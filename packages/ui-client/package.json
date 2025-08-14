@@ -1,0 +1,35 @@
+{
+  "name": "@hierarchidb/ui-client",
+  "version": "1.0.0",
+  "description": "Worker and Comlink communication client for HierarchiDB UI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hierarchidb/api": "workspace:*",
+    "@hierarchidb/core": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "comlink": "^4.4.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.10",
+    "@types/react": "^18.3.12",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

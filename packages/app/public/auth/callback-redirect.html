@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Authentication Redirect</title>
+    <meta charset="utf-8" />
+    <script>
+      // This is a helper page to handle the OAuth callback redirect properly on GitHub Pages
+      console.log('[auth-callback-redirect] Processing OAuth redirect');
+
+      // Extract the base path from the current URL
+      const projectName = 'eria-cartograph';
+      const basePath = '/' + projectName;
+
+      // Get the current URL parameters
+      const params = window.location.search;
+      const hash = window.location.hash;
+
+      // Check if we should use hash routing (for GitHub Pages)
+      const isGitHubPages = window.location.hostname.includes('github.io');
+
+      if (isGitHubPages || hash.includes('#/')) {
+        // Use hash-based routing for GitHub Pages
+        const hashCallbackUrl = window.location.origin + basePath + '/#/auth/callback' + params;
+        console.log('[auth-callback-redirect] Redirecting to hash route:', hashCallbackUrl);
+        window.location.replace(hashCallbackUrl);
+      } else {
+        // Use regular routing for other deployments
+        const callbackUrl = window.location.origin + basePath + '/auth/callback' + params;
+        console.log('[auth-callback-redirect] Redirecting to regular route:', callbackUrl);
+        window.location.replace(callbackUrl);
+      }
+    </script>
+  </head>
+  <body>
+    <div style="text-align: center; padding: 50px; font-family: sans-serif">
+      <h2>Redirecting...</h2>
+      <p>Please wait while we complete the authentication process.</p>
+    </div>
+  </body>
+</html>

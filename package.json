@@ -1,0 +1,59 @@
+{
+  "name": "hierarchidb",
+  "version": "0.0.1",
+  "description": "High-performance tree-structured data management framework for browser environments",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Hiroya Kubo",
+    "email": "hiroya@cuc.ac.jp"
+  },
+  "keywords": [
+    "tree",
+    "hierarchical-data",
+    "indexeddb",
+    "dexie",
+    "comlink"
+  ],
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "preinstall": "npx -y only-allow pnpm",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "typecheck": "turbo run typecheck",
+    "e2e": "turbo run e2e",
+    "count-lines": "node scripts/count-lines.js",
+    "storybook": "turbo run storybook --parallel",
+    "storybook:ui-core": "pnpm --filter @hierarchidb/ui-core storybook",
+    "storybook:ui-auth": "pnpm --filter @hierarchidb/ui-auth storybook",
+    "storybook:ui-routing": "pnpm --filter @hierarchidb/ui-routing storybook",
+    "storybook:ui-i18n": "pnpm --filter @hierarchidb/ui-i18n storybook",
+    "build-storybook": "turbo run build-storybook"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.2.0",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "comlink": "^4.4.2"
+  }
+}

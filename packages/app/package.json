@@ -1,0 +1,50 @@
+{
+  "name": "@hierarchidb/app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/entry.client.tsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@hierarchidb/core": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
+    "@hierarchidb/ui-client": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-layout": "workspace:*",
+    "@hierarchidb/ui-navigation": "workspace:*",
+    "@hierarchidb/ui-routing": "workspace:*",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@react-router/fs-routes": "^7.8.1",
+    "@react-router/node": "^7.8.1",
+    "isbot": "^5",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router": "^7.8.1",
+    "react-router-dom": "^7.8.1"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.8.1",
+    "@react-router/node": "^7.8.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "config": "link:@react-router/dev/config",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.5",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}
