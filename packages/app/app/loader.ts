@@ -1,4 +1,4 @@
-import {  Tree, TreeNode, TreeNodeType, TreeNodeAction, TreeNodeTypes } from '@hierarchidb/core';
+import { Tree, TreeNode, TreeNodeType, TreeNodeAction, TreeNodeTypes } from '@hierarchidb/core';
 import { WorkerAPIClient } from '@hierarchidb/ui-client';
 import { useRouteLoaderData } from 'react-router';
 
@@ -60,7 +60,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
   const workerAPIClientReturn = await loadWorkerAPIClient();
-  if(!treeId){
+  if (!treeId) {
     throw new Error('treeId is required');
   }
   return {
@@ -151,9 +151,7 @@ export function useTargetTreeNode(): TreeNode | undefined {
 }
 
 export function useTreeNodeType(): TreeNodeType | undefined {
-  return useRouteLoaderData(
-    't/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)'
-  );
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)');
 }
 
 export function useTreeNodeTAction(): TreeNodeAction | undefined {

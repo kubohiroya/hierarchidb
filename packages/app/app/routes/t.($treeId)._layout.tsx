@@ -9,12 +9,14 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 export default function TLayout() {
   const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
 
-  return (<div>
-    <h1>t.($treeId)._layout</h1>
-    <ul>
-      <li>{data.tree?.treeId}</li>
-      <li>{data.tree?.name}</li>
-    </ul>
-    <Outlet/>
-  </div>);
+  return (
+    <div>
+      <h1>t.($treeId)._layout</h1>
+      <ul>
+        <li>{data.tree?.treeId}</li>
+        <li>{data.tree?.name}</li>
+      </ul>
+      <Outlet />
+    </div>
+  );
 }

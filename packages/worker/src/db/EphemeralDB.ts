@@ -18,11 +18,11 @@ export class EphemeralDB extends Dexie {
   }
 
   async initialize(): Promise<void> {
-    if(await this.workingCopies.count() !== 0){
+    if ((await this.workingCopies.count()) !== 0) {
       console.log('initialize workingCopies');
       this.workingCopies.clear();
     }
-    if(await this.views.count() === 0){
+    if ((await this.views.count()) === 0) {
       console.log('initialize views');
       this.views.clear();
     }

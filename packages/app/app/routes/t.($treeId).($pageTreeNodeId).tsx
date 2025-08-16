@@ -8,15 +8,19 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 
 export default function TLayout() {
   const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
-
-  return (<div>
-    <h2>t.($treeId).($pageTreeNodeId)</h2>
-    <ul>
-      <li>{data.tree?.treeId}</li>
-      <li>{data.tree?.name}</li>
-      <li>{data.pageTreeNode?.treeNodeId}</li>
-      <li>{data.pageTreeNode?.name}</li>
-    </ul>
-    <Outlet/>
-  </div>);
+  if (!data.pageTreeNode) {
+    return;
+  }
+  return (
+    <div>
+      <h2>t.($treeId).($pageTreeNodeId)</h2>
+      <ul>
+        <li>{data.tree?.treeId}</li>
+        <li>{data.tree?.name}</li>
+        <li>{data.pageTreeNode?.treeNodeId}</li>
+        <li>{data.pageTreeNode?.name}</li>
+      </ul>
+      <Outlet />
+    </div>
+  );
 }

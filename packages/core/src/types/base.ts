@@ -4,7 +4,7 @@ export type Timestamp = number;
 
 export const TreeRootNodeTypes = {
   SuperRoot: 'SuperRoot',
-  Root: 'Root' ,
+  Root: 'Root',
   Trash: 'Trash',
 } as const;
 export type TreeRootNodeType = keyof typeof TreeRootNodeTypes;
@@ -12,7 +12,7 @@ export type TreeRootNodeType = keyof typeof TreeRootNodeTypes;
 export const TreeNodeTypes = {
   ...TreeRootNodeTypes,
   folder: 'folder',
-}
+};
 export type TreeNodeType = keyof typeof TreeNodeTypes;
 
 export type TreeRootNodeId = UUID;

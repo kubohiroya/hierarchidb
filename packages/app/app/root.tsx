@@ -1,11 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
 
-/**
- * ルートレベルでWorkerServicesを初期化
- * 全ての子ルートで利用可能になる
- */
-
-export default function App() {
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -15,10 +10,14 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <Outlet />
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
+}
+
+export default function App() {
+  return <Outlet />;
 }

@@ -13,9 +13,12 @@
     "license-check": "license-checker --json --out ../../docs/licenses.json",
     "license-check:summary": "license-checker --summary --out ../../docs/licenses-summary.txt",
     "license-check:csv": "license-checker --csv --out ../../docs/licenses.csv",
-    "license-check:all": "pnpm run license-check && pnpm run license-check:summary && pnpm run license-check:csv && echo '✅ License reports generated in docs/'"
+    "license-check:all": "pnpm run license-check && pnpm run license-check:summary && pnpm run license-check:csv && echo '✅ License reports generated in docs/'",
+    "format": "prettier --write \"app/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
+    "format:check": "prettier --check \"app/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\""
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hierarchidb/core": "workspace:*",
@@ -31,8 +34,8 @@
     "@react-router/fs-routes": "^7.8.1",
     "@react-router/node": "^7.8.1",
     "isbot": "^5",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-router": "^7.8.1",
     "react-router-dom": "^7.8.1"
   },
@@ -42,14 +45,13 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.7.0",
-    "config": "link:@react-router/dev/config",
     "license-checker": "^25.0.1",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

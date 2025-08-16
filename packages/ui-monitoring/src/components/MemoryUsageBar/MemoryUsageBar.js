@@ -173,26 +173,24 @@ export const MemoryUsageBar = ({
                 children: 'Breakdown by Origin:',
               }),
             }),
-            memoryInfo.breakdown
-              .slice(0, 5)
-              .map((entry, index) =>
-                _jsx(
-                  Box,
-                  {
-                    children: _jsxs(Typography, {
-                      variant: 'caption',
-                      sx: { fontSize: '0.7rem' },
-                      children: [
-                        '\u2022 ',
-                        entry.url || 'Unknown',
-                        ': ',
-                        formatBytes(entry.bytes || 0),
-                      ],
-                    }),
-                  },
-                  index
-                )
-              ),
+            memoryInfo.breakdown.slice(0, 5).map((entry, index) =>
+              _jsx(
+                Box,
+                {
+                  children: _jsxs(Typography, {
+                    variant: 'caption',
+                    sx: { fontSize: '0.7rem' },
+                    children: [
+                      '\u2022 ',
+                      entry.url || 'Unknown',
+                      ': ',
+                      formatBytes(entry.bytes || 0),
+                    ],
+                  }),
+                },
+                index
+              )
+            ),
             memoryInfo.breakdown.length > 5 &&
               _jsxs(Typography, {
                 variant: 'caption',

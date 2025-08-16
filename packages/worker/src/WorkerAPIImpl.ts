@@ -78,10 +78,7 @@ export class WorkerAPIImpl implements WorkerAPI {
   }
 
   async initialize(): Promise<void> {
-    await Promise.all([
-      this.coreDB.initialize(),
-      this.ephemeralDB.initialize()
-    ]);
+    await Promise.all([this.coreDB.initialize(), this.ephemeralDB.initialize()]);
   }
 
   async dispose(): Promise<void> {

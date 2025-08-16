@@ -79,18 +79,18 @@ export default function AuthCallbackRoute() {
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-      }}
-    >
-      <CircularProgress size={60} />
-      <Typography variant="h6" sx={{ mt: 3 }}>
-        Completing authentication...
-      </Typography>
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+          }}
+        >
+          <CircularProgress size={60} />
+          <Typography variant="h6" sx={{ mt: 3 }}>
+            Completing authentication...
+          </Typography>
     </Box>
   );
 }

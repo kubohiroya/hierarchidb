@@ -8,7 +8,9 @@
     "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
-    "clean": "rm -rf dist build .wrangler"
+    "clean": "rm -rf dist build .wrangler",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
     "hono": "^4.6.14",

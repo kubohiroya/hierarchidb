@@ -24,6 +24,21 @@ export { default as theme } from './theme/theme';
 // Additional components
 export { AriaLiveRegion } from './components/AriaLiveRegion/AriaLiveRegion';
 
+// Info components
+export {
+  InfoDialog,
+  InfoContent,
+  InfoPanel,
+  LicenseInfo,
+  type InfoDialogProps,
+  type InfoContentProps,
+  type InfoPanelProps,
+  type InfoPanelAction,
+  type LicenseInfoProps,
+  type LicenseData,
+  type LicenseRecord,
+} from './components/Info';
+
 // Temporarily disabled components with dependency issues:
 // export { useThemeMode } from './theme/hooks/useThemeMode';
 // export { ErrorBoundary } from './components/ErrorBoundary';

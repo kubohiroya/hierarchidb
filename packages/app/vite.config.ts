@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
+import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import * as path from 'path';
 
@@ -10,6 +11,8 @@ export default defineConfig(({ mode }) => {
   const appName = env.VITE_APP_NAME || '';
   // VITE_APP_NAMEが設定されている場合のみbaseを設定
   const base = appName ? `/${appName}/` : '/';
+
+  const isDev = mode === 'development';
 
   return {
     base,
@@ -26,45 +29,48 @@ export default defineConfig(({ mode }) => {
         { find: /^~(?!.*node_modules)/, replacement: path.resolve(__dirname, './app') },
         // パッケージエイリアス
         { find: '@', replacement: path.resolve(__dirname, './src') },
+        // Core packages always use dist for stability
         { find: '@hierarchidb/core', replacement: path.resolve(__dirname, '../core/dist') },
         { find: '@hierarchidb/api', replacement: path.resolve(__dirname, '../api/dist') },
         { find: '@hierarchidb/worker', replacement: path.resolve(__dirname, '../worker/dist') },
-        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../ui-core/src') },
+        // UI packages use src in development for HMR, dist in production
+        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, isDev ? '../ui-core/src' : '../ui-core/dist') },
         {
           find: '@hierarchidb/ui-client',
-          replacement: path.resolve(__dirname, '../ui-client/src'),
+          replacement: path.resolve(__dirname, isDev ? '../ui-client/src' : '../ui-client/dist'),
         },
-        { find: '@hierarchidb/ui-auth', replacement: path.resolve(__dirname, '../ui-auth/src') },
-        { find: '@hierarchidb/ui-i18n', replacement: path.resolve(__dirname, '../ui-i18n/src') },
+        { find: '@hierarchidb/ui-auth', replacement: path.resolve(__dirname, isDev ? '../ui-auth/src' : '../ui-auth/dist') },
+        { find: '@hierarchidb/ui-i18n', replacement: path.resolve(__dirname, isDev ? '../ui-i18n/src' : '../ui-i18n/dist') },
         {
           find: '@hierarchidb/ui-layout',
-          replacement: path.resolve(__dirname, '../ui-layout/src'),
+          replacement: path.resolve(__dirname, isDev ? '../ui-layout/src' : '../ui-layout/dist'),
         },
         {
           find: '@hierarchidb/ui-navigation',
-          replacement: path.resolve(__dirname, '../ui-navigation/src'),
+          replacement: path.resolve(__dirname, isDev ? '../ui-navigation/src' : '../ui-navigation/dist'),
         },
         {
           find: '@hierarchidb/ui-routing',
-          replacement: path.resolve(__dirname, '../ui-routing/src'),
+          replacement: path.resolve(__dirname, isDev ? '../ui-routing/src' : '../ui-routing/dist'),
         },
-        { find: '@hierarchidb/ui-tour', replacement: path.resolve(__dirname, '../ui-tour/src') },
-        { find: '@hierarchidb/ui-file', replacement: path.resolve(__dirname, '../ui-file/src') },
+        { find: '@hierarchidb/ui-tour', replacement: path.resolve(__dirname, isDev ? '../ui-tour/src' : '../ui-tour/dist') },
+        { find: '@hierarchidb/ui-file', replacement: path.resolve(__dirname, isDev ? '../ui-file/src' : '../ui-file/dist') },
         {
           find: '@hierarchidb/ui-monitoring',
-          replacement: path.resolve(__dirname, '../ui-monitoring/src'),
+          replacement: path.resolve(__dirname, isDev ? '../ui-monitoring/src' : '../ui-monitoring/dist'),
         },
+        // Plugins always use dist for stability
         {
           find: '@hierarchidb/plugin-basemap',
-          replacement: path.resolve(__dirname, '../plugins/basemap/src'),
+          replacement: path.resolve(__dirname, '../plugins/basemap/dist'),
         },
         {
           find: '@hierarchidb/plugin-shapes',
-          replacement: path.resolve(__dirname, '../plugins/shapes/src'),
+          replacement: path.resolve(__dirname, '../plugins/shapes/dist'),
         },
         {
           find: '@hierarchidb/plugin-stylemap',
-          replacement: path.resolve(__dirname, '../plugins/stylemap/src'),
+          replacement: path.resolve(__dirname, '../plugins/stylemap/dist'),
         },
       ],
     },

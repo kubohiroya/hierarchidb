@@ -8,9 +8,12 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 
 export default function TLayout() {
   const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
+  if (!data.targetTreeNode) {
+    return;
+  }
   return (
     <>
-    <h3>t.($treeId).($pageTreeNodeId).($targetTreeNodeId)</h3>
+      <h3>t.($treeId).($pageTreeNodeId).($targetTreeNodeId)</h3>
       <ul>
         <li>{data.tree?.treeId}</li>
         <li>{data.tree?.name}</li>
@@ -19,7 +22,7 @@ export default function TLayout() {
         <li>{data.targetTreeNode?.treeNodeId}</li>
         <li>{data.targetTreeNode?.name}</li>
       </ul>
-    <Outlet />
+      <Outlet />
     </>
-);
+  );
 }

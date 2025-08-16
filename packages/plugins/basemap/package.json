@@ -10,12 +10,13 @@
       "import": "./dist/index.js"
     }
   },
-  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && tsc-alias",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
     "@hierarchidb/core": "workspace:*",
