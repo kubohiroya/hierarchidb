@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLoaderData } from 'react-router-dom';
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { loadTreeNodeType, LoadTreeNodeTypeArgs } from '~/loader';
 
@@ -7,5 +7,19 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 }
 
 export default function TLayout() {
-  return <Outlet />;
+  const data = useLoaderData();
+  return <>
+    <h4>t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType)</h4>
+    <ul>
+      <li>{data.tree.treeId}</li>
+      <li>{data.tree.name}</li>
+      <li>{data.pageTreeNode?.treeNodeId}</li>
+      <li>{data.pageTreeNode?.name}</li>
+      <li>{data.targetTreeNode?.treeNodeId}</li>
+      <li>{data.targetTreeNode?.name}</li>
+      <li>{data.treeNodeType}</li>
+    </ul>
+    <Outlet />
+    </>
+  ;
 }

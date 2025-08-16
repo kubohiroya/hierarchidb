@@ -139,25 +139,25 @@ export function useWorkerAPIClient() {
 }
 
 export function useTree(): Tree | undefined {
-  return useRouteLoaderData('t/($treeId)') as Tree;
+  return useRouteLoaderData('t/($treeId)');
 }
 
 export function usePageTreeNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)') as TreeNode;
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)');
 }
 
 export function useTargetTreeNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)') as TreeNode;
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)');
 }
 
 export function useTreeNodeType(): TreeNodeType | undefined {
   return useRouteLoaderData(
     't/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)'
-  ) as TreeNodeType;
+  );
 }
 
 export function useTreeNodeTAction(): TreeNodeAction | undefined {
   return useRouteLoaderData(
     't/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)/($action)'
-  ) as TreeNodeAction;
+  );
 }

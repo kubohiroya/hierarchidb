@@ -12,7 +12,7 @@ export default function TLayout() {
   return (
     <div>
       <div style={{ padding: '20px', border: '1px solid #ccc', margin: '10px' }}>
-        <h2>Route Parameters</h2>
+        <h5>Route Parameters</h5>
         <ul>
           <li><strong>Tree ID:</strong> {params.treeId || 'Not provided'}</li>
           <li><strong>Page Tree Node ID:</strong> {params.pageTreeNodeId || 'Not provided'}</li>
