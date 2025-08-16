@@ -1,0 +1,6 @@
+├─ MIT: 55
+├─ UNKNOWN: 5
+├─ UNLICENSED: 5
+├─ Apache-2.0: 4
+├─ Unlicense: 1
+└─ BSD-3-Clause: 1
