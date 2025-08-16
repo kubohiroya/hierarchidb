@@ -4,151 +4,223 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-hierarchiidb is a high-performance tree-structured data management framework for browser environments. It uses a 4-layer architecture with strict UI-Worker separation via Comlink RPC, dual database strategy (CoreDB/EphemeralDB), and plugin-based node type system.
+HierarchiDB is a high-performance tree-structured data management framework for browser environments. It implements a 4-layer architecture with strict UI-Worker separation via Comlink RPC, dual database strategy (CoreDB/EphemeralDB), and a plugin-based node type system.
 
 ## Essential Commands
 
 ### Development
-- `pnpm dev` - Start all development servers (uses Turborepo parallel execution)
-- `pnpm build` - Build all packages (respects dependency order)  
-- `pnpm typecheck` - Run TypeScript checking across all packages
-- `pnpm test` - Run unit tests (Vitest), `pnpm e2e` for E2E (Playwright)
-- `pnpm lint` - Run ESLint, `pnpm format` for Prettier
+- `pnpm install` - Install dependencies (enforces pnpm via preinstall hook)
+- `pnpm dev` - Start all development servers in parallel (Turborepo)
+- `pnpm build` - Build all packages respecting dependency order
+- `pnpm build --force` - Force rebuild without cache
 
-### Package-Specific Development
-- `pnpm --filter @hierarchidb/core dev` - Specific package dev mode
-- `pnpm storybook:ui-core` - Start Storybook for UI components
-- `pnpm --filter @hierarchidb/worker test` - Run tests for specific package
+### Testing & Quality
+- `pnpm typecheck` - TypeScript checking across all packages
+- `pnpm lint` - ESLint validation
+- `pnpm format` - Prettier formatting
+- `pnpm test` - Unit tests (Vitest)
+- `pnpm test:run` - Run tests once without watch
+- `pnpm e2e` - E2E tests (Playwright)
 
-### When Task Complete - ALWAYS RUN:
-1. `pnpm typecheck` - TypeScript must pass
-2. `pnpm lint` - Linting must pass  
-3. `pnpm test` - Tests must pass
-4. `pnpm build` - Build must succeed
+### Package-Specific Commands
+- `pnpm --filter @hierarchidb/[package] dev` - Run specific package in dev mode
+- `pnpm --filter @hierarchidb/[package] build` - Build specific package
+- `pnpm --filter @hierarchidb/[package] test` - Test specific package
+- `pnpm storybook:ui-core` - Launch UI component Storybook
 
-## Architecture Understanding
+### Build Verification Checklist
+After making changes, ALWAYS run in order:
+1. `pnpm typecheck` - Must pass without errors
+2. `pnpm lint` - Must pass without errors
+3. `pnpm test:run` - All tests must pass
+4. `pnpm build` - Must complete successfully
+
+## Architecture
 
 ### 4-Layer System
 ```
 UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB/EphemeralDB)
 ```
 
-### Key Patterns
-- **Working Copy Pattern**: Create working copy → Edit → Commit/Discard (supports undo/redo)
-- **AOP Node System**: Plugin-based node types with lifecycle hooks
-- **Strict Separation**: UI never accesses IndexedDB directly, only through Worker
+### Core Patterns
 
-### Package Structure
-- `/packages/core/` - Types and data models only
-- `/packages/api/` - UI-Worker interface contracts
-- `/packages/worker/` - Database operations, command processing  
-- `/packages/ui*/` - Modular React UI packages (core, auth, routing, i18n)
-- `/packages/plugins/` - Node type plugins (e.g., basemap)
+**Working Copy Pattern**
+1. Create working copy in EphemeralDB
+2. Edit working copy (isolated from main data)
+3. Commit to CoreDB or discard
+4. Supports full undo/redo via ring buffer
 
-## Critical Code Rules
+**Command Pattern**
+- All mutations go through CommandManager
+- Commands are serializable for undo/redo
+- Worker processes commands with lifecycle hooks
 
-### TypeScript (Strictly Enforced)
-- **`any` type is FORBIDDEN** - use `unknown` with type guards
-- **Non-null assertion (`!`) is PROHIBITED** - use proper null checks
-- **Relative imports FORBIDDEN** - ESLint enforces absolute imports only
-- **Type safety required** for all plugin APIs and Comlink interfaces
+**Subscription System**
+- UI subscribes to node changes
+- Worker detects diffs and publishes updates
+- Automatic cleanup on unsubscribe
 
-### React/UI Guidelines
-- **Controlled components only** - don't mix controlled/uncontrolled
-- **Accessibility mandatory** - labels, roles, keyboard navigation
-- **Virtualization required** for large lists (use TanStack Virtual)
-- **MUI theme tokens** - never hardcode colors/spacing
+### Package Dependencies
 
-### Worker/Database Rules
-- **No UI → Database direct access** - all through Worker layer
-- **Transaction boundaries clear** - group related operations properly
-- **Required indexing** - no full table scans allowed
-- **Lifecycle hooks** - use for node type extensions
-
-### Error Handling
-- **Explicit error handling** - use Result<T,E> patterns
-- **Type-safe error codes** for Comlink API
-- **No secrets in logs** - especially production builds
-
-## Plugin Development
-
-### Node Type Definition Pattern
-```typescript
-export const MyNodeDefinition: NodeTypeDefinition<MyEntity, MySubEntity, MyWorkingCopy> = {
-  nodeType: 'mytype',
-  database: { entityStore: 'mytypes', schema: {...}, version: 1 },
-  entityHandler: new MyEntityHandler(),
-  lifecycle: { afterCreate, beforeDelete, ... },
-  ui: { dialogComponent, panelComponent, ... },
-  api: { workerExtensions: {...}, clientExtensions: {...} }
-};
+```
+core (types only)
+  ↑
+api (interfaces)
+  ↑
+worker + ui-client (implementations)
+  ↑
+ui-* packages (components)
+  ↑
+app (main application)
 ```
 
-### Registration
+### Critical Packages
+
+- `packages/core/` - Pure TypeScript types, no runtime code
+- `packages/api/` - Comlink interface contracts between UI and Worker
+- `packages/worker/` - Database operations, command processing, lifecycle management
+- `packages/ui-client/` - Worker connection management, React hooks
+- `packages/app/` - React Router v7 file-based routing application
+
+## Code Rules
+
+### TypeScript Strictness
+- `any` type forbidden - use `unknown` with type guards
+- Non-null assertions (`!`) prohibited - use proper null checks
+- All imports must use `~/*` paths (configured via tsconfig)
+- `tsc-alias` resolves paths during build
+
+### Import Paths
+- Use `~/*` for package-internal imports
+- Use `@hierarchidb/*` for cross-package imports
+- ESLint enforces no relative imports
+
+### React Patterns
+- Controlled components only
+- Required accessibility attributes
+- Virtual scrolling for lists >100 items (TanStack Virtual)
+- Use MUI theme tokens, no hardcoded styles
+
+### Worker Rules
+- UI never directly accesses IndexedDB
+- All database operations through Worker layer
+- Transactions must have clear boundaries
+- Use lifecycle hooks for extensibility
+
+## Plugin System
+
+### Node Type Registration
 ```typescript
+// Define node type with all handlers
+const MyNodeDefinition: NodeTypeDefinition<Entity, SubEntity, WorkingCopy> = {
+  nodeType: 'mytype',
+  database: { 
+    entityStore: 'mytypes',
+    schema: { /* Dexie schema */ },
+    version: 1 
+  },
+  entityHandler: new MyEntityHandler(),
+  lifecycle: {
+    afterCreate: async (node, context) => { /* hook */ },
+    beforeDelete: async (node, context) => { /* hook */ }
+  },
+  ui: {
+    dialogComponent: MyDialog,
+    panelComponent: MyPanel
+  }
+};
+
+// Register at startup
 NodeTypeRegistry.getInstance().register(MyNodeDefinition);
 ```
 
-## Testing Requirements
+## Database Strategy
 
-### Unit Tests (Vitest)
-- Business logic functions (pure functions preferred)
-- Entity handlers CRUD operations
-- Validation logic
+### CoreDB (Long-lived)
+- TreeEntity - Tree metadata
+- TreeNodeEntity - Node hierarchy
+- TreeRootStateEntity - Root node states
+- Plugin entity stores
 
-### E2E Tests (Playwright)  
-- Critical user flows: Create → Edit → Delete → Undo/Redo
-- Plugin integration scenarios
-- Authentication flows
+### EphemeralDB (Short-lived)
+- WorkingCopyEntity - Edit sessions
+- TreeViewStateEntity - UI state
+- Cleared on browser close
 
-## Common Patterns
+## Environment Configuration
 
-### Command Processing
+### Development (`.env.development`)
+```
+VITE_APP_NAME=
+# Empty for development, no base path
+```
+
+### Production (`.env.production`)
+```
+VITE_APP_NAME=hierarchidb
+# Sets base path for deployment
+```
+
+### React Router Base Path
+Configured in `packages/app/react-router.config.ts` and `vite.config.ts` using `VITE_APP_NAME`
+
+## Authentication Flow
+
+1. UI initiates OAuth with provider
+2. BFF (Cloudflare Worker) handles OAuth callback
+3. BFF generates JWT token
+4. CORS Proxy validates JWT for API requests
+
+## Performance Guidelines
+
+- Use `useMemo`/`useCallback` for expensive computations
+- Keep Dexie transactions short and focused
+- Implement virtual scrolling for large lists
+- Code split at package boundaries
+- Ring buffer for undo/redo (prevents memory leaks)
+
+## Common Development Tasks
+
+### Add New Node Type
+1. Create entity handler extending `BaseEntityHandler`
+2. Define node type definition
+3. Register in `NodeTypeRegistry`
+4. Add UI components for dialog/panel
+5. Implement lifecycle hooks
+
+### Debug Worker Communication
 ```typescript
-// UI sends command
-const result = await workerApi.executeCommand({
-  type: 'createNode',
-  payload: { parentId, nodeType, data }
+// Enable Comlink debug mode
+Comlink.transferHandlers.set('DEBUG', {
+  canHandle: () => true,
+  serialize: (obj) => console.log('Serialize:', obj)
 });
-
-// Worker processes with lifecycle hooks
-await lifecycleManager.handleNodeCreation(parentId, data, nodeType);
 ```
 
-### Working Copy Flow
+### Test Database Operations
 ```typescript
-// 1. Create working copy
-const workingCopy = await entityHandler.createWorkingCopy(nodeId);
-
-// 2. Edit (in EphemeralDB)
-await entityHandler.updateWorkingCopy(workingCopy.id, changes);
-
-// 3. Commit (to CoreDB) or Discard
-await entityHandler.commitWorkingCopy(nodeId, workingCopy);
+// Use fake-indexeddb in tests
+import 'fake-indexeddb/auto';
+// Tests run with in-memory database
 ```
 
-## Authentication Architecture
+## Deployment
 
-### OAuth2 Flow
-UI → Identity Provider → BFF (Cloudflare Worker) → JWT → CORS Proxy
+### GitHub Pages
+- Set `VITE_APP_NAME` to repository name
+- Build: `pnpm build`
+- Deploy `packages/app/dist` directory
 
-### Secrets Management
-- **Frontend**: No secrets, only client IDs in environment variables
-- **Cloudflare Workers**: Secrets via `wrangler secret put`
-- **Development**: Use `.env` (gitignored) for non-sensitive config
+### Cloudflare Workers
+```bash
+# BFF
+cd packages/bff
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put JWT_SECRET
+pnpm deploy
 
-## Performance Considerations
-
-- **Virtual scrolling** for any list >100 items
-- **useMemo/useCallback** for expensive React computations
-- **Dexie transactions** kept short and focused
-- **Code splitting** at package boundaries
-- **Ring buffer** for undo/redo (prevents memory leaks)
-
-## Development Environment
-
-- **Node.js** >= 20.0.0 required
-- **pnpm** >= 9.0.0 (enforced by preinstall script)
-- **macOS** development (Darwin commands available)
-- **Turborepo** for build orchestration
-- **Strict TypeScript** configuration across all packages
+# CORS Proxy
+cd packages/cors-proxy
+wrangler secret put BFF_JWT_SECRET
+pnpm deploy
+```

@@ -9,7 +9,11 @@
     "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "license-check": "license-checker --json --out ../../docs/licenses.json",
+    "license-check:summary": "license-checker --summary --out ../../docs/licenses-summary.txt",
+    "license-check:csv": "license-checker --csv --out ../../docs/licenses.csv",
+    "license-check:all": "pnpm run license-check && pnpm run license-check:summary && pnpm run license-check:csv && echo '✅ License reports generated in docs/'"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -39,6 +43,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.7.0",
     "config": "link:@react-router/dev/config",
+    "license-checker": "^25.0.1",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vite-tsconfig-paths": "^5.1.4"
