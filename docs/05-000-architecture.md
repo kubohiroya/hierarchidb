@@ -91,3 +91,14 @@ UI モジュールの分割（概要）
 - 5.4-ui.md: UI モジュール詳細、フック/コンポーネント一覧、アプリ結線、i18n/アクセシビリティ指針。
 
 補足: サーバサイドの認証クレデンシャルは Cloudflare Secrets（`wrangler secret put`）、非機密は `.env`（.gitignore 登録）で管理する。
+
+---
+
+## 章内目次 (Chapter 05)
+
+- 05-020-core.md — Core 概要とデータモデル
+- 05-030-api.md — API レイヤ（UI↔Worker 契約）
+- 05-040-worker.md — Worker レイヤ（DB操作・コマンド処理）
+- 05-050-ui.md — UI レイヤ
+- 05-060-serverside.md — ServerSide 連携
+- 05-070-authorization.md — 認証・認可
