@@ -1,5 +1,4 @@
-# 12-2. プラグイン: stylemap（スタイルマップ）
-> 注意: このファイル名は typo（sylemap）です。将来 `12-2-plugin-stylemap.md` にリネーム予定。プラグイン識別子（nodeType）は `stylemap`（単数形）に統一します。
+# 12-2. プラグイン: stylemap（スタイルマップ)
 
 本章では、CSV ベースのスタイル情報を管理・提供する stylemap プラグインについて、6/7/8/11章の設計に沿って仕様をまとめる。命名規則に基づき、本プラグインの nodeType は単数形の `stylemap` に統一する。リポジトリには packages/plugins/stylemap として実装（Unified 定義・DB・UI）が存在するため、ここでは実装要点の要約と統合確認の TODO を整理する。
 
@@ -10,7 +9,7 @@
   - 11章: docs/11-plugin-ui.md
 
 ## 12.2.1 概要
-- 目的: CSV などの外部データをもとに地図上のスタイル（色、サイズ、分類ルール）を定義し、他プラグイン（shapes/locations/routes 等）で利用可能なスタイル解決を提供する。
+- 目的: CSV などの外部データをもとに地図上のスタイル（色、サイズ、分類ルール）を定義し、他プラグイン（shape/location/route 等）で利用可能なスタイル解決を提供する。
 - Tree: Resources ツリー配下。
 - NodeType: `stylemap`（単数形）
 
@@ -82,8 +81,6 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<StyleMapEntity, 
 - CSV からの取り込み→ルール生成→プレビュー→保存の基本フローが成立
 
 ## 12.2.9 TODO（仕様の不備・設計の矛盾・未実装）
-- ファイル名のtypo: `12-2-plugin-sylemap.md`
-  - 対応: 将来 `12-2-plugin-stylemap.md` にファイル名をリネーム（参照リンクを更新）
 - 実装確認済み: `packages/plugins/stylemap` に Unified 定義・DB・UI が存在
   - 対応: 実装要点のドキュメント反映、NodeTypeRegistry 登録とルーティング統合（11章）を実機確認
 - propertyresolver との責務境界が曖昧

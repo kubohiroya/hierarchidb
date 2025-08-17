@@ -34,10 +34,10 @@ workerでのAPIサービスを、アスペクト志向でのクロスカット�
 ### 6.2.1 ツリー分類とプラグイン配置
 
 **Resourcesツリー専用プラグイン**:
-- basemap, stylemap, shapes, locations, routes, propertyresolver
+- basemap, stylemap, shape, location, route, propertyresolver
 - 地図表示に必要な各種リソースデータを管理
 - 各プラグインは独立してリソースを提供
-- 命名規則: NodeType 識別子は原則として「1対1対応のデータを管理するプラグインは単数形（例: basemap, stylemap, propertyresolver, project）、1対n対応のデータを管理するプラグインは複数形（例: shapes, locations, routes）」とする。
+- 命名規則: プラグイン名称（NodeType 識別子を含む）はすべて単数形で統一する（例: basemap, stylemap, shape, location, route, propertyresolver, project）。
 
 **Projectsツリー専用プラグイン**:
 - project
@@ -95,19 +95,19 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, ne
 - **ルーティング**: import（CSVインポート）、preview（スタイルプレビュー）、export（スタイル出力）
 - **API拡張**: parseCSVStyles、applyStyles、validateStyleData
 
-#### 6.2.2.3 shapes（ベクトルデータプラグイン）
+#### 6.2.2.3 shape（ベクトルデータプラグイン）
 - **機能**: GeoJSONを選択的に読み込み簡略化しベクトルタイルデータを生成して提供
 - **エンティティ**: ShapeEntity（GeoJSONパス、簡略化レベル、フィルタ条件等）
 - **サブエンティティ**: FeatureSubEntity（個別のGeoJSONフィーチャー情報）
 - **ルーティング**: upload（GeoJSONアップロード）、simplify（形状簡略化）、tiles（ベクトルタイル生成）
 
-#### 6.2.2.4 locations（地点情報プラグイン）
+#### 6.2.2.4 location（地点情報プラグイン）
 - **機能**: 都市、港湾、空港、駅、インターチェンジをもとに、地図上の地点情報を提供
 - **エンティティ**: LocationEntity（地点タイプ、座標、名称、属性情報等）
 - **バリデーション**: 座標検証、地点タイプ制約、重複チェック
 - **ルーティング**: search（地点検索）、batch（一括登録）、geocode（住所解析）
 
-#### 6.2.2.5 routes（経路情報プラグイン）
+#### 6.2.2.5 route（経路情報プラグイン）
 - **機能**: 海路、空路、道路、鉄道などの、地図上の経路情報を提供
 - **エンティティ**: RouteEntity（経路タイプ、始点・終点、ウェイポイント、交通手段等）
 - **ワーキングコピー**: 経路編集中の一時的な状態を安全に管理
@@ -115,7 +115,7 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, ne
 
 #### 6.2.2.6 propertyresolver（プロパティマッピングプラグイン）
 - **機能**: MapLibreGLJSでの色・スタイル表示時のプロパティ名変換ルールを定義
-- **目的**: shapes, locations, routesが提供するGeoJSON featuresのpropertiesを統一化
+- **目的**: shape, location, route が提供する GeoJSON features の properties を統一化
 - **問題解決**: 同じ意味だが異なるproperty名や値で表現されているデータの変換
 - **エンティティ**: PropertyResolverEntity（変換ルール、マッピング定義、条件式等）
 - **処理対象**: GeoJSON features.properties の変換・正規化
@@ -167,14 +167,14 @@ packages/plugins/{plugin-name}/
 ```typescript
 // アプリケーション初期化時
 import { BaseMapPlugin } from '@hierarchidb/plugin-basemap';
-import { ShapesPlugin } from '@hierarchidb/plugin-shapes';
+import { ShapePlugin } from '@hierarchidb/plugin-shape';
 
 const registry = NodeTypeRegistry.getInstance();
 const pluginLoader = new PluginLoader(pluginContext);
 
 // 統合プラグインの読み込み
 await pluginLoader.loadPlugin(BaseMapPlugin);
-await pluginLoader.loadPlugin(ShapesPlugin);
+await pluginLoader.loadPlugin(ShapePlugin);
 // ... 他のプラグイン
 ```
 
@@ -182,7 +182,7 @@ await pluginLoader.loadPlugin(ShapesPlugin);
 
 1. **依存関係の追加**:
    ```bash
-   pnpm add @hierarchidb/plugin-basemap @hierarchidb/plugin-shapes
+   pnpm add @hierarchidb/plugin-basemap @hierarchidb/plugin-shape
    ```
 
 2. **プラグイン設定（プライオリティ指定）**:
@@ -190,8 +190,8 @@ await pluginLoader.loadPlugin(ShapesPlugin);
    // app.config.ts
    export const pluginConfig = {
      basemap: { enabled: true, priority: 10, settings: { defaultStyle: 'streets' } },
-     shapes: { enabled: true, priority: 20, settings: { maxFileSize: '10MB' } },
-     propertyresolver: { enabled: true, priority: 30 }, // shapes等の後に初期化
+     shape: { enabled: true, priority: 20, settings: { maxFileSize: '10MB' } },
+     propertyresolver: { enabled: true, priority: 30 }, // shape 等の後に初期化
      project: { enabled: true, priority: 40 } // 最後に初期化
    };
    ```

@@ -20,7 +20,7 @@
 - `treeId`: Tree識別子
 - `pageTreeNodeId`: 現在表示中のノード（オプション）
 - `targetTreeNodeId`: 操作対象のノード（オプション）  
-- `treeNodeType`: プラグイン識別子として機能（basemap, shapes, locations等）
+- `treeNodeType`: プラグイン識別子として機能（basemap, shape, location 等）
 - `action`: プラグイン内のアクション（edit, preview, batch, settings等）
 
 ### 8.2.2 具体例
@@ -31,8 +31,8 @@
 # BasemapプラグインのEdit画面
 /t/tree-123/node-456/node-789/basemap/edit
 
-# ShapesプラグインのBatch処理
-/t/tree-123/node-456/node-789/shapes/batch?step=2
+# ShapeプラグインのBatch処理
+/t/tree-123/node-456/node-789/shape/batch?step=2
 ```
 
 ### 8.2.3 ファイル構造
@@ -68,7 +68,7 @@ interface RouteParams {
   treeId: string;              // Tree識別子
   pageTreeNodeId?: string;     // 現在表示中のノード
   targetTreeNodeId?: string;   // 操作対象のノード
-  treeNodeType?: string;       // プラグイン識別子（basemap, shapes等）
+  treeNodeType?: string;       // プラグイン識別子（basemap, shape 等）
   action?: string;             // プラグイン内アクション（edit, preview等）
 }
 
@@ -1121,10 +1121,10 @@ export default function BasemapEdit() {
 
 ```bash
 # 新しいプラグインを作成
-npm run create-plugin shapes
+npm run create-plugin shape
 
 # プラグイン開発
-cd packages/plugins/shapes
+cd packages/plugins/shape
 npm run dev  # ウォッチモードでビルド
 
 # テスト実行
@@ -1161,8 +1161,8 @@ npm run dev  # プラグイン自動検出・登録
 // BasemapプラグインのEdit画面
 /t/tree-123/node-456/node-789/basemap/edit
 
-// Shapesプラグインのバッチ処理
-/t/tree-123/node-456/node-789/shapes/batch?step=2
+// Shapeプラグインのバッチ処理
+/t/tree-123/node-456/node-789/shape/batch?step=2
 
 // プラグインなし（通常のツリー表示）
 /t/tree-123/node-456
