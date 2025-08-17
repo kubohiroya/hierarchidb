@@ -1,0 +1,1 @@
+import{w as o,O as n}from"./vendor-react-BMYEQlIp.js";import{j as t}from"./vendor-mui-Dno2bF5d.js";import{e}from"./loader-CLgMaEhM.js";async function d(r){return await e()}const m=o(function(){return t.jsxs("div",{children:[t.jsx("h1",{children:"[t._index]"}),t.jsx(n,{})]})});export{d as clientLoader,m as default};
