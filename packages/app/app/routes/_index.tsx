@@ -1,16 +1,20 @@
-import { Outlet } from 'react-router-dom';
-import type { LoaderFunctionArgs } from 'react-router-dom';
-import { loadWorkerAPIClient } from '~/loader';
+import { Link } from 'react-router-dom';
+import { Container, Typography, Button, Box } from '@mui/material';
 
-export async function clientLoader(_args: LoaderFunctionArgs) {
-  return await loadWorkerAPIClient();
-}
-
-export default function TLayout() {
+export default function Index() {
   return (
-    <div>
-      <h1>[_index]</h1>
-      <Outlet />
-    </div>
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Typography variant="h2" component="h1" gutterBottom>
+        Welcome to HierarchiDB
+      </Typography>
+      <Typography variant="body1" paragraph>
+        High-performance tree-structured data management framework
+      </Typography>
+      <Box sx={{ mt: 4 }}>
+        <Button component={Link} to="/info" variant="contained">
+          About
+        </Button>
+      </Box>
+    </Container>
   );
 }

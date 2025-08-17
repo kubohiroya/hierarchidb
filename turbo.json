@@ -29,13 +29,6 @@
     "e2e": {
       "dependsOn": ["build"],
       "outputs": ["playwright-report/**"]
-    },
-    "storybook": {
-      "cache": false,
-      "persistent": true
-    },
-    "build-storybook": {
-      "outputs": ["storybook-static/**"]
     }
   }
 }

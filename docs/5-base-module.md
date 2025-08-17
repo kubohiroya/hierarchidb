@@ -268,24 +268,30 @@ ui-i18n → (独立)
 Worker層、UI層、app で用いられるデータモデル定義
 
 #### 5.4.1.1 基本データモデル
-```ts
-type UUID = string;
-type TreeId = string;
-type TreeRootNodeType = "SuperRoot" | "Root" | "TrashRoot";
-type TreeNodeType = TreeRootNodeType | "folder" | "file";
-type TreeRootNodeId = UUID;
-type TreeNodeId = TreeRootNodeId | UUID;
-type Timestamp = number;
-```
+- 基本型は core モジュールが提供する Opaque/Branded 型を利用し、外部（UI/Worker/API呼び出し側）では string の具体型を直接扱わない。
+- ここでは名称と関係のみを示し、実装詳細（ブランド付与方法など）は core/types に委ねる。
+
+用語と関係:
+- UUID: 体系内で用いる一意識別子（opaque）
+- TreeId: ツリー識別子（opaque）
+- TreeRootNodeType: 列挙型。値は SuperRoot / Root / TrashRoot（文字列リテラルの直書きは非推奨）
+- TreeNodeType: 列挙型。TreeRootNodeType に folder/file を加えた上位集合
+- SuperRootNodeId: SuperRoot 用 ID（opaque）
+- RootNodeId: Root 用 ID（opaque）
+- TrashRootNodeId: TrashRoot 用 ID（opaque）
+- TreeRootNodeId: SuperRootNodeId | RootNodeId | TrashRootNodeId（共用体）
+- RegularNodeId: 一般ノード（非ルート）用 ID（opaque）
+- TreeNodeId: TreeRootNodeId | RegularNodeId（共用体）
+- Timestamp: 数値時間（number）。IDとは異なり opaque ではない
 
 #### 5.4.1.2 ツリー構造関係データモデル
 
 ```ts
 type Tree = {
   treeId: TreeId;
-  treeRootNodeId: TreeRootNodeId;       // Root
-  treeTrashRootNodeId: TreeRootNodeId;  // TrashRoot
-  superRootNodeId: TreeRootNodeId;      // e.g., `superroot:${treeId}`
+  treeRootNodeId: RootNodeId;           // Root 専用ID
+  treeTrashRootNodeId: TrashRootNodeId; // TrashRoot 専用ID
+  superRootNodeId: SuperRootNodeId;     // e.g., `superroot:${treeId}`
 };
 // Root/TrashRoot の parentTreeNodeId は必ず superRootNodeId
 // SuperRoot の TreeNode 実体は存在しない（内部専用・UI 非表示）
@@ -460,7 +466,7 @@ nodes.where('referredBy').equals(targetId)（multiEntry）
 → *referredBy
 
 * ルート状態の取得
-rootStates.get([treeId, 'Root']) / rootStates.get([treeId, 'TrashRoot'])
+rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.TrashRoot])
 → &[treeId+treeRootNodeType]
 
 ### 5.4.3 API層におけるPub-Subモデル

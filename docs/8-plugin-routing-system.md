@@ -2,7 +2,13 @@
 
 ## 8.1 概要
 
-階層的URLパターン `/t/:treeId/:pageTreeNodeId?/:targetTreeNodeId?/:treeNodeType?/:action?` を維持したルーティングシステムを構築する。`treeNodeType` パラメータによるプラグインの動的ロード、file-convention based route config（@react-router/fs-routes）の活用、useLoaderDataによる階層情報とプラグインデータの統合を実現する。
+外部仕様（URLパターン）はそのままに、内部的な実装を大幅に刷新した。階層的URLパターン `/t/:treeId/:pageTreeNodeId?/:targetTreeNodeId?/:treeNodeType?/:action?` は変更せず、内部では React Router v7 のファイルベース・ルーティング（app/routes のフラットファイル命名）と段階的 clientLoader（各階層でのデータ集約）により処理する。
+
+主な変更点（内部仕様）:
+- @react-router/fs-routes と Vite の routes() プラグイン依存を廃止し、app/routes ディレクトリ配下のフラットファイル命名で階層を表現する方式へ移行
+- 各階層に clientLoader を配置し、`useLoaderData` で段階的に統合されたデータを取得
+- WorkerAPIClient 経由でツリー・ノード情報を取得し、`useRouteLoaderData` を使った階層ごとのデータ参照ヘルパーを提供
+- ルーティングの外部的仕様（URL）は互換を維持
 
 ## 8.2 URLパターン設計
 
@@ -31,47 +37,27 @@
 
 ### 8.2.3 ファイル構造
 
-```
-packages/app/src/routes/
-├── t/
-│   └── $treeId/
-│       ├── _layout.tsx                     # ツリー共通レイアウト
-│       ├── index.tsx                       # /t/:treeId
-│       └── $pageTreeNodeId/
-│           ├── index.tsx                   # /t/:treeId/:pageTreeNodeId
-│           └── $targetTreeNodeId/
-│               ├── index.tsx               # /t/:treeId/:pageTreeNodeId/:targetTreeNodeId
-│               └── $treeNodeType/
-│                   ├── _layout.tsx         # プラグインレイアウト
-│                   └── $.tsx               # 動的アクションキャッチオール
-```
+現在は app/routes ディレクトリ配下の「フラットファイル命名」で階層を表現する。各セグメントは () で囲んだ動的パラメータとして表記し、ドットで連結する。
 
 ```
-packages/
-├── plugins/
-│   ├── basemap/
-│   │   ├── package.json
-│   │   ├── src/
-│   │   │   ├── routes/      # プラグイン固有のルート定義
-│   │   │   │   ├── _index.tsx
-│   │   │   │   └── settings.tsx
-│   │   │   └── index.ts
-│   │   └── plugin.config.ts # プラグイン設定
-│   └── shapes/
-│       ├── package.json
-│       ├── src/
-│       │   ├── routes/
-│       │   │   ├── _index.tsx
-│       │   │   ├── batch.tsx
-│       │   │   └── preview.$id.tsx
-│       │   └── index.ts
-│       └── plugin.config.ts
-└── tools/
-    └── plugin-builder/     # プラグインビルドツール
-        ├── generate-routes.ts
-        ├── collect-plugins.ts
-        └── templates/
+packages/app/app/routes/
+├── root.tsx                                 # レイアウトと <Outlet />
+├── _index.tsx                               # /
+├── t._index.tsx                             # /t
+├── t.($treeId).tsx                          # /t/:treeId
+├── t.($treeId)._layout.tsx                  # /t/:treeId のレイアウト
+├── t.($treeId).($pageTreeNodeId).tsx        # /t/:treeId/:pageTreeNodeId
+├── t.($treeId).($pageTreeNodeId)._layout.tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId)._layout.tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType)._layout.tsx
+└── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
 ```
+
+補足:
+- 各階層のファイルに clientLoader を定義し、必要なデータのみを段階的にロードする。
+- レイアウトファイル（_layout.tsx）を併用して共通UI/エラーバウンダリ/サブアウトレットを提供する。
 
 ## 8.3 データ仕様
 
@@ -403,7 +389,7 @@ export default function PluginRoute() {
 
 ### 8.4.3 プラグイン開発側の実装（Worker API拡張統合）
 
-```typescript
+```tsx
 // packages/plugins/basemap/src/index.ts
 export { default as EditComponent } from './components/Edit';
 export { default as PreviewComponent } from './components/Preview';
@@ -598,179 +584,153 @@ export async function generatePluginRegistry() {
 
 ### 8.6.1 要件と設計方針
 
-**React Router統合の具体的要件:**
-- React Router v7 (React Router v7 Devが利用可能になり次第対応)
-- file-convention based routing (@react-router/fs-routes) の活用
-- 階層的URL構造の維持
-- 動的プラグインルート生成
-- useLoaderDataによるデータ統合
-- TypeScript型安全性確保
+【内部仕様変更の要点】
+- React Router v7 の app/routes ベース（フラットファイル命名）に移行
+- 各階層に clientLoader を配置し、段階的にデータを組み立てる
+- 階層的URL構造は維持（外部仕様変更なし）
+- 動的プラグインルート（treeNodeType/action）のレンダリングは最深層で行う前提
+- useLoaderData/useRouteLoaderData による型安全なデータ取得
 
-**設計原則:**
-1. **ファイルベース規則**: routes/構造がURL構造と直接対応
-2. **プラグイン透過性**: プラグイン追加時のルート設定変更不要
-3. **遅延ロード**: プラグインコンポーネントの動的インポート
-4. **型安全性**: LoaderDataとuseLoaderDataの型推論
+【設計原則】
+1. ファイル命名がURL構造と1対1で対応（t.($treeId).($pageTreeNodeId)...）
+2. 各階層で必要最小限のデータのみ取得して合成（ステップロード）
+3. プラグイン追加時にルーター設定を手で編集しない（ルートは固定・中身で分岐）
+4. 型安全性（Loaderの戻り値に基づく推論）
 
-### 8.6.2 Vite設定
+### 8.6.2 ルートエントリ（root.tsx）
 
-```typescript
-// packages/app/vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { routes } from '@react-router/fs-routes/vite';
-import { generatePluginRegistry } from '../tools/plugin-builder/generate-registry';
+```tsx
+// packages/app/app/root.tsx
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
 
-export default defineConfig({
-  plugins: [
-    react(),
-    routes({
-      rootDirectory: 'src/routes',
-      ignoredRouteFiles: ['**/.*', '**/*.d.ts']
-    }),
-    // プラグインレジストリ生成プラグイン
-    {
-      name: 'plugin-registry',
-      buildStart: async () => {
-        await generatePluginRegistry();
-      }
-    }
-  ],
-  resolve: {
-    alias: {
-      '@': '/src',
-      '@plugins': '/src/plugins'
-    }
-  }
-});
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+export default function App() {
+  return <Outlet />;
+}
 ```
 
 ### 8.6.3 ルートファイル構造の詳細
 
+- app/routes 配下のフラットファイル命名で階層を表現
+- 各ファイルは clientLoader とコンポーネントを持ち、`useLoaderData` で階層データを段階的に参照
+
 ```
-packages/app/src/routes/
-├── t/                                  # Tree routes base
-│   ├── _layout.tsx                     # ツリー共通レイアウト
-│   └── $treeId/                       # Dynamic tree ID
-│       ├── _layout.tsx                 # Tree-specific layout
-│       ├── index.tsx                   # /t/:treeId (tree root)
-│       └── $pageTreeNodeId/           # Current page node
-│           ├── index.tsx               # /t/:treeId/:pageTreeNodeId
-│           └── $targetTreeNodeId/     # Target node for operations
-│               ├── index.tsx           # /t/:treeId/:pageTreeNodeId/:targetTreeNodeId
-│               └── $treeNodeType/     # Plugin type (basemap, shapes, etc)
-│                   ├── _layout.tsx     # Plugin-specific layout
-│                   ├── index.tsx       # Default plugin view
-│                   └── $.tsx           # Catch-all for plugin actions
+packages/app/app/routes/
+├── t._index.tsx
+├── t.($treeId).tsx
+├── t.($treeId)._layout.tsx
+├── t.($treeId).($pageTreeNodeId).tsx
+├── t.($treeId).($pageTreeNodeId)._layout.tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId)._layout.tsx
+├── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).( $treeNodeType ).tsx
+└── t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
 ```
 
-**各ルートファイルの役割:**
-
-1. **$.tsx (キャッチオールルート)**:
-   - 動的アクション (`edit`, `preview`, `batch`等) の処理
-   - プラグインレジストリからコンポーネント解決
-   - ローダーでのデータ統合
-
-2. **_layout.tsx (レイアウトファイル)**:
-   - 共通UI要素 (ブレッドクラム、サイドバー等)
-   - 階層コンテキストの提供
-   - エラーバウンダリ
-
-3. **index.tsx (インデックスルート)**:
-   - デフォルト表示
-   - プラグインなしの通常ビュー
+役割:
+- _layout.tsx: 各階層の共通UI/サブアウトレット
+- 最終ファイル（…($treeNodeType).($action).tsx）: プラグインのアクションを表示（内部で動的読み込み）
 
 ### 8.6.4 Loaderの統合設計
 
-```typescript
-// packages/app/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
-import { LoaderFunctionArgs, useLoaderData, useParams } from 'react-router-dom';
-import { HierarchicalPluginRouter } from '@hierarchidb/ui-routing';
-import { WorkerAPI } from '@hierarchidb/api';
+現在は各階層で clientLoader を用いてデータを段階的に取得し、`~/loader` のユーティリティで共通化している。
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { treeId, pageTreeNodeId, targetTreeNodeId, treeNodeType } = params;
-  const url = new URL(request.url);
-  const action = params['*'] || 'index'; // キャッチオールパラメータ
-  
-  // URLから階層ルートパラメータを構築
-  const routeParams = {
-    treeId: treeId!,
-    pageTreeNodeId,
-    targetTreeNodeId, 
-    treeNodeType,
-    action
-  };
-  
-  try {
-    // HierarchicalPluginRouterを使用してデータを統合
-    const pluginRouter = new HierarchicalPluginRouter();
-    const hierarchicalData = await pluginRouter.loadHierarchicalData(routeParams);
-    
-    // WorkerAPIから実際のデータを取得
-    const workerAPI = new WorkerAPI();
-    const treeData = await workerAPI.getTreeContext(treeId!, pageTreeNodeId);
-    const targetNodeData = targetTreeNodeId ? await workerAPI.getNode(targetTreeNodeId) : null;
-    
-    // プラグイン固有のローダーがあれば実行
-    const plugin = pluginRouter.getPlugin(treeNodeType!);
-    const pluginData = plugin?.actions[action]?.loader 
-      ? await plugin.actions[action].loader!({ params, request })
-      : null;
-    
-    return {
-      treeContext: {
-        ...hierarchicalData.treeContext,
-        ...treeData  // 実際のデータで上書き
-      },
-      targetNode: targetNodeData || hierarchicalData.targetNode,
-      pluginData,
-      routeParams
-    };
-  } catch (error) {
-    // エラーハンドリング - 404/500レスポンス
-    if (error instanceof Error && error.message.includes('not found')) {
-      throw new Response('Not Found', { status: 404 });
-    }
-    throw new Response('Internal Server Error', { status: 500 });
-  }
+```tsx
+// packages/app/app/routes/t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
+import { Outlet, useLoaderData } from 'react-router-dom';
+import type { LoaderFunctionArgs } from 'react-router-dom';
+import { loadTreeNodeAction, LoadTreeNodeActionArgs } from '~/loader';
+
+export async function clientLoader(args: LoaderFunctionArgs) {
+  return await loadTreeNodeAction(args.params as LoadTreeNodeActionArgs);
 }
 
-export default function PluginActionRoute() {
-  const data = useLoaderData<typeof loader>();
-  const { treeNodeType } = useParams();
-  const action = useParams()['*'] || 'index';
-  
-  // プラグインコンポーネントを動的ロード
-  const PluginComponent = useMemo(() => {
-    return lazy(() => 
-      import(`@hierarchidb/plugin-${treeNodeType}/${action}`)
-        .catch(() => import(`@hierarchidb/plugin-${treeNodeType}/index`))
-    );
-  }, [treeNodeType, action]);
-  
+export default function TLayout() {
+  const data = useLoaderData();
+  if (!data.action) return null;
   return (
-    React.createElement(Suspense, { fallback: 'Loading plugin...' },
-      React.createElement(PluginComponent, data)
-    )
+    <div>
+      {/* ここにプラグインの実描画（treeNodeType/actionに応じた動的レンダリング）を行う */}
+      <Outlet />
+    </div>
   );
+}
+```
+
+共通ローダー群（抜粋）:
+
+```ts
+// packages/app/app/loader.ts
+import { WorkerAPIClient } from '@hierarchidb/ui-client';
+
+export async function loadWorkerAPIClient() {
+  return { client: await WorkerAPIClient.getSingleton() };
+}
+
+export async function loadTree({ treeId }: { treeId: string }) {
+  const { client } = await loadWorkerAPIClient();
+  return {
+    client,
+    tree: await client.getAPI().getTree({ treeId }),
+  };
+}
+
+export async function loadPageTreeNode({ treeId, pageTreeNodeId }: { treeId: string; pageTreeNodeId: string; }) {
+  const base = await loadTree({ treeId });
+  return {
+    ...base,
+    pageTreeNode: await base.client.getAPI().getNode({ treeNodeId: pageTreeNodeId || treeId + 'Root' }),
+  };
+}
+
+// ... loadTargetTreeNode → loadTreeNodeType → loadTreeNodeAction と段階的に合成していく
+```
+
+補足（階層データの参照ヘルパー）:
+
+```ts
+// packages/app/app/loader.ts（抜粋）
+import { useRouteLoaderData } from 'react-router';
+
+export function useTree() {
+  return useRouteLoaderData('t/($treeId)');
+}
+export function usePageTreeNode() {
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)');
+}
+export function useTargetTreeNode() {
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)');
+}
+export function useTreeNodeType() {
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)');
+}
+export function useTreeNodeTAction() {
+  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)/($action)');
 }
 ```
 
 ### 8.6.5 メインアプリケーション統合
 
-```tsx
-// packages/app/src/App.tsx
-import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { routes } from '@react-router/fs-routes';
-
-const router = createBrowserRouter(routes);
-
-export default function App() {
-  return <RouterProvider router={router} />;
-}
-```
+- ルーターの明示的生成は不要。app/routes のファイルから自動的にルートが構築される。
+- ルートエントリは root.tsx（上記 8.6.2）で Layout と Outlet を提供する。
+- 各ルートモジュールで `export async function clientLoader()` を定義し、`useLoaderData` で参照する。
 
 ## 8.7 自動プラグイン登録システム
 
@@ -1103,7 +1063,7 @@ export const PLUGIN_METADATA = {
 } as const;
 ```
 
-```typescript
+```tsx
 // packages/plugins/basemap/src/components/BasemapEdit.tsx
 import React from 'react';
 import { useLoaderData } from 'react-router-dom';

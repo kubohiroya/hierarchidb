@@ -156,7 +156,9 @@ export { default as EditComponent } from './components/Edit';
 export { default as PreviewComponent } from './components/Preview';
 export { editLoader, previewLoader } from './loaders';
 export { editAction, previewAction } from './actions';
+```
 
+```tsx
 // packages/plugins/basemap/src/components/Edit.tsx
 export default function BasemapEdit({ treeContext, targetNode, pluginData }) {
   const { basemapEntity } = pluginData;

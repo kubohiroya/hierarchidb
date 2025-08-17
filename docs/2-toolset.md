@@ -105,3 +105,64 @@ flowchart TD
   ts --> eslint
   eslint --> prettier
 ```
+
+## 2.6 Turborepo を使った開発運用（HMR と再ビルドの使い分け）
+
+本モノレポでは、UI 系（Vite）とライブラリ/ワーカー系（tsc）を Turborepo で横断制御します。変更内容に応じて次のどちらかのフローを選びます。
+
+- 変更が即時反映される（ホットリロード/HMRが効く）ケース
+- 変更ごとに個別パッケージのビルド（またはウォッチ）・再起動が必要なケース
+
+### 2.6.1 即時反映（HMR）される主なケース
+- apps: `@hierarchidb/app` 直下の画面・ルート・コンポーネントの変更
+- UI パッケージが「開発時はソースを参照する」設定の場合（例：条件付きエクスポートで `development` に `src/` を指定）、アプリから参照しても変更が即時反映されることがあります
+
+推奨手順:
+1) アプリだけ起動して開発する
+   - ルートから（Turborepo経由）
+     - `pnpm dev --filter @hierarchidb/app`
+     - または `turbo run dev --filter=@hierarchidb/app`
+   - Vite の HMR により、`packages/app` 内の変更が即時反映されます。
+
+補足:
+- モノレポで多数の `dev` が存在するため、全パッケージを一斉に起動したくない場合は、上記のように `--filter` を必ず付けて対象を絞ってください。
+- UI パッケージの開発中にアプリ側の HMR にも反映させたい場合は、該当 UI パッケージをウォッチビルド（tsc --watch）にして出力（dist）を更新するか、開発時にソース参照の設定（例：exports の `development` 条件など）を活用してください。
+
+### 2.6.2 個別パッケージのビルド・インストールが必要な主なケース
+- ライブラリ（`@hierarchidb/core`, `@hierarchidb/api`, `@hierarchidb/worker` など）のビルド成果物（dist）を他パッケージが参照している場合
+- 型の公開面（exported types）を変更して依存側で型エラーが起きる場合（依存側の再ビルド/再起動が必要）
+- Node/Workers ベースのサービス（例：`@hierarchidb/bff`, `@hierarchidb/cors-proxy`）が稼働しており、依存変更を取り込む再起動が必要な場合
+- 依存関係（package.json）の追加・更新・削除を行った場合（`pnpm install` が必要）
+
+典型手順:
+- あるライブラリだけビルドする
+  - `pnpm --filter @hierarchidb/core build`
+  - `pnpm --filter @hierarchidb/api build`
+  - `pnpm --filter @hierarchidb/worker build`
+- 変更を監視しながらライブラリをビルドする（推奨）
+  - `pnpm --filter @hierarchidb/core dev`（= `tsc --watch`）
+  - `pnpm --filter @hierarchidb/api dev`
+  - `pnpm --filter @hierarchidb/worker dev`
+  - 複数を並列で:
+    - `turbo run dev --filter=@hierarchidb/core --filter=@hierarchidb/api --filter=@hierarchidb/worker --parallel`
+- アプリ側に反映させる
+  - 上記ウォッチにより dist が更新されると、`@hierarchidb/app` の Vite が差分を取り込み、必要に応じて HMR またはリロードが走ります。
+  - うまく反映されない場合は、アプリを再起動（`Ctrl+C` → 再度 `pnpm dev --filter @hierarchidb/app`）。
+- 依存を変更した場合
+  - ルートで `pnpm install`（CI と同様に一貫性を担保したい場合は `pnpm install --frozen-lockfile`）。
+  - その後、関係する `dev`/`build` プロセスを再起動。
+
+### 2.6.3 Turborepo とフィルタの実践例
+- モノレポ全体をビルド（依存順に）
+  - `pnpm build`（= `turbo run build`）
+- 特定パッケージだけビルド
+  - `turbo run build --filter=@hierarchidb/app`
+- 特定パッケージ群の開発サーバやウォッチを並列起動
+  - `turbo run dev --filter=@hierarchidb/app --filter=@hierarchidb/core --parallel`
+- キャッシュを無効化して都度実行（デバッグ用）
+  - `TURBO_FORCE=true turbo run build --filter=@hierarchidb/core`
+
+ベストプラクティス:
+- 日常開発では「アプリ（Vite HMR）+ 変更中ライブラリ（tsc --watch）」の併用が最も快適です。
+- 多数パッケージの並列起動はマシン負荷が高いため、`--filter` で最小限に絞る運用を徹底してください。
+- 依存の追加/削除時は必ず `pnpm install` を実施し、必要に応じて dev プロセスの再起動を行ってください。

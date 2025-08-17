@@ -153,11 +153,6 @@ pnpm license-check:all    # 全依存関係のライセンス確認
 pnpm license-check        # JSON形式で出力
 pnpm license-check:csv    # CSV形式で出力
 
-# Storybook
-pnpm storybook:ui-core    # UI コンポーネントカタログ
-pnpm storybook:ui-auth    # 認証コンポーネント
-pnpm storybook:ui-routing # ルーティングコンポーネント
-
 # パッケージ指定の実行
 pnpm --filter @hierarchidb/worker test
 pnpm --filter @hierarchidb/app dev

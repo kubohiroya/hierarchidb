@@ -234,8 +234,7 @@ export interface EntityBackup<TEntity extends BaseEntity = BaseEntity> {
     backupDate: Timestamp;
     version: string;
     nodeType: TreeNodeType;
-  };
-}
+  }
 }
 ```
 
@@ -1194,12 +1193,9 @@ interface DynamicNodeDialogProps<TEntity extends BaseEntity = BaseEntity> {
   onSave?: (data: Partial<TEntity>) => Promise<void>;
 }
 
-export const DynamicNodeDialog = <TEntity extends BaseEntity = BaseEntity>({ 
-  nodeType, 
-  nodeId, 
-  onClose,
-  onSave
-}: DynamicNodeDialogProps<TEntity>) => {
+export function DynamicNodeDialog<TEntity extends BaseEntity = BaseEntity>(
+  { nodeType, nodeId, onClose, onSave }: DynamicNodeDialogProps<TEntity>
+) {
   const registry = useUIComponentRegistry();
   const DialogComponent = registry.getDialog<TEntity>(nodeType);
   
@@ -1221,7 +1217,7 @@ export const DynamicNodeDialog = <TEntity extends BaseEntity = BaseEntity>({
       onSave={onSave}
     />
   );
-};
+}
 ```
 
 ## 7.8 導入計画
