@@ -43,7 +43,7 @@ hierarchidb/
 │   │   └── ...
 │   ├── plugins/        # プラグインパッケージ
 │   │   ├── basemap/    # ベースマッププラグイン
-│   │   ├── shapes/     # 図形プラグイン
+│   │   ├── shape/      # 図形プラグイン
 │   │   └── stylemap/   # スタイルマッププラグイン
 │   ├── bff/            # Backend for Frontend (Cloudflare Worker)
 │   └── cors-proxy/     # CORS プロキシ (Cloudflare Worker)
@@ -51,6 +51,10 @@ hierarchidb/
 ├── scripts/            # ビルド・開発用スクリプト
 └── CLAUDE.md          # AI アシスタント用プロジェクトガイド
 ```
+
+### ドキュメント運用
+
+- 命名規則: docs/00-000-doc-naming.md（名前順ソートでも順序が崩れないルール）
 
 ## セットアップ
 
