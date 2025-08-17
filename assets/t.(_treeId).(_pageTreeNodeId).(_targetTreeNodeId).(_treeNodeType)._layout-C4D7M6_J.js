@@ -1,0 +1,1 @@
+import{w as t,O as o}from"./vendor-react-CDvDc01k.js";import{j as r}from"./vendor-mui-BsvZ856x.js";import{c as a}from"./loader-CzRGHQLC.js";async function p(e){return await a(e.params)}const d=t(function(){return r.jsx(o,{})});export{p as clientLoader,d as default};

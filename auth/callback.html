@@ -6,7 +6,7 @@
     <script>
       console.log('[auth-callback] Processing OAuth callback from BFF');
 
-      // Helper function to extract app path from current URL
+      // Helper function to extract src path from current URL
       function getAppPath() {
         const currentPath = window.location.pathname;
         // Remove /auth/callback.html from the path
@@ -110,13 +110,13 @@
             console.log('[auth-callback] Using hash router, redirecting to:', hashCallbackUrl);
             window.location.replace(hashCallbackUrl);
           } else {
-            // Redirect to the React app's auth callback route
+            // Redirect to the React src's auth callback route
             window.location.replace(spaCallbackUrl);
           }
         } catch (error) {
           console.error('[auth-callback] Error during OAuth processing:', error);
 
-          // Fallback: redirect to main app root
+          // Fallback: redirect to main src root
           const appPath = getAppPath();
           const baseUrl = window.location.origin;
           const fallbackUrl = `${baseUrl}${appPath}/`;

@@ -1,0 +1,1 @@
+import{j as e}from"./vendor-mui-BsvZ856x.js";import{e as i,a as o,H as n}from"./vendor-react-CDvDc01k.js";var t={},a;function s(){if(a)return t;a=1;var r=i();return t.createRoot=r.createRoot,t.hydrateRoot=r.hydrateRoot,t}var c=s();o.startTransition(()=>{c.hydrateRoot(document,e.jsx(o.StrictMode,{children:e.jsx(n,{})}))});
