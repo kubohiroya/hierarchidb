@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Tooltip, Paper, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { formatBytes } from '@hierarchidb/core';
 import { devWarn } from '../../utils/logger';
 
 interface MemoryUsageChartProps {
@@ -34,13 +35,7 @@ const ChartContainer = styled(Box)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-};
+// formatBytes now imported from @hierarchidb/core
 
 const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp);

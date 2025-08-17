@@ -7,7 +7,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Avatar, Box } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import Gravatar from 'react-gravatar';
-import { preloadImage, getGoogleImageVariants } from '@/shared/utils/imageUtils';
+import { preloadImage, getGoogleImageVariants } from '@hierarchidb/core';
 
 interface UserAvatarProps {
   /** User's profile picture URL (potentially unreliable) */

@@ -3,7 +3,7 @@ import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/mate
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 
 import { devWarn } from '../../utils/logger';
-import { formatBytes } from '../../utils/formatBytes';
+import { formatBytes } from '@hierarchidb/core';
 interface MemoryDataPoint {
   timestamp: number;
   used: number;

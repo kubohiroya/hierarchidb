@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth as useOidcAuth } from 'react-oidc-context';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User } from 'oidc-client-ts';
 // import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
 import { useAuthMethod } from './useAuthMethod';

@@ -3,32 +3,40 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "build/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "test": {
       "dependsOn": ["build"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "lint": {
-      "outputs": []
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "format": {
-      "outputs": []
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "format:check": {
-      "outputs": []
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "outputs": []
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "e2e": {
       "dependsOn": ["build"],
-      "outputs": ["playwright-report/**"]
+      "outputs": ["playwright-report/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     }
   }
 }

@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 // import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
 // import { useAuthMethod } from "@/shared/auth/components/Auth/useAuthMethod";
 const useAuthMethod = () => 'popup' as 'popup' | 'redirect'; // TODO: Implement useAuthMethod

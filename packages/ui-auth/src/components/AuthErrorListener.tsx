@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 
 //import { APP_PREFIX } from "@/config/appDescription";

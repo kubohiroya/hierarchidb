@@ -31,6 +31,7 @@
     "typecheck": "turbo run typecheck",
     "e2e": "turbo run e2e",
     "count-lines": "node scripts/count-lines.js",
+    "analyze:docs": "node scripts/analyze-docs.cjs",
     "license-check": "pnpm --filter @hierarchidb/app license-check",
     "license-check:summary": "pnpm --filter @hierarchidb/app license-check:summary",
     "license-check:csv": "pnpm --filter @hierarchidb/app license-check:csv",

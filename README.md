@@ -56,6 +56,43 @@ hierarchidb/
 
 - 命名規則: docs/00-000-doc-naming.md（名前順ソートでも順序が崩れないルール）
 
+#### ドキュメント分析ツールの使い方（本作業の成果物）
+
+本リポジトリには、docs 配下の SS-MMM-title.md 形式のドキュメントを「ファイル名順」に並べた時の流れを自動チェックするツールが含まれています。
+
+- 成果物（スクリプト）: scripts/analyze-docs.cjs
+- 出力レポート: docs/_analysis.md
+
+使い方:
+
+```bash
+# 依存関係のインストール（初回のみ）
+pnpm install
+
+# 分析の実行（レポートを docs/_analysis.md に生成）
+pnpm analyze:docs
+```
+
+レポートの読み方（要点）:
+- Similarity: 隣接するファイル同士の「上位キーワードのジャッカード類似度」。極端に低いと話題の断絶、極端に高いと重複の可能性。
+- Flags:
+  - LOW_SIM_WITH_PREV / LOW_SIM_WITH_NEXT: 前/次章とのつながりが弱い可能性（橋渡しの説明や導入文を検討）
+  - HIGH_SIM_WITH_PREV / HIGH_SIM_WITH_NEXT: 前/次章と重複が多い可能性（統合・差別化を検討）
+- Suggested sections to consider adding: よくある章（概要/目的/背景/設計/実装/エッジケース/データフロー/受け入れ基準/利点/移行）の不足候補。
+- Outline (H1/H2): ページの大まかな見出し構成。
+
+推奨ワークフロー:
+1. docs の各ファイル名を SS-MMM-title.md（例: 09-001-plugin-architecture.md）の形式に統一。
+2. `pnpm analyze:docs` を実行し、docs/_analysis.md を開く。
+3. LOW_SIM の箇所は、章間の橋渡し（概要/背景/導入文）や配置見直しを検討。
+4. HIGH_SIM の箇所は、重複解消（統合/差別化）を検討。
+5. 「Suggested sections…」に挙がった不足セクションを必要に応じて補完。
+6. 修正後にもう一度 `pnpm analyze:docs` を実行して改善を確認。
+
+注意:
+- 本リポジトリは package.json の `"type": "module"` 設定のため、CommonJS 版（scripts/analyze-docs.cjs）を使用しています。`pnpm analyze:docs` は .cjs を呼び出します。
+- 出力の数値やフラグはヒューリスティック（目安）です。最終判断は人間のレビューで行ってください。
+
 ## セットアップ
 
 ### 前提条件

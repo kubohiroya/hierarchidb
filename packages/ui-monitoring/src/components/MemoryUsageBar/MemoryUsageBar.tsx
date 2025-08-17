@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { formatBytes } from '@hierarchidb/core';
 
 import { devWarn } from '../../utils/logger';
 export interface MemoryUsageBarProps {
@@ -59,13 +60,7 @@ const BarFill = styled(Box)<{ percentage: number; severity: 'normal' | 'warning'
   })
 );
 
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-};
+// formatBytes now imported from @hierarchidb/core
 
 /**
  * メモリ使用量を帯グラフで表示するコンポーネント

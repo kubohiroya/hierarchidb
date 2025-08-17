@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
+    "@hierarchidb/core": "workspace:*",
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
     "react": "^19.1.1",

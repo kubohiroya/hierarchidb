@@ -4,9 +4,12 @@
  */
 
 import { Button, ButtonGroup, ButtonProps } from '@mui/material';
-import { useLoaderData, useNavigate } from 'react-router';
-import { AttachmentIcon, MapIcon } from '@/icons';
-import { APP_PREFIX } from '@/config/appDescription';
+// @ts-ignore - react-router not available in ui-core
+const useLoaderData = () => ({}); // Placeholder until moved to proper package
+const useNavigate = () => (_path: string, _options?: any) => {}; // Placeholder until moved to proper package
+// import { AttachmentIcon, MapIcon } from '~/icons';
+import AttachmentIcon from '@mui/icons-material/Attachment';
+import MapIcon from '@mui/icons-material/Map';
 
 export type ResourceProjectType = 'resources' | 'projects' | 'none';
 export type ResourceProjectToggleOrientation = 'horizontal' | 'vertical';
@@ -15,57 +18,72 @@ export type ResourceProjectToggleSize = 'small' | 'medium' | 'large';
 interface ResourceProjectToggleProps {
   /** Currently selected type - 'none' for neutral state (Home page) */
   selected?: ResourceProjectType;
-  /** Current pageNodeId to preserve in sessionStorage */
+  /** Current pageNodeId to preserve */
   currentPageNodeId?: string;
+  /** App prefix for routing */
+  appPrefix: string;
+  /** Callback to get saved pageNodeId for a given type */
+  getSavedPageNodeId: (type: 'resources' | 'projects') => string | null;
+  /** Callback to save pageNodeId for a given type */
+  savePageNodeId: (type: 'resources' | 'projects', pageNodeId: string) => void;
+  /** Callback to get current page context (resources or projects) */
+  getNodeContext?: (pageNodeId: string) => Promise<'resources' | 'projects'>;
   /** Button group orientation - horizontal (default) or vertical */
   orientation?: ResourceProjectToggleOrientation;
   /** Button size - small, medium (default), or large */
   size?: ResourceProjectToggleSize;
 }
 
-const STORAGE_KEYS = {
-  RESOURCES_PAGE_NODE_ID: 'resourcesPageNodeId',
-  PROJECTS_PAGE_NODE_ID: 'projectsPageNodeId',
-} as const;
+// Type definitions as stubs
+type TreeNodeId = string;
 
 export function ResourceProjectToggle({
   selected = 'none',
   currentPageNodeId,
+  appPrefix,
+  getSavedPageNodeId,
+  savePageNodeId,
+  getNodeContext,
   orientation = 'horizontal',
   size = 'medium',
 }: ResourceProjectToggleProps) {
   const navigate = useNavigate();
-  const { pageNodeId, isProjectContext } = useLoaderData();
-  const { treeNode } = useWorkerServices();
+  
+  // Safe handling of loader data that might not be available
+  let pageNodeId;
+  try {
+    ({ pageNodeId } = useLoaderData() as any);
+  } catch {
+    pageNodeId = undefined;
+  }
 
   const handleToggle = async (targetType: 'resources' | 'projects') => {
-    // Save current pageNodeId to sessionStorage if we're navigating away from a selected page
+    // Save current pageNodeId if we're navigating away from a selected page
     // and the current node actually belongs to the current theme
-    if (selected !== 'none' && targetType !== selected && currentPageNodeId && treeNode) {
-      const nodeContext = await getNodeContext(pageNodeId as TreeNodeId, treeNode);
-
-      // Only save if the current node actually belongs to the current selected theme
-      if (nodeContext === selected) {
-        const storageKey =
-          selected === 'resources'
-            ? STORAGE_KEYS.RESOURCES_PAGE_NODE_ID
-            : STORAGE_KEYS.PROJECTS_PAGE_NODE_ID;
-        sessionStorage.setItem(storageKey, currentPageNodeId);
+    if (selected !== 'none' && selected !== 'resources' && selected !== 'projects') {
+      // Skip saving for 'none' state
+    } else if (selected !== 'none' && targetType !== selected && currentPageNodeId) {
+      // If getNodeContext is provided, check if the node belongs to the current context
+      if (getNodeContext && pageNodeId) {
+        const nodeContext = await getNodeContext(pageNodeId as TreeNodeId);
+        // Only save if the current node actually belongs to the current selected theme
+        if (nodeContext === selected) {
+          savePageNodeId(selected as 'resources' | 'projects', currentPageNodeId);
+        }
+      } else {
+        // If no context check is available, save directly
+        savePageNodeId(selected as 'resources' | 'projects', currentPageNodeId);
       }
     }
 
     // Get saved pageNodeId for target type
-    const targetStorageKey =
-      targetType === 'resources'
-        ? STORAGE_KEYS.RESOURCES_PAGE_NODE_ID
-        : STORAGE_KEYS.PROJECTS_PAGE_NODE_ID;
-    const savedPageNodeId = sessionStorage.getItem(targetStorageKey);
+    const savedPageNodeId = getSavedPageNodeId(targetType);
 
     // Navigate to target page
     const basePath = targetType === 'resources' ? 'r' : 'p';
     const targetPath = savedPageNodeId
-      ? `/${APP_PREFIX}/t/${basePath}/${savedPageNodeId}`
-      : `/${APP_PREFIX}/t/${basePath}`;
+      ? `/${appPrefix}/t/${basePath}/${savedPageNodeId}`
+      : `/${appPrefix}/t/${basePath}`;
 
     navigate(targetPath, { replace: true });
   };

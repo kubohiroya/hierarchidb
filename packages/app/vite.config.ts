@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     resolve: {
+      // @emotion/reactとreactの重複を解決
+      dedupe: ['@emotion/react', '@emotion/styled', 'react', 'react-dom'],
       alias: [
         // appの~エイリアス
         { find: /^~(?!.*node_modules)/, replacement: path.resolve(__dirname, './app') },
@@ -115,6 +117,12 @@ export default defineConfig(({ mode }) => {
         '@emotion/react',
         '@emotion/styled',
       ],
+      // @emotion/reactの重複を解決
+      exclude: [],
+      esbuildOptions: {
+        // ビルド時の最適化
+        target: 'es2020',
+      },
     },
     define: {
       'import.meta.env.VITE_AUTH_AUTHORITY': JSON.stringify(process.env.VITE_AUTH_AUTHORITY || ''),

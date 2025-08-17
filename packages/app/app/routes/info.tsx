@@ -13,8 +13,15 @@
   );
  */
 // import { useOutletContext } from 'react-router-dom';
-import { InfoPage } from "~/pages/Info/InfoPage";
+import { loadAppConfig } from '~/loader';
+import { InfoPage } from '~/pages/Info/InfoPage';
+import { useLoaderData } from 'react-router-dom';
+
+export function clientLoader() {
+  return loadAppConfig();
+}
 
 export default function InfoRoute() {
-  return <InfoPage/>;
+  const appConfig = useLoaderData();
+  return <InfoPage appConfig={appConfig} />;
 }

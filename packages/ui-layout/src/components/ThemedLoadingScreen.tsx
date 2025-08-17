@@ -3,7 +3,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import {
   getBackgroundColorForTheme as getThemeBackgroundColor,
   getTextColorForTheme as getThemeTextColor,
-} from '../utils/themeUtils';
+} from '@hierarchidb/core';
 
 interface ThemedLoadingScreenProps {
   variant?: 'linear' | 'circular';

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/hiearchidb.iml" filepath="$PROJECT_DIR$/.idea/hiearchidb.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/hierarchidb.iml" filepath="$PROJECT_DIR$/.idea/hierarchidb.iml" />
     </modules>
   </component>
 </project>

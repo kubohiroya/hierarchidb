@@ -23,6 +23,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hierarchidb/core": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@mui/x-date-pickers": "^8.10.0",
@@ -36,11 +37,11 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-gravatar": "^2.6.14",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
     "vitest": "^2.1.8"
   },
-  "peerDependencies": {
-  }
+  "peerDependencies": {}
 }

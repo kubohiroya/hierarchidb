@@ -27,5 +27,15 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["node_modules", "dist", "build", "coverage", ".turbo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".turbo",
+    // Reference materials and external symlink
+    "docs/references/**",
+    "references/**",
+    "packages/eria-cargograph/**"
+  ]
 }

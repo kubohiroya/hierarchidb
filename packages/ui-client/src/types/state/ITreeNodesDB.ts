@@ -23,11 +23,16 @@
 
 import type { TreeNodeId, TreeNodeType } from '@hierarchidb/core';
 import type {
-  TreeNodeDatabaseEntity,
   TreeNodeEntity,
   TreeNodeEntityWithChildren,
   DescendantNodeJson,
-} from '@hierarchidb/ui-core';
+} from '../CommandManagerTypes';
+
+// TreeNodeDatabaseEntity extends TreeNodeEntity with database-specific fields
+interface TreeNodeDatabaseEntity extends TreeNodeEntity {
+  index: number;
+  descendantsCount: number;
+}
 // Import Dexie Table type
 type Table<_T> = any; // Stub for Dexie Table type
 

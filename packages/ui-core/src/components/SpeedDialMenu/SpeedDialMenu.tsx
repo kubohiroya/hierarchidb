@@ -19,9 +19,8 @@
  */
 
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
-import { type ReactNode, useEffect, useState } from 'react';
-import type { SpeedDialActionType } from '@/components/ui/SpeedDialMenu/SpeedDialActionType';
-import { useLocation } from 'react-router';
+import { ReactNode, useState } from 'react';
+import { SpeedDialActionType } from './SpeedDialActionType';
 
 export const SpeedDialMenu = ({
   id,
@@ -39,14 +38,8 @@ export const SpeedDialMenu = ({
   color?: 'primary' | 'secondary' | 'inherit';
 }) => {
   const [open, setOpen] = useState(false);
-  const location = useLocation();
 
   // Close speed dial when hash dialog opens
-  useEffect(() => {
-    if (location.hash.includes('dialog=')) {
-      setOpen(false);
-    }
-  }, [location.hash]);
 
   const handleClose = () => setOpen(false);
 

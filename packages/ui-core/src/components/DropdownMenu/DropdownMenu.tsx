@@ -62,7 +62,7 @@ export const DropdownMenu = ({
             <MenuItem
               key={index}
               onClick={() => handleMenuItemClick(item.onClick)}
-              aria-label={item.name}
+              aria-label={item.label}
             >
               <span
                 style={{
@@ -75,7 +75,7 @@ export const DropdownMenu = ({
                 }}
               >
                 <ListItemIcon color={color || 'default'}>{item.icon}</ListItemIcon>
-                <ListItemText>{item.name}</ListItemText>
+                <ListItemText>{item.label}</ListItemText>
               </span>
             </MenuItem>
           ) : (

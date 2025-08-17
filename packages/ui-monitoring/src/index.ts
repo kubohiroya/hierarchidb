@@ -7,4 +7,4 @@ export { MemoryUsageMonitor } from './components/MemoryUsageMonitor/MemoryUsageM
 export type { MemoryUsageBarProps } from './components/MemoryUsageBar/MemoryUsageBar';
 
 // Utils
-export { formatBytes } from './utils/formatBytes';
+export { formatBytes } from '@hierarchidb/core';

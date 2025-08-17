@@ -1,6 +1,9 @@
-export interface SpeedDialActionType {
-  icon: React.ReactNode;
+import type { ReactNode } from 'react';
+
+export type SpeedDialActionType = {
+  icon: ReactNode;
   name: string;
-  onClick: () => void;
   disabled?: boolean;
-}
+  color?: string;
+  onClick: (() => void) | undefined;
+};

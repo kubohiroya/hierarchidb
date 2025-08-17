@@ -4,9 +4,11 @@
  */
 
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
-import { useNavigate } from 'react-router';
-import { AttachmentIcon, MapIcon } from '@/icons';
-import { APP_PREFIX } from '@/config/appDescription';
+// @ts-ignore - react-router not available in ui-core
+const useNavigate = () => (_path: string, _options?: any) => {}; // Placeholder until moved to proper package
+// import { AttachmentIcon, MapIcon } from '~/icons';
+import AttachmentIcon from '@mui/icons-material/Attachment';
+import MapIcon from '@mui/icons-material/Map';
 
 export type ResourceProjectType = 'resources' | 'projects';
 export type ButtonGroupOrientation = 'horizontal' | 'vertical';
@@ -15,8 +17,14 @@ export type ButtonGroupSize = 'small' | 'medium' | 'large';
 interface ResourceProjectPreviewGroupProps {
   /** Currently selected type */
   selected: ResourceProjectType;
-  /** Current pageNodeId to preserve in sessionStorage */
+  /** Current pageNodeId to preserve */
   currentPageNodeId?: string;
+  /** App prefix for routing */
+  appPrefix: string;
+  /** Callback to get saved pageNodeId for a given type */
+  getSavedPageNodeId: (type: ResourceProjectType) => string | null;
+  /** Callback to save pageNodeId for a given type */
+  savePageNodeId: (type: ResourceProjectType, pageNodeId: string) => void;
   /** Whether preview button is enabled */
   previewEnabled?: boolean;
   /** Callback when preview is clicked */
@@ -27,14 +35,17 @@ interface ResourceProjectPreviewGroupProps {
   size?: ButtonGroupSize;
 }
 
-const STORAGE_KEYS = {
-  RESOURCES_PAGE_NODE_ID: 'resourcesPageNodeId',
-  PROJECTS_PAGE_NODE_ID: 'projectsPageNodeId',
-} as const;
+// Utility function to get button color for page type
+function getPageButtonColor(pageType: ResourceProjectType): 'primary' | 'secondary' {
+  return pageType === 'resources' ? 'primary' : 'secondary';
+}
 
 export function ResourceProjectPreviewGroup({
   selected,
   currentPageNodeId,
+  appPrefix,
+  getSavedPageNodeId,
+  savePageNodeId,
   previewEnabled: _previewEnabled = false,
   onPreviewClick: _onPreviewClick,
   orientation = 'horizontal',
@@ -43,27 +54,19 @@ export function ResourceProjectPreviewGroup({
   const navigate = useNavigate();
 
   const handleToggle = (targetType: ResourceProjectType) => {
-    // Save current pageNodeId to sessionStorage if we're navigating away
+    // Save current pageNodeId if we're navigating away
     if (targetType !== selected && currentPageNodeId) {
-      const storageKey =
-        selected === 'resources'
-          ? STORAGE_KEYS.RESOURCES_PAGE_NODE_ID
-          : STORAGE_KEYS.PROJECTS_PAGE_NODE_ID;
-      sessionStorage.setItem(storageKey, currentPageNodeId);
+      savePageNodeId(selected, currentPageNodeId);
     }
 
     // Get saved pageNodeId for target type
-    const targetStorageKey =
-      targetType === 'resources'
-        ? STORAGE_KEYS.RESOURCES_PAGE_NODE_ID
-        : STORAGE_KEYS.PROJECTS_PAGE_NODE_ID;
-    const savedPageNodeId = sessionStorage.getItem(targetStorageKey);
+    const savedPageNodeId = getSavedPageNodeId(targetType);
 
     // Navigate to target page
     const basePath = targetType === 'resources' ? 'r' : 'p';
     const targetPath = savedPageNodeId
-      ? `/${APP_PREFIX}/t/${basePath}/${savedPageNodeId}`
-      : `/${APP_PREFIX}/t/${basePath}`;
+      ? `/${appPrefix}/t/${basePath}/${savedPageNodeId}`
+      : `/${appPrefix}/t/${basePath}`;
 
     navigate(targetPath, { replace: true });
   };

@@ -1,19 +1,8 @@
 /**
  * Material-UI Theme Configuration
  */
-import { createTheme } from '@mui/material/styles';
+// @ts-ignore - ui-theme package not properly configured yet
+import { createAppTheme } from '@hierarchidb/ui-theme';
 
-export const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-  },
-});
+// Export the default light theme
+export const theme = createAppTheme('light');

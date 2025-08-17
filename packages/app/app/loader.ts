@@ -2,6 +2,20 @@ import { Tree, TreeNode, TreeNodeType, TreeNodeAction, TreeNodeTypes } from '@hi
 import { WorkerAPIClient } from '@hierarchidb/ui-client';
 import { useRouteLoaderData } from 'react-router';
 
+export type LoadAppConfigReturn = {
+  appPrefix: string;
+  appName: string;
+  appTitle: string;
+  appDescription: string;
+  appHomepage: string;
+  appLogo: string;
+  appFavicon: string;
+  appTheme: string;
+  appLocale: string;
+  appDefaultLocale: string;
+  appDefaultLanguage: string;
+};
+
 export type LoadWorkerAPIClientReturn = {
   client: WorkerAPIClient;
 };
@@ -52,8 +66,40 @@ export type LoadTreeNodeActionReturn = {
   action: TreeNodeAction | undefined;
 } & LoadTreeNodeTypeReturn;
 
-export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
+export async function loadAppConfig(): Promise<LoadAppConfigReturn> {
+  const {
+    VITE_APP_PREFIX,
+    VITE_APP_NAME,
+    VITE_APP_TITLE,
+    VITE_APP_DESCRIPTION,
+    APP_HOMEPAGE,
+    VITE_APP_LOGO,
+    VITE_APP_FAVICON,
+    VITE_APP_THEME,
+    VITE_APP_LOCALE,
+  } = import.meta.env;
+
   return {
+    appPrefix: VITE_APP_PREFIX || '',
+    appName: VITE_APP_NAME || 'HierarchiDB',
+    appTitle: VITE_APP_TITLE || 'HierarchiDB',
+    appDescription:
+      VITE_APP_DESCRIPTION ||
+      'High-performance tree-structured data management framework for browser environments',
+    appHomepage: APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
+    appLogo: VITE_APP_LOGO || 'logo.png',
+    appFavicon: VITE_APP_FAVICON || 'logo.favicon.png',
+    appTheme: VITE_APP_THEME || 'light',
+    appLocale: VITE_APP_LOCALE || 'en-US',
+    appDefaultLocale: 'en-US',
+    appDefaultLanguage: 'en',
+  };
+}
+
+export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
+  const appConfig = await loadAppConfig();
+  return {
+    ...appConfig,
     client: await WorkerAPIClient.getSingleton(),
   };
 }
@@ -132,6 +178,10 @@ export async function loadTreeNodeAction({
     ...loadTreeNodeTypeReturn,
     action: action as TreeNodeAction | undefined,
   };
+}
+
+export function useAppConfig() {
+  return useRouteLoaderData('/info') as LoadAppConfigReturn;
 }
 
 export function useWorkerAPIClient() {

@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthProviderType } from '../types/AuthProviderType';
 import { PopupDetectionService } from '../services/PopupDetectionService';
 
