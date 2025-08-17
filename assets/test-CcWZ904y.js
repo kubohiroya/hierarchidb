@@ -1,0 +1,1 @@
+import{w as s}from"./vendor-react-CDvDc01k.js";import{j as t}from"./vendor-mui-BsvZ856x.js";const i=s(function(){return t.jsxs("div",{children:[t.jsx("h1",{children:"Test Route Works!"}),t.jsx("p",{children:"If you can see this, routing is working."})]})});export{i as default};
