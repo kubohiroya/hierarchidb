@@ -1,1 +1,1 @@
-import{b as s}from"./vendor-react-c8TNKgLa.js";import{j as t}from"./jsx-runtime-ByjDy5UU.js";const i=s(function(){return t.jsxs("div",{children:[t.jsx("h1",{children:"Test Route Works!"}),t.jsx("p",{children:"If you can see this, routing is working."})]})});export{i as default};
+import{b as s}from"./vendor-react-B-Cs2nwu.js";import{j as t}from"./jsx-runtime-BiiJswKw.js";const i=s(function(){return t.jsxs("div",{children:[t.jsx("h1",{children:"Test Route Works!"}),t.jsx("p",{children:"If you can see this, routing is working."})]})});export{i as default};
