@@ -7,6 +7,7 @@ export type LoadAppConfigReturn = {
   appName: string;
   appTitle: string;
   appDescription: string;
+  appDetails: string;
   appHomepage: string;
   appLogo: string;
   appFavicon: string;
@@ -14,6 +15,7 @@ export type LoadAppConfigReturn = {
   appLocale: string;
   appDefaultLocale: string;
   appDefaultLanguage: string;
+  appAttribution: string;
 };
 
 export type LoadWorkerAPIClientReturn = {
@@ -77,6 +79,8 @@ export async function loadAppConfig(): Promise<LoadAppConfigReturn> {
     VITE_APP_FAVICON,
     VITE_APP_THEME,
     VITE_APP_LOCALE,
+    VITE_APP_ATTRIBUTION,
+    VITE_APP_DETAILS,
   } = import.meta.env;
 
   return {
@@ -86,11 +90,15 @@ export async function loadAppConfig(): Promise<LoadAppConfigReturn> {
     appDescription:
       VITE_APP_DESCRIPTION ||
       'High-performance tree-structured data management framework for browser environments',
+    appDetails:
+      VITE_APP_DETAILS ||
+      'A powerful framework for managing hierarchical data in browser environments',
     appHomepage: APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
     appLogo: VITE_APP_LOGO || 'logo.png',
     appFavicon: VITE_APP_FAVICON || 'logo.favicon.png',
     appTheme: VITE_APP_THEME || 'light',
     appLocale: VITE_APP_LOCALE || 'en-US',
+    appAttribution: VITE_APP_ATTRIBUTION || '',
     appDefaultLocale: 'en-US',
     appDefaultLanguage: 'en',
   };

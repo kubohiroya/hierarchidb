@@ -3,10 +3,6 @@ import { Box, Typography, Link } from '@mui/material';
 
 export interface InfoContentProps {
   /**
-   * The logo or icon to display
-   */
-  logo?: ReactNode;
-  /**
    * The main title of the application
    */
   title: string;
@@ -57,7 +53,6 @@ export interface InfoContentProps {
  * with consistent styling and layout.
  */
 export const InfoContent = ({
-  logo,
   title,
   description,
   details,
@@ -73,11 +68,6 @@ export const InfoContent = ({
   return (
     <Box sx={{ textAlign: 'center', py: 2 }}>
       <Typography variant={titleVariant} component="h1" color={titleColor} textAlign="center">
-        {logo && (
-          <Box component="span" sx={{ mr: 1 }}>
-            {logo}
-          </Box>
-        )}
         {title}
       </Typography>
 
