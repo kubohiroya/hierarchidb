@@ -1,0 +1,409 @@
+{
+  "timestamp": "2025-08-18T13:09:26.187Z",
+  "summary": {
+    "packagesAnalyzed": 12,
+    "totalFiles": 183,
+    "exactDuplicates": 0,
+    "similarFiles": 5,
+    "duplicateFunctions": 17,
+    "duplicateInterfaces": 7
+  },
+  "details": {
+    "exactDuplicates": [],
+    "similarFiles": [
+      {
+        "file1": "ui-navigation/src/components/MenuListItemButton/MenuListItemLinkButton.tsx",
+        "file2": "ui-routing/src/components/MenuListItemButton/MenuListItemLinkButton.tsx",
+        "similarity": "97.2"
+      },
+      {
+        "file1": "ui-auth/src/components/UserAvatar.tsx",
+        "file2": "ui-core/src/components/UserAvatar/UserAvatar.tsx",
+        "similarity": "89.3"
+      },
+      {
+        "file1": "ui-auth/src/vite-env.d.ts",
+        "file2": "ui-core/src/vite-env.d.ts",
+        "similarity": "85.0"
+      },
+      {
+        "file1": "ui-navigation/src/components/NavLinkMenu/NavLinkMenu.tsx",
+        "file2": "ui-routing/src/components/NavLinkMenu/NavLinkMenu.tsx",
+        "similarity": "74.4"
+      },
+      {
+        "file1": "ui-file/src/utils/logger.d.ts",
+        "file2": "ui-monitoring/src/utils/logger.d.ts",
+        "similarity": "71.4"
+      }
+    ],
+    "duplicateFunctions": [
+      {
+        "name": "getIdToken",
+        "locations": [
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthBFF.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthGoogle.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthLib.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthMulti.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/useBFFAuth.ts"
+          }
+        ]
+      },
+      {
+        "name": "useAuth",
+        "locations": [
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthBFF.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthGoogle.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useAuthMulti.ts"
+          }
+        ]
+      },
+      {
+        "name": "UserAvatar",
+        "locations": [
+          {
+            "package": "ui-auth",
+            "path": "src/components/UserAvatar.tsx"
+          },
+          {
+            "package": "ui-core",
+            "path": "src/components/UserAvatar/UserAvatar.tsx"
+          }
+        ]
+      },
+      {
+        "name": "getStoredThemeMode",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          },
+          {
+            "package": "ui-theme",
+            "path": "src/utils/storage.ts"
+          }
+        ]
+      },
+      {
+        "name": "getSystemTheme",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          },
+          {
+            "package": "ui-theme",
+            "path": "src/utils/storage.ts"
+          }
+        ]
+      },
+      {
+        "name": "ThemedLoadingScreen",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          },
+          {
+            "package": "ui-layout",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          }
+        ]
+      },
+      {
+        "name": "ThemedLinearProgress",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          },
+          {
+            "package": "ui-layout",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          }
+        ]
+      },
+      {
+        "name": "ThemedCircularProgress",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          },
+          {
+            "package": "ui-layout",
+            "path": "src/components/ThemedLoadingScreen.tsx"
+          }
+        ]
+      },
+      {
+        "name": "useToast",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/toast/ToastProvider.tsx"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/components/LinkButton/useToast.ts"
+          }
+        ]
+      },
+      {
+        "name": "devLog",
+        "locations": [
+          {
+            "package": "ui-file",
+            "path": "src/utils/logger.ts"
+          },
+          {
+            "package": "ui-monitoring",
+            "path": "src/utils/logger.ts"
+          }
+        ]
+      },
+      {
+        "name": "devError",
+        "locations": [
+          {
+            "package": "ui-file",
+            "path": "src/utils/logger.ts"
+          },
+          {
+            "package": "ui-monitoring",
+            "path": "src/utils/logger.ts"
+          }
+        ]
+      },
+      {
+        "name": "devWarn",
+        "locations": [
+          {
+            "package": "ui-file",
+            "path": "src/utils/logger.ts"
+          },
+          {
+            "package": "ui-monitoring",
+            "path": "src/utils/logger.ts"
+          }
+        ]
+      },
+      {
+        "name": "MemoryUsageChart",
+        "locations": [
+          {
+            "package": "ui-monitoring",
+            "path": "src/components/MemoryUsageBar/MemoryUsageChart.tsx"
+          },
+          {
+            "package": "ui-monitoring",
+            "path": "src/components/MemoryUsageChart/MemoryUsageChart.tsx"
+          }
+        ]
+      },
+      {
+        "name": "MenuListItemLinkButton",
+        "locations": [
+          {
+            "package": "ui-navigation",
+            "path": "src/components/MenuListItemButton/MenuListItemLinkButton.tsx"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/components/MenuListItemButton/MenuListItemLinkButton.tsx"
+          }
+        ]
+      },
+      {
+        "name": "NavLinkMenu",
+        "locations": [
+          {
+            "package": "ui-navigation",
+            "path": "src/components/NavLinkMenu/NavLinkMenu.tsx"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/components/NavLinkMenu/NavLinkMenu.tsx"
+          }
+        ]
+      },
+      {
+        "name": "PluginRegistry",
+        "locations": [
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.ts"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.tsx"
+          }
+        ]
+      },
+      {
+        "name": "parseHierarchicalUrl",
+        "locations": [
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.ts"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.tsx"
+          }
+        ]
+      }
+    ],
+    "duplicateInterfaces": [
+      {
+        "name": "AuthUser",
+        "locations": [
+          {
+            "package": "ui-auth",
+            "path": "src/hooks/obsolate/useBaseAuth.ts"
+          },
+          {
+            "package": "ui-auth",
+            "path": "src/types/AuthUser.ts"
+          }
+        ]
+      },
+      {
+        "name": "ToastConfig",
+        "locations": [
+          {
+            "package": "ui-core",
+            "path": "src/components/toast/ToastProvider.tsx"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/components/LinkButton/LinkButton.tsx"
+          }
+        ]
+      },
+      {
+        "name": "FileInputWithUrlProps",
+        "locations": [
+          {
+            "package": "ui-file",
+            "path": "src/components/FileInputWithUrl/FileInputWithUrl.d.ts"
+          },
+          {
+            "package": "ui-file",
+            "path": "src/components/FileInputWithUrl/FileInputWithUrl.tsx"
+          }
+        ]
+      },
+      {
+        "name": "MemoryUsageBarProps",
+        "locations": [
+          {
+            "package": "ui-monitoring",
+            "path": "src/components/MemoryUsageBar/MemoryUsageBar.d.ts"
+          },
+          {
+            "package": "ui-monitoring",
+            "path": "src/components/MemoryUsageBar/MemoryUsageBar.tsx"
+          }
+        ]
+      },
+      {
+        "name": "PluginAction",
+        "locations": [
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.ts"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/types.ts"
+          }
+        ]
+      },
+      {
+        "name": "PluginDefinition",
+        "locations": [
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/HierarchicalPluginRouter.ts"
+          },
+          {
+            "package": "ui-routing",
+            "path": "src/plugins/types.ts"
+          }
+        ]
+      },
+      {
+        "name": "GenericGuidedTourProps",
+        "locations": [
+          {
+            "package": "ui-tour",
+            "path": "src/components/GuidedTour/GenericGuidedTour.d.ts"
+          },
+          {
+            "package": "ui-tour",
+            "path": "src/components/GuidedTour/GenericGuidedTour.tsx"
+          }
+        ]
+      }
+    ],
+    "commonImports": [
+      {
+        "import": "@hierarchidb/core",
+        "packages": [
+          "ui-client",
+          "ui-core",
+          "ui-monitoring"
+        ]
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "issue": "Duplicate logger utilities",
+      "description": "Multiple packages have identical logger functions (devLog, devError, devWarn)",
+      "solution": "Create a shared @hierarchidb/ui-utils package with common logging utilities"
+    },
+    {
+      "priority": "MEDIUM",
+      "issue": "Theme-related code duplication",
+      "description": "Multiple packages implement their own theme utilities",
+      "solution": "Use the centralized @hierarchidb/ui-theme package consistently"
+    },
+    {
+      "priority": "MEDIUM",
+      "issue": "Duplicate component implementations",
+      "description": "ThemedLoadingScreen exists in multiple packages",
+      "solution": "Move shared components to @hierarchidb/ui-core"
+    },
+    {
+      "priority": "LOW",
+      "issue": "Common import patterns",
+      "description": "1 packages are commonly imported across UI packages",
+      "solution": "Consider creating facade exports in parent packages to simplify imports"
+    }
+  ]
+}

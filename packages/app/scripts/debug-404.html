@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>HierarchiDB - Debug 404</title>
+    <style>
+      body { font-family: monospace; padding: 20px; }
+      .log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+      .error { color: red; }
+      .success { color: green; }
+      .info { color: blue; }
+    </style>
+  </head>
+  <body>
+    <h1>GitHub Pages SPA Redirect Debug</h1>
+    <div id="logs"></div>
+    
+    <script type="text/javascript">
+      const logs = document.getElementById('logs');
+      
+      function log(message, type = 'info') {
+        const div = document.createElement('div');
+        div.className = `log ${type}`;
+        div.textContent = `[${new Date().toISOString()}] ${message}`;
+        logs.appendChild(div);
+        console.log(message);
+      }
+      
+      // Debug information
+      log('=== INITIAL STATE ===', 'info');
+      log(`Full URL: ${window.location.href}`, 'info');
+      log(`Protocol: ${window.location.protocol}`, 'info');
+      log(`Hostname: ${window.location.hostname}`, 'info');
+      log(`Port: ${window.location.port || '(default)'}`, 'info');
+      log(`Pathname: ${window.location.pathname}`, 'info');
+      log(`Search: ${window.location.search || '(none)'}`, 'info');
+      log(`Hash: ${window.location.hash || '(none)'}`, 'info');
+      
+      // Configuration
+      const pathSegmentsToKeep = 1; // hierarchidb
+      log(`Path segments to keep: ${pathSegmentsToKeep}`, 'info');
+      
+      // Parse pathname
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      log(`Path segments: [${pathSegments.join(', ')}]`, 'info');
+      
+      // Calculate redirect URL
+      const l = window.location;
+      const baseSegments = l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep);
+      const routeSegments = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep);
+      
+      log('=== REDIRECT CALCULATION ===', 'info');
+      log(`Base segments: [${baseSegments.join(', ')}]`, 'info');
+      log(`Route segments: [${routeSegments.join(', ')}]`, 'info');
+      
+      const redirectUrl = 
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        baseSegments.join('/') + '/?/' +
+        routeSegments.join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash;
+      
+      log(`Redirect URL: ${redirectUrl}`, 'success');
+      
+      // Check for redirect loop
+      if (l.search && l.search[1] === '/') {
+        log('⚠️ WARNING: Already has redirect query parameter!', 'error');
+        log('This would cause a redirect loop!', 'error');
+      } else {
+        log('✓ No redirect loop detected', 'success');
+        
+        // Add redirect button
+        const button = document.createElement('button');
+        button.textContent = 'Execute Redirect';
+        button.style.cssText = 'margin-top: 20px; padding: 10px 20px; font-size: 16px;';
+        button.onclick = () => {
+          log('Executing redirect...', 'info');
+          window.location.replace(redirectUrl);
+        };
+        document.body.appendChild(button);
+        
+        // Auto-redirect after 5 seconds
+        let countdown = 5;
+        const timer = setInterval(() => {
+          log(`Auto-redirect in ${countdown} seconds...`, 'info');
+          countdown--;
+          if (countdown === 0) {
+            clearInterval(timer);
+            log('Auto-redirecting now...', 'success');
+            // Uncomment to enable auto-redirect:
+            // window.location.replace(redirectUrl);
+          }
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>
