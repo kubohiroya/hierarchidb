@@ -1,1 +1,1 @@
-import{w as t,O as o}from"./vendor-react-B1vr_upH.js";import{j as r}from"./jsx-runtime-49RhsWNe.js";import{c as a}from"./loader-BHZpdoHD.js";async function p(e){return await a(e.params)}const d=t(function(){return r.jsx(o,{})});export{p as clientLoader,d as default};
+import{w as t,O as o}from"./vendor-react-B1vr_upH.js";import{j as r}from"./jsx-runtime-49RhsWNe.js";import{c as a}from"./loader-J7dSblRQ.js";async function p(e){return await a(e.params)}const d=t(function(){return r.jsx(o,{})});export{p as clientLoader,d as default};
