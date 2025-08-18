@@ -1,0 +1,1 @@
+import{a as e}from"./vendor-react-DCOeofjU.js";import{j as s}from"./jsx-runtime-vjdH2-jS.js";const r=e.createContext();function u({value:t,...o}){return s.jsx(r.Provider,{value:t??!0,...o})}const x=()=>e.useContext(r)??!1;export{u as R,x as u};
