@@ -6,24 +6,24 @@
     <link rel="icon" href="/hierarchidb/favicon.svg" />
     <title>HierarchiDB</title>
     <script type="text/javascript">
-      // Handle GitHub Pages SPA redirect
-      // This script processes the redirect from 404.html
-      (function(l) {
-        if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
-          );
+      // Hash routing handler for GitHub Pages
+      // Convert path-based URLs to hash-based URLs
+      (function() {
+        var path = window.location.pathname;
+        var base = '/hierarchidb';
+        
+        // If we're on a path that's not the base path, redirect to hash version
+        if (path !== base + '/' && path.startsWith(base + '/')) {
+          var hashPath = path.substring(base.length);
+          window.location.replace(base + '/#' + hashPath + window.location.search + window.location.hash);
         }
-      }(window.location))
+      })();
     </script>
 </head>
 <body>
 <div id="root"></div>
 <script>
-  // React Router SPA mode initialization
+  // React Router SPA mode initialization with hash routing support
   window.__reactRouterContext = {
     "basename": "/hierarchidb/",
     "future": {
@@ -38,12 +38,32 @@
     "isSpaMode": true
   };
   
+  // Intercept navigation to add hash prefix
+  var originalPushState = history.pushState;
+  var originalReplaceState = history.replaceState;
+  
+  history.pushState = function() {
+    var url = arguments[2];
+    if (url && !url.startsWith('#') && !url.startsWith('/hierarchidb/#')) {
+      arguments[2] = '/hierarchidb/#' + url.replace('/hierarchidb', '');
+    }
+    return originalPushState.apply(history, arguments);
+  };
+  
+  history.replaceState = function() {
+    var url = arguments[2];
+    if (url && !url.startsWith('#') && !url.startsWith('/hierarchidb/#')) {
+      arguments[2] = '/hierarchidb/#' + url.replace('/hierarchidb', '');
+    }
+    return originalReplaceState.apply(history, arguments);
+  };
+  
   // Create a minimal stream for SPA mode
   window.__reactRouterContext.stream = new ReadableStream({
     start(controller) {
       window.__reactRouterContext.streamController = controller;
-      // Immediately provide empty loader data for SPA mode
-      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]\n');
+      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]
+');
       controller.close();
     }
   }).pipeThrough(new TextEncoderStream());
