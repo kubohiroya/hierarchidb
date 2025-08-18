@@ -7,15 +7,25 @@
     <title>HierarchiDB</title>
     <script type="text/javascript">
       // Hash routing handler for GitHub Pages
-      // Convert path-based URLs to hash-based URLs
+      // Convert path-based URLs to hash-based URLs - run only once on page load
       (function() {
+        // Check if we already processed this page
+        if (sessionStorage.getItem('hash-routing-processed')) {
+          return;
+        }
+        
         var path = window.location.pathname;
         var base = '/hierarchidb';
         
-        // If we're on a path that's not the base path, redirect to hash version
-        if (path !== base + '/' && path.startsWith(base + '/')) {
+        // Only redirect if we're on a sub-path (not the root)
+        // and we don't already have a hash fragment
+        if (path !== base + '/' && path.startsWith(base + '/') && !window.location.hash) {
+          sessionStorage.setItem('hash-routing-processed', 'true');
           var hashPath = path.substring(base.length);
-          window.location.replace(base + '/#' + hashPath + window.location.search + window.location.hash);
+          window.location.replace(base + '/#' + hashPath + window.location.search);
+        } else if (path === base + '/') {
+          // Mark as processed for root path too
+          sessionStorage.setItem('hash-routing-processed', 'true');
         }
       })();
     </script>
@@ -38,7 +48,9 @@
     "isSpaMode": true
   };
   
-  // Intercept navigation to add hash prefix
+  // Intercept navigation to add hash prefix - disabled for now to prevent loops
+  // This approach can cause conflicts with React Router's internal navigation
+  /*
   var originalPushState = history.pushState;
   var originalReplaceState = history.replaceState;
   
@@ -57,6 +69,7 @@
     }
     return originalReplaceState.apply(history, arguments);
   };
+  */
   
   // Create a minimal stream for SPA mode
   window.__reactRouterContext.stream = new ReadableStream({
@@ -68,7 +81,7 @@
   }).pipeThrough(new TextEncoderStream());
 </script>
 <script type="module">
-  import "/hierarchidb/assets/manifest-a1720a44.js";
+  
   import * as route0 from "/hierarchidb/assets/root.js";
   
   window.__reactRouterRouteModules = {"root": route0};
