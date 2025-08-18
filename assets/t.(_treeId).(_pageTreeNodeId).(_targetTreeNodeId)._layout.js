@@ -1,1 +1,1 @@
-import{b as e,O as o}from"./vendor-react-C8WWZUWX.js";import{j as r}from"./jsx-runtime-DHMuy5Xl.js";import{b as a}from"./loader-J7dSblRQ.js";async function d(t){return await a(t.params)}const i=e(function(){return r.jsx(o,{})});export{d as clientLoader,i as default};
+import{b as e,O as o}from"./vendor-react-j8un_64k.js";import{j as r}from"./jsx-runtime-CDlkRUSh.js";import{b as a}from"./loader-C2Ge8-k5.js";async function d(t){return await a(t.params)}const i=e(function(){return r.jsx(o,{})});export{d as clientLoader,i as default};
