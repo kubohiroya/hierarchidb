@@ -6,7 +6,7 @@ This document provides examples of how to refactor existing button patterns to u
 
 ### Before
 ```tsx
-// From: /app/lib/components/dialogs/SubmitDialog/SubmitDialogActionPanel.tsx
+// From: /src/lib/components/dialogs/SubmitDialog/SubmitDialogActionPanel.tsx
 const [isSubmitting, setIsSubmitting] = useState(false);
 
 const handleSubmit = async () => {
@@ -57,7 +57,7 @@ const handleSubmit = async () => {
 
 ### Before
 ```tsx
-// From: /app/lib/components/dialogs/ResourceRemoveDialog.tsx
+// From: /src/lib/components/dialogs/ResourceRemoveDialog.tsx
 const [removing, setRemoving] = useState(false);
 const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -143,7 +143,7 @@ const handleDelete = async () => {
 
 ### Before
 ```tsx
-// From: /app/lib/shared/components/resources/ResourceDialog.tsx
+// From: /src/lib/shared/components/resources/ResourceDialog.tsx
 const handleSubmit = useCallback(async () => {
   if (!resourceState.canSubmitForm) return;
   
@@ -284,7 +284,7 @@ const handleNext = async () => {
 
 ### Before
 ```tsx
-// From: /app/lib/components/dialogs/UnsavedChangesDialog.tsx
+// From: /src/lib/components/dialogs/UnsavedChangesDialog.tsx
 const handleCancel = async () => {
   if (hasUnsavedChanges) {
     setConfirmOpen(true);

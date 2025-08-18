@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["app/*"]
+      "~/*": ["src/*"]
     },
     "outDir": "./dist",
     "rootDir": "./",
@@ -13,7 +13,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler"
   },
-  "include": ["app/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

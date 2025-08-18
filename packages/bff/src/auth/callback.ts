@@ -30,7 +30,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
     if (error) {
       const errorDescription = url.searchParams.get('error_description') || 'Authentication failed';
 
-      // Redirect back to app with error
+      // Redirect back to src with error
       const appBaseUrl = getAppCallbackUrlFromState(c, state);
       const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
       appCallbackUrl.searchParams.set('error', error);
@@ -39,7 +39,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
     }
 
     if (!code) {
-      // Redirect back to app with error
+      // Redirect back to src with error
       const appBaseUrl = getAppCallbackUrlFromState(c, state);
       const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
       appCallbackUrl.searchParams.set('error', 'invalid_request');
@@ -47,7 +47,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
       return c.redirect(appCallbackUrl.toString());
     }
 
-    // Redirect to app callback with the authorization code
+    // Redirect to src callback with the authorization code
     const appBaseUrl = getAppCallbackUrlFromState(c, state);
     const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
     appCallbackUrl.searchParams.set('code', code);
@@ -59,7 +59,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
   } catch (error) {
     console.error('OAuth2 callback error:', error);
 
-    // Redirect back to app with error
+    // Redirect back to src with error
     const url = new URL(c.req.url);
     const state = url.searchParams.get('state');
     const appBaseUrl = getAppCallbackUrlFromState(c, state);

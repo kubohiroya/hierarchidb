@@ -2,6 +2,9 @@ import { loadEnv } from 'vite';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
+import { copyFile } from 'node:fs/promises';
+import path from 'node:path';
+
 // 現在のファイルのディレクトリを取得
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,14 +26,24 @@ const basename = appName ? `/${appName}/` : '/';
 // React Router config type
 interface ReactRouterConfig {
   appDirectory: string;
+  prerender: boolean;
   ssr: boolean;
   basename: string; // 必須にする
 }
+/*
+  buildEnd?: (args: { viteConfig: any }) => Promise<void>;
+async buildEnd(args): Promise<void> {
+  if (!args.viteConfig.isProduction) return;
+const buildPath = args.viteConfig.build.outDir;
+await copyFile(path.join(buildPath, 'index.html'), path.join(buildPath, '404.html'));
+},
+ */
 
 const config: ReactRouterConfig = {
-  appDirectory: 'app',
-  ssr: false,
-  basename: basename,
+  appDirectory: 'src',
+  prerender: false,
+  ssr: false, // SSRを無効化
+  basename,
 };
 
 export default config;

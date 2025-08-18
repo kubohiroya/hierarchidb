@@ -47,7 +47,7 @@ packages/app/src/routes/
 
 ### プラグインレジストリ
 ```typescript
-// packages/app/src/plugins/registry.ts
+// packages/src/src/plugins/registry.ts
 export interface PluginDefinition {
   nodeType: string;  // treeNodeTypeと一致（basemap, shapes等）
   actions: {
@@ -82,7 +82,7 @@ pluginRegistry.set('basemap', {
 
 ### 動的ルートコンポーネント
 ```tsx
-// packages/app/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
+// packages/src/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
 import { useParams, useLoaderData } from 'react-router-dom';
 import { pluginRegistry } from '@/plugins/registry';
 import { NotFound } from '@/components/NotFound';
@@ -209,7 +209,7 @@ export async function generatePluginRegistry() {
     `;
   }
   
-  await writeFile('packages/app/src/plugins/registry.generated.ts', registryCode);
+  await writeFile('packages/src/src/plugins/registry.generated.ts', registryCode);
 }
 ```
 

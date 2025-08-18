@@ -5,7 +5,7 @@
     <script>
       console.log('[oauth-redirect] Processing OAuth callback for react-oidc-context');
 
-      // Helper function to extract app path from current URL
+      // Helper function to extract src path from current URL
       function getAppPath() {
         const currentPath = window.location.pathname;
         return currentPath.replace(/\/oauth-redirect\.html$/, '');
@@ -36,7 +36,7 @@
             window.close();
           } else {
             console.log('[oauth-redirect] In redirect mode, redirecting to main app');
-            // For redirect mode, redirect to the main app with OAuth parameters
+            // For redirect mode, redirect to the main src with OAuth parameters
             const currentSearch = window.location.search;
             const currentHash = window.location.hash;
             const appPath = getAppPath();
@@ -48,7 +48,7 @@
           }
         } catch (error) {
           console.error('[oauth-redirect] Error during OAuth processing:', error);
-          // Fallback: redirect to main app root
+          // Fallback: redirect to main src root
           const appPath = getAppPath();
           const baseUrl = window.location.origin;
           const fallbackUrl = `${baseUrl}${appPath}/`;

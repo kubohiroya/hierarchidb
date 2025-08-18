@@ -13,13 +13,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc && tsc-alias",
+    "build": "tsc -b && tsc-alias",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@hierarchidb/core": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
     "react": "^19.1.1"

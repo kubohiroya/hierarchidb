@@ -107,11 +107,11 @@ function main() {
   let grandTotal = 0;
   const summaries = [];
 
-  // Count app/src if it exists
-  if (fs.existsSync('app/src')) {
-    const appLines = countDirectory('app/src');
+  // Count src/src if it exists
+  if (fs.existsSync('src/src')) {
+    const appLines = countDirectory('src/src');
     grandTotal += appLines;
-    summaries.push({ name: 'app/src', lines: appLines });
+    summaries.push({ name: 'src/src', lines: appLines });
   }
 
   // Count each package's src directory

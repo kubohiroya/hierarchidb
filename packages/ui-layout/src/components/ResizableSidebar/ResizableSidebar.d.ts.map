@@ -1,1 +1,0 @@
-{"version":3,"file":"ResizableSidebar.d.ts","sourceRoot":"","sources":["ResizableSidebar.tsx"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;;;;;GAiBG;AAIH,OAAc,EACZ,KAAK,SAAS,EAKf,MAAM,OAAO,CAAC;AA4Bf,eAAO,MAAM,gBAAgB,GAAI,4CAK9B;IACD,QAAQ,EAAE,SAAS,CAAC;IACpB,WAAW,EAAE,OAAO,CAAC;IACrB,cAAc,EAAE,CAAC,KAAK,EAAE,OAAO,KAAK,IAAI,CAAC;CAE1C,4CA0EA,CAAC"}

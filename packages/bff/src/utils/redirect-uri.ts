@@ -29,7 +29,7 @@ export function getDynamicRedirectUri(c: Context, provider: string = 'google'): 
 }
 
 /**
- * Gets app callback URL from state parameter
+ * Gets src callback URL from state parameter
  */
 export function getAppCallbackUrlFromState(c: Context, state: string | null): string {
   const env = c.env as any;
@@ -47,7 +47,7 @@ export function getAppCallbackUrlFromState(c: Context, state: string | null): st
     }
   }
 
-  // Use configured app base URL
+  // Use configured src base URL
   if (env.APP_BASE_URL) {
     return env.APP_BASE_URL;
   }
@@ -62,7 +62,7 @@ export function getAppCallbackUrlFromState(c: Context, state: string | null): st
 }
 
 /**
- * Gets app callback URL
+ * Gets src callback URL
  */
 export function getAppCallbackUrl(c: Context): string {
   const env = c.env as any;

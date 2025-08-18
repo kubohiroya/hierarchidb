@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router';
 import { useCallback } from 'react';
 import { loadAppConfig } from '~/loader.ts';
 import { useLoaderData } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 
 // Tree configurations for t and r trees
 const treeConfigs: TreeConfig[] = [
@@ -71,35 +72,43 @@ export default function Index() {
   );
 
   return (
-    <LandingPage
-      logo={
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <StorageIcon sx={{ fontSize: 80, color: 'primary.main' }} />
-        </Box>
-      }
-      heading={appTitle}
-      description={appDescription}
-      githubUrl={appHomepage}
-      infoPath={`/${appPrefix}/info`}
-      showInfoButton={true}
-      showHelpButton={false}
-    >
-      {/* Top-left slot - could add version or environment info */}
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        v1.0.0
-      </Typography>
-      {/* Top-right slot - could add user menu or settings */}
-      <TreeToggleButtonGroup
-        trees={treeConfigs}
-        selectedTreeId={null}
-        appPrefix={appPrefix}
-        getSavedPageNodeId={getSavedPageNodeId}
-        savePageNodeId={savePageNodeId}
-        onTreeSelect={handleTreeSelect}
-        orientation="horizontal"
-        size="large"
-        sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
-      />
-    </LandingPage>
+    <>
+      <Helmet>
+        <title>{appTitle}</title>
+        {appDescription ? <meta name="description" content={appDescription} /> : null}
+        {/* You can change favicon dynamically by changing href below based on loader data or state */}
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+      </Helmet>
+      <LandingPage
+        logo={
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <StorageIcon sx={{ fontSize: 80, color: 'primary.main' }} />
+          </Box>
+        }
+        heading={appTitle}
+        description={appDescription}
+        githubUrl={appHomepage}
+        infoPath={`/${appPrefix}/info`}
+        showInfoButton={true}
+        showHelpButton={false}
+      >
+        {/* Top-left slot - could add version or environment info */}
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          v1.0.0
+        </Typography>
+        {/* Top-right slot - could add user menu or settings */}
+        <TreeToggleButtonGroup
+          trees={treeConfigs}
+          selectedTreeId={null}
+          appPrefix={appPrefix}
+          getSavedPageNodeId={getSavedPageNodeId}
+          savePageNodeId={savePageNodeId}
+          onTreeSelect={handleTreeSelect}
+          orientation="horizontal"
+          size="large"
+          sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
+        />
+      </LandingPage>
+    </>
   );
 }

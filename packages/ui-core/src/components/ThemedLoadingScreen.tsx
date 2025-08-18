@@ -10,7 +10,7 @@ interface ThemedLoadingScreenProps {
   children?: ReactNode;
 }
 
-const THEME_STORAGE_KEY = 'app-theme-mode';
+const THEME_STORAGE_KEY = 'src-theme-mode';
 
 export const getStoredThemeMode = (): ThemeMode => {
   if (typeof window === 'undefined') return 'system';

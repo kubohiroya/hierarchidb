@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@mui/material';
 //import { APP_PREFIX } from "@/config/appDescription";
-//import { EriaCartLogo } from "@/domains/app-config/components/info/EriaCartLogo";
+//import { EriaCartLogo } from "@/domains/src-config/components/info/EriaCartLogo";
 
 // to={`/${APP_PREFIX}/`}
 // <EriaCartLogo size="large" />

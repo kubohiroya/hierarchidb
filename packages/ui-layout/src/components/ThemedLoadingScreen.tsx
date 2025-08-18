@@ -1,9 +1,6 @@
 import { Box, CircularProgress, LinearProgress, Typography, useTheme } from '@mui/material';
 import { ReactNode, useEffect, useState } from 'react';
-import {
-  getBackgroundColorForTheme as getThemeBackgroundColor,
-  getTextColorForTheme as getThemeTextColor,
-} from '@hierarchidb/core';
+import { getBackgroundColorForTheme, getTextColorForTheme } from '@hierarchidb/ui-theme';
 
 interface ThemedLoadingScreenProps {
   variant?: 'linear' | 'circular';
@@ -27,8 +24,8 @@ export function ThemedLoadingScreen({
   }, []);
 
   // Use light theme defaults for SSR, then actual theme after hydration
-  const backgroundColor = isHydrated ? getThemeBackgroundColor(theme) : '#fafafa';
-  const textColor = isHydrated ? getThemeTextColor(theme) : 'rgba(0, 0, 0, 0.87)';
+  const backgroundColor = isHydrated ? getBackgroundColorForTheme(theme) : '#fafafa';
+  const textColor = isHydrated ? getTextColorForTheme(theme) : 'rgba(0, 0, 0, 0.87)';
 
   return (
     <Box

@@ -1,4 +1,4 @@
-// import { TopPageGuidedTour } from "@/domains/app-config/guides";
+// import { TopPageGuidedTour } from "@/domains/src-config/guides";
 import { GenericGuidedTour } from './GenericGuidedTour';
 
 const TopPageGuidedTour = ({ run, onFinish }: { run: boolean; onFinish?: () => void }) => {

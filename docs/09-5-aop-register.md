@@ -83,7 +83,7 @@ await pluginLoader.loadPlugin(ShapePlugin);
 
 2. **プラグイン設定（プライオリティ指定）**:
    ```typescript
-   // app.config.ts
+   // src.config.ts
    export const pluginConfig = {
      basemap: { enabled: true, priority: 10, settings: { defaultStyle: 'streets' } },
      shape: { enabled: true, priority: 20, settings: { maxFileSize: '10MB' } },

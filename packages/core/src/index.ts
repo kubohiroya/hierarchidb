@@ -4,7 +4,6 @@ export * from '~/utils/name';
 export * from '~/utils/time';
 export * from '~/utils/validation';
 export * from '~/utils/SingletonMixin';
-export * from '~/utils/theme';
 export * from '~/utils/image';
 export * from '~/utils/memory';
 export * from '~/utils/page';

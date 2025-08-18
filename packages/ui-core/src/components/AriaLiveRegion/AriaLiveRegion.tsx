@@ -53,10 +53,10 @@ function notifyListeners() {
  *
  * @example
  * ```tsx
- * // Add to your app root
+ * // Add to your src root
  * <AriaLiveRegion />
  *
- * // Use from anywhere in your app
+ * // Use from anywhere in your src
  * announceToScreenReader('File uploaded successfully');
  * announceToScreenReader('Error: Invalid file format', 'assertive');
  * ```

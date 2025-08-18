@@ -142,7 +142,7 @@ export class BFFAuthService {
 
     // Store return URL
     const currentUrl = window.location.href;
-    localStorage.setItem('bff-auth-app-return-url', returnUrl || currentUrl);
+    localStorage.setItem('bff-auth-src-return-url', returnUrl || currentUrl);
 
     // Build auth URL
     const authUrl = new URL(`${this.baseUrl}/signin`, window.location.origin);
@@ -313,7 +313,7 @@ export class BFFAuthService {
    */
   private clearAuthData(): void {
     localStorage.removeItem('bff-auth-state');
-    localStorage.removeItem('bff-auth-app-return-url');
+    localStorage.removeItem('bff-auth-src-return-url');
     localStorage.removeItem('bff-auth-user');
     sessionStorage.removeItem('bff-auth-state');
     sessionStorage.removeItem('bff-auth-result');

@@ -122,10 +122,10 @@ pnpm dev
 
 ```bash
 # 開発環境用の設定をコピー
-cp packages/app/.env.example packages/app/.env.development
+cp packages/src/.env.example packages/src/.env.development
 
 # 本番環境用の設定をコピー
-cp packages/app/.env.example packages/app/.env.production
+cp packages/src/.env.example packages/src/.env.production
 ```
 
 主な環境変数：
@@ -196,7 +196,7 @@ pnpm license-check:csv    # CSV形式で出力
 
 # パッケージ指定の実行
 pnpm --filter @hierarchidb/worker test
-pnpm --filter @hierarchidb/app dev
+pnpm --filter @hierarchidb/src dev
 ```
 
 ### コーディング規約

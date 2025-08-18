@@ -8,19 +8,20 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'prettier',
-    'plugin:storybook/recommended',
+    // Type-aware rules require parserOptions.project
+    'plugin:@typescript-eslint/recommended-type-checked',
+    'prettier'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,
   },
   plugins: ['@typescript-eslint', 'import'],
   rules: {
-    // TypeScript rules
+    // Prefer TS-aware unused vars rule and ignore leading underscores
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {
@@ -28,13 +29,10 @@ module.exports = {
         varsIgnorePattern: '^_',
       },
     ],
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/no-empty-interface': 'warn',
-    '@typescript-eslint/ban-ts-comment': 'warn',
 
     // General rules
     'prefer-const': 'warn',
-    'no-unused-vars': 'off', // Handled by TypeScript
+    'no-unused-vars': 'off', // Use TS-aware variant above
 
     // Import rules - 相対パスを禁止
     'no-restricted-imports': [

@@ -58,7 +58,7 @@ interface BasemapEntity extends BaseEntity {
 #### 9.4.2.1 統合プラグインレジストリ（NodeTypeRegistry使用）
 
 ```typescript
-// packages/app/src/plugins/registry.ts
+// packages/src/src/plugins/registry.ts
 import { NodeTypeRegistry } from '@hierarchidb/core';
 import type { UnifiedPluginDefinition } from '@hierarchidb/core';
 
@@ -150,7 +150,7 @@ pluginRegistry.registerPlugin(basemapPlugin);
 #### 9.4.2.2 動的ルートコンポーネント
 
 ```tsx
-// packages/app/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
+// packages/src/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
 import { useParams, useLoaderData } from 'react-router-dom';
 import { pluginRegistry } from '@/plugins/registry';
 import { NotFound } from '@/components/NotFound';
@@ -483,7 +483,7 @@ export async function generatePluginRegistry() {
     `;
   }
   
-  await writeFile('packages/app/src/plugins/registry.generated.ts', registryCode);
+  await writeFile('packages/src/src/plugins/registry.generated.ts', registryCode);
 }
 ```
 
@@ -507,7 +507,7 @@ export async function generatePluginRegistry() {
 #### 9.4.3.2 ルートエントリ（root.tsx）
 
 ```tsx
-// packages/app/app/root.tsx
+// packages/src/src/root.tsx
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -560,7 +560,7 @@ packages/app/app/routes/
 現在は各階層で clientLoader を用いてデータを段階的に取得し、`~/loader` のユーティリティで共通化している。
 
 ```tsx
-// packages/app/app/routes/t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
+// packages/src/src/routes/t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
 import { Outlet, useLoaderData } from 'react-router-dom';
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { loadTreeNodeAction, LoadTreeNodeActionArgs } from '~/loader';
@@ -584,7 +584,7 @@ export default function TLayout() {
 共通ローダー群（抜粋）:
 
 ```ts
-// packages/app/app/loader.ts
+// packages/src/src/loader.ts
 import { WorkerAPIClient } from '@hierarchidb/ui-client';
 
 export async function loadWorkerAPIClient() {
@@ -613,7 +613,7 @@ export async function loadPageTreeNode({ treeId, pageTreeNodeId }: { treeId: str
 補足（階層データの参照ヘルパー）:
 
 ```ts
-// packages/app/app/loader.ts（抜粋）
+// packages/src/src/loader.ts（抜粋）
 import { useRouteLoaderData } from 'react-router';
 
 export function useTree() {
@@ -754,7 +754,7 @@ export async function generatePluginRegistry() {
   const registryCode = generateRegistryCode(plugins);
   
   // 出力ファイルに書き込み
-  const outputPath = 'packages/app/src/plugins/registry.generated.ts';
+  const outputPath = 'packages/src/src/plugins/registry.generated.ts';
   await writeFile(outputPath, registryCode, 'utf-8');
   
   console.log(`📝 Generated plugin registry: ${outputPath}`);
@@ -1244,7 +1244,7 @@ export interface ExtendedPluginContext<T extends Record<string, PluginExtension>
 #### 9.4.8.2 プラグインローダー
 
 ```typescript
-// packages/app/src/plugin/PluginLoader.ts
+// packages/src/src/plugin/PluginLoader.ts
 
 export class PluginLoader<TContext extends PluginContext = PluginContext> {
   private plugins: Map<string, Plugin<TContext>> = new Map();

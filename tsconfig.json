@@ -1,22 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/api" },
-    { "path": "./packages/worker" },
-    { "path": "./packages/ui-client" },
-    { "path": "./packages/ui-core" },
-    { "path": "./packages/ui-auth" },
-    { "path": "./packages/ui-routing" },
-    { "path": "./packages/ui-layout" },
-    { "path": "./packages/ui-navigation" },
-    { "path": "./packages/ui-file" },
-    { "path": "./packages/ui-tour" },
-    { "path": "./packages/ui-i18n" },
-    { "path": "./packages/ui-monitoring" },
-    { "path": "./packages/plugins" },
-    { "path": "./packages/bff" },
-    { "path": "./packages/cors-proxy" },
+    { "path": "./packages/*" },
     { "path": "./app" }
   ],
   "files": []

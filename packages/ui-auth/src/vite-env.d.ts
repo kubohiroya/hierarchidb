@@ -12,7 +12,6 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_CLIENT_ID: string;
   readonly VITE_BFF_BASE_URL: string;
   readonly VITE_CORS_PROXY_BASE_URL: string;
-  readonly VITE_API_BASE_URL: string;
   readonly VITE_APP_PREFIX: string;
 }
 

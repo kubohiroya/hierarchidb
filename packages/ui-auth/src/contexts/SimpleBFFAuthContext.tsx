@@ -364,7 +364,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
           // Listen for messages from popup
           const handlePopupMessage = (event: MessageEvent) => {
-            // Only accept messages from same origin (since popup gets redirected back to app domain)
+            // Only accept messages from same origin (since popup gets redirected back to src domain)
             if (event.origin === window.location.origin && event.data && event.data.type) {
               if (event.data.type === 'AUTH_SUCCESS') {
                 cleanupPopupListeners();

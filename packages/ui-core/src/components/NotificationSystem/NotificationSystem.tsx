@@ -98,10 +98,10 @@ export function replaceWindowAlert() {
  *
  * @example
  * ```tsx
- * // Add to your app root
+ * // Add to your src root
  * <NotificationSystem />
  *
- * // Use from anywhere in your app
+ * // Use from anywhere in your src
  * import { notify } from '@/shared/components/ui/NotificationSystem';
  *
  * notify.success('File uploaded successfully');

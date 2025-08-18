@@ -284,7 +284,7 @@ const projectPlugin: WorkerPlugin = {
 ```
 
 ```typescript
-// app/src/plugins/index.ts
+// src/src/plugins/index.ts
 import { basemapPlugin } from '@hierarchidb/plugin-basemap';
 import { projectPlugin } from '@hierarchidb/plugin-project';
 
