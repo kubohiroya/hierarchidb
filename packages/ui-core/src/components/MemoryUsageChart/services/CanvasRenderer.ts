@@ -1,5 +1,5 @@
 import { formatBytes } from '@hierarchidb/core';
-import type { MemoryData, MemoryBreakdown } from '../hooks/useMemoryData';
+import type { MemoryData } from '../hooks/useMemoryData';
 
 /**
  * 【リファクタリング概要】: Canvas描画ロジックを専用サービスクラスとして抽出
@@ -274,9 +274,9 @@ export class CanvasRenderer {
       const y = yScale(point.memoryData.percentage);
 
       if (index === 0) {
-        this.ctx.moveTo(x, y);
+        this.ctx!.moveTo(x, y);
       } else {
-        this.ctx.lineTo(x, y);
+        this.ctx!.lineTo(x, y);
       }
     });
 
@@ -288,9 +288,9 @@ export class CanvasRenderer {
       const x = xScale(point.timestamp);
       const y = yScale(point.memoryData.percentage);
       
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, 3, 0, 2 * Math.PI);
-      this.ctx.fill();
+      this.ctx!.beginPath();
+      this.ctx!.arc(x, y, 3, 0, 2 * Math.PI);
+      this.ctx!.fill();
     });
   }
 

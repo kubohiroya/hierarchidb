@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { formatBytes } from '@hierarchidb/core';
@@ -43,7 +43,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
   width = '100%',
   height = 300,
   updateInterval = 5000,
-  timeRange = 300, // 5分
+  // timeRange = 300, // 5分 - 未使用のため一時的にコメントアウト
   maxDataPoints = 100,
   categoryColors = {
     JavaScript: '#F7DF1E',

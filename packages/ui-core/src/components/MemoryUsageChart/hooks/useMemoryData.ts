@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { formatBytes } from '@hierarchidb/core';
 
 /**
  * 【リファクタリング概要】: メモリデータ収集ロジックをカスタムフックとして抽出

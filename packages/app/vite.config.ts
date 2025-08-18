@@ -83,6 +83,13 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
             isDev ? '../ui-monitoring/src' : '../ui-monitoring/dist'
           ),
         },
+        {
+          find: '@hierarchidb/ui-theme',
+          replacement: path.resolve(
+            __dirname,
+            isDev ? '../ui-theme/src' : '../ui-theme/dist'
+          ),
+        },
         // Plugins always use dist for stability
         {
           find: '@hierarchidb/plugin-basemap',

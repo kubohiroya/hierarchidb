@@ -387,9 +387,10 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
 export const createAppTheme = (mode: PaletteMode) => {
   const theme = createMuiTheme(getDesignTokens(mode));
 
-  // Add CSS custom properties for TreeTable styling
-  const root = document.documentElement;
-  if (root) {
+  // Add CSS custom properties for TreeTable styling (only in browser)
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement;
+    if (root) {
     // Define CSS variables based on theme
     root.style.setProperty(
       '--color-success-light',
@@ -456,6 +457,7 @@ export const createAppTheme = (mode: PaletteMode) => {
     // TreeTable header background colors
     root.style.setProperty('--color-table-header-bg', mode === 'dark' ? '#2a2a2a' : '#f5f5f5');
     root.style.setProperty('--color-table-header-hover', mode === 'dark' ? '#333333' : '#eeeeee');
+    }
   }
 
   return theme;

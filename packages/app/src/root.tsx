@@ -1,7 +1,8 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
-import { createTheme, CssBaseline, LinearProgress, ThemeProvider } from '@mui/material';
-import { StrictMode } from 'react';
+import { CssBaseline, LinearProgress, ThemeProvider } from '@mui/material';
+import { StrictMode, useMemo } from 'react';
 import { AppConfigProvider, useAppConfig } from './contexts/AppConfigContext';
+import { createAppTheme } from '@hierarchidb/ui-theme';
 
 import * as pkg from 'react-helmet-async';
 const { Helmet, HelmetProvider } = pkg;
@@ -49,9 +50,12 @@ function AppContent() {
 }
 
 export default function App() {
+  // Create theme inside component with useMemo to avoid hydration mismatch
+  const theme = useMemo(() => createAppTheme('light'), []);
+  
   return (
     <AppConfigProvider>
-      <ThemeProvider theme={createTheme()}>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <AppContent />
       </ThemeProvider>
