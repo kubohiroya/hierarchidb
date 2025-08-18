@@ -1,9 +1,63 @@
 ## 9.4 階層的URLパターンでのプラグインルーティングシステム
 
+### 9.4.0 概略：NodeTypeRegistry と UI ルーティング統合
+
+7章（NodeTypeRegistry）では、`UnifiedPluginDefinition` に `routing` を持たせ、`nodeType` ごとのアクションを登録可能としている。
+
+アプリ側のルートは、`treeNodeType` と `action` を元に Registry から該当 `PluginRouterAction` を取得してレンダリングする方針（8章の設計）。現状の `t.*.($treeNodeType).tsx` / `($action).tsx` は、その枠組みのプレースホルダとして Loader Data を確認・デバッグ出力している。
+
+
+### 9.4.0.1 概略：典型的なプラグインUIの実装例
+
+以下は疑似コード（6章の Basemap 例に準拠）。
+
+```tsx
+// packages/plugins/basemap/src/ui/MapEditor.tsx
+export default function MapEditor() {
+  const data = useRouteLoaderData(/* 上位loaderのid */) as LoaderData;
+  const nodeId = data.targetNode?.treeNodeId ?? data.treeContext.currentNode?.treeNodeId;
+  // ここで WorkerAPI による entity 取得や保存を行う
+  return <MapEditorView nodeId={nodeId} />;
+}
+```
+
+```ts
+// packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
+export const BaseMapUnifiedDefinition: UnifiedPluginDefinition = {
+  // ... NodeTypeDefinition 部分（DB, handler, lifecycle等）
+  routing: {
+    actions: {
+      view: { component: lazy(() => import('../ui/MapView')), displayName: 'Map View' },
+      edit: { component: lazy(() => import('../ui/MapEditor')), displayName: 'Map Editor' },
+    },
+    defaultAction: 'view'
+  },
+};
+```
+
+アプリは `treeNodeType='basemap'` かつ `action='edit'` のとき、Registry 経由で `MapEditor` をレンダリングする。
+
+---
+
 ### 9.4.1 統合プラグイン定義仕様
 
+ここでは、BaseMapEntityを例に統合プラグイン定義仕様を示す。
+
 ```typescript
-// 文書7のUnifiedPluginDefinitionを使用
+// データベーススキーマ例
+interface BasemapEntity extends BaseEntity {
+  nodeId: TreeNodeId;
+  mapStyle: 'streets' | 'satellite' | 'hybrid' | 'terrain';
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+}
+```
+
+以下、NodeTypeDefinitionの定義内容については、前章を参照すること。
+
+```typescript
 interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
@@ -40,16 +94,6 @@ interface UnifiedPluginDefinition<
     tags?: string[];
     dependencies?: string[];
   };
-}
-
-// データベーススキーマ例
-interface BasemapEntity extends BaseEntity {
-  nodeId: TreeNodeId;
-  mapStyle: 'streets' | 'satellite' | 'hybrid' | 'terrain';
-  center: [number, number];
-  zoom: number;
-  bearing: number;
-  pitch: number;
 }
 ```
 

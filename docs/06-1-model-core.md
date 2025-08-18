@@ -134,6 +134,17 @@ type SubTreeChanges = {
   version: number;
 }
 ```
+
+補足: TreeNodeWithChildren はツリー状態通知のための伝達用型で、以下の形とする。
+```ts
+type TreeNodeWithChildren = TreeNode & { children?: TreeNodeId[] };
+```
 * changesのキーとなるTreeNodeIdは、pageNodeIdのノード自身およびその直系の先祖ノードを含むものとする。また、pageNodeIdのノードの下位のノードのうち開状態のノードを含むものとする。
 * changesの値が、UI側で保持されるツリー状態の値にマージされる。
 * changesのRecordの値がnullの場合は、当該ノードが削除されたことを表すものとする。
+
+
+#### 6.1.1.6 共通定義の補足（重要事項）
+- OnNameConflict: 'error' | 'auto-rename'（兄弟名の重複時の方針）。既定値は実装により 'error' を推奨（UIで明示指定可）。
+- Version の意味: TreeNode.version はノード単体の変更番号、SubTreeChanges/ExpandedStateChanges.version は Pub-Sub ストリームの単調増加番号（treeId+treeRootNodeType 単位）。
+- Timestamp の取得源: Date.now() を基本とし、単位は ms。保存時に正規化（NFC）と合わせて記録する。

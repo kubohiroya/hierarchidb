@@ -121,7 +121,7 @@ export interface TreeMutationService {
 
   pasteNodes(cmd: CommandEnvelope<'pasteNodes', {
     nodes: Record<TreeNodeId, TreeNode>; // クリップボード由来（新規ID採番）
-    nodeIds: TreeNode[];
+    nodeIds: TreeNodeId[];
     toParentId: TreeNodeId;
     onNameConflict?: OnNameConflict;
   }>): Promise<{ seq: Seq; newNodeIds: TreeNodeId[] }>;
@@ -142,7 +142,7 @@ export interface TreeMutationService {
 
   importNodes(cmd: CommandEnvelope<'importNodes', {
     nodes: Record<TreeNodeId, TreeNode>; // JSONファイル由来（新規ID採番）
-    nodeIds: TreeNode[];
+    nodeIds: TreeNodeId[];
     toParentId: TreeNodeId;
     onNameConflict?: OnNameConflict;
   }>): Promise<{ seq: Seq; newNodeIds: TreeNodeId[] }>;

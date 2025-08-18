@@ -11,11 +11,11 @@
 
 代表クエリとインデックスの対応は 5.3 を参照。
 
-## 6.1.3 DBマイグレーション方針
+## 6.2.3 DBマイグレーション方針
 - DB スキーマ変更はバージョンで管理し、移行関数を実装。
 - 破壊的変更は極力回避し、必要時はメジャーバージョンアップで告知。
 
-## 6.1.4 一貫性と制約
+## 6.2.4 一貫性と制約
 - 保存時正規化: `normalize('NFC')(name).trim()`。
 - 参照整合性: inbound refs のあるノードは Trash へ移動不可（エラー）。
 - クロスツリー禁止: 親は同一 SuperRoot 系であること。
@@ -24,13 +24,13 @@
 
 
 ------
-## 5.4 データモデル定義
+## 6.2.2 データモデル定義
 
-### 5.4.2 Workerモジュールにおけるデータベース定義
+### 6.2.2 Workerモジュールにおけるデータベース定義
 
 Worker層におけるツリー格納用のデータモデル
 
-#### 5.4.3.1 CoreDB（長命・原子性必要）
+#### 6.2.2.1 CoreDB（長命・原子性必要）
 ```ts
 import Dexie, { Table } from 'dexie';
 
@@ -56,7 +56,7 @@ export class CoreDB extends Dexie {
         'originalParentTreeNodeId',
         '*references'
       ].join(', '),
-      rootStates: '&[treeId+treeRootNodeType], treeId, treeRootNodeId'
+      rootStates: '&[treeId+treeRootNodeType], treeId'
     });
   }
 }
@@ -68,11 +68,11 @@ export class CoreDB extends Dexie {
 * &[parentTreeNodeId+name] … 兄弟名の一意性（重複名禁止）を安全に担保。
 * [parentTreeNodeId+updatedAt] … 展開中枝の差分購読（指定Timestamp以降の更新）を効率化。
 * removedAt, originalParentTreeNodeId … ゴミ箱の時系列表示と復元先特定に最適。
-* referencesは、アプリで利用される
+* references … ノードが参照しているノードIDの multiEntry インデックス。参照系機能や参照整合性チェックで使用。
 
 
 
-#### 5.4.2.2 EphemeralDB（短命・高頻度）
+#### 6.2.2.2 EphemeralDB（短命・高頻度）
 ```ts
 export type WorkingCopyRow = WorkingCopy;
 export type TreeViewStateRow = TreeViewState;
@@ -95,7 +95,7 @@ export class EphemeralDB extends Dexie {
 
 インデックス設計理由
 * &[treeId+treeRootNodeType] … ツリー×ルート種別で 一意 に状態を特定。
-* treeRootNodeId … ルートノードIDから逆引きして状態を素早く得る用途。
+* [treeId+pageNodeId] … 表示ページ単位の状態を逆引きして素早く取得。
 
 代表的なクエリと対応インデックス（実装目安）
 * 子ノード一覧
@@ -111,7 +111,7 @@ export class EphemeralDB extends Dexie {
   → [parentTreeNodeId+updatedAt]
 
 * WorkingCopy → 元の探索
-  nodes.where('workingCopyOf').equals(nodeId)
+  workingCopies.where('workingCopyOf').equals(nodeId)
   → workingCopyOf
 
 * Trash 一覧の時系列
@@ -119,8 +119,8 @@ export class EphemeralDB extends Dexie {
   → removedAt
 
 * 参照整合性（remove前チェック）
-  nodes.where('referredBy').equals(targetId)（multiEntry）
-  → *referredBy
+  nodes.where('references').equals(targetId)（multiEntry）
+  → *references
 
 * ルート状態の取得
   rootStates.get([treeId, TreeRootNodeType.Root]) / rootStates.get([treeId, TreeRootNodeType.TrashRoot])

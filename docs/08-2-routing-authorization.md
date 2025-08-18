@@ -53,7 +53,7 @@ BFF は、OAuth2/OIDC プロバイダーとのやり取り（認証開始、コ�
   - 実装: `packages/app/app/routes/silent-renew.tsx`
   - IFrame でロードされ、`resumeAfterSignIn()` を呼び出し、親ウィンドウへ `postMessage` で成功/失敗を通知
 
-ホーム・情報ページ等のベース画面については 10章を参照。
+ホーム・情報ページ等のベース画面については 8.1章を参照。
 
 ### 8.2.4 ガードと遷移制御の実装例
 

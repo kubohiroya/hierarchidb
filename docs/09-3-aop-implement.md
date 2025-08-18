@@ -178,6 +178,8 @@ export interface NodeTypeDefinition<
 }
 ```
 
+
+
 #### 9.3.3.2 エンティティハンドラー
 
 ```typescript
@@ -300,4 +302,3 @@ export interface NodeLifecycleHooks<
   ) => Promise<void>;
 }
 ```
-

@@ -1,15 +1,19 @@
 # 5 アーキテクチャ概要
 
 本章では、hierarchidb の全体アーキテクチャとモジュール構成、依存関係を俯瞰する。
-- サーバサイドは Cloudflare Workers 上で稼働（bff, cors-proxy）。
-- クライアントサイドは GitHub Pages（静的ホスティング）で提供され、UI と Worker（ブラウザ内のアプリ内ワーカー/Comlink）が疎結合に連携する。
+- サーバサイドは Cloudflare Workers 上で稼働（bff, cors-proxy）。本リポジトリには両者の実装が packages 配下に含まれる（デプロイは wrangler を利用）。
+- クライアントサイドは静的ホスティング（例: GitHub Pages）で提供され、UI と Worker（ブラウザ内のアプリ内ワーカー/Comlink）が疎結合に連携する。
+
+[現状ステータス]
+- 実装済み: core, api（型定義/契約）, worker（IndexedDB, コマンド処理, Pub/Sub）, ui-* 群, app、bff、cors-proxy。
+- 配置/運用: bff と cors-proxy は Cloudflare Workers として独立デプロイ（packages/bff, packages/cors-proxy に実装と wrangler スクリプト）。
 
 ###  モジュール一覧と依存関係（概要）
 
-- サーバサイド
+- サーバサイド（実装）
   - bff: OAuth2 認証仲介（Google/Microsoft/GitHub）。Cloudflare Worker。
   - cors-proxy: 外部オープンデータ/API への CORS 制約回避プロキシ（bff 認証必須）。
-- クライアントサイド
+- クライアントサイド（実装）
   - core: アプリ共通の型・定数・ユーティリティ（データモデル、DBスキーマの型など）。
   - api: UI 層と Worker 層の通信契約（Comlink インターフェイス）。
   - worker: DB 操作、コマンド処理、Pub/Sub 通知などバックエンド的役割。
@@ -29,8 +33,8 @@ ui-i18n → (独立)
 
 ```
 +-----------------------+        +---------------------+
-|   Cloudflare Workers  |        |     GitHub Pages    |
-|  (Server-side)        |        |   (Client-side)     |
+|   Cloudflare Workers  |        |     Static Host     |
+|  (Server-side, plan)  |        |   (Client-side)     |
 +-----------------------+        +---------------------+
 |  bff      cors-proxy  |        |  app                |
 +----^------------^-----+        |   |                 |
@@ -55,7 +59,7 @@ ui-i18n → (独立)
 ```
 
 - UI は ui-client を介して api を呼び出し、Comlink で worker に委譲。worker は core の型・規約を用いて DB を更新・購読通知を行う。
-- サーバサイド（bff/cors-proxy）は必要時のみ介在し、クライアント内のアーキテクチャからは分離。
+- サーバサイド（bff/cors-proxy）は必要時のみ介在（クライアント単体でも動作可能だが、認証や外部API利用時はこれらを利用）。
 
 
 ### データ・フロー要約
