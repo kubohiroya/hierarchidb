@@ -7,9 +7,8 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { TreeToggleButtonGroup, type TreeConfig } from '@hierarchidb/ui-core';
 import { useNavigate } from 'react-router';
 import { useCallback } from 'react';
-import { loadAppConfig } from '~/loader.ts';
-import { useLoaderData } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAppConfig } from '../contexts/AppConfigContext';
 
 // Tree configurations for t and r trees
 const treeConfigs: TreeConfig[] = [
@@ -31,12 +30,9 @@ const treeConfigs: TreeConfig[] = [
   },
 ];
 
-export const clientLoader = () => {
-  return loadAppConfig();
-};
-
 export default function Index() {
-  const { appPrefix, appTitle, appDescription, appHomepage } = useLoaderData();
+  // Get app config from context
+  const { appPrefix, appTitle, appDescription, appHomepage } = useAppConfig();
   const navigate = useNavigate();
 
   // SessionStorage key pattern for page node IDs

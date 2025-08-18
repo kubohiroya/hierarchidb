@@ -8,7 +8,7 @@
     "dev": "react-router dev",
     "build": "react-router build --mode production",
     "build:dev": "react-router build --mode development",
-    "preview": "react-router preview",
+    "preview": "vite preview --config vite.preview.config.ts",
     "typecheck": "tsc --noEmit",
     "license-check": "license-checker --json --out ../../docs/licenses.json",
     "license-check:summary": "license-checker --summary --out ../../docs/licenses-summary.txt",

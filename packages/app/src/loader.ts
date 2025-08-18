@@ -68,7 +68,7 @@ export type LoadTreeNodeActionReturn = {
   action: TreeNodeAction | undefined;
 } & LoadTreeNodeTypeReturn;
 
-export async function loadAppConfig(): Promise<LoadAppConfigReturn> {
+export function loadAppConfig(): LoadAppConfigReturn {
   const {
     VITE_APP_PREFIX,
     VITE_APP_NAME,
@@ -188,8 +188,8 @@ export async function loadTreeNodeAction({
   };
 }
 
-export function useAppConfig() {
-  return useRouteLoaderData('/info') as LoadAppConfigReturn;
+export function useAppConfig(): LoadAppConfigReturn {
+  return loadAppConfig();
 }
 
 export function useWorkerAPIClient() {

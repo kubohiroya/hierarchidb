@@ -1,8 +1,8 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
 import { createTheme, CssBaseline, LinearProgress, ThemeProvider } from '@mui/material';
 import { StrictMode } from 'react';
+import { AppConfigProvider, useAppConfig } from './contexts/AppConfigContext';
 
-import { loadAppConfig } from './loader';
 import * as pkg from 'react-helmet-async';
 const { Helmet, HelmetProvider } = pkg;
 
@@ -31,35 +31,30 @@ export function HydrateFallback() {
   return <LinearProgress color="inherit" />;
 }
 
-const appConfig = await loadAppConfig();
+function AppContent() {
+  const { appTitle, appDescription, appFavicon } = useAppConfig();
+
+  return (
+    <StrictMode>
+      <HelmetProvider>
+        <Helmet>
+          <title>{appTitle}</title>
+          {appDescription ? <meta name="description" content={appDescription} /> : null}
+          <link rel="icon" href={appFavicon} type="image/svg+xml" />
+        </Helmet>
+        <Outlet />
+      </HelmetProvider>
+    </StrictMode>
+  );
+}
 
 export default function App() {
   return (
-    <ThemeProvider theme={createTheme()}>
-      <CssBaseline />
-      <StrictMode>
-        <HelmetProvider>
-          <Helmet>
-            <title>{appConfig.appTitle}</title>
-            {appConfig.appDescription ? (
-              <meta name="description" content={appConfig.appDescription} />
-            ) : null}
-            <link rel="icon" href={appConfig.appFavicon} type="image/svg+xml" />
-          </Helmet>
-          <Outlet />
-        </HelmetProvider>
-      </StrictMode>
-    </ThemeProvider>
-  );
-  /*
-    const theme = createTheme();
-  return (
-    <ThemeProvider theme={theme}>
-      <StrictMode>
+    <AppConfigProvider>
+      <ThemeProvider theme={createTheme()}>
         <CssBaseline />
-        <Outlet />;
-      </StrictMode>
-    </ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </AppConfigProvider>
   );
-   */
 }
