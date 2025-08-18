@@ -11,6 +11,15 @@ export { InlineIcon } from './components/InlineIcon/InlineIcon';
 export { BackActionButton } from './components/BackActionButton/BackActionButton';
 export { CloseActionButton } from './components/CloseActionButton/CloseActionButton';
 
+// User interface components
+export { UserAvatar } from './components/UserAvatar/UserAvatar';
+
+// Memory monitoring components
+export { 
+  MemoryUsageChart,
+  type MemoryUsageChartProps,
+} from './components/MemoryUsageChart';
+
 // Re-export theme utilities from ui-theme
 // Temporarily disabled until ui-theme package is properly configured
 // export {
@@ -29,6 +38,11 @@ export { CloseActionButton } from './components/CloseActionButton/CloseActionBut
 
 // Additional components
 export { AriaLiveRegion } from './components/AriaLiveRegion/AriaLiveRegion';
+export { 
+  ThemedLoadingScreen,
+  ThemedLinearProgress,
+  ThemedCircularProgress,
+} from './components/ThemedLoadingScreen';
 
 // Info components
 export {
@@ -55,3 +69,18 @@ export {
   type TreeConfig,
   type TreeToggleButtonGroupProps,
 } from './components/TreeToggleButtonGroup';
+
+// Utilities
+export { createLogger } from './utils/logger';
+export {
+  getStoredThemeMode,
+  getSystemTheme,
+  getActualTheme,
+  getThemeBackgroundColor,
+  getThemeTextColor,
+  getThemeIcon,
+  getThemeDisplayName,
+  getBackgroundColorForTheme,
+  getTextColorForTheme,
+  type ThemeMode,
+} from './utils/theme';

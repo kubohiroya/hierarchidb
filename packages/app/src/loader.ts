@@ -105,7 +105,7 @@ export function loadAppConfig(): LoadAppConfigReturn {
 }
 
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
-  const appConfig = await loadAppConfig();
+  const appConfig = loadAppConfig();
   return {
     ...appConfig,
     client: await WorkerAPIClient.getSingleton(),

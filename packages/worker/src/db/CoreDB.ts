@@ -98,6 +98,10 @@ export class CoreDB extends Dexie {
     return await this.trees.get(treeId);
   }
 
+  async getTrees(): Promise<Tree[]> {
+    return this.trees.toArray();
+  }
+
   // CRUD operations for TreeNode
   async getNode(nodeId: TreeNodeId): Promise<TreeNode | undefined> {
     return await this.nodes.get(nodeId);

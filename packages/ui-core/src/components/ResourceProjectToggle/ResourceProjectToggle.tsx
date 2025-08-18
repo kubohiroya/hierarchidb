@@ -20,8 +20,8 @@ interface ResourceProjectToggleProps {
   selected?: ResourceProjectType;
   /** Current pageNodeId to preserve */
   currentPageNodeId?: string;
-  /** App prefix for routing */
-  appPrefix: string;
+  /** App prefix for routing (optional, only needed if not using React Router basename) */
+  appPrefix?: string;
   /** Callback to get saved pageNodeId for a given type */
   getSavedPageNodeId: (type: 'resources' | 'projects') => string | null;
   /** Callback to save pageNodeId for a given type */
@@ -40,7 +40,7 @@ type TreeNodeId = string;
 export function ResourceProjectToggle({
   selected = 'none',
   currentPageNodeId,
-  appPrefix,
+  appPrefix: _appPrefix,
   getSavedPageNodeId,
   savePageNodeId,
   getNodeContext,
@@ -79,11 +79,11 @@ export function ResourceProjectToggle({
     // Get saved pageNodeId for target type
     const savedPageNodeId = getSavedPageNodeId(targetType);
 
-    // Navigate to target page
+    // Navigate to target page (don't include appPrefix since it's already in basename)
     const basePath = targetType === 'resources' ? 'r' : 'p';
     const targetPath = savedPageNodeId
-      ? `/${appPrefix}/t/${basePath}/${savedPageNodeId}`
-      : `/${appPrefix}/t/${basePath}`;
+      ? `/t/${basePath}/${savedPageNodeId}`
+      : `/t/${basePath}`;
 
     navigate(targetPath, { replace: true });
   };

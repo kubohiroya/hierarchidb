@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // import { convertCorsProxyURL } from "@/domains/resources/shapes/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
-import { devLog } from '../../../utils/logger';
+import { createLogger } from '@hierarchidb/ui-core';
+
+const logger = createLogger('File');
 import { validateExternalURL } from '../../../utils/validation';
 import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 
@@ -210,7 +212,7 @@ export function useUrlDownload({
       if (errorMessage.includes('Authentication') || errorMessage.includes('401')) {
         // Try to refresh token once before giving up
         if (retryCountRef.current === 0) {
-          devLog('Received auth error, attempting token refresh...');
+          logger.devLog('Received auth error, attempting token refresh...');
           retryCountRef.current++;
 
           try {
@@ -231,7 +233,7 @@ export function useUrlDownload({
               }
             }
           } catch (refreshError) {
-            devLog('Token refresh failed:', refreshError);
+            logger.devLog('Token refresh failed:', String(refreshError));
           }
         }
 

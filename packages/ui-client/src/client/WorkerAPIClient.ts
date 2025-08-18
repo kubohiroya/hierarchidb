@@ -6,6 +6,7 @@
 import * as Comlink from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/api';
 import { SingletonMixin } from '@hierarchidb/core';
+import { createWorker } from '../worker-loader';
 
 /**
  * Singleton client for Worker services management
@@ -14,15 +15,15 @@ export class WorkerAPIClient {
   private worker: Worker | undefined;
   private workerAPIProxy: Comlink.Remote<WorkerAPI> | undefined;
 
-  /**t  * Initialize Worker and establish Comlink connection
+  /**
+   * Initialize Worker and establish Comlink connection
    */
   static async getSingleton(): Promise<WorkerAPIClient> {
     return SingletonMixin.getSingleton(WorkerAPIClient.name, async () => {
       const client = new WorkerAPIClient();
-      // Create Worker instance
-      client.worker = new Worker(new URL('../../../worker/dist/worker.js', import.meta.url), {
-        type: 'module',
-      });
+      
+      // Create Worker instance using the loader
+      client.worker = createWorker();
 
       // Wrap with Comlink
       client.workerAPIProxy = Comlink.wrap<WorkerAPI>(client.worker);

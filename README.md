@@ -4,7 +4,9 @@ High-performance tree-structured data management framework for browser environme
 
 ## 概要
 
-**HierarchiDB** は、ツリー構造データをブラウザ環境で高速かつ効率的に管理するための先進的なフレームワークです。Web Worker による並列処理、IndexedDB による永続化、プラグインシステムによる拡張性を特徴とし、大規模データセットでも高いパフォーマンスを実現します。
+**HierarchiDB** は、ツリー構造をもつデータをブラウザ環境で効率的かつ一貫性を保ちながら管理・操作するための **高汎用性フレームワーク** です。アプリケーションの UI 層と Worker 層を明確に分離し、Dexie を用いた IndexedDB 永続化と Comlink 経由の非同期通信を組み合わせることで、堅牢かつ拡張性の高い構造を実現しています。
+
+本フレームワークは特定ドメインに依存しない汎用コアを提供し、地理情報システム（GIS）、プロジェクト管理、データカタログなど、階層型リソース管理を必要とするあらゆる分野に適用可能です。
 
 ## 主な特徴
 
@@ -54,7 +56,8 @@ hierarchidb/
 
 ### ドキュメント運用
 
-- 命名規則: docs/00-000-doc-naming.md（名前順ソートでも順序が崩れないルール）
+- 命名規則: `docs/番号-タイトル.md` 形式（例: `01-overview.md`, `05-0-architecture.md`）
+- 番号順ソートで論理的な順序を保証
 
 #### ドキュメント分析ツールの使い方（本作業の成果物）
 
@@ -131,8 +134,8 @@ cp packages/src/.env.example packages/src/.env.production
 主な環境変数：
 - `VITE_APP_NAME`: アプリケーションのベースパス（GitHub Pages デプロイ時に使用）
 - `VITE_APP_TITLE`: アプリケーションタイトル
-- `VITE_API_URL`: API エンドポイント
 - `VITE_BFF_BASE_URL`: BFF サービスの URL
+- `VITE_USE_HASH_ROUTING`: ハッシュルート方式を有効化
 
 ### Cloudflare Workers のセットアップ
 

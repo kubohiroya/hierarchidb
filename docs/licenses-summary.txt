@@ -1,6 +1,11 @@
-├─ MIT: 55
-├─ UNKNOWN: 5
-├─ UNLICENSED: 5
-├─ Apache-2.0: 4
-├─ Unlicense: 1
-└─ BSD-3-Clause: 1
+License Summary
+Generated: 2025-08-18T12:15:50.921Z
+
+Internal Packages (@hierarchidb/*): 12 (all MIT licensed)
+External Dependencies: 54
+
+External License Distribution:
+  MIT: 47
+  Apache-2.0: 5
+  Unlicense: 1
+  BSD-3-Clause: 1

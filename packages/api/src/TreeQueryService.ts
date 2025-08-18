@@ -13,6 +13,8 @@ import type {
 } from '@hierarchidb/core';
 
 export interface TreeQueryService {
+  getTrees(): Promise<Tree[]>;
+  
   getTree(payload: GetTreePayload): Promise<Tree | undefined>;
 
   // Basic query operations

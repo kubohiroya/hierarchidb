@@ -28,6 +28,20 @@ HierarchiDB is a high-performance tree-structured data management framework for 
 - `pnpm --filter @hierarchidb/[package] test` - Test specific package
 - `pnpm storybook:ui-core` - Launch UI component Storybook
 
+### Turborepo Usage (Development Operations)
+- **Watch specific packages**: `turbo run dev --filter=@hierarchidb/core --filter=@hierarchidb/api --parallel`
+- **Build with dependencies**: `turbo run build --filter=@hierarchidb/app` (builds all dependencies first)
+- **Force rebuild without cache**: `TURBO_FORCE=true turbo run build --filter=@hierarchidb/core`
+- **Development workflow**:
+  1. Start app with HMR: `pnpm dev --filter @hierarchidb/app`
+  2. Watch library changes: `pnpm --filter @hierarchidb/worker dev` (runs tsc --watch)
+  3. For multiple packages: `turbo run dev --filter=@hierarchidb/app --filter=@hierarchidb/core --parallel`
+
+### Document Analysis Tool
+- **Analyze docs structure**: `pnpm analyze:docs` - Generates report in docs/_analysis.md
+- Checks document flow, similarity between chapters, and suggests missing sections
+- Reports help identify gaps and redundancies in documentation
+
 ### Build Verification Checklist
 After making changes, ALWAYS run in order:
 1. `pnpm typecheck` - Must pass without errors
@@ -89,6 +103,15 @@ app (main application)
 - Non-null assertions (`!`) prohibited - use proper null checks
 - All imports must use `~/*` paths (configured via tsconfig)
 - `tsc-alias` resolves paths during build
+- Use `readonly` for function parameters
+- Magic strings/numbers forbidden - use constants with `as const`
+- Prefer early returns to reduce nesting
+- Use assertion functions instead of non-null assertions:
+```typescript
+function assertNonNull<T>(v: T | null | undefined, msg='required'): asserts v is T {
+  if (v == null) throw new Error(msg);
+}
+```
 
 ### Import Paths
 - Use `~/*` for package-internal imports
@@ -100,6 +123,19 @@ app (main application)
 - Required accessibility attributes
 - Virtual scrolling for lists >100 items (TanStack Virtual)
 - Use MUI theme tokens, no hardcoded styles
+
+### UI Module Structure
+UI functionality is split into separate packages:
+- `@hierarchidb/ui-core` - Basic UI components (MUI, theme, notifications, icons)
+- `@hierarchidb/ui-auth` - Authentication components (OAuth2/OIDC, auth context)
+- `@hierarchidb/ui-routing` - React Router navigation and URL helpers
+- `@hierarchidb/ui-i18n` - Internationalization with i18next
+- `@hierarchidb/ui-client` - Worker connection management, React hooks
+- `@hierarchidb/ui-layout` - Layout components
+- `@hierarchidb/ui-navigation` - Navigation components
+- `@hierarchidb/ui-file` - File handling components
+- `@hierarchidb/ui-monitoring` - Performance monitoring
+- `@hierarchidb/ui-tour` - User onboarding tours
 
 ### Worker Rules
 - UI never directly accesses IndexedDB
@@ -160,6 +196,12 @@ VITE_APP_NAME=
 VITE_APP_NAME=hierarchidb
 # Sets base path for deployment
 ```
+
+### Security Configuration Policy
+- **Non-sensitive values** (client IDs, redirect URLs): Managed in `.env` files, added to `.gitignore`
+- **Sensitive values** (client secrets, JWT keys): Use Cloudflare Secrets (`wrangler secret put`)
+- Never commit secrets to repository
+- Use environment-specific configuration files
 
 ### React Router Base Path
 Configured in `packages/app/react-router.config.ts` and `vite.config.ts` using `VITE_APP_NAME`

@@ -90,6 +90,10 @@ export class WorkerAPIImpl implements WorkerAPI {
     return this.coreDB.getTree(params.treeId);
   }
 
+  async getTrees(): Promise<Tree[]> {
+    return this.coreDB.getTrees();
+  }
+
   /**
    * Get command processor instance
    */

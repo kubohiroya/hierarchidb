@@ -10,6 +10,9 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
   const appName = env.VITE_APP_NAME || '';
   // VITE_APP_NAMEが設定されている場合のみbaseを設定
   const base = appName ? `/${appName}/` : '/';
+  
+  // Hash routing設定を環境変数から取得
+  const useHashRouting = env.VITE_USE_HASH_ROUTING !== 'false';
 
   const isDev = mode === 'development';
 
@@ -109,7 +112,7 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
       },
     },
     build: {
-      outDir: 'build/client',
+      outDir: 'dist',
       // production環境ではソースマップを無効化
       sourcemap: mode === 'development',
       rollupOptions: {

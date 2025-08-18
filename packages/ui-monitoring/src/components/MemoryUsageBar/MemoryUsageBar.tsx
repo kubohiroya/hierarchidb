@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/core';
+import { createLogger } from '@hierarchidb/ui-core';
 
-import { devWarn } from '../../utils/logger';
+const logger = createLogger('Monitor');
 export interface MemoryUsageBarProps {
   /** 幅 (例: '300px', '100%') */
   width?: string | number;
@@ -139,7 +140,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
         setIsSupported(false);
       }
     } catch (error) {
-      devWarn('Memory measurement failed:', error);
+      logger.devWarn('Memory measurement failed:', String(error));
 
       // エラー時は古いAPIにフォールバック
       if ('memory' in performance) {

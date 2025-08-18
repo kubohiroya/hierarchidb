@@ -84,7 +84,7 @@ export default function Index() {
         heading={appTitle}
         description={appDescription}
         githubUrl={appHomepage}
-        infoPath={`/${appPrefix}/info`}
+        onInfoClick={() => navigate('/info')}
         showInfoButton={true}
         showHelpButton={false}
       >
@@ -96,7 +96,6 @@ export default function Index() {
         <TreeToggleButtonGroup
           trees={treeConfigs}
           selectedTreeId={null}
-          appPrefix={appPrefix}
           getSavedPageNodeId={getSavedPageNodeId}
           savePageNodeId={savePageNodeId}
           onTreeSelect={handleTreeSelect}

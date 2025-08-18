@@ -7,7 +7,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Avatar, Box } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import Gravatar from 'react-gravatar';
-import { preloadImage, getGoogleImageVariants } from '@hierarchidb/core';
+import { preloadImage, getGoogleImageVariants } from './imageUtils';
 
 interface UserAvatarProps {
   /** User's profile picture URL (potentially unreliable) */
@@ -47,7 +47,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     }
 
     const testGoogleVariants = async () => {
+      // 【エラー処理】: バリアント取得失敗時の対応 🟢  
+      // 【テスト対応】: モックで空配列が返された場合のUnhandled Rejection回避
       const variants = getGoogleImageVariants(pictureUrl);
+      
+      if (!variants || !Array.isArray(variants) || variants.length === 0) {
+        // 【フォールバック処理】: バリアントが無効な場合は即座に失敗とマーク
+        setGoogleImageFailed(true);
+        return;
+      }
 
       for (const variant of variants) {
         const success = await preloadImage(variant);

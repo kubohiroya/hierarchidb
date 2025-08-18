@@ -6,18 +6,18 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build --mode production",
-    "build:dev": "react-router build --mode development",
+    "build": "react-router build --mode production && node scripts/fix-spa-build.js",
+    "build:dev": "react-router build --mode development && node scripts/fix-spa-build.js",
+    "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
     "preview": "vite preview --config vite.preview.config.ts",
     "typecheck": "tsc --noEmit",
-    "license-check": "license-checker --json --out ../../docs/licenses.json",
-    "license-check:summary": "license-checker --summary --out ../../docs/licenses-summary.txt",
-    "license-check:csv": "license-checker --csv --out ../../docs/licenses.csv",
-    "license-check:all": "pnpm run license-check && pnpm run license-check:summary && pnpm run license-check:csv && echo '✅ License reports generated in docs/'",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "predeploy": "pnpm run build",
-    "deploy": "gh-pages -d build/client -r git@github.com:kubohiroya/hierarchidb.git"
+    "deploy": "gh-pages -d build/client -r git@github.com:kubohiroya/hierarchidb.git",
+    "test:github-pages": "node scripts/test-github-pages.js",
+    "debug:copy": "cp scripts/debug-*.html build/client/ && cp scripts/minimal-*.html build/client/",
+    "debug:serve": "npx serve build/client -l 8080"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -33,6 +33,7 @@
     "@hierarchidb/ui-navigation": "workspace:*",
     "@hierarchidb/ui-routing": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/ui-treeconsole": "workspace:*",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@react-router/fs-routes": "^7.8.1",
@@ -59,5 +60,6 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
-  }
+  },
+  "license": "MIT"
 }
