@@ -1,46 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/hierarchidb/favicon.svg" />
+<html>
+  <head>
+    <meta charset="utf-8">
     <title>HierarchiDB</title>
-</head>
-<body>
-<div id="root"></div>
-<script>
-  // React Router SPA mode initialization
-  window.__reactRouterContext = {
-    "basename": "/hierarchidb/",
-    "future": {
-      "unstable_middleware": false,
-      "unstable_optimizeDeps": false,
-      "unstable_splitRouteModules": false,
-      "unstable_subResourceIntegrity": false,
-      "unstable_viteEnvironmentApi": false
-    },
-    "routeDiscovery": {"mode": "initial"},
-    "ssr": false,
-    "isSpaMode": true
-  };
-  
-  // Create a minimal stream for SPA mode
-  window.__reactRouterContext.stream = new ReadableStream({
-    start(controller) {
-      window.__reactRouterContext.streamController = controller;
-      // Immediately provide empty loader data for SPA mode
-      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]\n');
-      controller.close();
-    }
-  }).pipeThrough(new TextEncoderStream());
-</script>
-<script type="module">
-  import "/hierarchidb/assets/manifest-1288d6fe.js";
-  import * as route0 from "/hierarchidb/assets/root.js";
-  
-  window.__reactRouterRouteModules = {"root": route0};
-  
-  import("/hierarchidb/assets/entry.client.js");
-</script>
-</body>
+    <script type="text/javascript">
+      // GitHub Pages SPA redirect script
+      // This script takes the current location and replaces it with the base URL
+      // plus a query parameter to preserve the path for the SPA router
+      var pathSegmentsToKeep = 1; // Keep "hierarchidb" segment
+
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body>
+  </body>
 </html>
