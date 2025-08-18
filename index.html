@@ -62,8 +62,7 @@
   window.__reactRouterContext.stream = new ReadableStream({
     start(controller) {
       window.__reactRouterContext.streamController = controller;
-      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]
-');
+      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]' + String.fromCharCode(10));
       controller.close();
     }
   }).pipeThrough(new TextEncoderStream());
