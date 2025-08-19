@@ -3,19 +3,21 @@
  * @description StyleMap icon component
  */
 
-import React from 'react';
+import { BaseIcon, type BaseIconProps } from '@hierarchidb/ui-core';
 
-export interface StyleMapIconProps {
-  nodeId: string;
-  size?: number;
+export interface StyleMapIconProps extends BaseIconProps {
+  nodeId?: string;
 }
 
-export const StyleMapIcon: React.FC<StyleMapIconProps> = ({ nodeId: _nodeId, size = 24 }) => {
+export const StyleMapIcon: React.FC<StyleMapIconProps> = ({ 
+  nodeId: _nodeId, 
+  size = 24,
+  ...props 
+}) => {
   return (
-    <div style={{ width: size, height: size }}>
-      {/* TODO: Implement StyleMap icon */}
+    <BaseIcon size={size} {...props} testId="stylemap-icon">
       📊
-    </div>
+    </BaseIcon>
   );
 };
 

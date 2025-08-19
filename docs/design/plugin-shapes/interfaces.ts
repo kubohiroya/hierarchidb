@@ -824,11 +824,9 @@ export type {
   // Entities
   ShapesEntity,
   ShapesWorkingCopy,
-
   // Styles
   ShapeStyle,
   MapLibreStyleOutput,
-
   // WebWorker Messages
   WorkerMessage,
   BatchDownloadMessage,
@@ -838,32 +836,26 @@ export type {
   ProcessingProgressMessage,
   ProcessingCompleteMessage,
   ProcessingErrorMessage,
-
   // Vector Tiles
   VectorTileInfo,
   QuadTreeNode,
   TileGenerationOptions,
-
   // Database
   VectorTileCache,
   BatchProcessingTask,
   ShapesMetadata,
-
   // API
   CreateShapesRequest,
   UpdateShapesRequest,
   BatchImportRequest,
   VectorTileGenerationRequest,
   ApiResponse,
-
   // BaseMap Integration
   BaseMapShapesIntegration,
   ShapesLayer,
   LayerConfig,
-
   // Configuration
   ShapesPluginConfig,
-
   // Utilities
   CoordinateReferenceSystem,
   GeometryStats,

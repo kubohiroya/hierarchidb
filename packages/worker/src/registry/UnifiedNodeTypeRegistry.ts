@@ -5,18 +5,20 @@
  * References: docs/7-aop-architecture.md, ../eria-cartograph/app0/src/shared/services/ResourceDefinitionRegistry.ts
  */
 
-import type { TreeNodeType, TreeNodeId } from '@hierarchidb/core';
-import type { INodeTypeRegistry, IPluginRegistry } from '@hierarchidb/core';
+import type {
+  IPluginRegistry,
+  TreeNodeType,
+} from '@hierarchidb/core';
+import { workerLog, workerWarn } from '../utils/workerLogger';
 import type { NodeTypeConfig } from './types';
 import type {
   BaseEntity,
   BaseSubEntity,
   BaseWorkingCopy,
-  UnifiedPluginDefinition,
   EntityHandler,
+  UnifiedPluginDefinition,
   WorkerPluginRouterAction,
-} from './types/unified-plugin';
-import { workerWarn, workerLog } from '../utils/workerLogger';
+} from './unified-plugin';
 
 /**
  * Extended registry interface with UnifiedPluginDefinition support
@@ -27,9 +29,7 @@ export interface IUnifiedNodeTypeRegistry extends IPluginRegistry {
     TEntity extends BaseEntity,
     TSubEntity extends BaseSubEntity,
     TWorkingCopy extends BaseWorkingCopy,
-  >(
-    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
-  ): void;
+  >(definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>): void;
 
   // Plugin retrieval
   getPluginDefinition(nodeType: TreeNodeType): UnifiedPluginDefinition | undefined;
@@ -87,9 +87,9 @@ export class UnifiedNodeTypeRegistry implements IUnifiedNodeTypeRegistry {
    * Register a unified plugin definition
    */
   registerPlugin<
-    TEntity extends import('./types/unified-plugin').BaseEntity,
-    TSubEntity extends import('./types/unified-plugin').BaseSubEntity,
-    TWorkingCopy extends import('./types/unified-plugin').BaseWorkingCopy,
+    TEntity extends import('./unified-plugin').BaseEntity,
+    TSubEntity extends import('./unified-plugin').BaseSubEntity,
+    TWorkingCopy extends import('./unified-plugin').BaseWorkingCopy,
   >(definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>): void {
     const { nodeType } = definition;
 
@@ -138,7 +138,7 @@ export class UnifiedNodeTypeRegistry implements IUnifiedNodeTypeRegistry {
   /**
    * Generic register method
    */
-  register(nodeType: TreeNodeType, config: any): void {
+  register(_nodeType: TreeNodeType, config: NodeTypeConfig): void {
     if (this.isUnifiedPluginDefinition(config)) {
       this.registerPlugin(config);
     } else {
@@ -360,7 +360,7 @@ export class UnifiedNodeTypeRegistry implements IUnifiedNodeTypeRegistry {
   /**
    * Type guard to check if config is UnifiedPluginDefinition
    */
-  private isUnifiedPluginDefinition(config: any): config is UnifiedPluginDefinition {
+  private isUnifiedPluginDefinition(config: NodeTypeConfig): config is UnifiedPluginDefinition {
     return (
       config &&
       typeof config === 'object' &&

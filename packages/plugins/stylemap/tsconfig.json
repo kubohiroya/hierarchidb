@@ -21,6 +21,13 @@
     }
   },
   "include": ["src/**/*", "plugin.config.ts"],
-  "exclude": ["dist", "node_modules", "**/*.test.ts", "**/*.test.tsx"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/components/**/*",
+    "src/ui/components/**/*"
+  ],
   "references": [{ "path": "../../core" }, { "path": "../../worker" }]
 }

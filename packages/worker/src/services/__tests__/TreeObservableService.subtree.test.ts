@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { firstValueFrom, take, toArray, timeout } from 'rxjs';
-import { TreeObservableServiceImpl } from '../TreeObservableServiceImpl';
 import type {
   CommandEnvelope,
-  TreeNodeId,
   ObserveSubtreePayload,
   Timestamp,
+  TreeNodeId,
 } from '@hierarchidb/core';
 import { generateUUID } from '@hierarchidb/core';
-import { createMockCoreDB, setupTestData, type MockCoreDB } from './TreeObservableService.setup';
+import { firstValueFrom, take, timeout, toArray } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TreeObservableServiceImpl } from '../TreeObservableServiceImpl';
+import { createMockCoreDB, type MockCoreDB, setupTestData } from './TreeObservableService.setup';
 
 /**
  * TreeObservableService - 部分木監視機能のテスト

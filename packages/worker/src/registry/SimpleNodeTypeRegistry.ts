@@ -4,16 +4,15 @@
  * This replaces the old NodeTypeRegistry.ts in the worker package
  */
 
-import type { TreeNodeType } from '@hierarchidb/core';
+import type { ISimpleNodeTypeRegistry, NodeTypeConfig, TreeNodeType } from '@hierarchidb/core';
 import { BaseNodeTypeRegistry, TreeNodeTypes } from '@hierarchidb/core';
-import type { ISimpleNodeTypeRegistry, NodeTypeConfig } from '@hierarchidb/core';
 
 /**
  * Simple registry for managing basic node type configurations
  * Used for lightweight node type management without full plugin features
  */
 export class SimpleNodeTypeRegistry
-  extends BaseNodeTypeRegistry
+  extends BaseNodeTypeRegistry<NodeTypeConfig>
   implements ISimpleNodeTypeRegistry
 {
   constructor() {
@@ -109,8 +108,11 @@ export class SimpleNodeTypeRegistry
       case TreeNodeTypes.Trash:
       case TreeNodeTypes.folder:
         return 'folder';
+      case TreeNodeTypes.file:
+        return 'file';
       default:
-        throw new Error(`Default icon not found for node type: ${nodeType}`);
+        // Default to 'file' icon for unknown types in a simple registry
+        return 'file';
     }
   }
 
@@ -156,8 +158,8 @@ export class SimpleNodeTypeRegistry
 
     return types
       .sort((a, b) => {
-        const orderA = (a[1] as NodeTypeConfig).sortOrder ?? 999;
-        const orderB = (b[1] as NodeTypeConfig).sortOrder ?? 999;
+        const orderA = a[1].sortOrder ?? 999;
+        const orderB = b[1].sortOrder ?? 999;
         return orderA - orderB;
       })
       .map(([type]) => type);

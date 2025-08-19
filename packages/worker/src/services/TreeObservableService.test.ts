@@ -13,23 +13,23 @@
  * - TreeObservableService.error.test.ts: エラーハンドリング・リソース管理
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Subject, firstValueFrom, take, toArray, timeout } from 'rxjs';
-import { TreeObservableServiceImpl } from './TreeObservableServiceImpl';
-import { CoreDB } from '../db/CoreDB';
 import type {
   CommandEnvelope,
-  TreeNodeId,
-  TreeNode,
-  TreeChangeEvent,
-  Timestamp,
-  TreeNodeType,
-  ObserveNodePayload,
   ObserveChildrenPayload,
+  ObserveNodePayload,
   ObserveSubtreePayload,
   ObserveWorkingCopiesPayload,
+  Timestamp,
+  TreeChangeEvent,
+  TreeNode,
+  TreeNodeId,
+  TreeNodeType,
 } from '@hierarchidb/core';
 import { generateUUID } from '@hierarchidb/core';
+import { firstValueFrom, Subject, take, timeout, toArray } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CoreDB } from '../db/CoreDB';
+import { TreeObservableServiceImpl } from './TreeObservableServiceImpl';
 
 // Mock types for testing
 type MockCoreDB = {

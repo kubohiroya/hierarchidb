@@ -3,7 +3,7 @@ import type { TreeNodeType } from '@hierarchidb/core';
 /**
  * Configuration for a node type
  */
-export interface NodeTypeConfig {
+export type NodeTypeConfig = {
   icon?: string;
   color?: string;
   displayName?: string;
@@ -20,7 +20,7 @@ export interface NodeTypeConfig {
 /**
  * Registry for managing node type configurations
  */
-export interface INodeTypeRegistry {
+export type INodeTypeRegistry = {
   registerNodeType(nodeType: TreeNodeType, config: NodeTypeConfig): void;
   unregisterNodeType(nodeType: TreeNodeType): void;
   isRegistered(nodeType: TreeNodeType): boolean;

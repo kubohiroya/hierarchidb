@@ -3,11 +3,11 @@
  * @description Unit tests for SubEntityHandler advanced sub-entity operations
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Dexie from 'dexie';
-import { SubEntityHandler } from './SubEntityHandler';
-import type { ExtendedSubEntity } from './SubEntityHandler';
 import type { TreeNodeId } from '@hierarchidb/core';
+import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ExtendedSubEntity } from './SubEntityHandler';
+import { SubEntityHandler } from './SubEntityHandler';
 
 describe('SubEntityHandler', () => {
   let db: Dexie;

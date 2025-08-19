@@ -1,6 +1,6 @@
-import { Outlet, useLoaderData } from 'react-router-dom';
-import type { LoaderFunctionArgs } from 'react-router-dom';
-import { loadTree, LoadTreeArgs } from '~/loader';
+import { Outlet, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { loadTree, LoadTreeArgs } from "~/loader";
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   return await loadTree(args.params as LoadTreeArgs);

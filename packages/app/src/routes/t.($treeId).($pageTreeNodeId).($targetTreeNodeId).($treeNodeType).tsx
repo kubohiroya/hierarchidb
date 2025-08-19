@@ -1,29 +1,451 @@
-import { Outlet, useLoaderData } from 'react-router-dom';
-import type { LoaderFunctionArgs } from 'react-router-dom';
-import { loadTreeNodeType, LoadTreeNodeTypeArgs } from '~/loader';
+import { useParams, useNavigate, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { useState, useCallback, useMemo } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Button,
+  Box,
+  Typography,
+  Alert,
+  LinearProgress,
+  Chip,
+} from "@mui/material";
+import {
+  Close as CloseIcon,
+  RestoreFromTrash as RestoreIcon,
+  Clear as RemoveIcon,
+} from "@mui/icons-material";
+import { TreeConsolePanel } from "@hierarchidb/ui-treeconsole-base";
+import { loadTargetTreeNode, LoadTargetTreeNodeArgs } from "~/loader";
+import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import type { TreeNodeId, TreeNode } from "@hierarchidb/core";
+import type { TreeNodeData } from "@hierarchidb/ui-treeconsole-base";
+import { convertTreeNodeToTreeNodeData, createDefaultColumns } from "~/utils/treeNodeConverter";
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  return await loadTreeNodeType(args.params as LoadTreeNodeTypeArgs);
+  const params = args.params as LoadTargetTreeNodeArgs & { treeNodeType: string };
+  const result = await loadTargetTreeNode(params);
+  
+  // Load trash items if targetTreeNodeId is "trash" or trash root
+  const client = result.client;
+  const api = client.getAPI();
+  const tree = result.tree;
+  
+  let trashRootId: TreeNodeId | undefined;
+  let trashItems: TreeNode[] = [];
+  
+  if (tree) {
+    trashRootId = tree.treeTrashRootNodeId;
+    
+    // Determine which node to load children from
+    const nodeToLoad = params.targetTreeNodeId === "trash" 
+      ? trashRootId 
+      : params.targetTreeNodeId;
+    
+    // Load children of the trash node
+    if (nodeToLoad) {
+      try {
+        trashItems = await api.getChildren({
+          parentTreeNodeId: nodeToLoad as TreeNodeId,
+        });
+      } catch (error) {
+        console.error("Failed to load trash items:", error);
+      }
+    }
+  }
+  
+  return {
+    ...result,
+    trashRootId,
+    trashItems,
+    treeNodeType: params.treeNodeType,
+  };
 }
 
-export default function TLayout() {
-  const data = useLoaderData();
-  if (!data.treeNodeType) {
-    return;
-  }
+export default function TrashDialog() {
+  const { treeId, pageTreeNodeId, targetTreeNodeId, treeNodeType } = useParams();
+  const navigate = useNavigate();
+  const data = useLoaderData() as any;
+  
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Determine mode from treeNodeType
+  const mode = treeNodeType as "recover" | "delete";
+  const isRecoverMode = mode === "recover";
+  const isDeleteMode = mode === "delete";
+  
+  // Handle dialog close
+  const handleClose = () => {
+    navigate(`/t/${treeId}/${pageTreeNodeId}`);
+  };
+  
+  // Handle restore action with enhanced error handling and UX
+  const handleRestore = async () => {
+    if (selectedIds.length === 0) {
+      setError("Please select items to restore");
+      return;
+    }
+    
+    // Show confirmation dialog for multiple items
+    if (selectedIds.length > 1) {
+      if (!confirm(`Are you sure you want to restore ${selectedIds.length} items from the trash?`)) {
+        return;
+      }
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      const api = client.getAPI();
+      
+      const result = await api.recoverFromTrash({
+        payload: {
+          nodeIds: selectedIds as TreeNodeId[],
+        },
+        commandId: `recover-${Date.now()}`,
+        groupId: `group-${Date.now()}`,
+        kind: "recoverFromTrash",
+        issuedAt: Date.now(),
+      });
+      
+      if (result.success) {
+        // Success - show success message briefly, then close dialog
+        setError(null);
+        // TODO: Show success notification instead of alert
+        setTimeout(() => {
+          handleClose();
+          // TODO: Replace with proper refresh using React Router revalidation
+          window.location.reload();
+        }, 500);
+      } else {
+        setError(`Failed to restore items: ${result.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handle empty trash action with enhanced confirmation and error handling
+  const handleEmptyTrash = async () => {
+    if (!data.trashItems || data.trashItems.length === 0) {
+      setError("No items to delete");
+      return;
+    }
+    
+    // Enhanced confirmation dialog
+    const itemCount = data.trashItems.length;
+    const confirmMessage = `Are you sure you want to permanently remove all ${itemCount} items from the trash?
+
+⚠️ This action cannot be undone and all selected items will be permanently deleted.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      const api = client.getAPI();
+      
+      const allIds = data.trashItems.map((item: TreeNode) => item.treeNodeId);
+      
+      const result = await api.remove({
+        payload: {
+          nodeIds: allIds,
+        },
+        commandId: `delete-${Date.now()}`,
+        groupId: `group-${Date.now()}`,
+        kind: "remove",
+        issuedAt: Date.now(),
+      });
+      
+      if (result.success) {
+        // Success - show success message briefly, then close dialog
+        setError(null);
+        // TODO: Show success notification instead of alert
+        setTimeout(() => {
+          handleClose();
+          // TODO: Replace with proper refresh using React Router revalidation
+          window.location.reload();
+        }, 500);
+      } else {
+        setError(`Failed to remove items: ${result.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handle node click in trash (navigation within trash)
+  const handleNodeClick = useCallback((node: TreeNodeData) => {
+    // Navigate to the clicked node within trash
+    navigate(`/t/${treeId}/${pageTreeNodeId}/${node.id}/${mode}`);
+  }, [navigate, treeId, pageTreeNodeId, mode]);
+  
+  // Handle breadcrumb navigation
+  const handleBreadcrumbNavigate = useCallback((item: any) => {
+    if (item.id === "trash" || item.id === data.trashRootId) {
+      // Navigate to trash root
+      navigate(`/t/${treeId}/${pageTreeNodeId}/trash/${mode}`);
+    } else {
+      // Navigate to specific folder in trash
+      navigate(`/t/${treeId}/${pageTreeNodeId}/${item.id}/${mode}`);
+    }
+  }, [navigate, treeId, pageTreeNodeId, mode, data.trashRootId]);
+  
+  // Handle back navigation (go up one level)
+  const handleNavigateBack = useCallback(() => {
+    if (targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId) {
+      // Go back to trash root
+      navigate(`/t/${treeId}/${pageTreeNodeId}/trash/${mode}`);
+    }
+  }, [navigate, treeId, pageTreeNodeId, targetTreeNodeId, data.trashRootId, mode]);
+  
+  // Handle node selection
+  const handleNodeSelect = useCallback((nodeId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedIds(prev => [...prev, nodeId]);
+    } else {
+      setSelectedIds(prev => prev.filter(id => id !== nodeId));
+    }
+  }, []);
+  
+  // Handle node expansion
+  const handleNodeExpand = useCallback((nodeId: string, expanded: boolean) => {
+    if (expanded) {
+      setExpandedIds(prev => [...prev, nodeId]);
+    } else {
+      setExpandedIds(prev => prev.filter(id => id !== nodeId));
+    }
+  }, []);
+  
+  // Convert trash items to TreeNodeData format
+  const treeData: TreeNodeData[] = data.trashItems?.map(convertTreeNodeToTreeNodeData) || [];
+  const columns = createDefaultColumns();
+  
+  // Create breadcrumb items with proper navigation
+  const breadcrumbItems = useMemo(() => {
+    const items = [
+      { id: "trash", name: "Trash", nodeType: "folder" as const, isClickable: true },
+    ];
+    
+    // If we're not at trash root, add current folder to breadcrumbs
+    if (targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId && data.targetTreeNode) {
+      items.push({
+        id: data.targetTreeNode.treeNodeId,
+        name: data.targetTreeNode.name,
+        nodeType: data.targetTreeNode.treeNodeType,
+        isClickable: false, // Current folder is not clickable
+      });
+    }
+    
+    return items;
+  }, [targetTreeNodeId, data.trashRootId, data.targetTreeNode]);
+  
+  // Get dialog title with context
+  const getDialogTitle = () => {
+    const baseTitle = isRecoverMode ? "Restore from Trash" : isDeleteMode ? "Empty Trash" : "Trash";
+    
+    // Add current folder context if not at root
+    if (targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId && data.targetTreeNode) {
+      return `${baseTitle} - ${data.targetTreeNode.name}`;
+    }
+    
+    return baseTitle;
+  };
+  
+  // Get action button with enhanced UX
+  const getActionButton = () => {
+    if (isRecoverMode) {
+      const buttonText = loading 
+        ? `Restoring ${selectedIds.length} items...` 
+        : `Restore Selected (${selectedIds.length})`;
+        
+      return (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<RestoreIcon />}
+          onClick={handleRestore}
+          disabled={selectedIds.length === 0 || loading}
+          sx={{ minWidth: 180 }}
+        >
+          {buttonText}
+        </Button>
+      );
+    } else if (isDeleteMode) {
+      const itemCount = data.trashItems?.length || 0;
+      const buttonText = loading 
+        ? `Removing ${itemCount} items...` 
+        : `Remove All (${itemCount} items)`;
+        
+      return (
+        <Button
+          variant="contained"
+          color="error"
+          startIcon={<RemoveIcon />}
+          onClick={handleEmptyTrash}
+          disabled={itemCount === 0 || loading}
+          sx={{ minWidth: 180 }}
+        >
+          {buttonText}
+        </Button>
+      );
+    }
+    return null;
+  };
+  
   return (
-    <>
-      <h4>t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType)</h4>
-      <ul>
-        <li>{data.tree.treeId}</li>
-        <li>{data.tree.name}</li>
-        <li>{data.pageTreeNode?.treeNodeId}</li>
-        <li>{data.pageTreeNode?.name}</li>
-        <li>{data.targetTreeNode?.treeNodeId}</li>
-        <li>{data.targetTreeNode?.name}</li>
-        <li>{data.treeNodeType}</li>
-      </ul>
-      <Outlet />
-    </>
+    <Dialog
+      open
+      fullWidth
+      maxWidth="lg"
+      onClose={handleClose}
+      PaperProps={{
+        sx: {
+          height: "80vh",
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="h6">{getDialogTitle()}</Typography>
+            {/* Show item count chip */}
+            {treeData.length > 0 && (
+              <Chip 
+                label={`${treeData.length} items`} 
+                size="small" 
+                variant="outlined"
+                color={isDeleteMode ? "error" : "primary"}
+              />
+            )}
+          </Box>
+          {/* Show current location in subtitle */}
+          {targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId && data.targetTreeNode && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              📁 {data.targetTreeNode.name}
+            </Typography>
+          )}
+          {(targetTreeNodeId === "trash" || targetTreeNodeId === data.trashRootId) && treeData.length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              🗑️ Trash is empty
+            </Typography>
+          )}
+        </Box>
+        <IconButton onClick={handleClose} size="small" disabled={loading}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      
+      {/* Loading indicator */}
+      {loading && <LinearProgress />}
+      
+      <DialogContent sx={{ flex: 1, overflow: "hidden", p: 0 }}>
+        {error && (
+          <Alert 
+            severity="error" 
+            onClose={() => setError(null)} 
+            sx={{ m: 2 }}
+            action={
+              <Button size="small" color="inherit" onClick={() => setError(null)}>
+                Dismiss
+              </Button>
+            }
+          >
+            {error}
+          </Alert>
+        )}
+        
+        {/* Show empty state when no items */}
+        {!loading && !error && treeData.length === 0 && (
+          <Alert severity="info" sx={{ m: 2 }}>
+            {targetTreeNodeId === "trash" || targetTreeNodeId === data.trashRootId
+              ? "🗑️ The trash is empty. Deleted items will appear here."
+              : "📁 This folder is empty."
+            }
+          </Alert>
+        )}
+        
+        {isDeleteMode && (
+          <Alert severity="warning" sx={{ m: 2 }}>
+            ⚠️ You are about to remove all items from the trash. This action cannot be undone.
+          </Alert>
+        )}
+        
+        {/* Phase 2: Using TreeConsolePanel for trash items display */}
+        <TreeConsolePanel
+          title="Trash Items"
+          rootNodeId={data.trashRootId || "trash"}
+          data={treeData}
+          columns={columns}
+          breadcrumbItems={breadcrumbItems}
+          loading={loading}
+          error={error || undefined}
+          selectedIds={isRecoverMode ? selectedIds : []}
+          expandedIds={expandedIds}
+          searchTerm={searchTerm}
+          viewMode="list"
+          canCreate={false}
+          canEdit={false}
+          canDelete={false}
+          showNavigationButtons={false}
+          dense={true}
+          availableFilters={[]}
+          onNodeClick={handleNodeClick}
+          onNodeSelect={isRecoverMode && !loading ? handleNodeSelect : undefined}
+          onNodeExpand={handleNodeExpand}
+          onSearchChange={setSearchTerm}
+          onSearchClear={() => setSearchTerm("")}
+          onCreate={() => {}}
+          onEdit={() => {}}
+          onDelete={() => {}}
+          onRefresh={() => window.location.reload()}
+          onExpandAll={() => setExpandedIds(treeData.map(d => d.id))}
+          onCollapseAll={() => setExpandedIds([])}
+          onSort={() => {}}
+          onFilterChange={() => {}}
+          onViewModeChange={() => {}}
+          onBreadcrumbNavigate={handleBreadcrumbNavigate}
+          onNavigateBack={handleNavigateBack}
+          onNavigateForward={() => {}}
+          canGoBack={targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId}
+          canGoForward={false}
+          onContextMenuAction={() => {}}
+        />
+      </DialogContent>
+      
+      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+        <Button onClick={handleClose} color="inherit" disabled={loading}>
+          Cancel
+        </Button>
+        {getActionButton()}
+        
+        {/* Show selection info in recover mode */}
+        {isRecoverMode && selectedIds.length > 0 && !loading && (
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+            {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
+          </Typography>
+        )}
+      </DialogActions>
+    </Dialog>
   );
 }

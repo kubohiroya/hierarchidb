@@ -1,4 +1,0 @@
-# Ignore external references and local-only symlink
-references/**
-docs/references/**
-packages/eria-cargograph/**

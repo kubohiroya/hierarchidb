@@ -1,20 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
+    "module": "ESNext",
+    "target": "ES2022",
     "baseUrl": ".",
-    "paths": {
-      "~/*": ["src/*"]
-    },
+    "rootDir": ".",
+    "types": ["node"],
     "noEmit": false,
-    "emitDeclarationOnly": false,
+    "esModuleInterop": true,
+    "allowArbitraryExtensions": true,
     "allowImportingTsExtensions": false,
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../core" }]
+  "include": ["./src/**.ts"],
+  "exclude": ["./node_modules", "./dist"]
 }

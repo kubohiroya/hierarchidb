@@ -13,9 +13,9 @@
   );
  */
 // import { useOutletContext } from 'react-router-dom';
-import { loadAppConfig } from '~/loader';
-import { InfoPage } from '~/pages/Info/InfoPage';
-import { useLoaderData } from 'react-router-dom';
+import { loadAppConfig } from "~/loader";
+import { InfoPage } from "~/pages/Info/InfoPage";
+import { useLoaderData } from "react-router";
 
 export function clientLoader() {
   return loadAppConfig();

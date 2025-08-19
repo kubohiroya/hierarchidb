@@ -3,11 +3,10 @@
  * @description Unit tests for BaseEntityHandler abstract class
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { BaseEntity, BaseSubEntity, BaseWorkingCopy, TreeNodeId } from '@hierarchidb/core';
 import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';
-import type { TreeNodeId } from '@hierarchidb/core';
-import type { BaseEntity, BaseSubEntity, BaseWorkingCopy } from '@hierarchidb/core';
 
 // Mock entity types
 interface TestEntity extends BaseEntity {

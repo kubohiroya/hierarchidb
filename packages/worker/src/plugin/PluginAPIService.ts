@@ -1,5 +1,5 @@
-import { PluginLoader } from './PluginLoader';
 import type { TreeNodeId } from '@hierarchidb/core';
+import type { PluginLoader } from './PluginLoader';
 
 /**
  * プラグイン固有APIへのアクセスを提供するサービス

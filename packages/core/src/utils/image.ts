@@ -19,7 +19,7 @@ export const preloadImage = (url: string): Promise<boolean> => {
     };
 
     // Set crossOrigin before lib to avoid CORS issues
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
     img.src = url;
 
     // Timeout after 10 seconds
@@ -37,8 +37,8 @@ export const preloadImage = (url: string): Promise<boolean> => {
 export const testImageUrl = async (url: string): Promise<boolean> => {
   try {
     await fetch(url, {
-      method: "HEAD",
-      mode: "no-cors", // Avoid CORS issues for testing
+      method: 'HEAD',
+      mode: 'no-cors', // Avoid CORS issues for testing
     });
 
     // In no-cors mode, we can't check the actual status
@@ -53,7 +53,7 @@ export const testImageUrl = async (url: string): Promise<boolean> => {
  * Create a cache-busting URL
  */
 export const addCacheBuster = (url: string): string => {
-  const separator = url.includes("?") ? "&" : "?";
+  const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}t=${Date.now()}`;
 };
 
@@ -61,11 +61,11 @@ export const addCacheBuster = (url: string): string => {
  * Convert Google profile URL to different sizes
  */
 export const getGoogleImageVariants = (url: string): string[] => {
-  if (!url.includes("googleusercontent.com")) {
+  if (!url.includes('googleusercontent.com')) {
     return [url];
   }
 
-  const baseUrl = url.replace(/=s\d+(-c)?$/, "");
+  const baseUrl = url.replace(/=s\d+(-c)?$/, '');
   return [
     `${baseUrl}=s96`, // Small size
     `${baseUrl}=s128`, // Medium size

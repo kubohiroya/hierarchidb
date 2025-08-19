@@ -5,11 +5,11 @@
 
 // Re-export all handler types from core
 export type {
-  EntityHandler,
   BaseEntity,
   BaseSubEntity,
   BaseWorkingCopy,
   EntityBackup,
+  EntityHandler,
 } from '@hierarchidb/core';
 
 // Worker-specific extensions (if needed)

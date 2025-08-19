@@ -7,16 +7,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc && tsc-alias",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc && tsc-alias",
+    "dev:tsc": "tsc --watch"
   },
   "dependencies": {
     "@hierarchidb/core": "workspace:*",
@@ -26,7 +29,8 @@
   "devDependencies": {
     "@types/react": "^18.3.17",
     "react": "^19.0.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "tsup": "^8.3.5"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
@@ -42,5 +46,6 @@
     "color-mapping"
   ],
   "author": "hierarchidb team",
-  "license": "MIT"
+  "license": "MIT",
+  "module": "dist/index.mjs"
 }

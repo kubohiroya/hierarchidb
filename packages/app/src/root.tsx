@@ -1,11 +1,14 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
-import { CssBaseline, LinearProgress, ThemeProvider } from '@mui/material';
-import { StrictMode, useMemo } from 'react';
-import { AppConfigProvider, useAppConfig } from './contexts/AppConfigContext';
-import { createAppTheme } from '@hierarchidb/ui-theme';
-
-import * as pkg from 'react-helmet-async';
-const { Helmet, HelmetProvider } = pkg;
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { CssBaseline, LinearProgress, ThemeProvider } from "@mui/material";
+import { StyledEngineProvider } from "@mui/material/styles";
+import { StrictMode, useMemo } from "react";
+import { AppConfigProvider, useAppConfig } from "./contexts/AppConfigContext";
+import {
+  createAppTheme,
+  ThemeProvider as CustomThemeProvider,
+} from "@hierarchidb/ui-theme";
+import { LanguageProvider } from "@hierarchidb/ui-i18n";
+import { SimpleBFFAuthProvider } from "@hierarchidb/ui-auth";
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
 //<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,12 +17,12 @@ const { Helmet, HelmetProvider } = pkg;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <Meta />
         <Links />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -37,28 +40,35 @@ function AppContent() {
 
   return (
     <StrictMode>
-      <HelmetProvider>
-        <Helmet>
-          <title>{appTitle}</title>
-          {appDescription ? <meta name="description" content={appDescription} /> : null}
-          <link rel="icon" href={appFavicon} type="image/svg+xml" />
-        </Helmet>
-        <Outlet />
-      </HelmetProvider>
+      <title>{appTitle}</title>
+      {appDescription ? (
+        <meta name="description" content={appDescription} />
+      ) : null}
+      <link rel="icon" href={appFavicon} type="image/svg+xml" />
+      <Outlet />
     </StrictMode>
   );
 }
 
 export default function App() {
   // Create theme inside component with useMemo to avoid hydration mismatch
-  const theme = useMemo(() => createAppTheme('light'), []);
-  
+  // Using a stable theme creation to prevent SSR/hydration mismatches
+  const theme = useMemo(() => createAppTheme("light"), []);
+
   return (
     <AppConfigProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AppContent />
-      </ThemeProvider>
+      <SimpleBFFAuthProvider>
+        <LanguageProvider>
+          <StyledEngineProvider injectFirst>
+            <ThemeProvider theme={theme}>
+              <CustomThemeProvider>
+                <CssBaseline />
+                <AppContent />
+              </CustomThemeProvider>
+            </ThemeProvider>
+          </StyledEngineProvider>
+        </LanguageProvider>
+      </SimpleBFFAuthProvider>
     </AppConfigProvider>
   );
 }

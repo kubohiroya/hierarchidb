@@ -3,11 +3,11 @@
  * @description Unit tests for SimpleEntityHandler concrete implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Dexie from 'dexie';
-import { SimpleEntityHandler } from './SimpleEntityHandler';
-import type { SimpleEntity, SimpleSubEntity, SimpleWorkingCopy } from './SimpleEntityHandler';
 import type { TreeNodeId } from '@hierarchidb/core';
+import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SimpleEntity, SimpleSubEntity, SimpleWorkingCopy } from './SimpleEntityHandler';
+import { SimpleEntityHandler } from './SimpleEntityHandler';
 
 describe('SimpleEntityHandler', () => {
   let db: Dexie;

@@ -13,7 +13,7 @@ import type {
   UnifiedPluginDefinition,
   NodeLifecycleHooks,
   WorkerPluginRouterAction,
-} from '@hierarchidb/worker/registry';
+} from '@hierarchidb/worker';
 import type { StyleMapEntity, StyleMapWorkingCopy } from '../types';
 import { StyleMapEntityHandler } from '../handlers/StyleMapEntityHandler';
 import { StyleMapDatabase } from '../database/StyleMapDatabase';

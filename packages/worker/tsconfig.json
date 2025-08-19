@@ -3,28 +3,23 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
+    "baseUrl": "./",
     "paths": {
       "~/*": ["src/*"]
     },
+    "composite": true,
     "noEmit": false,
     "emitDeclarationOnly": false,
     "allowImportingTsExtensions": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules",
-    "dist",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.integration.test.ts",
-    "src/**/*.performance.test.ts",
-    "src/**/*.test.suite.ts"
-  ],
-  "references": [{ "path": "../api" }, { "path": "../core" }]
+    "dist"
+  ]
 }

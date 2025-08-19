@@ -1,6 +1,12 @@
-import { Tree, TreeNode, TreeNodeType, TreeNodeAction, TreeNodeTypes } from '@hierarchidb/core';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
-import { useRouteLoaderData } from 'react-router';
+import {
+  type Tree,
+  type TreeNode,
+  type TreeNodeType,
+  type TreeNodeAction,
+  TreeNodeTypes,
+} from "@hierarchidb/core";
+import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import { useRouteLoaderData } from "react-router";
 
 export type LoadAppConfigReturn = {
   appPrefix: string;
@@ -84,23 +90,23 @@ export function loadAppConfig(): LoadAppConfigReturn {
   } = import.meta.env;
 
   return {
-    appPrefix: VITE_APP_PREFIX || '',
-    appName: VITE_APP_NAME || 'HierarchiDB',
-    appTitle: VITE_APP_TITLE || 'HierarchiDB',
+    appPrefix: VITE_APP_PREFIX || "",
+    appName: VITE_APP_NAME || "HierarchiDB",
+    appTitle: VITE_APP_TITLE || "HierarchiDB",
     appDescription:
       VITE_APP_DESCRIPTION ||
-      'High-performance tree-structured data management framework for browser environments',
+      "High-performance tree-structured data management framework for browser environments",
     appDetails:
       VITE_APP_DETAILS ||
-      'A powerful framework for managing hierarchical data in browser environments',
-    appHomepage: APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
-    appLogo: VITE_APP_LOGO || 'logo.png',
-    appFavicon: VITE_APP_FAVICON || 'logo.favicon.png',
-    appTheme: VITE_APP_THEME || 'light',
-    appLocale: VITE_APP_LOCALE || 'en-US',
-    appAttribution: VITE_APP_ATTRIBUTION || '',
-    appDefaultLocale: 'en-US',
-    appDefaultLanguage: 'en',
+      "A powerful framework for managing hierarchical data in browser environments",
+    appHomepage: APP_HOMEPAGE || "https://github.com/kubohiroya/hierarchidb",
+    appLogo: VITE_APP_LOGO || "logo.png",
+    appFavicon: VITE_APP_FAVICON || "logo.favicon.png",
+    appTheme: VITE_APP_THEME || "light",
+    appLocale: VITE_APP_LOCALE || "en-US",
+    appAttribution: VITE_APP_ATTRIBUTION || "",
+    appDefaultLocale: "en-US",
+    appDefaultLanguage: "en",
   };
 }
 
@@ -112,10 +118,12 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
   };
 }
 
-export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
+export async function loadTree({
+  treeId,
+}: LoadTreeArgs): Promise<LoadTreeReturn> {
   const workerAPIClientReturn = await loadWorkerAPIClient();
   if (!treeId) {
-    throw new Error('treeId is required');
+    throw new Error("treeId is required");
   }
   return {
     client: workerAPIClientReturn.client,
@@ -143,11 +151,15 @@ export async function loadTargetTreeNode({
   pageTreeNodeId,
   targetTreeNodeId,
 }: LoadTargetTreeNodeArgs): Promise<LoadTargetTreeNodeReturn> {
-  const loadPageTreeNodeReturn = await loadPageTreeNode({ treeId, pageTreeNodeId });
+  const loadPageTreeNodeReturn = await loadPageTreeNode({
+    treeId,
+    pageTreeNodeId,
+  });
   return {
     ...loadPageTreeNodeReturn,
     targetTreeNode: await loadPageTreeNodeReturn.client.getAPI().getNode({
-      treeNodeId: targetTreeNodeId || pageTreeNodeId || treeId + TreeNodeTypes.Root,
+      treeNodeId:
+        targetTreeNodeId || pageTreeNodeId || treeId + TreeNodeTypes.Root,
     }),
   };
 }
@@ -193,27 +205,31 @@ export function useAppConfig(): LoadAppConfigReturn {
 }
 
 export function useWorkerAPIClient() {
-  return useRouteLoaderData('t') as WorkerAPIClient;
+  return useRouteLoaderData("t") as WorkerAPIClient;
 }
 
 export function useTree(): Tree | undefined {
-  return useRouteLoaderData('t/($treeId)');
+  return useRouteLoaderData("t/($treeId)");
 }
 
 export function usePageTreeNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)');
+  return useRouteLoaderData("t/($treeId)/($pageTreeNodeId)");
 }
 
 export function useTargetTreeNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)');
+  return useRouteLoaderData(
+    "t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)",
+  );
 }
 
 export function useTreeNodeType(): TreeNodeType | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)');
+  return useRouteLoaderData(
+    "t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)",
+  );
 }
 
 export function useTreeNodeTAction(): TreeNodeAction | undefined {
   return useRouteLoaderData(
-    't/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)/($action)'
+    "t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)/($action)",
   );
 }

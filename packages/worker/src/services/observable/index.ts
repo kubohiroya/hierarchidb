@@ -5,7 +5,7 @@
  * 統一的にエクスポートします。
  */
 
-export { SubscriptionManager, type SubscriptionInfo } from './SubscriptionManager';
-export { EventFilterManager } from './EventFilterManager';
 export { DatabaseHelper } from './DatabaseHelper';
+export { EventFilterManager } from './EventFilterManager';
 export { ObservableFactory } from './ObservableFactory';
+export { type SubscriptionInfo, SubscriptionManager } from './SubscriptionManager';

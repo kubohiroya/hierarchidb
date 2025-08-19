@@ -1,11 +1,11 @@
 export {
-  createNewDraftWorkingCopy,
-  createWorkingCopyFromNode,
+  checkWorkingCopyConflict,
   commitWorkingCopy,
+  createNewDraftWorkingCopy,
+  createNewName,
+  createWorkingCopyFromNode,
   discardWorkingCopy,
+  getChildNames,
   getWorkingCopy,
   updateWorkingCopy,
-  checkWorkingCopyConflict,
-  getChildNames,
-  createNewName,
 } from './WorkingCopyOperations';

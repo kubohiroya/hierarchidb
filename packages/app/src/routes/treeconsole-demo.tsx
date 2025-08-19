@@ -1,15 +1,21 @@
 /**
  * TreeConsole Demo Page
- * 
+ *
  * TreeConsoleパッケージの統合テストページ
  * WorkerAPIClientと接続してTreeConsoleコンポーネントの動作を確認
  */
 
-import { useState, useEffect } from 'react';
-import { Box, Container, Typography, Alert, CircularProgress } from '@mui/material';
-import { TreeTableConsolePanelContext, WorkerAPIAdapter } from '@hierarchidb/ui-treeconsole';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
-import type { TreeNodeId, Tree } from '@hierarchidb/core';
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  Alert,
+  CircularProgress,
+} from "@mui/material";
+import { TreeTableConsolePanelContext } from "@hierarchidb/ui-treeconsole-base";
+import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import type { TreeNodeId, Tree } from "@hierarchidb/core";
 
 export default function TreeConsoleDemo() {
   const [client, setClient] = useState<WorkerAPIClient | null>(null);
@@ -24,32 +30,29 @@ export default function TreeConsoleDemo() {
         setLoading(true);
         const workerClient = await WorkerAPIClient.getSingleton();
         setClient(workerClient);
-        
+
         // デフォルトツリーを取得または作成
         const api = workerClient.getAPI();
         const trees = await api.getTrees();
-        
+
         let tree: Tree | null = null;
         if (trees && trees.length > 0) {
           // 既存のツリーがある場合は最初のものを使用
-          tree = trees[0];
+          tree = trees[0] ?? null;
         } else {
-          // ツリーがない場合は新規作成
-          tree = await api.createTree({
-            name: 'Demo Tree',
-            description: 'TreeConsole Demo Tree'
-          });
+          // ツリーがない場合は処理を停止
+          throw new Error("No trees available and createTree not implemented");
         }
-        
+
         setDefaultTree(tree);
       } catch (err) {
-        console.error('Failed to initialize WorkerAPIClient:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize');
+        console.error("Failed to initialize WorkerAPIClient:", err);
+        setError(err instanceof Error ? err.message : "Failed to initialize");
       } finally {
         setLoading(false);
       }
     }
-    
+
     initClient();
   }, []);
 
@@ -89,9 +92,20 @@ export default function TreeConsoleDemo() {
   const rootNodeId = `${defaultTree.treeId}Root` as TreeNodeId;
 
   return (
-    <Container maxWidth={false} disableGutters sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Container
+      maxWidth={false}
+      disableGutters
+      sx={{ height: "100vh", display: "flex", flexDirection: "column" }}
+    >
       {/* ヘッダー */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', backgroundColor: 'background.paper' }}>
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: 1,
+          borderColor: "divider",
+          backgroundColor: "background.paper",
+        }}
+      >
         <Typography variant="h4" component="h1">
           TreeConsole Demo
         </Typography>
@@ -104,7 +118,7 @@ export default function TreeConsoleDemo() {
       </Box>
 
       {/* TreeConsoleコンテナ */}
-      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <Box sx={{ flex: 1, overflow: "hidden", position: "relative" }}>
         <TreeTableConsolePanelContext
           treeRootNodeId={rootNodeId}
           nodeId={rootNodeId}
@@ -113,16 +127,24 @@ export default function TreeConsoleDemo() {
           showSearchOnly={false}
           useTrashColumns={false}
           mode="restore"
-          close={() => console.log('Close clicked')}
-          handleStartTour={() => console.log('Start tour clicked')}
+          close={() => console.log("Close clicked")}
+          handleStartTour={() => console.log("Start tour clicked")}
           workerClient={client} // Pass the WorkerAPIClient
         />
       </Box>
 
       {/* デバッグ情報 */}
-      <Box sx={{ p: 1, borderTop: 1, borderColor: 'divider', backgroundColor: 'grey.100' }}>
+      <Box
+        sx={{
+          p: 1,
+          borderTop: 1,
+          borderColor: "divider",
+          backgroundColor: "grey.100",
+        }}
+      >
         <Typography variant="caption" component="div">
-          Debug: Client initialized | Tree: {defaultTree.treeId} | Root: {rootNodeId}
+          Debug: Client initialized | Tree: {defaultTree.treeId} | Root:{" "}
+          {rootNodeId}
         </Typography>
       </Box>
     </Container>

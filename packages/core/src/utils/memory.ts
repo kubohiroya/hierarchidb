@@ -13,8 +13,8 @@ export function formatBytes(bytes: number, decimals = 2): string {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  const n = parseFloat((bytes / Math.pow(k, i)).toFixed(dm))
+  return `${n} ${sizes[i]}`;
 }
 
 /**

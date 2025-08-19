@@ -1,11 +1,12 @@
 import type {
-  UUID,
-  Timestamp,
-  TreeNodeId,
-  Seq,
-  ErrorCode as CoreErrorCode,
-  CommandResult as CoreCommandResult,
   CommandEnvelope as CoreCommandEnvelope,
+  CommandResult as CoreCommandResult,
+  ErrorCode as CoreErrorCode,
+  Seq,
+  Timestamp,
+  TreeNode,
+  TreeNodeId,
+  UUID,
 } from '@hierarchidb/core';
 
 /**
@@ -62,6 +63,13 @@ export type CommandResult =
       seq: Seq;
       nodeId?: TreeNodeId;
       newNodeIds?: TreeNodeId[];
+      clipboardData?: {
+        type: 'nodes-copy';
+        timestamp: number;
+        nodes: Record<string, TreeNode>;
+        rootNodeIds: string[];
+        nodeCount?: number;
+      };
     }
   | {
       success: false;

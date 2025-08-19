@@ -22,7 +22,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "composite": true,
+    "composite": false,
     "incremental": true,
     "allowImportingTsExtensions": true,
     "noEmit": true
@@ -32,10 +32,6 @@
     "dist",
     "build",
     "coverage",
-    ".turbo",
-    // Reference materials and external symlink
-    "docs/references/**",
-    "references/**",
-    "packages/eria-cargograph/**"
+    ".turbo"
   ]
 }

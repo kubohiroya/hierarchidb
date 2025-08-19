@@ -10,7 +10,7 @@ import type {
   DuplicateNodesPayload,
   PasteNodesPayload,
   MoveToTrashPayload,
-  PermanentDeletePayload,
+  RemovePayload,
   RecoverFromTrashPayload,
   ImportNodesPayload,
   UndoPayload,
@@ -54,8 +54,8 @@ export interface TreeMutationService {
 
   moveToTrash(cmd: CommandEnvelope<'moveToTrash', MoveToTrashPayload>): Promise<CommandResult>;
 
-  permanentDelete(
-    cmd: CommandEnvelope<'permanentDelete', PermanentDeletePayload>
+  remove(
+    cmd: CommandEnvelope<'remove', RemovePayload>
   ): Promise<CommandResult>;
 
   recoverFromTrash(

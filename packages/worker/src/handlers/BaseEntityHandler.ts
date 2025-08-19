@@ -4,15 +4,15 @@
  * Provides common functionality for all entity handlers
  */
 
-import Dexie from 'dexie';
-import type { TreeNodeId } from '@hierarchidb/core';
 import type {
-  EntityHandler,
   BaseEntity,
   BaseSubEntity,
   BaseWorkingCopy,
   EntityBackup,
+  EntityHandler,
+  TreeNodeId,
 } from '@hierarchidb/core';
+import type Dexie from 'dexie';
 import { workerLog } from '../utils/workerLogger';
 
 /**
@@ -238,7 +238,7 @@ export abstract class BaseEntityHandler<
       throw new Error(`Entity not found: ${nodeId}`);
     }
 
-    let subEntities: Record<string, BaseSubEntity[]> = {};
+    const subEntities: Record<string, BaseSubEntity[]> = {};
     if (this.subEntityTableName) {
       const allSubEntities = await this.db
         .table(this.subEntityTableName)
@@ -288,12 +288,14 @@ export abstract class BaseEntityHandler<
 
       // Add restored sub-entities
       for (const [type, entities] of Object.entries(subEntities)) {
-        for (const subEntity of entities) {
-          await this.db.table(this.subEntityTableName).add({
-            ...subEntity,
-            parentNodeId: nodeId,
-            subEntityType: type,
-          });
+        if (Array.isArray(entities)) {
+          for (const subEntity of entities) {
+            await this.db.table(this.subEntityTableName).add({
+              ...subEntity,
+              parentNodeId: nodeId,
+              subEntityType: type,
+            });
+          }
         }
       }
     }
@@ -330,7 +332,7 @@ export abstract class BaseEntityHandler<
    * Generate a UUID v4
    */
   protected generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
       const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);

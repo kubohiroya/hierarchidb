@@ -4,12 +4,11 @@
  * Implements Copy-on-Write pattern with conflict resolution and version control
  */
 
-import type { TreeNodeId } from '@hierarchidb/core';
-import type { BaseEntity, BaseSubEntity, BaseWorkingCopy } from '@hierarchidb/core';
-import { SubEntityHandler } from './SubEntityHandler';
+import type { BaseEntity, BaseSubEntity, BaseWorkingCopy, TreeNodeId } from '@hierarchidb/core';
+import type Dexie from 'dexie';
 import type { SimpleEntity, SimpleSubEntity, SimpleWorkingCopy } from './SimpleEntityHandler';
 import type { ExtendedSubEntity } from './SubEntityHandler';
-import Dexie from 'dexie';
+import { SubEntityHandler } from './SubEntityHandler';
 
 /**
  * Enhanced working copy with additional tracking
@@ -460,8 +459,6 @@ export class WorkingCopyHandler extends SubEntityHandler {
             typeof conflict.workingValue === 'string' &&
             typeof conflict.currentValue === 'string'
           ) {
-            // Keep working value (could implement more sophisticated merge)
-            continue;
           }
           // For numbers, keep the larger value
           else if (

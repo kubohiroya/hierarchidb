@@ -3,36 +3,27 @@
  * @description Registry module exports for worker package
  */
 
+// Export registries
+// Direct export for immediate usage
+export {
+  SimpleNodeTypeRegistry,
+  SimpleNodeTypeRegistry as NodeTypeRegistry,
+} from './SimpleNodeTypeRegistry';
 // Export types
 export * from './types';
 export type {
   BaseEntity,
   BaseSubEntity,
   BaseWorkingCopy,
-  EntityHandler,
   EntityBackup,
+  EntityHandler,
+  ExtendedNodeTypeConfig,
   NodeLifecycleHooks,
-  WorkerPluginRouterAction,
-  ValidationRule,
   NodeTypeDefinition,
   UnifiedPluginDefinition,
-  ExtendedNodeTypeConfig,
-} from './types/unified-plugin';
-
-// Export registries
-export { SimpleNodeTypeRegistry } from './SimpleNodeTypeRegistry';
-export { UnifiedNodeTypeRegistry } from './UnifiedNodeTypeRegistry';
-
+  ValidationRule,
+  WorkerPluginRouterAction,
+} from './unified-plugin';
 // Export interfaces
 export type { IUnifiedNodeTypeRegistry } from './UnifiedNodeTypeRegistry';
-
-// Direct export for immediate usage
-export { SimpleNodeTypeRegistry as NodeTypeRegistry } from './SimpleNodeTypeRegistry';
-
-// Re-export core interfaces
-export type {
-  INodeTypeRegistry,
-  IPluginRegistry,
-  ISimpleNodeTypeRegistry,
-  NodeTypeConfig,
-} from '@hierarchidb/core';
+export { UnifiedNodeTypeRegistry } from './UnifiedNodeTypeRegistry';

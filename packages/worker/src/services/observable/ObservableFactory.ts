@@ -1,5 +1,5 @@
-import { Observable, Subject, filter as rxFilter, map, share, startWith } from 'rxjs';
 import type { TreeChangeEvent } from '@hierarchidb/core';
+import { map, type Observable, filter as rxFilter, type Subject, share, startWith } from 'rxjs';
 import type { SubscriptionInfo } from './SubscriptionManager';
 
 /**

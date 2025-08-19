@@ -1,13 +1,20 @@
-export * from '~/types/index';
-export * from '~/utils/id';
-export * from '~/utils/name';
-export * from '~/utils/time';
-export * from '~/utils/validation';
-export * from '~/utils/SingletonMixin';
-export * from '~/utils/image';
-export * from '~/utils/memory';
-export * from '~/utils/page';
-export * from '~/utils/logger';
-export * from '~/registry/INodeTypeRegistry';
-export * from '~/registry/BaseNodeTypeRegistry';
-export * from '~/registry/NodeDefinitionRegistry';
+// Export interfaces
+export type {
+  INodeTypeRegistry,
+  IPluginRegistry,
+  INodeDefinitionRegistry,
+  ISimpleNodeTypeRegistry,
+  NodeTypeConfig,
+} from './registry/INodeTypeRegistry';
+
+// Export base class
+export { BaseNodeTypeRegistry } from './registry/BaseNodeTypeRegistry';
+
+// Export concrete implementation
+export { NodeDefinitionRegistry } from './registry/NodeDefinitionRegistry';
+
+// Direct export as NodeTypeRegistry for immediate migration
+export { NodeDefinitionRegistry as NodeTypeRegistry } from './registry/NodeDefinitionRegistry';
+
+export * from './types';
+export * from './utils';

@@ -1,5 +1,5 @@
-import * as Comlink from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/api';
+import * as Comlink from 'comlink';
 
 export function createWorkerClient(workerUrl: string | URL): Comlink.Remote<WorkerAPI> {
   const worker = new Worker(workerUrl, { type: 'module' });

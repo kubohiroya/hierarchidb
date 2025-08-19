@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { TreeNode, TreeNodeId, TreeNodeType } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NodeLifecycleManager } from './NodeLifecycleManager';
+import { SimpleNodeTypeRegistry } from '~/registry';
 import type { NodeTypeDefinition } from './types';
-import type { TreeNodeId, TreeNodeType, TreeNode } from '@hierarchidb/core';
-import { SimpleNodeTypeRegistry } from './registry';
 
 // Mock implementations
 class MockCoreDB {
@@ -56,7 +56,7 @@ describe('NodeLifecycleManager', () => {
 
   beforeEach(() => {
     // Reset mocks
-    Object.values(hookCalls).forEach((fn) => fn.mockClear());
+    Object.values(hookCalls).map((fn) => fn.mockClear());
 
     coreDB = new MockCoreDB();
     ephemeralDB = {};

@@ -1,9 +1,9 @@
-import type { TreeNodeId, TreeNode, TreeNodeType } from '@hierarchidb/core';
-import type { NodeLifecycleHooks, LifecycleEvent, LifecycleContext } from './types';
-import type { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
+import type { TreeNode, TreeNodeId, TreeNodeType } from '@hierarchidb/core';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
+import type { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
 import { workerError } from '../utils/workerLogger';
+import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './types';
 
 /**
  * Manages lifecycle hooks for node operations

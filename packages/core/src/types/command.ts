@@ -23,7 +23,12 @@ export type ErrorCode =
   | 'HAS_INBOUND_REFS'
   | 'ILLEGAL_RELATION'
   | 'NODE_NOT_FOUND'
-  | 'INVALID_OPERATION';
+  | 'INVALID_OPERATION'
+  | 'UNKNOWN_ERROR'
+  | 'WORKING_COPY_NOT_FOUND'
+  | 'COMMIT_CONFLICT'
+  | 'VALIDATION_ERROR'
+  | 'DATABASE_ERROR';
 
 export type CommandResult =
   | {
@@ -31,6 +36,13 @@ export type CommandResult =
       seq: Seq;
       nodeId?: TreeNodeId;
       newNodeIds?: TreeNodeId[];
+      clipboardData?: {
+        type: 'nodes-copy';
+        timestamp: number;
+        nodes: Record<string, TreeNode>;
+        rootNodeIds: string[];
+        nodeCount?: number;
+      };
     }
   | {
       success: false;
@@ -89,7 +101,7 @@ export interface MoveToTrashPayload {
   nodeIds: TreeNodeId[];
 }
 
-export interface PermanentDeletePayload {
+export interface RemovePayload {
   nodeIds: TreeNodeId[];
 }
 

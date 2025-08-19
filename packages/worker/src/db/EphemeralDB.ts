@@ -1,5 +1,5 @@
-import Dexie, { Table } from 'dexie';
-import type { WorkingCopy, TreeViewState, TreeNodeId } from '@hierarchidb/core';
+import type { TreeViewState, WorkingCopy } from '@hierarchidb/core';
+import Dexie, { type Table } from 'dexie';
 
 export type WorkingCopyRow = WorkingCopy;
 export type TreeViewStateRow = TreeViewState;
@@ -37,7 +37,7 @@ export class EphemeralDB extends Dexie {
     await this.workingCopies.put(workingCopy);
   }
 
-  async deleteWorkingCopy(workingCopyId: string): Promise<void> {
+  async discardWorkingCopy(workingCopyId: string): Promise<void> {
     await this.workingCopies.delete(workingCopyId);
   }
 }

@@ -1,19 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { TreeNode, TreeNodeId, TreeNodeType, UUID, WorkingCopy } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { WorkerErrorCode } from '../command/types';
 import {
-  createNewDraftWorkingCopy,
-  createWorkingCopyFromNode,
+  checkWorkingCopyConflict,
   commitWorkingCopy,
+  createNewDraftWorkingCopy,
+  createNewName,
+  createWorkingCopyFromNode,
   discardWorkingCopy,
+  getChildNames,
   getWorkingCopy,
   updateWorkingCopy,
-  checkWorkingCopyConflict,
-  getChildNames,
-  createNewName,
 } from './WorkingCopyOperations';
-import type { TreeNodeId, UUID, TreeNodeType, TreeNode, WorkingCopy } from '@hierarchidb/core';
-import type { CoreDB } from '../db/CoreDB';
-import type { EphemeralDB } from '../db/EphemeralDB';
-import { WorkerErrorCode } from '../command/types';
 
 // Mock database implementations
 class MockCoreDB {

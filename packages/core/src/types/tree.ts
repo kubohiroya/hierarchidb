@@ -35,6 +35,7 @@ export interface TrashItemProperties {
   originalName: string;
   originalParentTreeNodeId: TreeNodeId;
   removedAt: Timestamp;
+  isRemoved: boolean; // 【追加】: ゴミ箱状態を表すブール値フラグ
 }
 
 export type TreeNode = TreeNodeBase &

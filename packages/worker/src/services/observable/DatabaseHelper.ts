@@ -1,11 +1,11 @@
 import type {
-  TreeNodeId,
-  TreeNode,
-  TreeChangeEvent,
   SubscriptionFilter,
   Timestamp,
+  TreeChangeEvent,
+  TreeNode,
+  TreeNodeId,
 } from '@hierarchidb/core';
-import { CoreDB } from '../../db/CoreDB';
+import type { CoreDB } from '../../db/CoreDB';
 
 /**
  * TreeObservableService用のデータベースアクセスヘルパークラス

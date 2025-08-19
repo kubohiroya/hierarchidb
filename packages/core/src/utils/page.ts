@@ -25,7 +25,7 @@ export function getPageButtonColor(pageType: PageType): 'primary' | 'secondary' 
  * Uses a generic theme interface to avoid MUI dependency in core
  */
 export function getPageBackgroundColor(
-  pageType: PageType, 
+  pageType: PageType,
   theme: { palette: { background: { paper: string; default: string } } }
 ): string {
   switch (pageType) {

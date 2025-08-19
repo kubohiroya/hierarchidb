@@ -4,10 +4,10 @@
  * Tests scalability, memory usage, and concurrent operations
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Dexie from 'dexie';
-import { WorkingCopyHandler } from './WorkingCopyHandler';
 import type { TreeNodeId } from '@hierarchidb/core';
+import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WorkingCopyHandler } from './WorkingCopyHandler';
 
 // Helper to measure execution time
 const measureTime = async <T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> => {
@@ -254,7 +254,7 @@ describe('EntityHandler Performance Tests', () => {
 
       // Track memory usage (simplified - actual memory profiling would require more sophisticated tools)
       const startTime = performance.now();
-      let peakMemoryUsage = 0;
+      const peakMemoryUsage = 0;
 
       // Create entities with sub-entities
       for (let i = 0; i < entityCount; i++) {

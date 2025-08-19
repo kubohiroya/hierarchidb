@@ -14,7 +14,7 @@ import type {
 
 export interface TreeQueryService {
   getTrees(): Promise<Tree[]>;
-  
+
   getTree(payload: GetTreePayload): Promise<Tree | undefined>;
 
   // Basic query operations

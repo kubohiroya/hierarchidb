@@ -20,7 +20,6 @@ export type {
   StyleMapCreationData,
   StyleMapUpdateData,
   StyleMapValidationResult,
-
   // Configuration types
   StyleMapConfig,
   ColorMappingConfig,
@@ -28,13 +27,11 @@ export type {
   ColorSpace,
   MapLibreStyleProperty,
   StylePropertyMetadata,
-
   // Filter types
   FilterRule,
   FilterAction,
   FilterRuleValidationResult,
   FilterRuleStats,
-
   // Table types
   TableMetadataEntity,
   RowEntity,
@@ -43,7 +40,6 @@ export type {
   TableImportResult,
   TableQueryOptions,
   TableQueryResult,
-
   // Utility types
   StyleMapFormData,
   RGBColor,
@@ -64,7 +60,6 @@ export {
   createStyleMapEntity,
   createStyleMapWorkingCopy,
   validateStyleMapEntity,
-
   // Configuration utilities
   DEFAULT_STYLEMAP_CONFIG,
   COLOR_MAPPING_PRESETS,
@@ -74,26 +69,22 @@ export {
   applyColorPreset,
   getStylePropertyMetadata,
   getStylePropertiesByCategory,
-
   // Filter utilities
   createFilterRule,
   validateFilterRule,
   createTemplateFilterRules,
   applyFilterRules,
   getColumnUniqueValues,
-
   // Table utilities
   createTableMetadataEntity,
   createRowEntity,
   analyzeColumnData,
   validateTableMetadata,
   createTableDataSummary,
-
   // Constants and enums
   STYLEMAP_CONSTANTS,
   StyleMapErrorType,
   StyleMapError,
-
   // Type guards
   isStyleMapEntity,
   isStyleMapConfig,
@@ -134,53 +125,13 @@ export {
 // ==================
 // React Components (Lazy Loaded)
 // ==================
-// Note: These are lazy-loaded to prevent loading React in Worker context
+// Note: Components are temporarily disabled due to build issues
 
-/**
- * Lazy-loaded React components for UI
- * Only load these in the main thread UI context
- */
+/*
 export const StyleMapComponents = {
-  // Main components
-  get StyleMapDialog() {
-    return import('./components/StyleMapDialog');
-  },
-  get StyleMapEditor() {
-    return import('./components/StyleMapEditor');
-  },
-  get StyleMapForm() {
-    return import('./components/StyleMapForm');
-  },
-  get StyleMapView() {
-    return import('./components/StyleMapView');
-  },
-  get StyleMapPreview() {
-    return import('./components/StyleMapPreview');
-  },
-  get StyleMapPanel() {
-    return import('./components/StyleMapPanel');
-  },
-  get StyleMapIcon() {
-    return import('./components/StyleMapIcon');
-  },
-  get StyleMapImport() {
-    return import('./components/StyleMapImport');
-  },
-
-  // Step components
-  get Step1FileUpload() {
-    return import('./components/steps/Step1FileUpload');
-  },
-  get Step2ColumnMapping() {
-    return import('./components/steps/Step2ColumnMapping');
-  },
-  get Step3ColorMapping() {
-    return import('./components/steps/Step3ColorMapping');
-  },
-  get Step4Preview() {
-    return import('./components/steps/Step4Preview');
-  },
+  // Components disabled temporarily
 };
+*/
 
 // ==================
 // Utility Functions (Lazy Loaded)
@@ -368,6 +319,11 @@ export async function checkPluginHealth(): Promise<{
 }
 
 // ==================
+// UI Plugin Export
+// ==================
+export { StyleMapUIPlugin } from './ui/StyleMapUIPlugin';
+
+// ==================
 // Default Export
 // ==================
 
@@ -404,6 +360,7 @@ import { StyleMapEntityHandler } from './handlers/StyleMapEntityHandler';
 import { StyleMapHandler } from './handlers/StyleMapHandler';
 import { StyleMapDatabase } from './database/StyleMapDatabase';
 import { StyleMapUnifiedDefinition } from './definitions/StyleMapDefinition';
+import { StyleMapUIPlugin } from './ui/StyleMapUIPlugin';
 
 const exportDefault: any = {
   // Plugin configuration
@@ -416,6 +373,9 @@ const exportDefault: any = {
 
   // Plugin definition
   StyleMapUnifiedDefinition,
+
+  // UI Plugin
+  UIPlugin: StyleMapUIPlugin,
 
   // Utilities
   initialize: initializeStyleMapPlugin,

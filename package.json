@@ -26,11 +26,17 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
-    "lint": "turbo run lint",
-    "format": "prettier --write . && turbo run format",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "check": "biome check . && turbo run typecheck",
     "typecheck": "turbo run typecheck",
     "e2e": "turbo run e2e",
     "count-lines": "node scripts/count-lines.js",
+    "wc:ts": "find packages -name '*.ts' -o -name '*.tsx' | xargs wc -l",
+    "wc:test": "find packages -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.spec.ts' -o -name '*.spec.tsx' | xargs wc -l | tail -1",
+    "wc:md": "find . -name '*.md' -not -path './node_modules/*' | xargs wc -l | tail -1",
+    "wc:summary": "echo '📊 Line Count Summary:' && echo '  TypeScript/TSX:' && pnpm run wc:ts | tail -1 && echo '  Test Files:' && pnpm run wc:test && echo '  Markdown:' && pnpm run wc:md && echo '  Legacy count script:' && pnpm run count-lines",
     "analyze:docs": "node scripts/analyze-docs.cjs",
     "license-check": "pnpm --filter @hierarchidb/app license-check",
     "license-check:summary": "pnpm --filter @hierarchidb/app license-check:summary",
@@ -38,25 +44,13 @@
     "license-check:all": "pnpm --filter @hierarchidb/app license-check:all"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.19.0",
-    "@typescript-eslint/parser": "^8.19.0",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "prettier": "^3.2.0",
+    "@biomejs/biome": "2.2.0",
+    "@types/node": "^22.17.2",
     "tsc-alias": "^1.8.16",
-    "tsx": "^4.19.2",
+    "tsx": "^4.20.4",
     "turbo": "^2.5.6",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.3",
-    "vitest": "^2.1.8"
-  },
-  "pnpm": {
-    "overrides": {
-      "eslint": "^9.17.0",
-      "@typescript-eslint/eslint-plugin": "^8.19.0",
-      "@typescript-eslint/parser": "^8.19.0"
-    }
+    "typescript": "^5.9.2",
+    "vite": "^6.3.5",
+    "vitest": "^2.1.9"
   }
 }

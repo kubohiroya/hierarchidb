@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { EntityHandler, BaseSubEntity, BaseWorkingCopy } from './types';
-import { WorkingCopyHandler } from './WorkingCopyHandler';
 import type { TreeNodeId, UUID } from '@hierarchidb/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BaseSubEntity, BaseWorkingCopy, EntityHandler } from './types';
+import { WorkingCopyHandler } from './WorkingCopyHandler';
 
 // Test entity types
 interface TestEntity {

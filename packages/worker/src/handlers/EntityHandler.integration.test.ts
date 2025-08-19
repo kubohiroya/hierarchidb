@@ -5,13 +5,13 @@
  * SubEntityHandler, and WorkingCopyHandler
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { TreeNodeId } from '@hierarchidb/core';
 import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';
 import { SimpleEntityHandler } from './SimpleEntityHandler';
 import { SubEntityHandler } from './SubEntityHandler';
 import { WorkingCopyHandler } from './WorkingCopyHandler';
-import type { TreeNodeId } from '@hierarchidb/core';
 
 describe('EntityHandler Integration Tests', () => {
   let db: Dexie;

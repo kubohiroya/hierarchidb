@@ -372,11 +372,7 @@
     "commonImports": [
       {
         "import": "@hierarchidb/core",
-        "packages": [
-          "ui-client",
-          "ui-core",
-          "ui-monitoring"
-        ]
+        "packages": ["ui-client", "ui-core", "ui-monitoring"]
       }
     ]
   },

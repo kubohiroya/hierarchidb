@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { WorkerAPIImpl } from './WorkerAPIImpl';
-import { CommandProcessor } from './command/CommandProcessor';
-import { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CommandProcessor } from '~/command/CommandProcessor';
+import { SimpleNodeTypeRegistry } from '~/registry/SimpleNodeTypeRegistry';
+import { WorkerAPIImpl } from '~/WorkerAPIImpl';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('WorkerAPIImpl', () => {
   let workerAPI: WorkerAPIImpl;
@@ -56,13 +57,14 @@ describe('WorkerAPIImpl', () => {
 
       // Execute undo through WorkerAPI
       const result = await workerAPI.undo({
-        type: 'undo',
-        payload: {},
-        meta: {
-          commandId: 'test-undo',
-          timestamp: Date.now(),
+        kind: 'undo',
+        payload: {
+          groupId: uuidv4(),
         },
-      } as any);
+        issuedAt: Date.now(),
+        commandId: 'test-undo',
+        groupId: uuidv4()
+      });
 
       // Should return error when no command to undo
       expect(result).toHaveProperty('success', false);
@@ -79,13 +81,14 @@ describe('WorkerAPIImpl', () => {
 
       // Execute redo through WorkerAPI
       const result = await workerAPI.redo({
-        type: 'redo',
-        payload: {},
-        meta: {
-          commandId: 'test-redo',
-          timestamp: Date.now(),
+        kind: 'redo',
+        payload: {
+          groupId: uuidv4()
         },
-      } as any);
+        issuedAt: Date.now(),
+        commandId: 'test-redo',
+        groupId: uuidv4()
+      });
 
       // Should return error when no command to redo
       expect(result).toHaveProperty('success', false);
@@ -99,19 +102,19 @@ describe('WorkerAPIImpl', () => {
     it('should allow registering node types', () => {
       const registry = workerAPI.getNodeTypeRegistry();
 
-      registry.registerNodeType('customType' as any, {
+      registry.registerNodeType('customType', {
         icon: 'custom-icon',
         color: '#FF0000',
       });
 
-      expect(registry.isRegistered('customType' as any)).toBe(true);
+      expect(registry.isRegistered('customType')).toBe(true);
     });
 
     it('should preserve node type registrations across operations', () => {
       const registry = workerAPI.getNodeTypeRegistry();
 
       // Register a type
-      registry.registerNodeType('persistentType' as any, {
+      registry.registerNodeType('persistentType', {
         icon: 'persistent-icon',
       });
 
@@ -119,8 +122,8 @@ describe('WorkerAPIImpl', () => {
       const sameRegistry = workerAPI.getNodeTypeRegistry();
 
       // Should still be registered
-      expect(sameRegistry.isRegistered('persistentType' as any)).toBe(true);
-      expect(sameRegistry.getNodeTypeConfig('persistentType' as any)).toEqual({
+      expect(sameRegistry.isRegistered('persistentType')).toBe(true);
+      expect(sameRegistry.getNodeTypeConfig('persistentType')).toEqual({
         icon: 'persistent-icon',
       });
     });

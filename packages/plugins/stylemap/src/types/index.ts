@@ -316,4 +316,4 @@ export type DeepReadonly<T> = {
  * Re-export important types from dependencies
  */
 export type { TreeNodeId, UUID } from '@hierarchidb/core';
-export type { BaseEntity, BaseWorkingCopy } from '@hierarchidb/worker/registry';
+export type { BaseEntity, BaseWorkingCopy } from '@hierarchidb/worker';

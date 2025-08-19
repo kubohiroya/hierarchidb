@@ -3,16 +3,15 @@
  * @description Plugin module exports for worker package
  */
 
+export { PluginAPIService } from './PluginAPIService';
 // Export plugin types and classes
 export type {
-  PluginConfig,
-  NodeTypeConfig,
   DatabaseConfig,
-  TableConfig,
   DependencyConfig,
   LifecycleConfig,
+  NodeTypeConfig,
+  PluginConfig,
   PluginContext,
+  TableConfig,
 } from './PluginLoader';
-
-export { PluginLoader, LoadPriority } from './PluginLoader';
-export { PluginAPIService } from './PluginAPIService';
+export { LoadPriority, PluginLoader } from './PluginLoader';

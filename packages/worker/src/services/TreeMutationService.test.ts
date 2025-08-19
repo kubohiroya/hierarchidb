@@ -1,24 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TreeMutationServiceImpl } from './TreeMutationServiceImpl';
-import { CoreDB } from '../db/CoreDB';
-import { EphemeralDB } from '../db/EphemeralDB';
-import { CommandProcessor } from '../command/CommandProcessor';
-import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
 import type {
   CommandEnvelope,
-  TreeNodeId,
-  UUID,
-  TreeNode,
-  WorkingCopy,
   Timestamp,
+  TreeNode,
+  TreeNodeId,
   TreeNodeType,
+  UUID,
+  WorkingCopy,
 } from '@hierarchidb/core';
 import { generateUUID } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CommandProcessor } from '../command/CommandProcessor';
+import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
 import {
+  commitWorkingCopy,
   createNewDraftWorkingCopy,
   createWorkingCopyFromNode,
-  commitWorkingCopy,
 } from '../operations/WorkingCopyOperations';
+import { TreeMutationServiceImpl } from './TreeMutationServiceImpl';
 
 // Mock implementations
 vi.mock('../operations/WorkingCopyOperations');
@@ -662,8 +660,8 @@ describe('TreeMutationService', () => {
       });
     });
 
-    describe('permanentDelete', () => {
-      it('should permanently delete nodes', async () => {
+    describe('remove', () => {
+      it('should remove nodes', async () => {
         const nodeId = 'node-1' as TreeNodeId;
 
         coreDB.treeNodes.set(nodeId, {
@@ -676,15 +674,15 @@ describe('TreeMutationService', () => {
           version: 1,
         });
 
-        const cmd: CommandEnvelope<'permanentDelete', any> = {
+        const cmd: CommandEnvelope<'remove', any> = {
           commandId: generateUUID(),
           groupId: generateUUID(),
-          kind: 'permanentDelete',
+          kind: 'remove',
           payload: { nodeIds: [nodeId] },
           issuedAt: Date.now() as Timestamp,
         };
 
-        const result = await service.permanentDelete(cmd);
+        const result = await service.remove(cmd);
 
         expect(result.success).toBe(true);
         expect(coreDB.deleteNode).toHaveBeenCalledWith(nodeId);
@@ -714,15 +712,15 @@ describe('TreeMutationService', () => {
           version: 1,
         });
 
-        const cmd: CommandEnvelope<'permanentDelete', any> = {
+        const cmd: CommandEnvelope<'remove', any> = {
           commandId: generateUUID(),
           groupId: generateUUID(),
-          kind: 'permanentDelete',
+          kind: 'remove',
           payload: { nodeIds: [parentId] },
           issuedAt: Date.now() as Timestamp,
         };
 
-        const result = await service.permanentDelete(cmd);
+        const result = await service.remove(cmd);
 
         expect(result.success).toBe(true);
         expect(coreDB.deleteNode).toHaveBeenCalledWith(parentId);

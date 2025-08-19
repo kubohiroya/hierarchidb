@@ -49,3 +49,65 @@
 ### 今後の拡張
 - ProjectsConsole も ResourcesConsole と同じTreeConsole/TreeTable系の構成を共有しています。本表は両者に共通するUI部品を包括しています。
 - 必要に応じてセル単位の部品（NodeNameCellなど）や、ツールバー内のメニュー項目別の詳細も追補可能です。
+
+## 移植状況（2025-01-19更新）
+
+### 完了したコンポーネント
+
+#### 忠実に再現されたコンポーネント（見た目100%再現）
+- **TreeConsoleToolbar** - 完全な見た目の再現、全ボタングループ、設定ポッパー
+- **TreeConsoleFooter** - @emotion/styledでの完全再現、カウント表示ロジック
+- **TreeConsoleBreadcrumb** - パンくずナビゲーション、削除確認ダイアログ
+- **TreeConsoleActions** - SpeedDialMenu、FloatingActionButton（元のSpeedDialMenuを完全再現）
+
+#### 基本実装済みコンポーネント
+- **TreeTableConsolePanel** - メインパネル構造、レイアウト管理、ResizeObserver統合
+- **TreeConsoleHeader** - ヘッダー構造、タイトル表示、閉じるボタン
+- **TreeConsoleContent** - 基本構造（独自UIは削除済み）
+- **TreeTableConsolePanelContext** - コンテキスト提供、状態管理（簡略化）
+
+### 新アーキテクチャによる再実装（進行中）
+
+#### TreeTableの再設計
+元のTreeTableCoreは技術的負債を抱えた複雑な実装であったため、以下の方針で再設計：
+
+1. **責務の分離**
+   - Presentation層: 表示専用のPure Components
+   - State層: Jotaiによる中央集権的な状態管理
+   - Orchestration層: ユーザーストーリーベースの状態遷移
+
+2. **段階的移植計画**
+   - Phase 1: 基本テーブル表示 ✅
+   - Phase 2: データバインディング 🚧
+   - Phase 3: インタラクション
+   - Phase 4: 高度な機能（D&D、編集）
+   - Phase 5: パフォーマンス最適化
+   - Phase 6: 統合テスト
+
+3. **実装済みモジュール**
+   - `/state/atoms.ts` - Jotai状態管理atoms
+   - `/orchestrator/TreeTableOrchestrator.ts` - オーケストレーション層
+   - `/presentation/TreeTableView.tsx` - 表示専用コンポーネント
+   - `/TreeTableCore.tsx` - 統合コンポーネント（Phase 1実装）
+
+詳細な設計は [07-3-treeconsole-architecture.md](./07-3-treeconsole-architecture.md) を参照。
+
+### 技術的決定事項
+
+#### 採用した技術
+- **Jotai** - 状態管理（Redux/Zustandより軽量で、Reactとの親和性が高い）
+- **TanStack Table v8** - テーブル機能（元の実装でも使用）
+- **@dnd-kit** - ドラッグ&ドロップ（元の実装でも使用）
+- **@emotion/styled** - スタイリング（MUIとの親和性）
+
+#### 削除した独自実装
+- デバッグ情報ボックス（不要な独自UI）
+- プレースホルダーテキスト（元のデザインに存在しない）
+- 仮実装のボタン（混乱を招く）
+
+### 今後の作業
+
+1. **TreeTableCore Phase 2-6の実装**
+2. **WorkerAPIAdapterの完全統合**
+3. **E2Eテストの作成**
+4. **パフォーマンス最適化**

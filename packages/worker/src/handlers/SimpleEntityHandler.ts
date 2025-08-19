@@ -4,11 +4,10 @@
  * Provides basic CRUD operations with Dexie integration
  */
 
+import type { BaseEntity, BaseSubEntity, BaseWorkingCopy, TreeNodeId } from '@hierarchidb/core';
 import Dexie from 'dexie';
-import type { TreeNodeId } from '@hierarchidb/core';
-import { BaseEntityHandler } from './BaseEntityHandler';
-import type { BaseEntity, BaseSubEntity, BaseWorkingCopy } from '@hierarchidb/core';
 import { workerWarn } from '../utils/workerLogger';
+import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**
  * Simple entity for testing and basic usage

@@ -10,17 +10,17 @@ import type { INodeTypeRegistry } from './INodeTypeRegistry';
  * Abstract base implementation for node type registries
  * Provides common functionality for all registry types
  */
-export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
+export abstract class BaseNodeTypeRegistry<TValue = unknown> implements INodeTypeRegistry<TValue> {
   /**
    * Internal storage for registered items
    */
-  protected registry: Map<TreeNodeType, any> = new Map();
+  protected registry: Map<TreeNodeType, TValue> = new Map();
 
   /**
    * Register a node type with its configuration
    * Must be implemented by subclasses
    */
-  abstract register(nodeType: TreeNodeType, config: any): void;
+  abstract register(nodeType: TreeNodeType, config: TValue): void;
 
   /**
    * Unregister a node type
@@ -33,7 +33,7 @@ export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
   /**
    * Get configuration for a node type
    */
-  get(nodeType: TreeNodeType): any {
+  get(nodeType: TreeNodeType): TValue | undefined {
     return this.registry.get(nodeType);
   }
 
@@ -57,7 +57,7 @@ export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
   clear(): void {
     const types = this.getAll();
     this.registry.clear();
-    types.forEach((type) => this.onUnregister(type));
+    types.map((type) => this.onUnregister(type));
   }
 
   /**
@@ -70,21 +70,21 @@ export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
   /**
    * Iterate over all entries
    */
-  forEach(callback: (value: any, key: TreeNodeType) => void): void {
+  forEach(callback: (value: TValue, key: TreeNodeType) => void): void {
     this.registry.forEach(callback);
   }
 
   /**
    * Get all values
    */
-  values(): IterableIterator<any> {
+  values(): IterableIterator<TValue> {
     return this.registry.values();
   }
 
   /**
    * Get all entries
    */
-  entries(): IterableIterator<[TreeNodeType, any]> {
+  entries(): IterableIterator<[TreeNodeType, TValue]> {
     return this.registry.entries();
   }
 
@@ -92,7 +92,7 @@ export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
    * Hook called after successful registration
    * Can be overridden by subclasses
    */
-  protected onRegister(_nodeType: TreeNodeType, _config: any): void {
+  protected onRegister(_nodeType: TreeNodeType, _config: TValue): void {
     // Override in subclasses if needed
   }
 
@@ -108,7 +108,7 @@ export abstract class BaseNodeTypeRegistry implements INodeTypeRegistry {
    * Validate configuration before registration
    * Can be overridden by subclasses
    */
-  protected validateConfig(nodeType: TreeNodeType, config: any): void {
+  protected validateConfig(nodeType: TreeNodeType, config: TValue): void {
     if (!nodeType) {
       throw new Error('Node type cannot be null or undefined');
     }

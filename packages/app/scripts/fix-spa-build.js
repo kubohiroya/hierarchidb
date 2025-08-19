@@ -2,7 +2,7 @@
 
 /**
  * Fix React Router v7 SPA build for GitHub Pages
- * 
+ *
  * React Router v7 in SPA mode generates an index.html with streaming scripts
  * that can cause issues on static hosts like GitHub Pages.
  * This script creates a proper SPA index.html with the required initialization.
@@ -16,40 +16,48 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const buildDir = join(__dirname, '..', 'build', 'client');
 
 async function fixSpaBuild() {
+  // Create .nojekyll file for GitHub Pages to serve files starting with _
+  const nojekyllPath = join(buildDir, '.nojekyll');
+  await writeFile(nojekyllPath, '', 'utf-8');
+  console.log('✅ Created .nojekyll file for GitHub Pages');
+
   // Load environment variables
   const { loadEnv } = await import('vite');
   const env = loadEnv('production', process.cwd(), '');
   // Default to hash routing unless explicitly disabled
   const useHashRouting = env.VITE_USE_HASH_ROUTING !== 'false';
-  
+
   // Get app name from environment for dynamic path generation
   const appName = env.VITE_APP_NAME || '';
   const basePath = appName ? `/${appName}` : '';
-  
+
   // Find actual asset files in build directory
   const assetsDir = join(buildDir, 'assets');
   const assetFiles = await readdir(assetsDir);
-  
+
   // Find manifest and entry files dynamically
-  const manifestFile = assetFiles.find(f => f.startsWith('manifest-') && f.endsWith('.js'));
-  const entryFile = assetFiles.find(f => f === 'entry.client.js');
-  const rootFile = assetFiles.find(f => f === 'root.js');
-  
+  const manifestFile = assetFiles.find((f) => f.startsWith('manifest-') && f.endsWith('.js'));
+  const entryFile = assetFiles.find((f) => f === 'entry.client.js');
+  const rootFile = assetFiles.find((f) => f === 'root.js');
+
   // Check for required files (manifest is optional for Vite builds)
   if (!entryFile || !rootFile) {
     throw new Error(`Missing required asset files. Found: entry=${entryFile}, root=${rootFile}`);
   }
-  
+
   // Use main entry file if manifest is not available
-  const mainFile = manifestFile || assetFiles.find(f => f.startsWith('index-') && f.endsWith('.js'));
-  
-  console.log(`Using asset files: manifest=${manifestFile || 'none'}, main=${mainFile}, entry=${entryFile}, root=${rootFile}`);
+  const mainFile =
+    manifestFile || assetFiles.find((f) => f.startsWith('index-') && f.endsWith('.js'));
+
+  console.log(
+    `Using asset files: manifest=${manifestFile || 'none'}, main=${mainFile}, entry=${entryFile}, root=${rootFile}`
+  );
 
   try {
-    // Check if hash routing is enabled  
+    // Check if hash routing is enabled
     if (useHashRouting) {
       console.log('✅ Hash routing enabled - generating hash-based index.html');
-      
+
       // Create hash-routing compatible index.html
       const indexHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -151,7 +159,7 @@ async function fixSpaBuild() {
       // Write the hash-routing index.html
       const dest = join(buildDir, 'index.html');
       await writeFile(dest, indexHtml, 'utf-8');
-      
+
       // Remove 404.html if it exists (conflicts with hash routing)
       const notFoundPath = join(buildDir, '404.html');
       try {
@@ -161,11 +169,11 @@ async function fixSpaBuild() {
       } catch {
         // 404.html doesn't exist, which is good for hash routing
       }
-      
+
       console.log('✅ Hash routing build complete - 404.html not needed');
       return;
     }
-    
+
     // Original browser routing index.html
     const indexHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -174,7 +182,10 @@ async function fixSpaBuild() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="${basePath}/favicon.svg" />
     <title>HierarchiDB</title>
-    ${useHashRouting ? '' : `<script type="text/javascript">
+    ${
+      useHashRouting
+        ? ''
+        : `<script type="text/javascript">
       // Handle GitHub Pages SPA redirect
       // This script processes the redirect from 404.html
       (function(l) {
@@ -187,7 +198,8 @@ async function fixSpaBuild() {
           );
         }
       }(window.location))
-    </script>`}
+    </script>`
+    }
 </head>
 <body>
 <div id="root"></div>
@@ -235,7 +247,7 @@ async function fixSpaBuild() {
     // Write the fixed index.html
     const dest = join(buildDir, 'index.html');
     await writeFile(dest, indexHtml, 'utf-8');
-    
+
     // Create 404.html for GitHub Pages SPA routing with redirection script
     const notFoundHtml = `<!DOCTYPE html>
 <html>
@@ -261,10 +273,10 @@ async function fixSpaBuild() {
   <body>
   </body>
 </html>`;
-    
+
     const dest404 = join(buildDir, '404.html');
     await writeFile(dest404, notFoundHtml, 'utf-8');
-    
+
     console.log('✅ Fixed SPA build: Created proper index.html with React Router initialization');
   } catch (error) {
     console.error('❌ Error fixing SPA build:', error);

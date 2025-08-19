@@ -1,7 +1,7 @@
 /**
  * BaseMapプラグイン設定
  */
-import type { PluginConfig } from '@hierarchidb/worker/plugin';
+import type { PluginConfig } from '@hierarchidb/worker';
 import { BaseMapEntityHandler } from './src/handlers/BaseMapEntityHandler';
 
 export const basemapPlugin: PluginConfig = {
@@ -48,16 +48,16 @@ export const basemapPlugin: PluginConfig = {
 
   lifecycle: {
     hooks: {
-      onInstall: async (_context) => {
+      onInstall: async (_context: unknown) => {
         console.log('BaseMap plugin installed');
       },
-      onEnable: async (_context) => {
+      onEnable: async (_context: unknown) => {
         console.log('BaseMap plugin enabled');
       },
-      onDisable: async (_context) => {
+      onDisable: async (_context: unknown) => {
         console.log('BaseMap plugin disabled');
       },
-      onUninstall: async (_context) => {
+      onUninstall: async (_context: unknown) => {
         console.log('BaseMap plugin uninstalled');
       },
     },

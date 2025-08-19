@@ -31,7 +31,7 @@ app.get('*', (req, res) => {
     console.log(`Redirecting to ${BASE_PATH}${req.url}`);
     return res.redirect(BASE_PATH + req.url);
   }
-  
+
   console.log('Serving 404.html for SPA routing');
   res.sendFile(path.join(buildDir, '404.html'));
 });

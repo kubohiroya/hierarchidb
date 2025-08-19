@@ -15,11 +15,11 @@ import type {
 /**
  * Base interface for all node type registries
  */
-export interface INodeTypeRegistry {
+export interface INodeTypeRegistry<TValue = unknown> {
   /**
    * Register a node type with its configuration
    */
-  register(nodeType: TreeNodeType, config: any): void;
+  register(nodeType: TreeNodeType, config: TValue): void;
 
   /**
    * Unregister a node type
@@ -29,7 +29,7 @@ export interface INodeTypeRegistry {
   /**
    * Get configuration for a node type
    */
-  get(nodeType: TreeNodeType): any;
+  get(nodeType: TreeNodeType): TValue | undefined;
 
   /**
    * Check if a node type is registered
@@ -50,7 +50,7 @@ export interface INodeTypeRegistry {
 /**
  * Extended interface for plugin registries with UnifiedPluginDefinition support
  */
-export interface IPluginRegistry extends INodeTypeRegistry {
+export interface IPluginRegistry extends INodeTypeRegistry<unknown> {
   /**
    * Register a plugin with its unified definition
    */
@@ -87,7 +87,7 @@ export interface IPluginRegistry extends INodeTypeRegistry {
 /**
  * Interface for node type definition registry (original core registry)
  */
-export interface INodeDefinitionRegistry extends INodeTypeRegistry {
+export interface INodeDefinitionRegistry extends INodeTypeRegistry<NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>> {
   /**
    * Register a node type definition
    */
@@ -95,9 +95,7 @@ export interface INodeDefinitionRegistry extends INodeTypeRegistry {
     TEntity extends BaseEntity,
     TSubEntity extends BaseSubEntity,
     TWorkingCopy extends BaseWorkingCopy,
-  >(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
-  ): void;
+  >(definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>): void;
 
   /**
    * Get node type definition
@@ -134,7 +132,7 @@ export interface NodeTypeConfig {
 /**
  * Interface for simple node type registry (lightweight version)
  */
-export interface ISimpleNodeTypeRegistry extends INodeTypeRegistry {
+export interface ISimpleNodeTypeRegistry extends INodeTypeRegistry<NodeTypeConfig> {
   /**
    * Register node type with simple config
    */

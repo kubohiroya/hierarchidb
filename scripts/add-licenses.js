@@ -37,11 +37,11 @@ async function addLicenseToPackageJson(filePath) {
     const fullPath = join(rootDir, filePath);
     const content = await readFile(fullPath, 'utf8');
     const pkg = JSON.parse(content);
-    
+
     // Add MIT license if not already present
     if (!pkg.license) {
       pkg.license = 'MIT';
-      
+
       // Write back with proper formatting
       await writeFile(fullPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
       console.log(`✅ Added MIT license to ${filePath}`);
@@ -59,14 +59,14 @@ async function addLicenseToPackageJson(filePath) {
 
 async function main() {
   console.log('Adding MIT license to all package.json files...\n');
-  
+
   for (const file of packageFiles) {
     await addLicenseToPackageJson(file);
   }
-  
+
   // Also check and update root package.json
   await addLicenseToPackageJson('package.json');
-  
+
   console.log('\n✅ License update complete!');
 }
 

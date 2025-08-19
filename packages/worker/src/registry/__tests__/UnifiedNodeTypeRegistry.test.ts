@@ -3,16 +3,16 @@
  * @description Unit tests for UnifiedNodeTypeRegistry
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UnifiedNodeTypeRegistry } from '../UnifiedNodeTypeRegistry';
+import type { TreeNodeId, TreeNodeType } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
-  UnifiedPluginDefinition,
   BaseEntity,
   BaseSubEntity,
   BaseWorkingCopy,
   EntityHandler,
+  UnifiedPluginDefinition,
 } from '../types/unified-plugin';
-import { TreeNodeType, TreeNodeId } from '@hierarchidb/core';
+import { UnifiedNodeTypeRegistry } from '../UnifiedNodeTypeRegistry';
 
 // Mock entity types
 interface TestEntity extends BaseEntity {

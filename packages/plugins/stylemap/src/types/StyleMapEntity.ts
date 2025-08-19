@@ -8,7 +8,7 @@
  */
 
 import type { TreeNodeId, UUID } from '@hierarchidb/core';
-import type { BaseEntity, BaseWorkingCopy } from '@hierarchidb/worker/registry';
+import type { BaseEntity, BaseWorkingCopy } from '@hierarchidb/worker';
 import type { StyleMapConfig } from './StyleMapConfig';
 import type { FilterRule } from './FilterRule';
 

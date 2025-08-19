@@ -1,27 +1,31 @@
 // Database exports
-export * from './db/CoreDB';
-export * from './db/EphemeralDB';
 
-// API exports
-export * from './WorkerAPIImpl';
-export * from './client';
-
+export * from '~/client';
 // Command exports
-export * from './command';
-
-// Registry exports
-export { SimpleNodeTypeRegistry, UnifiedNodeTypeRegistry, NodeTypeRegistry } from './registry';
-
+export * from '~/command';
+export * from '~/db';
 // Handler exports
 export {
   BaseEntityHandler,
   SimpleEntityHandler,
   SubEntityHandler,
   WorkingCopyHandler,
-} from './handlers';
-
+} from '~/handlers';
 // Lifecycle exports
-export * from './lifecycle';
-
+export * from '~/lifecycle';
 // Operations exports
-export * from './operations';
+export * from '~/operations';
+// Registry exports
+// export * from '~/registry';
+// API exports
+export * from '~/WorkerAPIImpl';
+// Plugin exports
+export type {
+  PluginConfig,
+  NodeTypeConfig,
+  DatabaseConfig,
+  TableConfig,
+  DependencyConfig,
+  LifecycleConfig,
+  PluginContext,
+} from '~/plugin/PluginLoader';

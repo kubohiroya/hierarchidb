@@ -7,7 +7,7 @@
  * - docs/spec/plugin-stylemap-requirements.md
  */
 
-import type { PluginConfig } from '@hierarchidb/worker/plugin';
+import type { PluginConfig } from '@hierarchidb/worker';
 import { StyleMapEntityHandler } from './src/handlers/StyleMapEntityHandler';
 
 /**

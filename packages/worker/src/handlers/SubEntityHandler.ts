@@ -4,11 +4,10 @@
  * Provides comprehensive sub-entity management with type safety
  */
 
-import type { TreeNodeId } from '@hierarchidb/core';
-import type { BaseEntity, BaseSubEntity, BaseWorkingCopy } from '@hierarchidb/core';
-import { SimpleEntityHandler } from './SimpleEntityHandler';
+import type { BaseEntity, BaseSubEntity, BaseWorkingCopy, TreeNodeId } from '@hierarchidb/core';
+import type Dexie from 'dexie';
 import type { SimpleEntity, SimpleSubEntity, SimpleWorkingCopy } from './SimpleEntityHandler';
-import Dexie from 'dexie';
+import { SimpleEntityHandler } from './SimpleEntityHandler';
 
 /**
  * Extended sub-entity with additional metadata
@@ -126,8 +125,8 @@ export class SubEntityHandler extends SimpleEntityHandler {
     const subEntity: ExtendedSubEntity = {
       id: data.id || this.generateUUID(),
       parentNodeId: nodeId,
+      type: subEntityType, // Required by BaseSubEntity
       subEntityType,
-      type: subEntityType, // Required by ExtendedSubEntity
       name: data.name,
       data: data.data || {},
       metadata: data.metadata || {},
@@ -161,7 +160,7 @@ export class SubEntityHandler extends SimpleEntityHandler {
       return [];
     }
 
-    let query = this.db.table(this.subEntityTableName).where('parentNodeId').equals(nodeId);
+    const query = this.db.table(this.subEntityTableName).where('parentNodeId').equals(nodeId);
 
     const results = await query.toArray();
 
@@ -432,7 +431,6 @@ export class SubEntityHandler extends SimpleEntityHandler {
         parentNodeId: targetNodeId,
         name: subEntity.name ? `${subEntity.name} (Copy)` : undefined,
         subEntityType: subEntity.subEntityType,
-        type: subEntity.type,
         createdAt: this.now(),
         updatedAt: this.now(),
         version: 1,

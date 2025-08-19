@@ -3,17 +3,13 @@
   "version": "0.0.1",
   "description": "API interfaces for UI-Worker communication",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && tsc-alias",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "build:tsc": "tsc && tsc-alias",
+    "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
@@ -26,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },
   "license": "MIT"

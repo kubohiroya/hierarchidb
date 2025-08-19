@@ -6,7 +6,7 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build --mode production && node scripts/fix-spa-build.js",
+    "build": "react-router build --mode production && node scripts/fix-spa-build.js && touch build/client/assets/.nojekyll",
     "build:dev": "react-router build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
     "preview": "vite preview --config vite.preview.config.ts",
@@ -27,29 +27,34 @@
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-client": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-guide": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-import-export": "workspace:*",
     "@hierarchidb/ui-landingpage": "workspace:*",
     "@hierarchidb/ui-layout": "workspace:*",
     "@hierarchidb/ui-navigation": "workspace:*",
     "@hierarchidb/ui-routing": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
-    "@hierarchidb/ui-treeconsole": "workspace:*",
+    "@hierarchidb/ui-treeconsole-base": "workspace:*",
+    "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
+    "@hierarchidb/ui-usermenu": "workspace:*",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@react-router/fs-routes": "^7.8.1",
     "@react-router/node": "^7.8.1",
     "isbot": "^5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-helmet-async": "^2.0.5",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-router": "^7.8.1",
-    "react-router-dom": "^7.8.1"
+    "react-router-dom": "^7.8.1",
+    "rxjs": "^7.8.2",
+    "vite-plugin-dts": "^4.5.4"
   },
   "devDependencies": {
     "@react-router/dev": "^7.8.1",
     "@react-router/node": "^7.8.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.7.0",
     "gh-pages": "^6.3.0",
     "license-checker": "^25.0.1",
@@ -58,8 +63,8 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "peerDependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "license": "MIT"
 }

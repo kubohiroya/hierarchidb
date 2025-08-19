@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { SimpleNodeTypeRegistry } from './SimpleNodeTypeRegistry';
 import type { TreeNodeType } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { SimpleNodeTypeRegistry } from './SimpleNodeTypeRegistry';
 
 describe('SimpleNodeTypeRegistry', () => {
   let registry: SimpleNodeTypeRegistry;

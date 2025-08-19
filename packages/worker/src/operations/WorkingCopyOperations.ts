@@ -1,16 +1,16 @@
 import type {
-  TreeNodeId,
-  UUID,
-  TreeNodeType,
-  TreeNode,
-  WorkingCopy,
   Timestamp,
+  TreeNode,
+  TreeNodeId,
+  TreeNodeType,
+  UUID,
+  WorkingCopy,
 } from '@hierarchidb/core';
 import { generateUUID } from '@hierarchidb/core';
-import type { CoreDB } from '../db/CoreDB';
-import type { EphemeralDB } from '../db/EphemeralDB';
 import type { CommandResult } from '../command/types';
 import { WorkerErrorCode } from '../command/types';
+import type { CoreDB } from '../db/CoreDB';
+import type { EphemeralDB } from '../db/EphemeralDB';
 
 /**
  * Create a new draft working copy for creating a new node

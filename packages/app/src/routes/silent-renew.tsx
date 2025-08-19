@@ -2,8 +2,8 @@
  * サイレントトークン更新ページ
  * IFrameで読み込まれ、バックグラウンドでトークンを更新
  */
-import { useEffect } from 'react';
-import { useBFFAuth } from '@hierarchidb/ui-auth';
+import { useEffect } from "react";
+import { useBFFAuth } from "@hierarchidb/ui-auth";
 
 export default function SilentRenewRoute() {
   const { resumeAfterSignIn } = useBFFAuth();
@@ -14,14 +14,17 @@ export default function SilentRenewRoute() {
         resumeAfterSignIn();
         // 親ウィンドウに更新成功を通知
         if (window.parent !== window) {
-          window.parent.postMessage({ type: 'silent-renew-success' }, window.location.origin);
+          window.parent.postMessage(
+            { type: "silent-renew-success" },
+            window.location.origin,
+          );
         }
       } catch (error) {
-        console.error('Silent renew failed:', error);
+        console.error("Silent renew failed:", error);
         if (window.parent !== window) {
           window.parent.postMessage(
-            { type: 'silent-renew-error', error: error?.toString() },
-            window.location.origin
+            { type: "silent-renew-error", error: error?.toString() },
+            window.location.origin,
           );
         }
       }

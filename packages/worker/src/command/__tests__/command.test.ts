@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { UUID, Timestamp, TreeNodeId, Seq } from '@hierarchidb/core';
+import type { Seq, Timestamp, TreeNodeId, UUID } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  CommandEnvelope,
+  type CommandEnvelope,
   CommandMeta,
-  CommandResult,
-  WorkerErrorCode,
   CommandProcessor,
+  type CommandResult,
+  WorkerErrorCode,
 } from '../index';
 
 // ユーティリティ関数のモック
@@ -111,7 +111,7 @@ describe('Command Pattern Implementation', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBeDefined();
-        expect(result.code).toBe(WorkerErrorCode.UNKNOWN_ERROR);
+        expect(result.code).toBe(WorkerErrorCode.INVALID_OPERATION);
       }
     });
 

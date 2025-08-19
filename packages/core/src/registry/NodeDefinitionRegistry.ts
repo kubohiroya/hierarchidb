@@ -11,6 +11,8 @@ import type {
   BaseSubEntity,
   BaseWorkingCopy,
   EntityHandler,
+  NodeLifecycleHooks,
+  EntityBackup,
 } from '../types/nodeDefinition';
 import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
 import type { INodeDefinitionRegistry } from './INodeTypeRegistry';
@@ -20,7 +22,7 @@ import type { INodeDefinitionRegistry } from './INodeTypeRegistry';
  * Used for AOP-based plugin architecture
  */
 export class NodeDefinitionRegistry
-  extends BaseNodeTypeRegistry
+  extends BaseNodeTypeRegistry<NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>
   implements INodeDefinitionRegistry
 {
   private static instance: NodeDefinitionRegistry;
@@ -48,7 +50,8 @@ export class NodeDefinitionRegistry
    * Reset singleton instance (useful for testing)
    */
   static resetInstance(): void {
-    NodeDefinitionRegistry.instance = undefined as any;
+    // Resetting to undefined is safe for singleton reset
+    NodeDefinitionRegistry.instance = undefined as unknown as NodeDefinitionRegistry;
   }
 
   /**
@@ -59,24 +62,24 @@ export class NodeDefinitionRegistry
     TSubEntity extends BaseSubEntity,
     TWorkingCopy extends BaseWorkingCopy,
   >(definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>): void {
-    const { nodeType, entityHandler } = definition;
+    const { nodeType } = definition;
 
-    // Validate
-    this.validateConfig(nodeType, definition);
+    // Validate (local to avoid generic variance issues)
+    if (!nodeType) {
+      throw new Error('Node type cannot be null or undefined');
+    }
+    if (definition === null || definition === undefined) {
+      throw new Error('Definition cannot be null or undefined');
+    }
 
     if (this.registry.has(nodeType)) {
       throw new Error(`Node type ${nodeType} is already registered`);
     }
 
-    // Store with type casting to base types
-    this.registry.set(
-      nodeType,
-      definition as unknown as NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>
-    );
-    this.handlers.set(
-      nodeType,
-      entityHandler as unknown as EntityHandler<BaseEntity, BaseSubEntity, BaseWorkingCopy>
-    );
+    // Store with safe adaptation to base-typed facade (avoid unsafe casts)
+    const adapted = this.adaptDefinition(definition);
+    this.registry.set(nodeType, adapted.definition);
+    this.handlers.set(nodeType, adapted.handler);
 
     // Register database schema
     this.registerDatabaseSchema(definition);
@@ -87,14 +90,14 @@ export class NodeDefinitionRegistry
     }
 
     // Call hook
-    this.onRegister(nodeType, definition);
+    this.onRegister(nodeType, adapted.definition);
     this.logRegistration(nodeType, 'register');
   }
 
   /**
    * Generic register method (delegates to registerDefinition)
    */
-  register(_nodeType: TreeNodeType, config: any): void {
+  register(_nodeType: TreeNodeType, config: NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>): void {
     if (this.isNodeTypeDefinition(config)) {
       this.registerDefinition(config);
     } else {
@@ -189,15 +192,123 @@ export class NodeDefinitionRegistry
   }
 
   /**
+   * Adapt a generic NodeTypeDefinition<TEntity,...> into a base-typed facade
+   * to safely store in the registry without using any. Function parameters
+   * are downcast at the boundary; return values are upcast to base.
+   */
+  private adaptDefinition<
+    TEntity extends BaseEntity,
+    TSubEntity extends BaseSubEntity,
+    TWorkingCopy extends BaseWorkingCopy,
+  >(definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>): {
+    definition: NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>;
+    handler: EntityHandler<BaseEntity, BaseSubEntity, BaseWorkingCopy>;
+  } {
+    const { entityHandler, lifecycle } = definition;
+
+    const adaptedHandler: EntityHandler<BaseEntity, BaseSubEntity, BaseWorkingCopy> = {
+      // Entity operations
+      createEntity: async (nodeId, data) =>
+        (await entityHandler.createEntity(nodeId, data as Partial<TEntity>)) as BaseEntity,
+      getEntity: async (nodeId) =>
+        (await entityHandler.getEntity(nodeId)) as BaseEntity | undefined,
+      updateEntity: async (nodeId, data) =>
+        entityHandler.updateEntity(nodeId, data as Partial<TEntity>),
+      deleteEntity: async (nodeId) => entityHandler.deleteEntity(nodeId),
+
+      // Sub-entity operations
+      createSubEntity: entityHandler.createSubEntity
+        ? async (nodeId, subType, data) =>
+            entityHandler.createSubEntity!(nodeId, subType, data as TSubEntity)
+        : undefined,
+      getSubEntities: entityHandler.getSubEntities
+        ? async (nodeId, subType) =>
+            (await entityHandler.getSubEntities!(nodeId, subType)) as TSubEntity[]
+        : undefined,
+      deleteSubEntities: entityHandler.deleteSubEntities
+        ? async (nodeId, subType) => entityHandler.deleteSubEntities!(nodeId, subType)
+        : undefined,
+
+      // Working copy operations
+      createWorkingCopy: async (nodeId) =>
+        (await entityHandler.createWorkingCopy(nodeId)) as BaseWorkingCopy,
+      commitWorkingCopy: async (nodeId, workingCopy) =>
+        entityHandler.commitWorkingCopy(nodeId, workingCopy as TWorkingCopy),
+      discardWorkingCopy: async (nodeId) => entityHandler.discardWorkingCopy(nodeId),
+
+      // Optional operations
+      duplicate: entityHandler.duplicate
+        ? async (nodeId, newNodeId) => entityHandler.duplicate!(nodeId, newNodeId)
+        : undefined,
+      backup: entityHandler.backup
+        ? async (nodeId) => entityHandler.backup!(nodeId)
+        : undefined,
+      restore: entityHandler.restore
+        ? async (nodeId, backup) =>
+            entityHandler.restore!(nodeId, backup as EntityBackup<TEntity>)
+        : undefined,
+      cleanup: entityHandler.cleanup
+        ? async (nodeId) => entityHandler.cleanup!(nodeId)
+        : undefined,
+    };
+
+    const adaptedLifecycle: NodeLifecycleHooks<BaseEntity, BaseWorkingCopy> = {
+      beforeCreate: lifecycle.beforeCreate
+        ? async (parentId, nodeData) => lifecycle.beforeCreate!(parentId, nodeData)
+        : undefined,
+      afterCreate: lifecycle.afterCreate
+        ? async (nodeId, entity) => lifecycle.afterCreate!(nodeId, entity as TEntity)
+        : undefined,
+      beforeUpdate: lifecycle.beforeUpdate
+        ? async (nodeId, changes) => lifecycle.beforeUpdate!(nodeId, changes)
+        : undefined,
+      afterUpdate: lifecycle.afterUpdate
+        ? async (nodeId, entity) => lifecycle.afterUpdate!(nodeId, entity as TEntity)
+        : undefined,
+      beforeDelete: lifecycle.beforeDelete
+        ? async (nodeId) => lifecycle.beforeDelete!(nodeId)
+        : undefined,
+      afterDelete: lifecycle.afterDelete
+        ? async (nodeId) => lifecycle.afterDelete!(nodeId)
+        : undefined,
+      beforeMove: lifecycle.beforeMove
+        ? async (nodeId, newParentId) => lifecycle.beforeMove!(nodeId, newParentId)
+        : undefined,
+      afterMove: lifecycle.afterMove
+        ? async (nodeId, newParentId) => lifecycle.afterMove!(nodeId, newParentId)
+        : undefined,
+      beforeDuplicate: lifecycle.beforeDuplicate
+        ? async (sourceId, targetParentId) => lifecycle.beforeDuplicate!(sourceId, targetParentId)
+        : undefined,
+      afterDuplicate: lifecycle.afterDuplicate
+        ? async (sourceId, newNodeId) => lifecycle.afterDuplicate!(sourceId, newNodeId)
+        : undefined,
+      onWorkingCopyCreated: lifecycle.onWorkingCopyCreated
+        ? async (nodeId, wc) => lifecycle.onWorkingCopyCreated!(nodeId, wc as TWorkingCopy)
+        : undefined,
+      onWorkingCopyCommitted: lifecycle.onWorkingCopyCommitted
+        ? async (nodeId, wc) => lifecycle.onWorkingCopyCommitted!(nodeId, wc as TWorkingCopy)
+        : undefined,
+      onWorkingCopyDiscarded: lifecycle.onWorkingCopyDiscarded
+        ? async (nodeId) => lifecycle.onWorkingCopyDiscarded!(nodeId)
+        : undefined,
+    };
+
+    const adaptedDefinition: NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy> = {
+      ...definition,
+      entityHandler: adaptedHandler,
+      lifecycle: adaptedLifecycle,
+    } as unknown as NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>;
+
+    return { definition: adaptedDefinition, handler: adaptedHandler };
+  }
+
+  /**
    * Type guard to check if config is NodeTypeDefinition
    */
-  private isNodeTypeDefinition(config: any): config is NodeTypeDefinition {
-    return (
-      config &&
-      typeof config === 'object' &&
-      'nodeType' in config &&
-      'entityHandler' in config &&
-      'database' in config
-    );
+  private isNodeTypeDefinition(config: unknown): config is NodeTypeDefinition {
+    if (typeof config !== 'object' || config === null) return false;
+    const obj = config as Record<string, unknown>;
+    return 'nodeType' in obj && 'entityHandler' in obj && 'database' in obj;
   }
 }

@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { TreeNode, WorkingCopy } from '@hierarchidb/core';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../CoreDB';
 import { EphemeralDB } from '../EphemeralDB';
-import type { TreeNode, WorkingCopy } from '@hierarchidb/core';
 
 describe('データベース初期化テスト', () => {
   let coreDB: CoreDB;
   let ephemeralDB: EphemeralDB;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // テスト用の新しいデータベースインスタンスを作成
     coreDB = new CoreDB('test-core');
     ephemeralDB = new EphemeralDB('test-ephemeral');

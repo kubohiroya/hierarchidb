@@ -4,7 +4,7 @@
  * Provides consolidated test execution and reporting
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // Import all test modules
 import './BaseEntityHandler.test';
@@ -28,7 +28,7 @@ interface ModuleTestResults {
 
 describe('EntityHandler Test Suite', () => {
   let suiteStartTime: number;
-  let moduleResults: ModuleTestResults = {};
+  const moduleResults: ModuleTestResults = {};
 
   beforeAll(() => {
     suiteStartTime = Date.now();

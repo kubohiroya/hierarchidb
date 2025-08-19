@@ -1,9 +1,9 @@
 import type { BaseSubEntity, TreeNodeId, UUID } from '@hierarchidb/core';
 import { generateUUID } from '@hierarchidb/core';
-import type { EntityHandler, BaseEntity, BaseWorkingCopy } from './types';
+import { WorkerErrorCode } from '../command/types';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
-import { WorkerErrorCode } from '../command/types';
+import type { BaseEntity, BaseWorkingCopy, EntityHandler } from './types';
 
 /**
  * Base implementation of EntityHandler

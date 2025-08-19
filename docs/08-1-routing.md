@@ -11,6 +11,8 @@ React Router v7 のファイルベース・ルーティング（app/routes の�
 - 各階層に clientLoader を配置し、`useLoaderData` で段階的に統合されたデータを取得する
 - WorkerAPIClient 経由でツリー・ノード情報を取得し、`useRouteLoaderData` を使った階層ごとのデータ参照ヘルパーを提供
 
+たとえばWorkerAPIClient.getSingleton()はasyncなので、これを自前のReactのカスタムフックで得るのではなく、React Routerの仕組みを使って、useRouteLoaderDataで非同期初期化済みのものを得るようにしている。
+同様のケースがあれば、カスタムフックをつくって内部でuseEffectで非同期に値を得るのではなく、ここでのuseRouteLoaderDataを使うパターンを真似ることを推奨する。
 
 ### 8.1.2 URLパターン設計
 
@@ -416,3 +418,262 @@ const data = useLoaderData() as LoadTreeNodeActionReturn;
 - `pageTreeNode` は `/t/:treeId/:pageTreeNodeId?` で提供され、未指定時はルートノード（`treeId + TreeNodeTypes.Root`）。
 - `targetTreeNode` は `/t/:treeId/:pageTreeNodeId?/:targetTreeNodeId?` で提供され、`targetTreeNodeId || pageTreeNodeId || treeId + TreeNodeTypes.Root` の優先順位で解決。
 - `treeNodeType` と `action` は URL 文字列を型アサーションでそのまま返すため、存在/権限の検証はプラグイン層やルートガードで行う。
+
+## 8.2 React Router v7 + MUI の SSR/Hydration 対応実装ガイド
+
+### 8.2.1 概要
+
+React Router v7とMaterial-UIを組み合わせたSPAアプリケーションにおいて、SSR/Hydration警告を解消し、安定した動作を実現するための実装パターンをまとめます。
+
+### 8.2.2 問題と解決策
+
+#### 8.2.2.1 SSR/Hydration 不一致による警告
+
+**問題:**
+```
+Warning: Extra attributes from the server: style Error Component Stack
+```
+
+**原因:**
+- MUIのEmotionスタイルエンジンがサーバー側とクライアント側で異なるスタイルを生成
+- `sessionStorage`へのアクセスがSSR時に利用できない
+- React Router v7のhydration処理との競合
+
+**解決策:**
+
+1. **Layout コンポーネントでの hydration 警告抑制**
+```tsx
+// packages/app/src/root.tsx
+export function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body suppressHydrationWarning>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+```
+
+2. **MUI スタイルエンジンの統一**
+```tsx
+// packages/app/src/root.tsx
+import { StyledEngineProvider } from '@mui/material/styles';
+
+export default function App() {
+  const theme = useMemo(() => createAppTheme('light'), []);
+
+  return (
+    <AppConfigProvider>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppContent />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </AppConfigProvider>
+  );
+}
+```
+
+3. **Client-side状態の安全な管理**
+```tsx
+// packages/app/src/routes/_index.tsx
+export default function Index() {
+  // SSR/hydration不一致を防ぐためのクライアント判定
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // sessionStorageの安全なアクセス
+  const getSavedPageNodeId = useCallback((treeId: string): string | null => {
+    if (!isClient) return null; // SSR時はnullを返す
+    try {
+      return sessionStorage.getItem(getSessionStorageKey(treeId));
+    } catch {
+      return null;
+    }
+  }, [isClient]);
+}
+```
+
+#### 8.2.2.2 React Router v7 の設定
+
+**SPAモード設定:**
+```typescript
+// packages/app/react-router.config.ts
+const config: ReactRouterConfig = {
+  appDirectory: 'src',
+  prerender: false,
+  ssr: false, // SSRを無効化
+  basename,
+  async buildEnd(args): Promise<void> {
+    // GitHub Pages用の設定など
+  },
+};
+```
+
+**Entry Client の実装:**
+```tsx
+// packages/app/src/entry.client.tsx
+import { StrictMode, startTransition } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { HydratedRouter } from 'react-router/dom';
+
+startTransition(() => {
+  hydrateRoot(
+    document,
+    <StrictMode>
+      <HydratedRouter />
+    </StrictMode>
+  );
+});
+```
+
+#### 8.2.2.3 Vite設定での最適化
+
+**モジュール重複の解決:**
+```typescript
+// packages/app/vite.config.ts
+export default defineConfig({
+  resolve: {
+    // @emotion/reactとreactの重複を解決
+    dedupe: ['@emotion/react', '@emotion/styled', 'react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@mui/material',
+      '@mui/icons-material',
+      '@emotion/react',
+      '@emotion/styled',
+    ],
+  },
+});
+```
+
+### 8.2.3 ベストプラクティス
+
+#### 8.2.3.1 SSR対応コンポーネントの設計原則
+
+**❌ 避けるべきパターン:**
+```tsx
+// 直接的なDOM/BOM APIのアクセス
+const data = localStorage.getItem('key'); // SSR時にエラー
+
+// 不安定な値の使用
+const id = Math.random(); // SSR/CSRで異なる値
+```
+
+**✅ 推奨パターン:**
+```tsx
+// クライアント判定フラグの使用
+const [isClient, setIsClient] = useState(false);
+useEffect(() => setIsClient(true), []);
+
+// 条件付きアクセス
+const data = isClient ? localStorage.getItem('key') : null;
+
+// 安定した初期値
+const [id] = useState(() => crypto.randomUUID()); // useMemoでも可
+```
+
+#### 8.2.3.2 テーマとスタイリングの統一
+
+**MUIテーマの安定化:**
+```tsx
+// テーマの安定化でhydration不一致を防ぐ
+const theme = useMemo(() => createAppTheme('light'), []);
+
+// StyledEngineProviderでスタイル優先度を制御
+<StyledEngineProvider injectFirst>
+  <ThemeProvider theme={theme}>
+```
+
+#### 8.2.3.3 段階的なクライアント機能の有効化
+
+**段階的な機能有効化パターン:**
+```tsx
+function MyComponent() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // 基本表示（SSR対応）
+  if (!mounted) {
+    return <BasicView />;
+  }
+  
+  // 完全機能版（CSRのみ）
+  return <EnhancedView />;
+}
+```
+
+### 8.2.4 トラブルシューティング
+
+#### 8.2.4.1 よくあるエラーと対処法
+
+| エラー | 原因 | 解決策 |
+|--------|------|--------|
+| `Extra attributes from the server: style` | MUIスタイルの不一致 | `StyledEngineProvider` + `suppressHydrationWarning` |
+| `localStorage is not defined` | SSR時のBOM APIアクセス | `isClient`フラグで条件付きアクセス |
+| コンテンツが表示されない | Entry clientの設定ミス | 標準的な`hydrateRoot`パターンを使用 |
+| テーマが反映されない | テーマプロバイダーの順序 | `StyledEngineProvider`を`ThemeProvider`より外側に配置 |
+
+#### 8.2.4.2 デバッグ手順
+
+1. **ブラウザ開発者ツールのConsoleを確認**
+   - Hydration警告の詳細を確認
+   - エラースタックトレースから問題箇所を特定
+
+2. **Network タブでリソース読み込みを確認**
+   - CSSファイルの読み込み状況
+   - JSバンドルの読み込み順序
+
+3. **React Developer Toolsでコンポーネント状態を確認**
+   - Props/Stateの値がSSR/CSRで一致しているか
+   - Context値の伝播状況
+
+### 8.2.5 実装のポイントまとめ
+
+#### 8.2.5.1 重要な設定項目
+
+1. **suppressHydrationWarning の適用**
+   - `<html>` と `<body>` タグに設定
+   - スタイル不一致の警告を抑制
+
+2. **StyledEngineProvider の配置**
+   - ThemeProvider より外側に配置
+   - `injectFirst` プロパティで優先度制御
+
+3. **クライアント状態の管理**
+   - `useEffect` でクライアント判定
+   - DOM/BOM API への安全なアクセス
+
+#### 8.2.5.2 アーキテクチャ上の考慮点
+
+- **段階的な機能有効化**: SSR対応の基本表示から徐々に機能を拡張
+- **状態の分離**: サーバー側で利用できない状態は明確に分離
+- **エラーハンドリング**: hydration失敗時の適切なフォールバック
+
+### 8.2.6 参考リンク
+
+- [React Router v7 Documentation](https://reactrouter.com/en/main)
+- [MUI Server-Side Rendering Guide](https://mui.com/material-ui/guides/server-rendering/)
+- [React Hydration Best Practices](https://react.dev/reference/react-dom/client/hydrateRoot)
+
+---
+
+このガイドは実際のプロダクション環境で発生した問題とその解決策をまとめたものです。類似のシステム開発時の参考としてご活用ください。

@@ -3,11 +3,11 @@
  * @description Unit tests for WorkingCopyHandler advanced working copy operations
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import Dexie from 'dexie';
-import { WorkingCopyHandler } from './WorkingCopyHandler';
-import type { EnhancedWorkingCopy, WorkingCopyStatus } from './WorkingCopyHandler';
 import type { TreeNodeId } from '@hierarchidb/core';
+import Dexie from 'dexie';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EnhancedWorkingCopy, WorkingCopyStatus } from './WorkingCopyHandler';
+import { WorkingCopyHandler } from './WorkingCopyHandler';
 
 describe('WorkingCopyHandler', () => {
   let db: Dexie;

@@ -246,6 +246,57 @@ import 'fake-indexeddb/auto';
 // Tests run with in-memory database
 ```
 
+## Build Configuration
+
+### Package Export Configuration
+**CRITICAL**: Package.json export fields must match actual dist output files
+
+#### tsup Output Patterns
+1. **Default tsup** (`format: ['esm', 'cjs']`):
+   - ESM → `dist/index.js`
+   - CommonJS → `dist/index.cjs`
+   - Types → `dist/index.d.ts`
+
+2. **Custom tsup with outExtension**:
+   - ESM → `dist/index.mjs`
+   - CommonJS → `dist/index.cjs`
+   - Types → `dist/index.d.ts`
+
+#### Correct package.json Configuration
+```json
+// For default tsup output (most packages)
+{
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  }
+}
+
+// For custom tsup with .mjs output
+{
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  }
+}
+```
+
+#### Validation Scripts
+- `node scripts/validate-package-exports.cjs` - Validate all package configurations
+- `node scripts/fix-all-package-exports.cjs` - Auto-fix mismatched configurations
+
+**NEVER** reference `.mjs` files unless tsup is configured with `outExtension` to generate them.
+
 ## Deployment
 
 ### GitHub Pages

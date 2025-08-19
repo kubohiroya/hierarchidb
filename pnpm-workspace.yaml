@@ -1,7 +1,10 @@
 packages:
   - src
   - packages/*
+  - packages/backend/*
   - packages/plugins/*
+  - packages/ui/*
+  - packages/ui/treeconsole/*
 
 ignoredBuiltDependencies:
   - esbuild
