@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "name": "Total Population by Country",
+  "description": "World population data by country for 2023, including demographic statistics and geographic boundaries",
+  "icon": "Public",
+  "category": "demographic",
+  "tags": ["population", "demographics", "countries", "2023", "world data"],
+  "dataSource": "UN Population Division",
+  "lastUpdated": "2023-07-01",
+  "nodeCount": 4,
+  "resourceTypes": {
+    "shapes": 1,
+    "stylemaps": 1,
+    "tables": 1
+  },
+  "rootNodes": ["population-folder-2023"]
+}
