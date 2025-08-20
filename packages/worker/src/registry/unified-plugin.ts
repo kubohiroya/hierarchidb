@@ -119,6 +119,39 @@ export interface NodeTypeDefinition<
   readonly name: string;
   readonly displayName: string;
   
+  // i18n configuration
+  readonly i18n?: {
+    // Namespace for this plugin's translations
+    namespace?: string;
+    // Default locale (e.g., 'en', 'ja')
+    defaultLocale?: string;
+    // Path pattern for locale files (e.g., './locales/{{lng}}/{{ns}}.json')
+    localesPath?: string;
+    // Embedded translations (optional, for small plugins)
+    resources?: {
+      [locale: string]: {
+        menuItem?: {
+          title?: string;
+          tooltip?: string;
+        };
+        dialog?: {
+          title?: string;
+          description?: string;
+          createButton?: string;
+          cancelButton?: string;
+        };
+        panel?: {
+          title?: string;
+          description?: string;
+        };
+        speedDial?: {
+          tooltip?: string;
+        };
+        [key: string]: any;
+      };
+    };
+  };
+  
   // Icon configuration with multi-format support
   readonly icon?: IconDefinition;
 

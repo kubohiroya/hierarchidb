@@ -180,6 +180,13 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<
   
   // Icon configuration
   icon: baseMapIcon,
+  
+  // i18n configuration
+  i18n: {
+    namespace: 'plugin-basemap',
+    defaultLocale: 'en',
+    localesPath: '/plugins/basemap/locales/{{lng}}/core.json',
+  },
 
   // Database configuration
   database: {

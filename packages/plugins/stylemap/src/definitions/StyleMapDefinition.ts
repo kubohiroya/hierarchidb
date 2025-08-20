@@ -374,6 +374,13 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<
   
   // Icon configuration
   icon: styleMapIcon,
+  
+  // i18n configuration
+  i18n: {
+    namespace: 'plugin-stylemap',
+    defaultLocale: 'en',
+    localesPath: '/plugins/stylemap/locales/{{lng}}/core.json',
+  },
 
   // Database configuration
   database: {

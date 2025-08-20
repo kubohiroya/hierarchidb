@@ -85,6 +85,12 @@ import { TreeObservableServiceImpl } from './services/TreeObservableServiceImpl'
 import { TreeQueryServiceImpl } from './services/TreeQueryServiceImpl';
 import { ImportService } from './services/ImportService';
 import { ExportService } from './services/ExportService';
+import { 
+  getRegisteredPlugins, 
+  getPluginDefinition, 
+  isNodeTypeRegistered,
+  getCreatableNodeTypes 
+} from './registry/plugin-registry-api';
 
 export class WorkerAPIImpl implements WorkerAPI {
   private coreDB: CoreDB;
@@ -901,5 +907,35 @@ export class WorkerAPIImpl implements WorkerAPI {
         error: String(error),
       };
     }
+  }
+
+  // Plugin Registry API methods
+  
+  /**
+   * Get all registered plugins
+   */
+  async getRegisteredPlugins(): Promise<any[]> {
+    return getRegisteredPlugins();
+  }
+
+  /**
+   * Get a specific plugin definition
+   */
+  async getPluginDefinition(nodeType: string): Promise<any | null> {
+    return getPluginDefinition(nodeType);
+  }
+
+  /**
+   * Check if a node type is registered
+   */
+  async isNodeTypeRegistered(nodeType: string): Promise<boolean> {
+    return isNodeTypeRegistered(nodeType);
+  }
+
+  /**
+   * Get creatable node types
+   */
+  async getCreatableNodeTypes(): Promise<string[]> {
+    return getCreatableNodeTypes();
   }
 }
