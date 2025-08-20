@@ -1,5 +1,5 @@
 import { Outlet, useLoaderData, useNavigate } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import { type LoaderFunctionArgs, useLoaderData, useNavigate } from "react-router";
 import { Suspense, useState, useEffect } from "react";
 import {
   Box,
@@ -20,10 +20,21 @@ import { loadPageTreeNode, LoadPageTreeNodeArgs } from "~/loader";
 import { TreeConsoleIntegration } from "~/components/TreeConsoleIntegration";
 import { UserLoginButton } from "@hierarchidb/ui-usermenu";
 import { WorkerAPIClient } from "@hierarchidb/ui-client";
-import type { Tree } from "@hierarchidb/core";
+import { Tree, TreeNodeTypes } from "@hierarchidb/core";
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  return await loadPageTreeNode(args.params as LoadPageTreeNodeArgs);
+  const params = args.params as LoadPageTreeNodeArgs;
+  
+  // pageTreeNodeIdが省略された場合、デフォルトのルートノードIDを設定
+  const pageTreeNodeId = params.pageTreeNodeId || (params.treeId + TreeNodeTypes.Root);
+  
+  // undefinedという文字列の場合もデフォルト値に置き換え
+  const actualPageTreeNodeId = pageTreeNodeId === "undefined" ? (params.treeId + TreeNodeTypes.Root) : pageTreeNodeId;
+  
+  return await loadPageTreeNode({
+    ...params,
+    pageTreeNodeId: actualPageTreeNodeId
+  });
 }
 
 export default function TLayout() {

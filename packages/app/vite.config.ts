@@ -3,6 +3,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import dts from "vite-plugin-dts";
 import * as path from "path";
+import { tildeResolver } from "./vite-plugin-tilde-resolver";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild, command }) => {
@@ -20,6 +21,7 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
   return {
     base,
     plugins: [
+      tildeResolver(),
       reactRouter(),
       tsconfigPaths({
         projects: ["./tsconfig.json"],
@@ -29,11 +31,6 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
       // @emotion/reactとreactの重複を解決
       dedupe: ["@emotion/react", "@emotion/styled", "react", "react-dom"],
       alias: [
-        // appの~エイリアス
-        {
-          find: /^~(?!.*node_modules)/,
-          replacement: path.resolve(__dirname, "./src"),
-        },
         // パッケージエイリアス
         { find: "@", replacement: path.resolve(__dirname, "./src") },
         // Core packages always use dist for stability
@@ -125,6 +122,78 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
           replacement: path.resolve(
             __dirname,
             isDev ? "../ui/theme/src" : "../ui/theme/dist",
+          ),
+        },
+        // TreeConsole UI packages
+        {
+          find: "@hierarchidb/ui-treeconsole-base",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/base/src" : "../ui/treeconsole/base/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-breadcrumb",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/breadcrumb/src" : "../ui/treeconsole/breadcrumb/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-footer",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/footer/src" : "../ui/treeconsole/footer/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-speeddial",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/speeddial/src" : "../ui/treeconsole/speeddial/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-toolbar",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/toolbar/src" : "../ui/treeconsole/toolbar/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-trashbin",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/trashbin/src" : "../ui/treeconsole/trashbin/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-treeconsole-treetable",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/treeconsole/treetable/src" : "../ui/treeconsole/treetable/dist",
+          ),
+        },
+        // Other UI packages
+        {
+          find: "@hierarchidb/ui-usermenu",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/usermenu/src" : "../ui/usermenu/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-import-export",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/import-export/src" : "../ui/import-export/dist",
+          ),
+        },
+        {
+          find: "@hierarchidb/ui-guide",
+          replacement: path.resolve(
+            __dirname,
+            isDev ? "../ui/guide/src" : "../ui/guide/dist",
           ),
         },
         // Plugins always use dist for stability

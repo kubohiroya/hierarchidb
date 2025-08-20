@@ -7,6 +7,7 @@
 export * from './types';
 export * from './handlers/ShapesEntityHandler';
 export * from './constants';
+export * from './definitions/ShapesDefinition';
 
 // UI layer exports
 export { ShapesUIPlugin } from './ui/ShapesUIPlugin';

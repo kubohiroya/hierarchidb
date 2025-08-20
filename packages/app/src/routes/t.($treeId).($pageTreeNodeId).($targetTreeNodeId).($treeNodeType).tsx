@@ -22,13 +22,21 @@ import {
 import { TreeConsolePanel } from "@hierarchidb/ui-treeconsole-base";
 import { loadTargetTreeNode, LoadTargetTreeNodeArgs } from "~/loader";
 import { WorkerAPIClient } from "@hierarchidb/ui-client";
-import type { TreeNodeId, TreeNode } from "@hierarchidb/core";
+import { TreeNodeId, TreeNode, TreeNodeTypes } from "@hierarchidb/core";
 import type { TreeNodeData } from "@hierarchidb/ui-treeconsole-base";
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from "~/utils/treeNodeConverter";
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadTargetTreeNodeArgs & { treeNodeType: string };
-  const result = await loadTargetTreeNode(params);
+  
+  // pageTreeNodeIdが省略された場合、デフォルトのルートノードIDを設定
+  const pageTreeNodeId = params.pageTreeNodeId || (params.treeId + TreeNodeTypes.Root);
+  const actualPageTreeNodeId = pageTreeNodeId === "undefined" ? (params.treeId + TreeNodeTypes.Root) : pageTreeNodeId;
+  
+  const result = await loadTargetTreeNode({
+    ...params,
+    pageTreeNodeId: actualPageTreeNodeId
+  });
   
   // Load trash items if targetTreeNodeId is "trash" or trash root
   const client = result.client;
@@ -70,6 +78,11 @@ export default function TrashDialog() {
   const { treeId, pageTreeNodeId, targetTreeNodeId, treeNodeType } = useParams();
   const navigate = useNavigate();
   const data = useLoaderData() as any;
+  
+  // If targetTreeNodeId or treeNodeType is missing/undefined, don't render the dialog
+  if (!targetTreeNodeId || targetTreeNodeId === 'undefined' || !treeNodeType || treeNodeType === 'undefined') {
+    return null;
+  }
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
@@ -194,18 +207,17 @@ export default function TrashDialog() {
   
   // Handle node click in trash (navigation within trash)
   const handleNodeClick = useCallback((node: TreeNodeData) => {
-    // Navigate to the clicked node within trash
     navigate(`/t/${treeId}/${pageTreeNodeId}/${node.id}/${mode}`);
   }, [navigate, treeId, pageTreeNodeId, mode]);
   
   // Handle breadcrumb navigation
-  const handleBreadcrumbNavigate = useCallback((item: any) => {
-    if (item.id === "trash" || item.id === data.trashRootId) {
+  const handleBreadcrumbNavigate = useCallback((nodeId: string, node?: any) => {
+    if (nodeId === "trash" || nodeId === data.trashRootId) {
       // Navigate to trash root
       navigate(`/t/${treeId}/${pageTreeNodeId}/trash/${mode}`);
     } else {
       // Navigate to specific folder in trash
-      navigate(`/t/${treeId}/${pageTreeNodeId}/${item.id}/${mode}`);
+      navigate(`/t/${treeId}/${pageTreeNodeId}/${nodeId}/${mode}`);
     }
   }, [navigate, treeId, pageTreeNodeId, mode, data.trashRootId]);
   
@@ -242,16 +254,15 @@ export default function TrashDialog() {
   // Create breadcrumb items with proper navigation
   const breadcrumbItems = useMemo(() => {
     const items = [
-      { id: "trash", name: "Trash", nodeType: "folder" as const, isClickable: true },
+      { treeNodeId: "trash", name: "Trash", treeNodeType: "folder" as const },
     ];
     
     // If we're not at trash root, add current folder to breadcrumbs
     if (targetTreeNodeId !== "trash" && targetTreeNodeId !== data.trashRootId && data.targetTreeNode) {
       items.push({
-        id: data.targetTreeNode.treeNodeId,
+        treeNodeId: data.targetTreeNode.treeNodeId,
         name: data.targetTreeNode.name,
-        nodeType: data.targetTreeNode.treeNodeType,
-        isClickable: false, // Current folder is not clickable
+        treeNodeType: data.targetTreeNode.treeNodeType,
       });
     }
     

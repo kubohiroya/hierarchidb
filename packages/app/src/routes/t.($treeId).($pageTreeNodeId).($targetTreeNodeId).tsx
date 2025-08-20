@@ -1,9 +1,19 @@
 import { Outlet, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { loadTargetTreeNode, LoadTargetTreeNodeArgs } from "~/loader";
+import { TreeNodeTypes } from "@hierarchidb/core";
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  return await loadTargetTreeNode(args.params as LoadTargetTreeNodeArgs);
+  const params = args.params as LoadTargetTreeNodeArgs;
+  
+  // pageTreeNodeIdが省略された場合、デフォルトのルートノードIDを設定
+  const pageTreeNodeId = params.pageTreeNodeId || (params.treeId + TreeNodeTypes.Root);
+  const actualPageTreeNodeId = pageTreeNodeId === "undefined" ? (params.treeId + TreeNodeTypes.Root) : pageTreeNodeId;
+  
+  return await loadTargetTreeNode({
+    ...params,
+    pageTreeNodeId: actualPageTreeNodeId
+  });
 }
 
 export default function TLayout() {

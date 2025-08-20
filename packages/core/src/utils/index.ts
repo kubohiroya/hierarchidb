@@ -1,4 +1,5 @@
 export * from './commandBuilder';
+export * from './id';
 export * from './image';
 export * from './logger';
 export * from './memory';

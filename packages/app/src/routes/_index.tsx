@@ -1,6 +1,7 @@
-import { LandingPage } from "@hierarchidb/ui-landingpage";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Container, Stack, IconButton } from "@mui/material";
 import StorageIcon from "@mui/icons-material/Storage";
+import InfoIcon from "@mui/icons-material/Info";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 import { TreeToggleButtonGroup, type TreeConfig } from "@hierarchidb/ui-core";
 import { Folder, AccountTree } from "@mui/icons-material";
@@ -96,43 +97,89 @@ export default function Index() {
       ) : null}
       {/* You can change favicon dynamically by changing href below based on loader data or state */}
       <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-      <LandingPage
-        logo={
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 4,
+          }}
+        >
+          {/* Header with version and user menu */}
           <Box
             sx={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              right: 16,
               display: "flex",
+              justifyContent: "space-between",
               alignItems: "center",
-              justifyContent: "center",
             }}
           >
-            <StorageIcon sx={{ fontSize: 80, color: "primary.main" }} />
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              v1.0.0
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {appHomepage && (
+                <IconButton
+                  href={appHomepage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                >
+                  <GitHubIcon />
+                </IconButton>
+              )}
+              <IconButton onClick={() => navigate("/info")} size="small">
+                <InfoIcon />
+              </IconButton>
+              <UserLoginButton />
+            </Stack>
           </Box>
-        }
-        heading={appTitle}
-        description={appDescription}
-        githubUrl={appHomepage}
-        onInfoClick={() => navigate("/info")}
-        showInfoButton={true}
-        showHelpButton={false}
-      >
-        {/* Top-left slot - could add version or environment info */}
-        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-          v1.0.0
-        </Typography>
-        {/* Top-right slot - User menu */}
-        <UserLoginButton />
-        {/* TreeToggleButtonGroup temporarily commented out until component is available */}
-        <TreeToggleButtonGroup
-          trees={treeButtonConfigs}
-          selectedTreeId={null}
-          getSavedPageNodeId={getSavedPageNodeId}
-          savePageNodeId={savePageNodeId}
-          onTreeSelect={handleTreeSelect}
-          orientation="horizontal"
-          size="large"
-          sx={{ backgroundColor: "background.paper", borderRadius: 2, p: 1 }}
-        />
-      </LandingPage>
+
+          {/* Main content */}
+          <Stack spacing={4} alignItems="center">
+            {/* Logo */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <StorageIcon sx={{ fontSize: 80, color: "primary.main" }} />
+            </Box>
+
+            {/* Title and description */}
+            <Stack spacing={2} alignItems="center" textAlign="center">
+              <Typography variant="h3" component="h1">
+                {appTitle}
+              </Typography>
+              {appDescription && (
+                <Typography variant="body1" color="text.secondary" maxWidth={600}>
+                  {appDescription}
+                </Typography>
+              )}
+            </Stack>
+
+            {/* Tree selection buttons */}
+            <TreeToggleButtonGroup
+              trees={treeButtonConfigs}
+              selectedTreeId={null}
+              getSavedPageNodeId={getSavedPageNodeId}
+              savePageNodeId={savePageNodeId}
+              onTreeSelect={handleTreeSelect}
+              orientation="horizontal"
+              size="large"
+              sx={{ backgroundColor: "background.paper", borderRadius: 2, p: 1 }}
+            />
+          </Stack>
+        </Box>
+      </Container>
     </>
   );
 }

@@ -10,6 +10,9 @@ import {
 import { LanguageProvider } from "@hierarchidb/ui-i18n";
 import { SimpleBFFAuthProvider } from "@hierarchidb/ui-auth";
 
+// Initialize worker URL configuration
+import "./worker-setup";
+
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
 //<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 //<base href={appPrefix} />

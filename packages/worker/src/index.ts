@@ -16,6 +16,17 @@ export * from '~/lifecycle';
 // Operations exports
 export * from '~/operations';
 // Registry exports
+export type { 
+  BaseEntity, 
+  BaseWorkingCopy,
+  BaseSubEntity,
+  NodeLifecycleHooks,
+  UnifiedPluginDefinition,
+  WorkerPluginRouterAction,
+  NodeTypeDefinition,
+  ValidationRule
+} from '~/registry/unified-plugin';
+export { UnifiedNodeTypeRegistry } from '~/registry/UnifiedNodeTypeRegistry';
 // export * from '~/registry';
 // API exports
 export * from '~/WorkerAPIImpl';

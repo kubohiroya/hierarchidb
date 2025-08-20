@@ -13,6 +13,7 @@ import type {
   UnifiedPluginDefinition,
   NodeLifecycleHooks,
   WorkerPluginRouterAction,
+  IconDefinition,
 } from '@hierarchidb/worker';
 import type { StyleMapEntity, StyleMapWorkingCopy } from '../types';
 import { StyleMapEntityHandler } from '../handlers/StyleMapEntityHandler';
@@ -332,6 +333,32 @@ async function getTableColumns(tableId: string): Promise<string[]> {
 }
 
 /**
+ * Icon definition for StyleMap plugin
+ * Provides multiple formats for different UI contexts
+ */
+const styleMapIcon: IconDefinition = {
+  // MUI icon name (priority)
+  muiIconName: 'Palette',
+  
+  // Unicode emoji fallback
+  emoji: '🎨',
+  
+  // Custom SVG icon
+  svg: `<svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.09-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 10c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+  </svg>`,
+  
+  // SVG path for icon libraries
+  svgPath: 'M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.09-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 10c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z',
+  
+  // Icon description for accessibility and UI display
+  description: 'Style Map - Import CSV/TSV data and apply dynamic color mappings for visualization',
+  
+  // Theme color
+  color: '#9c27b0'
+};
+
+/**
  * StyleMap Unified Plugin Definition
  * Complete integration with hierarchidb plugin system
  */
@@ -344,6 +371,9 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<
   nodeType: 'stylemap' as TreeNodeType,
   name: 'StyleMap',
   displayName: 'Style Map',
+  
+  // Icon configuration
+  icon: styleMapIcon,
 
   // Database configuration
   database: {
@@ -372,7 +402,8 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<
   api: {
     workerExtensions: {
       // CSV/TSV file processing
-      parseDataFile: async (_nodeId: TreeNodeId, file: File): Promise<any> => {
+      parseDataFile: async (...args: unknown[]): Promise<unknown> => {
+        const [_nodeId, file] = args as [TreeNodeId, File];
         const { parseCSVFile } = await import('../utils/csvParser');
         const content = await file.text();
         const delimiter = file.name.endsWith('.tsv') ? '	' : ',';
@@ -380,13 +411,15 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<
       },
 
       // Color mapping generation
-      generateColorMapping: async (_nodeId: TreeNodeId, config: any): Promise<any> => {
+      generateColorMapping: async (...args: unknown[]): Promise<unknown> => {
+        const [_nodeId, config] = args as [TreeNodeId, any];
         const { generateColorMapping } = await import('../utils/colorMapping');
         return await generateColorMapping(config, []);
       },
 
       // Filter application
-      applyDataFilters: async (_nodeId: TreeNodeId, _rules: any[]): Promise<any> => {
+      applyDataFilters: async (...args: unknown[]): Promise<unknown> => {
+        const [_nodeId, _rules] = args as [TreeNodeId, any[]];
         // const { applyFilterRules } = await import('../types/FilterRule');
         return {
           filteredRows: [],
@@ -395,12 +428,14 @@ export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<
       },
 
       // Cache management
-      clearStyleCache: async (_nodeId: TreeNodeId): Promise<void> => {
+      clearStyleCache: async (...args: unknown[]): Promise<unknown> => {
+        const [_nodeId] = args as [TreeNodeId];
         const db = StyleMapDatabase.getInstance();
         const entity = await db.getEntity(_nodeId);
         if (entity?.cacheKey) {
           await db.deleteCache(entity.cacheKey);
         }
+        return undefined;
       },
 
       // Performance optimization

@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink';
-import { workerError, workerLog } from '~/utils/workerLogger';
-import { WorkerAPIImpl } from '~/WorkerAPIImpl';
+import { workerError, workerLog } from './utils/workerLogger';
+import { WorkerAPIImpl } from './WorkerAPIImpl';
 
 // Create the worker API instance
 const appName = import.meta.env.VITE_APP_NAME || 'hierarchidb';

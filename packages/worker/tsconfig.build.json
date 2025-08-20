@@ -3,9 +3,14 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": "./",
     "paths": {
       "~/*": ["./src/*"]
     },
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2023",
+    "lib": ["es2023", "dom"],
     "noEmit": false,
     "emitDeclarationOnly": false,
     "allowImportingTsExtensions": false,
@@ -13,6 +18,5 @@
     "noUnusedParameters": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/__tests__/*"],
-  "references": [{ "path": "../api" }, { "path": "../core" }]
+  "exclude": ["node_modules", "dist", "**/__tests__/*", "**/*.test.ts", "**/*.test.tsx"]
 }

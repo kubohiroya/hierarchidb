@@ -60,7 +60,7 @@ export interface NodeLifecycleHooks<
   // Working copy hooks
   beforeCommit?: (nodeId: TreeNodeId, workingCopy: TWorkingCopy) => Promise<void>;
   afterCommit?: (nodeId: TreeNodeId, entity: TEntity) => Promise<void>;
-  beforeDiscard?: (nodeId: TreeNodeId, workingCopy: TWorkingCopy) => Promise<void>;
+  beforeDiscard?: (nodeId: TrだeeNodeId, workingCopy: TWorkingCopy) => Promise<void>;
   afterDiscard?: (nodeId: TreeNodeId) => Promise<void>;
 
   // Move hooks
@@ -90,6 +90,25 @@ export interface ValidationRule<TEntity extends BaseEntity = BaseEntity> {
   validate: (entity: TEntity) => Promise<boolean | string>;
 }
 
+// Icon definition supporting multiple formats
+export interface IconDefinition {
+  // MUI icon name (e.g., 'Folder', 'Description', 'Map')
+  muiIconName?: string;
+  
+  // Unicode emoji (e.g., '📁', '🗺️', '📍')
+  emoji?: string;
+  
+  // SVG as string or React component path
+  svg?: string;
+  svgPath?: string;
+  
+  // Icon description for accessibility and UI hints
+  description?: string;
+  
+  // Optional color hint
+  color?: string;
+}
+
 // Node type definition (base)
 export interface NodeTypeDefinition<
   TEntity extends BaseEntity = BaseEntity,
@@ -99,6 +118,9 @@ export interface NodeTypeDefinition<
   readonly nodeType: TreeNodeType;
   readonly name: string;
   readonly displayName: string;
+  
+  // Icon configuration with multi-format support
+  readonly icon?: IconDefinition;
 
   // Database configuration
   readonly database: {

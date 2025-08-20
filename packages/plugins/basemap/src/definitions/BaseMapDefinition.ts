@@ -10,6 +10,7 @@ import type {
   UnifiedPluginDefinition,
   NodeLifecycleHooks,
   WorkerPluginRouterAction,
+  IconDefinition,
 } from '@hierarchidb/worker/registry';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types';
 import { BaseMapHandler } from '../handlers/BaseMapHandler';
@@ -138,6 +139,32 @@ const baseMapRouterActions = {
 };
 
 /**
+ * Icon definition for BaseMap plugin
+ * Provides multiple formats for different UI contexts
+ */
+const baseMapIcon: IconDefinition = {
+  // MUI icon name (priority)
+  muiIconName: 'Map',
+  
+  // Unicode emoji fallback
+  emoji: '🗺️',
+  
+  // Custom SVG icon
+  svg: `<svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+  </svg>`,
+  
+  // SVG path for icon libraries
+  svgPath: 'M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z',
+  
+  // Icon description for accessibility and UI display
+  description: 'Base Map - Configure and manage map layers with various styles and visualization options',
+  
+  // Theme color
+  color: '#1976d2'
+};
+
+/**
  * BaseMap Unified Plugin Definition
  * Complete definition for the BaseMap plugin
  */
@@ -150,6 +177,9 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',
   displayName: 'Base Map',
+  
+  // Icon configuration
+  icon: baseMapIcon,
 
   // Database configuration
   database: {
