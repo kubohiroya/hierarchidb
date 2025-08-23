@@ -1,8 +1,8 @@
 # 第5部 バックエンド (Backend)
 
-## Chapter 11: バックエンド・フォー・フロントエンド (Backend for Frontend - BFF)
+## Chapter 11: バックエンド・フォー・フロントエンド (Backend for Frontend - BFF) ⭐️⭐️⭐️⭐️
 
-### 11.1 BFF アーキテクチャ概要 (BFF Architecture Overview)
+### 11.1 BFF アーキテクチャ概要 (BFF Architecture Overview) ⭐️⭐️⭐️⭐️
 
 HierarchiDBのBFFは、Cloudflare Workersを基盤とした軽量なバックエンドサービスです。フロントエンドのニーズに特化した API を提供し、認証とセキュリティを管理します。
 
@@ -54,7 +54,7 @@ graph TB
     class Authentication,TokenValidation,RateLimiting security
 ```
 
-### 11.2 認証フロー設計 (Authentication Flow Design)
+### 11.2 認証フロー設計 (Authentication Flow Design) ⭐️⭐️⭐️⭐️
 
 | フェーズ | アクション | 責任主体 | セキュリティ対応 |
 |----------|------------|----------|------------------|
@@ -87,7 +87,7 @@ sequenceDiagram
     CORS->>Frontend: データ返却
 ```
 
-### 11.3 セキュリティ実装 (Security Implementation)
+### 11.3 セキュリティ実装 (Security Implementation) ⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -138,9 +138,9 @@ graph LR
     class InputSanitization,OutputEncoding,SecretManagement data
 ```
 
-## Chapter 12: CORS プロキシサービス (CORS Proxy Service)
+## Chapter 12: CORS プロキシサービス (CORS Proxy Service) ⭐️⭐️⭐️
 
-### 12.1 CORS プロキシ アーキテクチャ (CORS Proxy Architecture)
+### 12.1 CORS プロキシ アーキテクチャ (CORS Proxy Architecture) ⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -194,7 +194,7 @@ graph TB
     class RateLimiter,ContentFilter,SizeLimit security
 ```
 
-### 12.2 許可URL管理 (Allowed URL Management)
+### 12.2 許可URL管理 (Allowed URL Management) ⭐️⭐️⭐️
 
 | カテゴリ | 許可パターン | 用途 | セキュリティレベル |
 |----------|--------------|------|-------------------|
@@ -204,7 +204,7 @@ graph TB
 | **タイルサービス** | `https://{a-c}.tile.openstreetmap.org/*` | ベースマップタイル | 低 - 公開API |
 | **統計データ** | `https://api.worldbank.org/*` | 統計・経済データ | 中 - レート制限あり |
 
-### 12.3 レスポンス処理とキャッシング (Response Processing and Caching)
+### 12.3 レスポンス処理とキャッシング (Response Processing and Caching) ⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -258,9 +258,9 @@ graph LR
     class Compression,SecurityHeaders,CORSHeaders delivery
 ```
 
-## Chapter 13: データプロキシとAPI統合 (Data Proxy and API Integration)
+## Chapter 13: データプロキシとAPI統合 (Data Proxy and API Integration) ⭐️⭐️⭐️
 
-### 13.1 外部API統合戦略 (External API Integration Strategy)
+### 13.1 外部API統合戦略 (External API Integration Strategy) ⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -317,7 +317,7 @@ graph TB
     class TemporaryCache,PersistentStore,MetadataStore storage
 ```
 
-### 13.2 API エンドポイント設計 (API Endpoint Design)
+### 13.2 API エンドポイント設計 (API Endpoint Design) ⭐️⭐️ 
 
 | エンドポイント | メソッド | 機能 | 認証レベル | レート制限 |
 |----------------|----------|------|------------|------------|
@@ -328,7 +328,7 @@ graph TB
 | `/proxy/upload` | POST | ファイルアップロード | JWT | 10/分 |
 | `/health` | GET | ヘルスチェック | なし | 制限なし |
 
-### 13.3 エラーハンドリングと復旧 (Error Handling and Recovery)
+### 13.3 エラーハンドリングと復旧 (Error Handling and Recovery) ⭐️⭐️ 
 
 ```mermaid
 graph LR
@@ -386,7 +386,7 @@ graph LR
     class GracefulDegradation,ProgressIndicator,UserNotification,RetryMechanism ux
 ```
 
-### 13.4 パフォーマンス最適化 (Performance Optimization)
+### 13.4 パフォーマンス最適化 (Performance Optimization) ⭐️⭐️ 
 
 | 最適化手法 | 目的 | 実装 | 効果指標 |
 |------------|------|------|----------|

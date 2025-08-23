@@ -33,6 +33,42 @@ function shouldCountFile(fileName) {
   return COUNTED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
 }
 
+function findPackageSrcDirs(baseDir, maxDepth = 3) {
+  const results = [];
+  function walk(currentDir, depth) {
+    if (depth >= maxDepth) return;
+    let items = [];
+    try {
+      items = fs.readdirSync(currentDir);
+    } catch (e) {
+      return;
+    }
+    for (const item of items) {
+      if (item.startsWith('.')) continue;
+      if (IGNORED_DIRS.includes(item)) continue;
+      const fullPath = path.join(currentDir, item);
+      let stats;
+      try {
+        stats = fs.statSync(fullPath);
+      } catch (e) {
+        continue;
+      }
+      if (!stats.isDirectory()) continue;
+      const srcPath = path.join(fullPath, 'src');
+      try {
+        if (fs.existsSync(srcPath) && fs.statSync(srcPath).isDirectory()) {
+          results.push(srcPath);
+        }
+      } catch (e) {
+        // ignore
+      }
+      walk(fullPath, depth + 1);
+    }
+  }
+  walk(baseDir, 0);
+  return results;
+}
+
 function countDirectory(dirPath, indent = '', showDetails = true) {
   let totalLines = 0;
   const results = [];
@@ -114,18 +150,14 @@ function main() {
     summaries.push({ name: 'src/src', lines: appLines });
   }
 
-  // Count each package's src directory
+  // Count each package's src directory (up to 3 levels deep)
   if (fs.existsSync('packages')) {
-    const packages = fs.readdirSync('packages').filter((pkg) => {
-      const srcPath = path.join('packages', pkg, 'src');
-      return fs.existsSync(srcPath) && fs.statSync(srcPath).isDirectory();
-    });
-
-    for (const pkg of packages.sort()) {
-      const srcPath = path.join('packages', pkg, 'src');
+    const srcDirs = findPackageSrcDirs('packages', 3).sort();
+    for (const srcPath of srcDirs) {
       const pkgLines = countDirectory(srcPath);
       grandTotal += pkgLines;
-      summaries.push({ name: `packages/${pkg}/src`, lines: pkgLines });
+      const rel = path.relative(process.cwd(), srcPath) || srcPath;
+      summaries.push({ name: rel, lines: pkgLines });
     }
   }
 

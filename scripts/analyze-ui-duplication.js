@@ -364,7 +364,7 @@ function analyzeUiPackages() {
       priority: 'MEDIUM',
       issue: 'Duplicate component implementations',
       description: 'ThemedLoadingScreen exists in multiple packages',
-      solution: 'Move shared components to @hierarchidb/ui-core',
+      solution: 'Move shared containers to @hierarchidb/ui-core',
     });
   }
 

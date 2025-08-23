@@ -5,7 +5,7 @@
   - Extracts title and headings
   - Builds keyword sets from content (simple tokenizer with JP/EN stopwords)
   - Computes similarity between adjacent files to flag potential gaps/redundancies
-  - Checks presence of common sections
+  - Checks presence of common BatchConfigStep
   - Outputs a report to console and docs/_analysis.md
 */
 
@@ -148,7 +148,7 @@ function analyze() {
   lines.push('Heuristics:');
   lines.push('- Similarity = Jaccard on top 25 keywords (after simple tokenization)');
   lines.push('- LOW_SIM threshold < 0.05; HIGH_SIM threshold > 0.60');
-  lines.push('- Missing sections are suggestions for completeness, not strict requirements');
+  lines.push('- Missing BatchConfigStep are suggestions for completeness, not strict requirements');
   lines.push('');
   lines.push('---');
   lines.push('');

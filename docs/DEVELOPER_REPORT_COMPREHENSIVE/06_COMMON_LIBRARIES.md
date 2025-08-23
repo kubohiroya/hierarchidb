@@ -1,8 +1,8 @@
 # 第6部 共通ライブラリ (Common Libraries)
 
-## Chapter 14: コア型システム (Core Type System)
+## Chapter 14: コア型システム (Core Type System) ⭐️⭐️⭐️⭐️⭐️
 
-### 14.1 ブランデッドタイプシステム (Branded Type System)
+### 14.1 ブランデッドタイプシステム (Branded Type System) ⭐️⭐️⭐️⭐️⭐️
 
 HierarchiDBの型安全性は、ブランデッドタイプによる厳格なID管理システムに基づいています。
 
@@ -56,7 +56,7 @@ graph TB
     class Result,Maybe,Brand utility
 ```
 
-### 14.2 型安全性パターン (Type Safety Patterns)
+### 14.2 型安全性パターン (Type Safety Patterns) ⭐️⭐️⭐️⭐️⭐️
 
 | パターン | 用途 | 実装 | 利点 |
 |----------|------|------|------|
@@ -90,7 +90,7 @@ function isValidNodeId(value: unknown): value is NodeId {
 }
 ```
 
-### 14.3 共通インターフェース (Common Interfaces)
+### 14.3 共通インターフェース (Common Interfaces) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -140,9 +140,9 @@ graph LR
     class TreeNodeEntity,PluginEntity,WorkingCopyEntity specific
 ```
 
-## Chapter 15: ユーティリティライブラリ (Utility Libraries)
+## Chapter 15: ユーティリティライブラリ (Utility Libraries) ⭐️⭐️⭐️⭐️⭐️
 
-### 15.1 ID生成とバリデーション (ID Generation and Validation)
+### 15.1 ID生成とバリデーション (ID Generation and Validation) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -193,7 +193,7 @@ graph TB
     class BrandedCasting,RuntimeChecks,ErrorReporting safety
 ```
 
-### 15.2 ロギングとモニタリング (Logging and Monitoring)
+### 15.2 ロギングとモニタリング (Logging and Monitoring) ⭐️⭐️⭐️⭐️
 
 | 機能カテゴリ | ツール | 目的 | 実装詳細 |
 |--------------|--------|------|----------|
@@ -203,7 +203,7 @@ graph TB
 | **メモリ監視** | Memory API | メモリリーク検出 | ヒープ使用量、GC頻度 |
 | **DB監視** | Dexie hooks | データベース操作 | クエリ時間、トランザクション監視 |
 
-### 15.3 非同期処理ユーティリティ (Async Processing Utilities)
+### 15.3 非同期処理ユーティリティ (Async Processing Utilities) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -254,9 +254,9 @@ graph LR
     class TimeoutWrapper,CircuitBreaker,RetryWithBackoff error
 ```
 
-## Chapter 16: 状態管理ライブラリ (State Management Libraries)
+## Chapter 16: 状態管理ライブラリ (State Management Libraries) ⭐️⭐️⭐️⭐️
 
-### 16.1 Working Copy システム (Working Copy System)
+### 16.1 Working Copy システム (Working Copy System) ⭐️⭐️⭐️⭐️⭐️
 
 Working Copyパターンは、HierarchiDBの中核的な状態管理メカニズムです。
 
@@ -316,7 +316,7 @@ graph TB
     class DiffCalculation,MergeResolution,ConflictDetection sync
 ```
 
-### 16.2 リアクティブ状態管理 (Reactive State Management)
+### 16.2 リアクティブ状態管理 (Reactive State Management) ⭐️⭐️⭐️⭐️
 
 | パターン | 実装 | 用途 | パフォーマンス特性 |
 |----------|------|------|--------------------|
@@ -325,7 +325,7 @@ graph TB
 | **Event Emitter** | Node.js EventEmitter | 横断的なイベント | O(1) 発行、O(n) 配信 |
 | **Signal Pattern** | React状態同期 | 細粒度状態更新 | O(1) 更新、バッチング対応 |
 
-### 16.3 キャッシング戦略 (Caching Strategy)
+### 16.3 キャッシング戦略 (Caching Strategy) ⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -380,9 +380,9 @@ graph LR
     class HitRateMonitoring,SizeManagement,MemoryPressure performance
 ```
 
-## Chapter 17: バリデーションとエラーハンドリング (Validation and Error Handling)
+## Chapter 17: バリデーションとエラーハンドリング (Validation and Error Handling) ⭐️⭐️⭐️⭐️
 
-### 17.1 統一エラーハンドリングシステム (Unified Error Handling System)
+### 17.1 統一エラーハンドリングシステム (Unified Error Handling System) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -439,7 +439,7 @@ graph TB
     class RetryMechanism,FallbackStrategy,GracefulDegradation recovery
 ```
 
-### 17.2 データバリデーション (Data Validation)
+### 17.2 データバリデーション (Data Validation) ⭐️⭐️⭐️⭐️
 
 | バリデーション層 | 責任 | 実装 | エラーレベル |
 |------------------|------|------|-------------|
@@ -449,7 +449,7 @@ graph TB
 | **境界値チェック** | 範囲・サイズ制限 | 数値・文字列バリデータ | Error |
 | **参照整合性** | ID参照チェック | データベースクエリ | Critical |
 
-### 17.3 Result型によるエラー管理 (Error Management with Result Types)
+### 17.3 Result型によるエラー管理 (Error Management with Result Types) ⭐️⭐️⭐️⭐️
 
 ```typescript
 // Result型の定義
@@ -500,7 +500,7 @@ async function createNode(nodeData: NodeData): Promise<Result<NodeId>> {
 }
 ```
 
-## まとめ (Summary)
+## まとめ (Summary) ⭐️⭐️⭐️⭐️
 
 共通ライブラリは、HierarchiDBの基盤となる型安全で再利用可能なコンポーネント群を提供します：
 

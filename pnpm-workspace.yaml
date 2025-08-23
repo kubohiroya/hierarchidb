@@ -5,6 +5,20 @@ packages:
   - packages/plugins/*
   - packages/ui/*
   - packages/ui/treeconsole/*
+  # New hierarchical structure
+  - packages/00-*
+  - packages/01-*
+  - packages/02-*
+  - packages/10-*
+  - packages/11-*
+  - packages/12-*
+  - packages/13-*
+  - packages/20-*
+  - packages/30-*
+  - packages/40-*
+  - packages/99-*
+  - packages/99-backend/*
+  - packages/app-*
 
 ignoredBuiltDependencies:
   - esbuild

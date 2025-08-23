@@ -1,8 +1,8 @@
 # 第7部 API (Application Programming Interface)
 
-## Chapter 18: Worker API インターフェース (Worker API Interface)
+## Chapter 18: Worker API インターフェース (Worker API Interface) ⭐️⭐️⭐️⭐️⭐️
 
-### 18.1 Comlink RPC アーキテクチャ (Comlink RPC Architecture)
+### 18.1 Comlink RPC アーキテクチャ (Comlink RPC Architecture) ⭐️⭐️⭐️⭐️⭐️
 
 HierarchiDBのAPI層は、Comlink RPCを基盤とした非同期通信システムです。UI層とWorker層間の型安全な通信を実現します。
 
@@ -61,7 +61,7 @@ graph TB
     class Transferables,SharedArrayBuffer,MessagePort transfer
 ```
 
-### 18.2 API契約定義 (API Contract Definition)
+### 18.2 API契約定義 (API Contract Definition) ⭐️⭐️⭐️⭐️⭐️
 
 | API カテゴリ | インターフェース | 目的 | 型安全性 |
 |--------------|------------------|------|----------|
@@ -138,7 +138,7 @@ interface IWorkingCopyAPI {
 }
 ```
 
-### 18.3 エラーハンドリング戦略 (Error Handling Strategy)
+### 18.3 エラーハンドリング戦略 (Error Handling Strategy) ⭐️⭐️
 
 ```mermaid
 graph LR
@@ -193,9 +193,9 @@ graph LR
     class StructuredLogging,ErrorMetrics,AlertSystem reporting
 ```
 
-## Chapter 19: サブスクリプション システム (Subscription System)
+## Chapter 19: サブスクリプション システム (Subscription System) ⭐️⭐️⭐️⭐️
 
-### 19.1 リアルタイム通知アーキテクチャ (Real-time Notification Architecture)
+### 19.1 リアルタイム通知アーキテクチャ (Real-time Notification Architecture) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -246,7 +246,7 @@ graph TB
     class ReactHooks,ComponentUpdates,BatchedUpdates subscriber
 ```
 
-### 19.2 サブスクリプションタイプ (Subscription Types)
+### 19.2 サブスクリプションタイプ (Subscription Types) ⭐️⭐️⭐️⭐️
 
 | サブスクリプション | 対象 | 粒度 | パフォーマンス | 用途 |
 |-------------------|------|------|----------------|------|
@@ -256,7 +256,7 @@ graph TB
 | **バルクサブスクリプション** | 複数ノード変更 | バッチレベル | 低速 | テーブルビュー、一括操作 |
 | **検索サブスクリプション** | 検索結果変更 | クエリレベル | 中速 | 動的フィルター、検索UI |
 
-### 19.3 サブスクリプション最適化 (Subscription Optimization)
+### 19.3 サブスクリプション最適化 (Subscription Optimization) ⭐️⭐️⭐️
 
 ```typescript
 // 効率的なサブスクリプション実装
@@ -318,9 +318,9 @@ class SubscriptionManager {
 }
 ```
 
-## Chapter 20: プラグインAPI拡張 (Plugin API Extension)
+## Chapter 20: プラグインAPI拡張 (Plugin API Extension) ⭐️⭐️⭐️⭐️
 
-### 20.1 プラグイン登録システム (Plugin Registration System)
+### 20.1 プラグイン登録システム (Plugin Registration System) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -378,7 +378,7 @@ graph TB
     class PluginRegistry,DependencyResolution,VersionManagement,ConflictResolution management
 ```
 
-### 20.2 プラグインAPI契約 (Plugin API Contract)
+### 20.2 プラグインAPI契約 (Plugin API Contract) ⭐️⭐️⭐️⭐️⭐️
 
 ```typescript
 // プラグインインターフェース定義
@@ -477,7 +477,7 @@ class NodeTypeRegistry {
 }
 ```
 
-### 20.3 プラグイン通信プロトコル (Plugin Communication Protocol)
+### 20.3 プラグイン通信プロトコル (Plugin Communication Protocol) ⭐️⭐️⭐️⭐️
 
 | 通信タイプ | プロトコル | 用途 | セキュリティ |
 |------------|------------|------|-------------|
@@ -534,7 +534,7 @@ graph LR
     class ExternalAPI,ThirdPartyService external
 ```
 
-## まとめ (Summary)
+## まとめ (Summary) ⭐️⭐️⭐️⭐️
 
 API層では、型安全で拡張可能な通信システムを構築しました：
 

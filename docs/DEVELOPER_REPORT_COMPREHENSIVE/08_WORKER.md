@@ -1,8 +1,8 @@
 # 第8部 Worker (Web Worker Layer)
 
-## Chapter 21: Worker アーキテクチャ (Worker Architecture)
+## Chapter 21: Worker アーキテクチャ (Worker Architecture) ⭐️⭐️⭐️⭐️⭐️
 
-### 21.1 Worker層の責任分離 (Worker Layer Separation of Concerns)
+### 21.1 Worker層の責任分離 (Worker Layer Separation of Concerns) ⭐️⭐️⭐️⭐️⭐️
 
 HierarchiDBのWorker層は、データベース操作とビジネスロジックを担当する独立したレイヤーです。UI層から完全に分離され、高いパフォーマンスと安全性を提供します。
 
@@ -65,7 +65,7 @@ graph TB
     class CoreDB,EphemeralDB,IndexedDB database
 ```
 
-### 21.2 Worker初期化プロセス (Worker Initialization Process)
+### 21.2 Worker初期化プロセス (Worker Initialization Process) ⭐️⭐️⭐️⭐️⭐️
 
 | フェーズ | 処理内容 | 責任者 | エラーハンドリング |
 |----------|----------|--------|-------------------|
@@ -128,7 +128,7 @@ class WorkerInitializer {
 }
 ```
 
-### 21.3 Worker パフォーマンス最適化 (Worker Performance Optimization)
+### 21.3 Worker パフォーマンス最適化 (Worker Performance Optimization) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -179,9 +179,9 @@ graph LR
     class MessageBatching,TransferableObjects,CompressionOptimization communication
 ```
 
-## Chapter 22: データベース管理 (Database Management)
+## Chapter 22: データベース管理 (Database Management) ⭐️⭐️⭐️⭐️⭐️
 
-### 22.1 デュアルデータベース戦略 (Dual Database Strategy)
+### 22.1 デュアルデータベース戦略 (Dual Database Strategy) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -237,7 +237,7 @@ graph TB
     class DiffCalculation,MergeConflictResolution,VersionManagement sync
 ```
 
-### 22.2 トランザクション管理 (Transaction Management)
+### 22.2 トランザクション管理 (Transaction Management) ⭐️⭐️⭐️⭐️
 
 | トランザクションタイプ | 対象データベース | 分離レベル | 期間 | 用途 |
 |----------------------|------------------|------------|------|------|
@@ -302,7 +302,7 @@ class TransactionManager {
 }
 ```
 
-### 22.3 インデックス最適化戦略 (Index Optimization Strategy)
+### 22.3 インデックス最適化戦略 (Index Optimization Strategy) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -353,9 +353,9 @@ graph LR
     class FrequentQueries,SpatialIndex,BitmapIndex performance
 ```
 
-## Chapter 23: コマンドプロセッサ (Command Processor)
+## Chapter 23: コマンドプロセッサ (Command Processor) ⭐️⭐️⭐️⭐️
 
-### 23.1 コマンドパターン実装 (Command Pattern Implementation)
+### 23.1 コマンドパターン実装 (Command Pattern Implementation) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -410,7 +410,7 @@ graph TB
     class UndoStack,RedoStack,SnapshotManager undoredo
 ```
 
-### 23.2 コマンド実行フロー (Command Execution Flow)
+### 23.2 コマンド実行フロー (Command Execution Flow) ⭐️⭐️⭐️⭐️
 
 | フェーズ | 処理内容 | バリデーション | エラー対応 |
 |----------|----------|----------------|------------|
@@ -499,7 +499,7 @@ class CreateNodeCommand extends BaseCommand<CreateNodeData, NodeId> implements I
 }
 ```
 
-### 23.3 パフォーマンス最適化 (Performance Optimization)
+### 23.3 パフォーマンス最適化 (Performance Optimization) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR

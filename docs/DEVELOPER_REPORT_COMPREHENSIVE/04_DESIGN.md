@@ -1,8 +1,8 @@
 # 第4部 設計 (Design)
 
-## Chapter 8: システム設計 (System Design)
+## Chapter 8: システム設計 (System Design) ⭐️⭐️⭐️⭐️⭐️
 
-### 8.1 アーキテクチャ概要 (Architecture Overview)
+### 8.1 アーキテクチャ概要 (Architecture Overview) ⭐️⭐️⭐️⭐️⭐️
 
 HierarchiDBは階層型データ管理に特化した4層アーキテクチャを採用し、高性能とスケーラビリティを実現します。
 
@@ -55,7 +55,7 @@ graph TB
     class CoreDB,EphemeralDB,IndexedDB db
 ```
 
-### 8.2 設計原則 (Design Principles)
+### 8.2 設計原則 (Design Principles) ⭐️⭐️⭐️⭐️⭐️
 
 | 原則 | 説明 | 実装 |
 |------|------|------|
@@ -65,7 +65,7 @@ graph TB
 | **拡張性** | プラグインベースのノードタイプ拡張 | 動的ノードタイプ登録システム |
 | **パフォーマンス** | 仮想化とバッチ処理 | 大規模データセット対応 |
 
-### 8.3 データ流れ設計 (Data Flow Design)
+### 8.3 データ流れ設計 (Data Flow Design) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 sequenceDiagram
@@ -96,9 +96,9 @@ sequenceDiagram
     RPC-->>UI: success
 ```
 
-## Chapter 9: コンポーネント設計 (Component Design)
+## Chapter 9: コンポーネント設計 (Component Design) ⭐️⭐️⭐️⭐️
 
-### 9.1 UI コンポーネント階層 (UI Component Hierarchy)
+### 9.1 UI コンポーネント階層 (UI Component Hierarchy) ⭐️⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TD
@@ -156,7 +156,7 @@ graph TD
     class PluginDialog,PluginPanel,PluginIcon plugin
 ```
 
-### 9.2 状態管理設計 (State Management Design)
+### 9.2 状態管理設計 (State Management Design) ⭐️⭐️⭐️⭐️⭐️
 
 | コンポーネント | 状態タイプ | 管理方法 | 永続化 |
 |----------------|------------|----------|--------|
@@ -166,7 +166,7 @@ graph TD
 | **Theme** | テーマ設定 | Context + localStorage | localStorage |
 | **Notification** | 通知キュー | Context + useState | なし |
 
-### 9.3 プラグインコンポーネント設計 (Plugin Component Design)
+### 9.3 プラグインコンポーネント設計 (Plugin Component Design) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph LR
@@ -209,9 +209,9 @@ graph LR
     class BasemapPlugin,StylemapPlugin,ShapePlugin concrete
 ```
 
-## Chapter 10: パフォーマンス設計 (Performance Design)
+## Chapter 10: パフォーマンス設計 (Performance Design) ⭐️⭐️⭐️
 
-### 10.1 レンダリング最適化 (Rendering Optimization)
+### 10.1 レンダリング最適化 (Rendering Optimization) ⭐️⭐️⭐️⭐️
 
 ```mermaid
 graph TB
@@ -257,7 +257,7 @@ graph TB
     class LazyComponents,Suspense,ChunkSplitting,DynamicImports lazy
 ```
 
-### 10.2 データベースパフォーマンス設計 (Database Performance Design)
+### 10.2 データベースパフォーマンス設計 (Database Performance Design) ⭐️⭐️⭐️
 
 | 最適化手法 | 目的 | 実装詳細 | 効果 |
 |------------|------|----------|------|
@@ -266,7 +266,7 @@ graph TB
 | **クエリプランニング** | 効率的なデータアクセス | WHERE句の順序最適化 | メモリ使用量 60% 削減 |
 | **キャッシング戦略** | 重複データアクセス削減 | LRU キャッシュ (最大1000エントリ) | レスポンス時間 70% 改善 |
 
-### 10.3 メモリ管理設計 (Memory Management Design)
+### 10.3 メモリ管理設計 (Memory Management Design) ⭐️⭐️
 
 ```mermaid
 graph LR
@@ -305,7 +305,7 @@ graph LR
     class Subscription,EventListeners,Timers resource
 ```
 
-### 10.4 パフォーマンス指標とモニタリング (Performance Metrics and Monitoring)
+### 10.4 パフォーマンス指標とモニタリング (Performance Metrics and Monitoring) ⭐️⭐️
 
 | 指標カテゴリ | 指標名 | 目標値 | 測定方法 |
 |--------------|--------|--------|----------|
@@ -317,7 +317,7 @@ graph LR
 | **メモリ** | ヒープ使用量 | < 100MB | Memory API |
 | **CPU** | Main Thread Blocking | < 50ms | Performance Observer |
 
-### 10.5 スケーラビリティ設計 (Scalability Design)
+### 10.5 スケーラビリティ設計 (Scalability Design) ⭐️⭐️ ❌
 
 ```mermaid
 graph TB

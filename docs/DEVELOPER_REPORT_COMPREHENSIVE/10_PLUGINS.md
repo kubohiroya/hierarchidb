@@ -1,6 +1,6 @@
 # 第10部 プラグイン (Plugins)
 
-## Chapter 27: プラグインシステム概要 (Plugin System Overview)
+## Chapter 27: プラグインシステム概要 (Plugin System Overview) ⭐️⭐️⭐️⭐️
 
 ### 27.1 プラグインアーキテクチャ (Plugin Architecture)
 
@@ -123,7 +123,7 @@ sequenceDiagram
     Registry-->>App: plugin uninstalled
 ```
 
-## Chapter 28: 既存プラグイン解析 (Existing Plugin Analysis)
+## Chapter 28: 既存プラグイン解析 (Existing Plugin Analysis) ⭐️⭐️⭐️
 
 ### 28.1 Shape Plugin アーキテクチャ (Shape Plugin Architecture)
 
@@ -503,7 +503,7 @@ graph LR
     class CoreAPI,StateManager,SecurityManager core
 ```
 
-## Chapter 29: プラグイン開発ガイド (Plugin Development Guide)
+## Chapter 29: プラグイン開発ガイド (Plugin Development Guide) ⭐️⭐️⭐️
 
 ### 29.1 プラグイン開発プロセス (Plugin Development Process)
 
@@ -570,7 +570,7 @@ graph TB
 ### 29.2 プラグイン開発テンプレート (Plugin Development Template)
 
 ```typescript
-// Plugin Template - plugin-template/src/index.ts
+// Plugin Template - plugin-template/src/openstreetmap-type.ts
 import { 
   IPlugin, 
   PluginMetadata, 
