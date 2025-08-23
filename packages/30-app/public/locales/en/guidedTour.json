@@ -1,0 +1,24 @@
+{
+  "welcome": {
+    "title": "🗺️ Welcome to ERIA Cartograph!",
+    "description": "ERIA Cartograph is a powerful tool for creating and managing geographic data visualizations. Let us guide you through the main features."
+  },
+  "navigation": {
+    "title": "Navigation Buttons 🧭",
+    "description": "Use these buttons to switch between Resources and Projects. Resources are shared across projects, while Projects combine multiple resources."
+  },
+  "authentication": {
+    "title": "Authentication 🔐",
+    "loginDescription": "Login with your Google account to access external data sources.",
+    "loggedInDescription": "You're already logged in! Click here to access your user menu.",
+    "additionalInfo": "Authentication is required for downloading geographic data from GADM, Natural Earth, and other providers."
+  },
+  "documentation": {
+    "title": "Documentation 📚",
+    "description": "Click here to access detailed information about ERIA Cartograph, including licenses, system architecture, and technical documentation."
+  },
+  "help": {
+    "title": "Need Help? 🤔",
+    "description": "You can restart this tour anytime by clicking the help button. We're here to help you get the most out of ERIA Cartograph!"
+  }
+}

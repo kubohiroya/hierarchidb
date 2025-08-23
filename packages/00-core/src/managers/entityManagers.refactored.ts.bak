@@ -1,0 +1,934 @@
+/**
+ * Entity Manager System - Refactored Version
+ * 
+ * Implements the 6-classification entity system with improved:
+ * - Type safety
+ * - Error handling
+ * - Performance optimizations
+ * - Clean architecture patterns
+ */
+
+import type { 
+  PeerEntity, 
+  GroupEntity, 
+  RelationalEntity,
+  TreeNodeId,
+  Timestamp
+} from '../types';
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+interface EntityStore<T> {
+  get(id: string): Promise<T | undefined>;
+  set(id: string, value: T): Promise<void>;
+  delete(id: string): Promise<void>;
+  values(): Promise<T[]>;
+  clear(): Promise<void>;
+}
+
+interface EntityManagerOptions {
+  enableAutoCleanup?: boolean;
+  cleanupInterval?: number;
+  maxRetries?: number;
+}
+
+interface PluginDefinition<T extends PeerEntity | GroupEntity | RelationalEntity> {
+  entityType: string;
+  manager: BaseEntityManager<T>;
+  lifecycleHooks?: LifecycleHooks<T>;
+}
+
+interface LifecycleHooks<T> {
+  beforeCreate?: (data: Partial<T>) => Promise<void>;
+  afterCreate?: (entity: T) => Promise<void>;
+  beforeDelete?: (id: string) => Promise<void>;
+  afterDelete?: (id: string) => Promise<void>;
+}
+
+// ============================================================================
+// Error Classes
+// ============================================================================
+
+export class EntityNotFoundError extends Error {
+  constructor(entityType: string, id: string) {
+    super(`${entityType} with id '${id}' not found`);
+    this.name = 'EntityNotFoundError';
+  }
+}
+
+export class EntityAlreadyExistsError extends Error {
+  constructor(entityType: string, id: string) {
+    super(`${entityType} with id '${id}' already exists`);
+    this.name = 'EntityAlreadyExistsError';
+  }
+}
+
+export class InvalidEntityStateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidEntityStateError';
+  }
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Generates a unique group ID with collision resistance
+ */
+function generateGroupId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 11);
+  const counter = (globalThis as any).__groupCounter = ((globalThis as any).__groupCounter || 0) + 1;
+  return `grp_${timestamp}_${random}_${counter.toString(36)}`;
+}
+
+/**
+ * Validates entity data before operations
+ */
+function validateEntity<T extends PeerEntity | GroupEntity | RelationalEntity>(
+  entity: Partial<T>,
+  requiredFields: string[]
+): void {
+  for (const field of requiredFields) {
+    if (!(field in entity)) {
+      throw new InvalidEntityStateError(`Required field '${field}' is missing`);
+    }
+  }
+}
+
+// ============================================================================
+// Base Entity Manager
+// ============================================================================
+
+abstract class BaseEntityManager<T extends PeerEntity | GroupEntity | RelationalEntity> {
+  protected store: Map<string, T> = new Map();
+  protected readonly entityType: string;
+  protected readonly options: Required<EntityManagerOptions>;
+
+  constructor(
+    entityType: string,
+    protected db: any,
+    options: EntityManagerOptions = {}
+  ) {
+    this.entityType = entityType;
+    this.options = {
+      enableAutoCleanup: options.enableAutoCleanup ?? false,
+      cleanupInterval: options.cleanupInterval ?? 60000, // 1 minute
+      maxRetries: options.maxRetries ?? 3
+    };
+  }
+
+  /**
+   * Gets an entity by ID with proper error handling
+   */
+  protected async getEntity(id: string): Promise<T | undefined> {
+    return this.store.get(id);
+  }
+
+  /**
+   * Sets an entity with validation
+   */
+  protected async setEntity(id: string, entity: T): Promise<void> {
+    this.store.set(id, entity);
+  }
+
+  /**
+   * Deletes an entity with cleanup
+   */
+  protected async deleteEntity(id: string): Promise<boolean> {
+    return this.store.delete(id);
+  }
+
+  /**
+   * Gets all entities matching a predicate
+   */
+  protected async findEntities(predicate: (entity: T) => boolean): Promise<T[]> {
+    const entities: T[] = [];
+    for (const entity of this.store.values()) {
+      if (predicate(entity)) {
+        entities.push(entity);
+      }
+    }
+    return entities;
+  }
+
+  /**
+   * Executes an operation with retry logic
+   */
+  protected async withRetry<R>(
+    operation: () => Promise<R>,
+    retries = this.options.maxRetries
+  ): Promise<R> {
+    let lastError: Error | undefined;
+    
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+}
+
+// ============================================================================
+// PeerEntityManager
+// ============================================================================
+
+export class PeerEntityManager<T extends PeerEntity> extends BaseEntityManager<T> {
+  private nodeEntityMap: Map<TreeNodeId, string> = new Map();
+
+  constructor(db: any, options?: EntityManagerOptions) {
+    super('PeerEntity', db, options);
+  }
+
+  /**
+   * Creates a new PeerEntity with 1:1 TreeNode relationship
+   */
+  async create(nodeId: TreeNodeId, data: Partial<T>): Promise<T> {
+    // Check for existing entity
+    if (this.nodeEntityMap.has(nodeId)) {
+      throw new EntityAlreadyExistsError(this.entityType, nodeId);
+    }
+
+    // Validate required fields
+    validateEntity(data, []);
+
+    // Create entity with metadata
+    const entity: T = {
+      ...data,
+      nodeId,
+      createdAt: Date.now() as Timestamp,
+      updatedAt: Date.now() as Timestamp,
+      version: 1
+    } as T;
+
+    // Store entity and mapping
+    const entityId = `${this.entityType}_${nodeId}`;
+    await this.setEntity(entityId, entity);
+    this.nodeEntityMap.set(nodeId, entityId);
+
+    return entity;
+  }
+
+  /**
+   * Gets a PeerEntity by TreeNode ID
+   */
+  async get(nodeId: TreeNodeId): Promise<T | undefined> {
+    const entityId = this.nodeEntityMap.get(nodeId);
+    if (!entityId) return undefined;
+    
+    return this.getEntity(entityId);
+  }
+
+  /**
+   * Updates a PeerEntity
+   */
+  async update(nodeId: TreeNodeId, updates: Partial<T>): Promise<T> {
+    const existing = await this.get(nodeId);
+    if (!existing) {
+      throw new EntityNotFoundError(this.entityType, nodeId);
+    }
+
+    const updated: T = {
+      ...existing,
+      ...updates,
+      nodeId, // Preserve nodeId
+      updatedAt: Date.now() as Timestamp,
+      version: existing.version + 1
+    };
+
+    const entityId = this.nodeEntityMap.get(nodeId)!;
+    await this.setEntity(entityId, updated);
+
+    return updated;
+  }
+
+  /**
+   * Deletes a PeerEntity and cleans up mappings
+   */
+  async delete(nodeId: TreeNodeId): Promise<void> {
+    const entityId = this.nodeEntityMap.get(nodeId);
+    if (!entityId) {
+      throw new EntityNotFoundError(this.entityType, nodeId);
+    }
+
+    await this.deleteEntity(entityId);
+    this.nodeEntityMap.delete(nodeId);
+  }
+
+  /**
+   * Cleanup method called when TreeNode is deleted
+   */
+  async cleanup(nodeId: TreeNodeId): Promise<void> {
+    try {
+      await this.delete(nodeId);
+    } catch (error) {
+      if (!(error instanceof EntityNotFoundError)) {
+        throw error;
+      }
+      // Ignore if entity doesn't exist
+    }
+  }
+}
+
+// ============================================================================
+// GroupEntityManager
+// ============================================================================
+
+export class GroupEntityManager<T extends GroupEntity> extends BaseEntityManager<T> {
+  private nodeGroupMap: Map<TreeNodeId, Set<string>> = new Map();
+  private groupEntityMap: Map<string, string> = new Map();
+
+  constructor(db: any, options?: EntityManagerOptions) {
+    super('GroupEntity', db, options);
+  }
+
+  /**
+   * Creates a new GroupEntity with 1:N TreeNode relationship
+   */
+  async create(nodeId: TreeNodeId, data: Partial<T>): Promise<T> {
+    // Generate unique group ID
+    const groupId = data.groupId || generateGroupId();
+
+    // Get or create group set for this node
+    if (!this.nodeGroupMap.has(nodeId)) {
+      this.nodeGroupMap.set(nodeId, new Set());
+    }
+    const groups = this.nodeGroupMap.get(nodeId)!;
+
+    // Calculate sort order
+    const sortOrder = data.sortOrder ?? groups.size;
+
+    // Create entity
+    const entity: T = {
+      ...data,
+      nodeId,
+      groupId,
+      sortOrder,
+      createdAt: Date.now() as Timestamp,
+      updatedAt: Date.now() as Timestamp,
+      version: 1
+    } as T;
+
+    // Store entity and mappings
+    const entityId = `${this.entityType}_${nodeId}_${groupId}`;
+    await this.setEntity(entityId, entity);
+    groups.add(groupId);
+    this.groupEntityMap.set(groupId, entityId);
+
+    return entity;
+  }
+
+  /**
+   * Gets all GroupEntities for a TreeNode
+   */
+  async getByNode(nodeId: TreeNodeId): Promise<T[]> {
+    const groups = this.nodeGroupMap.get(nodeId);
+    if (!groups || groups.size === 0) return [];
+
+    const entities: T[] = [];
+    for (const groupId of groups) {
+      const entityId = this.groupEntityMap.get(groupId);
+      if (entityId) {
+        const entity = await this.getEntity(entityId);
+        if (entity) {
+          entities.push(entity);
+        }
+      }
+    }
+
+    // Sort by sortOrder
+    return entities.sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  /**
+   * Gets a specific GroupEntity by groupId
+   */
+  async getByGroupId(groupId: string): Promise<T | undefined> {
+    const entityId = this.groupEntityMap.get(groupId);
+    if (!entityId) return undefined;
+    
+    return this.getEntity(entityId);
+  }
+
+  /**
+   * Updates a GroupEntity
+   */
+  async update(groupId: string, updates: Partial<T>): Promise<T> {
+    const entityId = this.groupEntityMap.get(groupId);
+    if (!entityId) {
+      throw new EntityNotFoundError(this.entityType, groupId);
+    }
+
+    const existing = await this.getEntity(entityId);
+    if (!existing) {
+      throw new EntityNotFoundError(this.entityType, groupId);
+    }
+
+    const updated: T = {
+      ...existing,
+      ...updates,
+      nodeId: existing.nodeId, // Preserve nodeId
+      groupId: existing.groupId, // Preserve groupId
+      updatedAt: Date.now() as Timestamp,
+      version: existing.version + 1
+    };
+
+    await this.setEntity(entityId, updated);
+    return updated;
+  }
+
+  /**
+   * Deletes a specific GroupEntity
+   */
+  async deleteByGroupId(groupId: string): Promise<void> {
+    const entityId = this.groupEntityMap.get(groupId);
+    if (!entityId) {
+      throw new EntityNotFoundError(this.entityType, groupId);
+    }
+
+    const entity = await this.getEntity(entityId);
+    if (entity) {
+      const groups = this.nodeGroupMap.get(entity.nodeId);
+      if (groups) {
+        groups.delete(groupId);
+        if (groups.size === 0) {
+          this.nodeGroupMap.delete(entity.nodeId);
+        }
+      }
+    }
+
+    await this.deleteEntity(entityId);
+    this.groupEntityMap.delete(groupId);
+  }
+
+  /**
+   * Cleanup method called when TreeNode is deleted
+   */
+  async cleanup(nodeId: TreeNodeId): Promise<void> {
+    const groups = this.nodeGroupMap.get(nodeId);
+    if (!groups) return;
+
+    // Delete all group entities for this node
+    for (const groupId of groups) {
+      const entityId = this.groupEntityMap.get(groupId);
+      if (entityId) {
+        await this.deleteEntity(entityId);
+        this.groupEntityMap.delete(groupId);
+      }
+    }
+
+    // Clear node mapping
+    this.nodeGroupMap.delete(nodeId);
+  }
+}
+
+// ============================================================================
+// RelationalEntityManager
+// ============================================================================
+
+export class RelationalEntityManager<T extends RelationalEntity> extends BaseEntityManager<T> {
+  private entityReferenceMap: Map<string, Set<TreeNodeId>> = new Map();
+  private nodeEntityMap: Map<TreeNodeId, Set<string>> = new Map();
+
+  constructor(db: any, options?: EntityManagerOptions) {
+    super('RelationalEntity', db, options);
+  }
+
+  /**
+   * Adds a reference from a TreeNode to a RelationalEntity
+   */
+  async addReference(entityId: string, nodeId: TreeNodeId, data?: Partial<T>): Promise<T> {
+    let entity = await this.getEntity(entityId);
+    
+    if (!entity) {
+      // Create new entity if it doesn't exist
+      entity = {
+        ...data,
+        entityId,
+        referenceCount: 1,
+        createdAt: Date.now() as Timestamp,
+        updatedAt: Date.now() as Timestamp,
+        version: 1
+      } as T;
+      await this.setEntity(entityId, entity);
+      this.entityReferenceMap.set(entityId, new Set([nodeId]));
+    } else {
+      // Add reference to existing entity
+      const references = this.entityReferenceMap.get(entityId) || new Set();
+      if (!references.has(nodeId)) {
+        references.add(nodeId);
+        this.entityReferenceMap.set(entityId, references);
+        
+        entity = {
+          ...entity,
+          referenceCount: references.size,
+          updatedAt: Date.now() as Timestamp,
+          version: entity.version + 1
+        };
+        await this.setEntity(entityId, entity);
+      }
+    }
+
+    // Update node-to-entity mapping
+    if (!this.nodeEntityMap.has(nodeId)) {
+      this.nodeEntityMap.set(nodeId, new Set());
+    }
+    this.nodeEntityMap.get(nodeId)!.add(entityId);
+
+    return entity;
+  }
+
+  /**
+   * Removes a reference from a TreeNode to a RelationalEntity
+   */
+  async removeReference(entityId: string, nodeId: TreeNodeId): Promise<void> {
+    const references = this.entityReferenceMap.get(entityId);
+    if (!references || !references.has(nodeId)) {
+      return; // Reference doesn't exist
+    }
+
+    // Remove reference
+    references.delete(nodeId);
+    
+    if (references.size === 0) {
+      // Delete entity if no more references
+      await this.deleteEntity(entityId);
+      this.entityReferenceMap.delete(entityId);
+    } else {
+      // Update reference count
+      const entity = await this.getEntity(entityId);
+      if (entity) {
+        const updated = {
+          ...entity,
+          referenceCount: references.size,
+          updatedAt: Date.now() as Timestamp,
+          version: entity.version + 1
+        };
+        await this.setEntity(entityId, updated);
+      }
+    }
+
+    // Update node-to-entity mapping
+    const nodeEntities = this.nodeEntityMap.get(nodeId);
+    if (nodeEntities) {
+      nodeEntities.delete(entityId);
+      if (nodeEntities.size === 0) {
+        this.nodeEntityMap.delete(nodeId);
+      }
+    }
+  }
+
+  /**
+   * Gets a RelationalEntity by ID
+   */
+  async get(entityId: string): Promise<T | undefined> {
+    return this.getEntity(entityId);
+  }
+
+  /**
+   * Gets all RelationalEntities referenced by a TreeNode
+   */
+  async getByNode(nodeId: TreeNodeId): Promise<T[]> {
+    const entityIds = this.nodeEntityMap.get(nodeId);
+    if (!entityIds || entityIds.size === 0) return [];
+
+    const entities: T[] = [];
+    for (const entityId of entityIds) {
+      const entity = await this.getEntity(entityId);
+      if (entity) {
+        entities.push(entity);
+      }
+    }
+
+    return entities;
+  }
+
+  /**
+   * Cleanup method called when TreeNode is deleted
+   */
+  async cleanup(nodeId: TreeNodeId): Promise<void> {
+    const entityIds = this.nodeEntityMap.get(nodeId);
+    if (!entityIds) return;
+
+    // Remove references for all entities
+    for (const entityId of entityIds) {
+      await this.removeReference(entityId, nodeId);
+    }
+  }
+}
+
+// ============================================================================
+// EphemeralPeerEntityManager
+// ============================================================================
+
+export class EphemeralPeerEntityManager<T extends PeerEntity> extends PeerEntityManager<T> {
+  private expirationMap: Map<string, number> = new Map();
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor(db: any, options?: EntityManagerOptions) {
+    super(db, { ...options, enableAutoCleanup: true });
+    
+    if (this.options.enableAutoCleanup) {
+      this.startAutoCleanup();
+    }
+  }
+
+  /**
+   * Creates an ephemeral PeerEntity with expiration
+   */
+  async create(nodeId: TreeNodeId, data: Partial<T> & { expiresAt?: Timestamp }): Promise<T> {
+    const entity = await super.create(nodeId, data);
+    
+    // Set expiration if provided
+    if ('expiresAt' in data && data.expiresAt) {
+      const entityId = `${this.entityType}_${nodeId}`;
+      this.expirationMap.set(entityId, data.expiresAt as number);
+    }
+    
+    return entity;
+  }
+
+  /**
+   * Cleans up expired entities
+   */
+  async cleanupExpired(): Promise<void> {
+    const now = Date.now();
+    const expiredEntities: string[] = [];
+
+    for (const [entityId, expiresAt] of this.expirationMap.entries()) {
+      if (expiresAt <= now) {
+        expiredEntities.push(entityId);
+      }
+    }
+
+    for (const entityId of expiredEntities) {
+      // Extract nodeId from entityId
+      const nodeId = entityId.replace(`${this.entityType}_`, '') as TreeNodeId;
+      await this.cleanup(nodeId);
+      this.expirationMap.delete(entityId);
+    }
+  }
+
+  /**
+   * Starts automatic cleanup timer
+   */
+  private startAutoCleanup(): void {
+    this.cleanupTimer = setInterval(
+      () => this.cleanupExpired(),
+      this.options.cleanupInterval
+    );
+  }
+
+  /**
+   * Stops automatic cleanup timer
+   */
+  dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
+  }
+}
+
+// ============================================================================
+// EphemeralGroupEntityManager
+// ============================================================================
+
+export class EphemeralGroupEntityManager<T extends GroupEntity> extends GroupEntityManager<T> {
+  private workingCopyMap: Map<string, Set<string>> = new Map();
+  private expirationMap: Map<string, number> = new Map();
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor(db: any, options?: EntityManagerOptions) {
+    super(db, { ...options, enableAutoCleanup: true });
+    
+    if (this.options.enableAutoCleanup) {
+      this.startAutoCleanup();
+    }
+  }
+
+  /**
+   * Creates an ephemeral GroupEntity with working copy association
+   */
+  async create(
+    nodeId: TreeNodeId, 
+    data: Partial<T> & { workingCopyId?: string; expiresAt?: Timestamp }
+  ): Promise<T> {
+    const entity = await super.create(nodeId, data);
+    
+    // Associate with working copy if provided
+    if (data.workingCopyId) {
+      if (!this.workingCopyMap.has(data.workingCopyId)) {
+        this.workingCopyMap.set(data.workingCopyId, new Set());
+      }
+      this.workingCopyMap.get(data.workingCopyId)!.add(entity.groupId);
+    }
+    
+    // Set expiration if provided
+    if (data.expiresAt) {
+      this.expirationMap.set(entity.groupId, data.expiresAt as number);
+    }
+    
+    return entity;
+  }
+
+  /**
+   * Cleans up entities associated with a working copy
+   */
+  async cleanupByWorkingCopy(workingCopyId: string): Promise<void> {
+    const groupIds = this.workingCopyMap.get(workingCopyId);
+    if (!groupIds) return;
+
+    for (const groupId of groupIds) {
+      await this.deleteByGroupId(groupId);
+      this.expirationMap.delete(groupId);
+    }
+
+    this.workingCopyMap.delete(workingCopyId);
+  }
+
+  /**
+   * Cleans up expired entities
+   */
+  async cleanupExpired(): Promise<void> {
+    const now = Date.now();
+    const expiredGroups: string[] = [];
+
+    for (const [groupId, expiresAt] of this.expirationMap.entries()) {
+      if (expiresAt <= now) {
+        expiredGroups.push(groupId);
+      }
+    }
+
+    for (const groupId of expiredGroups) {
+      await this.deleteByGroupId(groupId);
+      this.expirationMap.delete(groupId);
+      
+      // Remove from working copy map
+      for (const [wcId, groups] of this.workingCopyMap.entries()) {
+        if (groups.has(groupId)) {
+          groups.delete(groupId);
+          if (groups.size === 0) {
+            this.workingCopyMap.delete(wcId);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Starts automatic cleanup timer
+   */
+  private startAutoCleanup(): void {
+    this.cleanupTimer = setInterval(
+      () => this.cleanupExpired(),
+      this.options.cleanupInterval
+    );
+  }
+
+  /**
+   * Stops automatic cleanup timer
+   */
+  dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
+  }
+}
+
+// ============================================================================
+// AutoEntityLifecycleManager
+// ============================================================================
+
+export class AutoEntityLifecycleManager {
+  private plugins: Map<string, PluginDefinition<any>> = new Map();
+  private nodeTypeMap: Map<TreeNodeId, string> = new Map();
+
+  /**
+   * Registers a plugin with its entity manager
+   */
+  registerPlugin<T extends PeerEntity | GroupEntity | RelationalEntity>(
+    definition: PluginDefinition<T>
+  ): void {
+    if (this.plugins.has(definition.entityType)) {
+      throw new EntityAlreadyExistsError('Plugin', definition.entityType);
+    }
+    
+    this.plugins.set(definition.entityType, definition);
+  }
+
+  /**
+   * Handles TreeNode creation with automatic entity creation
+   */
+  async handleNodeCreation(
+    nodeId: TreeNodeId, 
+    data: any & { entityType?: string }
+  ): Promise<void> {
+    const entityType = data.entityType || 'default';
+    const plugin = this.plugins.get(entityType);
+    
+    if (!plugin) {
+      throw new EntityNotFoundError('Plugin', entityType);
+    }
+
+    // Execute lifecycle hooks
+    if (plugin.lifecycleHooks?.beforeCreate) {
+      await plugin.lifecycleHooks.beforeCreate(data);
+    }
+
+    // Create entity based on manager type
+    if (plugin.manager instanceof PeerEntityManager) {
+      const entity = await plugin.manager.create(nodeId, data);
+      
+      if (plugin.lifecycleHooks?.afterCreate) {
+        await plugin.lifecycleHooks.afterCreate(entity);
+      }
+    } else if (plugin.manager instanceof GroupEntityManager) {
+      const entity = await plugin.manager.create(nodeId, data);
+      
+      if (plugin.lifecycleHooks?.afterCreate) {
+        await plugin.lifecycleHooks.afterCreate(entity);
+      }
+    }
+
+    // Track node type
+    this.nodeTypeMap.set(nodeId, entityType);
+  }
+
+  /**
+   * Handles TreeNode deletion with automatic entity cleanup
+   */
+  async handleNodeDeletion(nodeId: TreeNodeId): Promise<void> {
+    const entityType = this.nodeTypeMap.get(nodeId);
+    if (!entityType) return;
+
+    const plugin = this.plugins.get(entityType);
+    if (!plugin) return;
+
+    // Execute lifecycle hooks
+    if (plugin.lifecycleHooks?.beforeDelete) {
+      await plugin.lifecycleHooks.beforeDelete(nodeId);
+    }
+
+    // Cleanup entities
+    if (plugin.manager instanceof PeerEntityManager) {
+      await plugin.manager.cleanup(nodeId);
+    } else if (plugin.manager instanceof GroupEntityManager) {
+      await plugin.manager.cleanup(nodeId);
+    } else if (plugin.manager instanceof RelationalEntityManager) {
+      await plugin.manager.cleanup(nodeId);
+    }
+
+    // Execute lifecycle hooks
+    if (plugin.lifecycleHooks?.afterDelete) {
+      await plugin.lifecycleHooks.afterDelete(nodeId);
+    }
+
+    // Clear tracking
+    this.nodeTypeMap.delete(nodeId);
+  }
+
+  /**
+   * Gets an entity by TreeNode ID
+   */
+  async getEntity(nodeId: TreeNodeId): Promise<any> {
+    const entityType = this.nodeTypeMap.get(nodeId);
+    if (!entityType) return undefined;
+
+    const plugin = this.plugins.get(entityType);
+    if (!plugin) return undefined;
+
+    if (plugin.manager instanceof PeerEntityManager) {
+      return plugin.manager.get(nodeId);
+    } else if (plugin.manager instanceof GroupEntityManager) {
+      return plugin.manager.getByNode(nodeId);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Gets a relational entity by ID
+   */
+  async getRelationalEntity(entityId: string): Promise<any> {
+    // Search through all relational managers
+    for (const plugin of this.plugins.values()) {
+      if (plugin.manager instanceof RelationalEntityManager) {
+        const entity = await plugin.manager.get(entityId);
+        if (entity) return entity;
+      }
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * Disposes all managers
+   */
+  dispose(): void {
+    for (const plugin of this.plugins.values()) {
+      if ('dispose' in plugin.manager && typeof plugin.manager.dispose === 'function') {
+        plugin.manager.dispose();
+      }
+    }
+    
+    this.plugins.clear();
+    this.nodeTypeMap.clear();
+  }
+}
+
+// ============================================================================
+// Export convenience factory functions
+// ============================================================================
+
+export function createPeerEntityManager<T extends PeerEntity>(
+  db: any,
+  options?: EntityManagerOptions
+): PeerEntityManager<T> {
+  return new PeerEntityManager<T>(db, options);
+}
+
+export function createGroupEntityManager<T extends GroupEntity>(
+  db: any,
+  options?: EntityManagerOptions
+): GroupEntityManager<T> {
+  return new GroupEntityManager<T>(db, options);
+}
+
+export function createRelationalEntityManager<T extends RelationalEntity>(
+  db: any,
+  options?: EntityManagerOptions
+): RelationalEntityManager<T> {
+  return new RelationalEntityManager<T>(db, options);
+}
+
+export function createEphemeralPeerEntityManager<T extends PeerEntity>(
+  db: any,
+  options?: EntityManagerOptions
+): EphemeralPeerEntityManager<T> {
+  return new EphemeralPeerEntityManager<T>(db, options);
+}
+
+export function createEphemeralGroupEntityManager<T extends GroupEntity>(
+  db: any,
+  options?: EntityManagerOptions
+): EphemeralGroupEntityManager<T> {
+  return new EphemeralGroupEntityManager<T>(db, options);
+}
+
+export function createAutoEntityLifecycleManager(): AutoEntityLifecycleManager {
+  return new AutoEntityLifecycleManager();
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@hierarchidb/plugin-spreadsheet",
+  "version": "0.1.0",
+  "description": "Spreadsheet plugin for HierarchiDB - Universal table data processing with Excel/CSV support",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@hierarchidb/00-core": "workspace:*",
+    "@hierarchidb/10-ui-auth": "workspace:*",
+    "@hierarchidb/11-ui-file": "workspace:*",
+    "dexie": "^3.2.7",
+    "pako": "^2.1.0",
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.3",
+    "@types/papaparse": "^5.3.16"
+  },
+  "keywords": [
+    "csv",
+    "storage",
+    "indexeddb",
+    "chunking",
+    "compression",
+    "large-files"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT"
+}

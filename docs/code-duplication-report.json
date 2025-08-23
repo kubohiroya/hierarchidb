@@ -1,0 +1,1659 @@
+{
+  "timestamp": "2025-08-23T01:34:33.945Z",
+  "summary": {
+    "filesAnalyzed": 854,
+    "totalLines": 124796,
+    "codeBlocks": 1746,
+    "exactDuplicateGroups": 76,
+    "similarPairs": 62,
+    "duplicatedLines": 2015,
+    "duplicationPercentage": "1.61"
+  },
+  "exactDuplicates": [
+    {
+      "type": "interface",
+      "name": "ImportMeta",
+      "tokenCount": 24,
+      "occurrences": [
+        {
+          "file": "packages/ui/auth/src/vite-env.d.ts",
+          "lines": "18-21"
+        },
+        {
+          "file": "packages/ui/core/src/vite-env.d.ts",
+          "lines": "26-29"
+        },
+        {
+          "file": "packages/ui/i18n/src/vite-env.d.ts",
+          "lines": "7-10"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "MenuListItemLinkButton",
+      "tokenCount": 363,
+      "occurrences": [
+        {
+          "file": "packages/ui/navigation/src/components/MenuListItemButton/MenuListItemLinkButton.tsx",
+          "lines": "18-77"
+        },
+        {
+          "file": "packages/ui/routing/src/components/MenuListItemButton/MenuListItemLinkButton.tsx",
+          "lines": "18-77"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "BaseReferenceCountingHandler",
+      "tokenCount": 238,
+      "occurrences": [
+        {
+          "file": "packages/plugins/spreadsheet/src/handlers/SpreadsheetEntityHandler.ts",
+          "lines": "12-49"
+        },
+        {
+          "file": "packages/plugins/stylemap/src/handlers/StyleMapEntityHandler.ts",
+          "lines": "11-48"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "WorkerMock",
+      "tokenCount": 228,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/vitest.setup.ts",
+          "lines": "87-117"
+        },
+        {
+          "file": "packages/worker/vitest.setup.ts",
+          "lines": "40-71"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "MapLibreStyleConfig",
+      "tokenCount": 210,
+      "occurrences": [
+        {
+          "file": "packages/plugins/basemap/src/shared/types.ts",
+          "lines": "132-188"
+        },
+        {
+          "file": "packages/plugins/basemap/src/types/BaseMapEntity.ts",
+          "lines": "136-192"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "BaseMapWorkingCopy",
+      "tokenCount": 165,
+      "occurrences": [
+        {
+          "file": "packages/plugins/basemap/src/shared/types.ts",
+          "lines": "193-234"
+        },
+        {
+          "file": "packages/plugins/basemap/src/types/BaseMapEntity.ts",
+          "lines": "197-238"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "BaseMapEntity",
+      "tokenCount": 153,
+      "occurrences": [
+        {
+          "file": "packages/plugins/basemap/src/shared/types.ts",
+          "lines": "76-126"
+        },
+        {
+          "file": "packages/plugins/basemap/src/types/BaseMapEntity.ts",
+          "lines": "80-130"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "GeoJSONData",
+      "tokenCount": 147,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "101-117"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "113-129"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "SearchOnlyToolbar",
+      "tokenCount": 138,
+      "occurrences": [
+        {
+          "file": "packages/ui/treeconsole/base/src/components/TreeConsoleToolbar.tsx",
+          "lines": "58-92"
+        },
+        {
+          "file": "packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx",
+          "lines": "58-92"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "DragDropSectionProps",
+      "tokenCount": 130,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/DragDropSection.d.ts",
+          "lines": "2-18"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/DragDropSection.tsx",
+          "lines": "5-21"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UrlDownloadSectionProps",
+      "tokenCount": 122,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/UrlDownloadSection.d.ts",
+          "lines": "2-21"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/UrlDownloadSection.tsx",
+          "lines": "16-35"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "FileInputWithUrlProps",
+      "tokenCount": 111,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/FileInputWithUrl.d.ts",
+          "lines": "2-55"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/FileInputWithUrl.tsx",
+          "lines": "12-77"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "PluginDefinitionAPI",
+      "tokenCount": 104,
+      "occurrences": [
+        {
+          "file": "packages/app/src/components/DynamicSpeedDial.tsx",
+          "lines": "23-42"
+        },
+        {
+          "file": "packages/app/src/hooks/usePluginsForTree.ts",
+          "lines": "12-31"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "clearAllDatabases",
+      "tokenCount": 104,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/vitest.setup.ts",
+          "lines": "169-180"
+        },
+        {
+          "file": "packages/worker/vitest.setup.ts",
+          "lines": "86-97"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ShapeEntity",
+      "tokenCount": 89,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "11-40"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "9-39"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UseUrlDownloadReturn",
+      "tokenCount": 87,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.d.ts",
+          "lines": "10-23"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.ts",
+          "lines": "21-34"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "clientLoader",
+      "tokenCount": 77,
+      "occurrences": [
+        {
+          "file": "packages/app/src/routes/t.($treeId).($pageNodeId)._layout.tsx",
+          "lines": "24-37"
+        },
+        {
+          "file": "packages/app/src/routes/t.($treeId).($pageNodeId).tsx",
+          "lines": "7-18"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "Feature",
+      "tokenCount": 74,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "233-246"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "254-267"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UseUrlDownloadProps",
+      "tokenCount": 71,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.d.ts",
+          "lines": "1-9"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.ts",
+          "lines": "11-19"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ProjectPanelProps",
+      "tokenCount": 68,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/components/ProjectPanel.tsx",
+          "lines": "47-56"
+        },
+        {
+          "file": "packages/plugins/project/src/ui/components/ProjectPanel.tsx",
+          "lines": "46-55"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "VectorTileEntity",
+      "tokenCount": 67,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "248-263"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "292-307"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UseDragDropProps",
+      "tokenCount": 67,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.d.ts",
+          "lines": "1-9"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.ts",
+          "lines": "3-11"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UseFileInputReturn",
+      "tokenCount": 66,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useFileInput.d.ts",
+          "lines": "4-10"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useFileInput.ts",
+          "lines": "7-13"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ProcessingConfig",
+      "tokenCount": 65,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "72-92"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "71-91"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ProjectEntity",
+      "tokenCount": 62,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "10-37"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "13-41"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getIconByType",
+      "tokenCount": 62,
+      "occurrences": [
+        {
+          "file": "packages/ui/treeconsole/base/src/components/common/NodeTypeIcon.tsx",
+          "lines": "29-48"
+        },
+        {
+          "file": "packages/ui/treeconsole/breadcrumb/src/components/NodeTypeIcon.tsx",
+          "lines": "30-49"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ProjectDialogProps",
+      "tokenCount": 60,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/components/ProjectDialog.tsx",
+          "lines": "38-46"
+        },
+        {
+          "file": "packages/plugins/project/src/ui/components/ProjectDialog.tsx",
+          "lines": "39-47"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "LayerSource",
+      "tokenCount": 59,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "89-99"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "131-141"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getIdToken",
+      "tokenCount": 59,
+      "occurrences": [
+        {
+          "file": "packages/ui/auth/src/hooks/obsolate/useAuthGoogle.ts",
+          "lines": "17-30"
+        },
+        {
+          "file": "packages/ui/auth/src/hooks/obsolate/useAuthMulti.ts",
+          "lines": "9-21"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UseDragDropReturn",
+      "tokenCount": 59,
+      "occurrences": [
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.d.ts",
+          "lines": "10-15"
+        },
+        {
+          "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.ts",
+          "lines": "13-18"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "PluginDefinition",
+      "tokenCount": 48,
+      "occurrences": [
+        {
+          "file": "packages/core/src/types/nodeDefinition.ts",
+          "lines": "351-361"
+        },
+        {
+          "file": "packages/worker/src/registry/plugin.ts",
+          "lines": "87-97"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "DataSourceConfig",
+      "tokenCount": 48,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "55-66"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "54-65"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "CreateProjectData",
+      "tokenCount": 47,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "186-193"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "230-237"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "BatchTask",
+      "tokenCount": 47,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "136-145"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "135-144"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "GenericGuidedTourProps",
+      "tokenCount": 46,
+      "occurrences": [
+        {
+          "file": "packages/ui/tour/src/components/GuidedTour/GenericGuidedTour.d.ts",
+          "lines": "2-9"
+        },
+        {
+          "file": "packages/ui/tour/src/components/GuidedTour/GenericGuidedTour.tsx",
+          "lines": "9-16"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "FeatureIndex",
+      "tokenCount": 45,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/services/types.ts",
+          "lines": "495-503"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "269-277"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ComposedMapLayer",
+      "tokenCount": 42,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/api.ts",
+          "lines": "56-63"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectAPI.ts",
+          "lines": "57-64"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "MapConfiguration",
+      "tokenCount": 42,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "42-48"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "46-52"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "CountryMetadata",
+      "tokenCount": 42,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "100-108"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "99-107"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ReferenceCountingHandler",
+      "tokenCount": 41,
+      "occurrences": [
+        {
+          "file": "packages/plugins/spreadsheet/src/handlers/SpreadsheetEntityHandler.ts",
+          "lines": "6-10"
+        },
+        {
+          "file": "packages/plugins/stylemap/src/handlers/StyleMapEntityHandler.ts",
+          "lines": "5-9"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "AggregationStatus",
+      "tokenCount": 39,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/api.ts",
+          "lines": "80-87"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectAPI.ts",
+          "lines": "82-89"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "LayerConfiguration",
+      "tokenCount": 38,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "63-73"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "67-82"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "VisibilityCondition",
+      "tokenCount": 36,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "136-140"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "165-169"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "StageStatus",
+      "tokenCount": 36,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "209-216"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "377-384"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ProgressInfo",
+      "tokenCount": 35,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "199-207"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "367-375"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "StyleConfiguration",
+      "tokenCount": 34,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "82-87"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "102-107"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "ExportConfiguration",
+      "tokenCount": 34,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "142-150"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "174-182"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "AggregationMetadata",
+      "tokenCount": 33,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "174-181"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "218-225"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UpdateProjectData",
+      "tokenCount": 31,
+      "occurrences": [
+        {
+          "file": "packages/plugins/project/src/shared/types.ts",
+          "lines": "198-203"
+        },
+        {
+          "file": "packages/plugins/project/src/types/ProjectEntity.ts",
+          "lines": "242-247"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "UrlMetadata",
+      "tokenCount": 31,
+      "occurrences": [
+        {
+          "file": "packages/plugins/shape/src/shared/types.ts",
+          "lines": "110-117"
+        },
+        {
+          "file": "packages/plugins/shape/src/types/index.ts",
+          "lines": "109-116"
+        }
+      ]
+    }
+  ],
+  "similarBlocks": [
+    {
+      "block1": {
+        "type": "function",
+        "name": "TreeTableCore",
+        "file": "packages/ui/treeconsole/base/src/components/TreeTable/TreeTableCore.tsx",
+        "lines": "131-492",
+        "tokens": 2124
+      },
+      "block2": {
+        "type": "function",
+        "name": "TreeTableCore",
+        "file": "packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx",
+        "lines": "120-476",
+        "tokens": 2101
+      },
+      "similarity": "97.8"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "TreeConsoleFooter",
+        "file": "packages/ui/treeconsole/base/src/components/TreeConsoleFooter.tsx",
+        "lines": "39-133",
+        "tokens": 490
+      },
+      "block2": {
+        "type": "function",
+        "name": "TreeConsoleFooter",
+        "file": "packages/ui/treeconsole/footer/src/components/TreeConsoleFooter.tsx",
+        "lines": "39-197",
+        "tokens": 753
+      },
+      "similarity": "97.0"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "SpreadsheetChunk",
+        "file": "packages/plugins/spreadsheet/src/entities/types.ts",
+        "lines": "90-107",
+        "tokens": 62
+      },
+      "block2": {
+        "type": "interface",
+        "name": "SpreadsheetChunk",
+        "file": "packages/worker/src/db/SpreadsheetDB.ts",
+        "lines": "32-47",
+        "tokens": 62
+      },
+      "similarity": "96.9"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProgressInfo",
+        "file": "packages/plugins/shape/src/services/types.ts",
+        "lines": "131-139",
+        "tokens": 35
+      },
+      "block2": {
+        "type": "interface",
+        "name": "ProgressInfo",
+        "file": "packages/plugins/shape/src/shared/types.ts",
+        "lines": "199-207",
+        "tokens": 35
+      },
+      "similarity": "95.3"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProgressInfo",
+        "file": "packages/plugins/shape/src/services/types.ts",
+        "lines": "131-139",
+        "tokens": 35
+      },
+      "block2": {
+        "type": "interface",
+        "name": "ProgressInfo",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "367-375",
+        "tokens": 35
+      },
+      "similarity": "95.3"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "TileMetadata",
+        "file": "packages/plugins/shape/src/services/types.ts",
+        "lines": "249-264",
+        "tokens": 67
+      },
+      "block2": {
+        "type": "interface",
+        "name": "TileMetadata",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "322-337",
+        "tokens": 67
+      },
+      "similarity": "95.3"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "BaseMapDialogProps",
+        "file": "packages/plugins/basemap/src/components/BaseMapDialog.tsx",
+        "lines": "11-19",
+        "tokens": 53
+      },
+      "block2": {
+        "type": "interface",
+        "name": "BaseMapStepperDialogProps",
+        "file": "packages/plugins/basemap/src/components/BaseMapStepperDialog.tsx",
+        "lines": "27-35",
+        "tokens": 53
+      },
+      "similarity": "94.9"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "validateExternalURL",
+        "file": "packages/ui/file/src/utils/validation.js",
+        "lines": "6-28",
+        "tokens": 154
+      },
+      "block2": {
+        "type": "function",
+        "name": "validateExternalURL",
+        "file": "packages/ui/file/src/utils/validation.ts",
+        "lines": "6-33",
+        "tokens": 172
+      },
+      "similarity": "94.8"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "FeatureBufferRecord",
+        "file": "packages/plugins/shape/src/services/database/ShapeDB.ts",
+        "lines": "108-119",
+        "tokens": 51
+      },
+      "block2": {
+        "type": "interface",
+        "name": "FeatureBuffer",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "279-290",
+        "tokens": 51
+      },
+      "similarity": "94.6"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "CacheEntryRecord",
+        "file": "packages/plugins/shape/src/services/database/ShapeDB.ts",
+        "lines": "151-161",
+        "tokens": 49
+      },
+      "block2": {
+        "type": "interface",
+        "name": "CacheEntry",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "339-349",
+        "tokens": 49
+      },
+      "similarity": "94.2"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "GenericGuidedTour",
+        "file": "packages/ui/tour/src/components/GuidedTour/GenericGuidedTour.js",
+        "lines": "8-380",
+        "tokens": 2210
+      },
+      "block2": {
+        "type": "function",
+        "name": "GenericGuidedTour",
+        "file": "packages/ui/tour/src/components/GuidedTour/GenericGuidedTour.tsx",
+        "lines": "18-443",
+        "tokens": 2335
+      },
+      "similarity": "94.2"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "NodeContextMenu",
+        "file": "packages/ui/treeconsole/base/src/components/common/NodeContextMenu.tsx",
+        "lines": "56-350",
+        "tokens": 1359
+      },
+      "block2": {
+        "type": "function",
+        "name": "NodeContextMenu",
+        "file": "packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx",
+        "lines": "55-342",
+        "tokens": 1294
+      },
+      "similarity": "94.0"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "useUrlDownload",
+        "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.js",
+        "lines": "7-240",
+        "tokens": 1244
+      },
+      "block2": {
+        "type": "function",
+        "name": "useUrlDownload",
+        "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useUrlDownload.ts",
+        "lines": "36-314",
+        "tokens": 1326
+      },
+      "similarity": "93.9"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "GuidedTourDemo",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTourDemo.js",
+        "lines": "48-85",
+        "tokens": 225
+      },
+      "block2": {
+        "type": "function",
+        "name": "GuidedTourDemo",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTourDemo.tsx",
+        "lines": "47-83",
+        "tokens": 196
+      },
+      "similarity": "93.6"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "NodeContextMenuProps",
+        "file": "packages/ui/treeconsole/base/src/components/common/NodeContextMenu.tsx",
+        "lines": "25-50",
+        "tokens": 174
+      },
+      "block2": {
+        "type": "interface",
+        "name": "NodeContextMenuProps",
+        "file": "packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx",
+        "lines": "25-49",
+        "tokens": 167
+      },
+      "similarity": "93.6"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "TileBufferRecord",
+        "file": "packages/plugins/shape/src/services/database/ShapeDB.ts",
+        "lines": "138-149",
+        "tokens": 45
+      },
+      "block2": {
+        "type": "interface",
+        "name": "TileBuffer",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "309-320",
+        "tokens": 45
+      },
+      "similarity": "93.2"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "SpreadsheetMetadata",
+        "file": "packages/plugins/spreadsheet/src/entities/types.ts",
+        "lines": "48-85",
+        "tokens": 113
+      },
+      "block2": {
+        "type": "interface",
+        "name": "SpreadsheetMetadata",
+        "file": "packages/worker/src/db/SpreadsheetDB.ts",
+        "lines": "5-30",
+        "tokens": 115
+      },
+      "similarity": "93.2"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "getGoogleUserInfo",
+        "file": "packages/backend/bff/src/auth/google.ts",
+        "lines": "69-81",
+        "tokens": 67
+      },
+      "block2": {
+        "type": "function",
+        "name": "getMicrosoftUserInfo",
+        "file": "packages/backend/bff/src/auth/microsoft.ts",
+        "lines": "70-82",
+        "tokens": 67
+      },
+      "similarity": "92.4"
+    },
+    {
+      "block1": {
+        "type": "class",
+        "name": "UnifiedDownloadService",
+        "file": "packages/ui/file/src/services/UnifiedDownloadService.js",
+        "lines": "1-34",
+        "tokens": 234
+      },
+      "block2": {
+        "type": "class",
+        "name": "UnifiedDownloadService",
+        "file": "packages/ui/file/src/services/UnifiedDownloadService.ts",
+        "lines": "1-48",
+        "tokens": 266
+      },
+      "similarity": "91.6"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "Step1BasicInformationProps",
+        "file": "packages/plugins/project/src/components/steps/Step1BasicInformation.tsx",
+        "lines": "20-23",
+        "tokens": 26
+      },
+      "block2": {
+        "type": "interface",
+        "name": "Step2MapConfigurationProps",
+        "file": "packages/plugins/project/src/components/steps/Step2MapConfiguration.tsx",
+        "lines": "32-35",
+        "tokens": 26
+      },
+      "similarity": "91.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "Step1BasicInformationProps",
+        "file": "packages/plugins/project/src/components/steps/Step1BasicInformation.tsx",
+        "lines": "20-23",
+        "tokens": 26
+      },
+      "block2": {
+        "type": "interface",
+        "name": "Step4LayerConfigurationProps",
+        "file": "packages/plugins/project/src/components/steps/Step4LayerConfiguration.tsx",
+        "lines": "43-46",
+        "tokens": 26
+      },
+      "similarity": "91.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "Step2MapConfigurationProps",
+        "file": "packages/plugins/project/src/components/steps/Step2MapConfiguration.tsx",
+        "lines": "32-35",
+        "tokens": 26
+      },
+      "block2": {
+        "type": "interface",
+        "name": "Step4LayerConfigurationProps",
+        "file": "packages/plugins/project/src/components/steps/Step4LayerConfiguration.tsx",
+        "lines": "43-46",
+        "tokens": 26
+      },
+      "similarity": "91.5"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "useDragDrop",
+        "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.js",
+        "lines": "2-90",
+        "tokens": 447
+      },
+      "block2": {
+        "type": "function",
+        "name": "useDragDrop",
+        "file": "packages/ui/file/src/components/FileInputWithUrl/hooks/useDragDrop.ts",
+        "lines": "20-123",
+        "tokens": 476
+      },
+      "similarity": "91.2"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "clientLoader",
+        "file": "packages/app/src/routes/t.($treeId).($pageNodeId).($targetNodeId).tsx",
+        "lines": "7-18",
+        "tokens": 77
+      },
+      "block2": {
+        "type": "function",
+        "name": "clientLoader",
+        "file": "packages/app/src/routes/t.($treeId).($pageNodeId)._layout.tsx",
+        "lines": "24-37",
+        "tokens": 77
+      },
+      "similarity": "90.5"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "clientLoader",
+        "file": "packages/app/src/routes/t.($treeId).($pageNodeId).($targetNodeId).tsx",
+        "lines": "7-18",
+        "tokens": 77
+      },
+      "block2": {
+        "type": "function",
+        "name": "clientLoader",
+        "file": "packages/app/src/routes/t.($treeId).($pageNodeId).tsx",
+        "lines": "7-18",
+        "tokens": 77
+      },
+      "similarity": "90.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "LayerMetadata",
+        "file": "packages/plugins/basemap/src/shared/types.ts",
+        "lines": "60-62",
+        "tokens": 21
+      },
+      "block2": {
+        "type": "interface",
+        "name": "SourceMetadata",
+        "file": "packages/plugins/basemap/src/types/BaseMapEntity.ts",
+        "lines": "72-74",
+        "tokens": 21
+      },
+      "similarity": "90.3"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "SourceMetadata",
+        "file": "packages/plugins/basemap/src/shared/types.ts",
+        "lines": "68-70",
+        "tokens": 21
+      },
+      "block2": {
+        "type": "interface",
+        "name": "LayerMetadata",
+        "file": "packages/plugins/basemap/src/types/BaseMapEntity.ts",
+        "lines": "64-66",
+        "tokens": 21
+      },
+      "similarity": "90.3"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "AsyncValidator",
+        "file": "packages/plugins/basemap/src/shared/validation.ts",
+        "lines": "300-302",
+        "tokens": 20
+      },
+      "block2": {
+        "type": "interface",
+        "name": "AsyncValidator",
+        "file": "packages/plugins/project/src/shared/validation.ts",
+        "lines": "444-446",
+        "tokens": 20
+      },
+      "similarity": "90.3"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "getLicenseLimitationsFromType",
+        "file": "packages/ui-datasource/src/components/DataSourceLicenseAgreement.tsx",
+        "lines": "286-297",
+        "tokens": 114
+      },
+      "block2": {
+        "type": "function",
+        "name": "getLicenseLimitations",
+        "file": "packages/ui-datasource/src/types/DataSource.ts",
+        "lines": "248-259",
+        "tokens": 118
+      },
+      "similarity": "90.2"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProjectsGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ProjectsGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "ResourcesGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ResourcesGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProjectsGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ProjectsGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "TopPageGuidedTourProps",
+        "file": "packages/ui/guide/src/components/TopPageGuidedTour.tsx",
+        "lines": "6-9",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProjectsGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ProjectsGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.d.ts",
+        "lines": "1-4",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ProjectsGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ProjectsGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.tsx",
+        "lines": "21-24",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ResourcesGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ResourcesGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "TopPageGuidedTourProps",
+        "file": "packages/ui/guide/src/components/TopPageGuidedTour.tsx",
+        "lines": "6-9",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ResourcesGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ResourcesGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.d.ts",
+        "lines": "1-4",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ResourcesGuidedTourProps",
+        "file": "packages/ui/guide/src/components/ResourcesGuidedTour.tsx",
+        "lines": "5-8",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.tsx",
+        "lines": "21-24",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "TopPageGuidedTourProps",
+        "file": "packages/ui/guide/src/components/TopPageGuidedTour.tsx",
+        "lines": "6-9",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.d.ts",
+        "lines": "1-4",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "TopPageGuidedTourProps",
+        "file": "packages/ui/guide/src/components/TopPageGuidedTour.tsx",
+        "lines": "6-9",
+        "tokens": 17
+      },
+      "block2": {
+        "type": "interface",
+        "name": "GuidedTourProps",
+        "file": "packages/ui/tour/src/components/GuidedTour/GuidedTour.tsx",
+        "lines": "21-24",
+        "tokens": 17
+      },
+      "similarity": "89.5"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "NodeTypeIcon",
+        "file": "packages/ui/treeconsole/base/src/components/common/NodeTypeIcon.tsx",
+        "lines": "53-96",
+        "tokens": 230
+      },
+      "block2": {
+        "type": "function",
+        "name": "NodeTypeIcon",
+        "file": "packages/ui/treeconsole/breadcrumb/src/components/NodeTypeIcon.tsx",
+        "lines": "54-102",
+        "tokens": 263
+      },
+      "similarity": "89.4"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "ValidationResult",
+        "file": "packages/plugins/basemap/src/shared/validation.ts",
+        "lines": "37-41",
+        "tokens": 21
+      },
+      "block2": {
+        "type": "interface",
+        "name": "AsyncValidationResult",
+        "file": "packages/plugins/project/src/shared/validation.ts",
+        "lines": "435-439",
+        "tokens": 21
+      },
+      "similarity": "89.2"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "BaseMapValidationWarning",
+        "file": "packages/plugins/basemap/src/shared/api.ts",
+        "lines": "46-51",
+        "tokens": 23
+      },
+      "block2": {
+        "type": "interface",
+        "name": "BasicValidationWarning",
+        "file": "packages/plugins/basemap/src/shared/utils.ts",
+        "lines": "38-43",
+        "tokens": 23
+      },
+      "similarity": "88.7"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "formatBytes",
+        "file": "packages/plugins/shape/src/shared/utils.ts",
+        "lines": "258-268",
+        "tokens": 109
+      },
+      "block2": {
+        "type": "function",
+        "name": "formatBytes",
+        "file": "packages/ui-accordion-config/src/utils/accordionHelpers.ts",
+        "lines": "31-39",
+        "tokens": 92
+      },
+      "similarity": "88.4"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "exchangeCodeForTokens",
+        "file": "packages/backend/bff/src/auth/google.ts",
+        "lines": "37-67",
+        "tokens": 159
+      },
+      "block2": {
+        "type": "function",
+        "name": "exchangeCodeForTokens",
+        "file": "packages/backend/bff/src/auth/microsoft.ts",
+        "lines": "37-68",
+        "tokens": 163
+      },
+      "similarity": "88.0"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "CacheStatistics",
+        "file": "packages/plugins/shape/src/services/types.ts",
+        "lines": "312-322",
+        "tokens": 47
+      },
+      "block2": {
+        "type": "interface",
+        "name": "CacheStatistics",
+        "file": "packages/plugins/shape/src/types/index.ts",
+        "lines": "351-361",
+        "tokens": 47
+      },
+      "similarity": "88.0"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "MultiAuthProviderProps",
+        "file": "packages/ui/auth/src/contexts/MultiAuthContext.tsx",
+        "lines": "39-42",
+        "tokens": 15
+      },
+      "block2": {
+        "type": "interface",
+        "name": "SimpleBFFAuthProviderProps",
+        "file": "packages/ui/auth/src/contexts/SimpleBFFAuthContext.tsx",
+        "lines": "93-96",
+        "tokens": 15
+      },
+      "similarity": "88.0"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "BasicValidationError",
+        "file": "packages/plugins/basemap/src/shared/utils.ts",
+        "lines": "32-36",
+        "tokens": 18
+      },
+      "block2": {
+        "type": "interface",
+        "name": "ValidationError",
+        "file": "packages/plugins/shape/src/services/types.ts",
+        "lines": "235-239",
+        "tokens": 18
+      },
+      "similarity": "87.6"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "initiateGoogleAuth",
+        "file": "packages/backend/bff/src/auth/google.ts",
+        "lines": "16-35",
+        "tokens": 141
+      },
+      "block2": {
+        "type": "function",
+        "name": "initiateMicrosoftAuth",
+        "file": "packages/backend/bff/src/auth/microsoft.ts",
+        "lines": "16-35",
+        "tokens": 144
+      },
+      "similarity": "87.5"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "formatBytes",
+        "file": "packages/core/src/utils/memory.ts",
+        "lines": "8-18",
+        "tokens": 123
+      },
+      "block2": {
+        "type": "function",
+        "name": "formatBytes",
+        "file": "packages/plugins/shape/src/shared/utils.ts",
+        "lines": "258-268",
+        "tokens": 109
+      },
+      "similarity": "87.5"
+    },
+    {
+      "block1": {
+        "type": "function",
+        "name": "NavLinkMenu",
+        "file": "packages/ui/navigation/src/components/NavLinkMenu/NavLinkMenu.js",
+        "lines": "11-37",
+        "tokens": 178
+      },
+      "block2": {
+        "type": "function",
+        "name": "NavLinkMenu",
+        "file": "packages/ui/navigation/src/components/NavLinkMenu/NavLinkMenu.tsx",
+        "lines": "16-38",
+        "tokens": 192
+      },
+      "similarity": "87.5"
+    },
+    {
+      "block1": {
+        "type": "interface",
+        "name": "IndexViewProps",
+        "file": "packages/plugins/basemap/src/routes/_index.tsx",
+        "lines": "16-20",
+        "tokens": 16
+      },
+      "block2": {
+        "type": "interface",
+        "name": "EditViewProps",
+        "file": "packages/plugins/basemap/src/routes/edit.tsx",
+        "lines": "16-20",
+        "tokens": 16
+      },
+      "similarity": "87.4"
+    }
+  ],
+  "packageAnalysis": {
+    "packages": {
+      "exact": 153,
+      "similar": 124,
+      "lines": 2015
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "issue": "Duplicate function names across multiple files",
+      "examples": [
+        "\"clientLoader\" appears in 6 files",
+        "\"main\" appears in 6 files",
+        "\"devError\" appears in 5 files"
+      ],
+      "solution": "Consider extracting common functions to shared utility packages"
+    },
+    {
+      "priority": "HIGH",
+      "issue": "Found 76 groups of exact duplicate code",
+      "examples": [
+        "\"ImportMeta\" duplicated 3 times",
+        "\"MenuListItemLinkButton\" duplicated 2 times",
+        "\"BaseReferenceCountingHandler\" duplicated 2 times"
+      ],
+      "solution": "Extract duplicated code to shared modules or base classes"
+    },
+    {
+      "priority": "MEDIUM",
+      "issue": "Found 62 pairs of similar code blocks",
+      "examples": [
+        "TreeTableCore and TreeTableCore are 97.8% similar",
+        "TreeConsoleFooter and TreeConsoleFooter are 97.0% similar",
+        "SpreadsheetChunk and SpreadsheetChunk are 96.9% similar"
+      ],
+      "solution": "Consider creating generic/template functions or using composition"
+    }
+  ]
+}

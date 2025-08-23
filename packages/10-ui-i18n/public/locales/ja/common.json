@@ -1,0 +1,52 @@
+{
+  "navigation": {
+    "language": "言語",
+    "theme": "テーマ"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "authMethod": "認証方式",
+    "popup": "ポップアップ",
+    "redirect": "リダイレクト",
+    "userMenu": "ユーザーメニュー",
+    "themeSelection": "テーマ選択",
+    "languageSelection": "言語選択",
+    "clearAllData": "すべてのデータをクリア",
+    "showMemoryMonitor": "メモリモニターを表示",
+    "hideMemoryMonitor": "メモリモニターを隠す",
+    "loadingAuthentication": "認証中",
+    "selectTheme": "{{theme}}テーマを選択",
+    "selectLanguage": "{{language}}言語を選択"
+  },
+  "common": {
+    "enabled": "有効",
+    "disabled": "無効",
+    "feature": "機能",
+    "user": "ユーザー",
+    "loading": "読み込み中",
+    "error": "エラー",
+    "success": "成功",
+    "warning": "警告",
+    "themeChangeRequested": "テーマ変更がリクエストされました: {{theme}}"
+  },
+  "api": {
+    "request": "APIリクエスト",
+    "response": "APIレスポンス",
+    "error": "APIエラー"
+  },
+  "errors": {
+    "assertionFailed": "アサーションに失敗しました",
+    "failedToClearData": "一部のキャッシュデータのクリアに失敗しました。もう一度お試しください。",
+    "languageNotSupported": "言語 {{language}} はサポートされていません",
+    "routeResolutionFailed": "ルート解決に失敗しました {{duration}}ms: {{error}}",
+    "routeResolutionSlow": "ルート解決に {{duration}}ms かかりました。100ms 未満が期待されます"
+  },
+  "lifecycle": {
+    "mount": "マウント",
+    "unmount": "アンマウント",
+    "update": "更新",
+    "render": "レンダー",
+    "effect": "エフェクト"
+  }
+}

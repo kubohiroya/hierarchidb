@@ -1,0 +1,51 @@
+{
+  "name": "@hierarchidb/11-ui-csv-extract",
+  "version": "0.1.0",
+  "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@hierarchidb/10-ui-core": "workspace:*",
+    "@hierarchidb/11-ui-file": "workspace:*",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^3.2.4"
+  },
+  "keywords": [
+    "hierarchidb",
+    "csv",
+    "extract",
+    "ui",
+    "react",
+    "components"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT"
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@hierarchidb/11-ui-map",
+  "version": "0.0.1",
+  "description": "Shared map components for HierarchiDB with MapLibre GL support",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
+  },
+  "dependencies": {
+    "@hierarchidb/00-core": "workspace:*",
+    "maplibre-gl": "^4.0.0",
+    "@vis.gl/react-maplibre": "^8.0.4"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": "^5.0.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1"
+  },
+  "devDependencies": {},
+  "license": "MIT",
+  "module": "dist/index.js",
+  "type": "module"
+}

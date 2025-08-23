@@ -1,0 +1,44 @@
+{
+  "name": "@hierarchidb/app-datasource",
+  "version": "0.1.0",
+  "description": "Data source selection and license agreement components for HierarchiDB",
+  "keywords": [
+    "hierarchidb",
+    "ui",
+    "datasource",
+    "components"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "Proprietary",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "react": "^18.3.1"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
+    "react": ">=18.0.0"
+  }
+}

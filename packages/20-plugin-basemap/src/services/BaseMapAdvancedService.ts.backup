@@ -1,0 +1,597 @@
+/**
+ * @file BaseMapAdvancedService.ts
+ * @description Advanced service layer for BaseMap plugin
+ * Provides enhanced functionality for map operations, style management, and spatial analysis
+ */
+
+import type { NodeId } from '@hierarchidb/core';
+import type { BaseMapEntity, MapLibreStyleConfig } from '../types/BaseMapEntity';
+import { BaseMapDatabase } from '../database/BaseMapDatabase';
+
+/**
+ * Spatial analysis result for map bounds
+ */
+export interface SpatialAnalysisResult {
+  center: [number, number];
+  bounds: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
+  area: number; // in square kilometers
+  aspectRatio: number;
+  suggestedZoom: number;
+}
+
+/**
+ * Style optimization metrics
+ */
+export interface StyleOptimizationMetrics {
+  layerCount: number;
+  sourceCount: number;
+  filterComplexity: number;
+  paintPropertyCount: number;
+  layoutPropertyCount: number;
+  estimatedRenderCost: number;
+  optimizationSuggestions: string[];
+}
+
+/**
+ * Map validation result
+ */
+export interface MapValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  performance: {
+    estimatedLoadTime: number;
+    memoryUsage: number;
+    renderComplexity: number;
+  };
+}
+
+/**
+ * Export format options
+ */
+export interface ExportOptions {
+  format: 'mapbox-style' | 'maplibre-style' | 'geojson' | 'image' | 'pdf';
+  options?: {
+    width?: number;
+    height?: number;
+    dpi?: number;
+    quality?: number;
+    includeAttribution?: boolean;
+  };
+}
+
+/**
+ * Advanced service for BaseMap operations
+ */
+export class BaseMapAdvancedService {
+  private static instance: BaseMapAdvancedService;
+  private db: BaseMapDatabase;
+
+  private constructor() {
+    this.db = BaseMapDatabase.getInstance();
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): BaseMapAdvancedService {
+    if (!BaseMapAdvancedService.instance) {
+      BaseMapAdvancedService.instance = new BaseMapAdvancedService();
+    }
+    return BaseMapAdvancedService.instance;
+  }
+
+  /**
+   * Perform spatial analysis on map bounds
+   */
+  public async analyzeSpatialExtent(nodeId: NodeId): Promise<SpatialAnalysisResult> {
+    const entity = await this.db.getEntity(nodeId);
+    if (!entity) {
+      throw new Error('BaseMap entity not found');
+    }
+
+    const bounds = entity.bounds || this.calculateBoundsFromCenter(entity.center, entity.zoom);
+    
+    // Calculate area in square kilometers
+    const area = this.calculateArea(bounds);
+    
+    // Calculate aspect ratio
+    const width = bounds.east - bounds.west;
+    const height = bounds.north - bounds.south;
+    const aspectRatio = width / height;
+    
+    // Suggest optimal zoom level based on area
+    const suggestedZoom = this.calculateOptimalZoom(area);
+
+    return {
+      center: entity.center,
+      bounds,
+      area,
+      aspectRatio,
+      suggestedZoom,
+    };
+  }
+
+  /**
+   * Optimize map style for performance
+   */
+  public async optimizeMapStyle(nodeId: NodeId): Promise<StyleOptimizationMetrics> {
+    const entity = await this.db.getEntity(nodeId);
+    if (!entity || !entity.styleConfig) {
+      throw new Error('BaseMap entity or style configuration not found');
+    }
+
+    const style = entity.styleConfig;
+    
+    const metrics: StyleOptimizationMetrics = {
+      layerCount: style.layers?.length || 0,
+      sourceCount: Object.keys(style.sources || {}).length,
+      filterComplexity: this.calculateFilterComplexity(style),
+      paintPropertyCount: this.countPaintProperties(style),
+      layoutPropertyCount: this.countLayoutProperties(style),
+      estimatedRenderCost: 0,
+      optimizationSuggestions: [],
+    };
+
+    // Calculate estimated render cost
+    metrics.estimatedRenderCost = this.calculateRenderCost(metrics);
+
+    // Generate optimization suggestions
+    metrics.optimizationSuggestions = this.generateOptimizationSuggestions(metrics, style);
+
+    return metrics;
+  }
+
+  /**
+   * Validate map configuration
+   */
+  public async validateMapConfiguration(nodeId: NodeId): Promise<MapValidationResult> {
+    const entity = await this.db.getEntity(nodeId);
+    if (!entity) {
+      throw new Error('BaseMap entity not found');
+    }
+
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validate coordinates
+    const [lng, lat] = entity.center;
+    if (lng < -180 || lng > 180) {
+      errors.push('Longitude must be between -180 and 180');
+    }
+    if (lat < -90 || lat > 90) {
+      errors.push('Latitude must be between -90 and 90');
+    }
+
+    // Validate zoom level
+    if (entity.zoom < 0 || entity.zoom > 22) {
+      errors.push('Zoom level must be between 0 and 22');
+    }
+
+    // Validate style configuration
+    if (entity.styleConfig) {
+      const styleValidation = this.validateStyleConfig(entity.styleConfig);
+      errors.push(...styleValidation.errors);
+      warnings.push(...styleValidation.warnings);
+    }
+
+    // Performance analysis
+    const performance = await this.analyzePerformance(entity);
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      performance,
+    };
+  }
+
+  /**
+   * Export map in various formats
+   */
+  public async exportMap(nodeId: NodeId, options: ExportOptions): Promise<Blob | string> {
+    const entity = await this.db.getEntity(nodeId);
+    if (!entity) {
+      throw new Error('BaseMap entity not found');
+    }
+
+    switch (options.format) {
+      case 'mapbox-style':
+      case 'maplibre-style':
+        return this.exportAsStyle(entity, options.format);
+
+      case 'geojson':
+        return this.exportAsGeoJSON(entity);
+
+      case 'image':
+        return this.exportAsImage(entity, options.options);
+
+      case 'pdf':
+        return this.exportAsPDF(entity, options.options);
+
+      default:
+        throw new Error(`Unsupported export format: ${options.format}`);
+    }
+  }
+
+  /**
+   * Clone map with modifications
+   */
+  public async cloneMap(
+    sourceNodeId: NodeId,
+    targetNodeId: NodeId,
+    modifications?: Partial<BaseMapEntity>
+  ): Promise<BaseMapEntity> {
+    const sourceEntity = await this.db.getEntity(sourceNodeId);
+    if (!sourceEntity) {
+      throw new Error('Source BaseMap entity not found');
+    }
+
+    // Create a deep copy
+    const clonedEntity: BaseMapEntity = {
+      ...sourceEntity,
+      nodeId: targetNodeId,
+      ...modifications,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    };
+
+    // Save the cloned entity
+    await this.db.createEntity(clonedEntity);
+
+    return clonedEntity;
+  }
+
+  /**
+   * Compare two maps and generate diff
+   */
+  public async compareMap(
+    mapId1: NodeId,
+    mapId2: NodeId
+  ): Promise<{
+    differences: Array<{
+      path: string;
+      type: 'added' | 'removed' | 'changed';
+      oldValue?: any;
+      newValue?: any;
+    }>;
+    similarity: number;
+  }> {
+    const [map1, map2] = await Promise.all([
+      this.db.getEntity(mapId1),
+      this.db.getEntity(mapId2),
+    ]);
+
+    if (!map1 || !map2) {
+      throw new Error('One or both BaseMap entities not found');
+    }
+
+    return this.performDeepComparison(map1, map2);
+  }
+
+  // Private helper methods
+
+  private calculateBoundsFromCenter(
+    center: [number, number],
+    zoom: number
+  ): { north: number; south: number; east: number; west: number } {
+    const [lng, lat] = center;
+    
+    // Approximate bounds calculation based on zoom level
+    const latSpan = 180 / Math.pow(2, zoom);
+    const lngSpan = 360 / Math.pow(2, zoom);
+
+    return {
+      north: Math.min(90, lat + latSpan / 2),
+      south: Math.max(-90, lat - latSpan / 2),
+      east: Math.min(180, lng + lngSpan / 2),
+      west: Math.max(-180, lng - lngSpan / 2),
+    };
+  }
+
+  private calculateArea(bounds: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  }): number {
+    // Simple approximation using spherical geometry
+    const earthRadius = 6371; // km
+    const latDiff = (bounds.north - bounds.south) * Math.PI / 180;
+    const lngDiff = (bounds.east - bounds.west) * Math.PI / 180;
+    const avgLat = (bounds.north + bounds.south) / 2 * Math.PI / 180;
+    
+    const area = earthRadius * earthRadius * latDiff * lngDiff * Math.cos(avgLat);
+    return Math.abs(area);
+  }
+
+  private calculateOptimalZoom(area: number): number {
+    // Suggest zoom level based on area
+    if (area > 1000000) return 4; // Country level
+    if (area > 100000) return 6;  // State level
+    if (area > 10000) return 8;   // City level
+    if (area > 1000) return 10;   // District level
+    if (area > 100) return 12;    // Neighborhood level
+    return 14; // Street level
+  }
+
+  private calculateFilterComplexity(style: MapLibreStyleConfig): number {
+    if (!style.layers) return 0;
+
+    return style.layers.reduce((complexity, layer) => {
+      if (!layer.filter) return complexity;
+      
+      // Simple complexity calculation based on filter depth
+      const filterString = JSON.stringify(layer.filter);
+      return complexity + filterString.length / 100;
+    }, 0);
+  }
+
+  private countPaintProperties(style: MapLibreStyleConfig): number {
+    if (!style.layers) return 0;
+
+    return style.layers.reduce((count, layer) => {
+      return count + (layer.paint ? Object.keys(layer.paint).length : 0);
+    }, 0);
+  }
+
+  private countLayoutProperties(style: MapLibreStyleConfig): number {
+    if (!style.layers) return 0;
+
+    return style.layers.reduce((count, layer) => {
+      return count + (layer.layout ? Object.keys(layer.layout).length : 0);
+    }, 0);
+  }
+
+  private calculateRenderCost(metrics: StyleOptimizationMetrics): number {
+    // Weighted calculation of render cost
+    return (
+      metrics.layerCount * 1.0 +
+      metrics.sourceCount * 2.0 +
+      metrics.filterComplexity * 3.0 +
+      metrics.paintPropertyCount * 0.5 +
+      metrics.layoutPropertyCount * 0.3
+    );
+  }
+
+  private generateOptimizationSuggestions(
+    metrics: StyleOptimizationMetrics,
+    style: MapLibreStyleConfig
+  ): string[] {
+    const suggestions: string[] = [];
+
+    if (metrics.layerCount > 50) {
+      suggestions.push('Consider reducing the number of layers for better performance');
+    }
+
+    if (metrics.sourceCount > 20) {
+      suggestions.push('Multiple sources detected - consider consolidating where possible');
+    }
+
+    if (metrics.filterComplexity > 10) {
+      suggestions.push('Complex filters detected - simplify filters for better performance');
+    }
+
+    if (metrics.estimatedRenderCost > 100) {
+      suggestions.push('High render cost detected - consider style optimization');
+    }
+
+    // Check for unused sources
+    const usedSources = new Set(
+      style.layers?.map(layer => layer.source).filter(Boolean) || []
+    );
+    const allSources = Object.keys(style.sources || {});
+    const unusedSources = allSources.filter(source => !usedSources.has(source));
+    
+    if (unusedSources.length > 0) {
+      suggestions.push(`Remove unused sources: ${unusedSources.join(', ')}`);
+    }
+
+    return suggestions;
+  }
+
+  private validateStyleConfig(style: MapLibreStyleConfig): {
+    errors: string[];
+    warnings: string[];
+  } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validate style version
+    if (style.version !== 8) {
+      errors.push('Style version must be 8');
+    }
+
+    // Validate sources
+    if (!style.sources || Object.keys(style.sources).length === 0) {
+      warnings.push('No sources defined in style');
+    }
+
+    // Validate layers
+    if (!style.layers || style.layers.length === 0) {
+      warnings.push('No layers defined in style');
+    }
+
+    return { errors, warnings };
+  }
+
+  private async analyzePerformance(entity: BaseMapEntity): Promise<{
+    estimatedLoadTime: number;
+    memoryUsage: number;
+    renderComplexity: number;
+  }> {
+    // Simple performance estimation
+    const layerCount = entity.styleConfig?.layers?.length || 0;
+    const sourceCount = Object.keys(entity.styleConfig?.sources || {}).length;
+
+    return {
+      estimatedLoadTime: (layerCount * 50) + (sourceCount * 100), // milliseconds
+      memoryUsage: (layerCount * 2) + (sourceCount * 5), // MB estimate
+      renderComplexity: layerCount + (sourceCount * 2),
+    };
+  }
+
+  private exportAsStyle(entity: BaseMapEntity, format: 'mapbox-style' | 'maplibre-style'): string {
+    if (!entity.styleConfig) {
+      throw new Error('No style configuration to export');
+    }
+
+    // Add format-specific modifications if needed
+    const exportStyle = { ...entity.styleConfig };
+    
+    if (format === 'mapbox-style') {
+      // Add Mapbox-specific properties
+      exportStyle.metadata = {
+        ...exportStyle.metadata,
+        'mapbox:type': 'template',
+      };
+    }
+
+    return JSON.stringify(exportStyle, null, 2);
+  }
+
+  private exportAsGeoJSON(entity: BaseMapEntity): string {
+    // Create a GeoJSON representation of the map bounds
+    const bounds = entity.bounds || this.calculateBoundsFromCenter(entity.center, entity.zoom);
+
+    const geojson = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            name: entity.name,
+            mapStyle: entity.mapStyle,
+            zoom: entity.zoom,
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [bounds.west, bounds.south],
+              [bounds.east, bounds.south],
+              [bounds.east, bounds.north],
+              [bounds.west, bounds.north],
+              [bounds.west, bounds.south],
+            ]],
+          },
+        },
+      ],
+    };
+
+    return JSON.stringify(geojson, null, 2);
+  }
+
+  private async exportAsImage(
+    entity: BaseMapEntity,
+    options?: { width?: number; height?: number; quality?: number }
+  ): Promise<Blob> {
+    // This would typically integrate with a map rendering service
+    // For now, return a placeholder
+    const canvas = document.createElement('canvas');
+    canvas.width = options?.width || 800;
+    canvas.height = options?.height || 600;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#333';
+      ctx.font = '20px Arial';
+      ctx.fillText(`Map: ${entity.name || 'Untitled'}`, 20, 40);
+      ctx.fillText(`Center: ${entity.center.join(', ')}`, 20, 70);
+      ctx.fillText(`Zoom: ${entity.zoom}`, 20, 100);
+    }
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob || new Blob());
+      }, 'image/png', options?.quality || 0.9);
+    });
+  }
+
+  private async exportAsPDF(
+    entity: BaseMapEntity,
+    options?: { width?: number; height?: number; dpi?: number }
+  ): Promise<Blob> {
+    // This would typically integrate with a PDF generation library
+    // For now, return a placeholder text file
+    const content = `
+BaseMap Export
+==============
+
+Name: ${entity.name || 'Untitled'}
+Style: ${entity.mapStyle}
+Center: ${entity.center.join(', ')}
+Zoom: ${entity.zoom}
+Bearing: ${entity.bearing}°
+Pitch: ${entity.pitch}°
+
+${entity.bounds ? `
+Bounds:
+  North: ${entity.bounds.north}
+  South: ${entity.bounds.south}
+  East: ${entity.bounds.east}
+  West: ${entity.bounds.west}
+` : ''}
+
+Created: ${new Date(entity.createdAt).toISOString()}
+Updated: ${new Date(entity.updatedAt).toISOString()}
+`;
+
+    return new Blob([content], { type: 'text/plain' });
+  }
+
+  private performDeepComparison(
+    obj1: BaseMapEntity,
+    obj2: BaseMapEntity
+  ): {
+    differences: Array<{
+      path: string;
+      type: 'added' | 'removed' | 'changed';
+      oldValue?: any;
+      newValue?: any;
+    }>;
+    similarity: number;
+  } {
+    const differences: Array<{
+      path: string;
+      type: 'added' | 'removed' | 'changed';
+      oldValue?: any;
+      newValue?: any;
+    }> = [];
+
+    // Simple comparison for key properties
+    const compareFields = [
+      'name', 'mapStyle', 'center', 'zoom', 'bearing', 'pitch',
+      'styleUrl', 'apiKey', 'attribution'
+    ];
+
+    let changedFields = 0;
+    const totalFields = compareFields.length;
+
+    for (const field of compareFields) {
+      const val1 = (obj1 as any)[field];
+      const val2 = (obj2 as any)[field];
+
+      if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+        differences.push({
+          path: field,
+          type: 'changed',
+          oldValue: val1,
+          newValue: val2,
+        });
+        changedFields++;
+      }
+    }
+
+    const similarity = ((totalFields - changedFields) / totalFields) * 100;
+
+    return { differences, similarity };
+  }
+}

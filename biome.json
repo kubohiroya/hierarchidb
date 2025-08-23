@@ -1,0 +1,102 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
+    "experimentalScannerIgnores": [
+      "node_modules",
+      "dist",
+      "build",
+      ".turbo",
+      "coverage",
+      "playwright-report",
+      "docs/references/**",
+      "references/**",
+      "packages/eria-cargograph/**",
+      "*.config.js",
+      "*.config.ts",
+      ".eslintrc.cjs",
+      ".pnpm-store/",
+      ".next/",
+      "out/",
+      "test-results/",
+      ".idea/",
+      ".vscode/",
+      ".wrangler/",
+      "*.min.js",
+      "*.min.css",
+      "pnpm-lock.yaml",
+      "package-lock.json",
+      "yarn.lock",
+      "*.md",
+      ".env*",
+      ".serena/",
+      ".claude/",
+      "CLAUDE.md"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "attributePosition": "auto"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "style": {
+        "useConst": "warn",
+        "useImportType": "warn",
+        "useNodejsImportProtocol": "off",
+        "noNonNullAssertion": "warn",
+        "useTemplate": "warn",
+        "noRestrictedImports": "off"
+      },
+      "complexity": {
+        "noBannedTypes": "warn",
+        "noUselessConstructor": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noImplicitAnyLet": "error",
+        "noConfusingVoidType": "warn",
+        "useAwait": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  }
+}

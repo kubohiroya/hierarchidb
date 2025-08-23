@@ -1,0 +1,11 @@
+External Dependencies License Summary
+Generated: 2025-08-18T12:11:01.065Z
+
+Internal Packages (@hierarchidb/*): 12
+External Dependencies: 54
+
+License Distribution:
+  MIT: 47
+  Apache-2.0: 5
+  Unlicense: 1
+  BSD-3-Clause: 1

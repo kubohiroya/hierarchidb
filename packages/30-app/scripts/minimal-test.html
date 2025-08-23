@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Minimal SPA Test</title>
+</head>
+<body>
+    <h1>Minimal GitHub Pages SPA Test</h1>
+    
+    <div style="border: 2px solid blue; padding: 20px; margin: 20px;">
+        <h2>Current State</h2>
+        <p>URL: <code id="current-url"></code></p>
+        <p>Path: <code id="current-path"></code></p>
+        <p>Search: <code id="current-search"></code></p>
+    </div>
+    
+    <div style="border: 2px solid green; padding: 20px; margin: 20px;">
+        <h2>Test Links</h2>
+        <p><a href="/hierarchidb/">Home</a></p>
+        <p><a href="/hierarchidb/about">About (will 404)</a></p>
+        <p><a href="/hierarchidb/test/deep/path">Deep Path (will 404)</a></p>
+    </div>
+    
+    <div style="border: 2px solid red; padding: 20px; margin: 20px;">
+        <h2>404 Redirect Test</h2>
+        <button onclick="test404Redirect()">Simulate 404 Redirect</button>
+        <div id="redirect-result"></div>
+    </div>
+    
+    <script>
+        // Display current state
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('current-path').textContent = window.location.pathname;
+        document.getElementById('current-search').textContent = window.location.search || '(none)';
+        
+        // Handle redirect from 404
+        if (window.location.search && window.location.search[1] === '/') {
+            document.body.style.backgroundColor = '#ffe0e0';
+            alert('Redirected from 404.html! Check console for details.');
+            console.log('Redirect detected:', window.location.search);
+        }
+        
+        // Test 404 redirect logic
+        function test404Redirect() {
+            const testPath = '/hierarchidb/test/path';
+            const pathSegmentsToKeep = 1;
+            
+            const segments = testPath.split('/').filter(Boolean);
+            const baseSegments = [''].concat(segments.slice(0, pathSegmentsToKeep));
+            const routeSegments = segments.slice(pathSegmentsToKeep);
+            
+            const redirectUrl = baseSegments.join('/') + '/?/' + routeSegments.join('/');
+            
+            document.getElementById('redirect-result').innerHTML = `
+                <p>Test path: <code>${testPath}</code></p>
+                <p>Base: <code>${baseSegments.join('/')}</code></p>
+                <p>Route: <code>${routeSegments.join('/')}</code></p>
+                <p>Redirect URL: <code>${redirectUrl}</code></p>
+                <p><a href="${redirectUrl}">Test this redirect</a></p>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "@hierarchidb/11-ui-layout",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc -b && tsc-alias"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@hierarchidb/10-ui-core": "workspace:*",
+    "@hierarchidb/10-ui-theme": "workspace:*",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
+    "react": "^18.3.1"
+  },
+  "license": "MIT",
+  "module": "dist/index.js"
+}

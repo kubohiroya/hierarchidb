@@ -1,0 +1,65 @@
+{
+  "name": "@hierarchidb/20-plugin-basemap",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc && tsc-alias",
+    "dev:tsc": "tsc --watch"
+  },
+  "dependencies": {
+    "@hierarchidb/00-core": "workspace:*",
+    "@hierarchidb/01-api": "workspace:*",
+    "@hierarchidb/10-ui-core": "workspace:*",
+    "@hierarchidb/10-ui-client": "workspace:*",
+    "@hierarchidb/11-ui-dialog": "workspace:*",
+    "@hierarchidb/11-ui-map": "workspace:*",
+    "dexie": "^4.0.0",
+    "maplibre-gl": "^4.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.0.0",
+    "jsdom": "^22.0.0",
+    "fake-indexeddb": "^4.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": "^5.0.0",
+    "@mui/icons-material": "^5.0.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1"
+  },
+  "keywords": [
+    "hierarchidb",
+    "plugin",
+    "basemap",
+    "mapping",
+    "gis",
+    "geographic"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

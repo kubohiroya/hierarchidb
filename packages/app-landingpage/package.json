@@ -1,0 +1,27 @@
+{
+  "name": "@hierarchidb/app-landingpage",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@mui/icons-material": "^7.0.0",
+    "@mui/material": "^7.0.0",
+    "react": ">=18.0.0",
+    "react-router": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "prettier": "^3.6.2",
+    "tsc-alias": "^1.8.16"
+  },
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts"
+}

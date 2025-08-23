@@ -1,0 +1,72 @@
+name: Check Deprecated Usage
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check-deprecated:
+    name: Check for deprecated usage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.15.0
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Check deprecated types with strict TypeScript
+        run: pnpm typecheck:strict
+        continue-on-error: true
+        id: typecheck-strict
+      
+      - name: Check deprecated usage with custom script
+        run: pnpm check:deprecated
+        id: check-deprecated
+      
+      - name: Fail if deprecated usage found
+        if: failure()
+        run: |
+          echo "::error::Deprecated type usage detected!"
+          echo "::error::Please migrate away from deprecated types before merging."
+          echo "::error::Run 'pnpm lint:deprecated' locally to see details."
+          exit 1
+      
+      - name: Comment on PR if deprecated found
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ **Deprecated Type Usage Detected**
+              
+              This PR contains usage of deprecated types. Please update the code to use the new types:
+              
+              - \`NodeTypeDefinition\` → \`NodeDefinition\`
+              - \`getNodeTypeDefinition\` → \`getNodeDefinition\`
+              
+              Run locally to check:
+              \`\`\`bash
+              pnpm lint:deprecated
+              pnpm check:deprecated  
+              \`\`\`
+              
+              The build will fail until deprecated usage is removed.`
+            })
