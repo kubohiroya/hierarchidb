@@ -13,14 +13,14 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 // Forbidden dependencies for plugins
 const FORBIDDEN_DEPENDENCIES = [
-  '@hierarchidb/worker',
+  '@hierarchidb/runtime-worker',
   '@hierarchidb/app',
 ];
 
 // Allowed dependencies for plugins
 const ALLOWED_DEPENDENCIES = [
-  '@hierarchidb/core',
-  '@hierarchidb/api',
+  '@hierarchidb/common-core',
+  '@hierarchidb/common-api',
   '@hierarchidb/ui-core',
   '@hierarchidb/ui-client',
   '@hierarchidb/ui-*', // UI packages are allowed
@@ -311,7 +311,7 @@ function generateESlintRule() {
       {
         patterns: [
           {
-            group: ['@hierarchidb/worker'],
+            group: ['@hierarchidb/runtime-worker'],
             message: 'Plugins cannot import from @hierarchidb/worker. Use @hierarchidb/api or @hierarchidb/core instead.'
           },
           {

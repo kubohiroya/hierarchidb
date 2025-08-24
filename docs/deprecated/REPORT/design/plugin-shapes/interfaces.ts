@@ -6,7 +6,7 @@
  * 🔴 eria-cartographパターンからの推測を含む高度な機能
  */
 
-import type { TreeNodeId, PeerEntity, BaseWorkingCopy, Timestamp } from '@hierarchidb/core';
+import type { TreeNodeId, PeerEntity, BaseWorkingCopy, Timestamp } from '@hierarchidb/common-core';
 
 // ============================================================================
 // Core Entity Types 🟢

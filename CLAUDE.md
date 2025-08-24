@@ -29,13 +29,98 @@ HierarchiDB is a high-performance tree-structured data management framework for 
 - `pnpm storybook:ui-core` - Launch UI component Storybook
 
 ### Turborepo Usage (Development Operations)
-- **Watch specific packages**: `turbo run dev --filter=@hierarchidb/core --filter=@hierarchidb/api --parallel`
-- **Build with dependencies**: `turbo run build --filter=@hierarchidb/app` (builds all dependencies first)
-- **Force rebuild without cache**: `TURBO_FORCE=true turbo run build --filter=@hierarchidb/core`
-- **Development workflow**:
-  1. Start app with HMR: `pnpm dev --filter @hierarchidb/app`
-  2. Watch library changes: `pnpm --filter @hierarchidb/worker dev` (runs tsc --watch)
-  3. For multiple packages: `turbo run dev --filter=@hierarchidb/app --filter=@hierarchidb/core --parallel`
+
+#### Recommended Development Workflow (Turbo Watch Mode)
+This project uses **Turbo watch mode** instead of Vite aliases for package development. This approach provides better type safety and simpler configuration.
+
+**Start development environment:**
+
+Option 1 - Single command (Recommended):
+```bash
+# This starts everything including the Vite dev server on port 4200
+turbo run dev --parallel
+```
+
+Option 2 - Separate terminals (Better log visibility):
+```bash
+# Terminal 1: Watch all library packages
+turbo run dev --parallel --filter='!@hierarchidb/30-app'
+
+# Terminal 2: Start the application
+cd packages/30-app && pnpm dev
+```
+
+Option 3 - Minimal setup (Faster startup):
+```bash
+# Only watch packages that 30-app depends on
+turbo run dev --filter=@hierarchidb/30-app
+```
+
+**Important Note**: 
+`turbo run dev --parallel` automatically starts the Vite dev server for packages/30-app because:
+- The 30-app's package.json defines `"dev": "react-router dev"`
+- This command internally starts a Vite dev server on port 4200
+- Therefore, you do **NOT** need to run `pnpm dev` in packages/30-app separately
+
+The single command `turbo run dev --parallel` handles:
+1. Building and watching all library packages (using tsup --watch or tsc --watch)
+2. Starting the main application's Vite dev server
+3. Enabling HMR (Hot Module Replacement) for the entire development environment
+
+**How it works:**
+- Each package has a `dev` script in its package.json
+- Library packages: `dev` script runs `tsup --watch` (builds and watches for changes)
+- Application package (30-app): `dev` script runs `react-router dev` (starts Vite dev server)
+- Turbo runs all `dev` scripts in parallel, so everything starts with one command
+
+**Benefits of this approach:**
+- No manual vite.config.ts alias maintenance required
+- Full TypeScript type checking preserved
+- Automatic dependency tracking and rebuilding
+- New packages automatically included
+- **Single command starts everything** - no need for multiple terminals
+
+#### Other Turbo Commands
+- **Watch specific packages**: `turbo run dev --filter=@hierarchidb/00-core --filter=@hierarchidb/01-api --parallel`
+- **Build with dependencies**: `turbo run build --filter=@hierarchidb/30-app` (builds all dependencies first)
+- **Force rebuild without cache**: `TURBO_FORCE=true turbo run build --filter=@hierarchidb/00-core`
+
+#### Package Configuration for Watch Mode
+Each package should have a `dev` script in package.json:
+```json
+{
+  "scripts": {
+    "dev": "tsup --watch",  // Fast, recommended
+    // or
+    "dev": "tsc --watch"    // Slower but more thorough type checking
+  }
+}
+```
+
+#### Development Flow Example
+
+**Scenario**: You want to modify a UI component in `packages/10-ui-core`:
+
+1. Start development:
+   ```bash
+   turbo run dev --parallel
+   ```
+
+2. Edit your component in `packages/10-ui-core/src/components/Button.tsx`
+
+3. What happens automatically:
+   - tsup detects the change and rebuilds `10-ui-core`
+   - Vite dev server detects the new build in `10-ui-core/dist`
+   - HMR updates the browser instantly
+
+4. No manual steps required - everything just works!
+
+#### Why Not Vite Aliases?
+We deliberately avoid complex Vite alias configurations because:
+1. **Maintenance burden**: Adding/removing packages requires vite.config.ts updates
+2. **Type safety**: Direct src imports can bypass TypeScript checking
+3. **Simplicity**: Turbo handles dependency graphs automatically
+4. **Consistency**: Same build artifacts in development and production
 
 ### Document Analysis Tool
 - **Analyze docs structure**: `pnpm analyze:docs` - Generates report in docs/_analysis.md

@@ -13,9 +13,9 @@ const { execSync } = require('child_process');
 // Package mapping configuration
 const PACKAGE_MAPPINGS = [
   // Core層 (00-09)
-  { old: 'packages/core', new: 'packages/00-core', name: '@hierarchidb/core' },
-  { old: 'packages/api', new: 'packages/01-api', name: '@hierarchidb/api' },
-  { old: 'packages/worker', new: 'packages/02-worker', name: '@hierarchidb/worker' },
+  { old: 'packages/core', new: 'packages/00-core', name: '@hierarchidb/common-core' },
+  { old: 'packages/api', new: 'packages/01-api', name: '@hierarchidb/common-api' },
+  { old: 'packages/worker', new: 'packages/02-worker', name: '@hierarchidb/runtime-worker' },
   
   // UI Foundation層 (10)
   { old: 'packages/ui/theme', new: 'packages/10-ui-foundation/theme', name: '@hierarchidb/ui-foundation-theme', oldName: '@hierarchidb/ui-theme' },

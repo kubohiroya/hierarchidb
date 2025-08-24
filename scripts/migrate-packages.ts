@@ -46,21 +46,21 @@ const PACKAGE_MAPPINGS: PackageMapping[] = [
   { 
     oldPath: 'packages/core', 
     newPath: 'packages/00-core',
-    oldName: '@hierarchidb/core',
+    oldName: '@hierarchidb/common-core',
     newName: '@hierarchidb/00-core'
   },
   // 01-level: API layer
   { 
     oldPath: 'packages/api', 
     newPath: 'packages/01-api',
-    oldName: '@hierarchidb/api',
+    oldName: '@hierarchidb/common-api',
     newName: '@hierarchidb/01-api'
   },
   // 02-level: Worker
   { 
     oldPath: 'packages/worker', 
     newPath: 'packages/02-worker',
-    oldName: '@hierarchidb/worker',
+    oldName: '@hierarchidb/runtime-worker',
     newName: '@hierarchidb/02-worker'
   },
   // 10-level: UI Core packages

@@ -10,9 +10,9 @@ interface PackageMappings {
 }
 
 const packageMappings: PackageMappings = {
-  '@hierarchidb/core': '@hierarchidb/00-core',
-  '@hierarchidb/api': '@hierarchidb/01-api',
-  '@hierarchidb/worker': '@hierarchidb/02-worker',
+  '@hierarchidb/common-core': '@hierarchidb/00-core',
+  '@hierarchidb/common-api': '@hierarchidb/01-api',
+  '@hierarchidb/runtime-worker': '@hierarchidb/02-worker',
   '@hierarchidb/ui-core': '@hierarchidb/10-ui-core',
   '@hierarchidb/ui-client': '@hierarchidb/10-ui-client',
   '@hierarchidb/ui-auth': '@hierarchidb/10-ui-auth',
