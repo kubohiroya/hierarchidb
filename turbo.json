@@ -1,6 +1,19 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
+    "@hierarchidb/app#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["build/**", ".react-router/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
+      "env": ["NODE_ENV", "VITE_APP_NAME", "VITE_USE_HASH_ROUTING"]
+    },
+    "@hierarchidb/app#dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
+      "env": ["NODE_ENV", "VITE_APP_NAME", "VITE_USE_HASH_ROUTING"]
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**"],

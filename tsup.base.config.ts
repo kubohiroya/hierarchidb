@@ -8,7 +8,7 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
 
   return defineConfig({
     // Default entry point
-    entry: ['src/openstreetmap-type.ts'],
+    entry: ['app/src/entry.client.ts'],
 
     // Output formats
     format: ['esm', 'cjs'],
