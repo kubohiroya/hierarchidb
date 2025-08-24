@@ -1,5 +1,5 @@
 packages:
-  - app
+  - _app
   - packages/common/*
   - packages/runtime/*
   - packages/ui/*

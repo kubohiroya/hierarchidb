@@ -13,14 +13,14 @@ const colors = {
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
-  red: '\x1b[31m'
+  red: '\x1b[31m',
 } as const;
 
 const log = {
   info: (msg: string) => console.log(`${colors.blue}ℹ${colors.reset} ${msg}`),
   success: (msg: string) => console.log(`${colors.green}✓${colors.reset} ${msg}`),
   warn: (msg: string) => console.log(`${colors.yellow}⚠${colors.reset} ${msg}`),
-  error: (msg: string) => console.log(`${colors.red}✗${colors.reset} ${msg}`)
+  error: (msg: string) => console.log(`${colors.red}✗${colors.reset} ${msg}`),
 };
 
 // Package name mappings - only the renames, not the moves
@@ -43,9 +43,9 @@ const PACKAGE_RENAMES = new Map<string, string>([
   ['@hierarchidb/plugin-basemap', '@hierarchidb/20-plugin-basemap'],
   ['@hierarchidb/plugin-stylemap', '@hierarchidb/20-plugin-stylemap'],
   ['@hierarchidb/plugin-import-export', '@hierarchidb/20-plugin-import-export'],
-  ['@hierarchidb/app', '@hierarchidb/30-app'],
+  ['@hierarchidb/_app', '@hierarchidb/30-_app'],
   ['@hierarchidb/backend-bff', '@hierarchidb/bff'],
-  ['@hierarchidb/backend-cors-proxy', '@hierarchidb/cors-proxy']
+  ['@hierarchidb/backend-cors-proxy', '@hierarchidb/cors-proxy'],
 ]);
 
 async function updatePackageJson(filePath: string): Promise<boolean> {
@@ -53,7 +53,7 @@ async function updatePackageJson(filePath: string): Promise<boolean> {
     const content = await fs.promises.readFile(filePath, 'utf8');
     const pkg = JSON.parse(content);
     let modified = false;
-    
+
     // Update dependencies
     const depTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
     for (const depType of depTypes) {
@@ -69,13 +69,13 @@ async function updatePackageJson(filePath: string): Promise<boolean> {
         pkg[depType] = newDeps;
       }
     }
-    
+
     if (modified) {
       await fs.promises.writeFile(filePath, JSON.stringify(pkg, null, 2) + '\n');
       log.success(`Updated: ${filePath}`);
       return true;
     }
-    
+
     return false;
   } catch (error) {
     log.error(`Failed to update ${filePath}: ${error}`);
@@ -87,15 +87,15 @@ async function updateSourceFile(filePath: string): Promise<boolean> {
   try {
     let content = await fs.promises.readFile(filePath, 'utf8');
     let modified = false;
-    
+
     for (const [oldName, newName] of PACKAGE_RENAMES.entries()) {
       const patterns = [
         new RegExp(`(from\\s+['"])${escapeRegex(oldName)}(['"/])`, 'g'),
         new RegExp(`(import\\s*\\(\\s*['"])${escapeRegex(oldName)}(['"/])`, 'g'),
         new RegExp(`(require\\s*\\(\\s*['"])${escapeRegex(oldName)}(['"/])`, 'g'),
-        new RegExp(`(import\\s+['"])${escapeRegex(oldName)}(['"/])`, 'g')
+        new RegExp(`(import\\s+['"])${escapeRegex(oldName)}(['"/])`, 'g'),
       ];
-      
+
       for (const regex of patterns) {
         if (regex.test(content)) {
           content = content.replace(regex, `$1${newName}$2`);
@@ -103,13 +103,13 @@ async function updateSourceFile(filePath: string): Promise<boolean> {
         }
       }
     }
-    
+
     if (modified) {
       await fs.promises.writeFile(filePath, content);
       log.success(`Updated imports in: ${filePath}`);
       return true;
     }
-    
+
     return false;
   } catch (error) {
     log.error(`Failed to update ${filePath}: ${error}`);
@@ -123,13 +123,13 @@ function escapeRegex(str: string): string {
 
 async function main() {
   console.log('\n=== Fixing Remaining Package References ===\n');
-  
+
   // Find all package.json files
   log.info('Updating package.json files...');
   const packageJsonFiles = await glob('packages/**/package.json', {
-    ignore: ['**/node_modules/**', '**/dist/**']
+    ignore: ['**/node_modules/**', '**/dist/**'],
   });
-  
+
   let updatedPackageCount = 0;
   for (const file of packageJsonFiles) {
     if (await updatePackageJson(file)) {
@@ -137,13 +137,13 @@ async function main() {
     }
   }
   log.info(`Updated ${updatedPackageCount} package.json files\n`);
-  
+
   // Find all source files
   log.info('Updating import statements...');
   const sourceFiles = await glob('packages/**/*.{ts,tsx,js,jsx,mjs,cjs}', {
-    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+    ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
   });
-  
+
   let updatedSourceCount = 0;
   for (const file of sourceFiles) {
     if (await updateSourceFile(file)) {
@@ -151,12 +151,12 @@ async function main() {
     }
   }
   log.info(`Updated ${updatedSourceCount} source files\n`);
-  
+
   log.success('Fix complete!');
   log.info('\nNext: Run "pnpm install" to verify all dependencies are resolved.');
 }
 
-main().catch(error => {
+main().catch((error) => {
   log.error(`Fatal error: ${error}`);
   process.exit(1);
 });

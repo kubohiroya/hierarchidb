@@ -77,7 +77,7 @@ pnpm build
 git checkout -b gh-pages
 
 # Copy build output
-cp -r packages/app/dist/* .
+cp -r packages/_app/dist/* .
 
 # Add nojekyll file
 touch .nojekyll
@@ -130,7 +130,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/app/dist
+          path: packages/_app/dist
   
   deploy:
     environment:

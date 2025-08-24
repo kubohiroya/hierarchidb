@@ -830,7 +830,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/30-app/dist
+          path: packages/30-_app/dist
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
 ```

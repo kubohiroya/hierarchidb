@@ -202,7 +202,7 @@ pnpm -r build
 pnpm -r --parallel dev
 
 # Run with dependencies
-pnpm --filter @hierarchidb/app... build
+pnpm --filter @hierarchidb/_app... build
 ```
 
 ## Troubleshooting

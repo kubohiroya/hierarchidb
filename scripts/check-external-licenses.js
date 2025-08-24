@@ -18,7 +18,7 @@ async function checkExternalLicenses() {
   try {
     // Run license-checker and get JSON output
     const { stdout } = await execAsync('npx license-checker --json', {
-      cwd: join(rootDir, 'packages/app'),
+      cwd: join(rootDir, 'packages/_app'),
     });
 
     const licenses = JSON.parse(stdout);

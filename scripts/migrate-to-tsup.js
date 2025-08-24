@@ -33,7 +33,7 @@ const packagesToMigrate = [
 
 // Packages that should keep existing build tools
 const skipPackages = [
-  'packages/app', // React Router + Vite
+  'packages/_app', // React Router + Vite
   'packages/bff', // Wrangler
   'packages/cors-proxy', // Wrangler
   'packages/ui-treeconsole-*', // Already using tsup

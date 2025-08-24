@@ -1301,7 +1301,7 @@ file packages/ui-treeconsole/dist/index.d.ts
 
 ```bash
 # Test package installation in consuming package
-cd packages/app
+cd packages/_app
 pnpm add @hierarchidb/ui-treeconsole
 pnpm typecheck
 
@@ -1414,7 +1414,7 @@ pnpm test:run
 pnpm build
 
 # Verify all packages still work
-pnpm --filter @hierarchidb/app dev
+pnpm --filter @hierarchidb/_app dev
 ```
 
 ---
@@ -1478,10 +1478,10 @@ pnpm --filter @hierarchidb/app dev
 
 **Prevention:**
 ```typescript
-// ❌ WRONG: ui-treeconsole importing from app
-import { AppSpecificComponent } from '@hierarchidb/app';
+// ❌ WRONG: ui-treeconsole importing from _app
+import { AppSpecificComponent } from '@hierarchidb/_app';
 
-// ✅ CORRECT: Define interfaces, let app implement
+// ✅ CORRECT: Define interfaces, let _app implement
 export interface TreeConsoleExtension {
   renderCustomAction?: (node: TreeNode) => ReactNode;
 }

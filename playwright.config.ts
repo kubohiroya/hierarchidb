@@ -101,7 +101,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm dev --filter @hierarchidb/app',
+    command: 'pnpm dev --filter @hierarchidb/_app',
     url: 'http://localhost:4200',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes timeout for dev server startup

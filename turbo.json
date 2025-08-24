@@ -4,7 +4,8 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
+      "env": ["NODE_ENV"]
     },
     "dev": {
       "cache": false,
@@ -12,9 +13,10 @@
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
+      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
+      "env": ["NODE_ENV"]
     },
     "lint": {
       "outputs": [],
@@ -38,5 +40,7 @@
       "outputs": ["playwright-report/**"],
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     }
-  }
+  },
+  "globalEnv": ["NODE_ENV", "VITE_*"],
+  "globalDependencies": ["tsconfig.json", "tsconfig.base.json"]
 }

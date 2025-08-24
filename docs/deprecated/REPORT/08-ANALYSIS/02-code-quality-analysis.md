@@ -112,7 +112,7 @@ const typeAnalysis = {
         count: 12
       },
       {
-        file: 'app/src/routes/*.tsx',
+        file: '_app/src/routes/*.tsx',
         issue: 'Missing return type annotations',
         count: 8
       }
@@ -339,7 +339,7 @@ const architectureViolations = [
     severity: 'High',
     occurrences: 3,
     files: [
-      'app/src/routes/treeconsole-demo.tsx'
+      '_app/src/routes/treeconsole-demo.tsx'
     ],
     fix: 'Use API interfaces only'
   },

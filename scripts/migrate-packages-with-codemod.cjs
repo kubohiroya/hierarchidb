@@ -44,7 +44,7 @@ const DIRECTORY_MAPPINGS = [
   { old: 'packages/plugins/import-export', new: 'packages/20-plugin-import-export' },
   
   // 30-level: Application
-  { old: 'packages/app', new: 'packages/30-app' },
+  { old: 'packages/_app', new: 'packages/30-_app' },
   
   // 40-level: Backend
   { old: 'packages/backend/bff', new: 'packages/40-backend-bff' },
@@ -73,7 +73,7 @@ const PACKAGE_NAME_MAPPINGS = {
   '@hierarchidb/plugin-stylemap': '@hierarchidb/20-plugin-stylemap',
   '@hierarchidb/plugin-shapes': '@hierarchidb/20-plugin-shapes',
   '@hierarchidb/plugin-import-export': '@hierarchidb/20-plugin-import-export',
-  '@hierarchidb/app': '@hierarchidb/30-app',
+  '@hierarchidb/app': '@hierarchidb/30-_app',
   '@hierarchidb/backend-bff': '@hierarchidb/bff',
   '@hierarchidb/backend-cors-proxy': '@hierarchidb/cors-proxy'
 };
@@ -228,7 +228,7 @@ function updateConfigFiles(dryRun = false) {
       .replace(/- 'packages\/ui\/\*'/g, "- 'packages/1*-ui-*'")
       .replace(/- 'packages\/ui\/treeconsole\/\*'/g, "- 'packages/12-ui-treeconsole-*'")
       .replace(/- 'packages\/plugins\/\*'/g, "- 'packages/20-plugin-*'")
-      .replace(/- 'packages\/app'/g, "- 'packages/30-app'")
+      .replace(/- 'packages\/app'/g, "- 'packages/30-_app'")
       .replace(/- 'packages\/backend\/\*'/g, "- 'packages/40-backend-*'");
     
     if (dryRun) {

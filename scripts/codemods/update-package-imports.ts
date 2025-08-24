@@ -30,7 +30,7 @@ const packageMappings: PackageMappings = {
   '@hierarchidb/plugin-stylemap': '@hierarchidb/20-plugin-stylemap',
   '@hierarchidb/plugin-shapes': '@hierarchidb/20-plugin-shapes',
   '@hierarchidb/plugin-import-export': '@hierarchidb/20-plugin-import-export',
-  '@hierarchidb/app': '@hierarchidb/30-app',
+  '@hierarchidb/app': '@hierarchidb/30-_app',
   '@hierarchidb/backend-bff': '@hierarchidb/bff',
   '@hierarchidb/backend-cors-proxy': '@hierarchidb/cors-proxy',
 };
@@ -51,7 +51,7 @@ const transform: Transform = (fileInfo: FileInfo, api: API, options?: Options) =
   };
 
   // Update import declarations
-  root.find(j.ImportDeclaration).forEach(path => {
+  root.find(j.ImportDeclaration).forEach((path) => {
     const source = path.value.source?.value;
     if (typeof source === 'string') {
       const newSource = updateSource(source);
@@ -63,28 +63,26 @@ const transform: Transform = (fileInfo: FileInfo, api: API, options?: Options) =
   });
 
   // Update require calls
-  root.find(j.CallExpression, {
-    callee: { name: 'require' }
-  }).forEach(path => {
-    const firstArg = path.value.arguments[0];
-    if (firstArg && 
-        firstArg.type === 'Literal' && 
-        typeof firstArg.value === 'string') {
-      const newSource = updateSource(firstArg.value);
-      if (newSource) {
-        firstArg.value = newSource;
-        modified = true;
+  root
+    .find(j.CallExpression, {
+      callee: { name: 'require' },
+    })
+    .forEach((path) => {
+      const firstArg = path.value.arguments[0];
+      if (firstArg && firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
+        const newSource = updateSource(firstArg.value);
+        if (newSource) {
+          firstArg.value = newSource;
+          modified = true;
+        }
       }
-    }
-  });
+    });
 
   // Update dynamic imports - import()
-  root.find(j.CallExpression).forEach(path => {
+  root.find(j.CallExpression).forEach((path) => {
     if (path.value.callee.type === 'Import') {
       const firstArg = path.value.arguments[0];
-      if (firstArg && 
-          firstArg.type === 'Literal' && 
-          typeof firstArg.value === 'string') {
+      if (firstArg && firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
         const newSource = updateSource(firstArg.value);
         if (newSource) {
           firstArg.value = newSource;
@@ -95,7 +93,7 @@ const transform: Transform = (fileInfo: FileInfo, api: API, options?: Options) =
   });
 
   // Update export ... from statements
-  root.find(j.ExportNamedDeclaration).forEach(path => {
+  root.find(j.ExportNamedDeclaration).forEach((path) => {
     const source = path.value.source?.value;
     if (typeof source === 'string') {
       const newSource = updateSource(source);
@@ -107,7 +105,7 @@ const transform: Transform = (fileInfo: FileInfo, api: API, options?: Options) =
   });
 
   // Update export * from statements
-  root.find(j.ExportAllDeclaration).forEach(path => {
+  root.find(j.ExportAllDeclaration).forEach((path) => {
     const source = path.value.source?.value;
     if (typeof source === 'string') {
       const newSource = updateSource(source);

@@ -125,7 +125,7 @@ turbo.json更新:
       "inputs": ["src/**", "vite.config.ts", "package.json"]
     },
     "build": {
-      "dependsOn": ["build:utils", "build:app"]
+      "dependsOn": ["build:utils", "build:_app"]
     }
   }
 }
@@ -178,11 +178,11 @@ pnpm build --filter @hierarchidb/[package-name]
 {
   "scripts": {
     "build": "turbo run build",
-    "build:libs": "turbo run build --filter='./packages/*' --filter='!./packages/app'",
-    "build:app": "turbo run build --filter=@hierarchidb/app",
+    "build:libs": "turbo run build --filter='./packages/*' --filter='!./packages/_app'",
+    "build:app": "turbo run build --filter=@hierarchidb/_app",
     "dev": "turbo run dev --parallel",
-    "dev:libs": "turbo run dev --filter='./packages/*' --filter='!./packages/app' --parallel",
-    "dev:app": "turbo run dev --filter=@hierarchidb/app"
+    "dev:libs": "turbo run dev --filter='./packages/*' --filter='!./packages/_app' --parallel",
+    "dev:app": "turbo run dev --filter=@hierarchidb/_app"
   }
 }
 ```

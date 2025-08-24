@@ -10,7 +10,7 @@ const rootDir = join(__dirname, '..');
 // List of all package.json files to update (excluding node_modules)
 const packageFiles = [
   'packages/api/package.json',
-  'packages/app/package.json',
+  'packages/_app/package.json',
   'packages/bff/package.json',
   'packages/core/package.json',
   'packages/cors-proxy/package.json',

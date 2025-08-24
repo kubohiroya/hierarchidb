@@ -978,7 +978,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
 ### 4.7 プラグインの登録
 
 ```typescript
-// packages/app/src/plugins/register.ts
+// packages/_app/src/plugins/register.ts
 import { PluginRegistry } from '~/registry'; // Workerパッケージ内のregistry
 import { MyPluginDefinition } from '@hierarchidb/plugin-myplugin';
 

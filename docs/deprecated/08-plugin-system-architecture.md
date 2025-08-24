@@ -1412,7 +1412,7 @@ export function registerAllUIPlugins(): void {
 ### アプリケーション初期化
 
 ```typescript
-// packages/app/src/main.tsx
+// packages/_app/src/main.tsx
 import { registerAllUIPlugins } from '@hierarchidb/ui-core/plugins';
 
 async function initializeApp() {

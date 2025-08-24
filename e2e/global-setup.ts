@@ -19,8 +19,8 @@ async function globalSetup(config: FullConfig) {
       timeout: 60000,
     });
 
-    // Check if the app is loaded properly - just wait for page to load
-    // Remove app-root check as it doesn't exist in current implementation
+    // Check if the _app is loaded properly - just wait for page to load
+    // Remove _app-root check as it doesn't exist in current implementation
     console.log('✅ Page loaded successfully');
 
     // Initialize test database if needed

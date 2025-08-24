@@ -81,7 +81,7 @@ export default defineConfig([
 
 ### アプリケーション設定
 ```typescript
-// packages/app/vite.config.ts
+// packages/_app/vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { reactRouter } from '@react-router/dev/vite';
@@ -256,9 +256,9 @@ plugins: [
     "build": "turbo run build",
     "build:packages": "turbo run build --filter='./packages/*'",
     "build:plugins": "turbo run build --filter='./packages/plugins/*'",
-    "build:app": "turbo run build --filter=@hierarchidb/app",
+    "build:app": "turbo run build --filter=@hierarchidb/_app",
     "build:force": "turbo run build --force",
-    "build:analyze": "ANALYZE=true pnpm build:app",
+    "build:analyze": "ANALYZE=true pnpm build:_app",
     "prebuild": "pnpm clean",
     "postbuild": "pnpm size"
   }
@@ -290,7 +290,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build-output
-          path: packages/app/dist
+          path: packages/_app/dist
 ```
 
 ## ビルドエラー対処

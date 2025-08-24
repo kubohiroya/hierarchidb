@@ -44,16 +44,16 @@ turbo run dev --parallel
 Option 2 - Separate terminals (Better log visibility):
 ```bash
 # Terminal 1: Watch all library packages
-turbo run dev --parallel --filter='!@hierarchidb/30-app'
+turbo run dev --parallel --filter='!@hierarchidb/30-_app'
 
 # Terminal 2: Start the application
-cd packages/30-app && pnpm dev
+cd packages/30-_app && pnpm dev
 ```
 
 Option 3 - Minimal setup (Faster startup):
 ```bash
-# Only watch packages that 30-app depends on
-turbo run dev --filter=@hierarchidb/30-app
+# Only watch packages that 30-_app depends on
+turbo run dev --filter=@hierarchidb/30-_app
 ```
 
 **Important Note**: 
@@ -662,7 +662,7 @@ When performing large-scale refactoring such as renaming functions, variables, o
 3. **Turborepo-aware refactoring**
    ```bash
    # Use turbo to run codemods across affected packages only
-   turbo run codemod --filter=...@hierarchidb/app
+   turbo run codemod --filter=...@hierarchidb/_app
    ```
 
 #### Common Refactoring Scenarios

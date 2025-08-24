@@ -443,7 +443,7 @@ Warning: Extra attributes from the server: style Error Component Stack
 
 1. **Layout コンポーネントでの hydration 警告抑制**
 ```tsx
-// packages/app/src/root.tsx
+// packages/_app/src/root.tsx
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -463,7 +463,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 2. **MUI スタイルエンジンの統一**
 ```tsx
-// packages/app/src/root.tsx
+// packages/_app/src/root.tsx
 import { StyledEngineProvider } from '@mui/material/styles';
 
 export default function App() {
@@ -484,7 +484,7 @@ export default function App() {
 
 3. **Client-side状態の安全な管理**
 ```tsx
-// packages/app/src/routes/_index.tsx
+// packages/_app/src/routes/_index.tsx
 export default function Index() {
   // SSR/hydration不一致を防ぐためのクライアント判定
   const [isClient, setIsClient] = useState(false);
@@ -509,7 +509,7 @@ export default function Index() {
 
 **SPAモード設定:**
 ```typescript
-// packages/app/react-router.config.ts
+// packages/_app/react-router.config.ts
 const config: ReactRouterConfig = {
   appDirectory: 'src',
   prerender: false,
@@ -523,7 +523,7 @@ const config: ReactRouterConfig = {
 
 **Entry Client の実装:**
 ```tsx
-// packages/app/src/entry.client.tsx
+// packages/_app/src/entry.client.tsx
 import { StrictMode, startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { HydratedRouter } from 'react-router/dom';
@@ -542,7 +542,7 @@ startTransition(() => {
 
 **モジュール重複の解決:**
 ```typescript
-// packages/app/vite.config.ts
+// packages/_app/vite.config.ts
 export default defineConfig({
   resolve: {
     // @emotion/reactとreactの重複を解決

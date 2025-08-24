@@ -61,7 +61,7 @@ packages/
 
 #### 1.2 テンプレート定義ファイルの作成
 ```typescript
-// packages/app/public/templates/population-2023/manifest.json
+// packages/_app/public/templates/population-2023/manifest.json
 {
   "version": "1.0",
   "name": "Total Population by Country",
@@ -242,7 +242,7 @@ const handleAction = (action: string, params?: any) => {
 
 #### 3.3 テンプレート選択UIの実装
 ```typescript
-// packages/app/src/features/import-export/containers/TemplateMenu.tsx
+// packages/_app/src/features/import-export/containers/TemplateMenu.tsx
 export const IMPORT_TEMPLATES = [
   {
     id: 'population-2023',
@@ -263,7 +263,7 @@ export const IMPORT_TEMPLATES = [
 
 #### 4.1 E2Eテストの移植
 ```typescript
-// packages/app/e2e/template-import.test.ts
+// packages/_app/e2e/template-import.test.ts
 import { test, expect } from '@playwright/test';
 
 test.describe('Template Import', () => {
