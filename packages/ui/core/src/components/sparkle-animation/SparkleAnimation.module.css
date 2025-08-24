@@ -1,0 +1,81 @@
+/* SparkleAnimation.module.css */
+
+@keyframes sparkle-enhanced {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1.8) rotate(72deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.5) rotate(144deg);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.8) rotate(216deg);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.6) rotate(288deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.7) rotate(360deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.5) rotate(432deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.4) rotate(504deg);
+  }
+  80% {
+    opacity: 0.8;
+    transform: scale(1.2) rotate(576deg);
+  }
+  90% {
+    opacity: 0.4;
+    transform: scale(1) rotate(648deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(720deg);
+  }
+}
+
+@keyframes sparkle-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.8));
+  }
+  25% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 1)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) drop-shadow(0 0 16px rgba(255, 255, 255, 1));
+  }
+  75% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 1)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+  }
+}
+
+.sparkle {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  pointer-events: none;
+  z-index: 10;
+  animation:
+    sparkle-enhanced 5s ease-in-out forwards,
+    sparkle-glow 1s ease-in-out infinite;
+  display: inline-block;
+  font-size: 20px;
+  color: #ffd700;
+  text-shadow:
+    0 0 4px rgba(255, 215, 0, 0.8),
+    0 0 8px rgba(255, 255, 255, 0.6);
+}

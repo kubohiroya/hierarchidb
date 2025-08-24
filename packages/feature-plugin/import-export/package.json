@@ -1,0 +1,57 @@
+{
+  "name": "@hierarchidb/feature-import-export-plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Import/Export Plugin for HierarchiDB - Data import/export and format conversion",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hierarchidb/common-core": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "csv-parse": "^5.5.0",
+    "csv-stringify": "^6.4.0",
+    "jszip": "^3.10.0",
+    "papaparse": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": ">=5.0.0",
+    "@mui/icons-material": ">=5.0.0"
+  },
+  "keywords": [
+    "hierarchidb",
+    "plugin",
+    "import",
+    "export",
+    "data",
+    "csv",
+    "json",
+    "xml"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

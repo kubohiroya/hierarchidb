@@ -1,0 +1,24 @@
+{
+  "welcome": {
+    "title": "🗺️ ERIA Cartographへようこそ！",
+    "description": "ERIA Cartographは、地理データの視覚化を作成・管理するための強力なツールです。主要な機能をご案内します。"
+  },
+  "navigation": {
+    "title": "ナビゲーションボタン 🧭",
+    "description": "これらのボタンを使用して、リソースとプロジェクトを切り替えます。リソースはプロジェクト間で共有され、プロジェクトは複数のリソースを組み合わせます。"
+  },
+  "authentication": {
+    "title": "認証 🔐",
+    "loginDescription": "外部データソースにアクセスするには、Googleアカウントでログインしてください。",
+    "loggedInDescription": "すでにログインしています！ここをクリックしてユーザーメニューにアクセスしてください。",
+    "additionalInfo": "GADM、Natural Earth、その他のプロバイダーから地理データをダウンロードするには認証が必要です。"
+  },
+  "documentation": {
+    "title": "ドキュメント 📚",
+    "description": "ここをクリックして、ライセンス、システムアーキテクチャ、技術文書など、ERIA Cartographに関する詳細情報にアクセスしてください。"
+  },
+  "help": {
+    "title": "ヘルプが必要ですか？ 🤔",
+    "description": "ヘルプボタンをクリックすることで、いつでもこのツアーを再開できます。ERIA Cartographを最大限に活用できるようお手伝いします！"
+  }
+}

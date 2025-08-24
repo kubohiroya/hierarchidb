@@ -1,0 +1,27 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "noEmit": true
+  },
+  "include": [
+    "src/shared/**/*",
+    "src/worker/api.ts",
+    "src/worker/handlers/**/*",
+    "src/worker/plugin.ts"
+  ],
+  "exclude": [
+    "src/services/**/*",
+    "src/types/**/*",
+    "src/ui/**/*",
+    "**/*.test.*",
+    "**/__tests__/**"
+  ],
+  "references": [
+    {"path": "../../common/core"},
+    {"path": "../../common/api"}
+  ]
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/hierarchidb/favicon.svg" />
+    <title>HierarchiDB - Debug Index</title>
+    <style>
+      body { font-family: monospace; padding: 20px; }
+      .log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+      .error { color: red; }
+      .success { color: green; }
+      .info { color: blue; }
+    </style>
+</head>
+<body>
+<h1>GitHub Pages SPA Index Debug</h1>
+<div id="logs"></div>
+<div id="root"></div>
+
+<script type="text/javascript">
+  const logs = document.getElementById('logs');
+  
+  function log(message, type = 'info') {
+    const div = document.createElement('div');
+    div.className = `log ${type}`;
+    div.textContent = `[${new Date().toISOString()}] ${message}`;
+    logs.appendChild(div);
+    console.log(message);
+  }
+  
+  log('=== INDEX.HTML LOADED ===', 'info');
+  log(`Full URL: ${window.location.href}`, 'info');
+  log(`Search params: ${window.location.search || '(none)'}`, 'info');
+  
+  // Check for redirect from 404.html
+  (function(l) {
+    log('Checking for 404.html redirect...', 'info');
+    
+    if (l.search && l.search[1] === '/') {
+      log('✓ Detected redirect from 404.html', 'success');
+      log(`Raw search string: ${l.search}`, 'info');
+      
+      var decoded = l.search.slice(1).split('&').map(function(s) { 
+        return s.replace(/~and~/g, '&')
+      }).join('?');
+      
+      log(`Decoded path: ${decoded}`, 'info');
+      
+      var newUrl = l.pathname.slice(0, -1) + decoded + l.hash;
+      log(`New URL: ${newUrl}`, 'success');
+      
+      log('Updating browser history...', 'info');
+      window.history.replaceState(null, null, newUrl);
+      log('✓ History updated', 'success');
+      
+      // Check final URL
+      log(`Final URL: ${window.location.href}`, 'success');
+    } else {
+      log('No redirect detected - normal page load', 'info');
+    }
+  }(window.location));
+  
+  // React Router initialization debug
+  log('=== REACT ROUTER INIT ===', 'info');
+  
+  window.__reactRouterContext = {
+    "basename": "/hierarchidb/",
+    "future": {
+      "unstable_middleware": false,
+      "unstable_optimizeDeps": false,
+      "unstable_splitRouteModules": false,
+      "unstable_subResourceIntegrity": false,
+      "unstable_viteEnvironmentApi": false
+    },
+    "routeDiscovery": {"mode": "initial"},
+    "ssr": false,
+    "isSpaMode": true
+  };
+  
+  log(`Basename: ${window.__reactRouterContext.basename}`, 'info');
+  log(`SSR: ${window.__reactRouterContext.ssr}`, 'info');
+  log(`SPA Mode: ${window.__reactRouterContext.isSpaMode}`, 'info');
+  
+  // Check for potential issues
+  const currentPath = window.location.pathname;
+  const basename = window.__reactRouterContext.basename;
+  
+  if (!currentPath.startsWith(basename)) {
+    log(`⚠️ WARNING: Current path "${currentPath}" does not start with basename "${basename}"`, 'error');
+    log('This will cause routing issues!', 'error');
+  } else {
+    log(`✓ Path correctly starts with basename`, 'success');
+  }
+</script>
+
+<!-- Placeholder for React _app -->
+<script type="module">
+  // Simulate React Router loading
+  setTimeout(() => {
+    const log = (msg) => {
+      const div = document.createElement('div');
+      div.className = 'log success';
+      div.textContent = `[${new Date().toISOString()}] ${msg}`;
+      document.getElementById('logs').appendChild(div);
+    };
+    
+    log('React Router would load here...');
+    log('App initialization complete');
+    
+    // Show final state
+    document.getElementById('root').innerHTML = `
+      <div style="margin-top: 20px; padding: 20px; border: 2px solid green;">
+        <h2>✓ App Loaded Successfully</h2>
+        <p>Final URL: ${window.location.href}</p>
+        <p>Routing path: ${window.location.pathname.replace('/hierarchidb/', '') || '/'}</p>
+      </div>
+    `;
+  }, 1000);
+</script>
+</body>
+</html>

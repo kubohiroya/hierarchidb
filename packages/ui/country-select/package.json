@@ -1,0 +1,45 @@
+{
+  "name": "@hierarchidb/ui-country-select",
+  "version": "0.1.0",
+  "description": "Country and matrix selection components for HierarchiDB plugins",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "react": "^18.3.1",
+    "react-virtuoso": "^4.14.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "keywords": [
+    "hierarchidb",
+    "country",
+    "selection",
+    "matrix",
+    "ui",
+    "react",
+    "virtualization"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@hierarchidb/common-core",
+  "version": "0.0.1",
+  "description": "Core types and data models for hierarchidb",
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:tsc": "tsc && tsc-alias",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "fake-indexeddb": "^6.1.0"
+  },
+  "license": "MIT"
+}

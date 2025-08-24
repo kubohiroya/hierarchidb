@@ -1,0 +1,43 @@
+{
+  "name": "@hierarchidb/ui-accordion-config",
+  "version": "1.0.0",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": "^5.0.0",
+    "@mui/material": "^5.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "description": "Configurable accordion components with phase-based theming for HierarchiDB",
+  "keywords": [
+    "react",
+    "accordion",
+    "configuration",
+    "ui-components",
+    "hierarchidb"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kubohiroya/hierarchidb.git",
+    "directory": "packages/ui-accordion-config"
+  },
+  "license": "MIT"
+}

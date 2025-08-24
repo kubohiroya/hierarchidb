@@ -1,0 +1,6081 @@
+[
+  {
+    "id": "AFG",
+    "name": "Afghanistan",
+    "countryName": "Afghanistan",
+    "countryCode": "AF",
+    "iso2": "AF",
+    "iso3": "AFG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XAD",
+    "name": "Akrotiri and Dhekelia",
+    "countryName": "Akrotiri and Dhekelia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XAD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ALA",
+    "name": "Åland",
+    "countryName": "Åland",
+    "countryCode": "AX",
+    "iso2": "AX",
+    "iso3": "ALA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ALB",
+    "name": "Albania",
+    "countryName": "Albania",
+    "countryCode": "AL",
+    "iso2": "AL",
+    "iso3": "ALB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DZA",
+    "name": "Algeria",
+    "countryName": "Algeria",
+    "countryCode": "DZ",
+    "iso2": "DZ",
+    "iso3": "DZA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ASM",
+    "name": "American Samoa",
+    "countryName": "American Samoa",
+    "countryCode": "AS",
+    "iso2": "AS",
+    "iso3": "ASM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AND",
+    "name": "Andorra",
+    "countryName": "Andorra",
+    "countryCode": "AD",
+    "iso2": "AD",
+    "iso3": "AND",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AGO",
+    "name": "Angola",
+    "countryName": "Angola",
+    "countryCode": "AO",
+    "iso2": "AO",
+    "iso3": "AGO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AIA",
+    "name": "Anguilla",
+    "countryName": "Anguilla",
+    "countryCode": "AI",
+    "iso2": "AI",
+    "iso3": "AIA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ATA",
+    "name": "Antarctica",
+    "countryName": "Antarctica",
+    "countryCode": "AQ",
+    "iso2": "AQ",
+    "iso3": "ATA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ATG",
+    "name": "Antigua and Barbuda",
+    "countryName": "Antigua and Barbuda",
+    "countryCode": "AG",
+    "iso2": "AG",
+    "iso3": "ATG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ARG",
+    "name": "Argentina",
+    "countryName": "Argentina",
+    "countryCode": "AR",
+    "iso2": "AR",
+    "iso3": "ARG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ARM",
+    "name": "Armenia",
+    "countryName": "Armenia",
+    "countryCode": "AM",
+    "iso2": "AM",
+    "iso3": "ARM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ABW",
+    "name": "Aruba",
+    "countryName": "Aruba",
+    "countryCode": "AW",
+    "iso2": "AW",
+    "iso3": "ABW",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AUS",
+    "name": "Australia",
+    "countryName": "Australia",
+    "countryCode": "AU",
+    "iso2": "AU",
+    "iso3": "AUS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AUT",
+    "name": "Austria",
+    "countryName": "Austria",
+    "countryCode": "AT",
+    "iso2": "AT",
+    "iso3": "AUT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "AZE",
+    "name": "Azerbaijan",
+    "countryName": "Azerbaijan",
+    "countryCode": "AZ",
+    "iso2": "AZ",
+    "iso3": "AZE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BHS",
+    "name": "Bahamas",
+    "countryName": "Bahamas",
+    "countryCode": "BS",
+    "iso2": "BS",
+    "iso3": "BHS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BHR",
+    "name": "Bahrain",
+    "countryName": "Bahrain",
+    "countryCode": "BH",
+    "iso2": "BH",
+    "iso3": "BHR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BGD",
+    "name": "Bangladesh",
+    "countryName": "Bangladesh",
+    "countryCode": "BD",
+    "iso2": "BD",
+    "iso3": "BGD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BRB",
+    "name": "Barbados",
+    "countryName": "Barbados",
+    "countryCode": "BB",
+    "iso2": "BB",
+    "iso3": "BRB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BLR",
+    "name": "Belarus",
+    "countryName": "Belarus",
+    "countryCode": "BY",
+    "iso2": "BY",
+    "iso3": "BLR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BEL",
+    "name": "Belgium",
+    "countryName": "Belgium",
+    "countryCode": "BE",
+    "iso2": "BE",
+    "iso3": "BEL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BLZ",
+    "name": "Belize",
+    "countryName": "Belize",
+    "countryCode": "BZ",
+    "iso2": "BZ",
+    "iso3": "BLZ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BEN",
+    "name": "Benin",
+    "countryName": "Benin",
+    "countryCode": "BJ",
+    "iso2": "BJ",
+    "iso3": "BEN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BMU",
+    "name": "Bermuda",
+    "countryName": "Bermuda",
+    "countryCode": "BM",
+    "iso2": "BM",
+    "iso3": "BMU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BTN",
+    "name": "Bhutan",
+    "countryName": "Bhutan",
+    "countryCode": "BT",
+    "iso2": "BT",
+    "iso3": "BTN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BOL",
+    "name": "Bolivia",
+    "countryName": "Bolivia",
+    "countryCode": "BO",
+    "iso2": "BO",
+    "iso3": "BOL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BES",
+    "name": "Bonaire, Saint Eustatius and Saba",
+    "countryName": "Bonaire, Saint Eustatius and Saba",
+    "countryCode": "BQ",
+    "iso2": "BQ",
+    "iso3": "BES",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BIH",
+    "name": "Bosnia and Herzegovina",
+    "countryName": "Bosnia and Herzegovina",
+    "countryCode": "BA",
+    "iso2": "BA",
+    "iso3": "BIH",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BWA",
+    "name": "Botswana",
+    "countryName": "Botswana",
+    "countryCode": "BW",
+    "iso2": "BW",
+    "iso3": "BWA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BVT",
+    "name": "Bouvet Island",
+    "countryName": "Bouvet Island",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "BVT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BRA",
+    "name": "Brazil",
+    "countryName": "Brazil",
+    "countryCode": "BR",
+    "iso2": "BR",
+    "iso3": "BRA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IOT",
+    "name": "British Indian Ocean Territory",
+    "countryName": "British Indian Ocean Territory",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "IOT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VGB",
+    "name": "British Virgin Islands",
+    "countryName": "British Virgin Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "VGB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BRN",
+    "name": "Brunei",
+    "countryName": "Brunei",
+    "countryCode": "BN",
+    "iso2": "BN",
+    "iso3": "BRN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BGR",
+    "name": "Bulgaria",
+    "countryName": "Bulgaria",
+    "countryCode": "BG",
+    "iso2": "BG",
+    "iso3": "BGR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BFA",
+    "name": "Burkina Faso",
+    "countryName": "Burkina Faso",
+    "countryCode": "BF",
+    "iso2": "BF",
+    "iso3": "BFA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BDI",
+    "name": "Burundi",
+    "countryName": "Burundi",
+    "countryCode": "BI",
+    "iso2": "BI",
+    "iso3": "BDI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CPV",
+    "name": "Cabo Verde",
+    "countryName": "Cabo Verde",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CPV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KHM",
+    "name": "Cambodia",
+    "countryName": "Cambodia",
+    "countryCode": "KH",
+    "iso2": "KH",
+    "iso3": "KHM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CMR",
+    "name": "Cameroon",
+    "countryName": "Cameroon",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CMR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CAN",
+    "name": "Canada",
+    "countryName": "Canada",
+    "countryCode": "CA",
+    "iso2": "CA",
+    "iso3": "CAN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XCA",
+    "name": "Caspian Sea",
+    "countryName": "Caspian Sea",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XCA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CYM",
+    "name": "Cayman Islands",
+    "countryName": "Cayman Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CYM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CAF",
+    "name": "Central African Republic",
+    "countryName": "Central African Republic",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CAF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TCD",
+    "name": "Chad",
+    "countryName": "Chad",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TCD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CHL",
+    "name": "Chile",
+    "countryName": "Chile",
+    "countryCode": "CL",
+    "iso2": "CL",
+    "iso3": "CHL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CHN",
+    "name": "China",
+    "countryName": "China",
+    "countryCode": "CN",
+    "iso2": "CN",
+    "iso3": "CHN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CXR",
+    "name": "Christmas Island",
+    "countryName": "Christmas Island",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CXR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XCL",
+    "name": "Clipperton Island",
+    "countryName": "Clipperton Island",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XCL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CCK",
+    "name": "Cocos Islands",
+    "countryName": "Cocos Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CCK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "COL",
+    "name": "Colombia",
+    "countryName": "Colombia",
+    "countryCode": "CO",
+    "iso2": "CO",
+    "iso3": "COL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "COM",
+    "name": "Comoros",
+    "countryName": "Comoros",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "COM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "COG",
+    "name": "Congo",
+    "countryName": "Congo",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "COG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "COK",
+    "name": "Cook Islands",
+    "countryName": "Cook Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "COK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CRI",
+    "name": "Costa Rica",
+    "countryName": "Costa Rica",
+    "countryCode": "CR",
+    "iso2": "CR",
+    "iso3": "CRI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CIV",
+    "name": "Côte d'Ivoire",
+    "countryName": "Côte d'Ivoire",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CIV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "HRV",
+    "name": "Croatia",
+    "countryName": "Croatia",
+    "countryCode": "HR",
+    "iso2": "HR",
+    "iso3": "HRV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CUB",
+    "name": "Cuba",
+    "countryName": "Cuba",
+    "countryCode": "CU",
+    "iso2": "CU",
+    "iso3": "CUB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CUW",
+    "name": "Curaçao",
+    "countryName": "Curaçao",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "CUW",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CYP",
+    "name": "Cyprus",
+    "countryName": "Cyprus",
+    "countryCode": "CY",
+    "iso2": "CY",
+    "iso3": "CYP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CZE",
+    "name": "Czech Republic",
+    "countryName": "Czech Republic",
+    "countryCode": "CZ",
+    "iso2": "CZ",
+    "iso3": "CZE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "COD",
+    "name": "Democratic Republic of the Congo",
+    "countryName": "Democratic Republic of the Congo",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "COD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DNK",
+    "name": "Denmark",
+    "countryName": "Denmark",
+    "countryCode": "DK",
+    "iso2": "DK",
+    "iso3": "DNK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DJI",
+    "name": "Djibouti",
+    "countryName": "Djibouti",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "DJI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DMA",
+    "name": "Dominica",
+    "countryName": "Dominica",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "DMA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DOM",
+    "name": "Dominican Republic",
+    "countryName": "Dominican Republic",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "DOM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TLS",
+    "name": "East Timor",
+    "countryName": "East Timor",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TLS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ECU",
+    "name": "Ecuador",
+    "countryName": "Ecuador",
+    "countryCode": "EC",
+    "iso2": "EC",
+    "iso3": "ECU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "EGY",
+    "name": "Egypt",
+    "countryName": "Egypt",
+    "countryCode": "EG",
+    "iso2": "EG",
+    "iso3": "EGY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SLV",
+    "name": "El Salvador",
+    "countryName": "El Salvador",
+    "countryCode": "SV",
+    "iso2": "SV",
+    "iso3": "SLV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GNQ",
+    "name": "Equatorial Guinea",
+    "countryName": "Equatorial Guinea",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GNQ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ERI",
+    "name": "Eritrea",
+    "countryName": "Eritrea",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "ERI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "EST",
+    "name": "Estonia",
+    "countryName": "Estonia",
+    "countryCode": "EE",
+    "iso2": "EE",
+    "iso3": "EST",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SWZ",
+    "name": "Eswatini",
+    "countryName": "Eswatini",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SWZ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ETH",
+    "name": "Ethiopia",
+    "countryName": "Ethiopia",
+    "countryCode": "ET",
+    "iso2": "ET",
+    "iso3": "ETH",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FLK",
+    "name": "Falkland Islands",
+    "countryName": "Falkland Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "FLK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FRO",
+    "name": "Faroe Islands",
+    "countryName": "Faroe Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "FRO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FJI",
+    "name": "Fiji",
+    "countryName": "Fiji",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "FJI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FIN",
+    "name": "Finland",
+    "countryName": "Finland",
+    "countryCode": "FI",
+    "iso2": "FI",
+    "iso3": "FIN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FRA",
+    "name": "France",
+    "countryName": "France",
+    "countryCode": "FR",
+    "iso2": "FR",
+    "iso3": "FRA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GUF",
+    "name": "French Guiana",
+    "countryName": "French Guiana",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GUF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PYF",
+    "name": "French Polynesia",
+    "countryName": "French Polynesia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PYF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ATF",
+    "name": "French Southern Territories",
+    "countryName": "French Southern Territories",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "ATF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GAB",
+    "name": "Gabon",
+    "countryName": "Gabon",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GAB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GMB",
+    "name": "Gambia",
+    "countryName": "Gambia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GMB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GEO",
+    "name": "Georgia",
+    "countryName": "Georgia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GEO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "DEU",
+    "name": "Germany",
+    "countryName": "Germany",
+    "countryCode": "DE",
+    "iso2": "DE",
+    "iso3": "DEU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GHA",
+    "name": "Ghana",
+    "countryName": "Ghana",
+    "countryCode": "GH",
+    "iso2": "GH",
+    "iso3": "GHA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GIB",
+    "name": "Gibraltar",
+    "countryName": "Gibraltar",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GIB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GRC",
+    "name": "Greece",
+    "countryName": "Greece",
+    "countryCode": "GR",
+    "iso2": "GR",
+    "iso3": "GRC",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GRL",
+    "name": "Greenland",
+    "countryName": "Greenland",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GRL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GRD",
+    "name": "Grenada",
+    "countryName": "Grenada",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GRD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GLP",
+    "name": "Guadeloupe",
+    "countryName": "Guadeloupe",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GLP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GUM",
+    "name": "Guam",
+    "countryName": "Guam",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GUM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GTM",
+    "name": "Guatemala",
+    "countryName": "Guatemala",
+    "countryCode": "GT",
+    "iso2": "GT",
+    "iso3": "GTM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GGY",
+    "name": "Guernsey",
+    "countryName": "Guernsey",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GGY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GIN",
+    "name": "Guinea",
+    "countryName": "Guinea",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GIN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GNB",
+    "name": "Guinea-Bissau",
+    "countryName": "Guinea-Bissau",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GNB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GUY",
+    "name": "Guyana",
+    "countryName": "Guyana",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "GUY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "HTI",
+    "name": "Haiti",
+    "countryName": "Haiti",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "HTI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "HMD",
+    "name": "Heard Island and McDonald Islands",
+    "countryName": "Heard Island and McDonald Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "HMD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "HND",
+    "name": "Honduras",
+    "countryName": "Honduras",
+    "countryCode": "HN",
+    "iso2": "HN",
+    "iso3": "HND",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "HUN",
+    "name": "Hungary",
+    "countryName": "Hungary",
+    "countryCode": "HU",
+    "iso2": "HU",
+    "iso3": "HUN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ISL",
+    "name": "Iceland",
+    "countryName": "Iceland",
+    "countryCode": "IS",
+    "iso2": "IS",
+    "iso3": "ISL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IND",
+    "name": "India",
+    "countryName": "India",
+    "countryCode": "IN",
+    "iso2": "IN",
+    "iso3": "IND",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IDN",
+    "name": "Indonesia",
+    "countryName": "Indonesia",
+    "countryCode": "ID",
+    "iso2": "ID",
+    "iso3": "IDN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IRN",
+    "name": "Iran",
+    "countryName": "Iran",
+    "countryCode": "IR",
+    "iso2": "IR",
+    "iso3": "IRN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IRQ",
+    "name": "Iraq",
+    "countryName": "Iraq",
+    "countryCode": "IQ",
+    "iso2": "IQ",
+    "iso3": "IRQ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IRL",
+    "name": "Ireland",
+    "countryName": "Ireland",
+    "countryCode": "IE",
+    "iso2": "IE",
+    "iso3": "IRL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "IMN",
+    "name": "Isle of Man",
+    "countryName": "Isle of Man",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "IMN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ISR",
+    "name": "Israel",
+    "countryName": "Israel",
+    "countryCode": "IL",
+    "iso2": "IL",
+    "iso3": "ISR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ITA",
+    "name": "Italy",
+    "countryName": "Italy",
+    "countryCode": "IT",
+    "iso2": "IT",
+    "iso3": "ITA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "JAM",
+    "name": "Jamaica",
+    "countryName": "Jamaica",
+    "countryCode": "JM",
+    "iso2": "JM",
+    "iso3": "JAM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "JPN",
+    "name": "Japan",
+    "countryName": "Japan",
+    "countryCode": "JP",
+    "iso2": "JP",
+    "iso3": "JPN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "JEY",
+    "name": "Jersey",
+    "countryName": "Jersey",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "JEY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "JOR",
+    "name": "Jordan",
+    "countryName": "Jordan",
+    "countryCode": "JO",
+    "iso2": "JO",
+    "iso3": "JOR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KAZ",
+    "name": "Kazakhstan",
+    "countryName": "Kazakhstan",
+    "countryCode": "KZ",
+    "iso2": "KZ",
+    "iso3": "KAZ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KEN",
+    "name": "Kenya",
+    "countryName": "Kenya",
+    "countryCode": "KE",
+    "iso2": "KE",
+    "iso3": "KEN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KIR",
+    "name": "Kiribati",
+    "countryName": "Kiribati",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "KIR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XKO",
+    "name": "Kosovo",
+    "countryName": "Kosovo",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XKO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KWT",
+    "name": "Kuwait",
+    "countryName": "Kuwait",
+    "countryCode": "KW",
+    "iso2": "KW",
+    "iso3": "KWT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KGZ",
+    "name": "Kyrgyzstan",
+    "countryName": "Kyrgyzstan",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "KGZ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LAO",
+    "name": "Laos",
+    "countryName": "Laos",
+    "countryCode": "LA",
+    "iso2": "LA",
+    "iso3": "LAO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LVA",
+    "name": "Latvia",
+    "countryName": "Latvia",
+    "countryCode": "LV",
+    "iso2": "LV",
+    "iso3": "LVA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LBN",
+    "name": "Lebanon",
+    "countryName": "Lebanon",
+    "countryCode": "LB",
+    "iso2": "LB",
+    "iso3": "LBN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LSO",
+    "name": "Lesotho",
+    "countryName": "Lesotho",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "LSO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LBR",
+    "name": "Liberia",
+    "countryName": "Liberia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "LBR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LBY",
+    "name": "Libya",
+    "countryName": "Libya",
+    "countryCode": "LY",
+    "iso2": "LY",
+    "iso3": "LBY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LIE",
+    "name": "Liechtenstein",
+    "countryName": "Liechtenstein",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "LIE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LTU",
+    "name": "Lithuania",
+    "countryName": "Lithuania",
+    "countryCode": "LT",
+    "iso2": "LT",
+    "iso3": "LTU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LUX",
+    "name": "Luxembourg",
+    "countryName": "Luxembourg",
+    "countryCode": "LU",
+    "iso2": "LU",
+    "iso3": "LUX",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MKD",
+    "name": "Macedonia",
+    "countryName": "Macedonia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MKD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MDG",
+    "name": "Madagascar",
+    "countryName": "Madagascar",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MDG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MWI",
+    "name": "Malawi",
+    "countryName": "Malawi",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MWI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MYS",
+    "name": "Malaysia",
+    "countryName": "Malaysia",
+    "countryCode": "MY",
+    "iso2": "MY",
+    "iso3": "MYS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MDV",
+    "name": "Maldives",
+    "countryName": "Maldives",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MDV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MLI",
+    "name": "Mali",
+    "countryName": "Mali",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MLI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MLT",
+    "name": "Malta",
+    "countryName": "Malta",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MLT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MHL",
+    "name": "Marshall Islands",
+    "countryName": "Marshall Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MHL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MTQ",
+    "name": "Martinique",
+    "countryName": "Martinique",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MTQ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MRT",
+    "name": "Mauritania",
+    "countryName": "Mauritania",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MRT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MUS",
+    "name": "Mauritius",
+    "countryName": "Mauritius",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MUS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MYT",
+    "name": "Mayotte",
+    "countryName": "Mayotte",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MYT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MEX",
+    "name": "Mexico",
+    "countryName": "Mexico",
+    "countryCode": "MX",
+    "iso2": "MX",
+    "iso3": "MEX",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "FSM",
+    "name": "Micronesia",
+    "countryName": "Micronesia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "FSM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MDA",
+    "name": "Moldova",
+    "countryName": "Moldova",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MDA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MCO",
+    "name": "Monaco",
+    "countryName": "Monaco",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MCO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MNG",
+    "name": "Mongolia",
+    "countryName": "Mongolia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MNG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MNE",
+    "name": "Montenegro",
+    "countryName": "Montenegro",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MNE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MSR",
+    "name": "Montserrat",
+    "countryName": "Montserrat",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MSR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MAR",
+    "name": "Morocco",
+    "countryName": "Morocco",
+    "countryCode": "MA",
+    "iso2": "MA",
+    "iso3": "MAR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MOZ",
+    "name": "Mozambique",
+    "countryName": "Mozambique",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MOZ",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MMR",
+    "name": "Myanmar",
+    "countryName": "Myanmar",
+    "countryCode": "MM",
+    "iso2": "MM",
+    "iso3": "MMR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NAM",
+    "name": "Namibia",
+    "countryName": "Namibia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NAM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NRU",
+    "name": "Nauru",
+    "countryName": "Nauru",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NRU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NPL",
+    "name": "Nepal",
+    "countryName": "Nepal",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NPL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NLD",
+    "name": "Netherlands",
+    "countryName": "Netherlands",
+    "countryCode": "NL",
+    "iso2": "NL",
+    "iso3": "NLD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NCL",
+    "name": "New Caledonia",
+    "countryName": "New Caledonia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NCL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NZL",
+    "name": "New Zealand",
+    "countryName": "New Zealand",
+    "countryCode": "NZ",
+    "iso2": "NZ",
+    "iso3": "NZL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NIC",
+    "name": "Nicaragua",
+    "countryName": "Nicaragua",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NIC",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NER",
+    "name": "Niger",
+    "countryName": "Niger",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NER",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NGA",
+    "name": "Nigeria",
+    "countryName": "Nigeria",
+    "countryCode": "NG",
+    "iso2": "NG",
+    "iso3": "NGA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NIU",
+    "name": "Niue",
+    "countryName": "Niue",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NIU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NFK",
+    "name": "Norfolk Island",
+    "countryName": "Norfolk Island",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "NFK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PRK",
+    "name": "North Korea",
+    "countryName": "North Korea",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PRK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ZNC",
+    "name": "Northern Cyprus",
+    "countryName": "Northern Cyprus",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "ZNC",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MNP",
+    "name": "Northern Mariana Islands",
+    "countryName": "Northern Mariana Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MNP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "NOR",
+    "name": "Norway",
+    "countryName": "Norway",
+    "countryCode": "NO",
+    "iso2": "NO",
+    "iso3": "NOR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "OMN",
+    "name": "Oman",
+    "countryName": "Oman",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "OMN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PAK",
+    "name": "Pakistan",
+    "countryName": "Pakistan",
+    "countryCode": "PK",
+    "iso2": "PK",
+    "iso3": "PAK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PLW",
+    "name": "Palau",
+    "countryName": "Palau",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PLW",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PSE",
+    "name": "Palestine",
+    "countryName": "Palestine",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PSE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PAN",
+    "name": "Panama",
+    "countryName": "Panama",
+    "countryCode": "PA",
+    "iso2": "PA",
+    "iso3": "PAN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PNG",
+    "name": "Papua New Guinea",
+    "countryName": "Papua New Guinea",
+    "countryCode": "PG",
+    "iso2": "PG",
+    "iso3": "PNG",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XPI",
+    "name": "Paracel Islands",
+    "countryName": "Paracel Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XPI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PRY",
+    "name": "Paraguay",
+    "countryName": "Paraguay",
+    "countryCode": "PY",
+    "iso2": "PY",
+    "iso3": "PRY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PER",
+    "name": "Peru",
+    "countryName": "Peru",
+    "countryCode": "PE",
+    "iso2": "PE",
+    "iso3": "PER",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PHL",
+    "name": "Philippines",
+    "countryName": "Philippines",
+    "countryCode": "PH",
+    "iso2": "PH",
+    "iso3": "PHL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PCN",
+    "name": "Pitcairn Islands",
+    "countryName": "Pitcairn Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PCN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "POL",
+    "name": "Poland",
+    "countryName": "Poland",
+    "countryCode": "PL",
+    "iso2": "PL",
+    "iso3": "POL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PRT",
+    "name": "Portugal",
+    "countryName": "Portugal",
+    "countryCode": "PT",
+    "iso2": "PT",
+    "iso3": "PRT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "PRI",
+    "name": "Puerto Rico",
+    "countryName": "Puerto Rico",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "PRI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "QAT",
+    "name": "Qatar",
+    "countryName": "Qatar",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "QAT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "REU",
+    "name": "Réunion",
+    "countryName": "Réunion",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "REU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ROU",
+    "name": "Romania",
+    "countryName": "Romania",
+    "countryCode": "RO",
+    "iso2": "RO",
+    "iso3": "ROU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "RUS",
+    "name": "Russia",
+    "countryName": "Russia",
+    "countryCode": "RU",
+    "iso2": "RU",
+    "iso3": "RUS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "RWA",
+    "name": "Rwanda",
+    "countryName": "Rwanda",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "RWA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "BLM",
+    "name": "Saint-Barthélemy",
+    "countryName": "Saint-Barthélemy",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "BLM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "MAF",
+    "name": "Saint-Martin",
+    "countryName": "Saint-Martin",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "MAF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SHN",
+    "name": "Saint Helena",
+    "countryName": "Saint Helena",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SHN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KNA",
+    "name": "Saint Kitts and Nevis",
+    "countryName": "Saint Kitts and Nevis",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "KNA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LCA",
+    "name": "Saint Lucia",
+    "countryName": "Saint Lucia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "LCA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SPM",
+    "name": "Saint Pierre and Miquelon",
+    "countryName": "Saint Pierre and Miquelon",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SPM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VCT",
+    "name": "Saint Vincent and the Grenadines",
+    "countryName": "Saint Vincent and the Grenadines",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "VCT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "WSM",
+    "name": "Samoa",
+    "countryName": "Samoa",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "WSM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SMR",
+    "name": "San Marino",
+    "countryName": "San Marino",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SMR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "STP",
+    "name": "São Tomé and Príncipe",
+    "countryName": "São Tomé and Príncipe",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "STP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SAU",
+    "name": "Saudi Arabia",
+    "countryName": "Saudi Arabia",
+    "countryCode": "SA",
+    "iso2": "SA",
+    "iso3": "SAU",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SEN",
+    "name": "Senegal",
+    "countryName": "Senegal",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SEN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SRB",
+    "name": "Serbia",
+    "countryName": "Serbia",
+    "countryCode": "RS",
+    "iso2": "RS",
+    "iso3": "SRB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SYC",
+    "name": "Seychelles",
+    "countryName": "Seychelles",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SYC",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SLE",
+    "name": "Sierra Leone",
+    "countryName": "Sierra Leone",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SLE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SGP",
+    "name": "Singapore",
+    "countryName": "Singapore",
+    "countryCode": "SG",
+    "iso2": "SG",
+    "iso3": "SGP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SXM",
+    "name": "Sint Maarten",
+    "countryName": "Sint Maarten",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SXM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SVK",
+    "name": "Slovakia",
+    "countryName": "Slovakia",
+    "countryCode": "SK",
+    "iso2": "SK",
+    "iso3": "SVK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SVN",
+    "name": "Slovenia",
+    "countryName": "Slovenia",
+    "countryCode": "SI",
+    "iso2": "SI",
+    "iso3": "SVN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SLB",
+    "name": "Solomon Islands",
+    "countryName": "Solomon Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SLB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SOM",
+    "name": "Somalia",
+    "countryName": "Somalia",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SOM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ZAF",
+    "name": "South Africa",
+    "countryName": "South Africa",
+    "countryCode": "ZA",
+    "iso2": "ZA",
+    "iso3": "ZAF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SGS",
+    "name": "South Georgia and the South Sandwich Islands",
+    "countryName": "South Georgia and the South Sandwich Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SGS",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "KOR",
+    "name": "South Korea",
+    "countryName": "South Korea",
+    "countryCode": "KR",
+    "iso2": "KR",
+    "iso3": "KOR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SSD",
+    "name": "South Sudan",
+    "countryName": "South Sudan",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SSD",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ESP",
+    "name": "Spain",
+    "countryName": "Spain",
+    "countryCode": "ES",
+    "iso2": "ES",
+    "iso3": "ESP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "XSP",
+    "name": "Spratly Islands",
+    "countryName": "Spratly Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "XSP",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "LKA",
+    "name": "Sri Lanka",
+    "countryName": "Sri Lanka",
+    "countryCode": "LK",
+    "iso2": "LK",
+    "iso3": "LKA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SDN",
+    "name": "Sudan",
+    "countryName": "Sudan",
+    "countryCode": "SD",
+    "iso2": "SD",
+    "iso3": "SDN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SUR",
+    "name": "Suriname",
+    "countryName": "Suriname",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SUR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SJM",
+    "name": "Svalbard and Jan Mayen",
+    "countryName": "Svalbard and Jan Mayen",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "SJM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SWE",
+    "name": "Sweden",
+    "countryName": "Sweden",
+    "countryCode": "SE",
+    "iso2": "SE",
+    "iso3": "SWE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "CHE",
+    "name": "Switzerland",
+    "countryName": "Switzerland",
+    "countryCode": "CH",
+    "iso2": "CH",
+    "iso3": "CHE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "SYR",
+    "name": "Syria",
+    "countryName": "Syria",
+    "countryCode": "SY",
+    "iso2": "SY",
+    "iso3": "SYR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TWN",
+    "name": "Taiwan",
+    "countryName": "Taiwan",
+    "countryCode": "TW",
+    "iso2": "TW",
+    "iso3": "TWN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TJK",
+    "name": "Tajikistan",
+    "countryName": "Tajikistan",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TJK",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TZA",
+    "name": "Tanzania",
+    "countryName": "Tanzania",
+    "countryCode": "TZ",
+    "iso2": "TZ",
+    "iso3": "TZA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "THA",
+    "name": "Thailand",
+    "countryName": "Thailand",
+    "countryCode": "TH",
+    "iso2": "TH",
+    "iso3": "THA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TGO",
+    "name": "Togo",
+    "countryName": "Togo",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TGO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TKL",
+    "name": "Tokelau",
+    "countryName": "Tokelau",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TKL",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TON",
+    "name": "Tonga",
+    "countryName": "Tonga",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TON",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TTO",
+    "name": "Trinidad and Tobago",
+    "countryName": "Trinidad and Tobago",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TTO",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TUN",
+    "name": "Tunisia",
+    "countryName": "Tunisia",
+    "countryCode": "TN",
+    "iso2": "TN",
+    "iso3": "TUN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TUR",
+    "name": "Turkey",
+    "countryName": "Turkey",
+    "countryCode": "TR",
+    "iso2": "TR",
+    "iso3": "TUR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TKM",
+    "name": "Turkmenistan",
+    "countryName": "Turkmenistan",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TKM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TCA",
+    "name": "Turks and Caicos Islands",
+    "countryName": "Turks and Caicos Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TCA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "TUV",
+    "name": "Tuvalu",
+    "countryName": "Tuvalu",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "TUV",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "UGA",
+    "name": "Uganda",
+    "countryName": "Uganda",
+    "countryCode": "UG",
+    "iso2": "UG",
+    "iso3": "UGA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "UKR",
+    "name": "Ukraine",
+    "countryName": "Ukraine",
+    "countryCode": "UA",
+    "iso2": "UA",
+    "iso3": "UKR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ARE",
+    "name": "United Arab Emirates",
+    "countryName": "United Arab Emirates",
+    "countryCode": "AE",
+    "iso2": "AE",
+    "iso3": "ARE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "GBR",
+    "name": "United Kingdom",
+    "countryName": "United Kingdom",
+    "countryCode": "GB",
+    "iso2": "GB",
+    "iso3": "GBR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "numAdminLevels": 6,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "USA",
+    "name": "United States",
+    "countryName": "United States",
+    "countryCode": "US",
+    "iso2": "US",
+    "iso3": "USA",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "UMI",
+    "name": "United States Minor Outlying Islands",
+    "countryName": "United States Minor Outlying Islands",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "UMI",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "URY",
+    "name": "Uruguay",
+    "countryName": "Uruguay",
+    "countryCode": "UY",
+    "iso2": "UY",
+    "iso3": "URY",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "UZB",
+    "name": "Uzbekistan",
+    "countryName": "Uzbekistan",
+    "countryCode": "UZ",
+    "iso2": "UZ",
+    "iso3": "UZB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VUT",
+    "name": "Vanuatu",
+    "countryName": "Vanuatu",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "VUT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VAT",
+    "name": "Vatican City",
+    "countryName": "Vatican City",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "VAT",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1
+    ],
+    "numAdminLevels": 2,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VEN",
+    "name": "Venezuela",
+    "countryName": "Venezuela",
+    "countryCode": "VE",
+    "iso2": "VE",
+    "iso3": "VEN",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VNM",
+    "name": "Vietnam",
+    "countryName": "Vietnam",
+    "countryCode": "VN",
+    "iso2": "VN",
+    "iso3": "VNM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "VIR",
+    "name": "Virgin Islands, U.S.",
+    "countryName": "Virgin Islands, U.S.",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "VIR",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "WLF",
+    "name": "Wallis and Futuna",
+    "countryName": "Wallis and Futuna",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "WLF",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ESH",
+    "name": "Western Sahara",
+    "countryName": "Western Sahara",
+    "countryCode": "",
+    "iso2": "",
+    "iso3": "ESH",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2
+    ],
+    "numAdminLevels": 3,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "YEM",
+    "name": "Yemen",
+    "countryName": "Yemen",
+    "countryCode": "YE",
+    "iso2": "YE",
+    "iso3": "YEM",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ZMB",
+    "name": "Zambia",
+    "countryName": "Zambia",
+    "countryCode": "ZM",
+    "iso2": "ZM",
+    "iso3": "ZMB",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "numAdminLevels": 4,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  },
+  {
+    "id": "ZWE",
+    "name": "Zimbabwe",
+    "countryName": "Zimbabwe",
+    "countryCode": "ZW",
+    "iso2": "ZW",
+    "iso3": "ZWE",
+    "continent": "",
+    "region": "",
+    "subregion": "",
+    "adminLevels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "numAdminLevels": 5,
+    "bbox": [
+      -180,
+      -90,
+      180,
+      90
+    ]
+  }
+]

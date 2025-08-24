@@ -1,0 +1,46 @@
+{
+  "name": "@hierarchidb/ui-client",
+  "version": "1.0.0",
+  "description": "Worker and Comlink communication client for HierarchiDB UI",
+  "readme": "README.md",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc && tsc-alias",
+    "dev:tsc": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-core": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "comlink": "^4.4.2",
+    "dexie": "^4.2.0",
+    "react-router-dom": "^7.8.1",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "license": "MIT"
+}
