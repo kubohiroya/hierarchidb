@@ -69,7 +69,7 @@ export function deserializeTreeNode(data: unknown): TreeNode {
     throw new ValidationError('id', 'string', obj.id);
   }
   if (typeof obj.parentId !== 'string') {
-    throw new ValidationError('parentNodeId', 'string', obj.parentId);
+    throw new ValidationError('parentId', 'string', obj.parentId);
   }
   if (typeof obj.nodeType !== 'string') {
     throw new ValidationError('nodeType', 'string', obj.nodeType);
@@ -183,7 +183,7 @@ export function deserializeTree(data: unknown): Tree {
 export function serializeTreeNode(node: TreeNode): Record<string, unknown> {
   return {
     id: node.id as string,
-    parentNodeId: node.parentId as string,
+    parentId: node.parentId as string,
     nodeType: node.nodeType,
     name: node.name,
     description: node.description,
@@ -291,7 +291,7 @@ export function validateIds(data: unknown): {
   const obj = data as Record<string, unknown>;
 
   // Check common NodeId fields
-  const nodeIdFields = ['id', 'parentNodeId', 'nodeId', 'originalParentNodeId'];
+  const nodeIdFields = ['id', 'parentId', 'nodeId', 'originalParentNodeId'];
   for (const field of nodeIdFields) {
     if (obj[field] !== undefined) {
       if (!isNodeId(obj[field])) {

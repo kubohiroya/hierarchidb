@@ -108,7 +108,7 @@ describe('TreeMutationService', () => {
           kind: 'createWorkingCopyForCreate',
           payload: {
             workingCopyId,
-            parentNodeId: parentId,
+            parentId: parentId,
             name: 'New Node',
             description: 'Test description',
           },
@@ -147,7 +147,7 @@ describe('TreeMutationService', () => {
           kind: 'createWorkingCopyForCreate',
           payload: {
             workingCopyId,
-            parentNodeId: 'parent-1' as NodeId,
+            parentId: 'parent-1' as NodeId,
             name: 'Document',
           },
           issuedAt: Date.now() as Timestamp,
@@ -407,7 +407,7 @@ describe('TreeMutationService', () => {
         nodeIds.forEach((id) => {
           expect(coreDB.updateNode).toHaveBeenCalledWith(
             id,
-            expect.objectContaining({ parentNodeId: toParentId })
+            expect.objectContaining({ parentId: toParentId })
           );
         });
       });
@@ -492,7 +492,7 @@ describe('TreeMutationService', () => {
           // Verify new node was created
           expect(coreDB.createNode).toHaveBeenCalledWith(
             expect.objectContaining({
-              parentNodeId: toParentId,
+              parentId: toParentId,
               name: 'Original (Copy)',
             })
           );
@@ -616,7 +616,7 @@ describe('TreeMutationService', () => {
         expect(coreDB.updateNode).toHaveBeenCalledWith(
           nodeId,
           expect.objectContaining({
-            parentNodeId: originalParentId,
+            parentId: originalParentId,
             name: 'Original Name',
           })
         );
@@ -656,7 +656,7 @@ describe('TreeMutationService', () => {
         expect(coreDB.updateNode).toHaveBeenCalledWith(
           nodeId,
           expect.objectContaining({
-            parentNodeId: newParentId,
+            parentId: newParentId,
           })
         );
       });

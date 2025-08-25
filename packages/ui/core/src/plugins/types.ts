@@ -100,7 +100,7 @@ export interface UIActionHooks {
 
 // Hook Parameter Types
 export interface BeforeShowCreateDialogParams {
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
   readonly nodeType: string;
   readonly context: UIContext;
 }
@@ -112,7 +112,7 @@ export interface BeforeShowCreateDialogResult {
 }
 
 export interface ShowCreateDialogParams {
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
   readonly nodeType: string;
   readonly onSubmit: (data: any) => Promise<void>;
   readonly onCancel: () => void;
@@ -120,7 +120,7 @@ export interface ShowCreateDialogParams {
 
 export interface ValidateCreateFormParams {
   readonly formData: any;
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
 }
 
 export interface ValidateCreateFormResult {
@@ -132,7 +132,7 @@ export interface ValidateCreateFormResult {
 export interface AfterCreateParams {
   readonly nodeId: NodeId;
   readonly data: any;
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
 }
 
 export interface AfterCreateResult {
@@ -240,7 +240,7 @@ export interface DropResult {
 
 // Component Props Types
 export interface CreateDialogProps {
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
   readonly onSubmit: (data: any) => Promise<void>;
   readonly onCancel: () => void;
   readonly open?: boolean;

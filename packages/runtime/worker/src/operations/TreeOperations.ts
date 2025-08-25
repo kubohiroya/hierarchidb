@@ -1,4 +1,4 @@
-import {generateNodeId, type NodeId } from '@hierarchidb/common-core';
+import { generateNodeId, type NodeId } from '@hierarchidb/common-core';
 import { workerWarn } from '../utils/workerLogger';
 
 /**
@@ -71,7 +71,7 @@ async function duplicateBranchRecursive(
   const duplicatedNode = {
     ...sourceNode,
     id: newId,
-    parentNodeId: newParentId,
+    parentId: newParentId,
     name: branchRootMode ? `${sourceNode.name} (Copy)` : sourceNode.name,
   };
 
@@ -82,7 +82,7 @@ async function duplicateBranchRecursive(
   idMapping.set(sourceId, newId);
 
   // 子ノードがあれば再帰的に処理
-  const children = await db.treeNodes.where('parentNodeId').equals(sourceId).toArray();
+  const children = await db.treeNodes.where('parentId').equals(sourceId).toArray();
 
   for (const child of children) {
     await duplicateBranchRecursive(db, child.id, newId, idMapping, false, visited); // 子ノードは(Copy)なし
@@ -190,7 +190,7 @@ export async function getAllDescendants(db: CoreDB, nodeId: NodeId): Promise<Nod
     visited.add(currentNodeId);
 
     // 子ノードを取得
-    const children = await db.treeNodes.where('parentNodeId').equals(currentNodeId).toArray();
+    const children = await db.treeNodes.where('parentId').equals(currentNodeId).toArray();
 
     for (const child of children) {
       descendants.push(child.id);

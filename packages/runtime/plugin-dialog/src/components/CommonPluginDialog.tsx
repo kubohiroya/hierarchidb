@@ -18,32 +18,32 @@ import {
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
-import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
 import { CommonDialogActions } from './CommonDialogActions';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit';
   open: boolean;
   nodeId?: string;
-  parentNodeId?: string;
+  parentId?: string;
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
-  
+
   // Dialog size
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
   fullScreen?: boolean;
-  
+
   // State management
   hasUnsavedChanges?: boolean;
   supportsDraft?: boolean;
   isValid?: boolean;
-  
+
   // Actions
   onSubmit: () => Promise<void> | void;
   onSaveDraft?: () => Promise<void> | void;
   onCancel: () => void;
-  
+
   // Additional actions
   additionalActions?: React.ReactNode;
   headerActions?: React.ReactNode;
@@ -53,7 +53,7 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
   mode,
   open,
   nodeId,
-  parentNodeId: _parentNodeId, // TODO: Use for create mode
+  parentId: _parentId, // TODO: Use for create mode
   title,
   icon,
   children,
@@ -71,7 +71,7 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Handle dialog close
   const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
@@ -80,11 +80,11 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
       onCancel();
     }
   }, [hasUnsavedChanges, onCancel]);
-  
+
   // Handle submit
   const handleSubmit = useCallback(async () => {
     if (!isValid || isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
       await onSubmit();
@@ -95,11 +95,11 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
       setIsSubmitting(false);
     }
   }, [isValid, isSubmitting, onSubmit]);
-  
+
   // Handle save draft
   const handleSaveDraft = useCallback(async () => {
     if (!onSaveDraft) return;
-    
+
     try {
       await onSaveDraft();
       setShowUnsavedChangesDialog(false);
@@ -108,18 +108,18 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
       console.error('Save draft failed:', error);
     }
   }, [onSaveDraft, onCancel]);
-  
+
   // Handle discard changes
   const handleDiscardChanges = useCallback(() => {
     setShowUnsavedChangesDialog(false);
     onCancel();
   }, [onCancel]);
-  
+
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(!isFullscreen);
   }, [isFullscreen]);
-  
+
   return (
     <>
       <Dialog
@@ -141,34 +141,28 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
                 </Typography>
               )}
             </Stack>
-            
+
             <Stack direction="row" spacing={1}>
               {/* Fullscreen toggle */}
               <IconButton
                 onClick={toggleFullscreen}
                 color="inherit"
-                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
               >
                 {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
               </IconButton>
-              
+
               {headerActions}
-              
-              <IconButton
-                onClick={handleClose}
-                color="inherit"
-                aria-label="Close dialog"
-              >
+
+              <IconButton onClick={handleClose} color="inherit" aria-label="Close dialog">
                 <CloseIcon />
               </IconButton>
             </Stack>
           </Box>
         </DialogTitle>
-        
-        <DialogContent sx={{ flex: 1, minHeight: 0 }}>
-          {children}
-        </DialogContent>
-        
+
+        <DialogContent sx={{ flex: 1, minHeight: 0 }}>{children}</DialogContent>
+
         <DialogActions>
           <CommonDialogActions
             mode={mode}
@@ -180,7 +174,7 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
           />
         </DialogActions>
       </Dialog>
-      
+
       {/* Unsaved Changes Dialog */}
       <UnsavedChangesDialog
         open={showUnsavedChangesDialog}

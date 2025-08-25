@@ -42,7 +42,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const params = {
         nodeType: 'folder' as NodeType,
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Test Folder',
         description: 'A test folder for orchestrated API testing',
       };
@@ -60,7 +60,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const params = {
         nodeType: 'folder' as NodeType,
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: '', // Invalid empty name
         description: 'Test description',
       };
@@ -77,7 +77,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const params = {
         nodeType: 'folder' as NodeType,
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'a'.repeat(300), // Too long name
         description: 'Test description',
       };
@@ -97,7 +97,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const params = {
           nodeType,
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Test ${nodeType}`,
         };
 
@@ -116,7 +116,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const sourceResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Source Node',
       });
 
@@ -128,7 +128,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const targetResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Target Parent',
       });
 
@@ -152,7 +152,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: targetParentId,
+        parentId: targetParentId,
         name: 'Source Node', // Same name as source
       });
 
@@ -172,7 +172,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: targetParentId,
+        parentId: targetParentId,
         name: 'Source Node',
       });
 
@@ -193,7 +193,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const result = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Original Name',
       });
 
@@ -260,7 +260,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Test Node ${i}`,
         });
 
@@ -316,7 +316,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Original Node ${i}`,
         });
 
@@ -329,7 +329,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const targetResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Target Parent',
       });
 
@@ -388,7 +388,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Copy Source ${i}`,
         });
 
@@ -401,7 +401,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const targetResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Paste Target',
       });
 
@@ -472,7 +472,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Delete Test ${i}`,
         });
 
@@ -519,7 +519,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Export Test ${i}`,
         });
 
@@ -583,7 +583,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const createResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Integration Test Node',
       });
 
@@ -596,7 +596,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const parentResult = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Move Target',
       });
 
@@ -653,7 +653,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Batch Node ${i}`,
         });
 
@@ -697,7 +697,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const result = await workerAPI.execute.createNode({
         nodeType: 'folder',
         treeId: testTreeId,
-        parentNodeId: testRootId,
+        parentId: testRootId,
         name: 'Error Test Node',
       });
 
@@ -712,7 +712,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const invalidParams = [
         { nodeType: null, name: 'Test' },
         { nodeType: 'folder', name: null },
-        { nodeType: 'folder', name: 'Test', parentNodeId: null },
+        { nodeType: 'folder', name: 'Test', parentId: null },
       ];
 
       for (const params of invalidParams) {
@@ -734,7 +734,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
         const result = await workerAPI.execute.createNode({
           nodeType: 'folder',
           treeId: testTreeId,
-          parentNodeId: testRootId,
+          parentId: testRootId,
           name: `Performance Test Node ${i}`,
         });
 

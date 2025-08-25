@@ -13,9 +13,17 @@
   );
  */
 // import { useOutletContext } from 'react-router-dom';
-import { loadAppConfig } from "~/loader";
-import { InfoPage } from "~/pages/Info/InfoPage";
-import { useLoaderData } from "react-router";
+import { InfoPage } from '~/pages/Info/InfoPage';
+import { useLoaderData } from 'react-router';
+import { loadAppConfig } from '~/loadAppConfig';
+
+// Meta function for React Router v7
+export function meta() {
+  return [
+    { title: 'About - HierarchiDB' },
+    { name: 'description', content: 'Application information and licenses' }
+  ];
+}
 
 export function clientLoader() {
   return loadAppConfig();

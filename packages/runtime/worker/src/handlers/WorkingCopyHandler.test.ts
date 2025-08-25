@@ -7,7 +7,7 @@ import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkingCopyHandler } from './WorkingCopyHandler';
-import {GroupEntityImpl} from "~/handlers/SimpleEntityHandler";
+import { GroupEntityImpl } from '~/handlers/SimpleEntityHandler';
 
 describe.skip('WorkingCopyHandler', () => {
   let db: Dexie;
@@ -21,7 +21,7 @@ describe.skip('WorkingCopyHandler', () => {
     db.version(1).stores({
       entities: 'nodeId, name, createdAt, updatedAt, version',
       workingCopies: 'workingCopyId, workingCopyOf, nodeId, updatedAt',
-      subEntities: 'id, parentNodeId, [parentNodeId+subEntityType]',
+      subEntities: 'id, parentId, [parentId+subEntityType]',
     });
 
     await db.open();
@@ -33,8 +33,7 @@ describe.skip('WorkingCopyHandler', () => {
       nodeId,
       type: 'test',
     });
-    await handler.createEntity(nodeId2, {
-      });
+    await handler.createEntity(nodeId2, {});
   });
 
   afterEach(async () => {
@@ -75,7 +74,7 @@ describe.skip('WorkingCopyHandler', () => {
         await handler.createGroupEntity(nodeId, 'attachment', {
           id: 'attach-1' as EntityId,
           nodeId: nodeId,
-          parentNodeId: nodeId,
+          parentId: nodeId,
           type: 'comment',
           groupEntityType: 'comment',
           data: { text: 'Hello' },
@@ -86,7 +85,7 @@ describe.skip('WorkingCopyHandler', () => {
         await handler.createGroupEntity(nodeId, 'comment', {
           id: 'comment-1' as EntityId,
           nodeId: nodeId,
-          parentNodeId: nodeId,
+          parentId: nodeId,
           type: 'comment',
           groupEntityType: 'comment',
           data: { text: 'Hello' },
@@ -266,7 +265,7 @@ describe.skip('WorkingCopyHandler', () => {
           id: crypto.randomUUID() as EntityId,
           nodeId: nodeId,
           type: 'task',
-          parentNodeId: nodeId,
+          parentId: nodeId,
           groupEntityType: 'task',
           data: { status: 'pending' },
           createdAt: Date.now(),
@@ -294,8 +293,10 @@ describe.skip('WorkingCopyHandler', () => {
 
       it('should throw error if working copy does not exist', async () => {
         const nonExistentWorkingCopy = await handler.getWorkingCopy(nodeId2);
-        if( nonExistentWorkingCopy){
-          await expect(handler.commitWorkingCopy(nodeId2, nonExistentWorkingCopy)).rejects.toThrow();
+        if (nonExistentWorkingCopy) {
+          await expect(
+            handler.commitWorkingCopy(nodeId2, nonExistentWorkingCopy)
+          ).rejects.toThrow();
         }
       });
     });
@@ -325,9 +326,9 @@ describe.skip('WorkingCopyHandler', () => {
       await handler.updateWorkingCopy(nodeId, { name: 'Working Copy Name' });
 
       const workingCopy = await handler.getWorkingCopy(nodeId);
-        if (workingCopy) {
-          await handler.commitWorkingCopy(nodeId, workingCopy);
-        }
+      if (workingCopy) {
+        await handler.commitWorkingCopy(nodeId, workingCopy);
+      }
 
       const entity = await handler.getEntity(nodeId);
       expect(entity?.nodeId).toBe(nodeId);
@@ -337,9 +338,9 @@ describe.skip('WorkingCopyHandler', () => {
       await handler.updateWorkingCopy(nodeId, { name: 'Working Copy Name' });
 
       const workingCopy = await handler.getWorkingCopy(nodeId);
-        if (workingCopy) {
-          await handler.commitWorkingCopy(nodeId, workingCopy);
-        }
+      if (workingCopy) {
+        await handler.commitWorkingCopy(nodeId, workingCopy);
+      }
 
       const entity = await handler.getEntity(nodeId);
       expect(entity?.nodeId).toBe(nodeId);
@@ -355,9 +356,9 @@ describe.skip('WorkingCopyHandler', () => {
       });
 */
       const workingCopy = await handler.getWorkingCopy(nodeId);
-        if (workingCopy) {
-          await handler.commitWorkingCopy(nodeId, workingCopy);
-        }
+      if (workingCopy) {
+        await handler.commitWorkingCopy(nodeId, workingCopy);
+      }
 
       // const entity = await handler.getEntity(nodeId);
       // Merge strategy keeps working values for strings, max for numbers
@@ -424,9 +425,9 @@ describe.skip('WorkingCopyHandler', () => {
       });
 
       it('should throw error if source does not exist', async () => {
-        await expect(
-          handler.branchWorkingCopy('non-existent' as NodeId, nodeId2)
-        ).rejects.toThrow('Source working copy not found');
+        await expect(handler.branchWorkingCopy('non-existent' as NodeId, nodeId2)).rejects.toThrow(
+          'Source working copy not found'
+        );
       });
 
       it('should throw error if target already has working copy', async () => {
@@ -464,9 +465,9 @@ describe.skip('WorkingCopyHandler', () => {
       });
 
       it('should throw error if working copies do not exist', async () => {
-        await expect(
-          handler.mergeWorkingCopies('non-existent' as NodeId, nodeId2)
-        ).rejects.toThrow('Both working copies must exist');
+        await expect(handler.mergeWorkingCopies('non-existent' as NodeId, nodeId2)).rejects.toThrow(
+          'Both working copies must exist'
+        );
       });
     });
 

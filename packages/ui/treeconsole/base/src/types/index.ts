@@ -88,7 +88,7 @@ export interface TreeConsoleBreadcrumbProps {
   onNodeAction?: {
     onEdit?: (nodeId: NodeId) => void;
     onDelete?: (nodeId: NodeId) => void;
-    onCreate?: (parentNodeId: NodeId) => void;
+    onCreate?: (parentId: NodeId) => void;
   };
 
   /** 表示設定 */
@@ -244,7 +244,7 @@ export interface TreeViewController {
 
   // Working Copy操作
   startEdit: (nodeId: NodeId) => Promise<void>;
-  startCreate: (parentNodeId: NodeId, name: string) => Promise<void>;
+  startCreate: (parentId: NodeId, name: string) => Promise<void>;
 
   // TreeTableCore specific methods
   onNodeExpand?: (nodeId: NodeId, expanded: boolean) => void;
@@ -252,7 +252,7 @@ export interface TreeViewController {
   onNodeSelect?: (nodeIds: NodeId[], append: boolean) => void;
   finishEdit?: (nodeId: NodeId, newValue: string) => void;
   cancelEdit?: () => void;
-  onCreate?: (parentNodeId: NodeId, nodeType: string) => void;
+  onCreate?: (parentId: NodeId, nodeType: string) => void;
   onDuplicate?: (nodeId: NodeId) => void;
   onRemove?: (nodeIds: NodeId[]) => void;
   createNode?: (nodeType: string) => void;

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Menu,
   MenuItem,
@@ -8,16 +8,16 @@ import {
   Typography,
   CircularProgress,
   Alert,
-} from "@mui/material";
-import type { NodeId, CreateMenuItem } from "@hierarchidb/common-core";
-import { useDynamicCreateMenu } from "../hooks/useDynamicCreateMenu";
-import { NodeDataAdapter } from "../adapters/NodeDataAdapter";
+} from '@mui/material';
+import type { NodeId, CreateMenuItem } from '@hierarchidb/common-core';
+import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu';
+import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 
 export interface DynamicCreateMenuProps {
   /**
    * Parent node where new items will be created
    */
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
 
   /**
    * Anchor element for the menu
@@ -37,7 +37,7 @@ export interface DynamicCreateMenuProps {
   /**
    * Called when a create action is triggered
    */
-  readonly onCreate: (parentNodeId: NodeId, nodeType: string) => void;
+  readonly onCreate: (parentId: NodeId, nodeType: string) => void;
 
   /**
    * Node data adapter for fetching data
@@ -49,12 +49,12 @@ export interface DynamicCreateMenuProps {
    */
   readonly positioning?: {
     readonly anchorOrigin?: {
-      readonly vertical: "top" | "center" | "bottom";
-      readonly horizontal: "left" | "center" | "right";
+      readonly vertical: 'top' | 'center' | 'bottom';
+      readonly horizontal: 'left' | 'center' | 'right';
     };
     readonly transformOrigin?: {
-      readonly vertical: "top" | "center" | "bottom";
-      readonly horizontal: "left" | "center" | "right";
+      readonly vertical: 'top' | 'center' | 'bottom';
+      readonly horizontal: 'left' | 'center' | 'right';
     };
   };
 }
@@ -70,24 +70,21 @@ export interface DynamicCreateMenuProps {
  * - Worker layer restrictions
  */
 export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
-  parentNodeId,
+  parentId,
   anchorEl,
   open,
   onClose,
   onCreate,
   nodeAdapter,
   positioning = {
-    anchorOrigin: { vertical: "bottom", horizontal: "left" },
-    transformOrigin: { vertical: "top", horizontal: "left" },
+    anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+    transformOrigin: { vertical: 'top', horizontal: 'left' },
   },
 }) => {
-  const { menuItems, loading, error } = useDynamicCreateMenu(
-    parentNodeId,
-    nodeAdapter,
-  );
+  const { menuItems, loading, error } = useDynamicCreateMenu(parentId, nodeAdapter);
 
   const handleItemClick = (nodeType: string) => {
-    onCreate(parentNodeId, nodeType);
+    onCreate(parentId, nodeType);
     onClose();
   };
 
@@ -177,7 +174,7 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
     >
       {menuItems.map((item, index) => {
         // Render divider
-        if ("type" in item && item.type === "divider") {
+        if ('type' in item && item.type === 'divider') {
           return <Divider key={`divider-${index}`} />;
         }
 
@@ -192,33 +189,31 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
             key={createItem.nodeType || `item-${index}`}
             onClick={() => handleItemClick(createItem.nodeType!)}
             sx={{
-              "& .MuiListItemIcon-root": {
+              '& .MuiListItemIcon-root': {
                 minWidth: 36,
               },
-              "&:hover": {
-                backgroundColor: "action.hover",
+              '&:hover': {
+                backgroundColor: 'action.hover',
               },
             }}
           >
-            <ListItemIcon>
-              {IconComponent && <IconComponent fontSize="small" />}
-            </ListItemIcon>
+            <ListItemIcon>{IconComponent && <IconComponent fontSize="small" />}</ListItemIcon>
             <ListItemText
               primary={createItem.label}
               secondary={createItem.description}
               primaryTypographyProps={{
-                variant: "body2",
+                variant: 'body2',
                 fontWeight: 500,
               }}
               secondaryTypographyProps={{
-                variant: "caption",
-                color: "text.secondary",
+                variant: 'caption',
+                color: 'text.secondary',
                 sx: {
-                  display: "-webkit-box",
+                  display: '-webkit-box',
                   WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 },
               }}
             />
@@ -229,22 +224,20 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
   );
 };
 
-DynamicCreateMenu.displayName = "DynamicCreateMenu";
+DynamicCreateMenu.displayName = 'DynamicCreateMenu';
 
 /**
  * Simplified version for quick integration
  */
 export interface SimpleDynamicCreateMenuProps {
-  readonly parentNodeId: NodeId;
+  readonly parentId: NodeId;
   readonly anchorEl: HTMLElement | null;
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly onCreate: (parentNodeId: NodeId, nodeType: string) => void;
+  readonly onCreate: (parentId: NodeId, nodeType: string) => void;
   readonly nodeAdapter: NodeDataAdapter;
 }
 
-export const SimpleDynamicCreateMenu: React.FC<SimpleDynamicCreateMenuProps> = (
-  props,
-) => {
+export const SimpleDynamicCreateMenu: React.FC<SimpleDynamicCreateMenuProps> = (props) => {
   return <DynamicCreateMenu {...props} />;
 };

@@ -479,8 +479,8 @@ export class TreeMutationService implements TreeMutationAPI {
       }
 
       // 【親ノード存在確認】: ペースト先の妥当性検証 🟢
-      const parentNodeId = toParentId as NodeId;
-      const parentNode = await this.coreDB.getNode?.(parentNodeId);
+      const parentId = toParentId as NodeId;
+      const parentNode = await this.coreDB.getNode?.(parentId);
       if (!parentNode) {
         return {
           success: false,
@@ -492,7 +492,7 @@ export class TreeMutationService implements TreeMutationAPI {
       const newNodeIds: NodeId[] = [];
 
       // 【パフォーマンス改善】: 兄弟ノード名を一度だけ取得 🟡
-      const siblings = (await this.coreDB.listChildren?.(parentNodeId)) || [];
+      const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
       const existingNames = new Set(siblings.map((sibling: TreeNode) => sibling.name));
 
       // 【バッチ処理最適化】: ノード作成を効率的に実行 🟡
@@ -530,7 +530,7 @@ export class TreeMutationService implements TreeMutationAPI {
         const newNode = {
           ...sourceNode,
           id: newNodeId,
-          parentNodeId: parentNodeId,
+          parentId: parentId,
           name: newName,
           createdAt: timestamp,
           updatedAt: timestamp,

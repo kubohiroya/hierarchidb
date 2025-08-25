@@ -19,70 +19,71 @@ class TestGroupEntityHandler extends BaseEntityHandler<GroupEntity> {
       updatedAt: data?.updatedAt || Date.now(),
       version: data?.version || 1,
     };
-    
+
     await this.db.table(this.tableName).add(entity);
     return entity;
   }
-  
+
   async getEntity(nodeId: NodeId): Promise<GroupEntity | undefined> {
-    return await this.db.table(this.tableName)
-      .where('nodeId')
-      .equals(nodeId)
-      .first();
+    return await this.db.table(this.tableName).where('nodeId').equals(nodeId).first();
   }
-  
+
   async updateEntity(nodeId: NodeId, data: Partial<GroupEntity>): Promise<void> {
     const existing = await this.getEntity(nodeId);
     if (!existing) throw new Error(`Entity not found: ${nodeId}`);
-    
+
     await this.db.table(this.tableName).update(existing.id, {
       ...data,
       updatedAt: Date.now(),
       version: (existing.version || 0) + 1,
     });
   }
-  
+
   async deleteEntity(nodeId: NodeId): Promise<void> {
     const existing = await this.getEntity(nodeId);
     if (existing) {
       await this.db.table(this.tableName).delete(existing.id);
     }
   }
-  
+
   // Group-specific methods
-  async createGroupEntity(nodeId: NodeId, groupEntityType: string, data: GroupEntity): Promise<void> {
+  async createGroupEntity(
+    nodeId: NodeId,
+    groupEntityType: string,
+    data: GroupEntity
+  ): Promise<void> {
     // Validate type is not empty
     if (!groupEntityType) {
       throw new Error('Group entity type is required');
     }
     await this.db.table(this.tableName).add(data);
   }
-  
+
   async getGroupEntities(nodeId: NodeId, type?: string): Promise<GroupEntity[]> {
     let query = this.db.table(this.tableName).where('nodeId').equals(nodeId);
     const results = await query.toArray();
-    
+
     if (type) {
       return results.filter((e: any) => e.type === type);
     }
     return results;
   }
-  
+
   async getGroupEntity(entityId: EntityId): Promise<GroupEntity | undefined> {
     return await this.db.table(this.tableName).get(entityId);
   }
-  
+
   async updateGroupEntity(entityId: EntityId, data: Partial<GroupEntity>): Promise<void> {
     await this.db.table(this.tableName).update(entityId, {
       ...data,
       updatedAt: Date.now(),
     });
   }
-  
+
   async deleteGroupEntity(entityId: EntityId): Promise<void> {
     await this.db.table(this.tableName).delete(entityId);
   }
-  
+
   async deleteGroupEntities(nodeId: NodeId, type?: string): Promise<void> {
     const entities = await this.getGroupEntities(nodeId, type);
     for (const entity of entities) {
@@ -94,7 +95,7 @@ class TestGroupEntityHandler extends BaseEntityHandler<GroupEntity> {
 describe('GroupEntityHandler', () => {
   let db: Dexie;
   let handler: TestGroupEntityHandler;
-  const parentNodeId = 'parent-node-123' as NodeId;
+  const parentId = 'parent-node-123' as NodeId;
 
   beforeEach(async () => {
     // Create in-memory database
@@ -118,50 +119,50 @@ describe('GroupEntityHandler', () => {
       it('should create a group entity', async () => {
         const entityData: GroupEntity = {
           id: 'test-1' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
         };
 
-        await handler.createGroupEntity(parentNodeId, 'attachment', entityData);
+        await handler.createGroupEntity(parentId, 'attachment', entityData);
 
-        const subEntities = await handler.getGroupEntities(parentNodeId, 'attachment');
+        const subEntities = await handler.getGroupEntities(parentId, 'attachment');
         expect(subEntities).toHaveLength(1);
-        expect(subEntities[0]?.nodeId).toBe(parentNodeId);
+        expect(subEntities[0]?.nodeId).toBe(parentId);
         expect(subEntities[0]?.type).toBe('attachment');
       });
 
       it('should validate group entity type', async () => {
         const entityData: GroupEntity = {
           id: 'invalid' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: '',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
         };
 
-        await expect(
-          handler.createGroupEntity(parentNodeId, '', entityData)
-        ).rejects.toThrow('Group entity type is required');
+        await expect(handler.createGroupEntity(parentId, '', entityData)).rejects.toThrow(
+          'Group entity type is required'
+        );
       });
     });
 
     describe('getGroupEntities', () => {
       beforeEach(async () => {
-        await handler.createGroupEntity(parentNodeId, 'attachment', {
+        await handler.createGroupEntity(parentId, 'attachment', {
           id: 'file-1' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
         });
-        await handler.createGroupEntity(parentNodeId, 'comment', {
+        await handler.createGroupEntity(parentId, 'comment', {
           id: 'comment-1' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'comment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -170,12 +171,12 @@ describe('GroupEntityHandler', () => {
       });
 
       it('should get all sub-entities for a node', async () => {
-        const allEntities = await handler.getGroupEntities(parentNodeId);
+        const allEntities = await handler.getGroupEntities(parentId);
         expect(allEntities).toHaveLength(2);
       });
 
       it('should get sub-entities by type', async () => {
-        const attachments = await handler.getGroupEntities(parentNodeId, 'attachment');
+        const attachments = await handler.getGroupEntities(parentId, 'attachment');
         expect(attachments).toHaveLength(1);
         expect(attachments[0]?.type).toBe('attachment');
       });
@@ -191,9 +192,9 @@ describe('GroupEntityHandler', () => {
 
       beforeEach(async () => {
         entityId = 'test-entity-id' as EntityId;
-        await handler.createGroupEntity(parentNodeId, 'attachment', {
+        await handler.createGroupEntity(parentId, 'attachment', {
           id: entityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -219,9 +220,9 @@ describe('GroupEntityHandler', () => {
 
       beforeEach(async () => {
         entityId = 'update-test-id' as EntityId;
-        await handler.createGroupEntity(parentNodeId, 'task', {
+        await handler.createGroupEntity(parentId, 'task', {
           id: entityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'task',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -244,9 +245,9 @@ describe('GroupEntityHandler', () => {
 
       beforeEach(async () => {
         entityId = 'delete-test-id' as EntityId;
-        await handler.createGroupEntity(parentNodeId, 'attachment', {
+        await handler.createGroupEntity(parentId, 'attachment', {
           id: entityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -262,33 +263,31 @@ describe('GroupEntityHandler', () => {
       });
 
       it('should not throw for non-existent group entity', async () => {
-        await expect(
-          handler.deleteGroupEntity('non-existent' as EntityId)
-        ).resolves.not.toThrow();
+        await expect(handler.deleteGroupEntity('non-existent' as EntityId)).resolves.not.toThrow();
       });
     });
 
     describe('deleteGroupEntities', () => {
       beforeEach(async () => {
-        await handler.createGroupEntity(parentNodeId, 'attachment', {
+        await handler.createGroupEntity(parentId, 'attachment', {
           id: 'attach-1' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
         });
-        await handler.createGroupEntity(parentNodeId, 'attachment', {
+        await handler.createGroupEntity(parentId, 'attachment', {
           id: 'attach-2' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'attachment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
         });
-        await handler.createGroupEntity(parentNodeId, 'comment', {
+        await handler.createGroupEntity(parentId, 'comment', {
           id: 'comment-1' as EntityId,
-          nodeId: parentNodeId,
+          nodeId: parentId,
           type: 'comment',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -297,11 +296,11 @@ describe('GroupEntityHandler', () => {
       });
 
       it('should delete all sub-entities of a specific type', async () => {
-        await handler.deleteGroupEntities(parentNodeId, 'attachment');
+        await handler.deleteGroupEntities(parentId, 'attachment');
 
-        const remainingAttachments = await handler.getGroupEntities(parentNodeId, 'attachment');
-        const remainingComments = await handler.getGroupEntities(parentNodeId, 'comment');
-        
+        const remainingAttachments = await handler.getGroupEntities(parentId, 'attachment');
+        const remainingComments = await handler.getGroupEntities(parentId, 'comment');
+
         expect(remainingAttachments).toHaveLength(0);
         expect(remainingComments).toHaveLength(1);
         expect(remainingComments[0]?.type).toBe('comment');

@@ -106,7 +106,7 @@ describe('BaseEntityHandler', () => {
     db.version(1).stores({
       entities: '&nodeId, name, createdAt, updatedAt',
       workingCopies: '&workingCopyId, workingCopyOf, nodeId',
-      subEntities: '[parentNodeId+subEntityType], id',
+      subEntities: '[parentId+subEntityType], id',
     });
 
     await db.open();

@@ -1,20 +1,14 @@
 import {
   Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   Typography,
   Link,
-  IconButton,
+  Divider,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-
-// import { InfoDialog, InfoContent } from '@hierarchidb/ui-core';
-// LicenseInfo temporarily commented out until component is available
-// import { LicenseInfo } from '@hierarchidb/ui-core';
+import InfoIcon from "@mui/icons-material/Info";
 import { useNavigate } from "react-router";
-
 import { LoadAppConfigReturn } from "~/loader";
+import { LicenseInfo } from "~/components/LicenseInfo";
+import { FullScreenDialog } from "@hierarchidb/ui-dialog";
 
 // LicenseInfo temporarily commented out until component is available
 // const LazyLicenseInfo = lazy(() =>
@@ -27,21 +21,14 @@ export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
   const navigate = useNavigate();
 
   return (
-    <Dialog open={true} onClose={() => navigate("/")} fullScreen={true}>
-      <DialogTitle
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        {`About ${appConfig.appTitle}` || "About ..."}
-        <IconButton onClick={() => navigate("/")} edge="end">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ width: "100%" }}>
+    <FullScreenDialog
+      open={true}
+      onClose={() => navigate("/")}
+      title={`About ${appConfig.appTitle}` || "About ..."}
+      subtitle="Application information and licenses"
+      icon={<InfoIcon />}
+    >
+      <Box sx={{ width: "100%" }}>
           {/* Temporary InfoContent replacement */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h4" gutterBottom>
@@ -65,14 +52,10 @@ export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
             )}
           </Box>
 
-          {/* LicenseInfo temporarily commented out until component is available */}
-          {/* <Alert severity="info" sx={{ mt: 4 }}>
-            <Suspense fallback={<LinearProgress />}>
-              <LazyLicenseInfo />
-            </Suspense>
-          </Alert> */}
+          {/* License Information Section */}
+          <Divider sx={{ my: 4 }} />
+          <LicenseInfo />
         </Box>
-      </DialogContent>
-    </Dialog>
+    </FullScreenDialog>
   );
 }

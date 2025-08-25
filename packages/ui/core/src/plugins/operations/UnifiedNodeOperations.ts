@@ -221,7 +221,7 @@ export class UnifiedNodeOperations {
     }
 
     return await plugin.hooks.beforeShowCreateDialog({
-      parentNodeId: parentId,
+      parentId: parentId,
       nodeType,
       context: await this.getCurrentContext(),
     });
@@ -234,7 +234,7 @@ export class UnifiedNodeOperations {
   ): Promise<void> {
     if (plugin.hooks.onShowCreateDialog) {
       await plugin.hooks.onShowCreateDialog({
-        parentNodeId: parentId,
+        parentId: parentId,
         nodeType,
         onSubmit: async (data) => {
           await this.executeCreate(plugin, parentId, nodeType, data);
@@ -258,7 +258,7 @@ export class UnifiedNodeOperations {
     if (plugin.hooks.onValidateCreateForm) {
       const validation = await plugin.hooks.onValidateCreateForm({
         formData: data,
-        parentNodeId: parentId,
+        parentId: parentId,
       });
 
       if (!validation.valid) {
@@ -282,7 +282,7 @@ export class UnifiedNodeOperations {
       const afterResult = await plugin.hooks.afterCreate({
         nodeId,
         data,
-        parentNodeId: parentId,
+        parentId: parentId,
       });
 
       if (afterResult.showMessage) {
@@ -413,9 +413,7 @@ export class UnifiedNodeOperations {
     this.dataRefreshService.refresh(Array.from(allParentIds));
   }
 
-  private async groupNodesByType(
-    nodeIds: readonly NodeId[]
-  ): Promise<Map<string, readonly any[]>> {
+  private async groupNodesByType(nodeIds: readonly NodeId[]): Promise<Map<string, readonly any[]>> {
     const nodesByType = new Map<string, any[]>();
 
     for (const nodeId of nodeIds) {

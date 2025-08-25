@@ -13,10 +13,21 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { WorkerAPIAdapter } from '~/adapters';
-import type { TreeViewController, SelectionMode, UndoRedoResult, UndoRedoCommand } from '../types/index';
+import type {
+  TreeViewController,
+  SelectionMode,
+  UndoRedoResult,
+  UndoRedoCommand,
+} from '../types/index';
 import type { NodeId, TreeNode } from '@hierarchidb/common-core';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { useCopyPasteOperations, type CopyResult, type CutResult, type PasteResult, type ClipboardData } from './useCopyPasteOperations';
+import {
+  useCopyPasteOperations,
+  type CopyResult,
+  type CutResult,
+  type PasteResult,
+  type ClipboardData,
+} from './useCopyPasteOperations';
 import { useUndoRedoOperations } from './useUndoRedoOperations';
 import { useCRUDOperations } from './useCRUDOperations';
 
@@ -39,8 +50,6 @@ export interface UseTreeViewControllerOptions {
   /** WorkerAPIClient（直接提供する場合） */
   workerClient?: unknown;
 }
-
-
 
 export interface UseTreeViewControllerReturn extends TreeViewController {
   // TODO: 実装時に既存コードから完全なインターフェースを抽出
@@ -84,13 +93,13 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
 
   // Working Copy操作
   startEdit: (nodeId: NodeId) => Promise<void>;
-  startCreate: (parentNodeId: NodeId, name: string) => Promise<void>;
+  startCreate: (parentId: NodeId, name: string) => Promise<void>;
 
   // Copy/Paste操作 🟢
   copyNodes: (nodeIds: NodeId[]) => Promise<CopyResult>;
   cutNodes: (nodeIds: NodeId[]) => Promise<CutResult>;
   pasteNodes: (targetParentId: NodeId) => Promise<PasteResult>;
-  
+
   // Copy/Paste状態 🟢
   clipboardData: ClipboardData | null;
   cutNodeIds: NodeId[];
@@ -117,19 +126,20 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
 export function useTreeViewController(
   props: TreeViewControllerProps & UseTreeViewControllerOptions = { treeId: '' }
 ): UseTreeViewControllerReturn {
-  const { 
-    rootNodeId: _rootNodeId, 
+  const {
+    rootNodeId: _rootNodeId,
     initialExpandedNodeIds = [],
     treeId: _treeId = '',
     stateManager,
     onStateChange,
     workerService,
-    workerClient: providedWorkerClient
+    workerClient: providedWorkerClient,
   } = props;
 
   // WorkerAPI接続（オプショナル - 直接提供またはコンテキストから取得）
   const workerClient = providedWorkerClient || null;
-  const api = ((workerClient as any)?.getAPI ? (workerClient as any).getAPI() : null) || stateManager || {};
+  const api =
+    ((workerClient as any)?.getAPI ? (workerClient as any).getAPI() : null) || stateManager || {};
 
   // WorkerAPIAdapterのセットアップ
   const workerAdapter = useMemo(() => {
@@ -169,14 +179,14 @@ export function useTreeViewController(
 
   // Track if this is the initial render
   const isInitialMount = useRef(true);
-  
+
   // Effect to notify state changes
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    
+
     if (onStateChange) {
       onStateChange({
         selectedNodeIds: selectedNodes,
@@ -219,7 +229,7 @@ export function useTreeViewController(
   const selectNode = useCallback(
     async (nodeId: NodeId, options?: { ctrlKey?: boolean; shiftKey?: boolean }) => {
       const { ctrlKey = false, shiftKey = false } = options || {};
-      
+
       if (ctrlKey) {
         // Multi-select with Ctrl key
         setSelectedNodes((prev) => {
@@ -233,7 +243,7 @@ export function useTreeViewController(
         });
       } else if (shiftKey && lastSelectedNode) {
         // Range select with Shift key - simplified implementation for testing
-        // Get all children from state manager (mocked in tests) 
+        // Get all children from state manager (mocked in tests)
         // TODO: Implement getChildren when API is available
         if ((stateManager as any)?.getChildren) {
           const children = await (stateManager as any).getChildren('root');
@@ -257,10 +267,10 @@ export function useTreeViewController(
         // Single select
         setSelectedNodes([nodeId]);
       }
-      
+
       // Update last selected node for range selection
       setLastSelectedNode(nodeId);
-      
+
       // Fetch and set current node
       // TODO: Implement getNode when API is available
       if ((stateManager as any)?.getNode && !ctrlKey && !shiftKey) {

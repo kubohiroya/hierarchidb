@@ -3,8 +3,8 @@
  * Implements ShapeAPI interface from shared layer
  */
 
-import { NodeId, EntityId, generateEntityId } from "@hierarchidb/common-core";
-import type { PluginAPI } from "@hierarchidb/common-api";
+import { NodeId, EntityId, generateEntityId } from '@hierarchidb/common-core';
+import type { PluginAPI } from '@hierarchidb/common-api';
 import {
   ShapeAPI,
   ShapeEntity,
@@ -22,9 +22,9 @@ import {
   ProgressInfo,
   ProcessingStatus,
   TileInfo,
-} from "../shared";
-import { DEFAULT_PROCESSING_CONFIG } from "../shared/constants";
-import { ShapeEntityHandler } from "./handlers";
+} from '../shared';
+import { DEFAULT_PROCESSING_CONFIG } from '../shared/constants';
+import { ShapeEntityHandler } from './handlers';
 import {
   DEFAULT_DATA_SOURCES,
   generateUrlMetadata,
@@ -32,17 +32,14 @@ import {
   validateProcessingConfig,
   generateSessionId,
   generateTaskId,
-} from "../shared";
+} from '../shared';
 
 export const shapePluginAPI = {
   // ===================================
   // Core Entity Operations
   // ===================================
 
-  createEntity: async (
-    nodeId: NodeId,
-    data: CreateShapeData,
-  ): Promise<ShapeEntity> => {
+  createEntity: async (nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> => {
     const handler = new ShapeEntityHandler();
     return await handler.createEntity(nodeId, data);
   },
@@ -52,10 +49,7 @@ export const shapePluginAPI = {
     return await handler.getEntityByNodeId(nodeId);
   },
 
-  updateEntity: async (
-    nodeId: NodeId,
-    data: UpdateShapeData,
-  ): Promise<void> => {
+  updateEntity: async (nodeId: NodeId, data: UpdateShapeData): Promise<void> => {
     const handler = new ShapeEntityHandler();
     const entity = await handler.getEntityByNodeId(nodeId);
     if (!entity) {
@@ -87,25 +81,18 @@ export const shapePluginAPI = {
     return workingCopy.id;
   },
 
-  createNewDraftWorkingCopy: async (
-    parentNodeId: NodeId,
-  ): Promise<EntityId> => {
+  createNewDraftWorkingCopy: async (parentId: NodeId): Promise<EntityId> => {
     const handler = new ShapeEntityHandler();
-    const workingCopy = await handler.createNewDraftWorkingCopy(parentNodeId);
+    const workingCopy = await handler.createNewDraftWorkingCopy(parentId);
     return workingCopy.id;
   },
 
-  getWorkingCopy: async (
-    workingCopyId: EntityId,
-  ): Promise<ShapeEntity | undefined> => {
+  getWorkingCopy: async (workingCopyId: EntityId): Promise<ShapeEntity | undefined> => {
     const handler = new ShapeEntityHandler();
     return await handler.getWorkingCopy(workingCopyId);
   },
 
-  updateWorkingCopy: async (
-    workingCopyId: EntityId,
-    data: Partial<ShapeEntity>,
-  ): Promise<void> => {
+  updateWorkingCopy: async (workingCopyId: EntityId, data: Partial<ShapeEntity>): Promise<void> => {
     const handler = new ShapeEntityHandler();
     await handler.updateWorkingCopy(workingCopyId, data);
   },
@@ -128,28 +115,26 @@ export const shapePluginAPI = {
     return DEFAULT_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (
-    dataSource: string,
-  ): Promise<CountryMetadata[]> => {
+  getCountryMetadata: async (dataSource: string): Promise<CountryMetadata[]> => {
     // Mock implementation - would fetch from real data source
     return [
       {
-        countryCode: "US",
-        countryName: "United States",
-        continent: "North America",
+        countryCode: 'US',
+        countryName: 'United States',
+        continent: 'North America',
         availableAdminLevels: [0, 1, 2],
         population: 331900000,
         area: 9833517,
-        dataQuality: "high",
+        dataQuality: 'high',
       },
       {
-        countryCode: "JP",
-        countryName: "Japan",
-        continent: "Asia",
+        countryCode: 'JP',
+        countryName: 'Japan',
+        continent: 'Asia',
         availableAdminLevels: [0, 1],
         population: 125800000,
         area: 377975,
-        dataQuality: "high",
+        dataQuality: 'high',
       },
     ];
   },
@@ -157,16 +142,11 @@ export const shapePluginAPI = {
   generateUrlMetadata: async (
     dataSource: string,
     countries: string[],
-    adminLevels: number[],
+    adminLevels: number[]
   ): Promise<UrlMetadata[]> => {
     // Get country metadata first
     const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSource);
-    return generateUrlMetadata(
-      dataSource as any,
-      countries,
-      adminLevels,
-      countryMetadata,
-    );
+    return generateUrlMetadata(dataSource as any, countries, adminLevels, countryMetadata);
   },
 
   // ===================================
@@ -176,27 +156,25 @@ export const shapePluginAPI = {
   validateSelection: async (
     countries: string[],
     adminLevels: number[],
-    dataSource: string,
+    dataSource: string
   ): Promise<ValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
 
     if (countries.length === 0) {
-      errors.push("At least one country must be selected");
+      errors.push('At least one country must be selected');
     }
 
     if (adminLevels.length === 0) {
-      errors.push("At least one administrative level must be selected");
+      errors.push('At least one administrative level must be selected');
     }
 
     if (!DEFAULT_DATA_SOURCES.find((ds) => ds.name === dataSource)) {
-      errors.push("Invalid data source selected");
+      errors.push('Invalid data source selected');
     }
 
     if (countries.length > 10) {
-      warnings.push(
-        "Large country selection may require significant processing time",
-      );
+      warnings.push('Large country selection may require significant processing time');
     }
 
     return {
@@ -206,9 +184,7 @@ export const shapePluginAPI = {
     };
   },
 
-  calculateSelectionStats: async (
-    urlMetadata: UrlMetadata[],
-  ): Promise<SelectionStats> => {
+  calculateSelectionStats: async (urlMetadata: UrlMetadata[]): Promise<SelectionStats> => {
     return calculateSelectionStats(urlMetadata);
   },
 
@@ -219,18 +195,16 @@ export const shapePluginAPI = {
   startBatchProcessing: async (
     workingCopyId: EntityId,
     config: ProcessingConfig,
-    urlMetadata: UrlMetadata[],
+    urlMetadata: UrlMetadata[]
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {
-      throw new Error(
-        `Invalid processing config: ${validation.errors?.join(", ")}`,
-      );
+      throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
 
     const sessionId = generateSessionId();
     console.log(
-      `Started batch processing session: ${sessionId} for working copy: ${workingCopyId}`,
+      `Started batch processing session: ${sessionId} for working copy: ${workingCopyId}`
     );
     return sessionId;
   },
@@ -245,14 +219,10 @@ export const shapePluginAPI = {
   },
 
   cancelBatchProcessing: async (workingCopyId: EntityId): Promise<void> => {
-    console.log(
-      `Cancelling batch processing for working copy: ${workingCopyId}`,
-    );
+    console.log(`Cancelling batch processing for working copy: ${workingCopyId}`);
   },
 
-  getBatchSession: async (
-    sessionId: string,
-  ): Promise<BatchSession | undefined> => {
+  getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
     console.log(`Getting batch session: ${sessionId}`);
     return undefined;
   },
@@ -274,7 +244,7 @@ export const shapePluginAPI = {
   },
 
   getBatchStatus: async (
-    sessionId: string,
+    sessionId: string
   ): Promise<{
     sessionId: string;
     workingCopyId?: EntityId;
@@ -286,7 +256,7 @@ export const shapePluginAPI = {
     console.log(`Getting batch status for session: ${sessionId}`);
     return {
       sessionId,
-      status: "running",
+      status: 'running',
       progress: 0.5,
       completedTasks: 0,
       totalTasks: 0,
@@ -303,7 +273,7 @@ export const shapePluginAPI = {
   },
 
   getBatchSessionStatus: async (
-    sessionId: string,
+    sessionId: string
   ): Promise<{
     exists: boolean;
     canResume: boolean;
@@ -329,7 +299,7 @@ export const shapePluginAPI = {
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
-    console.log("Performing EphemeralDB cleanup");
+    console.log('Performing EphemeralDB cleanup');
     return {
       workingCopiesRemoved: 0,
       batchSessionsRemoved: 0,
@@ -346,7 +316,7 @@ export const shapePluginAPI = {
     estimatedSpaceUsed: number;
     lastCleanupAt?: number;
   }> => {
-    console.log("Getting cleanup statistics");
+    console.log('Getting cleanup statistics');
     return {
       totalWorkingCopies: 0,
       expiredWorkingCopies: 0,
@@ -363,7 +333,7 @@ export const shapePluginAPI = {
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
-    console.log("Force cleaning all EphemeralDB data");
+    console.log('Force cleaning all EphemeralDB data');
     return {
       workingCopiesRemoved: 0,
       batchSessionsRemoved: 0,
@@ -385,11 +355,9 @@ export const shapePluginAPI = {
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number,
+    y: number
   ): Promise<TileInfo | undefined> => {
-    console.log(
-      `Getting vector tile info for node: ${nodeId}, z: ${z}, x: ${x}, y: ${y}`,
-    );
+    console.log(`Getting vector tile info for node: ${nodeId}, z: ${z}, x: ${x}, y: ${y}`);
     return undefined;
   },
 
@@ -403,14 +371,14 @@ export const shapePluginAPI = {
 
     if (!entity) {
       return {
-        status: "idle",
+        status: 'idle',
         hasErrors: false,
         errorMessages: [],
       };
     }
 
     return {
-      status: entity.processingStatus || "idle",
+      status: entity.processingStatus || 'idle',
       lastProcessed: entity.updatedAt,
       totalFeatures: 0,
       totalVectorTiles: 0,

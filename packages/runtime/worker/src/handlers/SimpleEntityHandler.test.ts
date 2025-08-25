@@ -411,7 +411,7 @@ describe('PeerEntityHandler', () => {
       await handler.createGroupEntity?.(testNodeId, 'test-type', {
         id: 'sub-1' as EntityId,
         nodeId: testNodeId,
-        parentNodeId: testNodeId,
+        parentId: testNodeId,
         type: 'test-type',
         groupEntityType: 'test-type',
         data: 'test-data',

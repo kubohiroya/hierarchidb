@@ -8,10 +8,7 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-core';
 import { TreeObservableAdapter } from './TreeObservableAdapter';
-import type {
-  AdapterContext,
-  UnsubscribeFunction,
-} from '../../types/index';
+import type { AdapterContext, UnsubscribeFunction } from '../../types/index';
 import type { TreeNodeEvent } from '@hierarchidb/common-core';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
@@ -52,11 +49,7 @@ export class SubscriptionManager {
     try {
       const subscriptionId = `subtree_${nodeId}_${Date.now()}`;
 
-      const unsubscribe = await this.adapter.subscribeToSubtree(
-        nodeId,
-        callback,
-        context
-      );
+      const unsubscribe = await this.adapter.subscribeToSubtree(nodeId, callback, context);
 
       const entry: SubscriptionEntry = {
         id: subscriptionId,
@@ -117,25 +110,25 @@ export class SubscriptionManager {
   /**
    * 子ノードサブスクリプションを作成
    *
-   * @param parentNodeId 親ノードID
+   * @param parentId 親ノードID
    * @param callback 子ノード変更コールバック
    * @param context アダプター実行コンテキスト
    * @returns サブスクリプションID
    */
   async subscribeToChildren(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     callback: TreeNodeEventCallback,
     context: AdapterContext
   ): Promise<string> {
     try {
-      const subscriptionId = `children_${parentNodeId}_${Date.now()}`;
+      const subscriptionId = `children_${parentId}_${Date.now()}`;
 
-      const unsubscribe = await this.adapter.subscribeToChildren(parentNodeId, callback, context);
+      const unsubscribe = await this.adapter.subscribeToChildren(parentId, callback, context);
 
       const entry: SubscriptionEntry = {
         id: subscriptionId,
         type: 'children',
-        nodeId: parentNodeId,
+        nodeId: parentId,
         unsubscribe,
         createdAt: Date.now(),
       };
@@ -144,7 +137,7 @@ export class SubscriptionManager {
       return subscriptionId;
     } catch (error) {
       throw new TreeConsoleAdapterError(
-        `Failed to create children subscription for node ${parentNodeId}`,
+        `Failed to create children subscription for node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_MANAGER_ERROR',
         error as Error
       );

@@ -185,14 +185,31 @@ export function registerBuiltinPlugins(): void {
   registry.registerPlugin(stylemapPlugin);
   registry.registerPlugin(shapePlugin);
   
-  console.log('Registered builtin plugins:', registry.getAllNodeTypes());
+  const registeredPlugins = registry.getAllNodeTypes();
+  console.log('========================================');
+  console.log('📦 Registered Builtin Plugins:');
+  console.log('========================================');
+  registeredPlugins.forEach((nodeType, index) => {
+    const plugin = registry.get(nodeType);
+    console.log(`${index + 1}. ${nodeType}${plugin?.metadata?.experimental ? ' (experimental)' : ''}`);
+    if (plugin?.metadata) {
+      console.log(`   Version: ${plugin.metadata.version || 'N/A'}`);
+      console.log(`   Description: ${plugin.metadata.description || 'N/A'}`);
+      console.log(`   Priority: ${plugin.metadata.priority || 'N/A'}`);
+    }
+  });
+  console.log('========================================');
+  console.log(`Total: ${registeredPlugins.length} plugins loaded`);
+  console.log('========================================');
 }
 
 /**
  * Initialize plugin APIs for 3-layer architecture support
  */
 export async function initializePluginAPIs(workerAPI: any): Promise<void> {
-  console.log('Initializing plugin APIs for 3-layer architecture...');
+  console.log('========================================');
+  console.log('🔌 Initializing Plugin APIs (3-layer architecture)');
+  console.log('========================================');
 
   // Get the plugin registry from WorkerAPI
   const pluginRegistry = await workerAPI.getPluginRegistryAPI();

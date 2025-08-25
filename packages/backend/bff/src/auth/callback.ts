@@ -13,7 +13,8 @@ import {
 } from './microsoft';
 import { createSessionToken } from '../utils/jwt';
 import { KVStorageManager } from '../utils/kv-storage';
-import { getAppCallbackUrlFromState, getDynamicRedirectUri } from '../utils/redirect-uri';
+import { getAppCallbackUrlFromState, getDynamicRedirectUri, validateRedirectUri } from '../utils/redirect-uri';
+import { StateManager } from '../utils/state-manager';
 
 /**
  * Handle OAuth2 callback from OAuth providers
@@ -25,6 +26,22 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
+
+    // State検証（CSRF対策）
+    if (state) {
+      const env = c.env as any;
+      const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
+      const stateData = await stateManager.validateState(state);
+      
+      if (!stateData) {
+        // 無効なstateの場合はエラーを返す
+        const appBaseUrl = getAppCallbackUrlFromState(c, state);
+        const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
+        appCallbackUrl.searchParams.set('error', 'invalid_state');
+        appCallbackUrl.searchParams.set('error_description', 'Invalid or expired state parameter');
+        return c.redirect(appCallbackUrl.toString());
+      }
+    }
 
     // Handle OAuth2 errors
     if (error) {
@@ -84,6 +101,15 @@ export async function exchangeCodeForToken(
 
     if (!code) {
       return c.json({ error: 'Missing authorization code' }, 400);
+    }
+
+    // redirect_uriの検証
+    if (redirect_uri && !validateRedirectUri(redirect_uri, c)) {
+      console.error(`Invalid redirect_uri received: ${redirect_uri}`);
+      return c.json({ 
+        error: 'invalid_request',
+        error_description: 'Invalid redirect_uri parameter' 
+      }, 400);
     }
 
     const env = c.env as any;

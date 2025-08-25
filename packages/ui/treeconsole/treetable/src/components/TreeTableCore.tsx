@@ -9,7 +9,7 @@
  * Phase 5: 仮想スクロール
  */
 
-import { useMemo, useState, MouseEvent } from 'react';
+import { useMemo, useState, MouseEvent, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,6 +18,7 @@ import {
   getFilteredRowModel,
   ColumnDef,
   flexRender,
+  SortingState,
 } from '@tanstack/react-table';
 import {
   Box,
@@ -28,6 +29,8 @@ import {
   TableRow,
   IconButton,
   TextField,
+  Checkbox,
+  TableSortLabel,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -69,6 +72,7 @@ const StyledTable = styled(Table)`
   border-collapse: collapse;
   width: 100%;
   table-layout: fixed;
+  min-width: 100%;
 `;
 
 const StyledTableHead = styled(TableHead)`
@@ -80,8 +84,33 @@ const StyledTableHead = styled(TableHead)`
   & .MuiTableCell-root {
     font-weight: 600;
     border-bottom: 2px solid ${({ theme }) => theme.palette.divider};
+    border-right: 1px solid ${({ theme }) => theme.palette.divider};
     padding: 8px 12px;
     user-select: none;
+    position: relative;
+    
+    &:last-child {
+      border-right: none;
+    }
+  }
+`;
+
+const ResizeHandle = styled('div')`
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  user-select: none;
+  
+  &:hover {
+    background-color: rgba(25, 118, 210, 0.3);
+  }
+  
+  &.resizing {
+    background-color: rgba(25, 118, 210, 0.5);
   }
 `;
 
@@ -98,7 +127,12 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
 
   & .MuiTableCell-root {
     padding: 8px 12px;
+    border-right: 1px solid ${({ theme }) => theme.palette.divider};
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
+    
+    &:last-child {
+      border-right: none;
+    }
   }
 `;
 
@@ -120,7 +154,7 @@ const IndentSpace = styled(Box)<{ depth: number }>`
 export function TreeTableCore({
   controller,
   viewHeight,
-  viewWidth,
+  viewWidth: _viewWidth,
   useTrashColumns = false,
   depthOffset = 0,
   disableDragAndDrop = false,
@@ -144,6 +178,15 @@ export function TreeTableCore({
     anchorEl: HTMLElement | null;
     node: TreeNodeWithDepth | null;
   }>({ anchorEl: null, node: null });
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    selection: 50,
+    name: 350,
+    description: 400,
+    createdAt: 150,
+    updatedAt: 150,
+  });
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
 
   // Get data from controller
   const rawData = controller?.data || [];
@@ -177,13 +220,51 @@ export function TreeTableCore({
   const rowSelection = controller?.rowSelection || {};
   const expandedRowIds = controller?.expandedRowIds || new Set();
 
+  // Select all handling
+  const allSelected = useMemo(() => {
+    return data.length > 0 && data.every((node) => rowSelection[node.id]);
+  }, [data, rowSelection]);
+
+  const someSelected = useMemo(() => {
+    return data.some((node) => rowSelection[node.id]) && !allSelected;
+  }, [data, rowSelection, allSelected]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!controller?.onNodeSelect) return;
+    const nodeIds = checked ? data.map(node => node.id) : [];
+    controller.onNodeSelect(nodeIds, checked);
+  };
+
   // Column definitions
   const columns = useMemo<ColumnDef<TreeNodeWithDepth>[]>(() => {
     const baseColumns: ColumnDef<TreeNodeWithDepth>[] = [
       {
+        id: 'selection',
+        header: () => (
+          <Checkbox
+            checked={allSelected}
+            indeterminate={someSelected}
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            size="small"
+          />
+        ),
+        size: 50,
+        cell: ({ row }) => (
+          <Checkbox
+            checked={rowSelection[row.original.id] || false}
+            onChange={(e) => {
+              controller?.onNodeSelect?.([row.original.id], e.target.checked);
+            }}
+            size="small"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+      },
+      {
         id: 'name',
         header: 'Name',
-        size: 300,
+        size: columnWidths.name,
+        enableSorting: true,
         cell: ({ row }) => {
           const node = row.original;
           const depth = (node.depth || 0) + depthOffset;
@@ -277,13 +358,15 @@ export function TreeTableCore({
       {
         id: 'description',
         header: 'Description',
-        size: 300,
+        size: columnWidths.description,
+        enableSorting: true,
         cell: ({ row }) => row.original.description || '-',
       },
       {
         id: 'createdAt',
         header: 'Created',
-        size: 120,
+        size: columnWidths.createdAt,
+        enableSorting: true,
         cell: ({ row }) => {
           const value = row.original.createdAt;
           return value ? new Date(value).toLocaleDateString() : '-';
@@ -292,7 +375,8 @@ export function TreeTableCore({
       {
         id: 'updatedAt',
         header: 'Updated',
-        size: 120,
+        size: columnWidths.updatedAt,
+        enableSorting: true,
         cell: ({ row }) => {
           const value = row.original.updatedAt;
           return value ? new Date(value).toLocaleDateString() : '-';
@@ -322,6 +406,10 @@ export function TreeTableCore({
     useTrashColumns,
     controller,
     IconComponent,
+    columnWidths,
+    rowSelection,
+    allSelected,
+    someSelected,
   ]);
 
   // React Table instance
@@ -336,7 +424,9 @@ export function TreeTableCore({
     enableMultiRowSelection: selectionMode === 'multiple',
     state: {
       rowSelection,
+      sorting,
     },
+    onSortingChange: setSorting,
     onRowSelectionChange: (updater) => {
       if (typeof updater === 'function') {
         const newSelection = updater(rowSelection);
@@ -398,23 +488,91 @@ export function TreeTableCore({
     setContextMenuState({ anchorEl: null, node: null });
   };
 
+  // Column resize implementation
+  const resizeRef = useRef<{ startX: number; startWidth: number }>({ startX: 0, startWidth: 0 });
+
+  const handleResizeStart = (columnId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const startX = e.clientX;
+    const startWidth = columnWidths[columnId] || 100;
+    resizeRef.current = { startX, startWidth };
+    setResizingColumn(columnId);
+
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      const deltaX = e.clientX - startX;
+      const newWidth = Math.max(50, startWidth + deltaX);
+      setColumnWidths(prev => ({
+        ...prev,
+        [columnId]: newWidth,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      setResizingColumn(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   // Render
   return (
-    <StyledTableContainer sx={{ height: viewHeight, width: viewWidth }}>
+    <StyledTableContainer sx={{ height: viewHeight || '100%', width: '100%' }}>
       <StyledTable stickyHeader>
         <StyledTableHead>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableCell key={header.id} sx={{ width: header.getSize() }}>
-                  {header.isPlaceholder
-                    ? null
-                    : (flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      ) as React.ReactNode)}
-                </TableCell>
-              ))}
+              {headerGroup.headers.map((header) => {
+                const isSelectionColumn = header.column.id === 'selection';
+                const canSort = header.column.getCanSort();
+                const sortDirection = header.column.getIsSorted();
+                
+                return (
+                  <TableCell 
+                    key={header.id} 
+                    sx={{ 
+                      width: `${columnWidths[header.column.id]}px`,
+                      minWidth: `${columnWidths[header.column.id]}px`,
+                      maxWidth: `${columnWidths[header.column.id]}px`,
+                    }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <>
+                        {isSelectionColumn ? (
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          ) as React.ReactNode
+                        ) : canSort ? (
+                          <TableSortLabel
+                            active={!!sortDirection}
+                            direction={sortDirection === 'asc' ? 'asc' : 'desc'}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {typeof header.column.columnDef.header === 'string'
+                              ? header.column.columnDef.header
+                              : 'Column'}
+                          </TableSortLabel>
+                        ) : (
+                          typeof header.column.columnDef.header === 'string'
+                            ? header.column.columnDef.header
+                            : 'Column'
+                        )}
+                        {!isSelectionColumn && header.column.id !== 'updatedAt' && (
+                          <ResizeHandle
+                            className={resizingColumn === header.column.id ? 'resizing' : ''}
+                            onMouseDown={(e) => handleResizeStart(header.column.id, e)}
+                          />
+                        )}
+                      </>
+                    )}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </StyledTableHead>
@@ -434,7 +592,14 @@ export function TreeTableCore({
                 sx={{ cursor: 'pointer' }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} sx={{ width: cell.column.getSize() }}>
+                  <TableCell 
+                    key={cell.id} 
+                    sx={{ 
+                      width: `${columnWidths[cell.column.id]}px`,
+                      minWidth: `${columnWidths[cell.column.id]}px`,
+                      maxWidth: `${columnWidths[cell.column.id]}px`,
+                    }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext()) as React.ReactNode}
                   </TableCell>
                 ))}

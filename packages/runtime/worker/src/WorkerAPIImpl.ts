@@ -165,7 +165,7 @@ export class WorkerAPIImpl implements WorkerAPI {
       validateNodeTypeOperation: async (
         nodeType: NodeType,
         operation: 'create' | 'update' | 'delete' | 'move',
-        context?: { parentNodeId?: NodeId; targetNodeId?: NodeId }
+        context?: { parentId?: NodeId; targetId?: NodeId }
       ) => {
         // Validation logic using registry
         const isRegistered = await isNodeTypeRegistered(nodeType);
@@ -305,7 +305,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     const workingCopyAPI = {
       createDraftWorkingCopy: async (
         nodeType: string,
-        parentNodeId: NodeId,
+        parentId: NodeId,
         initialData?: Partial<TreeNode>
       ): Promise<WorkingCopy> => {
         const nodeId = crypto.randomUUID() as NodeId;
@@ -313,7 +313,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         const workingCopy: WorkingCopy = {
           id: nodeId,
           nodeType,
-          parentId: parentNodeId,
+          parentId,
           name: initialData?.name || 'New Node',
           description: initialData?.description || '',
           createdAt: now,
@@ -833,7 +833,7 @@ export class WorkerAPIImpl implements WorkerAPI {
 
       if (format === 'csv') {
         // CSV export
-        const headers = ['id', 'name', 'nodeType', 'parentNodeId', 'createdAt', 'updatedAt'];
+        const headers = ['id', 'name', 'nodeType', 'parentId', 'createdAt', 'updatedAt'];
         const csvRows = [headers.join(',')];
 
         for (const node of nodes) {

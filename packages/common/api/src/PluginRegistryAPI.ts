@@ -80,7 +80,7 @@ export interface PluginRegistryAPI {
   validateNodeTypeOperation(
     nodeType: NodeType,
     operation: 'create' | 'update' | 'delete' | 'move',
-    context?: { parentNodeId?: NodeId; targetNodeId?: NodeId }
+    context?: { parentId?: NodeId; targetNodeId?: NodeId }
   ): Promise<ValidationResult>;
 
   // ==================

@@ -1,13 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { 
-  Box, 
-  Button, 
-  Stack,
-} from '@mui/material';
-import { 
-  PlayArrow as PlayArrowIcon,
-  Category as CategoryIcon,
-} from '@mui/icons-material';
+import { Box, Button, Stack } from '@mui/material';
+import { PlayArrow as PlayArrowIcon, Category as CategoryIcon } from '@mui/icons-material';
 import { StepperDialog, useWorkingCopy } from '@hierarchidb/ui-dialog';
 import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/types';
@@ -41,15 +34,15 @@ const getInitialShapeData = (): ShapeWorkingCopy => ({
   version: 1,
 });
 
-export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({ 
-  mode = 'create', 
-  nodeId, 
-  parentNodeId, 
+export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
+  mode = 'create',
+  nodeId,
+  parentId,
   open = true,
-  onClose 
+  onClose,
 }) => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
-  
+
   // Working Copy management using ui-dialog hook
   const {
     workingCopy,
@@ -62,7 +55,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
   } = useWorkingCopy<ShapeWorkingCopy>({
     mode,
     nodeId: nodeId as NodeId,
-    parentNodeId: parentNodeId as NodeId,
+    parentId: parentId as NodeId,
     initialData: getInitialShapeData(),
     onCommit: async (data) => {
       // In production, this would save to the actual database
@@ -78,7 +71,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
 
   const hasSelectedCountries = (wc: ShapeWorkingCopy): boolean => {
     if (Array.isArray(wc.checkboxState)) {
-      return wc.checkboxState.some(row => row.some(cell => cell === true));
+      return wc.checkboxState.some((row) => row.some((cell) => cell === true));
     }
     return false;
   };
@@ -86,7 +79,8 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
   // Check if batch processing can start
   const canStartBatch = useMemo(() => {
     return (
-      workingCopy.name && workingCopy.name.length > 0 &&
+      workingCopy.name &&
+      workingCopy.name.length > 0 &&
       !!workingCopy.dataSourceName &&
       workingCopy.licenseAgreement === true &&
       validateProcessingConfig(workingCopy.processingConfig) &&
@@ -102,10 +96,10 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
       workingCopy.adminLevels || [],
       workingCopy.dataSourceName
     );
-    
+
     // Update working copy with URL metadata
     updateWorkingCopy({ urlMetadata });
-    
+
     // Open batch dialog
     setBatchDialogOpen(true);
   }, [workingCopy, updateWorkingCopy]);
@@ -160,7 +154,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
         mode={mode}
         open={open && !batchDialogOpen}
         nodeId={nodeId}
-        parentNodeId={parentNodeId}
+        parentId={parentId}
         title="Shape Data Configuration"
         icon={<CategoryIcon />}
         steps={steps}
@@ -174,9 +168,15 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
         }}
         maxWidth="lg"
         nonLinear={mode === 'edit'}
-        
         // Custom footer with Start Batch button
-        customFooterContent={({ currentStep, isFirstStep, isLastStep, canGoNext, onBack, onNext }) => (
+        customFooterContent={({
+          currentStep,
+          isFirstStep,
+          isLastStep,
+          canGoNext,
+          onBack,
+          onNext,
+        }) => (
           <CustomStepperFooter
             currentStep={currentStep}
             isFirstStep={isFirstStep}
@@ -194,7 +194,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
           />
         )}
       />
-      
+
       {/* Batch Processing Monitor Dialog */}
       {batchDialogOpen && nodeId && (
         <BatchProcessingMonitorDialog
@@ -239,27 +239,18 @@ const CustomStepperFooter: React.FC<CustomStepperFooterProps> = ({
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
       {/* Left side button */}
-      <Button
-        onClick={isFirstStep ? onCancel : onBack}
-        variant="outlined"
-        size="large"
-      >
+      <Button onClick={isFirstStep ? onCancel : onBack} variant="outlined" size="large">
         {isFirstStep ? 'Cancel' : 'Back'}
       </Button>
-      
+
       {/* Right side buttons */}
       <Stack direction="row" spacing={2}>
         {!isLastStep && (
-          <Button
-            onClick={onNext}
-            variant="contained"
-            size="large"
-            disabled={!canGoNext}
-          >
+          <Button onClick={onNext} variant="contained" size="large" disabled={!canGoNext}>
             Next
           </Button>
         )}
-        
+
         {showStartBatch && (
           <Button
             onClick={onStartBatch}
@@ -273,14 +264,9 @@ const CustomStepperFooter: React.FC<CustomStepperFooterProps> = ({
             Start Batch
           </Button>
         )}
-        
+
         {isLastStep && !showStartBatch && (
-          <Button
-            onClick={onNext}
-            variant="contained"
-            size="large"
-            disabled={!canGoNext}
-          >
+          <Button onClick={onNext} variant="contained" size="large" disabled={!canGoNext}>
             Save
           </Button>
         )}

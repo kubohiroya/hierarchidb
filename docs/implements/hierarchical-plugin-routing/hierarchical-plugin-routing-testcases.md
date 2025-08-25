@@ -255,6 +255,6 @@ describe('階層的URL解析', () => {
 
 ---
 
-**作成日**: 2025年1月14日  
+**作成日**: 2025年8月25日  
 **対象システム**: 階層的プラグインルーティングシステム  
 **実装ベース**: `packages/ui-routing/src/plugins/HierarchicalPluginRouter.tsx`

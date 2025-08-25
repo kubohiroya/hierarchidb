@@ -21,6 +21,7 @@
       "env": ["NODE_ENV"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
@@ -55,5 +56,6 @@
     }
   },
   "globalEnv": ["NODE_ENV", "VITE_*"],
-  "globalDependencies": ["tsconfig.json", "tsconfig.base.json"]
+  "globalDependencies": ["tsconfig.json", "tsconfig.base.json"],
+  "concurrency": "30"
 }

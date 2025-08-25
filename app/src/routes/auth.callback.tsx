@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Box, CircularProgress, Typography, Alert } from "@mui/material";
-import { AuthCallbackHandler } from "@hierarchidb/ui-auth";
+import { BFFAuthService } from "@hierarchidb/ui-auth";
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
@@ -30,11 +30,12 @@ export default function AuthCallbackRoute() {
         }
 
         // 認証処理を実行
-        await AuthCallbackHandler.handleCallback(); //{ code, state }
+        const authService = BFFAuthService.getInstance();
+        await authService.handleCallback(searchParams);
 
         // 元のページまたはホームへリダイレクト
-        const returnUrl = sessionStorage.getItem("auth.returnUrl") || "/";
-        sessionStorage.removeItem("auth.returnUrl");
+        const returnUrl = localStorage.getItem("auth_return_url") || "/";
+        localStorage.removeItem("auth_return_url");
         navigate(returnUrl, { replace: true });
       } catch (err) {
         console.error("Auth callback error:", err);

@@ -114,7 +114,7 @@ describe('EntityMetadata Type Definitions', () => {
         tableName: 'groupEntities',
         relationship: {
           type: 'one-to-many',
-          foreignKeyField: 'parentNodeId',
+          foreignKeyField: 'parentId',
           cascadeDelete: true,
         },
       };

@@ -12,6 +12,16 @@ api
   .then(async () => {
     workerLog('worker.initialized');
     
+    // Initialize builtin plugins first
+    try {
+      const { initializeBuiltinPlugins } = await import('./plugins');
+      const registry = api['nodeTypeRegistry'];
+      initializeBuiltinPlugins(registry);
+      workerLog('Builtin plugins registered successfully');
+    } catch (error) {
+      workerError('Failed to register builtin plugins', {}, error);
+    }
+    
     // Initialize plugin APIs for 3-layer architecture
     try {
       const { initializePluginAPIs } = await import('./plugins');

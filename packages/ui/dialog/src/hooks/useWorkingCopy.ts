@@ -12,7 +12,7 @@ export type UseWorkingCopyReturn<T = unknown> = WorkingCopyState<T>;
 export interface WorkingCopyOptions<T = unknown> {
   mode: 'create' | 'edit';
   nodeId?: string;
-  parentNodeId?: string;
+  parentId?: string;
   initialData: T;
   autoSave?: boolean;
   autoSaveDelay?: number;
@@ -35,7 +35,7 @@ export interface WorkingCopyState<T = unknown> {
 export function useWorkingCopy<T = any>({
   mode,
   nodeId: _nodeId,
-  parentNodeId: _parentNodeId,
+  parentId: _parentId,
   initialData,
   autoSave = true,
   autoSaveDelay = 1000,
@@ -48,59 +48,62 @@ export function useWorkingCopy<T = any>({
   const [isDirty, setIsDirty] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // const { enqueueSnackbar } = useSnackbar(); // Temporarily disabled to fix build
   const enqueueSnackbar = (message: string, options?: { variant?: string }) => {
     console.log(`[${options?.variant || 'info'}] ${message}`);
   };
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  
+
   // Update working copy
-  const updateWorkingCopy = useCallback((updates: Partial<T>) => {
-    setWorkingCopy(prev => {
-      const updated = { ...prev, ...updates };
-      
-      // Check if data is dirty
-      const isDataDirty = JSON.stringify(updated) !== JSON.stringify(originalData);
-      setIsDirty(isDataDirty);
-      
-      // Schedule auto-save if enabled
-      if (autoSave && onSave && isDataDirty) {
-        if (autoSaveTimeoutRef.current) {
-          clearTimeout(autoSaveTimeoutRef.current);
+  const updateWorkingCopy = useCallback(
+    (updates: Partial<T>) => {
+      setWorkingCopy((prev) => {
+        const updated = { ...prev, ...updates };
+
+        // Check if data is dirty
+        const isDataDirty = JSON.stringify(updated) !== JSON.stringify(originalData);
+        setIsDirty(isDataDirty);
+
+        // Schedule auto-save if enabled
+        if (autoSave && onSave && isDataDirty) {
+          if (autoSaveTimeoutRef.current) {
+            clearTimeout(autoSaveTimeoutRef.current);
+          }
+
+          autoSaveTimeoutRef.current = setTimeout(() => {
+            onSave(updated).catch((err) => {
+              console.warn('Auto-save failed:', err);
+              enqueueSnackbar('Auto-save failed', { variant: 'warning' });
+              setError(err);
+            });
+          }, autoSaveDelay);
         }
-        
-        autoSaveTimeoutRef.current = setTimeout(() => {
-          onSave(updated).catch(err => {
-            console.warn('Auto-save failed:', err);
-            enqueueSnackbar('Auto-save failed', { variant: 'warning' });
-            setError(err);
-          });
-        }, autoSaveDelay);
-      }
-      
-      return updated;
-    });
-  }, [originalData, autoSave, onSave, autoSaveDelay, enqueueSnackbar]);
-  
+
+        return updated;
+      });
+    },
+    [originalData, autoSave, onSave, autoSaveDelay, enqueueSnackbar]
+  );
+
   // Commit changes to permanent storage
   const commitChanges = useCallback(async () => {
     if (isProcessing) return;
-    
+
     setIsProcessing(true);
     setError(null);
-    
+
     try {
       await onCommit(workingCopy);
       setIsDirty(false);
-      enqueueSnackbar(`${mode === 'create' ? 'Created' : 'Updated'} successfully`, { 
-        variant: 'success' 
+      enqueueSnackbar(`${mode === 'create' ? 'Created' : 'Updated'} successfully`, {
+        variant: 'success',
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Commit failed');
       setError(error);
-      enqueueSnackbar(`Failed to ${mode === 'create' ? 'create' : 'update'}: ${error.message}`, { 
-        variant: 'error' 
+      enqueueSnackbar(`Failed to ${mode === 'create' ? 'create' : 'update'}: ${error.message}`, {
+        variant: 'error',
       });
       console.error('Commit error:', error.message);
       throw error;
@@ -108,23 +111,23 @@ export function useWorkingCopy<T = any>({
       setIsProcessing(false);
     }
   }, [workingCopy, isProcessing, onCommit, mode, enqueueSnackbar]);
-  
+
   // Discard changes
   const discardWorkingCopy = useCallback(async () => {
     if (isProcessing) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       if (onDiscard) {
         await onDiscard();
       }
-      
+
       // Clear auto-save timeout
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
-      
+
       setWorkingCopy(originalData);
       setIsDirty(false);
       setError(null);
@@ -132,22 +135,22 @@ export function useWorkingCopy<T = any>({
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Discard failed');
       setError(error);
-      enqueueSnackbar(`Failed to discard changes: ${error.message}`, { 
-        variant: 'error' 
+      enqueueSnackbar(`Failed to discard changes: ${error.message}`, {
+        variant: 'error',
       });
       console.error('Discard error:', error.message);
     } finally {
       setIsProcessing(false);
     }
   }, [isProcessing, onDiscard, originalData, enqueueSnackbar]);
-  
+
   // Save as draft (if supported)
   const saveAsDraft = useCallback(async () => {
     if (!onSave || isProcessing) return;
-    
+
     setIsProcessing(true);
     setError(null);
-    
+
     try {
       await onSave(workingCopy);
       setIsDirty(false);
@@ -155,8 +158,8 @@ export function useWorkingCopy<T = any>({
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Save draft failed');
       setError(error);
-      enqueueSnackbar(`Failed to save draft: ${error.message}`, { 
-        variant: 'error' 
+      enqueueSnackbar(`Failed to save draft: ${error.message}`, {
+        variant: 'error',
       });
       console.error('Save draft error:', error.message);
       throw error;
@@ -164,7 +167,7 @@ export function useWorkingCopy<T = any>({
       setIsProcessing(false);
     }
   }, [workingCopy, onSave, isProcessing, enqueueSnackbar]);
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -173,7 +176,7 @@ export function useWorkingCopy<T = any>({
       }
     };
   }, []);
-  
+
   return {
     workingCopy,
     updateWorkingCopy,

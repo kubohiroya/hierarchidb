@@ -24,6 +24,11 @@ export interface UnsavedChangesDialogProps {
   open: boolean;
   title: string;
   message: string;
+  /**
+   * Optional children to display specific unsaved changes details
+   * e.g., diff view, list of modified fields, etc.
+   */
+  children?: React.ReactNode;
   showSaveDraft?: boolean;
   onDiscard: () => void;
   onSaveDraft?: () => void;
@@ -34,6 +39,7 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
   open,
   title,
   message,
+  children,
   showSaveDraft = false,
   onDiscard,
   onSaveDraft,
@@ -58,6 +64,13 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           <AlertTitle>Unsaved Changes</AlertTitle>
           <Typography variant="body2">{message}</Typography>
         </Alert>
+        
+        {/* Display specific unsaved changes if provided */}
+        {children && (
+          <Stack sx={{ mb: 2, mt: 2 }}>
+            {children}
+          </Stack>
+        )}
         
         <Typography variant="body2" color="text.secondary">
           Choose one of the following options:

@@ -4,7 +4,13 @@
  * Provides basic CRUD operations with Dexie integration
  */
 
-import type { PeerEntity, GroupEntity, WorkingCopyProperties, NodeId, EntityId } from '@hierarchidb/common-core';
+import type {
+  PeerEntity,
+  GroupEntity,
+  WorkingCopyProperties,
+  NodeId,
+  EntityId,
+} from '@hierarchidb/common-core';
 import { generateNodeId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { workerWarn } from '../utils/workerLogger';
@@ -31,7 +37,7 @@ export interface PeerEntityImpl extends PeerEntity {
  * Simple sub-entity
  */
 export interface GroupEntityImpl extends GroupEntity {
-  parentNodeId: NodeId;
+  parentId: NodeId;
   groupEntityType: string;
   data: any;
   createdAt: number;
@@ -66,12 +72,12 @@ export class PeerEntityHandler extends BaseEntityHandler<
       // PeerEntity properties
       id: generateEntityId(),
       nodeId: nodeId,
-      
+
       // PeerEntityImpl specific properties
       name: data?.name || 'New Entity',
       description: data?.description,
       data: data?.data || {},
-      
+
       // BaseEntity properties
       createdAt: data?.createdAt || now,
       updatedAt: data?.updatedAt || now,
@@ -93,10 +99,7 @@ export class PeerEntityHandler extends BaseEntityHandler<
       throw new Error('nodeId is required');
     }
 
-    const entity = await this.db.table(this.tableName)
-      .where('nodeId')
-      .equals(nodeId)
-      .first();
+    const entity = await this.db.table(this.tableName).where('nodeId').equals(nodeId).first();
     return entity as PeerEntityImpl | undefined;
   }
 
@@ -172,12 +175,12 @@ export class PeerEntityHandler extends BaseEntityHandler<
           // PeerEntity properties
           id: generateEntityId(),
           nodeId: nodeId,
-          
+
           // PeerEntityImpl specific properties
           name: data?.name || 'New Entity',
           description: data?.description,
           data: data?.data || {},
-          
+
           // BaseEntity properties
           createdAt: data?.createdAt || now,
           updatedAt: data?.updatedAt || now,
@@ -266,11 +269,15 @@ export class PeerEntityHandler extends BaseEntityHandler<
     }
 
     if (criteria.createdAfter) {
-      query = query.filter((entity) => (entity as PeerEntityImpl).createdAt > criteria.createdAfter!);
+      query = query.filter(
+        (entity) => (entity as PeerEntityImpl).createdAt > criteria.createdAfter!
+      );
     }
 
     if (criteria.updatedAfter) {
-      query = query.filter((entity) => (entity as PeerEntityImpl).updatedAt > criteria.updatedAfter!);
+      query = query.filter(
+        (entity) => (entity as PeerEntityImpl).updatedAt > criteria.updatedAfter!
+      );
     }
 
     return (await query.toArray()) as PeerEntityImpl[];
@@ -317,7 +324,7 @@ export class PeerEntityHandler extends BaseEntityHandler<
   /**
    * Get entities by parent (for hierarchical relationships)
    */
-  async getEntitiesByParent(parentNodeId: NodeId): Promise<PeerEntityImpl[]> {
+  async getEntitiesByParent(parentId: NodeId): Promise<PeerEntityImpl[]> {
     // This is a placeholder - actual implementation would depend on
     // how parent-child relationships are stored
     return [];
@@ -333,5 +340,4 @@ export class PeerEntityHandler extends BaseEntityHandler<
       data: { parentId: newParentId },
     });
   }
-
 }

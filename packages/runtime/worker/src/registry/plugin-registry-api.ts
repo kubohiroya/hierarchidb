@@ -75,10 +75,15 @@ export async function getPluginsForTree(treeId: TreeId): Promise<PluginDefinitio
   for (const nodeType of nodeTypes) {
     const definition = registry.get(nodeType);
     if (definition) {
-      // Check if plugin is available for this tree
-      const category = definition.category;
-      if (category && (category.treeId === '*' || category.treeId === treeId)) {
+      // If treeId is '*', return all plugins
+      if (treeId === '*' as TreeId) {
         plugins.push(definition);
+      } else {
+        // Check if plugin is available for this tree
+        const category = definition.category;
+        if (category && (category.treeId === '*' || category.treeId === treeId)) {
+          plugins.push(definition);
+        }
       }
     }
   }

@@ -4,12 +4,12 @@
  */
 
 import { NodeId, EntityId, generateEntityId } from '@hierarchidb/common-core';
-import { 
+import {
   ShapeEntity,
   ShapeWorkingCopy,
   CreateShapeData,
   ProcessingConfig,
-  DEFAULT_PROCESSING_CONFIG
+  DEFAULT_PROCESSING_CONFIG,
 } from '../../shared';
 
 /**
@@ -108,20 +108,20 @@ export class ShapeEntityHandler {
       }),
     };
   }
-  
+
   /**
    * Create a new Shape entity
    */
   async createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> {
     const entityId = generateEntityId() as EntityId;
     const now = Date.now();
-    
+
     // Merge with default processing config
     const processingConfig: ProcessingConfig = {
       ...DEFAULT_PROCESSING_CONFIG,
       ...data.processingConfig,
     };
-    
+
     const entity: ShapeEntity = {
       id: entityId,
       nodeId: nodeId,
@@ -193,10 +193,10 @@ export class ShapeEntityHandler {
 
       // Cleanup related data
       await this.cleanupEntityData(entity);
-      
+
       // Delete from database
       await this.table.delete(entityId);
-      
+
       console.log(`Deleted Shape entity: ${entityId}`);
     } catch (error) {
       console.error('Failed to delete Shape entity:', error);
@@ -236,15 +236,15 @@ export class ShapeEntityHandler {
   async listEntities(limit?: number, offset?: number): Promise<ShapeEntity[]> {
     try {
       let query = this.table.orderBy('updatedAt').reverse();
-      
+
       if (offset) {
         query = query.offset(offset);
       }
-      
+
       if (limit) {
         query = query.limit(limit);
       }
-      
+
       return await query.toArray();
     } catch (error) {
       console.error('Failed to list Shape entities:', error);
@@ -265,7 +265,7 @@ export class ShapeEntityHandler {
       let query = this.table.toCollection();
 
       if (criteria.name) {
-        query = query.filter((entity: any) => 
+        query = query.filter((entity: any) =>
           entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
         );
       }
@@ -275,11 +275,13 @@ export class ShapeEntityHandler {
       }
 
       if (criteria.processingStatus) {
-        query = query.filter((entity: any) => entity.processingStatus === criteria.processingStatus);
+        query = query.filter(
+          (entity: any) => entity.processingStatus === criteria.processingStatus
+        );
       }
 
       if (criteria.hasActiveBatch !== undefined) {
-        query = query.filter((entity: any) => 
+        query = query.filter((entity: any) =>
           criteria.hasActiveBatch ? !!entity.batchSessionId : !entity.batchSessionId
         );
       }
@@ -317,9 +319,9 @@ export class ShapeEntityHandler {
     return workingCopy;
   }
 
-  async createNewDraftWorkingCopy(parentNodeId: NodeId): Promise<ShapeWorkingCopy> {
+  async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
     const workingCopyId = generateEntityId() as EntityId;
-    
+
     const workingCopy: ShapeWorkingCopy = {
       id: workingCopyId,
       nodeId: '' as NodeId, // Will be set when committed
@@ -339,8 +341,8 @@ export class ShapeEntityHandler {
     };
 
     // In real implementation, would store in EphemeralDB
-    console.log(`Created new draft working copy: ${workingCopyId} for parent: ${parentNodeId}`);
-    
+    console.log(`Created new draft working copy: ${workingCopyId} for parent: ${parentId}`);
+
     return workingCopy;
   }
 
@@ -350,10 +352,13 @@ export class ShapeEntityHandler {
     return undefined;
   }
 
-  async updateWorkingCopy(workingCopyId: EntityId, data: Partial<ShapeEntity>): Promise<ShapeWorkingCopy> {
+  async updateWorkingCopy(
+    workingCopyId: EntityId,
+    data: Partial<ShapeEntity>
+  ): Promise<ShapeWorkingCopy> {
     // Mock implementation - would update in EphemeralDB
     console.log(`Updating working copy: ${workingCopyId}`, data);
-    
+
     const mockUpdated: ShapeWorkingCopy = {
       id: workingCopyId,
       nodeId: '' as NodeId,
@@ -382,7 +387,7 @@ export class ShapeEntityHandler {
     // 3. Create tree node if it's a new draft
     // 4. Remove working copy from EphemeralDB
     console.log(`Committing working copy: ${workingCopyId}`);
-    
+
     const nodeId = generateEntityId() as unknown as NodeId;
     return nodeId;
   }
@@ -414,7 +419,7 @@ export class ShapeEntityHandler {
    * Update processing status
    */
   async updateProcessingStatus(
-    entityId: EntityId, 
+    entityId: EntityId,
     status: 'idle' | 'processing' | 'completed' | 'failed',
     batchSessionId?: string
   ): Promise<void> {
@@ -443,7 +448,7 @@ export class ShapeEntityHandler {
     return {
       featureCount: 0,
       tileCount: 0,
-      storageUsed: 0
+      storageUsed: 0,
     };
   }
 
@@ -464,13 +469,12 @@ export class ShapeEntityHandler {
   private async cleanupEntityData(entity: ShapeEntity): Promise<void> {
     try {
       console.log(`Cleaning up data for Shape entity: ${entity.id}`);
-      
+
       // Would cleanup:
       // 1. Feature data
       // 2. Vector tiles
       // 3. Cache entries
       // 4. Batch sessions
-      
     } catch (error) {
       console.error('Error during entity cleanup:', error);
       // Don't throw - cleanup is best effort

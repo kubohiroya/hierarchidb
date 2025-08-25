@@ -1,0 +1,170 @@
+name = "hierarchidb-bff"
+main = "src/index.ts"
+workers_dev = true
+compatibility_date = "2025-06-28"
+
+# ================================================================
+# HierarchiDB BFF - 複数デプロイ先対応
+# 1つのBFFで開発・ステージング・本番すべてをサポート
+# ================================================================
+
+[vars]
+# JWT Configuration
+JWT_ISSUER = "hierarchidb-bff"
+SESSION_DURATION_HOURS = "48"
+
+# ================================================================
+# CORS Configuration - すべてのデプロイ先を許可
+# ================================================================
+ALLOWED_ORIGINS = """
+http://localhost:3000,
+http://localhost:4200,
+http://localhost:5173,
+http://127.0.0.1:3000,
+http://127.0.0.1:4200,
+http://127.0.0.1:5173,
+https://kubohiroya.github.io,
+https://hierarchidb.vercel.app,
+https://hierarchidb.netlify.app,
+https://hierarchidb-staging.vercel.app,
+https://hierarchidb-dev.vercel.app
+"""
+
+# 環境別のOrigin設定（セキュリティログ用）
+PRODUCTION_ORIGINS = "https://kubohiroya.github.io,https://hierarchidb.vercel.app"
+STAGING_ORIGINS = "https://hierarchidb-staging.vercel.app,https://hierarchidb-dev.vercel.app"
+DEVELOPMENT_ORIGINS = "http://localhost:3000,http://localhost:4200,http://localhost:5173"
+
+# ================================================================
+# Application Configuration
+# ================================================================
+# BFFのベースURL（固定）
+BFF_BASE_URL = "https://hierarchidb-bff.kubohiroya.workers.dev"
+
+# OAuth Callback URLs（すべて同じBFFを使用）
+REDIRECT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/auth/callback"
+GITHUB_REDIRECT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/callback"
+
+# 複数のアプリケーションベースURLをサポート
+APP_BASE_URLS = """
+http://localhost:4200,
+https://kubohiroya.github.io/hierarchidb,
+https://hierarchidb.vercel.app,
+https://hierarchidb.netlify.app
+"""
+
+# Static callback for GitHub Pages
+STATIC_CALLBACK_PATH = "/auth/callback.html"
+USE_HISTORY_WORKAROUND = "true"
+
+# ================================================================
+# Security Configuration
+# ================================================================
+# レート制限
+ENABLE_RATE_LIMIT = "true"
+RATE_LIMIT_PER_MINUTE = "30"  # 開発中は緩めに設定
+RATE_LIMIT_PER_HOUR = "500"
+
+# 監査ログ
+ENABLE_AUDIT_LOG = "true"
+LOG_LEVEL = "info"  # debug, info, warn, error
+
+# JWT有効期限（環境別）
+JWT_EXPIRY_HOURS_PROD = "2"    # 本番: 2時間
+JWT_EXPIRY_HOURS_STAGING = "8"  # ステージング: 8時間
+JWT_EXPIRY_HOURS_DEV = "24"     # 開発: 24時間
+
+# セキュリティヘッダー
+ENABLE_SECURITY_HEADERS = "true"
+CSP_REPORT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/csp-report"
+
+# ================================================================
+# OAuth2 Client IDs (HierarchiDB専用)
+# ================================================================
+# TODO: Google ConsoleとGitHubで新しいOAuth Appを作成
+GOOGLE_CLIENT_ID = "116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "YOUR_HIERARCHIDB_GITHUB_CLIENT_ID"
+
+# ================================================================
+# KV Namespaces（必要に応じて作成）
+# ================================================================
+# レート制限用KV
+# wrangler kv:namespace create "RATE_LIMIT"
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "your-rate-limit-kv-id"
+
+# 監査ログ用KV
+# wrangler kv:namespace create "AUDIT_LOG"
+# [[kv_namespaces]]
+# binding = "AUDIT_LOG_KV"
+# id = "your-audit-log-kv-id"
+
+# セッション管理用KV
+# wrangler kv:namespace create "SESSION"
+# [[kv_namespaces]]
+# binding = "SESSION_KV"
+# id = "your-session-kv-id"
+
+# ================================================================
+# Development environment（開発環境設定）
+# ================================================================
+[env.development]
+name = "hierarchidb-bff-dev"
+
+[env.development.vars]
+JWT_ISSUER = "hierarchidb-bff-dev"
+SESSION_DURATION_HOURS = "48"
+LOG_LEVEL = "debug"  # 開発環境では詳細ログ
+RATE_LIMIT_PER_MINUTE = "100"  # 開発環境では制限を緩く
+
+# 開発環境のみlocalhost許可
+ALLOWED_ORIGINS = """
+http://localhost:3000,
+http://localhost:4200,
+http://localhost:5173,
+http://127.0.0.1:3000,
+http://127.0.0.1:4200,
+http://127.0.0.1:5173
+"""
+
+# ================================================================
+# Production environment（本番環境設定）
+# ================================================================
+[env.production]
+name = "hierarchidb-bff"
+
+[env.production.vars]
+JWT_ISSUER = "hierarchidb-bff"
+SESSION_DURATION_HOURS = "48"
+LOG_LEVEL = "warn"  # 本番環境では警告以上のみログ
+RATE_LIMIT_PER_MINUTE = "20"  # 本番環境では厳しく制限
+RATE_LIMIT_PER_HOUR = "300"
+
+# 本番環境では本番デプロイ先のみ許可
+ALLOWED_ORIGINS = """
+https://kubohiroya.github.io,
+https://hierarchidb.vercel.app,
+https://hierarchidb.netlify.app
+"""
+
+# ================================================================
+# ⚠️ SECURITY NOTICE ⚠️
+# ================================================================
+# NEVER put secrets in this file!
+# 
+# Secrets MUST be set using wrangler commands:
+# 
+# For production:
+# - wrangler secret put GOOGLE_CLIENT_SECRET --env production
+# - wrangler secret put GITHUB_CLIENT_SECRET --env production
+# - wrangler secret put JWT_SECRET --env production
+#
+# For development:
+# - wrangler secret put GOOGLE_CLIENT_SECRET --env development
+# - wrangler secret put GITHUB_CLIENT_SECRET --env development
+# - wrangler secret put JWT_SECRET --env development
+#
+# Generate JWT_SECRET:
+# openssl rand -base64 32
+# ================================================================

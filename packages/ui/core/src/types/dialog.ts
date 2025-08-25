@@ -1,6 +1,6 @@
 /**
  * Base Dialog Type Definitions
- * 
+ *
  * Provides standardized interfaces for dialog containers
  * to ensure consistency across the application.
  */
@@ -15,12 +15,12 @@ export interface BaseDialogProps<T = any> {
    * Controls the visibility of the dialog
    */
   readonly open: boolean;
-  
+
   /**
    * Callback fired when the dialog should be closed
    */
   readonly onCancel: () => void;
-  
+
   /**
    * Callback fired when the form is submitted
    * @param data - The form data to submit
@@ -36,8 +36,8 @@ export interface NodeDialogProps<T = any> extends BaseDialogProps<T> {
   /**
    * The parent node ID where the new node will be created
    */
-  readonly parentNodeId?: NodeId;
-  
+  readonly parentId?: NodeId;
+
   /**
    * The node being edited (for edit dialogs)
    */
@@ -52,7 +52,7 @@ export interface EditDialogProps<T = any> extends NodeDialogProps<T> {
    * Initial data to populate the form
    */
   readonly initialData?: Partial<T>;
-  
+
   /**
    * Whether the dialog is in edit mode (vs create mode)
    */
@@ -67,27 +67,27 @@ export interface ConfirmDialogProps extends Omit<BaseDialogProps<void>, 'onSubmi
    * The title of the confirmation dialog
    */
   readonly title: string;
-  
+
   /**
    * The message to display in the confirmation dialog
    */
   readonly message: string;
-  
+
   /**
    * Optional severity level for the confirmation
    */
   readonly severity?: 'info' | 'warning' | 'error';
-  
+
   /**
    * Text for the confirm button
    */
   readonly confirmText?: string;
-  
+
   /**
    * Text for the cancel button
    */
   readonly cancelText?: string;
-  
+
   /**
    * Callback fired when confirmed
    */
@@ -102,12 +102,12 @@ export interface BaseFormData {
    * Name of the item
    */
   name: string;
-  
+
   /**
    * Optional description
    */
   description?: string;
-  
+
   /**
    * Optional metadata
    */
@@ -122,7 +122,7 @@ export interface DialogResult<T = any> {
    * Whether the dialog was confirmed (vs cancelled)
    */
   confirmed: boolean;
-  
+
   /**
    * The data returned from the dialog (if confirmed)
    */

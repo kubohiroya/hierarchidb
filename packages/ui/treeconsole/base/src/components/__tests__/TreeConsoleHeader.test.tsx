@@ -97,8 +97,8 @@ describe('TreeConsoleHeader', () => {
 
   it('should show breadcrumb path when not root node', () => {
     const previousNodePath = [
-      { id: '1', name: 'Root', parentNodeId: null },
-      { id: '2', name: 'Parent', parentNodeId: '1' },
+      { id: '1', name: 'Root', parentId: null },
+      { id: '2', name: 'Parent', parentId: '1' },
     ] as any;
 
     render(

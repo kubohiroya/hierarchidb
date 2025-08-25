@@ -237,7 +237,7 @@ describe('WorkerAPIAdapter', () => {
       expect(editSession).toEqual(
         expect.objectContaining({
           workingCopyId: expect.any(String),
-          parentNodeId: 'parent-node',
+          parentId: 'parent-node',
           isCreate: true,
         })
       );
@@ -246,7 +246,7 @@ describe('WorkerAPIAdapter', () => {
         expect.objectContaining({
           kind: 'createWorkingCopyForCreate',
           payload: expect.objectContaining({
-            parentNodeId: 'parent-node',
+            parentId: 'parent-node',
             name: 'New Node',
             description: 'Description',
             workingCopyId: expect.any(String),

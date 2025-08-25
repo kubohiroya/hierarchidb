@@ -7,14 +7,8 @@
 
 // import { Observable } from 'rxjs'; // TODO: will be used when implementing actual Observable subscriptions
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type {
-  NodeId,
-  TreeNodeEvent,
-} from '@hierarchidb/common-core';
-import type {
-  UnsubscribeFunction,
-  AdapterContext,
-} from '../../types/index';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-core';
+import type { UnsubscribeFunction, AdapterContext } from '../../types/index';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 import { TreeConsoleAdapterError } from '../../types/index';
@@ -40,11 +34,8 @@ export class TreeObservableAdapter {
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
-      
-      const subscriptionId = await subscriptionAPI.subscribeSubtree(
-        nodeId,
-        callback
-      );
+
+      const subscriptionId = await subscriptionAPI.subscribeSubtree(nodeId, callback);
 
       const internalSubscriptionId = `subtree_${nodeId}_${context.viewId}`;
       const wrappedUnsubscribe = async () => {
@@ -79,11 +70,8 @@ export class TreeObservableAdapter {
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
-      
-      const subscriptionId = await subscriptionAPI.subscribeNode(
-        nodeId,
-        callback
-      );
+
+      const subscriptionId = await subscriptionAPI.subscribeNode(nodeId, callback);
 
       const internalSubscriptionId = `node_${nodeId}_${context.viewId}`;
       const wrappedUnsubscribe = async () => {
@@ -106,26 +94,23 @@ export class TreeObservableAdapter {
   /**
    * 子ノード一覧の変更監視
    *
-   * @param parentNodeId 親ノードID
+   * @param parentId 親ノードID
    * @param callback 子ノード変更時のコールバック
    * @param context アダプター実行コンテキスト
    * @returns サブスクリプション解除関数
    */
   async subscribeToChildren(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     callback: TreeNodeEventCallback,
     context: AdapterContext
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
-      
-      // Subscribe to subtree with depth 1 to get only direct children
-      const subscriptionId = await subscriptionAPI.subscribeSubtree(
-        parentNodeId,
-        callback
-      );
 
-      const internalSubscriptionId = `children_${parentNodeId}_${context.viewId}`;
+      // Subscribe to subtree with depth 1 to get only direct children
+      const subscriptionId = await subscriptionAPI.subscribeSubtree(parentId, callback);
+
+      const internalSubscriptionId = `children_${parentId}_${context.viewId}`;
       const wrappedUnsubscribe = async () => {
         await subscriptionAPI.unsubscribe(subscriptionId);
         this.subscriptions.delete(internalSubscriptionId);
@@ -136,7 +121,7 @@ export class TreeObservableAdapter {
       return wrappedUnsubscribe;
     } catch (error) {
       throw new TreeConsoleAdapterError(
-        `Failed to subscribe to children of node ${parentNodeId}`,
+        `Failed to subscribe to children of node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_INIT_ERROR',
         error as Error
       );
@@ -163,8 +148,4 @@ export class TreeObservableAdapter {
   getActiveSubscriptionCount(): number {
     return this.subscriptions.size;
   }
-
-
-
-
 }

@@ -196,9 +196,9 @@ describe('Shape Plugin Integration', () => {
     const mockEntityId = 'entity-456' as EntityId;
 
     it('should create WorkingCopy for new draft', async () => {
-      const parentNodeId = 'parent-123' as NodeId;
+      const parentId = 'parent-123' as NodeId;
       
-      const workingCopy = await entityHandler.createNewDraftWorkingCopy(parentNodeId);
+      const workingCopy = await entityHandler.createNewDraftWorkingCopy(parentId);
 
       expect(workingCopy).toBeDefined();
       expect(workingCopy.isDraft).toBe(true);
@@ -626,9 +626,9 @@ describe('Shape Plugin Integration', () => {
       await pluginAPI.initialize();
       
       // Create a WorkingCopy
-      const parentNodeId = 'parent-456' as NodeId;
+      const parentId = 'parent-456' as NodeId;
       const entityHandler = new ShapeEntityHandler();
-      const workingCopy = await entityHandler.createNewDraftWorkingCopy(parentNodeId);
+      const workingCopy = await entityHandler.createNewDraftWorkingCopy(parentId);
       
       // Simulate dialog close (data should persist in EphemeralDB)
       // Simulate dialog reopen - data should still be available

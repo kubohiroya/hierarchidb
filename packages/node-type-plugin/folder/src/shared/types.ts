@@ -14,7 +14,7 @@ export type {
   FolderWorkingCopy,
   FolderOperationResult,
   FolderSearchQuery,
-  FolderStatsSummary
+  FolderStatsSummary,
 } from '../entities/FolderEntity';
 
 /**
@@ -49,7 +49,7 @@ export interface FolderSettings {
     sortDirection?: 'asc' | 'desc';
     viewMode?: 'list' | 'grid' | 'tree';
   };
-  
+
   // Access control
   permissions?: {
     isPublic?: boolean;
@@ -57,7 +57,7 @@ export interface FolderSettings {
     allowedUsers?: string[];
     deniedUsers?: string[];
   };
-  
+
   // Folder rules
   rules?: {
     maxChildren?: number;
@@ -127,7 +127,7 @@ export interface FolderBreadcrumb {
 export interface FolderTreeNode {
   nodeId: NodeId;
   name: string;
-  parentNodeId?: NodeId;
+  parentId?: NodeId;
   children: FolderTreeNode[];
   hasChildren: boolean;
   isExpanded: boolean;
@@ -148,7 +148,7 @@ export enum FolderErrorType {
   CIRCULAR_REFERENCE = 'CIRCULAR_REFERENCE',
   EXCEEDS_MAX_DEPTH = 'EXCEEDS_MAX_DEPTH',
   EXCEEDS_MAX_CHILDREN = 'EXCEEDS_MAX_CHILDREN',
-  DATABASE_ERROR = 'DATABASE_ERROR'
+  DATABASE_ERROR = 'DATABASE_ERROR',
 }
 
 export class FolderError extends Error {
@@ -173,8 +173,16 @@ export const FOLDER_CONSTANTS = {
   MAX_TAGS: 10,
   MAX_TAG_LENGTH: 50,
   ICON_COLORS: [
-    '#1976d2', '#388e3c', '#f57c00', '#d32f2f', '#7b1fa2',
-    '#455a64', '#e64a19', '#00796b', '#303f9f', '#c2185b'
+    '#1976d2',
+    '#388e3c',
+    '#f57c00',
+    '#d32f2f',
+    '#7b1fa2',
+    '#455a64',
+    '#e64a19',
+    '#00796b',
+    '#303f9f',
+    '#c2185b',
   ] as const,
   SORT_ORDERS: ['name', 'date', 'type', 'custom'] as const,
   VIEW_MODES: ['list', 'grid', 'tree'] as const,
@@ -203,6 +211,3 @@ export function isValidFolderName(name: string): boolean {
     !/[<>:"/\\|?*]/.test(name) // Exclude filesystem-unsafe characters
   );
 }
-
-
-

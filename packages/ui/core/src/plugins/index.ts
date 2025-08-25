@@ -53,6 +53,8 @@ export type {
 // Plugin registration helper
 export function registerAllUIPlugins(): void {
   const registry = getUIPluginRegistry();
+  
+  console.log('Starting UI plugin registration...');
 
   // Register Shape plugin
   try {
@@ -105,10 +107,16 @@ export function registerAllUIPlugins(): void {
     };
     
     registry.register(ShapeUIPlugin as any);
-    console.log('Shape UI Plugin registered');
+    console.log('✓ Shape UI Plugin registered');
   } catch (error) {
     console.error('Failed to register Shape UI Plugin:', error);
   }
 
-  console.log('UI Plugin system initialized');
+  // Log all registered plugins
+  const allPlugins = registry.getAll();
+  console.log(`Total UI plugins registered: ${allPlugins.length}`);
+  allPlugins.forEach((plugin, index) => {
+    console.log(`  ${index + 1}. ${plugin.nodeType}`);
+  });
+  console.log('UI Plugin system initialized successfully');
 }

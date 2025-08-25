@@ -14,7 +14,7 @@ import { Subject } from 'rxjs';
 export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
   nodes!: Table<TreeNode, NodeId>;
-  rootStates!: Table<TreeRootState, [TreeId, string]>;
+  rootStates!: Table<TreeRootState, NodeId>;
 
   // イベント通知用のSubject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
@@ -33,7 +33,7 @@ export class CoreDB extends Dexie {
         'originalParentId',
         '*references',
       ].join(', '),
-      rootStates: '&[treeId+treeRootNodeType], treeId, treeRootId',
+      rootStates: '&rootNodeId, treeId',
     });
   }
 
@@ -44,7 +44,7 @@ export class CoreDB extends Dexie {
   async initialize(): Promise<void> {
     const now = Date.now();
     if ((await this.trees.count()) === 0) {
-      this.trees.bulkPut(
+      await this.trees.bulkPut(
         ['r', 'p'].map((treeId) => ({
           treeId,
           name: this.treeIdToTreeName(treeId),
@@ -58,7 +58,7 @@ export class CoreDB extends Dexie {
     if ((await this.nodes.count()) === 0) {
       const data = ['r', 'p'].flatMap((treeId) => [
         {
-          parentId: NodeIdGenerator.superRootNode(''),
+          parentId: NodeIdGenerator.superRootNode(treeId),
           id: NodeIdGenerator.rootNode(treeId),
           nodeType: TREE_ROOT_NODE_TYPES.ROOT,
           name: this.treeIdToTreeName(treeId),
@@ -67,7 +67,7 @@ export class CoreDB extends Dexie {
           version: 1,
         },
         {
-          parentId: NodeIdGenerator.superRootNode(''),
+          parentId: NodeIdGenerator.superRootNode(treeId),
           id: NodeIdGenerator.trashNode(treeId),
           nodeType: TREE_ROOT_NODE_TYPES.TRASH,
           name: 'Trash',
@@ -77,21 +77,29 @@ export class CoreDB extends Dexie {
         },
       ]) satisfies TreeNode[];
       console.log('⭐️initialize nodes', data);
-      this.nodes.bulkAdd(data);
+      await this.nodes.bulkAdd(data);
     }
     if ((await this.rootStates.count()) === 0) {
-      this.rootStates.bulkAdd(
-        ['r', 'p'].flatMap((treeId) =>
-          [TREE_ROOT_NODE_TYPES.ROOT, TREE_ROOT_NODE_TYPES.TRASH].map((treeRootNodeType) => ({
-            treeId: treeId as TreeId,
-            rootNodeId:
-              treeRootNodeType === TREE_ROOT_NODE_TYPES.ROOT
-                ? NodeIdGenerator.rootNode(treeId)
-                : NodeIdGenerator.trashNode(treeId),
-            expanded: {},
-          }))
-        )
+      const rootStateData = ['r', 'p'].flatMap((treeId) =>
+        [TREE_ROOT_NODE_TYPES.ROOT, TREE_ROOT_NODE_TYPES.TRASH].map((treeRootNodeType) => ({
+          treeId: treeId as TreeId,
+          rootNodeId:
+            treeRootNodeType === TREE_ROOT_NODE_TYPES.ROOT
+              ? NodeIdGenerator.rootNode(treeId)
+              : NodeIdGenerator.trashNode(treeId),
+          expanded: {},
+        }))
       );
+      
+      console.log('⭐️initialize rootStates', rootStateData);
+      
+      try {
+        await this.rootStates.bulkAdd(rootStateData);
+      } catch (error) {
+        console.error('Failed to initialize rootStates:', error);
+        console.error('Data that failed:', rootStateData);
+        throw error;
+      }
     }
   }
 
@@ -175,7 +183,8 @@ export class CoreDB extends Dexie {
 
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {
     const children = await this.nodes
-      .where({ parentNodeId: parentId })
+      .where('parentId')
+      .equals(parentId)
       .filter((node) => !node.removedAt)
       .sortBy('createdAt');
 

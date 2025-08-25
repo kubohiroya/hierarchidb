@@ -16,6 +16,9 @@ import { handleOAuth2Callback, exchangeCodeForToken } from './auth/callback';
 import { refreshToken, revokeToken } from './auth/refresh';
 import { mapEnvironmentVariables, MappedEnv } from './env-mapper';
 import { getDynamicRedirectUri } from './utils/redirect-uri';
+import { StateManager } from './utils/state-manager';
+import { validateOrigin } from './middleware/origin-validator';
+import { requireTurnstile } from './utils/turnstile';
 
 const app = new Hono<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>();
 
@@ -47,6 +50,10 @@ app.use('*', async (c, next) => {
   return;
 });
 
+// Origin validation middleware for auth endpoints
+app.use('/auth/*', validateOrigin);
+app.use('/api/auth/*', validateOrigin);
+
 // Health check endpoint
 app.get('/', (c) => {
   return c.json({
@@ -62,7 +69,8 @@ app.get('/', (c) => {
 // ============================================================================
 
 // Step 1: Initiate OAuth2 flow (GET request as per standard OAuth2)
-app.get('/auth/google/authorize', async (c) => {
+// Turnstile検証を追加（ボット対策）
+app.get('/auth/google/authorize', requireTurnstile, async (c) => {
   try {
     // Use dynamic redirect URI based on request origin
     const redirectUri = getDynamicRedirectUri(c, 'google');
@@ -73,14 +81,16 @@ app.get('/auth/google/authorize', async (c) => {
       redirectUri,
     };
 
-    const { state } = await initiateGoogleAuth(config);
+    // StateManagerを使用してHMAC署名付きstateを生成
+    const env = c.env as any;
+    const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
+    const state = await stateManager.createState(c);
 
     // For standard OAuth2 flow, redirect to Google's authorization page
     // The client should have sent code_challenge in the request
     const url = new URL(c.req.url);
     const code_challenge = url.searchParams.get('code_challenge');
     const code_challenge_method = url.searchParams.get('code_challenge_method');
-    const client_state = url.searchParams.get('state');
 
     // Build Google OAuth URL with PKCE parameters
     const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -91,7 +101,7 @@ app.get('/auth/google/authorize', async (c) => {
       'scope',
       url.searchParams.get('scope') || 'openid profile email'
     );
-    googleAuthUrl.searchParams.set('state', client_state || state);
+    googleAuthUrl.searchParams.set('state', state);
 
     // Add PKCE parameters if provided
     if (code_challenge) {

@@ -134,7 +134,7 @@ export interface TreeNodeEvent {
   type: 'created' | 'updated' | 'deleted' | 'moved';
   nodeId: NodeId;
   node?: TreeNode;
-  parentNodeId?: NodeId;
+  parentId?: NodeId;
   previousParentNodeId?: NodeId;
   timestamp: number;
 }

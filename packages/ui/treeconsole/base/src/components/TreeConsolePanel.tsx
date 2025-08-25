@@ -1,5 +1,5 @@
 import React from 'react';
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { Box } from '@mui/material';
 import { 
   Add as AddIcon,
@@ -11,12 +11,13 @@ import {
   Palette as PaletteIcon 
 } from '@mui/icons-material';
 import {
-  TreeTableView,
   TreeTableToolbar,
   TreeTableFooter,
   RowContextMenu,
 } from './TreeTable';
 import type { TreeTableColumn } from './TreeTable';
+import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
@@ -72,6 +73,42 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     node: TreeNodeData | null;
     anchorEl: HTMLElement | null;
   }>({ node: null, anchorEl: null });
+
+  // Create TreeTableController from props
+  const controller: TreeTableController = useMemo(() => {
+    // Convert data to TreeNodeInUI format
+    const data = props.data.map(node => ({
+      ...node,
+      nodeType: node.nodeType || 'folder',
+      type: node.nodeType,
+      hasChildren: node.hasChildren || false,
+    })) as TreeNodeInUI[];
+
+    // Convert selectedIds and expandedIds to the expected format
+    const rowSelection: Record<string, boolean> = {};
+    props.selectedIds.forEach(id => {
+      rowSelection[id] = true;
+    });
+
+    const expandedRowIds = new Set(props.expandedIds);
+
+    return {
+      data,
+      rowSelection,
+      expandedRowIds,
+      onNodeClick: (_nodeId: string, node?: TreeNodeInUI) => {
+        if (node && props.onNodeClick) {
+          props.onNodeClick(node as TreeNodeData);
+        }
+      },
+      onNodeSelect: (nodeIds: string[], selected: boolean) => {
+        if (props.onNodeSelect) {
+          nodeIds.forEach(id => props.onNodeSelect?.(id, selected));
+        }
+      },
+      onNodeExpand: props.onNodeExpand,
+    };
+  }, [props.data, props.selectedIds, props.expandedIds, props.onNodeClick, props.onNodeSelect, props.onNodeExpand]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, node: TreeNodeData) => {
     event.preventDefault();
@@ -182,23 +219,20 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       />
 
       {/* Main Table Content */}
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <TreeTableView
-          data={props.data as TreeNodeData[]}
-          columns={props.columns}
-          loading={props.loading}
-          error={props.error}
-          selectedIds={props.selectedIds}
-          expandedIds={props.expandedIds}
-          sortBy={props.sortBy}
-          sortDirection={props.sortDirection}
-          onNodeClick={props.onNodeClick as ((node: TreeNodeData) => void) | undefined}
-          onNodeSelect={props.onNodeSelect}
-          onNodeExpand={props.onNodeExpand}
-          onSort={props.onSort}
-          onContextMenu={handleContextMenu as (event: React.MouseEvent, node: TreeNodeData) => void}
-          dense={props.dense}
-          maxHeight={props.maxHeight}
+      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <TreeTableCore
+          controller={controller}
+          viewHeight={600}
+          viewWidth={1200}
+          useTrashColumns={false}
+          depthOffset={0}
+          disableDragAndDrop={false}
+          hideDragHandler={false}
+          rowClickAction="Select"
+          selectionMode="multiple"
+          onRowContextMenu={(node: TreeNodeInUI, event: React.MouseEvent) => {
+            handleContextMenu(event as React.MouseEvent, node as TreeNodeData);
+          }}
         />
       </Box>
 

@@ -4,5 +4,6 @@
  */
 
 // Import the actual worker implementation
-// We need to use relative imports as this will be compiled as a separate worker bundle
-import '../../02-worker/src/worker';
+// Import the worker module from the runtime-worker package
+// Import the worker module from the runtime-worker package
+import '@hierarchidb/runtime-worker/worker';

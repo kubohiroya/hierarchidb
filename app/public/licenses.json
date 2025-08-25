@@ -1,0 +1,231 @@
+{
+  "@biomejs/biome@1.9.4": {
+    "licenses": "MIT OR Apache-2.0",
+    "repository": "https://github.com/biomejs/biome",
+    "publisher": "Emanuele Stoppa"
+  },
+  "@eslint-community/eslint-utils@4.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/eslint-community/eslint-utils",
+    "publisher": "Toru Nagashima"
+  },
+  "@eslint-community/regexpp@4.12.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/eslint-community/regexpp",
+    "publisher": "Toru Nagashima"
+  },
+  "@eslint/eslintrc@2.1.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/eslint/eslintrc",
+    "publisher": "Nicholas C. Zakas"
+  },
+  "@eslint/js@9.34.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/eslint/eslint"
+  },
+  "@playwright/test@1.55.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/microsoft/playwright",
+    "publisher": "Microsoft Corporation"
+  },
+  "@testing-library/jest-dom@6.8.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/jest-dom",
+    "publisher": "Ernesto Garcia",
+    "email": "gnapse@gmail.com",
+    "url": "http://gnapse.github.io"
+  },
+  "@testing-library/react@16.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/react-testing-library",
+    "publisher": "Kent C. Dodds",
+    "email": "me@kentcdodds.com",
+    "url": "https://kentcdodds.com"
+  },
+  "@testing-library/user-event@14.6.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/user-event",
+    "publisher": "Giorgio Polvara",
+    "email": "polvara@gmail.com"
+  },
+  "@types/jscodeshift@17.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
+  },
+  "@types/node@18.19.123": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
+  },
+  "@types/react-dom@18.3.7": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
+  },
+  "@types/react@18.3.24": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
+  },
+  "@typescript-eslint/eslint-plugin@5.62.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/parser@5.62.0": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/scope-manager@5.62.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/type-utils@5.62.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/types@5.62.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/typescript-estree@5.62.0": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/utils@5.62.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@typescript-eslint/visitor-keys@7.18.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint"
+  },
+  "@vitejs/plugin-react@4.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vitejs/vite-plugin-react",
+    "publisher": "Evan You"
+  },
+  "eslint-plugin-react-hooks@5.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react"
+  },
+  "eslint-plugin-react-refresh@0.4.20": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ArnaudBarre/eslint-plugin-react-refresh",
+    "publisher": "Arnaud Barré",
+    "url": "https://github.com/ArnaudBarre"
+  },
+  "eslint-plugin-react@7.37.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/jsx-eslint/eslint-plugin-react",
+    "publisher": "Yannick Croissant",
+    "email": "yannick.croissant+npm@gmail.com"
+  },
+  "eslint-scope@7.2.2": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/eslint/eslint-scope"
+  },
+  "eslint-visitor-keys@3.4.3": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/eslint/eslint-visitor-keys",
+    "publisher": "Toru Nagashima",
+    "url": "https://github.com/mysticatea"
+  },
+  "eslint@8.57.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/eslint/eslint",
+    "publisher": "Nicholas C. Zakas",
+    "email": "nicholas+npm@nczconsulting.com"
+  },
+  "fake-indexeddb@6.1.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/dumbmatter/fakeIndexedDB",
+    "publisher": "Jeremy Scheff",
+    "email": "jdscheff@gmail.com",
+    "url": "https://dumbmatter.com/"
+  },
+  "glob@11.0.3": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-glob",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "https://blog.izs.me/"
+  },
+  "globals@15.15.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/globals",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com"
+  },
+  "happy-dom@16.8.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/capricorn86/happy-dom",
+    "publisher": "David Ortner"
+  },
+  "http-server@14.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/http-party/http-server"
+  },
+  "jscodeshift@17.3.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/jscodeshift",
+    "publisher": "Felix Kling"
+  },
+  "license-checker@25.0.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/davglass/license-checker",
+    "publisher": "Dav Glass",
+    "email": "davglass@gmail.com"
+  },
+  "prettier@3.6.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prettier/prettier",
+    "publisher": "James Long"
+  },
+  "react-dom@18.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react"
+  },
+  "react@18.3.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react"
+  },
+  "tsc-alias@1.8.16": {
+    "licenses": "MIT",
+    "repository": "https://github.com/justkey007/tsc-alias",
+    "publisher": "Juskey B."
+  },
+  "tsup@8.5.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/egoist/tsup",
+    "publisher": "EGOIST"
+  },
+  "turbo@2.5.6": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/turborepo"
+  },
+  "typescript@4.9.5": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/Microsoft/TypeScript",
+    "publisher": "Microsoft Corp."
+  },
+  "vite-plugin-checker@0.8.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/fi3ework/vite-plugin-checker",
+    "publisher": "fi3ework",
+    "email": "fi3ework@gmail.com"
+  },
+  "vite-tsconfig-paths@5.1.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/aleclarson/vite-tsconfig-paths",
+    "publisher": "aleclarson"
+  },
+  "vite@6.3.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vitejs/vite",
+    "publisher": "Evan You"
+  },
+  "vitest@2.1.9": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vitest-dev/vitest",
+    "publisher": "Anthony Fu",
+    "email": "anthonyfu117@hotmail.com"
+  }
+}

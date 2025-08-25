@@ -13,9 +13,16 @@ import { SimpleBFFAuthProvider } from "@hierarchidb/ui-auth";
 // Initialize worker URL configuration
 import "./worker-setup";
 
-// Initialize UI plugins (temporarily disabled until plugins are properly exported)
-// import { registerAllUIPlugins } from "@hierarchidb/ui-core";
-// registerAllUIPlugins();
+// Initialize UI plugins
+import { registerAllUIPlugins } from "@hierarchidb/ui-core";
+
+// Register all UI plugins at startup
+console.log('========================================');
+console.log('🎨 Registering UI Plugins');
+console.log('========================================');
+registerAllUIPlugins();
+console.log('UI plugins registration complete');
+console.log('========================================');
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
 //<meta name="viewport" content="width=device-width, initial-scale=1.0" />

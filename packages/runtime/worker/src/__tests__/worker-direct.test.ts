@@ -62,12 +62,12 @@ describe('Worker層直接呼び出しテスト', () => {
     it('Working Copyの作成と管理', async () => {
       // Working Copyを直接作成
       const workingCopyId = 'wc-test-001';
-      const parentNodeId = 'root' as NodeId;
+      const parentId = 'root' as NodeId;
 
       // EphemeralDBにWorking Copyを保存
       await ephemeralDB.workingCopies.add({
         id: workingCopyId as NodeId,
-        parentId: parentNodeId,
+        parentId: parentId,
         nodeType: 'folder',
         name: 'Test Folder',
         description: 'Test Description',
@@ -87,13 +87,13 @@ describe('Worker層直接呼び出しテスト', () => {
     it('Working CopyからCoreDBへのコミット', async () => {
       // Working Copyを作成
       const workingCopyId = 'wc-test-002';
-      const parentNodeId = 'root' as NodeId;
+      const parentId = 'root' as NodeId;
       const newNodeId = 'node-001' as NodeId;
 
       // Working Copyを準備
       await ephemeralDB.workingCopies.add({
         id: workingCopyId as NodeId,
-        parentId: parentNodeId,
+        parentId: parentId,
         nodeType: 'folder',
         name: 'Committed Folder',
         createdAt: Date.now(),
@@ -106,7 +106,7 @@ describe('Worker層直接呼び出しテスト', () => {
       const now = Date.now();
       const newNode: TreeNode = {
         id: newNodeId,
-        parentId: parentNodeId,
+        parentId: parentId,
         nodeType: 'folder',
         name: 'Committed Folder',
         createdAt: now,
@@ -351,7 +351,7 @@ describe('Worker層直接呼び出しテスト', () => {
       const startTime = Date.now();
 
       // 特定の親ノードの子を検索
-      const children = await coreDB.nodes.where('parentNodeId').equals('root').toArray();
+      const children = await coreDB.nodes.where('parentId').equals('root').toArray();
 
       const endTime = Date.now();
       const duration = endTime - startTime;

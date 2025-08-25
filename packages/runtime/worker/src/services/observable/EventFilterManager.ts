@@ -57,22 +57,21 @@ export class EventFilterManager {
    * 移動や削除イベントも適切に処理します。
    *
    * @param event フィルタリング対象のイベント
-   * @param parentNodeId 親ノードのID
+   * @param parentId 親ノードのID
    * @param filter 追加のフィルタリング条件
    * @returns イベントが関連する場合true
    */
   isEventRelevantForChildrenObservation(
     event: TreeChangeEvent,
-    parentNodeId: NodeId,
+    parentId: NodeId,
     filter?: SubscriptionFilter
   ): boolean {
     // 直接の子ノードかをチェック
-    const isDirectChild =
-      event.parentId === parentNodeId || event.previousParentId === parentNodeId;
+    const isDirectChild = event.parentId === parentId || event.previousParentId === parentId;
 
     // ノード削除イベントの特別処理
     if (event.type === 'node-deleted' && event.previousNode) {
-      const wasChildNode = event.previousNode.parentId === parentNodeId;
+      const wasChildNode = event.previousNode.parentId === parentId;
       if (!isDirectChild && !wasChildNode) {
         return false;
       }

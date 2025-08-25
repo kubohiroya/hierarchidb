@@ -622,7 +622,7 @@ async function createFolder(
   // 新しい簡易APIを使用
   return await api.createFolder({
     treeId: treeId as TreeId,
-    parentNodeId: parentId,
+    parentId: parentId,
     name,
   });
 }

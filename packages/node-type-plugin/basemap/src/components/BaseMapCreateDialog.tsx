@@ -26,7 +26,7 @@ export interface BaseMapCreateDialogProps {
   /**
    * Parent node where the basemap will be created
    */
-  parentNodeId: NodeId;
+  parentId: NodeId;
 
   /**
    * Called when user submits the form
@@ -48,7 +48,7 @@ export interface BaseMapCreateDialogProps {
  * Dialog for creating new basemaps
  */
 export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
-  parentNodeId,
+  parentId,
   onSubmit,
   onCancel,
   open = true,
@@ -101,21 +101,27 @@ export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
   }, []);
 
   // Handle field change
-  const handleFieldChange = useCallback((field: keyof BaseMapEntity, value: any) => {
-    handleFormDataChange({ ...formData, [field]: value });
-  }, [formData, handleFormDataChange]);
-
-  // Specific handlers for different input types
-  const handleTextFieldChange = useCallback((field: keyof BaseMapEntity) => 
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      handleFieldChange(field, e.target.value);
-    }, [handleFieldChange]
+  const handleFieldChange = useCallback(
+    (field: keyof BaseMapEntity, value: any) => {
+      handleFormDataChange({ ...formData, [field]: value });
+    },
+    [formData, handleFormDataChange]
   );
 
-  const handleSelectChange = useCallback((field: keyof BaseMapEntity) => 
-    (event: SelectChangeEvent<string>) => {
+  // Specific handlers for different input types
+  const handleTextFieldChange = useCallback(
+    (field: keyof BaseMapEntity) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        handleFieldChange(field, e.target.value);
+      },
+    [handleFieldChange]
+  );
+
+  const handleSelectChange = useCallback(
+    (field: keyof BaseMapEntity) => (event: SelectChangeEvent<string>) => {
       handleFieldChange(field, event.target.value);
-    }, [handleFieldChange]
+    },
+    [handleFieldChange]
   );
 
   const isValid = validateForm();
@@ -130,7 +136,7 @@ export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
     <CommonPluginDialog
       mode="create"
       open={open}
-      parentNodeId={parentNodeId}
+      parentId={parentId}
       title="Create New BaseMap"
       icon={<MapIcon />}
       onSubmit={handleSubmit}
@@ -174,7 +180,9 @@ export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
             <Typography gutterBottom>Zoom Level: {formData.zoom?.toFixed(1)}</Typography>
             <Slider
               value={formData.zoom || 10}
-              onChange={(_: Event, value: number | number[]) => handleFieldChange('zoom', value as number)}
+              onChange={(_: Event, value: number | number[]) =>
+                handleFieldChange('zoom', value as number)
+              }
               min={0}
               max={22}
               step={0.1}
@@ -244,7 +252,9 @@ export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
             <Typography gutterBottom>Bearing: {formData.bearing}°</Typography>
             <Slider
               value={formData.bearing || 0}
-              onChange={(_: Event, value: number | number[]) => handleFieldChange('bearing', value as number)}
+              onChange={(_: Event, value: number | number[]) =>
+                handleFieldChange('bearing', value as number)
+              }
               min={0}
               max={360}
               step={1}
@@ -264,7 +274,9 @@ export const BaseMapCreateDialog: React.FC<BaseMapCreateDialogProps> = ({
             <Typography gutterBottom>Pitch: {formData.pitch}°</Typography>
             <Slider
               value={formData.pitch || 0}
-              onChange={(_: Event, value: number | number[]) => handleFieldChange('pitch', value as number)}
+              onChange={(_: Event, value: number | number[]) =>
+                handleFieldChange('pitch', value as number)
+              }
               min={0}
               max={60}
               step={1}

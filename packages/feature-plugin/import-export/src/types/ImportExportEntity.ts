@@ -12,25 +12,25 @@ export interface ImportExportEntity extends PeerEntity {
   // Identity (from PeerEntity)
   id: EntityId;
   nodeId: NodeId;
-  
+
   // Basic operation information
   name: string;
   description: string;
   operationType: OperationType;
-  
+
   // Configuration
   sourceConfig: SourceConfiguration;
   targetConfig: TargetConfiguration;
   transformConfig: TransformConfiguration;
-  
+
   // Status and execution
   status: OperationStatus;
   progress: OperationProgress;
   executionHistory: ExecutionRecord[];
-  
+
   // Scheduling
   schedule?: ScheduleConfiguration;
-  
+
   // Lifecycle
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -40,11 +40,11 @@ export interface ImportExportEntity extends PeerEntity {
 /**
  * Operation types
  */
-export type OperationType = 
-  | 'import'        // Import data from external source
-  | 'export'        // Export data to external destination
-  | 'sync'          // Bidirectional synchronization
-  | 'transform';    // Data transformation only
+export type OperationType =
+  | 'import' // Import data from external source
+  | 'export' // Export data to external destination
+  | 'sync' // Bidirectional synchronization
+  | 'transform'; // Data transformation only
 
 /**
  * Source configuration for import operations
@@ -72,37 +72,37 @@ export interface TargetConfiguration {
  * Source types
  */
 export type SourceType =
-  | 'file'          // Local file upload
-  | 'url'           // Remote URL
-  | 'database'      // Database connection
-  | 'api'           // REST/GraphQL API
-  | 'clipboard'     // Clipboard data
-  | 'tree';         // Another tree in HierarchiDB
+  | 'file' // Local file upload
+  | 'url' // Remote URL
+  | 'database' // Database connection
+  | 'api' // REST/GraphQL API
+  | 'clipboard' // Clipboard data
+  | 'tree'; // Another tree in HierarchiDB
 
 /**
  * Target types
  */
 export type TargetType =
-  | 'file'          // File download
-  | 'database'      // Database export
-  | 'api'           // API endpoint
-  | 'clipboard'     // Clipboard export
-  | 'tree';         // Another tree in HierarchiDB
+  | 'file' // File download
+  | 'database' // Database export
+  | 'api' // API endpoint
+  | 'clipboard' // Clipboard export
+  | 'tree'; // Another tree in HierarchiDB
 
 /**
  * Data formats
  */
 export type DataFormat =
-  | 'json'          // JSON format
-  | 'csv'           // CSV format
-  | 'xml'           // XML format
-  | 'yaml'          // YAML format
-  | 'excel'         // Excel (.xlsx)
-  | 'sql'           // SQL dump
-  | 'geojson'       // GeoJSON for spatial data
-  | 'shapefile'     // ESRI Shapefile
-  | 'kml'           // KML format
-  | 'hierarchidb';  // Native HierarchiDB format
+  | 'json' // JSON format
+  | 'csv' // CSV format
+  | 'xml' // XML format
+  | 'yaml' // YAML format
+  | 'excel' // Excel (.xlsx)
+  | 'sql' // SQL dump
+  | 'geojson' // GeoJSON for spatial data
+  | 'shapefile' // ESRI Shapefile
+  | 'kml' // KML format
+  | 'hierarchidb'; // Native HierarchiDB format
 
 /**
  * Source location configurations
@@ -183,7 +183,7 @@ export interface TreeLocation {
  */
 export interface NodeFilter {
   nodeTypes?: string[];
-  parentNodeId?: NodeId;
+  parentId?: NodeId;
   namePattern?: string;
   createdAfter?: Timestamp;
   createdBefore?: Timestamp;
@@ -235,14 +235,7 @@ export interface TargetColumnConfig {
 /**
  * Data types
  */
-export type DataType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'datetime'
-  | 'json'
-  | 'array';
+export type DataType = 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'json' | 'array';
 
 /**
  * Transform functions
@@ -269,13 +262,7 @@ export interface AuthenticationConfig {
 /**
  * Authentication types
  */
-export type AuthenticationType =
-  | 'none'
-  | 'basic'
-  | 'bearer'
-  | 'oauth2'
-  | 'apikey'
-  | 'database';
+export type AuthenticationType = 'none' | 'basic' | 'bearer' | 'oauth2' | 'apikey' | 'database';
 
 /**
  * Authentication credentials
@@ -383,22 +370,22 @@ export interface ErrorHandlingConfig {
  * Error handling strategies
  */
 export type ErrorStrategy =
-  | 'abort'         // Stop on first error
-  | 'skip'          // Skip invalid records
-  | 'fix'           // Attempt to fix errors
-  | 'ignore';       // Continue despite errors
+  | 'abort' // Stop on first error
+  | 'skip' // Skip invalid records
+  | 'fix' // Attempt to fix errors
+  | 'ignore'; // Continue despite errors
 
 /**
  * Operation status
  */
 export type OperationStatus =
-  | 'draft'         // Operation is being configured
-  | 'ready'         // Ready to execute
-  | 'running'       // Currently executing
-  | 'completed'     // Successfully completed
-  | 'failed'        // Failed with errors
-  | 'cancelled'     // Cancelled by user
-  | 'scheduled';    // Scheduled for future execution
+  | 'draft' // Operation is being configured
+  | 'ready' // Ready to execute
+  | 'running' // Currently executing
+  | 'completed' // Successfully completed
+  | 'failed' // Failed with errors
+  | 'cancelled' // Cancelled by user
+  | 'scheduled'; // Scheduled for future execution
 
 /**
  * Operation progress
@@ -475,10 +462,10 @@ export interface ScheduleConfiguration {
  * Schedule types
  */
 export type ScheduleType =
-  | 'once'          // Run once at specified time
-  | 'interval'      // Run at regular intervals
-  | 'cron'          // Run based on cron expression
-  | 'manual';       // Manual execution only
+  | 'once' // Run once at specified time
+  | 'interval' // Run at regular intervals
+  | 'cron' // Run based on cron expression
+  | 'manual'; // Manual execution only
 
 /**
  * Data for creating a new ImportExportEntity

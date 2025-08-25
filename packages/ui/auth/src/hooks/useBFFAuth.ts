@@ -8,36 +8,8 @@ import { useCallback, useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthProviderType } from '../types/AuthProviderType';
 import { PopupDetectionService } from '../services/PopupDetectionService';
+import { BFFAuthService, BFFUser, BFFSignInOptions } from '../services/BFFAuthService';
 
-// BFF Auth Service interface
-interface BFFAuthService {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: BFFUser | null;
-  signIn: (options?: BFFSignInOptions) => Promise<void>;
-  signOut: () => Promise<void>;
-  refreshToken: () => Promise<BFFUser | null>;
-  getIdToken: () => string | undefined;
-  getAccessToken: () => string | undefined;
-  currentProvider: AuthProviderType;
-}
-
-interface BFFUser {
-  id: string;
-  email: string;
-  name: string;
-  picture?: string;
-  access_token: string;
-  refresh_token?: string;
-  expires_at: number;
-  provider?: AuthProviderType;
-}
-
-interface BFFSignInOptions {
-  returnUrl?: string;
-  method?: 'popup' | 'redirect';
-  provider?: AuthProviderType;
-}
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -51,60 +23,53 @@ const STORAGE_KEYS = {
 const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000;
 
 /**
- * Mock BFF Auth Service - Replace with actual implementation
+ * BFF Auth Service Hook
+ * Wraps the BFFAuthService singleton for React usage
  */
-const useBFFAuthService = (): BFFAuthService => {
-  const [user, setUser] = useState<BFFUser | null>(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  });
-
+const useBFFAuthService = () => {
+  const authService = BFFAuthService.getInstance();
+  const [user, setUser] = useState<BFFUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize user from stored token
+  useEffect(() => {
+    const initUser = async () => {
+      setIsLoading(true);
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initUser();
+  }, [authService]);
 
   return {
     isAuthenticated: !!user && user.expires_at > Date.now(),
     isLoading,
     user,
-    signIn: async (options) => {
+    signIn: async (options?: BFFSignInOptions) => {
       setIsLoading(true);
       try {
-        // Actual BFF call would go here
-        const response = await fetch('/api/auth/signin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(options),
-        });
-        const data = await response.json();
-        setUser(data.user);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data.user));
+        const authenticatedUser = await authService.signIn(options || {});
+        setUser(authenticatedUser);
+      } catch (error) {
+        throw error;
       } finally {
         setIsLoading(false);
       }
     },
     signOut: async () => {
-      await fetch('/api/auth/signout', { method: 'POST' });
+      await authService.signOut();
       setUser(null);
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     },
     refreshToken: async () => {
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data.user));
-        return data.user;
+      const refreshedUser = await authService.refreshToken();
+      if (refreshedUser) {
+        setUser(refreshedUser);
       }
-      return null;
+      return refreshedUser;
     },
     getIdToken: () => user?.access_token,
     getAccessToken: () => user?.access_token,
@@ -150,11 +115,9 @@ export function useBFFAuth(homeUrl = '/') {
 
     setIsRefreshing(true);
     try {
-      console.log('[BFF Auth] Refreshing token...');
       const refreshedUser = await bffAuth.refreshToken();
 
       if (refreshedUser) {
-        console.log('[BFF Auth] Token refreshed successfully');
 
         // Schedule next refresh
         const nextRefreshIn = refreshedUser.expires_at - Date.now() - TOKEN_REFRESH_BUFFER;
@@ -162,7 +125,6 @@ export function useBFFAuth(homeUrl = '/') {
           refreshTimerRef.current = setTimeout(performTokenRefresh, nextRefreshIn);
         }
       } else {
-        console.warn('[BFF Auth] Token refresh failed, user needs to re-authenticate');
 
         // Store current location for redirect after re-auth
         const currentPath = location.pathname + location.search;
@@ -177,7 +139,6 @@ export function useBFFAuth(homeUrl = '/') {
         }
       }
     } catch (error) {
-      console.error('[BFF Auth] Token refresh error:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -270,7 +231,6 @@ export function useBFFAuth(homeUrl = '/') {
           error instanceof Error &&
           (error.message.includes('popup') || error.message.includes('blocked'))
         ) {
-          console.warn('[BFF Auth] Popup blocked, falling back to redirect');
           popupDetection.saveCapability('blocked');
 
           // Retry with redirect
@@ -417,16 +377,10 @@ export function useBFFAuth(homeUrl = '/') {
 
 /**
  * Global token getter for CORS proxy integration
+ * Synchronous version for compatibility
  */
 export function getIdToken(): string | undefined {
-  const stored = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-  if (stored) {
-    try {
-      const user = JSON.parse(stored) as BFFUser;
-      return user.access_token;
-    } catch {
-      return undefined;
-    }
-  }
-  return undefined;
+  // Get token from localStorage for synchronous access
+  const token = localStorage.getItem('access_token');
+  return token || undefined;
 }

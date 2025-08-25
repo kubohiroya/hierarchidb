@@ -109,13 +109,13 @@ export class WorkerAPIAdapter {
    * 子ノードリストの変更を監視
    */
   async subscribeToChildren(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     callback: TreeNodeEventCallback,
     contextOverrides?: Partial<AdapterContext>
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
-      .subscribeToChildren(parentNodeId, callback, context)
+      .subscribeToChildren(parentId, callback, context)
       .then((subscriptionId) => () => this.subscriptionManager.unsubscribe(subscriptionId));
   }
 
@@ -138,10 +138,7 @@ export class WorkerAPIAdapter {
   /**
    * ノードを削除（ゴミ箱に移動）
    */
-  async deleteNodes(
-    nodeIds: NodeId[],
-    contextOverrides?: Partial<AdapterContext>
-  ): Promise<void> {
+  async deleteNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.deleteNodes(nodeIds, options);
   }
@@ -172,10 +169,7 @@ export class WorkerAPIAdapter {
   /**
    * ノードを削除
    */
-  async removeNodes(
-    nodeIds: NodeId[],
-    contextOverrides?: Partial<AdapterContext>
-  ): Promise<void> {
+  async removeNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.removeNodes(nodeIds, options);
   }
@@ -211,14 +205,14 @@ export class WorkerAPIAdapter {
    * 新規ノードの作成を開始
    */
   async startNodeCreate(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     name: string,
     description?: string,
     nodeType: string = 'folder',
     contextOverrides?: Partial<AdapterContext>
   ): Promise<WorkingCopyEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.startNodeCreate(parentNodeId, name, description, nodeType, options);
+    return this.workingCopyAdapter.startNodeCreate(parentId, name, description, nodeType, options);
   }
 
   /**

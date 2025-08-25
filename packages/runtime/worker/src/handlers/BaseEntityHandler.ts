@@ -23,8 +23,7 @@ export abstract class BaseEntityHandler<
   TEntity extends PeerEntity | GroupEntity | RelationalEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
->
-{
+> {
   /**
    * Database instance
    */
@@ -166,7 +165,7 @@ export abstract class BaseEntityHandler<
     const groupEntity = {
       ...data,
       id: this.generateNodeId(),
-      parentNodeId: nodeId,
+      parentId: nodeId,
       groupEntityType,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -185,7 +184,7 @@ export abstract class BaseEntityHandler<
 
     return await this.db
       .table(this.groupEntityTableName)
-      .where(['parentNodeId', 'groupEntityType'])
+      .where(['parentId', 'groupEntityType'])
       .equals([nodeId, groupEntityType])
       .toArray();
   }
@@ -200,7 +199,7 @@ export abstract class BaseEntityHandler<
 
     await this.db
       .table(this.groupEntityTableName)
-      .where(['parentNodeId', 'groupEntityType'])
+      .where(['parentId', 'groupEntityType'])
       .equals([nodeId, groupEntityType])
       .delete();
   }
@@ -242,7 +241,7 @@ export abstract class BaseEntityHandler<
     if (this.groupEntityTableName) {
       const allGroupEntities = await this.db
         .table(this.groupEntityTableName)
-        .where('parentNodeId')
+        .where('parentId')
         .equals(nodeId)
         .toArray();
 
@@ -284,7 +283,7 @@ export abstract class BaseEntityHandler<
     // Restore sub-entities if any
     if (subEntities && this.groupEntityTableName) {
       // Delete existing sub-entities
-      await this.db.table(this.groupEntityTableName).where('parentNodeId').equals(nodeId).delete();
+      await this.db.table(this.groupEntityTableName).where('parentId').equals(nodeId).delete();
 
       // Add restored sub-entities
       for (const [type, entities] of Object.entries(subEntities)) {
@@ -292,7 +291,7 @@ export abstract class BaseEntityHandler<
           for (const groupEntity of entities) {
             await this.db.table(this.groupEntityTableName).add({
               ...groupEntity,
-              parentNodeId: nodeId,
+              parentId: nodeId,
               groupEntityType: type,
             });
           }
@@ -316,7 +315,7 @@ export abstract class BaseEntityHandler<
     // Delete sub-entities
     if (this.groupEntityTableName) {
       try {
-        await this.db.table(this.groupEntityTableName).where('parentNodeId').equals(nodeId).delete();
+        await this.db.table(this.groupEntityTableName).where('parentId').equals(nodeId).delete();
       } catch (error) {
         // Ignore errors if table doesn't exist
         this.log('Cleanup warning: sub-entity table issue', error);

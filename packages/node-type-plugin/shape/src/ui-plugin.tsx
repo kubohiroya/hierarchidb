@@ -33,12 +33,9 @@ const ShapeForm: React.FC<{ nodeId: string }> = ({ nodeId }) => <div>Shape Form 
 /**
  * Shape Create Dialog Wrapper
  */
-const ShapeCreateDialog: React.FC<CreateDialogProps> = ({
-  parentNodeId,
-  onSubmit,
-  onCancel,
-  open,
-}) => <ShapeDialog mode="create" parentNodeId={parentNodeId} onClose={onCancel} open={!!open} />;
+const ShapeCreateDialog: React.FC<CreateDialogProps> = ({ parentId, onSubmit, onCancel, open }) => (
+  <ShapeDialog mode="create" parentId={parentId} onClose={onCancel} open={!!open} />
+);
 
 /**
  * Shape Edit Dialog Wrapper
@@ -97,16 +94,16 @@ export const ShapeUIPlugin: UIPluginDefinition = {
 
   // Lifecycle hooks
   hooks: {
-    beforeShowCreateDialog: async ({ parentNodeId, context }) => {
-      console.log('Opening Shape create dialog for parent:', parentNodeId);
+    beforeShowCreateDialog: async ({ parentId, context }) => {
+      console.log('Opening Shape create dialog for parent:', parentId);
       return { proceed: true };
     },
 
-    afterCreate: async ({ nodeId, data, parentNodeId }) => {
+    afterCreate: async ({ nodeId, data, parentId }) => {
       console.log('Shape created:', nodeId, data);
       return {
         showMessage: 'Shape created successfully',
-        refreshNodes: [parentNodeId],
+        refreshNodes: [parentId],
       };
     },
 

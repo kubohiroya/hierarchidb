@@ -1,6 +1,6 @@
 /**
  * Unified Plugin System for HierarchiDB
- * 
+ *
  * Supports both node-type plugins and feature plugins with a consistent interface
  */
 
@@ -33,12 +33,12 @@ export interface PluginContext {
   // Core services
   getWorkerAPI?: () => any;
   getUIRegistry?: () => any;
-  
+
   // Event emitters
   on?: (event: string, handler: Function) => void;
   off?: (event: string, handler: Function) => void;
   emit?: (event: string, ...args: any[]) => void;
-  
+
   // Configuration
   config?: Record<string, any>;
 }
@@ -50,7 +50,7 @@ export interface NodeTypeCapability {
   nodeType: string;
   label: string;
   icon?: ComponentType;
-  
+
   // Entity handling
   entityHandler?: {
     create?: (nodeId: NodeId, data: any) => Promise<any>;
@@ -58,7 +58,7 @@ export interface NodeTypeCapability {
     delete?: (nodeId: NodeId) => Promise<void>;
     get?: (nodeId: NodeId) => Promise<any>;
   };
-  
+
   // UI components
   ui?: {
     createDialog?: ComponentType<any>;
@@ -66,10 +66,10 @@ export interface NodeTypeCapability {
     panelComponent?: ComponentType<any>;
     viewComponent?: ComponentType<any>;
   };
-  
+
   // Lifecycle hooks
   lifecycle?: {
-    beforeCreate?: (parentNodeId: NodeId, data: any) => Promise<any>;
+    beforeCreate?: (parentId: NodeId, data: any) => Promise<any>;
     afterCreate?: (node: TreeNode) => Promise<void>;
     beforeUpdate?: (node: TreeNode, changes: any) => Promise<any>;
     afterUpdate?: (node: TreeNode) => Promise<void>;
@@ -84,10 +84,10 @@ export interface NodeTypeCapability {
 export interface FeatureCapability {
   id: string;
   name: string;
-  
+
   // Feature type
   category: 'import-export' | 'auth' | 'theme' | 'ui-extension' | 'data-processing' | 'other';
-  
+
   // UI integration points
   ui?: {
     menuItems?: MenuItemDefinition[];
@@ -95,14 +95,14 @@ export interface FeatureCapability {
     panels?: PanelDefinition[];
     routes?: RouteDefinition[];
   };
-  
+
   // API extensions
   api?: {
     commands?: CommandDefinition[];
     queries?: QueryDefinition[];
     subscriptions?: SubscriptionDefinition[];
   };
-  
+
   // Activation
   activate?: (context: PluginContext) => Promise<void>;
   deactivate?: () => Promise<void>;
@@ -166,15 +166,15 @@ export interface SubscriptionDefinition {
  */
 export interface UnifiedPlugin {
   manifest: PluginManifest;
-  
+
   // Capabilities based on plugin type
   nodeTypes?: NodeTypeCapability[];
   features?: FeatureCapability[];
-  
+
   // Lifecycle
   install: (context: PluginContext) => Promise<void>;
   uninstall?: () => Promise<void>;
-  
+
   // Status
   isInstalled?: () => boolean;
   isActive?: () => boolean;

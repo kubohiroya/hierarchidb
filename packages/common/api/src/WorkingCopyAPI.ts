@@ -12,7 +12,7 @@ import type {
   WorkingCopy,
   CommitResult,
   ValidationResult,
-} from "@hierarchidb/common-core";
+} from '@hierarchidb/common-core';
 
 /**
  * Working copy management API
@@ -29,7 +29,7 @@ export interface WorkingCopyAPI {
    * Create a new draft working copy for a new node
    *
    * @param nodeType - Type of node to create
-   * @param parentNodeId - Parent node for the new node
+   * @param parentId - Parent node for the new node
    * @param initialData - Initial data for the working copy
    * @returns Created working copy with output nodeId
    *
@@ -37,7 +37,7 @@ export interface WorkingCopyAPI {
    * ```typescript
    * const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
    *   'document',
-   *   parentNodeId,
+   *   parentId,
    *   { name: 'New Document', description: 'Draft' }
    * );
    * console.log('Draft node ID:', workingCopy.nodeId);
@@ -45,8 +45,8 @@ export interface WorkingCopyAPI {
    */
   createDraftWorkingCopy(
     nodeType: string,
-    parentNodeId: NodeId,
-    initialData?: Partial<TreeNode>,
+    parentId: NodeId,
+    initialData?: Partial<TreeNode>
   ): Promise<WorkingCopy>;
 
   /**
@@ -91,10 +91,7 @@ export interface WorkingCopyAPI {
    * );
    * ```
    */
-  updateWorkingCopy(
-    nodeId: NodeId,
-    updates: Partial<TreeNode>,
-  ): Promise<WorkingCopy>;
+  updateWorkingCopy(nodeId: NodeId, updates: Partial<TreeNode>): Promise<WorkingCopy>;
 
   /**
    * List all active working copies

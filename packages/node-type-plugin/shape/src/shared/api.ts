@@ -3,7 +3,7 @@
  */
 
 import { NodeId, EntityId } from '@hierarchidb/common-core';
-import { 
+import {
   ShapeEntity,
   CreateShapeData,
   UpdateShapeData,
@@ -15,7 +15,7 @@ import {
   DataSourceConfig,
   ValidationResult,
   SelectionStats,
-  ProgressInfo
+  ProgressInfo,
 } from './types';
 
 /**
@@ -30,7 +30,7 @@ export interface ShapeAPI {
 
   // ✅ WorkingCopy management (CopyOnWrite pattern)
   createWorkingCopy(nodeId: NodeId): Promise<EntityId>;
-  createNewDraftWorkingCopy(parentNodeId: NodeId): Promise<EntityId>;
+  createNewDraftWorkingCopy(parentId: NodeId): Promise<EntityId>;
   getWorkingCopy(workingCopyId: EntityId): Promise<ShapeEntity | undefined>;
   updateWorkingCopy(workingCopyId: EntityId, data: Partial<ShapeEntity>): Promise<void>;
   commitWorkingCopy(workingCopyId: EntityId): Promise<void>;
@@ -39,14 +39,26 @@ export interface ShapeAPI {
   // Data source operations
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
   getCountryMetadata(dataSource: string): Promise<CountryMetadata[]>;
-  generateUrlMetadata(dataSource: string, countries: string[], adminLevels: number[]): Promise<UrlMetadata[]>;
+  generateUrlMetadata(
+    dataSource: string,
+    countries: string[],
+    adminLevels: number[]
+  ): Promise<UrlMetadata[]>;
 
   // Selection validation
-  validateSelection(countries: string[], adminLevels: number[], dataSource: string): Promise<ValidationResult>;
+  validateSelection(
+    countries: string[],
+    adminLevels: number[],
+    dataSource: string
+  ): Promise<ValidationResult>;
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
   // ✅ Batch processing operations - WorkingCopy-based
-  startBatchProcessing(workingCopyId: EntityId, config: ProcessingConfig, urlMetadata: UrlMetadata[]): Promise<string>;
+  startBatchProcessing(
+    workingCopyId: EntityId,
+    config: ProcessingConfig,
+    urlMetadata: UrlMetadata[]
+  ): Promise<string>;
   pauseBatchProcessing(workingCopyId: EntityId): Promise<void>;
   resumeBatchProcessing(workingCopyId: EntityId): Promise<void>;
   cancelBatchProcessing(workingCopyId: EntityId): Promise<void>;
@@ -96,6 +108,3 @@ export interface TileInfo {
   generatedAt: number;
   lastAccessed?: number;
 }
-
-
-

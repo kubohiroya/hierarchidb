@@ -33,7 +33,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
     const coreDB = (api as any).coreDB;
     await coreDB.createNode({
       id: 'root' as NodeId,
-      parentNodeId: 'super-root' as NodeId,
+      parentId: 'super-root' as NodeId,
       nodeType: 'folder',
       name: 'Root',
       createdAt: Date.now(),
@@ -54,7 +54,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
       const result = await mutationAPI.createNode({
         nodeType: 'folder',
         treeId: testTreeId as TreeId,
-        parentNodeId: 'root' as NodeId,
+        parentId: 'root' as NodeId,
         name: 'Test Folder',
         description: 'A test folder',
       });
@@ -69,7 +69,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
       // 親フォルダを作成（Orchestrated API使用）
       const parentResult = await api.createFolder({
         treeId: testTreeId as TreeId,
-        parentNodeId: 'root' as NodeId,
+        parentId: 'root' as NodeId,
         name: 'Parent Folder',
       });
 
@@ -79,7 +79,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
         // 子フォルダを作成
         const childResult = await api.createFolder({
           treeId: testTreeId as TreeId,
-          parentNodeId: parentResult.nodeId,
+          parentId: parentResult.nodeId,
           name: 'Child Folder',
         });
 
@@ -93,7 +93,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
       // Orchestrated API使用 - 空の名前でテスト
       const result = await api.createFolder({
         treeId: testTreeId as TreeId,
-        parentNodeId: 'root' as NodeId,
+        parentId: 'root' as NodeId,
         name: '', // 空の名前
       });
 
@@ -110,7 +110,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
       // フォルダを作成（Orchestrated API使用）
       const createResult = await api.createFolder({
         treeId: testTreeId as TreeId,
-        parentNodeId: 'root' as NodeId,
+        parentId: 'root' as NodeId,
         name: 'Original Name',
       });
 
@@ -363,7 +363,7 @@ async function createFolder(
   // API経由でフォルダを作成（CommandProcessorによる記録も含む）
   const result = await api.createFolder({
     treeId: treeId as TreeId,
-    parentNodeId: parentId,
+    parentId: parentId,
     name: name,
   });
 

@@ -3,12 +3,12 @@ import type {
   ObserveNodePayload,
   Timestamp,
   NodeId,
-} from "@hierarchidb/common-core";
-import { generateNodeId } from "@hierarchidb/common-core";
-import type { Observable } from "rxjs";
-import { Subject } from "rxjs";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TreeSubscribeService } from "../TreeSubscribeService";
+} from '@hierarchidb/common-core';
+import { generateNodeId } from '@hierarchidb/common-core';
+import type { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TreeSubscribeService } from '../TreeSubscribeService';
 
 /**
  * TreeSubscribeService - Performance Tests
@@ -19,7 +19,7 @@ import { TreeSubscribeService } from "../TreeSubscribeService";
  * - High-frequency event processing performance
  * - Memory leak resistance
  */
-describe("TreeSubscribeService - Performance Tests", () => {
+describe('TreeSubscribeService - Performance Tests', () => {
   let service: TreeSubscribeService;
   let mockCoreDB: any;
 
@@ -38,10 +38,10 @@ describe("TreeSubscribeService - Performance Tests", () => {
 
       // Core methods
       getNode: vi.fn().mockResolvedValue({
-        id: "folder1" as NodeId,
-        parentNodeId: "root" as NodeId,
-        name: "Test Folder",
-        nodeType: "folder",
+        id: 'folder1' as NodeId,
+        parentId: 'root' as NodeId,
+        name: 'Test Folder',
+        nodeType: 'folder',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
@@ -72,16 +72,16 @@ describe("TreeSubscribeService - Performance Tests", () => {
    * Mass simultaneous subscription processing test
    * Verifies multiple subscriptions can be created and managed simultaneously
    */
-  it("should handle multiple simultaneous subscriptions efficiently", async () => {
-    const nodeIds = ["folder1", "folder2", "folder3"] as NodeId[];
+  it('should handle multiple simultaneous subscriptions efficiently', async () => {
+    const nodeIds = ['folder1', 'folder2', 'folder3'] as NodeId[];
     const observables: Observable<any>[] = [];
 
     // Create multiple subscriptions
     for (const nodeId of nodeIds) {
-      const cmd: CommandEnvelope<"subscribeNode", ObserveNodePayload> = {
+      const cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload> = {
         commandId: generateNodeId(),
         groupId: generateNodeId(),
-        kind: "subscribeNode",
+        kind: 'subscribeNode',
         payload: {
           nodeId: nodeId,
           includeInitialValue: true,
@@ -105,14 +105,14 @@ describe("TreeSubscribeService - Performance Tests", () => {
    * Subscription cleanup functionality test
    * Verifies unused subscriptions are properly deleted
    */
-  it("should cleanup orphaned subscriptions", async () => {
+  it('should cleanup orphaned subscriptions', async () => {
     // Create subscription
-    const cmd: CommandEnvelope<"subscribeNode", ObserveNodePayload> = {
+    const cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload> = {
       commandId: generateNodeId(),
       groupId: generateNodeId(),
-      kind: "subscribeNode",
+      kind: 'subscribeNode',
       payload: {
-        nodeId: "folder1" as NodeId,
+        nodeId: 'folder1' as NodeId,
         includeInitialValue: false,
       },
       issuedAt: Date.now() as Timestamp,
@@ -139,13 +139,13 @@ describe("TreeSubscribeService - Performance Tests", () => {
    * This test measures current implementation performance characteristics
    * and also serves as a benchmark for evaluating improvements after refactoring.
    */
-  it("should handle high-frequency changes without memory leaks", async () => {
-    const cmd: CommandEnvelope<"subscribeNode", ObserveNodePayload> = {
+  it('should handle high-frequency changes without memory leaks', async () => {
+    const cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload> = {
       commandId: generateNodeId(),
       groupId: generateNodeId(),
-      kind: "subscribeNode",
+      kind: 'subscribeNode',
       payload: {
-        nodeId: "folder1" as NodeId,
+        nodeId: 'folder1' as NodeId,
         includeInitialValue: false,
       },
       issuedAt: Date.now() as Timestamp,
@@ -163,7 +163,7 @@ describe("TreeSubscribeService - Performance Tests", () => {
     const startTime = performance.now();
 
     for (let i = 0; i < changeCount; i++) {
-      await mockCoreDB.updateNode("folder1" as NodeId, { name: `Folder ${i}` });
+      await mockCoreDB.updateNode('folder1' as NodeId, { name: `Folder ${i}` });
     }
 
     const endTime = performance.now();
@@ -184,7 +184,7 @@ describe("TreeSubscribeService - Performance Tests", () => {
     console.log(`  - Processing time: ${processingTime.toFixed(2)}ms`);
     if (processingTime > 0) {
       console.log(
-        `  - Throughput: ${((eventCount / processingTime) * 1000).toFixed(2)} events/sec`,
+        `  - Throughput: ${((eventCount / processingTime) * 1000).toFixed(2)} events/sec`
       );
     }
 
@@ -196,7 +196,7 @@ describe("TreeSubscribeService - Performance Tests", () => {
    * Resource management test
    * Verifies service properly manages resources and prevents memory leaks
    */
-  it("should manage resources properly during intensive usage", async () => {
+  it('should manage resources properly during intensive usage', async () => {
     const initialActiveCount = await service.getActiveSubscriptions();
 
     // Execute multiple subscription creation/destruction cycles
@@ -206,10 +206,10 @@ describe("TreeSubscribeService - Performance Tests", () => {
 
       // Create subscriptions
       for (let i = 0; i < 5; i++) {
-        const cmd: CommandEnvelope<"subscribeNode", ObserveNodePayload> = {
+        const cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload> = {
           commandId: generateNodeId(),
           groupId: generateNodeId(),
-          kind: "subscribeNode",
+          kind: 'subscribeNode',
           payload: {
             nodeId: `folder${(i % 3) + 1}` as NodeId,
             includeInitialValue: false,
@@ -241,7 +241,7 @@ describe("TreeSubscribeService - Performance Tests", () => {
     console.log(`  - Initial subscriptions: ${initialActiveCount}`);
     console.log(`  - Final subscriptions: ${finalActiveCount}`);
     console.log(
-      `  - Leak detection: ${finalActiveCount <= initialActiveCount + 5 ? "✅ PASS" : "❌ FAIL"}`,
+      `  - Leak detection: ${finalActiveCount <= initialActiveCount + 5 ? '✅ PASS' : '❌ FAIL'}`
     );
   });
 });

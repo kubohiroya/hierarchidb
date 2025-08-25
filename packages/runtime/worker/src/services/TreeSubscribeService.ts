@@ -348,16 +348,15 @@ export class TreeSubscribeService {
 
   private isEventRelevantForChildNodesObservation(
     event: TreeChangeEvent,
-    parentNodeId: NodeId,
+    parentId: NodeId,
     filter?: SubscriptionFilter
   ): boolean {
     // Check if this event is about a childNode of our target parentNode
-    const isDirectChild =
-      event.parentId === parentNodeId || event.previousParentId === parentNodeId;
+    const isDirectChild = event.parentId === parentId || event.previousParentId === parentId;
 
     // For node deletions, we also need to check if the deleted node was a childNode
     if (event.type === 'node-deleted' && event.previousNode) {
-      const wasChildNode = event.previousNode.parentId === parentNodeId;
+      const wasChildNode = event.previousNode.parentId === parentId;
       if (!isDirectChild && !wasChildNode) {
         return false;
       }
@@ -446,15 +445,15 @@ export class TreeSubscribeService {
   }
 
   private createInitialChildNodesEvent(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     filter?: SubscriptionFilter
   ): TreeChangeEvent {
     // Get current childNodes
-    const childNodes = this.getChildNodesFromDB(parentNodeId, filter);
+    const childNodes = this.getChildNodesFromDB(parentId, filter);
 
     return {
       type: 'children-changed',
-      nodeId: parentNodeId,
+      nodeId: parentId,
       affectedChildren: childNodes.map((childNode) => childNode.id),
       timestamp: Date.now() as Timestamp,
     };
@@ -493,11 +492,11 @@ export class TreeSubscribeService {
     return undefined;
   }
 
-  private getChildNodesFromDB(parentNodeId: NodeId, filter?: SubscriptionFilter): TreeNode[] {
+  private getChildNodesFromDB(parentId: NodeId, filter?: SubscriptionFilter): TreeNode[] {
     // Access the mock database directly for testing
     if (this.coreDB && 'treeNodes' in this.coreDB && this.coreDB.treeNodes instanceof Map) {
       const allNodes = Array.from(this.coreDB.treeNodes.values()) as TreeNode[];
-      let childNodes = allNodes.filter((node: TreeNode) => node.parentId === parentNodeId);
+      let childNodes = allNodes.filter((node: TreeNode) => node.parentId === parentId);
 
       // Apply filter
       if (filter?.nodeTypes) {
@@ -579,12 +578,12 @@ export class TreeSubscribeService {
     return Promise.resolve();
   }
 
-  listChildNodes(parentNodeId: NodeId, doExpandNode?: boolean): Promise<any> {
-    console.log('listChildNodes (V1 compat)', parentNodeId, doExpandNode);
+  listChildNodes(parentId: NodeId, doExpandNode?: boolean): Promise<any> {
+    console.log('listChildNodes (V1 compat)', parentId, doExpandNode);
     return Promise.resolve({
       treeId: '' as TreeId,
       rootNodeId: '' as NodeId,
-      pageNodeId: parentNodeId,
+      pageNodeId: parentId,
       changes: {},
       version: 0,
     });

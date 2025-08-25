@@ -148,9 +148,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             <TableCell
               key={column.id}
               align={column.align || 'left'}
-              sx={{
+              style={{
                 ...(column.width && { width: column.width }),
-                pl: isFirstColumn ? level * 3 + 1 : undefined,
+                paddingLeft: isFirstColumn ? `${level * 24 + 8}px` : '8px',
+                paddingRight: '8px',
+                borderRight: columnIndex < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
               }}
             >
               {isFirstColumn && (
@@ -242,7 +245,14 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             <TableRow>
               {/* Selection header */}
               {showCheckboxes && (
-                <TableCell padding="checkbox">
+                <TableCell 
+                  padding="checkbox"
+                  style={{
+                    borderRight: columns.length > 0 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
+                    borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                    padding: '8px 12px',
+                  }}
+                >
                   <Checkbox
                     indeterminate={someSelected && !allSelected}
                     checked={allSelected}
@@ -253,13 +263,16 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
               )}
 
               {/* Column headers */}
-              {columns.map((column) => (
+              {columns.map((column, index) => (
                 <TableCell
                   key={column.id}
                   align={column.align || 'left'}
-                  sx={{
+                  style={{
                     fontWeight: 600,
                     ...(column.width && { width: column.width }),
+                    borderRight: index < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
+                    borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                    padding: '8px 12px',
                   }}
                 >
                   {column.sortable && onSort ? (

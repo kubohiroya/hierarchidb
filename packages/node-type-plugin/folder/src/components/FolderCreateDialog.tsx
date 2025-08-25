@@ -16,7 +16,7 @@ export interface FolderCreateDialogProps {
   /**
    * Parent node where the folder will be created
    */
-  parentNodeId: NodeId;
+  parentId: NodeId;
 
   /**
    * Called when user submits the form
@@ -38,7 +38,7 @@ export interface FolderCreateDialogProps {
  * Dialog for creating new folders
  */
 export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
-  parentNodeId: _parentNodeId,
+  parentId: _parentId,
   onSubmit,
   onCancel,
   open = true,

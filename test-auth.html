@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>認証テスト</h1>
+    <button onclick="testAuth()">OAuth認証を開始（正しい方法）</button>
+    <button onclick="testOldAuth()">古い認証を試す（エラーになるはず）</button>
+    
+    <script>
+        function testAuth() {
+            console.log('✅ Redirecting to OAuth...');
+            window.location.href = '/api/auth/google/authorize';
+        }
+        
+        function testOldAuth() {
+            console.log('❌ Trying old POST method...');
+            fetch('/api/auth/signin', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => console.log(data))
+                .catch(err => console.error('Expected error:', err));
+        }
+    </script>
+</body>
+</html>

@@ -5,13 +5,7 @@
  * 🟢 信頼性レベル: 設計文書に基づく実装
  */
 
-import type { 
-  PeerEntity, 
-  GroupEntity, 
-  RelationalEntity,
-  NodeId,
-  Timestamp
-} from '../types';
+import type { PeerEntity, GroupEntity, RelationalEntity, NodeId, Timestamp } from '../types';
 
 /**
  * 【機能概要】: グループIDを生成する
@@ -46,15 +40,15 @@ export class PeerEntityManager<T extends PeerEntity> {
       ...data,
       createdAt: Date.now() as Timestamp,
       updatedAt: Date.now() as Timestamp,
-      version: 1
+      version: 1,
     } as unknown as T;
-    
+
     // 【DB保存】: データベースにエンティティを追加
     // 【テスト対応】: モックのaddメソッドが呼ばれることを期待
     if (this.db.add) {
       await this.db.add(entity);
     }
-    
+
     // 【結果返却】: 作成したエンティティを返す
     return entity;
   }
@@ -123,24 +117,24 @@ export class GroupEntityManager<T extends GroupEntity> {
   async create(nodeId: NodeId, data: Partial<T>): Promise<T> {
     // 【グループID生成】: 新規または既存のグループIDを使用
     const groupId = (data as any).groupId || generateGroupId();
-    
+
     // 【エンティティ構築】: GroupEntityの基本プロパティを設定
     const entity = {
       id: `entity-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-      parentNodeId: nodeId,
+      parentId: nodeId,
       type: (data as any).type || 'unknown',
       ...data,
       groupId,
       sortOrder: await this.getNextSortOrder(nodeId),
       createdAt: Date.now() as Timestamp,
-      updatedAt: Date.now() as Timestamp
+      updatedAt: Date.now() as Timestamp,
     } as unknown as T;
-    
+
     // 【DB保存】: データベースにエンティティを追加
     if (this.db.add) {
       await this.db.add(entity);
     }
-    
+
     // 【結果返却】: 作成したエンティティを返す
     return entity;
   }
@@ -154,11 +148,8 @@ export class GroupEntityManager<T extends GroupEntity> {
   async cleanup(nodeId: NodeId): Promise<void> {
     // 【関連エンティティ検索】: nodeIdに関連する全エンティティを取得
     if (this.db.where && this.db.equals && this.db.toArray) {
-      const entities = await this.db
-        .where('parentNodeId')
-        .equals(nodeId)
-        .toArray();
-      
+      const entities = await this.db.where('parentId').equals(nodeId).toArray();
+
       // 【一括削除】: 取得したエンティティのIDで一括削除
       // 【テスト対応】: モックのbulkDeleteが呼ばれることを期待
       if (entities && entities.length > 0 && this.db.bulkDelete) {
@@ -166,7 +157,7 @@ export class GroupEntityManager<T extends GroupEntity> {
         await this.db.bulkDelete(ids);
       }
     }
-    
+
     // 【カウンターリセット】: sortOrderカウンターをクリア
     this.sortOrderCounters.delete(nodeId);
   }
@@ -191,23 +182,23 @@ export class RelationalEntityManagerImpl<T extends RelationalEntity = Relational
   async addReference(entityId: string, nodeId: NodeId): Promise<void> {
     // 【エンティティ取得】: 対象エンティティを取得
     if (!this.db.get) return;
-    
+
     const entity = await this.db.get(entityId);
     if (!entity) {
       // 【エラー処理】: エンティティが存在しない場合
       throw new Error('Entity not found');
     }
-    
+
     // 【参照追加】: nodeIdが未登録の場合のみ追加
     if (!entity.references) {
       entity.references = [];
     }
-    
+
     if (!entity.references.includes(nodeId)) {
       entity.references.push(nodeId);
       entity.referenceCount = entity.references.length;
       entity.lastAccessedAt = Date.now() as Timestamp;
-      
+
       // 【DB更新】: 更新したエンティティを保存
       if (this.db.put) {
         await this.db.put(entity);
@@ -224,15 +215,15 @@ export class RelationalEntityManagerImpl<T extends RelationalEntity = Relational
   async removeReference(entityId: string, nodeId: NodeId): Promise<void> {
     // 【エンティティ取得】: 対象エンティティを取得
     if (!this.db.get) return;
-    
+
     const entity = await this.db.get(entityId);
     if (!entity) return;
-    
+
     // 【参照削除】: nodeIdを参照リストから削除
     if (entity.references) {
       entity.references = entity.references.filter((id: NodeId) => id !== nodeId);
       entity.referenceCount = entity.references.length;
-      
+
       // 【自動削除判定】: 参照カウントが0になったら削除
       if (entity.referenceCount === 0) {
         // 【テスト対応】: モックのdeleteが呼ばれることを期待
@@ -257,11 +248,8 @@ export class RelationalEntityManagerImpl<T extends RelationalEntity = Relational
   async cleanup(nodeId: NodeId): Promise<void> {
     // 【関連エンティティ検索】: nodeIdを参照している全エンティティを取得
     if (this.db.where && this.db.anyOf && this.db.toArray) {
-      const entities = await this.db
-        .where('references')
-        .anyOf([nodeId])
-        .toArray();
-      
+      const entities = await this.db.where('references').anyOf([nodeId]).toArray();
+
       // 【参照削除】: 各エンティティから参照を削除
       if (entities) {
         for (const entity of entities) {
@@ -288,13 +276,10 @@ export class EphemeralPeerEntityManager<T extends PeerEntity> extends PeerEntity
   async cleanupExpired(): Promise<void> {
     // 【期限切れ検索】: 現在時刻より前に期限切れのエンティティを検索
     const now = Date.now();
-    
+
     if (this.db.where && this.db.below && this.db.toArray) {
-      const expired = await this.db
-        .where('expiresAt')
-        .below(now)
-        .toArray();
-      
+      const expired = await this.db.where('expiresAt').below(now).toArray();
+
       // 【一括削除】: 期限切れエンティティを削除
       if (expired && expired.length > 0 && this.db.bulkDelete) {
         const ids = expired.map((e: any) => e.id);
@@ -320,11 +305,8 @@ export class EphemeralGroupEntityManager<T extends GroupEntity> extends GroupEnt
   async cleanupByWorkingCopy(workingCopyId: string): Promise<void> {
     // 【関連エンティティ検索】: workingCopyIdに関連するエンティティを取得
     if (this.db.where && this.db.equals && this.db.toArray) {
-      const entities = await this.db
-        .where('workingCopyId')
-        .equals(workingCopyId)
-        .toArray();
-      
+      const entities = await this.db.where('workingCopyId').equals(workingCopyId).toArray();
+
       // 【一括削除】: 取得したエンティティを削除
       // 【テスト対応】: モックのbulkDeleteが呼ばれることを期待
       if (entities && entities.length > 0 && this.db.bulkDelete) {
@@ -343,13 +325,10 @@ export class EphemeralGroupEntityManager<T extends GroupEntity> extends GroupEnt
   async cleanupExpired(): Promise<void> {
     // 【期限切れ検索】: 現在時刻より前に期限切れのエンティティを検索
     const now = Date.now();
-    
+
     if (this.db.where && this.db.below && this.db.toArray) {
-      const expired = await this.db
-        .where('expiresAt')
-        .below(now)
-        .toArray();
-      
+      const expired = await this.db.where('expiresAt').below(now).toArray();
+
       // 【一括削除】: 期限切れエンティティを削除
       // 【テスト対応】: モックのbulkDeleteが呼ばれることを期待
       if (expired && expired.length > 0 && this.db.bulkDelete) {
@@ -396,12 +375,12 @@ export class AutoEntityLifecycleManager {
       ...data,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      version: 1
+      version: 1,
     };
-    
+
     // 【エンティティ保存】: メモリ上に保存（テスト用）
     this.entities.set(nodeId, entity);
-    
+
     // 【RelationalEntity処理】: tableMetadataIdがある場合
     if (data.tableMetadataId) {
       // 【参照カウント初期化】: 新規または既存のRelationalEntity
@@ -410,16 +389,16 @@ export class AutoEntityLifecycleManager {
         tableMetadata = {
           id: data.tableMetadataId,
           referenceCount: 0,
-          references: []
+          references: [],
         };
       }
-      
+
       // 【参照追加】: nodeIdを参照リストに追加
       if (!tableMetadata.references.includes(nodeId)) {
         tableMetadata.references.push(nodeId);
         tableMetadata.referenceCount = tableMetadata.references.length;
       }
-      
+
       this.relationalEntities.set(data.tableMetadataId, tableMetadata);
     }
   }
@@ -433,13 +412,13 @@ export class AutoEntityLifecycleManager {
   async handleNodeDeletion(nodeId: NodeId): Promise<void> {
     // 【エンティティ削除】: メモリから削除（テスト用）
     this.entities.delete(nodeId);
-    
+
     // 【RelationalEntity処理】: 参照を削除
     for (const [id, entity] of this.relationalEntities.entries()) {
       if (entity.references && entity.references.includes(nodeId)) {
         entity.references = entity.references.filter((ref: NodeId) => ref !== nodeId);
         entity.referenceCount = entity.references.length;
-        
+
         // 【自動削除】: 参照カウントが0になったら削除
         if (entity.referenceCount === 0) {
           this.relationalEntities.delete(id);
@@ -478,18 +457,14 @@ export class AutoEntityLifecycleManager {
 /**
  * PeerEntityManagerを作成
  */
-export function createPeerEntityManager<T extends PeerEntity>(
-  db: any
-): PeerEntityManager<T> {
+export function createPeerEntityManager<T extends PeerEntity>(db: any): PeerEntityManager<T> {
   return new PeerEntityManager<T>(db);
 }
 
 /**
  * GroupEntityManagerを作成
  */
-export function createGroupEntityManager<T extends GroupEntity>(
-  db: any
-): GroupEntityManager<T> {
+export function createGroupEntityManager<T extends GroupEntity>(db: any): GroupEntityManager<T> {
   return new GroupEntityManager<T>(db);
 }
 

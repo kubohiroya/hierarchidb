@@ -1,6 +1,6 @@
 /**
  * 検索API統合テスト - 4つのマッチモード対応
- * 
+ *
  * 完全・前方・後方・部分一致の検索機能をテストします
  */
 
@@ -16,15 +16,15 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
   beforeEach(async () => {
     api = new WorkerAPIImpl('test-search-api-db');
     await api.initialize();
-    
+
     testTreeId = 'test-tree';
     rootNodeId = 'root' as NodeId;
-    
+
     // テスト用のルートノードを作成
     const coreDB = (api as any).coreDB;
     await coreDB.createNode({
       id: rootNodeId,
-      parentNodeId: 'super-root' as NodeId,
+      parentId: 'super-root' as NodeId,
       nodeType: 'folder',
       name: 'Root',
       createdAt: Date.now(),
@@ -41,18 +41,18 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
     beforeEach(async () => {
       // 検索テスト用のフォルダ構造を作成
       const testFolders = [
-        'Project',           // 完全一致用
-        'ProjectAlpha',      // 前方一致用
-        'MyProject',         // 後方一致用
-        'ProjectBetaTest',   // 部分一致用
-        'Documentation',     // マッチしないもの
-        'proj',              // 小文字（大文字小文字区別用）
+        'Project', // 完全一致用
+        'ProjectAlpha', // 前方一致用
+        'MyProject', // 後方一致用
+        'ProjectBetaTest', // 部分一致用
+        'Documentation', // マッチしないもの
+        'proj', // 小文字（大文字小文字区別用）
       ];
 
       for (const name of testFolders) {
         const result = await api.createFolder({
           treeId: testTreeId as TreeId,
-          parentNodeId: rootNodeId,
+          parentId: rootNodeId,
           name,
         });
         expect(result.success).toBe(true);
@@ -79,7 +79,7 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
 
       // 'Project', 'ProjectAlpha', 'ProjectBetaTest' がマッチ
       expect(results).toHaveLength(3);
-      const names = results.map(r => r.name).sort();
+      const names = results.map((r) => r.name).sort();
       expect(names).toEqual(['Project', 'ProjectAlpha', 'ProjectBetaTest']);
     });
 
@@ -92,7 +92,7 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
 
       // 'Project', 'MyProject' がマッチ
       expect(results).toHaveLength(2);
-      const names = results.map(r => r.name).sort();
+      const names = results.map((r) => r.name).sort();
       expect(names).toEqual(['MyProject', 'Project']);
     });
 
@@ -105,7 +105,7 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
 
       // 'Project', 'ProjectAlpha', 'MyProject', 'ProjectBetaTest' がマッチ
       expect(results).toHaveLength(4);
-      const names = results.map(r => r.name).sort();
+      const names = results.map((r) => r.name).sort();
       expect(names).toEqual(['MyProject', 'Project', 'ProjectAlpha', 'ProjectBetaTest']);
     });
 
@@ -167,7 +167,7 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
       // 特殊文字を含むフォルダを作成
       const specialResult = await api.createFolder({
         treeId: testTreeId as TreeId,
-        parentNodeId: rootNodeId,
+        parentId: rootNodeId,
         name: 'Test.Folder[1]',
       });
       expect(specialResult.success).toBe(true);
@@ -191,13 +191,13 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
         const name = i % 10 === 0 ? `Target${i}` : `Other${i}`;
         await api.createFolder({
           treeId: testTreeId as TreeId,
-          parentNodeId: rootNodeId,
+          parentId: rootNodeId,
           name,
         });
       }
 
       const startTime = Date.now();
-      
+
       const results = await api.searchByNameWithMatchMode({
         rootNodeId,
         query: 'Target',
@@ -205,13 +205,13 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
       });
 
       const searchTime = Date.now() - startTime;
-      
+
       // 検索時間が500ms以内
       expect(searchTime).toBeLessThan(500);
-      
+
       // 結果の妥当性確認
       expect(results.length).toBe(50); // 500 / 10 = 50個のTargetノード
-      expect(results.every(r => r.name.startsWith('Target'))).toBe(true);
+      expect(results.every((r) => r.name.startsWith('Target'))).toBe(true);
     });
   });
 
@@ -220,7 +220,7 @@ describe.skip('検索API統合テスト - マッチモード対応 (needs update
       // 互換性テスト用フォルダ作成
       await api.createFolder({
         treeId: testTreeId as TreeId,
-        parentNodeId: rootNodeId,
+        parentId: rootNodeId,
         name: 'TestFolder',
       });
 

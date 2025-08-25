@@ -94,14 +94,14 @@ describe('データベース初期化テスト', () => {
       // ノードを一括追加
       await coreDB.nodes.bulkAdd(nodes);
 
-      // parentNodeIdインデックスを使用した検索が機能することを確認
+      // parentIdインデックスを使用した検索が機能することを確認
       const children = await coreDB.listChildren(parentId);
       expect(children).toHaveLength(3);
       expect(children.map((c) => c.name)).toContain('Child 1');
       expect(children.map((c) => c.name)).toContain('Child 2');
       expect(children.map((c) => c.name)).toContain('Child 3');
 
-      // 複合インデックス [parentNodeId+name] の動作確認
+      // 複合インデックス [parentId+name] の動作確認
       const specificChild = await coreDB.nodes
         .where('[parenId+name]')
         .equals([parentId, 'Child 2'])
@@ -299,9 +299,9 @@ describe('データベース初期化テスト', () => {
 
       // インデックスの存在確認（Dexieのschemaオブジェクトから）
       const indexNames = schema.indexes.map((idx) => idx.name);
-      expect(indexNames).toContain('parentNodeId');
-      expect(indexNames).toContain('[parentNodeId+name]');
-      expect(indexNames).toContain('[parentNodeId+updatedAt]');
+      expect(indexNames).toContain('parentId');
+      expect(indexNames).toContain('[parentId+name]');
+      expect(indexNames).toContain('[parentId+updatedAt]');
     });
   });
 });

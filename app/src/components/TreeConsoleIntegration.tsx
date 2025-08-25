@@ -11,7 +11,11 @@ import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDyna
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
-import { TopPageGuidedTour, ProjectsGuidedTour, ResourcesGuidedTour } from '@hierarchidb/_app-tour';
+import {
+  TopPageGuidedTour,
+  ProjectsGuidedTour,
+  ResourcesGuidedTour,
+} from '@hierarchidb/runtime-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-core';
 

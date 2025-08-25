@@ -4,8 +4,8 @@
  * Based on 3-classification entity system
  */
 
-import type { GroupEntity, NodeId, EntityId } from "@hierarchidb/common-core";
-import { BaseEntityHandler } from "./BaseEntityHandler";
+import type { GroupEntity, NodeId, EntityId } from '@hierarchidb/common-core';
+import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**
  * Abstract handler specialized for GroupEntity (1:N relationship with TreeNode)
@@ -25,7 +25,7 @@ export abstract class GroupEntityHandler<
    */
   protected getPrimaryKey(nodeId: NodeId, entityId?: EntityId): string {
     if (!entityId) {
-      throw new Error("GroupEntity requires EntityId as primary key");
+      throw new Error('GroupEntity requires EntityId as primary key');
     }
     return entityId;
   }
@@ -34,10 +34,7 @@ export abstract class GroupEntityHandler<
    * Create multiple entities in a batch
    * Optimized for GroupEntity's 1:N nature
    */
-  async createBatch(
-    nodeId: NodeId,
-    items: Partial<TEntity>[],
-  ): Promise<TEntity[]> {
+  async createBatch(nodeId: NodeId, items: Partial<TEntity>[]): Promise<TEntity[]> {
     const entities: TEntity[] = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -72,7 +69,7 @@ export abstract class GroupEntityHandler<
   async getByParentNode(nodeId: NodeId): Promise<TEntity[]> {
     return await this.db
       .table(this.tableName)
-      .where("nodeId")
+      .where('nodeId')
       .equals(nodeId)
       // .orderBy('index') - Not available in basic Dexie Collection
       .toArray();
@@ -81,10 +78,7 @@ export abstract class GroupEntityHandler<
   /**
    * Update entities by parent node with batch operations
    */
-  async updateBatchByNode(
-    nodeId: NodeId,
-    updates: Partial<TEntity>[],
-  ): Promise<void> {
+  async updateBatchByNode(nodeId: NodeId, updates: Partial<TEntity>[]): Promise<void> {
     const existingEntities = await this.getByParentNode(nodeId);
 
     for (let i = 0; i < updates.length && i < existingEntities.length; i++) {
@@ -107,11 +101,7 @@ export abstract class GroupEntityHandler<
    * Essential for GroupEntity cleanup
    */
   async deleteByParentNode(nodeId: NodeId): Promise<void> {
-    const count = await this.db
-      .table(this.tableName)
-      .where("nodeId")
-      .equals(nodeId)
-      .delete();
+    const count = await this.db.table(this.tableName).where('nodeId').equals(nodeId).delete();
 
     this.log(`Deleted ${count} GroupEntities for node: ${nodeId}`);
   }
@@ -152,11 +142,7 @@ export abstract class GroupEntityHandler<
    * Useful for pagination and statistics
    */
   async getCountByParentNode(nodeId: NodeId): Promise<number> {
-    return await this.db
-      .table(this.tableName)
-      .where("nodeId")
-      .equals(nodeId)
-      .count();
+    return await this.db.table(this.tableName).where('nodeId').equals(nodeId).count();
   }
 
   /**
@@ -166,12 +152,12 @@ export abstract class GroupEntityHandler<
   async getByParentNodePaginated(
     nodeId: NodeId,
     offset: number = 0,
-    limit: number = 50,
+    limit: number = 50
   ): Promise<{ entities: TEntity[]; total: number }> {
     const total = await this.getCountByParentNode(nodeId);
     const entities = await this.db
       .table(this.tableName)
-      .where("nodeId")
+      .where('nodeId')
       .equals(nodeId)
       // .orderBy('index') - Not available in basic Dexie Collection
       .offset(offset)
@@ -185,13 +171,10 @@ export abstract class GroupEntityHandler<
    * Find entities by type within a parent node
    * Useful when GroupEntity has subtypes
    */
-  async getByParentNodeAndType(
-    nodeId: NodeId,
-    type: string,
-  ): Promise<TEntity[]> {
+  async getByParentNodeAndType(nodeId: NodeId, type: string): Promise<TEntity[]> {
     return await this.db
       .table(this.tableName)
-      .where(["nodeId", "type"])
+      .where(['nodeId', 'type'])
       .equals([nodeId, type])
       // .orderBy('index') - Not available in basic Dexie Collection
       .toArray();
@@ -214,20 +197,14 @@ export abstract class GroupEntityHandler<
    */
   async onNodeCreated(nodeId: NodeId, nodeData: any): Promise<void> {
     // GroupEntities are typically created on-demand, not automatically
-    this.log(
-      `Node created: ${nodeId}. GroupEntities will be created on-demand.`,
-    );
+    this.log(`Node created: ${nodeId}. GroupEntities will be created on-demand.`);
   }
 
   /**
    * Called when the associated TreeNode is updated
    * Default implementation does nothing (GroupEntities are independent)
    */
-  async onNodeUpdated(
-    nodeId: NodeId,
-    nodeData: any,
-    oldNodeData?: any,
-  ): Promise<void> {
+  async onNodeUpdated(nodeId: NodeId, nodeData: any, oldNodeData?: any): Promise<void> {
     // GroupEntities typically don't sync with node updates
     // Override if specific behavior is needed
   }
@@ -242,13 +219,9 @@ export abstract class GroupEntityHandler<
 
   /**
    * Called when the associated TreeNode is moved
-   * Default implementation updates parentNodeId for all entities
+   * Default implementation updates parentId for all entities
    */
-  async onNodeMoved(
-    nodeId: NodeId,
-    oldParentId: NodeId,
-    newParentId: NodeId,
-  ): Promise<void> {
+  async onNodeMoved(nodeId: NodeId, oldParentId: NodeId, newParentId: NodeId): Promise<void> {
     // GroupEntities typically stay with their direct parent (the node itself)
     // This method is for cases where entities need to be aware of node hierarchy changes
     this.log(`Node moved: ${nodeId} from ${oldParentId} to ${newParentId}`);
@@ -263,23 +236,20 @@ export abstract class GroupEntityHandler<
    */
   protected validateGroupEntity(entity: Partial<TEntity>): void {
     if (!(entity as any).nodeId) {
-      throw new Error("GroupEntity must have nodeId");
+      throw new Error('GroupEntity must have nodeId');
     }
     if ((entity as any).index === undefined || (entity as any).index < 0) {
-      throw new Error("GroupEntity must have valid index");
+      throw new Error('GroupEntity must have valid index');
     }
   }
 
   /**
    * Override createEntity to add GroupEntity specific validation
    */
-  async createEntity(
-    nodeId: NodeId,
-    data?: Partial<TEntity>,
-  ): Promise<TEntity> {
+  async createEntity(nodeId: NodeId, data?: Partial<TEntity>): Promise<TEntity> {
     const entityData = {
       ...data,
-      parentNodeId: nodeId,
+      parentId: nodeId,
       id: this.generateEntityId(),
       index: (data as any)?.index ?? (await this.getNextIndex(nodeId)),
     } as unknown as Partial<TEntity>;

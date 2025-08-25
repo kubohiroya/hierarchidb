@@ -15,22 +15,22 @@ import {
   StepLabel,
   Box,
   Typography,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import { NodeId } from '@hierarchidb/common-core';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
-import { 
+import {
   ShapeEntity,
   ShapeWorkingCopy,
   CreateShapeData,
   UpdateShapeData,
-  UI_CONSTANTS
+  UI_CONSTANTS,
 } from '../../shared';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';
   nodeId?: NodeId;
-  parentNodeId?: NodeId;
+  parentId?: NodeId;
   open: boolean;
   onClose: () => void;
   onSuccess?: (entity: ShapeEntity) => void;
@@ -40,14 +40,14 @@ export interface ShapeDialogProps {
 export function ShapeDialog({
   mode,
   nodeId,
-  parentNodeId,
+  parentId,
   open,
   onClose,
   onSuccess,
-  onError
+  onError,
 }: ShapeDialogProps) {
   const getShapeAPI = useShapeAPIGetter();
-  
+
   // State management
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ export function ShapeDialog({
   const initializeTempState = useCallback(() => {
     const tempState: ShapeWorkingCopy = {
       id: 'temp-id' as any,
-      nodeId: nodeId || parentNodeId as any,
+      nodeId: nodeId || (parentId as any),
       name: '',
       description: '',
       dataSourceName: 'naturalearth',
@@ -70,7 +70,7 @@ export function ShapeDialog({
         featureFilterMethod: 'hybrid',
         featureAreaThreshold: 0.1,
         concurrentProcesses: 2,
-        maxZoomLevel: 12
+        maxZoomLevel: 12,
       },
       checkboxState: '',
       selectedCountries: [],
@@ -82,7 +82,7 @@ export function ShapeDialog({
       version: 1,
     };
     setWorkingCopy(tempState);
-  }, [nodeId, parentNodeId]);
+  }, [nodeId, parentId]);
 
   // Initialize temp state for Step 1 only
   useEffect(() => {
@@ -94,11 +94,11 @@ export function ShapeDialog({
   // ✅ Step-based initialization - Only create WorkingCopy at Step 2
   const initializeWorkingCopyForStep2 = useCallback(async () => {
     if (initializing || workingCopy) return;
-    
+
     setInitializing(true);
     try {
       const api = await getShapeAPI();
-      
+
       if (mode === 'edit' && nodeId) {
         // ✅ CopyOnWrite: Create working copy from existing entity
         const workingCopyId = await api.createWorkingCopy(nodeId);
@@ -106,9 +106,9 @@ export function ShapeDialog({
         if (workingCopyData) {
           setWorkingCopy(workingCopyData as ShapeWorkingCopy);
         }
-      } else if (mode === 'create' && parentNodeId) {
+      } else if (mode === 'create' && parentId) {
         // ✅ New draft: Create working copy for new entity
-        const workingCopyId = await api.createNewDraftWorkingCopy(parentNodeId);
+        const workingCopyId = await api.createNewDraftWorkingCopy(parentId);
         const workingCopyData = await api.getWorkingCopy(workingCopyId);
         if (workingCopyData) {
           setWorkingCopy(workingCopyData as ShapeWorkingCopy);
@@ -120,16 +120,14 @@ export function ShapeDialog({
     } finally {
       setInitializing(false);
     }
-  }, [mode, nodeId, parentNodeId, getShapeAPI, onError, initializing, workingCopy]);
-
-
+  }, [mode, nodeId, parentId, getShapeAPI, onError, initializing, workingCopy]);
 
   const handleNext = useCallback(async () => {
     // ✅ Step 1 → Step 2: Create actual WorkingCopy (CopyOnWrite)
     if (activeStep === 1 && !initializing && workingCopy?.id === 'temp-id') {
       await initializeWorkingCopyForStep2();
     }
-    
+
     setActiveStep((prev) => Math.min(prev + 1, UI_CONSTANTS.STEPPER_STEPS.length - 1));
   }, [activeStep, initializing, workingCopy, initializeWorkingCopyForStep2]);
 
@@ -138,7 +136,7 @@ export function ShapeDialog({
   }, []);
 
   const handleUpdateWorkingCopy = useCallback((updates: Partial<ShapeWorkingCopy>) => {
-    setWorkingCopy((prev) => prev ? { ...prev, ...updates } : null);
+    setWorkingCopy((prev) => (prev ? { ...prev, ...updates } : null));
   }, []);
 
   const handleSubmit = useCallback(async () => {
@@ -156,7 +154,7 @@ export function ShapeDialog({
           processingConfig: workingCopy.processingConfig,
         };
 
-        const entity = await api.createEntity(parentNodeId as NodeId, createData);
+        const entity = await api.createEntity(parentId as NodeId, createData);
         onSuccess?.(entity);
       } else if (mode === 'edit' && nodeId) {
         const updateData: UpdateShapeData = {
@@ -182,7 +180,7 @@ export function ShapeDialog({
     } finally {
       setLoading(false);
     }
-  }, [mode, workingCopy, nodeId, parentNodeId, getShapeAPI, onSuccess, onError, onClose]);
+  }, [mode, workingCopy, nodeId, parentId, getShapeAPI, onSuccess, onError, onClose]);
 
   const handleClose = useCallback(() => {
     setActiveStep(0);
@@ -191,24 +189,27 @@ export function ShapeDialog({
     onClose();
   }, [onClose]);
 
-  const isStepComplete = useCallback((step: number) => {
-    if (!workingCopy) return false;
+  const isStepComplete = useCallback(
+    (step: number) => {
+      if (!workingCopy) return false;
 
-    switch (step) {
-      case 0: // Basic Information
-        return workingCopy.name.trim().length > 0;
-      case 1: // Data Source
-        return !!workingCopy.dataSourceName;
-      case 2: // License Agreement
-        return workingCopy.licenseAgreement;
-      case 3: // Processing Configuration
-        return !!workingCopy.processingConfig;
-      case 4: // Country Selection
-        return workingCopy.selectedCountries.length > 0 && workingCopy.adminLevels.length > 0;
-      default:
-        return false;
-    }
-  }, [workingCopy]);
+      switch (step) {
+        case 0: // Basic Information
+          return workingCopy.name.trim().length > 0;
+        case 1: // Data Source
+          return !!workingCopy.dataSourceName;
+        case 2: // License Agreement
+          return workingCopy.licenseAgreement;
+        case 3: // Processing Configuration
+          return !!workingCopy.processingConfig;
+        case 4: // Country Selection
+          return workingCopy.selectedCountries.length > 0 && workingCopy.adminLevels.length > 0;
+        default:
+          return false;
+      }
+    },
+    [workingCopy]
+  );
 
   const canProceed = isStepComplete(activeStep);
   const isLastStep = activeStep === UI_CONSTANTS.STEPPER_STEPS.length - 1;
@@ -230,19 +231,17 @@ export function ShapeDialog({
   }
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth={UI_CONSTANTS.DIALOG_MAX_WIDTH as any} 
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth={UI_CONSTANTS.DIALOG_MAX_WIDTH as any}
       fullWidth
       PaperProps={{
-        sx: { minHeight: '70vh' }
+        sx: { minHeight: '70vh' },
       }}
     >
-      <DialogTitle>
-        {mode === 'create' ? 'Create Shape' : 'Edit Shape'}
-      </DialogTitle>
-      
+      <DialogTitle>{mode === 'create' ? 'Create Shape' : 'Edit Shape'}</DialogTitle>
+
       <DialogContent>
         <Box sx={{ width: '100%', mb: 3 }}>
           <Stepper activeStep={activeStep} alternativeLabel>
@@ -265,7 +264,7 @@ export function ShapeDialog({
                 <Typography variant="body2" color="text.secondary" paragraph>
                   Enter basic information for your shape data source.
                 </Typography>
-                
+
                 {/* Basic form fields would go here */}
                 <Typography variant="body2">
                   Current name: {workingCopy.name || '(empty)'}
@@ -275,7 +274,7 @@ export function ShapeDialog({
                 </Typography>
               </Box>
             )}
-            
+
             {activeStep === 1 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
@@ -284,12 +283,10 @@ export function ShapeDialog({
                 <Typography variant="body2" color="text.secondary" paragraph>
                   Choose your geographic data source.
                 </Typography>
-                <Typography variant="body2">
-                  Selected: {workingCopy.dataSourceName}
-                </Typography>
+                <Typography variant="body2">Selected: {workingCopy.dataSourceName}</Typography>
               </Box>
             )}
-            
+
             {activeStep === 2 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
@@ -303,7 +300,7 @@ export function ShapeDialog({
                 </Typography>
               </Box>
             )}
-            
+
             {activeStep === 3 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
@@ -317,7 +314,7 @@ export function ShapeDialog({
                 </Typography>
               </Box>
             )}
-            
+
             {activeStep === 4 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
@@ -342,31 +339,23 @@ export function ShapeDialog({
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        
+
         <Box sx={{ flex: 1 }} />
-        
+
         {activeStep > 0 && (
           <Button onClick={handleBack} disabled={loading}>
             Back
           </Button>
         )}
-        
+
         {!isLastStep && (
-          <Button 
-            onClick={handleNext} 
-            disabled={!canProceed || loading}
-            variant="contained"
-          >
+          <Button onClick={handleNext} disabled={!canProceed || loading} variant="contained">
             Next
           </Button>
         )}
-        
+
         {isLastStep && (
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!canSubmit || loading}
-            variant="contained"
-          >
+          <Button onClick={handleSubmit} disabled={!canSubmit || loading} variant="contained">
             {loading && <CircularProgress size={16} sx={{ mr: 1 }} />}
             {mode === 'create' ? 'Create' : 'Update'}
           </Button>

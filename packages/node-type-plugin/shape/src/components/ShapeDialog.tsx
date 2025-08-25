@@ -3,7 +3,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/
 
 interface ShapeDialogProps {
   mode: 'create' | 'edit';
-  parentNodeId?: string;
+  parentId?: string;
   nodeId?: string;
   onClose: () => void;
   open: boolean;
@@ -11,23 +11,20 @@ interface ShapeDialogProps {
 
 export const ShapeDialog: React.FC<ShapeDialogProps> = ({
   mode,
-  parentNodeId,
+  parentId,
   nodeId,
   onClose,
-  open
+  open,
 }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {mode === 'create' ? 'Create Shape Layer' : 'Edit Shape Layer'}
-      </DialogTitle>
+      <DialogTitle>{mode === 'create' ? 'Create Shape Layer' : 'Edit Shape Layer'}</DialogTitle>
       <DialogContent>
         {/* Shape configuration form will go here */}
         <div>
-          {mode === 'create' 
-            ? `Creating shape layer in parent: ${parentNodeId}`
-            : `Editing shape layer: ${nodeId}`
-          }
+          {mode === 'create'
+            ? `Creating shape layer in parent: ${parentId}`
+            : `Editing shape layer: ${nodeId}`}
         </div>
       </DialogContent>
       <DialogActions>

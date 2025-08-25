@@ -9,7 +9,6 @@ export interface BreadcrumbNode {
   type?: string;
   name?: string;
   parentId?: string | null;
-  parentNodeId?: string | null;
 }
 
 export interface TreeConsoleBreadcrumbContext {

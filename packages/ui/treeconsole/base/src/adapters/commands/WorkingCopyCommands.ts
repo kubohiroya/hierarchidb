@@ -10,7 +10,6 @@ import type {
   NodeId,
   TreeNode,
   Timestamp,
-
   CommitWorkingCopyPayload,
   CommitWorkingCopyForCreatePayload,
   DiscardWorkingCopyPayload,
@@ -21,8 +20,8 @@ import { TreeConsoleAdapterError } from '../../types/index';
 
 export interface WorkingCopyEditSession {
   workingCopyId: string;
-  sourceNodeId?: NodeId;
-  parentNodeId?: NodeId;
+  sourceId?: NodeId;
+  parentId?: NodeId;
   isCreate: boolean;
   expectedUpdatedAt?: Timestamp;
 }
@@ -53,7 +52,7 @@ export class WorkingCopyCommandsAdapter {
 
       return {
         workingCopyId,
-        sourceNodeId,
+        sourceId: sourceNodeId,
         isCreate: false,
         expectedUpdatedAt: currentNodeData?.updatedAt,
       };
@@ -69,14 +68,14 @@ export class WorkingCopyCommandsAdapter {
   /**
    * 新規ノード作成のためのWorking Copy作成
    *
-   * @param parentNodeId 新規ノードの親ノードID
+   * @param parentId 新規ノードの親ノードID
    * @param name 新規ノードの名前
    * @param description 新規ノードの説明（省略可能）
    * @param options アダプター実行オプション
    * @returns 編集セッション情報
    */
   async startNodeCreate(
-    parentNodeId: NodeId,
+    parentId: NodeId,
     name: string,
     _description: string | undefined,
     nodeType: string,
@@ -84,22 +83,20 @@ export class WorkingCopyCommandsAdapter {
   ): Promise<WorkingCopyEditSession> {
     try {
       // Command creation is no longer needed with the new API
-      
+
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
-        nodeType,
-        parentNodeId,
-        { name }
-      );
+      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(nodeType, parentId, {
+        name,
+      });
 
       return {
         workingCopyId: workingCopy.id,
-        parentNodeId,
+        parentId: parentId,
         isCreate: true,
       };
     } catch (error) {
       throw new TreeConsoleAdapterError(
-        `Failed to start creating node in parent ${parentNodeId}`,
+        `Failed to start creating node in parent ${parentId}`,
         'START_NODE_CREATE_ERROR',
         error as Error
       );
@@ -139,12 +136,14 @@ export class WorkingCopyCommandsAdapter {
       );
 
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
+      const result = await workingCopyAPI.commitWorkingCopy(
+        command.payload.workingCopyId as NodeId
+      );
 
       if (!result.success) {
         throw new TreeConsoleAdapterError(
           `Failed to commit node edit: ${result.error || 'Unknown error'}`,
-'COMMIT_NODE_EDIT_FAILED'
+          'COMMIT_NODE_EDIT_FAILED'
         );
       }
     } catch (error) {
@@ -191,12 +190,14 @@ export class WorkingCopyCommandsAdapter {
       );
 
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
+      const result = await workingCopyAPI.commitWorkingCopy(
+        command.payload.workingCopyId as NodeId
+      );
 
       if (!result.success) {
         throw new TreeConsoleAdapterError(
           `Failed to commit node create: ${result.error || 'Unknown error'}`,
-'COMMIT_NODE_CREATE_FAILED'
+          'COMMIT_NODE_CREATE_FAILED'
         );
       }
     } catch (error) {

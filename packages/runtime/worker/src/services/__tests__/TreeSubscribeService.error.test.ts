@@ -1,4 +1,9 @@
-import type { CommandEnvelope, ObserveNodePayload, Timestamp, NodeId } from '@hierarchidb/common-core';
+import type {
+  CommandEnvelope,
+  ObserveNodePayload,
+  Timestamp,
+  NodeId,
+} from '@hierarchidb/common-core';
 import { generateNodeId } from '@hierarchidb/common-core';
 import { firstValueFrom, take, timeout, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,18 +27,18 @@ describe('TreeSubscribeService - Error Handling & Resource Management', () => {
     mockCoreDB = {
       // Database tables
       trees: { toArray: vi.fn().mockResolvedValue([]) },
-      nodes: { 
+      nodes: {
         get: vi.fn(),
         toArray: vi.fn().mockResolvedValue([]),
         where: vi.fn().mockReturnThis(),
         equals: vi.fn().mockReturnThis(),
       },
       rootStates: { toArray: vi.fn().mockResolvedValue([]) },
-      
+
       // Core methods
       getNode: vi.fn().mockResolvedValue({
         id: 'folder1' as NodeId,
-        parentNodeId: 'root' as NodeId,
+        parentId: 'root' as NodeId,
         name: 'Test Folder',
         nodeType: 'folder',
         createdAt: Date.now(),
@@ -42,7 +47,7 @@ describe('TreeSubscribeService - Error Handling & Resource Management', () => {
       }),
       updateNode: vi.fn().mockResolvedValue(undefined),
       deleteNode: vi.fn().mockResolvedValue(undefined),
-      
+
       // Required database properties for CoreDB interface
       treeIdToTreeName: new Map(),
       changeSubject: new Subject(), // Add the required changeSubject
@@ -100,7 +105,7 @@ describe('TreeSubscribeService - Error Handling & Resource Management', () => {
       });
 
       // Allow time for error to propagate
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       subscription.unsubscribe();
     });
 
@@ -132,7 +137,7 @@ describe('TreeSubscribeService - Error Handling & Resource Management', () => {
         },
         error: (error) => {
           console.log('Subscription error after deletion:', error);
-        }
+        },
       });
 
       // Simulate node deletion after a delay
@@ -141,7 +146,7 @@ describe('TreeSubscribeService - Error Handling & Resource Management', () => {
       }, 10);
 
       // Allow time for deletion to be processed
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       subscription.unsubscribe();
     });
   });

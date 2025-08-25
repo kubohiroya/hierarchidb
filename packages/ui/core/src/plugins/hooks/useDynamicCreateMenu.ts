@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { NodeId, CreateMenuItem, CreateMenuItemOrDivider, IconComponent } from '@hierarchidb/common-core';
+import type {
+  NodeId,
+  CreateMenuItem,
+  CreateMenuItemOrDivider,
+  IconComponent,
+} from '@hierarchidb/common-core';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 
@@ -13,7 +18,7 @@ import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
  * - Worker-side restrictions
  */
 export function useDynamicCreateMenu(
-  parentNodeId: NodeId,
+  parentId: NodeId,
   nodeAdapter: NodeDataAdapter
 ): {
   readonly menuItems: readonly CreateMenuItemOrDivider[];
@@ -33,7 +38,7 @@ export function useDynamicCreateMenu(
         setError(null);
 
         // Get parent node information
-        const parentNode = await nodeAdapter.getWorkerAPI().getTreeNode(parentNodeId);
+        const parentNode = await nodeAdapter.getWorkerAPI().getTreeNode(parentId);
         const parentPlugin = getUIPluginRegistry().get(parentNode.nodeType);
 
         // Check if parent can have children
@@ -63,7 +68,7 @@ export function useDynamicCreateMenu(
         );
 
         // Check permissions for each plugin
-        const permissionCheckedPlugins = await checkPluginPermissions(allowedPlugins, parentNodeId);
+        const permissionCheckedPlugins = await checkPluginPermissions(allowedPlugins, parentId);
 
         // Build menu items
         const items = permissionCheckedPlugins.map((plugin) => ({
@@ -75,7 +80,7 @@ export function useDynamicCreateMenu(
           order: plugin.menu.createOrder,
           onClick: () => {
             // This will be provided by the consuming component
-            console.log(`Create ${plugin.nodeType} in ${parentNodeId}`);
+            console.log(`Create ${plugin.nodeType} in ${parentId}`);
           },
         }));
 
@@ -104,7 +109,7 @@ export function useDynamicCreateMenu(
     return () => {
       isCancelled = true;
     };
-  }, [parentNodeId, nodeAdapter]);
+  }, [parentId, nodeAdapter]);
 
   return { menuItems, loading, error };
 }
@@ -138,7 +143,7 @@ async function getWorkerAllowedChildTypes(
  */
 async function checkPluginPermissions(
   plugins: readonly any[],
-  parentNodeId: NodeId
+  parentId: NodeId
 ): Promise<readonly any[]> {
   const allowedPlugins: any[] = [];
 
@@ -147,7 +152,7 @@ async function checkPluginPermissions(
       // Check plugin-specific permissions
       if (plugin.hooks.beforeShowCreateDialog) {
         const result = await plugin.hooks.beforeShowCreateDialog({
-          parentNodeId,
+          parentId: parentId,
           nodeType: plugin.nodeType,
           context: {
             userId: 'current-user', // TODO: Get from context
@@ -208,10 +213,7 @@ export function useCreateMenuItem(
   _nodeAdapter: NodeDataAdapter,
   unifiedOperations: any // TODO: Type this properly
 ) {
-  return function createMenuItemWithHandler(
-    parentNodeId: NodeId,
-    nodeType: string
-  ): CreateMenuItem {
+  return function createMenuItemWithHandler(parentId: NodeId, nodeType: string): CreateMenuItem {
     const plugin = getUIPluginRegistry().get(nodeType);
 
     if (!plugin) {
@@ -225,7 +227,7 @@ export function useCreateMenuItem(
       icon: plugin.components.icon as IconComponent | string | undefined,
       group: plugin.menu.group,
       order: plugin.menu.createOrder,
-      onClick: () => unifiedOperations.createNode(parentNodeId, nodeType),
+      onClick: () => unifiedOperations.createNode(parentId, nodeType),
     };
   };
 }

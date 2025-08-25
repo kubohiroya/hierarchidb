@@ -1,13 +1,14 @@
 /**
  * @fileoverview UI Dialog package exports
+ * 
+ * This package provides generic, reusable dialog components.
+ * Plugin-specific components are located in @hierarchidb/runtime-plugin-dialog
  */
 
-// Components
+// Generic dialog components
 export { StepperDialog } from './components/StepperDialog';
+export { FullScreenDialog } from './components/FullScreenDialog';
 export { UnsavedChangesDialog } from './components/UnsavedChangesDialog';
-export { CommonPluginDialog } from './components/CommonPluginDialog';
-export { CommonDialogTitle } from './components/CommonDialogTitle';
-export { CommonDialogActions } from './components/CommonDialogActions';
 
 // Hooks
 export { useWorkingCopy } from './hooks/useWorkingCopy';
@@ -39,3 +40,7 @@ export type {
 export type {
   NotificationProviderProps,
 } from './providers/NotificationProvider';
+
+export type {
+  FullScreenDialogProps,
+} from './components/FullScreenDialog';

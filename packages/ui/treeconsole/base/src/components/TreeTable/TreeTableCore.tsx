@@ -80,13 +80,22 @@ const StyledTableHead = styled(TableHead)`
   
   & .MuiTableCell-root {
     font-weight: 600;
-    border-bottom: 2px solid ${({ theme }) => theme.palette.divider};
+    border-bottom: 2px solid ${({ theme }) => theme.palette.divider} !important;
     padding: 8px 12px;
     user-select: none;
-    border-right: 2px solid ${({ theme }) => theme.palette.divider};
+    border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
     
     &:last-child {
-      border-right: none;
+      border-right: none !important;
+    }
+  }
+  
+  /* MUIのstickyHeaderクラスのスタイルを上書き */
+  & .MuiTableCell-stickyHeader {
+    border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
+    
+    &:last-child {
+      border-right: none !important;
     }
   }
 `;
@@ -104,11 +113,11 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
   
   & .MuiTableCell-root {
     padding: 8px 12px;
-    border-right: 2px solid ${({ theme }) => theme.palette.divider};
-    border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
+    border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
+    border-bottom: 1px solid ${({ theme }) => theme.palette.divider} !important;
     
     &:last-child {
-      border-right: none;
+      border-right: none !important;
     }
   }
 `;
@@ -394,13 +403,29 @@ export function TreeTableCore({
         <StyledTableHead>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableCell key={header.id} sx={{ width: header.getSize() }}>
-                  {header.isPlaceholder
-                    ? null
-                    : (flexRender(header.column.columnDef.header, header.getContext()) as React.ReactNode)}
-                </TableCell>
-              ))}
+              {headerGroup.headers.map((header, index) => {
+                // デバッグ: インデックスと境界線の状態を確認
+                const showBorder = index < headerGroup.headers.length - 1;
+                console.log(`Header ${index}: showBorder=${showBorder}, total=${headerGroup.headers.length}`);
+                
+                return (
+                  <TableCell 
+                    key={header.id} 
+                    style={{ 
+                      width: header.getSize(),
+                      borderRight: showBorder ? '2px solid red' : 'none',
+                      borderBottom: '2px solid red',
+                      fontWeight: 600,
+                      padding: '8px 12px',
+                      userSelect: 'none'
+                    }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : (flexRender(header.column.columnDef.header, header.getContext()) as React.ReactNode)}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </StyledTableHead>
@@ -419,8 +444,18 @@ export function TreeTableCore({
                 onContextMenu={(e) => handleRowContextMenu(node, e)}
                 sx={{ cursor: 'pointer' }}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} sx={{ width: cell.column.getSize() }}>
+                {row.getVisibleCells().map((cell, index) => (
+                  <TableCell 
+                    key={cell.id} 
+                    style={{ 
+                      width: cell.column.getSize(),
+                      borderRight: index < row.getVisibleCells().length - 1 
+                        ? '2px solid rgba(0, 0, 0, 0.12)'
+                        : 'none',
+                      borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
+                      padding: '8px 12px'
+                    }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext()) as React.ReactNode}
                   </TableCell>
                 ))}

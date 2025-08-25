@@ -1,5 +1,5 @@
-import type { NodeId, PeerEntity, EntityId } from "@hierarchidb/common-core";
-import type { Geometry, BBox } from "geojson";
+import type { NodeId, PeerEntity, EntityId } from '@hierarchidb/common-core';
+import type { Geometry, BBox } from 'geojson';
 
 // Types are imported from shared/types.ts via shared/openstreetmap-type.ts
 
@@ -30,7 +30,7 @@ export interface ShapeEntity extends PeerEntity {
 
   // Processing Status
   batchSessionId?: string;
-  processingStatus?: "idle" | "processing" | "completed" | "failed";
+  processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
 
   // Metadata
   createdAt: number;
@@ -49,11 +49,7 @@ export interface ShapeWorkingCopy extends ShapeEntity {
 // Data Source Types
 // ================================
 
-export type DataSourceName =
-  | "naturalearth"
-  | "geoboundaries"
-  | "gadm"
-  | "openstreetmap";
+export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
 
 export interface DataSourceConfig {
   name: DataSourceName;
@@ -94,7 +90,7 @@ export interface ProcessingConfig {
   tileZoomRange?: [number, number];
 }
 
-export type FeatureFilterMethod = "bbox_only" | "polygon_only" | "hybrid";
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 
 // ================================
 // Country & Admin Level Types
@@ -107,7 +103,7 @@ export interface CountryMetadata {
   availableAdminLevels: number[];
   population?: number;
   area?: number;
-  dataQuality?: "high" | "medium" | "low";
+  dataQuality?: 'high' | 'medium' | 'low';
 }
 
 export interface UrlMetadata {
@@ -124,25 +120,24 @@ export interface UrlMetadata {
 // ================================
 
 export type BatchStatus =
-  | "preparing"
-  | "downloading"
-  | "processing"
-  | "generating"
-  | "completed"
-  | "error"
-  | "cancelled";
+  | 'preparing'
+  | 'downloading'
+  | 'processing'
+  | 'generating'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
 
 export const BatchTaskStage = {
-  WAIT: "wait",
-  PROCESS: "process",
-  SUCCESS: "success",
-  ERROR: "error",
-  PAUSE: "pause",
-  CANCEL: "cancel",
+  WAIT: 'wait',
+  PROCESS: 'process',
+  SUCCESS: 'success',
+  ERROR: 'error',
+  PAUSE: 'pause',
+  CANCEL: 'cancel',
 } as const;
 
-export type BatchTaskStage =
-  (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
+export type BatchTaskStage = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
 export interface BatchTask {
   taskId: string;
@@ -155,14 +150,10 @@ export interface BatchTask {
   metadata?: Record<string, any>;
 }
 
-export type BatchTaskType =
-  | "download"
-  | "simplify1"
-  | "simplify2"
-  | "vectortile";
+export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 
 export interface DownloadTask extends BatchTask {
-  taskType: "download";
+  taskType: 'download';
   url: string;
   countryCode: string;
   adminLevel: number;
@@ -171,7 +162,7 @@ export interface DownloadTask extends BatchTask {
 }
 
 export interface SimplifyTask extends BatchTask {
-  taskType: "simplify1" | "simplify2";
+  taskType: 'simplify1' | 'simplify2';
   countryCode: string;
   adminLevel: number;
   featureCount?: number;
@@ -179,7 +170,7 @@ export interface SimplifyTask extends BatchTask {
 }
 
 export interface VectorTileTask extends BatchTask {
-  taskType: "vectortile";
+  taskType: 'vectortile';
   countryCode: string;
   adminLevel: number;
   zoomLevel: number;
@@ -192,9 +183,9 @@ export interface VectorTileTask extends BatchTask {
 // ================================
 
 export interface ShapeDialogProps {
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   nodeId?: NodeId;
-  parentNodeId?: NodeId;
+  parentId?: NodeId;
   open: boolean;
   onClose: () => void;
 }
@@ -246,7 +237,7 @@ export interface ShapeEntityMetadata {
 export interface BatchSession {
   sessionId: string;
   nodeId: NodeId;
-  status: "running" | "paused" | "completed" | "failed" | "cancelled";
+  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;
   startedAt: number;
   updatedAt: number;
@@ -264,20 +255,11 @@ export interface BatchSession {
   resourceUsage?: any;
 }
 
-export type TaskStatus =
-  | "waiting"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
-export type ProcessingStage =
-  | "download"
-  | "simplify1"
-  | "simplify2"
-  | "vectortile";
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type ProcessingStage = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 
 export interface Feature {
-  type: "Feature"; // GeoJSON標準のtypeプロパティ
+  type: 'Feature'; // GeoJSON標準のtypeプロパティ
   id: number; // Dexie.js内部管理用ID（自動インクリメント）
   originalId?: string | number; // GeoJSON由来の元ID（保持用）
   nodeId: NodeId;
@@ -308,7 +290,7 @@ export interface FeatureBuffer {
   nodeId: NodeId;
   stage: ProcessingStage;
   data: Uint8Array;
-  format: "geojson" | "topojson" | "geobuf";
+  format: 'geojson' | 'topojson' | 'geobuf';
   featureCount: number;
   byteSize: number;
   compression?: string;
@@ -329,7 +311,7 @@ export interface VectorTileEntity {
   generatedAt: number;
   lastAccessed?: number;
   contentHash: string;
-  contentEncoding?: "gzip" | "br";
+  contentEncoding?: 'gzip' | 'br';
   version: number;
 }
 
@@ -359,14 +341,14 @@ export interface TileMetadata {
   generatedAt: number;
   lastAccessed?: number;
   contentHash: string;
-  contentEncoding?: "gzip" | "br";
+  contentEncoding?: 'gzip' | 'br';
   version: number;
 }
 
 export interface CacheEntry {
   cacheKey: string;
   nodeId?: NodeId;
-  cacheType: "features" | "tiles" | "buffers" | "metadata";
+  cacheType: 'features' | 'tiles' | 'buffers' | 'metadata';
   data: any;
   size: number;
   hits: number;
@@ -402,7 +384,7 @@ export interface ProgressInfo {
 }
 
 export interface StageStatus {
-  status: "waiting" | "running" | "completed" | "failed";
+  status: 'waiting' | 'running' | 'completed' | 'failed';
   progress: number;
   tasksTotal: number;
   tasksCompleted: number;
@@ -434,9 +416,9 @@ export interface ResourceUsage {
 
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   concurrentDownloads: 2,
-  corsProxyBaseURL: "",
+  corsProxyBaseURL: '',
   enableFeatureFiltering: false,
-  featureFilterMethod: "hybrid",
+  featureFilterMethod: 'hybrid',
   featureAreaThreshold: 0.1,
   concurrentProcesses: 2,
   maxZoomLevel: 12,
@@ -445,10 +427,10 @@ export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
 };
 
 export const SHAPE_LEVELS = [
-  { level: 0, label: "Country", icon: "🌍" },
-  { level: 1, label: "State/Province", icon: "🏛️" },
-  { level: 2, label: "County/District", icon: "🏘️" },
-  { level: 3, label: "Municipality", icon: "🏢" },
-  { level: 4, label: "Ward/Borough", icon: "🏠" },
-  { level: 5, label: "Neighborhood", icon: "📍" },
+  { level: 0, label: 'Country', icon: '🌍' },
+  { level: 1, label: 'State/Province', icon: '🏛️' },
+  { level: 2, label: 'County/District', icon: '🏘️' },
+  { level: 3, label: 'Municipality', icon: '🏢' },
+  { level: 4, label: 'Ward/Borough', icon: '🏠' },
+  { level: 5, label: 'Neighborhood', icon: '📍' },
 ] as const;

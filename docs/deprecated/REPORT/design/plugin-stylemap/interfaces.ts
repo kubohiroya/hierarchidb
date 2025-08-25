@@ -404,7 +404,7 @@ export interface StyleMapDialogProps {
   /** Dialog mode */
   mode: 'create' | 'edit';
   /** Parent node ID for creation */
-  parentNodeId: string;
+  parentId: string;
   /** Current step for stepper */
   currentStep?: number;
   /** Step change handler */

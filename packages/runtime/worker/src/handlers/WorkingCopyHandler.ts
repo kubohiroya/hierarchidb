@@ -4,7 +4,13 @@
  * Implements Copy-on-Write pattern with conflict resolution and version control
  */
 
-import type { PeerEntity, GroupEntity, WorkingCopy, NodeId, EntityId } from '@hierarchidb/common-core';
+import type {
+  PeerEntity,
+  GroupEntity,
+  WorkingCopy,
+  NodeId,
+  EntityId,
+} from '@hierarchidb/common-core';
 import type Dexie from 'dexie';
 import type { PeerEntityImpl, GroupEntityImpl, PeerWorkingCopy } from './SimpleEntityHandler';
 // GroupEntityImpl interface was removed, using GroupEntityImpl instead
@@ -161,7 +167,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
         // Get all sub-entities for this node without relying on groupEntityIndex
         const allGroupEntities = await this.db
           .table(this.groupEntityTableName)
-          .where('parentNodeId')
+          .where('parentId')
           .equals(nodeId)
           .toArray();
 
@@ -321,18 +327,14 @@ export class WorkingCopyHandler extends GroupEntityHandler {
       // Commit sub-entities if configured
       if (workingCopy.groupEntitiesData && this.groupEntityTableName) {
         // Clear existing sub-entities
-        await this.db
-          .table(this.groupEntityTableName)
-          .where('parentNodeId')
-          .equals(nodeId)
-          .delete();
+        await this.db.table(this.groupEntityTableName).where('parentId').equals(nodeId).delete();
 
         // Add all sub-entities from working copy
         for (const [type, groupEntities] of Object.entries(workingCopy.groupEntitiesData)) {
           for (const groupEntity of groupEntities) {
             await this.db.table(this.groupEntityTableName).add({
               ...groupEntity,
-              parentNodeId: nodeId,
+              parentId: nodeId,
               updatedAt: now,
             });
           }
@@ -532,17 +534,17 @@ export class WorkingCopyHandler extends GroupEntityHandler {
   ): Promise<void> {
     // Delete all existing sub-entities
     if (this.groupEntityTableName) {
-      await this.db.table(this.groupEntityTableName).where('parentNodeId').equals(nodeId).delete();
+      await this.db.table(this.groupEntityTableName).where('parentId').equals(nodeId).delete();
     }
 
     // Create new sub-entities from working copy
     for (const [type, entities] of Object.entries(groupEntitiesData)) {
       for (const entity of entities) {
-        const { id, parentNodeId, createdAt, updatedAt, version, ...data } = entity;
+        const { id, parentId, createdAt, updatedAt, version, ...data } = entity;
         await this.createGroupEntity(nodeId, type, {
           ...data,
           id: id || this.generateNodeId(),
-          parentNodeId: nodeId,
+          parentId: nodeId,
           groupEntityType: type,
           type: type,
           createdAt: createdAt || this.now(),
@@ -836,7 +838,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
       id: data.id || (this.generateNodeId() as EntityId),
       nodeId: nodeId,
       type: groupEntityType, // Required by GroupEntity
-      parentNodeId: nodeId,
+      parentId: nodeId,
       groupEntityType,
       data: data.data || {},
       createdAt: data.createdAt || now,

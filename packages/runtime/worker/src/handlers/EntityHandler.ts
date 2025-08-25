@@ -1,4 +1,10 @@
-import { generateEntityId, type NodeId, type EntityId, type PeerEntity, type WorkingCopyProperties } from '@hierarchidb/common-core';
+import {
+  generateEntityId,
+  type NodeId,
+  type EntityId,
+  type PeerEntity,
+  type WorkingCopyProperties,
+} from '@hierarchidb/common-core';
 import { WorkerErrorCode } from '../command/types';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
@@ -99,7 +105,7 @@ export class BaseEntityHandler<
           updatedAt: Date.now(),
           version: 1, // Reset version for working copy
         } as TEntity;
-        
+
         // Store in EphemeralDB
         if (this.ephemeralDB.tables[0]) {
           await this.ephemeralDB.transaction('rw', this.ephemeralDB.tables[0], async () => {
@@ -108,7 +114,7 @@ export class BaseEntityHandler<
         } else {
           await this.ephemeralDB.table(this.tableName).add(entityCopy);
         }
-        
+
         // Update working copy metadata
         workingCopyMeta.hasEntityCopy = true;
         workingCopyMeta.entityWorkingCopyId = entityWorkingCopyId;
@@ -125,7 +131,7 @@ export class BaseEntityHandler<
           updatedAt: Date.now(),
           version: 1,
         } as TEntity;
-        
+
         if (this.ephemeralDB.tables[0]) {
           await this.ephemeralDB.transaction('rw', this.ephemeralDB.tables[0], async () => {
             await this.ephemeralDB.table(this.tableName).add(newEntity);
@@ -133,34 +139,40 @@ export class BaseEntityHandler<
         } else {
           await this.ephemeralDB.table(this.tableName).add(newEntity);
         }
-        
+
         workingCopyMeta.hasEntityCopy = true;
         workingCopyMeta.entityWorkingCopyId = entityWorkingCopyId;
         await this.storeWorkingCopy(workingCopyMeta);
       }
     } else {
       // Entity already copied - just update it
-      const entityCopy = await this.ephemeralDB.table(this.tableName)
-        .where('id').equals(workingCopyMeta.entityWorkingCopyId!)
+      const entityCopy = await this.ephemeralDB
+        .table(this.tableName)
+        .where('id')
+        .equals(workingCopyMeta.entityWorkingCopyId!)
         .first();
-      
+
       if (!entityCopy) {
         throw new Error('Entity copy not found');
       }
-      
+
       const updated = {
         ...entityCopy,
         ...data,
         updatedAt: Date.now(),
         version: entityCopy.version + 1,
       };
-      
+
       if (this.ephemeralDB.tables[0]) {
         await this.ephemeralDB.transaction('rw', this.ephemeralDB.tables[0], async () => {
-          await this.ephemeralDB.table(this.tableName).update(workingCopyMeta.entityWorkingCopyId!, updated);
+          await this.ephemeralDB
+            .table(this.tableName)
+            .update(workingCopyMeta.entityWorkingCopyId!, updated);
         });
       } else {
-        await this.ephemeralDB.table(this.tableName).update(workingCopyMeta.entityWorkingCopyId!, updated);
+        await this.ephemeralDB
+          .table(this.tableName)
+          .update(workingCopyMeta.entityWorkingCopyId!, updated);
       }
     }
   }
@@ -169,7 +181,7 @@ export class BaseEntityHandler<
    * Update sub-entities in working copy context with copy-on-write
    */
   async updateWorkingCopyGroupEntities(
-    nodeId: NodeId, 
+    nodeId: NodeId,
     groupEntityType: string,
     groupEntities: TGroupEntity[]
   ): Promise<void> {
@@ -187,37 +199,39 @@ export class BaseEntityHandler<
     // Check if this type of sub-entity has been copied
     if (!(workingCopyMeta as any).hasGroupEntityCopy[groupEntityType]) {
       // First update for this sub-entity type - copy from CoreDB to EphemeralDB
-      const originalGroupEntities = await this.getGroupEntities?.(nodeId) || [];
-      
+      const originalGroupEntities = (await this.getGroupEntities?.(nodeId)) || [];
+
       // Delete any existing sub-entities in EphemeralDB (clean slate)
       if (this.groupEntityTableName) {
-        await this.ephemeralDB.table(this.groupEntityTableName)
-          .where('parentNodeId').equals(nodeId)
-          .and(item => item.type === groupEntityType)
+        await this.ephemeralDB
+          .table(this.groupEntityTableName)
+          .where('parentId')
+          .equals(nodeId)
+          .and((item) => item.type === groupEntityType)
           .delete();
       }
-      
+
       // Mark this sub-entity type as copied
       (workingCopyMeta as any).hasGroupEntityCopy[groupEntityType] = true;
     }
-    
+
     // Store new sub-entities in EphemeralDB
     if (this.groupEntityTableName) {
       for (const groupEntity of groupEntities) {
         const groupEntityCopy = {
           ...groupEntity,
           id: groupEntity.id || generateEntityId(),
-          parentNodeId: nodeId,
+          parentId: nodeId,
           type: groupEntityType,
           createdAt: groupEntity.createdAt || Date.now(),
           updatedAt: Date.now(),
           version: 1,
         };
-        
+
         await this.ephemeralDB.table(this.groupEntityTableName).add(groupEntityCopy);
       }
     }
-    
+
     // Update working copy metadata
     await this.storeWorkingCopy(workingCopyMeta);
   }
@@ -244,7 +258,7 @@ export class BaseEntityHandler<
   async createWorkingCopy(nodeId: NodeId, isDraft?: boolean): Promise<TWorkingCopy> {
     // For new specification: Working copy for TreeNode only, entity is copy-on-write
     // This method now only tracks that a working copy exists, entity copy happens on first update
-    
+
     // Check if working copy tracking exists
     const existing = await this.getWorkingCopy(nodeId);
     if (existing) {
@@ -252,7 +266,7 @@ export class BaseEntityHandler<
     }
 
     const now = Date.now();
-    
+
     // Create minimal working copy metadata (entity not copied yet)
     const workingCopyMetadata = {
       nodeId,
@@ -287,17 +301,19 @@ export class BaseEntityHandler<
     // Only proceed if entity was actually copied (copy-on-write)
     if (workingCopyMeta.hasEntityCopy && workingCopyMeta.entityWorkingCopyId) {
       // Get the entity copy from EphemeralDB
-      const entityCopy = await this.ephemeralDB.table(this.tableName)
-        .where('id').equals(workingCopyMeta.entityWorkingCopyId)
+      const entityCopy = await this.ephemeralDB
+        .table(this.tableName)
+        .where('id')
+        .equals(workingCopyMeta.entityWorkingCopyId)
         .first();
-      
+
       if (!entityCopy) {
         throw new Error('Entity copy not found in EphemeralDB');
       }
 
       // Check if this is a new entity or update
       const existingEntity = await this.getEntity(nodeId);
-      
+
       // Prepare entity with correct ID for CoreDB
       const finalEntity = {
         ...entityCopy,
@@ -322,20 +338,26 @@ export class BaseEntityHandler<
 
     // Commit sub-entities if they were copied
     if ((workingCopyMeta as any).hasGroupEntityCopy && this.groupEntityTableName) {
-      for (const [groupEntityType, wasCopied] of Object.entries((workingCopyMeta as any).hasGroupEntityCopy)) {
+      for (const [groupEntityType, wasCopied] of Object.entries(
+        (workingCopyMeta as any).hasGroupEntityCopy
+      )) {
         if (wasCopied) {
           // Get sub-entities from EphemeralDB
-          const groupEntitiesInWC = await this.ephemeralDB.table(this.groupEntityTableName)
-            .where('parentNodeId').equals(nodeId)
-            .and(item => item.type === groupEntityType)
+          const groupEntitiesInWC = await this.ephemeralDB
+            .table(this.groupEntityTableName)
+            .where('parentId')
+            .equals(nodeId)
+            .and((item) => item.type === groupEntityType)
             .toArray();
-          
+
           // Delete existing sub-entities in CoreDB
-          await this.coreDB.table(this.groupEntityTableName)
-            .where('parentNodeId').equals(nodeId)
-            .and(item => item.type === groupEntityType)
+          await this.coreDB
+            .table(this.groupEntityTableName)
+            .where('parentId')
+            .equals(nodeId)
+            .and((item) => item.type === groupEntityType)
             .delete();
-          
+
           // Copy sub-entities to CoreDB
           for (const groupEntity of groupEntitiesInWC) {
             await this.coreDB.table(this.groupEntityTableName).add({
@@ -343,11 +365,13 @@ export class BaseEntityHandler<
               updatedAt: Date.now(),
             });
           }
-          
+
           // Delete sub-entities from EphemeralDB
-          await this.ephemeralDB.table(this.groupEntityTableName)
-            .where('parentNodeId').equals(nodeId)
-            .and(item => item.type === groupEntityType)
+          await this.ephemeralDB
+            .table(this.groupEntityTableName)
+            .where('parentId')
+            .equals(nodeId)
+            .and((item) => item.type === groupEntityType)
             .delete();
         }
       }
@@ -379,7 +403,7 @@ export class BaseEntityHandler<
     const groupEntityData: TGroupEntity = {
       ...data,
       id: data.id || generateEntityId(),
-      parentNodeId: nodeId,
+      parentId: nodeId,
       groupEntityType,
     } as TGroupEntity;
 
@@ -477,7 +501,9 @@ export class BaseEntityHandler<
 
   protected async retrieveGroupEntities(parentId: NodeId): Promise<TGroupEntity[]> {
     // Retrieve sub-entities by parent
-    const groupEntitiesMap = (this.coreDB as any)._groupEntities as Map<string, TGroupEntity> | undefined;
+    const groupEntitiesMap = (this.coreDB as any)._groupEntities as
+      | Map<string, TGroupEntity>
+      | undefined;
     if (!groupEntitiesMap) return [];
 
     const result: TGroupEntity[] = [];

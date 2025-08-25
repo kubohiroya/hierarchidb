@@ -29,7 +29,7 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
     db.version(1).stores({
       entities: 'nodeId, name, createdAt, updatedAt, version',
       workingCopies: 'workingCopyId, workingCopyOf, nodeId, updatedAt',
-      subEntities: 'id, parentNodeId, [parentNodeId+groupType], createdAt, updatedAt',
+      subEntities: 'id, parentId, [parentId+groupType], createdAt, updatedAt',
     });
 
     await db.open();
@@ -150,23 +150,23 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
       const subEntityPromises = [
         subEntityHandler.createEntity(nodeId1, {
           name: 'Task 1',
-          data: { 
+          data: {
             type: 'task',
-            status: 'pending' 
+            status: 'pending',
           },
         }),
         subEntityHandler.createEntity(nodeId2, {
           name: 'Task 2',
-          data: { 
+          data: {
             type: 'task',
-            status: 'in-progress' 
+            status: 'in-progress',
           },
         }),
         subEntityHandler.createEntity(nodeId3, {
           name: 'Task 3',
-          data: { 
+          data: {
             type: 'task',
-            status: 'completed' 
+            status: 'completed',
           },
         }),
       ];
@@ -260,31 +260,31 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
       const batchOperations = [
         {
           nodeId: nodeId1,
-          data: { 
+          data: {
             name: 'Batch Item 1',
-            data: { 
+            data: {
               type: 'batch-test',
-              batchIndex: 1 
+              batchIndex: 1,
             },
           },
         },
         {
           nodeId: nodeId1,
-          data: { 
+          data: {
             name: 'Batch Item 2',
-            data: { 
+            data: {
               type: 'batch-test',
-              batchIndex: 2 
+              batchIndex: 2,
             },
           },
         },
         {
           nodeId: nodeId1,
-          data: { 
+          data: {
             name: 'Batch Item 3',
-            data: { 
+            data: {
               type: 'batch-test',
-              batchIndex: 3 
+              batchIndex: 3,
             },
           },
         },
@@ -335,17 +335,17 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
 
       await subEntityHandler.createEntity(nodeId1, {
         name: 'Cascade Attachment',
-        data: { 
+        data: {
           type: 'attachment',
-          size: 100 
+          size: 100,
         },
       });
 
       await subEntityHandler.createEntity(nodeId1, {
         name: 'Cascade Comment',
-        data: { 
+        data: {
           type: 'comment',
-          text: 'Test comment' 
+          text: 'Test comment',
         },
       });
 
@@ -450,9 +450,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
       ).rejects.toThrow('Parent entity not found');
 
       // Test working copy validation
-      await expect(
-        workingCopyHandler.createWorkingCopy('non-existent' as NodeId)
-      ).rejects.toThrow('Entity not found');
+      await expect(workingCopyHandler.createWorkingCopy('non-existent' as NodeId)).rejects.toThrow(
+        'Entity not found'
+      );
 
       const workingCopy = await workingCopyHandler.createWorkingCopy(nodeId1);
 
@@ -530,8 +530,8 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
 
       // Note: queryEntities only supports name, description, createdAfter, updatedAfter
       const allSubEntities = await subEntityHandler.queryEntities({});
-      const highPrioritySubEntities = allSubEntities.filter((e: any) => 
-        e.data?.type === 'test' && e.data?.priority === 3
+      const highPrioritySubEntities = allSubEntities.filter(
+        (e: any) => e.data?.type === 'test' && e.data?.priority === 3
       );
 
       const queryTime = Date.now() - queryStartTime;
@@ -543,7 +543,10 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
       // Batch operations performance
       const batchStartTime = Date.now();
 
-      const batchUpdates: Array<{ nodeId: NodeId; data: { data: { batchUpdated: boolean; updateIndex: number } } }> = [];
+      const batchUpdates: Array<{
+        nodeId: NodeId;
+        data: { data: { batchUpdated: boolean; updateIndex: number } };
+      }> = [];
       for (let i = 0; i < 50; i++) {
         batchUpdates.push({
           nodeId: `perf-entity-${i}` as NodeId,
@@ -580,9 +583,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
           id: `memory-sub-${i}` as EntityId,
           nodeId: nodeId,
           name: `Memory Test Sub ${i}`,
-          data: { 
+          data: {
             type: 'memory-test',
-            largeArray: new Array(50).fill(`sub-data-${i}`) 
+            largeArray: new Array(50).fill(`sub-data-${i}`),
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -629,9 +632,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
         id: subEntity1Id,
         nodeId: nodeId1,
         name: 'Task 1',
-        data: { 
+        data: {
           type: 'task',
-          status: 'pending' 
+          status: 'pending',
         },
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -643,9 +646,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
         id: subEntity2Id,
         nodeId: nodeId1,
         name: 'Task 2',
-        data: { 
+        data: {
           type: 'task',
-          status: 'in-progress' 
+          status: 'in-progress',
         },
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -667,9 +670,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
           id: 'step1-1' as EntityId,
           nodeId: nodeId1,
           name: 'Step 1',
-          data: { 
+          data: {
             type: 'step1',
-            order: 1 
+            order: 1,
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -680,9 +683,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
           id: 'step2-1' as EntityId,
           nodeId: nodeId1,
           name: 'Step 2',
-          data: { 
+          data: {
             type: 'step2',
-            order: 2 
+            order: 2,
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -693,8 +696,7 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
         await workingCopyHandler.createWorkingCopy(nodeId1);
 
         // Modify working copy
-        await workingCopyHandler.updateWorkingCopy(nodeId1, {
-          });
+        await workingCopyHandler.updateWorkingCopy(nodeId1, {});
 
         return true;
       };

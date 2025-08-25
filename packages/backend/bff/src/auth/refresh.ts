@@ -10,6 +10,10 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
   try {
     const authHeader = c.req.header('Authorization');
     const token = extractBearerToken(authHeader);
+    
+    // リフレッシュトークンIDをボディから取得（オプション）
+    const body = await c.req.json().catch(() => ({}));
+    const { refresh_token_id } = body;
 
     if (!token) {
       return c.json({ error: 'Missing authorization token' }, 401);
@@ -43,11 +47,26 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       env.JWT_ISSUER
     );
 
-    // Refresh with new token
-    const result = await kvManager.refreshUserToken(token, newSessionToken, sessionDuration);
+    // Refresh with new token and rotation
+    const result = await kvManager.refreshUserToken(
+      token, 
+      newSessionToken, 
+      sessionDuration,
+      refresh_token_id
+    );
 
     if (!result.success) {
-      return c.json({ error: 'Invalid or expired refresh token' }, 401);
+      // セキュリティ違反の場合は詳細なエラーを返す
+      if (result.error === 'Token reuse detected - all sessions revoked') {
+        return c.json({ 
+          error: 'security_violation',
+          error_description: result.error 
+        }, 403);
+      }
+      return c.json({ 
+        error: 'invalid_grant',
+        error_description: result.error || 'Invalid or expired refresh token' 
+      }, 401);
     }
 
     return c.json({
@@ -55,6 +74,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       token_type: 'Bearer',
       expires_in: sessionDuration * 3600,
       id_token: newSessionToken,
+      refresh_token_id: result.newRefreshTokenId, // 新しいリフレッシュトークンID
       scope: 'openid profile email',
       userinfo: {
         sub: userData.userId,

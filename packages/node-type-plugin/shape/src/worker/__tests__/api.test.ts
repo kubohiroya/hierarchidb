@@ -62,7 +62,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should create new draft WorkingCopy', async () => {
-      const parentNodeId = 'parent-456' as NodeId;
+      const parentId = 'parent-456' as NodeId;
       const mockWorkingCopy = {
         id: 'working-copy-new' as any,
         name: '',
@@ -77,9 +77,9 @@ describe('Shape Plugin API', () => {
         ShapeEntityHandler: vi.fn(() => mockHandler)
       }));
 
-      const workingCopyId = await shapePluginAPI.createNewDraftWorkingCopy(parentNodeId);
+      const workingCopyId = await shapePluginAPI.createNewDraftWorkingCopy(parentId);
       expect(typeof workingCopyId).toBe('string');
-      expect(mockHandler.createNewDraftWorkingCopy).toHaveBeenCalledWith(parentNodeId);
+      expect(mockHandler.createNewDraftWorkingCopy).toHaveBeenCalledWith(parentId);
     });
 
     it('should get WorkingCopy by ID', async () => {

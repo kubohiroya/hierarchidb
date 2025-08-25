@@ -1,17 +1,17 @@
 // TODO: Fix import path when ui-core/plugins/types is available
-import React from "react";
+import React from 'react';
 // import type { UIPluginDefinition } from '@hierarchidb/ui-core/plugins/types';
 type UIPluginDefinition = any;
-import { BaseMapIcon } from "../components/BaseMapIcon";
+import { BaseMapIcon } from '../components/BaseMapIcon';
 // import { BaseMapDialog } from '../components/BaseMapDialog';
-import { BaseMapPanel } from "../components/BaseMapPanel";
-import { BaseMapPreview } from "../components/BaseMapPreview";
-import type { BaseMapEntity } from "../types";
-import type { NodeId } from "@hierarchidb/common-core";
+import { BaseMapPanel } from '../components/BaseMapPanel';
+import { BaseMapPreview } from '../components/BaseMapPreview';
+import type { BaseMapEntity } from '../types';
+import type { NodeId } from '@hierarchidb/common-core';
 
 // Component definitions (moved to top to avoid hoisting issues)
 interface CreateDialogProps {
-  parentNodeId: NodeId;
+  parentId: NodeId;
   onSubmit: (data: Partial<BaseMapEntity>) => Promise<void>;
   onCancel: () => void;
 }
@@ -52,13 +52,13 @@ const BaseMapTableCell: React.FC<TableCellProps> = (_props) => {
  * and display in the tree view.
  */
 export const BaseMapUIPlugin: UIPluginDefinition = {
-  nodeType: "basemap",
-  displayName: "Base Map",
-  description: "Geographic base map with customizable styling and layers",
+  nodeType: 'basemap',
+  displayName: 'Base Map',
+  description: 'Geographic base map with customizable styling and layers',
 
   dataSource: {
     requiresEntity: true,
-    entityType: "BaseMapEntity",
+    entityType: 'BaseMapEntity',
   },
 
   capabilities: {
@@ -87,27 +87,23 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     beforeShowCreateDialog: async (_params: any) => {
       // Check if geolocation is available for better UX
       try {
-        if ("geolocation" in navigator) {
+        if ('geolocation' in navigator) {
           // Could prompt for location to set default center
           return { proceed: true };
         }
       } catch (error) {
-        console.warn("Geolocation not available:", error);
+        console.warn('Geolocation not available:', error);
       }
 
       return { proceed: true };
     },
 
-    onShowCreateDialog: async (_params: {
-      parentNodeId: NodeId;
-      onSubmit: any;
-      onCancel: any;
-    }) => {
+    onShowCreateDialog: async (_params: { parentId: NodeId; onSubmit: any; onCancel: any }) => {
       // const _dialog = (
-      //   <BaseMapCreateDialog parentNodeId={parentNodeId} onSubmit={onSubmit} onCancel={onCancel} />
+      //   <BaseMapCreateDialog parentId={parentId} onSubmit={onSubmit} onCancel={onCancel} />
       // );
       // TODO: Show dialog via dialog service
-      console.log("Show BaseMap create dialog");
+      console.log('Show BaseMap create dialog');
     },
 
     onValidateCreateForm: async ({ formData }: { formData: any }) => {
@@ -116,66 +112,55 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 
       // Name validation
       if (!formData.name?.trim()) {
-        errors.name = "Map name is required";
+        errors.name = 'Map name is required';
       } else if (formData.name.length > 255) {
-        errors.name = "Map name is too long (maximum 255 characters)";
+        errors.name = 'Map name is too long (maximum 255 characters)';
       }
 
       // Coordinate validation
       if (formData.center && Array.isArray(formData.center)) {
         const [lng, lat] = formData.center;
         if (lng < -180 || lng > 180) {
-          errors.coordinates = "Longitude must be between -180 and 180";
+          errors.coordinates = 'Longitude must be between -180 and 180';
         }
         if (lat < -90 || lat > 90) {
-          errors.coordinates = "Latitude must be between -90 and 90";
+          errors.coordinates = 'Latitude must be between -90 and 90';
         }
       }
 
       // Zoom level validation
       if (formData.zoom !== undefined) {
         if (formData.zoom < 0 || formData.zoom > 22) {
-          errors.zoom = "Zoom level must be between 0 and 22";
+          errors.zoom = 'Zoom level must be between 0 and 22';
         }
         if (formData.zoom > 18) {
-          warnings.push("High zoom levels may have limited tile availability");
+          warnings.push('High zoom levels may have limited tile availability');
         }
       }
 
       // Map style validation
       if (formData.mapStyle) {
-        const validStyles = [
-          "streets",
-          "satellite",
-          "hybrid",
-          "terrain",
-          "custom",
-        ];
+        const validStyles = ['streets', 'satellite', 'hybrid', 'terrain', 'custom'];
         if (!validStyles.includes(formData.mapStyle)) {
-          errors.mapStyle = `Map style must be one of: ${validStyles.join(", ")}`;
+          errors.mapStyle = `Map style must be one of: ${validStyles.join(', ')}`;
         }
 
-        if (
-          formData.mapStyle === "custom" &&
-          !formData.styleUrl &&
-          !formData.styleConfig
-        ) {
-          errors.mapStyle =
-            "Custom style requires either styleUrl or styleConfig";
+        if (formData.mapStyle === 'custom' && !formData.styleUrl && !formData.styleConfig) {
+          errors.mapStyle = 'Custom style requires either styleUrl or styleConfig';
         }
       }
 
       // Bearing validation
       if (formData.bearing !== undefined) {
         if (formData.bearing < 0 || formData.bearing > 360) {
-          errors.bearing = "Bearing must be between 0 and 360 degrees";
+          errors.bearing = 'Bearing must be between 0 and 360 degrees';
         }
       }
 
       // Pitch validation
       if (formData.pitch !== undefined) {
         if (formData.pitch < 0 || formData.pitch > 60) {
-          errors.pitch = "Pitch must be between 0 and 60 degrees";
+          errors.pitch = 'Pitch must be between 0 and 60 degrees';
         }
       }
 
@@ -193,46 +178,38 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       };
     },
 
-    onFormatDisplay: async ({
-      data,
-      field,
-    }: {
-      data: any;
-      field: string;
-      viewType?: string;
-    }) => {
+    onFormatDisplay: async ({ data, field }: { data: any; field: string; viewType?: string }) => {
       switch (field) {
-        case "coordinates":
+        case 'coordinates':
           if (data.center && Array.isArray(data.center)) {
             const [lng, lat] = data.center;
             return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           }
-          return "Unknown location";
+          return 'Unknown location';
 
-        case "zoom":
+        case 'zoom':
           return `Level ${data.zoom || 0}`;
 
-        case "style":
+        case 'style':
           return (
-            data.mapStyle
-              ?.replace(/-/g, " ")
-              .replace(/\b\w/g, (l: string) => l.toUpperCase()) || "Default"
+            data.mapStyle?.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) ||
+            'Default'
           );
 
-        case "size":
+        case 'size':
           if (data.bounds) {
             const [minLng, minLat, maxLng, maxLat] = data.bounds;
             const width = maxLng - minLng;
             const height = maxLat - minLat;
             return `${width.toFixed(3)}° × ${height.toFixed(3)}°`;
           }
-          return "Not calculated";
+          return 'Not calculated';
 
-        case "bearing":
-          return data.bearing !== undefined ? `${data.bearing}°` : "North";
+        case 'bearing':
+          return data.bearing !== undefined ? `${data.bearing}°` : 'North';
 
-        case "pitch":
-          return data.pitch !== undefined ? `${data.pitch}°` : "Flat";
+        case 'pitch':
+          return data.pitch !== undefined ? `${data.pitch}°` : 'Flat';
 
         default:
           return null;
@@ -248,18 +225,18 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       return {
         proceed: true,
         editableFields: [
-          "name",
-          "description",
-          "center",
-          "zoom",
-          "mapStyle",
-          "styleUrl",
-          "styleConfig",
-          "bearing",
-          "pitch",
-          "bounds",
+          'name',
+          'description',
+          'center',
+          'zoom',
+          'mapStyle',
+          'styleUrl',
+          'styleConfig',
+          'bearing',
+          'pitch',
+          'bounds',
         ],
-        readOnlyFields: ["createdAt", "version"],
+        readOnlyFields: ['createdAt', 'version'],
       };
     },
 
@@ -278,7 +255,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       //   />
       // );
       // TODO: Show dialog via dialog service
-      console.log("Show BaseMap edit dialog");
+      console.log('Show BaseMap edit dialog');
     },
 
     afterUpdate: async ({
@@ -289,14 +266,14 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       changes: any;
       updatedData: any;
     }) => {
-      let message = "Map updated successfully";
+      let message = 'Map updated successfully';
 
       if (changes.name) {
         message = `Map renamed to "${changes.name}"`;
       } else if (changes.center) {
-        message = "Map location updated";
+        message = 'Map location updated';
       } else if (changes.mapStyle) {
-        message = "Map style updated";
+        message = 'Map style updated';
       }
 
       return {
@@ -305,14 +282,9 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       };
     },
 
-    beforeDelete: async ({
-      nodeIds,
-    }: {
-      nodeIds: NodeId[];
-      entities: any[];
-    }) => {
+    beforeDelete: async ({ nodeIds }: { nodeIds: NodeId[]; entities: any[] }) => {
       const count = nodeIds.length;
-      const mapWord = count === 1 ? "map" : "maps";
+      const mapWord = count === 1 ? 'map' : 'maps';
 
       return {
         proceed: true,
@@ -329,9 +301,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     }) => {
       const count = deletedNodeIds.length;
       const message =
-        count === 1
-          ? "Map deleted successfully"
-          : `${count} maps deleted successfully`;
+        count === 1 ? 'Map deleted successfully' : `${count} maps deleted successfully`;
 
       return {
         showMessage: message,
@@ -339,27 +309,21 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       };
     },
 
-    onExport: async ({
-      nodeIds,
-      format,
-    }: {
-      nodeIds: NodeId[];
-      format: string;
-    }) => {
+    onExport: async ({ nodeIds, format }: { nodeIds: NodeId[]; format: string }) => {
       // Get map data for all nodes
       const maps = await Promise.all(
         nodeIds.map(async (id: NodeId) => {
           // TODO: Get data via nodeAdapter
-          return { id, name: "Map", center: [0, 0] }; // Placeholder
-        }),
+          return { id, name: 'Map', center: [0, 0] }; // Placeholder
+        })
       );
 
       switch (format) {
-        case "geojson":
+        case 'geojson':
           const features = maps.map((mapData) => ({
-            type: "Feature",
+            type: 'Feature',
             geometry: {
-              type: "Point",
+              type: 'Point',
               coordinates: mapData.center,
             },
             properties: {
@@ -369,39 +333,39 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
           }));
 
           const geoJson = {
-            type: "FeatureCollection",
+            type: 'FeatureCollection',
             features,
           };
 
           return new Blob([JSON.stringify(geoJson, null, 2)], {
-            type: "application/geo+json",
+            type: 'application/geo+json',
           });
 
-        case "kml":
+        case 'kml':
           // Simple KML export
           let kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
           kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
-          kml += "  <Document>\n";
+          kml += '  <Document>\n';
 
           for (const map of maps) {
-            kml += "    <Placemark>\n";
+            kml += '    <Placemark>\n';
             kml += `      <name>${map.name}</name>\n`;
-            kml += "      <Point>\n";
+            kml += '      <Point>\n';
             kml += `        <coordinates>${map.center[0]},${map.center[1]},0</coordinates>\n`;
-            kml += "      </Point>\n";
-            kml += "    </Placemark>\n";
+            kml += '      </Point>\n';
+            kml += '    </Placemark>\n';
           }
 
-          kml += "  </Document>\n";
-          kml += "</kml>";
+          kml += '  </Document>\n';
+          kml += '</kml>';
 
           return new Blob([kml], {
-            type: "application/vnd.google-earth.kml+xml",
+            type: 'application/vnd.google-earth.kml+xml',
           });
 
-        case "json":
+        case 'json':
           return new Blob([JSON.stringify(maps, null, 2)], {
-            type: "application/json",
+            type: 'application/json',
           });
 
         default:
@@ -412,62 +376,59 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     onContextMenu: async ({ nodeId, data }: { nodeId: NodeId; data: any }) => {
       return [
         {
-          label: "Open in Map Editor",
-          icon: "edit_location",
+          label: 'Open in Map Editor',
+          icon: 'edit_location',
           action: () => {
             // TODO: Navigate to map editor
             console.log(`Open map editor for ${nodeId}`);
           },
         },
         {
-          label: "Duplicate Map",
-          icon: "content_copy",
+          label: 'Duplicate Map',
+          icon: 'content_copy',
           action: () => {
             // TODO: Implement map duplication
             console.log(`Duplicate map ${nodeId}`);
           },
         },
         {
-          type: "divider",
+          type: 'divider',
         },
         {
-          label: "Export as GeoJSON",
-          icon: "download",
+          label: 'Export as GeoJSON',
+          icon: 'download',
           action: () => {
             // TODO: Trigger export
             console.log(`Export ${nodeId} as GeoJSON`);
           },
         },
         {
-          label: "Export as KML",
-          icon: "download",
+          label: 'Export as KML',
+          icon: 'download',
           action: () => {
             // TODO: Trigger export
             console.log(`Export ${nodeId} as KML`);
           },
         },
         {
-          type: "divider",
+          type: 'divider',
         },
         {
-          label: "Share Map",
-          icon: "share",
+          label: 'Share Map',
+          icon: 'share',
           action: () => {
             // TODO: Implement sharing
             console.log(`Share map ${nodeId}`);
           },
         },
         {
-          label: "View on External Map",
-          icon: "open_in_new",
+          label: 'View on External Map',
+          icon: 'open_in_new',
           action: () => {
             if (data.center) {
               const [lng, lat] = data.center;
               const zoom = data.zoom || 10;
-              window.open(
-                `https://www.openstreetmap.org/#map=${zoom}/${lat}/${lng}`,
-                "_blank",
-              );
+              window.open(`https://www.openstreetmap.org/#map=${zoom}/${lat}/${lng}`, '_blank');
             }
           },
         },
@@ -477,12 +438,12 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 
   menu: {
     createOrder: 10,
-    group: "document",
+    group: 'document',
   },
 
   style: {
-    primaryColor: "#4CAF50",
-    icon: "map",
+    primaryColor: '#4CAF50',
+    icon: 'map',
   },
 };
 

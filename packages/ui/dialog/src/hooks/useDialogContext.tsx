@@ -11,32 +11,32 @@ export interface DialogContextData<T = any> {
    * Dialog mode
    */
   mode: 'create' | 'edit';
-  
+
   /**
    * Node ID (for edit mode)
    */
   nodeId?: NodeId;
-  
+
   /**
    * Parent node ID (for create mode)
    */
-  parentNodeId?: NodeId;
-  
+  parentId?: NodeId;
+
   /**
    * Current form data
    */
   formData?: T;
-  
+
   /**
    * Update form data
    */
   updateFormData: (data: T) => void;
-  
+
   /**
    * Whether there are unsaved changes
    */
   hasUnsavedChanges: boolean;
-  
+
   /**
    * Whether submit is in progress
    */
@@ -55,11 +55,7 @@ export const DialogProvider = <T extends any>({
   children: ReactNode;
   value: DialogContextData<T>;
 }) => {
-  return (
-    <DialogContext.Provider value={value}>
-      {children}
-    </DialogContext.Provider>
-  );
+  return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
 };
 
 /**

@@ -37,25 +37,23 @@ export interface UseCRUDOperationsReturn {
   deleteNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
-  
+
   // Working Copy操作
   startEdit: (nodeId: NodeId) => Promise<void>;
-  startCreate: (parentNodeId: NodeId, name: string) => Promise<void>;
+  startCreate: (parentId: NodeId, name: string) => Promise<void>;
 }
 
 /**
  * CRUD操作を管理するカスタムhook
  */
-export function useCRUDOperations(
-  options: UseCRUDOperationsOptions = {}
-): UseCRUDOperationsReturn {
-  const { 
-    stateManager, 
-    workerAdapter, 
+export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCRUDOperationsReturn {
+  const {
+    stateManager,
+    workerAdapter,
     setIsLoading,
     onSelectedNodesChange,
     onExpandedNodesChange,
-    onCurrentNodeChange
+    onCurrentNodeChange,
   } = options;
 
   // CRUD操作（WorkerAPIAdapter経由）
@@ -116,7 +114,7 @@ export function useCRUDOperations(
           // Remove from expanded nodes
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           // Clear current node if it was deleted
-          onCurrentNodeChange?.((prev) => prev?.id === nodeId ? null : prev);
+          onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
         } finally {
           setIsLoading?.(false);
         }
@@ -141,7 +139,7 @@ export function useCRUDOperations(
         // Remove from expanded nodes
         onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
         // Clear current node if it was deleted
-        onCurrentNodeChange?.((prev) => prev && nodeIds.includes(prev.id) ? null : prev);
+        onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
       } finally {
         setIsLoading?.(false);
       }
@@ -205,13 +203,13 @@ export function useCRUDOperations(
   );
 
   const startCreate = useCallback(
-    async (parentNodeId: NodeId, name: string) => {
+    async (parentId: NodeId, name: string) => {
       if (!workerAdapter) {
         throw new Error('WorkerAPIAdapter not available');
       }
 
       // TODO: 実装時に作成セッション管理ロジックを追加
-      const createSession = await workerAdapter.startNodeCreate(parentNodeId, name, undefined);
+      const createSession = await workerAdapter.startNodeCreate(parentId, name, undefined);
       console.log('Create session started:', createSession);
     },
     [workerAdapter]
@@ -225,7 +223,7 @@ export function useCRUDOperations(
     deleteNodes,
     duplicateNode,
     duplicateNodes,
-    
+
     // Working Copy操作
     startEdit,
     startCreate,
