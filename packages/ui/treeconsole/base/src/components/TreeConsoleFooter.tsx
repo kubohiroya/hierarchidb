@@ -44,22 +44,41 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
   // コントローラーが無い場合のフォールバック表示
   if (!controller) {
     return (
-      <FooterContainer theme={theme}>
+      <FooterContainer 
+        theme={theme}
+        sx={{
+          position: 'absolute',
+          left: 0,
+          bottom: 0,
+          width: '100%',
+          height,
+          display: 'flex',
+          alignItems: 'center',
+          px: 1,
+        }}
+      >
         <IconButton
           size="small"
           onClick={onStartTour}
+          disabled={!onStartTour}
           aria-label="Start guided tour"
           sx={{
-            mr: 1,
-            color: 'text.secondary',
-            '&:hover': {
+            color: onStartTour ? 'text.secondary' : 'action.disabled',
+            '&:hover': onStartTour ? {
               color: 'primary.main',
+            } : {},
+            '&.Mui-disabled': {
+              color: 'action.disabled',
             },
           }}
         >
           <HelpOutline fontSize="small" />
         </IconButton>
-        <FooterText variant="body2" theme={theme}>
+        <FooterText 
+          variant="body2" 
+          theme={theme}
+          sx={{ ml: 2 }}
+        >
           Loading...
         </FooterText>
       </FooterContainer>
@@ -105,27 +124,36 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         bottom: 0,
         width: '100%',
         height,
+        display: 'flex',
+        alignItems: 'center',
+        px: 1,
       }}
     >
-      {onStartTour ? (
-        <IconButton
-          size="small"
-          onClick={onStartTour}
-          aria-label="Start guided tour"
-          sx={{
-            mr: 1,
-            color: 'text.secondary',
-            '&:hover': {
-              color: 'primary.main',
-            },
-          }}
-        >
-          <HelpOutline fontSize="small" />
-        </IconButton>
-      ) : (
-        <Box sx={{ width: 16, color: 'text.secondary' }} />
-      )}
-      <FooterText variant="body2" theme={theme}>
+      {/* Help icon always on the left */}
+      <IconButton
+        size="small"
+        onClick={onStartTour}
+        disabled={!onStartTour}
+        aria-label="Start guided tour"
+        sx={{
+          color: onStartTour ? 'text.secondary' : 'action.disabled',
+          '&:hover': onStartTour ? {
+            color: 'primary.main',
+          } : {},
+          '&.Mui-disabled': {
+            color: 'action.disabled',
+          },
+        }}
+      >
+        <HelpOutline fontSize="small" />
+      </IconButton>
+      
+      {/* Node counts display with left margin */}
+      <FooterText 
+        variant="body2" 
+        theme={theme}
+        sx={{ ml: 2 }}
+      >
         {getFooterText()}
       </FooterText>
     </FooterContainer>

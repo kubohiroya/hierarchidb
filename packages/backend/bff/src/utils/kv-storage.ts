@@ -31,6 +31,7 @@ export interface UserAuthData {
       deviceInfo?: string;
     };
   };
+  usedTokens?: string[]; // Track used refresh token IDs for replay protection
 }
 
 /**

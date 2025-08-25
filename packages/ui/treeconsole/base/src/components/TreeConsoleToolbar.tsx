@@ -76,7 +76,7 @@ function SearchOnlyToolbar({
       <TextField
         fullWidth
         size="small"
-        placeholder="Search..."
+        placeholder="Search...⭐️"
         value={searchText}
         onChange={(e) => onSearchTextChange(e.target.value)}
         InputProps={{

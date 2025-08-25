@@ -14,11 +14,12 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { TreeTableConsolePanelContext } from "@hierarchidb/ui-treeconsole-base";
-import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import { WorkerAPIClient } from "../WorkerAPIClient";
 import type { NodeId, Tree } from "@hierarchidb/common-core";
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export default function TreeConsoleDemo() {
-  const [client, setClient] = useState<WorkerAPIClient | null>(null);
+  const [client, setClient] = useState<WorkerAPI | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [defaultTree, setDefaultTree] = useState<Tree | null>(null);
@@ -32,7 +33,7 @@ export default function TreeConsoleDemo() {
         setClient(workerClient);
 
         // デフォルトツリーを取得または作成
-        const api = workerClient.getAPI();
+        const api = workerClient;
         const trees = await api.getTrees();
 
         let tree: Tree | null = null;

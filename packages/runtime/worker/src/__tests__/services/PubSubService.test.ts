@@ -14,8 +14,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
   let observableService: TreeSubscribeService;
 
   beforeEach(async () => {
-    coreDB = new CoreDB('test-pubsub-db');
-    await coreDB.open();
+    coreDB = await CoreDB.getSingleton('test-pubsub-db');
 
     observableService = new TreeSubscribeService(coreDB);
   });
@@ -181,7 +180,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
       // サブツリーの購読
       const observable = await observableService.subscribeSubtree({
         kind: 'subscribeSubtree',
-        payload: { rootNodeId: parentId },
+        payload: { rootId: parentId },
         commandId: 'cmd-003',
         groupId: 'test-group-003',
         issuedAt: Date.now(),

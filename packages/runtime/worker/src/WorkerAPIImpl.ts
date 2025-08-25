@@ -20,6 +20,7 @@ import type {
   ObserveSubtreePayload,
   RecoverFromTrashPayload,
 } from '@hierarchidb/common-core';
+import { SingletonMixin } from '@hierarchidb/common-core';
 import { CommandProcessor } from './command/CommandProcessor';
 
 /**
@@ -65,12 +66,20 @@ import {
 } from './registry/plugin-registry-api';
 
 export class WorkerAPIImpl implements WorkerAPI {
-  private coreDB: CoreDB;
-  private ephemeralDB: EphemeralDB;
-  private queryService: TreeQueryService;
-  private mutationService: TreeMutationService;
-  private subscriptionService: TreeSubscribeService;
-  private commandProcessor: CommandProcessor;
+  static async getSingleton(dbName: string = 'default-worker-db'): Promise<WorkerAPIImpl> {
+    return SingletonMixin.getSingleton(WorkerAPIImpl.name, async () => {
+      const instance = new WorkerAPIImpl(dbName);
+      await instance.initialize();
+      return instance;
+    });
+  }
+
+  private coreDB!: CoreDB;
+  private ephemeralDB!: EphemeralDB;
+  private queryService!: TreeQueryService;
+  private mutationService!: TreeMutationService;
+  private subscriptionService!: TreeSubscribeService;
+  private commandProcessor!: CommandProcessor;
 
   // Plugin API registry for 3-layer architecture
   private pluginAPIs = new Map<NodeType, any>();
@@ -79,56 +88,25 @@ export class WorkerAPIImpl implements WorkerAPI {
    * Async initialization of plugin APIs
    */
   private async initializePluginAPIsAsync(): Promise<void> {
-    try {
-      const { initializePluginAPIs } = await import('./plugins');
-      await initializePluginAPIs(this);
-    } catch (error) {
-      console.warn('Failed to initialize plugin APIs:', error);
-    }
+    // Defer implementation to plugins
+    // This would be extended by specific plugins
   }
 
   getCommandProcessor(): CommandProcessor {
     return this.commandProcessor;
   }
-  private nodeTypeRegistry: SimpleNodeTypeRegistry;
-  private nodeLifecycleManager: NodeLifecycleManager;
-  private importService: ImportService;
-  private exportService: ExportService;
-  private initializationTime: number;
 
-  constructor(dbName: string = 'default-worker-db') {
-    this.coreDB = new CoreDB(dbName);
-    this.ephemeralDB = new EphemeralDB(dbName);
+  private nodeTypeRegistry!: SimpleNodeTypeRegistry;
+  private nodeLifecycleManager!: NodeLifecycleManager;
+  private importService!: ImportService;
+  private exportService!: ExportService;
+  private initializationTime = Date.now();
 
-    this.nodeTypeRegistry = new SimpleNodeTypeRegistry();
-    this.nodeLifecycleManager = new NodeLifecycleManager(
-      this.nodeTypeRegistry,
-      this.coreDB,
-      this.ephemeralDB
-    );
+  // 初期化済みフラグ
+  private isInitialized = false;
 
-    // Initialize services in dependency order
-    this.queryService = new TreeQueryService(this.coreDB);
-
-    this.subscriptionService = new TreeSubscribeService(this.coreDB);
-
-    this.commandProcessor = new CommandProcessor();
-
-    this.mutationService = new TreeMutationService(
-      this.coreDB,
-      this.ephemeralDB,
-      this.commandProcessor,
-      this.nodeLifecycleManager
-    );
-
-    this.importService = new ImportService(this.coreDB, this.mutationService);
-
-    this.exportService = new ExportService(this.coreDB, this.queryService);
-
-    this.initializationTime = Date.now();
-
-    // Initialize plugin APIs for 3-layer architecture (async)
-    this.initializePluginAPIsAsync();
+  constructor(private dbName: string = 'default-worker-db') {
+    // コンストラクタでは初期化しない（非同期処理が必要なため）
   }
 
   // ==================
@@ -293,7 +271,6 @@ export class WorkerAPIImpl implements WorkerAPI {
 
       registerExtension: async (nodeType: NodeType, api: any): Promise<void> => {
         this.pluginAPIs.set(nodeType, api);
-        console.log(`Registered plugin API for node type: ${nodeType}`);
       },
     };
 
@@ -485,8 +462,40 @@ export class WorkerAPIImpl implements WorkerAPI {
   // ==================
 
   async initialize(): Promise<void> {
-    await this.coreDB.initialize();
-    await this.ephemeralDB.initialize();
+    if (this.isInitialized) {
+      return; // 既に初期化済み
+    }
+
+    // データベースインスタンスを非同期で取得（初期化も内部で完了）
+    this.coreDB = await CoreDB.getSingleton(this.dbName);
+    this.ephemeralDB = await EphemeralDB.getSingleton(this.dbName);
+
+      // サービスの初期化
+      this.nodeTypeRegistry = await SimpleNodeTypeRegistry.getSingleton();
+      this.nodeLifecycleManager = new NodeLifecycleManager(
+        this.nodeTypeRegistry,
+        this.coreDB,
+        this.ephemeralDB
+      );
+
+      // Initialize services in dependency order
+      this.queryService = new TreeQueryService(this.coreDB);
+      this.subscriptionService = new TreeSubscribeService(this.coreDB);
+      this.commandProcessor = new CommandProcessor();
+      this.mutationService = new TreeMutationService(
+        this.coreDB,
+        this.ephemeralDB,
+        this.commandProcessor,
+        this.nodeLifecycleManager
+      );
+
+      this.importService = new ImportService(this.coreDB, this.mutationService);
+      this.exportService = new ExportService(this.coreDB, this.queryService);
+
+      // Initialize plugin APIs
+      await this.initializePluginAPIsAsync();
+      
+      this.isInitialized = true;
   }
 
   async shutdown(): Promise<void> {
@@ -565,7 +574,10 @@ export class WorkerAPIImpl implements WorkerAPI {
   }
 
   async getTree(params: { treeId: TreeId }): Promise<Tree | undefined> {
-    return this.queryService.getTree(params.treeId);
+    console.log('[WorkerAPIImpl] getTree called with params:', params);
+    const result = await this.queryService.getTree(params.treeId);
+    console.log('[WorkerAPIImpl] getTree result:', result);
+    return result;
   }
 
   async listTrees(): Promise<Tree[]> {

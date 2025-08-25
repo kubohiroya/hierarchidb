@@ -1,15 +1,12 @@
 /**
- * @file openstreetmap-type.ts
- * @description Export all dialog components
+ * @file Export all dialog components
  */
 
-export { CommonPluginDialog } from './CommonPluginDialog';
-export type { CommonPluginDialogProps } from './CommonPluginDialog';
-
 export { UnsavedChangesDialog } from './UnsavedChangesDialog';
-
-export { CommonDialogTitle } from './CommonDialogTitle';
-
-export { CommonDialogActions } from './CommonDialogActions';
+export type { UnsavedChangesDialogProps } from './UnsavedChangesDialog';
 
 export { StepperDialog } from './StepperDialog';
+export type { StepperDialogProps, StepConfiguration } from './StepperDialog';
+
+export { default as FullScreenDialog } from './FullScreenDialog';
+export type { FullScreenDialogProps } from './FullScreenDialog';

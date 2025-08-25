@@ -318,7 +318,7 @@ describe.skip('WorkingCopyOperations', () => {
       );
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'code' in result) {
         expect(result.code).toBe(WorkerErrorCode.COMMIT_CONFLICT);
       }
     });

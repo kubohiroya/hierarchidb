@@ -3,7 +3,7 @@
  * Tests TreeConsole with WorkerAPIClient.getSingleton()
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Container,
   Typography,
@@ -15,49 +15,18 @@ import {
   TreeConsolePanel,
   type TreeNodeData,
 } from "@hierarchidb/ui-treeconsole-base";
-import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import { useWorkerAPIClient } from "~/hooks/useWorkerAPIClient";
 
 export default function TreeConsoleSimple() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [workerClient, setWorkerClient] = useState<WorkerAPIClient | null>(
-    null,
-  );
-
-  useEffect(() => {
-    let mounted = true;
-
-    const initWorker = async () => {
-      try {
-        console.log("Initializing WorkerAPIClient...");
-        const client = await WorkerAPIClient.getSingleton();
-
-        if (mounted) {
-          setWorkerClient(client);
-          setLoading(false);
-          console.log("WorkerAPIClient initialized successfully");
-        }
-      } catch (err) {
-        console.error("Failed to initialize WorkerAPIClient:", err);
-        if (mounted) {
-          setError(err instanceof Error ? err.message : String(err));
-          setLoading(false);
-        }
-      }
-    };
-
-    initWorker();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Get the Worker API client
+  const workerClientWrapper = useWorkerAPIClient();
+  const workerClient = workerClientWrapper?.getAPI();
 
   const handleNodeClick = (node: TreeNodeData) => {
     console.log("Node clicked:", node);
   };
 
-  if (loading) {
+  if (!workerClient) {
     return (
       <Container
         sx={{
@@ -68,17 +37,6 @@ export default function TreeConsoleSimple() {
         }}
       >
         <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error">
-          <Typography variant="h6">Failed to initialize Worker</Typography>
-          <Typography>{error}</Typography>
-        </Alert>
       </Container>
     );
   }

@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
+import { TitleLogo } from '../components/TitleLogo';
 
 // Temporary type definition until TreeToggleButtonGroup is available
 
@@ -110,82 +111,72 @@ export default function Index() {
 
   return (
     <>
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            py: 4,
-          }}
-        >
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#ffffff',
+          fontFamily: 'Roboto, sans-serif',
+        }}
+      >
           {/* Header with version and user menu */}
-          <Box
-            sx={{
+          <div
+            style={{
               position: 'absolute',
-              top: 16,
-              left: 16,
-              right: 16,
+              top: '16px',
+              left: '16px',
+              right: '16px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
           >
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              v1.0.0
-            </Typography>
-            <UserLoginButton />
-          </Box>
-
-          {/* Main content */}
-          <Stack spacing={4} alignItems="center">
-            {/* Logo */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+            <div
+              style={{
+                fontSize: '12px',
+                color: '#999999',
               }}
             >
-              <StorageIcon sx={{ fontSize: 80, color: 'primary.main' }} />
-            </Box>
+              v1.0.0
+            </div>
+            <UserLoginButton />
+          </div>
 
-            {/* Title and description */}
-            <Stack spacing={2} alignItems="center" textAlign="center">
-              <Typography variant="h3" component="h1">
-                {appTitle}
-              </Typography>
-              {appDescription && (
-                <Typography variant="body1" color="text.secondary" maxWidth={600}>
-                  {appDescription}
-                </Typography>
-              )}
-            </Stack>
+          {/* Main content */}
+          <TitleLogo 
+            title={appTitle} 
+            description={appDescription || undefined}
+            showProgress={false}
+          />
 
-            {/* Tree selection buttons */}
-            <TreeToggleButtonGroup
-              trees={treeButtonConfigs}
-              selectedTreeId={null}
-              getSavedPageNodeId={getSavedPageNodeId}
-              savePageNodeId={savePageNodeId}
-              onTreeSelect={handleTreeSelect}
-              orientation="horizontal"
-              size="large"
-              sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
-            />
-          </Stack>
+          {/* Tree selection buttons */}
+          <TreeToggleButtonGroup
+            trees={treeButtonConfigs}
+            selectedTreeId={null}
+            getSavedPageNodeId={getSavedPageNodeId}
+            savePageNodeId={savePageNodeId}
+            onTreeSelect={handleTreeSelect}
+            orientation="horizontal"
+            size="large"
+            sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
+          />
 
           {/* Bottom-left corner buttons */}
-          <Box
-            sx={{
+          <div
+            style={{
               position: 'fixed',
-              bottom: 16,
-              left: 16,
+              bottom: '16px',
+              left: '16px',
               display: 'flex',
               flexDirection: 'row',
-              gap: 1,
+              gap: '8px',
             }}
           >
             {/* 1. Help/Tour - User onboarding and assistance */}
@@ -258,9 +249,8 @@ export default function Index() {
                 </IconButton>
               </Tooltip>
             )}
-          </Box>
-        </Box>
-      </Container>
+          </div>
+      </div>
     </>
   );
 }

@@ -6,8 +6,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId, PluginDefinition } from '@hierarchidb/common-core';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
@@ -18,7 +19,7 @@ export interface UsePluginsForTreeResult {
 
 export function usePluginsForTree(
   treeId: TreeId | undefined,
-  workerClient: WorkerAPIClient | null
+  workerClient: WorkerAPI | null
 ): UsePluginsForTreeResult {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,7 @@ export function usePluginsForTree(
     setError(null);
 
     try {
-      const api = workerClient.getAPI();
+      const api = workerClient;
       const pluginDefinitions = await api.getPluginsForTree(treeId);
       setPlugins(pluginDefinitions);
     } catch (err) {

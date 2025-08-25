@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData } from 'react-router';
+import { Outlet } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { loadTree, LoadTreeArgs } from '~/loader';
 
@@ -7,7 +7,7 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 }
 
 export default function TLayout() {
-  const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
+  // const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
 
   return <Outlet />;
 }

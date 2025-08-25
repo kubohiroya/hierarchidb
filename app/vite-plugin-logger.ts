@@ -9,7 +9,7 @@ export function pluginLogger(): Plugin {
       console.log('='.repeat(60));
       
       config.plugins.forEach((plugin, index) => {
-        const pluginName = (plugin as any).name || `Unknown Plugin ${index + 1}`;
+        const pluginName = plugin.name || `Unknown Plugin ${index + 1}`;
         console.log(`  ${(index + 1).toString().padStart(2, '0')}. ${pluginName}`);
       });
       

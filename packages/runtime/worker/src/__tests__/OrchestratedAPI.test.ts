@@ -68,7 +68,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const result = await workerAPI.execute.createNode(params);
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('required and cannot be empty');
       }
     });
@@ -85,7 +85,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       const result = await workerAPI.execute.createNode(params);
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('cannot exceed 255 characters');
       }
     });
@@ -219,7 +219,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('required and cannot be empty');
       }
     });
@@ -231,7 +231,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('cannot exceed 255 characters');
       }
     });
@@ -243,7 +243,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('Node not found');
       }
     });
@@ -702,7 +702,7 @@ describe.skip('OrchestratedAPI (needs update to new API)', () => {
       });
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('Database connection failed');
       }
     });

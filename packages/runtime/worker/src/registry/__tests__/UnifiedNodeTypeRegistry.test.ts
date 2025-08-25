@@ -124,7 +124,7 @@ function createTestPlugin(
 }
 
 describe.skip('UnifiedNodeTypeRegistry', () => {
-  let registry: UnifiedNodeTypeRegistry;
+  let registry: any; // Type is not available for skipped test
 
   beforeEach(() => {
     // Reset singleton before each test

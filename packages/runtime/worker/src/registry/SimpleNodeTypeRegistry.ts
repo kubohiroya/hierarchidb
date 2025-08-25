@@ -5,7 +5,7 @@
  */
 
 import type { ISimpleNodeTypeRegistry, NodeTypeConfig } from '@hierarchidb/common-core';
-import { BaseNodeTypeRegistry, NodeType } from '@hierarchidb/common-core';
+import { BaseNodeTypeRegistry, NodeType, SingletonMixin } from '@hierarchidb/common-core';
 
 /**
  * Simple registry for managing basic node type configurations
@@ -15,7 +15,14 @@ export class SimpleNodeTypeRegistry
   extends BaseNodeTypeRegistry<NodeTypeConfig>
   implements ISimpleNodeTypeRegistry
 {
-  constructor() {
+  static async getSingleton(): Promise<SimpleNodeTypeRegistry> {
+    return SingletonMixin.getSingleton(SimpleNodeTypeRegistry.name, async () => {
+      const instance = new SimpleNodeTypeRegistry();
+      return instance;
+    });
+  }
+  
+  private constructor() {
     super();
     this.initializeDefaultTypes();
   }

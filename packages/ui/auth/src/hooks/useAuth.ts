@@ -1,6 +1,6 @@
 /**
- * @file useBFFAuthV2.ts
- * @description Version 2 of BFF authentication hook - fixes the signin URL issue
+ * @file useAuth.ts
+ * @description Main authentication hook for BFF authentication
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -20,9 +20,9 @@ const STORAGE_KEYS = {
 // Token refresh timing (5 minutes before expiry) - removed as not used in V2
 
 /**
- * BFF Auth Service Hook V2
+ * BFF Auth Service Hook
  */
-const useBFFAuthServiceV2 = () => {
+const useBFFAuthService = () => {
   const authService = BFFAuthService.getInstance();
   const [user, setUser] = useState<BFFUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,10 +74,10 @@ const useBFFAuthServiceV2 = () => {
 };
 
 /**
- * Enhanced BFF Authentication Hook V2
+ * Main Authentication Hook
  */
-export function useBFFAuth(homeUrl = '/') {
-  const bffAuth = useBFFAuthServiceV2();
+export function useAuth(homeUrl = '/') {
+  const bffAuth = useBFFAuthService();
   const location = useLocation();
   const navigate = useNavigate();
   const popupDetection = PopupDetectionService.getInstance();

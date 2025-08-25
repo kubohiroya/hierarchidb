@@ -21,11 +21,11 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "vite.config.ts",
-    "tsconfig.node.json"
+    //"node_modules",
+    "dist"
+    //"**/*.test.ts",
+    //"**/*.spec.ts",
+    //"vite.config.ts",
+    //"tsconfig.node.json"
   ]
 }

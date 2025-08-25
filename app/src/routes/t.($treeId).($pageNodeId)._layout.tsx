@@ -9,12 +9,13 @@ import {
   ToggleButtonGroup,
   Typography,
   Stack,
+  Button,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
 import { loadPageNode, LoadPageNodeArgs } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import { Tree, type NodeId } from '@hierarchidb/common-core';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
@@ -38,13 +39,16 @@ export default function TLayout() {
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string>(data.tree?.id || '');
+  
+  // Check if the node exists
+  const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
 
   // Load available trees
   useEffect(() => {
     const loadTrees = async () => {
       try {
         const client = await WorkerAPIClient.getSingleton();
-        const api = client.getAPI();
+        const api = client;
         const availableTrees = await api.getTrees();
         setTrees(availableTrees);
       } catch (error) {
@@ -57,7 +61,7 @@ export default function TLayout() {
   // Update selected tree when route changes
   useEffect(() => {
     if (data.tree?.id) {
-      setSelectedTreeId(data.pageTreeNode.treeId);
+      setSelectedTreeId(data.tree.id);
     }
   }, [data.tree?.id]);
 
@@ -77,11 +81,15 @@ export default function TLayout() {
         <Toolbar>
           {/* Tree Title */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
-            {data.pageTreeNode?.name || 'Tree Console'}
+            {data.pageNode?.name || 'Tree Console'}
           </Typography>
 
           {/* Tree Switcher Button Group */}
-          <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
+          <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}></Stack>
+
+          {/* User Login Button - Right Aligned */}
+          <Box sx={{ ml: 'auto' }}>
+            ⭐️
             <ToggleButtonGroup
               value={selectedTreeId}
               exclusive
@@ -102,37 +110,63 @@ export default function TLayout() {
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
-          </Stack>
-
-          {/* User Login Button - Right Aligned */}
-          <Box sx={{ ml: 'auto' }}>
             <UserLoginButton />
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* TreeConsole Integration */}
+      {/* TreeConsole Integration or Error Message */}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <Suspense
-          fallback={
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-              }}
+        {nodeNotFound ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Typography variant="h5" color="error">
+              Node Not Found
+            </Typography>
+            <Typography variant="body1" color="textSecondary">
+              The requested node does not exist.
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Node ID: {data.pageNodeId || 'Unknown'}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate(`/t/${data.tree?.id || 'r'}`)}
+              sx={{ mt: 2 }}
             >
-              <CircularProgress />
-            </Box>
-          }
-        >
-          <TreeConsoleIntegration
-            treeId={data.tree?.id}
-            pageNodeId={data.pageTreeNode?.id}
-            pageTreeNode={data.pageTreeNode}
-          />
-        </Suspense>
+              Go to Tree Root
+            </Button>
+          </Box>
+        ) : (
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '100%',
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <TreeConsoleIntegration
+              treeId={data.tree?.id}
+              pageNodeId={data.pageNodeId}
+              pageTreeNode={data.pageNode}
+            />
+          </Suspense>
+        )}
       </Box>
 
       {/* Child Routes */}

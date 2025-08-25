@@ -80,7 +80,7 @@ export function useDynamicCreateMenu(
           order: plugin.menu.createOrder,
           onClick: () => {
             // This will be provided by the consuming component
-            console.log(`Create ${plugin.nodeType} in ${parentId}`);
+            // Create plugin.nodeType in parentId
           },
         }));
 

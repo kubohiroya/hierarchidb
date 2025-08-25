@@ -5,8 +5,8 @@ import { SimpleNodeTypeRegistry } from './SimpleNodeTypeRegistry';
 describe('SimpleNodeTypeRegistry', () => {
   let registry: SimpleNodeTypeRegistry;
 
-  beforeEach(() => {
-    registry = new SimpleNodeTypeRegistry();
+  beforeEach(async () => {
+    registry = await SimpleNodeTypeRegistry.getSingleton();
   });
 
   describe('registerNodeType', () => {

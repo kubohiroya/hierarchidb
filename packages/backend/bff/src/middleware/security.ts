@@ -266,7 +266,7 @@ export async function handleSecurity(
   handler: () => Promise<Response>
 ): Promise<Response> {
   // 1. Origin検証
-  const { isValid, origin, environment } = validateOrigin(request, env);
+  const { isValid, origin } = validateOrigin(request, env);
   
   if (!isValid && request.method !== 'OPTIONS') {
     await logAuditEvent({

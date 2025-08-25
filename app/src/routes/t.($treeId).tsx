@@ -1,5 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router';
-import { Outlet, useLoaderData, useNavigate } from 'react-router';
+import { Outlet, useLoaderData, useNavigate, type LoaderFunctionArgs } from 'react-router';
 import { Suspense, useState, useEffect } from 'react';
 import {
   Box,
@@ -15,38 +14,63 @@ import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@
 import { loadTree, LoadTreeArgs } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Tree } from '@hierarchidb/common-core';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  const treeData = await loadTree(args.params as LoadTreeArgs);
-  // Load the root node when pageNodeId is not specified
-  console.log('treeData in layout:', treeData);
+  console.log('[t.($treeId).tsx] clientLoader called with params:', args.params);
+  const { treeId } = args.params as LoadTreeArgs;
+  
+  try {
+    const treeData = await loadTree({ treeId });
+  
+  console.log('[t.($treeId).tsx] Loaded tree data:', treeData);
+  
+  // If tree doesn't exist, throw an error
+  if (!treeData.tree) {
+    throw new Error(`Tree with ID '${treeId}' does not exist`);
+  }
+  
   if (treeData.tree?.rootId) {
-    const rootNode = await treeData.client.getAPI().getNode(treeData.tree.rootId);
+    const rootNode = await treeData.client.getNode(treeData.tree.rootId);
+    console.log('[t.($treeId).tsx] Loaded root node:', rootNode);
     return {
       ...treeData,
       rootNode,
     };
   }
   return treeData;
+  } catch (error) {
+    console.error('[t.($treeId).tsx] clientLoader error:', error);
+    throw error;
+  }
 }
 
 export default function TLayout() {
+  console.log('[TLayout] Component rendering');
   const data = useLoaderData() as any; // Type workaround for rootNode property
+  console.log('[TLayout] Loader data:', data);
+  
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
-  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
+  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data?.tree?.id || null);
   // Load available trees
   useEffect(() => {
     const loadTrees = async () => {
       try {
+        console.log('[TreePage] Loading trees...');
         const client = await WorkerAPIClient.getSingleton();
-        const api = client.getAPI();
-        const availableTrees = await api.getTrees();
+        console.log('[TreePage] WorkerAPIClient obtained:', client);
+        
+        console.log('[TreePage] Client obtained:', client);
+        console.log('[TreePage] Client getTrees method:', typeof client.getTrees);
+        
+        const availableTrees = await client.getTrees();
+        console.log('[TreePage] Trees loaded:', availableTrees);
         setTrees(availableTrees);
       } catch (error) {
         console.error('Failed to load trees:', error);
+        console.error('Error stack:', (error as Error)?.stack);
       }
     };
     loadTrees();
@@ -126,9 +150,9 @@ export default function TLayout() {
           }
         >
           <TreeConsoleIntegration
-            treeId={data.tree?.id}
-            pageNodeId={data.tree?.rootNodeId}
-            pageTreeNode={data.rootNode}
+            treeId={data?.tree?.id}
+            pageNodeId={data?.tree?.rootId}
+            pageTreeNode={data?.rootNode}
           />
         </Suspense>
       </Box>

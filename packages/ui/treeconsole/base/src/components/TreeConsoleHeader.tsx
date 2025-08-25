@@ -75,7 +75,6 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         <Typography variant="h6" component="h1" noWrap>
           {title}
         </Typography>
-
         {/* パンくずリスト */}
         {previousNodePath.length > 0 && (
           <TreeConsoleBreadcrumb
@@ -91,12 +90,11 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
               console.log('Navigate to node:', nodeId, node);
               // TODO: 実装時にナビゲーション処理を追加
             }}
-            variant={"default" as any}
+            variant={'default' as any}
             // showIcons={true} // Commented out - not supported by current interface
             // maxWidth={600} // Commented out - not supported by current interface
           />
         )}
-
         {/* 現在のノード情報 */}
         {currentNodeInfo && (
           <Box sx={{ mt: 0.5 }}>

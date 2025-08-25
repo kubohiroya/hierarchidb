@@ -7,6 +7,7 @@ import {
   type TreeChangeEvent,
   NodeIdGenerator,
   TREE_ROOT_NODE_TYPES,
+  SingletonMixin,
 } from '@hierarchidb/common-core';
 import Dexie, { type Table } from 'dexie';
 import { Subject } from 'rxjs';
@@ -19,22 +20,41 @@ export class CoreDB extends Dexie {
   // イベント通知用のSubject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
 
-  constructor(name: string = 'hierarchidb') {
+  static async getSingleton(name: string = 'hierarchidb'): Promise<CoreDB> {
+    return SingletonMixin.getSingleton(CoreDB.name, async () => {
+      const instance = new CoreDB(name);
+      await instance.open();
+      await instance.initialize();
+      return instance;
+    });
+  }
+
+  private constructor(name: string) {
     super(`${name}-CoreDB`);
 
-    this.version(1).stores({
-      trees: '&id, treeRootId, trashRootId, superRootId',
-      nodes: [
-        '&id',
-        'parentId',
-        '&[parentId+name]',
-        '[parentId+updatedAt]',
-        'removedAt',
-        'originalParentId',
-        '*references',
-      ].join(', '),
-      rootStates: '&rootNodeId, treeId',
-    });
+    // Increment version to force schema update
+    this.version(3)
+      .stores({
+        trees: '&id, rootId, trashRootId, superRootId',
+        nodes: [
+          '&id',
+          'parentId',
+          '&[parentId+name]',
+          '[parentId+updatedAt]',
+          'removedAt',
+          'originalParentId',
+          '*references',
+        ].join(', '),
+        // Fix: rootStates should use a composite key since rootNodeId might not be unique across trees
+        rootStates: '&rootNodeId',
+      })
+      .upgrade(async (tx) => {
+        // Clear all data to start fresh
+
+        await tx.table('trees').clear();
+        await tx.table('nodes').clear();
+        await tx.table('rootStates').clear();
+      });
   }
 
   private treeIdToTreeName(treeId: string): string {
@@ -42,69 +62,96 @@ export class CoreDB extends Dexie {
   }
 
   async initialize(): Promise<void> {
-    const now = Date.now();
-    if ((await this.trees.count()) === 0) {
-      await this.trees.bulkPut(
-        ['r', 'p'].map((treeId) => ({
-          treeId,
-          name: this.treeIdToTreeName(treeId),
-          id: treeId as TreeId,
-          superRootId: NodeIdGenerator.superRootNode(treeId),
-          rootId: NodeIdGenerator.rootNode(treeId),
-          trashRootId: NodeIdGenerator.trashNode(treeId),
-        }))
-      );
-    }
-    if ((await this.nodes.count()) === 0) {
-      const data = ['r', 'p'].flatMap((treeId) => [
-        {
-          parentId: NodeIdGenerator.superRootNode(treeId),
-          id: NodeIdGenerator.rootNode(treeId),
-          nodeType: TREE_ROOT_NODE_TYPES.ROOT,
-          name: this.treeIdToTreeName(treeId),
-          createdAt: now,
-          updatedAt: now,
-          version: 1,
-        },
-        {
-          parentId: NodeIdGenerator.superRootNode(treeId),
-          id: NodeIdGenerator.trashNode(treeId),
-          nodeType: TREE_ROOT_NODE_TYPES.TRASH,
-          name: 'Trash',
-          createdAt: now,
-          updatedAt: now,
-          version: 1,
-        },
-      ]) satisfies TreeNode[];
-      console.log('⭐️initialize nodes', data);
-      await this.nodes.bulkAdd(data);
-    }
-    if ((await this.rootStates.count()) === 0) {
-      const rootStateData = ['r', 'p'].flatMap((treeId) =>
-        [TREE_ROOT_NODE_TYPES.ROOT, TREE_ROOT_NODE_TYPES.TRASH].map((treeRootNodeType) => ({
-          treeId: treeId as TreeId,
-          rootNodeId:
-            treeRootNodeType === TREE_ROOT_NODE_TYPES.ROOT
-              ? NodeIdGenerator.rootNode(treeId)
-              : NodeIdGenerator.trashNode(treeId),
-          expanded: {},
-        }))
-      );
-      
-      console.log('⭐️initialize rootStates', rootStateData);
-      
-      try {
-        await this.rootStates.bulkAdd(rootStateData);
-      } catch (error) {
-        console.error('Failed to initialize rootStates:', error);
-        console.error('Data that failed:', rootStateData);
-        throw error;
+await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
+      const now = Date.now();
+
+      // Check database state
+      const treesCount = await this.trees.count();
+      const nodesCount = await this.nodes.count();
+      const rootStatesCount = await this.rootStates.count();
+
+// If database is partially initialized, clear it and start fresh
+      if (treesCount != 2 || rootStatesCount != 4) {
+        console.warn('Database is in an inconsistent state. Clearing and reinitializing...');
+        await this.trees.clear();
+        await this.nodes.clear();
+        await this.rootStates.clear();
       }
-    }
+
+      if (treesCount === 0) {
+        await this.trees.bulkPut(
+          ['r', 'p'].map((treeId) => ({
+            id: treeId as TreeId,
+            name: treeId === 'r' ? 'Resources' : 'Projects',
+            rootId: NodeIdGenerator.rootNode(treeId),
+            trashRootId: NodeIdGenerator.trashNode(treeId),
+            superRootId: NodeIdGenerator.superRootNode(treeId),
+          }))
+        );
+      }
+      if (nodesCount === 0) {
+        const data = ['r', 'p'].flatMap((treeId) => [
+          {
+            parentId: NodeIdGenerator.superRootNode(treeId),
+            id: NodeIdGenerator.rootNode(treeId),
+            nodeType: TREE_ROOT_NODE_TYPES.ROOT,
+            name: treeId === 'r' ? 'Resources' : 'Projects',
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+          },
+          {
+            parentId: NodeIdGenerator.superRootNode(treeId),
+            id: NodeIdGenerator.trashNode(treeId),
+            nodeType: TREE_ROOT_NODE_TYPES.TRASH,
+            name: 'Trash',
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+          },
+        ]) satisfies TreeNode[];
+await this.nodes.bulkAdd(data);
+      }
+
+      if (rootStatesCount === 0) {
+        const rootStateData = ['r', 'p'].flatMap((treeId) =>
+          [TREE_ROOT_NODE_TYPES.ROOT, TREE_ROOT_NODE_TYPES.TRASH].map((treeRootNodeType) => ({
+            treeId: treeId as TreeId,
+            rootNodeId:
+              treeRootNodeType === TREE_ROOT_NODE_TYPES.ROOT
+                ? NodeIdGenerator.rootNode(treeId)
+                : NodeIdGenerator.trashNode(treeId),
+            expanded: {},
+          }))
+        );
+
+try {
+          await this.rootStates.bulkAdd(rootStateData);
+        } catch (error) {
+          console.error('Failed to initialize rootStates:', error);
+          console.error('Data that failed:', rootStateData);
+
+          // Try to get more details about the error
+          if ((error as any).failures) {
+            console.error('Bulk add failures:', (error as any).failures);
+          }
+          throw error;
+        }
+      }
+      
+});
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    return await this.trees.get(treeId);
+    console.log('[CoreDB] getTree called with treeId:', treeId);
+    try {
+      const tree = await this.trees.get(treeId);
+      console.log('[CoreDB] getTree result:', tree);
+      return tree;
+    } catch (error) {
+      console.error('[CoreDB] getTree error:', error);
+      throw error;
+    }
   }
 
   listTrees(): Promise<Tree[]> {

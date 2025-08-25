@@ -3,8 +3,8 @@ import type { NodeId, TreeId } from './ids';
 import type { TreeNodeWithChildren } from './tree';
 
 export interface TreeRootState {
-  treeId: TreeId;
   rootNodeId: NodeId;
+  treeId: TreeId;
   expanded: true | Record<NodeId, boolean>;
 }
 

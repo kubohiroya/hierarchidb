@@ -6,7 +6,8 @@
 # ================================================================
 
 # 基本設定を読み込み
-source "$(dirname "$0")/base.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/base.sh"
 
 # 開発環境固有の設定（上書き）
 export VITE_BFF_BASE_URL="https://eria-cartograph-bff.kubohiroya.workers.dev/api/auth"

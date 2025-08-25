@@ -35,7 +35,7 @@ import {
   ChevronRight as ChevronRightIcon,
   DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
-import type {TreeConsoleContentProps, TreeNode, TreeNodeData, NodeId } from '../../types';
+import type { TreeConsoleContentProps, TreeNode, TreeNodeData, NodeId } from '../../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 // スタイル定義（元のTreeTable.cssを再現）
@@ -44,7 +44,7 @@ const StyledTableContainer = styled(Box)`
   height: 100%;
   overflow: auto;
   position: relative;
-  
+
   /* Custom scrollbar styling - 元のデザインを再現 */
   &::-webkit-scrollbar {
     width: 12px;
@@ -58,7 +58,7 @@ const StyledTableContainer = styled(Box)`
   &::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
-    
+
     &:hover {
       background: rgba(0, 0, 0, 0.3);
     }
@@ -77,23 +77,23 @@ const StyledTableHead = styled(TableHead)`
   top: 0;
   z-index: 10;
   background: ${({ theme }) => theme.palette.background.paper};
-  
+
   & .MuiTableCell-root {
     font-weight: 600;
     border-bottom: 2px solid ${({ theme }) => theme.palette.divider} !important;
     padding: 8px 12px;
     user-select: none;
     border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
-    
+
     &:last-child {
       border-right: none !important;
     }
   }
-  
+
   /* MUIのstickyHeaderクラスのスタイルを上書き */
   & .MuiTableCell-stickyHeader {
     border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
-    
+
     &:last-child {
       border-right: none !important;
     }
@@ -104,18 +104,18 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
   &:hover {
     background-color: rgba(0, 0, 0, 0.04);
   }
-  
+
   ${({ selected }) =>
     selected &&
     `
     background-color: rgba(25, 118, 210, 0.08) !important;
   `}
-  
+
   & .MuiTableCell-root {
     padding: 8px 12px;
     border-right: 2px solid ${({ theme }) => theme.palette.divider} !important;
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider} !important;
-    
+
     &:last-child {
       border-right: none !important;
     }
@@ -406,23 +406,28 @@ export function TreeTableCore({
               {headerGroup.headers.map((header, index) => {
                 // デバッグ: インデックスと境界線の状態を確認
                 const showBorder = index < headerGroup.headers.length - 1;
-                console.log(`Header ${index}: showBorder=${showBorder}, total=${headerGroup.headers.length}`);
-                
+                console.log(
+                  `Header ${index}: showBorder=${showBorder}, total=${headerGroup.headers.length}`
+                );
+
                 return (
-                  <TableCell 
-                    key={header.id} 
-                    style={{ 
+                  <TableCell
+                    key={header.id}
+                    style={{
                       width: header.getSize(),
                       borderRight: showBorder ? '2px solid red' : 'none',
                       borderBottom: '2px solid red',
                       fontWeight: 600,
                       padding: '8px 12px',
-                      userSelect: 'none'
+                      userSelect: 'none',
                     }}
                   >
                     {header.isPlaceholder
                       ? null
-                      : (flexRender(header.column.columnDef.header, header.getContext()) as React.ReactNode)}
+                      : (flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        ) as React.ReactNode)}
                   </TableCell>
                 );
               })}
@@ -445,15 +450,16 @@ export function TreeTableCore({
                 sx={{ cursor: 'pointer' }}
               >
                 {row.getVisibleCells().map((cell, index) => (
-                  <TableCell 
-                    key={cell.id} 
-                    style={{ 
+                  <TableCell
+                    key={cell.id}
+                    style={{
                       width: cell.column.getSize(),
-                      borderRight: index < row.getVisibleCells().length - 1 
-                        ? '2px solid rgba(0, 0, 0, 0.12)'
-                        : 'none',
+                      borderRight:
+                        index < row.getVisibleCells().length - 1
+                          ? '2px solid rgba(0, 0, 0, 0.12)'
+                          : 'none',
                       borderBottom: '1px solid rgba(0, 0, 0, 0.12)',
-                      padding: '8px 12px'
+                      padding: '8px 12px',
                     }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext()) as React.ReactNode}
@@ -464,7 +470,6 @@ export function TreeTableCore({
           })}
         </TableBody>
       </StyledTable>
-
       {/* Context Menu */}
       <ContextMenuComponent
         anchorEl={contextMenuState.anchorEl}

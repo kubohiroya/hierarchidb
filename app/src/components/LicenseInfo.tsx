@@ -185,7 +185,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
       <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap' }}>
         {sortedCategories.map((category) => {
           const config = LICENSE_CATEGORIES[category as keyof typeof LICENSE_CATEGORIES];
-          const count = groupedPackages[category].length;
+          const count = groupedPackages[category]?.length || 0;
           
           return (
             <Chip
@@ -219,7 +219,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
                   size="small"
                 />
                 <Typography variant="subtitle1">
-                  {categoryPackages.length} package{categoryPackages.length !== 1 ? 's' : ''}
+                  {categoryPackages?.length || 0} package{(categoryPackages?.length || 0) !== 1 ? 's' : ''}
                 </Typography>
               </Stack>
             </AccordionSummary>
@@ -235,7 +235,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {categoryPackages.map((pkg) => (
+                    {(categoryPackages || []).map((pkg) => (
                       <TableRow key={pkg.name}>
                         <TableCell>
                           <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>

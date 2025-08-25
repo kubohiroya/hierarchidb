@@ -270,7 +270,7 @@ describe('TreeMutationService', () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.code).toBe('NAME_NOT_UNIQUE');
+          expect((result as { success: false; error: string; code: any }).code).toBe('NAME_NOT_UNIQUE');
         }
       });
     });
@@ -334,7 +334,7 @@ describe('TreeMutationService', () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.code).toBe('STALE_VERSION');
+          expect((result as { success: false; error: string; code: any }).code).toBe('STALE_VERSION');
         }
       });
     });

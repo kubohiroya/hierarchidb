@@ -388,7 +388,7 @@ describe('TreeSubscribeService', () => {
           groupId: generateNodeId(),
           kind: 'subscribeSubtree',
           payload: {
-            rootNodeId: 'folder1' as NodeId,
+            rootId: 'folder1' as NodeId,
             includeInitialSnapshot: false,
           },
           issuedAt: Date.now() as Timestamp,
@@ -417,7 +417,7 @@ describe('TreeSubscribeService', () => {
           groupId: generateNodeId(),
           kind: 'subscribeSubtree',
           payload: {
-            rootNodeId: 'folder1' as NodeId,
+            rootId: 'folder1' as NodeId,
             maxDepth: 1, // Only direct children
             includeInitialSnapshot: false,
           },

@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import { NodeId, TreeNode } from '@hierarchidb/common-core';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
@@ -41,7 +41,7 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 
   // Load trash items if targetNodeId is "trash" or trash root
   const client = result.client;
-  const api = client.getAPI();
+  const api = client;
   const tree = result.tree;
 
   let trashRootId: NodeId | undefined;
@@ -120,7 +120,7 @@ export default function TrashDialog() {
 
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client.getAPI();
+      const api = client;
 
       const result = await api.recoverFromTrash({
         nodeIds: selectedIds as NodeId[],
@@ -167,7 +167,7 @@ export default function TrashDialog() {
 
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client.getAPI();
+      const api = client;
 
       const allIds = data.trashItems.map((item: TreeNode) => item.id);
 

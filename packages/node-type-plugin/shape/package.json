@@ -34,7 +34,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
-    "@hierarchidb/ui-client": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",

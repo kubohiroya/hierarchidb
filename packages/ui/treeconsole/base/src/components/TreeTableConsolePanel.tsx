@@ -15,12 +15,12 @@
 // import React from 'react'; // Not needed with new JSX transform
 import { Box } from '@mui/material';
 import { useTreeViewController } from '../hooks/useTreeViewController';
-import type { TreeViewController } from '../types/index';
-import { TreeConsoleHeader } from './TreeConsoleHeader';
+//import type { TreeViewController } from '../types/index';
+//import { TreeConsoleHeader } from './TreeConsoleHeader';
 import { TreeConsoleContent } from './TreeConsoleContent';
-import { TreeConsoleToolbar } from './TreeConsoleToolbar';
+//import { TreeConsoleToolbar } from './TreeConsoleToolbar';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
-import { TreeConsoleActions } from './TreeConsoleActions';
+//import { TreeConsoleActions } from './TreeConsoleActions';
 import type { TreeTableConsolePanelProps, NodeId } from '../types/index';
 
 /**
@@ -31,14 +31,13 @@ import type { TreeTableConsolePanelProps, NodeId } from '../types/index';
 export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.JSX.Element {
   const {
     rootNodeId,
-    nodeId,
+    //nodeId,
     displayExpandedNode: _displayExpandedNode,
-    close,
     initialRowSelection: _initialRowSelection,
     onRowSelectionChange: _onRowSelectionChange,
     enableRowSelection: _enableRowSelection,
-    hideConsole,
-    showSearchOnly,
+    //hideConsole,
+    //showSearchOnly,
     useTrashColumns,
     containerWidth,
     containerHeight,
@@ -75,6 +74,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
     >
       {/* ヘッダーコンポーネント */}
       <Box sx={{ flexShrink: 0 }}>
+        {/*
         <TreeConsoleHeader
           title={`Tree Console - ${mode || 'Default'} Mode`}
           baseTitle="Tree Console"
@@ -92,7 +92,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
           canPreviewNode={false} // TODO: 実装時にプレビュー可能性を判定
           depthOffset={0} // TODO: 実装時に深度オフセットを設定
         />
-
+*/}
         {/* デバッグ情報 */}
         <Box
           sx={{
@@ -110,7 +110,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
         </Box>
       </Box>
 
-      {/* ツールバー */}
+      {/* ツールバー
       <TreeConsoleToolbar
         hideConsole={hideConsole || false}
         showSearchOnly={showSearchOnly || false}
@@ -121,7 +121,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
         hasTrashItems={mode === 'restore' || mode === 'dispose'} // TODO: 実装時に実際の判定ロジック
         hasChildren={treeController.expandedNodes.length > 0} // TODO: 実装時により正確な判定
       />
-
+*/}
       {/* メインコンテンツ */}
       <TreeConsoleContent
         controller={treeController}
@@ -151,7 +151,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
         height={footerHeight || 32}
       />
 
-      {/* アクションボタン */}
+      {/* アクションボタン
       <TreeConsoleActions
         isProjectsPage={false} // TODO: 実装時にページタイプを判定
         isResourcesPage={true} // TODO: 実装時にページタイプを判定
@@ -173,6 +173,7 @@ export function TreeTableConsolePanel(props: TreeTableConsolePanelProps): React.
         backLink="/" // TODO: 実装時に適切なリンク
         rootNodeId={rootNodeId}
       />
+      */}
     </Box>
   );
 }

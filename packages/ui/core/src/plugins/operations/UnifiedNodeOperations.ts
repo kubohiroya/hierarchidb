@@ -472,10 +472,10 @@ export class UnifiedNodeOperations {
   private async showDefaultCreateDialog(
     _plugin: UIPluginDefinition,
     _parentId: NodeId,
-    nodeType: string
+    _nodeType: string
   ): Promise<void> {
     // TODO: Implement default create dialog
-    console.log(`Show default create dialog for ${nodeType}`);
+    // Show default create dialog
   }
 
   private async showDefaultEditDialog(

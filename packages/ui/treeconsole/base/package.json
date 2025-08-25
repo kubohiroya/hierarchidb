@@ -28,7 +28,6 @@
     "@emotion/styled": "^11.14.1",
     "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/ui-client": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-treeconsole-footer": "workspace:*",
     "@hierarchidb/ui-treeconsole-speeddial": "workspace:*",

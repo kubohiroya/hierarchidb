@@ -12,7 +12,7 @@
 
 import { useRef, useState, useEffect, RefObject } from 'react';
 import { Box, LinearProgress } from '@mui/material';
-import { TreeTableConsolePanel } from './TreeTableConsolePanel';
+//import { TreeTableConsolePanel } from './TreeTableConsolePanel';
 import type { TreeTableConsolePanelProps } from '../types/index';
 
 /**
@@ -72,7 +72,7 @@ function useValidatedSize(ref: RefObject<HTMLElement | null>) {
  *
  * ResizeObserverを統合し、TreeTableConsolePanelが適切な寸法で描画されるよう制御する。
  */
-export function TreeTableConsolePanelContext(props: TreeTableConsolePanelProps) {
+export function TreeTableConsolePanelContext(_props: TreeTableConsolePanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width, height, isValid: hasValidDimensions } = useValidatedSize(containerRef);
 
@@ -126,7 +126,8 @@ export function TreeTableConsolePanelContext(props: TreeTableConsolePanelProps) 
         </Box>
       ) : (
         // 有効な寸法が確定したらTreeTableConsolePanelを描画
-        <TreeTableConsolePanel {...props} containerWidth={width} containerHeight={height} />
+        // <TreeTableConsolePanel {...props} containerWidth={width} containerHeight={height} />
+        <Box>Dummy</Box>
       )}
     </Box>
   );

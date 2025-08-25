@@ -26,7 +26,6 @@ import type { TreeConsoleBreadcrumbProps, BreadcrumbNode } from '../types';
 import { NodeContextMenu } from './NodeContextMenu';
 import { NodeTypeIcon } from './NodeTypeIcon';
 
-
 /**
  * BreadcrumbContainer - 元のスタイルを完全に再現
  */
@@ -135,8 +134,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
   // Use custom containers if provided, otherwise use defaults
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
-  
-
 
   // コンテキストメニューの状態
   const [contextMenuAnchor, setContextMenuAnchor] = useState<HTMLElement | null>(null);
@@ -262,10 +259,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       fontSize: '0.975rem',
                     }}
                   >
-                    <IconComponent
-                      nodeType={node.nodeType || node.type || 'folder'}
-                      size="small"
-                    />
+                    <IconComponent nodeType={node.nodeType || node.type || 'folder'} size="small" />
                     {nodeName}
                   </Typography>
                 );
@@ -290,10 +284,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       gap: 0.5,
                     }}
                   >
-                    <IconComponent
-                      nodeType={node.nodeType || node.type || 'folder'}
-                      size="small"
-                    />
+                    <IconComponent nodeType={node.nodeType || node.type || 'folder'} size="small" />
                     {nodeName}
                   </Link>
                   <IconButton
@@ -332,8 +323,18 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onRemove={handleRemove}
-        onOpen={() => handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)}
-        onOpenFolder={() => handleNodeClick(contextMenuNode?.id || contextMenuNode?.id || '', contextMenuNode || undefined)}
+        onOpen={() =>
+          handleNodeClick(
+            contextMenuNode?.id || contextMenuNode?.id || '',
+            contextMenuNode || undefined
+          )
+        }
+        onOpenFolder={() =>
+          handleNodeClick(
+            contextMenuNode?.id || contextMenuNode?.id || '',
+            contextMenuNode || undefined
+          )
+        }
         onCheckReference={() => console.log('Check reference:', contextMenuNode?.id)}
         onPreview={() => console.log('PreviewStep:', contextMenuNode?.id)}
       />

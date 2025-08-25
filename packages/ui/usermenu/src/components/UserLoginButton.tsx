@@ -24,13 +24,13 @@ import {
   Memory as MemoryIcon,
   MemoryOutlined as MemoryOutlinedIcon,
 } from '@mui/icons-material';
-import { AuthProviderType, UserAvatar, AuthProviderDialog, useBFFAuth } from '@hierarchidb/ui-auth';
+import { AuthProviderType, UserAvatar, AuthProviderDialog, useAuth } from '@hierarchidb/ui-auth';
 import { useThemeMode, getThemeIcon, getThemeDisplayName, ThemeMode } from '@hierarchidb/ui-theme';
 import { useLanguage, type LanguageConfig } from '@hierarchidb/ui-i18n';
 import { useTranslation } from 'react-i18next';
 
 export const UserLoginButton: React.FC = () => {
-  const { user, signIn, signOut, auth } = useBFFAuth();
+  const { user, signIn, signOut, auth } = useAuth();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
   const { currentLanguage, supportedLanguages, changeLanguage } = useLanguage();
   const { t } = useTranslation();

@@ -19,15 +19,18 @@ export class TreeQueryService implements TreeQueryAPI {
   // Basic Query Operations
 
   async getTrees(): Promise<Tree[]> {
-    return (await this.coreDB.listTrees?.()) || [];
+    return (await this.coreDB.listTrees()) || [];
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    return await this.coreDB.getTree?.(treeId);
+    console.log('[TreeQueryService] getTree called with treeId:', treeId);
+    const result = await this.coreDB.getTree(treeId);
+    console.log('[TreeQueryService] getTree result:', result);
+    return result;
   }
 
   async listTrees(): Promise<Tree[]> {
-    return (await this.coreDB.listTrees?.()) || [];
+    return (await this.coreDB.listTrees()) || [];
   }
 
   async getNode(nodeId: NodeId): Promise<TreeNode | undefined> {
@@ -37,7 +40,7 @@ export class TreeQueryService implements TreeQueryAPI {
       return undefined;
     }
 
-    return await this.coreDB.getNode?.(nodeId);
+    return await this.coreDB.getNode(nodeId);
   }
 
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {

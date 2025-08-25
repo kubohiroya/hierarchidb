@@ -7,10 +7,10 @@ describe('データベース初期化テスト', () => {
   let coreDB: CoreDB;
   let ephemeralDB: EphemeralDB;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // テスト用の新しいデータベースインスタンスを作成
-    coreDB = new CoreDB('test-core');
-    ephemeralDB = new EphemeralDB('test-ephemeral');
+    coreDB = await CoreDB.getSingleton('test-core');
+    ephemeralDB = await EphemeralDB.getSingleton('test-ephemeral');
   });
 
   afterEach(async () => {
@@ -215,7 +215,7 @@ describe('データベース初期化テスト', () => {
   describe('データベース接続エラーハンドリング', () => {
     it('データベース接続失敗時の再試行', async () => {
       // 無効なデータベース名でインスタンスを作成
-      const invalidCoreDB = new CoreDB('');
+      const invalidCoreDB = await CoreDB.getSingleton('');
 
       try {
         await invalidCoreDB.open();
@@ -233,7 +233,7 @@ describe('データベース初期化テスト', () => {
 
     it('バージョン競合時のマイグレーション', async () => {
       // 初期バージョンのデータベースを作成
-      const db1 = new CoreDB('migration-test');
+      const db1 = await CoreDB.getSingleton('migration-test');
       await db1.open();
 
       // データを追加
@@ -250,7 +250,7 @@ describe('データベース初期化テスト', () => {
       await db1.close();
 
       // 同じ名前で新しいインスタンスを作成（マイグレーションのシミュレーション）
-      const db2 = new CoreDB('migration-test');
+      const db2 = await CoreDB.getSingleton('migration-test');
       await db2.open();
 
       // データが保持されていることを確認

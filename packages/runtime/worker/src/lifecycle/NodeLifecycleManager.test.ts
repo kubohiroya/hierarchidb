@@ -54,13 +54,13 @@ describe('NodeLifecycleManager', () => {
     onUnload: vi.fn(),
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks
     Object.values(hookCalls).map((fn) => fn.mockClear());
 
     coreDB = new MockCoreDB();
     ephemeralDB = {};
-    registry = new SimpleNodeTypeRegistry();
+    registry = await SimpleNodeTypeRegistry.getSingleton();
 
     lifecycleManager = new NodeLifecycleManager(registry, coreDB as any, ephemeralDB as any);
   });

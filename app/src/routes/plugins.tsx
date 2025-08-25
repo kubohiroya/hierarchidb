@@ -27,8 +27,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
-import { type PluginDefinition } from '@hierarchidb/common-core';
+import { WorkerAPIClient } from '../WorkerAPIClient';
+import { type PluginDefinition, type PluginDatabaseConfig, type TreeId } from '@hierarchidb/common-core';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { FullScreenDialog } from '@hierarchidb/ui-dialog';
 import { useNavigate } from 'react-router';
@@ -42,7 +42,7 @@ export function meta() {
 }
 
 interface PluginRowProps {
-  plugin: PluginDefinition<any, any, any>;
+  plugin: PluginDefinition;
   index: number;
 }
 
@@ -73,18 +73,10 @@ function PluginRow({ plugin, index }: PluginRowProps) {
           </Stack>
         </TableCell>
         <TableCell>
-          {plugin.metadata?.version || 'N/A'}
+          {plugin.displayName}
         </TableCell>
         <TableCell>
           <Stack direction="row" spacing={1}>
-            {plugin.metadata?.experimental && (
-              <Chip
-                label="Experimental"
-                size="small"
-                color="warning"
-                icon={<ScienceIcon />}
-              />
-            )}
             {plugin.ui && (
               <Chip
                 label="UI"
@@ -109,10 +101,26 @@ function PluginRow({ plugin, index }: PluginRowProps) {
                 variant="outlined"
               />
             )}
+            {plugin.validation && (
+              <Chip
+                label="Validation"
+                size="small"
+                color="warning"
+                variant="outlined"
+              />
+            )}
+            {plugin.api && (
+              <Chip
+                label="API"
+                size="small"
+                color="info"
+                variant="outlined"
+              />
+            )}
           </Stack>
         </TableCell>
         <TableCell align="center">
-          {plugin.metadata?.priority || 'N/A'}
+          {plugin.category?.createOrder || 'N/A'}
         </TableCell>
         <TableCell>
           <Tooltip title="Plugin is active">
@@ -129,38 +137,48 @@ function PluginRow({ plugin, index }: PluginRowProps) {
               </Typography>
               
               <Stack spacing={2}>
-                {plugin.metadata?.description && (
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Name
+                  </Typography>
+                  <Typography variant="body2">
+                    {plugin.name}
+                  </Typography>
+                </Box>
+                
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Display Name
+                  </Typography>
+                  <Typography variant="body2">
+                    {plugin.displayName}
+                  </Typography>
+                </Box>
+                
+                {plugin.category && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Description
+                      Category
                     </Typography>
                     <Typography variant="body2">
-                      {plugin.metadata.description}
+                      Tree: {plugin.category.treeId} | 
+                      Group: {plugin.category.menuGroup || 'default'} | 
+                      Order: {plugin.category.createOrder || 'N/A'}
                     </Typography>
                   </Box>
                 )}
                 
-                {plugin.metadata?.author && (
+                {plugin.icon && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Author
+                      Icon Configuration
                     </Typography>
                     <Typography variant="body2">
-                      {plugin.metadata.author}
+                      {plugin.icon.muiIconName && `MUI Icon: ${plugin.icon.muiIconName}`}
+                      {plugin.icon.emoji && ` | Emoji: ${plugin.icon.emoji}`}
+                      {plugin.icon.color && ` | Color: ${plugin.icon.color}`}
+                      {plugin.icon.description && ` | ${plugin.icon.description}`}
                     </Typography>
-                  </Box>
-                )}
-                
-                {plugin.metadata?.tags && plugin.metadata.tags.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Tags
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                      {plugin.metadata.tags.map((tag: string) => (
-                        <Chip key={tag} label={tag} size="small" />
-                      ))}
-                    </Stack>
                   </Box>
                 )}
                 
@@ -170,9 +188,15 @@ function PluginRow({ plugin, index }: PluginRowProps) {
                       Database Configuration
                     </Typography>
                     <Typography variant="body2">
-                      Table: {plugin.database.tableName || plugin.database.entityStore} | 
+                      DB: {plugin.database.dbName} | 
+                      Table: {plugin.database.tableName} | 
                       Version: {plugin.database.version}
                     </Typography>
+                    {plugin.database.schema && (
+                      <Typography variant="caption" component="div" sx={{ mt: 1, fontFamily: 'monospace' }}>
+                        Schema: {plugin.database.schema}
+                      </Typography>
+                    )}
                   </Box>
                 )}
                 
@@ -190,13 +214,62 @@ function PluginRow({ plugin, index }: PluginRowProps) {
                   </Box>
                 )}
                 
-                {plugin.dependencies && plugin.dependencies.length > 0 && (
+                {plugin.validation && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Dependencies
+                      Validation Rules
                     </Typography>
                     <Typography variant="body2">
-                      {plugin.dependencies.join(', ')}
+                      {plugin.validation.namePattern && `Name Pattern: ${plugin.validation.namePattern.toString()}`}
+                      {plugin.validation.maxChildren && ` | Max Children: ${plugin.validation.maxChildren}`}
+                      {plugin.validation.allowedChildTypes && ` | Allowed Child Types: ${plugin.validation.allowedChildTypes.join(', ')}`}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {plugin.lifecycle && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Lifecycle Hooks
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                      {plugin.lifecycle.hasBeforeCreate && <Chip label="beforeCreate" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterCreate && <Chip label="afterCreate" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasBeforeUpdate && <Chip label="beforeUpdate" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterUpdate && <Chip label="afterUpdate" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasBeforeDelete && <Chip label="beforeDelete" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterDelete && <Chip label="afterDelete" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasBeforeMove && <Chip label="beforeMove" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterMove && <Chip label="afterMove" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasBeforeCommit && <Chip label="beforeCommit" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterCommit && <Chip label="afterCommit" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasBeforeDiscard && <Chip label="beforeDiscard" size="small" variant="outlined" />}
+                      {plugin.lifecycle.hasAfterDiscard && <Chip label="afterDiscard" size="small" variant="outlined" />}
+                    </Stack>
+                  </Box>
+                )}
+                
+                {plugin.api && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      API Extensions
+                    </Typography>
+                    <Typography variant="body2">
+                      {plugin.api.workerExtensions && `Worker Extensions: ${Object.keys(plugin.api.workerExtensions).join(', ')}`}
+                      {plugin.api.clientExtensions && ` | Client Extensions: ${Object.keys(plugin.api.clientExtensions).join(', ')}`}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {plugin.i18n && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Internationalization
+                    </Typography>
+                    <Typography variant="body2">
+                      {plugin.i18n.namespace && `Namespace: ${plugin.i18n.namespace}`}
+                      {plugin.i18n.defaultLocale && ` | Default Locale: ${plugin.i18n.defaultLocale}`}
+                      {plugin.i18n.resources && ` | Available Locales: ${Object.keys(plugin.i18n.resources).join(', ')}`}
                     </Typography>
                   </Box>
                 )}
@@ -211,7 +284,7 @@ function PluginRow({ plugin, index }: PluginRowProps) {
 
 export default function PluginsPage() {
   const navigate = useNavigate();
-  const [workerPlugins, setWorkerPlugins] = useState<PluginDefinition<any, any, any>[]>([]);
+  const [workerPlugins, setWorkerPlugins] = useState<PluginDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -220,10 +293,10 @@ export default function PluginsPage() {
       try {
         setLoading(true);
         const client = await WorkerAPIClient.getSingleton();
-        const api = client.getAPI();
+        const api = client;
         
         // Get plugins from worker
-        const plugins = await api.getPluginsForTree('*' as any);
+        const plugins = await api.getPluginsForTree('*' as TreeId);
         setWorkerPlugins(plugins || []);
       } catch (err) {
         console.error('Failed to load plugins:', err);
@@ -310,7 +383,7 @@ export default function PluginsPage() {
                 Experimental
               </Typography>
               <Typography variant="h4">
-                {workerPlugins.filter(p => p.metadata?.experimental).length}
+                {0}
               </Typography>
             </CardContent>
           </Card>
@@ -334,7 +407,7 @@ export default function PluginsPage() {
                   <TableCell />
                   <TableCell>#</TableCell>
                   <TableCell>Node Type</TableCell>
-                  <TableCell>Version</TableCell>
+                  <TableCell>Display Name</TableCell>
                   <TableCell>Features</TableCell>
                   <TableCell align="center">Priority</TableCell>
                   <TableCell>Status</TableCell>
@@ -385,19 +458,19 @@ export default function PluginsPage() {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
-                        {plugin.ui?.createDialog && (
+                        {plugin.components?.createDialog && (
                           <Chip label="Dialog" size="small" variant="outlined" />
                         )}
-                        {plugin.ui?.editDialog && (
+                        {plugin.components?.editDialog && (
                           <Chip label="Edit" size="small" variant="outlined" />
                         )}
-                        {plugin.ui?.icon && (
+                        {plugin.components?.icon && (
                           <Chip label="Icon" size="small" variant="outlined" />
                         )}
                       </Stack>
                     </TableCell>
                     <TableCell align="center">
-                      {plugin.metadata?.createOrder || 'N/A'}
+                      {plugin.menu?.createOrder || 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Tooltip title="Plugin is active">

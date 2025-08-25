@@ -11,6 +11,7 @@ import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDyna
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
+import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient';
 import {
   TopPageGuidedTour,
   ProjectsGuidedTour,
@@ -18,6 +19,7 @@ import {
 } from '@hierarchidb/runtime-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-core';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
@@ -25,18 +27,17 @@ export interface TreeConsoleIntegrationProps {
   readonly pageTreeNode?: TreeNode;
 }
 
-export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
-  treeId,
-  pageNodeId,
-  pageTreeNode,
-}) => {
+// Inner component that uses the hook (client is guaranteed to be non-null)
+const TreeConsoleIntegrationInner: React.FC<
+  TreeConsoleIntegrationProps & { client: WorkerAPI }
+> = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [tourRun, setTourRun] = useState(false);
   const [hasTrashItems, setHasTrashItems] = useState(false);
 
   const {
-    workerClient,
+    client,
     loading: workerLoading,
     error: workerError,
     treeData,
@@ -52,6 +53,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     actions,
     state,
   } = useTreeConsoleIntegration({
+    client: workerClient,
     treeId,
     pageNodeId,
     pageTreeNode,
@@ -62,7 +64,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     const checkTrashItems = async () => {
       if (workerClient && treeId) {
         try {
-          const api = workerClient.getAPI();
+          const api = workerClient;
           // Get trash root node and check if it has children
           const tree = await api.getTree({ treeId: treeId as TreeId });
           if (tree?.trashRootId) {
@@ -125,17 +127,26 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     [navigate, treeId, pageNodeId, actions]
   );
 
-  // Handler for starting guided tour (kept for future use)
-  // const handleStartTour = useCallback(() => {
-  //   setTourRun(true);
-  // }, []);
+  // Handler for starting guided tour
+  const handleStartTour = useCallback(() => {
+    setTourRun(true);
+  }, []);
 
   const handleTourFinish = useCallback(() => {
     setTourRun(false);
   }, []);
 
+  console.log('[TreeConsoleIntegration] Render state:', {
+    workerLoading,
+    workerError,
+    workerClient: !!workerClient,
+    treeData: treeData?.length || 0,
+    loading: state.loading,
+  });
+
   // Handle loading state
   if (workerLoading) {
+    console.log('[TreeConsoleIntegration] Showing loading spinner (worker loading)');
     return (
       <Box
         sx={{
@@ -153,6 +164,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
 
   // Handle error state
   if (workerError) {
+    console.log('[TreeConsoleIntegration] Showing error:', workerError);
     return (
       <Box sx={{ p: 2 }}>
         <Alert severity="error">Failed to initialize TreeConsole: {workerError}</Alert>
@@ -162,6 +174,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
 
   // Handle no worker client
   if (!workerClient) {
+    console.log('[TreeConsoleIntegration] Worker client not available');
     return (
       <Box sx={{ p: 2 }}>
         <Alert severity="warning">Worker client not available</Alert>
@@ -188,7 +201,6 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {renderGuidedTour()}
-      {/* TreeConsole Toolbar */}
       <TreeConsoleToolbar
         isProjectsPage={pageTreeNode?.name?.toLowerCase().includes('project')}
         isResourcesPage={pageTreeNode?.name?.toLowerCase().includes('resource')}
@@ -206,10 +218,12 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
         canDuplicate={selectedIds.length > 0}
         canRemove={canDelete && selectedIds.length > 0}
       />
+
       {/* TreeConsole Panel */}
       <TreeConsolePanelWithDynamicSpeedDial
         treeId={treeId as TreeId}
         workerClient={workerClient}
+        onStartTour={handleStartTour}
         title={`Tree: ${pageTreeNode?.name || 'Root'}`}
         rootNodeId={pageNodeId}
         data={treeData}
@@ -252,5 +266,41 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
         onContextMenuAction={actions.handleContextMenuAction}
       />
     </Box>
+  );
+};
+
+// Outer component that handles client loading
+export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
+  treeId,
+  pageNodeId,
+  pageTreeNode,
+}) => {
+  console.log('[TreeConsoleIntegration] Rendering with props:', {
+    treeId,
+    pageNodeId,
+    pageTreeNode,
+  });
+
+  // Get the Worker API client
+  const workerClientWrapper = useWorkerAPIClient();
+  const workerClient = workerClientWrapper?.getAPI();
+
+  // Show loading if client is not ready
+  if (!workerClient) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Render the inner component with guaranteed non-null client
+  return (
+    <TreeConsoleIntegrationInner
+      client={workerClient}
+      treeId={treeId}
+      pageNodeId={pageNodeId}
+      pageTreeNode={pageTreeNode}
+    />
   );
 };

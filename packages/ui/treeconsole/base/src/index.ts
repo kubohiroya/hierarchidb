@@ -6,12 +6,7 @@ export { TreeTableConsolePanel } from './components/TreeTableConsolePanel';
 export { TreeTableConsolePanelContext } from './components/TreeTableConsolePanelContext';
 
 // TreeTable containers
-export {
-  TreeTableView,
-  TreeTableToolbar,
-  TreeTableFooter,
-  RowContextMenu,
-} from './components/TreeTable';
+export { TreeTableView, TreeTableFooter, RowContextMenu } from './components/TreeTable';
 
 export type {
   TreeTableViewProps,

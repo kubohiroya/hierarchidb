@@ -367,7 +367,7 @@ export interface ExtendedPluginDefinition<
   readonly routing: PluginRoutingConfig;
 
   // Plugin metadata
-  readonly meta: PluginMetadata;
+  readonly metadata: PluginMetadata;
 }
 
 // =============================================================================

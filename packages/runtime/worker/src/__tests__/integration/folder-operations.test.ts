@@ -99,7 +99,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
 
       // バリデーションエラーを期待
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result) {
         expect(result.error).toContain('name');
       }
     });
@@ -178,7 +178,7 @@ describe.skip('フォルダ操作の統合テスト (needs update to new API)', 
 
       // エラーを期待
       expect(moveResult.success).toBe(false);
-      if (!moveResult.success) {
+      if (!moveResult.success && 'error' in moveResult) {
         expect(moveResult.error).toContain('Circular');
       }
     });

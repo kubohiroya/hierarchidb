@@ -25,8 +25,8 @@ describe('Worker層直接呼び出しテスト', () => {
 
   beforeEach(async () => {
     // データベースを直接初期化
-    coreDB = new CoreDB('test-core-db');
-    ephemeralDB = new EphemeralDB('test-ephemeral-db');
+    coreDB = await CoreDB.getSingleton('test-core-db');
+    ephemeralDB = await EphemeralDB.getSingleton('test-ephemeral-db');
 
     await coreDB.open();
     await ephemeralDB.open();
@@ -41,7 +41,7 @@ describe('Worker層直接呼び出しテスト', () => {
       },
     };
     commandProcessor = new CommandProcessor(dbAdapter);
-    const registry = new SimpleNodeTypeRegistry();
+    const registry = await SimpleNodeTypeRegistry.getSingleton();
     const lifecycleManager = new NodeLifecycleManager(registry, coreDB, ephemeralDB);
     mutationService = new TreeMutationService(
       coreDB,
@@ -256,8 +256,8 @@ describe('Worker層直接呼び出しテスト', () => {
       });
 
       // トランザクション完了後の確認
-      const node1 = await coreDB.nodes.get('tx-node-001');
-      const node2 = await coreDB.nodes.get('tx-node-002');
+      const node1 = await coreDB.nodes.get('tx-node-001' as NodeId);
+      const node2 = await coreDB.nodes.get('tx-node-002' as NodeId);
 
       expect(node1).toBeDefined();
       expect(node2).toBeDefined();
@@ -292,7 +292,7 @@ describe('Worker層直接呼び出しテスト', () => {
       expect(errorThrown).toBe(true);
 
       // ロールバックされたことを確認
-      const node = await coreDB.nodes.get('rollback-001');
+      const node = await coreDB.nodes.get('rollback-001' as NodeId);
       expect(node).toBeUndefined();
     });
   });

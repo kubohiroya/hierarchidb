@@ -4,14 +4,7 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  IconButton,
-  Stack,
-  Chip,
-  useTheme,
-} from '@mui/material';
+import { Box, Typography, IconButton, Stack, Chip, useTheme } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -32,7 +25,7 @@ export interface PaneHeaderComponentProps extends PaneHeaderProps {
 
 /**
  * PaneHeader - Default header component for split view panes
- * 
+ *
  * Features:
  * - Clickable header to toggle pane expansion
  * - Progress display with task counts
@@ -75,16 +68,20 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         p: 1,
         borderBottom: 1,
         borderColor: 'divider',
-        backgroundColor: state.color,
+        //backgroundColor: state.color,
+        color: 'red', //FIXME
+        backgroundColor: 'blue', //FIXME
         cursor: clickable ? 'pointer' : 'default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         minHeight: state.collapsedSize || 60,
         transition: 'background-color 0.2s ease-in-out',
-        '&:hover': clickable ? {
-          backgroundColor: theme.palette.action.hover,
-        } : {},
+        '&:hover': clickable
+          ? {
+              backgroundColor: theme.palette.action.hover,
+            }
+          : {},
       }}
       onClick={handleClick}
     >
@@ -93,13 +90,9 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         <IconButton size="small" sx={{ p: 0.5 }}>
           {getToggleIcon()}
         </IconButton>
-        
-        {pane.icon && (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {pane.icon}
-          </Box>
-        )}
-        
+
+        {pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
+
         <Typography variant="subtitle2" noWrap sx={{ flex: 1 }}>
           {pane.title}
         </Typography>
@@ -121,34 +114,31 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
                       : `${progress.completedCount} done`
                 }
                 size="small"
-                color={progress.progress === 100 ? 'success' : progress.progress > 0 ? 'primary' : 'default'}
+                color={
+                  progress.progress === 100
+                    ? 'success'
+                    : progress.progress > 0
+                      ? 'primary'
+                      : 'default'
+                }
                 variant={progress.progress > 0 ? 'filled' : 'outlined'}
               />
             )}
-            
+
             {/* Progress percentage */}
             {progress.progress > 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 'auto' }}>
                 {progress.progress.toFixed(0)}%
               </Typography>
             )}
-            
+
             {/* Custom status */}
-            {progress.status && (
-              <Chip
-                label={progress.status}
-                size="small"
-                variant="outlined"
-              />
-            )}
+            {progress.status && <Chip label={progress.status} size="small" variant="outlined" />}
           </>
         )}
-
         {/* Header actions */}
         {pane.headerActions && (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {pane.headerActions}
-          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.headerActions}</Box>
         )}
       </Stack>
     </Box>

@@ -39,7 +39,7 @@ export class UIPluginRegistry {
 
     this.plugins.set(plugin.nodeType, plugin);
 
-    console.log(`UI Plugin registered: ${plugin.nodeType} (${plugin.displayName})`);
+
   }
 
   /**
@@ -110,7 +110,7 @@ export class UIPluginRegistry {
   unregister(nodeType: string): boolean {
     const deleted = this.plugins.delete(nodeType);
     if (deleted) {
-      console.log(`UI Plugin unregistered: ${nodeType}`);
+
     }
     return deleted;
   }
@@ -119,9 +119,8 @@ export class UIPluginRegistry {
    * Clear all registered plugins
    */
   clear(): void {
-    const count = this.plugins.size;
     this.plugins.clear();
-    console.log(`All UI plugins cleared (${count} plugins)`);
+
   }
 
   /**

@@ -17,7 +17,7 @@ import {
   Box,
 } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
-import { CommonPluginDialog } from '@hierarchidb/ui-dialog';
+import { CommonPluginDialog } from '@hierarchidb/runtime-plugin-dialog';
 import type { BaseMapEntity } from '../types';
 import type { NodeId } from '@hierarchidb/common-core';
 

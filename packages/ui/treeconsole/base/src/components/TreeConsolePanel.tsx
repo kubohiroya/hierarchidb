@@ -1,24 +1,21 @@
 import React from 'react';
 import { memo, useState, useCallback, useMemo } from 'react';
 import { Box } from '@mui/material';
-import { 
+import {
   Add as AddIcon,
   CreateNewFolder as CreateFolderIcon,
   NoteAdd as NoteAddIcon,
   InsertDriveFile as FileIcon,
   Public as PublicIcon,
   Map as MapIcon,
-  Palette as PaletteIcon 
+  Palette as PaletteIcon,
 } from '@mui/icons-material';
-import {
-  TreeTableToolbar,
-  TreeTableFooter,
-  RowContextMenu,
-} from './TreeTable';
+import { /*TreeTableToolbar,*/ RowContextMenu } from './TreeTable';
 import type { TreeTableColumn } from './TreeTable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+//import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { TreeConsoleFooter } from './TreeConsoleFooter';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
 import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
@@ -66,6 +63,7 @@ export interface TreeConsolePanelProps {
   readonly canGoBack?: boolean;
   readonly canGoForward?: boolean;
   readonly onContextMenuAction: (action: string, node: TreeNodeData) => void;
+  readonly onStartTour?: () => void;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -77,7 +75,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   // Create TreeTableController from props
   const controller: TreeTableController = useMemo(() => {
     // Convert data to TreeNodeInUI format
-    const data = props.data.map(node => ({
+    const data = props.data.map((node) => ({
       ...node,
       nodeType: node.nodeType || 'folder',
       type: node.nodeType,
@@ -86,7 +84,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
     // Convert selectedIds and expandedIds to the expected format
     const rowSelection: Record<string, boolean> = {};
-    props.selectedIds.forEach(id => {
+    props.selectedIds.forEach((id) => {
       rowSelection[id] = true;
     });
 
@@ -103,12 +101,19 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       },
       onNodeSelect: (nodeIds: string[], selected: boolean) => {
         if (props.onNodeSelect) {
-          nodeIds.forEach(id => props.onNodeSelect?.(id, selected));
+          nodeIds.forEach((id) => props.onNodeSelect?.(id, selected));
         }
       },
       onNodeExpand: props.onNodeExpand,
     };
-  }, [props.data, props.selectedIds, props.expandedIds, props.onNodeClick, props.onNodeSelect, props.onNodeExpand]);
+  }, [
+    props.data,
+    props.selectedIds,
+    props.expandedIds,
+    props.onNodeClick,
+    props.onNodeSelect,
+    props.onNodeExpand,
+  ]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, node: TreeNodeData) => {
     event.preventDefault();
@@ -166,28 +171,30 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     },
   ];
 
-  const totalItems = props.data.length;
-  const selectedItems = props.selectedIds.length;
-  const visibleItems = props.data.length; // In real implementation, this would be filtered count
+  //const totalItems = props.data.length;
+  //const selectedItems = props.selectedIds.length;
+  // const visibleItems = props.data.length; // In real implementation, this would be filtered count
 
   return (
-    <Box sx={{ 
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
-      // Allow pointer events to pass through to SpeedDial
-      '& > *:last-child': {
-        pointerEvents: 'none'
-      }
-    }}>
-      {/* Breadcrumb Navigation */}
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        // Allow pointer events to pass through to SpeedDial
+        '& > *:last-child': {
+          pointerEvents: 'none',
+        },
+      }}
+    >
+      {/* Breadcrumb Navigation
       <TreeConsoleBreadcrumb
         nodePath={[...props.breadcrumbItems]}
         onNodeClick={props.onBreadcrumbNavigate}
         variant="default"
       />
-
-      {/* Toolbar */}
+*/}
+      {/* Toolbar
       <TreeTableToolbar
         title={props.title}
         searchTerm={props.searchTerm}
@@ -217,7 +224,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         onFilterChange={props.onFilterChange}
         availableFilters={props.availableFilters}
       />
-
+*/}
       {/* Main Table Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <TreeTableCore
@@ -237,13 +244,10 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       </Box>
 
       {/* Footer */}
-      <TreeTableFooter
-        totalItems={totalItems}
-        selectedItems={selectedItems}
-        visibleItems={visibleItems}
-        isLoading={props.loading}
-        error={props.error}
-        onRetry={props.onRefresh}
+      <TreeConsoleFooter
+        controller={null} // TODO: Convert TreeTableController to TreeViewController
+        onStartTour={props.onStartTour}
+        height={32}
       />
 
       {/* Context Menu */}

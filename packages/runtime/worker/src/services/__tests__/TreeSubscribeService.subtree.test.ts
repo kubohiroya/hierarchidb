@@ -81,7 +81,7 @@ describe('TreeSubscribeService - Subtree Observation', () => {
         groupId: generateNodeId(),
         kind: 'subscribeSubtree',
         payload: {
-          rootNodeId: 'folder1' as NodeId,
+          rootId: 'folder1' as NodeId,
           maxDepth: 1, // 直接の子のみ
           includeInitialSnapshot: false,
         },
@@ -131,7 +131,7 @@ describe('TreeSubscribeService - Subtree Observation', () => {
         groupId: generateNodeId(),
         kind: 'subscribeSubtree',
         payload: {
-          rootNodeId: 'root' as NodeId,
+          rootId: 'root' as NodeId,
           maxDepth: 2, // root -> folder -> subfolder まで
           includeInitialSnapshot: false,
         },

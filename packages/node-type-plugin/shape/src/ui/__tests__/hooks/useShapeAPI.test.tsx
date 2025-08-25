@@ -7,7 +7,7 @@ import { renderHook } from '@testing-library/react';
 import { useShapeAPI, useShapeAPIGetter } from '../../hooks/useShapeAPI';
 import type { ShapeAPI } from '../../../shared';
 
-// Mock @hierarchidb/ui-client
+// Mock @hierarchidb/runtime-client
 const mockWorkerAPI = {
   getPluginRegistryAPI: vi.fn()
 };
@@ -48,7 +48,7 @@ const mockClient = {
   getAPI: vi.fn(() => mockWorkerAPI)
 };
 
-vi.mock('@hierarchidb/ui-client', () => ({
+vi.mock('@hierarchidb/app/src/hooks/useWorkerAPIClient', () => ({
   useWorkerAPIClient: () => mockClient
 }));
 

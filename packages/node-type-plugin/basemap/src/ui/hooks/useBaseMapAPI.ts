@@ -1,9 +1,10 @@
 /**
  * React hook for BaseMap API access via Comlink
+ * NOTE: This hook should be provided by the host application context
+ * or replaced with a proper plugin API pattern
  */
 
 import { useMemo } from 'react';
-import { useWorkerAPIClient } from '@hierarchidb/ui-client';
 import type { BaseMapAPI } from '../../shared';
 
 /**
@@ -11,13 +12,11 @@ import type { BaseMapAPI } from '../../shared';
  * Returns a Comlink proxy that automatically handles RPC calls
  */
 export function useBaseMapAPI(): Promise<BaseMapAPI> {
-  const client = useWorkerAPIClient();
-
+  // TODO: This should be provided by the application context
+  // For now, returning a mock implementation
   return useMemo(async () => {
-    const workerAPI = client.getAPI();
-    const pluginRegistry = await workerAPI.getPluginRegistryAPI();
-    return await pluginRegistry.getExtension('basemap') as BaseMapAPI;
-  }, [client]);
+    throw new Error('useBaseMapAPI requires application context - not yet implemented');
+  }, []);
 }
 
 /**
@@ -25,13 +24,10 @@ export function useBaseMapAPI(): Promise<BaseMapAPI> {
  * Use this when you need the API in event handlers or effects
  */
 export function useBaseMapAPIGetter(): () => Promise<BaseMapAPI> {
-  const client = useWorkerAPIClient();
-
+  // TODO: This should be provided by the application context
   return useMemo(() => {
     return async (): Promise<BaseMapAPI> => {
-      const workerAPI = client.getAPI();
-      const pluginRegistry = await workerAPI.getPluginRegistryAPI();
-      return await pluginRegistry.getExtension('basemap') as BaseMapAPI;
+      throw new Error('useBaseMapAPIGetter requires application context - not yet implemented');
     };
-  }, [client]);
+  }, []);
 }

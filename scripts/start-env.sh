@@ -86,7 +86,7 @@ case "$COMMAND" in
         
     build)
         echo "📦 Building for $ENV_NAME..."
-        pnpm build
+        pnpm build:turbo
         echo ""
         echo "✅ Build complete!"
         

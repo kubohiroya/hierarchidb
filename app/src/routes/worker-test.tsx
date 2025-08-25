@@ -6,39 +6,52 @@
 
 import { useState } from "react";
 import { Box, Container, Typography, Alert, Button } from "@mui/material";
-import { WorkerAPIClient } from "@hierarchidb/ui-client";
+import { WorkerAPIClient } from "../WorkerAPIClient";
+import { initializeWorker, getWorker } from "../initWorker";
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export default function WorkerTest() {
   const [status, setStatus] = useState<string>("Not started");
   const [error, setError] = useState<string | null>(null);
-  const [client, setClient] = useState<WorkerAPIClient | null>(null);
+  const [client, setClient] = useState<WorkerAPI | null>(null);
 
   const testWorker = async () => {
     setStatus("Initializing...");
     setError(null);
 
     try {
-      // Step 1: Get singleton
+      // Step 1: Test WorkerAPIClient.getSingleton
       setStatus("Getting WorkerAPIClient singleton...");
-      const workerClient = await WorkerAPIClient.getSingleton();
-      setClient(workerClient);
+      const client = await WorkerAPIClient.getSingleton();
+      console.log('WorkerAPIClient obtained:', client);
 
-      // Step 2: Test ping
-      setStatus("Testing ping...");
-      await workerClient.ping();
+      // Step 2: Use client directly (no getAPI needed)
+      setStatus("Using client directly...");
+      const api = client;
+      console.log('API obtained:', api);
+      console.log('API methods:', Object.getOwnPropertyNames(api));
 
-      // Step 3: Get API
-      setStatus("Getting API...");
-      const api = workerClient.getAPI();
-
-      // Step 4: Test a simple API call
-      setStatus("Testing API call (getTrees)...");
+      // Step 3: Test getTrees
+      setStatus("Testing getTrees method...");
       const trees = await api.getTrees();
+      console.log('getTrees result:', trees);
+
+      // Step 4: Test other methods
+      setStatus("Testing other API methods...");
+      
+      if (typeof api.getSystemHealth === 'function') {
+        const health = await api.getSystemHealth();
+        console.log('System health:', health);
+      }
 
       setStatus(`Success! Found ${trees?.length || 0} trees`);
+      setClient(client);
     } catch (err) {
       console.error("Worker test failed:", err);
-      setError(err instanceof Error ? err.message : String(err));
+      console.error("Error stack:", (err as Error)?.stack);
+      setError(err instanceof Error ? `${err.message}
+
+Stack: ${err.stack}` : String(err));
       setStatus("Failed");
     }
   };

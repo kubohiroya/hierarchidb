@@ -1,4 +1,4 @@
-import type { TreeViewState, WorkingCopy } from '@hierarchidb/common-core';
+import { SingletonMixin, TreeViewState, WorkingCopy } from '@hierarchidb/common-core';
 import Dexie, { type Table } from 'dexie';
 
 export type WorkingCopyRow = WorkingCopy;
@@ -7,8 +7,16 @@ export type TreeViewStateRow = TreeViewState;
 export class EphemeralDB extends Dexie {
   workingCopies!: Table<WorkingCopyRow, string>;
   views!: Table<TreeViewStateRow, string>;
+  
+  static async getSingleton(name: string = 'hierarchidb'): Promise<EphemeralDB> {
+    return SingletonMixin.getSingleton(EphemeralDB.name, async () => {
+      const instance = new EphemeralDB(name);
+      await instance.initialize();
+      return instance;
+    });
+  }
 
-  constructor(name: string = 'hierarchidb') {
+  private constructor(name: string = 'hierarchidb') {
     super(`${name}-EphemeralDB`);
 
     this.version(1).stores({
@@ -18,15 +26,12 @@ export class EphemeralDB extends Dexie {
   }
 
   async initialize(): Promise<void> {
+// Clear working copies on initialization
     if ((await this.workingCopies.count()) !== 0) {
-      console.log('initialize workingCopies');
-      this.workingCopies.clear();
+await this.workingCopies.clear();
     }
-    if ((await this.views.count()) === 0) {
-      console.log('initialize views');
-      this.views.clear();
-    }
-  }
+    // Views should be kept between sessions, no need to clear
+}
 
   // WorkingCopy CRUD operations
   async getWorkingCopy(workingCopyId: string): Promise<WorkingCopy | undefined> {

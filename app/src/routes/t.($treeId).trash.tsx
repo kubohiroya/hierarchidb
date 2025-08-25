@@ -8,7 +8,7 @@ import {
   DeleteForever as EmptyTrashIcon,
 } from '@mui/icons-material';
 import { loadTree, LoadTreeArgs } from '~/loader';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeNode, NodeId } from '@hierarchidb/common-core';
@@ -17,10 +17,10 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   const treeData = await loadTree(args.params as LoadTreeArgs);
   // Load trash root node
   if (treeData.tree) {
-    const trashRootNode = await treeData.client.getAPI().getNode(treeData.tree.trashRootId);
+    const trashRootNode = await treeData.client.getNode(treeData.tree.trashRootId);
 
     // Load trash items (children of trash root)
-    const trashItems = await treeData.client.getAPI().getChildren({
+    const trashItems = await treeData.client.getChildren({
       parentId: treeData.tree.trashRootId,
     });
 
@@ -49,7 +49,7 @@ export default function TrashPage() {
     setLoading(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client.getAPI();
+      const api = client;
 
       // Use recoverFromTrash API
       const result = await api.recoverFromTrash({
@@ -82,7 +82,7 @@ export default function TrashPage() {
     setLoading(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client.getAPI();
+      const api = client;
 
       // Permanently delete all trash items
       const allTrashIds = data.trashItems?.map((item: TreeNode) => item.id) || [];
@@ -144,6 +144,7 @@ export default function TrashPage() {
       {/* AppBar with mode-specific actions */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
+          ⭐️
           {/* Back button */}
           <Button
             startIcon={<BackIcon />}
@@ -152,12 +153,10 @@ export default function TrashPage() {
           >
             Back
           </Button>
-
           {/* Title */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
             {mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'} - {data.tree?.name}
           </Typography>
-
           {/* Mode-specific actions */}
           <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
             {mode === 'restore' ? (
@@ -182,14 +181,12 @@ export default function TrashPage() {
               </Button>
             )}
           </Stack>
-
           {/* User Login Button */}
           <Box sx={{ ml: 'auto' }}>
             <UserLoginButton />
           </Box>
         </Toolbar>
       </AppBar>
-
       {/* Trash TreeConsole */}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         {loading ? (

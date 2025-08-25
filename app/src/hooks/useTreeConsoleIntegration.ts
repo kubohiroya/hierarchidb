@@ -6,14 +6,15 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
 import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 // import { useImportExport } from '@hierarchidb/feature-import-export-plugin'; // TODO: Implement this hook
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
 
 export interface UseTreeConsoleIntegrationParams {
+  client: WorkerAPI;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -62,13 +63,10 @@ export interface TreeConsoleActions {
 }
 
 export function useTreeConsoleIntegration({
+  client,
   pageNodeId,
   pageTreeNode,
 }: UseTreeConsoleIntegrationParams) {
-  // Worker client state
-  const [workerClient, setWorkerClient] = useState<WorkerAPIClient | null>(null);
-  const [workerLoading, setWorkerLoading] = useState(true);
-  const [workerError, setWorkerError] = useState<string | null>(null);
 
   // Tree data state
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
@@ -92,79 +90,6 @@ export function useTreeConsoleIntegration({
     canPaste: false,
   });
 
-  // Initialize WorkerAPIClient
-  useEffect(() => {
-    let mounted = true;
-
-    const initWorker = async () => {
-      try {
-        console.log('Initializing WorkerAPIClient for TreeConsole...');
-        const client = await WorkerAPIClient.getSingleton();
-
-        if (mounted) {
-          setWorkerClient(client);
-          setWorkerLoading(false);
-          console.log('WorkerAPIClient initialized successfully for TreeConsole');
-        }
-      } catch (err) {
-        console.error('Failed to initialize WorkerAPIClient for TreeConsole:', err);
-        if (mounted) {
-          setWorkerError(err instanceof Error ? err.message : String(err));
-          setWorkerLoading(false);
-        }
-      }
-    };
-
-    initWorker();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Load tree data when worker client is ready
-  useEffect(() => {
-    if (!workerClient || !pageNodeId) {
-      return;
-    }
-
-    const loadTreeData = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-
-      try {
-        console.log('Loading tree data for node:', pageNodeId);
-
-        // Get children of the current node using direct Worker API
-        const api = workerClient.getAPI();
-        const children = await api.getChildren({
-          parentId: pageNodeId,
-        });
-
-        console.log('Loaded children:', children);
-
-        // Convert TreeNode[] to TreeNodeData[]
-        const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
-        setTreeData(treeNodeData);
-
-        // Auto-expand the root if it has children
-        if (children.length > 0) {
-          setExpandedIds((prev) => [...new Set([...prev, pageNodeId])]);
-        }
-
-        setState((prev) => ({ ...prev, loading: false }));
-      } catch (err) {
-        console.error('Failed to load tree data:', err);
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: err instanceof Error ? err.message : String(err),
-        }));
-      }
-    };
-
-    loadTreeData();
-  }, [workerClient, pageNodeId]);
-
   // Memoized columns configuration
   const columns = useMemo(() => createDefaultColumns(), []);
 
@@ -180,11 +105,6 @@ export function useTreeConsoleIntegration({
       },
     ];
   }, [pageTreeNode]);
-
-  // Permission checks (simplified for now, avoiding Orchestrated APIs)
-  const canCreate = true;
-  const canEdit = selectedIds.length === 1;
-  const canDelete = selectedIds.length > 0;
 
   // Import/Export functionality from ui-import-export
   // TODO: Implement useImportExport hook
@@ -221,10 +141,9 @@ export function useTreeConsoleIntegration({
         });
 
         // Load children when expanding (if not already loaded)
-        if (expanded && workerClient) {
+        if (expanded && client) {
           try {
-            const api = workerClient.getAPI();
-            const children = await api.getChildren({
+            const children = await client.getChildren({
               parentId: nodeId as NodeId,
             });
 
@@ -283,12 +202,11 @@ export function useTreeConsoleIntegration({
       },
 
       handleRefresh: async () => {
-        if (!workerClient || !pageNodeId) return;
+        if (!client || !pageNodeId) return;
 
         setState((prev) => ({ ...prev, loading: true }));
         try {
-          const api = workerClient.getAPI();
-          const children = await api.getChildren({
+          const children = await client.getChildren({
             parentId: pageNodeId,
           });
           const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
@@ -354,9 +272,8 @@ export function useTreeConsoleIntegration({
 
           try {
             // Use the worker API to create a new node
-            if (workerClient && pageNodeId) {
-              const api = workerClient.getAPI();
-              const result = await api.create({
+            if (client && pageNodeId) {
+              const result = await client.create({
                 nodeType: nodeType === 'shapes' ? 'shape' : nodeType, // Handle legacy 'shapes' -> 'shape'
                 treeId: 'default-tree', // Use a default treeId for now
                 parentId: pageNodeId as NodeId,
@@ -367,10 +284,9 @@ export function useTreeConsoleIntegration({
               if (result.success) {
                 console.log('Node created successfully:', result.nodeId);
                 // Refresh the tree data
-                if (workerClient && pageNodeId) {
+                if (client && pageNodeId) {
                   try {
-                    const api = workerClient.getAPI();
-                    const children = await api.getChildren({
+                    const children = await client.getChildren({
                       parentId: pageNodeId,
                     });
                     const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
@@ -432,14 +348,61 @@ export function useTreeConsoleIntegration({
         await handleExport('json');
       },
     }),
-    [workerClient, pageNodeId, selectedIds, treeData, handleExport]
+    [client, pageNodeId, selectedIds, treeData, handleExport]
   );
 
+  // Load tree data when client is ready
+  useEffect(() => {
+    if (!client || !pageNodeId) {
+      return;
+    }
+
+    const loadTreeData = async () => {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+
+      try {
+        console.log('Loading tree data for node:', pageNodeId);
+
+        // Get children of the current node using direct Worker API
+        const children = await client.getChildren({
+          parentId: pageNodeId,
+        });
+
+        console.log('Loaded children:', children);
+
+        // Convert TreeNode[] to TreeNodeData[]
+        const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
+        setTreeData(treeNodeData);
+
+        // Auto-expand the root if it has children
+        if (children.length > 0) {
+          setExpandedIds((prev) => [...new Set([...prev, pageNodeId])]);
+        }
+
+        setState((prev) => ({ ...prev, loading: false }));
+      } catch (err) {
+        console.error('Failed to load tree data:', err);
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      }
+    };
+
+    loadTreeData();
+  }, [client, pageNodeId]);
+
+  // Permission checks (simplified for now, avoiding Orchestrated APIs)
+  const canCreate = true;
+  const canEdit = selectedIds.length === 1;
+  const canDelete = selectedIds.length > 0;
+
   return {
-    // Worker client state
-    workerClient,
-    loading: workerLoading,
-    error: workerError,
+    // Worker client
+    client,
+    loading: state.loading,
+    error: state.error,
 
     // Tree data
     treeData,

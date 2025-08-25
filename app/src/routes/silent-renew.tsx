@@ -3,10 +3,10 @@
  * IFrameで読み込まれ、バックグラウンドでトークンを更新
  */
 import { useEffect } from "react";
-import { useBFFAuth } from "@hierarchidb/ui-auth";
+import { useAuth } from "@hierarchidb/ui-auth";
 
 export default function SilentRenewRoute() {
-  const { resumeAfterSignIn } = useBFFAuth();
+  const { resumeAfterSignIn } = useAuth();
 
   useEffect(() => {
     async function renew() {

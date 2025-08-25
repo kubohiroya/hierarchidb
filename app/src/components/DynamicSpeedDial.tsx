@@ -17,13 +17,14 @@ import {
   Extension as ExtensionIcon,
 } from '@mui/icons-material';
 import { usePluginsForTree } from '~/hooks/usePluginsForTree';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId, PluginDefinition } from '@hierarchidb/common-core';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  workerClient: WorkerAPIClient | null;
+  workerClient: WorkerAPI | null;
   onCreateAction: (action: string, node: TreeNodeData) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
@@ -187,9 +188,7 @@ export function DynamicSpeedDial({
           const icon = getIconComponent(plugin);
           
           // Create tooltip with description if available
-          const tooltipTitle = plugin.metadata?.description 
-            ? `${displayName}: ${plugin.metadata.description}`
-            : displayName;
+          const tooltipTitle = displayName;
 
           return (
             <SpeedDialAction

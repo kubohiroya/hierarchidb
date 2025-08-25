@@ -1,13 +1,14 @@
 import { defineConfig, loadEnv } from 'vite';
-import { defineConfig, loadEnv } from 'vite';
+// @ts-ignore
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import { faviconPlugin } from './vite-plugin-favicon';
+import { comlink } from 'vite-plugin-comlink';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, isSsrBuild, command }) => {
+export default defineConfig(({ mode, isSsrBuild }) => {
   // 環境変数を読み込む
   const env = loadEnv(mode, process.cwd(), '');
   const appName = env.VITE_APP_NAME || '';
@@ -18,7 +19,9 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
   // プラグインのリストを作成
   const plugins = [
     // tildeResolver(),
+    dts(),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
+    comlink(), // Add Comlink plugin for Worker support
     reactRouter(),
     tsconfigPaths({
       projects: ['./tsconfig.json'],
@@ -42,6 +45,7 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
       open: true,
       host: true,
       // CORS問題を回避するためのプロキシ設定を追加
+      /*
       proxy: {
         '/auth': {
           target: 'https://eria-cartograph-bff.kubohiroya.workers.dev',
@@ -58,12 +62,14 @@ export default defineConfig(({ mode, isSsrBuild, command }) => {
               proxyRes.headers['access-control-allow-origin'] = 'http://localhost:4200';
               proxyRes.headers['access-control-allow-credentials'] = 'true';
             });
-          }
-        }
-      }
+          },
+        },
+      },
+       */
     },
     worker: {
       format: 'es',
+      plugins: () => [comlink()],
       rollupOptions: {
         output: {
           entryFileNames: '[name].js',

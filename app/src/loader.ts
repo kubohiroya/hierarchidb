@@ -6,12 +6,14 @@ import {
   type TreeId,
   type TreeNode,
 } from '@hierarchidb/common-core';
-import { WorkerAPIClient } from '@hierarchidb/ui-client';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { useRouteLoaderData } from 'react-router';
-import { loadAppConfig, LoadAppConfigReturn } from '~/loadAppConfig';
+import { loadAppConfig } from '~/loadAppConfig';
+import type { LoadAppConfigReturn } from '~/loadAppConfig';
+export type { LoadAppConfigReturn };
 
 export type LoadWorkerAPIClientReturn = {
-  client: WorkerAPIClient;
+  client: WorkerAPI; // Worker API instance
 };
 
 export type LoadTreeArgs = {
@@ -26,7 +28,6 @@ export type LoadPageNodeArgs = {
   nodeId: string;
 };
 export type LoadPageNodeReturn = {
-  client: WorkerAPIClient;
   pageNodeId: NodeId;
   pageNode: TreeNode | undefined;
 } & LoadTreeReturn;
@@ -62,23 +63,66 @@ export type LoadNodeActionReturn = {
 } & LoadNodeTypeReturn;
 
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
+  console.log('[loadWorkerAPIClient] Getting Worker client...');
   const appConfig = loadAppConfig();
-  return {
-    ...appConfig,
-    client: await WorkerAPIClient.getSingleton(),
-  };
+
+  try {
+    // WorkerAPIClientを取得（WorkerProviderで既に初期化済み）
+    const { WorkerAPIClient } = await import('./WorkerAPIClient');
+
+    // WorkerProviderで初期化されていない場合のフォールバック
+    // （開発中やテスト環境での直接アクセス用）
+    if (!WorkerAPIClient.isReady()) {
+      console.warn('[loadWorkerAPIClient] Worker not initialized by provider, initializing now...');
+      await WorkerAPIClient.initialize();
+    }
+
+    // 同期的に取得 - WorkerAPIClientは既にworkerインスタンスを返す
+    const client = WorkerAPIClient.getSingleton();
+    console.log('[loadWorkerAPIClient] Worker client obtained successfully');
+
+    return {
+      ...appConfig,
+      client,
+    };
+  } catch (error) {
+    console.error('[loadWorkerAPIClient] Failed to get Worker client:', error);
+    // エラーを詳細に記録
+    if (error instanceof Error) {
+      console.error('[loadWorkerAPIClient] Error message:', error.message);
+      console.error('[loadWorkerAPIClient] Error stack:', error.stack);
+    }
+    throw error;
+  }
 }
 
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
+  console.log('[loadTree] Loading tree with ID:', treeId);
   const workerAPIClientReturn = await loadWorkerAPIClient();
   if (!treeId) {
     throw new Error('treeId is required');
   }
+
+  const client = workerAPIClientReturn.client;
+  console.log('[loadTree] Got client, calling getTree with treeId:', treeId);
+  console.log('[loadTree] Client type:', typeof client);
+  console.log('[loadTree] getTree method type:', typeof client.getTree);
+  
+  let tree;
+  try {
+    tree = await client.getTree({
+      treeId: treeId as TreeId,
+    });
+
+    console.log('[loadTree] Loaded tree:', tree);
+  } catch (error) {
+    console.error('[loadTree] Error calling getTree:', error);
+    throw error;
+  }
+
   return {
     client: workerAPIClientReturn.client,
-    tree: await workerAPIClientReturn.client.getAPI().getTree({
-      treeId: treeId as TreeId,
-    }),
+    tree,
   };
 }
 
@@ -88,7 +132,7 @@ export async function loadPageNode({
 }: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
   const loadTreeReturn = await loadTree({ treeId });
   const resolvedPageId = (nodeId || `${treeId}Root`) as NodeId;
-  const pageNode = await loadTreeReturn.client.getAPI().getNode(resolvedPageId);
+  const pageNode = await loadTreeReturn.client.getNode(resolvedPageId);
 
   return {
     ...loadTreeReturn,
@@ -108,9 +152,9 @@ export async function loadTargetNode({
   });
   return {
     ...loadPageNodeReturn,
-    targetNode: await loadPageNodeReturn.client
-      .getAPI()
-      .getNode((targetNodeId || pageNodeId || `${treeId}Root`) as NodeId),
+    targetNode: await loadPageNodeReturn.client.getNode(
+      (targetNodeId || pageNodeId || `${treeId}Root`) as NodeId
+    ),
   };
 }
 
@@ -155,7 +199,7 @@ export function useAppConfig(): LoadAppConfigReturn {
 }
 
 export function useWorkerAPIClient() {
-  return useRouteLoaderData('t') as WorkerAPIClient;
+  return useRouteLoaderData('t') as any; // Returns the worker proxy instance
 }
 
 export function useTree(): Tree | undefined {

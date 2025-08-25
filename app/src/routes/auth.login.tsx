@@ -10,7 +10,7 @@ import { LoginForm, useAuth } from "@hierarchidb/ui-auth";
 export default function LoginRoute() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { initiateOAuth } = useAuth();
+  const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   // Get the return URL from state or default to home
@@ -24,7 +24,12 @@ export default function LoginRoute() {
       sessionStorage.setItem("auth.returnUrl", from);
       
       // Initiate OAuth flow with Turnstile token
-      await initiateOAuth(provider, turnstileToken);
+      // TODO: Add Turnstile token support to signIn
+      await signIn({
+        provider: provider as 'google',
+        returnUrl: from,
+        isUserInitiated: true,
+      });
       
       // The OAuth flow will redirect to the provider
       // Control will not return here

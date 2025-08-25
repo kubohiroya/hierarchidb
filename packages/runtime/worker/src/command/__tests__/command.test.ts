@@ -109,7 +109,7 @@ describe('Command Pattern Implementation', () => {
       const result = await processor.processCommand(envelope);
 
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (!result.success && 'error' in result && 'code' in result) {
         expect(result.error).toBeDefined();
         expect(result.code).toBe(WorkerErrorCode.INVALID_OPERATION);
       }
