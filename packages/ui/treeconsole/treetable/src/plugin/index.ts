@@ -15,6 +15,11 @@ export {
   usePluginEnabled,
   withPlugins 
 } from './PluginProvider';
+export { 
+  useOptionalPluginContext,
+  usePluginsEnabled,
+  useSafePluginHook
+} from './useOptionalPluginContext';
 
 // Type definitions
 export type {
@@ -41,13 +46,12 @@ export type {
   HookExecutionError,
 } from './types';
 
-// Plugin-enhanced components
+// Plugin-enhanced components (新しい統合版から)
 export {
-  TreeTableWithPlugins,
   InlineEditableTreeTable,
   KeyboardNavigableTreeTable,
   AdvancedTreeTable,
-} from '../components/TreeTableWithPlugins';
+} from '../components/TreeTableCoreWithPlugins';
 
 // Utility functions
 export function createPlugin(

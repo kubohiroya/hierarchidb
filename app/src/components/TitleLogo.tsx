@@ -33,13 +33,35 @@ export function TitleLogo({
         <svg 
           width="80" 
           height="80" 
-          viewBox="0 0 24 24" 
-          fill="#1976d2"
+          viewBox="0 0 80 80" 
+          fill="none"
           style={{
             display: 'block',  // Prevent inline spacing issues
           }}
         >
-          <path d="M2 20h20v-4H2m18-2h2v-4h-2m-2 0v4h-2v-4h-2v4h-2v-4h-2v4H10v-4H8v4H6v-4H4v4H2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v8z"/>
+          {/* Tree structure with nodes and connections */}
+          {/* Top node */}
+          <circle cx="40" cy="15" r="8" fill="#1976d2" />
+          
+          {/* Connection lines from top to middle */}
+          <line x1="40" y1="23" x2="25" y2="32" stroke="#1976d2" strokeWidth="2" />
+          <line x1="40" y1="23" x2="55" y2="32" stroke="#1976d2" strokeWidth="2" />
+          
+          {/* Middle nodes */}
+          <circle cx="25" cy="40" r="8" fill="#42a5f5" />
+          <circle cx="55" cy="40" r="8" fill="#42a5f5" />
+          
+          {/* Connection lines from middle to bottom */}
+          <line x1="25" y1="48" x2="15" y2="57" stroke="#42a5f5" strokeWidth="2" />
+          <line x1="25" y1="48" x2="32" y2="57" stroke="#42a5f5" strokeWidth="2" />
+          <line x1="55" y1="48" x2="48" y2="57" stroke="#42a5f5" strokeWidth="2" />
+          <line x1="55" y1="48" x2="65" y2="57" stroke="#42a5f5" strokeWidth="2" />
+          
+          {/* Bottom nodes */}
+          <circle cx="15" cy="65" r="6" fill="#90caf9" />
+          <circle cx="32" cy="65" r="6" fill="#90caf9" />
+          <circle cx="48" cy="65" r="6" fill="#90caf9" />
+          <circle cx="65" cy="65" r="6" fill="#90caf9" />
         </svg>
       </div>
       

@@ -4,41 +4,41 @@
  * Simple test to verify WorkerAPIClient can be initialized
  */
 
-import { useState } from "react";
-import { Box, Container, Typography, Alert, Button } from "@mui/material";
-import { WorkerAPIClient } from "../WorkerAPIClient";
-import { initializeWorker, getWorker } from "../initWorker";
+import { useState } from 'react';
+import { Box, Container, Typography, Alert, Button } from '@mui/material';
+import { WorkerAPIClient } from '../WorkerAPIClient';
+import { getWorkerClient } from '../initWorkerClient';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export default function WorkerTest() {
-  const [status, setStatus] = useState<string>("Not started");
+  const [status, setStatus] = useState<string>('Not started');
   const [error, setError] = useState<string | null>(null);
   const [client, setClient] = useState<WorkerAPI | null>(null);
 
   const testWorker = async () => {
-    setStatus("Initializing...");
+    setStatus('Initializing...');
     setError(null);
 
     try {
       // Step 1: Test WorkerAPIClient.getSingleton
-      setStatus("Getting WorkerAPIClient singleton...");
+      setStatus('Getting WorkerAPIClient singleton...');
       const client = await WorkerAPIClient.getSingleton();
       console.log('WorkerAPIClient obtained:', client);
 
       // Step 2: Use client directly (no getAPI needed)
-      setStatus("Using client directly...");
+      setStatus('Using client directly...');
       const api = client;
       console.log('API obtained:', api);
       console.log('API methods:', Object.getOwnPropertyNames(api));
 
       // Step 3: Test getTrees
-      setStatus("Testing getTrees method...");
+      setStatus('Testing getTrees method...');
       const trees = await api.getTrees();
       console.log('getTrees result:', trees);
 
       // Step 4: Test other methods
-      setStatus("Testing other API methods...");
-      
+      setStatus('Testing other API methods...');
+
       if (typeof api.getSystemHealth === 'function') {
         const health = await api.getSystemHealth();
         console.log('System health:', health);
@@ -47,12 +47,16 @@ export default function WorkerTest() {
       setStatus(`Success! Found ${trees?.length || 0} trees`);
       setClient(client);
     } catch (err) {
-      console.error("Worker test failed:", err);
-      console.error("Error stack:", (err as Error)?.stack);
-      setError(err instanceof Error ? `${err.message}
+      console.error('Worker test failed:', err);
+      console.error('Error stack:', (err as Error)?.stack);
+      setError(
+        err instanceof Error
+          ? `${err.message}
 
-Stack: ${err.stack}` : String(err));
-      setStatus("Failed");
+Stack: ${err.stack}`
+          : String(err)
+      );
+      setStatus('Failed');
     }
   };
 
@@ -63,11 +67,7 @@ Stack: ${err.stack}` : String(err));
       </Typography>
 
       <Box sx={{ my: 3 }}>
-        <Button
-          variant="contained"
-          onClick={testWorker}
-          disabled={status === "Initializing..."}
-        >
+        <Button variant="contained" onClick={testWorker} disabled={status === 'Initializing...'}>
           Test Worker Connection
         </Button>
       </Box>
@@ -75,13 +75,7 @@ Stack: ${err.stack}` : String(err));
       <Box sx={{ my: 2 }}>
         <Typography variant="h6">Status:</Typography>
         <Typography
-          color={
-            error
-              ? "error"
-              : status.includes("Success")
-                ? "success.main"
-                : "text.primary"
-          }
+          color={error ? 'error' : status.includes('Success') ? 'success.main' : 'text.primary'}
         >
           {status}
         </Typography>
@@ -96,22 +90,16 @@ Stack: ${err.stack}` : String(err));
 
       {client && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          <Typography>
-            WorkerAPIClient instance created successfully!
-          </Typography>
+          <Typography>WorkerAPIClient instance created successfully!</Typography>
         </Alert>
       )}
 
-      <Box sx={{ mt: 4, p: 2, backgroundColor: "grey.100", borderRadius: 1 }}>
-        <Typography
-          variant="caption"
-          component="pre"
-          sx={{ fontFamily: "monospace" }}
-        >
+      <Box sx={{ mt: 4, p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}>
+        <Typography variant="caption" component="pre" sx={{ fontFamily: 'monospace' }}>
           {`// Debug Info
 Status: ${status}
-Error: ${error || "None"}
-Client: ${client ? "Created" : "Not created"}
+Error: ${error || 'None'}
+Client: ${client ? 'Created' : 'Not created'}
 Time: ${new Date().toLocaleTimeString()}`}
         </Typography>
       </Box>

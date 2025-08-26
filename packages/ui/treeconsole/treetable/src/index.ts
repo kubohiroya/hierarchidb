@@ -4,8 +4,10 @@
  * TreeTable component for HierarchiDB TreeConsole
  */
 
-// Main component
+// Main components
 export { TreeTableCore } from './components/TreeTableCore';
+export { TreeTableCoreWithPlugins } from './components/TreeTableCoreWithPlugins';
+export type { TreeTableCorePropsWithPlugins } from './components/TreeTableCoreWithPlugins';
 
 // Orchestrator
 export { useTreeTableOrchestrator } from './orchestrator';
@@ -19,6 +21,9 @@ export * from './utils';
 
 // Plugin System
 export * from './plugin';
+
+// Built-in Plugins
+export * from './plugins';
 
 // Types
 export type {

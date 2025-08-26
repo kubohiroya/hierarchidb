@@ -689,7 +689,8 @@ interface BoundaryReference {
 type SharedBoundaryMap = Map<string, BoundaryReference[]>;
 
 // Export for Comlink
-Comlink.expose(SimplifyWorker2);
+// Removed Comlink.expose - this worker will be wrapped by plugin registry proxy
+// Comlink.expose(SimplifyWorker2);
 
 // Also export the class for direct usage if needed
 export default SimplifyWorker2;

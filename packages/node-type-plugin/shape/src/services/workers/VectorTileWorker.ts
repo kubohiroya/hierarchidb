@@ -702,7 +702,8 @@ interface ParsedMVT {
 }
 
 // Export for Comlink
-Comlink.expose(VectorTileWorker);
+// Removed Comlink.expose - this worker will be wrapped by plugin registry proxy
+// Comlink.expose(VectorTileWorker);
 
 // Also export the class for direct usage if needed
 export default VectorTileWorker;

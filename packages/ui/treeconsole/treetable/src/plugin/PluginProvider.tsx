@@ -27,7 +27,7 @@ import type {
 // Context Definition
 // =============================================================================
 
-const PluginContext = createContext<IPluginContext | null>(null);
+export const PluginContext = createContext<IPluginContext | null>(null);
 
 // =============================================================================
 // Provider Props

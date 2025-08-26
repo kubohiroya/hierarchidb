@@ -174,11 +174,9 @@ export class ShapeWorkerAPI {
   }
 }
 
-// Create and expose the worker API instance
+// Create the worker API instance
 const shapeWorkerAPI = new ShapeWorkerAPI();
 
-// Expose the API to the main thread via Comlink
-Comlink.expose(shapeWorkerAPI);
-
-// Export for local use
+// Export for local use - do not expose via Comlink here
+// This is loaded by the main worker and should not compete with main Comlink.expose
 export { shapeWorkerAPI };

@@ -10,8 +10,8 @@
 import React, { memo, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { TreeConsoleContentProps } from '../types/index';
-import { TreeTableCore } from './TreeTable/TreeTableCore';
+import type { TreeConsoleContentProps, NodeId } from '../types/index';
+import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;
@@ -148,21 +148,58 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
             </EmptyStateContainer>
           )}
 
-          {contentState === 'table' && (
+          {contentState === 'table' && controller && (
             <TableContainer>
               <TreeTableCore
-                controller={controller}
+                controller={{
+                  data: controller.data,
+                  rowSelection: controller.rowSelection,
+                  expandedRowIds: controller.expandedRowIds,
+                  searchText: controller.searchText,
+                  filteredItemCount: controller.filteredItemCount,
+                  totalItemCount: controller.totalItemCount,
+                  handleSearchTextChange: controller.handleSearchTextChange,
+                  onNodeClick: controller.onNodeClick ? 
+                    (nodeId: string, node?: any) => controller.onNodeClick!(nodeId as NodeId, node) : 
+                    undefined,
+                  onNodeExpand: controller.onNodeExpand ? 
+                    (nodeId: string, expanded: boolean) => 
+                      controller.onNodeExpand!(nodeId as NodeId, expanded) :
+                    undefined,
+                  onNodeSelect: controller.onNodeSelect ? 
+                    (nodeIds: string[], selected: boolean) => 
+                      controller.onNodeSelect!(nodeIds as NodeId[], selected) :
+                    undefined,
+                  startEdit: controller.startEdit ? 
+                    (nodeId: string) => controller.startEdit!(nodeId as NodeId) :
+                    undefined,
+                  finishEdit: controller.finishEdit ? 
+                    (nodeId: string, newName: string) => 
+                      controller.finishEdit!(nodeId as NodeId, newName) :
+                    undefined,
+                  cancelEdit: controller.cancelEdit,
+                  onCreate: controller.onCreate ? 
+                    (parentId: string, type: string) => 
+                      controller.onCreate!(parentId as NodeId, type) :
+                    undefined,
+                  onDuplicate: controller.onDuplicate ? 
+                    (nodeId: string) => 
+                      controller.onDuplicate!(nodeId as NodeId) :
+                    undefined,
+                  onRemove: controller.onRemove ? 
+                    (nodeIds: string[]) => controller.onRemove!(nodeIds as NodeId[]) :
+                    undefined,
+                }}
                 viewHeight={viewHeight || 400}
                 viewWidth={viewWidth || 800}
                 useTrashColumns={useTrashColumns}
                 depthOffset={_depthOffset}
                 disableDragAndDrop={false}
                 hideDragHandler={false}
-                onDragStateChange={_onDragStateChange}
-                mode={_mode}
-                isProjectsPage={isProjectsPage}
-                isResourcesPage={isResourcesPage}
-                rootNodeId={_treeRootNodeId}
+                onDragStateChange={_onDragStateChange ? 
+                  (draggingNodeId: string | undefined, descendantIdSet: Set<string> | undefined, _dragPreviewElement: HTMLElement | null) =>
+                    _onDragStateChange(draggingNodeId as NodeId | undefined, descendantIdSet as Set<NodeId> | undefined) :
+                  undefined}
               />
             </TableContainer>
           )}

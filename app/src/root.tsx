@@ -28,19 +28,13 @@ if (typeof window !== 'undefined' && !(window as any).__uiPluginsRegistered) {
   (window as any).__uiPluginsRegistered = true;
 }
 
-// Initialize WorkerAPIClient early to avoid initialization race conditions
-if (typeof window !== 'undefined' && !(window as any).__workerInitialized) {
-  (window as any).__workerInitialized = true;
-  // Dynamic import to avoid SSR issues
+// Pre-load WorkerAPIClient module to ensure it's available when WorkerProvider needs it
+// This doesn't initialize the worker, just ensures the module is loaded
+if (typeof window !== 'undefined') {
   import('./WorkerAPIClient').then(({ WorkerAPIClient }) => {
-    console.log('[root.tsx] Starting early WorkerAPIClient initialization...');
-    WorkerAPIClient.initialize()
-      .then(() => {
-        console.log('[root.tsx] WorkerAPIClient initialized successfully');
-      })
-      .catch((error) => {
-        console.error('[root.tsx] Failed to initialize WorkerAPIClient:', error);
-      });
+    console.log('[root.tsx] WorkerAPIClient module loaded, ready for WorkerProvider');
+  }).catch(error => {
+    console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
 }
 

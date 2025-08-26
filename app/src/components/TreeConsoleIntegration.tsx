@@ -11,7 +11,7 @@ import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDyna
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
-import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient';
+import { useWorkerContext } from '~/contexts/WorkerProvider';
 import {
   TopPageGuidedTour,
   ProjectsGuidedTour,
@@ -281,15 +281,25 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     pageTreeNode,
   });
 
-  // Get the Worker API client
-  const workerClientWrapper = useWorkerAPIClient();
-  const workerClient = workerClientWrapper?.getAPI();
+  // Get the Worker API client from WorkerProvider
+  const { client: workerClient, isReady, error } = useWorkerContext();
 
   // Show loading if client is not ready
-  if (!workerClient) {
+  if (!isReady || !workerClient) {
+    console.log('[TreeConsoleIntegration] Worker not ready:', { isReady, workerClient: !!workerClient });
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100%">
         <CircularProgress />
+      </Box>
+    );
+  }
+  
+  // Show error if initialization failed
+  if (error) {
+    console.error('[TreeConsoleIntegration] Worker error:', error);
+    return (
+      <Box sx={{ p: 2 }}>
+        <Alert severity="error">Failed to initialize Worker: {error.message}</Alert>
       </Box>
     );
   }

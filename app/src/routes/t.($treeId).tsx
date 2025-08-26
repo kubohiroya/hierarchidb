@@ -9,6 +9,7 @@ import {
   ToggleButtonGroup,
   Typography,
   Stack,
+  IconButton,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
 import { loadTree, LoadTreeArgs } from '~/loader';
@@ -97,39 +98,85 @@ export default function TLayout() {
       {/* AppBar with Tree Switcher and UserLoginButton */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
+          {/* HierarchiDB Icon - Left side, navigates to top page */}
+          <IconButton 
+            onClick={() => navigate('/')}
+            edge="start"
+            color="primary"
+            aria-label="Go to HierarchiDB home"
+            sx={{ mr: 2 }}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2 20h20v-4H2m18-2h2v-4h-2m-2 0v4h-2v-4h-2v4h-2v-4h-2v4H10v-4H8v4H6v-4H4v4H2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v8z"/>
+            </svg>
+          </IconButton>
+
           {/* Tree Title */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
             {data.tree?.name || 'Tree Console'}
           </Typography>
 
-          {/* Tree Switcher Button Group */}
-          <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
+          {/* Spacer to push buttons to the right */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Tree Switcher Button Group - Right side, before login button */}
+          <Stack direction="row" spacing={1}>
             <ToggleButtonGroup
               value={selectedTreeId || undefined}
               exclusive
               onChange={handleTreeChange}
               aria-label="tree selection"
               size="small"
+              sx={{ 
+                borderRadius: '24px',
+                '& .MuiToggleButton-root': { 
+                  px: 2,
+                  py: 0.5,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  borderRadius: 0,
+                  '&:first-of-type': {
+                    borderTopLeftRadius: '24px',
+                    borderBottomLeftRadius: '24px',
+                  },
+                  '&:last-of-type': {
+                    borderTopRightRadius: '24px',
+                    borderBottomRightRadius: '24px',
+                  },
+                  '&:not(:first-of-type)': {
+                    borderLeft: 'none',
+                  }
+                } 
+              }}
             >
-              {trees.map((tree) => (
-                <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
-                  {tree.name.toLowerCase().includes('project') ? (
-                    <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
-                  ) : tree.name.toLowerCase().includes('resource') ? (
-                    <MapIcon sx={{ mr: 1, fontSize: 20 }} />
-                  ) : (
-                    <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
-                  )}
-                  {tree.name}
-                </ToggleButton>
-              ))}
+              {/* Sort trees to show Resources first, then Projects */}
+              {trees
+                .sort((a, b) => {
+                  // Resources first, then Projects
+                  const aIsResource = a.name.toLowerCase().includes('resource');
+                  const bIsResource = b.name.toLowerCase().includes('resource');
+                  if (aIsResource && !bIsResource) return -1;
+                  if (!aIsResource && bIsResource) return 1;
+                  return 0;
+                })
+                .map((tree) => (
+                  <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
+                    {tree.name.toLowerCase().includes('project') ? (
+                      <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
+                    ) : tree.name.toLowerCase().includes('resource') ? (
+                      <MapIcon sx={{ mr: 1, fontSize: 20 }} />
+                    ) : (
+                      <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
+                    )}
+                    {tree.name}
+                  </ToggleButton>
+                ))}
             </ToggleButtonGroup>
+            
+            {/* User Login Button - Right Aligned with 8px gap */}
+            <Box sx={{ ml: '8px' }}>
+              <UserLoginButton />
+            </Box>
           </Stack>
-
-          {/* User Login Button - Right Aligned */}
-          <Box sx={{ ml: 'auto' }}>
-            <UserLoginButton />
-          </Box>
         </Toolbar>
       </AppBar>
 

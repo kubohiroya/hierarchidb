@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -64,6 +64,7 @@ export interface TreeConsoleActions {
 
 export function useTreeConsoleIntegration({
   client,
+  treeId,
   pageNodeId,
   pageTreeNode,
 }: UseTreeConsoleIntegrationParams) {
@@ -273,12 +274,15 @@ export function useTreeConsoleIntegration({
           try {
             // Use the worker API to create a new node
             if (client && pageNodeId) {
+              // Generate a user-friendly name based on the node type
+              const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
+              
               const result = await client.create({
-                nodeType: nodeType === 'shapes' ? 'shape' : nodeType, // Handle legacy 'shapes' -> 'shape'
-                treeId: 'default-tree', // Use a default treeId for now
+                nodeType: nodeType,
+                treeId: treeId || ('default-tree' as TreeId),
                 parentId: pageNodeId as NodeId,
-                name: `New ${nodeType === 'shapes' ? 'Shape' : nodeType.charAt(0).toUpperCase() + nodeType.slice(1)}`,
-                description: `Created via SpeedDial`,
+                name: `New ${displayName}`,
+                description: '',
               });
 
               if (result.success) {
@@ -297,10 +301,12 @@ export function useTreeConsoleIntegration({
                 }
               } else {
                 console.error('Failed to create node:', result.error);
+                // TODO: Show error notification to user
               }
             }
           } catch (error) {
             console.error('Error creating node:', error);
+            // TODO: Show error notification to user
           }
           return;
         }
@@ -348,12 +354,13 @@ export function useTreeConsoleIntegration({
         await handleExport('json');
       },
     }),
-    [client, pageNodeId, selectedIds, treeData, handleExport]
+    [client, treeId, pageNodeId, selectedIds, treeData, handleExport]
   );
 
   // Load tree data when client is ready
   useEffect(() => {
     if (!client || !pageNodeId) {
+      console.log('[useTreeConsoleIntegration] Skipping load - client:', !!client, 'pageNodeId:', pageNodeId);
       return;
     }
 
@@ -361,27 +368,22 @@ export function useTreeConsoleIntegration({
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        console.log('Loading tree data for node:', pageNodeId);
+        console.log('[useTreeConsoleIntegration] Loading tree data for node:', pageNodeId);
 
         // Get children of the current node using direct Worker API
         const children = await client.getChildren({
           parentId: pageNodeId,
         });
 
-        console.log('Loaded children:', children);
+        console.log('[useTreeConsoleIntegration] Loaded children:', children);
 
         // Convert TreeNode[] to TreeNodeData[]
         const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
         setTreeData(treeNodeData);
 
-        // Auto-expand the root if it has children
-        if (children.length > 0) {
-          setExpandedIds((prev) => [...new Set([...prev, pageNodeId])]);
-        }
-
         setState((prev) => ({ ...prev, loading: false }));
       } catch (err) {
-        console.error('Failed to load tree data:', err);
+        console.error('[useTreeConsoleIntegration] Failed to load tree data:', err);
         setState((prev) => ({
           ...prev,
           loading: false,

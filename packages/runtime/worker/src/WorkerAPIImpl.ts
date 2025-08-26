@@ -51,11 +51,13 @@ import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
 import { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';
+import { UnifiedNodeTypeRegistry } from './registry/UnifiedNodeTypeRegistry';
 import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscribeService } from './services/TreeSubscribeService';
 import { TreeQueryService } from './services/TreeQueryService';
 import { ImportService } from './services/ImportService';
 import { ExportService } from './services/ExportService';
+import { registerDefaultPlugins } from './registry/default-plugins';
 import {
   getRegisteredPlugins,
   getPluginDefinition,
@@ -88,8 +90,27 @@ export class WorkerAPIImpl implements WorkerAPI {
    * Async initialization of plugin APIs
    */
   private async initializePluginAPIsAsync(): Promise<void> {
-    // Defer implementation to plugins
-    // This would be extended by specific plugins
+    console.log('[WorkerAPIImpl] Plugin API initialization temporarily disabled for debugging');
+    return; // Early return to skip plugin initialization
+    
+    /* TODO: Re-enable after identifying the source of Comlink conflict
+    const registeredPlugins = await getRegisteredPlugins();
+    
+    for (const plugin of registeredPlugins) {
+      try {
+        const pluginDefinition = await getPluginDefinition(plugin.nodeType);
+        if (pluginDefinition?.workerAPI) {
+          await pluginDefinition.workerAPI.initialize();
+          this.pluginAPIs.set(plugin.nodeType, pluginDefinition.workerAPI);
+          console.log(`[WorkerAPIImpl] Initialized worker API for plugin: ${plugin.nodeType}`);
+        }
+      } catch (error) {
+        console.warn(`[WorkerAPIImpl] Failed to initialize worker API for plugin ${plugin.nodeType}:`, error);
+      }
+    }
+    
+    console.log('[WorkerAPIImpl] Plugin API initialization completed');
+    */
   }
 
   getCommandProcessor(): CommandProcessor {
@@ -461,41 +482,68 @@ export class WorkerAPIImpl implements WorkerAPI {
   // System Management
   // ==================
 
+  /**
+   * Simple ping method for health check
+   */
+  ping(): { response: 'pong'; timestamp: number } {
+    console.log('[WorkerAPIImpl] ping() called');
+    return {
+      response: 'pong',
+      timestamp: Date.now(),
+    };
+  }
+
   async initialize(): Promise<void> {
+    console.log('[WorkerAPIImpl] initialize() called, isInitialized:', this.isInitialized);
+    
     if (this.isInitialized) {
+      console.log('[WorkerAPIImpl] Already initialized, returning');
       return; // 既に初期化済み
     }
 
+    console.log('[WorkerAPIImpl] Starting database initialization...');
     // データベースインスタンスを非同期で取得（初期化も内部で完了）
     this.coreDB = await CoreDB.getSingleton(this.dbName);
+    console.log('[WorkerAPIImpl] CoreDB initialized');
+    
     this.ephemeralDB = await EphemeralDB.getSingleton(this.dbName);
+    console.log('[WorkerAPIImpl] EphemeralDB initialized');
 
-      // サービスの初期化
-      this.nodeTypeRegistry = await SimpleNodeTypeRegistry.getSingleton();
-      this.nodeLifecycleManager = new NodeLifecycleManager(
-        this.nodeTypeRegistry,
-        this.coreDB,
-        this.ephemeralDB
-      );
+    // サービスの初期化
+    console.log('[WorkerAPIImpl] Initializing node type registry...');
+    this.nodeTypeRegistry = await SimpleNodeTypeRegistry.getSingleton();
+    console.log('[WorkerAPIImpl] Node type registry initialized');
 
-      // Initialize services in dependency order
-      this.queryService = new TreeQueryService(this.coreDB);
-      this.subscriptionService = new TreeSubscribeService(this.coreDB);
-      this.commandProcessor = new CommandProcessor();
-      this.mutationService = new TreeMutationService(
-        this.coreDB,
-        this.ephemeralDB,
-        this.commandProcessor,
-        this.nodeLifecycleManager
-      );
+    // Register default plugins
+    console.log('[WorkerAPIImpl] Registering default plugins...');
+    const registry = UnifiedNodeTypeRegistry.getInstance();
+    registerDefaultPlugins(registry);
+    console.log('[WorkerAPIImpl] Default plugins registered');
+    this.nodeLifecycleManager = new NodeLifecycleManager(
+      this.nodeTypeRegistry,
+      this.coreDB,
+      this.ephemeralDB
+    );
 
-      this.importService = new ImportService(this.coreDB, this.mutationService);
-      this.exportService = new ExportService(this.coreDB, this.queryService);
+    // Initialize services in dependency order
+    this.queryService = new TreeQueryService(this.coreDB);
+    this.subscriptionService = new TreeSubscribeService(this.coreDB);
+    this.commandProcessor = new CommandProcessor();
+    this.mutationService = new TreeMutationService(
+      this.coreDB,
+      this.ephemeralDB,
+      this.commandProcessor,
+      this.nodeLifecycleManager
+    );
 
-      // Initialize plugin APIs
-      await this.initializePluginAPIsAsync();
-      
-      this.isInitialized = true;
+    this.importService = new ImportService(this.coreDB, this.mutationService);
+    this.exportService = new ExportService(this.coreDB, this.queryService);
+
+    // Initialize plugin APIs
+    await this.initializePluginAPIsAsync();
+
+    this.isInitialized = true;
+    console.log('⭐️ [WorkerAPIImpl] INTERNAL INITIALIZATION COMPLETED ⭐️');
   }
 
   async shutdown(): Promise<void> {
@@ -575,9 +623,14 @@ export class WorkerAPIImpl implements WorkerAPI {
 
   async getTree(params: { treeId: TreeId }): Promise<Tree | undefined> {
     console.log('[WorkerAPIImpl] getTree called with params:', params);
-    const result = await this.queryService.getTree(params.treeId);
-    console.log('[WorkerAPIImpl] getTree result:', result);
-    return result;
+    try {
+      const result = await this.queryService.getTree(params.treeId);
+      console.log('[WorkerAPIImpl] getTree result:', result);
+      return result;
+    } catch (error) {
+      console.error('[WorkerAPIImpl] getTree error:', error);
+      throw error;
+    }
   }
 
   async listTrees(): Promise<Tree[]> {

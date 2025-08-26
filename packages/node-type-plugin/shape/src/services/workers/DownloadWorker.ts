@@ -412,7 +412,8 @@ export class DownloadWorker implements DownloadWorkerAPI {
 }
 
 // Export for Comlink
-Comlink.expose(DownloadWorker);
+// Removed Comlink.expose - this worker will be wrapped by plugin registry proxy
+// Comlink.expose(DownloadWorker);
 
 // Also export the class for direct usage if needed
 export default DownloadWorker;

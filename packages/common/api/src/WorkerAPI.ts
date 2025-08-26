@@ -97,6 +97,16 @@ export interface WorkerAPI {
   getWorkingCopyAPI(): Remote<WorkingCopyAPI>;
 
   /**
+   * Simple ping method for health check
+   *
+   * Returns a simple response to verify Worker is responsive.
+   * This is the simplest possible health check.
+   *
+   * @returns Promise that resolves to "pong" with timestamp
+   */
+  ping(): { response: 'pong'; timestamp: number };
+
+  /**
    * Initialize the worker system
    *
    * Sets up databases, services, and plugin registry.

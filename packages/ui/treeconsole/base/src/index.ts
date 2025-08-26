@@ -2,9 +2,6 @@
 export { TreeConsolePanel } from './components/TreeConsolePanel';
 export type { TreeConsolePanelProps } from './components/TreeConsolePanel';
 
-export { TreeTableConsolePanel } from './components/TreeTableConsolePanel';
-export { TreeTableConsolePanelContext } from './components/TreeTableConsolePanelContext';
-
 // TreeTable containers
 export { TreeTableView, TreeTableFooter, RowContextMenu } from './components/TreeTable';
 

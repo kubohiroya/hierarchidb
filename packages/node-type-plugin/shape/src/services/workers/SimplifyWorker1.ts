@@ -717,7 +717,8 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 }
 
 // Export for Comlink
-Comlink.expose(SimplifyWorker1);
+// Removed Comlink.expose - this worker will be wrapped by plugin registry proxy
+// Comlink.expose(SimplifyWorker1);
 
 // Also export the class for direct usage if needed
 export default SimplifyWorker1;

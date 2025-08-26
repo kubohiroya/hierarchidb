@@ -37,6 +37,12 @@ function getIconComponent(plugin: PluginDefinition) {
   const iconName = plugin.icon?.muiIconName;
   const emoji = plugin.icon?.emoji;
   
+  // First, try to use emoji if available
+  if (emoji) {
+    return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
+  }
+  
+  // Then, try to match MUI icon names
   switch (iconName) {
     case 'Folder':
     case 'CreateNewFolder':
@@ -54,33 +60,8 @@ function getIconComponent(plugin: PluginDefinition) {
     case 'Extension':
       return <ExtensionIcon />;
     default:
-      // Use emoji if available, otherwise default icon
-      if (emoji) {
-        return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
-      }
+      // Default icon for plugins without specific icons
       return <AddIcon />;
-  }
-}
-
-/**
- * Convert plugin nodeType to action string for compatibility
- */
-function getActionFromNodeType(nodeType: string): string {
-  switch (nodeType) {
-    case 'folder':
-      return 'create:folder';
-    case 'basemap':
-      return 'create:basemap';
-    case 'stylemap':
-      return 'create:stylemap';
-    case 'shape':
-      return 'create:shapes'; // Note: keeping legacy 'shapes' for compatibility
-    case 'note':
-      return 'create:note';
-    case 'file':
-      return 'create:file';
-    default:
-      return `create:${nodeType}`;
   }
 }
 
@@ -98,15 +79,15 @@ export function DynamicSpeedDial({
   // Sort plugins by category group and create order
   const sortedPlugins = useMemo(() => {
     return [...plugins].sort((a, b) => {
-      const aGroup = a.category.menuGroup || 'basic';
-      const bGroup = b.category.menuGroup || 'basic';
-      const aOrder = a.category.createOrder || 999;
-      const bOrder = b.category.createOrder || 999;
+      const aGroup = a.category?.menuGroup || 'basic';
+      const bGroup = b.category?.menuGroup || 'basic';
+      const aOrder = a.category?.createOrder || 999;
+      const bOrder = b.category?.createOrder || 999;
       
       // Define group priority
-      const groupPriority = { basic: 1, container: 2, document: 3, advanced: 4 };
-      const aPriority = groupPriority[aGroup as keyof typeof groupPriority] || 999;
-      const bPriority = groupPriority[bGroup as keyof typeof groupPriority] || 999;
+      const groupPriority: Record<string, number> = { basic: 1, container: 2, document: 3, advanced: 4 };
+      const aPriority = groupPriority[aGroup] || 999;
+      const bPriority = groupPriority[bGroup] || 999;
       
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
@@ -120,7 +101,8 @@ export function DynamicSpeedDial({
   const handleToggle = () => setOpen(!open);
 
   const handleActionClick = (plugin: PluginDefinition) => {
-    const action = getActionFromNodeType(plugin.nodeType);
+    // Pass the actual nodeType directly for creation
+    const action = `create:${plugin.nodeType}`;
     onCreateAction(action, {} as TreeNodeData);
     handleClose();
   };
