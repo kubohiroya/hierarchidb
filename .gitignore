@@ -182,3 +182,5 @@ references/eria-cartograph/
 e2e-results
 e2e-results.json
 e2e-results.xml
+tsup.config.buldled*.mjs
+vitest.config.ts.*.mjs
