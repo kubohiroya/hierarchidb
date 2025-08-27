@@ -3,8 +3,11 @@
  */
 
 import { getWorkerClient } from './initWorkerClient';
-import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
+import type WorkerModule from './worker';
+
+// Create a type that matches the expected interface
+type WorkerInterface = Remote<typeof WorkerModule>;
 
 export class NotInitializedError extends Error {
   constructor() {
@@ -14,7 +17,7 @@ export class NotInitializedError extends Error {
 }
 
 export class WorkerAPIClient {
-  private static workerInstance: Remote<WorkerAPI> | null = null;
+  private static workerInstance: WorkerInterface | null = null;
   private static state: 'uninitialized' | 'initializing' | 'initialized' | 'error' =
     'uninitialized';
   private static initializationPromise: Promise<void> | null = null;
@@ -81,15 +84,30 @@ export class WorkerAPIClient {
     console.log('[WorkerAPIClient.doInitialize] Starting at', new Date().toISOString());
 
     try {
-      console.log('[WorkerAPIClient.doInitialize] Calling getRemoteWorkerSingleton()...');
-      const remoteWorker = await getWorkerClient();
+      console.log('[WorkerAPIClient.doInitialize] Calling getWorkerClient()...');
+      const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
       console.log('[WorkerAPIClient.doInitialize] Remote worker obtained:', !!remoteWorker);
 
-      // Store the Remote<WorkerAPI> directly
+      // Test the connection immediately
+      console.log('[WorkerAPIClient.doInitialize] Testing worker connection...');
+      try {
+        const pingResult = await remoteWorker.ping();
+        console.log('[WorkerAPIClient.doInitialize] Worker connection test successful:', pingResult);
+        
+        // Check if this was a retry (error state indicates previous failure)
+        if (this.lastError) {
+          console.log('👍 [WorkerAPIClient.doInitialize] Reconnection successful after previous failure!');
+        }
+      } catch (pingError) {
+        console.error('[WorkerAPIClient.doInitialize] Worker connection test failed:', pingError);
+        throw new Error(`Worker connection test failed: ${pingError}`);
+      }
+
+      // Store the worker instance only after successful connection test
       this.workerInstance = remoteWorker;
 
       if (!this.workerInstance) {
-        throw new Error('getRemoteWorkerSingleton returned null');
+        throw new Error('getWorkerClient returned null');
       }
 
       console.log('[WorkerAPIClient.doInitialize] Initialization completed successfully');
@@ -104,9 +122,9 @@ export class WorkerAPIClient {
   }
 
   /**
-   * Get singleton Worker API instance directly
+   * Get singleton Worker instance directly
    */
-  static getSingleton(): WorkerAPI {
+  static getSingleton(): WorkerInterface {
     console.log(`[WorkerAPIClient.getSingleton] Current state: ${this.state}`);
 
     if (this.state !== 'initialized' || !this.workerInstance) {
@@ -119,52 +137,35 @@ export class WorkerAPIClient {
     }
 
     console.log('[WorkerAPIClient.getSingleton] Returning worker instance');
-    // Cast Remote<WorkerAPI> to WorkerAPI - they have the same interface
-    return this.workerInstance as unknown as WorkerAPI;
+    return this.workerInstance;
   }
 
   /**
-   * Get the raw worker API (direct access to worker methods)
+   * Reset the WorkerAPIClient state to allow re-initialization
+   * Useful when connection fails and needs to be retried
    */
-  getAPI() {
-    if (!WorkerAPIClient.isReady() || !WorkerAPIClient.workerInstance) {
-      throw new NotInitializedError();
+  static reset(): void {
+    console.log('[WorkerAPIClient.reset] Resetting client state');
+    
+    // Try to clean up existing worker instance
+    if (this.workerInstance) {
+      try {
+        if ('terminate' in this.workerInstance) {
+          (this.workerInstance as any).terminate();
+        }
+      } catch (error) {
+        console.warn('[WorkerAPIClient.reset] Failed to terminate worker:', error);
+      }
     }
-
-    console.log('[WorkerAPIClient] Returning worker API:', WorkerAPIClient.workerInstance);
-    console.log(
-      '[WorkerAPIClient] API methods:',
-      Object.getOwnPropertyNames(WorkerAPIClient.workerInstance)
-    );
-    console.log(
-      '[WorkerAPIClient] getNode method type:',
-      typeof WorkerAPIClient.workerInstance.getNode
-    );
-    console.log(
-      '[WorkerAPIClient] getTree method type:',
-      typeof WorkerAPIClient.workerInstance.getTree
-    );
-
-    return WorkerAPIClient.workerInstance;
+    
+    this.state = 'uninitialized';
+    this.workerInstance = null;
+    this.lastError = null;
+    this.initializationPromise = null;
+    
+    console.log('[WorkerAPIClient.reset] Reset complete');
   }
 
-  /**
-   * Direct access to worker methods for convenience
-   */
-  async getTrees() {
-    const api = this.getAPI();
-    return await api.getTrees();
-  }
-
-  async getSystemHealth() {
-    const api = this.getAPI();
-    return await api.getSystemHealth();
-  }
-
-  async getTree(treeId: string) {
-    const api = this.getAPI();
-    return await api.getTree({ treeId: treeId as any });
-  }
 
   /**
    * Check if initialized
@@ -177,17 +178,8 @@ export class WorkerAPIClient {
     return ready;
   }
 
-  /**
-   * Reset (mainly for testing)
-   */
-  static reset(): void {
-    console.log('[WorkerAPIClient.reset] Resetting state');
-    this.workerInstance = null;
-    this.state = 'uninitialized';
-    this.initializationPromise = null;
-    this.lastError = null;
-  }
+
 }
 
 // Export for compatibility
-export const getWorkerAPIClient = (): WorkerAPI => WorkerAPIClient.getSingleton() as unknown as WorkerAPI;
+export const getWorkerAPIClient = () => WorkerAPIClient.getSingleton();

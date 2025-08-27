@@ -1,9 +1,38 @@
 // Database exports
 
-export * from '~/client';
+// Client exports
+export { createWorkerClient, createWorkerClientFromInstance } from '~/client';
+
 // Command exports
-export * from '~/command';
-export * from '~/db';
+export { CommandProcessor } from '~/command';
+export type {
+  CommandEnvelope,
+  CommandMeta,
+  CommandResult,
+  CommandEvent
+} from '~/command/types';
+export { WorkerErrorCode } from '~/command/types';
+
+// Database exports
+export { CoreDB } from '~/db/CoreDB';
+export { EphemeralDB } from '~/db/EphemeralDB';
+export { StyleMapDB } from '~/db/StyleMapDB';
+export { SpreadsheetDB } from '~/db/SpreadsheetDB';
+export { EntityDatabase, DexieAdapter, ExpirationCleaner, TransactionManager, DexieEntityManagerFactory } from '~/db/dexieIntegration';
+export type { 
+  WorkingCopyRow,
+  TreeViewStateRow
+} from '~/db/EphemeralDB';
+export type {
+  ColorRule,
+  StyleMapEntity
+} from '~/db/StyleMapDB';
+export type {
+  SpreadsheetMetadata,
+  SpreadsheetChunk,
+  SpreadsheetRefEntity,
+  SpreadsheetMetadataId
+} from '~/db/SpreadsheetDB';
 // Handler exports
 export {
   BaseEntityHandler,
@@ -11,15 +40,35 @@ export {
   // GroupEntityHandler, // Temporarily disabled - needs update to new API
   // WorkingCopyHandler, // Temporarily disabled - needs update to new API
 } from '~/handlers';
+
 // Auto Lifecycle Management exports
 export { EntityRegistrationService } from '~/services/EntityRegistrationService';
 export { WorkingCopyManager, WorkingCopySession } from '~/services/WorkingCopyManager';
 export { AutoLifecycleManager } from '~/services/AutoLifecycleManager';
 export { AutoEntityHandler } from '~/handlers/AutoEntityHandler';
+
 // Lifecycle exports
-export * from '~/lifecycle';
+export { NodeLifecycleManager } from '~/lifecycle/NodeLifecycleManager';
+export type {
+  NodeLifecycleHooks as LifecycleHooks,
+  NodeTypeDefinition as LifecycleNodeTypeDefinition,
+  LifecycleContext,
+  LifecycleEvent
+} from '~/lifecycle/types';
+
 // Operations exports
-export * from '~/operations';
+export {
+  checkWorkingCopyConflict,
+  commitWorkingCopy,
+  createNewDraftWorkingCopy,
+  createNewName,
+  createWorkingCopyFromNode,
+  discardWorkingCopy,
+  getChildNames,
+  getWorkingCopy,
+  updateWorkingCopy
+} from '~/operations/WorkingCopyOperations';
+
 // Registry exports
 export type { 
   PeerEntity, 
@@ -35,9 +84,15 @@ export type {
   IconDefinition
 } from '~/registry/plugin';
 export { UnifiedNodeTypeRegistry } from '~/registry/UnifiedNodeTypeRegistry';
-// export * from '~/registry';
+
+// Service exports (needed for WorkerAPIImpl return types)
+export { TreeQueryService } from '~/services/TreeQueryService';
+export { TreeMutationService } from '~/services/TreeMutationService';
+export { TreeSubscriptionService } from '~/services/TreeSubscriptionService';
+
 // API exports
-export * from '~/WorkerAPIImpl';
+export { WorkerAPIImpl } from '~/WorkerAPIImpl';
+
 // Plugin exports
 export type {
   PluginConfig,

@@ -30,9 +30,11 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@hierarchidb/runtime-datasource": "workspace:*",
     "@hierarchidb/runtime-fetch-metadata": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-core": "workspace:*",
+    "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
@@ -52,13 +54,17 @@
     "topojson-server": "^3.0.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/geojson": "^7946.0.14",
     "@types/pako": "^2.0.3",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.1",
     "@types/topojson-client": "^3.1.4",
     "@types/topojson-server": "^3.0.4",
-    "fake-indexeddb": "^6.1.0"
+    "fake-indexeddb": "^6.1.0",
+    "jsdom": "^25.0.1"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5.16.7 || ^6.0.0",

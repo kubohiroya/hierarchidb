@@ -19,7 +19,7 @@ import { TreeQueryService } from './TreeQueryService';
 type MockCoreDB = {
   treeNodes: Map<NodeId, TreeNode>;
   getNode: any;
-  getChildren: any;
+  listChildren: any;
   getDescendants: any;
   searchNodes: any;
 };
@@ -49,7 +49,7 @@ describe('TreeQueryService', () => {
     coreDB = {
       treeNodes: new Map<NodeId, TreeNode>(),
       getNode: vi.fn(),
-      getChildren: vi.fn(),
+      listChildren: vi.fn(),
       getDescendants: vi.fn(),
       searchNodes: vi.fn(),
     };
@@ -59,8 +59,8 @@ describe('TreeQueryService', () => {
       return Promise.resolve(coreDB.treeNodes.get(id));
     });
 
-    // Configure getChildren mock
-    coreDB.getChildren.mockImplementation(async (parentId: NodeId) => {
+    // Configure listChildren mock
+    coreDB.listChildren.mockImplementation(async (parentId: NodeId) => {
       const children = Array.from(coreDB.treeNodes.values()).filter((n) => n.parentId === parentId);
       return children.sort((a, b) => a.createdAt - b.createdAt);
     });
@@ -135,7 +135,7 @@ describe('TreeQueryService', () => {
 
         expect(result).toHaveLength(3);
         expect(result.map((n) => n.name)).toEqual(['Folder 1', 'Folder 2', 'Empty Folder']);
-        expect(coreDB.getChildren).toHaveBeenCalledWith('root');
+        expect(coreDB.listChildren).toHaveBeenCalledWith('root');
       });
 
       it('should return empty array for node with no children', async () => {
@@ -146,7 +146,7 @@ describe('TreeQueryService', () => {
         const result = await service.getChildren(payload);
 
         expect(result).toEqual([]);
-        expect(coreDB.getChildren).toHaveBeenCalledWith('folder3');
+        expect(coreDB.listChildren).toHaveBeenCalledWith('folder3');
       });
 
       it('should support sorting by name', async () => {

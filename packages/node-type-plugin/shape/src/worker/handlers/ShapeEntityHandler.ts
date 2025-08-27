@@ -10,6 +10,8 @@ import {
   CreateShapeData,
   ProcessingConfig,
   DEFAULT_PROCESSING_CONFIG,
+  buildShapeEntityFromCreate,
+  mapWorkingCopyToUpdates,
 } from '../../shared';
 
 /**
@@ -99,7 +101,7 @@ export class ShapeEntityHandler {
         },
       }),
       toCollection: () => ({
-        filter: (predicate: any) => ({
+        filter: (_predicate: any) => ({
           toArray: async (): Promise<any[]> => {
             console.log('Mock: Collection filter query');
             return [];
@@ -114,31 +116,17 @@ export class ShapeEntityHandler {
    */
   async createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> {
     const entityId = generateEntityId() as EntityId;
-    const now = Date.now();
 
-    // Merge with default processing config
-    const processingConfig: ProcessingConfig = {
-      ...DEFAULT_PROCESSING_CONFIG,
-      ...data.processingConfig,
-    };
-
-    const entity: ShapeEntity = {
-      id: entityId,
-      nodeId: nodeId,
-      name: data.name,
-      description: data.description || '',
-      dataSourceName: data.dataSourceName as any,
-      licenseAgreement: false, // Always starts false, user must agree in UI
-      processingConfig,
-      checkboxState: '[]', // Serialized empty array
-      selectedCountries: [],
-      adminLevels: [],
-      urlMetadata: [],
-      processingStatus: 'idle',
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-    };
+    const entity: ShapeEntity = buildShapeEntityFromCreate({
+      nodeId,
+      entityId,
+      data: {
+        name: data.name,
+        description: data.description,
+        dataSourceName: data.dataSourceName as any,
+        processingConfig: data.processingConfig as Partial<ProcessingConfig>,
+      },
+    });
 
     try {
       await this.table.add(entity);
@@ -401,17 +389,7 @@ export class ShapeEntityHandler {
    * Apply working copy changes to entity
    */
   async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = {
-      name: workingCopy.name,
-      description: workingCopy.description,
-      dataSourceName: workingCopy.dataSourceName,
-      processingConfig: workingCopy.processingConfig,
-      selectedCountries: workingCopy.selectedCountries,
-      adminLevels: workingCopy.adminLevels,
-      urlMetadata: workingCopy.urlMetadata,
-      checkboxState: workingCopy.checkboxState,
-    };
-
+    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(workingCopy) as Partial<ShapeEntity>;
     return this.updateEntity(entityId, updates);
   }
 

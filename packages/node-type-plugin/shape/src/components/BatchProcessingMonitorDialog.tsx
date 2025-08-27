@@ -20,6 +20,7 @@ import {
   ErrorOutline as ErrorOutlineIcon,
   Timeline as TimelineIcon,
   Map as MapIcon,
+  BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import type { BatchMonitorDialogProps, BatchStatus } from '~/types';
@@ -27,6 +28,8 @@ import type { BatchMonitorDialogProps, BatchStatus } from '~/types';
 import { BatchProgressSplitView } from './batch/BatchProgressSplitView';
 import { MapPreview } from './batch/MapPreview';
 import { ErrorConsoleDialog } from './batch/ErrorConsoleDialog';
+import { ErrorReportPanel } from './batch/ErrorReportPanel';
+import type { ErrorLogEntry } from '../hooks/useErrorConsole';
 import { BatchStatusChip } from './batch/BatchStatusChip';
 import { useBatchWorkerConsole } from '~/hooks/useBatchWorkerConsole';
 import { useErrorConsole } from '~/hooks/useErrorConsole';
@@ -45,8 +48,19 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   
-  // Error console management
+  // Error console management  
   const { errors, addError, clearErrors, errorCount, hasErrors } = useErrorConsole();
+  
+  // Enhanced error reporting with context
+  const addErrorWithContext = useCallback((
+    message: string,
+    level: ErrorLogEntry['level'] = 'error',
+    phase: string = 'processing',
+    rowNumber?: number,
+    columnName?: string
+  ) => {
+    addError(message, { level, phase, rowNumber, columnName });
+  }, [addError]);
   
   // Batch worker console hook (mock implementation)
   const {
@@ -65,18 +79,52 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
     id: nodeId,
     config,
     urlMetadata,
-    onError: addError,
+    onError: (message: string) => addErrorWithContext(message, 'error', 'batch-processing'),
   });
 
   // Auto-start batch processing
   useEffect(() => {
     if (canStart && !hasStarted) {
       handleStart().catch((error) => {
-        addError(`Failed to start batch processing: ${error.message}`);
+        addErrorWithContext(
+          `Failed to start batch processing: ${error.message}`, 
+          'critical', 
+          'startup'
+        );
         setBatchStatus('error');
       });
     }
-  }, [canStart, hasStarted, handleStart, addError]);
+  }, [canStart, hasStarted, handleStart, addErrorWithContext]);
+  
+  // Generate test errors for demonstration (can be removed in production)
+  useEffect(() => {
+    if (hasStarted && errors.length === 0) {
+      // Add some sample errors for testing
+      setTimeout(() => {
+        addErrorWithContext('Connection timeout to data source', 'warning', 'download');
+      }, 2000);
+      
+      setTimeout(() => {
+        addErrorWithContext('Invalid geometry in row 1,245', 'error', 'simplify', 1245, 'geometry');
+      }, 4000);
+      
+      setTimeout(() => {
+        addErrorWithContext('Memory usage approaching limit (85%)', 'warning', 'processing');
+      }, 6000);
+      
+      setTimeout(() => {
+        addErrorWithContext('Database connection lost', 'critical', 'storage');
+      }, 8000);
+      
+      setTimeout(() => {
+        addErrorWithContext('Duplicate key found in administrative data', 'error', 'validation', 892, 'admin_code');
+      }, 10000);
+      
+      setTimeout(() => {
+        addErrorWithContext('Vector tile generation completed with warnings', 'info', 'vectortile');
+      }, 12000);
+    }
+  }, [hasStarted, errors.length, addErrorWithContext]);
 
   // Update batch status based on task progress
   useEffect(() => {
@@ -173,6 +221,15 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
                   iconPosition="start"
                   disabled={!hasStarted || downloadTasks.length === 0}
                 />
+                <Tab 
+                  icon={
+                    <Badge badgeContent={hasErrors ? errorCount : 0} color="error">
+                      <BugReportIcon />
+                    </Badge>
+                  } 
+                  label="Error Report" 
+                  iconPosition="start"
+                />
               </Tabs>
             </Paper>
             
@@ -200,20 +257,22 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
                   />
                 </Box>
               )}
+              
+              {selectedTab === 2 && (
+                <ErrorReportPanel
+                  errors={errors}
+                  onClearErrors={clearErrors}
+                  batchStatus={batchStatus}
+                  taskCounts={{
+                    download: downloadTasks.length,
+                    simplify1: simplify1Tasks.length,
+                    simplify2: simplify2Tasks.length,
+                    vectorTile: vectorTileTasks.length,
+                  }}
+                />
+              )}
             </Box>
-            
-            {/* Error Display Floating Button */}
-            {hasErrors && (
-              <Fab
-                color="error"
-                sx={{ position: 'absolute', bottom: 16, right: 16 }}
-                onClick={() => setErrorDialogOpen(true)}
-              >
-                <Badge badgeContent={errorCount} color="error">
-                  <ErrorOutlineIcon />
-                </Badge>
-              </Fab>
-            )}
+
           </Box>
         </DialogContent>
       </Dialog>

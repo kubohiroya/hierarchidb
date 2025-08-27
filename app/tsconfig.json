@@ -14,18 +14,14 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "node",
-    "skipLibCheck": true,
+
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowImportingTsExtensions": false
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.ts"],
   "exclude": [
-    //"node_modules",
+    "node_modules",
     "dist"
-    //"**/*.test.ts",
-    //"**/*.spec.ts",
-    //"vite.config.ts",
-    //"tsconfig.node.json"
   ]
 }

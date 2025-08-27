@@ -1,34 +1,39 @@
 // Components
-export * from './components/AuthErrorBoundary';
-export * from './components/LoginForm';
-export * from './components/AuthErrorListener';
-export * from './components/AuthMethodSettings';
-export * from './components/AuthPanel';
-export * from './components/AuthProviderDialog';
-export * from './components/AuthProviderOption';
-export * from './components/AuthProviderPrompt';
-export * from './components/MicrosoftIcon';
-export * from './components/OAuthCallback';
-export * from './components/OidcProvider';
-export * from './components/UserAvatar';
-export * from './components/UserAvatarMenu';
+export { AuthErrorBoundary } from './components/AuthErrorBoundary';
+export { LoginForm } from './components/LoginForm';
+export { AuthErrorListener } from './components/AuthErrorListener';
+export { AuthMethodSettings } from './components/AuthMethodSettings';
+export { AuthProviderDialog } from './components/AuthProviderDialog';
+export type { AuthProviderOption } from './components/AuthProviderOption';
+export { AuthProviderOptions } from './components/AuthProviderOptions';
+export { AuthProviderPrompt, AuthRequiredPrompt } from './components/AuthProviderPrompt';
+export { MicrosoftIcon } from './components/MicrosoftIcon';
+export { OAuthCallback } from './components/OAuthCallback';
+export { OidcProvider } from './components/OidcProvider';
+export { UserAvatar } from './components/UserAvatar';
+export { UserProfile, UserAvatarMenu } from './components/UserAvatarMenu';
 
 // Contexts
-export * from './contexts/GoogleAuthContext';
-export * from './contexts/MultiAuthContext';
-export * from './contexts/OIDCAuthContext';
-export * from './contexts/SimpleBFFAuthContext';
+export { useGoogleAuth, GoogleAuthProvider } from './contexts/GoogleAuthContext';
+export { useMultiAuth, MultiAuthProvider } from './contexts/MultiAuthContext';
+export { useOIDCAuth, OIDCAuthProvider } from './contexts/OIDCAuthContext';
+export { useSimpleBFFAuth, SimpleBFFAuthProvider } from './contexts/SimpleBFFAuthContext';
 
 // Types
-export * from './types/AuthProviderType';
-export * from './types/AuthUser';
-export * from './types/AuthContextType';
-export * from './types/AuthProviderConfig';
+export type { AuthProviderType } from './types/AuthProviderType';
+export type { AuthUser } from './types/AuthUser';
+export type { AuthContextType } from './types/AuthContextType';
+export type { AuthProviderConfig } from './types/AuthProviderConfig';
 
 // Services
-export * from './services/AuthCallbackHandler';
-export * from './services/BFFAuthService';
-export * from './services/PopupDetectionService';
+export { AuthCallbackHandler } from './services/AuthCallbackHandler';
+export { BFFAuthService } from './services/BFFAuthService';
+export type { BFFUser, BFFSignInOptions, BFFAuthResponse } from './services/BFFAuthService';
+export { PopupDetectionService } from './services/PopupDetectionService';
+export type { PopupCapability } from './services/PopupDetectionService';
+export { AuthService } from './services/AuthService';
+export type { AuthMethod } from './services/AuthService';
+export { handleAuthError } from './services/handleAuthError';
 
 // Hooks
 export { useAuth, getIdToken } from './hooks/useAuth';

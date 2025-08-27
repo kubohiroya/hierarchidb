@@ -7,14 +7,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 // import { useImportExport } from '@hierarchidb/feature-import-export-plugin'; // TODO: Implement this hook
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
 
 export interface UseTreeConsoleIntegrationParams {
-  client: WorkerAPI;
+  client: Remote<typeof WorkerModule>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -144,9 +145,7 @@ export function useTreeConsoleIntegration({
         // Load children when expanding (if not already loaded)
         if (expanded && client) {
           try {
-            const children = await client.getChildren({
-              parentId: nodeId as NodeId,
-            });
+            const children = await client.getChildren(nodeId);
 
             // Update tree data with children
             setTreeData((prev) => {
@@ -207,9 +206,7 @@ export function useTreeConsoleIntegration({
 
         setState((prev) => ({ ...prev, loading: true }));
         try {
-          const children = await client.getChildren({
-            parentId: pageNodeId,
-          });
+          const children = await client.getChildren(pageNodeId as string);
           const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
           setTreeData(treeNodeData);
         } catch (err) {
@@ -290,9 +287,7 @@ export function useTreeConsoleIntegration({
                 // Refresh the tree data
                 if (client && pageNodeId) {
                   try {
-                    const children = await client.getChildren({
-                      parentId: pageNodeId,
-                    });
+                    const children = await client.getChildren(pageNodeId as string);
                     const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
                     setTreeData(treeNodeData);
                   } catch (refreshError) {
@@ -371,9 +366,7 @@ export function useTreeConsoleIntegration({
         console.log('[useTreeConsoleIntegration] Loading tree data for node:', pageNodeId);
 
         // Get children of the current node using direct Worker API
-        const children = await client.getChildren({
-          parentId: pageNodeId,
-        });
+        const children = await client.getChildren(pageNodeId as string);
 
         console.log('[useTreeConsoleIntegration] Loaded children:', children);
 
@@ -401,8 +394,7 @@ export function useTreeConsoleIntegration({
   const canDelete = selectedIds.length > 0;
 
   return {
-    // Worker client
-    client,
+    // Worker client (removed to avoid TS4094 error)
     loading: state.loading,
     error: state.error,
 

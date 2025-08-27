@@ -5,14 +5,14 @@
  * 実際の移植作業時に、アダプターの変換ロジックを検証するために使用します。
  */
 
-import { describe, it, expect, beforeEach, vi, MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Observable } from 'rxjs';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+
 import type { TreeChangeEvent, CommandResult } from '@hierarchidb/common-core';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
 
 // WorkerAPI のモックを作成
-const createMockWorkerAPI = (): jest.Mocked<WorkerAPI> =>
+const createMockWorkerAPI = () =>
   ({
     // TreeObservableService methods
     observeNode: vi.fn(),
@@ -46,7 +46,7 @@ const createMockWorkerAPI = (): jest.Mocked<WorkerAPI> =>
   }) as any;
 
 describe('WorkerAPIAdapter', () => {
-  let mockWorkerAPI: jest.Mocked<WorkerAPI>;
+  let mockWorkerAPI: any;
   let adapter: WorkerAPIAdapter;
 
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe('WorkerAPIAdapter', () => {
     adapter = new WorkerAPIAdapter({
       workerAPI: mockWorkerAPI,
       defaultViewId: 'test-view',
-      defaultOnNameConflict: 'auto-rename',
+      defaultOnNameConflict: (name: string) => `${name}-copy`,
     });
   });
 
@@ -64,7 +64,7 @@ describe('WorkerAPIAdapter', () => {
       const info = adapter.getAdapterInfo();
 
       expect(info.viewId).toBe('test-view');
-      expect(info.defaultOnNameConflict).toBe('auto-rename');
+      expect(info.defaultOnNameConflict('test')).toBe('test-copy');
       expect(info.subscriptionStats.total).toBe(0);
     });
 
@@ -89,6 +89,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.observeSubtree.mockResolvedValue(mockObservable);
 
+      // Callback tracking variables
       let expandedCallbackCalled = false;
       let subtreeCallbackCalled = false;
 
@@ -96,8 +97,6 @@ describe('WorkerAPIAdapter', () => {
         'test-node' as any,
         () => {
           expandedCallbackCalled = true;
-        },
-        () => {
           subtreeCallbackCalled = true;
         }
       );
@@ -116,6 +115,10 @@ describe('WorkerAPIAdapter', () => {
         })
       );
 
+      // Test callback functionality
+      expect(expandedCallbackCalled).toBe(false); // Initially false
+      expect(subtreeCallbackCalled).toBe(false); // Initially false
+      
       // クリーンアップ確認
       expect(typeof unsubscribe).toBe('function');
       unsubscribe();
@@ -128,7 +131,6 @@ describe('WorkerAPIAdapter', () => {
       await expect(
         adapter.subscribeToSubtree(
           'test-node' as any,
-          () => {},
           () => {}
         )
       ).rejects.toThrow();
@@ -139,7 +141,7 @@ describe('WorkerAPIAdapter', () => {
     it('should convert moveNodes to CommandEnvelope format', async () => {
       const successResult: CommandResult = {
         success: true,
-        commandId: 'test-command',
+        seq: 123,
       };
 
       mockWorkerAPI.moveNodes.mockResolvedValue(successResult);
@@ -165,8 +167,8 @@ describe('WorkerAPIAdapter', () => {
       const failureResult: CommandResult = {
         success: false,
         error: 'Target not found',
-        code: 'TARGET_NOT_FOUND',
-        commandId: 'test-command',
+        code: 'NODE_NOT_FOUND',
+        seq: 123,
       };
 
       mockWorkerAPI.moveNodes.mockResolvedValue(failureResult);
@@ -179,7 +181,7 @@ describe('WorkerAPIAdapter', () => {
     it('should handle deleteNodes (moveToTrash) conversion', async () => {
       const successResult: CommandResult = {
         success: true,
-        commandId: 'test-command',
+        seq: 123,
       };
 
       mockWorkerAPI.moveToTrash.mockResolvedValue(successResult);
@@ -264,7 +266,6 @@ describe('WorkerAPIAdapter', () => {
 
       await adapter.subscribeToSubtree(
         'test-node' as any,
-        () => {},
         () => {}
       );
 
@@ -299,7 +300,7 @@ describe('WorkerAPIAdapter', () => {
     it('should apply context overrides correctly', async () => {
       const successResult: CommandResult = {
         success: true,
-        commandId: 'test-command',
+        seq: 123,
       };
 
       mockWorkerAPI.moveNodes.mockResolvedValue(successResult);

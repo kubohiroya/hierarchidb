@@ -28,23 +28,33 @@ describe('Folder Plugin Integration', () => {
       expect(folder.nodeId).toBe(testNodeId);
 
       // 2. Add bookmarks
-      const bookmark1 = await manager.addBookmark(folder.id, {
+      const bookmark1 = await manager.addBookmark(testNodeId, {
         name: 'GitHub Repo',
         url: 'https://github.com/project/repo',
-        description: 'Main repository'
+        description: 'Main repository',
+        type: 'group',
+        nodeId: testNodeId,
+        groupId: 'bookmark-group-1',
+        version: 1,
+        updatedAt: Date.now()
       });
 
-      const bookmark2 = await manager.addBookmark(folder.id, {
+      const bookmark2 = await manager.addBookmark(testNodeId, {
         name: 'Documentation',
         url: 'https://docs.project.com',
-        description: 'Project documentation'
+        description: 'Project documentation',
+        type: 'group',
+        nodeId: testNodeId,
+        groupId: 'bookmark-group-2',
+        version: 1,
+        updatedAt: Date.now()
       });
 
-      const bookmarks = await manager.getBookmarks(folder.id);
+      const bookmarks = await manager.getBookmarks(testNodeId);
       expect(bookmarks).toHaveLength(2);
 
       // 3. Add template
-      const template = await manager.addTemplate(folder.id, {
+      const template = await manager.addTemplate(testNodeId, {
         name: 'Project Structure',
         content: {
           type: 'folder',
@@ -54,44 +64,48 @@ describe('Folder Plugin Integration', () => {
             { name: 'tests', type: 'folder' }
           ]
         },
-        description: 'Standard project structure'
+        description: 'Standard project structure',
+        type: 'group',
+        nodeId: testNodeId,
+        groupId: 'template-group-1',
+        version: 1,
+        updatedAt: Date.now()
       });
 
-      const templates = await manager.getTemplates(folder.id);
+      const templates = await manager.getTemplates(testNodeId);
       expect(templates).toHaveLength(1);
-      expect(templates[0].name).toBe('Project Structure');
+      expect(templates[0]?.name).toBe('Project Structure');
 
       // 4. Create working copy and modify
-      const workingCopy = await manager.createWorkingCopy(testNodeId, {
-        name: 'Updated Project Folder',
-        description: 'Updated description'
-      });
+      const workingCopy = await manager.createWorkingCopy(testNodeId);
 
       const updatedWorkingCopy = await manager.updateWorkingCopy(workingCopy.id, {
-        name: 'Final Project Folder'
+        name: 'Final Project Folder',
+        description: 'Updated description'
       });
 
       expect(updatedWorkingCopy.name).toBe('Final Project Folder');
 
       // 5. Commit working copy
-      const updatedFolder = await manager.commitWorkingCopy(workingCopy.id);
-      expect(updatedFolder.name).toBe('Final Project Folder');
-      expect(updatedFolder.description).toBe('Updated description');
+      await manager.commitWorkingCopy(testNodeId, updatedWorkingCopy);
+      const updatedFolder = await manager.getFolder(testNodeId);
+      expect(updatedFolder?.name).toBe('Final Project Folder');
+      expect(updatedFolder?.description).toBe('Updated description');
 
       // 6. Search functionality
       const searchResults = await manager.searchFolders('project');
       expect(searchResults).toHaveLength(1);
-      expect(searchResults[0].id).toBe(folder.id);
+      expect(searchResults[0]?.id).toBe(folder.id);
 
       // 7. Cleanup
       await manager.removeBookmark(bookmark1.id);
       await manager.removeTemplate(template.id);
       
-      const finalBookmarks = await manager.getBookmarks(folder.id);
+      const finalBookmarks = await manager.getBookmarks(testNodeId);
       expect(finalBookmarks).toHaveLength(1);
-      expect(finalBookmarks[0].id).toBe(bookmark2.id);
+      expect(finalBookmarks[0]?.id).toBe(bookmark2.id);
 
-      const finalTemplates = await manager.getTemplates(folder.id);
+      const finalTemplates = await manager.getTemplates(testNodeId);
       expect(finalTemplates).toHaveLength(0);
     });
 
@@ -103,27 +117,20 @@ describe('Folder Plugin Integration', () => {
       });
 
       // Create working copy from existing folder
-      const workingCopy = await manager.createWorkingCopy(testNodeId, {
-        name: 'Modified Folder',
-        description: 'Modified description'
-      });
+      const workingCopy = await manager.createWorkingCopy(testNodeId);
 
-      // Update working copy multiple times
-      await manager.updateWorkingCopy(workingCopy.id, {
-        name: 'First Update'
-      });
-
-      await manager.updateWorkingCopy(workingCopy.id, {
+      // Update working copy
+      const updatedWorkingCopy = await manager.updateWorkingCopy(workingCopy.id, {
+        name: 'First Update',
         description: 'Second update description'
       });
-
-      // Commit changes
-      const finalFolder = await manager.commitWorkingCopy(workingCopy.id);
+      await manager.commitWorkingCopy(testNodeId, updatedWorkingCopy);
+      const finalFolder = await manager.getFolder(testNodeId);
       
-      expect(finalFolder.id).toBe(originalFolder.id); // Same entity, updated
-      expect(finalFolder.name).toBe('First Update');
-      expect(finalFolder.description).toBe('Second update description');
-      expect(finalFolder.version).toBe(originalFolder.version + 1);
+      expect(finalFolder?.id).toBe(originalFolder.id); // Same entity, updated
+      expect(finalFolder?.name).toBe('First Update');
+      expect(finalFolder?.description).toBe('Second update description');
+      expect(finalFolder?.version).toBe(originalFolder.version + 1);
     });
   });
 
@@ -147,7 +154,9 @@ describe('Folder Plugin Integration', () => {
       await expect(manager.updateFolder(nonExistentId, { name: 'Test' }))
         .rejects.toThrow('not found');
       
-      await expect(manager.commitWorkingCopy(nonExistentId))
+      // commitWorkingCopy requires a working copy object, not just an ID
+      const dummyWorkingCopy = { id: nonExistentId, nodeId: nonExistentId } as any;
+      await expect(manager.commitWorkingCopy(nonExistentId, dummyWorkingCopy))
         .rejects.toThrow('not found');
     });
   });

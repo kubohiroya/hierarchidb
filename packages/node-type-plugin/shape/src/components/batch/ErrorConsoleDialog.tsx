@@ -12,11 +12,12 @@ import {
   IconButton,
 } from '@mui/material';
 import { Close as CloseIcon, Clear as ClearIcon } from '@mui/icons-material';
+import type { ErrorLogEntry } from '../../hooks/useErrorConsole';
 
 interface ErrorConsoleDialogProps {
   open: boolean;
   onClose: () => void;
-  errors: string[];
+  errors: ErrorLogEntry[];
   onClearErrors: () => void;
 }
 
@@ -43,11 +44,11 @@ export const ErrorConsoleDialog: React.FC<ErrorConsoleDialogProps> = ({
         ) : (
           <List dense>
             {errors.map((error, index) => (
-              <ListItem key={index}>
+              <ListItem key={error.id || index}>
                 <ListItemText
-                  primary={error}
+                  primary={error.message}
                   primaryTypographyProps={{ variant: 'body2', color: 'error' }}
-                  secondary={new Date().toLocaleTimeString()}
+                  secondary={`${new Date(error.timestamp).toLocaleTimeString()} - ${error.phase} (${error.level.toUpperCase()})`}
                   secondaryTypographyProps={{ variant: 'caption' }}
                 />
               </ListItem>

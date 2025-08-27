@@ -3,13 +3,13 @@
  * Pure functions that can be used in both UI and Worker environments
  */
 
-import type { 
+import type {
   ValidationResult,
   SelectionStats,
   UrlMetadata,
   CountryMetadata,
   ProcessingConfig,
-  DataSourceName
+  DataSourceName,
 } from './types';
 import { DEFAULT_PROCESSING_CONFIG } from './constants';
 
@@ -18,22 +18,22 @@ import { DEFAULT_PROCESSING_CONFIG } from './constants';
  */
 export function validateShapeName(name: string): ValidationResult {
   const errors: string[] = [];
-  
+
   if (!name.trim()) {
     errors.push('Name is required');
   }
-  
+
   if (name.length > 100) {
     errors.push('Name must be 100 characters or less');
   }
-  
+
   if (!/^[a-zA-Z0-9\s\-_]+$/.test(name)) {
     errors.push('Name can only contain letters, numbers, spaces, hyphens, and underscores');
   }
-  
+
   return {
     isValid: errors.length === 0,
-    errors: errors.length > 0 ? errors : undefined
+    errors: errors.length > 0 ? errors : undefined,
   };
 }
 
@@ -43,21 +43,21 @@ export function validateShapeName(name: string): ValidationResult {
 export function validateProcessingConfig(config: Partial<ProcessingConfig>): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   // Validate concurrent downloads
   if (config.concurrentDownloads !== undefined) {
     if (config.concurrentDownloads < 1 || config.concurrentDownloads > 10) {
       errors.push('Concurrent downloads must be between 1 and 10');
     }
   }
-  
+
   // Validate concurrent processes
   if (config.concurrentProcesses !== undefined) {
     if (config.concurrentProcesses < 1 || config.concurrentProcesses > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
-  
+
   // Validate max zoom level
   if (config.maxZoomLevel !== undefined) {
     if (config.maxZoomLevel < 8 || config.maxZoomLevel > 18) {
@@ -67,18 +67,18 @@ export function validateProcessingConfig(config: Partial<ProcessingConfig>): Val
       warnings.push('High zoom levels may require significant storage and processing time');
     }
   }
-  
+
   // Validate feature area threshold
   if (config.featureAreaThreshold !== undefined) {
     if (config.featureAreaThreshold < 0 || config.featureAreaThreshold > 1) {
       errors.push('Feature area threshold must be between 0 and 1');
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors: errors.length > 0 ? errors : undefined,
-    warnings: warnings.length > 0 ? warnings : undefined
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 
@@ -93,16 +93,16 @@ export function calculateSelectionStats(urlMetadata: UrlMetadata[]): SelectionSt
       levelCounts: [],
       estimatedSize: 0,
       estimatedFeatures: 0,
-      estimatedProcessingTime: 0
+      estimatedProcessingTime: 0,
     };
   }
-  
+
   const countries = new Set<string>();
   const levelCounts: number[] = new Array(6).fill(0);
   let estimatedSize = 0;
   let estimatedFeatures = 0;
-  
-  urlMetadata.forEach(metadata => {
+
+  urlMetadata.forEach((metadata) => {
     countries.add(metadata.countryCode);
     if (metadata.adminLevel >= 0 && metadata.adminLevel < levelCounts.length) {
       levelCounts[metadata.adminLevel]++;
@@ -113,17 +113,17 @@ export function calculateSelectionStats(urlMetadata: UrlMetadata[]): SelectionSt
     // Rough estimate: 1MB ≈ 1000 features
     estimatedFeatures += Math.floor((metadata.estimatedSize || 0) / 1000);
   });
-  
+
   // Rough processing time estimate: 1 second per 1000 features + 10 seconds base
   const estimatedProcessingTime = Math.ceil(estimatedFeatures / 1000) + 10;
-  
+
   return {
     totalSelected: urlMetadata.length,
     countriesWithSelection: countries.size,
     levelCounts,
     estimatedSize,
     estimatedFeatures,
-    estimatedProcessingTime
+    estimatedProcessingTime,
   };
 }
 
@@ -137,15 +137,15 @@ export function generateUrlMetadata(
   countryMetadata: CountryMetadata[]
 ): UrlMetadata[] {
   const urlMetadata: UrlMetadata[] = [];
-  const countryMap = new Map(countryMetadata.map(c => [c.countryCode, c]));
-  
-  countries.forEach(countryCode => {
+  const countryMap = new Map(countryMetadata.map((c) => [c.countryCode, c]));
+
+  countries.forEach((countryCode) => {
     const country = countryMap.get(countryCode);
     if (!country) return;
-    
-    adminLevels.forEach(level => {
+
+    adminLevels.forEach((level) => {
       if (!country.availableAdminLevels.includes(level)) return;
-      
+
       const url = buildDataSourceUrl(dataSource, countryCode, level);
       if (url) {
         urlMetadata.push({
@@ -154,12 +154,12 @@ export function generateUrlMetadata(
           adminLevel: level,
           continent: country.continent,
           estimatedSize: estimateDataSize(dataSource, countryCode, level, country),
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         });
       }
     });
   });
-  
+
   return urlMetadata;
 }
 
@@ -175,12 +175,12 @@ function buildDataSourceUrl(
     naturalearth: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download',
     geoboundaries: 'https://www.geoboundaries.org/api/gbOpen',
     gadm: 'https://biogeo.ucdavis.edu/data/gadm3.6',
-    openstreetmap: 'https://download.geofabrik.de'
+    openstreetmap: 'https://download.geofabrik.de',
   };
-  
+
   const baseUrl = baseUrls[dataSource];
   if (!baseUrl) return null;
-  
+
   switch (dataSource) {
     case 'naturalearth':
       return `${baseUrl}/10m/cultural/ne_10m_admin_${adminLevel}_countries.zip`;
@@ -200,7 +200,7 @@ function buildDataSourceUrl(
  */
 function estimateDataSize(
   dataSource: DataSourceName,
-  countryCode: string,
+  _countryCode: string,
   adminLevel: number,
   country: CountryMetadata
 ): number {
@@ -209,18 +209,18 @@ function estimateDataSize(
     naturalearth: 100,
     geoboundaries: 50,
     gadm: 200,
-    openstreetmap: 1000
+    openstreetmap: 1000,
   };
-  
+
   // Admin level multipliers
   const adminLevelMultipliers = [1, 2, 5, 10, 20, 50];
-  
+
   // Population factor (larger countries = more data)
   const populationFactor = Math.log10((country.population || 1000000) / 1000000) + 1;
-  
+
   const baseSize = baseSizeFactors[dataSource] || 100;
   const adminMultiplier = adminLevelMultipliers[adminLevel] || 1;
-  
+
   return Math.round(baseSize * adminMultiplier * populationFactor * 1000); // Convert to bytes
 }
 
@@ -230,7 +230,7 @@ function estimateDataSize(
 export function mergeProcessingConfig(config: Partial<ProcessingConfig>): ProcessingConfig {
   return {
     ...DEFAULT_PROCESSING_CONFIG,
-    ...config
+    ...config,
   };
 }
 
@@ -257,13 +257,13 @@ export function generateTaskId(type: string): string {
  */
 export function formatBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  
+
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
@@ -296,4 +296,90 @@ export function parseCheckboxState(state: boolean[][] | string): boolean[][] {
  */
 export function serializeCheckboxState(state: boolean[][]): string {
   return JSON.stringify(state);
+}
+
+/**
+ * Build a new ShapeEntity from create data (shared mapping)
+ */
+export function buildShapeEntityFromCreate(
+  params: {
+    nodeId: import('@hierarchidb/common-core').NodeId;
+    entityId: import('@hierarchidb/common-core').EntityId;
+    data: {
+      name: string;
+      description?: string;
+      dataSourceName: any;
+      processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
+    };
+    now?: number;
+  }
+): import('./types').ShapeEntity {
+  const now = params.now ?? Date.now();
+  const merged = mergeProcessingConfig(
+    (params.data.processingConfig as Partial<ProcessingConfig>) || {}
+  );
+  return {
+    id: params.entityId,
+    nodeId: params.nodeId,
+    name: params.data.name,
+    description: params.data.description || '',
+    dataSourceName: params.data.dataSourceName,
+    licenseAgreement: false,
+    processingConfig: merged,
+    checkboxState: '[]',
+    selectedCountries: [],
+    adminLevels: [],
+    urlMetadata: [],
+    processingStatus: 'idle',
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+  };
+}
+
+/**
+ * Create a ShapeWorkingCopy from an entity (shared mapping)
+ */
+export function createWorkingCopyFromEntity(
+  entity: import('./types').ShapeEntity
+): import('./types').ShapeWorkingCopy {
+  return {
+    id: entity.id as import('@hierarchidb/common-core').EntityId,
+    nodeId: entity.nodeId,
+    name: entity.name,
+    description: entity.description,
+    dataSourceName: entity.dataSourceName,
+    licenseAgreement: false,
+    processingConfig: { ...entity.processingConfig },
+    checkboxState: [],
+    selectedCountries: [...entity.selectedCountries],
+    adminLevels: [...entity.adminLevels],
+    urlMetadata: [...entity.urlMetadata],
+    isDraft: false,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+    version: entity.version,
+  };
+}
+
+/**
+ * Map a working copy back to entity updates (shared mapping)
+ */
+export function mapWorkingCopyToUpdates(
+  workingCopy: import('./types').ShapeWorkingCopy
+): Partial<import('./types').ShapeEntity> {
+  const updates: Partial<import('./types').ShapeEntity> = {
+    name: workingCopy.name,
+    description: workingCopy.description,
+    dataSourceName: workingCopy.dataSourceName,
+    processingConfig: workingCopy.processingConfig,
+    selectedCountries: workingCopy.selectedCountries,
+    adminLevels: workingCopy.adminLevels,
+    urlMetadata: workingCopy.urlMetadata,
+  };
+  // Optional checkbox state when present in the environment
+  if (typeof (workingCopy as any).checkboxState !== 'undefined') {
+    (updates as any).checkboxState = (workingCopy as any).checkboxState;
+  }
+  return updates;
 }

@@ -3,12 +3,9 @@
  * Implements ShapeAPI interface from shared layer
  */
 
-import { NodeId, EntityId, generateEntityId } from '@hierarchidb/common-core';
-import type { PluginAPI } from '@hierarchidb/common-api';
+import { NodeId, EntityId } from '@hierarchidb/common-core';
 import {
-  ShapeAPI,
   ShapeEntity,
-  ShapeWorkingCopy,
   CreateShapeData,
   UpdateShapeData,
   ProcessingConfig,
@@ -23,7 +20,6 @@ import {
   ProcessingStatus,
   TileInfo,
 } from '../shared';
-import { DEFAULT_PROCESSING_CONFIG } from '../shared/constants';
 import { ShapeEntityHandler } from './handlers';
 import {
   DEFAULT_DATA_SOURCES,
@@ -31,8 +27,9 @@ import {
   calculateSelectionStats,
   validateProcessingConfig,
   generateSessionId,
-  generateTaskId,
 } from '../shared';
+
+import { metadataLoader } from '../services/metadata/MetadataLoader';
 
 export const shapePluginAPI = {
   // ===================================
@@ -46,7 +43,7 @@ export const shapePluginAPI = {
 
   getEntity: async (nodeId: NodeId): Promise<ShapeEntity | undefined> => {
     const handler = new ShapeEntityHandler();
-    return await handler.getEntityByNodeId(nodeId);
+    return (await handler.getEntityByNodeId(nodeId)) ?? undefined;
   },
 
   updateEntity: async (nodeId: NodeId, data: UpdateShapeData): Promise<void> => {
@@ -115,28 +112,16 @@ export const shapePluginAPI = {
     return DEFAULT_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (dataSource: string): Promise<CountryMetadata[]> => {
-    // Mock implementation - would fetch from real data source
-    return [
-      {
-        countryCode: 'US',
-        countryName: 'United States',
-        continent: 'North America',
-        availableAdminLevels: [0, 1, 2],
-        population: 331900000,
-        area: 9833517,
-        dataQuality: 'high',
-      },
-      {
-        countryCode: 'JP',
-        countryName: 'Japan',
-        continent: 'Asia',
-        availableAdminLevels: [0, 1],
-        population: 125800000,
-        area: 377975,
-        dataQuality: 'high',
-      },
-    ];
+  getCountryMetadata: async (_dataSource: string): Promise<CountryMetadata[]> => {
+    // Load from pre-fetched metadata files provided by @hierarchidb/runtime-fetch-metadata
+    // Use the centralized MetadataLoader service for caching and transformation
+    try {
+      const data = await metadataLoader.loadMetadata(_dataSource);
+      return data;
+    } catch (err) {
+      console.error('Failed to load country metadata for data source:', _dataSource, err);
+      return [];
+    }
   },
 
   generateUrlMetadata: async (
@@ -195,7 +180,7 @@ export const shapePluginAPI = {
   startBatchProcessing: async (
     workingCopyId: EntityId,
     config: ProcessingConfig,
-    urlMetadata: UrlMetadata[]
+    _urlMetadata: UrlMetadata[]
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {

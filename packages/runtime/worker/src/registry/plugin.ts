@@ -18,7 +18,7 @@ import type {
   PluginUIConfig,
   PluginAPIConfig,
   PluginValidationConfig,
-  CoreNodeDefinition,
+  PluginDefinition as CorePluginDefinition,
   PluginRoutingConfig,
   PluginMetadata,
 } from '@hierarchidb/common-core';
@@ -48,17 +48,16 @@ export type NodeLifecycleHooks<
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
 > = CoreNodeLifecycleHooks<TEntity, TWorkingCopy>;
 
-export type WorkerPluginRouterAction = CoreWorkerPluginRouterAction;
+// Re-export core types directly instead of creating aliases
+export type { WorkerPluginRouterAction, IconDefinition, CategoryDefinition } from '@hierarchidb/common-core';
 export type ValidationRule<TEntity extends PeerEntity = PeerEntity> = CoreValidationRule<TEntity>;
-export type IconDefinition = CoreIconDefinition;
-export type CategoryDefinition = CoreCategoryDefinition;
 
 // Node definition with entity handler (worker-specific extension of core)
 export interface NodeDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> extends Omit<CoreNodeDefinition, 'lifecycle' | 'database' | 'ui' | 'api'> {
+> extends Omit<PluginDefinition, 'lifecycle' | 'database' | 'ui' | 'api'> {
   // Entity handler - this is worker-specific and not in core
   readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
 
@@ -78,16 +77,22 @@ export interface NodeDefinition<
   readonly validation?: PluginValidationConfig;
 }
 
-// Unified plugin definition (extends NodeDefinition with routing and metadata)
+// Use the core PluginDefinition directly and extend it with worker-specific properties
 export interface PluginDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> extends NodeDefinition<TEntity, TGroupEntity, TWorkingCopy> {
-  // Worker-side routing configuration (use core type)
+> extends Omit<CorePluginDefinition, 'lifecycle'> {
+  // Entity handler - this is worker-specific and not in core
+  readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
+
+  // Lifecycle hooks with actual implementations (override core's boolean flags)
+  readonly lifecycle?: NodeLifecycleHooks<TEntity, TWorkingCopy>;
+
+  // Worker-side routing configuration
   readonly routing: PluginRoutingConfig;
 
-  // Plugin metadata (use core type)
+  // Plugin metadata
   readonly meta: PluginMetadata;
 }
 

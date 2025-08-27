@@ -14,15 +14,20 @@
     "emitDeclarationOnly": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "strictNullChecks": false, // Temporarily relaxed for compatibility
+    "strictNullChecks": false,
     "strict": true,
     "noImplicitAny": false,
     "baseUrl": "./",
     "paths": {
       "~/*": ["src/*"]
-    },
-    "skipLibCheck": true // Required for @types/node disposable symbols compatibility
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts"
+  ]
 }

@@ -255,11 +255,12 @@ export class NodeLifecycleManager {
       }
 
       // TODO: Implement getHandler method in registry
+      // For now, log that this functionality is not implemented
+      console.log(`Reference counting not implemented for ${nodeType} node ${nodeId}`);
       // const handler = this.registry.getHandler(nodeType);
       // if (!isReferenceCountingHandler(handler)) {
       //   return; // Handler doesn't support reference counting
       // }
-      //
       // await handler.incrementReferenceCount(nodeId);
     } catch (e) {
       workerError(
@@ -284,11 +285,12 @@ export class NodeLifecycleManager {
       }
 
       // TODO: Implement getHandler method in registry
+      // For now, log that this functionality is not implemented
+      console.log(`Reference counting decrement not implemented for ${nodeType} node ${nodeId}`);
       // const handler = this.registry.getHandler(nodeType);
       // if (!isReferenceCountingHandler(handler)) {
       //   return; // Handler doesn't support reference counting
       // }
-      //
       // await handler.decrementReferenceCount(nodeId);
     } catch (e) {
       workerError(

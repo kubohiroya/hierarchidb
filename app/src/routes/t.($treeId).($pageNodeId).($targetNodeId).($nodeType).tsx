@@ -41,7 +41,6 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 
   // Load trash items if targetNodeId is "trash" or trash root
   const client = result.client;
-  const api = client;
   const tree = result.tree;
 
   let trashRootId: NodeId | undefined;
@@ -56,9 +55,9 @@ export async function clientLoader(args: LoaderFunctionArgs) {
     // Load children of the trash node
     if (nodeToLoad) {
       try {
-        trashItems = await api.getChildren({
-          parentId: nodeToLoad as NodeId,
-        });
+        // Use facade pattern: get QueryAPI first
+        const queryAPI = await client.getQueryAPI();
+        trashItems = await queryAPI.listChildren(nodeToLoad as NodeId);
       } catch (error) {
         console.error('Failed to load trash items:', error);
       }
@@ -120,9 +119,10 @@ export default function TrashDialog() {
 
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client;
+      // Use facade pattern: get MutationAPI first
+      const mutationAPI = await client.getMutationAPI();
 
-      const result = await api.recoverFromTrash({
+      const result = await mutationAPI.recoverNodesFromTrash({
         nodeIds: selectedIds as NodeId[],
       });
 
@@ -167,11 +167,12 @@ export default function TrashDialog() {
 
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client;
+      // Use facade pattern: get MutationAPI first
+      const mutationAPI = await client.getMutationAPI();
 
       const allIds = data.trashItems.map((item: TreeNode) => item.id);
 
-      const result = await api.removeNodes(allIds);
+      const result = await mutationAPI.removeNodes(allIds);
 
       if (result.success) {
         // Success - show success message briefly, then close dialog

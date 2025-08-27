@@ -61,6 +61,15 @@ module.exports = {
         },
       },
     ],
+
+    // Prevent wildcard exports for better traceability
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "ExportAllDeclaration",
+        message: "Avoid 'export * from'. Use explicit named exports for better traceability and tree-shaking.",
+      },
+    ],
   },
   ignorePatterns: [
     'node_modules',

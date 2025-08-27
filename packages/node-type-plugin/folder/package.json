@@ -40,6 +40,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-base": "workspace:*",
     "dexie": "^4.0.8"
   },
   "peerDependencies": {

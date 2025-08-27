@@ -19,7 +19,8 @@ import {
 } from '@hierarchidb/runtime-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-core';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
@@ -29,7 +30,7 @@ export interface TreeConsoleIntegrationProps {
 
 // Inner component that uses the hook (client is guaranteed to be non-null)
 const TreeConsoleIntegrationInner: React.FC<
-  TreeConsoleIntegrationProps & { client: WorkerAPI }
+  TreeConsoleIntegrationProps & { client: Remote<typeof WorkerModule> }
 > = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -68,9 +69,7 @@ const TreeConsoleIntegrationInner: React.FC<
           // Get trash root node and check if it has children
           const tree = await api.getTree({ treeId: treeId as TreeId });
           if (tree?.trashRootId) {
-            const trashChildren = await api.getChildren({
-              parentId: tree.trashRootId,
-            });
+            const trashChildren = await api.getChildren(tree.trashRootId as string);
             setHasTrashItems(trashChildren.length > 0);
           }
         } catch (error) {

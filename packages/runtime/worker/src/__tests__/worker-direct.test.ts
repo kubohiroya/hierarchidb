@@ -10,7 +10,7 @@ import { WorkerAPIImpl } from '../WorkerAPIImpl';
 import { CoreDB } from '../db/CoreDB';
 import { EphemeralDB } from '../db/EphemeralDB';
 import { TreeMutationService } from '../services/TreeMutationService';
-import { TreeSubscribeService } from '../services/TreeSubscribeService';
+import { TreeSubscriptionService } from '../services/TreeSubscriptionService';
 import { CommandProcessor } from '../command/CommandProcessor';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
 import { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
@@ -20,7 +20,7 @@ describe('Worker層直接呼び出しテスト', () => {
   let coreDB: CoreDB;
   let ephemeralDB: EphemeralDB;
   let mutationService: TreeMutationService;
-  let observableService: TreeSubscribeService;
+  let observableService: TreeSubscriptionService;
   let commandProcessor: CommandProcessor;
 
   beforeEach(async () => {
@@ -49,7 +49,7 @@ describe('Worker層直接呼び出しテスト', () => {
       commandProcessor,
       lifecycleManager
     );
-    observableService = new TreeSubscribeService(coreDB);
+    observableService = new TreeSubscriptionService(coreDB);
   });
 
   afterEach(async () => {
@@ -185,22 +185,15 @@ describe('Worker層直接呼び出しテスト', () => {
       // 変更を記録するための配列
       const changes: any[] = [];
 
-      // Observable購読（実際のAPI呼び出し形式に修正）
-      const observable = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId },
-        commandId: 'cmd-obs-001',
-        groupId: 'test-obs-group',
-        issuedAt: Date.now(),
-      });
-
-      const subscription = observable.subscribe({
-        next: (change) => {
+      // Observable購読（新しいコールバックベースAPI）
+      const subscriptionId = await observableService.subscribeNode(
+        nodeId,
+        (change) => {
           console.log('Received change:', change);
           changes.push(change);
         },
-        error: (err) => console.error('Observable error:', err),
-      });
+        { includeMetadata: false }
+      );
 
       // ノードを更新（changeSubjectイベントが自動発火するupdateNodeメソッドを使用）
       const updatedNode = await coreDB.nodes.get(nodeId);
@@ -222,7 +215,7 @@ describe('Worker層直接呼び出しテスト', () => {
       expect(changes[0].nodeId).toBe(nodeId);
 
       // クリーンアップ
-      subscription.unsubscribe();
+      await observableService.unsubscribe(subscriptionId);
     });
   });
 

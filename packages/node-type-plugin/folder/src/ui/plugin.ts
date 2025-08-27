@@ -46,7 +46,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
   
   // Action Hooks
   hooks: {
-    onValidateCreateForm: async (params) => {
+    onValidateCreateForm: async (params: { formData: unknown }) => {
       const validation = validateFolderData(params.formData as CreateFolderData);
       const errors: Record<string, string> = {};
       

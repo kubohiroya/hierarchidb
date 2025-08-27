@@ -10,6 +10,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { vi } from 'vitest';
 import { TreeConsoleContent } from '../TreeConsoleContent';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
+import type { NodeId } from '@hierarchidb/common-core';
 
 // テーマプロバイダーでラップ
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -23,7 +24,7 @@ const createMockController = (overrides?: Partial<TreeViewController>): TreeView
   selectedNodes: [],
   expandedNodes: [],
   isLoading: false,
-  selectionMode: 'multiple',
+  selectionMode: 'checkbox' as const,
   data: [],
   expandedRowIds: new Set(),
   selectNode: vi.fn(),
@@ -54,7 +55,7 @@ const defaultProps: TreeConsoleContentProps = {
   viewWidth: 800,
   useTrashColumns: false,
   depthOffset: 0,
-  rootNodeId: 'test-root-node-id',
+  rootNodeId: 'test-root-node-id' as NodeId,
   currentNodeInfo: null,
   mode: undefined,
 };
@@ -145,8 +146,8 @@ describe('TreeConsoleContent', () => {
   it('データがある場合にテーブル表示する', () => {
     const dataController = createMockController({
       isLoading: false,
-      selectedNodes: ['node1', 'node2'],
-      expandedNodes: ['node1'],
+      selectedNodes: ['node1', 'node2'] as NodeId[],
+      expandedNodes: ['node1'] as NodeId[],
     });
 
     render(
@@ -171,7 +172,7 @@ describe('TreeConsoleContent', () => {
         <TreeConsoleContent
           {...defaultProps}
           controller={emptyController}
-          treeRootNodeId="test-root"
+          rootNodeId={"test-root" as NodeId}
           mode="restore"
         />
       </TestWrapper>

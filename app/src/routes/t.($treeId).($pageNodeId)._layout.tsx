@@ -48,8 +48,9 @@ export default function TLayout() {
     const loadTrees = async () => {
       try {
         const client = await WorkerAPIClient.getSingleton();
-        const api = client;
-        const availableTrees = await api.getTrees();
+        // Use facade pattern: get QueryAPI first
+        const queryAPI = await client.getQueryAPI();
+        const availableTrees = await queryAPI.listTrees();
         setTrees(availableTrees);
       } catch (error) {
         console.error('Failed to load trees:', error);

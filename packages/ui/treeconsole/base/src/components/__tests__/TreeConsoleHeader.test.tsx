@@ -7,14 +7,17 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TreeConsoleHeader } from '../TreeConsoleHeader';
-import type { TreeConsoleHeaderProps } from '~/types';
+import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
 
 // モックデータ
-const mockController = {
+const mockController: TreeViewController = {
   currentNode: null,
   selectedNodes: [],
   expandedNodes: [],
   isLoading: false,
+  selectionMode: 'checkbox' as const,
+  data: [],
+  expandedRowIds: new Set(),
   selectNode: () => {},
   selectMultipleNodes: () => {},
   expandNode: () => {},
@@ -24,6 +27,13 @@ const mockController = {
   duplicateNodes: async () => {},
   startEdit: async () => {},
   startCreate: async () => {},
+  undo: async () => ({ success: true }),
+  redo: async () => ({ success: true }),
+  canUndo: false,
+  canRedo: false,
+  undoHistory: [],
+  redoHistory: [],
+  clearHistory: async () => ({ success: true }),
 };
 
 const defaultProps: TreeConsoleHeaderProps = {

@@ -33,7 +33,9 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   }
   
   if (treeData.tree?.rootId) {
-    const rootNode = await treeData.client.getNode(treeData.tree.rootId);
+    // Use facade pattern: get QueryAPI first
+    const queryAPI = await treeData.client.getQueryAPI();
+    const rootNode = await queryAPI.getNode(treeData.tree.rootId);
     console.log('[t.($treeId).tsx] Loaded root node:', rootNode);
     return {
       ...treeData,
@@ -64,9 +66,12 @@ export default function TLayout() {
         console.log('[TreePage] WorkerAPIClient obtained:', client);
         
         console.log('[TreePage] Client obtained:', client);
-        console.log('[TreePage] Client getTrees method:', typeof client.getTrees);
         
-        const availableTrees = await client.getTrees();
+        // Use facade pattern: get QueryAPI first
+        const queryAPI = await client.getQueryAPI();
+        console.log('[TreePage] QueryAPI obtained:', queryAPI);
+        
+        const availableTrees = await queryAPI.listTrees();
         console.log('[TreePage] Trees loaded:', availableTrees);
         setTrees(availableTrees);
       } catch (error) {

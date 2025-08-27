@@ -13,6 +13,24 @@ export type {
   DataSourceLicenseStepProps,
 } from './components';
 
+// Services
+export {
+  DataSourceManager,
+  GADMStrategy,
+  NaturalEarthStrategy,
+  GeoBoundariesStrategy,
+  OpenStreetMapStrategy,
+} from './services/DataSourceManager';
+
+export type {
+  DataSourceStrategy,
+  CountryMetadata,
+  AdminLevelInfo,
+  ValidationResult,
+  BoundingBox,
+  DataSourceInfo,
+} from './services/DataSourceManager';
+
 // Types and utilities
 export {
   DATA_SOURCES,

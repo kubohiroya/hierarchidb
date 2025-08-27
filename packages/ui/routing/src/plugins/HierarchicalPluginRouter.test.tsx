@@ -3,19 +3,20 @@
  * テストファイル: HierarchicalPluginRouter.test.ts
  */
 
-// Vitest APIを使用 - Jestではなく完全にVitest統一
+// Vitest API - Complete Vitest integration
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 
-// 未実装のインポート（テストが失敗する原因）
+// Import router components and functions
 import {
   HierarchicalPluginRouter,
   parseHierarchicalUrl,
   PluginRegistry,
   loadPluginComponent,
-  type PluginRouteParams,
-  type PluginDefinition,
-} from './HierarchicalPluginRouter';
+} from './HierarchicalPluginRouter.tsx';
+
+// Import types separately
+import type { PluginRouteParams, PluginDefinition } from "./types";
 
 describe('階層的プラグインルーティングシステム', () => {
   beforeEach(() => {
@@ -43,7 +44,7 @@ describe('階層的プラグインルーティングシステム', () => {
 
       // 【実際の処理実行】: URL解析関数によるパラメータ抽出処理
       // 【処理内容】: React RouterのURL解析パターンに基づく階層的パラメータ抽出
-      const params = parseHierarchicalUrl(testUrl);
+      const params: PluginRouteParams = parseHierarchicalUrl(testUrl);
 
       // 【結果検証】: 解析されたパラメータが期待値と完全に一致するかを確認
       // 【期待値確認】: URL構造に基づく各パラメータの正確な抽出を検証
@@ -66,7 +67,7 @@ describe('階層的プラグインルーティングシステム', () => {
 
       // 【実際の処理実行】: 最小URLでの解析処理を実行
       // 【処理内容】: 必須パラメータとオプショナルパラメータの区別処理
-      const params = parseHierarchicalUrl(minimalUrl);
+      const params: PluginRouteParams = parseHierarchicalUrl(minimalUrl);
 
       // 【結果検証】: 必須パラメータは設定され、オプショナルパラメータは未定義であることを確認
       // 【期待値確認】: 最小構成でもシステムが正常に動作することを検証
@@ -107,13 +108,13 @@ describe('階層的プラグインルーティングシステム', () => {
         actions: {
           view: {
             component: React.lazy(() =>
-              import('@hierarchidb/node-type-basemap-plugin').then((m) => ({ default: m.BaseMapView }))
+              Promise.resolve({ default: () => React.createElement('div', { 'data-testid': 'mock-basemap-view' }, 'Mock Basemap View') })
             ),
             permissions: ['basemap:view'],
           },
           edit: {
             component: React.lazy(() =>
-              import('@hierarchidb/node-type-basemap-plugin').then((m) => ({ default: m.BaseMapEditor }))
+              Promise.resolve({ default: () => React.createElement('div', { 'data-testid': 'mock-basemap-editor' }, 'Mock Basemap Editor') })
             ),
             permissions: ['basemap:view', 'basemap:edit'],
           },
@@ -122,7 +123,7 @@ describe('階層的プラグインルーティングシステム', () => {
 
       // 【実際の処理実行】: プラグインレジストリへの登録処理
       // 【処理内容】: プラグイン定義の検証と内部ストレージへの保存
-      PluginRegistry.register(basemapPlugin);
+      PluginRegistry.register('basemap', basemapPlugin);
 
       // 【結果検証】: 登録されたプラグインが正確に取得できることを確認
       // 【期待値確認】: プラグイン情報の完全性と整合性を検証
@@ -186,7 +187,7 @@ describe('階層的プラグインルーティングシステム', () => {
           },
         },
       };
-      PluginRegistry.register(basemapPlugin);
+      PluginRegistry.register('basemap', basemapPlugin);
 
       // 【実際の処理実行】: 動的コンポーネントロード処理の実行
       // 【処理内容】: プラグインコンポーネントの正常な取得
@@ -238,7 +239,8 @@ describe('階層的プラグインルーティングシステム', () => {
 
       // 【実際の処理実行】: 階層データローダー関数の実行
       // 【処理内容】: ツリーコンテキスト、ノード情報、プラグインデータの統合取得
-      const routeData = await HierarchicalPluginRouter.loadHierarchicalData(routeParams);
+      const router = new HierarchicalPluginRouter();
+      const routeData = await router.loadHierarchicalData(routeParams);
 
       // 【結果検証】: 統合されたデータオブジェクトが期待される構造を持つことを確認
       // 【期待値確認】: 階層情報とプラグインデータの完全性を検証
@@ -269,7 +271,8 @@ describe('階層的プラグインルーティングシステム', () => {
 
       // 【実際の処理実行】: 無効なパラメータでのデータロード試行
       // 【処理内容】: データベースクエリとエラーハンドリングの検証
-      await expect(HierarchicalPluginRouter.loadHierarchicalData(invalidParams)).rejects.toThrow(
+      const router = new HierarchicalPluginRouter();
+      await expect(router.loadHierarchicalData(invalidParams)).rejects.toThrow(
         '指定されたツリーが見つかりません'
       ); // 【確認内容】: 適切なエラーメッセージでエラーが発生することを確認 🟢
     });
@@ -290,13 +293,13 @@ describe('階層的プラグインルーティングシステム', () => {
         actions: {
           view: {
             component: React.lazy(() =>
-              import('@hierarchidb/node-type-basemap-plugin').then((m) => ({ default: m.BaseMapView }))
+              Promise.resolve({ default: () => React.createElement('div', { 'data-testid': 'mock-basemap-view' }, 'Mock Basemap View') })
             ),
             permissions: ['basemap:view'],
           },
         },
       };
-      PluginRegistry.register(basemapPlugin);
+      PluginRegistry.register('basemap', basemapPlugin);
 
       const routeParams: PluginRouteParams = {
         treeId: 'tree-123',
@@ -310,7 +313,8 @@ describe('階層的プラグインルーティングシステム', () => {
       // 【処理内容】: URL解析、プラグインロード、データ取得の一連の処理時間計測
       // 【改善内容】: より正確な実行時間測定のためのperformance.now()直接使用
       const startTime = performance.now();
-      await HierarchicalPluginRouter.resolveRoute(routeParams);
+      const router = new HierarchicalPluginRouter();
+      await router.resolveRoute(routeParams);
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 

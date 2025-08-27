@@ -12,6 +12,16 @@ export * as UI from './ui';
 // Worker layer - Worker環境専用
 export * as Worker from './worker';
 
+// Extension exports (for plugin extension system)
+export {
+  ShapeExtension,
+  ShapeExtensionHandler,
+  DataSourceStep,
+  LicenseStep,
+  ProcessingStep,
+  CountrySelectionStep
+} from './extension';
+
 // Backward compatibility - 既存コードとの互換性
 export { ShapeMetadata } from './shared/metadata';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types';

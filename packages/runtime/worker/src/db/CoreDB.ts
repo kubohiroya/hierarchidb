@@ -147,15 +147,37 @@ try {
     try {
       const tree = await this.trees.get(treeId);
       console.log('[CoreDB] getTree result:', tree);
-      return tree;
+      
+      // Ensure we return a plain object that can be serialized by Comlink
+      if (tree) {
+        const plainTree: Tree = {
+          id: tree.id,
+          name: tree.name,
+          rootId: tree.rootId,
+          trashRootId: tree.trashRootId,
+          superRootId: tree.superRootId,
+        };
+        return plainTree;
+      }
+      
+      return undefined;
     } catch (error) {
       console.error('[CoreDB] getTree error:', error);
       throw error;
     }
   }
 
-  listTrees(): Promise<Tree[]> {
-    return this.trees.toArray();
+  async listTrees(): Promise<Tree[]> {
+    const trees = await this.trees.toArray();
+    
+    // Ensure we return plain objects that can be serialized by Comlink
+    return trees.map((tree): Tree => ({
+      id: tree.id,
+      name: tree.name,
+      rootId: tree.rootId,
+      trashRootId: tree.trashRootId,
+      superRootId: tree.superRootId,
+    }));
   }
 
   // CRUD operations for TreeNode
@@ -166,7 +188,26 @@ try {
       return undefined;
     }
 
-    return await this.nodes.get(nodeId);
+    const node = await this.nodes.get(nodeId);
+    
+    // Ensure we return a plain object that can be serialized by Comlink
+    if (node) {
+      const plainNode: TreeNode = {
+        id: node.id,
+        parentId: node.parentId,
+        nodeType: node.nodeType,
+        name: node.name,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
+        version: node.version,
+        ...(node.removedAt && { removedAt: node.removedAt }),
+        ...(node.originalParentId && { originalParentId: node.originalParentId }),
+        ...(node.references && { references: node.references }),
+      };
+      return plainNode;
+    }
+    
+    return undefined;
   }
 
   async createNode(node: TreeNode): Promise<NodeId> {
@@ -235,7 +276,19 @@ try {
       .filter((node) => !node.removedAt)
       .sortBy('createdAt');
 
-    return children;
+    // Ensure we return plain objects that can be serialized by Comlink
+    return children.map((node): TreeNode => ({
+      id: node.id,
+      parentId: node.parentId,
+      nodeType: node.nodeType,
+      name: node.name,
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      version: node.version,
+      ...(node.removedAt && { removedAt: node.removedAt }),
+      ...(node.originalParentId && { originalParentId: node.originalParentId }),
+      ...(node.references && { references: node.references }),
+    }));
   }
 
   /**

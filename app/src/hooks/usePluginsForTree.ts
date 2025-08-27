@@ -8,10 +8,13 @@
 import { useState, useEffect } from 'react';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId, PluginDefinition } from '@hierarchidb/common-core';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { TreePluginInfo } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
+  pluginInfo: TreePluginInfo[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -19,15 +22,17 @@ export interface UsePluginsForTreeResult {
 
 export function usePluginsForTree(
   treeId: TreeId | undefined,
-  workerClient: WorkerAPI | null
+  workerClient: Remote<typeof WorkerModule> | null
 ): UsePluginsForTreeResult {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
+  const [pluginInfo, setPluginInfo] = useState<TreePluginInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPlugins = async () => {
     if (!treeId || !workerClient) {
       setPlugins([]);
+      setPluginInfo([]);
       return;
     }
 
@@ -35,12 +40,24 @@ export function usePluginsForTree(
     setError(null);
 
     try {
-      const api = workerClient;
-      const pluginDefinitions = await api.getPluginsForTree(treeId);
+      // Use both old registry API and new facade API
+      const pluginRegistryAPI = await workerClient.getPluginRegistryAPI();
+      const pluginDefinitions = await pluginRegistryAPI.getPluginsForTree(treeId);
       setPlugins(pluginDefinitions);
+      
+      // Also get structured plugin info via new facade
+      const pluginTreeAPI = await workerClient.getPluginTreeAPI();
+      const response = await pluginTreeAPI.getPluginsForTree({
+        treeId,
+        filters: { capabilities: ['create'] },
+        sortBy: 'createOrder',
+        sortOrder: 'asc'
+      });
+      setPluginInfo(response.plugins);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch plugins');
       setPlugins([]);
+      setPluginInfo([]);
     } finally {
       setLoading(false);
     }
@@ -52,6 +69,7 @@ export function usePluginsForTree(
 
   return {
     plugins,
+    pluginInfo,
     loading,
     error,
     refetch: fetchPlugins,

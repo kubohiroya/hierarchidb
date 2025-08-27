@@ -140,7 +140,6 @@ export function createEmptyFolderEntity(nodeId: NodeId, name: string): FolderEnt
       displayOptions: {
         iconColor: getDefaultIconColor(),
         iconType: 'default',
-        sortOrder: 'name',
         sortDirection: 'asc',
         viewMode: 'list',
       },

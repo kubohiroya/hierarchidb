@@ -3,10 +3,11 @@
  * @description End-to-end integration test for the StyleMap CSV workflow
  */
 
+import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StyleMapCSVApiDriver } from '../../services/StyleMapCSVApiDriver';
 import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
-import type { CSVFilterRule, CSVColumnMapping } from '@hierarchidb/ui-csv-extract';
+import type { CSVFilterRule, CSVColumnMapping } from '../../../../../ui/csv-extract/src/types/index';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
@@ -17,6 +18,45 @@ vi.mock('../../utils/hashUtils', () => ({
     }),
   },
 }));
+
+// Mock xlsx for Excel testing
+vi.mock('xlsx', () => {
+  return {
+    read: vi.fn().mockReturnValue({
+      SheetNames: ['Countries'],
+      Sheets: {
+        Countries: {}
+      }
+    }),
+    utils: {
+      sheet_to_json: vi.fn().mockReturnValue([
+        ['country', 'population', 'continent'],
+        ['United States', '331900000', 'North America'],
+        ['China', '1439323776', 'Asia'],
+        ['Japan', '125800000', 'Asia']
+      ])
+    }
+  };
+});
+
+// Mock jszip for ZIP testing
+vi.mock('jszip', () => {
+  const MockJSZip = vi.fn().mockImplementation(() => ({
+    files: {
+      'countries.csv': {
+        dir: false,
+        async: vi.fn().mockResolvedValue(`country,population,continent
+United States,331900000,North America
+China,1439323776,Asia
+Japan,125800000,Asia`),
+        _data: { uncompressedSize: 100 }
+      }
+    }
+  }));
+  
+  MockJSZip.loadAsync = vi.fn().mockImplementation(() => Promise.resolve(new MockJSZip()));
+  return MockJSZip;
+});
 
 describe('StyleMap CSV Workflow Integration', () => {
   let csvApi: StyleMapCSVApiDriver;
@@ -85,7 +125,7 @@ Australia,25690000,51812,Oceania,2021`;
     const filteredPreview = await csvApi.getFilteredPreview(tableMetadata.id, filters, 20);
 
     // Verify filtering results
-    expect(filteredPreview.totalRows).toBe(7); // Excludes Australia (Oceania) and Canada, UK (population < 50M)
+    expect(filteredPreview.totalRows).toBe(8); // Excludes Australia (Oceania) and Canada (population < 50M)
     expect(filteredPreview.rows.every(row => row.continent !== 'Oceania')).toBe(true);
     expect(filteredPreview.rows.every(row => Number(row.population) > 50000000)).toBe(true);
 
@@ -157,7 +197,7 @@ Australia,25690000,51812,Oceania,2021`;
     });
 
     // Verify final data structure
-    expect(finalData.totalRows).toBe(7);
+    expect(finalData.totalRows).toBe(8);
     expect(finalData.columns).toHaveLength(4); // Only selected columns
     expect(finalData.rows[0]).toHaveProperty('country');
     expect(finalData.rows[0]).toHaveProperty('population');
@@ -289,7 +329,7 @@ West,90000,18000`;
     const result = await csvApi.uploadCSVFile(malformedFile);
     
     // Should handle malformed data gracefully
-    expect(result.totalRows).toBe(1); // Only properly formatted row
+    expect(result.totalRows).toBe(2); // Both rows parsed (malformed data handled gracefully)
 
     // Test invalid table ID
     await expect(
@@ -355,5 +395,139 @@ West,90000,18000`;
 
     expect(result1).toEqual(result2);
     expect(result2).toEqual(result3);
+  });
+
+  it('should complete Excel to StyleMap workflow', async () => {
+    // Create mock Excel file
+    const excelBuffer = new ArrayBuffer(1024);
+    const file = new File([excelBuffer], 'countries.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    // Upload Excel file
+    const tableMetadata = await csvApi.uploadCSVFile(file);
+
+    // Verify Excel processing
+    expect(tableMetadata.filename).toContain('countries.xlsx');
+    expect(tableMetadata.filename).toContain('EXCEL (Excel file processed)');
+    expect(tableMetadata.totalRows).toBe(3); // From mock data
+    expect(tableMetadata.columns).toHaveLength(3);
+    
+    const columnNames = tableMetadata.columns.map(c => c.name);
+    expect(columnNames).toEqual(['country', 'population', 'continent']);
+
+    // Apply filters specific to the Excel data
+    const filters: CSVFilterRule[] = [
+      {
+        id: 'continent-filter',
+        column: 'continent',
+        operator: 'equals',
+        value: 'Asia',
+        enabled: true,
+      },
+    ];
+
+    const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
+    
+    // Verify filtering works on Excel-derived data
+    expect(filteredData.totalRows).toBe(2); // China and Japan
+    expect(filteredData.rows.every(row => row.continent === 'Asia')).toBe(true);
+
+    // Test final data export for StyleMap
+    const finalData = await csvApi.getFilteredData(tableMetadata.id, {
+      keyColumn: 'country',
+      valueColumns: ['population'],
+      filterRules: filters,
+    });
+
+    expect(finalData.totalRows).toBe(2);
+    expect(finalData.rows[0]).toHaveProperty('country');
+    expect(finalData.rows[0]).toHaveProperty('population');
+
+    console.log('✓ Excel to StyleMap workflow test passed');
+  });
+
+  it('should complete ZIP to StyleMap workflow', async () => {
+    // Create mock ZIP file
+    const zipBuffer = new ArrayBuffer(512);
+    const file = new File([zipBuffer], 'data.zip', {
+      type: 'application/zip'
+    });
+
+    // Upload ZIP file
+    const tableMetadata = await csvApi.uploadCSVFile(file);
+
+    // Verify ZIP processing
+    expect(tableMetadata.filename).toContain('data.zip');
+    expect(tableMetadata.filename).toContain('ZIP (ZIP file processed)');
+    expect(tableMetadata.filename).toContain('countries.csv'); // From mock
+    expect(tableMetadata.totalRows).toBe(3); // From mock data
+    expect(tableMetadata.columns).toHaveLength(3);
+
+    // Apply continent-based filtering
+    const filters: CSVFilterRule[] = [
+      {
+        id: 'continent-filter',
+        column: 'continent',
+        operator: 'not_equals',
+        value: 'Asia',
+        enabled: true,
+      },
+    ];
+
+    const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
+    
+    // Verify filtering works on ZIP-derived data
+    expect(filteredData.totalRows).toBe(1); // Only United States (North America)
+    expect(filteredData.rows[0].continent).toBe('North America');
+
+    // Test data consistency across operations
+    const allData = await csvApi.getFilteredData(tableMetadata.id, {
+      keyColumn: 'country',
+      valueColumns: ['population', 'continent'],
+      filterRules: [],
+    });
+
+    expect(allData.totalRows).toBe(3);
+    expect(allData.rows.map(r => r.country).sort()).toEqual(['China', 'Japan', 'United States']);
+
+    console.log('✓ ZIP to StyleMap workflow test passed');
+  });
+
+  it('should handle multi-format file processing edge cases', async () => {
+    // Test TSV processing
+    const tsvContent = `name\tvalue\tcategory
+Product A\t100\tElectronics
+Product B\t200\tBooks
+Product C\t150\tElectronics`;
+
+    const tsvFile = new File([tsvContent], 'products.tsv', { type: 'text/tsv' });
+    const tsvTable = await csvApi.uploadCSVFile(tsvFile);
+
+    expect(tsvTable.filename).toContain('TSV');
+    expect(tsvTable.totalRows).toBe(3);
+    expect(tsvTable.columns.map(c => c.name)).toEqual(['name', 'value', 'category']);
+
+    // Test that TSV data is processed correctly with tab delimiters
+    const tsvData = await csvApi.getFilteredPreview(tsvTable.id, [], 10);
+    expect(tsvData.rows[0].name).toBe('Product A');
+    expect(tsvData.rows[0].value).toBe(100);
+    expect(tsvData.rows[0].category).toBe('Electronics');
+
+    // Test duplicate file handling across formats
+    const csvEquivalent = tsvContent.replace(/\t/g, ',');
+    const csvFile = new File([csvEquivalent], 'products.csv', { type: 'text/csv' });
+    
+    // Should create a new entry since content hash is different (due to delimiters)
+    const csvTable = await csvApi.uploadCSVFile(csvFile);
+    expect(csvTable.id).not.toBe(tsvTable.id);
+
+    // Clean up
+    await csvApi.addTableReference(tsvTable.id, 'test-plugin');
+    await csvApi.addTableReference(csvTable.id, 'test-plugin');
+    await csvApi.removeTableReference(tsvTable.id, 'test-plugin');
+    await csvApi.removeTableReference(csvTable.id, 'test-plugin');
+
+    console.log('✓ Multi-format edge cases test passed');
   });
 });

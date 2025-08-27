@@ -7,12 +7,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { TitleLogo } from '../components/TitleLogo';
 
 interface WorkerContextValue {
-  client: WorkerAPI | null;
+  client: Remote<typeof WorkerModule> | null;
   isReady: boolean;
   error: Error | null;
 }

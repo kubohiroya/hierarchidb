@@ -43,6 +43,27 @@ export interface CategoryDefinition {
   readonly createOrder?: number;
 }
 
+/**
+ * Node capability definition
+ * Defines what operations and features a node type supports
+ */
+export type NodeCapability = 
+  | 'create'           // Can create new instances
+  | 'read'             // Can be read/viewed
+  | 'update'           // Can be updated/edited
+  | 'delete'           // Can be deleted
+  | 'move'             // Can be moved to different parent
+  | 'copy'             // Can be copied/duplicated
+  | 'export'           // Can be exported
+  | 'import'           // Can import data
+  | 'children'         // Can have child nodes
+  | 'references'       // Can reference other nodes
+  | 'validation'       // Has custom validation rules
+  | 'lifecycle'        // Has lifecycle hooks
+  | 'search'           // Can be searched/indexed
+  | 'sync'             // Can be synchronized
+  | 'offline';         // Can work offline
+
 // Worker-side plugin router action definition (without React containers)
 export interface WorkerPluginRouterAction {
   path?: string;
@@ -158,10 +179,8 @@ export interface PluginDefinition {
   readonly validation?: PluginValidationConfig;
 }
 
-/**
- * @deprecated Use PluginDefinition instead
- */
-export type CoreNodeDefinition = PluginDefinition;
+// CoreNodeDefinition removed - use PluginDefinition directly
+// This reduces type confusion and improves clarity
 
 // Plugin routing configuration
 export interface PluginRoutingConfig {
@@ -173,7 +192,7 @@ export interface PluginRoutingConfig {
 // export interface PluginMetadata { ... } // Defined in nodeDefinition.ts
 
 // Extended node definition with routing and metadata
-export interface ExtendedNodeDefinition extends CoreNodeDefinition {
+export interface ExtendedNodeDefinition extends PluginDefinition {
   // Worker-side routing configuration (without React containers)
   readonly routing: PluginRoutingConfig;
 

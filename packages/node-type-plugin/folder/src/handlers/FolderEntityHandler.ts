@@ -79,8 +79,12 @@ export class FolderEntityHandler {
       nodeId,
       name: entity.name,
       description: entity.description,
-      settings: entity.settings,
-      metadata: entity.metadata,
+      settings: entity.settings || {
+        allowNestedFolders: true,
+        maxDepth: 10,
+        sortOrder: 'name'
+      },
+      metadata: entity.metadata || {},
       createdAt: now,
       updatedAt: now,
       version: entity.version,
@@ -166,7 +170,12 @@ export class FolderEntityHandler {
       id: bookmarkId,
       folderId: entity.id,
       ...bookmark,
+      nodeId: bookmark.nodeId || entity.nodeId,
+      groupId: bookmark.groupId || crypto.randomUUID(),
       createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+      type: 'group',
     };
 
     await this.folderDB.bookmarks.add(newBookmark);
@@ -196,7 +205,12 @@ export class FolderEntityHandler {
       id: templateId,
       folderId: entity.id,
       ...template,
+      nodeId: template.nodeId || entity.nodeId,
+      groupId: template.groupId || crypto.randomUUID(),
       createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+      type: 'group',
     };
 
     await this.folderDB.templates.add(newTemplate);
@@ -217,11 +231,10 @@ export class FolderEntityHandler {
 
   async searchFolders(query: string): Promise<FolderEntity[]> {
     const lowerQuery = query.toLowerCase();
-    return await this.folderDB.folders
-      .filter(folder => 
-        folder.name.toLowerCase().includes(lowerQuery) ||
-        folder.description.toLowerCase().includes(lowerQuery)
-      )
-      .toArray();
+    const folders = await this.folderDB.folders.toArray();
+    return folders.filter(folder => 
+      folder.name.toLowerCase().includes(lowerQuery) ||
+      (folder.description && folder.description.toLowerCase().includes(lowerQuery))
+    );
   }
 }

@@ -260,10 +260,8 @@ export class TreeMutationService implements TreeMutationAPI {
       version: 1,
     };
 
-    // EphemeralDBのテーブルに直接追加（簡易実装）
-    if (this.ephemeralDB.workingCopies) {
-      await this.ephemeralDB.workingCopies.add(workingCopy);
-    }
+    // EphemeralDBの適切なメソッドを使用
+    await this.ephemeralDB.createWorkingCopy(workingCopy);
   }
 
   async createWorkingCopy(

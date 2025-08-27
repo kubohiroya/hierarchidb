@@ -8,7 +8,7 @@
 import type { NodeId } from '@hierarchidb/common-core';
 import { shapeDB } from './database/ShapeDB';
 import { BatchSessionManager } from './batch/BatchSessionManager';
-import { DataSourceManager } from './datasource/DataSourceManager';
+import { DataSourceManager } from '@hierarchidb/runtime-datasource';
 import { VectorTileService } from './tiles/VectorTileService';
 import type {
   BatchProcessConfig,

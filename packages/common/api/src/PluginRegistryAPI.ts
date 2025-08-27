@@ -9,49 +9,37 @@
 import type {
   NodeId,
   NodeType,
-  CoreNodeDefinition,
+  PluginDefinition,
   PluginCapabilities,
   PluginMetadata,
   ValidationResult,
 } from '@hierarchidb/common-core';
 
 /**
- * Plugin system management API
- *
- * Provides comprehensive plugin lifecycle management, node type operations,
- * and plugin capability validation within the tree system.
+ * @deprecated This API will be split into specialized APIs for better separation of concerns.
+ * 
+ * Migration guide:
+ * - Node type operations → Use NodeTypeAPI
+ * - Plugin management → Use PluginManagementAPI  
+ * - Tree-specific plugin queries → Use PluginTreeAPI
+ * - Plugin method extensions → Use PluginAPI
+ * 
+ * This legacy API remains for backward compatibility but will be removed in v2.0.
  */
 export interface PluginRegistryAPI {
   // ==================
-  // Node Type Operations
+  // Node Type Operations - DEPRECATED
   // ==================
 
   /**
-   * Get list of all supported node types
-   *
-   * @returns Array of supported node type identifiers
-   *
-   * @example
-   * ```typescript
-   * const nodeTypes = await pluginAPI.listSupportedNodeTypes();
-   * console.log('Available types:', nodeTypes); // ['folder', 'document', 'basemap']
-   * ```
+   * @deprecated Use NodeTypeAPI.listSupported() instead
+   * @see NodeTypeAPI.listSupported
    */
   listSupportedNodeTypes(): Promise<NodeType[]>;
 
   /**
-   * Check if a specific node type is supported
-   *
-   * @param nodeType - Node type to validate
-   * @returns True if the node type is registered and supported
-   *
-   * @example
-   * ```typescript
-   * const isSupported = await pluginAPI.isSupportedNodeType('document');
-   * if (isSupported) {
-   *   console.log('Document type is available');
-   * }
-   * ```
+   * @deprecated Use NodeTypeAPI.isSupported() instead
+   * @see NodeTypeAPI.isSupported
    */
   isSupportedNodeType(nodeType: NodeType): Promise<boolean>;
 
@@ -67,7 +55,7 @@ export interface PluginRegistryAPI {
    * console.log('Database schema:', definition?.database?.schema);
    * ```
    */
-  getNodeDefinition(nodeType: NodeType): Promise<CoreNodeDefinition | undefined>;
+  getNodeDefinition(nodeType: NodeType): Promise<PluginDefinition | undefined>;
 
   /**
    * Validate node type compatibility for a specific operation
@@ -93,6 +81,12 @@ export interface PluginRegistryAPI {
    * @returns Array of plugin metadata for all registered plugins
    */
   listRegisteredPlugins(): Promise<PluginMetadata[]>;
+
+  /**
+   * @deprecated Use PluginTreeAPI.getPluginsForTree() instead for better type safety and features
+   * @see PluginTreeAPI.getPluginsForTree
+   */
+  getPluginsForTree(treeId: string): Promise<any[]>;
 
   /**
    * Get metadata for a specific plugin
@@ -138,7 +132,7 @@ export interface PluginRegistryAPI {
    * }
    * ```
    */
-  registerPlugin(definition: CoreNodeDefinition): Promise<{
+  registerPlugin(definition: PluginDefinition): Promise<{
     success: boolean;
     error?: string;
   }>;
@@ -164,7 +158,7 @@ export interface PluginRegistryAPI {
    */
   reloadPlugin(
     nodeType: NodeType,
-    definition: CoreNodeDefinition
+    definition: PluginDefinition
   ): Promise<{
     success: boolean;
     affectedNodes: number;
@@ -181,7 +175,7 @@ export interface PluginRegistryAPI {
    * @param definition - Plugin definition to validate
    * @returns Validation result with detailed error information
    */
-  validatePluginDefinition(definition: CoreNodeDefinition): Promise<
+  validatePluginDefinition(definition: PluginDefinition): Promise<
     ValidationResult & {
       warnings?: string[];
       recommendations?: string[];
@@ -249,11 +243,8 @@ export interface PluginRegistryAPI {
   getAllowedChildTypes(parentType: NodeType): Promise<NodeType[]>;
 
   // ==================
-  // Backward Compatibility - TEMPORARY for migration only
+  // Backward Compatibility - Removed deprecated methods
   // ==================
-
-  /** @deprecated Use getNodeDefinition instead. Will be removed after plugin migration. */
-  getNodeTypeDefinition(nodeType: NodeType): Promise<CoreNodeDefinition | undefined>;
 
   // ==================
   // Plugin API Extensions - New 3-Layer Architecture Support

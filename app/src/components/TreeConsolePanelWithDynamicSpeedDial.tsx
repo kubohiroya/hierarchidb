@@ -10,11 +10,12 @@ import { TreeConsolePanel, type TreeConsolePanelProps } from '@hierarchidb/ui-tr
 import { DynamicSpeedDial } from './DynamicSpeedDial';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId } from '@hierarchidb/common-core';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 
 interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProps {
   treeId: TreeId | undefined;
-  workerClient: WorkerAPI | null;
+  workerClient: Remote<typeof WorkerModule> | null;
   onStartTour?: () => void;
 }
 

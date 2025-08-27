@@ -1,7 +1,7 @@
-import type { Seq, Timestamp, TreeNode, NodeId } from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
+import { generateNodeId, type TreeNode, type NodeId, type Timestamp, type Seq } from '@hierarchidb/common-core';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './types';
 import { WorkerErrorCode } from './types';
+import type { CoreDB } from '../db/CoreDB';
 
 /**
  * 【型定義】: ログ出力用のサニタイズされた結果型
@@ -56,6 +56,21 @@ class NullDatabaseOperations implements DatabaseOperations {
 }
 
 /**
+ * Real database operations implementation that connects to CoreDB
+ */
+class CoreDatabaseOperations implements DatabaseOperations {
+  constructor(private coreDB: CoreDB) {}
+
+  async deleteNode(nodeId: NodeId): Promise<void> {
+    await this.coreDB.deleteNode(nodeId);
+  }
+
+  async createNode(node: TreeNode): Promise<void> {
+    await this.coreDB.createNode(node);
+  }
+}
+
+/**
  * 【機能概要】: コマンド実行およびUndo/Redo機能を管理する高性能・高セキュリティなプロセッサ
  * 【改善内容】: Ring Bufferによる安全なメモリ管理とセキュリティ強化を実装
  * 【設計方針】: メモリ安全性、型安全性、および拡張性を重視した堅牢な設計
@@ -82,6 +97,8 @@ const PERFORMANCE_CONFIG = {
   COMMAND_TIMEOUT_MS: 30000, // 【コマンドタイムアウト】: 30秒での処理中断
   BATCH_OPERATION_SIZE: 50, // 【バッチサイズ】: 一括処理の最適単位
 } as const;
+
+export { CoreDatabaseOperations };
 
 export class CommandProcessor {
   // 【パフォーマンス強化】: 設定値の集約による保守性向上 🟢
@@ -628,8 +645,14 @@ export class CommandProcessor {
    * 【型安全性】: any型を排除し、適切な型定義による安全性向上
    * 🟢 信頼性レベル: DIパターンのベストプラクティスに準拠
    */
-  constructor(databaseOperations?: DatabaseOperations) {
+  constructor(databaseOperations?: DatabaseOperations, coreDB?: CoreDB) {
     // 【下位互換性】: 既存コードとの互換性を保ちつつ段階的改善 🟡
-    this.databaseOperations = databaseOperations || new NullDatabaseOperations();
+    if (databaseOperations) {
+      this.databaseOperations = databaseOperations;
+    } else if (coreDB) {
+      this.databaseOperations = new CoreDatabaseOperations(coreDB);
+    } else {
+      this.databaseOperations = new NullDatabaseOperations();
+    }
   }
 }

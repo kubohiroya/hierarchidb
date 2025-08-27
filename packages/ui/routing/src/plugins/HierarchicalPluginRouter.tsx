@@ -266,7 +266,10 @@ export class HierarchicalPluginRouter {
 }
 
 // Re-export types for convenience
-export type { PluginRouteParams, PluginDefinition, HierarchicalRouteData };
+export { type PluginRouteParams, type PluginDefinition, type HierarchicalRouteData };
 
 // Default export
 export default HierarchicalPluginRouter;
+
+// Export functions and classes for external use
+export { parseHierarchicalUrl, PluginRegistry, loadPluginComponent };

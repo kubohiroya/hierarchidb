@@ -1,60 +1,63 @@
 /**
- * BaseMap Plugin - Main exports
- * Integrates 3-layer architecture (shared/ui/worker)
+ * BaseMap Plugin - Folder Extension
+ * Following the Spreadsheet plugin pattern for clean folder extension
  */
 
-// Shared layer exports (types, constants, utilities)
+// Main extension export (following spreadsheet pattern)
+export { BaseMapExtension } from './extension/definition';
+
+// Type exports for external usage
 export type { 
-  BaseMapAPI,
   BaseMapEntity,
-  BaseMapWorkingCopy,
-  CreateBaseMapData,
-  UpdateBaseMapData,
-  MapViewportState,
-  BaseMapDisplayOptions,
-  BaseMapValidationResult,
-  BaseMapStatistics,
-  MapLibreStyleConfig
-} from './shared';
+  BaseMapWorkingCopy
+} from './extension/definition';
 
-export { 
-  DEFAULT_MAP_CONFIG,
-  MAP_STYLE_PRESETS,
-  VALIDATION_LIMITS,
-  validateCreateBaseMapData,
-  validateUpdateBaseMapData,
-  validateCreateBaseMapDataStrict,
-  validateUpdateBaseMapDataStrict,
-  BaseMapErrorFactory
-} from './shared';
+export type {
+  BaseMapExtendedFields
+} from './types/BaseMapEntity';
 
-export { BaseMapMetadata } from './shared';
+// Step components export
+export { MapStyleStep } from './extension/components/MapStyleStep';
+export { MapViewportStep } from './extension/components/MapViewportStep';
+export { DisplayOptionsStep } from './extension/components/DisplayOptionsStep';
 
-// UI layer exports (for browser/main thread)
-export { 
-  BaseMapUIPlugin,
-  BaseMapDialogContainer,
-  BaseMapForm,
-  BaseMapPreview,
-  BaseMapIcon,
-  BaseMapPanel,
-  useBaseMapAPI,
-  useBaseMapData,
-  useBaseMapValidation
-} from './ui';
-
-// Worker layer exports (for web worker thread)  
-export {
-  BaseMapWorkerPlugin,
-  basemapPluginAPI,
-  BaseMapEntityHandler,
-  BaseMapDatabaseConfig
-} from './worker';
+// Shared constants and utilities
+export const BASEMAP_CONSTANTS = {
+  DEFAULT_VIEWPORT: {
+    center: [139.6917, 35.6895] as [number, number], // Tokyo
+    zoom: 10,
+    bearing: 0,
+    pitch: 0
+  },
+  
+  MAP_STYLE_PRESETS: {
+    streets: 'Standard street map view',
+    satellite: 'Satellite imagery view',
+    terrain: 'Topographical terrain view',
+    dark: 'Dark theme for low-light viewing',
+    light: 'Clean light theme',
+    custom: 'Custom MapLibre style URL'
+  },
+  
+  VALIDATION_LIMITS: {
+    LONGITUDE_MIN: -180,
+    LONGITUDE_MAX: 180,
+    LATITUDE_MIN: -90,
+    LATITUDE_MAX: 90,
+    ZOOM_MIN: 0,
+    ZOOM_MAX: 24,
+    BEARING_MIN: 0,
+    BEARING_MAX: 360,
+    PITCH_MIN: 0,
+    PITCH_MAX: 60
+  }
+} as const;
 
 // Plugin information
 export const PLUGIN_INFO = {
   id: 'com.hierarchidb.basemap',
   name: 'BaseMap Plugin',
   version: '1.0.0',
-  architecture: '3-layer',
+  extends: 'folder',
+  architecture: 'extension',
 } as const;

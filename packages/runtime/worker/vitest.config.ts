@@ -9,8 +9,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/common-core': path.resolve(__dirname, '../core/src'),
-      '@hierarchidb/common-api': path.resolve(__dirname, '../api/src'),
+      '@hierarchidb/common-core': path.resolve(__dirname, '../../common/core/src'),
+      '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
       '~': path.resolve(__dirname, './src'),
     },
   },

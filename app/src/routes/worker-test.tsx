@@ -8,12 +8,13 @@ import { useState } from 'react';
 import { Box, Container, Typography, Alert, Button } from '@mui/material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { getWorkerClient } from '../initWorkerClient';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 
 export default function WorkerTest() {
   const [status, setStatus] = useState<string>('Not started');
   const [error, setError] = useState<string | null>(null);
-  const [client, setClient] = useState<WorkerAPI | null>(null);
+  const [client, setClient] = useState<Remote<typeof WorkerModule> | null>(null);
 
   const testWorker = async () => {
     setStatus('Initializing...');
@@ -31,14 +32,14 @@ export default function WorkerTest() {
       console.log('API obtained:', api);
       console.log('API methods:', Object.getOwnPropertyNames(api));
 
-      // Step 3: Test getTrees
-      setStatus('Testing getTrees method...');
-      const trees = await api.getTrees();
-      console.log('getTrees result:', trees);
+      // Step 3: Test listTrees via QueryAPI
+      setStatus('Getting QueryAPI and testing listTrees...');
+      const queryAPI = await api.getQueryAPI();
+      const trees = await queryAPI.listTrees();
+      console.log('listTrees result:', trees);
 
-      // Step 4: Test other methods
-      setStatus('Testing other API methods...');
-
+      // Step 4: Test system health
+      setStatus('Testing system health...');
       if (typeof api.getSystemHealth === 'function') {
         const health = await api.getSystemHealth();
         console.log('System health:', health);

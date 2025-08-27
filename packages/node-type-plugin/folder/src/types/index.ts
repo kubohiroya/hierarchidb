@@ -1,22 +1,23 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+// Re-export the comprehensive folder entity definitions from entities
+export type {
+  FolderEntity,
+  FolderBookmark,
+  FolderTemplate,
+  FolderWorkingCopy,
+  FolderOperationResult,
+  FolderSearchQuery,
+  FolderStatsSummary,
+  FolderStructureNode
+} from '../entities/FolderEntity';
 
-export interface FolderEntity {
-  id: EntityId;
-  nodeId: NodeId;
-  name: string;
-  description: string;
-  settings: FolderSettings;
-  metadata: Record<string, any>;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-}
+// Keep existing simple types for backward compatibility if needed
+import type { NodeId, EntityId } from '@hierarchidb/common-core';
 
 export interface FolderEntityWorkingCopy {
   id: EntityId;
   nodeId: NodeId;
   name: string;
-  description: string;
+  description?: string; // Make optional to match comprehensive version
   settings: FolderSettings;
   metadata: Record<string, any>;
   createdAt: number;
@@ -31,25 +32,25 @@ export interface FolderEntityWorkingCopy {
 }
 
 export interface FolderSettings {
-  allowNestedFolders: boolean;
-  maxDepth: number;
-  sortOrder: 'name' | 'date' | 'type' | 'size';
+  allowNestedFolders?: boolean;
+  maxDepth?: number;
+  sortOrder?: 'name' | 'date' | 'type' | 'size';
 }
 
-export interface FolderBookmark {
+// Additional display types for UI
+export interface FolderDisplayData {
   id: EntityId;
-  folderId: EntityId;
   name: string;
-  url: string;
   description?: string;
+  hasChildren: boolean;
+  childCount: number;
   createdAt: number;
+  updatedAt: number;
 }
 
-export interface FolderTemplate {
-  id: EntityId;
-  folderId: EntityId;
+export interface FolderEditData {
   name: string;
-  content: any;
   description?: string;
-  createdAt: number;
+  settings: FolderSettings;
+  [key: string]: any; // Allow additional properties for extensibility
 }

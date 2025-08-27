@@ -3,7 +3,7 @@
  * Panel component for displaying shape entity information
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -17,7 +17,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Grid,
-  LinearProgress
+  LinearProgress,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -25,17 +25,17 @@ import {
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
   Stop as StopIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { NodeId, EntityId } from '@hierarchidb/common-core';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
-import { 
+import {
   ShapeEntity,
   ProcessingStatus,
   ProgressInfo,
   formatBytes,
-  formatDuration,
-  parseCheckboxState
+  //formatDuration,
+  //parseCheckboxState,
 } from '../../shared';
 
 export interface ShapePanelProps {
@@ -46,7 +46,7 @@ export interface ShapePanelProps {
 
 export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
   const getShapeAPI = useShapeAPIGetter();
-  
+
   // State management
   const [entity, setEntity] = useState<ShapeEntity | null>(null);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
@@ -60,11 +60,11 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
       const api = await getShapeAPI();
       const entityData = await api.getEntity(nodeId);
       setEntity(entityData || null);
-      
+
       if (entityData) {
         const status = await api.getProcessingStatus(nodeId);
         setProcessingStatus(status);
-        
+
         if (entityData.batchSessionId) {
           const progress = await api.getBatchProgress(entityData.batchSessionId as EntityId);
           setBatchProgress(progress);
@@ -93,12 +93,16 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
   // Batch processing actions
   const handleStartProcessing = useCallback(async () => {
     if (!entity) return;
-    
+
     try {
       const api = await getShapeAPI();
       // Note: startBatchProcessing expects a workingCopyId (EntityId), not nodeId
       // For now, we cast the nodeId, but this should be refactored to use proper WorkingCopy
-      await api.startBatchProcessing(nodeId as unknown as EntityId, entity.processingConfig, entity.urlMetadata);
+      await api.startBatchProcessing(
+        nodeId as unknown as EntityId,
+        entity.processingConfig,
+        entity.urlMetadata
+      );
       await handleRefresh();
     } catch (error) {
       console.error('Failed to start processing:', error);
@@ -108,7 +112,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
   const handlePauseProcessing = useCallback(async () => {
     if (!entity?.batchSessionId) return;
-    
+
     try {
       const api = await getShapeAPI();
       await api.pauseBatchProcessing(entity.batchSessionId as EntityId);
@@ -121,7 +125,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
   const handleStopProcessing = useCallback(async () => {
     if (!entity?.batchSessionId) return;
-    
+
     try {
       const api = await getShapeAPI();
       await api.cancelBatchProcessing(entity.batchSessionId as EntityId);
@@ -144,14 +148,10 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
   }
 
   if (!entity) {
-    return (
-      <Alert severity="error">
-        Shape entity not found for node: {nodeId}
-      </Alert>
-    );
+    return <Alert severity="error">Shape entity not found for node: {nodeId}</Alert>;
   }
 
-  const checkboxState = parseCheckboxState(entity.checkboxState);
+  //const checkboxState = parseCheckboxState(entity.checkboxState);
   const isProcessing = processingStatus?.status === 'processing';
 
   return (
@@ -161,7 +161,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
         <Typography variant="h6" component="h2">
           {entity.name}
         </Typography>
-        
+
         <Box display="flex" gap={1}>
           <Button
             size="small"
@@ -171,12 +171,8 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
           >
             Refresh
           </Button>
-          
-          <Button
-            size="small"
-            startIcon={<EditIcon />}
-            onClick={onEdit}
-          >
+
+          <Button size="small" startIcon={<EditIcon />} onClick={onEdit}>
             Edit
           </Button>
         </Box>
@@ -188,32 +184,34 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
           <Typography variant="subtitle1" gutterBottom>
             Basic Information
           </Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Data Source
               </Typography>
-              <Typography variant="body1">
-                {entity.dataSourceName}
-              </Typography>
+              <Typography variant="body1">{entity.dataSourceName}</Typography>
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Processing Status
               </Typography>
-              <Chip 
+              <Chip
                 label={processingStatus?.status || 'unknown'}
                 color={
-                  processingStatus?.status === 'completed' ? 'success' :
-                  processingStatus?.status === 'processing' ? 'primary' :
-                  processingStatus?.status === 'failed' ? 'error' : 'default'
+                  processingStatus?.status === 'completed'
+                    ? 'success'
+                    : processingStatus?.status === 'processing'
+                      ? 'primary'
+                      : processingStatus?.status === 'failed'
+                        ? 'error'
+                        : 'default'
                 }
                 size="small"
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <Typography variant="body2" color="text.secondary">
                 Description
@@ -233,16 +231,14 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
             <Typography variant="subtitle1" gutterBottom>
               Processing Status
             </Typography>
-            
+
             {batchProgress && isProcessing && (
               <Box sx={{ mb: 2 }}>
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                   <Typography variant="body2">
                     {batchProgress.currentStage || 'Processing'}
                   </Typography>
-                  <Typography variant="body2">
-                    {batchProgress.percentage.toFixed(1)}%
-                  </Typography>
+                  <Typography variant="body2">{batchProgress.percentage.toFixed(1)}%</Typography>
                 </Box>
                 <LinearProgress variant="determinate" value={batchProgress.percentage} />
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
@@ -251,7 +247,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 </Typography>
               </Box>
             )}
-            
+
             <Grid container spacing={2}>
               <Grid item xs={12} sm={4}>
                 <Typography variant="body2" color="text.secondary">
@@ -261,7 +257,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                   {processingStatus.totalFeatures?.toLocaleString() || '0'}
                 </Typography>
               </Grid>
-              
+
               <Grid item xs={12} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Vector Tiles
@@ -270,7 +266,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                   {processingStatus.totalVectorTiles?.toLocaleString() || '0'}
                 </Typography>
               </Grid>
-              
+
               <Grid item xs={12} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Storage Used
@@ -280,7 +276,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 </Typography>
               </Grid>
             </Grid>
-            
+
             {/* Processing Controls */}
             <Box mt={2}>
               {!isProcessing && entity.selectedCountries.length > 0 && (
@@ -293,7 +289,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                   Start Processing
                 </Button>
               )}
-              
+
               {isProcessing && (
                 <Box display="flex" gap={1}>
                   <Button
@@ -323,9 +319,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
       {/* Configuration Details */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="subtitle1">
-            Configuration Details
-          </Typography>
+          <Typography variant="subtitle1">Configuration Details</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2}>
@@ -344,7 +338,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 )}
               </Box>
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Admin Levels
@@ -360,18 +354,21 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 )}
               </Box>
             </Grid>
-            
+
             <Grid item xs={12}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Processing Configuration
               </Typography>
-              <Box component="pre" sx={{ 
-                fontSize: '0.75rem',
-                backgroundColor: 'grey.50',
-                p: 1,
-                borderRadius: 1,
-                overflow: 'auto'
-              }}>
+              <Box
+                component="pre"
+                sx={{
+                  fontSize: '0.75rem',
+                  backgroundColor: 'grey.50',
+                  p: 1,
+                  borderRadius: 1,
+                  overflow: 'auto',
+                }}
+              >
                 {JSON.stringify(entity.processingConfig, null, 2)}
               </Box>
             </Grid>
@@ -383,14 +380,15 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
       {entity.urlMetadata.length > 0 && (
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">
-              Data Sources ({entity.urlMetadata.length})
-            </Typography>
+            <Typography variant="subtitle1">Data Sources ({entity.urlMetadata.length})</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Box>
               {entity.urlMetadata.slice(0, 5).map((metadata, index) => (
-                <Box key={index} sx={{ mb: 1, p: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                <Box
+                  key={index}
+                  sx={{ mb: 1, p: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}
+                >
                   <Typography variant="body2" noWrap>
                     <strong>{metadata.countryCode}</strong> - Level {metadata.adminLevel}
                   </Typography>

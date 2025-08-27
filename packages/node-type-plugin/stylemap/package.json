@@ -28,6 +28,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
@@ -41,10 +43,13 @@
     "@mui/icons-material": "^6.1.6",
     "@mui/material": "^6.1.6",
     "dexie": "^4.2.0",
-    "react": "^18.3.1"
+    "jszip": "^3.10.0",
+    "react": "^18.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.0.0"
+    "@testing-library/react": "^14.0.0",
+    "@types/jszip": "^3.4.1"
   },
   "peerDependencies": {
     "@mui/icons-material": ">=5.0.0",

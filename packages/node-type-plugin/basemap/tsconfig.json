@@ -2,7 +2,7 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2020", "DOM"],
-    "skipLibCheck": true,
+
     "composite": true,
     "outDir": "./dist",
     "rootDir": "./",
@@ -21,8 +21,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+    "dist"
+    ]
 }

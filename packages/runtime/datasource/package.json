@@ -32,6 +32,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@hierarchidb/runtime-fetch-metadata": "workspace:*",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "react": "^18.3.1"

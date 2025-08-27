@@ -5,18 +5,18 @@
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { TreeSubscribeService } from '../../services/TreeSubscribeService';
+import { TreeSubscriptionService } from '../../services/TreeSubscriptionService';
 import { CoreDB } from '../../db/CoreDB';
 import type { NodeId, TreeNode, TreeChangeEvent } from '@hierarchidb/common-core';
 
 describe('Pub/Sub Service Node環境テスト', () => {
   let coreDB: CoreDB;
-  let observableService: TreeSubscribeService;
+  let observableService: TreeSubscriptionService;
 
   beforeEach(async () => {
     coreDB = await CoreDB.getSingleton('test-pubsub-db');
 
-    observableService = new TreeSubscribeService(coreDB);
+    observableService = new TreeSubscriptionService(coreDB);
   });
 
   afterEach(async () => {
@@ -26,7 +26,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
   describe('ノード変更の購読と通知', () => {
     it('単一ノードの変更を検出できる', async () => {
       const nodeId = 'test-node-001' as NodeId;
-      const receivedEvents: TreeChangeEvent[] = [];
+      const receivedEvents: any[] = [];
 
       // ノードを作成
       const initialNode: TreeNode = {
@@ -41,19 +41,12 @@ describe('Pub/Sub Service Node環境テスト', () => {
 
       await coreDB.nodes.add(initialNode);
 
-      // ノード変更の購読
-      const observable = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId },
-        commandId: 'cmd-001',
-        groupId: 'test-group-001',
-        issuedAt: Date.now(),
-      });
-
-      const subscription = observable.subscribe({
-        next: (event) => receivedEvents.push(event),
-        error: (error) => console.error('Subscription error:', error),
-      });
+      // ノード変更の購読（新しいコールバックベースAPI）
+      const subscriptionId = await observableService.subscribeNode(
+        nodeId,
+        (event) => receivedEvents.push(event),
+        { includeMetadata: false }
+      );
 
       // ノードを更新（changeSubjectイベントが自動発火するupdateNodeメソッドを使用）
       const updatedNode = await coreDB.nodes.get(nodeId);
@@ -78,13 +71,13 @@ describe('Pub/Sub Service Node環境テスト', () => {
       expect(receivedEvents[0]?.type).toBe('update');
       expect(receivedEvents[0]?.nodeId).toBe(nodeId);
 
-      subscription.unsubscribe();
+      await observableService.unsubscribe(subscriptionId);
     });
 
     it('複数の購読者に同時に通知される', async () => {
       const nodeId = 'test-node-002' as NodeId;
-      const subscriber1Events: TreeChangeEvent[] = [];
-      const subscriber2Events: TreeChangeEvent[] = [];
+      const subscriber1Events: any[] = [];
+      const subscriber2Events: any[] = [];
 
       // ノードを作成
       const node: TreeNode = {
@@ -100,29 +93,17 @@ describe('Pub/Sub Service Node環境テスト', () => {
       await coreDB.nodes.add(node);
 
       // 複数の購読者を設定
-      const observable1 = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId },
-        commandId: 'cmd-002a',
-        groupId: 'test-group-002a',
-        issuedAt: Date.now(),
-      });
+      const subscriptionId1 = await observableService.subscribeNode(
+        nodeId,
+        (event) => subscriber1Events.push(event),
+        { includeMetadata: false }
+      );
 
-      const observable2 = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId },
-        commandId: 'cmd-002b',
-        groupId: 'test-group-002b',
-        issuedAt: Date.now(),
-      });
-
-      const subscription1 = observable1.subscribe({
-        next: (event) => subscriber1Events.push(event),
-      });
-
-      const subscription2 = observable2.subscribe({
-        next: (event) => subscriber2Events.push(event),
-      });
+      const subscriptionId2 = await observableService.subscribeNode(
+        nodeId,
+        (event) => subscriber2Events.push(event),
+        { includeMetadata: false }
+      );
 
       // ノードを実際に更新してイベントを発火
       const nodeToUpdate = await coreDB.nodes.get(nodeId);
@@ -143,8 +124,8 @@ describe('Pub/Sub Service Node環境テスト', () => {
       expect(subscriber1Events[0]?.nodeId).toBe(nodeId);
       expect(subscriber2Events[0]?.nodeId).toBe(nodeId);
 
-      subscription1.unsubscribe();
-      subscription2.unsubscribe();
+      await observableService.unsubscribe(subscriptionId1);
+      await observableService.unsubscribe(subscriptionId2);
     });
   });
 
@@ -152,7 +133,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
     it('子ノードの変更を親購読者が検出できる', async () => {
       const parentId = 'parent-node' as NodeId;
       const childId = 'child-node' as NodeId;
-      const receivedEvents: TreeChangeEvent[] = [];
+      const receivedEvents: any[] = [];
 
       // 親ノードと子ノードを作成
       const parentNode: TreeNode = {
@@ -178,17 +159,11 @@ describe('Pub/Sub Service Node環境テスト', () => {
       await coreDB.nodes.bulkAdd([parentNode, childNode]);
 
       // サブツリーの購読
-      const observable = await observableService.subscribeSubtree({
-        kind: 'subscribeSubtree',
-        payload: { rootId: parentId },
-        commandId: 'cmd-003',
-        groupId: 'test-group-003',
-        issuedAt: Date.now(),
-      });
-
-      const subscription = observable.subscribe({
-        next: (event) => receivedEvents.push(event),
-      });
+      const subscriptionId = await observableService.subscribeSubtree(
+        parentId,
+        (event) => receivedEvents.push(event),
+        { includeMetadata: false }
+      );
 
       // 子ノードを実際に更新してイベントを発火
       const childToUpdate = await coreDB.nodes.get(childId);
@@ -207,14 +182,14 @@ describe('Pub/Sub Service Node環境テスト', () => {
       expect(receivedEvents[0]?.nodeId).toBe(childId);
       expect(receivedEvents[0]?.type).toBe('update');
 
-      subscription.unsubscribe();
+      await observableService.unsubscribe(subscriptionId);
     });
   });
 
   describe('購読のライフサイクル管理', () => {
     it('購読解除後は通知を受信しない', async () => {
       const nodeId = 'test-lifecycle' as NodeId;
-      const receivedEvents: TreeChangeEvent[] = [];
+      const receivedEvents: any[] = [];
 
       const node: TreeNode = {
         id: nodeId,
@@ -228,20 +203,14 @@ describe('Pub/Sub Service Node環境テスト', () => {
 
       await coreDB.nodes.add(node);
 
-      const observable = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId },
-        commandId: 'cmd-004',
-        groupId: 'test-group-004',
-        issuedAt: Date.now(),
-      });
-
-      const subscription = observable.subscribe({
-        next: (event) => receivedEvents.push(event),
-      });
+      const subscriptionId = await observableService.subscribeNode(
+        nodeId,
+        (event) => receivedEvents.push(event),
+        { includeMetadata: false }
+      );
 
       // 購読解除
-      subscription.unsubscribe();
+      await observableService.unsubscribe(subscriptionId);
 
       // ノードを実際に更新してイベントを発火
       const nodeAfterUnsubscribe = await coreDB.nodes.get(nodeId);
@@ -267,36 +236,29 @@ describe('Pub/Sub Service Node環境テスト', () => {
       // 初期状態：アクティブな購読は0
       expect(await observableService.getActiveSubscriptions()).toBe(0);
 
-      const observable1 = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId1 },
-        commandId: 'cmd-005a',
-        groupId: 'test-group-005a',
-        issuedAt: Date.now(),
-      });
+      const subscriptionId1 = await observableService.subscribeNode(
+        nodeId1,
+        () => {},
+        { includeMetadata: false }
+      );
 
-      const observable2 = await observableService.subscribeNode({
-        kind: 'subscribeNode',
-        payload: { nodeId: nodeId2 },
-        commandId: 'cmd-005b',
-        groupId: 'test-group-005b',
-        issuedAt: Date.now(),
-      });
-
-      const subscription1 = observable1.subscribe(() => {});
-      const subscription2 = observable2.subscribe(() => {});
+      const subscriptionId2 = await observableService.subscribeNode(
+        nodeId2,
+        () => {},
+        { includeMetadata: false }
+      );
 
       // 2つのアクティブな購読
       expect(await observableService.getActiveSubscriptions()).toBe(2);
 
       // 1つ解除
-      subscription1.unsubscribe();
+      await observableService.unsubscribe(subscriptionId1);
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(await observableService.getActiveSubscriptions()).toBe(1);
 
       // 残りも解除
-      subscription2.unsubscribe();
+      await observableService.unsubscribe(subscriptionId2);
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(await observableService.getActiveSubscriptions()).toBe(0);
@@ -325,16 +287,12 @@ describe('Pub/Sub Service Node環境テスト', () => {
 
       // 100個の購読者を作成
       for (let i = 0; i < subscriberCount; i++) {
-        const observable = await observableService.subscribeNode({
-          kind: 'subscribeNode',
-          payload: { nodeId: nodeId },
-          commandId: `perf-cmd-${i}`,
-          groupId: `test-group-perf-${i}`,
-          issuedAt: Date.now(),
-        });
-
-        const subscription = observable.subscribe(() => {});
-        subscriptions.push(subscription);
+        const subscriptionId = await observableService.subscribeNode(
+          nodeId,
+          () => {},
+          { includeMetadata: false }
+        );
+        subscriptions.push(subscriptionId);
       }
 
       const subscriptionTime = Date.now() - startTime;
@@ -364,7 +322,9 @@ describe('Pub/Sub Service Node環境テスト', () => {
       expect(notificationTime).toBeLessThan(100);
 
       // クリーンアップ
-      subscriptions.forEach((sub) => sub.unsubscribe());
+      for (const subscriptionId of subscriptions) {
+        await observableService.unsubscribe(subscriptionId);
+      }
     });
   });
 });

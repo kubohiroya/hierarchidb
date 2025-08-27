@@ -6,10 +6,11 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import type WorkerModule from '~/worker';
 
 interface WorkerContextValue {
-  client: WorkerAPI;
+  client: Remote<typeof WorkerModule>;
 }
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
@@ -22,7 +23,7 @@ export interface WorkerProviderProps {
  * Provider component that initializes Worker API Client once at app startup
  */
 export function WorkerProvider({ children }: WorkerProviderProps) {
-  const [client, setClient] = useState<WorkerAPI | null>(null);
+  const [client, setClient] = useState<Remote<typeof WorkerModule> | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const initializingRef = useRef(false); // Track if initialization is in progress
@@ -51,7 +52,7 @@ export function WorkerProvider({ children }: WorkerProviderProps) {
           const workerClient = await Promise.race([
             WorkerAPIClient.getSingleton(),
             timeoutPromise
-          ]) as WorkerAPI;
+          ]) as Remote<typeof WorkerModule>;
           
           if (mounted && workerClient) {
             console.log('[WorkerProvider] Worker initialized successfully');
@@ -152,7 +153,7 @@ export function useWorker(): WorkerContextValue {
  * Get the Worker API Client instance directly
  * This is for use in loaders and other non-component contexts
  */
-export async function getWorkerClient(): Promise<WorkerAPI> {
+export async function getWorkerClient(): Promise<Remote<typeof WorkerModule>> {
   // This will return the existing singleton instance
   return WorkerAPIClient.getSingleton();
 }

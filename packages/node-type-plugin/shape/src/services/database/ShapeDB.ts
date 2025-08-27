@@ -201,7 +201,7 @@ export class ShapeDB extends Dexie {
       tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
       
       // Cache - LRU and size-based management
-      cache: '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits'
+      cache: '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits, expiresAt'
     });
   }
 

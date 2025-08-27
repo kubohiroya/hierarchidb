@@ -31,8 +31,6 @@
   "exclude": [
     "dist",
     "node_modules",
-    "**/*.test.ts",
-    "**/*.test.tsx",
     "src/components/StyleMapAnalytics.tsx"
   ],
   "references": []

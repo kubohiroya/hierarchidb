@@ -293,11 +293,36 @@ export default function PluginsPage() {
       try {
         setLoading(true);
         const client = await WorkerAPIClient.getSingleton();
-        const api = client;
         
-        // Get plugins from worker
-        const plugins = await api.getPluginsForTree('*' as TreeId);
-        setWorkerPlugins(plugins || []);
+        // Use new PluginTreeAPI facade for better type safety and structure
+        const pluginTreeAPI = await client.getPluginTreeAPI();
+        const response = await pluginTreeAPI.getPluginsForTree({
+          treeId: '*' as TreeId,
+          filters: { includeDisabled: true },
+          sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' }
+        });
+        
+        // Convert TreePluginInfo back to PluginDefinition format for compatibility
+        const plugins = response.plugins.map(info => ({
+          nodeType: info.nodeType,
+          name: info.nodeType, // Use nodeType as name for compatibility
+          displayName: info.displayName,
+          // Note: Using displayName for compatibility, no description in PluginDefinition
+          category: {
+            treeId: info.treeConstraints.allowedTreeId,
+            menuGroup: info.menuGroup,
+            createOrder: info.createOrder,
+          },
+          database: {
+            entityStore: `${info.nodeType}s`, // Default entity store name
+            schema: {}, // Empty schema for compatibility
+            version: 1
+          },
+          ui: {
+            dialogComponentPath: info.creatable ? 'mock-dialog-path' : undefined,
+          }
+        }));
+        setWorkerPlugins((plugins as unknown) as PluginDefinition[] || []);
       } catch (err) {
         console.error('Failed to load plugins:', err);
         setError(err instanceof Error ? err.message : 'Failed to load plugins');

@@ -17,12 +17,12 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   const treeData = await loadTree(args.params as LoadTreeArgs);
   // Load trash root node
   if (treeData.tree) {
-    const trashRootNode = await treeData.client.getNode(treeData.tree.trashRootId);
+    // Use facade pattern: get QueryAPI first
+    const queryAPI = await treeData.client.getQueryAPI();
+    const trashRootNode = await queryAPI.getNode(treeData.tree.trashRootId);
 
     // Load trash items (children of trash root)
-    const trashItems = await treeData.client.getChildren({
-      parentId: treeData.tree.trashRootId,
-    });
+    const trashItems = await queryAPI.listChildren(treeData.tree.trashRootId);
 
     return {
       ...treeData,
@@ -49,10 +49,11 @@ export default function TrashPage() {
     setLoading(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client;
+      // Use facade pattern: get MutationAPI first
+      const mutationAPI = await client.getMutationAPI();
 
-      // Use recoverFromTrash API
-      const result = await api.recoverFromTrash({
+      // Use recoverNodesFromTrash API
+      const result = await mutationAPI.recoverNodesFromTrash({
         nodeIds: selectedIds as NodeId[],
       });
 
@@ -82,13 +83,14 @@ export default function TrashPage() {
     setLoading(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
-      const api = client;
+      // Use facade pattern: get MutationAPI first
+      const mutationAPI = await client.getMutationAPI();
 
       // Permanently delete all trash items
       const allTrashIds = data.trashItems?.map((item: TreeNode) => item.id) || [];
 
       if (allTrashIds.length > 0) {
-        const result = await api.removeNodes(allTrashIds);
+        const result = await mutationAPI.removeNodes(allTrashIds);
 
         if (result.success) {
           // Refresh the page to show empty trash

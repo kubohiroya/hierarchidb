@@ -39,7 +39,8 @@
     "validate:exports": "node scripts/validate-package-exports.cjs",
     "fix:exports": "node scripts/fix-all-package-exports.cjs",
     "count:lines": "node scripts/count-lines.js",
-    "analyze:ui": "node scripts/analyze-ui-duplication.js"
+    "analyze:ui": "node scripts/analyze-ui-duplication.js",
+    "check:sabotage": "tsx scripts/check-sabotage.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

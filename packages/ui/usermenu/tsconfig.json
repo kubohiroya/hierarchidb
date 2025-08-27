@@ -4,7 +4,7 @@
     "moduleResolution": "node16",
     "module": "Node16",
     "baseUrl": ".",
-    "skipLibCheck": true,
+
     "paths": {
       "~/*": [
         "./src/*"

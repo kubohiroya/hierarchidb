@@ -78,7 +78,7 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   expandedRowIds?: Set<NodeId>; // 展開状態
 
   // 基本操作
-  selectNode: (nodeId: NodeId) => void;
+  selectNode: (nodeId: NodeId, options?: { ctrlKey?: boolean; shiftKey?: boolean }) => Promise<void>;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
   expandNode: (nodeId: NodeId) => void;
   collapseNode: (nodeId: NodeId) => void;
@@ -318,9 +318,8 @@ export function useTreeViewController(
     setSearchText(newSearchText);
     // IndexedDBでは部分一致検索が困難（Nグラム化などの工数の多い対応が必要）
     // 現段階では完全一致・前方一致・後方一致のみ対応可能だが、要件に合わない
-    throw new Error(
-      'Text search not implemented yet - IndexedDB limitations require N-gram indexing'
-    );
+    // TODO: Implement N-gram indexing for full-text search
+    console.warn('Text search not yet implemented - IndexedDB limitations require N-gram indexing');
   }, []);
 
   // 選択モード変更

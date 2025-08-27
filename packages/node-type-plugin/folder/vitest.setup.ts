@@ -2,8 +2,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Setup fake IndexedDB for testing
-import { FDBFactory } from 'fake-indexeddb';
-global.indexedDB = new FDBFactory();
+import 'fake-indexeddb/auto';
 
 // Mock global functions that would be provided by the UI core
 global.checkCreatePermission = vi.fn().mockResolvedValue(true);

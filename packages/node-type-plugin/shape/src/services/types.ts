@@ -4,6 +4,14 @@
 
 import { NodeId } from '@hierarchidb/common-core';
 import type { Feature } from '../types';
+import type {
+  DataSourceName,
+  DataSourceInfo,
+  CountryMetadata,
+  ValidationResult,
+  BoundingBox,
+  AdminLevelInfo,
+} from '@hierarchidb/runtime-datasource';
 
 
 // === API Method Signatures ===
@@ -39,13 +47,8 @@ export interface ShapesAPIMethods extends Record<string, any> {
 
 // === Data Types ===
 
-export type BoundingBox = [number, number, number, number]; // [minX, minY, maxX, maxY]
-
-export type DataSourceName = 
-  | 'NaturalEarth'
-  | 'GeoBoundaries' 
-  | 'GADM'
-  | 'OpenStreetMap';
+// Re-export types from runtime/datasource for compatibility
+export type { DataSourceName, DataSourceInfo, CountryMetadata, ValidationResult, BoundingBox, AdminLevelInfo };
 
 export type ProcessingStage = 
   | 'download'
@@ -184,54 +187,7 @@ export interface ResourceUsage {
 }
 
 // === Data Source Types ===
-
-export interface DataSourceInfo {
-  name: DataSourceName;
-  displayName: string;
-  description: string;
-  license: string;
-  licenseUrl?: string;
-  attribution: string;
-  website?: string;
-  availableCountries: string[];
-  maxAdminLevel: number;
-  dataFormat: 'geojson' | 'topojson' | 'shapefile' | 'pbf';
-  updateFrequency: string;
-  lastUpdated?: string;
-  estimatedSize?: number;
-  features: string[];
-}
-
-export interface CountryMetadata {
-  countryCode: string;
-  countryName: string;
-  countryNameLocal?: string;
-  adminLevels: AdminLevelInfo[];
-  bbox: BoundingBox;
-  center: [number, number];
-  featureCount: number;
-  dataSize?: number;
-  lastUpdated: string;
-  available: boolean;
-}
-
-export interface AdminLevelInfo {
-  level: number;
-  name: string;
-  localName?: string;
-  description?: string;
-  featureCount: number;
-  averageVertices?: number;
-  available: boolean;
-  dataSize?: number;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: Array<{type: string; message: string; severity: 'error' | 'warning'}>;
-  warnings: string[];
-  metadata: Record<string, string | number | boolean>;
-}
+// Types imported from @hierarchidb/runtime-datasource
 
 export interface ValidationError {
   code: string;

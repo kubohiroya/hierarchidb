@@ -2,13 +2,13 @@
   "extends": "./tsconfig.base.json",
   "references": [
     {
-      "path": "./packages/api"
+      "path": "./packages/common/api"
     },
     {
-      "path": "./packages/app"
+      "path": "./app"
     },
     {
-      "path": "./packages/core"
+      "path": "./packages/common/core"
     }
   ],
   "files": []

@@ -112,8 +112,11 @@ export function useUndoRedoOperations(
       }
     }
     
-    // 未実装の場合はエラーを返す
-    throw new Error('Undo functionality not implemented yet');
+    // 未実装の場合は失敗レスポンスを返す（エラーを投げない）
+    return {
+      success: false,
+      error: 'Undo functionality not yet connected to CommandProcessor'
+    };
   }, [stateManager, setIsLoading, onStateChange, currentState]);
 
   // Redo操作の実装（プレースホルダー）
@@ -142,8 +145,11 @@ export function useUndoRedoOperations(
       }
     }
     
-    // 未実装の場合はエラーを返す
-    throw new Error('Redo functionality not implemented yet');
+    // 未実装の場合は失敗レスポンスを返す（エラーを投げない）
+    return {
+      success: false,
+      error: 'Redo functionality not yet connected to CommandProcessor'
+    };
   }, [stateManager, setIsLoading, onStateChange, currentState]);
 
   // 履歴クリア操作の実装（プレースホルダー）

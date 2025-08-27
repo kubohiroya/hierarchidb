@@ -9,6 +9,7 @@ import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import { generateEntityId } from '@hierarchidb/common-core';
 import type { ShapeEntity, ShapeWorkingCopy } from '~/types';
 import { shapePluginAPI } from '~/api/ShapePluginAPI';
+import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 
 /**
  * Entity handler for Shape plugin
@@ -256,39 +257,14 @@ export class ShapeEntityHandler {
    * Create working copy from entity
    */
   async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
-    return {
-      id: entity.id,
-      nodeId: entity.nodeId,
-      name: entity.name,
-      description: entity.description,
-      dataSourceName: entity.dataSourceName,
-      licenseAgreement: false, // Reset for editing
-      processingConfig: { ...entity.processingConfig },
-      checkboxState: [], // Will be populated by UI
-      selectedCountries: [...entity.selectedCountries],
-      adminLevels: [...entity.adminLevels],
-      urlMetadata: [...entity.urlMetadata],
-      isDraft: false,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      version: entity.version,
-    };
+    return createWorkingCopyFromEntity(entity) as ShapeWorkingCopy;
   }
 
   /**
    * Apply working copy changes to entity
    */
   async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = {
-      name: workingCopy.name,
-      description: workingCopy.description,
-      dataSourceName: workingCopy.dataSourceName,
-      processingConfig: workingCopy.processingConfig,
-      selectedCountries: workingCopy.selectedCountries,
-      adminLevels: workingCopy.adminLevels,
-      urlMetadata: workingCopy.urlMetadata,
-    };
-
+    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(workingCopy) as Partial<ShapeEntity>;
     return this.updateEntity(entityId, updates);
   }
 

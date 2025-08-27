@@ -5,6 +5,7 @@
  */
 
 import 'fake-indexeddb/auto';
+import '@testing-library/jest-dom';
 import { beforeEach, vi } from 'vitest';
 
 // Comlink mock for Node environment

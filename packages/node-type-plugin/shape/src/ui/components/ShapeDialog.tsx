@@ -3,7 +3,7 @@
  * Main dialog for creating and editing Shape entities
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -135,9 +135,11 @@ export function ShapeDialog({
     setActiveStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
+  /*
   const handleUpdateWorkingCopy = useCallback((updates: Partial<ShapeWorkingCopy>) => {
     setWorkingCopy((prev) => (prev ? { ...prev, ...updates } : null));
   }, []);
+   */
 
   const handleSubmit = useCallback(async () => {
     if (!workingCopy) return;
