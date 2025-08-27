@@ -4,13 +4,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
   useRouteError,
 } from 'react-router';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { StrictMode, useMemo } from 'react';
-import { AppConfigProvider, useAppConfig } from './contexts/AppConfigContext';
+import { AppConfigProvider } from './contexts/AppConfigContext';
 import { createAppTheme, ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
@@ -228,17 +227,9 @@ export function ErrorBoundary() {
 }
 
 function AppContent() {
-  const { appTitle, appDescription, appFavicon } = useAppConfig();
-  const location = useLocation();
-
   return (
     <StrictMode>
-      <>
-        <title>{appTitle}</title>
-        {appDescription ? <meta name="description" content={appDescription} /> : null}
-        <link rel="icon" href={appFavicon} type="image/svg+xml" />
-        <Outlet />
-      </>
+      <Outlet />
     </StrictMode>
   );
 }

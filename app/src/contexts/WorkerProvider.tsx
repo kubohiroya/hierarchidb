@@ -154,57 +154,6 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({ children }) => {
         }}
       >
         <TitleLogo showProgress={true} />
-        <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-          Initializing application...
-        </Typography>
-      </Box>
-    );
-  }
-
-  // Show error screen if initialization failed
-  if (state.error) {
-    console.log('[WorkerProvider] Rendering error screen');
-    return (
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff5f5',
-          padding: 4,
-        }}
-      >
-        <Typography variant="h5" color="error" gutterBottom>
-          Initialization Error
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          Failed to initialize the application. Please refresh the page.
-        </Typography>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'error.main' }}>
-          {(state.error as Error)?.message || 'Unknown error'}
-        </Typography>
-        <Box sx={{ mt: 3 }}>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#1976d2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Refresh Page
-          </button>
-        </Box>
       </Box>
     );
   }
