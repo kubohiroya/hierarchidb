@@ -17,7 +17,7 @@ describe('PluginManagementAPI - TDD Red Phase', () => {
     it('🔴 有効なプラグイン定義を登録できる', async () => {
       // プラグイン登録の成功ケース
       const pluginDefinition: PluginDefinition = {
-        nodeType: 'custom-folder' as NodeType,
+        nodeType: 'custom-folder-plugin' as NodeType,
         database: {
           entityStore: 'customFolders',
           schema: {
@@ -31,7 +31,7 @@ describe('PluginManagementAPI - TDD Red Phase', () => {
         meta: {
           name: 'Custom Folder Plugin',
           version: '1.0.0',
-          description: 'Custom folder implementation'
+          description: 'Custom folder-plugin implementation'
         }
       };
 
@@ -39,13 +39,13 @@ describe('PluginManagementAPI - TDD Red Phase', () => {
       
       expect(result.success).toBe(true);
       expect(result.pluginId).toBeDefined();
-      expect(result.registeredNodeType).toBe('custom-folder');
+      expect(result.registeredNodeType).toBe('custom-folder-plugin');
     });
 
     it('🔴 重複するnodeTypeの登録で適切なエラーを返す', async () => {
       // 同じnodeTypeの重複登録テスト
       const duplicateDefinition: PluginDefinition = {
-        nodeType: 'folder' as NodeType, // 既存のnodeType
+        nodeType: 'folder-plugin' as NodeType, // 既存のnodeType
         database: { entityStore: 'test', schema: {}, version: 1 },
         meta: { name: 'Duplicate', version: '1.0.0' }
       };
@@ -54,7 +54,7 @@ describe('PluginManagementAPI - TDD Red Phase', () => {
       
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe('DUPLICATE_NODE_TYPE');
-      expect(result.error?.message).toContain('folder');
+      expect(result.error?.message).toContain('folder-plugin');
     });
 
     it('🔴 不正なschema定義で登録が失敗する', async () => {
@@ -170,7 +170,7 @@ describe('PluginManagementAPI - TDD Red Phase', () => {
   describe('checkHealth() - プラグインヘルス監視機能', () => {
     it('🔴 健全なプラグインでHealthyステータスを返す', async () => {
       // 正常動作中のプラグインヘルスチェック
-      const result = await pluginManagementAPI.checkHealth('folder' as NodeType);
+      const result = await pluginManagementAPI.checkHealth('folder-plugin' as NodeType);
       
       expect(result.status).toBe('healthy');
       expect(result.lastCheck).toBeTypeOf('number');

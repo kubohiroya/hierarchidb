@@ -8,13 +8,8 @@ import type { TreeTablePlugin } from './plugin/types';
 import { TreeNode } from '@hierarchidb/common-core';
 //import { TreeNode } from '@hierarchidb/common-core';
 
-// Extended TreeNode type with calculated depth
-export interface TreeNodeWithDepth extends TreeNode {
-  depth?: number;
-}
-
 // Base TreeNode interface (simplified from core)
-export interface TreeNodeInUI extends TreeNodeWithDepth {
+export interface TreeNodeInUI extends TreeNode {
   nodeType: string;
   type?: string;
   name: string;
@@ -116,7 +111,7 @@ export interface TreeTableCoreProps {
   /**
    * Callbacks
    */
-  onRowClick?: (node: TreeNodeWithDepth, event: MouseEvent) => void;
+  onRowClick?: (node: TreeNode, event: MouseEvent) => void;
   onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => void;
 }

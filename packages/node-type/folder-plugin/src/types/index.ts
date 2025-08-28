@@ -13,14 +13,6 @@ export type {
 // Keep existing simple types for backward compatibility if needed
 import type { NodeId, EntityId } from '@hierarchidb/common-core';
 
-// DialogStepDefinition is not exported yet, define locally
-export interface DialogStepDefinition {
-  stepNumber: number;
-  title: string;
-  component: any;
-  validation?: any;
-}
-
 export interface FolderEntityWorkingCopy {
   id: EntityId;
   nodeId: NodeId;

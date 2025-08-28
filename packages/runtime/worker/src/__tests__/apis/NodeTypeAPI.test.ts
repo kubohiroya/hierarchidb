@@ -107,10 +107,10 @@ describe('NodeTypeAPI', () => {
       entityHandler: new MockEntityHandler(),
       lifecycle: {
         beforeCreate: async (parentId: NodeId, nodeData: Partial<TreeNode>) => {
-          console.log('Creating folder in parent:', parentId);
+          console.log('Creating folder-plugin in parent:', parentId);
         },
         afterCreate: async (nodeId: NodeId, entity: PeerEntity) => {
-          console.log('Created folder:', nodeId);
+          console.log('Created folder-plugin:', nodeId);
         },
       }
     },
@@ -362,7 +362,7 @@ describe('NodeTypeAPI', () => {
   describe('updateNodeTypeMetadata', () => {
     it('should update node type metadata', async () => {
       await api.updateNodeTypeMetadata('folder', {
-        id: 'folder-meta',
+        id: 'folder-plugin-meta',
         name: 'Folder Plugin',
         version: '1.0.0',
         nodeType: 'folder',
@@ -371,7 +371,7 @@ describe('NodeTypeAPI', () => {
       
       const metadata = await api.getNodeTypeMetadata('folder');
       expect(metadata).toEqual({
-        id: 'folder-meta',
+        id: 'folder-plugin-meta',
         name: 'Folder Plugin',
         version: '1.0.0',
         nodeType: 'folder',

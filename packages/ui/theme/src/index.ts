@@ -15,12 +15,12 @@ export type { ThemeProviderProps } from './components/ThemeProvider';
 // Hooks
 export { useThemeMode } from './hooks/useThemeMode';
 
-// Utils
+// Utils - Re-export from ui-core to avoid duplication
 export {
   getThemeIcon,
   getThemeDisplayName,
   getBackgroundColorForTheme,
   getTextColorForTheme,
-} from './utils/themeUtils';
+} from '@hierarchidb/ui-core';
 
 export { getStoredThemeMode, storeThemeMode, getSystemTheme } from './utils/storage';

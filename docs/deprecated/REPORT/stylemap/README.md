@@ -166,8 +166,8 @@ class StyleMapPlugin {
 ### 基本的な使用フロー
 
 ```typescript
-import { StyleMapPlugin } from '@hierarchidb/plugin-stylemap';
-import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet';
+import { StyleMapPlugin } from '@hierarchidb/plugin-stylemap-plugin';
+import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet-plugin';
 
 const styleMap = new StyleMapPlugin();
 

@@ -14,9 +14,9 @@ import {
 /**
  * Folder Drag & Drop E2E Tests
  *
- * Tests drag and drop functionality for folder operations including
+ * Tests drag and drop functionality for folder-plugin operations including
  * moving folders, reordering, and hierarchy changes.
- * Based on the specification in docs/12-2-e2e-folder.md
+ * Based on the specification in docs/12-2-e2e-folder-plugin.md
  */
 
 test.describe('Folder Drag & Drop Operations', () => {

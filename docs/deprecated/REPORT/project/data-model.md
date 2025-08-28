@@ -142,11 +142,11 @@ export interface ResourceReference extends GroupEntity {
 
 export type ResourceReferenceType = 
   | 'basemap'           // Reference to basemap node
-  | 'shape'             // Reference to shape node
-  | 'stylemap'          // Reference to stylemap node
+  | 'shape'             // Reference to shape-plugin node
+  | 'stylemap'          // Reference to stylemap-plugin node
   | 'location'          // Reference to location node
   | 'route'             // Reference to route node
-  | 'folder';           // Reference to folder (for batch operations)
+  | 'folder';           // Reference to folder-plugin (for batch operations)
 ```
 
 #### LayerConfiguration (RelationalEntity)

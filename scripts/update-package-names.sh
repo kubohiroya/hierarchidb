@@ -33,7 +33,7 @@ for plugin in folder basemap stylemap shape; do
 done
 
 if [ -f "packages/feature-plugin/import-export/package.json" ]; then
-  sed -i '' 's/"name": "@hierarchidb\/feature-import-export"/"name": "@hierarchidb\/feature-import-export-plugin"/' \
+  sed -i '' 's/"name": "@hierarchidb\/feature-import-export-plugin"/"name": "@hierarchidb\/feature-import-export-plugin-plugin"/' \
     "packages/feature-plugin/import-export/package.json"
 fi
 

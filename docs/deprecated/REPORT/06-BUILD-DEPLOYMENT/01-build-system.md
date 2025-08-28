@@ -222,7 +222,7 @@ turbo run build --filter=@hierarchidb/worker
 ```typescript
 // 動的インポート
 const BaseMapPlugin = () => import('./plugins/basemap');
-const SpreadsheetPlugin = () => import('./plugins/spreadsheet');
+const SpreadsheetPlugin = () => import('./plugins/spreadsheet-plugin');
 
 // React.lazy
 const LazyComponent = lazy(() => 

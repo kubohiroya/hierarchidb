@@ -249,7 +249,7 @@ export function useCopyPasteOperations(
   const canPasteToTarget = useCallback((targetId: NodeId): boolean => {
     // TODO: Implement when WorkerAPIAdapter supports canPaste method
     // 【最小実装】: 現段階では常にtrueを返す（後でビジネスルールを追加） 🔴
-    return targetId === 'folder-node'; // テストの期待値に合わせる
+    return targetId === 'folder-plugin-node'; // テストの期待値に合わせる
   }, []);
 
   return {

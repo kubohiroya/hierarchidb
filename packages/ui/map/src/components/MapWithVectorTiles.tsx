@@ -4,113 +4,78 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import type { Map as MapLibreMapInstance, FilterSpecification } from 'maplibre-gl';
-import MapLibreMap, { type MapViewState } from './MapLibreMap';
+import type { Map as MapLibreMapInstance } from 'maplibre-gl';
+import MapLibreMap from './MapLibreMap';
 import VectorTileLayer from './VectorTileLayer';
+import { BaseMapProps, VectorTileDataSource, VectorTileLayerConfig, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
-export interface LayerOptions {
-  layerId?: string;
-  sourceId?: string;
-  paint?: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-  filter?: FilterSpecification;
-  minzoom?: number;
-  maxzoom?: number;
-  layerType?: 'fill' | 'line' | 'circle' | 'symbol' | 'raster' | 'background';
-  sourceLayer?: string;
-}
+// Re-export for backward compatibility - but mark as deprecated
+/**
+ * @deprecated Use VectorTileLayerConfig from unified-map-props instead
+ */
+export type LayerOptions = VectorTileLayerConfig;
 
-export interface MapWithVectorTilesProps {
-  /** Database name for vector tiles */
-  dbName?: string;
+export interface MapWithVectorTilesProps extends BaseMapProps, VectorTileDataSource {
+  /** Vector tile layer configuration */
+  layerConfig?: VectorTileLayerConfig;
   
-  /** Node ID for data lookup */
-  nodeId?: string;
+  // Backward compatibility props (deprecated)
+  /**
+   * @deprecated Use layerConfig instead
+   */
+  layerOptions?: VectorTileLayerConfig;
   
-  /** Initial view state */
-  initialViewState?: MapViewState;
-  
-  /** Map style URL or object */
-  mapStyle?: string;
-  
-  /** Map container dimensions */
-  width?: string | number;
-  height?: string | number;
-  
-  /** Additional container styles */
-  style?: React.CSSProperties;
-  
-  /** Vector tile layer options */
-  layerOptions?: LayerOptions;
-  
-  /** Custom vector tile URLs */
-  tiles?: string[];
-  
-  /** Custom tile data provider */
-  tileDataProvider?: (z: number, x: number, y: number, nodeId?: string) => Promise<ArrayBuffer | null>;
-  
-  /** Callback when map loads */
+  /**
+   * @deprecated Use onLoad instead
+   */
   onMapLoad?: (map: MapLibreMapInstance) => void;
   
-  /** Callback when view state changes */
-  onViewStateChange?: (viewState: MapViewState) => void;
-  
-  /** Callback when map is clicked */
+  /**
+   * @deprecated Use onClick instead
+   */
   onMapClick?: (event: any) => void;
-  
-  /** Additional map options */
-  mapOptions?: {
-    interactive?: boolean;
-    scrollZoom?: boolean;
-    dragPan?: boolean;
-    dragRotate?: boolean;
-    doubleClickZoom?: boolean;
-    touchZoomRotate?: boolean;
-  };
 }
 
-const defaultViewState: MapViewState = {
-  longitude: 0,
-  latitude: 0,
-  zoom: 2,
-};
-
-const defaultLayerOptions: LayerOptions = {
-  layerId: 'vector-tile-layer',
-  sourceId: 'vector-tile-source',
-  paint: {
-    'fill-color': 'rgba(0, 136, 136, 0.7)',
-    'fill-outline-color': '#004444',
-  },
-  layerType: 'fill',
-  minzoom: 0,
-  maxzoom: 14,
-};
+// Default values from unified config
+const { viewState: defaultViewState, vectorTileLayer: defaultLayerConfig } = DEFAULT_MAP_CONFIG;
 
 export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
+  // Vector tile data source props
   dbName,
   nodeId,
-  initialViewState = defaultViewState,
-  mapStyle = 'https://demotiles.maplibre.org/style.json',
-  width = '100%',
-  height = '500px',
-  style,
-  layerOptions = {},
   tiles,
   tileDataProvider,
-  onMapLoad,
+  
+  // Base map props
+  initialViewState = defaultViewState,
+  mapStyle = DEFAULT_MAP_CONFIG.mapStyle,
+  width = DEFAULT_MAP_CONFIG.dimensions.width,
+  height = DEFAULT_MAP_CONFIG.dimensions.height,
+  style,
+  onLoad,
   onViewStateChange,
-  onMapClick,
+  onClick,
   mapOptions,
+  
+  // Layer configuration
+  layerConfig = {},
+  
+  // Backward compatibility props - deprecated
+  layerOptions = {},
+  onMapLoad,
+  onMapClick,
 }) => {
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
-  const mergedLayerOptions = { ...defaultLayerOptions, ...layerOptions };
+  // Merge layer config with backward compatibility support
+  const mergedLayerConfig = { ...defaultLayerConfig, ...layerConfig, ...layerOptions };
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     setMapInstance(map);
-    onMapLoad?.(map);
-  }, [onMapLoad]);
+    // Support both new and old callback names
+    onLoad?.(map);
+    onMapLoad?.(map); // Backward compatibility
+  }, [onLoad, onMapLoad]);
 
   return (
     <MapLibreMap
@@ -121,7 +86,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       style={style}
       onLoad={handleMapLoad}
       onViewStateChange={onViewStateChange}
-      onClick={onMapClick}
+      onClick={onClick || onMapClick}
       mapOptions={mapOptions}
     >
       {mapInstance && (dbName || tiles || tileDataProvider) && (
@@ -129,16 +94,17 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
           map={mapInstance}
           dbName={dbName}
           nodeId={nodeId}
-          layerId={mergedLayerOptions.layerId!}
-          sourceId={mergedLayerOptions.sourceId!}
+          layerId={mergedLayerConfig.layerId!}
+          sourceId={mergedLayerConfig.sourceId!}
           tiles={tiles}
-          paint={mergedLayerOptions.paint}
-          layout={mergedLayerOptions.layout}
-          filter={mergedLayerOptions.filter}
-          minzoom={mergedLayerOptions.minzoom}
-          maxzoom={mergedLayerOptions.maxzoom}
-          layerType={mergedLayerOptions.layerType}
-          sourceLayer={mergedLayerOptions.sourceLayer}
+          paint={mergedLayerConfig.paint}
+          layout={mergedLayerConfig.layout}
+          filter={mergedLayerConfig.filter}
+          minzoom={mergedLayerConfig.minzoom}
+          maxzoom={mergedLayerConfig.maxzoom}
+          layerType={mergedLayerConfig.layerType}
+          sourceLayer={mergedLayerConfig.sourceLayer}
+          visible={mergedLayerConfig.visible}
           tileDataProvider={tileDataProvider}
         />
       )}

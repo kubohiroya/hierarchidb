@@ -23,7 +23,7 @@ import { type NodeId } from "@hierarchidb/common-core";
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead
 // import { BaseMapDialog } from "@hierarchidb/basemap";
-// import { StyleMapDialog } from "@hierarchidb/stylemap";
+// import { StyleMapDialog } from "@hierarchidb/stylemap-plugin";
 
 // Mock Dialog Component for demonstration
 const MockDialog = ({ title, open, onClose, data, onSave }: any) => {
@@ -93,7 +93,7 @@ export default function PluginDemo() {
   const mockStyleMapEntity = {
     nodeId: mockNodeId,
     name: "Sample StyleMap",
-    description: "This is a demo stylemap configuration",
+    description: "This is a demo stylemap-plugin configuration",
     filterRules: [],
     selectedKeyColumn: "category",
     selectedValueColumns: ["value1", "value2"],

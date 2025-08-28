@@ -305,7 +305,7 @@ describe('NodeId operations', () => {
     const testNodeId = 'test-node-123' as NodeId;
     const node: TreeNode = {
       id: testNodeId,
-      nodeType: 'folder',
+      nodeType: 'folder-plugin',
       name: 'Test Node',
       createdAt: Date.now(),
       updatedAt: Date.now(),

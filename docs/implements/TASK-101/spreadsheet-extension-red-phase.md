@@ -7,7 +7,7 @@
 
 ### テストファイル構成
 ```
-packages/node-type-plugin/spreadsheet/
+packages/node-type/spreadsheet-plugin/
 ├── src/
 │   ├── extension/
 │   │   ├── definition.ts         # 実装対象（未作成）
@@ -113,7 +113,7 @@ validate: async (data) => {
 
 ### 実行コマンド
 ```bash
-cd packages/node-type-plugin/spreadsheet
+cd packages/node-type/spreadsheet-plugin
 pnpm test src/extension/definition.test.ts
 ```
 

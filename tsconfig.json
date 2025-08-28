@@ -11,5 +11,11 @@
       "path": "./packages/common/core"
     }
   ],
+  "compilerOptions": {
+    "downlevelIteration": false,
+    "target": "es2022",
+    "module": "es2022"
+  },
+  "include": ["scripts/*.ts"],
   "files": []
 }

@@ -1,5 +1,20 @@
 // API Interfaces
 export type { TreeMutationAPI } from './TreeMutationAPI';
+export type { ImportExportAPI } from './ImportExportAPI';
+export type {
+  ImportNodesParams,
+  ExportNodesParams,
+  ImportData,
+  ImportResult,
+  ExportResult,
+  ValidateImportParams,
+  ValidationResult,
+  ValidationError,
+  ValidationWarning,
+  ImportProgress,
+  ExportProgress,
+  OperationStatus
+} from './ImportExportAPI';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
 export type { TreeQueryAPI } from './TreeQueryAPI';
 export type { WorkingCopyAPI } from './WorkingCopyAPI';

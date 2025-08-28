@@ -163,7 +163,7 @@ interface PluginDefinition {
 ```typescript
 // 動的インポートによる遅延ロード
 const MapPlugin = lazy(() => import('./plugins/map'));
-const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet'));
+const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet-plugin'));
 ```
 
 ### バンドルサイズ

@@ -104,7 +104,7 @@ describe.skip('WorkingCopyOperations', () => {
     };
 
     const folder1: TreeNode = {
-      id: 'folder-1' as NodeId,
+      id: 'folder-plugin-1' as NodeId,
       parentId: 'root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'Documents',
@@ -114,7 +114,7 @@ describe.skip('WorkingCopyOperations', () => {
     };
 
     const folder2: TreeNode = {
-      id: 'folder-2' as NodeId,
+      id: 'folder-plugin-2' as NodeId,
       parentId: 'root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'Documents (2)',
@@ -191,7 +191,7 @@ describe.skip('WorkingCopyOperations', () => {
 
   describe('createWorkingCopyFromNode', () => {
     it('should create working copy from existing node', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
 
       const workingCopyId = await createWorkingCopyFromNode(
         ephemeralDB as any,
@@ -215,7 +215,7 @@ describe.skip('WorkingCopyOperations', () => {
     });
 
     it('should detect existing working copy', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
 
       // Create first working copy
       await createWorkingCopyFromNode(ephemeralDB as any, coreDB as any, nodeId);
@@ -261,7 +261,7 @@ describe.skip('WorkingCopyOperations', () => {
     });
 
     it('should commit changes to existing node', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
 
       // Create working copy
       const workingCopyId = await createWorkingCopyFromNode(
@@ -297,7 +297,7 @@ describe.skip('WorkingCopyOperations', () => {
     });
 
     it('should detect version conflict', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
 
       // Create working copy
       const workingCopyId = await createWorkingCopyFromNode(
@@ -453,7 +453,7 @@ describe.skip('WorkingCopyOperations', () => {
 
   describe('checkWorkingCopyConflict', () => {
     it('should detect no conflict when versions match', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
       const workingCopyId = await createWorkingCopyFromNode(
         ephemeralDB as any,
         coreDB as any,
@@ -470,7 +470,7 @@ describe.skip('WorkingCopyOperations', () => {
     });
 
     it('should detect conflict when versions differ', async () => {
-      const nodeId = 'folder-1' as NodeId;
+      const nodeId = 'folder-plugin-1' as NodeId;
       const workingCopyId = await createWorkingCopyFromNode(
         ephemeralDB as any,
         coreDB as any,
@@ -519,7 +519,7 @@ describe.skip('WorkingCopyOperations', () => {
       });
 
       it('should return empty array for childless node', async () => {
-        const names = await getChildNames(coreDB as any, 'folder-1' as NodeId);
+        const names = await getChildNames(coreDB as any, 'folder-plugin-1' as NodeId);
         expect(names).toEqual([]);
       });
     });

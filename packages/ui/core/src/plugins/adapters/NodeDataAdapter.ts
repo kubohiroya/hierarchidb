@@ -180,7 +180,7 @@ export class NodeDataAdapter {
   }
 
   /**
-   * Create folder-specific combined data
+   * Create folder-plugin-specific combined data
    *
    * @param treeNode - TreeNode data
    * @param nodeId - Node ID for additional queries
@@ -200,7 +200,7 @@ export class NodeDataAdapter {
       hasChildren: await this.hasChildren(nodeId),
       childCount: await this.getChildCount(nodeId),
 
-      // Additional folder metadata
+      // Additional folder-plugin metadata
       path: await this.getNodePath(nodeId),
       size: await this.calculateFolderSize(nodeId),
     };
@@ -296,7 +296,7 @@ export class NodeDataAdapter {
   }
 
   /**
-   * Calculate folder size (recursive)
+   * Calculate folder-plugin size (recursive)
    *
    * @param nodeId - Folder node ID
    * @returns Size in bytes (estimated)
@@ -305,19 +305,19 @@ export class NodeDataAdapter {
     // Simple implementation - could be optimized
     try {
       const children = await this.getChildren(nodeId);
-      let totalSize = 1024; // Base folder overhead
+      let totalSize = 1024; // Base folder-plugin overhead
 
       for (const child of children) {
         if (child.nodeType === 'folder') {
           totalSize += await this.calculateFolderSize(child.id);
         } else {
-          totalSize += 4096; // Estimated size for non-folder items
+          totalSize += 4096; // Estimated size for non-folder-plugin items
         }
       }
 
       return totalSize;
     } catch (error) {
-      console.warn('Failed to calculate folder size:', error);
+      console.warn('Failed to calculate folder-plugin size:', error);
       return 0;
     }
   }

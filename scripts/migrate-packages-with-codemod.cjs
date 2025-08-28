@@ -39,9 +39,9 @@ const DIRECTORY_MAPPINGS = [
   
   // 20-level: Plugins
   { old: 'packages/plugins/basemap', new: 'packages/20-plugin-basemap' },
-  { old: 'packages/plugins/stylemap', new: 'packages/20-plugin-stylemap' },
+  { old: 'packages/plugins/stylemap-plugin', new: 'packages/20-plugin-stylemap-plugin' },
   { old: 'packages/plugins/_shapes_buggy', new: 'packages/20-plugin-shapes' },
-  { old: 'packages/plugins/import-export', new: 'packages/20-plugin-import-export' },
+  { old: 'packages/plugins/import-export-plugin', new: 'packages/20-plugin-import-export-plugin' },
   
   // 30-level: Application
   { old: 'packages/_app', new: 'packages/30-_app' },
@@ -70,9 +70,9 @@ const PACKAGE_NAME_MAPPINGS = {
   '@hierarchidb/ui-treeconsole-base': '@hierarchidb/12-ui-treeconsole-base',
   '@hierarchidb/ui-treeconsole-simple': '@hierarchidb/12-ui-treeconsole-simple',
   '@hierarchidb/plugin-basemap': '@hierarchidb/20-plugin-basemap',
-  '@hierarchidb/plugin-stylemap': '@hierarchidb/20-plugin-stylemap',
+  '@hierarchidb/plugin-stylemap': '@hierarchidb/20-plugin-stylemap-plugin',
   '@hierarchidb/plugin-shapes': '@hierarchidb/20-plugin-shapes',
-  '@hierarchidb/plugin-import-export': '@hierarchidb/20-plugin-import-export',
+  '@hierarchidb/plugin-import-export': '@hierarchidb/20-plugin-import-export-plugin',
   '@hierarchidb/app': '@hierarchidb/30-_app',
   '@hierarchidb/backend-bff': '@hierarchidb/bff',
   '@hierarchidb/backend-cors-proxy': '@hierarchidb/cors-proxy'

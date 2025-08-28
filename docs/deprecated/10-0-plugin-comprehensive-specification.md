@@ -613,7 +613,7 @@ interface EntityUIDefinition {
 
 ```typescript
 export const FolderUIPlugin: UIPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   displayName: 'Folder',
   
   entitySupport: {
@@ -710,7 +710,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 
 ```typescript
 export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   displayName: 'Style Map',
   
   entitySupport: {
@@ -879,7 +879,7 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   
   const handleComplete = async () => {
     // StyleMapエンティティ作成
-    const entity = await workerAPI.createNode('stylemap', formData);
+    const entity = await workerAPI.createNode('stylemap-plugin', formData);
     onComplete(entity);
   };
   

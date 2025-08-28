@@ -8,6 +8,7 @@ import type {
   PluginTreeAPI,
   NodeTypeAPI,
   PluginManagementAPI,
+  ImportExportAPI,
 } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
@@ -17,8 +18,7 @@ import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
-import { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';
-import { UnifiedNodeTypeRegistry } from './registry/UnifiedNodeTypeRegistry';
+import { SimpleNodeTypeRegistry, UnifiedNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { registerDefaultPlugins } from './registry/default-plugins';
 
 // Services
@@ -30,6 +30,8 @@ import { ExportService } from './services/ExportService';
 import { PluginTreeService } from './services/PluginTreeService';
 import { NodeTypeService } from './services/NodeTypeService';
 import { PluginManagementService } from './services/PluginManagementService';
+import { ImportExportAPIImpl } from './apis/ImportExportAPIImpl';
+// import { importExportPluginRegistry } from '@hierarchidb/feature-import-export-plugin-plugin'; // Disabled due to build issues
 
 /**
  * Worker API Facade Implementation
@@ -61,6 +63,7 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Import/Export services
   private importService!: ImportService;
   private exportService!: ExportService;
+  private importExportAPI!: ImportExportAPIImpl;
   
   constructor(dbName: string = 'default-worker-db') {
     this.dbName = dbName;
@@ -91,6 +94,18 @@ export class WorkerAPIImpl implements WorkerAPI {
     const unifiedRegistry = UnifiedNodeTypeRegistry.getInstance();
     registerDefaultPlugins(unifiedRegistry);
     
+    // Register Import/Export plugins with dependency resolution
+    try {
+      // const registrationResult = await importExportPluginRegistry.registerAllPlugins(unifiedRegistry); // Disabled due to build issues
+      // if (registrationResult.success) {
+      //   console.log('[WorkerAPIImpl] Import/Export plugins registered successfully:', registrationResult.registered);
+      // } else {
+      //   console.warn('[WorkerAPIImpl] Some Import/Export plugins failed to register:', registrationResult.errors);
+      // } // Disabled due to build issues
+    } catch (error) {
+      console.error('[WorkerAPIImpl] Failed to register Import/Export plugins:', error);
+    }
+    
     // Initialize lifecycle manager
     this.nodeLifecycleManager = new NodeLifecycleManager(
       this.nodeTypeRegistry,
@@ -115,14 +130,13 @@ export class WorkerAPIImpl implements WorkerAPI {
     this.pluginTreeService = new PluginTreeService(this.coreDB, this.queryService);
     this.nodeTypeService = new NodeTypeService(this.nodeTypeRegistry, this.queryService);
     this.pluginManagementService = new PluginManagementService(
-      this.nodeTypeRegistry,
-      this.coreDB,
-      this.queryService
+      this.nodeTypeRegistry
     );
     
     // Initialize import/export services
     this.importService = new ImportService(this.coreDB, this.mutationService);
     this.exportService = new ExportService(this.coreDB, this.queryService);
+    this.importExportAPI = await ImportExportAPIImpl.getInstance();
     
     this.isInitialized = true;
     console.log('[WorkerAPIImpl] Initialization complete');
@@ -385,6 +399,10 @@ export class WorkerAPIImpl implements WorkerAPI {
     return Comlink.proxy(this.pluginManagementService);
   }
 
+  getImportExportAPI(): ImportExportAPI & Comlink.ProxyMarked {
+    return Comlink.proxy(this.importExportAPI);
+  }
+
   /**
    * @deprecated Use specialized APIs instead. This legacy API will be removed in v2.0.
    */
@@ -518,30 +536,51 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Legacy compatibility methods
   // ==================
 
+  /**
+   * @deprecated Use getQueryAPI().getTree() instead. Will be removed in v2.0.
+   */
   async getTree(params: { treeId: TreeId }): Promise<Tree | undefined> {
     return this.queryService.getTree(params.treeId);
   }
 
+  /**
+   * @deprecated Use getQueryAPI().listTrees() instead. Will be removed in v2.0.
+   */
   async listTrees(): Promise<Tree[]> {
     return this.queryService.listTrees();
   }
 
+  /**
+   * @deprecated Use getQueryAPI().listTrees() instead. This is a naming mistake. Will be removed in v2.0.
+   */
   async getTrees(): Promise<Tree[]> {
     return this.listTrees();
   }
 
+  /**
+   * @deprecated Use getQueryAPI().getNode() instead. Will be removed in v2.0.
+   */
   async getNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     return this.queryService.getNode(nodeId);
   }
 
+  /**
+   * @deprecated Use getQueryAPI().listChildren() instead. Will be removed in v2.0.
+   */
   async getChildren(params: { parentId: NodeId }): Promise<TreeNode[]> {
     return this.queryService.getChildren(params);
   }
 
+  /**
+   * @deprecated Use getMutationAPI().createNode() instead. Will be removed in v2.0.
+   */
   async create(params: any): Promise<any> {
     return this.mutationService.createNode(params);
   }
 
+  /**
+   * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
+   */
   async recoverFromTrash(params: { nodeIds: NodeId[]; toParentId?: NodeId }): Promise<{ success: boolean; error?: string }> {
     // The mutation service expects a CommandEnvelope, but for legacy compatibility we create a simple response
     try {
@@ -552,6 +591,9 @@ export class WorkerAPIImpl implements WorkerAPI {
     }
   }
 
+  /**
+   * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety. Will be removed in v2.0.
+   */
   async getPluginsForTree(treeId: TreeId): Promise<any[]> {
     const response = await this.pluginTreeService.getPluginsForTree({ 
       treeId, 
@@ -560,6 +602,9 @@ export class WorkerAPIImpl implements WorkerAPI {
     return response.plugins;
   }
 
+  /**
+   * @deprecated Use getMutationAPI().removeNodes() instead. Will be removed in v2.0.
+   */
   async removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     return this.mutationService.removeNodes(nodeIds);
   }

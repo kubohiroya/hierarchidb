@@ -96,7 +96,7 @@ describe('フォルダ作成の内部動作', () => {
       workingCopyId,
       treeNodeId: null, // 新規作成なのでnull
       parentTreeNodeId: parentNodeId,
-      nodeType: 'folder',
+      nodeType: 'folder-plugin',
       status: 'draft',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -122,7 +122,7 @@ describe('フォルダ作成の内部動作', () => {
       workingCopyId,
       treeNodeId: null,
       parentTreeNodeId: 'root' as TreeNodeId,
-      nodeType: 'folder',
+      nodeType: 'folder-plugin',
       status: 'draft',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -134,7 +134,7 @@ describe('フォルダ作成の内部動作', () => {
     const newNode: TreeNode = {
       treeNodeId: newNodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Committed Folder',
       createdAt: now,
       updatedAt: now,
@@ -165,7 +165,7 @@ describe('トランザクション処理', () => {
       {
         treeNodeId: 'tx-node-001' as TreeNodeId,
         parentTreeNodeId: 'root' as TreeNodeId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'TX Folder 1',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -174,7 +174,7 @@ describe('トランザクション処理', () => {
       {
         treeNodeId: 'tx-node-002' as TreeNodeId,
         parentTreeNodeId: 'root' as TreeNodeId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'TX Folder 2',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -206,7 +206,7 @@ describe('トランザクション処理', () => {
         await coreDB.nodes.add({
           treeNodeId: 'rollback-001' as TreeNodeId,
           parentTreeNodeId: 'root' as TreeNodeId,
-          treeNodeType: 'folder',
+          treeNodeType: 'folder-plugin',
           name: 'Should Rollback',
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -283,7 +283,7 @@ describe('Observable Serviceの動作', () => {
     const initialNode: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Initial Name',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -338,7 +338,7 @@ describe('パフォーマンステスト', () => {
       nodes.push({
         treeNodeId: `perf-node-${i}` as TreeNodeId,
         parentTreeNodeId: 'root' as TreeNodeId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: `Performance Test Folder ${i}`,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -366,7 +366,7 @@ describe('パフォーマンステスト', () => {
       testNodes.push({
         treeNodeId: `search-node-${i}` as TreeNodeId,
         parentTreeNodeId: i % 10 === 0 ? 'root' as TreeNodeId : `search-node-${i - 1}` as TreeNodeId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: `Search Test ${i}`,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -486,7 +486,7 @@ function createTestNode(override: Partial<TreeNode> = {}): TreeNode {
   return {
     treeNodeId: `test-node-${Date.now()}` as TreeNodeId,
     parentTreeNodeId: 'root' as TreeNodeId,
-    treeNodeType: 'folder',
+    treeNodeType: 'folder-plugin',
     name: 'Test Node',
     createdAt: Date.now(),
     updatedAt: Date.now(),

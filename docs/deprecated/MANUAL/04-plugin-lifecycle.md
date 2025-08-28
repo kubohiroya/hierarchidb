@@ -550,10 +550,10 @@ export class DependencyResolver {
 #### 3.4.1 簡略化されたプラグイン定義
 
 ```typescript
-// packages/plugins/stylemap/src/definitions/StyleMapDefinition.ts
+// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
 export const StyleMapDefinition: NodeTypeDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',
   

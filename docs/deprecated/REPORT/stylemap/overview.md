@@ -152,7 +152,7 @@ The StyleMap Plugin seamlessly integrates with HierarchiDB's core systems:
 ### PluginAPI Compliance
 ```typescript
 const styleMapDefinition: PluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   displayName: 'StyleMap',
   database: {
     entityStore: 'stylemaps',

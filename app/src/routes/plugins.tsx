@@ -18,6 +18,20 @@ import {
   Tooltip,
   Card,
   CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  FormControlLabel,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Divider,
 } from '@mui/material';
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -26,6 +40,12 @@ import {
   Science as ScienceIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  MoreVert as MoreVertIcon,
+  AccountTree as AccountTreeIcon,
+  Link as LinkIcon,
+  Storage as StorageIcon,
 } from '@mui/icons-material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { type PluginDefinition, type PluginDatabaseConfig, type TreeId } from '@hierarchidb/common-core';
@@ -41,13 +61,69 @@ export function meta() {
   ];
 }
 
-interface PluginRowProps {
+interface EnhancedPluginRowProps {
   plugin: PluginDefinition;
   index: number;
+  dependencies: string[];
+  onDelete: (pluginName: string) => void;
+  onReload: (pluginName: string, clearDatabase: boolean) => void;
+  disabled?: boolean;
 }
 
-function PluginRow({ plugin, index }: PluginRowProps) {
+interface DeletePluginDialogProps {
+  open: boolean;
+  pluginName: string;
+  affectedPlugins: string[];
+  onConfirm: (clearDatabase: boolean) => void;
+  onCancel: () => void;
+  loading?: boolean;
+}
+
+interface ResetPluginDialogProps {
+  open: boolean;
+  pluginName: string;
+  affectedPlugins: string[];
+  isProduction: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading?: boolean;
+}
+
+// Enhanced Plugin Row with Dependencies and Operations
+function EnhancedPluginRow({ 
+  plugin, 
+  index, 
+  dependencies, 
+  onDelete, 
+  onReload,
+  disabled = false 
+}: EnhancedPluginRowProps) {
   const [open, setOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
+  
+  // Folder plugin cannot be deleted as it's the foundation plugin
+  const isFolderPlugin = plugin.nodeType === 'folder';
+  const canDelete = !isFolderPlugin;
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleReset = () => {
+    onReload(plugin.nodeType, true);  // Reset always clears database
+    handleMenuClose();
+  };
+
+  const handleDelete = () => {
+    if (!canDelete) return;
+    onDelete(plugin.nodeType);
+    handleMenuClose();
+  };
 
   return (
     <>
@@ -76,6 +152,27 @@ function PluginRow({ plugin, index }: PluginRowProps) {
           {plugin.displayName}
         </TableCell>
         <TableCell>
+          {dependencies.length > 0 ? (
+            <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
+              <LinkIcon fontSize="small" color="action" />
+              {dependencies.map(dep => (
+                <Chip 
+                  key={dep}
+                  label={dep} 
+                  size="small" 
+                  variant="outlined"
+                  icon={<AccountTreeIcon />}
+                  sx={{ m: 0.25 }}
+                />
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No dependencies
+            </Typography>
+          )}
+        </TableCell>
+        <TableCell>
           <Stack direction="row" spacing={1}>
             {plugin.ui && (
               <Chip
@@ -101,35 +198,52 @@ function PluginRow({ plugin, index }: PluginRowProps) {
                 variant="outlined"
               />
             )}
-            {plugin.validation && (
-              <Chip
-                label="Validation"
-                size="small"
-                color="warning"
-                variant="outlined"
-              />
-            )}
-            {plugin.api && (
-              <Chip
-                label="API"
-                size="small"
-                color="info"
-                variant="outlined"
-              />
-            )}
           </Stack>
         </TableCell>
         <TableCell align="center">
           {plugin.category?.createOrder || 'N/A'}
         </TableCell>
         <TableCell>
-          <Tooltip title="Plugin is active">
-            <CheckCircleIcon color="success" fontSize="small" />
-          </Tooltip>
+          <IconButton
+            aria-label="more"
+            aria-controls={menuOpen ? 'plugin-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={menuOpen ? 'true' : undefined}
+            onClick={handleMenuClick}
+            disabled={disabled}
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            id="plugin-menu"
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleMenuClose}
+            MenuListProps={{
+              'aria-labelledby': 'plugin-menu-button',
+            }}
+          >
+            <MenuItem onClick={handleReset}>
+              <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
+              Reset {isFolderPlugin ? '(All Plugins)' : 'Plugin'}
+            </MenuItem>
+            <Divider />
+            {canDelete ? (
+              <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                Delete Plugin
+              </MenuItem>
+            ) : (
+              <MenuItem disabled sx={{ color: 'text.disabled' }}>
+                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                Delete (Disabled for Core Plugin)
+              </MenuItem>
+            )}
+          </Menu>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2 }}>
               <Typography variant="h6" gutterBottom component="div">
@@ -139,46 +253,34 @@ function PluginRow({ plugin, index }: PluginRowProps) {
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Name
+                    Dependencies Graph
                   </Typography>
-                  <Typography variant="body2">
-                    {plugin.name}
-                  </Typography>
+                  {dependencies.length > 0 ? (
+                    <Box sx={{ mt: 1, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="body2" component="div">
+                        {plugin.nodeType} → {dependencies.join(', ')}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      {isFolderPlugin 
+                        ? 'Core plugin - Foundation for all other plugins' 
+                        : 'This plugin has no dependencies'}
+                    </Typography>
+                  )}
                 </Box>
                 
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Display Name
-                  </Typography>
-                  <Typography variant="body2">
-                    {plugin.displayName}
-                  </Typography>
-                </Box>
-                
-                {plugin.category && (
+                {isFolderPlugin && (
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Category
-                    </Typography>
-                    <Typography variant="body2">
-                      Tree: {plugin.category.treeId} | 
-                      Group: {plugin.category.menuGroup || 'default'} | 
-                      Order: {plugin.category.createOrder || 'N/A'}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {plugin.icon && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Icon Configuration
-                    </Typography>
-                    <Typography variant="body2">
-                      {plugin.icon.muiIconName && `MUI Icon: ${plugin.icon.muiIconName}`}
-                      {plugin.icon.emoji && ` | Emoji: ${plugin.icon.emoji}`}
-                      {plugin.icon.color && ` | Color: ${plugin.icon.color}`}
-                      {plugin.icon.description && ` | ${plugin.icon.description}`}
-                    </Typography>
+                    <Alert severity="info" icon={<AccountTreeIcon />}>
+                      <Typography variant="body2">
+                        <strong>Core Plugin:</strong> This plugin cannot be deleted as it provides the foundation for all other plugins.
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Reset behavior:</strong> Resetting the folder plugin will completely clear ALL data:
+                        TreeNodes, PeerEntity, GroupEntity, and RelationalEntity for all plugins, then recreate initial trees.
+                      </Typography>
+                    </Alert>
                   </Box>
                 )}
                 
@@ -188,88 +290,7 @@ function PluginRow({ plugin, index }: PluginRowProps) {
                       Database Configuration
                     </Typography>
                     <Typography variant="body2">
-                      DB: {plugin.database.dbName} | 
-                      Table: {plugin.database.tableName} | 
-                      Version: {plugin.database.version}
-                    </Typography>
-                    {plugin.database.schema && (
-                      <Typography variant="caption" component="div" sx={{ mt: 1, fontFamily: 'monospace' }}>
-                        Schema: {plugin.database.schema}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-                
-                {plugin.ui && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      UI Components
-                    </Typography>
-                    <Typography variant="body2">
-                      {plugin.ui.dialogComponentPath && '✓ Dialog '}
-                      {plugin.ui.panelComponentPath && '✓ Panel '}
-                      {plugin.ui.formComponentPath && '✓ Form '}
-                      {plugin.ui.iconComponentPath && '✓ Icon'}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {plugin.validation && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Validation Rules
-                    </Typography>
-                    <Typography variant="body2">
-                      {plugin.validation.namePattern && `Name Pattern: ${plugin.validation.namePattern.toString()}`}
-                      {plugin.validation.maxChildren && ` | Max Children: ${plugin.validation.maxChildren}`}
-                      {plugin.validation.allowedChildTypes && ` | Allowed Child Types: ${plugin.validation.allowedChildTypes.join(', ')}`}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {plugin.lifecycle && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Lifecycle Hooks
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                      {plugin.lifecycle.hasBeforeCreate && <Chip label="beforeCreate" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterCreate && <Chip label="afterCreate" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasBeforeUpdate && <Chip label="beforeUpdate" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterUpdate && <Chip label="afterUpdate" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasBeforeDelete && <Chip label="beforeDelete" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterDelete && <Chip label="afterDelete" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasBeforeMove && <Chip label="beforeMove" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterMove && <Chip label="afterMove" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasBeforeCommit && <Chip label="beforeCommit" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterCommit && <Chip label="afterCommit" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasBeforeDiscard && <Chip label="beforeDiscard" size="small" variant="outlined" />}
-                      {plugin.lifecycle.hasAfterDiscard && <Chip label="afterDiscard" size="small" variant="outlined" />}
-                    </Stack>
-                  </Box>
-                )}
-                
-                {plugin.api && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      API Extensions
-                    </Typography>
-                    <Typography variant="body2">
-                      {plugin.api.workerExtensions && `Worker Extensions: ${Object.keys(plugin.api.workerExtensions).join(', ')}`}
-                      {plugin.api.clientExtensions && ` | Client Extensions: ${Object.keys(plugin.api.clientExtensions).join(', ')}`}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {plugin.i18n && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Internationalization
-                    </Typography>
-                    <Typography variant="body2">
-                      {plugin.i18n.namespace && `Namespace: ${plugin.i18n.namespace}`}
-                      {plugin.i18n.defaultLocale && ` | Default Locale: ${plugin.i18n.defaultLocale}`}
-                      {plugin.i18n.resources && ` | Available Locales: ${Object.keys(plugin.i18n.resources).join(', ')}`}
+                      Entity Store: {plugin.database.entityStore || `${plugin.nodeType}s`}
                     </Typography>
                   </Box>
                 )}
@@ -282,55 +303,388 @@ function PluginRow({ plugin, index }: PluginRowProps) {
   );
 }
 
+// Reset Plugin Confirmation Dialog
+function ResetPluginDialog({
+  open,
+  pluginName,
+  affectedPlugins,
+  isProduction,
+  onConfirm,
+  onCancel,
+  loading = false
+}: ResetPluginDialogProps) {
+  const isFolderPlugin = pluginName === 'folder';
+  
+  return (
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      aria-labelledby="reset-dialog-title"
+      aria-describedby="reset-dialog-description"
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle id="reset-dialog-title">
+        <Stack direction="row" spacing={1} alignItems="center">
+          <RefreshIcon color={isProduction && isFolderPlugin ? 'error' : 'warning'} />
+          <Typography>
+            Reset Plugin: {pluginName}
+            {isFolderPlugin && ' (Complete System Reset)'}
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          <DialogContentText id="reset-dialog-description">
+            {isFolderPlugin ? (
+              'This will reset the entire system, clearing ALL data including TreeNodes, all plugin entities, and recreating initial trees and root nodes.'
+            ) : (
+              'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and PeerEntity data will be preserved.'
+            )}
+          </DialogContentText>
+          
+          {affectedPlugins.length > 1 && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                The following plugins will be reset:
+              </Typography>
+              <List dense>
+                {affectedPlugins.map(plugin => (
+                  <ListItem key={plugin}>
+                    <ListItemText 
+                      primary={plugin}
+                      secondary={plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+          
+          {isProduction && isFolderPlugin && (
+            <Alert severity="error" icon={<WarningIcon />}>
+              <Typography variant="subtitle2" gutterBottom>
+                <strong>DANGER! ALL DATA WILL BE DELETED!</strong>
+              </Typography>
+              <Typography variant="body2">
+                This action will permanently delete ALL data including TreeNodes, all plugin entities (PeerEntity, GroupEntity, RelationalEntity), 
+                and cannot be undone. The system will be reset to its initial state with new trees and root nodes.
+              </Typography>
+            </Alert>
+          )}
+          
+          {!isFolderPlugin && (
+            <Alert severity="warning">
+              <Typography variant="body2">
+                This action will clear <strong>GroupEntity</strong> and <strong>RelationalEntity</strong> data for this plugin type.
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                • TreeNodes will be <strong>preserved</strong><br/>
+                • PeerEntity data will be <strong>preserved</strong><br/>
+                • Only plugin-specific group and relational data will be deleted
+              </Typography>
+            </Alert>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          color={isProduction && isFolderPlugin ? 'error' : 'warning'}
+          variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
+        >
+          {loading ? 'Resetting...' : (isFolderPlugin ? 'Reset Entire System' : 'Reset Plugin')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// Delete Plugin Confirmation Dialog
+function DeletePluginDialog({
+  open,
+  pluginName,
+  affectedPlugins,
+  onConfirm,
+  onCancel,
+  loading = false
+}: DeletePluginDialogProps) {
+  const [clearDatabase, setClearDatabase] = useState(true);
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      aria-labelledby="delete-dialog-title"
+      aria-describedby="delete-dialog-description"
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle id="delete-dialog-title">
+        <Stack direction="row" spacing={1} alignItems="center">
+          <DeleteIcon color="error" />
+          <Typography>Delete Plugin: {pluginName}</Typography>
+        </Stack>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          <DialogContentText id="delete-dialog-description">
+            This action will delete the selected plugin and all plugins that depend on it.
+          </DialogContentText>
+          
+          {affectedPlugins.length > 1 && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                The following plugins will be affected:
+              </Typography>
+              <List dense>
+                {affectedPlugins.map(plugin => (
+                  <ListItem key={plugin}>
+                    <ListItemText 
+                      primary={plugin}
+                      secondary={plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+          
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={clearDatabase}
+                onChange={(e) => setClearDatabase(e.target.checked)}
+                disabled={loading}
+              />
+            }
+            label="Clear database tables for affected plugins"
+          />
+          
+          <Alert severity="warning">
+            This action cannot be undone. All data associated with these plugins will be permanently deleted.
+          </Alert>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => onConfirm(clearDatabase)}
+          color="error"
+          variant="contained"
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={16} /> : <DeleteIcon />}
+        >
+          {loading ? 'Deleting...' : 'Delete'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 export default function PluginsPage() {
   const navigate = useNavigate();
   const [workerPlugins, setWorkerPlugins] = useState<PluginDefinition[]>([]);
+  const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
+  const [affectedPlugins, setAffectedPlugins] = useState<string[]>([]);
+  const [operationInProgress, setOperationInProgress] = useState(false);
+  
+  // Check if running in production mode
+  const isProduction = import.meta.env.MODE === 'production';
 
-  useEffect(() => {
-    async function loadPlugins() {
-      try {
-        setLoading(true);
-        const client = await WorkerAPIClient.getSingleton();
-        
-        // Use new PluginTreeAPI facade for better type safety and structure
-        const pluginTreeAPI = await client.getPluginTreeAPI();
-        const response = await pluginTreeAPI.getPluginsForTree({
-          treeId: '*' as TreeId,
-          filters: { includeDisabled: true },
-          sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' }
-        });
-        
-        // Convert TreePluginInfo back to PluginDefinition format for compatibility
-        const plugins = response.plugins.map(info => ({
-          nodeType: info.nodeType,
-          name: info.nodeType, // Use nodeType as name for compatibility
-          displayName: info.displayName,
-          // Note: Using displayName for compatibility, no description in PluginDefinition
-          category: {
-            treeId: info.treeConstraints.allowedTreeId,
-            menuGroup: info.menuGroup,
-            createOrder: info.createOrder,
-          },
-          database: {
-            entityStore: `${info.nodeType}s`, // Default entity store name
-            schema: {}, // Empty schema for compatibility
-            version: 1
-          },
-          ui: {
-            dialogComponentPath: info.creatable ? 'mock-dialog-path' : undefined,
-          }
-        }));
-        setWorkerPlugins((plugins as unknown) as PluginDefinition[] || []);
-      } catch (err) {
-        console.error('Failed to load plugins:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load plugins');
-      } finally {
-        setLoading(false);
+  // Load plugin dependencies from package.json metadata
+  const loadPluginDependencies = () => {
+    // This would be loaded from the plugin metadata in package.json
+    const dependencies: Record<string, string[]> = {
+      'folder': [],
+      'basemap': ['folder'],
+      'shape': ['folder'],
+      'spreadsheet': ['folder'],
+      'stylemap': ['spreadsheet'],  // stylemap-plugin depends on spreadsheet-plugin for CSV/TSV handling
+    };
+    setPluginDependencies(dependencies);
+  };
+
+  // Calculate affected plugins (children) when operating on a parent
+  const calculateAffectedPlugins = (pluginName: string): string[] => {
+    const affected = new Set<string>([pluginName]);
+    const queue = [pluginName];
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      
+      // Find all plugins that depend on the current one
+      for (const [plugin, deps] of Object.entries(pluginDependencies)) {
+        if (deps.includes(current) && !affected.has(plugin)) {
+          affected.add(plugin);
+          queue.push(plugin);
+        }
       }
     }
+    
+    return Array.from(affected);
+  };
 
+  // Handle delete plugin operation
+  const handleDeletePlugin = (pluginName: string) => {
+    setSelectedPlugin(pluginName);
+    const affected = calculateAffectedPlugins(pluginName);
+    setAffectedPlugins(affected);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete operation
+  const confirmDelete = async (clearDatabase: boolean) => {
+    if (!selectedPlugin) return;
+    
+    setOperationInProgress(true);
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      
+      // Delete plugin and its descendants
+      for (const plugin of affectedPlugins) {
+        console.log(`Deleting plugin: ${plugin}, clearDatabase: ${clearDatabase}`);
+        // TODO: Implement actual deletion logic with Worker API
+        // await client.deletePlugin(plugin, { clearDatabase });
+      }
+      
+      // Reload plugins
+      await loadPlugins();
+    } catch (err) {
+      console.error('Failed to delete plugin:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete plugin');
+    } finally {
+      setOperationInProgress(false);
+      setDeleteDialogOpen(false);
+      setSelectedPlugin(null);
+      setAffectedPlugins([]);
+    }
+  };
+
+  // Handle reset plugin operation
+  const handleResetPlugin = (pluginName: string) => {
+    setSelectedPlugin(pluginName);
+    const affected = calculateAffectedPlugins(pluginName);
+    setAffectedPlugins(affected);
+    setResetDialogOpen(true);
+  };
+
+  // Confirm reset operation
+  const confirmReset = async () => {
+    if (!selectedPlugin) return;
+    
+    setOperationInProgress(true);
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      const affected = affectedPlugins;
+      
+      // Reset plugin and its descendants
+      if (selectedPlugin === 'folder') {
+        // Special case: Complete system reset
+        console.warn('⚠️ Performing complete system reset');
+        // TODO: Implement complete system reset
+        // This would:
+        // 1. Clear ALL TreeNodes
+        // 2. Clear ALL PeerEntity data
+        // 3. Clear ALL GroupEntity data  
+        // 4. Clear ALL RelationalEntity data
+        // 5. Recreate initial trees and root nodes
+        // await client.resetSystem();
+        console.log('System reset: Clearing ALL data and recreating initial state');
+      } else {
+        // Reset specific plugin and dependents
+        // This only clears GroupEntity and RelationalEntity data
+        // TreeNodes and PeerEntity data are preserved
+        for (const plugin of affected) {
+          console.log(`Resetting plugin: ${plugin} (GroupEntity and RelationalEntity only)`);
+          // TODO: Implement actual reset logic with Worker API
+          // This would:
+          // 1. Clear GroupEntity data for this plugin type
+          // 2. Clear RelationalEntity data for this plugin type
+          // 3. TreeNodes remain intact
+          // 4. PeerEntity data remains intact
+          // await client.resetPluginEntities(plugin, { preserveTreeNodes: true, preservePeerEntities: true });
+        }
+      }
+      
+      // Reload plugins
+      await loadPlugins();
+    } catch (err) {
+      console.error('Failed to reset plugin:', err);
+      setError(err instanceof Error ? err.message : 'Failed to reset plugin');
+    } finally {
+      setOperationInProgress(false);
+      setResetDialogOpen(false);
+      setSelectedPlugin(null);
+      setAffectedPlugins([]);
+    }
+  };
+
+  // Handle reload plugin operation (deprecated - replaced by reset)
+  const handleReloadPlugin = async (pluginName: string, clearDatabase: boolean) => {
+    // This is now handled by handleResetPlugin
+    if (clearDatabase) {
+      handleResetPlugin(pluginName);
+    }
+  };
+
+  async function loadPlugins() {
+    try {
+      setLoading(true);
+      const client = await WorkerAPIClient.getSingleton();
+      
+      // Use new PluginTreeAPI facade for better type safety and structure
+      const pluginTreeAPI = await client.getPluginTreeAPI();
+      const response = await pluginTreeAPI.getPluginsForTree({
+        treeId: '*' as TreeId,
+        filters: { includeDisabled: true },
+        sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' }
+      });
+      
+      // Convert TreePluginInfo back to PluginDefinition format for compatibility
+      const plugins = response.plugins.map(info => ({
+        nodeType: info.nodeType,
+        name: info.nodeType, // Use nodeType as name for compatibility
+        displayName: info.displayName,
+        category: {
+          treeId: info.treeConstraints.allowedTreeId,
+          menuGroup: info.menuGroup,
+          createOrder: info.createOrder,
+        },
+        database: {
+          entityStore: `${info.nodeType}s`,
+          schema: {},
+          version: 1
+        },
+        ui: {
+          dialogComponentPath: info.creatable ? 'mock-dialog-path' : undefined,
+        }
+      }));
+      setWorkerPlugins((plugins as unknown) as PluginDefinition[] || []);
+      
+      // Load dependencies
+      loadPluginDependencies();
+    } catch (err) {
+      console.error('Failed to load plugins:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load plugins');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
     loadPlugins();
   }, []);
 
@@ -376,7 +730,6 @@ export default function PluginsPage() {
       subtitle="View and manage all registered plugins in the HierarchiDB system"
       icon={<ExtensionIcon />}
     >
-
       <Stack spacing={4}>
         {/* Summary Cards */}
         <Stack direction="row" spacing={2}>
@@ -405,23 +758,23 @@ export default function PluginsPage() {
           <Card sx={{ flex: 1 }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
-                Experimental
+                Dependencies
               </Typography>
               <Typography variant="h4">
-                {0}
+                {Object.values(pluginDependencies).flat().length}
               </Typography>
             </CardContent>
           </Card>
         </Stack>
 
-        {/* Worker Plugins Table */}
+        {/* Enhanced Worker Plugins Table with Dependencies and Operations */}
         <Paper elevation={2}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="h6">
-              Worker Layer Plugins
+              Worker Layer Plugins with Dependencies
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Plugins registered in the Worker layer for data processing
+              Plugins registered in the Worker layer with dependency management
             </Typography>
           </Box>
           
@@ -433,19 +786,57 @@ export default function PluginsPage() {
                   <TableCell>#</TableCell>
                   <TableCell>Node Type</TableCell>
                   <TableCell>Display Name</TableCell>
+                  <TableCell>Dependencies</TableCell>
                   <TableCell>Features</TableCell>
                   <TableCell align="center">Priority</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>Operations</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {workerPlugins.map((plugin, index) => (
-                  <PluginRow key={plugin.nodeType} plugin={plugin} index={index} />
+                  <EnhancedPluginRow
+                    key={plugin.nodeType}
+                    plugin={plugin}
+                    index={index}
+                    dependencies={pluginDependencies[plugin.nodeType] || []}
+                    onDelete={handleDeletePlugin}
+                    onReload={handleResetPlugin}
+                    disabled={operationInProgress}
+                  />
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
         </Paper>
+
+        {/* Reset Confirmation Dialog */}
+        <ResetPluginDialog
+          open={resetDialogOpen}
+          pluginName={selectedPlugin || ''}
+          affectedPlugins={affectedPlugins}
+          isProduction={isProduction}
+          onConfirm={confirmReset}
+          onCancel={() => {
+            setResetDialogOpen(false);
+            setSelectedPlugin(null);
+            setAffectedPlugins([]);
+          }}
+          loading={operationInProgress}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <DeletePluginDialog
+          open={deleteDialogOpen}
+          pluginName={selectedPlugin || ''}
+          affectedPlugins={affectedPlugins}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setDeleteDialogOpen(false);
+            setSelectedPlugin(null);
+            setAffectedPlugins([]);
+          }}
+          loading={operationInProgress}
+        />
 
         {/* UI Plugins Table */}
         <Paper elevation={2}>

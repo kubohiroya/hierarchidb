@@ -40,7 +40,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
         filters: {
-          nodeTypes: ['folder', 'document'] as NodeType[],
+          nodeTypes: ['folder-plugin', 'document'] as NodeType[],
           categories: ['core'],
           capabilities: ['create', 'edit']
         }
@@ -50,7 +50,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       
       expect(response.success).toBe(true);
       response.plugins.forEach(plugin => {
-        expect(['folder', 'document']).toContain(plugin.nodeType);
+        expect(['folder-plugin', 'document']).toContain(plugin.nodeType);
         expect(plugin.meta.category).toBe('core');
         expect(plugin.capabilities.some(cap => 
           ['create', 'edit'].includes(cap)
@@ -115,7 +115,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 指定ツリーでのプラグイン使用統計を取得できる', async () => {
       // プラグイン使用統計の基本取得テスト
       const treeId = 'stats-tree-456' as TreeId;
-      const nodeType = 'folder' as NodeType;
+      const nodeType = 'folder-plugin' as NodeType;
 
       const result = await pluginTreeAPI.getPluginUsageStats(treeId, nodeType);
       
@@ -148,7 +148,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
 
       const result = await pluginTreeAPI.getPluginUsageStats(
         'stats-tree-456' as TreeId,
-        'folder' as NodeType,
+        'folder-plugin' as NodeType,
         { from: fromDate, to: toDate }
       );
       
@@ -164,7 +164,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
   describe('getPluginCompatibility() - プラグイン互換性確認', () => {
     it('🔴 互換性のあるプラグイン組み合わせで成功を返す', async () => {
       // 互換性確認の成功ケース
-      const nodeTypes: NodeType[] = ['folder', 'document', 'image'];
+      const nodeTypes: NodeType[] = ['folder-plugin', 'document', 'image'];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
         'compat-tree' as TreeId,

@@ -16,6 +16,7 @@ export interface NodeBase {
   nodeType: NodeType;
   name: string;
   description?: string;
+  depth: number; // Mandatory depth property for efficient subscription filtering
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number;

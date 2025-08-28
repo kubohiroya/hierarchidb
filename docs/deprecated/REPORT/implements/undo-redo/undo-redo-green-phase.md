@@ -169,7 +169,7 @@ private async executeRedoCommand<TType extends string, TPayload>(
         const node = {
           treeNodeId: payload.nodeId,
           parentTreeNodeId: payload.parentNodeId,
-          treeNodeType: 'folder',
+          treeNodeType: 'folder-plugin',
           name: payload.name,
           description: payload.description,
           createdAt: Date.now(),

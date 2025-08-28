@@ -834,13 +834,13 @@ const basemapRef = await projectAPI.addResourceReference(
 
 const shapeRef = await projectAPI.addResourceReference(
   project.nodeId,
-  'shape-node-789' as NodeId,
+  'shape-plugin-node-789' as NodeId,
   'shape'
 );
 
 // Configure layers
 const layerConfig: LayerConfiguration = {
-  layerId: 'my-shape-layer',
+  layerId: 'my-shape-plugin-layer',
   layerType: 'fill',
   layerOrder: 1,
   isVisible: true,

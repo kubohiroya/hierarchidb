@@ -1,11 +1,9 @@
-// Vitest Setup
-import '@testing-library/jest-dom';
+/**
+ * base Test Setup
+ * Uses base vitest setup configuration
+ */
 
-// Mock ResizeObserver if not available
-if (typeof ResizeObserver === 'undefined') {
-  global.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
-}
+// Import base setup (includes common mocks and utilities)
+import '../../../../vitest.setup.base';
+
+// Package-specific setup can be added here if needed

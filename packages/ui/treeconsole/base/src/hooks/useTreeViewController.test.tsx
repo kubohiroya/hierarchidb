@@ -692,7 +692,7 @@ describe('useTreeViewController', () => {
         mockStateManager.copyNodes = vi.fn().mockResolvedValue({
           success: true,
           copiedNodes: [
-            { id: 'folder-1', type: 'folder', name: 'Folder 1' },
+            { id: 'folder-plugin-1', type: 'folder', name: 'Folder 1' },
             { id: 'file-1', type: 'file', name: 'File 1' },
             { id: 'custom-1', type: 'custom', name: 'Custom 1' }
           ]
@@ -703,7 +703,7 @@ describe('useTreeViewController', () => {
         // 【実際の処理実行】: 異なるタイプのノードをコピー
         // 【処理内容】: 複数タイプのノードを一括コピー
         const copyResult = await act(async () => {
-          return await result.current.copyNodes(['folder-1', 'file-1', 'custom-1'] as NodeId[]);
+          return await result.current.copyNodes(['folder-plugin-1', 'file-1', 'custom-1'] as NodeId[]);
         });
 
         // 【結果検証】: 全てのノードタイプがコピーされたこと
@@ -720,7 +720,7 @@ describe('useTreeViewController', () => {
 
         mockStateManager.canPaste = vi.fn((targetId) => {
           // ファイルはフォルダにのみペースト可能という仮定
-          return targetId === 'folder-node';
+          return targetId === 'folder-plugin-node';
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));

@@ -14,8 +14,8 @@ import {
 /**
  * Folder CRUD Operations E2E Tests
  *
- * Tests folder creation, reading, updating, and deletion operations.
- * Based on the specification in docs/12-2-e2e-folder.md
+ * Tests folder-plugin creation, reading, updating, and deletion operations.
+ * Based on the specification in docs/12-2-e2e-folder-plugin.md
  */
 
 test.describe('Folder CRUD Operations', () => {
@@ -45,7 +45,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // If createTestFolder completed without error, SpeedDial UI is working correctly
     expect(folderName).toBeTruthy();
-    console.log('SpeedDial UI test passed - folder creation flow completed');
+    console.log('SpeedDial UI test passed - folder-plugin creation flow completed');
   });
 
   test('フォルダ作成 - コンテキストメニューから', async ({ page }) => {
@@ -61,17 +61,17 @@ test.describe('Folder CRUD Operations', () => {
     await expect(page.locator('[data-testid="create-submenu"]')).toBeVisible();
 
     // フォルダ作成を選択
-    await page.locator('[data-testid="create-submenu-folder"]').click();
+    await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
     // 作成ダイアログの確認
-    await expect(page.locator('[data-testid="folder-create-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
 
     const folderName = `Context Menu Folder ${Date.now()}`;
-    await page.locator('[data-testid="folder-name-input"]').fill(folderName);
-    await page.locator('[data-testid="create-folder-confirm"]').click();
+    await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
+    await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // フォルダが作成されることを確認
-    await expect(page.locator('[data-testid="folder-create-dialog"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).toBeVisible({
       timeout: 5000,
     });
@@ -110,17 +110,17 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="context-menu-edit"]').click();
 
     // 編集ダイアログの確認
-    await expect(page.locator('[data-testid="folder-edit-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).toBeVisible();
 
     // 新しい名前を入力
     const newName = `Edited Name ${Date.now()}`;
-    const nameInput = page.locator('[data-testid="folder-name-input"]');
+    const nameInput = page.locator('[data-testid="folder-plugin-name-input"]');
     await nameInput.clear();
     await nameInput.fill(newName);
-    await page.locator('[data-testid="edit-folder-confirm"]').click();
+    await page.locator('[data-testid="edit-folder-plugin-confirm"]').click();
 
     // 名前が変更されることを確認
-    await expect(page.locator('[data-testid="folder-edit-dialog"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).not.toBeVisible();
     await waitForWorkingCopyUpdate(page);
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${newName}")`)).toBeVisible({
       timeout: 5000,
@@ -214,11 +214,11 @@ test.describe('Folder CRUD Operations', () => {
   test('フォルダ作成時のバリデーション', async ({ page }) => {
     // SpeedDialからフォルダ作成を開始
     await page.locator('[data-testid="speed-dial-fab"]').click();
-    await page.locator('[data-testid="create-folder-action"]').click();
+    await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
     // 空の名前で作成を試行
-    await expect(page.locator('[data-testid="folder-create-dialog"]')).toBeVisible();
-    await page.locator('[data-testid="create-folder-confirm"]').click();
+    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+    await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // エラーメッセージの確認
     await expect(page.locator('[data-testid="name-validation-error"]')).toBeVisible();
@@ -227,8 +227,8 @@ test.describe('Folder CRUD Operations', () => {
     );
 
     // 無効な文字を含む名前
-    await page.locator('[data-testid="folder-name-input"]').fill('Invalid/Name');
-    await page.locator('[data-testid="create-folder-confirm"]').click();
+    await page.locator('[data-testid="folder-plugin-name-input"]').fill('Invalid/Name');
+    await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // 無効文字エラーの確認
     await expect(page.locator('[data-testid="name-validation-error"]')).toHaveText(
@@ -236,8 +236,8 @@ test.describe('Folder CRUD Operations', () => {
     );
 
     // ダイアログをキャンセル
-    await page.locator('[data-testid="cancel-folder-create"]').click();
-    await expect(page.locator('[data-testid="folder-create-dialog"]')).not.toBeVisible();
+    await page.locator('[data-testid="cancel-folder-plugin-create"]').click();
+    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
   });
 
   test('重複名のハンドリング', async ({ page }) => {
@@ -247,13 +247,13 @@ test.describe('Folder CRUD Operations', () => {
 
     // 同じ名前でもう一つ作成を試行
     await page.locator('[data-testid="speed-dial-fab"]').click();
-    await page.locator('[data-testid="create-folder-action"]').click();
+    await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
-    await page.locator('[data-testid="folder-name-input"]').fill(originalName);
-    await page.locator('[data-testid="create-folder-confirm"]').click();
+    await page.locator('[data-testid="folder-plugin-name-input"]').fill(originalName);
+    await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // 重複名処理の確認（自動的に番号が付与される）
-    await expect(page.locator('[data-testid="folder-create-dialog"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
 
     // 元のフォルダと新しいフォルダの両方が存在することを確認
     const allFolders = page.locator(`[data-testid="tree-node"]:has-text("${originalName}")`);
@@ -273,7 +273,7 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="context-menu-properties"]').click();
 
     // プロパティダイアログの確認
-    await expect(page.locator('[data-testid="folder-properties-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-properties-dialog"]')).toBeVisible();
 
     // 基本情報の確認
     await expect(page.locator('[data-testid="property-name"]')).toHaveText(folderName);
@@ -283,7 +283,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // ダイアログを閉じる
     await page.locator('[data-testid="close-properties"]').click();
-    await expect(page.locator('[data-testid="folder-properties-dialog"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-properties-dialog"]')).not.toBeVisible();
   });
 
   test('フォルダの複製', async ({ page }) => {
@@ -348,7 +348,7 @@ test.describe('Folder CRUD Operations', () => {
   test('フォルダ作成の取り消し（Undo）', async ({ page }) => {
     // 初期状態のフォルダ数を記録
     const initialFolders = await page
-      .locator('[data-testid="tree-node"][data-node-type="folder"]')
+      .locator('[data-testid="tree-node"][data-node-type="folder-plugin"]')
       .count();
 
     // フォルダを作成
@@ -368,7 +368,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // フォルダ数が元に戻ることを確認
     const finalFolders = await page
-      .locator('[data-testid="tree-node"][data-node-type="folder"]')
+      .locator('[data-testid="tree-node"][data-node-type="folder-plugin"]')
       .count();
     expect(finalFolders).toBe(initialFolders);
   });

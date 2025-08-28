@@ -114,7 +114,7 @@ const topLevelNodes = await groupDescendants(db, selectedIds);
 
 ```typescript
 // フォルダ配下の全ファイル取得
-const allDescendants = await getAllDescendants(db, 'folder-root');
+const allDescendants = await getAllDescendants(db, 'folder-plugin-root');
 
 // 削除前の影響範囲確認
 console.log(`${allDescendants.length}個のノードが影響を受けます`);

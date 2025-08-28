@@ -89,6 +89,7 @@ export { UnifiedNodeTypeRegistry } from '~/registry/UnifiedNodeTypeRegistry';
 export { TreeQueryService } from '~/services/TreeQueryService';
 export { TreeMutationService } from '~/services/TreeMutationService';
 export { TreeSubscriptionService } from '~/services/TreeSubscriptionService';
+export { PluginManagementService } from '~/services/PluginManagementService';
 
 // API exports
 export { WorkerAPIImpl } from '~/WorkerAPIImpl';

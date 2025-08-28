@@ -122,7 +122,7 @@ await pluginRegistry.registerNodeType({
   nodeType: 'myNodeType',
   displayName: 'My Custom Node',
   description: 'Custom node implementation',
-  icon: 'folder',
+  icon: 'folder-plugin',
   database: { /* Dexie設定 */ },
   entityHandler: new MyEntityHandler(),
   lifecycle: { /* ライフサイクルフック */ },

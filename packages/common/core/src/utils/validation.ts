@@ -182,16 +182,37 @@ export function canMoveNode(
 }
 
 /**
- * Validate external URL format and protocol
+ * Validate and normalize external URL format and protocol
+ * Compatible with both ui-file and common-core patterns
  */
-export const validateExternalURL = (url: string): { isValid: boolean; error?: string } => {
+export const validateExternalURL = (url: string): { isValid: boolean; valid?: boolean; error?: string; url?: string } => {
   try {
-    const urlObj = new URL(url);
-    if (!['http:', 'https:'].includes(urlObj.protocol)) {
-      return { isValid: false, error: 'URL must use HTTP or HTTPS protocol' };
+    // Remove leading/trailing whitespace
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      return { isValid: false, valid: false, error: 'URL is required' };
     }
-    return { isValid: true };
+
+    // Parse URL
+    const parsedUrl = new URL(trimmedUrl);
+    
+    // Check protocol (only allow http and https)
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return { isValid: false, valid: false, error: 'URL must use HTTP or HTTPS protocol' };
+    }
+
+    // Basic sanitization: encode special characters in pathname
+    parsedUrl.pathname = parsedUrl.pathname
+      .split('/')
+      .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+      .join('/');
+
+    return { 
+      isValid: true, 
+      valid: true, 
+      url: parsedUrl.toString() 
+    };
   } catch {
-    return { isValid: false, error: 'Invalid URL format' };
+    return { isValid: false, valid: false, error: 'Invalid URL format' };
   }
 };

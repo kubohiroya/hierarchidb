@@ -107,7 +107,7 @@ export class SpreadsheetRefHandler extends PeerEntityHandler<SpreadsheetRefEntit
 ### SpreadsheetPlugin (UI側)
 
 ```typescript
-// packages/plugins/spreadsheet/src/SpreadsheetPlugin.ts
+// packages/plugins/spreadsheet-plugin/src/SpreadsheetPlugin.ts
 
 export class SpreadsheetPlugin {
   constructor(private workerAPI: WorkerAPI) {}
@@ -305,7 +305,7 @@ describe('SpreadsheetPlugin', () => {
     await plugin.import('node2' as NodeId, testFile);
     
     // Verify shared
-    const isShared = await mockWorkerAPI.call('spreadsheet.isShared', metadataId);
+    const isShared = await mockWorkerAPI.call('spreadsheet-plugin.isShared', metadataId);
     expect(isShared).toBe(true);
   });
 });

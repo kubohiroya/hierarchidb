@@ -237,10 +237,10 @@ export interface PluginExtensionConfig {
 /**
  * 【機能概要】: 拡張可能なノードタイプ定義
  * 【実装方針】: プラグインが他プラグインを継承可能にする中核型
- * 【テスト対応】: folder→stylemap拡張等のユースケース
+ * 【テスト対応】: folder-plugin→stylemap拡張等のユースケース
  * 🟢 信頼性レベル: 設計文書の中核仕様
  */
-export interface ExtendableNodeTypeDefinition<_TBase extends PeerEntity = any, _TExtended = any, _TWorkingCopy = any> {
+export interface ExtendingNodeTypeDefinition<_TBase extends PeerEntity = any, _TExtended = any, _TWorkingCopy = any> {
   // 【継承元】: 基底となるプラグインのnodeType
   extends: string;
   // 【ノードタイプ】: このプラグインのnodeType

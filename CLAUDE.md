@@ -8,6 +8,8 @@ HierarchiDB is a high-performance tree-structured data management framework for 
 
 ## Essential Commands
 
+プロンプトでのユーザとの会話は**日本語**に固定すること。
+
 ### Development
 - `pnpm install` - Install dependencies (enforces pnpm via preinstall hook)
 - `pnpm dev` - Start all development servers in parallel (Turborepo)
@@ -820,7 +822,7 @@ describe('NodeId operations', () => {
     const node: TreeNode = {
       id: testNodeId,
       parentNodeId: parentNodeId,
-      nodeType: 'folder', // String literal, not enum
+      nodeType: 'folder-plugin', // String literal, not enum
       name: 'Test Node',
       createdAt: Date.now(),
       updatedAt: Date.now(),

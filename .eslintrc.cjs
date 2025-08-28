@@ -18,7 +18,7 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
   },
-  plugins: ['@typescript-eslint', 'import'],
+  plugins: ['@typescript-eslint', 'import', 'deprecation'],
   rules: {
     // TypeScript rules
     '@typescript-eslint/no-unused-vars': [
@@ -31,6 +31,9 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-empty-interface': 'warn',
     '@typescript-eslint/ban-ts-comment': 'warn',
+    
+    // Deprecation detection
+    'deprecation/deprecation': 'warn',
 
     // General rules
     'prefer-const': 'warn',

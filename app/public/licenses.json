@@ -52,6 +52,10 @@
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
   },
+  "@types/minimist@1.2.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
+  },
   "@types/node@18.19.123": {
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped"
@@ -92,7 +96,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
-  "@typescript-eslint/visitor-keys@7.18.0": {
+  "@typescript-eslint/visitor-keys@5.62.0": {
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
@@ -100,6 +104,24 @@
     "licenses": "MIT",
     "repository": "https://github.com/vitejs/vite-plugin-react",
     "publisher": "Evan You"
+  },
+  "change-case@5.4.4": {
+    "licenses": "MIT",
+    "repository": "https://github.com/blakeembrey/change-case",
+    "publisher": "Blake Embrey",
+    "email": "hello@blakeembrey.com",
+    "url": "http://blakeembrey.me"
+  },
+  "eslint-config-prettier@10.1.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prettier/eslint-config-prettier",
+    "publisher": "Simon Lydell"
+  },
+  "eslint-plugin-deprecation@3.0.0": {
+    "licenses": "LGPL-3.0-or-later",
+    "repository": "https://github.com/gund/eslint-plugin-deprecation",
+    "publisher": "Alex Malkevich",
+    "email": "malkevich.alex@gmail.com"
   },
   "eslint-plugin-react-hooks@5.2.0": {
     "licenses": "MIT",
@@ -154,6 +176,13 @@
     "email": "sindresorhus@gmail.com",
     "url": "https://sindresorhus.com"
   },
+  "globby@14.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/globby",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com"
+  },
   "happy-dom@16.8.1": {
     "licenses": "MIT",
     "repository": "https://github.com/capricorn86/happy-dom",
@@ -174,6 +203,13 @@
     "publisher": "Dav Glass",
     "email": "davglass@gmail.com"
   },
+  "minimist@1.2.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/minimistjs/minimist",
+    "publisher": "James Halliday",
+    "email": "mail@substack.net",
+    "url": "http://substack.net"
+  },
   "prettier@3.6.2": {
     "licenses": "MIT",
     "repository": "https://github.com/prettier/prettier",
@@ -187,6 +223,11 @@
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react"
   },
+  "ts-morph@26.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/dsherret/ts-morph",
+    "publisher": "David Sherret"
+  },
   "tsc-alias@1.8.16": {
     "licenses": "MIT",
     "repository": "https://github.com/justkey007/tsc-alias",
@@ -196,6 +237,12 @@
     "licenses": "MIT",
     "repository": "https://github.com/egoist/tsup",
     "publisher": "EGOIST"
+  },
+  "tsx@4.20.5": {
+    "licenses": "MIT",
+    "repository": "https://github.com/privatenumber/tsx",
+    "publisher": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
   },
   "turbo@2.5.6": {
     "licenses": "MIT",

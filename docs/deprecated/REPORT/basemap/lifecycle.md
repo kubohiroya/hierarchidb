@@ -333,7 +333,7 @@ async function validateParentNodeConstraints(parentId: NodeId): Promise<void> {
   }
 
   // BaseMapノードが作成可能な親ノードタイプをチェック
-  const allowedParentTypes = ['root', 'folder', 'project'];
+  const allowedParentTypes = ['root', 'folder-plugin', 'project'];
   if (!allowedParentTypes.includes(parentNode.nodeType)) {
     throw new Error(`BaseMap cannot be created under ${parentNode.nodeType} node`);
   }

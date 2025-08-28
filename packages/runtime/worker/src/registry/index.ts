@@ -8,7 +8,7 @@
 export {
   SimpleNodeTypeRegistry,
   SimpleNodeTypeRegistry as NodeTypeRegistry,
-} from './SimpleNodeTypeRegistry';
+} from '@hierarchidb/runtime-plugin-registry';
 // Export types
 export * from './types';
 export type {

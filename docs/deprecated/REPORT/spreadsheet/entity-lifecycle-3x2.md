@@ -302,7 +302,7 @@ export class SpreadsheetDB extends Dexie {
   spreadsheetRefs!: Table<SpreadsheetRefEntity, NodeId>;
   spreadsheetChunks!: Table<SpreadsheetChunk, string>;
 
-  constructor(name: string = 'hierarchidb-spreadsheet') {
+  constructor(name: string = 'hierarchidb-spreadsheet-plugin') {
     super(name);
     // プラグイン固有のスキーマ定義
   }
@@ -312,7 +312,7 @@ export class SpreadsheetDB extends Dexie {
 export class StyleMapDB extends Dexie {
   styleMapEntities!: Table<StyleMapEntity, NodeId>;
   
-  constructor(name: string = 'hierarchidb-stylemap') {
+  constructor(name: string = 'hierarchidb-stylemap-plugin') {
     super(name);
     // StyleMap固有のスキーマ定義
   }

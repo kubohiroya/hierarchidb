@@ -4,7 +4,7 @@
  * This is the refactored version of the original NodeTypeRegistry in core
  */
 
-import type { NodeType } from '../types/base';
+import type { NodeType } from '../types';
 import type {
   NodeTypeDefinition,
   PeerEntity,

@@ -150,7 +150,7 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'folder',
     name: 'Folder',
     displayName: 'Folder',
-    description: 'Create a folder to organize your items. Folders can contain other folders and various node types.',
+    description: 'Create a folder-plugin to organize your items. Folders can contain other folders and various node types.',
     icon: {
       muiIconName: 'Folder',
       emoji: '📁',
@@ -216,7 +216,7 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'shape',
     name: 'Shape',
     displayName: 'Geographic Shape',
-    description: 'Manage geographic shape data and boundaries. Import and visualize country, state, and administrative boundaries.',
+    description: 'Manage geographic shape-plugin data and boundaries. Import and visualize country, state, and administrative boundaries.',
     icon: {
       muiIconName: 'Layers',
       emoji: '🌍',

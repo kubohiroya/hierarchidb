@@ -4,7 +4,7 @@
  * Prevents type information loss during JSON operations
  */
 
-import type { TreeNode, Tree } from '../types';
+import type { TreeNode, Tree, NodeId } from '../types';
 import { createNodeId, createTreeId, isNodeId, isTreeId, isEntityId } from './idFactory';
 
 /**
@@ -90,9 +90,10 @@ export function deserializeTreeNode(data: unknown): TreeNode {
   // Create validated TreeNode with proper types
   const treeNode: TreeNode = {
     id: createNodeId(obj.id),
-    parentId: createNodeId(obj.parentId),
+    parentId: obj.parentId ? createNodeId(obj.parentId) : ('' as NodeId),
     nodeType: obj.nodeType,
     name: obj.name,
+    depth: typeof (obj as any).depth === 'number' ? (obj as any).depth : 0, // Default to 0 if not provided
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
     version: obj.version,
@@ -186,6 +187,7 @@ export function serializeTreeNode(node: TreeNode): Record<string, unknown> {
     parentId: node.parentId as string,
     nodeType: node.nodeType,
     name: node.name,
+    depth: node.depth, // depth属性を追加
     description: node.description,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,

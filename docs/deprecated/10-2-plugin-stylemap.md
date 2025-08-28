@@ -878,7 +878,7 @@ const styleConfig = {
 };
 
 // Step 6: プレビューと作成
-const entity = await workerAPI.createNode('stylemap', {
+const entity = await workerAPI.createNode('stylemap-plugin', {
   ...basicInfo,
   filename: 'data.csv',
   ...columnConfig,

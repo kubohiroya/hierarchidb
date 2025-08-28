@@ -30,6 +30,7 @@ export async function createNewDraftWorkingCopy(
     parentId: parentId,
     nodeType,
     name: uniqueName,
+    depth: 0, // Will be calculated by database operations
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -146,6 +147,7 @@ export async function commitWorkingCopy(
         nodeType: workingCopy.nodeType,
         name: finalName,
         description: workingCopy.description,
+        depth: 0, // Will be calculated by database operations
         createdAt: now,
         updatedAt: now,
         version: 1,

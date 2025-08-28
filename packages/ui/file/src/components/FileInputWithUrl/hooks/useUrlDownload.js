@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 // import { convertCorsProxyURL } from "@/domains/resources/_shapes_buggy/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
-import { devLog } from '../../../utils/logger';
-import { validateExternalURL } from '../../../utils/validation';
+import { devLog } from '@hierarchidb/common-core';
+import { validateExternalURL } from '@hierarchidb/common-core';
 import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 export function useUrlDownload({
   accept,

@@ -47,7 +47,7 @@ const nodeCreation: NodeLifecycleHooks = {
   
   afterCreate: async (node: TreeNode, context: NodeContext) => {
     // Create corresponding StyleMapEntity
-    const handler = context.getEntityHandler<StyleMapEntity>('stylemap');
+    const handler = context.getEntityHandler<StyleMapEntity>('stylemap-plugin');
     await handler.createEntity(node.id, {
       name: node.name,
       description: node.description,
@@ -164,7 +164,7 @@ class StyleMapWorkingCopyManager implements WorkingCopyLifecycle {
 ```typescript
 const deletionLifecycle: NodeLifecycleHooks = {
   beforeDelete: async (node: TreeNode, context: NodeContext) => {
-    const handler = context.getEntityHandler<StyleMapEntity>('stylemap');
+    const handler = context.getEntityHandler<StyleMapEntity>('stylemap-plugin');
     const entity = await handler.getEntity(node.id);
     
     if (entity?.tableMetadataId) {

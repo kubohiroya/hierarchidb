@@ -45,7 +45,7 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
 }
 
 /**
- * Creates a test folder with a unique name
+ * Creates a test folder-plugin with a unique name
  */
 export async function createTestFolder(page: Page, baseName: string): Promise<string> {
   const timestamp = Date.now();
@@ -72,10 +72,10 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   );
   await expect(createFolderAction).toBeVisible({ timeout: 5000 });
   
-  // Click folder creation action
+  // Click folder-plugin creation action
   await createFolderAction.click();
 
-  // Handle the browser prompt dialog for folder creation
+  // Handle the browser prompt dialog for folder-plugin creation
   page.on('dialog', async dialog => {
     console.log('Dialog appeared:', dialog.type(), dialog.message());
     if (dialog.type() === 'prompt') {
@@ -87,14 +87,14 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   await page.waitForTimeout(1000);
 
   // For SpeedDial testing, we just verify the UI interaction worked
-  // The actual folder creation would require backend implementation
-  console.log('SpeedDial folder creation flow completed successfully');
+  // The actual folder-plugin creation would require backend implementation
+  console.log('SpeedDial folder-plugin creation flow completed successfully');
 
   return folderName;
 }
 
 /**
- * Creates a child folder under a parent node
+ * Creates a child folder-plugin under a parent node
  */
 export async function createChildFolder(
   page: Page,
@@ -112,22 +112,22 @@ export async function createChildFolder(
   await page.locator('[data-testid="context-menu-create"]').hover();
   await expect(page.locator('[data-testid="create-submenu"]')).toBeVisible();
 
-  // Click folder creation
-  await page.locator('[data-testid="create-submenu-folder"]').click();
+  // Click folder-plugin creation
+  await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
   // Fill dialog
-  await expect(page.locator('[data-testid="folder-create-dialog"]')).toBeVisible();
-  await page.locator('[data-testid="folder-name-input"]').fill(folderName);
-  await page.locator('[data-testid="create-folder-confirm"]').click();
+  await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+  await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
+  await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
   // Wait for creation
-  await expect(page.locator('[data-testid="folder-create-dialog"]')).not.toBeVisible();
+  await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
 
   return folderName;
 }
 
 /**
- * Moves a folder to trash
+ * Moves a folder-plugin to trash
  */
 export async function moveToTrash(page: Page, folderName: string): Promise<void> {
   const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
@@ -140,7 +140,7 @@ export async function moveToTrash(page: Page, folderName: string): Promise<void>
   await expect(page.locator('[data-testid="trash-confirmation-dialog"]')).toBeVisible();
   await page.locator('[data-testid="confirm-trash"]').click();
 
-  // Wait for folder to disappear from main view
+  // Wait for folder-plugin to disappear from main view
   await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).not.toBeVisible(
     { timeout: 5000 }
   );

@@ -115,10 +115,10 @@ const PACKAGE_MAPPINGS = [
 
   // UI Features層 (12) - その他
   {
-    old: 'packages/ui/import-export',
-    new: 'packages/12-ui-features/import-export',
-    name: '@hierarchidb/ui-features-import-export',
-    oldName: '@hierarchidb/ui-import-export',
+    old: 'packages/ui/import-export-plugin',
+    new: 'packages/12-ui-features/import-export-plugin',
+    name: '@hierarchidb/ui-features-import-export-plugin',
+    oldName: '@hierarchidb/ui-import-export-plugin',
   },
   {
     old: 'packages/ui/file',
@@ -211,14 +211,14 @@ const PACKAGE_MAPPINGS = [
     name: '@hierarchidb/plugin-basemap',
   },
   {
-    old: 'packages/plugins/stylemap',
-    new: 'packages/20-plugins/stylemap',
+    old: 'packages/plugins/stylemap-plugin',
+    new: 'packages/20-plugins/stylemap-plugin',
     name: '@hierarchidb/plugin-stylemap',
   },
   {
-    old: 'packages/plugins/folder',
-    new: 'packages/20-plugins/folder',
-    name: '@hierarchidb/plugin-folder',
+    old: 'packages/plugins/folder-plugin',
+    new: 'packages/20-plugins/folder-plugin',
+    name: '@hierarchidb/plugin-folder-plugin',
   },
   {
     old: 'packages/plugins/project',
@@ -226,8 +226,8 @@ const PACKAGE_MAPPINGS = [
     name: '@hierarchidb/plugin-project',
   },
   {
-    old: 'packages/plugins/import-export',
-    new: 'packages/20-plugins/import-export',
+    old: 'packages/plugins/import-export-plugin',
+    new: 'packages/20-plugins/import-export-plugin',
     name: '@hierarchidb/plugin-import-export',
   },
   {
@@ -236,9 +236,9 @@ const PACKAGE_MAPPINGS = [
     name: '@hierarchidb/plugin-shapes',
   },
   {
-    old: 'packages/plugins/spreadsheet',
-    new: 'packages/20-plugins/spreadsheet',
-    name: '@hierarchidb/plugin-spreadsheet',
+    old: 'packages/plugins/spreadsheet-plugin',
+    new: 'packages/20-plugins/spreadsheet-plugin',
+    name: '@hierarchidb/plugin-spreadsheet-plugin',
   },
 
   // Backend層 (30)

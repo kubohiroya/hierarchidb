@@ -6,11 +6,15 @@
 import * as Comlink from 'comlink';
 import { WorkerAPIImpl } from '@hierarchidb/runtime-worker';
 import type { TreeId, NodeId } from '@hierarchidb/common-core';
+import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-init-notifier';
 
 // Get app name from environment
 const appName = import.meta.env.VITE_APP_NAME || 'hierarchidb';
 
 console.log('[App Worker] Starting initialization...');
+
+// Create initialization reporter to notify UI when Worker is ready
+const initReporter = new WorkerInitializationReporter();
 
 // Create a minimal wrapper that handles lazy initialization
 class WorkerAPIProxy {
@@ -19,11 +23,17 @@ class WorkerAPIProxy {
   private async getInstance(): Promise<WorkerAPIImpl> {
     if (!this.instancePromise) {
       console.log('[App Worker] Creating WorkerAPIImpl singleton...');
+      initReporter.reportStepProgress('Creating WorkerAPIImpl singleton...', 10);
+      
       this.instancePromise = WorkerAPIImpl.getSingleton(appName);
       this.instancePromise.then(
-        () => console.log('[App Worker] WorkerAPIImpl initialized successfully'),
+        () => {
+          console.log('[App Worker] WorkerAPIImpl initialized successfully');
+          initReporter.reportStepProgress('WorkerAPIImpl initialized successfully', 90);
+        },
         (error) => {
           console.error('[App Worker] WorkerAPIImpl initialization failed:', error);
+          initReporter.reportError(error.message || 'WorkerAPIImpl initialization failed');
           this.instancePromise = null; // Allow retry
         }
       );
@@ -153,25 +163,36 @@ class WorkerAPIProxy {
     return queryAPI.getNode(nodeId as NodeId);
   }
 
-  // Additional methods required by WorkerAPI interface
+  /**
+   * @deprecated Use getQueryAPI().listChildren() instead. Will be removed in v2.0.
+   */
   async getChildren(parentId: string) {
     const instance = await this.getInstance();
     const queryAPI = await instance.getQueryAPI();
     return queryAPI.listChildren(parentId as NodeId);
   }
 
+  /**
+   * @deprecated Use getMutationAPI().createNode() instead. Will be removed in v2.0.
+   */
   async create(params: any) {
     const instance = await this.getInstance();
     const mutationAPI = await instance.getMutationAPI();
     return mutationAPI.createNode(params);
   }
 
+  /**
+   * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
+   */
   async recoverFromTrash(params: any) {
     const instance = await this.getInstance();
     const mutationAPI = await instance.getMutationAPI();
     return mutationAPI.recoverNodesFromTrash(params);
   }
 
+  /**
+   * @deprecated Use getMutationAPI().removeNodes() instead. Will be removed in v2.0.
+   */
   async removeNodes(nodeIds: any) {
     const instance = await this.getInstance();
     const mutationAPI = await instance.getMutationAPI();
@@ -190,8 +211,12 @@ class WorkerAPIProxy {
 // Create and expose the worker API proxy immediately
 const workerAPI = new WorkerAPIProxy();
 console.log('[App Worker] Exposing WorkerAPI via Comlink...');
+initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);
 Comlink.expose(workerAPI);
 console.log('[App Worker] Worker ready - will initialize on first call');
+
+// Report that Worker is fully initialized and ready
+initReporter.reportComplete();
 
 // Export for type safety
 export default workerAPI;

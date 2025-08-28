@@ -1344,7 +1344,7 @@ describe('TreeMutationService Integration', () => {
 
   it('should create and retrieve node', async () => {
     const parentId = 'parent' as NodeId;
-    const nodeData = { name: 'Test Node', nodeType: 'folder' };
+    const nodeData = { name: 'Test Node', nodeType: 'folder-plugin' };
     
     const nodeId = await service.createNode(parentId, nodeData);
     const retrieved = await service.getNode(nodeId);
@@ -1365,7 +1365,7 @@ test('should create and edit node', async ({ page }) => {
   // Create new node
   await page.click('[data-testid="create-node-button"]');
   await page.fill('[data-testid="node-name-input"]', 'New Node');
-  await page.selectOption('[data-testid="node-type-select"]', 'folder');
+  await page.selectOption('[data-testid="node-type-select"]', 'folder-plugin');
   await page.click('[data-testid="save-button"]');
   
   // Verify node created

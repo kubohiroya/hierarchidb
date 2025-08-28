@@ -259,7 +259,7 @@ export function TrashbinTable({
                 <TableCell>
                   <ItemCell>
                     <IconComponent
-                      nodeType={item.nodeType || item.type || 'folder'}
+                      nodeType={item.nodeType || item.type || 'folder-plugin'}
                       size="small"
                     />
                     <Typography variant="body2" sx={{ flex: 1 }}>
@@ -326,7 +326,7 @@ export function TrashbinTable({
         open={Boolean(contextMenuState.anchorEl)}
         onClose={handleContextMenuClose}
         nodeId={contextMenuState.item?.id || ''}
-        nodeType={contextMenuState.item?.nodeType || contextMenuState.item?.type || 'folder'}
+        nodeType={contextMenuState.item?.nodeType || contextMenuState.item?.type || 'folder-plugin'}
         nodeName={contextMenuState.item?.name}
         canCreate={false}
         canEdit={false}

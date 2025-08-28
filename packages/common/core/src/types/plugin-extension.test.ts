@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { NodeId } from '../index';
 import type {
-  ExtendableNodeTypeDefinition,
+  ExtendingNodeTypeDefinition,
   BaseNodeDefinition,
   DialogStepDefinition,
   ExtendedFieldDefinition,
@@ -18,7 +18,7 @@ import type {
   StepValidation
 } from './plugin-extension';
 
-describe('ExtendableNodeTypeDefinition インターフェース', () => {
+describe('ExtendingNodeTypeDefinition インターフェース', () => {
   
   beforeEach(() => {
     // 【テスト前準備】: 各テスト実行前にテスト環境を初期化し、一貫したテスト条件を保証
@@ -31,14 +31,14 @@ describe('ExtendableNodeTypeDefinition インターフェース', () => {
   });
 
   it('基本的なプラグイン拡張定義を作成できること', () => {
-    // 【テスト目的】: ExtendableNodeTypeDefinition型が基本的なプラグイン拡張構造を表現できることを確認
+    // 【テスト目的】: ExtendingNodeTypeDefinition型が基本的なプラグイン拡張構造を表現できることを確認
     // 【テスト内容】: folderプラグインを拡張するstylemap定義を作成し、型安全性を検証
     // 【期待される動作】: 継承元プラグイン、追加ステップ、拡張エンティティが正しく定義される
     // 🟢 信頼性レベル: 設計文書に基づいた仕様
 
     // 【テストデータ準備】: StyleMapプラグインがFolderプラグインを拡張する想定
     // 【初期条件設定】: 拡張定義に必要な最小限のプロパティを設定
-    const styleMapExtension: ExtendableNodeTypeDefinition<any, any, any> = {
+    const styleMapExtension: ExtendingNodeTypeDefinition<any, any, any> = {
       extends: 'folder',
       nodeType: 'stylemap',
       name: 'StyleMap',
@@ -407,12 +407,12 @@ describe('ExtendableNodeTypeDefinition インターフェース', () => {
 
   it('プラグインの継承チェーンを構築できること', () => {
     // 【テスト目的】: プラグインの継承関係から完全な継承チェーンを構築できることを確認
-    // 【テスト内容】: base → folder → stylemapのような継承チェーンの構築
+    // 【テスト内容】: base → folder-plugin → stylemapのような継承チェーンの構築
     // 【期待される動作】: ルートから現在のプラグインまでの完全なパスが取得できる
     // 🟡 信頼性レベル: 設計から推測した実装
 
     // 【テストデータ準備】: 3層の継承関係を持つプラグイン
-    // 【初期条件設定】: base → folder → stylemap の継承チェーン
+    // 【初期条件設定】: base → folder-plugin → stylemap-plugin の継承チェーン
     const buildInheritanceChain = (pluginName: string, registry: Map<string, any>): string[] => {
       const chain: string[] = [];
       let current = pluginName;
@@ -437,7 +437,7 @@ describe('ExtendableNodeTypeDefinition インターフェース', () => {
     const chain = buildInheritanceChain('stylemap', registry);
 
     // 【結果検証】: 継承チェーンが正しく構築されることを確認
-    // 【期待値確認】: base → folder → stylemap の順序でチェーンが構築される
+    // 【期待値確認】: base → folder-plugin → stylemap-plugin の順序でチェーンが構築される
     expect(chain).toEqual(['base', 'folder', 'stylemap']); // 【確認内容】: 継承チェーンが正しい順序で構築されることを確認 🟡
     expect(chain).toHaveLength(3); // 【確認内容】: 3層の継承関係が正しく認識されることを確認 🟡
   });

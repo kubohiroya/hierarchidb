@@ -16,7 +16,7 @@ const packageFiles = [
   'packages/cors-proxy/package.json',
   'packages/plugins/basemap/package.json',
   'packages/plugins/_shapes_buggy/package.json',
-  'packages/plugins/stylemap/package.json',
+  'packages/plugins/stylemap-plugin/package.json',
   'packages/ui-auth/package.json',
   'packages/registry/package.json',
   'packages/ui-core/package.json',

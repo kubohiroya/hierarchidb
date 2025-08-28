@@ -72,7 +72,7 @@ export const folderPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity 
     version: 1,
   },
   meta: {
-    id: 'folder-plugin',
+    id: 'folder-plugin-plugin',
     name: 'Folder',
     nodeType: 'folder',
     status: 'active',
@@ -148,7 +148,7 @@ export const stylemapPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntit
     version: 1,
   },
   meta: {
-    id: 'stylemap-plugin',
+    id: 'stylemap-plugin-plugin',
     name: 'StyleMap',
     nodeType: 'stylemap',
     status: 'active',
@@ -186,7 +186,7 @@ export const shapePlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity &
     version: 1,
   },
   meta: {
-    id: 'shape-plugin',
+    id: 'shape-plugin-plugin',
     name: 'Shape',
     nodeType: 'shape',
     status: 'active',
@@ -300,7 +300,7 @@ export const spreadsheetPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEn
     version: 1,
   },
   meta: {
-    id: 'spreadsheet-plugin',
+    id: 'spreadsheet-plugin-plugin',
     name: 'Spreadsheet',
     nodeType: 'spreadsheet',
     status: 'active',

@@ -31,7 +31,7 @@ if (typeof window !== 'undefined' && !(window as any).__uiPluginsRegistered) {
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
   import('./WorkerAPIClient').then(({ WorkerAPIClient }) => {
-    console.log('[root.tsx] WorkerAPIClient module loaded, ready for WorkerProvider');
+
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });

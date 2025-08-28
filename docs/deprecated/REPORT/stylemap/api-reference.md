@@ -23,7 +23,7 @@ Main plugin definition for HierarchiDB integration:
 
 ```typescript
 interface StyleMapPluginDefinition extends PluginDefinition {
-  nodeType: 'stylemap';
+  nodeType: 'stylemap-plugin';
   displayName: 'StyleMap';
   database: DatabaseDefinition;
   entityHandler: StyleMapEntityHandler;
@@ -33,7 +33,7 @@ interface StyleMapPluginDefinition extends PluginDefinition {
 
 // Usage
 const styleMapPlugin: StyleMapPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   displayName: 'StyleMap',
   database: {
     entityStore: 'stylemaps',

@@ -57,7 +57,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
     anchorEl,
     open,
     onClose,
-    nodeType = 'folder',
+    nodeType = 'folder-plugin',
     canOpen: _canOpen = true,
     canEdit = true,
     canCreate = true,
@@ -176,7 +176,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
   }, [anchorEl]);
 
   const isFolder =
-    nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+    nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
 
   return (
     <>
@@ -323,7 +323,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
         }}
       >
 
-        <MenuItem onClick={() => handleCreateClick('folder')} aria-label="Folder">
+        <MenuItem onClick={() => handleCreateClick('folder-plugin')} aria-label="Folder">
           <ListItemIcon>
             <CreateFolderIcon />
           </ListItemIcon>

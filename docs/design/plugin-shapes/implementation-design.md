@@ -81,7 +81,7 @@ export const shapesPlugin: PluginConfig = {
   id: 'com.hierarchidb.shapes',
   name: 'Shapes Plugin', 
   version: '1.0.0',
-  description: 'Geospatial shape data management with batch processing and vector tiles',
+  description: 'Geospatial shape-plugin data management with batch processing and vector tiles',
   
   nodeTypes: [
     {

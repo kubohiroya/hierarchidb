@@ -185,7 +185,7 @@ export class TreeMutationCommandsAdapter {
 
       if (!result.success) {
         throw new TreeConsoleAdapterError(
-          `Failed to paste nodes: ${result.error || 'Unknown error'}`,
+          `Failed to paste nodes: Unknown error`,
           'PASTE_NODES_FAILED'
         );
       }

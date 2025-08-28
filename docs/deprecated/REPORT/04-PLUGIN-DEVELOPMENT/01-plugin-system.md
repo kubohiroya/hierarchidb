@@ -328,9 +328,9 @@ interface ValidationResult {
 // プラグインの動的インポート
 const pluginLoaders = {
   basemap: () => import('./plugins/basemap'),
-  stylemap: () => import('./plugins/stylemap'),
-  shape: () => import('./plugins/shape'),
-  spreadsheet: () => import('./plugins/spreadsheet'),
+  stylemap: () => import('./plugins/stylemap-plugin'),
+  shape: () => import('./plugins/shape-plugin'),
+  spreadsheet: () => import('./plugins/spreadsheet-plugin'),
   project: () => import('./plugins/project')
 };
 

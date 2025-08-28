@@ -166,8 +166,8 @@ export class ProjectPlugin extends ContainerPluginBase<ProjectEntity> {
       name: data.name || 'New Project',
       description: data.description || '',
       settings: {
-        defaultChildType: 'folder',
-        allowedChildTypes: ['folder', 'basemap', 'stylemap', 'routes', '_shapes_buggy'],
+        defaultChildType: 'folder-plugin',
+        allowedChildTypes: ['folder-plugin', 'basemap', 'stylemap-plugin', 'routes', '_shapes_buggy'],
         autoSort: true
       },
       permissions: {

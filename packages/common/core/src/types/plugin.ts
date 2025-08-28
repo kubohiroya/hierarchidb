@@ -191,8 +191,8 @@ export interface PluginRoutingConfig {
 // Plugin metadata - use the one from nodeDefinition.ts to avoid duplication
 // export interface PluginMetadata { ... } // Defined in nodeDefinition.ts
 
-// Extended node definition with routing and metadata
-export interface ExtendedNodeDefinition extends PluginDefinition {
+// Extended plugin definition with routing and metadata
+export interface ExtendedPluginDefinition extends PluginDefinition {
   // Worker-side routing configuration (without React containers)
   readonly routing: PluginRoutingConfig;
 

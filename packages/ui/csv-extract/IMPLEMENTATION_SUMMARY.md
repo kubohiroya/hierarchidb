@@ -119,7 +119,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 
 ```typescript
 import { CSVProvider, CSVFileUploadStep } from '@hierarchidb/ui-csv-extract';
-import { StyleMapCSVApiDriver } from '@hierarchidb/plugin-stylemap';
+import { StyleMapCSVApiDriver } from '@hierarchidb/plugin-stylemap-plugin';
 
 const MyComponent = () => {
   const csvApi = new StyleMapCSVApiDriver(tableManager);
@@ -139,7 +139,7 @@ const MyComponent = () => {
 ### Complete Workflow
 
 ```typescript
-import { StyleMapDialogRefactored } from '@hierarchidb/plugin-stylemap';
+import { StyleMapDialogRefactored } from '@hierarchidb/plugin-stylemap-plugin';
 
 const StyleMapCreation = () => {
   const handleSubmit = async (config) => {

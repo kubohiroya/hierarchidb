@@ -148,7 +148,7 @@ Memory Usage: 85 MB (vs 2.3 GB without virtualization)
 ```typescript
 // 動的インポートによる遅延ロード
 const BaseMapPlugin = lazy(() => import('./plugins/basemap'));
-const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet'));
+const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet-plugin'));
 
 // 結果
 Initial Bundle: 365 KB → 180 KB

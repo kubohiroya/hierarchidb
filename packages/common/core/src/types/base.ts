@@ -1,7 +1,7 @@
 export type Timestamp = number;
 
 /**
- * Type identifier for tree nodes (e.g., 'folder', 'document', 'stylemap', etc.)
+ * Type identifier for tree nodes (e.g., 'folder-plugin', 'document', 'stylemap-plugin', etc.)
  */
 export type NodeType = string;
 

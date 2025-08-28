@@ -620,6 +620,7 @@ export class CommandProcessor {
           nodeType: payload.nodeType || 'folder',
           name: payload.name,
           description: payload.description,
+          depth: 0, // Will be calculated by database operations
           createdAt: Date.now() as Timestamp, // 【作成日時更新】: 新しいタイムスタンプで復元
           updatedAt: Date.now() as Timestamp,
           version: 1,

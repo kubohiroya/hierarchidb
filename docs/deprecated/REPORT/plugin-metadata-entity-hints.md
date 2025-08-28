@@ -48,9 +48,9 @@ export interface EntityReferenceHints {
 
 ```typescript
 export const SpreadsheetMetadata: PluginMetadata = {
-  id: 'com.hierarchidb.spreadsheet',
+  id: 'com.hierarchidb.spreadsheet-plugin',
   name: 'Spreadsheet',
-  nodeType: 'spreadsheet',
+  nodeType: 'spreadsheet-plugin',
   version: '1.0.0',
   description: 'Universal table data processing with Excel/CSV support',
   
@@ -77,12 +77,12 @@ interface SpreadsheetRefEntity {
 
 ```typescript
 export const StyleMapMetadata: PluginMetadata = {
-  id: 'com.hierarchidb.stylemap',
+  id: 'com.hierarchidb.stylemap-plugin',
   name: 'Style Map',
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   version: '1.0.0',
   description: 'Map visualization with data-driven styling',
-  dependencies: ['com.hierarchidb.spreadsheet'],
+  dependencies: ['com.hierarchidb.spreadsheet-plugin'],
   
   entityHints: {
     // StyleMapEntity.spreadsheetMetadataId でRelationalEntityを参照

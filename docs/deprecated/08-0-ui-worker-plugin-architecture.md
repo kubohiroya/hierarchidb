@@ -113,7 +113,7 @@ interface BaseMapEntity extends PeerEntity {
 
 ```typescript
 export const StyleMapPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   
   // 6分類での位置づけ（複数エンティティ利用）
   entityClassification: {
@@ -573,7 +573,7 @@ export class MultiStepDialogManager {
 ```typescript
 // packages/ui-core/src/plugins/basic/FolderPlugin.ts
 export const FolderUIPlugin: UIPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   displayName: 'Folder',
   
   dataSource: {
@@ -616,7 +616,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     beforeCreate: async ({ parentId, formData }) => {
       // 重複チェック
       const siblings = await nodeAPI.getChildren(parentId);
-      if (siblings.some(s => s.name === formData.name && s.type === 'folder')) {
+      if (siblings.some(s => s.name === formData.name && s.type === 'folder-plugin')) {
         return { proceed: false, message: 'Folder name already exists' };
       }
       return { proceed: true };

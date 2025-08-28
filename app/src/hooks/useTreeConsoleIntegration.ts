@@ -11,7 +11,7 @@ import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-// import { useImportExport } from '@hierarchidb/feature-import-export-plugin'; // TODO: Implement this hook
+import { useImportExport } from '@hierarchidb/feature-import-export-plugin';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
 
 export interface UseTreeConsoleIntegrationParams {
@@ -108,11 +108,8 @@ export function useTreeConsoleIntegration({
     ];
   }, [pageTreeNode]);
 
-  // Import/Export functionality from ui-import-export
-  // TODO: Implement useImportExport hook
-  const handleExport = async (format: string) => {
-    console.log(`Export functionality not implemented yet for format: ${format}`);
-  };
+  // Import/Export functionality
+  const importExport = useImportExport(client, !!client);
 
   // Actions implementation
   const actions = useMemo<TreeConsoleActions>(
@@ -145,7 +142,8 @@ export function useTreeConsoleIntegration({
         // Load children when expanding (if not already loaded)
         if (expanded && client) {
           try {
-            const children = await client.getChildren(nodeId);
+            const queryAPI = await client.getQueryAPI();
+            const children = await queryAPI.listChildren(nodeId as NodeId);
 
             // Update tree data with children
             setTreeData((prev) => {
@@ -180,10 +178,10 @@ export function useTreeConsoleIntegration({
 
       handleCreate: () => {
         console.log('Create action triggered');
-        // Simple folder creation implementation for E2E testing
-        const folderName = prompt('Enter folder name:');
+        // Simple folder-plugin creation implementation for E2E testing
+        const folderName = prompt('Enter folder-plugin name:');
         if (folderName && folderName.trim()) {
-          console.log('Creating folder:', folderName.trim());
+          console.log('Creating folder-plugin:', folderName.trim());
           // For E2E testing purposes, we'll use a simple prompt
           // In a real implementation, this would open a proper dialog
         }
@@ -206,7 +204,8 @@ export function useTreeConsoleIntegration({
 
         setState((prev) => ({ ...prev, loading: true }));
         try {
-          const children = await client.getChildren(pageNodeId as string);
+          const queryAPI = await client.getQueryAPI();
+          const children = await queryAPI.listChildren(pageNodeId as NodeId);
           const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
           setTreeData(treeNodeData);
         } catch (err) {
@@ -274,9 +273,10 @@ export function useTreeConsoleIntegration({
               // Generate a user-friendly name based on the node type
               const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
               
-              const result = await client.create({
+              const mutationAPI = await client.getMutationAPI();
+              const result = await mutationAPI.createNode({
                 nodeType: nodeType,
-                treeId: treeId || ('default-tree' as TreeId),
+                treeId: (treeId as TreeId) || ('default-tree' as TreeId),
                 parentId: pageNodeId as NodeId,
                 name: `New ${displayName}`,
                 description: '',
@@ -287,7 +287,8 @@ export function useTreeConsoleIntegration({
                 // Refresh the tree data
                 if (client && pageNodeId) {
                   try {
-                    const children = await client.getChildren(pageNodeId as string);
+                    const queryAPI = await client.getQueryAPI();
+          const children = await queryAPI.listChildren(pageNodeId as NodeId);
                     const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
                     setTreeData(treeNodeData);
                   } catch (refreshError) {
@@ -339,17 +340,78 @@ export function useTreeConsoleIntegration({
         // TODO: Implement duplicate functionality using Worker API
       },
 
-      handleImport: () => {
+      handleImport: async () => {
         console.log('Import action triggered');
-        // TODO: Implement import functionality
+        // Open file picker
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,.csv';
+        input.onchange = async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file && pageNodeId) {
+            const format = importExport.detectFileFormat(file) || 'json';
+            try {
+              const result = await importExport.importFile({
+                file,
+                targetNodeId: pageNodeId,
+                format: format as 'json' | 'csv',
+                onProgress: (progress) => {
+                  console.log('Import progress:', progress);
+                },
+              });
+              console.log('Import result:', result);
+              // Refresh tree data after import
+              await actions.handleRefresh();
+            } catch (error) {
+              console.error('Import failed:', error);
+              setState((prev) => ({ 
+                ...prev, 
+                error: `Import failed: ${error}` 
+              }));
+            }
+          }
+        };
+        input.click();
       },
 
       handleExport: async () => {
         console.log('Export action triggered');
-        await handleExport('json');
+        if (selectedIds.length === 0) {
+          console.warn('No nodes selected for export');
+          return;
+        }
+        
+        try {
+          const blob = await importExport.exportNodes({
+            nodeIds: selectedIds,
+            format: 'json',
+            includeChildren: true,
+            onProgress: (progress) => {
+              console.log('Export progress:', progress);
+            },
+          });
+          
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `export-${Date.now()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          console.log('Export completed');
+        } catch (error) {
+          console.error('Export failed:', error);
+          setState((prev) => ({ 
+            ...prev, 
+            error: `Export failed: ${error}` 
+          }));
+        }
       },
     }),
-    [client, treeId, pageNodeId, selectedIds, treeData, handleExport]
+    [client, treeId, pageNodeId, selectedIds, treeData, importExport, actions]
   );
 
   // Load tree data when client is ready
@@ -365,8 +427,9 @@ export function useTreeConsoleIntegration({
       try {
         console.log('[useTreeConsoleIntegration] Loading tree data for node:', pageNodeId);
 
-        // Get children of the current node using direct Worker API
-        const children = await client.getChildren(pageNodeId as string);
+        // Get children of the current node using facade API
+        const queryAPI = await client.getQueryAPI();
+        const children = await queryAPI.listChildren(pageNodeId as NodeId);
 
         console.log('[useTreeConsoleIntegration] Loaded children:', children);
 

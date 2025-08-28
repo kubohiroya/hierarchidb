@@ -23,7 +23,7 @@ const createSimplePNG = () => {
   const pixels = [];
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      // Create database shape (simplified)
+      // Create database shape-plugin (simplified)
       const isDatabase = 
         // Top ellipse
         (y === 3 && x >= 4 && x <= 11) ||

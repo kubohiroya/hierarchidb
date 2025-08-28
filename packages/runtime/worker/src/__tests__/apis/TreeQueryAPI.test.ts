@@ -33,7 +33,7 @@ describe('TreeQueryAPI', () => {
       parentId: rootNodeId,
       nodeType: 'folder',
       name: 'Folder 1',
-      description: 'Test folder 1',
+      description: 'Test folder-plugin 1',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,

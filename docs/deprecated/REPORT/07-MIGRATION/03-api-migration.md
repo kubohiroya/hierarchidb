@@ -225,11 +225,11 @@ export class GradualMigrationAPI {
     
     switch(major) {
       case 1:
-        // v1 API shape
+        // v1 API shape-plugin
         return await this.createNodeV1(data);
       
       case 2:
-        // v2 API shape with validation
+        // v2 API shape-plugin with validation
         return await this.createNodeV2(data);
       
       default:
@@ -486,7 +486,7 @@ describe('API Compatibility', () => {
     expect(result.name).toBe('Test');
   });
   
-  it('should handle v2 client with v1 response shape', async () => {
+  it('should handle v2 client with v1 response shape-plugin', async () => {
     const transformer = new ResponseTransformer();
     const v2Response = { treeNodeId: '123' as NodeId };
     

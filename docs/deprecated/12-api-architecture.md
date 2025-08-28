@@ -129,7 +129,7 @@ const moveResult = await workerAPI.moveFolder({
 
 ### Folder Management
 ```typescript
-// Create folder with validation
+// Create folder-plugin with validation
 createFolder(params: {
   treeId: string;
   parentNodeId: TreeNodeId;
@@ -137,13 +137,13 @@ createFolder(params: {
   description?: string;
 }): Promise<{ success: boolean; nodeId?: TreeNodeId; error?: string }>
 
-// Update folder name with validation  
+// Update folder-plugin name with validation  
 updateFolderName(params: {
   nodeId: TreeNodeId;
   newName: string;
 }): Promise<{ success: boolean; error?: string }>
 
-// Move folder with circular reference detection
+// Move folder-plugin with circular reference detection
 moveFolder(params: {
   nodeId: TreeNodeId;
   toParentId: TreeNodeId;
@@ -277,7 +277,7 @@ interface ProjectTemplate {
   name: string;
   structure: {
     [folderName: string]: {
-      type: 'folder' | 'file';
+      type: 'folder-plugin' | 'file';
       children?: ProjectTemplate['structure'];
       content?: string;
     };

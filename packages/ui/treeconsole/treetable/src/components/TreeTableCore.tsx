@@ -38,8 +38,9 @@ import {
   ChevronRight as ChevronRightIcon,
   DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
-import type { TreeNodeWithDepth, TreeTableCoreProps } from '../types';
+import type { TreeTableCoreProps } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { NodeType, TreeNode } from '@hierarchidb/common-core';
 
 // スタイル定義（元のTreeTable.cssを再現）
 const StyledTableContainer = styled(Box)`
@@ -88,7 +89,7 @@ const StyledTableHead = styled(TableHead)`
     padding: 8px 12px;
     user-select: none;
     position: relative;
-    
+
     &:last-child {
       border-right: none;
     }
@@ -104,11 +105,11 @@ const ResizeHandle = styled('div')`
   cursor: col-resize;
   z-index: 10;
   user-select: none;
-  
+
   &:hover {
     background-color: rgba(25, 118, 210, 0.3);
   }
-  
+
   &.resizing {
     background-color: rgba(25, 118, 210, 0.5);
   }
@@ -129,7 +130,7 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
     padding: 8px 12px;
     border-right: 1px solid ${({ theme }) => theme.palette.divider};
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
-    
+
     &:last-child {
       border-right: none;
     }
@@ -176,7 +177,7 @@ export function TreeTableCore({
   const [editingValue, setEditingValue] = useState('');
   const [contextMenuState, setContextMenuState] = useState<{
     anchorEl: HTMLElement | null;
-    node: TreeNodeWithDepth | null;
+    node: TreeNode | null;
   }>({ anchorEl: null, node: null });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
@@ -193,7 +194,7 @@ export function TreeTableCore({
 
   // Calculate depth for each node
   const data = useMemo(() => {
-    const nodeMap = new Map<string, TreeNodeWithDepth>();
+    const nodeMap = new Map<string, TreeNode>();
     const depthMap = new Map<string, number>();
 
     rawData.forEach((node) => nodeMap.set(node.id, node));
@@ -231,13 +232,13 @@ export function TreeTableCore({
 
   const handleSelectAll = (checked: boolean) => {
     if (!controller?.onNodeSelect) return;
-    const nodeIds = checked ? data.map(node => node.id) : [];
+    const nodeIds = checked ? data.map((node) => node.id) : [];
     controller.onNodeSelect(nodeIds, checked);
   };
 
   // Column definitions
-  const columns = useMemo<ColumnDef<TreeNodeWithDepth>[]>(() => {
-    const baseColumns: ColumnDef<TreeNodeWithDepth>[] = [
+  const columns = useMemo<ColumnDef<TreeNode>[]>(() => {
+    const baseColumns: ColumnDef<TreeNode>[] = [
       {
         id: 'selection',
         header: () => (
@@ -437,13 +438,13 @@ export function TreeTableCore({
   });
 
   // Event handlers
-  const handleStartEdit = (node: TreeNodeWithDepth) => {
+  const handleStartEdit = (node: TreeNode) => {
     setEditingNodeId(node.id);
     setEditingValue(node.name);
     controller?.startEdit?.(node.id);
   };
 
-  const handleRowClick = (node: TreeNodeWithDepth, event: MouseEvent) => {
+  const handleRowClick = (node: TreeNode, event: MouseEvent) => {
     if (rowClickAction === 'Select' && selectionMode !== 'none') {
       const newSelection = { ...rowSelection };
       if (event.ctrlKey || event.metaKey) {
@@ -464,7 +465,7 @@ export function TreeTableCore({
     onRowClick?.(node, event);
   };
 
-  const handleRowDoubleClick = (node: TreeNodeWithDepth, event: MouseEvent) => {
+  const handleRowDoubleClick = (node: TreeNode, event: MouseEvent) => {
     if (rowClickAction === 'Edit') {
       handleStartEdit(node);
     } else if (rowClickAction === 'Navigate') {
@@ -474,7 +475,7 @@ export function TreeTableCore({
     onRowDoubleClick?.(node, event);
   };
 
-  const handleRowContextMenu = (node: TreeNodeWithDepth, event: MouseEvent) => {
+  const handleRowContextMenu = (node: TreeNode, event: MouseEvent) => {
     event.preventDefault();
     setContextMenuState({
       anchorEl: event.currentTarget as HTMLElement,
@@ -494,7 +495,7 @@ export function TreeTableCore({
   const handleResizeStart = (columnId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const startX = e.clientX;
     const startWidth = columnWidths[columnId] || 100;
     resizeRef.current = { startX, startWidth };
@@ -503,7 +504,7 @@ export function TreeTableCore({
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       const deltaX = e.clientX - startX;
       const newWidth = Math.max(50, startWidth + deltaX);
-      setColumnWidths(prev => ({
+      setColumnWidths((prev) => ({
         ...prev,
         [columnId]: newWidth,
       }));
@@ -530,11 +531,11 @@ export function TreeTableCore({
                 const isSelectionColumn = header.column.id === 'selection';
                 const canSort = header.column.getCanSort();
                 const sortDirection = header.column.getIsSorted();
-                
+
                 return (
-                  <TableCell 
-                    key={header.id} 
-                    sx={{ 
+                  <TableCell
+                    key={header.id}
+                    sx={{
                       width: `${columnWidths[header.column.id]}px`,
                       minWidth: `${columnWidths[header.column.id]}px`,
                       maxWidth: `${columnWidths[header.column.id]}px`,
@@ -543,10 +544,10 @@ export function TreeTableCore({
                     {header.isPlaceholder ? null : (
                       <>
                         {isSelectionColumn ? (
-                          flexRender(
+                          (flexRender(
                             header.column.columnDef.header,
                             header.getContext()
-                          ) as React.ReactNode
+                          ) as React.ReactNode)
                         ) : canSort ? (
                           <TableSortLabel
                             active={!!sortDirection}
@@ -557,10 +558,10 @@ export function TreeTableCore({
                               ? header.column.columnDef.header
                               : 'Column'}
                           </TableSortLabel>
+                        ) : typeof header.column.columnDef.header === 'string' ? (
+                          header.column.columnDef.header
                         ) : (
-                          typeof header.column.columnDef.header === 'string'
-                            ? header.column.columnDef.header
-                            : 'Column'
+                          'Column'
                         )}
                         {!isSelectionColumn && header.column.id !== 'updatedAt' && (
                           <ResizeHandle
@@ -592,9 +593,9 @@ export function TreeTableCore({
                 sx={{ cursor: 'pointer' }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell 
-                    key={cell.id} 
-                    sx={{ 
+                  <TableCell
+                    key={cell.id}
+                    sx={{
                       width: `${columnWidths[cell.column.id]}px`,
                       minWidth: `${columnWidths[cell.column.id]}px`,
                       maxWidth: `${columnWidths[cell.column.id]}px`,
@@ -621,7 +622,7 @@ export function TreeTableCore({
         canEdit={true}
         canRemove={true}
         canDuplicate={true}
-        onCreate={(type) => {
+        onCreate={(type: NodeType) => {
           if (contextMenuState.node) {
             controller?.onCreate?.(contextMenuState.node.id, type);
           }

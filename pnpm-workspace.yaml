@@ -5,8 +5,8 @@ packages:
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/backend/*
-  - packages/node-type-plugin/*
-  - packages/feature-plugin/*
+  - packages/node-type/*
+  - packages/feature/*
 
 ignoredBuiltDependencies:
   - esbuild
