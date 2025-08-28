@@ -39,7 +39,7 @@ interface QueryParams {
 ```typescript
 interface LoaderData {
   treeContext: {
-    tree: Tree;
+    tree: TreeTypes;
     currentNode: TreeNode | null;
     breadcrumbs: BreadcrumbItem[];
     expandedNodes: Set<TreeNodeId>;

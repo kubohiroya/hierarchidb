@@ -27,7 +27,7 @@
 ```ts
 interface LoaderData {
   treeContext: {
-    tree: Tree;
+    tree: TreeTypes;
     currentNode: TreeNode | null;
     breadcrumbs: BreadcrumbItem[];
     expandedNodes: Set<TreeNodeId>;
@@ -45,7 +45,7 @@ interface LoaderData {
 
 ```ts
 // 型パラメータは簡略化して記載
-export interface UnifiedPluginDefinition extends NodeTypeDefinition {
+export interface UnifiedPluginDefinition extends PluginDefinition {
   readonly routing: {
     actions: Record<string, PluginRouterAction>; // action名→コンポーネント/loader/action
     defaultAction?: string;
@@ -82,7 +82,7 @@ export default function MapEditor() {
 ```ts
 // packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
 export const BaseMapUnifiedDefinition: UnifiedPluginDefinition = {
-  // ... NodeTypeDefinition 部分（DB, handler, lifecycle等）
+  // ... PluginDefinition 部分（DB, handler, lifecycle等）
   routing: {
     actions: {
       view: { component: lazy(() => import('../ui/MapView')), displayName: 'Map View' },

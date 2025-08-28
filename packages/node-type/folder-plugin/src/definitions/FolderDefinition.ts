@@ -1,4 +1,4 @@
-import type { NodeTypeDefinition, NodeId } from '@hierarchidb/common-core';
+import type { NodeTypeDefinition, NodeId } from '@hierarchidb/common-type';
 import type { FolderEntity, FolderEntityWorkingCopy } from '../types/index';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import { FolderValidation } from '../shared/metadata';

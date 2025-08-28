@@ -43,7 +43,7 @@ HierarchiDBでは、プラグインによって管理されるエンティティ
 #### 9.3.3.2 ノードタイプ定義インターフェース
 
 ```typescript
-// packages/core/src/types/nodeDefinition.ts
+// packages/core/src/types/entity-types.ts
 
 // エンティティ基底インターフェース群
 export interface PeerEntityCore {
@@ -226,7 +226,7 @@ export class TableMetadataManager implements RelationalEntityManager<TableMetada
 ```typescript
 // packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
-export const StyleMapDefinition: NodeTypeDefinition<StyleMapEntity, never, StyleMapWorkingCopy> = {
+export const StyleMapDefinition: PluginDefinition<StyleMapEntity, never, StyleMapWorkingCopy> = {
   nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',

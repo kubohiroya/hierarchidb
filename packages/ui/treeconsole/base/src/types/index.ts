@@ -4,13 +4,13 @@
  * 既存コードから抽出した型定義を新しいAPIに適応させたもの。
  */
 
-import type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
 
 // Re-export core types for convenience
-export type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-core';
+export type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 
 /**
  * 選択モード定義（既存コードから移植）
@@ -363,7 +363,7 @@ export type LegacyExpandedStateChanges = unknown;
 export type LegacySubTreeChanges = unknown;
 
 // Observable/Subscription types
-import type { TreeChangeEvent } from '@hierarchidb/common-core';
+import type { TreeChangeEvent } from '@hierarchidb/common-type';
 export type { TreeChangeEvent };
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
 export type UnsubscribeFunction = () => void;

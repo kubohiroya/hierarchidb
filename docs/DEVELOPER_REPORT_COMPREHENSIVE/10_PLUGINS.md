@@ -15,7 +15,7 @@ graph TB
     end
     
     subgraph "Node Type System"
-        NodeTypeDefinition["Node Type Definition"]
+        PluginDefinition["Node Type Definition"]
         EntityHandler["Entity Handler"]
         DatabaseSchema["Database Schema"]
     end
@@ -44,8 +44,8 @@ graph TB
     IPlugin --> BasePlugin
     BasePlugin --> PluginMetadata
     
-    BasePlugin --> NodeTypeDefinition
-    NodeTypeDefinition --> EntityHandler
+    BasePlugin --> PluginDefinition
+    PluginDefinition --> EntityHandler
     EntityHandler --> DatabaseSchema
     
     BasePlugin --> DialogComponent
@@ -68,7 +68,7 @@ graph TB
     classDef runtime fill:#ffebee
     
     class IPlugin,BasePlugin,PluginMetadata foundation
-    class NodeTypeDefinition,EntityHandler,DatabaseSchema nodetype
+    class PluginDefinition,EntityHandler,DatabaseSchema nodetype
     class DialogComponent,PanelComponent,IconComponent,ToolbarExtension ui
     class PluginInstaller,DependencyResolver,VersionManager,UpdateManager lifecycle
     class PluginRegistry,ComponentFactory,EventBus,ConfigManager runtime
@@ -224,7 +224,7 @@ export class BasemapPlugin implements IPlugin {
   };
 
   // Node Type Definition
-  getNodeTypeDefinition(): NodeTypeDefinition<BasemapEntity> {
+  getNodeTypeDefinition(): PluginDefinition<BasemapEntity> {
     return {
       nodeType: 'basemap',
       database: {
@@ -574,7 +574,7 @@ graph TB
 import { 
   IPlugin, 
   PluginMetadata, 
-  NodeTypeDefinition,
+  PluginDefinition,
   BaseEntityHandler,
   ValidationResult 
 } from '@hierarchidb/core';
@@ -682,7 +682,7 @@ export class TemplatePlugin implements IPlugin {
 
   private entityHandler = new TemplateEntityHandler();
 
-  getNodeTypeDefinition(): NodeTypeDefinition<TemplateEntity> {
+  getNodeTypeDefinition(): PluginDefinition<TemplateEntity> {
     return {
       nodeType: 'template',
       database: {
@@ -1002,12 +1002,12 @@ const calculateAffectedPlugins = (pluginName: string): string[] => {
 
 ```mermaid
 graph LR
-    subgraph "Core Entities (常に保持)"
+    subgraph "Core EntityTypes (常に保持)"
         TreeNode["TreeNode<br/>ツリー構造の基本"]
         PeerEntity["PeerEntity<br/>ノード間の関係"]
     end
     
-    subgraph "Plugin Entities (リセット対象)"
+    subgraph "Plugin EntityTypes (リセット対象)"
         GroupEntity["GroupEntity<br/>プラグイン固有グループ"]
         RelationalEntity["RelationalEntity<br/>プラグイン固有関係"]
     end

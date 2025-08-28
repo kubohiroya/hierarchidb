@@ -2,7 +2,7 @@
  * StyleMap plugin metadata with entity reference hints
  */
 
-import type { PluginMetadata } from '@hierarchidb/common-core';
+import type { PluginMetadata } from '@hierarchidb/common-type';
 
 export const StyleMapMetadata: PluginMetadata = {
   id: 'com.hierarchidb.stylemap-plugin',

@@ -1,11 +1,11 @@
 /**
  * Dynamic Plugin Registry System
- * 
+ *
  * Combines plugin discovery with dependency resolution for automatic registration.
  * Dynamically discovers plugins from package.json and loads them in correct order.
  */
 
-import { PluginDependencyResolver } from '@hierarchidb/common-core';
+import { PluginDependencyResolver } from '@hierarchidb/common-type';
 
 // Local PluginMetadata type to avoid conflicts with core definitions
 interface PluginMetadata {
@@ -19,7 +19,7 @@ interface PluginMetadata {
   category?: string;
 }
 import { PluginDiscoveryService, type DiscoveredPlugin } from './PluginDiscovery';
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 
 /**
  * Dynamic plugin registration result
@@ -82,7 +82,7 @@ export class DynamicPluginRegistry {
 
       // Step 2: Build metadata for dependency resolution
       const pluginMetadata = this.buildPluginMetadata(discovered);
-      
+
       // Step 3: Resolve dependencies and determine load order
       const resolutionStart = Date.now();
       this.dependencyResolver.registerPlugins(pluginMetadata);
@@ -124,11 +124,7 @@ export class DynamicPluginRegistry {
       };
     } catch (error) {
       timing.total = Date.now() - startTime;
-      return this.createErrorResult(
-        [],
-        [`Fatal error during auto-registration: ${error}`],
-        timing
-      );
+      return this.createErrorResult([], [`Fatal error during auto-registration: ${error}`], timing);
     }
   }
 
@@ -136,7 +132,7 @@ export class DynamicPluginRegistry {
    * Build plugin metadata from discovered plugins
    */
   private buildPluginMetadata(discovered: DiscoveredPlugin[]): PluginMetadata[] {
-    return discovered.map(plugin => {
+    return discovered.map((plugin) => {
       // Use discovered metadata or build from conventions
       if (plugin.metadata) {
         return plugin.metadata;
@@ -175,7 +171,7 @@ export class DynamicPluginRegistry {
     // Register each plugin in order
     for (const nodeType of loadOrder) {
       const plugin = discoveredMap.get(nodeType);
-      
+
       if (!plugin) {
         skipped.push(nodeType);
         console.warn(`[DynamicPluginRegistry] Plugin ${nodeType} in load order but not discovered`);
@@ -185,18 +181,18 @@ export class DynamicPluginRegistry {
       try {
         // Load plugin module
         const module = await this.loadPluginModule(plugin);
-        
+
         if (!module) {
           throw new Error(`Failed to load module for ${nodeType}`);
         }
 
         // Register with registry
         await this.registerPlugin(nodeType, module, registry);
-        
+
         registered.push(nodeType);
         this.registeredPlugins.add(nodeType);
         this.pluginModules.set(nodeType, module);
-        
+
         console.log(`[DynamicPluginRegistry] Registered plugin: ${nodeType}`);
       } catch (error) {
         const errorMsg = `Failed to register ${nodeType}: ${error}`;
@@ -227,7 +223,7 @@ export class DynamicPluginRegistry {
   private async registerPlugin(nodeType: NodeType, module: any, registry: any): Promise<void> {
     // Find the definition export
     const definition = this.extractDefinition(module, nodeType);
-    
+
     if (!definition) {
       throw new Error(`No definition found for ${nodeType}`);
     }
@@ -279,14 +275,14 @@ export class DynamicPluginRegistry {
    */
   private inferPriority(nodeType: NodeType): number {
     const priorityMap: Record<string, number> = {
-      'folder': 1000,    // Base type, highest priority
-      'project': 950,
-      'basemap': 900,
-      'shape': 800,
-      'stylemap': 700,
-      'spreadsheet': 600,
+      folder: 1000, // Base type, highest priority
+      project: 950,
+      basemap: 900,
+      shape: 800,
+      stylemap: 700,
+      spreadsheet: 600,
       // Default for unknown types
-      'default': 500,
+      default: 500,
     };
 
     return priorityMap[nodeType] ?? priorityMap.default ?? 500;
@@ -298,7 +294,7 @@ export class DynamicPluginRegistry {
   private inferDependencies(nodeType: NodeType): NodeType[] {
     // Most plugins extend folder-plugin, so depend on it
     const extendsFolderTypes = ['basemap', 'shape', 'stylemap', 'spreadsheet', 'project'];
-    
+
     if (extendsFolderTypes.includes(nodeType)) {
       return ['folder'];
     }
@@ -317,7 +313,7 @@ export class DynamicPluginRegistry {
    */
   private inferExtends(nodeType: NodeType): NodeType | undefined {
     const extendsFolderTypes = ['basemap', 'shape', 'stylemap', 'spreadsheet', 'project'];
-    
+
     if (extendsFolderTypes.includes(nodeType)) {
       return 'folder';
     }
@@ -338,7 +334,7 @@ export class DynamicPluginRegistry {
   private humanizeNodeType(nodeType: NodeType): string {
     return nodeType
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
+      .replace(/^./, (str) => str.toUpperCase())
       .trim();
   }
 

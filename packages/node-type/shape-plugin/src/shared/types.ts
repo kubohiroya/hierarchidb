@@ -2,7 +2,7 @@
  * Shape plugin shared types
  */
 
-import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-core';
+import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
 import type { Geometry, BBox } from 'geojson';
 
 // ================================
@@ -13,30 +13,30 @@ export interface ShapeEntity extends PeerEntity {
   // Basic Information (Step 1)
   name: string;
   description?: string;
-  
+
   // Map Position
   zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)] for initial position
-  
+
   // Data Source (Step 2)
   dataSourceName: DataSourceName;
-  
+
   // License Agreement (Step 3)
   licenseAgreement: boolean;
   licenseAgreedAt?: string;
-  
+
   // Processing Configuration (Step 4)
   processingConfig: ProcessingConfig;
-  
+
   // Country & Admin Selection (Step 5)
   checkboxState: boolean[][] | string; // Serializable matrix
   selectedCountries: string[];
   adminLevels: number[];
   urlMetadata: UrlMetadata[];
-  
+
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
-  
+
   // Metadata
   createdAt: number;
   updatedAt: number;
@@ -77,18 +77,18 @@ export interface ProcessingConfig {
   // Download settings
   concurrentDownloads: number;
   corsProxyBaseURL?: string;
-  
+
   // Feature processing settings
   enableFeatureFiltering: boolean;
   featureFilterMethod: FeatureFilterMethod;
   featureAreaThreshold: number;
-  
+
   // Vector tile settings
   concurrentProcesses: number;
   maxZoomLevel: number;
   tileBufferSize?: number;
   simplificationTolerance?: number;
-  
+
   // Additional settings
   workerPoolSize?: number;
   simplificationLevels?: number[];
@@ -124,7 +124,14 @@ export interface UrlMetadata {
 // Batch Processing Types
 // ================================
 
-export type BatchStatus = 'preparing' | 'downloading' | 'processing' | 'generating' | 'completed' | 'error' | 'cancelled';
+export type BatchStatus =
+  | 'preparing'
+  | 'downloading'
+  | 'processing'
+  | 'generating'
+  | 'completed'
+  | 'error'
+  | 'cancelled';
 
 export const BatchTaskStage = {
   WAIT: 'wait',
@@ -135,7 +142,7 @@ export const BatchTaskStage = {
   CANCEL: 'cancel',
 } as const;
 
-export type BatchTaskStage = typeof BatchTaskStage[keyof typeof BatchTaskStage];
+export type BatchTaskStage = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
 export interface BatchTask {
   taskId: string;
@@ -152,7 +159,7 @@ export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile
 
 export interface BatchSession {
   sessionId: string;
-  workingCopyId: EntityId;  // ✅ WorkingCopy-based processing
+  workingCopyId: EntityId; // ✅ WorkingCopyTypes-based processing
   nodeId: NodeId;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;
@@ -168,14 +175,14 @@ export interface BatchSession {
     currentStage?: string;
     currentTask?: string;
   };
-  
+
   // ✅ Direct link recovery metadata
   canResume: boolean;
   lastActivity: number;
   expiresAt: number;
   stages: Record<string, any>;
   resourceUsage?: any;
-};
+}
 
 // ================================
 // Validation Types
@@ -235,9 +242,9 @@ export type ProcessingStage = 'download' | 'simplify1' | 'simplify2' | 'vectorti
 // ================================
 
 export interface Feature {
-  type: 'Feature';  // GeoJSON標準のtypeプロパティ
-  id: number;       // Dexie.js内部管理用ID（自動インクリメント）
-  originalId?: string | number;  // GeoJSON由来の元ID（保持用）
+  type: 'Feature'; // GeoJSON標準のtypeプロパティ
+  id: number; // Dexie.js内部管理用ID（自動インクリメント）
+  originalId?: string | number; // GeoJSON由来の元ID（保持用）
   nodeId: NodeId;
   properties: Record<string, any>;
   geometry: Geometry;

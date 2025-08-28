@@ -3,7 +3,7 @@
  * Manages CRUD operations for Shape entities in Worker environment
  */
 
-import { NodeId, EntityId, generateEntityId } from '@hierarchidb/common-core';
+import { NodeId, EntityId, generateEntityId } from '@hierarchidb/common-type';
 import {
   ShapeEntity,
   ShapeWorkingCopy,

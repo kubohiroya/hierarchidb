@@ -3,7 +3,7 @@
  * Connects with HierarchiDB Worker layer via Comlink
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI';
 
 /**

@@ -247,13 +247,13 @@ graph TB
 2. **RPC層**: Comlink による型安全な Worker 通信
 3. **Worker層**: コマンド処理、Undo/Redo、差分検出、購読管理
 4. **Database層**: 
-   - **CoreDB**: 永続化データ（Tree, Node, State）
-   - **EphemeralDB**: 一時データ（WorkingCopy, ViewState）
+   - **CoreDB**: 永続化データ（TreeTypes, Node, State）
+   - **EphemeralDB**: 一時データ（WorkingCopyTypes, ViewState）
 
 ### プラグインアーキテクチャ
 
 ```typescript
-interface NodeTypeDefinition {
+interface PluginDefinition {
   nodeType: string;
   database: DatabaseConfig;
   entityHandler: EntityHandler;

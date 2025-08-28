@@ -153,7 +153,7 @@ expect(renderTime).toBeLessThan(100);
 
 - [x] 最大サイズ: 500KB（gzip圧縮後）
 - [x] 測定ツール: webpack-bundle-analyzer
-- [x] Tree-shaking: 未使用コードの除去確認
+- [x] TreeTypes-shaking: 未使用コードの除去確認
 - [x] Code Splitting: 動的インポートの活用確認
 
 ### セキュリティテスト

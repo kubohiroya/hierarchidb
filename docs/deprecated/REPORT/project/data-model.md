@@ -51,7 +51,7 @@ const indexConfiguration = {
 
 ## Entity Type Definitions
 
-### Core Entities
+### Core EntityTypes
 
 #### ProjectEntity (PeerEntity)
 Main project configuration entity with 1:1 correspondence to TreeNode.
@@ -110,7 +110,7 @@ export interface ResourceReference extends GroupEntity {
   
   // Reference information
   resourceNodeId: NodeId;      // Referenced node in Resources tree
-  resourceTreeId: TreeId;      // Tree containing the referenced node
+  resourceTreeId: TreeId;      // TreeTypes containing the referenced node
   referenceType: ResourceReferenceType;
   
   // Reference metadata
@@ -337,7 +337,7 @@ interface AggregationPipeline {
 }
 ```
 
-### Cross-Tree Reference System
+### Cross-TreeTypes Reference System
 
 References to Resources tree nodes are managed through the TreeNode reference system:
 
@@ -346,7 +346,7 @@ interface CrossTreeReference {
   // Reference identity
   sourceNodeId: NodeId;           // Project node making reference
   targetNodeId: NodeId;           // Referenced node in Resources tree
-  targetTreeId: TreeId;           // Tree containing referenced node
+  targetTreeId: TreeId;           // TreeTypes containing referenced node
   
   // Reference metadata
   referenceType: string;          // Type of reference relationship

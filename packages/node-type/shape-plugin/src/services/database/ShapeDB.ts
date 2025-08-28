@@ -9,7 +9,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type {
   // Core entity types
   ShapeEntity,

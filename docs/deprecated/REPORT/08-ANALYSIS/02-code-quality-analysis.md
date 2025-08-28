@@ -193,7 +193,7 @@ const duplicationAnalysis = {
     },
     {
       location: 'ui-treeconsole components',
-      type: 'Tree rendering logic',
+      type: 'TreeTypes rendering logic',
       lines: 189,
       suggestion: 'Create shared tree utilities'
     },

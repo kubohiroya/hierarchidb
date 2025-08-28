@@ -13,7 +13,7 @@ import type {
   TreeChangeEventType,
   // OnNameConflict, // Removed - using local function type instead
   // Timestamp // Removed - unused
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 
 /**
  * WorkerAPIベースのコールバック形式

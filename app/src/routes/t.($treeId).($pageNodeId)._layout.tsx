@@ -77,15 +77,15 @@ export default function TLayout() {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* AppBar with Tree Switcher and UserLoginButton */}
+      {/* AppBar with TreeTypes Switcher and UserLoginButton */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
-          {/* Tree Title */}
+          {/* TreeTypes Title */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
-            {data.pageNode?.name || 'Tree Console'}
+            {data.pageNode?.name || 'TreeTypes Console'}
           </Typography>
 
-          {/* Tree Switcher Button Group */}
+          {/* TreeTypes Switcher Button Group */}
           <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}></Stack>
 
           {/* User Login Button - Right Aligned */}

@@ -4,7 +4,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
-import type { EntityId, NodeId } from '@hierarchidb/common-core';
+import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import type {
   RawFileMetadata,
   RowChunk,

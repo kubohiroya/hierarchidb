@@ -33,8 +33,8 @@ TreeId → TreeId (変更なし)
 treeNodeId → id
 parentTreeNodeId → parentNodeId
 treeNodeType → nodeType
-treeId → id (Tree.id)
-treeRootNodeId → rootNodeId (Tree.rootNodeId)
+treeId → id (TreeTypes.id)
+treeRootNodeId → rootNodeId (TreeTypes.rootNodeId)
 ```
 
 ### 1.2 具体的作業
@@ -155,7 +155,7 @@ export function deserializeTreeNode(data: unknown): TreeNode {
 
 ```typescript
 // 現在：TreeNodeのワーキングコピーのみ
-interface WorkingCopy extends TreeNode {
+interface WorkingCopyTypes extends TreeNode {
   workingCopyId: string;
   workingCopyOf: NodeId;
   // ...
@@ -166,7 +166,7 @@ interface WorkingCopy extends TreeNode {
 
 ```typescript
 // エンティティ用ワーキングコピー
-interface EntityWorkingCopy<T extends BaseEntity> {
+interface EntiryWorkingCopyTypes<T extends BaseEntity> {
   workingCopyId: string;
   workingCopyOf: string; // EntityId
   entityType: 'peer' | 'group' | 'relational';

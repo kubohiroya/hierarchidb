@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 

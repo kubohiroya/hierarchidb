@@ -4,8 +4,15 @@
  * Prevents type information loss during JSON operations
  */
 
-import type { TreeNode, Tree, NodeId } from '../types';
-import { createNodeId, createTreeId, isNodeId, isTreeId, isEntityId } from './idFactory';
+import { NodeId, NodeType, Tree, TreeNode } from '@hierarchidb/common-type';
+import {
+  createNodeId,
+  createTreeId,
+  isNodeId,
+  isTreeId,
+  isEntityId,
+  createNodeType,
+} from './idFactory';
 
 /**
  * Validation schema for TreeNode
@@ -32,7 +39,7 @@ interface TreeNodeSchema {
 }
 
 /**
- * Validation schema for Tree
+ * Validation schema for TreeTypes
  */
 interface TreeSchema {
   id: unknown;
@@ -91,7 +98,7 @@ export function deserializeTreeNode(data: unknown): TreeNode {
   const treeNode: TreeNode = {
     id: createNodeId(obj.id),
     parentId: obj.parentId ? createNodeId(obj.parentId) : ('' as NodeId),
-    nodeType: obj.nodeType,
+    nodeType: obj.nodeType ? createNodeType(obj.nodeType) : ('' as NodeType),
     name: obj.name,
     depth: typeof (obj as any).depth === 'number' ? (obj as any).depth : 0, // Default to 0 if not provided
     createdAt: obj.createdAt,
@@ -142,7 +149,7 @@ export function deserializeTreeNode(data: unknown): TreeNode {
 }
 
 /**
- * Validate and convert unknown data to Tree
+ * Validate and convert unknown data to TreeTypes
  */
 export function deserializeTree(data: unknown): Tree {
   if (!data || typeof data !== 'object') {
@@ -205,7 +212,7 @@ export function serializeTreeNode(node: TreeNode): Record<string, unknown> {
 }
 
 /**
- * Serialize Tree to JSON-safe object
+ * Serialize TreeTypes to JSON-safe object
  */
 export function serializeTree(tree: Tree): Record<string, unknown> {
   return {
@@ -233,7 +240,7 @@ export function parseTreeNode(json: string): TreeNode {
 }
 
 /**
- * Safe JSON parsing for Tree
+ * Safe JSON parsing for TreeTypes
  */
 export function parseTree(json: string): Tree {
   try {

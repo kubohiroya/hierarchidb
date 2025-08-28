@@ -95,7 +95,7 @@ Cloudflareにデプロイして運用するサーバ再サイドモジュール
 
 #### 機能要件
 - Dexieスキーマ定義（CoreDB/EphemeralDB）。
-- Tree/TreeNode/TreeRootState/TreeViewStateの型定義。
+- TreeTypes/TreeNode/TreeRootState/TreeViewStateの型定義。
 - コマンド種別・プロパティの型安全な定義。
 - 共通ユーティリティ（ID生成、時刻取得、名前正規化）。
 
@@ -287,7 +287,7 @@ Worker層、UI層、app で用いられるデータモデル定義
 #### 5.4.1.2 ツリー構造関係データモデル
 
 ```ts
-type Tree = {
+type TreeTypes = {
   treeId: TreeId;
   treeRootNodeId: RootNodeId;           // Root 専用ID
   treeTrashRootNodeId: TrashRootNodeId; // TrashRoot 専用ID
@@ -377,7 +377,7 @@ Worker層におけるツリー格納用のデータモデル
 ```ts
 import Dexie, { Table } from 'dexie';
 
-export type TreeRow = Tree;
+export type TreeRow = TreeTypes;
 export type TreeNodeRow = TreeNode; 
 export type TreeRootStateRow = TreeRootState;
 
@@ -417,7 +417,7 @@ export class CoreDB extends Dexie {
 
 #### 5.4.2.2 EphemeralDB（短命・高頻度）
 ```ts
-export type WorkingCopyRow = WorkingCopy;
+export type WorkingCopyRow = WorkingCopyTypes;
 export type TreeViewStateRow = TreeViewState;
 
 export class EphemeralDB extends Dexie {
@@ -453,7 +453,7 @@ nodes.get({ parentTreeNodeId: pid, name })
 nodes.where('[parentTreeNodeId+updatedAt]').between([pid, ts], [pid, Dexie.maxKey])
 → [parentTreeNodeId+updatedAt]
 
-* WorkingCopy → 元の探索
+* WorkingCopyTypes → 元の探索
 nodes.where('workingCopyOf').equals(nodeId)
 → workingCopyOf
 

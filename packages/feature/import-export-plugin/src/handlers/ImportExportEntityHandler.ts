@@ -3,37 +3,44 @@
  * Handles database operations for ImportExportEntity
  */
 
-import type { 
-  EntityHandler, 
-  NodeId
-} from '@hierarchidb/common-core';
-import { generateEntityId } from '@hierarchidb/common-core';
+import type { EntityHandler, NodeId } from '@hierarchidb/common-type';
+import { generateEntityId } from '@hierarchidb/common-type';
 
 // Use core utility instead of local implementation
-import { 
-  ImportExportEntity, 
-  CreateImportExportData, 
+import {
+  ImportExportEntity,
+  CreateImportExportData,
   UpdateImportExportData,
   DEFAULT_SOURCE_CONFIG,
   DEFAULT_TARGET_CONFIG,
   DEFAULT_TRANSFORM_CONFIG,
   DEFAULT_PROGRESS,
-  OperationStatus
+  OperationStatus,
 } from '../types/ImportExportEntity';
 
 /**
  * Entity handler for ImportExportEntity
  * Manages CRUD operations for import/export configurations
  */
-export class ImportExportEntityHandler implements EntityHandler<ImportExportEntity, never, ImportExportEntity & { workingCopyId: string; copiedAt: number }> {
+export class ImportExportEntityHandler
+  implements
+    EntityHandler<
+      ImportExportEntity,
+      never,
+      ImportExportEntity & { workingCopyId: string; copiedAt: number }
+    >
+{
   // Context injection will be implemented at runtime by worker
 
   /**
    * Create a new ImportExportEntity
    */
-  async createEntity(nodeId: NodeId, data?: Partial<ImportExportEntity>): Promise<ImportExportEntity> {
+  async createEntity(
+    nodeId: NodeId,
+    data?: Partial<ImportExportEntity>
+  ): Promise<ImportExportEntity> {
     const createData = data as unknown as CreateImportExportData;
-    
+
     if (!createData?.name) {
       throw new Error('Operation name is required');
     }
@@ -49,7 +56,7 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
       name: createData.name,
       description: createData.description || '',
       operationType: createData.operationType,
-      
+
       // Configuration with defaults
       sourceConfig: {
         ...DEFAULT_SOURCE_CONFIG,
@@ -63,19 +70,21 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
         ...DEFAULT_TRANSFORM_CONFIG,
         ...createData.transformConfig,
       },
-      
+
       // Status and execution
       status: 'draft' as OperationStatus,
       progress: { ...DEFAULT_PROGRESS },
       executionHistory: [],
-      
+
       // Optional scheduling
-      schedule: createData.schedule ? {
-        enabled: createData.schedule.enabled ?? false,
-        scheduleType: createData.schedule.scheduleType ?? 'manual',
-        ...createData.schedule,
-      } : undefined,
-      
+      schedule: createData.schedule
+        ? {
+            enabled: createData.schedule.enabled ?? false,
+            scheduleType: createData.schedule.scheduleType ?? 'manual',
+            ...createData.schedule,
+          }
+        : undefined,
+
       // Lifecycle
       createdAt: now,
       updatedAt: now,
@@ -85,7 +94,7 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
     // Use context if available (injected at runtime)
     // Runtime implementation will be injected by worker
     console.log('Creating entity:', entity);
-    
+
     // Fallback for testing
     return entity;
   }
@@ -113,18 +122,24 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
       ...existing,
       ...updateData,
       // Merge configurations properly
-      sourceConfig: updateData.sourceConfig ? {
-        ...existing.sourceConfig,
-        ...updateData.sourceConfig,
-      } : existing.sourceConfig,
-      targetConfig: updateData.targetConfig ? {
-        ...existing.targetConfig,
-        ...updateData.targetConfig,
-      } : existing.targetConfig,
-      transformConfig: updateData.transformConfig ? {
-        ...existing.transformConfig,
-        ...updateData.transformConfig,
-      } : existing.transformConfig,
+      sourceConfig: updateData.sourceConfig
+        ? {
+            ...existing.sourceConfig,
+            ...updateData.sourceConfig,
+          }
+        : existing.sourceConfig,
+      targetConfig: updateData.targetConfig
+        ? {
+            ...existing.targetConfig,
+            ...updateData.targetConfig,
+          }
+        : existing.targetConfig,
+      transformConfig: updateData.transformConfig
+        ? {
+            ...existing.transformConfig,
+            ...updateData.transformConfig,
+          }
+        : existing.transformConfig,
       schedule: updateData.schedule as any,
       nodeId, // Ensure nodeId is not overwritten
       updatedAt: Date.now(),
@@ -144,7 +159,6 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
   }
 
   // Placeholder implementations for base class abstract methods
-
 
   // Import/Export specific methods
 
@@ -171,8 +185,8 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
    * Update operation progress
    */
   async updateProgress(
-    nodeId: NodeId, 
-    processedRecords: number, 
+    nodeId: NodeId,
+    processedRecords: number,
     totalRecords?: number,
     currentStep?: string
   ): Promise<void> {
@@ -184,7 +198,8 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
     operation.progress.processedRecords = processedRecords;
     if (totalRecords !== undefined) {
       operation.progress.totalRecords = totalRecords;
-      operation.progress.percentage = totalRecords > 0 ? (processedRecords / totalRecords) * 100 : 0;
+      operation.progress.percentage =
+        totalRecords > 0 ? (processedRecords / totalRecords) * 100 : 0;
     }
     if (currentStep) {
       operation.progress.currentStep = currentStep;
@@ -250,46 +265,56 @@ export class ImportExportEntityHandler implements EntityHandler<ImportExportEnti
     }
 
     const executionHistory = operation.executionHistory;
-    const completedExecutions = executionHistory.filter(exec => exec.status === 'completed');
-    const failedExecutions = executionHistory.filter(exec => exec.status === 'failed');
+    const completedExecutions = executionHistory.filter((exec) => exec.status === 'completed');
+    const failedExecutions = executionHistory.filter((exec) => exec.status === 'failed');
 
     return {
       totalExecutions: executionHistory.length,
       completedExecutions: completedExecutions.length,
       failedExecutions: failedExecutions.length,
-      totalRecordsProcessed: completedExecutions.reduce((sum, exec) => sum + exec.processedRecords, 0),
-      averageExecutionTime: completedExecutions.length > 0 
-        ? completedExecutions.reduce((sum, exec) => {
-            const duration = exec.endTime ? exec.endTime - exec.startTime : 0;
-            return sum + duration;
-          }, 0) / completedExecutions.length
-        : 0,
-      lastExecutionTime: executionHistory.length > 0 
-        ? executionHistory[executionHistory.length - 1]?.startTime || 0
-        : 0,
+      totalRecordsProcessed: completedExecutions.reduce(
+        (sum, exec) => sum + exec.processedRecords,
+        0
+      ),
+      averageExecutionTime:
+        completedExecutions.length > 0
+          ? completedExecutions.reduce((sum, exec) => {
+              const duration = exec.endTime ? exec.endTime - exec.startTime : 0;
+              return sum + duration;
+            }, 0) / completedExecutions.length
+          : 0,
+      lastExecutionTime:
+        executionHistory.length > 0
+          ? executionHistory[executionHistory.length - 1]?.startTime || 0
+          : 0,
       currentStatus: operation.status,
       lastUpdated: operation.updatedAt,
     };
   }
 
   // Working Copy Operations (required by EntityHandler interface)
-  async createWorkingCopy(nodeId: NodeId): Promise<ImportExportEntity & { workingCopyId: string; copiedAt: number }> {
+  async createWorkingCopy(
+    nodeId: NodeId
+  ): Promise<ImportExportEntity & { workingCopyId: string; copiedAt: number }> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Entity not found: ${nodeId}`);
     }
-    
+
     // Create working copy with additional workingCopyId and copiedAt fields
     const workingCopy = {
       ...entity,
       workingCopyId: `wc-${nodeId}-${Date.now()}`,
       copiedAt: Date.now(),
     };
-    
+
     return workingCopy;
   }
 
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: ImportExportEntity & { workingCopyId: string; copiedAt: number }): Promise<void> {
+  async commitWorkingCopy(
+    nodeId: NodeId,
+    workingCopy: ImportExportEntity & { workingCopyId: string; copiedAt: number }
+  ): Promise<void> {
     // Remove working copy fields and update the entity
     const { workingCopyId, copiedAt, ...entityData } = workingCopy;
     await this.updateEntity(nodeId, entityData);

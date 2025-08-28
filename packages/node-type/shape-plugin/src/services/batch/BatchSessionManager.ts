@@ -9,7 +9,7 @@
  * - Error handling and recovery
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { shapeDB, type BatchSessionRecord, type BatchTaskRecord } from '../database/ShapeDB';
 import { WorkerPoolManager } from '../workers/WorkerPoolManager';
 import type {

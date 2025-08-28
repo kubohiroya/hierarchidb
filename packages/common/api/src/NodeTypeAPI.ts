@@ -6,15 +6,15 @@
  * It's separated from plugin-specific functionality for better separation of concerns.
  */
 
-import type { 
-  NodeType, 
-  NodeId, 
-  ValidationResult, 
+import type {
+  NodeType,
+  NodeId,
+  ValidationResult,
   NodeTypeDefinition,
   TreeNode,
   NodeLifecycleHooks,
-  PluginMetadata
-} from '@hierarchidb/common-core';
+  PluginMetadata,
+} from '@hierarchidb/common-type';
 
 /**
  * Node type management API
@@ -25,10 +25,10 @@ import type {
  * @example
  * ```typescript
  * const nodeTypeAPI = workerAPI.getNodeTypeAPI();
- * 
+ *
  * // Check if a node type is supported
  * const isSupported = await nodeTypeAPI.isSupported('folder-plugin');
- * 
+ *
  * // Get supported operations
  * const operations = await nodeTypeAPI.getSupportedOperations('document');
  * ```

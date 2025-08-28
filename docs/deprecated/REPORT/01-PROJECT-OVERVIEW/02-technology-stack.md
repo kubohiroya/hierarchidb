@@ -36,13 +36,13 @@ const observableAPI = await workerAPI.getObservableAPI();
 // 二層データベース戦略
 class CoreDB extends Dexie {
   // 永続データ
-  trees!: Table<Tree, TreeId>;
+  trees!: Table<TreeTypes, TreeId>;
   nodes!: Table<TreeNode, NodeId>;
 }
 
 class EphemeralDB extends Dexie {
   // 一時データ（24時間で自動削除）
-  workingCopies!: Table<WorkingCopy, UUID>;
+  workingCopies!: Table<WorkingCopyTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
 }
 ```
@@ -175,7 +175,7 @@ const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet-plugin'));
 | @hierarchidb/ui-client | 95KB | 62KB | 21KB |
 
 ### 最適化技術
-- Tree Shaking
+- TreeTypes Shaking
 - Dead Code Elimination
 - Minification
 - Compression (gzip/brotli)

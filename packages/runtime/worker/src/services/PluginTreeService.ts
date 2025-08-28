@@ -1,6 +1,6 @@
 /**
  * @file PluginTreeService.ts
- * @description Tree-specific plugin management service implementation
+ * @description TreeTypes-specific plugin management service implementation
  */
 
 import type {

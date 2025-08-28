@@ -159,7 +159,7 @@ flowchart TD
     G -->|保存| H[commitWorkingCopy]
     G -->|破棄| I[discardWorkingCopy]
     
-    H --> J[WorkingCopy → CoreDB]
+    H --> J[WorkingCopyTypes → CoreDB]
     I --> K[Working Copy削除]
     
     J --> L[TreeChangeEvent発行]

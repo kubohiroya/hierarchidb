@@ -172,7 +172,7 @@
 
 ## Edgeケーステスト基準
 
-### EDGE-001: 不完全な NodeTypeDefinition 登録の受け入れ基準 🟢
+### EDGE-001: 不完全な PluginDefinition 登録の受け入れ基準 🟢
 
 **テストシナリオ**:
 - nodeType フィールドが未定義

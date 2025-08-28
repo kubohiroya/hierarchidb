@@ -172,7 +172,7 @@ export const ResourceSelectionStep: React.FC<ResourceSelectionStepProps> = ({
   
   return (
     <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
-      {/* Left Panel: Resource Tree */}
+      {/* Left Panel: Resource TreeTypes */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <ResourceSelectionHeader
           filterOptions={filterOptions}
@@ -477,7 +477,7 @@ graph TD
 
 ### Resource Selection Workflow
 
-1. **Tree Navigation**: Browse Resources tree hierarchy
+1. **TreeTypes Navigation**: Browse Resources tree hierarchy
 2. **Filter Application**: Apply resource type and metadata filters
 3. **Multi-Selection**: Select resources using checkboxes
 4. **Dependency Validation**: Verify resource compatibility
@@ -646,7 +646,7 @@ export const ProjectDialogWrapper: React.FC<DialogWrapperProps> = ({ nodeId }) =
   );
 };
 
-// Tree node panel integration
+// TreeTypes node panel integration
 export const ProjectPanelWrapper: React.FC<PanelWrapperProps> = ({ nodeId }) => {
   const { entity } = useEntityData<ProjectEntity>(nodeId);
   

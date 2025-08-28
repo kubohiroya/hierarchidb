@@ -11,7 +11,7 @@
  */
 
 import * as Comlink from 'comlink';
-//import { NodeId } from '@hierarchidb/common-core';
+//import { NodeId } from '@hierarchidb/common-type';
 //import { WorkerPool } from './WorkerPool';
 import type {
   DownloadWorkerAPI,

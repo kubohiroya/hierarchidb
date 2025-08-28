@@ -36,7 +36,7 @@ export function meta() {
   ];
 }
 
-// Tree configurations for t and r trees
+// TreeTypes configurations for t and r trees
 const treeButtonConfigs: TreeConfig[] = [
   {
     id: 'r',
@@ -156,7 +156,7 @@ export default function Index() {
             showProgress={false}
           />
 
-          {/* Tree selection buttons */}
+          {/* TreeTypes selection buttons */}
           <TreeToggleButtonGroup
             trees={treeButtonConfigs}
             selectedTreeId={null}

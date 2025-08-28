@@ -26,7 +26,7 @@ This report identifies unimplemented, mock, or placeholder code patterns through
 - **Lines**: 201-230, 554-618
 
 #### Default Plugins - Stub Handlers  
-**File**: `packages/runtime/worker/src/registry/default-plugins.ts`
+**File**: `packages/runtime/worker/src/registry/default-plugin.ts`
 - **Issue**: All entity handlers throw "Not implemented"
 - **Methods**: `createEntity()`, `updateEntity()`, `deleteEntity()`
 - **Impact**: Plugin system non-functional

@@ -399,7 +399,7 @@
 - **依存タスク**: TASK-0031
 - **実装詳細**:
   ```typescript
-  private registerDatabaseSchema(definition: NodeTypeDefinition): void {
+  private registerDatabaseSchema(definition: PluginDefinition): void {
     const { database } = definition;
     // Dexieスキーマの動的追加
     // インデックス設定

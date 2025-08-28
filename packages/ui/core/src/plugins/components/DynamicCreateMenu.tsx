@@ -9,7 +9,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import type { NodeId, CreateMenuItem } from '@hierarchidb/common-core';
+import type { NodeId, CreateMenuItem } from '@hierarchidb/common-type';
 import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 

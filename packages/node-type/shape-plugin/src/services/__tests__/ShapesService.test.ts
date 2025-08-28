@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NodeId, TreeId } from '@hierarchidb/common-core';
+import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { ShapesService } from '../ShapesService';
 import type { BatchProcessConfig, BatchSession, DataSourceInfo } from '../types';
 

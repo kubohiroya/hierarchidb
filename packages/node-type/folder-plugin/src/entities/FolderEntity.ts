@@ -12,7 +12,7 @@ import type {
   PeerEntity,
   GroupEntity,
   Timestamp
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 
 /**
  * FolderEntity - フォルダのメタデータ（PeerEntity）

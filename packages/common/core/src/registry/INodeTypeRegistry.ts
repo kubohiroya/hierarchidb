@@ -3,14 +3,14 @@
  * @description Base interfaces for node type and plugin registries
  */
 
-import type { NodeType } from '../types/base';
 import type {
-  NodeTypeDefinition,
   PeerEntity,
   GroupEntity,
   EntityHandler,
-} from '../types/nodeDefinition';
-import type { WorkingCopyProperties } from '../types/workingCopy';
+  WorkingCopyProperties,
+  NodeTypeDefinition,
+  NodeType,
+} from '@hierarchidb/common-type';
 
 /**
  * Base interface for all node type registries

@@ -29,7 +29,7 @@ import {
   Storage as StorageIcon,
   Map as MapIcon,
 } from '@mui/icons-material';
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import type { ShapeEntity } from '~/types';
 import type { BatchStatus } from '~/services/types';
 

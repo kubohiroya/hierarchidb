@@ -11,7 +11,7 @@ export type {
 } from '../entities/FolderEntity';
 
 // Keep existing simple types for backward compatibility if needed
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 
 export interface FolderEntityWorkingCopy {
   id: EntityId;

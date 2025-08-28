@@ -33,7 +33,7 @@ UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Processing) 
 
 ### 3. Data Storage
 Comprehensive entity system supporting:
-- **BaseMap Entities**: Main map configuration data in core database
+- **BaseMap EntityTypes**: Main map configuration data in core database
 - **Working Copies**: Draft editing capabilities in ephemeral database
 - **Tile Cache**: Optimized map tile storage for performance
 - **Plugin Configuration**: Persistent plugin settings and preferences

@@ -30,11 +30,11 @@ const mockPlugin1 = {
   },
   
   async onTreeCreate(treeId: TreeId, context: any) {
-    console.log('Plugin 1: Tree created', treeId);
+    console.log('Plugin 1: TreeTypes created', treeId);
   },
   
   async onTreeDelete(treeId: TreeId, context: any) {
-    console.log('Plugin 1: Tree deleted', treeId);
+    console.log('Plugin 1: TreeTypes deleted', treeId);
   },
 };
 

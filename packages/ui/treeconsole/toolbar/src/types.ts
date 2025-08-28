@@ -54,7 +54,7 @@ export interface TreeConsoleToolbarProps {
   isResourcesPage?: boolean;
 
   /**
-   * Tree root node ID for operations
+   * TreeTypes root node ID for operations
    */
   treeRootNodeId?: string;
 

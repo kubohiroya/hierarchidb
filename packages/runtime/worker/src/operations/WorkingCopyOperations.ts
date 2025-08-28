@@ -35,7 +35,7 @@ export async function createNewDraftWorkingCopy(
     updatedAt: now,
     version: 1,
 
-    // WorkingCopy properties
+    // WorkingCopyTypes properties
     copiedAt: now,
 
     // Draft property
@@ -84,7 +84,7 @@ export async function createWorkingCopyFromNode(
     updatedAt: now,
     version: 1, // Working copy starts with version 1
 
-    // WorkingCopy properties
+    // WorkingCopyTypes properties
     copiedAt: now,
 
     // Store original version for conflict detection

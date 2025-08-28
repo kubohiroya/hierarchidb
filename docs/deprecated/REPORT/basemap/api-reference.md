@@ -58,7 +58,7 @@ interface BaseMapEntity extends PeerEntity {
 #### BaseMapWorkingCopy
 
 ```typescript
-interface BaseMapWorkingCopy extends WorkingCopy {
+interface BaseMapWorkingCopy extends WorkingCopyTypes {
   // All BaseMapEntity fields
   nodeId: NodeId;
   mapStyle: 'streets' | 'satellite' | 'hybrid' | 'terrain' | 'custom';

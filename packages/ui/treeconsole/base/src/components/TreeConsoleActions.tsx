@@ -5,7 +5,7 @@
  * SpeedDialMenuを使用した右下のフローティングアクションボタン。
  */
 
-import { DialogActions, } from '@mui/material';
+import { DialogActions } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as CreateFolderIcon,
@@ -13,8 +13,8 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import type { TreeConsoleActionsProps } from '../types/index';
-import { getPageButtonColor } from "@hierarchidb/common-core";
-import {SpeedDialMenu} from '@hierarchidb/ui-treeconsole-speeddial';
+import { getPageButtonColor } from '@hierarchidb/common-type';
+import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
 /**
  * TreeConsoleActions メインコンポーネント
  * 元のTreeConsoleActionsの構造を完全に再現

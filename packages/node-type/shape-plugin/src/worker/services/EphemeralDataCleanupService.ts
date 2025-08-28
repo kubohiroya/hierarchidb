@@ -3,7 +3,7 @@
  * Manages automatic cleanup of expired WorkingCopies and batch processing data
  */
 
-import { EntityId, NodeId } from '@hierarchidb/common-core';
+import { EntityId, NodeId } from '@hierarchidb/common-type';
 import { BatchSession, ShapeWorkingCopy } from '../../shared';
 
 export interface CleanupStatistics {

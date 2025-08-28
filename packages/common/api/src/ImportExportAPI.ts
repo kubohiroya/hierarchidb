@@ -1,4 +1,4 @@
-import type { NodeId, TreeId } from '@hierarchidb/common-core';
+import type { NodeId, TreeId } from '@hierarchidb/common-type';
 
 /**
  * Import/Export API for data transfer operations
@@ -59,22 +59,22 @@ export interface ImportExportAPI {
 export interface ImportNodesParams {
   /** Target tree for import */
   treeId: TreeId;
-  
+
   /** Parent node under which to import */
   targetParentId: NodeId;
-  
+
   /** Data to import */
   data: ImportData;
-  
+
   /** Import format */
   format: 'json' | 'csv' | 'xml';
-  
+
   /** Options for handling conflicts */
   conflictResolution?: 'skip' | 'replace' | 'rename';
-  
+
   /** Whether to validate before import */
   validateFirst?: boolean;
-  
+
   /** Progress callback */
   onProgress?: (progress: ImportProgress) => void;
 }
@@ -91,7 +91,7 @@ export interface ImportData {
     metadata?: Record<string, any>;
     children?: ImportData['nodes'];
   }>;
-  
+
   /** Additional metadata */
   metadata?: {
     version?: string;
@@ -106,19 +106,19 @@ export interface ImportData {
 export interface ExportNodesParams {
   /** Node IDs to export */
   nodeIds: NodeId[];
-  
+
   /** Export format */
   format: 'json' | 'csv' | 'xml';
-  
+
   /** Whether to include child nodes */
   includeChildren?: boolean;
-  
+
   /** Whether to include node metadata */
   includeMetadata?: boolean;
-  
+
   /** For CSV exports - columns to include */
   csvColumns?: string[];
-  
+
   /** Progress callback */
   onProgress?: (progress: ExportProgress) => void;
 }
@@ -129,19 +129,19 @@ export interface ExportNodesParams {
 export interface ImportResult {
   /** Whether import succeeded */
   success: boolean;
-  
+
   /** IDs of successfully imported nodes */
   importedNodeIds: NodeId[];
-  
+
   /** Number of nodes imported */
   importedCount: number;
-  
+
   /** Number of nodes skipped */
   skippedCount: number;
-  
+
   /** Any errors encountered */
   errors?: string[];
-  
+
   /** Operation ID for status tracking */
   operationId?: string;
 }
@@ -152,22 +152,22 @@ export interface ImportResult {
 export interface ExportResult {
   /** Whether export succeeded */
   success: boolean;
-  
+
   /** Exported data */
   data: string | Blob;
-  
+
   /** Format of exported data */
   format: string;
-  
+
   /** Number of nodes exported */
   exportedCount: number;
-  
+
   /** MIME type for download */
   mimeType: string;
-  
+
   /** Suggested filename */
   filename: string;
-  
+
   /** Operation ID for status tracking */
   operationId?: string;
 }
@@ -178,13 +178,13 @@ export interface ExportResult {
 export interface ValidateImportParams {
   /** Data to validate */
   data: ImportData;
-  
+
   /** Expected format */
   format: 'json' | 'csv' | 'xml';
-  
+
   /** Target tree context for validation */
   treeId?: TreeId;
-  
+
   /** Target parent for context validation */
   targetParentId?: NodeId;
 }
@@ -195,13 +195,13 @@ export interface ValidateImportParams {
 export interface ValidationResult {
   /** Whether data is valid */
   valid: boolean;
-  
+
   /** Validation errors */
   errors: ValidationError[];
-  
+
   /** Validation warnings (non-blocking) */
   warnings?: ValidationWarning[];
-  
+
   /** Statistics about validated data */
   statistics?: {
     nodeCount: number;
@@ -216,13 +216,13 @@ export interface ValidationResult {
 export interface ValidationError {
   /** Error code */
   code: string;
-  
+
   /** Error message */
   message: string;
-  
+
   /** Path to error in data structure */
   path?: string;
-  
+
   /** Line number for CSV/XML */
   line?: number;
 }
@@ -233,10 +233,10 @@ export interface ValidationError {
 export interface ValidationWarning {
   /** Warning code */
   code: string;
-  
+
   /** Warning message */
   message: string;
-  
+
   /** Path to warning in data structure */
   path?: string;
 }
@@ -247,19 +247,19 @@ export interface ValidationWarning {
 export interface ImportProgress {
   /** Current phase of import */
   phase: 'validating' | 'importing' | 'finalizing';
-  
+
   /** Current item being processed */
   current: number;
-  
+
   /** Total items to process */
   total: number;
-  
+
   /** Progress percentage (0-100) */
   percentage: number;
-  
+
   /** Current status message */
   message: string;
-  
+
   /** Estimated time remaining in ms */
   estimatedTimeRemaining?: number;
 }
@@ -270,19 +270,19 @@ export interface ImportProgress {
 export interface ExportProgress {
   /** Current phase of export */
   phase: 'collecting' | 'formatting' | 'encoding';
-  
+
   /** Current item being processed */
   current: number;
-  
+
   /** Total items to process */
   total: number;
-  
+
   /** Progress percentage (0-100) */
   percentage: number;
-  
+
   /** Current status message */
   message: string;
-  
+
   /** Estimated time remaining in ms */
   estimatedTimeRemaining?: number;
 }
@@ -293,25 +293,25 @@ export interface ExportProgress {
 export interface OperationStatus {
   /** Operation ID */
   operationId: string;
-  
+
   /** Operation type */
   type: 'import' | 'export';
-  
+
   /** Current status */
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  
+
   /** Progress information */
   progress?: ImportProgress | ExportProgress;
-  
+
   /** Result if completed */
   result?: ImportResult | ExportResult;
-  
+
   /** Error if failed */
   error?: string;
-  
+
   /** Start time */
   startedAt: number;
-  
+
   /** End time if completed */
   completedAt?: number;
 }

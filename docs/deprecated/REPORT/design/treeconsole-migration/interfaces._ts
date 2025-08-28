@@ -197,7 +197,7 @@ export interface NodeDeleteDialogProps {
 }
 
 // ============================================================================
-// Tree State Management (UI layer)
+// TreeTypes State Management (UI layer)
 // ============================================================================
 
 export interface TreeViewState {

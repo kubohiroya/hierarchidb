@@ -149,7 +149,7 @@ class TransactionManager {
 ```typescript
 // 永続データベース（CoreDB）
 class CoreDB extends Dexie {
-  trees!: Table<Tree, TreeId>;
+  trees!: Table<TreeTypes, TreeId>;
   nodes!: Table<TreeNode, NodeId>;
   rootStates!: Table<TreeRootState, [TreeId, TreeRootNodeType]>;
   
@@ -165,7 +165,7 @@ class CoreDB extends Dexie {
 
 // 一時データベース（EphemeralDB）
 class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopy, UUID>;
+  workingCopies!: Table<WorkingCopyTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
   
   constructor() {

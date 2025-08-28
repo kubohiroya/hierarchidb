@@ -388,7 +388,7 @@ export class CrossTreeReferenceService {
   async validateReference(resourceNodeId: NodeId): Promise<boolean>;
   async validateMultipleReferences(resourceNodeIds: NodeId[]): Promise<ValidationResult[]>;
 
-  // Tree structure operations
+  // TreeTypes structure operations
   async getResourcesTreeStructure(): Promise<TreeStructure>;
   async getResourceTreePath(resourceNodeId: NodeId): Promise<TreePath>;
 
@@ -682,7 +682,7 @@ export interface MapViewport {
 ### Plugin Definition
 
 ```typescript
-export const ProjectDefinition: NodeTypeDefinition<
+export const ProjectDefinition: PluginDefinition<
   ProjectEntity,
   ResourceReference | LayerConfiguration | ExportConfiguration,
   ProjectEntity

@@ -145,7 +145,7 @@ graph TB
 ### 基本プラグイン構造
 ```typescript
 // プラグイン定義例（BaseMapプラグイン）
-export const BaseMapDefinition: NodeTypeDefinition<BaseMapEntity, never, BaseMapWorkingCopy> = {
+export const BaseMapDefinition: PluginDefinition<BaseMapEntity, never, BaseMapWorkingCopy> = {
   nodeType: 'basemap',
   name: 'BaseMap Plugin',
   
@@ -233,7 +233,7 @@ export const BaseMapExtension = {
 };
 
 // 明示的な依存関係の指定
-export const CustomPlugin: NodeTypeDefinition<CustomEntity, never, CustomWorkingCopy> = {
+export const CustomPlugin: PluginDefinition<CustomEntity, never, CustomWorkingCopy> = {
   nodeType: 'custom',
   meta: {
     dependencies: ['folder-plugin', 'basemap'] // 明示的依存関係
@@ -457,7 +457,7 @@ await registry.unregister('my-plugin', {
 
 #### プラグイン定義例
 ```typescript
-export const MyPluginDefinition: NodeTypeDefinition<MyEntity, never, MyWorkingCopy> = {
+export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyWorkingCopy> = {
   nodeType: 'my-plugin',
   database: {
     entityStore: 'my_entities',  // テーブル名

@@ -2,7 +2,7 @@
  * Shape plugin metadata
  */
 
-import type { PluginMetadata } from '@hierarchidb/common-core';
+import type { PluginMetadata } from '@hierarchidb/common-type';
 
 export const ShapeMetadata: PluginMetadata = {
   id: 'shape',

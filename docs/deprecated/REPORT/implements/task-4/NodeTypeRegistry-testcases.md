@@ -22,17 +22,17 @@ Task 4のNodeTypeRegistry実装に向けて、TDD手法に基づくテストケ�
 ```typescript
 export class NodeTypeRegistry {
   private static instance: NodeTypeRegistry;
-  private definitions: Map<TreeNodeType, NodeTypeDefinition>;
+  private definitions: Map<TreeNodeType, PluginDefinition>;
   private handlers: Map<TreeNodeType, EntityHandler>;
   
   static getInstance(): NodeTypeRegistry;
   register<TEntity, TSubEntity, TWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void;
   unregister(nodeType: TreeNodeType): void;
-  getDefinition(nodeType: TreeNodeType): NodeTypeDefinition | undefined;
+  getDefinition(nodeType: TreeNodeType): PluginDefinition | undefined;
   getHandler(nodeType: TreeNodeType): EntityHandler | undefined;
-  getAllDefinitions(): NodeTypeDefinition[];
+  getAllDefinitions(): PluginDefinition[];
 }
 ```
 
@@ -66,7 +66,7 @@ expect(instance1).toBe(instance2);
 
 **入力値**:
 ```typescript
-const mockDefinition: NodeTypeDefinition = {
+const mockDefinition: PluginDefinition = {
   nodeType: 'testType' as TreeNodeType,
   name: 'Test Node',
   displayName: 'Test Node Type',
@@ -162,13 +162,13 @@ const incompleteDefinition = {
   // nodeTypeが未定義
   name: 'Incomplete',
   // entityHandlerが未定義
-} as NodeTypeDefinition;
+} as PluginDefinition;
 ```
 
 **期待結果**:
 ```typescript
 expect(() => registry.register(incompleteDefinition))
-  .toThrow('Invalid NodeTypeDefinition');
+  .toThrow('Invalid PluginDefinition');
 ```
 
 **品質保証**: 堅牢性の確保とランタイムエラーの早期検出
@@ -220,7 +220,7 @@ expect(registry.getDefinition(null)).toBeUndefined();
 
 **入力値**:
 ```typescript
-const minimalDefinition: NodeTypeDefinition = {
+const minimalDefinition: PluginDefinition = {
   nodeType: 'minimal' as TreeNodeType,
   name: 'Minimal',
   displayName: 'Minimal Node', 

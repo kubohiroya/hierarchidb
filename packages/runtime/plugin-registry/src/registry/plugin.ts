@@ -12,7 +12,7 @@ import type {
   NodeLifecycleHooks as CoreNodeLifecycleHooks,
   ValidationRule as CoreValidationRule,
   // IconDefinition as CoreIconDefinition, - Unused
-  // CategoryDefinition as CoreCategoryDefinition, - Unused  
+  // CategoryDefinition as CoreCategoryDefinition, - Unused
   // WorkerPluginRouterAction as CoreWorkerPluginRouterAction, - Unused
   PluginDatabaseConfig,
   PluginUIConfig,
@@ -29,7 +29,7 @@ export type PeerEntity = CorePeerEntity;
 export type GroupEntity = CoreGroupEntity;
 export type { WorkingCopy } from '@hierarchidb/common-core';
 
-import { EntityHandler as BaseEntityHandler } from "@hierarchidb/common-core";
+import { EntityHandler as BaseEntityHandler } from '@hierarchidb/common-core';
 
 // BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
 
@@ -49,7 +49,11 @@ export type NodeLifecycleHooks<
 > = CoreNodeLifecycleHooks<TEntity, TWorkingCopy>;
 
 // Re-export core types directly instead of creating aliases
-export type { WorkerPluginRouterAction, IconDefinition, CategoryDefinition } from '@hierarchidb/common-core';
+export type {
+  WorkerPluginRouterAction,
+  IconDefinition,
+  CategoryDefinition,
+} from '@hierarchidb/common-core';
 export type ValidationRule<TEntity extends PeerEntity = PeerEntity> = CoreValidationRule<TEntity>;
 
 // Node definition with entity handler (worker-specific extension of core)
@@ -102,7 +106,7 @@ export interface ExtendedNodeTypeConfig extends NodeTypeConfig {
 }
 
 // Backward compatibility aliases - TEMPORARY for migration only, NOT for permanent use
-/** @deprecated Use NodeDefinition instead. This alias will be removed after plugin migration is complete. */
+/** @deprecated Use EntityTypes instead. This alias will be removed after plugin migration is complete. */
 export type NodeTypeDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,

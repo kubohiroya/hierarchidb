@@ -38,7 +38,7 @@ Ephemeral     │ Peer×Ephemeral │ Group×Ephemeral│ Relation×Ephemeral
 - **削除条件**: ユーザが明示的に削除、またはTreeNode削除時のカスケード削除
 
 #### EphemeralDB（一時的データ）
-- **保存対象**: WorkingCopy、EphemeralなPeer/Group/Relationエンティティ
+- **保存対象**: WorkingCopyTypes、EphemeralなPeer/Group/Relationエンティティ
 - **ライフサイクル**: 編集ダイアログのセッション内でのみ生存
 - **削除条件**: ダイアログ閉鎖時、WorkingCopy破棄時、またはセッション終了時に自動削除
 
@@ -263,7 +263,7 @@ export interface BatchConfigTemplate extends PersistentRelationalEntity {
 }
 ```
 
-#### Ephemeral Entities（中間処理データ）
+#### Ephemeral EntityTypes（中間処理データ）
 
 ```typescript
 // EphemeralGroupEntity（ダウンロードバッファ）
@@ -380,8 +380,8 @@ export interface BatchSessionEntity extends EphemeralRelationalEntity {
 ```typescript
 // packages/worker/src/db/DatabaseManager.ts
 export class DatabaseManager {
-  private coreDB: Dexie;      // Persistent Entities
-  private ephemeralDB: Dexie; // Ephemeral Entities
+  private coreDB: Dexie;      // Persistent EntityTypes
+  private ephemeralDB: Dexie; // Ephemeral EntityTypes
   
   constructor() {
     this.coreDB = new Dexie('HierarchiDB_Core');

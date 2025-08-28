@@ -266,7 +266,7 @@ export const proxy = vi.fn((obj) => obj);
 ### フィクスチャ
 ```typescript
 // fixtures/treeData.ts
-export const createMockTree = (): Tree => ({
+export const createMockTree = (): TreeTypes => ({
   id: 'tree_test' as TreeId,
   rootNodeId: 'root_test' as NodeId,
   trashRootNodeId: 'trash_test' as NodeId,

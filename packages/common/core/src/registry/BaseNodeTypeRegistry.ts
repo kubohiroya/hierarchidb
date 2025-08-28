@@ -3,7 +3,7 @@
  * @description Abstract base class for all node type registries
  */
 
-import type { NodeType } from '../types/base';
+import type { NodeType } from '@hierarchidb/common-type';
 import type { INodeTypeRegistry } from './INodeTypeRegistry';
 
 /**

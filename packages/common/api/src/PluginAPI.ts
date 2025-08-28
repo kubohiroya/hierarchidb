@@ -3,7 +3,7 @@ import type {
   APIMethodArgs,
   APIMethodReturn,
   WorkerAPIMethod,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 
 /**
  * @file PluginAPI.ts
@@ -15,19 +15,19 @@ import type {
 
 /**
  * Plugin API extension interface
- * 
+ *
  * Defines a plugin's custom API methods that extend the base Worker API.
  * Each plugin can expose type-safe methods specific to its node type.
- * 
+ *
  * @template TMethods - Record of method name to method implementation
- * 
+ *
  * @example
  * ```typescript
  * interface MapPluginMethods {
  *   getMapBounds: (nodeId: NodeId) => Promise<Bounds>;
  *   setMapStyle: (nodeId: NodeId, style: MapStyle) => Promise<void>;
  * }
- * 
+ *
  * const mapAPI: PluginAPI<MapPluginMethods> = {
  *   nodeType: 'map',
  *   methods: {
@@ -42,19 +42,19 @@ export interface PluginAPI<
 > {
   /** Node type this plugin handles */
   readonly nodeType: NodeType;
-  
+
   /** Collection of custom methods exposed by the plugin */
   readonly methods: TMethods;
 }
 
 /**
  * Type-safe method invocation result extractor
- * 
+ *
  * Extracts the return type of a plugin method for type-safe invocation.
- * 
+ *
  * @template T - Plugin API instance type
  * @template M - Method name to extract result type for
- * 
+ *
  * @example
  * ```typescript
  * type BoundsResult = InvokeResult<typeof mapAPI, 'getMapBounds'>;
@@ -72,17 +72,17 @@ export type InvokeResult<
 
 /**
  * Central registry for plugin API extensions
- * 
+ *
  * Manages registration, discovery, and invocation of plugin-specific API methods.
  * Provides type-safe method calls and plugin capability queries.
- * 
+ *
  * @example
  * ```typescript
  * const registry = new PluginAPIRegistry();
- * 
+ *
  * // Register a plugin
  * registry.register(mapAPI);
- * 
+ *
  * // Check if method exists
  * if (registry.hasMethod('map', 'getMapBounds')) {
  *   const bounds = await registry.invokeMethod('map', 'getMapBounds', nodeId);
@@ -95,10 +95,10 @@ export class PluginAPIRegistry {
 
   /**
    * Register a plugin API extension
-   * 
+   *
    * @template T - Plugin methods type
    * @param extension - Plugin API to register
-   * 
+   *
    * @example
    * ```typescript
    * registry.register({
@@ -108,7 +108,7 @@ export class PluginAPIRegistry {
    *   }
    * });
    * ```
-   * 
+   *
    * @remarks
    * Overwrites any existing plugin for the same nodeType
    */
@@ -118,9 +118,9 @@ export class PluginAPIRegistry {
 
   /**
    * Unregister a plugin API extension
-   * 
+   *
    * @param nodeType - Node type to unregister
-   * 
+   *
    * @example
    * ```typescript
    * registry.unregister('spreadsheet-plugin');
@@ -132,11 +132,11 @@ export class PluginAPIRegistry {
 
   /**
    * Get a registered plugin API extension
-   * 
+   *
    * @template T - Expected plugin methods type
    * @param nodeType - Node type to retrieve extension for
    * @returns Plugin API if registered, undefined otherwise
-   * 
+   *
    * @example
    * ```typescript
    * const mapExtension = registry.getExtension<MapPluginMethods>('map');
@@ -153,17 +153,17 @@ export class PluginAPIRegistry {
 
   /**
    * Invoke a plugin method with type safety
-   * 
+   *
    * @template TMethods - Plugin methods type
    * @template TMethod - Specific method name
    * @template TArgs - Method arguments type
    * @template TReturn - Method return type
-   * 
+   *
    * @param nodeType - Node type of the plugin
    * @param methodName - Name of the method to invoke
    * @param args - Arguments to pass to the method
    * @returns Promise resolving to method result
-   * 
+   *
    * @example
    * ```typescript
    * // Type-safe invocation
@@ -172,7 +172,7 @@ export class PluginAPIRegistry {
    *   'getMapBounds',
    *   nodeId
    * );
-   * 
+   *
    * // With multiple arguments
    * await registry.invokeMethod(
    *   'spreadsheet-plugin',
@@ -182,7 +182,7 @@ export class PluginAPIRegistry {
    *   42
    * );
    * ```
-   * 
+   *
    * @throws {Error} If plugin or method not found
    */
   async invokeMethod<
@@ -201,11 +201,11 @@ export class PluginAPIRegistry {
 
   /**
    * Check if a plugin has a specific method
-   * 
+   *
    * @param nodeType - Node type of the plugin
    * @param methodName - Method name to check
    * @returns True if method exists in plugin
-   * 
+   *
    * @example
    * ```typescript
    * if (registry.hasMethod('map', 'setMapStyle')) {
@@ -220,10 +220,10 @@ export class PluginAPIRegistry {
 
   /**
    * Get list of available methods for a plugin
-   * 
+   *
    * @param nodeType - Node type to query
    * @returns Array of method names, empty if plugin not found
-   * 
+   *
    * @example
    * ```typescript
    * const methods = registry.getAvailableMethods('spreadsheet-plugin');
@@ -238,9 +238,9 @@ export class PluginAPIRegistry {
 
   /**
    * Get all registered plugin extensions
-   * 
+   *
    * @returns Array of all registered plugin APIs
-   * 
+   *
    * @example
    * ```typescript
    * const allPlugins = registry.getAllExtensions();

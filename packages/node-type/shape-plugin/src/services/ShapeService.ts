@@ -5,7 +5,7 @@
  * feature queries, cache operations, and vector tile generation.
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { shapeDB } from './database/ShapeDB';
 import { BatchSessionManager } from './batch/BatchSessionManager';
 import { DataSourceManager } from '@hierarchidb/runtime-datasource';

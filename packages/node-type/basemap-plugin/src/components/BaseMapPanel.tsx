@@ -32,7 +32,7 @@ import {
   CameraAlt,
   Settings
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseMapDisplay } from './BaseMapDisplay';
 import { useBaseMapEntity } from '../hooks/useBaseMapEntity';
 import type { MapViewState } from '@hierarchidb/ui-map';

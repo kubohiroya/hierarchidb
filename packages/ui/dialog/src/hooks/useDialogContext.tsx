@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext, type ReactNode } from 'react';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 export interface DialogContextData<T = any> {
   /**

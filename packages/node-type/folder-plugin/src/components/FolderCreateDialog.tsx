@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { FolderIcon } from './FolderIcon';
 import type { FolderCreateData } from '../types';
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 
 export interface FolderCreateDialogProps {
   /**

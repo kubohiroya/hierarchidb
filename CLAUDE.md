@@ -514,7 +514,7 @@ UI functionality is split into separate packages:
 ### Node Type Registration
 ```typescript
 // Define node type with branded ID types
-const MyNodeDefinition: NodeTypeDefinition<Entity, SubEntity, WorkingCopy> = {
+const MyNodeDefinition: PluginDefinition<Entity, SubEntity, WorkingCopyTypes> = {
   nodeType: 'mytype', // String literal, not enum
   database: { 
     entityStore: 'mytypes',
@@ -571,7 +571,7 @@ class MyEntityHandler extends BaseEntityHandler<MyEntity> {
 ## Database Strategy
 
 ### CoreDB (Long-lived)
-- **TreeEntity** - Tree metadata with `TreeId` branding
+- **TreeEntity** - TreeTypes metadata with `TreeId` branding
 - **TreeNodeEntity** - Node hierarchy with `NodeId` branding
 - **TreeRootStateEntity** - Root node states with composite keys
 - **Plugin entity stores** - Custom entity types with `EntityId` branding

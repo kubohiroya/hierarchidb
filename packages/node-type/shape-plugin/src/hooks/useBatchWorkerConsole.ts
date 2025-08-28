@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { NodeId } from '@hierarchidb/common-core';
-import type { 
-  DownloadTask, 
-  SimplifyTask, 
+import type { NodeId } from '@hierarchidb/common-type';
+import type {
+  DownloadTask,
+  SimplifyTask,
   VectorTileTask,
   ProcessingConfig,
   UrlMetadata,
   BatchTaskStage,
 } from '~/types';
 import { mockShapeService } from '~/services/MockShapeService';
-import { 
+import {
   generateMockDownloadTasks,
   generateMockSimplifyTasks,
   generateMockVectorTileTasks,
@@ -57,11 +57,11 @@ export const useBatchWorkerConsole = ({
   useEffect(() => {
     if (urlMetadata.length > 0) {
       setDownloadTasks(generateMockDownloadTasks(urlMetadata));
-      const countries = [...new Set(urlMetadata.map(m => m.countryCode))];
-      const levels = [...new Set(urlMetadata.map(m => m.adminLevel))];
+      const countries = [...new Set(urlMetadata.map((m) => m.countryCode))];
+      const levels = [...new Set(urlMetadata.map((m) => m.adminLevel))];
       setSimplify1Tasks(generateMockSimplifyTasks(countries, levels));
       setSimplify2Tasks(
-        generateMockSimplifyTasks(countries, levels).map(task => ({
+        generateMockSimplifyTasks(countries, levels).map((task) => ({
           ...task,
           taskId: task.taskId.replace('simplify1', 'simplify2'),
           taskType: 'simplify2' as const,
@@ -77,34 +77,52 @@ export const useBatchWorkerConsole = ({
 
     const interval = setInterval(() => {
       // Update download tasks
-      setDownloadTasks(prev => prev.map(task => {
-        if (task.stage === 'wait' && Math.random() < 0.1) {
-          return { ...task, stage: 'process' as BatchTaskStage, progress: 0 };
-        }
-        if (task.stage === 'process') {
-          const newProgress = Math.min((task.progress || 0) + Math.random() * 20, 100);
-          if (newProgress >= 100) {
-            return { ...task, stage: 'success' as BatchTaskStage, progress: 100, completedAt: Date.now() };
+      setDownloadTasks((prev) =>
+        prev.map((task) => {
+          if (task.stage === 'wait' && Math.random() < 0.1) {
+            return { ...task, stage: 'process' as BatchTaskStage, progress: 0 };
           }
-          return { ...task, progress: newProgress };
-        }
-        return task;
-      }));
+          if (task.stage === 'process') {
+            const newProgress = Math.min((task.progress || 0) + Math.random() * 20, 100);
+            if (newProgress >= 100) {
+              return {
+                ...task,
+                stage: 'success' as BatchTaskStage,
+                progress: 100,
+                completedAt: Date.now(),
+              };
+            }
+            return { ...task, progress: newProgress };
+          }
+          return task;
+        })
+      );
 
       // Update simplify1 tasks
-      setSimplify1Tasks(prev => prev.map(task => {
-        if (task.stage === 'wait' && downloadTasks.some(d => d.stage === 'success') && Math.random() < 0.1) {
-          return { ...task, stage: 'process' as BatchTaskStage, progress: 0 };
-        }
-        if (task.stage === 'process') {
-          const newProgress = Math.min((task.progress || 0) + Math.random() * 15, 100);
-          if (newProgress >= 100) {
-            return { ...task, stage: 'success' as BatchTaskStage, progress: 100, completedAt: Date.now() };
+      setSimplify1Tasks((prev) =>
+        prev.map((task) => {
+          if (
+            task.stage === 'wait' &&
+            downloadTasks.some((d) => d.stage === 'success') &&
+            Math.random() < 0.1
+          ) {
+            return { ...task, stage: 'process' as BatchTaskStage, progress: 0 };
           }
-          return { ...task, progress: newProgress };
-        }
-        return task;
-      }));
+          if (task.stage === 'process') {
+            const newProgress = Math.min((task.progress || 0) + Math.random() * 15, 100);
+            if (newProgress >= 100) {
+              return {
+                ...task,
+                stage: 'success' as BatchTaskStage,
+                progress: 100,
+                completedAt: Date.now(),
+              };
+            }
+            return { ...task, progress: newProgress };
+          }
+          return task;
+        })
+      );
 
       // Similar updates for simplify2 and vectorTile tasks...
     }, 1000);
@@ -113,13 +131,21 @@ export const useBatchWorkerConsole = ({
   }, [hasStarted, downloadTasks]);
 
   const canStart = urlMetadata.length > 0;
-  
-  const hasFinished = 
+
+  const hasFinished =
     downloadTasks.length > 0 &&
-    downloadTasks.every(t => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel') &&
-    simplify1Tasks.every(t => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel') &&
-    simplify2Tasks.every(t => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel') &&
-    vectorTileTasks.every(t => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel');
+    downloadTasks.every(
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+    ) &&
+    simplify1Tasks.every(
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+    ) &&
+    simplify2Tasks.every(
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+    ) &&
+    vectorTileTasks.every(
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+    );
 
   const handleStart = useCallback(async () => {
     try {
@@ -134,11 +160,13 @@ export const useBatchWorkerConsole = ({
   const handleCancelTask = useCallback((taskId: string) => {
     // Update task state to pause
     const updateTaskState = <T extends AnyTask>(_tasks: T[], setter: TaskSetter<T>) => {
-      setter((prev: T[]) => prev.map(task => 
-        task.taskId === taskId && task.stage === 'process' 
-          ? { ...task, stage: 'pause' as BatchTaskStage }
-          : task
-      ));
+      setter((prev: T[]) =>
+        prev.map((task) =>
+          task.taskId === taskId && task.stage === 'process'
+            ? { ...task, stage: 'pause' as BatchTaskStage }
+            : task
+        )
+      );
     };
 
     updateTaskState(downloadTasks, setDownloadTasks);
@@ -150,11 +178,13 @@ export const useBatchWorkerConsole = ({
   const handleResumeTask = useCallback((taskId: string) => {
     // Update task state back to process
     const updateTaskState = <T extends AnyTask>(_tasks: T[], setter: TaskSetter<T>) => {
-      setter((prev: T[]) => prev.map(task => 
-        task.taskId === taskId && task.stage === 'pause' 
-          ? { ...task, stage: 'process' as BatchTaskStage }
-          : task
-      ));
+      setter((prev: T[]) =>
+        prev.map((task) =>
+          task.taskId === taskId && task.stage === 'pause'
+            ? { ...task, stage: 'process' as BatchTaskStage }
+            : task
+        )
+      );
     };
 
     updateTaskState(downloadTasks, setDownloadTasks);
@@ -165,11 +195,13 @@ export const useBatchWorkerConsole = ({
 
   const handleStopAll = useCallback(() => {
     const stopTasks = (setter: any) => {
-      setter((prev: any[]) => prev.map(task => 
-        (task.stage === 'process' || task.stage === 'wait')
-          ? { ...task, stage: 'cancel' as BatchTaskStage }
-          : task
-      ));
+      setter((prev: any[]) =>
+        prev.map((task) =>
+          task.stage === 'process' || task.stage === 'wait'
+            ? { ...task, stage: 'cancel' as BatchTaskStage }
+            : task
+        )
+      );
     };
 
     stopTasks(setDownloadTasks);

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 // Note: useWorker should be provided by the application context
 // This is a generic implementation that expects the worker client to be passed
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI, ImportProgress as APIImportProgress } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 
@@ -76,138 +76,144 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   /**
    * Import file with progress tracking
    */
-  const importFile = useCallback(async (options: ImportFileOptions): Promise<ImportResult> => {
-    if (!ready || !client) {
-      throw new Error('Worker not ready');
-    }
-
-    setIsImporting(true);
-    setImportError(null);
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const { file, targetNodeId, format, csvOptions, onProgress } = options;
-
-      // Read file content
-      const content = await readFileContent(file);
-
-      // Parse and validate content based on format
-      let parsedData: any;
-      if (format === 'json') {
-        parsedData = JSON.parse(content);
-      } else if (format === 'csv') {
-        parsedData = parseCSV(content, csvOptions);
-      } else {
-        throw new Error(`Unsupported format: ${format}`);
+  const importFile = useCallback(
+    async (options: ImportFileOptions): Promise<ImportResult> => {
+      if (!ready || !client) {
+        throw new Error('Worker not ready');
       }
 
-      // Validate import data
-      const validation = await validateImportData(parsedData);
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      setIsImporting(true);
+      setImportError(null);
+      abortControllerRef.current = new AbortController();
+
+      try {
+        const { file, targetNodeId, format, csvOptions, onProgress } = options;
+
+        // Read file content
+        const content = await readFileContent(file);
+
+        // Parse and validate content based on format
+        let parsedData: any;
+        if (format === 'json') {
+          parsedData = JSON.parse(content);
+        } else if (format === 'csv') {
+          parsedData = parseCSV(content, csvOptions);
+        } else {
+          throw new Error(`Unsupported format: ${format}`);
+        }
+
+        // Validate import data
+        const validation = await validateImportData(parsedData);
+        if (!validation.valid) {
+          throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+        }
+
+        // Report parsing complete
+        onProgress?.({
+          phase: 'validating',
+          current: 1,
+          total: 3,
+          message: 'Validating data...',
+        });
+
+        // Process import via Worker API
+        const result = await processImport(client, parsedData, targetNodeId, onProgress);
+
+        // Report completion
+        onProgress?.({
+          phase: 'completed',
+          current: 3,
+          total: 3,
+          message: `Successfully imported ${result.importedCount} nodes`,
+        });
+
+        return result;
+      } catch (error) {
+        const err = error as Error;
+        setImportError(err);
+        throw err;
+      } finally {
+        setIsImporting(false);
+        abortControllerRef.current = null;
       }
-
-      // Report parsing complete
-      onProgress?.({
-        phase: 'validating',
-        current: 1,
-        total: 3,
-        message: 'Validating data...',
-      });
-
-      // Process import via Worker API
-      const result = await processImport(client, parsedData, targetNodeId, onProgress);
-
-      // Report completion
-      onProgress?.({
-        phase: 'completed',
-        current: 3,
-        total: 3,
-        message: `Successfully imported ${result.importedCount} nodes`,
-      });
-
-      return result;
-    } catch (error) {
-      const err = error as Error;
-      setImportError(err);
-      throw err;
-    } finally {
-      setIsImporting(false);
-      abortControllerRef.current = null;
-    }
-  }, [client, ready]);
+    },
+    [client, ready]
+  );
 
   /**
    * Export nodes with progress tracking
    */
-  const exportNodes = useCallback(async (options: ExportNodesOptions): Promise<Blob> => {
-    if (!ready || !client) {
-      throw new Error('Worker not ready');
-    }
-
-    setIsExporting(true);
-    setExportError(null);
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const { nodeIds, format, includeChildren, csvOptions, onProgress } = options;
-
-      // Report collection phase
-      onProgress?.({
-        phase: 'collecting',
-        current: 1,
-        total: 3,
-        message: 'Collecting nodes...',
-      });
-
-      // Collect nodes from Worker API
-      const nodes = await collectNodesForExport(client, nodeIds, includeChildren);
-
-      if (abortControllerRef.current?.signal.aborted) {
-        throw new Error('Export cancelled');
+  const exportNodes = useCallback(
+    async (options: ExportNodesOptions): Promise<Blob> => {
+      if (!ready || !client) {
+        throw new Error('Worker not ready');
       }
 
-      // Report formatting phase
-      onProgress?.({
-        phase: 'formatting',
-        current: 2,
-        total: 3,
-        message: 'Formatting data...',
-      });
+      setIsExporting(true);
+      setExportError(null);
+      abortControllerRef.current = new AbortController();
 
-      // Format data based on export format
-      let content: string;
-      if (format === 'json') {
-        content = JSON.stringify({ nodes }, null, 2);
-      } else if (format === 'csv') {
-        content = formatCSV(nodes, csvOptions);
-      } else {
-        throw new Error(`Unsupported format: ${format}`);
+      try {
+        const { nodeIds, format, includeChildren, csvOptions, onProgress } = options;
+
+        // Report collection phase
+        onProgress?.({
+          phase: 'collecting',
+          current: 1,
+          total: 3,
+          message: 'Collecting nodes...',
+        });
+
+        // Collect nodes from Worker API
+        const nodes = await collectNodesForExport(client, nodeIds, includeChildren);
+
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error('Export cancelled');
+        }
+
+        // Report formatting phase
+        onProgress?.({
+          phase: 'formatting',
+          current: 2,
+          total: 3,
+          message: 'Formatting data...',
+        });
+
+        // Format data based on export format
+        let content: string;
+        if (format === 'json') {
+          content = JSON.stringify({ nodes }, null, 2);
+        } else if (format === 'csv') {
+          content = formatCSV(nodes, csvOptions);
+        } else {
+          throw new Error(`Unsupported format: ${format}`);
+        }
+
+        // Create blob
+        const blob = new Blob([content], {
+          type: format === 'json' ? 'application/json' : 'text/csv',
+        });
+
+        // Report completion
+        onProgress?.({
+          phase: 'completed',
+          current: 3,
+          total: 3,
+          message: `Successfully exported ${nodes.length} nodes`,
+        });
+
+        return blob;
+      } catch (error) {
+        const err = error as Error;
+        setExportError(err);
+        throw err;
+      } finally {
+        setIsExporting(false);
+        abortControllerRef.current = null;
       }
-
-      // Create blob
-      const blob = new Blob([content], {
-        type: format === 'json' ? 'application/json' : 'text/csv',
-      });
-
-      // Report completion
-      onProgress?.({
-        phase: 'completed',
-        current: 3,
-        total: 3,
-        message: `Successfully exported ${nodes.length} nodes`,
-      });
-
-      return blob;
-    } catch (error) {
-      const err = error as Error;
-      setExportError(err);
-      throw err;
-    } finally {
-      setIsExporting(false);
-      abortControllerRef.current = null;
-    }
-  }, [client, ready]);
+    },
+    [client, ready]
+  );
 
   /**
    * Cancel ongoing import/export operation
@@ -259,7 +265,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
 
     // Validate each node
     const validNodeTypes = ['folder', 'file', 'project', 'shape', 'basemap', 'stylemap'];
-    
+
     data.nodes.forEach((node: any, index: number) => {
       if (!node.name) {
         errors.push(`Node ${index}: missing required field 'name'`);
@@ -278,35 +284,35 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   /**
    * Validate CSV columns
    */
-  const validateCSVColumns = useCallback((
-    data: string[][],
-    options: { requiredColumns: string[] }
-  ): ValidationResult => {
-    const errors: string[] = [];
-    
-    if (data.length === 0) {
-      errors.push('CSV file is empty');
-      return { valid: false, errors };
-    }
+  const validateCSVColumns = useCallback(
+    (data: string[][], options: { requiredColumns: string[] }): ValidationResult => {
+      const errors: string[] = [];
 
-    const headers = data[0];
-    const { requiredColumns } = options;
+      if (data.length === 0) {
+        errors.push('CSV file is empty');
+        return { valid: false, errors };
+      }
 
-    if (headers) {
-      requiredColumns.forEach(col => {
-        if (!headers.includes(col)) {
-          errors.push(`Missing required column: ${col}`);
-        }
-      });
-    } else {
-      errors.push('CSV headers not found');
-    }
+      const headers = data[0];
+      const { requiredColumns } = options;
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }, []);
+      if (headers) {
+        requiredColumns.forEach((col) => {
+          if (!headers.includes(col)) {
+            errors.push(`Missing required column: ${col}`);
+          }
+        });
+      } else {
+        errors.push('CSV headers not found');
+      }
+
+      return {
+        valid: errors.length === 0,
+        errors,
+      };
+    },
+    []
+  );
 
   return {
     // State
@@ -340,13 +346,13 @@ async function readFileContent(file: File): Promise<string> {
 }
 
 function parseCSV(content: string, options?: CSVImportOptions): any {
-  const lines = content.split('\n').filter(line => line.trim());
+  const lines = content.split('\n').filter((line) => line.trim());
   const delimiter = options?.delimiter || ',';
   const hasHeader = options?.hasHeader ?? true;
 
-  const rows = lines.map(line => {
+  const rows = lines.map((line) => {
     // Simple CSV parsing (can be enhanced with proper CSV library)
-    return line.split(delimiter).map(cell => cell.trim());
+    return line.split(delimiter).map((cell) => cell.trim());
   });
 
   if (rows.length === 0) {
@@ -357,9 +363,9 @@ function parseCSV(content: string, options?: CSVImportOptions): any {
   const dataRows = hasHeader ? rows.slice(1) : rows;
 
   // Convert to nodes
-  const nodes = dataRows.map(row => {
+  const nodes = dataRows.map((row) => {
     const node: any = {};
-    
+
     if (options?.columnMapping) {
       Object.entries(options.columnMapping).forEach(([field, index]) => {
         node[field] = row[index];
@@ -392,8 +398,8 @@ function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
     rows.push(columns);
   }
 
-  nodes.forEach(node => {
-    const row = columns.map(col => {
+  nodes.forEach((node) => {
+    const row = columns.map((col) => {
       const value = (node as any)[col] || '';
       // Escape values containing delimiter or quotes
       if (typeof value === 'string' && (value.includes(delimiter) || value.includes('"'))) {
@@ -404,7 +410,7 @@ function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
     rows.push(row);
   });
 
-  return rows.map(row => row.join(delimiter)).join('\n');
+  return rows.map((row) => row.join(delimiter)).join('\n');
 }
 
 async function processImport(
@@ -414,7 +420,7 @@ async function processImport(
   onProgress?: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
   const importExportAPI = await client.getImportExportAPI();
-  
+
   const result = await importExportAPI.importNodes({
     treeId: '' as TreeId, // Will be determined by context
     targetParentId: targetNodeId,
@@ -422,16 +428,21 @@ async function processImport(
     format: 'json',
     onProgress: (apiProgress: APIImportProgress) => {
       onProgress?.({
-        phase: apiProgress.phase === 'validating' ? 'validating' : 
-               apiProgress.phase === 'importing' ? 'importing' : 
-               apiProgress.phase === 'finalizing' ? 'importing' : 'completed',
+        phase:
+          apiProgress.phase === 'validating'
+            ? 'validating'
+            : apiProgress.phase === 'importing'
+              ? 'importing'
+              : apiProgress.phase === 'finalizing'
+                ? 'importing'
+                : 'completed',
         current: apiProgress.current,
         total: apiProgress.total,
         message: apiProgress.message,
       });
     },
   });
-  
+
   return {
     success: result.success,
     importedCount: result.importedCount,

@@ -4,7 +4,7 @@
  * Improves type safety by providing validation and proper casting
  */
 
-import type { NodeId, TreeId, EntityId } from '../types/ids';
+import { EntityId, NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
 
 /**
  * UUID v4 pattern validation
@@ -25,7 +25,7 @@ export function isValidNodeIdString(id: string): boolean {
 }
 
 /**
- * TreeId format validation  
+ * TreeId format validation
  * Currently accepts any non-empty string, can be made stricter if needed
  */
 export function isValidTreeIdString(id: string): boolean {
@@ -48,12 +48,24 @@ export function createNodeId(id: string): NodeId {
   if (!id || typeof id !== 'string') {
     throw new Error('NodeId must be a non-empty string');
   }
-  
+
   if (!isValidNodeIdString(id)) {
     throw new Error(`Invalid NodeId format: ${id}`);
   }
-  
+
   return id as NodeId;
+}
+
+export function createNodeType(id: string): NodeType {
+  if (!id || typeof id !== 'string') {
+    throw new Error('NodeType must be a non-empty string');
+  }
+
+  if (!isValidNodeIdString(id)) {
+    throw new Error(`Invalid NodeType format: ${id}`);
+  }
+
+  return id as NodeType;
 }
 
 /**
@@ -64,11 +76,11 @@ export function createTreeId(id: string): TreeId {
   if (!id || typeof id !== 'string') {
     throw new Error('TreeId must be a non-empty string');
   }
-  
+
   if (!isValidTreeIdString(id)) {
     throw new Error(`Invalid TreeId format: ${id}`);
   }
-  
+
   return id as TreeId;
 }
 
@@ -81,14 +93,14 @@ export function createEntityId(id?: string): EntityId {
     if (typeof id !== 'string') {
       throw new Error('EntityId must be a string');
     }
-    
+
     if (!isValidEntityIdString(id)) {
       throw new Error(`Invalid EntityId format (must be UUID v4): ${id}`);
     }
-    
+
     return id as EntityId;
   }
-  
+
   // Generate new UUID v4 if no ID provided
   return generateEntityId();
 }
@@ -181,7 +193,7 @@ export function filterValidEntityIds(values: unknown[]): EntityId[] {
 export function validateNodeIds(ids: string[]): NodeId[] {
   const result: NodeId[] = [];
   const errors: string[] = [];
-  
+
   for (let i = 0; i < ids.length; i++) {
     try {
       const id = ids[i];
@@ -194,11 +206,11 @@ export function validateNodeIds(ids: string[]): NodeId[] {
       errors.push(`Index ${i}: ${error instanceof Error ? error.message : 'Invalid format'}`);
     }
   }
-  
+
   if (errors.length > 0) {
     throw new Error(`NodeId validation failed:\n${errors.join('\n')}`);
   }
-  
+
   return result;
 }
 
@@ -226,10 +238,13 @@ export function isEntityId(value: unknown): value is EntityId {
 /**
  * Create NodeIds from string array with error collection
  */
-export function createNodeIds(ids: string[]): { valid: NodeId[]; errors: { index: number; id: string; error: string }[] } {
+export function createNodeIds(ids: string[]): {
+  valid: NodeId[];
+  errors: { index: number; id: string; error: string }[];
+} {
   const valid: NodeId[] = [];
   const errors: { index: number; id: string; error: string }[] = [];
-  
+
   for (let i = 0; i < ids.length; i++) {
     try {
       const id = ids[i];
@@ -239,7 +254,7 @@ export function createNodeIds(ids: string[]): { valid: NodeId[]; errors: { index
         errors.push({
           index: i,
           id: 'undefined',
-          error: 'ID is undefined'
+          error: 'ID is undefined',
         });
       }
     } catch (error) {
@@ -247,11 +262,11 @@ export function createNodeIds(ids: string[]): { valid: NodeId[]; errors: { index
       errors.push({
         index: i,
         id: id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
-  
+
   return { valid, errors };
 }
 
@@ -261,7 +276,7 @@ export function createNodeIds(ids: string[]): { valid: NodeId[]; errors: { index
 export const SYSTEM_IDS = {
   // Reserved NodeIds for system use
   SUPER_ROOT_PREFIX: 'SuperRoot',
-  ROOT_SUFFIX: 'Root', 
+  ROOT_SUFFIX: 'Root',
   TRASH_SUFFIX: 'Trash',
 } as const;
 
@@ -270,7 +285,9 @@ export const SYSTEM_IDS = {
  */
 export function isSystemNodeId(nodeId: NodeId): boolean {
   const id = nodeId as string;
-  return id.includes(SYSTEM_IDS.SUPER_ROOT_PREFIX) || 
-         id.endsWith(SYSTEM_IDS.ROOT_SUFFIX) || 
-         id.endsWith(SYSTEM_IDS.TRASH_SUFFIX);
+  return (
+    id.includes(SYSTEM_IDS.SUPER_ROOT_PREFIX) ||
+    id.endsWith(SYSTEM_IDS.ROOT_SUFFIX) ||
+    id.endsWith(SYSTEM_IDS.TRASH_SUFFIX)
+  );
 }

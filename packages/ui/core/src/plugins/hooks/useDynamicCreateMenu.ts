@@ -4,7 +4,7 @@ import type {
   CreateMenuItem,
   CreateMenuItemOrDivider,
   IconComponent,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 

@@ -2,7 +2,7 @@
  * Folder API interface - UI-Worker通信契約
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import { 
   FolderEntity, 
   CreateFolderData, 

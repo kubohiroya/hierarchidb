@@ -2,7 +2,7 @@
  * Import/Export Service - Core business logic
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import { DataFormat } from '../types';
 
 export class ImportExportService {

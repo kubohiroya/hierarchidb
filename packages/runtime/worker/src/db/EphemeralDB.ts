@@ -7,7 +7,7 @@ export type TreeViewStateRow = TreeViewState;
 export class EphemeralDB extends Dexie {
   workingCopies!: Table<WorkingCopyRow, string>;
   views!: Table<TreeViewStateRow, string>;
-  
+
   static async getSingleton(name: string = 'hierarchidb'): Promise<EphemeralDB> {
     return SingletonMixin.getSingleton(EphemeralDB.name, async () => {
       const instance = new EphemeralDB(name);
@@ -26,14 +26,14 @@ export class EphemeralDB extends Dexie {
   }
 
   async initialize(): Promise<void> {
-// Clear working copies on initialization
+    // Clear working copies on initialization
     if ((await this.workingCopies.count()) !== 0) {
-await this.workingCopies.clear();
+      await this.workingCopies.clear();
     }
     // Views should be kept between sessions, no need to clear
-}
+  }
 
-  // WorkingCopy CRUD operations
+  // WorkingCopyTypes CRUD operations
   async getWorkingCopy(workingCopyId: string): Promise<WorkingCopy | undefined> {
     return await this.workingCopies.get(workingCopyId);
   }

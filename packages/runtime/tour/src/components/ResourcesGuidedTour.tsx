@@ -87,7 +87,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({
       disableBeacon: true,
     },
     {
-      target: '[aria-label="Tree console toolbar"]',
+      target: '[aria-label="TreeTypes console toolbar"]',
       content: (
         <div>
           <h3>Resource Management Toolbar 🔧</h3>

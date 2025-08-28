@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 
 // Core types
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 
 // Plugin components
 import { ShapePluginDefinition } from '~/definitions/ShapePluginDefinition';

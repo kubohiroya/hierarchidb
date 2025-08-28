@@ -1,6 +1,6 @@
 /**
  * TreeConsoleSpeedDialToBeRefactored - プラグインベースのSpeedDialメニュー
- * 
+ *
  * プラグインから動的に作成オプションを生成し、
  * descriptionをツールチップとして表示
  */
@@ -14,7 +14,7 @@ import {
   Extension as ExtensionIcon,
 } from '@mui/icons-material';
 
-import type { PluginDefinition as CorePluginDefinition } from '@hierarchidb/common-core';
+import type { PluginDefinition as CorePluginDefinition } from '@hierarchidb/common-type';
 
 // 拡張型定義（UIコンポーネント用のプロパティを追加）
 interface PluginDefinition extends CorePluginDefinition {
@@ -108,9 +108,9 @@ export function TreeConsoleSpeedDial({
       {sortedPlugins.map((plugin) => {
         const displayName = plugin.displayName || plugin.name;
         const icon = getIconComponent(plugin.icon?.muiIconName, plugin.icon?.emoji);
-        
+
         // descriptionがある場合はツールチップとして表示
-        const tooltipTitle = plugin.description 
+        const tooltipTitle = plugin.description
           ? `${displayName}: ${plugin.description}`
           : displayName;
 
@@ -150,7 +150,8 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'folder',
     name: 'Folder',
     displayName: 'Folder',
-    description: 'Create a folder-plugin to organize your items. Folders can contain other folders and various node types.',
+    description:
+      'Create a folder-plugin to organize your items. Folders can contain other folders and various node types.',
     icon: {
       muiIconName: 'Folder',
       emoji: '📁',
@@ -172,7 +173,8 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'basemap',
     name: 'BaseMap',
     displayName: 'Base Map',
-    description: 'Configure and manage map layers with various styles and visualization options. Supports multiple map providers.',
+    description:
+      'Configure and manage map layers with various styles and visualization options. Supports multiple map providers.',
     icon: {
       muiIconName: 'Map',
       emoji: '🗺️',
@@ -194,7 +196,8 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'stylemap',
     name: 'StyleMap',
     displayName: 'Style Map',
-    description: 'Define and manage CSV-based styling rules for map visualization. Apply data-driven styles to your map features.',
+    description:
+      'Define and manage CSV-based styling rules for map visualization. Apply data-driven styles to your map features.',
     icon: {
       muiIconName: 'Palette',
       emoji: '🎨',
@@ -216,7 +219,8 @@ export const defaultPlugins: PluginDefinition[] = [
     nodeType: 'shape',
     name: 'Shape',
     displayName: 'Geographic Shape',
-    description: 'Manage geographic shape-plugin data and boundaries. Import and visualize country, state, and administrative boundaries.',
+    description:
+      'Manage geographic shape-plugin data and boundaries. Import and visualize country, state, and administrative boundaries.',
     icon: {
       muiIconName: 'Layers',
       emoji: '🌍',

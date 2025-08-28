@@ -31,7 +31,6 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/ui-plugin-base": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "dexie": "^4.0.0",
     "maplibre-gl": "^4.0.0"
@@ -71,7 +70,9 @@
       "priority": 900,
       "category": "geographic",
       "extends": "folder",
-      "dependencies": ["folder"],
+      "dependencies": [
+        "folder"
+      ],
       "exports": {
         "definition": "BaseMapDefinition",
         "handler": "BaseMapEntityHandler",

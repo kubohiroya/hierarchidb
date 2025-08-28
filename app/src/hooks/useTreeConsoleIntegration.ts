@@ -70,7 +70,7 @@ export function useTreeConsoleIntegration({
   pageTreeNode,
 }: UseTreeConsoleIntegrationParams) {
 
-  // Tree data state
+  // TreeTypes data state
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [expandedIds, setExpandedIds] = useState<NodeId[]>([]);
@@ -461,7 +461,7 @@ export function useTreeConsoleIntegration({
     loading: state.loading,
     error: state.error,
 
-    // Tree data
+    // TreeTypes data
     treeData,
     columns,
     breadcrumbItems,

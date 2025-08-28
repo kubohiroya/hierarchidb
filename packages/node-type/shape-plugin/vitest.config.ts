@@ -16,7 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/core': path.resolve(__dirname, '../../common/core/src'),
-      '@hierarchidb/common-core': path.resolve(__dirname, '../../common/core/src'),
+      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/core/src'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../runtime/worker/src'),
       '@hierarchidb/runtime-datasource': path.resolve(__dirname, '../../runtime/datasource/src'),

@@ -6,7 +6,7 @@
  * 🟢 信頼性レベル: ExtendingNodeTypeDefinition仕様準拠
  */
 
-// import type { ExtendedPluginDefinition } from '@hierarchidb/common-core';
+// import type { ExtendedPluginDefinition } from '@hierarchidb/common-type';
 
 // Define base entity types since they're not exported
 interface SpreadsheetEntity {

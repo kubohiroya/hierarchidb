@@ -32,11 +32,11 @@
 ## 実装計画
 
 ### Phase 1: インターフェースの更新
-1. `packages/core/src/types/workingCopy.ts`の更新
+1. `packages/core/src/types/working-copy-types.ts`の更新
    - WorkingCopyをTreeNodeを継承する形に変更
    - workingCopyIdの削除
 
-2. `packages/core/src/types/tree.ts`の確認
+2. `packages/core/src/types/tree-types.ts`の確認
    - WorkingCopyPropertiesが正しく定義されていることを確認
 
 ### Phase 2: TreeNodeワーキングコピー処理の実装

@@ -68,7 +68,7 @@ mindmap
 | **Prettier** | コード整形 | 保存時自動実行 |
 | **Thunder Client** | API テスト | Worker API テスト用 |
 | **GitLens** | Git 履歴表示 | Blame情報表示 |
-| **Todo Tree** | TODO管理 | カスタムタグ設定 |
+| **Todo TreeTypes** | TODO管理 | カスタムタグ設定 |
 
 **開発環境標準化**
 

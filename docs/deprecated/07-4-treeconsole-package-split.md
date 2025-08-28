@@ -327,7 +327,7 @@ packages/ui-treeconsole/
 - 各パッケージは独立してバンドル可能
 - 動的インポートで必要時のみロード
 
-### Tree Shaking
+### TreeTypes Shaking
 - ES Modulesフォーマットで提供
 - 未使用コードの自動削除
 

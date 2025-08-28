@@ -22,13 +22,13 @@
 
 **実装で使用されている用語:**
 - `NodeId`, `TreeId` (Branded types)
-- `Tree.id`, `Tree.rootNodeId`, `Tree.trashRootNodeId`
+- `TreeTypes.id`, `TreeTypes.rootNodeId`, `TreeTypes.trashRootNodeId`
 - `TreeNode.id`, `TreeNode.parentNodeId`, `TreeNode.nodeType`
 - `TREE_ROOT_NODE_TYPES = { SUPER_ROOT: 'SuperRoot', ROOT: 'Root', TRASH: 'Trash' }`
 
 **仕様書で記載されている用語:**
 - `TreeNodeId`, `TreeId` (より詳細な命名)
-- `Tree.treeId`, `Tree.treeRootNodeId`, `Tree.treeTrashRootNodeId`
+- `TreeTypes.treeId`, `TreeTypes.treeRootNodeId`, `TreeTypes.treeTrashRootNodeId`
 - `TreeNode.treeNodeId`, `TreeNode.parentTreeNodeId`, `TreeNode.treeNodeType`
 
 ### 1.2 対応方針
@@ -40,7 +40,7 @@
 
 **実際には3分類システムが実装済み:**
 ```typescript
-// packages/core/src/types/nodeDefinition.ts
+// packages/core/src/types/entity-types.ts
 export interface PeerEntity extends BaseEntity { /* 1対1 */ }
 export interface GroupEntity extends BaseEntity { /* 1対N */ }  
 export interface RelationalEntity extends BaseEntity { /* N対N */ }
@@ -221,8 +221,8 @@ const node = deserializeTreeNode(data);
 workingCopies!: Table<WorkingCopyRow, string>;
 
 // 基本操作メソッド実装済み
-async getWorkingCopy(workingCopyId: string): Promise<WorkingCopy | undefined>
-async updateWorkingCopy(workingCopy: WorkingCopy): Promise<void>
+async getWorkingCopy(workingCopyId: string): Promise<WorkingCopyTypes | undefined>
+async updateWorkingCopy(workingCopy: WorkingCopyTypes): Promise<void>
 async discardWorkingCopy(workingCopyId: string): Promise<void>
 ```
 

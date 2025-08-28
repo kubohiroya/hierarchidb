@@ -238,11 +238,11 @@ classDiagram
 ```mermaid
 classDiagram
     class CoreDB {
-        +trees: Table~Tree, TreeId~
+        +trees: Table~TreeTypes, TreeId~
         +nodes: Table~TreeNode, NodeId~
         +rootStates: Table~TreeRootState, [TreeId, TreeRootNodeType]~
         +initialize(): Promise~void~
-        +getTree(treeId: TreeId): Promise~Tree | undefined~
+        +getTree(treeId: TreeId): Promise~TreeTypes | undefined~
         +getNode(nodeId: NodeId): Promise~TreeNode | undefined~
         +createNode(node: TreeNode): Promise~NodeId~
         +updateNode(node: TreeNode): Promise~void~
@@ -251,12 +251,12 @@ classDiagram
     }
 
     class EphemeralDB {
-        +workingCopies: Table~WorkingCopy, string~
+        +workingCopies: Table~WorkingCopyTypes, string~
         +views: Table~TreeViewState, string~
-        +entityWorkingCopies: Table~EntityWorkingCopy, string~
+        +entityWorkingCopies: Table~EntiryWorkingCopyTypes, string~
         +initialize(): Promise~void~
-        +getWorkingCopy(workingCopyId: string): Promise~WorkingCopy | undefined~
-        +updateWorkingCopy(workingCopy: WorkingCopy): Promise~void~
+        +getWorkingCopy(workingCopyId: string): Promise~WorkingCopyTypes | undefined~
+        +updateWorkingCopy(workingCopy: WorkingCopyTypes): Promise~void~
         +discardWorkingCopy(workingCopyId: string): Promise~void~
     }
 
@@ -285,7 +285,7 @@ sequenceDiagram
     participant UI as UI Component
     participant Client as UI Client
     participant Worker as Worker API
-    participant Service as Tree Service
+    participant Service as TreeTypes Service
     participant Handler as Entity Handler
     participant CoreDB as CoreDB
     participant Registry as Node Registry
@@ -327,7 +327,7 @@ sequenceDiagram
     participant UI as UI Dialog
     participant Client as UI Client
     participant Worker as Worker API
-    participant WCManager as WorkingCopy Manager
+    participant WCManager as WorkingCopyTypes Manager
     participant EntityHandler as Entity Handler
     participant EphemeralDB as EphemeralDB
     participant CoreDB as CoreDB
@@ -724,7 +724,7 @@ flowchart TD
     Start([Start Complex Operation])
     
     CreateSession[Create Working Copy Session]
-    LoadEntities[Load Related Entities]
+    LoadEntities[Load Related EntityTypes]
     
     subgraph "Working Copy Creation"
         CreatePeerWC[Create Peer Entity Working Copy]
@@ -734,7 +734,7 @@ flowchart TD
     
     subgraph "Editing Phase"
         UpdatePeer[Update Peer Entity]
-        BatchUpdateGroup[Batch Update Group Entities]
+        BatchUpdateGroup[Batch Update Group EntityTypes]
         UpdateReferences[Update Relational References]
         ValidateChanges{Validate Changes?}
         ShowValidationErrors[Show Validation Errors]
@@ -743,7 +743,7 @@ flowchart TD
     subgraph "Commit Phase"
         StartCommit[Start Commit Transaction]
         CommitPeer[Commit Peer Entity]
-        CommitGroups[Commit Group Entities]
+        CommitGroups[Commit Group EntityTypes]
         UpdateRelReferences[Update Relational References]
         CleanupOrphans[Cleanup Orphaned Relations]
         CommitTransaction[Commit Transaction]

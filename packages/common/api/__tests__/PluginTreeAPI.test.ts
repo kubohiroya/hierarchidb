@@ -1,13 +1,5 @@
 import { expect, describe, it } from 'vitest';
-import type { 
-  PluginTreeAPI, 
-  GetPluginsForTreeRequest,
-  GetPluginsForTreeResponse,
-  TreePluginInfo,
-  NodeType,
-  TreeId,
-  NodeId
-} from '~/api/index';
+import type { NodeType, TreeId, NodeId } from '@hierarchidb/common-type';
 
 describe('PluginTreeAPI - TDD Red Phase', () => {
   // テスト対象のAPIインスタンス（実装は未完成のため、テストは失敗する予定）
@@ -18,16 +10,16 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       // 基本的なプラグイン一覧取得テスト
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
-        includeInactive: false
+        includeInactive: false,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
       expect(Array.isArray(response.plugins)).toBe(true);
       expect(response.plugins.length).toBeGreaterThan(0);
       expect(response.treeId).toBe(request.treeId);
-      
+
       // プラグイン情報の構造確認
       const firstPlugin = response.plugins[0];
       expect(firstPlugin.nodeType).toBeDefined();
@@ -42,19 +34,17 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         filters: {
           nodeTypes: ['folder-plugin', 'document'] as NodeType[],
           categories: ['core'],
-          capabilities: ['create', 'edit']
-        }
+          capabilities: ['create', 'edit'],
+        },
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      response.plugins.forEach(plugin => {
+      response.plugins.forEach((plugin) => {
         expect(['folder-plugin', 'document']).toContain(plugin.nodeType);
         expect(plugin.meta.category).toBe('core');
-        expect(plugin.capabilities.some(cap => 
-          ['create', 'edit'].includes(cap)
-        )).toBe(true);
+        expect(plugin.capabilities.some((cap) => ['create', 'edit'].includes(cap))).toBe(true);
       });
     });
 
@@ -63,13 +53,13 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
         sortBy: 'usageCount',
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      
+
       // 使用回数の降順でソートされていることを確認
       for (let i = 0; i < response.plugins.length - 1; i++) {
         expect(response.plugins[i].usageCount).toBeGreaterThanOrEqual(
@@ -82,17 +72,17 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       // 非アクティブプラグインを含む取得テスト
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
-        includeInactive: true
+        includeInactive: true,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      
+
       // アクティブと非アクティブの両方が含まれることを確認
-      const activePlugins = response.plugins.filter(p => p.isActive);
-      const inactivePlugins = response.plugins.filter(p => !p.isActive);
-      
+      const activePlugins = response.plugins.filter((p) => p.isActive);
+      const inactivePlugins = response.plugins.filter((p) => !p.isActive);
+
       expect(activePlugins.length).toBeGreaterThan(0);
       expect(inactivePlugins.length).toBeGreaterThanOrEqual(0);
     });
@@ -100,11 +90,11 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 存在しないツリーIDで適切なエラーを返す', async () => {
       // 無効なツリーIDでのエラーハンドリングテスト
       const request: GetPluginsForTreeRequest = {
-        treeId: 'non-existent-tree' as TreeId
+        treeId: 'non-existent-tree' as TreeId,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.error?.code).toBe('TREE_NOT_FOUND');
       expect(response.error?.message).toContain('non-existent-tree');
@@ -118,7 +108,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const nodeType = 'folder-plugin' as NodeType;
 
       const result = await pluginTreeAPI.getPluginUsageStats(treeId, nodeType);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(result.nodeType).toBe(nodeType);
       expect(result.totalNodes).toBeTypeOf('number');
@@ -131,10 +121,10 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 使用されていないプラグインでゼロ統計を返す', async () => {
       // 未使用プラグインの統計テスト
       const result = await pluginTreeAPI.getPluginUsageStats(
-        'empty-tree' as TreeId, 
+        'empty-tree' as TreeId,
         'unused-plugin' as NodeType
       );
-      
+
       expect(result.totalNodes).toBe(0);
       expect(result.activeNodes).toBe(0);
       expect(result.lastUsed).toBe(0);
@@ -143,7 +133,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
 
     it('🔴 期間指定での使用統計を取得できる', async () => {
       // 期間指定統計取得テスト
-      const fromDate = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7日前
+      const fromDate = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7日前
       const toDate = Date.now();
 
       const result = await pluginTreeAPI.getPluginUsageStats(
@@ -151,13 +141,15 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         'folder-plugin' as NodeType,
         { from: fromDate, to: toDate }
       );
-      
+
       expect(result.period).toBeDefined();
       expect(result.period?.from).toBe(fromDate);
       expect(result.period?.to).toBe(toDate);
-      expect(result.operationStats.every(stat => 
-        stat.timestamp >= fromDate && stat.timestamp <= toDate
-      )).toBe(true);
+      expect(
+        result.operationStats.every(
+          (stat) => stat.timestamp >= fromDate && stat.timestamp <= toDate
+        )
+      ).toBe(true);
     });
   });
 
@@ -166,11 +158,8 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       // 互換性確認の成功ケース
       const nodeTypes: NodeType[] = ['folder-plugin', 'document', 'image'];
 
-      const result = await pluginTreeAPI.getPluginCompatibility(
-        'compat-tree' as TreeId,
-        nodeTypes
-      );
-      
+      const result = await pluginTreeAPI.getPluginCompatibility('compat-tree' as TreeId, nodeTypes);
+
       expect(result.compatible).toBe(true);
       expect(result.conflicts).toHaveLength(0);
       expect(result.warnings).toHaveLength(0);
@@ -185,7 +174,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         'compat-tree' as TreeId,
         conflictingTypes
       );
-      
+
       expect(result.compatible).toBe(false);
       expect(result.conflicts).toHaveLength.greaterThan(0);
       expect(result.conflicts[0].severity).toMatch(/^(error|warning|info)$/);
@@ -200,11 +189,11 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         'compat-tree' as TreeId,
         dependentType
       );
-      
+
       expect(result.warnings).toHaveLength.greaterThan(0);
-      expect(result.warnings.some(w => 
-        w.includes('dependency') || w.includes('required')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('dependency') || w.includes('required'))).toBe(
+        true
+      );
     });
   });
 
@@ -214,7 +203,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const treeId = 'optimize-tree' as TreeId;
 
       const result = await pluginTreeAPI.optimizePluginConfiguration(treeId);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(Array.isArray(result.recommendations)).toBe(true);
       expect(result.currentPerformance).toBeDefined();
@@ -225,9 +214,9 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 使用パターンに基づく具体的な推奨事項を提供する', async () => {
       // 使用パターン分析に基づく推奨テスト
       const result = await pluginTreeAPI.optimizePluginConfiguration('pattern-tree' as TreeId);
-      
+
       expect(result.recommendations.length).toBeGreaterThan(0);
-      
+
       const recommendation = result.recommendations[0];
       expect(recommendation.type).toMatch(/^(enable|disable|configure|replace)$/);
       expect(recommendation.nodeType).toBeDefined();
@@ -237,10 +226,8 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
 
     it('🔴 既に最適化されたツリーで最小限の推奨事項を返す', async () => {
       // 最適化済みツリーのテスト
-      const result = await pluginTreeAPI.optimizePluginConfiguration(
-        'optimized-tree' as TreeId
-      );
-      
+      const result = await pluginTreeAPI.optimizePluginConfiguration('optimized-tree' as TreeId);
+
       expect(result.recommendations).toHaveLength.lessThan(3);
       expect(result.currentPerformance.score).toBeGreaterThan(0.8); // 高いパフォーマンススコア
       expect(result.expectedImprovement.performanceGain).toBeLessThan(0.1); // 改善余地小
@@ -253,7 +240,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const treeId = 'graph-tree' as TreeId;
 
       const result = await pluginTreeAPI.getPluginDependencyGraph(treeId);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(Array.isArray(result.nodes)).toBe(true);
       expect(Array.isArray(result.edges)).toBe(true);
@@ -264,10 +251,10 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 循環依存を含む依存関係グラフで警告を含む結果を返す', async () => {
       // 循環依存の検出テスト
       const result = await pluginTreeAPI.getPluginDependencyGraph('cyclic-tree' as TreeId);
-      
+
       expect(result.metadata.hasCycles).toBe(true);
       expect(result.warnings).toHaveLength.greaterThan(0);
-      expect(result.warnings.some(w => w.includes('circular'))).toBe(true);
+      expect(result.warnings.some((w) => w.includes('circular'))).toBe(true);
       expect(result.cyclicPaths).toBeDefined();
       expect(result.cyclicPaths!.length).toBeGreaterThan(0);
     });
@@ -277,19 +264,14 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const options = {
         layout: 'hierarchical' as const,
         groupByCategory: true,
-        includeMetrics: true
+        includeMetrics: true,
       };
 
-      const result = await pluginTreeAPI.getPluginDependencyGraph(
-        'layout-tree' as TreeId, 
-        options
-      );
-      
+      const result = await pluginTreeAPI.getPluginDependencyGraph('layout-tree' as TreeId, options);
+
       expect(result.layout).toBe('hierarchical');
       expect(result.groups).toBeDefined(); // groupByCategory=trueのため
-      expect(result.nodes.every(node => 
-        node.metrics !== undefined
-      )).toBe(true); // includeMetrics=trueのため
+      expect(result.nodes.every((node) => node.metrics !== undefined)).toBe(true); // includeMetrics=trueのため
     });
   });
 
@@ -300,7 +282,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         'metrics-tree' as TreeId,
         'performance-plugin' as NodeType
       );
-      
+
       expect(metrics.nodeType).toBe('performance-plugin');
       expect(metrics.treeId).toBe('metrics-tree');
       expect(typeof metrics.performance.averageResponseTime).toBe('number');
@@ -312,8 +294,8 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
     it('🔴 期間指定でのパフォーマンス履歴を取得できる', async () => {
       // 履歴データの取得テスト
       const timeRange = {
-        start: Date.now() - (24 * 60 * 60 * 1000), // 24時間前
-        end: Date.now()
+        start: Date.now() - 24 * 60 * 60 * 1000, // 24時間前
+        end: Date.now(),
       };
 
       const metrics = await pluginTreeAPI.getPluginMetrics(
@@ -321,13 +303,13 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         'performance-plugin' as NodeType,
         { timeRange }
       );
-      
+
       expect(metrics.history).toBeDefined();
       expect(Array.isArray(metrics.history)).toBe(true);
       expect(metrics.history!.length).toBeGreaterThan(0);
-      
+
       // 履歴データの時刻が範囲内であることを確認
-      metrics.history!.forEach(point => {
+      metrics.history!.forEach((point) => {
         expect(point.timestamp).toBeGreaterThanOrEqual(timeRange.start);
         expect(point.timestamp).toBeLessThanOrEqual(timeRange.end);
       });

@@ -8,7 +8,7 @@
  */
 
 import { atom } from 'jotai';
-import type { TreeNode } from '@hierarchidb/common-core';
+import type { TreeNode } from '@hierarchidb/common-type';
 
 /**
  * テーブルデータ

@@ -4,7 +4,7 @@
  */
 
 import type { Feature as GeoJSONFeature, Geometry } from "geojson";
-import type { NodeId } from "@hierarchidb/common-core";
+import type { NodeId } from "@hierarchidb/common-type";
 import type { Feature } from "../types";
 
 /**

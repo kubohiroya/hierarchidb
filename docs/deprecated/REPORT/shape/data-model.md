@@ -72,7 +72,7 @@ const indexConfiguration = {
 
 ## Entity Type Definitions
 
-### Core Entities (ShapesDB)
+### Core EntityTypes (ShapesDB)
 
 #### ShapesEntity (Peer Entity)
 Main configuration entity with 1:1 correspondence to TreeNode.
@@ -312,7 +312,7 @@ interface BufferMetadata {
 }
 ```
 
-### Spatial Indexing Entities (FeatureIndexDB)
+### Spatial Indexing EntityTypes (FeatureIndexDB)
 
 #### FeatureIndexEntity (Peer Entity)
 Spatial indexing for efficient geographic queries.
@@ -349,7 +349,7 @@ export interface FeatureIndexEntity extends PeerEntity {
 type FeatureType = 'country' | 'admin1' | 'admin2' | 'admin3' | 'custom';
 ```
 
-### Feature Storage Entities (FeatureBufferDB)
+### Feature Storage EntityTypes (FeatureBufferDB)
 
 #### FeatureBufferEntity (Peer Entity)
 Optimized storage for processed geographic features.
@@ -382,7 +382,7 @@ export interface FeatureBufferEntity extends PeerEntity {
 }
 ```
 
-### Tile Data Entities (TileBufferDB)
+### Tile Data EntityTypes (TileBufferDB)
 
 #### TileBufferEntity (Group Entity)
 Intermediate tile-level data for vector tile generation.
@@ -419,7 +419,7 @@ export interface TileBufferEntity extends GroupEntity {
 type TileStatus = 'pending' | 'processing' | 'completed' | 'error';
 ```
 
-### Vector Tile Entities (VectorTileDB)
+### Vector Tile EntityTypes (VectorTileDB)
 
 #### VectorTileEntity (Peer Entity)
 Final MVT format vector tiles for client consumption.
@@ -1027,7 +1027,7 @@ classDiagram
         +string relationType
     }
     
-    %% Shape Plugin Entities
+    %% Shape Plugin EntityTypes
     class ShapesEntity {
         +DataSourceName dataSourceName
         +boolean licenseAgreement

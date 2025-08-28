@@ -298,7 +298,7 @@ describe('TreeSubscriptionAPI', () => {
       if (node) {
         await coreDB.updateNode({
           ...node,
-          name: 'Tree Update',
+          name: 'TreeTypes Update',
           version: node.version + 1,
         });
       }
@@ -396,7 +396,7 @@ describe('TreeSubscriptionAPI', () => {
       if (node) {
         await coreDB.updateNode({
           ...node,
-          name: 'After Tree Unsubscribe',
+          name: 'After TreeTypes Unsubscribe',
           version: node.version + 1,
         });
       }

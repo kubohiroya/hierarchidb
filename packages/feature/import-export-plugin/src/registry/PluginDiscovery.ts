@@ -1,6 +1,6 @@
 /**
  * Dynamic Plugin Discovery System
- * 
+ *
  * Automatically discovers and loads plugins from package.json dependencies.
  * Uses multiple strategies for plugin discovery:
  * 1. Package.json analysis
@@ -9,7 +9,7 @@
  * 4. Plugin manifest files
  */
 
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 // Local PluginMetadata type to avoid conflicts with core definitions
 interface PluginMetadata {
   nodeType: string;
@@ -129,7 +129,7 @@ export class PluginDiscoveryService {
 
     // Deduplicate and merge plugin information
     const merged = this.mergeDiscoveredPlugins(plugins);
-    
+
     // Store discovered plugins
     for (const plugin of merged) {
       this.discoveredPlugins.set(plugin.packageName, plugin);
@@ -143,20 +143,18 @@ export class PluginDiscoveryService {
    */
   private async discoverFromPackageJson(): Promise<DiscoveredPlugin[]> {
     const plugins: DiscoveredPlugin[] = [];
-    
+
     // Combine all dependency types
     const allDependencies = await this.loadPackageDependencies();
 
     for (const [packageName] of Object.entries(allDependencies)) {
       // Check if package name matches plugin patterns
-      const isPlugin = this.config.pluginPatterns.some(pattern => 
-        pattern.test(packageName)
-      );
+      const isPlugin = this.config.pluginPatterns.some((pattern) => pattern.test(packageName));
 
       if (isPlugin) {
         // Extract node type from package name
         const nodeType = this.extractNodeTypeFromPackageName(packageName);
-        
+
         plugins.push({
           packageName,
           nodeType,
@@ -178,7 +176,7 @@ export class PluginDiscoveryService {
       try {
         // Try to load plugin manifest
         const manifest = await this.loadPluginManifest(candidate.packageName);
-        
+
         if (manifest) {
           plugins.push({
             ...candidate,
@@ -214,17 +212,17 @@ export class PluginDiscoveryService {
       try {
         // Load module and analyze exports
         const moduleExports = await this.loadPluginModule(candidate.packageName);
-        
+
         if (moduleExports) {
           // Check for required exports
-          const hasRequiredExports = this.config.requiredExports.some(exportName =>
+          const hasRequiredExports = this.config.requiredExports.some((exportName) =>
             this.hasExport(moduleExports, exportName)
           );
 
           if (hasRequiredExports) {
             // Extract metadata from module
             const metadata = this.extractMetadataFromModule(moduleExports);
-            
+
             plugins.push({
               ...candidate,
               module: moduleExports,
@@ -294,7 +292,7 @@ export class PluginDiscoveryService {
       // TODO: These imports cause circular dependencies - need to be loaded dynamically
       // '@hierarchidb/node-type-folder-plugin-plugin': () =>
       //   import('@hierarchidb/node-type-folder-plugin-plugin'),
-      // '@hierarchidb/node-type-basemap-plugin': () => 
+      // '@hierarchidb/node-type-basemap-plugin': () =>
       //   import('@hierarchidb/node-type-basemap-plugin'),
       // '@hierarchidb/node-type-shape-plugin-plugin': () =>
       //   import('@hierarchidb/node-type-shape-plugin-plugin'),
@@ -306,7 +304,7 @@ export class PluginDiscoveryService {
 
     const loader = staticImports[packageName];
     if (loader) {
-      return loader().then(module => {
+      return loader().then((module) => {
         this.loadedModules.set(packageName, module);
         return module;
       });
@@ -368,10 +366,10 @@ export class PluginDiscoveryService {
    */
   private hasExport(module: any, exportName: string): boolean {
     if (!module) return false;
-    
+
     // Check direct export
     if (module[exportName]) return true;
-    
+
     // Check variations (Definition, definition, DEFINITION)
     const variations = [
       exportName,
@@ -380,8 +378,9 @@ export class PluginDiscoveryService {
       exportName.charAt(0).toUpperCase() + exportName.slice(1),
     ];
 
-    return variations.some(variant => 
-      variant in module || `${variant}Definition` in module || `${variant}Plugin` in module
+    return variations.some(
+      (variant) =>
+        variant in module || `${variant}Definition` in module || `${variant}Plugin` in module
     );
   }
 
@@ -391,7 +390,7 @@ export class PluginDiscoveryService {
   private extractMetadataFromModule(module: any): PluginMetadata | undefined {
     // Look for metadata in various locations
     const metadataKeys = ['metadata', 'METADATA', 'pluginMetadata', 'META'];
-    
+
     for (const key of metadataKeys) {
       if (module[key]) {
         return module[key];
@@ -428,14 +427,14 @@ export class PluginDiscoveryService {
 
     for (const plugin of plugins) {
       const existing = merged.get(plugin.packageName);
-      
+
       if (!existing) {
         merged.set(plugin.packageName, plugin);
       } else {
         // Merge based on source priority
         const existingPriority = priorityOrder.indexOf(existing.source);
         const newPriority = priorityOrder.indexOf(plugin.source);
-        
+
         if (newPriority < existingPriority) {
           // New plugin has higher priority
           merged.set(plugin.packageName, {
@@ -496,16 +495,19 @@ export class PluginDiscoveryService {
     loaded: number;
   } {
     const plugins = Array.from(this.discoveredPlugins.values());
-    
+
     return {
       total: plugins.length,
-      discovered: plugins.map(p => p.packageName),
-      bySource: plugins.reduce((acc, p) => {
-        acc[p.source] = (acc[p.source] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      withMetadata: plugins.filter(p => p.metadata).length,
-      loaded: plugins.filter(p => p.module).length,
+      discovered: plugins.map((p) => p.packageName),
+      bySource: plugins.reduce(
+        (acc, p) => {
+          acc[p.source] = (acc[p.source] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+      withMetadata: plugins.filter((p) => p.metadata).length,
+      loaded: plugins.filter((p) => p.module).length,
     };
   }
 }

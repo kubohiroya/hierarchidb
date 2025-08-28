@@ -22,7 +22,7 @@ graph TB
     subgraph "Composite Types"
         TreeNode["TreeNode"]
         Entity["Entity"]
-        WorkingCopy["WorkingCopy"]
+        WorkingCopyTypes["WorkingCopyTypes"]
     end
     
     subgraph "Utility Types"
@@ -39,11 +39,11 @@ graph TB
     NodeId --> TreeNode
     TreeId --> TreeNode
     EntityId --> Entity
-    WorkingCopyId --> WorkingCopy
+    WorkingCopyId --> WorkingCopyTypes
     
     TreeNode --> Result
     Entity --> Maybe
-    WorkingCopy --> Brand
+    WorkingCopyTypes --> Brand
     
     classDef base fill:#e1f5fe
     classDef branded fill:#f3e5f5
@@ -52,7 +52,7 @@ graph TB
     
     class string base
     class NodeId,TreeId,EntityId,WorkingCopyId branded
-    class TreeNode,Entity,WorkingCopy composite
+    class TreeNode,Entity,WorkingCopyTypes composite
     class Result,Maybe,Brand utility
 ```
 
@@ -268,7 +268,7 @@ graph TB
     end
     
     subgraph "EphemeralDB (Temporary)"
-        WorkingCopy["Working Copy"]
+        WorkingCopyTypes["Working Copy"]
         DraftChanges["Draft Changes"]
         UndoStack["Undo Stack"]
         RedoStack["Redo Stack"]
@@ -288,8 +288,8 @@ graph TB
     end
     
     OriginalNode --> CreateCopy
-    CreateCopy --> WorkingCopy
-    WorkingCopy --> ModifyCopy
+    CreateCopy --> WorkingCopyTypes
+    WorkingCopyTypes --> ModifyCopy
     ModifyCopy --> DraftChanges
     
     DraftChanges --> CommitChanges
@@ -298,7 +298,7 @@ graph TB
     DraftChanges --> DiscardChanges
     DiscardChanges --> OriginalNode
     
-    WorkingCopy --> UndoStack
+    WorkingCopyTypes --> UndoStack
     UndoStack --> RedoStack
     
     DraftChanges --> DiffCalculation
@@ -311,7 +311,7 @@ graph TB
     classDef sync fill:#e1f5fe
     
     class OriginalNode,CommittedState persistent
-    class WorkingCopy,DraftChanges,UndoStack,RedoStack temporary
+    class WorkingCopyTypes,DraftChanges,UndoStack,RedoStack temporary
     class CreateCopy,ModifyCopy,CommitChanges,DiscardChanges operations
     class DiffCalculation,MergeResolution,ConflictDetection sync
 ```

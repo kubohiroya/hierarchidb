@@ -169,7 +169,7 @@ interface ObserveSubtreePayload {
   includeWorkingCopies?: boolean;
 }
 
-// Example: Tree view subscription
+// Example: TreeTypes view subscription
 const subtree$ = await service.observeSubtree({
   commandId: generateId(),
   groupId: sessionId,
@@ -382,7 +382,7 @@ changes$.pipe(
 
 ## 9. Usage Patterns
 
-### 9.1 Tree View Pattern
+### 9.1 TreeTypes View Pattern
 ```typescript
 // Combine subtree with expansion state
 const treeView$ = combineLatest([
@@ -461,7 +461,7 @@ const subscription = sub.subscribe(handleEvent);
 
 ## 12. Constraints & Non-Goals
 
-- **Session/Tab Isolation**: Tree updates propagate, UI state (selection/scroll) does not
+- **Session/Tab Isolation**: TreeTypes updates propagate, UI state (selection/scroll) does not
 - **Security Model**: Local Worker assumed, auth/authz in separate layer
 - **Consistency Model**: Strong ordering within stream, no global ordering across streams
 - **Scalability Limits**: Consider pagination for >10,000 nodes

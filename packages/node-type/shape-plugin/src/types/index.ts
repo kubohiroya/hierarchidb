@@ -1,4 +1,4 @@
-import type { NodeId, PeerEntity, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, PeerEntity, EntityId } from '@hierarchidb/common-type';
 import type { Geometry, BBox } from 'geojson';
 
 // Types are imported from shared/types.ts via shared/openstreetmap-type.ts

@@ -27,7 +27,7 @@ import {
   Stop as StopIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { NodeId, EntityId } from '@hierarchidb/common-core';
+import { NodeId, EntityId } from '@hierarchidb/common-type';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
 import {
   ShapeEntity,
@@ -97,7 +97,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
     try {
       const api = await getShapeAPI();
       // Note: startBatchProcessing expects a workingCopyId (EntityId), not nodeId
-      // For now, we cast the nodeId, but this should be refactored to use proper WorkingCopy
+      // For now, we cast the nodeId, but this should be refactored to use proper WorkingCopyTypes
       await api.startBatchProcessing(
         nodeId as unknown as EntityId,
         entity.processingConfig,

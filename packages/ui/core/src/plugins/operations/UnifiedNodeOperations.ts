@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { UIPluginDefinition } from '../types';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';

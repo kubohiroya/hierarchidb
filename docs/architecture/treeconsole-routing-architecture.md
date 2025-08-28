@@ -14,7 +14,7 @@ The TreeConsole uses a hierarchical URL structure:
 For the example URL `/hierarchidb/t/r`:
 - Base path: `/hierarchidb` (from VITE_APP_NAME environment variable)
 - Route: `/t` (tree console route)
-- Tree ID: `r` (Resource tree)
+- TreeTypes ID: `r` (Resource tree)
 - Page Node ID: undefined (defaults to `rRoot`)
 
 ## File-based Routing Hierarchy (React Router v7)
@@ -23,7 +23,7 @@ For the example URL `/hierarchidb/t/r`:
 
 ```
 app/src/routes/
-├── t.($treeId)._layout.tsx         # Tree loader wrapper
+├── t.($treeId)._layout.tsx         # TreeTypes loader wrapper
 ├── t.($treeId).($pageNodeId)._layout.tsx  # Main layout with AppBar
 └── t.($treeId).($pageNodeId).tsx   # Route handler
 ```
@@ -68,7 +68,7 @@ app/src/routes/
 #### useTreeConsoleIntegration Hook (`~/hooks/useTreeConsoleIntegration.ts`)
 - **Role**: State and action management
 - **Provides**:
-  - Tree data fetching
+  - TreeTypes data fetching
   - Node selection/expansion state
   - Search functionality
   - CRUD operations
@@ -134,7 +134,7 @@ graph TD
 ### Loading Sequence
 
 1. **Route Activation**: React Router triggers route loaders
-2. **Tree Loading**: `loadTree()` fetches tree metadata
+2. **TreeTypes Loading**: `loadTree()` fetches tree metadata
 3. **Page Node Loading**: `loadPageNode()` fetches current node and children
 4. **Worker API Initialization**: `WorkerAPIClient.getSingleton()` establishes connection
 5. **Data Subscription**: Component subscribes to node updates

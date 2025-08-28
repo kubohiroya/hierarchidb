@@ -10,7 +10,7 @@
 
 ## 12.1.1 概要
 - 目的: MapLibre GL JS で表示する「基本地図（Base Map）」リソースを管理・表示する。
-- Tree: Resources ツリー配下のノードタイプ。
+- TreeTypes: Resources ツリー配下のノードタイプ。
 - NodeType: `basemap`
 - 代表的なユースケース:
   - 基本地図スタイル（style URL または JSON）、初期表示位置（中心座標・ズーム）等を保存
@@ -27,7 +27,7 @@
   - pitch?: number
   - createdAt: number
   - updatedAt: number
-- WorkingCopy: BaseMapWorkingCopy（例）
+- WorkingCopyTypes: BaseMapWorkingCopy（例）
   - 編集中の一時状態。5章の working copy モデルに準拠。
 
 注意: 具体の型定義は 6章の例示をベースにするが、実装時に core 型群と整合させること。

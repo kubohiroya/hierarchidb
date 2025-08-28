@@ -162,7 +162,7 @@ export class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
 
 #### 5. エンティティワーキングコピー基本機能
 **新規作成ファイル**:
-- `packages/core/src/types/entityWorkingCopy.ts` - エンティティ用ワーキングコピー型定義
+- `packages/core/src/types/entiry-working-copy-types.ts` - エンティティ用ワーキングコピー型定義
 - `packages/worker/src/services/EntityWorkingCopyManager.ts` - エンティティワーキングコピー管理
 
 **主要機能**:

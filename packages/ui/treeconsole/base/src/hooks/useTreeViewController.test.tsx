@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useTreeViewController } from './useTreeViewController';
 import type { TreeViewControllerProps } from './useTreeViewController';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 // Mock dependencies
 vi.mock('@hierarchidb/provider', () => ({
@@ -104,12 +104,14 @@ describe('useTreeViewController', () => {
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
       // Mock getChildren to return nodes for range selection
-      mockStateManager.getChildren = vi.fn().mockResolvedValue([
-        { id: 'node-1' },
-        { id: 'node-2' },
-        { id: 'node-3' },
-        { id: 'node-4' },
-      ]);
+      mockStateManager.getChildren = vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'node-1' },
+          { id: 'node-2' },
+          { id: 'node-3' },
+          { id: 'node-4' },
+        ]);
 
       act(() => {
         result.current.selectNode('$1' as NodeId);
@@ -167,9 +169,9 @@ describe('useTreeViewController', () => {
     });
 
     it('should handle move failure gracefully', async () => {
-      mockStateManager.moveNode = vi.fn().mockResolvedValue({ 
-        success: false, 
-        error: 'Cannot move node' 
+      mockStateManager.moveNode = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Cannot move node',
       });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -186,11 +188,9 @@ describe('useTreeViewController', () => {
 
     it('should update node order in state after successful move', async () => {
       mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
-      mockStateManager.getChildren = vi.fn().mockResolvedValue([
-        { id: 'node-2' },
-        { id: 'node-1' },
-        { id: 'node-3' },
-      ]);
+      mockStateManager.getChildren = vi
+        .fn()
+        .mockResolvedValue([{ id: 'node-2' }, { id: 'node-1' }, { id: 'node-3' }]);
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -303,9 +303,9 @@ describe('useTreeViewController', () => {
         parentId: 'root',
       };
 
-      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({ 
+      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
         success: true,
-        data: duplicatedNode
+        data: duplicatedNode,
       });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -325,9 +325,9 @@ describe('useTreeViewController', () => {
         parentId: 'root',
       };
 
-      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({ 
+      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
         success: true,
-        data: duplicatedNode
+        data: duplicatedNode,
       });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -348,9 +348,9 @@ describe('useTreeViewController', () => {
         parentId: 'parent-node',
       };
 
-      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({ 
+      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
         success: true,
-        data: duplicatedNode
+        data: duplicatedNode,
       });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -371,9 +371,9 @@ describe('useTreeViewController', () => {
         parentId: 'root',
       };
 
-      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({ 
+      mockStateManager.duplicateNode = vi.fn().mockResolvedValue({
         success: true,
-        data: duplicatedNode
+        data: duplicatedNode,
       });
       mockStateManager.getNode = vi.fn().mockResolvedValue(duplicatedNode);
 
@@ -461,7 +461,7 @@ describe('useTreeViewController', () => {
         // 🟢 信頼性レベル: インターフェース定義に基づく
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
-        
+
         // 【結果検証】: copyメソッドの存在確認
         // 【期待値確認】: copyが定義され、関数型であること
         expect(result.current.copyNodes).toBeDefined(); // 【確認内容】: copyNodesメソッドが存在すること 🟢
@@ -480,8 +480,8 @@ describe('useTreeViewController', () => {
           clipboard: {
             operation: 'copy',
             nodes: ['node-1', 'node-2'],
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -490,7 +490,7 @@ describe('useTreeViewController', () => {
         // 【初期条件設定】: 複数ノードを選択状態にする
         act(() => {
           result.current.selectNode('node-1' as NodeId);
-        result.current.selectNode('node-2' as NodeId, { ctrlKey: true });
+          result.current.selectNode('node-2' as NodeId, { ctrlKey: true });
         });
 
         // 【実際の処理実行】: copyNodesメソッドを呼び出し
@@ -515,7 +515,7 @@ describe('useTreeViewController', () => {
         // 🟢 信頼性レベル: インターフェース定義に基づく
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
-        
+
         expect(result.current.cutNodes).toBeDefined(); // 【確認内容】: cutNodesメソッドが存在すること 🟢
         expect(typeof result.current.cutNodes).toBe('function'); // 【確認内容】: cutNodesが関数であること 🟢
       });
@@ -532,8 +532,8 @@ describe('useTreeViewController', () => {
           clipboard: {
             operation: 'cut',
             nodes: ['node-1'],
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -559,7 +559,7 @@ describe('useTreeViewController', () => {
         // 🟢 信頼性レベル: インターフェース定義に基づく
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
-        
+
         expect(result.current.pasteNodes).toBeDefined(); // 【確認内容】: pasteNodesメソッドが存在すること 🟢
         expect(typeof result.current.pasteNodes).toBe('function'); // 【確認内容】: pasteNodesが関数であること 🟢
       });
@@ -572,9 +572,7 @@ describe('useTreeViewController', () => {
 
         mockStateManager.pasteNodes = vi.fn().mockResolvedValue({
           success: true,
-          pastedNodes: [
-            { id: 'node-1-copy', name: 'Node 1 (Copy)', parentId: 'target-parent' }
-          ]
+          pastedNodes: [{ id: 'node-1-copy', name: 'Node 1 (Copy)', parentId: 'target-parent' }],
         });
         mockStateManager.canPaste = vi.fn().mockReturnValue(true);
 
@@ -618,11 +616,11 @@ describe('useTreeViewController', () => {
 
         mockStateManager.cutNodes = vi.fn().mockResolvedValue({
           success: true,
-          cutNodes: ['node-1']
+          cutNodes: ['node-1'],
         });
         mockStateManager.pasteNodes = vi.fn().mockResolvedValue({
           success: true,
-          pastedNodes: [{ id: 'node-1', parentId: 'new-parent' }]
+          pastedNodes: [{ id: 'node-1', parentId: 'new-parent' }],
         });
         mockStateManager.clearClipboard = vi.fn().mockResolvedValue({ success: true });
 
@@ -654,16 +652,17 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        mockStateManager.copyNodes = vi.fn()
+        mockStateManager.copyNodes = vi
+          .fn()
           .mockResolvedValueOnce({
             success: true,
             copiedNodes: ['node-1'],
-            clipboard: { nodes: ['node-1'] }
+            clipboard: { nodes: ['node-1'] },
           })
           .mockResolvedValueOnce({
             success: true,
             copiedNodes: ['node-2', 'node-3'],
-            clipboard: { nodes: ['node-2', 'node-3'] }
+            clipboard: { nodes: ['node-2', 'node-3'] },
           });
 
         // 【実際の処理実行】: 複数回のコピー操作
@@ -694,8 +693,8 @@ describe('useTreeViewController', () => {
           copiedNodes: [
             { id: 'folder-plugin-1', type: 'folder', name: 'Folder 1' },
             { id: 'file-1', type: 'file', name: 'File 1' },
-            { id: 'custom-1', type: 'custom', name: 'Custom 1' }
-          ]
+            { id: 'custom-1', type: 'custom', name: 'Custom 1' },
+          ],
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -703,7 +702,11 @@ describe('useTreeViewController', () => {
         // 【実際の処理実行】: 異なるタイプのノードをコピー
         // 【処理内容】: 複数タイプのノードを一括コピー
         const copyResult = await act(async () => {
-          return await result.current.copyNodes(['folder-plugin-1', 'file-1', 'custom-1'] as NodeId[]);
+          return await result.current.copyNodes([
+            'folder-plugin-1',
+            'file-1',
+            'custom-1',
+          ] as NodeId[]);
         });
 
         // 【結果検証】: 全てのノードタイプがコピーされたこと
@@ -792,16 +795,16 @@ describe('useTreeViewController', () => {
     describe('undo operation', () => {
       it('should have undo method available', () => {
         const { result } = renderHook(() => useTreeViewController(mockProps));
-        
+
         // TreeViewControllerにundo機能が実装されているかテスト
         expect(result.current.undo).toBeDefined();
         expect(typeof result.current.undo).toBe('function');
       });
 
       it('should execute undo operation and return success', async () => {
-        mockStateManager.undo = vi.fn().mockResolvedValue({ 
-          success: true, 
-          undoneCommand: { id: 'cmd-1', type: 'deleteNode', nodeId: 'node-1' }
+        mockStateManager.undo = vi.fn().mockResolvedValue({
+          success: true,
+          undoneCommand: { id: 'cmd-1', type: 'deleteNode', nodeId: 'node-1' },
         });
         mockStateManager.canUndo = vi.fn().mockReturnValue(true);
 
@@ -811,21 +814,23 @@ describe('useTreeViewController', () => {
           return await result.current.undo();
         });
 
-        expect(undoResult).toEqual(expect.objectContaining({
-          success: true,
-          undoneCommand: expect.objectContaining({
-            id: 'cmd-1',
-            type: 'deleteNode',
-            nodeId: 'node-1'
+        expect(undoResult).toEqual(
+          expect.objectContaining({
+            success: true,
+            undoneCommand: expect.objectContaining({
+              id: 'cmd-1',
+              type: 'deleteNode',
+              nodeId: 'node-1',
+            }),
           })
-        }));
+        );
         expect(mockStateManager.undo).toHaveBeenCalledTimes(1);
       });
 
       it('should handle undo failure gracefully', async () => {
-        mockStateManager.undo = vi.fn().mockResolvedValue({ 
-          success: false, 
-          error: 'No operations to undo' 
+        mockStateManager.undo = vi.fn().mockResolvedValue({
+          success: false,
+          error: 'No operations to undo',
         });
         mockStateManager.canUndo = vi.fn().mockReturnValue(false);
 
@@ -835,10 +840,12 @@ describe('useTreeViewController', () => {
           return await result.current.undo();
         });
 
-        expect(undoResult).toEqual(expect.objectContaining({
-          success: false,
-          error: 'No operations to undo'
-        }));
+        expect(undoResult).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: 'No operations to undo',
+          })
+        );
       });
 
       it('should update view state after successful undo', async () => {
@@ -849,10 +856,10 @@ describe('useTreeViewController', () => {
           parentId: 'root',
         };
 
-        mockStateManager.undo = vi.fn().mockResolvedValue({ 
-          success: true, 
+        mockStateManager.undo = vi.fn().mockResolvedValue({
+          success: true,
           undoneCommand: { type: 'deleteNode', nodeId: 'node-1' },
-          restoredNode: undoneNode
+          restoredNode: undoneNode,
         });
         mockStateManager.canUndo = vi.fn().mockReturnValue(true);
 
@@ -867,8 +874,8 @@ describe('useTreeViewController', () => {
           expect.objectContaining({
             lastUndoResult: expect.objectContaining({
               success: true,
-              restoredNode: undoneNode
-            })
+              restoredNode: undoneNode,
+            }),
           })
         );
       });
@@ -877,16 +884,16 @@ describe('useTreeViewController', () => {
     describe('redo operation', () => {
       it('should have redo method available', () => {
         const { result } = renderHook(() => useTreeViewController(mockProps));
-        
+
         // TreeViewControllerにredo機能が実装されているかテスト
         expect(result.current.redo).toBeDefined();
         expect(typeof result.current.redo).toBe('function');
       });
 
       it('should execute redo operation and return success', async () => {
-        mockStateManager.redo = vi.fn().mockResolvedValue({ 
-          success: true, 
-          redoneCommand: { id: 'cmd-1', type: 'deleteNode', nodeId: 'node-1' }
+        mockStateManager.redo = vi.fn().mockResolvedValue({
+          success: true,
+          redoneCommand: { id: 'cmd-1', type: 'deleteNode', nodeId: 'node-1' },
         });
         mockStateManager.canRedo = vi.fn().mockReturnValue(true);
 
@@ -896,21 +903,23 @@ describe('useTreeViewController', () => {
           return await result.current.redo();
         });
 
-        expect(redoResult).toEqual(expect.objectContaining({
-          success: true,
-          redoneCommand: expect.objectContaining({
-            id: 'cmd-1',
-            type: 'deleteNode',
-            nodeId: 'node-1'
+        expect(redoResult).toEqual(
+          expect.objectContaining({
+            success: true,
+            redoneCommand: expect.objectContaining({
+              id: 'cmd-1',
+              type: 'deleteNode',
+              nodeId: 'node-1',
+            }),
           })
-        }));
+        );
         expect(mockStateManager.redo).toHaveBeenCalledTimes(1);
       });
 
       it('should handle redo failure gracefully', async () => {
-        mockStateManager.redo = vi.fn().mockResolvedValue({ 
-          success: false, 
-          error: 'No operations to redo' 
+        mockStateManager.redo = vi.fn().mockResolvedValue({
+          success: false,
+          error: 'No operations to redo',
         });
         mockStateManager.canRedo = vi.fn().mockReturnValue(false);
 
@@ -920,17 +929,19 @@ describe('useTreeViewController', () => {
           return await result.current.redo();
         });
 
-        expect(redoResult).toEqual(expect.objectContaining({
-          success: false,
-          error: 'No operations to redo'
-        }));
+        expect(redoResult).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: 'No operations to redo',
+          })
+        );
       });
     });
 
     describe('undo/redo state management', () => {
       it('should provide canUndo status', () => {
         mockStateManager.canUndo = vi.fn().mockReturnValue(true);
-        
+
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
         expect(result.current.canUndo).toBe(true);
@@ -939,7 +950,7 @@ describe('useTreeViewController', () => {
 
       it('should provide canRedo status', () => {
         mockStateManager.canRedo = vi.fn().mockReturnValue(false);
-        
+
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
         expect(result.current.canRedo).toBe(false);
@@ -949,10 +960,10 @@ describe('useTreeViewController', () => {
       it('should provide undo history information', () => {
         const mockUndoHistory = [
           { id: 'cmd-1', type: 'deleteNode', timestamp: Date.now() },
-          { id: 'cmd-2', type: 'createNode', timestamp: Date.now() }
+          { id: 'cmd-2', type: 'createNode', timestamp: Date.now() },
         ];
         mockStateManager.getUndoHistory = vi.fn().mockReturnValue(mockUndoHistory);
-        
+
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
         expect(result.current.undoHistory).toEqual(mockUndoHistory);
@@ -960,11 +971,9 @@ describe('useTreeViewController', () => {
       });
 
       it('should provide redo history information', () => {
-        const mockRedoHistory = [
-          { id: 'cmd-3', type: 'moveNode', timestamp: Date.now() }
-        ];
+        const mockRedoHistory = [{ id: 'cmd-3', type: 'moveNode', timestamp: Date.now() }];
         mockStateManager.getRedoHistory = vi.fn().mockReturnValue(mockRedoHistory);
-        
+
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
         expect(result.current.redoHistory).toEqual(mockRedoHistory);
@@ -973,7 +982,7 @@ describe('useTreeViewController', () => {
 
       it('should allow clearing history', async () => {
         mockStateManager.clearHistory = vi.fn().mockResolvedValue({ success: true });
-        
+
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
         const clearResult = await act(async () => {
@@ -986,11 +995,13 @@ describe('useTreeViewController', () => {
 
       it('should update undo/redo states after operations', async () => {
         // 初期状態設定
-        mockStateManager.canUndo = vi.fn()
+        mockStateManager.canUndo = vi
+          .fn()
           .mockReturnValueOnce(false) // 初期状態
           .mockReturnValueOnce(true); // undo後の状態
 
-        mockStateManager.canRedo = vi.fn()
+        mockStateManager.canRedo = vi
+          .fn()
           .mockReturnValueOnce(false) // 初期状態
           .mockReturnValueOnce(false) // undo後の状態（まだredoはない）
           .mockReturnValueOnce(true); // undoした後の状態
@@ -1015,11 +1026,12 @@ describe('useTreeViewController', () => {
 
     describe('undo/redo integration with CRUD operations', () => {
       it('should record operations for undo when performing CRUD', async () => {
-        mockStateManager.deleteNode = vi.fn().mockResolvedValue({ 
+        mockStateManager.deleteNode = vi.fn().mockResolvedValue({
           success: true,
-          recordedForUndo: true 
+          recordedForUndo: true,
         });
-        mockStateManager.canUndo = vi.fn()
+        mockStateManager.canUndo = vi
+          .fn()
           .mockReturnValueOnce(false) // before operation
           .mockReturnValueOnce(true); // after operation
 
@@ -1037,13 +1049,14 @@ describe('useTreeViewController', () => {
 
       it('should clear redo stack when new operation is performed', async () => {
         // シナリオ: undo→新しい操作→redoスタックがクリアされる
-        mockStateManager.canRedo = vi.fn()
-          .mockReturnValueOnce(true)  // undo後、redoが可能
+        mockStateManager.canRedo = vi
+          .fn()
+          .mockReturnValueOnce(true) // undo後、redoが可能
           .mockReturnValueOnce(false); // 新しい操作後、redoスタックがクリア
 
-        mockStateManager.createNode = vi.fn().mockResolvedValue({ 
+        mockStateManager.createNode = vi.fn().mockResolvedValue({
           success: true,
-          clearedRedoStack: true 
+          clearedRedoStack: true,
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -1065,20 +1078,20 @@ describe('useTreeViewController', () => {
       it('should handle batch operations undo', async () => {
         const batchOperation = {
           nodeIds: ['node-1', 'node-2', 'node-3'],
-          operation: 'delete'
+          operation: 'delete',
         };
 
-        mockStateManager.undo = vi.fn().mockResolvedValue({ 
-          success: true, 
-          undoneCommand: { 
-            type: 'batchDelete', 
+        mockStateManager.undo = vi.fn().mockResolvedValue({
+          success: true,
+          undoneCommand: {
+            type: 'batchDelete',
             batchOperation,
             restoredNodes: [
               { id: 'node-1', name: 'Node 1' },
               { id: 'node-2', name: 'Node 2' },
-              { id: 'node-3', name: 'Node 3' }
-            ]
-          }
+              { id: 'node-3', name: 'Node 3' },
+            ],
+          },
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -1093,16 +1106,16 @@ describe('useTreeViewController', () => {
       });
 
       it('should handle move operations undo by restoring original position', async () => {
-        mockStateManager.undo = vi.fn().mockResolvedValue({ 
-          success: true, 
-          undoneCommand: { 
-            type: 'moveNode', 
+        mockStateManager.undo = vi.fn().mockResolvedValue({
+          success: true,
+          undoneCommand: {
+            type: 'moveNode',
             nodeId: 'node-1',
             fromParent: 'new-parent',
             toParent: 'original-parent',
             fromIndex: 2,
-            toIndex: 0
-          }
+            toIndex: 0,
+          },
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));

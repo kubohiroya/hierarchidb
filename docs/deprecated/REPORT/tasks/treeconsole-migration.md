@@ -362,7 +362,7 @@ export const DragDropConfigProvider: React.FC<DragDropConfigProviderProps> = ({
 export * from './types';
 ```
 
-### 2.3 Tree Table Core Components
+### 2.3 TreeTypes Table Core Components
 
 **High Priority Files:**
 - `TreeTableCore.tsx` (main table component)
@@ -392,7 +392,7 @@ packages/ui-treeconsole/src/features/tree-table/
 - Keep accessibility features
 - Update theme integration
 
-### 2.4 Tree Console Components
+### 2.4 TreeTypes Console Components
 
 **Files to migrate:**
 - `TreeTableConsolePanel.tsx` (main panel)
@@ -549,7 +549,7 @@ const { treeService } = useWorkerServices();
 // Ensure TreeConsole types align with core types
 import type { 
   TreeNode, 
-  NodeTypeDefinition,
+  PluginDefinition,
   TreeViewState 
 } from '@hierarchidb/core';
 
@@ -625,7 +625,7 @@ export interface TreeConsoleActionDefinition {
   isDisabled?: (selectedNodes: TreeNode[]) => boolean;
 }
 
-// Tree view controller configuration
+// TreeTypes view controller configuration
 export interface TreeViewControllerConfig {
   /**
    * Enable drag and drop
@@ -1138,7 +1138,7 @@ Main console component that provides a complete tree management interface.
 Core tree table component with virtualization support.
 
 **Props:**
-- `nodes: TreeNode[]` - Tree nodes to display
+- `nodes: TreeNode[]` - TreeTypes nodes to display
 - `virtualization?: VirtualizationConfig` - Virtual scrolling config
 
 ## Hooks

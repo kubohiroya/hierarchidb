@@ -821,7 +821,7 @@ export interface ProcessingSummary {
 // ============================================================================
 
 export type {
-  // Entities
+  // EntityTypes
   ShapesEntity,
   ShapesWorkingCopy,
   // Styles

@@ -2,7 +2,7 @@
  * Shape Plugin API for HierarchiDB integration
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import type { 
   ShapesAPIMethods,
   BatchProcessConfig,

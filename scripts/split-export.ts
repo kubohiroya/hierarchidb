@@ -476,10 +476,32 @@ function addToDirIndex(di: DirIndex, dir: string, name: string, isTypeOnly: bool
 
 // ===== Main =====
 async function main(): Promise<void> {
-  const argv = minimist(process.argv.slice(2)) as unknown as Args;
+  const argv = minimist(process.argv.slice(2), {
+    alias: {
+      root: ['r'],
+      tsconfig: [],
+      'dry-run': ['dryRun'],
+      'include-index': ['includeIndex'],
+      'no-deps': ['noDeps'],
+      list: ['ls'],
+      verbose: ['v'],
+      trace: ['t'],
+      exclude: [],
+    },
+    boolean: ['dry-run', 'include-index', 'no-deps', 'list', 'verbose', 'trace'],
+    string: ['root', 'tsconfig', 'exclude'],
+    default: {
+      'dry-run': true,
+      verbose: false,
+      trace: false,
+      'include-index': false,
+      list: false,
+      'no-deps': false,
+    },
+  }) as any;
   const ROOT = argv.root ?? 'src';
-  const ROOT_ABS = path.resolve(ROOT);
-  const DRY = toBool(argv.dryRun, true);
+  const ROOT_ABS: string = path.resolve(ROOT);
+  const DRY: boolean = argv['dry-run'] as boolean; // ← ここが本命
   const VERBOSE = toBool(argv.verbose, false);
   const TRACE = toBool(argv.trace, false);
   const INCLUDE_INDEX = toBool(argv.includeIndex, false);
@@ -763,7 +785,40 @@ async function main(): Promise<void> {
     console.log(`[${stamp()}] write done in ${dur}s`);
   }
 
-  console.log(DRY ? '\n[Dry Run] 変更は未反映です。--dry-run=false で実行します。' : '\nDone.');
+  // console.log(DRY ? '\n[Dry Run] 変更は未反映です。--dry-run=false で実行します。' : '\nDone.');
+  // BACKUP ログ
+  if (DRY) {
+    console.log(`PLAN BACKUP: ${rel(p.absPath, ROOT_ABS)} -> ${rel(p.backupPath, ROOT_ABS)}`);
+  } else {
+    // 既存のバックアップ作成ロジック（実際に書く）
+    console.log(`BACKUP:      ${rel(p.absPath, ROOT_ABS)} -> ${rel(actualBackup, ROOT_ABS)}`);
+  }
+
+  // WRITE ログ
+  for (const f of p.symbolFiles) {
+    if (DRY) {
+      console.log(`PLAN WRITE:  ${rel(f.path, ROOT_ABS)}`);
+    } else {
+      await fs.writeFile(f.path, f.content, 'utf8');
+      console.log(`WRITE:       ${rel(f.path, ROOT_ABS)}`);
+    }
+  }
+
+  // SHIM ログ
+  if (DRY) {
+    console.log(`PLAN SHIM:   ${rel(p.shimPath, ROOT_ABS)}`);
+  } else {
+    await fs.writeFile(p.shimPath, p.shimContent, 'utf8');
+    console.log(`SHIM:        ${rel(p.shimPath, ROOT_ABS)}`);
+  }
+
+  // index.ts 生成部も同様に
+  if (DRY) {
+    console.log(`PLAN INDEX:  ${rel(indexPath, ROOT_ABS)} (${entries.length} symbols)`);
+  } else {
+    await fs.writeFile(indexPath, content, 'utf8');
+    console.log(`INDEX:       ${rel(indexPath, ROOT_ABS)} (${entries.length} symbols)`);
+  }
 }
 
 main().catch((e: unknown) => {

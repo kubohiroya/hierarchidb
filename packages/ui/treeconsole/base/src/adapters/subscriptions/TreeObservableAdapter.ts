@@ -7,7 +7,7 @@
 
 // import { Observable } from 'rxjs'; // TODO: will be used when implementing actual Observable subscriptions
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-core';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
 import type { UnsubscribeFunction, AdapterContext } from '../../types/index';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;

@@ -10,7 +10,7 @@ The TreeQueryService provides read-only operations for querying tree structures,
 import type {
   CommandResult,
   TreeNode,
-  Tree,
+  TreeTypes,
   TreeNodeId,
   // Payload types
   GetTreePayload,
@@ -24,9 +24,9 @@ import type {
 } from '@hierarchidb/core';
 
 export interface TreeQueryService {
-  // Tree operations
-  getTrees(): Promise<Tree[]>;
-  getTree(payload: GetTreePayload): Promise<Tree | undefined>;
+  // TreeTypes operations
+  getTrees(): Promise<TreeTypes[]>;
+  getTree(payload: GetTreePayload): Promise<TreeTypes | undefined>;
 
   // Node operations
   getNode(payload: GetNodePayload): Promise<TreeNode | undefined>;
@@ -45,7 +45,7 @@ export interface TreeQueryService {
 
 ## Operation Categories
 
-### 1. Tree Operations
+### 1. TreeTypes Operations
 
 #### `getTrees()`
 - Returns all available trees in the system
@@ -180,7 +180,7 @@ export interface TreeQueryService {
 
 ### Common Error Codes
 - `E_NODE_NOT_FOUND`: Node doesn't exist
-- `E_TREE_NOT_FOUND`: Tree doesn't exist
+- `E_TREE_NOT_FOUND`: TreeTypes doesn't exist
 - `E_PERMISSION_DENIED`: Access control violation (future)
 - `E_INVALID_PAYLOAD`: Malformed request data
 

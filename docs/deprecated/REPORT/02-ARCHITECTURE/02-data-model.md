@@ -6,19 +6,19 @@
 ```
 HierarchiDB Data Model
 ├── Core Models (ツリー構造)
-│   ├── Tree
+│   ├── TreeTypes
 │   ├── TreeNode
 │   └── TreeRootState
 └── Plugin Models (拡張データ)
     ├── Entity (6分類システム)
-    └── WorkingCopy
+    └── WorkingCopyTypes
 ```
 
 ## コアデータモデル
 
-### Tree（ツリー）
+### TreeTypes（ツリー）
 ```typescript
-interface Tree {
+interface TreeTypes {
   id: TreeId;                    // ブランデッド型
   rootNodeId: RootNodeId;         // ルートノード
   trashRootNodeId: TrashRootNodeId; // ゴミ箱ルート
@@ -178,7 +178,7 @@ interface BatchSessionEntity extends EphemeralRelationalEntity {
 
 ### WorkingCopy定義
 ```typescript
-interface WorkingCopy extends TreeNode {
+interface WorkingCopyTypes extends TreeNode {
   // ワーキングコピー識別
   workingCopyId: UUID;
   workingCopyOf: NodeId;        // オリジナルノード

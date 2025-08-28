@@ -81,7 +81,7 @@ mkdir -p src/worker/{handlers,database,validation,lifecycle}
 **Before:**
 ```typescript
 // src/definitions/ProjectDefinition.ts - ❌ Problem: Mixed UI/Worker code
-export const ProjectDefinition: NodeDefinition<ProjectEntity> = {
+export const ProjectDefinition: EntityTypes<ProjectEntity> = {
   nodeType: 'project',
   name: 'Project',
   displayName: 'Map Project',
@@ -645,7 +645,7 @@ import { ProjectEntityHandler } from '../handlers/ProjectEntityHandler';
 - [ ] **UI-only imports**: UI code doesn't import Worker-specific modules
 - [ ] **Worker-only imports**: Worker code doesn't import React/DOM APIs
 - [ ] **Shared code is pure**: No React dependencies or side effects in shared/
-- [ ] **Tree-shaking works**: Bundle analysis shows proper code splitting
+- [ ] **TreeTypes-shaking works**: Bundle analysis shows proper code splitting
 - [ ] **Tests pass**: All tests updated and passing
 - [ ] **Registration works**: Plugins register and function correctly
 

@@ -150,7 +150,7 @@ TreeQueryAPIは、IndexedDBのインデックスを活用して高速な検索�
 
 ### メソッド
 
-#### `getTree(treeId: TreeId): Promise<Tree | undefined>`
+#### `getTree(treeId: TreeId): Promise<TreeTypes | undefined>`
 
 指定されたツリーIDのツリー情報を取得します。
 
@@ -158,7 +158,7 @@ TreeQueryAPIは、IndexedDBのインデックスを活用して高速な検索�
 - `treeId: TreeId` - 取得するツリーのID（ブランド型）
 
 **戻り値:**
-- `Promise<Tree | undefined>` - ツリー情報。存在しない場合は`undefined`
+- `Promise<TreeTypes | undefined>` - ツリー情報。存在しない場合は`undefined`
 
 **使用例:**
 ```typescript
@@ -166,11 +166,11 @@ const treeId = 'tree-001' as TreeId;
 const tree = await queryAPI.getTree(treeId);
 
 if (tree) {
-  console.log(`Tree: ${tree.name}`);
+  console.log(`TreeTypes: ${tree.name}`);
   console.log(`Root Node: ${tree.rootNodeId}`);
   console.log(`Created: ${new Date(tree.createdAt).toLocaleDateString()}`);
 } else {
-  console.error('Tree not found');
+  console.error('TreeTypes not found');
 }
 ```
 
@@ -190,7 +190,7 @@ try {
 - `listTrees()` - すべてのツリーを取得
 - `getNode()` - ツリー内のノードを取得
 
-#### `listTrees(): Promise<Tree[]>`
+#### `listTrees(): Promise<TreeTypes[]>`
 すべてのツリー一覧を取得します。
 
 #### `getNode(nodeId: NodeId): Promise<TreeNode | undefined>`
@@ -343,13 +343,13 @@ interface EventFilter {
 
 ### メソッド
 
-#### `createDraftWorkingCopy(nodeType: TreeNodeType, parentNodeId: NodeId): Promise<WorkingCopy>`
+#### `createDraftWorkingCopy(nodeType: TreeNodeType, parentNodeId: NodeId): Promise<WorkingCopyTypes>`
 新規ドラフトのワーキングコピーを作成します。
 
-#### `createWorkingCopyFromNode(nodeId: NodeId): Promise<WorkingCopy>`
+#### `createWorkingCopyFromNode(nodeId: NodeId): Promise<WorkingCopyTypes>`
 既存ノードからワーキングコピーを作成します。
 
-#### `updateWorkingCopy(nodeId: NodeId, updates: Partial<WorkingCopy>): Promise<void>`
+#### `updateWorkingCopy(nodeId: NodeId, updates: Partial<WorkingCopyTypes>): Promise<void>`
 ワーキングコピーを更新します。
 
 #### `commitWorkingCopy(nodeId: NodeId): Promise<CommitResult>`
@@ -358,10 +358,10 @@ interface EventFilter {
 #### `discardWorkingCopy(nodeId: NodeId): Promise<void>`
 ワーキングコピーを破棄し、変更をキャンセルします。
 
-#### `getWorkingCopy(nodeId: NodeId): Promise<WorkingCopy | undefined>`
+#### `getWorkingCopy(nodeId: NodeId): Promise<WorkingCopyTypes | undefined>`
 特定のワーキングコピーを取得します。
 
-#### `listWorkingCopies(): Promise<WorkingCopy[]>`
+#### `listWorkingCopies(): Promise<WorkingCopyTypes[]>`
 すべてのアクティブなワーキングコピーを取得します。
 
 #### `hasWorkingCopy(nodeId: NodeId): Promise<boolean>`
@@ -376,11 +376,11 @@ interface EventFilter {
 
 ### メソッド
 
-#### `registerNodeType(definition: NodeTypeDefinition): Promise<void>`
+#### `registerNodeType(definition: PluginDefinition): Promise<void>`
 新しいノードタイプを登録します。
 
 ```typescript
-interface NodeTypeDefinition {
+interface PluginDefinition {
   nodeType: TreeNodeType;
   displayName: string;
   description?: string;
@@ -397,7 +397,7 @@ interface NodeTypeDefinition {
 #### `unregisterNodeType(nodeType: TreeNodeType): Promise<void>`
 ノードタイプの登録を解除します。
 
-#### `getNodeTypeDefinition(nodeType: TreeNodeType): Promise<NodeTypeDefinition | undefined>`
+#### `getNodeTypeDefinition(nodeType: TreeNodeType): Promise<PluginDefinition | undefined>`
 特定のノードタイプ定義を取得します。
 
 #### `listSupportedNodeTypes(): Promise<TreeNodeType[]>`

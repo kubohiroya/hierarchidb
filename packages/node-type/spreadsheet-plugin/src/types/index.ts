@@ -3,7 +3,7 @@
  * @description Type definitions for Spreadsheet plugin entities
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 
 // ============================================================================
 // Raw File Metadata (PersistentRelationalEntity)

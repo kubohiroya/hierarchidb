@@ -17,7 +17,7 @@ import type { PluginTreeAPI } from './PluginTreeAPI';
 import type { NodeTypeAPI } from './NodeTypeAPI';
 import type { PluginManagementAPI } from './PluginManagementAPI';
 import type { ProxyMarked } from 'comlink';
-import type { Tree, TreeId, TreeNode, NodeId } from '@hierarchidb/common-core';
+import type { Tree, TreeId, TreeNode, NodeId } from '@hierarchidb/common-type';
 
 /**
  * Main worker facade API
@@ -75,11 +75,11 @@ export interface WorkerAPI {
    * Get the plugin registry API for plugin system management
    *
    * @deprecated Use specialized APIs instead: getNodeTypeAPI(), getPluginManagementAPI(), getPluginTreeAPI()
-   * 
+   *
    * This legacy API will be removed in v2.0. Migration guide:
    * - Node type operations → getNodeTypeAPI()
    * - Plugin management → getPluginManagementAPI()
-   * - Tree-specific queries → getPluginTreeAPI()
+   * - TreeTypes-specific queries → getPluginTreeAPI()
    */
   getPluginRegistryAPI(): PluginRegistryAPI & ProxyMarked;
 
@@ -100,13 +100,13 @@ export interface WorkerAPI {
   getWorkingCopyAPI(): WorkingCopyAPI & ProxyMarked;
 
   /**
-   * Get Plugin Tree API facade
-   * 
+   * Get Plugin TreeTypes API facade
+   *
    * Provides a clean, type-safe interface for retrieving plugins available
    * for specific trees with filtering and sorting capabilities.
-   * 
-   * @returns Plugin Tree API facade instance
-   * 
+   *
+   * @returns Plugin TreeTypes API facade instance
+   *
    * @example
    * ```typescript
    * const pluginTreeAPI = workerAPI.getPluginTreeAPI();
@@ -120,12 +120,12 @@ export interface WorkerAPI {
 
   /**
    * Get Node Type API facade
-   * 
+   *
    * Provides focused interface for node type operations and capabilities,
    * separated from plugin management concerns.
-   * 
+   *
    * @returns Node Type API facade instance
-   * 
+   *
    * @example
    * ```typescript
    * const nodeTypeAPI = workerAPI.getNodeTypeAPI();
@@ -136,12 +136,12 @@ export interface WorkerAPI {
 
   /**
    * Get Plugin Management API facade
-   * 
+   *
    * Provides comprehensive plugin lifecycle management including registration,
    * validation, and health monitoring.
-   * 
+   *
    * @returns Plugin Management API facade instance
-   * 
+   *
    * @example
    * ```typescript
    * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
@@ -152,12 +152,12 @@ export interface WorkerAPI {
 
   /**
    * Get Import/Export API for data transfer operations
-   * 
+   *
    * Provides functionality for importing and exporting tree nodes
    * in various formats including JSON, CSV, and XML.
-   * 
+   *
    * @returns Import/Export API facade instance
-   * 
+   *
    * @example
    * ```typescript
    * const importExportAPI = workerAPI.getImportExportAPI();
@@ -234,37 +234,37 @@ export interface WorkerAPI {
    */
   // Backwards compatibility methods
   // These provide direct access to common operations without going through sub-APIs
-  
+
   /**
    * @deprecated Use getQueryAPI().getTree() instead. Will be removed in v2.0.
    */
   getTree(params: { treeId: TreeId }): Promise<Tree | undefined>;
-  
+
   /**
    * @deprecated Use getQueryAPI().listTrees() instead. Will be removed in v2.0.
    */
   listTrees(): Promise<Tree[]>;
-  
+
   /**
    * @deprecated Use getQueryAPI().listTrees() instead. This is a naming mistake. Will be removed in v2.0.
    */
   getTrees(): Promise<Tree[]>;
-  
+
   /**
    * @deprecated Use getQueryAPI().getNode() instead. Will be removed in v2.0.
    */
   getNode(nodeId: NodeId): Promise<TreeNode | undefined>;
-  
+
   /**
    * @deprecated Use getQueryAPI().listChildren() instead. Will be removed in v2.0.
    */
   getChildren(params: { parentId: NodeId }): Promise<TreeNode[]>;
-  
+
   /**
    * @deprecated Use getMutationAPI().createNode() instead. Will be removed in v2.0.
    */
   create(params: any): Promise<any>;
-  
+
   /**
    * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
    */
@@ -272,12 +272,12 @@ export interface WorkerAPI {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: boolean; error?: string }>;
-  
+
   /**
    * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety and structure. Will be removed in v2.0.
    */
   getPluginsForTree(treeId: TreeId): Promise<any[]>;
-  
+
   /**
    * @deprecated Use getMutationAPI().removeNodes() instead. Will be removed in v2.0.
    */

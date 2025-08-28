@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { StyleMapExtension } from '../extension/definition';
 import { StyleMapEntityHandler } from '../handlers/StyleMapEntityHandler';
 import { StyleMapDataService } from '../services/StyleMapDataService';

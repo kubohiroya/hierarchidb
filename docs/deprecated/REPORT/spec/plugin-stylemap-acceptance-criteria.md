@@ -332,7 +332,7 @@
 
 ### プラグインアーキテクチャ適合テスト
 
-- [ ] 🟢 NodeTypeDefinition 準拠: 必須フィールドの完全実装
+- [ ] 🟢 PluginDefinition 準拠: 必須フィールドの完全実装
 - [ ] 🟢 EntityHandler 実装: CRUD操作の完全サポート
 - [ ] 🟢 ライフサイクルフック: afterCreate, beforeDelete 等の正常動作
 - [ ] 🟢 UI コンポーネント登録: dialogComponent, panelComponent の適切な表示

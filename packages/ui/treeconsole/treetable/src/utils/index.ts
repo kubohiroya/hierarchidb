@@ -4,7 +4,7 @@
  * TreeTableで使用される共通ユーティリティ関数
  */
 
-import { TreeNode } from '@hierarchidb/common-core';
+import { TreeNode } from '@hierarchidb/common-type';
 
 // import type { TreeNode } from '../types';
 

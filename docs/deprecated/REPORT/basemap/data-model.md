@@ -70,7 +70,7 @@ interface BaseMapEntity extends PeerEntity {
 Working copy entity for draft editing operations:
 
 ```typescript
-interface BaseMapWorkingCopy extends WorkingCopy {
+interface BaseMapWorkingCopy extends WorkingCopyTypes {
   nodeId: NodeId;
   name: string;
   description?: string;
@@ -101,7 +101,7 @@ interface BaseMapWorkingCopy extends WorkingCopy {
   thumbnailUrl?: string;
   tags?: string[];
 
-  // Working copy specific fields (inherited from WorkingCopy)
+  // Working copy specific fields (inherited from WorkingCopyTypes)
   workingCopyId: string;
   workingCopyOf: NodeId;
   copiedAt: number;

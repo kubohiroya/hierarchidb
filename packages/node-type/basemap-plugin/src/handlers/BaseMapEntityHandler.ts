@@ -6,7 +6,7 @@
  * to provide BaseMap-specific functionality.
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import { FolderEntityHandler } from '@hierarchidb/node-type-folder-plugin';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
 import { BaseMapDatabase } from '../database/BaseMapDatabase';

@@ -109,7 +109,7 @@
 
 🟢 **NodeTypeDefinition構造**
 ```typescript
-interface NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy> {
+interface PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
   nodeType: TreeNodeType;
   name: string;
   displayName: string;

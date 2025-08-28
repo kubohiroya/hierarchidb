@@ -429,7 +429,7 @@ export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.El
       <Box
         data-testid="tree-console-toolbar"
         className="tree-console-toolbar"
-        aria-label="Tree console toolbar"
+        aria-label="TreeTypes console toolbar"
         style={{ backgroundColor: theme.palette.background.paper }}
       >
         <TreeConsoleToolbarContent

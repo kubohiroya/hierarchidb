@@ -133,7 +133,7 @@ sequenceDiagram
     participant UI as UI Dialog
     participant Client as UI Client
     participant Worker as Worker API
-    participant WCManager as WorkingCopy Manager
+    participant WCManager as WorkingCopyTypes Manager
     participant Handler as Entity Handler
     participant EphemeralDB as EphemeralDB
     participant CoreDB as CoreDB

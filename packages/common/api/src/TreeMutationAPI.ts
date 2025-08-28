@@ -1,5 +1,4 @@
-import type { TreeId, NodeId, NodeType } from '@hierarchidb/common-core';
-
+import type { TreeId, NodeId, NodeType } from '@hierarchidb/common-type';
 /**
  * データ変更API
  * ノードの作成、更新、削除、移動機能を提供

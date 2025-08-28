@@ -83,7 +83,7 @@ interface QueryParams {
 ```typescript
 interface LoaderData {
   treeContext: {
-    tree: Tree;
+    tree: TreeTypes;
     currentNode: TreeNode | null;
     breadcrumbs: BreadcrumbItem[];
     expandedNodes: Set<TreeNodeId>;
@@ -101,7 +101,7 @@ interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy> {
+> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
   // データベース管理（必須）
   readonly database: {
     entityStore: string;           // メインエンティティテーブル名
@@ -922,7 +922,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 ### 8.7.4 開発環境での自動再生成
 
 ```typescript
-// tools/plugin-builder/watch-plugins.ts
+// tools/plugin-builder/watch-plugin.ts
 import chokidar from 'chokidar';
 import { generatePluginRegistry } from './generate-registry.js';
 

@@ -111,8 +111,8 @@ graph TD
     end
     
     subgraph "Core Components"
-        TreeConsole["Tree Console"]
-        TreeTable["Tree Table"]
+        TreeConsole["TreeTypes Console"]
+        TreeTable["TreeTypes Table"]
         NodeDialog["Node Dialog"]
         NodePanel["Node Panel"]
     end

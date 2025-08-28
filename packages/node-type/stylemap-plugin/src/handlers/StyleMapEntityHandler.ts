@@ -3,8 +3,8 @@
  * @description StyleMap entity handler extending Spreadsheet functionality
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
-import type { EntityHandler, GroupEntity } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { EntityHandler, GroupEntity } from '@hierarchidb/common-type';
 import type { StyleMapEntity, StyleMapWorkingCopy } from '../entities/StyleMapEntity';
 import { StyleMapConfigDefault } from '../types/styleMapTypes';
 import { StyleMapDataService } from '../services/StyleMapDataService';

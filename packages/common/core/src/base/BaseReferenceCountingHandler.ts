@@ -1,18 +1,18 @@
-import type { NodeId } from '../types';
+import { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Base pattern for entities that require reference counting
- * 
+ *
  * This abstract class provides a template for managing entities with reference counting,
  * commonly used in plugins that share data between multiple nodes (e.g., spreadsheet-plugin, stylemap-plugin).
- * 
+ *
  * The pattern involves:
  * - PeerEntity: The entity directly associated with a node
  * - RelationalEntity: The shared data entity referenced by multiple PeerEntities
- * 
+ *
  * When the last PeerEntity referencing a RelationalEntity is deleted,
  * the RelationalEntity is also deleted (reference counting).
- * 
+ *
  * Note: This is a pattern/interface definition in the core package.
  * Implementations should be in the respective plugin's handler directory.
  */
@@ -22,32 +22,32 @@ export abstract class BaseReferenceCountingHandler {
    * @returns Field name (e.g., 'nodeId')
    */
   protected abstract getNodeRefField(): string;
-  
+
   /**
    * Get the field name that references the RelationalEntity in the PeerEntity
    * @returns Field name (e.g., 'metadataId', 'styleId')
    */
   protected abstract getRelRefField(): string;
-  
+
   /**
    * Get the PeerEntity associated with a node
    * @param nodeId - The node ID
    * @returns The PeerEntity or null if not found
    */
   protected abstract getPeerEntity(nodeId: NodeId): Promise<any>;
-  
+
   /**
    * Delete the PeerEntity associated with a node
    * @param nodeId - The node ID
    */
   protected abstract deletePeerEntity(nodeId: NodeId): Promise<void>;
-  
+
   /**
    * Delete the RelationalEntity and all related data
    * @param relRef - The reference to the RelationalEntity
    */
   protected abstract deleteRelationalEntity(relRef: any): Promise<void>;
-  
+
   /**
    * Count how many PeerEntities reference a RelationalEntity
    * @param relRef - The reference to the RelationalEntity
@@ -94,7 +94,7 @@ export abstract class BaseReferenceCountingHandler {
 
     const relRefField = this.getRelRefField();
     const relRef = peerEntity[relRefField];
-    
+
     return await this.countPeerEntitiesByRelRef(relRef);
   }
 }

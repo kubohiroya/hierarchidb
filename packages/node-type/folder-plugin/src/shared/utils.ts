@@ -7,7 +7,7 @@ import {
   EntityId,
   validateCommonNodeData,
   validateNodeName,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import {
   FolderEntity,
   FolderDisplayData,
@@ -191,7 +191,7 @@ export function generateFolderBreadcrumbs(
 }
 
 /**
- * Tree utilities
+ * TreeTypes utilities
  */
 export function buildFolderTree(
   folders: FolderDisplayData[],

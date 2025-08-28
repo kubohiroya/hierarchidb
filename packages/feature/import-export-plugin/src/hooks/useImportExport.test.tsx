@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useImportExport } from './useImportExport';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
 
@@ -97,7 +97,7 @@ describe('useImportExport', () => {
           hasHeader: true,
           columnMapping: {
             name: 0,
-            nodeType: 1, 
+            nodeType: 1,
             description: 2,
           },
         },

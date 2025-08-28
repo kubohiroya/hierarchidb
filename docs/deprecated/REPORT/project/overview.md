@@ -9,7 +9,7 @@ The Project Plugin follows HierarchiDB's 4-layer architecture with strict UI-Wor
 ```
 UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Aggregation) ←→ IndexedDB (Storage)
                                      ↓
-                            Cross-Tree References ←→ Resources Tree Nodes
+                            Cross-TreeTypes References ←→ Resources TreeTypes Nodes
 ```
 
 ### Key Components
@@ -22,7 +22,7 @@ UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Aggregation)
 ## Feature Overview
 
 ### 1. Resource Selection System
-- **Hierarchical Tree Display**: Interactive tree view of Resources tree content
+- **Hierarchical TreeTypes Display**: Interactive tree view of Resources tree content
 - **Multi-Selection Interface**: Checkbox-based selection with parent-child relationships
 - **Resource Type Filtering**: Support for basemap, shapes, stylemap, location, and route nodes
 - **Dependency Visualization**: Display relationships between selected resources
@@ -34,10 +34,10 @@ Four-stage aggregation architecture:
 3. **Rendering**: MapLibreGL.js-based integrated visualization
 4. **Export**: Project configuration and shareable map generation
 
-### 3. Cross-Tree Reference System
+### 3. Cross-TreeTypes Reference System
 Comprehensive TreeNode reference capabilities:
 - **Reference Storage**: Persistent links to Resources tree nodes
-- **Circular Dependency Prevention**: Tree-level isolation prevents reference cycles
+- **Circular Dependency Prevention**: TreeTypes-level isolation prevents reference cycles
 - **Change Propagation**: Automatic updates when referenced resources change
 - **Reference Validation**: Ensure referenced nodes exist and are accessible
 
@@ -119,12 +119,12 @@ This documentation is organized into focused sections:
 ## Integration Points
 
 ### HierarchiDB Plugin System
-- **NodeTypeDefinition**: Standard plugin registration
+- **PluginDefinition**: Standard plugin registration
 - **EntityHandler**: Project entity lifecycle management
 - **UI Components**: Dialog and panel integration
 - **API Extensions**: aggregateResources method implementation
 
-### Resources Tree Plugins
+### Resources TreeTypes Plugins
 - **Basemap Plugin**: Reference basemap configurations
 - **Shape Plugin**: Aggregate vector data layers
 - **Stylemap Plugin**: Apply styling to aggregated data
@@ -133,7 +133,7 @@ This documentation is organized into focused sections:
 
 ## Security Considerations
 
-### Cross-Tree Access
+### Cross-TreeTypes Access
 - **Permission Model**: Ensure Projects tree can reference but not modify Resources tree
 - **Validation**: Verify referenced nodes exist and are accessible
 - **Isolation**: Prevent circular dependencies between tree structures

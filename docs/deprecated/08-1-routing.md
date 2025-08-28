@@ -94,7 +94,7 @@ interface LoaderDataBase {
   
   // 段階的に各 loader が追加するフィールド
   client: WorkerAPIClient;               // /t の時点で提供
-  tree?: Tree;                           // /t/:treeId で提供
+  tree?: TreeTypes;                           // /t/:treeId で提供
   pageTreeNode?: TreeNode;               // /t/:treeId/:pageTreeNodeId? で提供（未指定時はルートノード解決）
   targetTreeNode?: TreeNode;             // /t/:treeId/:pageTreeNodeId?/:targetTreeNodeId? で提供
   treeNodeType?: TreeNodeType;           // /t/.../:treeNodeType? で提供（パラメータの型アサーション）
@@ -282,13 +282,13 @@ export default function RootLayout() {
 - 返却型: `LoadTreeReturn`
   - フィールド
     - `client: WorkerAPIClient` … UI と Worker(API) のブリッジ
-    - `tree: Tree | undefined` … 指定 `treeId` のツリー。見つからない場合は `undefined`
+    - `tree: TreeTypes | undefined` … 指定 `treeId` のツリー。見つからない場合は `undefined`
 - 重要ポイント
   - `treeId` が未指定の場合はエラー: `throw new Error('treeId is required')`
 
 型定義抜粋:
 ```ts
-export type LoadTreeReturn = { tree: Tree | undefined } & { client: WorkerAPIClient };
+export type LoadTreeReturn = { tree: TreeTypes | undefined } & { client: WorkerAPIClient };
 ```
 
 ---
@@ -299,7 +299,7 @@ export type LoadTreeReturn = { tree: Tree | undefined } & { client: WorkerAPICli
 - 返却型: `LoadPageTreeNodeReturn`（`LoadTreeReturn` を内包）
   - フィールド
     - `client: WorkerAPIClient`
-    - `tree: Tree | undefined`
+    - `tree: TreeTypes | undefined`
     - `pageTreeNode: TreeNode | undefined`
 - 既定解決
   - `pageTreeNodeId` が空なら、`treeId + TreeNodeTypes.Root` をノードIDとして解決（ルートノード）
@@ -358,7 +358,7 @@ return { ...loadTargetTreeNodeReturn, treeNodeType: treeNodeType as TreeNodeType
 - 返却型: `LoadTreeNodeActionReturn`（`LoadTreeNodeTypeReturn` を内包）
   - フィールド
     - `client: WorkerAPIClient`
-    - `tree: Tree | undefined`
+    - `tree: TreeTypes | undefined`
     - `pageTreeNode: TreeNode | undefined`
     - `targetTreeNode: TreeNode | undefined`
     - `treeNodeType: TreeNodeType | undefined`
@@ -378,7 +378,7 @@ const data = useLoaderData() as LoadTreeNodeActionReturn;
 参照フック（useRouteLoaderData ベース）
 - ルートIDはファイルパスに対応する文字列。各階層の loader の結果を取り出すヘルパーがある。
   - `useWorkerAPIClient(): WorkerAPIClient` … ルートID `'t'`
-  - `useTree(): Tree | undefined` … ルートID `'t/($treeId)'`
+  - `useTree(): TreeTypes | undefined` … ルートID `'t/($treeId)'`
   - `usePageTreeNode(): TreeNode | undefined` … ルートID `'t/($treeId)/($pageTreeNodeId)'`
   - `useTargetTreeNode(): TreeNode | undefined` … ルートID `'t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)'`
   - `useTreeNodeType(): TreeNodeType | undefined` … ルートID `'t/($treeId)/($pageTreeNodeId)/($targetTreeNodeId)/($treeNodeType)'`

@@ -165,7 +165,7 @@ CREATE TABLE row_entities (
 -- ================================================================================
 
 -- ------------------------------------------------------------------------------
--- WorkingCopy Store (EphemeralDB)
+-- WorkingCopyTypes Store (EphemeralDB)
 -- 🟡 Temporary editing states with undo/redo support
 -- ------------------------------------------------------------------------------
 -- Dexie Schema Definition:

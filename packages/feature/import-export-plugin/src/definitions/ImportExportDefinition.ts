@@ -2,7 +2,7 @@
  * Import/Export Plugin Definition
  */
 
-import type { PluginDefinition } from '@hierarchidb/common-core';
+import type { PluginDefinition } from '@hierarchidb/common-type';
 // ImportExportEntity is used in validation but TypeScript doesn't detect it
 
 /**
@@ -13,13 +13,13 @@ export const ImportExportDefinition: PluginDefinition = {
   nodeType: 'import-export-plugin',
   name: 'ImportExport',
   displayName: 'Import/Export Operation',
-  
+
   // Icon configuration
-  icon: { 
+  icon: {
     muiIconName: 'Sync',
     emoji: '🔄',
     color: '#2196F3',
-    description: 'Import/Export data operations'
+    description: 'Import/Export data operations',
   },
 
   // Category configuration
@@ -59,9 +59,8 @@ export const ImportExportDefinition: PluginDefinition = {
           }
           return { valid: true };
         },
-        getMessage: (entity: any) => 
-          `Invalid operation name: "${entity.name}"`,
+        getMessage: (entity: any) => `Invalid operation name: "${entity.name}"`,
       },
     ],
   },
-};;
+};

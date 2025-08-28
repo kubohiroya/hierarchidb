@@ -1,5 +1,5 @@
 // Define local types instead of importing from ui-plugin-base for now
-import type { TreeNode } from '@hierarchidb/common-core';
+import type { TreeNode } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../entities/FolderEntity';
 import type {
   DialogStepDefinition,

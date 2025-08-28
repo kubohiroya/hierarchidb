@@ -31,7 +31,7 @@
 
 ### 1. 一般的な地理情報
 - **GeoNames**: 1,180万件以上の地名データ（都市、行政区画、郵便番号、自然地形など）
-- **Wikidata Geographic Entities**: 構造化された地理エンティティデータ（ランドマーク、観光地など）
+- **Wikidata Geographic EntityTypes**: 構造化された地理エンティティデータ（ランドマーク、観光地など）
 
 ### 2. 施設・POI（Points of Interest）
 - **OpenStreetMap POI (Overpass API)**: レストラン、ホテル、病院、学校などのアメニティ

@@ -1,5 +1,5 @@
-import type { NodeType } from '../../types';
-import type { PackageJson, PluginDiscoveryResult } from '../types';
+import { NodeType, PackageJson } from '@hierarchidb/common-type';
+import { PluginDiscoveryResult } from '../types/DiscoveryTypes';
 
 /**
  * Plugin discovery system that reads dependencies directly from package.json files

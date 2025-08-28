@@ -13,7 +13,7 @@ import type {
   CommitWorkingCopyPayload,
   CommitWorkingCopyForCreatePayload,
   DiscardWorkingCopyPayload,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import { createCommand, createAdapterCommandId } from '../utils';
 import type { CommandAdapterOptions } from '../../types/index';
 import { TreeConsoleAdapterError } from '../../types/index';

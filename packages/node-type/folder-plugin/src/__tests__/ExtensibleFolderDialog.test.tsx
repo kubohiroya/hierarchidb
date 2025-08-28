@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { DialogStepDefinition } from '@hierarchidb/ui-plugin-base';
 
 describe('ExtensibleFolderDialog', () => {

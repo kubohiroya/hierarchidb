@@ -259,7 +259,7 @@ sequenceDiagram
     participant UI as UI Component
     participant Client as UI Client
     participant Worker as Worker API
-    participant Service as Tree Service
+    participant Service as TreeTypes Service
     participant Handler as Entity Handler
     participant CoreDB as CoreDB
     participant Registry as Node Registry

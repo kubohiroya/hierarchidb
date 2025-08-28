@@ -1,15 +1,16 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
     "composite": true,
     "incremental": true,
-    "noEmit": false,
+    "noEmit": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node"],
-    "skipLibCheck": true  // Required for @types/node compatibility with TypeScript 4.9
+    "types": ["node", "vite/client", "vitest/globals"],
+    "esModuleInterop": true,
+    "skipLibCheck": true // Required for @types/node compatibility with TypeScript 4.9
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

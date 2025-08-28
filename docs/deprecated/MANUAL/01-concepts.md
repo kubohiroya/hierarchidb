@@ -28,7 +28,7 @@
 - `description`: 説明文
 - `isDraft`: ドラフト状態フラグ
 
-### Tree（ツリー）
+### TreeTypes（ツリー）
 TreeNodeの集合体として管理される階層構造全体。
 
 ### Entity（エンティティ）
@@ -58,7 +58,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 
 ## ワーキングコピーシステム
 
-### WorkingCopy（ワーキングコピー）
+### WorkingCopyTypes（ワーキングコピー）
 編集時に作成される一時的なデータのコピー。
 
 **特徴:**
@@ -99,7 +99,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 特定の機能を提供する拡張モジュール。
 
 **構成要素:**
-- NodeTypeDefinition（ノードタイプ定義）
+- PluginDefinition（ノードタイプ定義）
 - EntityHandler（エンティティ処理）
 - UI Components（UIコンポーネント）
 - Lifecycle Hooks（ライフサイクルフック）

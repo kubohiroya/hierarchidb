@@ -184,7 +184,7 @@ classDiagram
         +getEntity(nodeId): Promise~Entity~
         +updateEntity(nodeId, data): Promise~void~
         +deleteEntity(nodeId): Promise~void~
-        +createWorkingCopy(nodeId): Promise~WorkingCopy~
+        +createWorkingCopy(nodeId): Promise~WorkingCopyTypes~
         +commitWorkingCopy(nodeId, wc): Promise~void~
         +discardWorkingCopy(nodeId): Promise~void~
         #generateNodeId(): string

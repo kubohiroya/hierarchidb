@@ -1,5 +1,5 @@
 /**
- * @file default-plugins.ts
+ * @file default-plugin.ts
  * @description Default plugin definitions for the system
  */
 
@@ -8,7 +8,9 @@ import { EntityHandler } from '@hierarchidb/common-core';
 import type { NodeId } from '@hierarchidb/common-core';
 
 // Basic working entity handler for default plugins
-class DefaultEntityHandler implements EntityHandler<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> {
+class DefaultEntityHandler
+  implements EntityHandler<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
+{
   async createEntity(nodeId: NodeId, data?: Partial<PeerEntity>): Promise<PeerEntity> {
     // Create a basic entity with minimal required fields
     const entity: PeerEntity = {
@@ -19,53 +21,56 @@ class DefaultEntityHandler implements EntityHandler<PeerEntity, GroupEntity, Pee
       version: 1,
       ...data, // Spread additional data
     };
-    
+
     // In a real implementation, this would save to database
     console.log(`Created entity for node ${nodeId}:`, entity);
     return entity;
   }
-  
+
   async getEntity(nodeId: NodeId): Promise<PeerEntity | undefined> {
     // In a real implementation, this would query the database
     console.log(`Getting entity for node ${nodeId}`);
     return undefined; // Return undefined for now as we don't have persistent storage
   }
-  
+
   async updateEntity(nodeId: NodeId, data: Partial<PeerEntity>): Promise<void> {
     // In a real implementation, this would update the database
     console.log(`Updated entity for node ${nodeId}:`, data);
   }
-  
+
   async deleteEntity(nodeId: NodeId): Promise<void> {
     // In a real implementation, this would delete from database
     console.log(`Deleted entity for node ${nodeId}`);
   }
-  
+
   async createWorkingCopy(nodeId: NodeId): Promise<PeerEntity & WorkingCopyProperties> {
     // Create working copy based on existing entity
     const entity = await this.getEntity(nodeId);
     const workingCopy: PeerEntity & WorkingCopyProperties = {
-      ...entity || {
+      ...(entity || {
         id: crypto.randomUUID() as any,
         nodeId,
         createdAt: Date.now() as any,
         updatedAt: Date.now() as any,
         version: 1,
-      },
+      }),
       originalNodeId: nodeId,
       copiedAt: Date.now(),
       hasEntityCopy: true,
     };
-    
+
     console.log(`Created working copy for node ${nodeId}:`, workingCopy);
     return workingCopy;
   }
-  
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: PeerEntity & WorkingCopyProperties): Promise<void> {
+
+  async commitWorkingCopy(
+    nodeId: NodeId,
+    workingCopy: PeerEntity & WorkingCopyProperties
+  ): Promise<void> {
     // In a real implementation, this would commit the working copy to the main entity
     console.log(`Committed working copy for node ${nodeId}:`, workingCopy);
   }
-  
+
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
     // In a real implementation, this would discard the working copy
     console.log(`Discarded working copy for node ${nodeId}`);
@@ -77,7 +82,11 @@ const defaultEntityHandler = new DefaultEntityHandler();
 /**
  * Folder plugin definition
  */
-export const folderPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const folderPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'folder',
   name: 'Folder',
   displayName: 'Folder',
@@ -115,7 +124,11 @@ export const folderPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity 
 /**
  * BaseMap plugin definition
  */
-export const basemapPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const basemapPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'basemap',
   name: 'BaseMap',
   displayName: 'Base Map',
@@ -153,7 +166,11 @@ export const basemapPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity
 /**
  * StyleMap plugin definition
  */
-export const stylemapPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const stylemapPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'stylemap',
   name: 'StyleMap',
   displayName: 'Style Map',
@@ -191,7 +208,11 @@ export const stylemapPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntit
 /**
  * Shape plugin definition
  */
-export const shapePlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const shapePlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'shape',
   name: 'Shape',
   displayName: 'Geographic Shape',
@@ -229,7 +250,11 @@ export const shapePlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity &
 /**
  * Project plugin definition
  */
-export const projectPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const projectPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'project',
   name: 'Project',
   displayName: 'Project',
@@ -267,7 +292,11 @@ export const projectPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity
 /**
  * Note/Document plugin definition
  */
-export const notePlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const notePlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'note',
   name: 'Note',
   displayName: 'Note',
@@ -305,7 +334,11 @@ export const notePlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & 
 /**
  * Spreadsheet plugin definition
  */
-export const spreadsheetPlugin: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> = {
+export const spreadsheetPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
   nodeType: 'spreadsheet',
   name: 'Spreadsheet',
   displayName: 'Spreadsheet',

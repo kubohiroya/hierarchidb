@@ -96,7 +96,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
-  "@typescript-eslint/visitor-keys@5.62.0": {
+  "@typescript-eslint/visitor-keys@7.18.0": {
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },

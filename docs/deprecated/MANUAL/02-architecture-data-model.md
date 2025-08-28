@@ -22,12 +22,12 @@ HierarchiDBのデータモデルは、コアのTreeNode構造と、プラグイ�
 ┌─────────────────────────────────────────────────────────────────┐
 │                    HierarchiDB Data Model                      │
 ├─────────────────────────────────────────────────────────────────┤
-│  Layer 1: Core Tree Structure (TreeNode, Tree, TreeRootState)  │
+│  Layer 1: Core TreeTypes Structure (TreeNode, TreeTypes, TreeRootState)  │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │  - TreeNode (基本ツリー構造)                              │    │
-│  │  - Tree (ツリーメタデータ)                               │    │
+│  │  - TreeTypes (ツリーメタデータ)                               │    │
 │  │  │  - TreeRootState (展開状態)                          │    │
-│  │  - WorkingCopy (一時編集データ)                          │    │
+│  │  - WorkingCopyTypes (一時編集データ)                          │    │
 │  └─────────────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────────────┤
 │  Layer 2: Plugin Entity Classification (6-Class System)        │
@@ -72,7 +72,7 @@ export type RegularNodeId = NodeId & { readonly __type: 'Regular' };
 
 ```typescript
 // ツリーメタデータ
-export interface Tree {
+export interface TreeTypes {
   id: TreeId;
   rootNodeId: RootNodeId;
   trashRootNodeId: TrashRootNodeId;
@@ -122,7 +122,7 @@ export interface WorkingCopyProperties {
   isDirty: boolean;
 }
 
-export type WorkingCopy = TreeNode & WorkingCopyProperties;
+export type WorkingCopyTypes = TreeNode & WorkingCopyProperties;
 ```
 
 ### 6.2.3 ツリー状態管理
@@ -288,8 +288,8 @@ export interface EphemeralRelationalEntity extends RelationalEntity {
 ```typescript
 // データベース管理クラス
 export class DatabaseManager {
-  private coreDB: Dexie;      // Persistent Entities
-  private ephemeralDB: Dexie; // Ephemeral Entities
+  private coreDB: Dexie;      // Persistent EntityTypes
+  private ephemeralDB: Dexie; // Ephemeral EntityTypes
   
   constructor() {
     this.coreDB = new Dexie('HierarchiDB_Core');
@@ -310,7 +310,7 @@ export class DatabaseManager {
 
 ```typescript
 export class CoreDB extends Dexie {
-  trees!: Table<Tree, TreeId>;
+  trees!: Table<TreeTypes, TreeId>;
   nodes!: Table<TreeNode, NodeId>;
   rootStates!: Table<TreeRootState, [TreeId, TreeRootNodeType]>;
   
@@ -340,7 +340,7 @@ export class CoreDB extends Dexie {
 
 ```typescript
 export class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopy, UUID>;
+  workingCopies!: Table<WorkingCopyTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
   
   // Ephemeralエンティティストア（動的登録）
@@ -402,8 +402,8 @@ export class DynamicSchemaManager {
 ```typescript
 export interface TreeQueryService {
   // Core TreeNode operations
-  getTrees(): Promise<Tree[]>;
-  getTree(id: TreeId): Promise<Tree | undefined>;
+  getTrees(): Promise<TreeTypes[]>;
+  getTree(id: TreeId): Promise<TreeTypes | undefined>;
   getNode(nodeId: NodeId): Promise<TreeNode | undefined>;
   getChildren(parentId: NodeId): Promise<TreeNode[]>;
   getDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]>;
@@ -443,7 +443,7 @@ export interface TreeMutationService {
   copyNode(payload: CopyNodePayload): Promise<CommandResult>;
   
   // Working Copy operations
-  createWorkingCopy(nodeId: NodeId): Promise<WorkingCopy>;
+  createWorkingCopy(nodeId: NodeId): Promise<WorkingCopyTypes>;
   updateWorkingCopy(workingCopyId: UUID, changes: Partial<TreeNode>): Promise<void>;
   commitWorkingCopy(workingCopyId: UUID): Promise<CommandResult>;
   discardWorkingCopy(workingCopyId: UUID): Promise<void>;

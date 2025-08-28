@@ -17,7 +17,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
 import {
   ShapeEntity,
@@ -54,7 +54,7 @@ export function ShapeDialog({
   const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy | null>(null);
   const [initializing, setInitializing] = useState(false);
 
-  // ✅ For Step 1, use temporary state (no WorkingCopy yet)
+  // ✅ For Step 1, use temporary state (no WorkingCopyTypes yet)
   const initializeTempState = useCallback(() => {
     const tempState: ShapeWorkingCopy = {
       id: 'temp-id' as any,
@@ -91,7 +91,7 @@ export function ShapeDialog({
     }
   }, [open, activeStep, workingCopy, initializing, initializeTempState]);
 
-  // ✅ Step-based initialization - Only create WorkingCopy at Step 2
+  // ✅ Step-based initialization - Only create WorkingCopyTypes at Step 2
   const initializeWorkingCopyForStep2 = useCallback(async () => {
     if (initializing || workingCopy) return;
 
@@ -123,7 +123,7 @@ export function ShapeDialog({
   }, [mode, nodeId, parentId, getShapeAPI, onError, initializing, workingCopy]);
 
   const handleNext = useCallback(async () => {
-    // ✅ Step 1 → Step 2: Create actual WorkingCopy (CopyOnWrite)
+    // ✅ Step 1 → Step 2: Create actual WorkingCopyTypes (CopyOnWrite)
     if (activeStep === 1 && !initializing && workingCopy?.id === 'temp-id') {
       await initializeWorkingCopyForStep2();
     }

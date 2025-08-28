@@ -1,4 +1,4 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 
 // Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };

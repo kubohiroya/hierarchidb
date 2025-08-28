@@ -22,7 +22,7 @@ The Shape Plugin enables HierarchiDB to handle geographic shape data from source
 ```
 UI Layer (React Components)
 ├── ShapeDialog.tsx - Main configuration dialog
-├── ShapePanel.tsx - Tree node panel
+├── ShapePanel.tsx - TreeTypes node panel
 ├── BatchProgressSplitView.tsx - Monitoring interface
 └── ErrorReportPanel.tsx - Error display and recovery
 

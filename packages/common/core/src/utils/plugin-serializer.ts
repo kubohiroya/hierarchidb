@@ -3,10 +3,7 @@
  * @description Plugin entity serialization utilities with Uint8Array handling
  */
 
-import type { 
-  SerializationResult, 
-  DeserializationInput
-} from '../types/plugin-serialization';
+import { DeserializationInput, SerializationResult } from '@hierarchidb/common-type';
 
 /**
  * Plugin Entity Serializer
@@ -18,21 +15,21 @@ import type {
  */
 export class PluginEntitySerializer {
   private static readonly UINT8_ARRAY_SUFFIX = '_Uint8Array';
-  
+
   /**
    * Serialize entity with _Uint8Array suffix handling
    */
   static serialize(entity: any): SerializationResult {
     const binaryData = new Map<string, Uint8Array>();
     const binaryFilenames = new Map<string, string>();
-    
+
     // Deep clone and process entity
     const jsonData = this.processObjectForSerialization(entity, binaryData, binaryFilenames);
 
     return {
       jsonData,
       binaryData,
-      binaryFilenames
+      binaryFilenames,
     };
   }
 
@@ -41,7 +38,7 @@ export class PluginEntitySerializer {
    */
   static deserialize(input: DeserializationInput): any {
     const { jsonData, binaryData } = input;
-    
+
     return this.processObjectForDeserialization(jsonData, binaryData);
   }
 
@@ -58,7 +55,9 @@ export class PluginEntitySerializer {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.processObjectForSerialization(item, binaryData, binaryFilenames));
+      return obj.map((item) =>
+        this.processObjectForSerialization(item, binaryData, binaryFilenames)
+      );
     }
 
     const result: any = {};
@@ -68,7 +67,7 @@ export class PluginEntitySerializer {
         const uuid = crypto.randomUUID();
         const basePropertyName = key.replace(this.UINT8_ARRAY_SUFFIX, '');
         const filename = `${basePropertyName}_${uuid}.bin`;
-        
+
         binaryData.set(uuid, value);
         binaryFilenames.set(uuid, filename);
         result[key] = uuid; // Store UUID reference
@@ -94,12 +93,16 @@ export class PluginEntitySerializer {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.processObjectForDeserialization(item, binaryData));
+      return obj.map((item) => this.processObjectForDeserialization(item, binaryData));
     }
 
     const result: any = {};
     for (const [key, value] of Object.entries(obj)) {
-      if (key.endsWith(this.UINT8_ARRAY_SUFFIX) && typeof value === 'string' && binaryData.has(value)) {
+      if (
+        key.endsWith(this.UINT8_ARRAY_SUFFIX) &&
+        typeof value === 'string' &&
+        binaryData.has(value)
+      ) {
         // Restore Uint8Array from UUID reference
         result[key] = binaryData.get(value);
       } else if (typeof value === 'object') {
@@ -124,10 +127,10 @@ export class PluginEntitySerializer {
     const binaryData = new Map<string, Uint8Array>();
     const binaryFilenames = new Map<string, string>();
 
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const result = this.serialize(entity);
       jsonArray.push(result.jsonData);
-      
+
       // Merge binary data
       result.binaryData.forEach((data, uuid) => {
         binaryData.set(uuid, data);
@@ -143,13 +146,8 @@ export class PluginEntitySerializer {
   /**
    * Deserialize array of entities
    */
-  static deserializeEntityArray(
-    jsonArray: any[],
-    binaryData: Map<string, Uint8Array>
-  ): any[] {
-    return jsonArray.map(jsonData => 
-      this.deserialize({ jsonData, binaryData })
-    );
+  static deserializeEntityArray(jsonArray: any[], binaryData: Map<string, Uint8Array>): any[] {
+    return jsonArray.map((jsonData) => this.deserialize({ jsonData, binaryData }));
   }
 
   /**
@@ -174,7 +172,7 @@ export class PluginEntitySerializer {
    */
   static calculateBinaryDataSize(binaryData: Map<string, Uint8Array>): number {
     let totalSize = 0;
-    binaryData.forEach(data => {
+    binaryData.forEach((data) => {
       totalSize += data.byteLength;
     });
     return totalSize;
@@ -194,7 +192,7 @@ export class PluginEntitySerializer {
       return { count: 0, totalSize: 0, averageSize: 0, minSize: 0, maxSize: 0 };
     }
 
-    const sizes = Array.from(binaryData.values()).map(data => data.byteLength);
+    const sizes = Array.from(binaryData.values()).map((data) => data.byteLength);
     const totalSize = sizes.reduce((sum, size) => sum + size, 0);
 
     return {
@@ -202,7 +200,7 @@ export class PluginEntitySerializer {
       totalSize,
       averageSize: Math.round(totalSize / binaryData.size),
       minSize: Math.min(...sizes),
-      maxSize: Math.max(...sizes)
+      maxSize: Math.max(...sizes),
     };
   }
 }

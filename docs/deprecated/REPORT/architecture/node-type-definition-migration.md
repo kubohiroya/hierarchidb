@@ -1,4 +1,4 @@
-# NodeTypeDefinition アーキテクチャ改善
+# PluginDefinition アーキテクチャ改善
 
 ## 🏗️ 概要
 
@@ -10,7 +10,7 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 
 ```
 @hierarchidb/core
-├── types/nodeDefinition.ts  ⚠️ Reactに依存
+├── types/entity-types.ts  ⚠️ Reactに依存
 └── registry/NodeTypeRegistry.ts ⚠️ UI関連型を含む
 ```
 
@@ -18,11 +18,11 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 
 ```
 @hierarchidb/core
-├── types/nodeDefinition.ts     ✅ NodeTypeDefinition（UI非依存）
+├── types/entity-types.ts     ✅ PluginDefinition（UI非依存）
 └── registry/NodeTypeRegistry.ts ✅ Core専用レジストリ
 
 @hierarchidb/ui-core
-└── types/nodeDefinition.ts     ✅ UINodeTypeDefinition（React依存）
+└── types/entity-types.ts     ✅ UINodeTypeDefinition（React依存）
 ```
 
 ## 📝 API変更
@@ -31,7 +31,7 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 
 ```typescript
 // Core専用型（UI非依存）
-export interface NodeTypeDefinition<
+export interface PluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy,
@@ -47,8 +47,8 @@ export interface NodeTypeDefinition<
 
 // NodeTypeRegistry
 class NodeTypeRegistry {
-  register(definition: NodeTypeDefinition): void;
-  getDefinition(nodeType: TreeNodeType): NodeTypeDefinition | undefined;
+  register(definition: PluginDefinition): void;
+  getDefinition(nodeType: TreeNodeType): PluginDefinition | undefined;
 }
 ```
 
@@ -78,9 +78,9 @@ class UINodeTypeRegistry {
 
 ```typescript
 // 変更なし - 既存のNodeTypeDefinitionがクリーンになっただけ
-import { NodeTypeDefinition } from '@hierarchidb/core';
+import { PluginDefinition } from '@hierarchidb/core';
 
-const definition: NodeTypeDefinition = {
+const definition: PluginDefinition = {
   nodeType: 'document',
   name: 'Document',
   displayName: 'Document Node',
@@ -144,7 +144,7 @@ const DialogComponent = uiDefinition?.ui?.dialogComponent;
 - UI層はブラウザー専用
 
 ### **3. クリーンな実装**
-- `NodeTypeDefinition`はCore層専用にクリーン化
+- `PluginDefinition`はCore層専用にクリーン化
 - 後方互換性を考慮した`@deprecated`コードは削除済み
 
 ### **4. 型安全性の向上**
@@ -156,9 +156,9 @@ const DialogComponent = uiDefinition?.ui?.dialogComponent;
 ### **Core層テスト**
 ```typescript
 // @hierarchidb/core/tests
-describe('NodeTypeDefinition', () => {
+describe('PluginDefinition', () => {
   it('should register core definition without UI dependencies', () => {
-    const definition: NodeTypeDefinition = { ... };
+    const definition: PluginDefinition = { ... };
     expect(() => registry.register(definition)).not.toThrow();
   });
 });

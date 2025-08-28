@@ -73,11 +73,11 @@ describe('Basic API Verification', () => {
       expect(health).toHaveProperty('services');
       expect(health).toHaveProperty('memory');
       expect(health).toHaveProperty('uptime');
-      
+
       // Check that databases are initialized
       expect(health.databases.coreDB).toBe(true);
       expect(health.databases.ephemeralDB).toBe(true);
-      
+
       // Check that core services are available
       expect(health.services.query).toBe(true);
       expect(health.services.mutation).toBe(true);
@@ -89,11 +89,11 @@ describe('Basic API Verification', () => {
     it('should list default trees', async () => {
       const trees = await workerAPI.listTrees();
       expect(Array.isArray(trees)).toBe(true);
-      
+
       // Default setup should have Resources and Projects trees
       expect(trees.length).toBeGreaterThanOrEqual(2);
-      
-      const treeNames = trees.map(t => t.name);
+
+      const treeNames = trees.map((t) => t.name);
       expect(treeNames).toContain('Resources');
       expect(treeNames).toContain('Projects');
     });
@@ -105,7 +105,7 @@ describe('Basic API Verification', () => {
       if (trees.length > 0) {
         const firstTree = trees[0];
         const retrievedTree = await workerAPI.getTree({ treeId: firstTree.id });
-        
+
         expect(retrievedTree).toBeDefined();
         expect(retrievedTree!.id).toBe(firstTree.id);
         expect(retrievedTree!.name).toBe(firstTree.name);
@@ -122,18 +122,18 @@ describe('Basic API Verification', () => {
       if (trees.length > 0) {
         const firstTree = trees[0];
         const children = await workerAPI.getChildren({ parentId: firstTree.rootId });
-        
+
         expect(Array.isArray(children)).toBe(true);
         // Root might have no children initially, so just verify it returns an array
       }
     });
   });
 
-  describe('WorkingCopy Service Basics', () => {
+  describe('WorkingCopyTypes Service Basics', () => {
     it('should list working copies (initially empty)', async () => {
       const workingCopyAPI = workerAPI.getWorkingCopyAPI();
       const workingCopies = await workingCopyAPI.listWorkingCopies();
-      
+
       expect(Array.isArray(workingCopies)).toBe(true);
       // Initially should be empty
       expect(workingCopies.length).toBe(0);
@@ -142,13 +142,13 @@ describe('Basic API Verification', () => {
     it('should provide working copy stats', async () => {
       const workingCopyAPI = workerAPI.getWorkingCopyAPI();
       const stats = await workingCopyAPI.getWorkingCopyStats();
-      
+
       expect(stats).toHaveProperty('total');
       expect(stats).toHaveProperty('drafts');
       expect(stats).toHaveProperty('edits');
       expect(stats).toHaveProperty('oldestTimestamp');
       expect(stats).toHaveProperty('newestTimestamp');
-      
+
       expect(typeof stats.total).toBe('number');
       expect(typeof stats.drafts).toBe('number');
       expect(typeof stats.edits).toBe('number');

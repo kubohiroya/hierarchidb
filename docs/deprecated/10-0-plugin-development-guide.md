@@ -633,7 +633,7 @@ export class PluginRegistry { /* ... */ }
 
 ## 付録B: プラグイン作成チェックリスト
 
-- [ ] 型定義 (Entity, WorkingCopy)
+- [ ] 型定義 (Entity, WorkingCopyTypes)
 - [ ] データベーススキーマ
 - [ ] EntityHandler実装
 - [ ] ライフサイクルフック

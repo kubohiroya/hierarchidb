@@ -1,7 +1,7 @@
 import { FolderEntityHandler } from './FolderEntityHandler';
 import { folderExtensionRegistry } from '../api/FolderExtensionAPI';
 import type { FolderEntity } from '../entities/FolderEntity';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Extended folder-plugin entity handler that supports plugin extensions

@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph移植: バッチセッション管理実装
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { BatchConfig } from '../types/BatchConfig';
 import type { BatchTaskLike, BatchStage } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';

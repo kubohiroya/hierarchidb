@@ -3,7 +3,7 @@
  * API interface definitions for import/export operations
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 
 // DOM API types for TypeScript 4.9 compatibility
 declare global {
@@ -13,15 +13,15 @@ declare global {
     readonly webkitRelativePath: string;
   }
 }
-import { 
-  ImportExportEntity, 
-  CreateImportExportData, 
+import {
+  ImportExportEntity,
+  CreateImportExportData,
   UpdateImportExportData,
   ImportExportStatistics,
   OperationProgress,
   ExecutionRecord,
   DataFormat,
-  OperationType
+  OperationType,
 } from './ImportExportEntity';
 
 /**

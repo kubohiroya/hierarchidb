@@ -57,11 +57,11 @@ HierarchiDBの現バージョンで実際に利用可能な機能を説明しま
 
 1. **CoreDB**: 永続データの保存
    - TreeNode（階層構造）
-   - Tree（ツリーメタデータ）
+   - TreeTypes（ツリーメタデータ）
    - プラグインエンティティ
 
 2. **EphemeralDB**: 一時データの保存
-   - WorkingCopy（編集中データ）
+   - WorkingCopyTypes（編集中データ）
    - セッション情報
 
 ### 自動保存

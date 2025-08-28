@@ -13,7 +13,7 @@
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
 import { shapeDB, type VectorTileRecord } from '../database/ShapeDB';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type {
   TileMetadata,
   //LayerInfo,

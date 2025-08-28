@@ -552,7 +552,7 @@ export class DependencyResolver {
 ```typescript
 // packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
-export const StyleMapDefinition: NodeTypeDefinition = {
+export const StyleMapDefinition: PluginDefinition = {
   nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',

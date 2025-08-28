@@ -1,4 +1,4 @@
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Data required to create a new folder-plugin

@@ -118,7 +118,7 @@
 ## プラグイン開発制約
 
 ### 必須実装
-- NodeTypeDefinition
+- PluginDefinition
 - EntityHandler
 - ダイアログコンポーネント
 

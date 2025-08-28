@@ -4,7 +4,7 @@ A flexible button group component for toggling between multiple tree views with 
 
 ## Features
 
-- **Flexible Tree Configuration**: Support for any number of tree views
+- **Flexible TreeTypes Configuration**: Support for any number of tree views
 - **Customizable Appearance**: Each tree can have its own icon, color, and tooltip
 - **State Preservation**: Automatically saves and restores the last visited page node ID for each tree
 - **Context Validation**: Optional validation to ensure nodes are saved to the correct tree
@@ -316,7 +316,7 @@ const trees = [
 
 ## Advanced Examples
 
-### Dynamic Tree List
+### Dynamic TreeTypes List
 
 ```tsx
 function DynamicTreeToggle() {

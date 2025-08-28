@@ -11,7 +11,7 @@
  */
 
 import { useCallback } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPIAdapter } from '~/adapters';
 
 export interface UseCRUDOperationsOptions {

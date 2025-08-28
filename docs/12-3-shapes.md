@@ -10,7 +10,7 @@
 
 ## 12.3.1 概要
 - 目的: GeoJSON のアップロード、選択的読み込み、簡略化（simplify）、ベクトルタイル（tiles）生成を提供。
-- Tree: Resources ツリー配下。
+- TreeTypes: Resources ツリー配下。
 - NodeType: `shapes`
 
 ## 12.3.2 データモデル（Entity / Sub-Entity / Working Copy）
@@ -26,7 +26,7 @@
   - updatedAt: number
 - Sub-Entity: FeatureSubEntity（任意）
   - 特定のフィーチャに関するメタ情報を格納
-- WorkingCopy: ShapeWorkingCopy（例）
+- WorkingCopyTypes: ShapeWorkingCopy（例）
   - 簡略化やフィルタの試行錯誤を安全に行うための一時状態
 
 ## 12.3.3 UnifiedPluginDefinition（想定）

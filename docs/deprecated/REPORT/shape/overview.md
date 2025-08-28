@@ -34,7 +34,7 @@ Four-stage Worker pool architecture:
 
 ### 3. Data Storage
 Comprehensive entity system supporting:
-- **Shape Entities**: Main geographic feature data
+- **Shape EntityTypes**: Main geographic feature data
 - **Batch Tasks**: Processing pipeline state management
 - **Feature Buffers**: Optimized geometric data storage
 - **Vector Tiles**: Cached tile data for visualization

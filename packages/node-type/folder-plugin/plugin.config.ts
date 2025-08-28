@@ -3,9 +3,9 @@ export default {
   version: '1.0.0',
   description: 'Hierarchical folder-plugin management plugin',
   author: 'HierarchiDB Team',
-  dependencies: ['@hierarchidb/common-core', '@hierarchidb/runtime-worker', 'dexie'],
+  dependencies: ['@hierarchidb/common-type', '@hierarchidb/runtime-worker', 'dexie'],
   peerDependencies: {
-    '@hierarchidb/common-core': '^1.0.0',
+    '@hierarchidb/common-type': '^1.0.0',
     '@hierarchidb/runtime-worker': '^1.0.0',
   },
   lifecycle: {

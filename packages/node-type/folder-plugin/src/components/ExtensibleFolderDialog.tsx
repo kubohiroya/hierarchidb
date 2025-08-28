@@ -8,7 +8,7 @@ import {
 } from '@hierarchidb/ui-plugin-base';
 
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types';
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Base step data for folder-plugin dialogs

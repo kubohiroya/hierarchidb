@@ -92,7 +92,7 @@ The project uses a monorepo structure with 43 packages organized in dependency l
 ## 4. Database Strategy
 
 ### CoreDB (Long-lived, IndexedDB)
-- **TreeEntity** - Tree metadata with TreeId branding
+- **TreeEntity** - TreeTypes metadata with TreeId branding
 - **TreeNodeEntity** - Node hierarchy with NodeId branding
 - **TreeRootStateEntity** - Root node states
 - **Plugin entity stores** - Custom entity types with EntityId branding
@@ -114,7 +114,7 @@ rootStates: '&[treeId+treeRootNodeType], treeId, treeRootNodeId'
 
 ### Node Type Registration
 ```typescript
-const MyNodeDefinition: NodeTypeDefinition<Entity, SubEntity, WorkingCopy> = {
+const MyNodeDefinition: PluginDefinition<Entity, SubEntity, WorkingCopyTypes> = {
   nodeType: 'mytype', // String literal, not enum
   database: { 
     entityStore: 'mytypes',

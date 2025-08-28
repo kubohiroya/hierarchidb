@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { shapePluginAPI } from '../api';
-import type { EntityId, NodeId } from '@hierarchidb/common-core';
+import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import type { CreateShapeData, UpdateShapeData } from '../../shared';
 
 // Mock ShapeEntityHandler
@@ -22,8 +22,8 @@ describe('Shape Plugin API', () => {
     vi.clearAllMocks();
   });
 
-  describe('WorkingCopy Management (CopyOnWrite Pattern)', () => {
-    it('should create WorkingCopy for existing entity', async () => {
+  describe('WorkingCopyTypes Management (CopyOnWrite Pattern)', () => {
+    it('should create WorkingCopyTypes for existing entity', async () => {
       const nodeId = 'node-456' as NodeId;
       const mockEntity = {
         id: 'entity-123' as any,
@@ -61,7 +61,7 @@ describe('Shape Plugin API', () => {
       expect(mockHandler.createWorkingCopy).toHaveBeenCalledWith(mockEntity);
     });
 
-    it('should create new draft WorkingCopy', async () => {
+    it('should create new draft WorkingCopyTypes', async () => {
       const parentId = 'parent-456' as NodeId;
       const mockWorkingCopy = {
         id: 'working-copy-new' as any,
@@ -82,7 +82,7 @@ describe('Shape Plugin API', () => {
       expect(mockHandler.createNewDraftWorkingCopy).toHaveBeenCalledWith(parentId);
     });
 
-    it('should get WorkingCopy by ID', async () => {
+    it('should get WorkingCopyTypes by ID', async () => {
       const workingCopyId = 'working-copy-123' as any;
       const mockWorkingCopy = {
         id: workingCopyId,
@@ -103,7 +103,7 @@ describe('Shape Plugin API', () => {
       expect(mockHandler.getWorkingCopy).toHaveBeenCalledWith(workingCopyId);
     });
 
-    it('should update WorkingCopy with new data', async () => {
+    it('should update WorkingCopyTypes with new data', async () => {
       const workingCopyId = 'working-copy-123' as any;
       const updateData: UpdateShapeData = {
         name: 'Updated Shape Name',
@@ -126,7 +126,7 @@ describe('Shape Plugin API', () => {
       expect(mockHandler.updateWorkingCopy).toHaveBeenCalledWith(workingCopyId, updateData);
     });
 
-    it('should commit WorkingCopy to CoreDB', async () => {
+    it('should commit WorkingCopyTypes to CoreDB', async () => {
       const workingCopyId = 'working-copy-123' as any;
       const expectedNodeId = 'node-456' as NodeId;
 
@@ -143,7 +143,7 @@ describe('Shape Plugin API', () => {
       expect(mockHandler.commitWorkingCopy).toHaveBeenCalledWith(workingCopyId);
     });
 
-    it('should discard WorkingCopy from EphemeralDB', async () => {
+    it('should discard WorkingCopyTypes from EphemeralDB', async () => {
       const workingCopyId = 'working-copy-123' as any;
 
       const mockHandler = {
@@ -159,8 +159,8 @@ describe('Shape Plugin API', () => {
     });
   });
 
-  describe('WorkingCopy-based Batch Processing', () => {
-    it('should start batch processing with WorkingCopy ID', async () => {
+  describe('WorkingCopyTypes-based Batch Processing', () => {
+    it('should start batch processing with WorkingCopyTypes ID', async () => {
       const workingCopyId = 'working-copy-123' as any;
       const config = {
         concurrentDownloads: 2,

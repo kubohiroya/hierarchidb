@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import { PlayArrow as PlayArrowIcon, Category as CategoryIcon } from '@mui/icons-material';
 import { StepperDialog, useWorkingCopy } from '@hierarchidb/ui-dialog';
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/types';
 import { DEFAULT_PROCESSING_CONFIG } from '~/types';
 import { mockShapeService } from '~/services/MockShapeService';

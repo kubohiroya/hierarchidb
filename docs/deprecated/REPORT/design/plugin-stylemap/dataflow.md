@@ -32,7 +32,7 @@ flowchart TD
     SMS --> MGL[MapLibre GL JS]
     SMFC --> FS[File System]
     
-    %% Data Entities
+    %% Data EntityTypes
     CDB --> SMEntity[StyleMapEntity]
     CDB --> TMEntity[TableMetadataEntity] 
     CDB --> REntity[RowEntity]
@@ -262,9 +262,9 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> Original: Load from CoreDB
-    Original --> WorkingCopy: Create Working Copy
+    Original --> WorkingCopyTypes: Create Working Copy
     
-    state WorkingCopy {
+    state WorkingCopyTypes {
         [*] --> Clean
         Clean --> Dirty: User Edit
         Dirty --> Clean: Auto Save to EphemeralDB
@@ -280,8 +280,8 @@ stateDiagram-v2
         UndoRedoBuffer --> Dirty: Undo/Redo
     }
     
-    WorkingCopy --> Committed: Commit Changes
-    WorkingCopy --> Discarded: Cancel/Discard
+    WorkingCopyTypes --> Committed: Commit Changes
+    WorkingCopyTypes --> Discarded: Cancel/Discard
     
     Committed --> [*]: Save to CoreDB & Cleanup
     Discarded --> [*]: Delete Working Copy

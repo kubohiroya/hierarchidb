@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { NodeId } from "@hierarchidb/common-core";
+import type { NodeId } from "@hierarchidb/common-type";
 import { ShapesPluginAPI } from "../ShapesPluginAPI";
 import type { BatchProcessConfig, DataSourceInfo } from "../types";
 

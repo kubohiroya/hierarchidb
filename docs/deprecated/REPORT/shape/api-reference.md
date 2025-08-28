@@ -23,7 +23,7 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
   // Plugin lifecycle methods
   async initialize(): Promise<void>;
   async cleanup(): Promise<void>;
-  async getNodeTypeDefinition(): Promise<NodeTypeDefinition<ShapesEntity>>;
+  async getNodeTypeDefinition(): Promise<PluginDefinition<ShapesEntity>>;
 }
 ```
 

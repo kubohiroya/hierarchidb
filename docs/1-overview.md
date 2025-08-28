@@ -32,7 +32,7 @@ hierarchiidb のコアアーキテクチャは以下の4層で構成されます
     - 頻繁に変化する編集・表示状態を格納。
 
 **処理の流れ（例：ノード編集）**  
-UI → Comlink → Worker（EphemeralDB に WorkingCopy 保存）→ コミットで CoreDB に反映 → UI へ差分 publish。
+UI → Comlink → Worker（EphemeralDB に WorkingCopyTypes 保存）→ コミットで CoreDB に反映 → UI へ差分 publish。
 
 ```mermaid
 flowchart LR

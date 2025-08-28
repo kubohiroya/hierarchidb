@@ -9,9 +9,9 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { TreeViewController } from '../../../types/index';
-import type { TreeNode } from '@hierarchidb/common-core';
+import type { TreeNode } from '@hierarchidb/common-type';
 import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state';
 
 export interface DragDropOrchestratorResult {

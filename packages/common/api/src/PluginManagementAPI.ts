@@ -6,10 +6,7 @@
  * It's focused on the management aspects of plugins, separated from node type queries.
  */
 
-import type {
-  NodeType,
-  PluginDefinition,
-} from '@hierarchidb/common-core';
+import type { NodeType, NodeTypeDefinition } from '@hierarchidb/common-type';
 
 // 【型定義】: テストで期待される結果型の定義
 // 🟡 信頼性レベル: テスト仕様から推測した型構造
@@ -86,7 +83,7 @@ export interface PluginDependencyInfo {
 
 export interface BulkOperationOptions {
   operation: 'register' | 'unregister';
-  plugins?: PluginDefinition[];
+  definition?: NodeTypeDefinition[];
   nodeTypes?: NodeType[];
 }
 
@@ -118,8 +115,8 @@ export interface PluginResetResult {
   deletedEntities: {
     groupEntities?: number;
     relationalEntities?: number;
-    treeNodes?: number;  // Only for folder-plugin/system reset
-    peerEntities?: number;  // Only for folder-plugin/system reset
+    treeNodes?: number; // Only for folder-plugin/system reset
+    peerEntities?: number; // Only for folder-plugin/system reset
   };
   backupLocation?: string;
   error?: {
@@ -147,10 +144,10 @@ export interface PluginDeleteResult {
  * @example
  * ```typescript
  * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
- * 
+ *
  * // Register a new plugin
  * const result = await pluginMgmtAPI.register(myPluginDefinition);
- * 
+ *
  * // Check plugin health
  * const health = await pluginMgmtAPI.checkHealth('folder-plugin');
  * ```
@@ -167,10 +164,10 @@ export interface PluginManagementAPI {
    * @param definition - 登録するプラグインの定義
    * @returns 登録結果とプラグインID
    */
-  register(definition: PluginDefinition): Promise<PluginRegistrationResult>;
+  register(definition: NodeTypeDefinition): Promise<PluginRegistrationResult>;
 
   /**
-   * 【機能概要】: 登録済みプラグインをシステムから削除する  
+   * 【機能概要】: 登録済みプラグインをシステムから削除する
    * 【テスト対応】: unregister()の成功/失敗/警告ケースをテスト
    * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
    * @param nodeType - 削除するプラグインのノードタイプ
@@ -185,7 +182,7 @@ export interface PluginManagementAPI {
    * @param definition - 検証するプラグイン定義
    * @returns 検証結果と詳細エラー情報
    */
-  validatePlugin(definition: PluginDefinition): Promise<PluginValidationResult>;
+  validatePlugin(definition: NodeTypeDefinition): Promise<PluginValidationResult>;
 
   /**
    * 【機能概要】: プラグインの動作状況とパフォーマンスを監視する

@@ -35,7 +35,7 @@
 - TypeScriptライブラリに最適化
 - ESM/CJS両対応
 - 高速ビルド
-- Tree-shakingサポート
+- TreeTypes-shakingサポート
 - 設定がシンプル
 
 ```json
@@ -133,7 +133,7 @@ turbo.json更新:
 
 ## Phase 3: 共通設定の作成
 
-### packages/build-config/tsup.base.ts
+### packages/build-config/tsup.menu.ts
 ```typescript
 import { defineConfig } from 'tsup';
 
@@ -192,7 +192,7 @@ pnpm build --filter @hierarchidb/[package-name]
 1. **一貫性**: 全ライブラリパッケージが同じビルドツール
 2. **高速化**: tsupはesbuildベースで高速
 3. **シンプル**: 設定ファイルが統一され管理が容易
-4. **柔軟性**: ESM/CJS両対応、Tree-shaking対応
+4. **柔軟性**: ESM/CJS両対応、TreeTypes-shaking対応
 5. **DX向上**: watch modeが高速、ソースマップ対応
 
 ## 注意事項

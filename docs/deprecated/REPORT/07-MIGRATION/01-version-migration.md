@@ -65,7 +65,7 @@ interface TreeNode {
 
 **Migration Script:**
 ```typescript
-// migrate-ids.ts
+// migrate-id-types.ts
 import { NodeId, TreeId, EntityId } from '@hierarchidb/core';
 
 async function migrateDatabase() {
@@ -173,9 +173,9 @@ export const plugin = {
 
 **After (v2.0):**
 ```typescript
-import { NodeTypeDefinition } from '@hierarchidb/core';
+import { PluginDefinition } from '@hierarchidb/core';
 
-export const MyNodeDefinition: NodeTypeDefinition = {
+export const MyNodeDefinition: PluginDefinition = {
   nodeType: 'mytype',
   database: {
     entityStore: 'mytypes',

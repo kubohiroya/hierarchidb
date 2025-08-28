@@ -501,7 +501,7 @@ class ProjectWorkerAPI implements ProjectAPI {
 
 ## Build Optimization
 
-### Tree-shaking
+### TreeTypes-shaking
 
 現代のバンドラー（Vite、Webpack、Rollup）のtree-shakingにより、各環境で必要な部分のみがバンドルに含まれます:
 
@@ -823,7 +823,7 @@ export function ShapeDialog({ mode, nodeId, parentNodeId, open, onClose }: Shape
         const copy = await api.getWorkingCopy(workingCopyId);
         setWorkingCopy(copy);
       } else if (mode === 'create' && parentNodeId) {
-        // ✅ 新規作成：Draft WorkingCopy
+        // ✅ 新規作成：Draft WorkingCopyTypes
         const workingCopyId = await api.createNewDraftWorkingCopy(parentNodeId);
         const copy = await api.getWorkingCopy(workingCopyId);
         setWorkingCopy(copy);
@@ -834,14 +834,14 @@ export function ShapeDialog({ mode, nodeId, parentNodeId, open, onClose }: Shape
 }
 ```
 
-#### WorkingCopy-based API Design
+#### WorkingCopyTypes-based API Design
 
 **すべてのバッチ処理APIはWorkingCopyベース**
 
 ```typescript
 // Shared Layer - API Interface
 export interface ShapeAPI {
-  // ✅ WorkingCopy management
+  // ✅ WorkingCopyTypes management
   createWorkingCopy(nodeId: NodeId): Promise<EntityId>;
   createNewDraftWorkingCopy(parentNodeId: NodeId): Promise<EntityId>;
   getWorkingCopy(workingCopyId: EntityId): Promise<ShapeWorkingCopy | undefined>;
@@ -849,7 +849,7 @@ export interface ShapeAPI {
   commitWorkingCopy(workingCopyId: EntityId): Promise<void>;
   discardWorkingCopy(workingCopyId: EntityId): Promise<void>;
 
-  // ✅ Batch processing - Always WorkingCopy-based
+  // ✅ Batch processing - Always WorkingCopyTypes-based
   startBatchProcessing(
     workingCopyId: EntityId,  // ← NodeIdではなくWorkingCopyId
     config: ProcessingConfig, 

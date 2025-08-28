@@ -1,12 +1,12 @@
 /**
  * @file NodeTypeAPI.test.ts
  * @description NodeTypeAPI のテストケース集
- * 
+ *
  * TDD Redフェーズ: 新しいNodeTypeAPI仕様に基づく失敗するテストを作成
  */
-
+import { expect, describe, it, beforeEach, afterEach, test } from 'vitest';
 import { NodeTypeAPI } from '../src/NodeTypeAPI';
-import { NodeType, NodeId, ValidationResult } from '@hierarchidb/common-core';
+import { NodeType, NodeId, ValidationResult } from '@hierarchidb/common-type';
 
 describe('NodeTypeAPI', () => {
   let nodeTypeAPI: NodeTypeAPI;

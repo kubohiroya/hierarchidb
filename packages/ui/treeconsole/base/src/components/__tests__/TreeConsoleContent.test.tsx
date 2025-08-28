@@ -10,7 +10,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { vi } from 'vitest';
 import { TreeConsoleContent } from '../TreeConsoleContent';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 // テーマプロバイダーでラップ
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -172,13 +172,13 @@ describe('TreeConsoleContent', () => {
         <TreeConsoleContent
           {...defaultProps}
           controller={emptyController}
-          rootNodeId={"test-root" as NodeId}
+          rootNodeId={'test-root' as NodeId}
           mode="restore"
         />
       </TestWrapper>
     );
 
-    expect(screen.getByText('Tree Root: test-root')).toBeInTheDocument();
+    expect(screen.getByText('TreeTypes Root: test-root')).toBeInTheDocument();
     expect(screen.getByText('Mode: restore')).toBeInTheDocument();
     expect(screen.getByText('Controller: Available')).toBeInTheDocument();
   });

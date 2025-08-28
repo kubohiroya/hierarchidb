@@ -1,10 +1,11 @@
 /**
  * @file PluginTreeAPI-Green.test.ts
  * @description PluginTreeAPI のTDD Green フェーズテスト
- * 
+ *
  * TDD Green フェーズ: 最小限の実装でテストを通す
  */
 
+import { expect, describe, beforeEach } from 'vitest';
 import type {
   PluginTreeAPI,
   GetPluginsForTreeRequest,
@@ -17,9 +18,9 @@ import type {
   PluginMetrics,
   TimePeriod,
   GraphOptions,
-  MetricOptions
+  MetricOptions,
 } from '../src/PluginTreeAPI';
-import type { NodeType, TreeId, NodeCapability } from '@hierarchidb/common-core';
+import type { NodeType, TreeId, NodeCapability } from '@hierarchidb/common-type';
 
 describe('PluginTreeAPI - TDD Green Phase', () => {
   let pluginTreeAPI: PluginTreeAPI;
@@ -41,7 +42,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         isActive: true,
         usageCount: 45,
         capabilities: ['create', 'edit', 'delete'],
-        meta: { name: 'Folder Plugin', version: '1.0.0', category: 'core' }
+        meta: { name: 'Folder Plugin', version: '1.0.0', category: 'core' },
       },
       {
         nodeType: 'document' as NodeType,
@@ -53,7 +54,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         isActive: false,
         usageCount: 23,
         capabilities: ['create', 'edit'],
-        meta: { name: 'Document Plugin', version: '1.0.0', category: 'core' }
+        meta: { name: 'Document Plugin', version: '1.0.0', category: 'core' },
       },
       {
         nodeType: 'project' as NodeType,
@@ -65,23 +66,25 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         isActive: true,
         usageCount: 78,
         capabilities: ['create', 'edit', 'delete', 'export'],
-        meta: { name: 'Project Plugin', version: '2.0.0', category: 'extension' }
-      }
+        meta: { name: 'Project Plugin', version: '2.0.0', category: 'extension' },
+      },
     ];
 
     pluginTreeAPI = {
       // 【プラグイン取得】: getPluginsForTree()メソッドの最小実装
-      getPluginsForTree: async (request: GetPluginsForTreeRequest): Promise<GetPluginsForTreeResponse> => {
+      getPluginsForTree: async (
+        request: GetPluginsForTreeRequest
+      ): Promise<GetPluginsForTreeResponse> => {
         // 【存在しないツリー処理】: 特定のツリーIDでエラーを返す
-        if (request.treeId === 'non-existent-tree' as TreeId) {
+        if (request.treeId === ('non-existent-tree' as TreeId)) {
           return {
             success: false,
             treeId: request.treeId,
             plugins: [],
             error: {
               code: 'TREE_NOT_FOUND',
-              message: `Tree non-existent-tree not found`
-            }
+              message: `Tree non-existent-tree not found`,
+            },
           };
         }
 
@@ -90,22 +93,22 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
         // 【ノードタイプフィルタ】
         if (request.filters?.nodeTypes) {
-          filteredPlugins = filteredPlugins.filter(p => 
+          filteredPlugins = filteredPlugins.filter((p) =>
             request.filters!.nodeTypes!.includes(p.nodeType)
           );
         }
 
         // 【カテゴリフィルタ】
         if (request.filters?.categories) {
-          filteredPlugins = filteredPlugins.filter(p => 
+          filteredPlugins = filteredPlugins.filter((p) =>
             request.filters!.categories!.includes(p.meta.category || 'core')
           );
         }
 
         // 【機能フィルタ】
         if (request.filters?.capabilities) {
-          filteredPlugins = filteredPlugins.filter(p => 
-            request.filters!.capabilities!.some(cap => 
+          filteredPlugins = filteredPlugins.filter((p) =>
+            request.filters!.capabilities!.some((cap) =>
               p.capabilities.includes(cap as NodeCapability)
             )
           );
@@ -113,14 +116,14 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
         // 【非アクティブ含む】
         if (!request.includeInactive) {
-          filteredPlugins = filteredPlugins.filter(p => p.isActive);
+          filteredPlugins = filteredPlugins.filter((p) => p.isActive);
         }
 
         // 【ソート処理】: 指定された条件でソート
         if (request.sortBy) {
           filteredPlugins.sort((a, b) => {
             let comparison = 0;
-            
+
             switch (request.sortBy) {
               case 'usageCount':
                 comparison = a.usageCount - b.usageCount;
@@ -134,7 +137,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
               default:
                 comparison = 0;
             }
-            
+
             return request.sortOrder === 'desc' ? -comparison : comparison;
           });
         }
@@ -142,12 +145,16 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         return {
           success: true,
           treeId: request.treeId,
-          plugins: filteredPlugins
+          plugins: filteredPlugins,
         };
       },
 
       // 【使用統計】: getPluginUsageStats()メソッドの最小実装
-      getPluginUsageStats: async (treeId: TreeId, nodeType: NodeType, period?: TimePeriod): Promise<PluginUsageStats> => {
+      getPluginUsageStats: async (
+        treeId: TreeId,
+        nodeType: NodeType,
+        period?: TimePeriod
+      ): Promise<PluginUsageStats> => {
         // 【未使用プラグイン処理】: 特定条件でゼロ統計を返す
         if (treeId === 'empty-tree' || nodeType === 'unused-plugin') {
           return {
@@ -156,7 +163,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
             totalNodes: 0,
             activeNodes: 0,
             lastUsed: 0,
-            operationStats: []
+            operationStats: [],
           };
         }
 
@@ -169,13 +176,13 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         let operationStats = [
           { operation: 'create', count: 15, timestamp: lastUsed - 3600000 },
           { operation: 'edit', count: 25, timestamp: lastUsed - 1800000 },
-          { operation: 'delete', count: 5, timestamp: lastUsed }
+          { operation: 'delete', count: 5, timestamp: lastUsed },
         ];
 
         // 【期間フィルタ】: 期間指定がある場合のフィルタリング
         if (period) {
-          operationStats = operationStats.filter(stat => 
-            stat.timestamp >= period.from && stat.timestamp <= period.to
+          operationStats = operationStats.filter(
+            (stat) => stat.timestamp >= period.from && stat.timestamp <= period.to
           );
 
           return {
@@ -185,7 +192,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
             activeNodes,
             lastUsed,
             period,
-            operationStats
+            operationStats,
           };
         }
 
@@ -195,35 +202,43 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
           totalNodes,
           activeNodes,
           lastUsed,
-          operationStats
+          operationStats,
         };
       },
 
       // 【互換性確認】: getPluginCompatibility()メソッドの最小実装
-      getPluginCompatibility: async (treeId: TreeId, nodeTypes: NodeType[]): Promise<CompatibilityResult> => {
+      getPluginCompatibility: async (
+        treeId: TreeId,
+        nodeTypes: NodeType[]
+      ): Promise<CompatibilityResult> => {
         // 【競合検出】: 特定の組み合わせで競合を検出
         const conflicts: CompatibilityResult['conflicts'] = [];
 
-        if (nodeTypes.includes('conflicting-plugin-a') && nodeTypes.includes('conflicting-plugin-b')) {
+        if (
+          nodeTypes.includes('conflicting-plugin-a') &&
+          nodeTypes.includes('conflicting-plugin-b')
+        ) {
           conflicts.push({
             nodeType1: 'conflicting-plugin-a',
             nodeType2: 'conflicting-plugin-b',
             severity: 'error',
-            description: 'These plugins have conflicting database schemas'
+            description: 'These plugins have conflicting database schemas',
           });
         }
 
         // 【依存関係警告】: 依存関係不足の警告
         const warnings: string[] = [];
         if (nodeTypes.includes('requires-dependency')) {
-          warnings.push('Plugin requires-dependency needs additional dependencies to function properly');
+          warnings.push(
+            'Plugin requires-dependency needs additional dependencies to function properly'
+          );
         }
 
         return {
           compatible: conflicts.length === 0,
           conflicts,
           warnings,
-          suggestions: conflicts.length > 0 ? ['Consider using alternative plugins'] : []
+          suggestions: conflicts.length > 0 ? ['Consider using alternative plugins'] : [],
         };
       },
 
@@ -238,11 +253,11 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
                 type: 'configure',
                 nodeType: 'minor-optimization' as NodeType,
                 reason: 'Minor configuration adjustment available',
-                priority: 1
-              }
+                priority: 1,
+              },
             ],
             currentPerformance: { score: 0.9 },
-            expectedImprovement: { performanceGain: 0.05 }
+            expectedImprovement: { performanceGain: 0.05 },
           };
         }
 
@@ -254,53 +269,56 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
               type: 'enable',
               nodeType: 'recommended-plugin' as NodeType,
               reason: 'This plugin would improve workflow efficiency based on usage patterns',
-              priority: 5
+              priority: 5,
             },
             {
               type: 'disable',
               nodeType: 'unused-plugin' as NodeType,
               reason: 'This plugin is rarely used and can be disabled to improve performance',
-              priority: 3
-            }
+              priority: 3,
+            },
           ],
           currentPerformance: { score: 0.6 },
-          expectedImprovement: { performanceGain: 0.3 }
+          expectedImprovement: { performanceGain: 0.3 },
         };
       },
 
       // 【依存関係グラフ】: getPluginDependencyGraph()メソッドの最小実装
-      getPluginDependencyGraph: async (treeId: TreeId, options?: GraphOptions): Promise<DependencyGraph> => {
+      getPluginDependencyGraph: async (
+        treeId: TreeId,
+        options?: GraphOptions
+      ): Promise<DependencyGraph> => {
         // 【循環依存ツリー処理】: 特定ツリーで循環依存を返す
         if (treeId === 'cyclic-tree') {
           return {
             treeId,
             nodes: [
               { nodeType: 'plugin-a' as NodeType, label: 'Plugin A' },
-              { nodeType: 'plugin-b' as NodeType, label: 'Plugin B' }
+              { nodeType: 'plugin-b' as NodeType, label: 'Plugin B' },
             ],
             edges: [
               { from: 'plugin-a' as NodeType, to: 'plugin-b' as NodeType, type: 'depends' },
-              { from: 'plugin-b' as NodeType, to: 'plugin-a' as NodeType, type: 'depends' }
+              { from: 'plugin-b' as NodeType, to: 'plugin-a' as NodeType, type: 'depends' },
             ],
             metadata: {
               totalPlugins: 2,
-              hasCycles: true
+              hasCycles: true,
             },
             warnings: ['Circular dependency detected between plugin-a and plugin-b'],
-            cyclicPaths: [['plugin-a', 'plugin-b', 'plugin-a']]
+            cyclicPaths: [['plugin-a', 'plugin-b', 'plugin-a']],
           };
         }
 
         // 【基本グラフ生成】: 通常のツリーの依存関係グラフ
-        const nodes = mockPlugins.slice(0, 3).map(plugin => ({
+        const nodes = mockPlugins.slice(0, 3).map((plugin) => ({
           nodeType: plugin.nodeType,
           label: plugin.displayName,
-          metrics: options?.includeMetrics ? { usage: Math.random() } : undefined
+          metrics: options?.includeMetrics ? { usage: Math.random() } : undefined,
         }));
 
         const edges = [
           { from: nodes[0].nodeType, to: nodes[1].nodeType, type: 'depends' },
-          { from: nodes[1].nodeType, to: nodes[2].nodeType, type: 'extends' }
+          { from: nodes[1].nodeType, to: nodes[2].nodeType, type: 'extends' },
         ];
 
         return {
@@ -309,15 +327,19 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
           edges,
           metadata: {
             totalPlugins: nodes.length,
-            hasCycles: false
+            hasCycles: false,
           },
           layout: options?.layout,
-          groups: options?.groupByCategory ? { core: ['folder', 'document'] } : undefined
+          groups: options?.groupByCategory ? { core: ['folder', 'document'] } : undefined,
         };
       },
 
       // 【パフォーマンス指標】: getPluginMetrics()メソッドの最小実装
-      getPluginMetrics: async (treeId: TreeId, nodeType: NodeType, options?: MetricOptions): Promise<PluginMetrics> => {
+      getPluginMetrics: async (
+        treeId: TreeId,
+        nodeType: NodeType,
+        options?: MetricOptions
+      ): Promise<PluginMetrics> => {
         // 【基本指標生成】: パフォーマンス指標の基本データ
         const metrics: PluginMetrics = {
           treeId,
@@ -325,11 +347,11 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
           performance: {
             averageResponseTime: Math.floor(Math.random() * 200) + 50,
             throughput: Math.floor(Math.random() * 1000) + 100,
-            errorRate: Math.random() * 0.05
+            errorRate: Math.random() * 0.05,
           },
           resourceUsage: {
-            memoryMB: Math.floor(Math.random() * 50) + 10
-          }
+            memoryMB: Math.floor(Math.random() * 50) + 10,
+          },
         };
 
         // 【履歴データ生成】: 時間範囲指定での履歴データ
@@ -339,18 +361,18 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
           const hourlyPoints = Math.min(10, Math.floor(duration / (60 * 60 * 1000)));
 
           metrics.history = Array.from({ length: hourlyPoints }, (_, i) => {
-            const timestamp = start + (i * duration / hourlyPoints);
+            const timestamp = start + (i * duration) / hourlyPoints;
             return {
               timestamp,
               averageResponseTime: Math.floor(Math.random() * 200) + 50,
               throughput: Math.floor(Math.random() * 1000) + 100,
-              errorRate: Math.random() * 0.05
+              errorRate: Math.random() * 0.05,
             };
-          }).filter(point => point.timestamp >= start && point.timestamp <= end);
+          }).filter((point) => point.timestamp >= start && point.timestamp <= end);
         }
 
         return metrics;
-      }
+      },
     };
   });
 
@@ -363,16 +385,16 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     test('🔴 指定ツリーで利用可能な全プラグインを取得できる', async () => {
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
-        includeInactive: false
+        includeInactive: false,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
       expect(Array.isArray(response.plugins)).toBe(true);
       expect(response.plugins.length).toBeGreaterThan(0);
       expect(response.treeId).toBe(request.treeId);
-      
+
       const firstPlugin = response.plugins[0];
       expect(firstPlugin.nodeType).toBeDefined();
       expect(firstPlugin.isActive).toBe(true); // includeInactive=falseのため
@@ -385,19 +407,17 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         filters: {
           nodeTypes: ['folder', 'document'] as NodeType[],
           categories: ['core'],
-          capabilities: ['create', 'edit']
-        }
+          capabilities: ['create', 'edit'],
+        },
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      response.plugins.forEach(plugin => {
+      response.plugins.forEach((plugin) => {
         expect(['folder', 'document']).toContain(plugin.nodeType);
         expect(plugin.meta.category).toBe('core');
-        expect(plugin.capabilities.some(cap => 
-          ['create', 'edit'].includes(cap)
-        )).toBe(true);
+        expect(plugin.capabilities.some((cap) => ['create', 'edit'].includes(cap))).toBe(true);
       });
     });
 
@@ -405,13 +425,13 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
         sortBy: 'usageCount',
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      
+
       for (let i = 0; i < response.plugins.length - 1; i++) {
         expect(response.plugins[i].usageCount).toBeGreaterThanOrEqual(
           response.plugins[i + 1].usageCount
@@ -422,27 +442,27 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     test('🔴 非アクティブプラグインを含む一覧を取得できる', async () => {
       const request: GetPluginsForTreeRequest = {
         treeId: 'test-tree-123' as TreeId,
-        includeInactive: true
+        includeInactive: true,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(true);
-      
-      const activePlugins = response.plugins.filter(p => p.isActive);
-      const inactivePlugins = response.plugins.filter(p => !p.isActive);
-      
+
+      const activePlugins = response.plugins.filter((p) => p.isActive);
+      const inactivePlugins = response.plugins.filter((p) => !p.isActive);
+
       expect(activePlugins.length).toBeGreaterThan(0);
       expect(inactivePlugins.length).toBeGreaterThanOrEqual(0);
     });
 
     test('🔴 存在しないツリーIDで適切なエラーを返す', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'non-existent-tree' as TreeId
+        treeId: 'non-existent-tree' as TreeId,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
-      
+
       expect(response.success).toBe(false);
       expect(response.error?.code).toBe('TREE_NOT_FOUND');
       expect(response.error?.message).toContain('non-existent-tree');
@@ -455,7 +475,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const nodeType = 'folder' as NodeType;
 
       const result = await pluginTreeAPI.getPluginUsageStats(treeId, nodeType);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(result.nodeType).toBe(nodeType);
       expect(result.totalNodes).toBeTypeOf('number');
@@ -467,10 +487,10 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 使用されていないプラグインでゼロ統計を返す', async () => {
       const result = await pluginTreeAPI.getPluginUsageStats(
-        'empty-tree' as TreeId, 
+        'empty-tree' as TreeId,
         'unused-plugin' as NodeType
       );
-      
+
       expect(result.totalNodes).toBe(0);
       expect(result.activeNodes).toBe(0);
       expect(result.lastUsed).toBe(0);
@@ -478,7 +498,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 期間指定での使用統計を取得できる', async () => {
-      const fromDate = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      const fromDate = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const toDate = Date.now();
 
       const result = await pluginTreeAPI.getPluginUsageStats(
@@ -486,13 +506,15 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         'folder' as NodeType,
         { from: fromDate, to: toDate }
       );
-      
+
       expect(result.period).toBeDefined();
       expect(result.period?.from).toBe(fromDate);
       expect(result.period?.to).toBe(toDate);
-      expect(result.operationStats.every(stat => 
-        stat.timestamp >= fromDate && stat.timestamp <= toDate
-      )).toBe(true);
+      expect(
+        result.operationStats.every(
+          (stat) => stat.timestamp >= fromDate && stat.timestamp <= toDate
+        )
+      ).toBe(true);
     });
   });
 
@@ -500,11 +522,8 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     test('🔴 互換性のあるプラグイン組み合わせで成功を返す', async () => {
       const nodeTypes: NodeType[] = ['folder', 'document', 'project'];
 
-      const result = await pluginTreeAPI.getPluginCompatibility(
-        'compat-tree' as TreeId,
-        nodeTypes
-      );
-      
+      const result = await pluginTreeAPI.getPluginCompatibility('compat-tree' as TreeId, nodeTypes);
+
       expect(result.compatible).toBe(true);
       expect(result.conflicts).toHaveLength(0);
       expect(result.warnings).toHaveLength(0);
@@ -518,7 +537,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         'compat-tree' as TreeId,
         conflictingTypes
       );
-      
+
       expect(result.compatible).toBe(false);
       expect(result.conflicts.length).toBeGreaterThan(0);
       expect(result.conflicts[0].severity).toMatch(/^(error|warning|info)$/);
@@ -532,11 +551,11 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         'compat-tree' as TreeId,
         dependentType
       );
-      
+
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings.some(w => 
-        w.includes('dependency') || w.includes('required')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('dependency') || w.includes('required'))).toBe(
+        true
+      );
     });
   });
 
@@ -545,7 +564,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const treeId = 'optimize-tree' as TreeId;
 
       const result = await pluginTreeAPI.optimizePluginConfiguration(treeId);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(Array.isArray(result.recommendations)).toBe(true);
       expect(result.currentPerformance).toBeDefined();
@@ -555,9 +574,9 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 使用パターンに基づく具体的な推奨事項を提供する', async () => {
       const result = await pluginTreeAPI.optimizePluginConfiguration('pattern-tree' as TreeId);
-      
+
       expect(result.recommendations.length).toBeGreaterThan(0);
-      
+
       const recommendation = result.recommendations[0];
       expect(recommendation.type).toMatch(/^(enable|disable|configure|replace)$/);
       expect(recommendation.nodeType).toBeDefined();
@@ -566,10 +585,8 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 既に最適化されたツリーで最小限の推奨事項を返す', async () => {
-      const result = await pluginTreeAPI.optimizePluginConfiguration(
-        'optimized-tree' as TreeId
-      );
-      
+      const result = await pluginTreeAPI.optimizePluginConfiguration('optimized-tree' as TreeId);
+
       expect(result.recommendations.length).toBeLessThan(3);
       expect(result.currentPerformance.score).toBeGreaterThan(0.8);
       expect(result.expectedImprovement.performanceGain).toBeLessThan(0.1);
@@ -581,7 +598,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const treeId = 'graph-tree' as TreeId;
 
       const result = await pluginTreeAPI.getPluginDependencyGraph(treeId);
-      
+
       expect(result.treeId).toBe(treeId);
       expect(Array.isArray(result.nodes)).toBe(true);
       expect(Array.isArray(result.edges)).toBe(true);
@@ -591,10 +608,10 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 循環依存を含む依存関係グラフで警告を含む結果を返す', async () => {
       const result = await pluginTreeAPI.getPluginDependencyGraph('cyclic-tree' as TreeId);
-      
+
       expect(result.metadata.hasCycles).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings.some(w => w.toLowerCase().includes('circular'))).toBe(true);
+      expect(result.warnings.some((w) => w.toLowerCase().includes('circular'))).toBe(true);
       expect(result.cyclicPaths).toBeDefined();
       expect(result.cyclicPaths!.length).toBeGreaterThan(0);
     });
@@ -603,19 +620,14 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const options = {
         layout: 'hierarchical' as const,
         groupByCategory: true,
-        includeMetrics: true
+        includeMetrics: true,
       };
 
-      const result = await pluginTreeAPI.getPluginDependencyGraph(
-        'layout-tree' as TreeId, 
-        options
-      );
-      
+      const result = await pluginTreeAPI.getPluginDependencyGraph('layout-tree' as TreeId, options);
+
       expect(result.layout).toBe('hierarchical');
       expect(result.groups).toBeDefined();
-      expect(result.nodes.every(node => 
-        node.metrics !== undefined
-      )).toBe(true);
+      expect(result.nodes.every((node) => node.metrics !== undefined)).toBe(true);
     });
   });
 
@@ -625,7 +637,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         'metrics-tree' as TreeId,
         'performance-plugin' as NodeType
       );
-      
+
       expect(metrics.nodeType).toBe('performance-plugin');
       expect(metrics.treeId).toBe('metrics-tree');
       expect(typeof metrics.performance.averageResponseTime).toBe('number');
@@ -636,8 +648,8 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 期間指定でのパフォーマンス履歴を取得できる', async () => {
       const timeRange = {
-        start: Date.now() - (24 * 60 * 60 * 1000),
-        end: Date.now()
+        start: Date.now() - 24 * 60 * 60 * 1000,
+        end: Date.now(),
       };
 
       const metrics = await pluginTreeAPI.getPluginMetrics(
@@ -645,12 +657,12 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         'performance-plugin' as NodeType,
         { timeRange }
       );
-      
+
       expect(metrics.history).toBeDefined();
       expect(Array.isArray(metrics.history)).toBe(true);
       expect(metrics.history!.length).toBeGreaterThan(0);
-      
-      metrics.history!.forEach(point => {
+
+      metrics.history!.forEach((point) => {
         expect(point.timestamp).toBeGreaterThanOrEqual(timeRange.start);
         expect(point.timestamp).toBeLessThanOrEqual(timeRange.end);
       });

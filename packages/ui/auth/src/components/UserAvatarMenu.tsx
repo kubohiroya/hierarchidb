@@ -172,14 +172,14 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         aria-describedby="clear-workingcopy-dialog-description"
       >
         <DialogTitle id="clear-workingcopy-dialog-title">
-          Clear WorkingCopy Garbage?
+          Clear WorkingCopyTypes Garbage?
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="clear-workingcopy-dialog-description" component="div">
             {workingCopyStats ? (
               <>
                 <Typography variant="body2" gutterBottom>
-                  Found {workingCopyStats.total} WorkingCopy entities:
+                  Found {workingCopyStats.total} WorkingCopyTypes entities:
                 </Typography>
                 <ul style={{ marginTop: 8, marginBottom: 8 }}>
                   <li>Orphaned (original deleted): {workingCopyStats.orphaned}</li>
@@ -203,7 +203,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
                 </Typography>
               </>
             ) : (
-              <Typography>Loading WorkingCopy statistics...</Typography>
+              <Typography>Loading WorkingCopyTypes statistics...</Typography>
             )}
           </DialogContentText>
         </DialogContent>

@@ -6,13 +6,7 @@
  * until changes are committed or discarded.
  */
 
-import type {
-  NodeId,
-  TreeNode,
-  WorkingCopy,
-  CommitResult,
-  ValidationResult,
-} from '@hierarchidb/common-core';
+import type { NodeId, TreeNode, CommitResult, ValidationResult } from '@hierarchidb/common-type';
 
 /**
  * Working copy management API
@@ -47,7 +41,7 @@ export interface WorkingCopyAPI {
     nodeType: string,
     parentId: NodeId,
     initialData?: Partial<TreeNode>
-  ): Promise<WorkingCopy>;
+  ): Promise<TreeNode>;
 
   /**
    * Create a working copy from an existing node for editing
@@ -62,7 +56,7 @@ export interface WorkingCopyAPI {
    * await workingCopyAPI.updateWorkingCopy(nodeId, { name: 'Updated Name' });
    * ```
    */
-  createWorkingCopyFromNode(nodeId: NodeId): Promise<WorkingCopy>;
+  createWorkingCopyFromNode(nodeId: NodeId): Promise<TreeNode>;
 
   // ==================
   // Working Copy Operations
@@ -74,7 +68,7 @@ export interface WorkingCopyAPI {
    * @param nodeId - Node ID (used as working copy key)
    * @returns Working copy if it exists
    */
-  getWorkingCopy(nodeId: NodeId): Promise<WorkingCopy | undefined>;
+  getWorkingCopy(nodeId: NodeId): Promise<TreeNode | undefined>;
 
   /**
    * Update a working copy with new data
@@ -91,14 +85,14 @@ export interface WorkingCopyAPI {
    * );
    * ```
    */
-  updateWorkingCopy(nodeId: NodeId, updates: Partial<TreeNode>): Promise<WorkingCopy>;
+  updateWorkingCopy(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode>;
 
   /**
    * List all active working copies
    *
    * @returns Array of all working copies in EphemeralDB
    */
-  listWorkingCopies(): Promise<WorkingCopy[]>;
+  listWorkingCopies(): Promise<TreeNode[]>;
 
   /**
    * Check if a working copy exists for a node
@@ -197,7 +191,7 @@ export interface WorkingCopyAPI {
    * @param nodeIds - Array of node IDs to create working copies for
    * @returns Created working copies
    */
-  createMultipleWorkingCopies(nodeIds: NodeId[]): Promise<WorkingCopy[]>;
+  createMultipleWorkingCopies(nodeIds: NodeId[]): Promise<TreeNode[]>;
 
   // ==================
   // Working Copy Status

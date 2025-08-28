@@ -22,7 +22,7 @@ UI Layer (React/MUI + StyleMap Components)
 Worker Layer (StyleMapService + StyleMapDB)
     ↕ Dexie Transactions
 CoreDB (StyleMapEntity + TableMetadataEntity + RowEntity)
-EphemeralDB (WorkingCopy + PreviewState)
+EphemeralDB (WorkingCopyTypes + PreviewState)
 ```
 
 ## コンポーネント構成
@@ -30,7 +30,7 @@ EphemeralDB (WorkingCopy + PreviewState)
 ### フロントエンド層
 
 🟢 **プラグイン統合**:
-- **NodeTypeDefinition**: `StyleMapNodeDefinition` でプラグイン登録
+- **PluginDefinition**: `StyleMapNodeDefinition` でプラグイン登録
 - **React コンポーネント**: ステップ式ダイアログ (`StyleMapDialog`)
 - **State管理**: React hooks + Comlink RPC
 - **UI フレームワーク**: Material-UI (MUI) v5
@@ -38,7 +38,7 @@ EphemeralDB (WorkingCopy + PreviewState)
 🟢 **主要コンポーネント**:
 ```typescript
 // Plugin Registration
-const StyleMapNodeDefinition: NodeTypeDefinition = {
+const StyleMapNodeDefinition: PluginDefinition = {
   nodeType: 'stylemap-plugin',
   database: { entityStore: 'styleMapEntities', schema: StyleMapEntity },
   entityHandler: new StyleMapEntityHandler(),

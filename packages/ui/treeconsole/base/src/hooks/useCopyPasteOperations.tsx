@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPIAdapter } from '~/adapters';
 
 // 【型定義】: Copy/Paste操作の結果型 🟢

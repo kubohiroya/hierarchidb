@@ -22,7 +22,7 @@ graph TD
     
     Match2 --> Layout["レイアウト構造"]
     
-    Layout --> AppBar["AppBar<br/>- Tree Title<br/>- Tree Switcher<br/>- User Login Button"]
+    Layout --> AppBar["AppBar<br/>- TreeTypes Title<br/>- TreeTypes Switcher<br/>- User Login Button"]
     Layout --> TreeConsole["TreeConsoleIntegration<br/>- treeId: 'r'<br/>- pageNodeId: tree.rootNodeId<br/>- pageTreeNode: rootNode"]
     Layout --> Outlet2["<Outlet />"]
     
@@ -41,7 +41,7 @@ graph TD
   <Outlet>
     <TLayout from="t.($treeId).tsx">       // ② メインレイアウト（AppBar + TreeConsole）
       <AppBar>
-        <Typography>Tree Title</Typography>
+        <Typography>TreeTypes Title</Typography>
         <ToggleButtonGroup>                 // Tree切り替えボタン
           <ToggleButton>Tree1</ToggleButton>
           <ToggleButton>Tree2</ToggleButton>

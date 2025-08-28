@@ -1,39 +1,38 @@
 /**
  * @file TreeSubscriptionAPI.ts
  * @description Real-time data monitoring and subscription-based tree management API
- * 
+ *
  * This API provides subscription-based monitoring capabilities for tree nodes and subtrees.
  * It handles real-time updates through event-driven notifications and manages subscription lifecycles.
  */
 
-import type { 
-  NodeId, 
-  TreeId, 
-  TreeNodeEvent, 
+import type {
+  NodeId,
+  TreeId,
+  TreeNodeEvent,
   SubscriptionId,
-  SubscriptionOptions 
-} from '@hierarchidb/common-core';
+  SubscriptionOptions,
+} from '@hierarchidb/common-type';
 
 /**
  * Real-time data subscription and monitoring API
- * 
+ *
  * Provides event-driven monitoring of tree nodes and subtrees with automatic
  * cleanup and lifecycle management.
  */
 export interface TreeSubscriptionAPI {
-
   // ==================
   // Node Subscriptions
   // ==================
 
   /**
    * Subscribe to changes for a specific node
-   * 
+   *
    * @param nodeId - Target node identifier
    * @param callback - Function to call when node changes occur
    * @param options - Optional subscription configuration
    * @returns Subscription identifier for cleanup
-   * 
+   *
    * @example
    * ```typescript
    * const subscriptionId = await observableAPI.subscribeNode(
@@ -53,12 +52,12 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Subscribe to changes for an entire subtree
-   * 
+   *
    * @param rootNodeId - Root node of the subtree to monitor
    * @param callback - Function to call when any node in subtree changes
    * @param options - Optional subscription configuration
    * @returns Subscription identifier for cleanup
-   * 
+   *
    * @example
    * ```typescript
    * const subscriptionId = await observableAPI.subscribeSubtree(
@@ -78,7 +77,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Subscribe to all changes within a specific tree
-   * 
+   *
    * @param treeId - Target tree identifier
    * @param callback - Function to call when any node in tree changes
    * @param options - Optional subscription configuration
@@ -96,10 +95,10 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Remove a specific subscription
-   * 
+   *
    * @param subscriptionId - Identifier of subscription to remove
    * @returns Promise that resolves when subscription is cleaned up
-   * 
+   *
    * @example
    * ```typescript
    * await subscriptionAPI.unsubscribe(subscriptionId);
@@ -110,7 +109,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Remove all subscriptions for a specific node
-   * 
+   *
    * @param nodeId - Target node identifier
    * @returns Number of subscriptions that were removed
    */
@@ -118,7 +117,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Remove all subscriptions for a specific tree
-   * 
+   *
    * @param treeId - Target tree identifier
    * @returns Number of subscriptions that were removed
    */
@@ -126,7 +125,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Remove all active subscriptions
-   * 
+   *
    * @returns Total number of subscriptions that were removed
    */
   unsubscribeAll(): Promise<number>;
@@ -137,14 +136,14 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Get list of active subscription identifiers
-   * 
+   *
    * @returns Array of currently active subscription IDs
    */
   listActiveSubscriptions(): Promise<SubscriptionId[]>;
 
   /**
    * Check if a specific subscription is still active
-   * 
+   *
    * @param subscriptionId - Subscription identifier to check
    * @returns True if subscription exists and is active
    */
@@ -152,7 +151,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Get subscription statistics
-   * 
+   *
    * @returns Object containing subscription counts and performance metrics
    */
   getSubscriptionStats(): Promise<{
@@ -170,7 +169,7 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Get recent events for a specific node
-   * 
+   *
    * @param nodeId - Target node identifier
    * @param limit - Maximum number of events to return (default: 50)
    * @returns Array of recent events in chronological order
@@ -179,17 +178,13 @@ export interface TreeSubscriptionAPI {
 
   /**
    * Get event history for a time range
-   * 
+   *
    * @param startTime - Start of time range (Unix timestamp)
    * @param endTime - End of time range (Unix timestamp)
    * @param nodeId - Optional node filter
    * @returns Array of events within the specified time range
    */
-  getEventHistory(
-    startTime: number,
-    endTime: number,
-    nodeId?: NodeId
-  ): Promise<TreeNodeEvent[]>;
+  getEventHistory(startTime: number, endTime: number, nodeId?: NodeId): Promise<TreeNodeEvent[]>;
 }
 
 /**

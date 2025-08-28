@@ -37,8 +37,8 @@ const mockController: TreeViewController = {
 };
 
 const defaultProps: TreeConsoleHeaderProps = {
-  title: 'Test Tree Console',
-  baseTitle: 'Tree Console',
+  title: 'Test TreeTypes Console',
+  baseTitle: 'TreeTypes Console',
   baseTitleSingular: 'Node',
   isShowingBranch: true,
   isRootNode: false,
@@ -57,7 +57,7 @@ describe('TreeConsoleHeader', () => {
   it('should render title correctly', () => {
     render(<TreeConsoleHeader {...defaultProps} />);
 
-    expect(screen.getByText('Test Tree Console')).toBeInTheDocument();
+    expect(screen.getByText('Test TreeTypes Console')).toBeInTheDocument();
   });
 
   it('should show resources page type', () => {

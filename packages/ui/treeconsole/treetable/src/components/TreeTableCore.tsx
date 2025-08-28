@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material';
 import type { TreeTableCoreProps } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { NodeType, TreeNode } from '@hierarchidb/common-core';
+import { NodeType, TreeNode } from '@hierarchidb/common-type';
 
 // スタイル定義（元のTreeTable.cssを再現）
 const StyledTableContainer = styled(Box)`

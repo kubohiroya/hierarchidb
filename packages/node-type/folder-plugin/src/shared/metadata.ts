@@ -2,7 +2,7 @@
  * Folder plugin metadata - UI・Worker共通メタデータ
  */
 
-import type { PluginMetadata } from '@hierarchidb/common-core';
+import type { PluginMetadata } from '@hierarchidb/common-type';
 
 export const FolderMetadata: PluginMetadata = {
   id: '@hierarchidb/node-type-folder-plugin-plugin',
@@ -23,7 +23,7 @@ export const FolderMetadata: PluginMetadata = {
   },
   
   dependencies: [
-    '@hierarchidb/common-core',
+    '@hierarchidb/common-type',
     '@hierarchidb/common-api'
   ],
   

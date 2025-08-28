@@ -61,13 +61,13 @@ treeNodes: Table<TreeNodeEntity, TreeNodeId> {
 ```typescript
 // CoreDB: 永続データ
 interface CoreDB {
-  trees: Table<Tree, TreeId>;
+  trees: Table<TreeTypes, TreeId>;
   treeNodes: Table<TreeNode, TreeNodeId>;
 }
 
 // EphemeralDB: 一時データ
 interface EphemeralDB {
-  workingCopies: Table<WorkingCopy, UUID>;
+  workingCopies: Table<WorkingCopyTypes, UUID>;
   treeViewStates: Table<TreeViewState, string>;
 }
 ```

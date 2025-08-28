@@ -16,7 +16,7 @@ export type ButtonGroupOrientation = 'horizontal' | 'vertical';
 export type ButtonGroupSize = 'small' | 'medium' | 'large';
 
 /**
- * Tree configuration for button group
+ * TreeTypes configuration for button group
  */
 export interface TreeConfig {
   /** Unique identifier for the tree */

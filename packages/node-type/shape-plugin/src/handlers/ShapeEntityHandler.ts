@@ -5,8 +5,8 @@
 
 // Shape plugin uses its own entity management approach via Comlink API
 // No direct dependency on worker's BaseEntityHandler
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
-import { generateEntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import { generateEntityId } from '@hierarchidb/common-type';
 import type { ShapeEntity, ShapeWorkingCopy } from '~/types';
 import { shapePluginAPI } from '~/api/ShapePluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
@@ -370,7 +370,7 @@ export class ShapeEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
     return PluginEntitySerializer.serialize(entity);
   }
 
@@ -378,7 +378,7 @@ export class ShapeEntityHandler {
    * Deserialize Shape entity with binary data restoration
    */
   async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ShapeEntity> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
     return PluginEntitySerializer.deserialize({ jsonData, binaryData });
   }
 
@@ -390,7 +390,7 @@ export class ShapeEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
     return PluginEntitySerializer.serializeEntityArray(entities);
   }
 
@@ -401,7 +401,7 @@ export class ShapeEntityHandler {
     jsonArray: any[],
     binaryData: Map<string, Uint8Array>
   ): Promise<ShapeEntity[]> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
     return PluginEntitySerializer.deserializeEntityArray(jsonArray, binaryData);
   }
 }

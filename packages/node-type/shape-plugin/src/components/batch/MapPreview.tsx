@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Paper, Typography, Alert, IconButton, Tooltip } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 import { MapWithVectorTiles, type MapViewState } from '@hierarchidb/ui-map';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { DownloadTask, VectorTileTask } from '~/types';
 
 interface MapPreviewProps {

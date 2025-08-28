@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 // Use types from main types file to avoid conflicts
 import type { UndoRedoResult, UndoRedoCommand } from '../types/index';
 
@@ -36,7 +36,7 @@ export interface UseUndoRedoOperationsReturn {
   undo: () => Promise<UndoRedoResult>;
   redo: () => Promise<UndoRedoResult>;
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
-  
+
   // Undo/Redo状態
   canUndo: boolean;
   canRedo: boolean;
@@ -92,7 +92,7 @@ export function useUndoRedoOperations(
       setIsLoading?.(true);
       try {
         const result = await (stateManager as any).undo();
-        
+
         // 成功時の状態変更通知
         if (result.success && onStateChange && currentState) {
           onStateChange({
@@ -100,22 +100,22 @@ export function useUndoRedoOperations(
             lastUndoResult: result,
           });
         }
-        
+
         return result;
       } catch (error) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error during undo'
+          error: error instanceof Error ? error.message : 'Unknown error during undo',
         };
       } finally {
         setIsLoading?.(false);
       }
     }
-    
+
     // 未実装の場合は失敗レスポンスを返す（エラーを投げない）
     return {
       success: false,
-      error: 'Undo functionality not yet connected to CommandProcessor'
+      error: 'Undo functionality not yet connected to CommandProcessor',
     };
   }, [stateManager, setIsLoading, onStateChange, currentState]);
 
@@ -125,7 +125,7 @@ export function useUndoRedoOperations(
       setIsLoading?.(true);
       try {
         const result = await (stateManager as any).redo();
-        
+
         // 成功時の状態変更通知
         if (result.success && onStateChange && currentState) {
           onStateChange({
@@ -133,22 +133,22 @@ export function useUndoRedoOperations(
             lastRedoResult: result,
           });
         }
-        
+
         return result;
       } catch (error) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error during redo'
+          error: error instanceof Error ? error.message : 'Unknown error during redo',
         };
       } finally {
         setIsLoading?.(false);
       }
     }
-    
+
     // 未実装の場合は失敗レスポンスを返す（エラーを投げない）
     return {
       success: false,
-      error: 'Redo functionality not yet connected to CommandProcessor'
+      error: 'Redo functionality not yet connected to CommandProcessor',
     };
   }, [stateManager, setIsLoading, onStateChange, currentState]);
 
@@ -161,17 +161,17 @@ export function useUndoRedoOperations(
       } catch (error) {
         return {
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error during clear history'
+          error: error instanceof Error ? error.message : 'Unknown error during clear history',
         };
       } finally {
         setIsLoading?.(false);
       }
     }
-    
+
     // 未実装の場合はエラーを返す
     return {
       success: false,
-      error: 'Clear history functionality not implemented yet'
+      error: 'Clear history functionality not implemented yet',
     };
   }, [stateManager, setIsLoading]);
 
@@ -180,7 +180,7 @@ export function useUndoRedoOperations(
     undo,
     redo,
     clearHistory,
-    
+
     // Undo/Redo状態
     canUndo,
     canRedo,

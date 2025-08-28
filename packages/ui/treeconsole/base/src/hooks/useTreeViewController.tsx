@@ -19,7 +19,7 @@ import type {
   UndoRedoResult,
   UndoRedoCommand,
 } from '../types/index';
-import type { NodeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
   useCopyPasteOperations,
@@ -32,7 +32,7 @@ import { useUndoRedoOperations } from './useUndoRedoOperations';
 import { useCRUDOperations } from './useCRUDOperations';
 
 export interface TreeViewControllerProps {
-  /** Tree ID */
+  /** TreeTypes ID */
   treeId: string;
   /** State manager */
   stateManager?: unknown;
@@ -78,7 +78,10 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   expandedRowIds?: Set<NodeId>; // 展開状態
 
   // 基本操作
-  selectNode: (nodeId: NodeId, options?: { ctrlKey?: boolean; shiftKey?: boolean }) => Promise<void>;
+  selectNode: (
+    nodeId: NodeId,
+    options?: { ctrlKey?: boolean; shiftKey?: boolean }
+  ) => Promise<void>;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
   expandNode: (nodeId: NodeId) => void;
   collapseNode: (nodeId: NodeId) => void;

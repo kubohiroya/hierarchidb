@@ -7,7 +7,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
 import { MapLibreMap, type MapViewState, type MapLibreMapInstance } from '@hierarchidb/ui-map';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
 import { BUILT_IN_STYLES } from '../constants/builtInStyles';

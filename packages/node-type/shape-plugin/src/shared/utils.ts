@@ -303,8 +303,8 @@ export function serializeCheckboxState(state: boolean[][]): string {
  */
 export function buildShapeEntityFromCreate(
   params: {
-    nodeId: import('@hierarchidb/common-core').NodeId;
-    entityId: import('@hierarchidb/common-core').EntityId;
+    nodeId: import('@hierarchidb/common-type').NodeId;
+    entityId: import('@hierarchidb/common-type').EntityId;
     data: {
       name: string;
       description?: string;
@@ -344,7 +344,7 @@ export function createWorkingCopyFromEntity(
   entity: import('./types').ShapeEntity
 ): import('./types').ShapeWorkingCopy {
   return {
-    id: entity.id as import('@hierarchidb/common-core').EntityId,
+    id: entity.id as import('@hierarchidb/common-type').EntityId,
     nodeId: entity.nodeId,
     name: entity.name,
     description: entity.description,

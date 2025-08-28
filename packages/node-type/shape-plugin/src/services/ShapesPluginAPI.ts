@@ -4,7 +4,7 @@
  */
 
 import { PluginAPI } from '@hierarchidb/common-api';
-import { NodeType, NodeId } from '@hierarchidb/common-core';
+import { NodeType, NodeId } from '@hierarchidb/common-type';
 import type {
   ShapesAPIMethods,
   BatchProcessConfig,

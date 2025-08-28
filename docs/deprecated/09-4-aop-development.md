@@ -24,7 +24,7 @@ export default function MapEditor() {
 ```ts
 // packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
 export const BaseMapUnifiedDefinition: UnifiedPluginDefinition = {
-  // ... NodeTypeDefinition 部分（DB, handler, lifecycle等）
+  // ... PluginDefinition 部分（DB, handler, lifecycle等）
   routing: {
     actions: {
       view: { component: lazy(() => import('../ui/MapView')), displayName: 'Map View' },
@@ -62,7 +62,7 @@ interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy> {
+> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
   // データベース管理（必須）
   readonly database: {
     entityStore: string;           // メインエンティティテーブル名
@@ -873,7 +873,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 #### 9.4.4.4 開発環境での自動再生成
 
 ```typescript
-// tools/plugin-builder/watch-plugins.ts
+// tools/plugin-builder/watch-plugin.ts
 import chokidar from 'chokidar';
 import { generatePluginRegistry } from './generate-registry.js';
 
@@ -1248,7 +1248,7 @@ export interface Plugin<TContext extends PluginContext = PluginContext> {
   readonly description?: string;
   
   // ノードタイプ定義（型安全）
-  readonly nodeTypes?: Array<NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
+  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
   
   // 初期化（コンテキストの型を指定可能）
   initialize?(context: TContext): Promise<void>;

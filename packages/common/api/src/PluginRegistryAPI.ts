@@ -9,21 +9,20 @@
 import type {
   NodeId,
   NodeType,
-  PluginDefinition,
-  PluginCapabilities,
+  NodeTypeDefinition,
   PluginMetadata,
   ValidationResult,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 
 /**
  * @deprecated This API will be split into specialized APIs for better separation of concerns.
- * 
+ *
  * Migration guide:
  * - Node type operations → Use NodeTypeAPI
- * - Plugin management → Use PluginManagementAPI  
- * - Tree-specific plugin queries → Use PluginTreeAPI
+ * - Plugin management → Use PluginManagementAPI
+ * - TreeTypes-specific plugin queries → Use PluginTreeAPI
  * - Plugin method extensions → Use PluginAPI
- * 
+ *
  * This legacy API remains for backward compatibility but will be removed in v2.0.
  */
 export interface PluginRegistryAPI {
@@ -55,7 +54,7 @@ export interface PluginRegistryAPI {
    * console.log('Database schema:', definition?.database?.schema);
    * ```
    */
-  getNodeDefinition(nodeType: NodeType): Promise<PluginDefinition | undefined>;
+  getNodeDefinition(nodeType: NodeType): Promise<NodeTypeDefinition | undefined>;
 
   /**
    * Validate node type compatibility for a specific operation
@@ -102,7 +101,7 @@ export interface PluginRegistryAPI {
    * @param pluginId - Plugin identifier
    * @returns Plugin capabilities including supported operations and features
    */
-  getPluginCapabilities(pluginId: string): Promise<PluginCapabilities | undefined>;
+  //getPluginCapabilities(pluginId: string): Promise<PluginCapabilities | undefined>;
 
   /**
    * Check if a plugin is currently active
@@ -132,7 +131,7 @@ export interface PluginRegistryAPI {
    * }
    * ```
    */
-  registerPlugin(definition: PluginDefinition): Promise<{
+  registerPlugin(definition: NodeTypeDefinition): Promise<{
     success: boolean;
     error?: string;
   }>;
@@ -158,7 +157,7 @@ export interface PluginRegistryAPI {
    */
   reloadPlugin(
     nodeType: NodeType,
-    definition: PluginDefinition
+    definition: NodeTypeDefinition
   ): Promise<{
     success: boolean;
     affectedNodes: number;
@@ -175,7 +174,7 @@ export interface PluginRegistryAPI {
    * @param definition - Plugin definition to validate
    * @returns Validation result with detailed error information
    */
-  validatePluginDefinition(definition: PluginDefinition): Promise<
+  validatePluginDefinition(definition: NodeTypeDefinition): Promise<
     ValidationResult & {
       warnings?: string[];
       recommendations?: string[];

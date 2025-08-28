@@ -193,7 +193,7 @@ export interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy> {
+> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
   // React Routerルーティング統合
   readonly routing: {
     actions: Record<string, PluginRouterAction>;
@@ -226,7 +226,7 @@ export class NodeTypeRegistry {
     return NodeTypeRegistry.instance;
   }
   
-  // 統合プラグイン登録（NodeTypeDefinition + Routing）
+  // 統合プラグイン登録（PluginDefinition + Routing）
   registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
     definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
@@ -260,7 +260,7 @@ export class NodeTypeRegistry {
 
   // 従来のNodeTypeDefinition登録（後方互換性）
   register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // UnifiedPluginDefinitionに変換して登録
     const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy> = {
@@ -323,7 +323,7 @@ export class NodeTypeRegistry {
   }
   
   private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // Dexieスキーマの動的登録
     const { database } = definition;
@@ -331,7 +331,7 @@ export class NodeTypeRegistry {
   }
   
   private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // API拡張の登録
     const { api } = definition;

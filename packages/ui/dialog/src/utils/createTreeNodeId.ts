@@ -3,7 +3,7 @@
  * @description Utility to create NodeId type
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Create a NodeId from a string

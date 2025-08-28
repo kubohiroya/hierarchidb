@@ -7,7 +7,7 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands';
 import { WorkingCopyCommandsAdapter, WorkingCopyEditSession } from './commands/WorkingCopyCommands';
@@ -19,7 +19,7 @@ import type {
   CommandAdapterOptions,
   UnsubscribeFunction,
 } from './types';
-import type { TreeNodeEvent } from '@hierarchidb/common-core';
+import type { TreeNodeEvent } from '@hierarchidb/common-type';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 

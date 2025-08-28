@@ -1,12 +1,12 @@
 /**
- * @file PluginTreeAPI.ts  
- * @description Tree-specific plugin management facade API
+ * @file PluginTreeAPI.ts
+ * @description TreeTypes-specific plugin management facade API
  *
  * Provides a focused interface for retrieving plugins available for specific trees,
  * with type safety and proper filtering capabilities.
  */
 
-import type { TreeId, NodeType, NodeCapability } from '@hierarchidb/common-core';
+import type { TreeId, NodeType, NodeCapability } from '@hierarchidb/common-type';
 
 // 【型定義】: PluginTreeAPIテスト用の追加型定義
 // 🟡 信頼性レベル: テスト仕様から推測した型構造
@@ -155,14 +155,14 @@ export interface MetricOptions {
 }
 
 /**
- * Tree-specific plugin management API
+ * TreeTypes-specific plugin management API
  *
  * Provides comprehensive plugin analysis and optimization for specific trees.
  *
  * @example
  * ```typescript
  * const pluginTreeAPI = workerAPI.getPluginTreeAPI();
- * 
+ *
  * // Get plugins for a tree
  * const response = await pluginTreeAPI.getPluginsForTree({
  *   treeId: 'my-tree-123' as TreeId
@@ -182,7 +182,11 @@ export interface PluginTreeAPI {
    * 【テスト対応】: 基本統計、未使用統計、期間指定統計をテスト
    * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
    */
-  getPluginUsageStats(treeId: TreeId, nodeType: NodeType, period?: TimePeriod): Promise<PluginUsageStats>;
+  getPluginUsageStats(
+    treeId: TreeId,
+    nodeType: NodeType,
+    period?: TimePeriod
+  ): Promise<PluginUsageStats>;
 
   /**
    * 【機能概要】: プラグイン間の互換性を確認
@@ -210,7 +214,11 @@ export interface PluginTreeAPI {
    * 【テスト対応】: 基本指標取得、履歴データ取得をテスト
    * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
    */
-  getPluginMetrics(treeId: TreeId, nodeType: NodeType, options?: MetricOptions): Promise<PluginMetrics>;
+  getPluginMetrics(
+    treeId: TreeId,
+    nodeType: NodeType,
+    options?: MetricOptions
+  ): Promise<PluginMetrics>;
 }
 
 /**

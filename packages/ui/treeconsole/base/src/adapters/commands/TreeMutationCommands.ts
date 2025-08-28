@@ -11,10 +11,9 @@ import type {
   MoveNodesPayload,
   MoveToTrashPayload,
   DuplicateNodesPayload,
-
   RemovePayload,
   RecoverFromTrashPayload,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import { createCommand } from '../utils';
 import type { CommandAdapterOptions } from '../../types/index';
 import { TreeConsoleAdapterError } from '../../types/index';
@@ -53,7 +52,7 @@ export class TreeMutationCommandsAdapter {
       const result = await mutationAPI.moveNodes({
         nodeIds: command.payload.nodeIds,
         toParentId: command.payload.toParentId,
-        onNameConflict: command.payload.onNameConflict
+        onNameConflict: command.payload.onNameConflict,
       });
 
       if (!result.success) {
@@ -145,7 +144,7 @@ export class TreeMutationCommandsAdapter {
       const mutationAPI = await this.workerAPI.getMutationAPI();
       const result = await mutationAPI.duplicateNodes({
         nodeIds: command.payload.nodeIds,
-        toParentId: command.payload.toParentId
+        toParentId: command.payload.toParentId,
       });
 
       if (!result.success) {
@@ -272,7 +271,7 @@ export class TreeMutationCommandsAdapter {
       const mutationAPI = await this.workerAPI.getMutationAPI();
       const result = await mutationAPI.recoverNodesFromTrash({
         nodeIds: command.payload.nodeIds,
-        toParentId: command.payload.toParentId
+        toParentId: command.payload.toParentId,
       });
 
       if (!result.success) {

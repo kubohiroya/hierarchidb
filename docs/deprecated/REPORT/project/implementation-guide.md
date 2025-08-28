@@ -143,13 +143,13 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity> {
 
 ```typescript
 // src/definitions/ProjectDefinition.ts
-import { NodeTypeDefinition } from '@hierarchidb/core';
+import { PluginDefinition } from '@hierarchidb/core';
 import { ProjectEntity, ResourceReference, LayerConfiguration, ExportConfiguration } from '../types';
 import { ProjectEntityHandler } from '../handlers/ProjectEntityHandler';
 import { ProjectHandler } from '../handlers/ProjectHandler';
 import { ProjectDialog } from '../components/ProjectDialog';
 
-export const ProjectDefinition: NodeTypeDefinition<
+export const ProjectDefinition: PluginDefinition<
   ProjectEntity,
   ResourceReference | LayerConfiguration | ExportConfiguration,
   ProjectEntity
@@ -193,7 +193,7 @@ export const ProjectDefinition: NodeTypeDefinition<
 };
 ```
 
-#### Day 2: Cross-Tree Reference Service
+#### Day 2: Cross-TreeTypes Reference Service
 
 **Reference Service Implementation:**
 
@@ -402,7 +402,7 @@ export const ProjectDialog: React.FC<ProjectDialogProps> = ({
 
 #### Day 4: Resource Selection Component
 
-**Resource Tree View:**
+**Resource TreeTypes View:**
 
 ```typescript
 // src/components/shared/ResourceTreeView.tsx

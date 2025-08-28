@@ -1,11 +1,11 @@
 /**
  * Plugin Auto-Registration System for Import/Export
- * 
+ *
  * Automatically registers all required node type plugins with proper dependency resolution.
  * Ensures plugins are loaded in the correct order based on their dependencies.
  */
 
-import { PluginDependencyResolver } from '@hierarchidb/common-core';
+import { PluginDependencyResolver } from '@hierarchidb/common-type';
 
 // Local PluginMetadata type to avoid conflicts with core definitions
 interface PluginMetadata {
@@ -18,7 +18,7 @@ interface PluginMetadata {
   description?: string;
   category?: string;
 }
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 
 // Import all required node type plugins
 // TODO: These imports cause circular dependencies - need to be loaded dynamically
@@ -128,7 +128,7 @@ export class ImportExportPluginRegistry {
    */
   getRegistrationOrder(): { success: boolean; order: NodeType[]; errors: string[] } {
     const result = this.resolver.resolve();
-    
+
     if (!result.success) {
       return {
         success: false,
@@ -147,9 +147,11 @@ export class ImportExportPluginRegistry {
   /**
    * Register all plugins in the correct order
    */
-  async registerAllPlugins(registry: any): Promise<{ success: boolean; registered: NodeType[]; errors: string[] }> {
+  async registerAllPlugins(
+    registry: any
+  ): Promise<{ success: boolean; registered: NodeType[]; errors: string[] }> {
     const orderResult = this.getRegistrationOrder();
-    
+
     if (!orderResult.success) {
       return {
         success: false,
@@ -166,7 +168,7 @@ export class ImportExportPluginRegistry {
         await this.registerSinglePlugin(nodeType, registry);
         registered.push(nodeType);
         this.registeredPlugins.add(nodeType);
-        
+
         console.log(`[ImportExportPluginRegistry] Successfully registered plugin: ${nodeType}`);
       } catch (error) {
         const errorMessage = `Failed to register plugin ${nodeType}: ${error}`;
@@ -234,13 +236,13 @@ export class ImportExportPluginRegistry {
    * Get plugin metadata for a specific node type
    */
   getPluginMetadata(nodeType: NodeType): PluginMetadata | undefined {
-    return IMPORT_EXPORT_PLUGIN_METADATA.find(p => p.nodeType === nodeType);
+    return IMPORT_EXPORT_PLUGIN_METADATA.find((p) => p.nodeType === nodeType);
   }
 
   /**
    * Get dependency graph for visualization/debugging
    */
-  getDependencyGraph(): { nodes: any[], edges: any[] } {
+  getDependencyGraph(): { nodes: any[]; edges: any[] } {
     return this.resolver.exportGraph();
   }
 
@@ -248,9 +250,9 @@ export class ImportExportPluginRegistry {
    * Validate that all required plugins are registered
    */
   validateRegistration(): { valid: boolean; missing: NodeType[]; errors: string[] } {
-    const requiredPlugins = IMPORT_EXPORT_PLUGIN_METADATA.map(p => p.nodeType);
-    const missing = requiredPlugins.filter(plugin => !this.registeredPlugins.has(plugin));
-    
+    const requiredPlugins = IMPORT_EXPORT_PLUGIN_METADATA.map((p) => p.nodeType);
+    const missing = requiredPlugins.filter((plugin) => !this.registeredPlugins.has(plugin));
+
     const errors: string[] = [];
     if (missing.length > 0) {
       errors.push(`Missing required plugins: ${missing.join(', ')}`);
@@ -277,7 +279,7 @@ export class ImportExportPluginRegistry {
     totalPlugins: number;
     registeredPlugins: number;
     registeredList: NodeType[];
-    dependencyGraph: { nodes: any[], edges: any[] };
+    dependencyGraph: { nodes: any[]; edges: any[] };
     metadata: PluginMetadata[];
   } {
     return {

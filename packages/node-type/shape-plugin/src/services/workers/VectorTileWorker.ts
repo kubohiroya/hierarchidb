@@ -36,7 +36,7 @@ import type {
   //FeatureData,
 } from '../types';
 import type { Feature } from '../../types';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 interface TileLayer {
   name: string;

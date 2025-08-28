@@ -31,7 +31,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  │   (既存維持)    │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │                │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• treeNodeId    │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• parentId      │    │ │StyleMap     │WorkingCopy  │ Peer  │ │  │
+│  │• parentId      │    │ │StyleMap     │WorkingCopyTypes  │ Peer  │ │  │
 │  │• treeNodeType  │    │ │BaseMap      │ViewState    │(1:1)  │ │  │
 │  │• name, etc     │    │ ├─────────────┼─────────────┤       │ │  │
 │  │                │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -705,7 +705,7 @@ export abstract class ContainerPluginBase<TEntity extends PeerEntity> {
 ```
 
 #### ドキュメント型プラグイン（ドキュメントベース）
-- **特徴**: 単一エンティティ、WorkingCopy、バージョン管理、エクスポート
+- **特徴**: 単一エンティティ、WorkingCopyTypes、バージョン管理、エクスポート
 - **例**: BaseMap, StyleMap, Shapes
 - **エンティティ**: PeerEntity, GroupEntity, RelationalEntity
 - **UI**: 編集ダイアログ、プレビュー、エクスポート

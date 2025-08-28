@@ -9,8 +9,8 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-core';
-import type { TreeNode } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
   subscribedRootNodeIdAtom,

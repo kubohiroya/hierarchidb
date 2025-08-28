@@ -7,7 +7,7 @@ const { glob } = require('glob');
 // Find all vitest.setup.ts files (excluding the base file and already updated ones)
 const setupFiles = glob.sync('**/vitest.setup.ts', {
   cwd: '/Users/hiroya/WebstormProjects/hierarchidb',
-  ignore: ['node_modules/**', 'dist/**', 'vitest.setup.base.ts']
+  ignore: ['node_modules/**', 'dist/**', 'vitest.setup.menu.ts']
 });
 
 console.log(`Found ${setupFiles.length} vitest setup files to update`);

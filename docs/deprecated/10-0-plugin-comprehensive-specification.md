@@ -30,7 +30,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
 │  │                │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │• treeNodeId    │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• parentId      │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• treeNodeType  │    │ │StyleMap     │WorkingCopy  │ Peer  │ │  │
+│  │• treeNodeType  │    │ │StyleMap     │WorkingCopyTypes  │ Peer  │ │  │
 │  │• name, etc     │    │ │BaseMap      │ViewState    │       │ │  │
 │  │                │    │ ├─────────────┼─────────────┤       │ │  │
 │  │• 既存システム   │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -312,7 +312,7 @@ async saveAsDraft(workingCopyId: string): Promise<void> {
 }
 
 // ドラフト再開時の処理
-async resumeDraft(nodeId: TreeNodeId): Promise<WorkingCopy> {
+async resumeDraft(nodeId: TreeNodeId): Promise<WorkingCopyTypes> {
   const node = await this.getNode(nodeId);
   
   if (!node.isDraft) {

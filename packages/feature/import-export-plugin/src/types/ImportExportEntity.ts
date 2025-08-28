@@ -3,7 +3,7 @@
  * Defines import/export operation entities and their configurations
  */
 
-import { EntityId, NodeId, Timestamp, PeerEntity } from '@hierarchidb/common-core';
+import { EntityId, NodeId, Timestamp, PeerEntity } from '@hierarchidb/common-type';
 
 /**
  * Main ImportExportEntity - represents an import/export operation
@@ -168,7 +168,7 @@ export interface APILocation {
 }
 
 /**
- * Tree location (for tree-to-tree operations)
+ * TreeTypes location (for tree-to-tree operations)
  */
 export interface TreeLocation {
   type: 'tree';

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Layers as LayersIcon } from '@mui/icons-material';
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import type {
   UIPluginDefinition,
   CreateDialogProps,

@@ -53,7 +53,7 @@
 - **依存タスク**: TASK-0001
 - **実装詳細**:
   ```typescript
-  // packages/core/src/types/nodeDefinition.ts
+  // packages/core/src/types/entity-types.ts
   export interface BaseEntity {
     nodeId: TreeNodeId;
     createdAt: Timestamp;
@@ -72,7 +72,7 @@
   - [ ] TypeScriptコンパイルエラーなし
   - [ ] JSDocコメント完備
 
-#### Day 3 (TASK-0003): NodeTypeDefinition インターフェース
+#### Day 3 (TASK-0003): PluginDefinition インターフェース
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -81,7 +81,7 @@
 - **依存タスク**: TASK-0002
 - **実装詳細**:
   ```typescript
-  export interface NodeTypeDefinition<
+  export interface PluginDefinition<
     TEntity extends BaseEntity = BaseEntity,
     TSubEntity extends BaseSubEntity = BaseSubEntity,
     TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
@@ -114,7 +114,7 @@
 - **依存タスク**: TASK-0003
 - **実装詳細**:
   ```typescript
-  export interface UnifiedPluginDefinition<...> extends NodeTypeDefinition<...> {
+  export interface UnifiedPluginDefinition<...> extends PluginDefinition<...> {
     readonly routing: {
       actions: Record<string, PluginRouterAction>;
       defaultAction?: string;

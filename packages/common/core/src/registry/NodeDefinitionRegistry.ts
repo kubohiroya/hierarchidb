@@ -1,24 +1,24 @@
 /**
  * @file NodeDefinitionRegistry.ts
- * @description Registry for NodeTypeDefinition (AOP-based node definitions)
+ * @description Registry for PluginDefinition (AOP-based node definitions)
  * This is the refactored version of the original NodeTypeRegistry in core
  */
 
-import type { NodeType } from '../types';
+import { NodeType, WorkingCopyProperties } from '@hierarchidb/common-type';
 import type {
-  NodeTypeDefinition,
   PeerEntity,
   GroupEntity,
   EntityHandler,
+  NodeTypeDefinition,
   NodeLifecycleHooks,
   EntityBackup,
-} from '../types/nodeDefinition';
-import type { WorkingCopyProperties } from '../types/workingCopy';
+} from '@hierarchidb/common-type';
+
 import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
 import type { INodeDefinitionRegistry } from './INodeTypeRegistry';
 
 /**
- * Registry for managing NodeTypeDefinition instances
+ * Registry for managing PluginDefinition instances
  * Used for AOP-based plugin architecture
  */
 export class NodeDefinitionRegistry
@@ -108,7 +108,7 @@ export class NodeDefinitionRegistry
     if (this.isNodeTypeDefinition(config)) {
       this.registerDefinition(config);
     } else {
-      throw new Error('Invalid configuration: expected NodeTypeDefinition');
+      throw new Error('Invalid configuration: expected PluginDefinition');
     }
   }
 
@@ -203,7 +203,7 @@ export class NodeDefinitionRegistry
   }
 
   /**
-   * Adapt a generic NodeTypeDefinition<TEntity,...> into a base-typed facade
+   * Adapt a generic PluginDefinition<TEntity,...> into a base-typed facade
    * to safely store in the registry without using any. Function parameters
    * are downcast at the boundary; return values are upcast to base.
    */
@@ -319,7 +319,7 @@ export class NodeDefinitionRegistry
   }
 
   /**
-   * Type guard to check if config is NodeTypeDefinition
+   * Type guard to check if config is PluginDefinition
    */
   private isNodeTypeDefinition(config: unknown): config is NodeTypeDefinition {
     if (typeof config !== 'object' || config === null) return false;

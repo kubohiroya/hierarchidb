@@ -1,4 +1,4 @@
-import type { NodeId } from '../types/ids';
+import { NodeId } from '@hierarchidb/common-type';
 
 export function assertNonNull<T>(
   value: T | null | undefined,
@@ -63,11 +63,17 @@ export function validateNodeName(name: string): CommonValidationResult {
   }
 
   if (trimmed.length < NODE_VALIDATION_CONSTANTS.NAME_MIN_LENGTH) {
-    return { isValid: false, error: `Name must be at least ${NODE_VALIDATION_CONSTANTS.NAME_MIN_LENGTH} character` };
+    return {
+      isValid: false,
+      error: `Name must be at least ${NODE_VALIDATION_CONSTANTS.NAME_MIN_LENGTH} character`,
+    };
   }
 
   if (trimmed.length > NODE_VALIDATION_CONSTANTS.NAME_MAX_LENGTH) {
-    return { isValid: false, error: `Name must be less than ${NODE_VALIDATION_CONSTANTS.NAME_MAX_LENGTH} characters` };
+    return {
+      isValid: false,
+      error: `Name must be less than ${NODE_VALIDATION_CONSTANTS.NAME_MAX_LENGTH} characters`,
+    };
   }
 
   if (NODE_VALIDATION_CONSTANTS.INVALID_NAME_CHARS.test(trimmed)) {
@@ -90,7 +96,10 @@ export function validateNodeDescription(description?: string): CommonValidationR
   }
 
   if (description.length > NODE_VALIDATION_CONSTANTS.DESCRIPTION_MAX_LENGTH) {
-    return { isValid: false, error: `Description must be less than ${NODE_VALIDATION_CONSTANTS.DESCRIPTION_MAX_LENGTH} characters` };
+    return {
+      isValid: false,
+      error: `Description must be less than ${NODE_VALIDATION_CONSTANTS.DESCRIPTION_MAX_LENGTH} characters`,
+    };
   }
 
   return { isValid: true };
@@ -116,9 +125,12 @@ export function validateNodeTags(tags?: string[]): CommonValidationResult {
     if (typeof tag !== 'string') {
       return { isValid: false, error: 'All tags must be strings' };
     }
-    
+
     if (tag.length > NODE_VALIDATION_CONSTANTS.MAX_TAG_LENGTH) {
-      return { isValid: false, error: `Tag "${tag}" is too long (max ${NODE_VALIDATION_CONSTANTS.MAX_TAG_LENGTH} characters)` };
+      return {
+        isValid: false,
+        error: `Tag "${tag}" is too long (max ${NODE_VALIDATION_CONSTANTS.MAX_TAG_LENGTH} characters)`,
+      };
     }
   }
 
@@ -158,7 +170,7 @@ export function validateCommonNodeData(data: NodeDataValidation): CommonValidati
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -185,7 +197,9 @@ export function canMoveNode(
  * Validate and normalize external URL format and protocol
  * Compatible with both ui-file and common-core patterns
  */
-export const validateExternalURL = (url: string): { isValid: boolean; valid?: boolean; error?: string; url?: string } => {
+export const validateExternalURL = (
+  url: string
+): { isValid: boolean; valid?: boolean; error?: string; url?: string } => {
   try {
     // Remove leading/trailing whitespace
     const trimmedUrl = url.trim();
@@ -195,7 +209,7 @@ export const validateExternalURL = (url: string): { isValid: boolean; valid?: bo
 
     // Parse URL
     const parsedUrl = new URL(trimmedUrl);
-    
+
     // Check protocol (only allow http and https)
     if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
       return { isValid: false, valid: false, error: 'URL must use HTTP or HTTPS protocol' };
@@ -207,10 +221,10 @@ export const validateExternalURL = (url: string): { isValid: boolean; valid?: bo
       .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
       .join('/');
 
-    return { 
-      isValid: true, 
-      valid: true, 
-      url: parsedUrl.toString() 
+    return {
+      isValid: true,
+      valid: true,
+      url: parsedUrl.toString(),
     };
   } catch {
     return { isValid: false, valid: false, error: 'Invalid URL format' };

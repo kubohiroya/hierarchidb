@@ -385,15 +385,15 @@ pnpm lint:deprecated
 
 **運用方針**:
 - **ビルドプロセス組み込み**: CI/CDパイプラインで `pnpm lint:deprecated` を実行し、非推奨要素の使用を検出した場合は **ビルド失敗** させる
-- **型移行時の安全装置**: パッケージ間の型移行（例：`NodeTypeDefinition` → `NodeDefinition`）時に、一時的な型エイリアスに `@deprecated` を付与し、移行完了後の除去を確実に行う
+- **型移行時の安全装置**: パッケージ間の型移行（例：`PluginDefinition` → `EntityTypes`）時に、一時的な型エイリアスに `@deprecated` を付与し、移行完了後の除去を確実に行う
 - **外部ライブラリの非推奨API検出**: RxJSのsubscribeメソッドやJavaScriptのsubstrメソッドなど、外部ライブラリの非推奨APIも検出対象
 
 ### 2.8.3 検出される非推奨要素の例
 
 ```typescript
 // 型移行時の一時的エイリアス
-/** @deprecated Use NodeDefinition instead. This alias will be removed after plugin migration is complete */
-export type NodeTypeDefinition = NodeDefinition;
+/** @deprecated Use EntityTypes instead. This alias will be removed after plugin migration is complete */
+export type PluginDefinition = EntityTypes;
 
 // 外部ライブラリの非推奨API
 observable.subscribe(next, error); // ← ESLintで検出される

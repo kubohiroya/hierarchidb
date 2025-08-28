@@ -3,8 +3,7 @@
  * @description Interface for plugin database management
  */
 
-import type { NodeType } from '../../types';
-import type { PluginDatabaseConfig } from '../../types/plugin';
+import { NodeType, PluginDatabaseConfig } from '@hierarchidb/common-type';
 
 /**
  * Interface for plugin database operations

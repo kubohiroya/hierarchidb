@@ -100,7 +100,7 @@ export default function TLayout() {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* AppBar with Tree Switcher and UserLoginButton */}
+      {/* AppBar with TreeTypes Switcher and UserLoginButton */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           {/* HierarchiDB Icon - Left side, navigates to top page */}
@@ -116,15 +116,15 @@ export default function TLayout() {
             </svg>
           </IconButton>
 
-          {/* Tree Title */}
+          {/* TreeTypes Title */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
-            {data.tree?.name || 'Tree Console'}
+            {data.tree?.name || 'TreeTypes Console'}
           </Typography>
 
           {/* Spacer to push buttons to the right */}
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* Tree Switcher Button Group - Right side, before login button */}
+          {/* TreeTypes Switcher Button Group - Right side, before login button */}
           <Stack direction="row" spacing={1}>
             <ToggleButtonGroup
               value={selectedTreeId || undefined}

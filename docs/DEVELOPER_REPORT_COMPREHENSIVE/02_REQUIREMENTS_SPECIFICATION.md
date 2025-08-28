@@ -13,7 +13,7 @@ mindmap
         バルク操作
         検索・フィルタ
       編集機能
-        WorkingCopy
+        WorkingCopyTypes
         Undo/Redo
         競合解決
       リアルタイム機能
@@ -213,7 +213,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "プラグイン定義"
-        A[NodeTypeDefinition] --> A1[nodeType: string]
+        A[PluginDefinition] --> A1[nodeType: string]
         A --> A2[database: Schema]
         A --> A3[entityHandler: Handler]
         A --> A4[ui: Components]
@@ -704,7 +704,7 @@ graph TB
     end
     
     subgraph "リソースベース認可"
-        F[Tree Level] --> F1[ツリー所有者]
+        F[TreeTypes Level] --> F1[ツリー所有者]
         F --> F2[共有設定]
         
         G[Node Level] --> G1[ノード作成者]

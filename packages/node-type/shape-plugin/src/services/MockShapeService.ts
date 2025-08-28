@@ -1,4 +1,4 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { 
   ShapeEntity, 
   ShapeWorkingCopy,

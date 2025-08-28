@@ -4,7 +4,15 @@
  */
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
-import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMetadata, NodeLifecycleHooks, TreeNode } from '@hierarchidb/common-core';
+import type {
+  NodeType,
+  NodeId,
+  ValidationResult,
+  NodeTypeDefinition,
+  PluginMetadata,
+  NodeLifecycleHooks,
+  TreeNode,
+} from '@hierarchidb/common-core';
 import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import type { TreeQueryService } from './TreeQueryService';
 import {
@@ -56,7 +64,7 @@ export class NodeTypeService implements NodeTypeAPI {
           if (!definition.ui?.dialogComponentPath) {
             errors.push(`Node type ${nodeType} does not support create operation`);
           }
-          
+
           if (context?.parentId) {
             try {
               const parentNode = await this.queryService.getNode(context.parentId);
@@ -65,7 +73,9 @@ export class NodeTypeService implements NodeTypeAPI {
               } else {
                 const parentSupportsChildren = await this.supportsChildren(parentNode.nodeType);
                 if (!parentSupportsChildren) {
-                  errors.push(`Parent node type ${parentNode.nodeType} does not support child nodes`);
+                  errors.push(
+                    `Parent node type ${parentNode.nodeType} does not support child nodes`
+                  );
                 }
               }
             } catch (error) {
@@ -107,22 +117,25 @@ export class NodeTypeService implements NodeTypeAPI {
             if (context.targetNodeId === context.parentId) {
               errors.push('Cannot move node to itself');
             }
-            
+
             try {
               const [targetNode, parentNode] = await Promise.all([
                 this.queryService.getNode(context.targetNodeId),
-                this.queryService.getNode(context.parentId)
+                this.queryService.getNode(context.parentId),
               ]);
-              
+
               if (!targetNode) {
                 errors.push('Target node not found');
               }
               if (!parentNode) {
                 errors.push('Parent node not found');
               }
-              
+
               if (targetNode && parentNode) {
-                const isDescendant = await this.isNodeDescendantOf(context.parentId, context.targetNodeId);
+                const isDescendant = await this.isNodeDescendantOf(
+                  context.parentId,
+                  context.targetNodeId
+                );
                 if (isDescendant) {
                   errors.push('Cannot move node to its own descendant');
                 }
@@ -142,11 +155,13 @@ export class NodeTypeService implements NodeTypeAPI {
 
     return {
       valid: errors.length === 0,
-      message: errors.length === 0 ? '' : errors.join('; ')
+      message: errors.length === 0 ? '' : errors.join('; '),
     };
   }
 
-  async getSupportedOperations(nodeType: NodeType): Promise<Array<'create' | 'read' | 'update' | 'delete' | 'move' | 'copy'>> {
+  async getSupportedOperations(
+    nodeType: NodeType
+  ): Promise<Array<'create' | 'read' | 'update' | 'delete' | 'move' | 'copy'>> {
     const isRegistered = await isNodeTypeRegistered(nodeType);
     if (!isRegistered) {
       return [];
@@ -225,11 +240,11 @@ export class NodeTypeService implements NodeTypeAPI {
 
     const allTypes = await getCreatableNodeTypes();
     const parentCategory = definition.category?.menuGroup;
-    
+
     if (parentCategory === 'container') {
       return allTypes as NodeType[];
     } else if (parentCategory === 'document') {
-      return allTypes.filter(type => !['project', 'basemap'].includes(type)) as NodeType[];
+      return allTypes.filter((type) => !['project', 'basemap'].includes(type)) as NodeType[];
     }
 
     return allTypes as NodeType[];
@@ -244,36 +259,38 @@ export class NodeTypeService implements NodeTypeAPI {
     switch (capability) {
       case 'create':
         return !!definition.ui?.dialogComponentPath;
-      
+
       case 'ui':
         return !!(definition.ui?.dialogComponentPath || definition.ui?.panelComponentPath);
-      
+
       case 'api':
         return !!definition.api;
-      
+
       case 'children':
         return await this.supportsChildren(nodeType);
-      
+
       case 'export':
         return !!definition.entityHandler;
-      
+
       case 'lifecycle':
-        return !!(definition.lifecycle?.beforeCreate || 
-                 definition.lifecycle?.afterCreate ||
-                 definition.lifecycle?.beforeUpdate ||
-                 definition.lifecycle?.afterUpdate ||
-                 definition.lifecycle?.beforeDelete ||
-                 definition.lifecycle?.afterDelete);
-      
+        return !!(
+          definition.lifecycle?.beforeCreate ||
+          definition.lifecycle?.afterCreate ||
+          definition.lifecycle?.beforeUpdate ||
+          definition.lifecycle?.afterUpdate ||
+          definition.lifecycle?.beforeDelete ||
+          definition.lifecycle?.afterDelete
+        );
+
       case 'validation':
         return !!definition.entityHandler;
-      
+
       case 'search':
         return true;
-      
+
       case 'permissions':
         return false;
-      
+
       default:
         return false;
     }
@@ -281,7 +298,7 @@ export class NodeTypeService implements NodeTypeAPI {
 
   // Additional methods expected by tests
   async registerNodeType(nodeType: NodeTypeDefinition<any, any, any>): Promise<void> {
-    // Map NodeTypeDefinition (core) to SimpleNodeTypeRegistry config (lightweight)
+    // Map PluginDefinition (core) to SimpleNodeTypeRegistry config (lightweight)
     const config: Partial<import('@hierarchidb/common-core').NodeTypeConfig> = {
       icon: nodeType.icon,
       allowedChildren: nodeType.validation?.allowedChildTypes,
@@ -302,7 +319,9 @@ export class NodeTypeService implements NodeTypeAPI {
     return this.nodeTypeRegistry.getAll();
   }
 
-  async getNodeTypeDefinition(nodeType: NodeType): Promise<NodeTypeDefinition<any, any, any> | null> {
+  async getNodeTypeDefinition(
+    nodeType: NodeType
+  ): Promise<NodeTypeDefinition<any, any, any> | null> {
     // Delegate to plugin registry which holds full plugin definitions in worker
     const def = await getPluginDefinition(nodeType);
     return (def as unknown as NodeTypeDefinition<any, any, any>) ?? null;
@@ -311,14 +330,14 @@ export class NodeTypeService implements NodeTypeAPI {
   async getNodeTypesByCategory(category: string): Promise<NodeType[]> {
     const allTypes = await this.listNodeTypes();
     const categorizedTypes: NodeType[] = [];
-    
+
     for (const type of allTypes) {
       const definition: any = await this.getNodeTypeDefinition(type);
       if (definition?.category?.menuGroup === category) {
         categorizedTypes.push(type);
       }
     }
-    
+
     return categorizedTypes;
   }
 
@@ -347,7 +366,7 @@ export class NodeTypeService implements NodeTypeAPI {
     if (!definition) {
       return {
         valid: false,
-        errors: [`Node type ${node.nodeType} is not registered`]
+        errors: [`Node type ${node.nodeType} is not registered`],
       };
     }
 
@@ -360,17 +379,22 @@ export class NodeTypeService implements NodeTypeAPI {
           const result = await validator.validate(node as any);
           if (!result.valid) {
             // result is { valid: false; message: string } in this branch
-            errors.push((result as Extract<ValidationResult, { valid: false }>).message ?? `Validation failed: ${validator.name}`);
+            errors.push(
+              (result as Extract<ValidationResult, { valid: false }>).message ??
+                `Validation failed: ${validator.name}`
+            );
           }
         } catch (error) {
-          errors.push(`Validation error in ${validator.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `Validation error in ${validator.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -385,12 +409,12 @@ export class NodeTypeService implements NodeTypeAPI {
   async getNodeTypeStats(): Promise<Record<NodeType, number>> {
     const allTypes = await this.listNodeTypes();
     const stats: Record<NodeType, number> = {};
-    
+
     // Initialize all registered types to 0
     for (const type of allTypes) {
       stats[type] = 0;
     }
-    
+
     try {
       // Count nodes by type using search functionality as substitute
       for (const nodeType of allTypes) {
@@ -406,7 +430,7 @@ export class NodeTypeService implements NodeTypeAPI {
     } catch (error) {
       // If there's an error getting stats, return zeros
     }
-    
+
     return stats;
   }
 
@@ -414,22 +438,22 @@ export class NodeTypeService implements NodeTypeAPI {
     try {
       let currentNodeId: NodeId | null = nodeId;
       const visitedNodes = new Set<NodeId>();
-      
+
       while (currentNodeId && !visitedNodes.has(currentNodeId)) {
         visitedNodes.add(currentNodeId);
-        
+
         const node = await this.queryService.getNode(currentNodeId);
         if (!node || !node.parentId) {
           break;
         }
-        
+
         if (node.parentId === potentialParentId) {
           return true;
         }
-        
+
         currentNodeId = node.parentId;
       }
-      
+
       return false;
     } catch (error) {
       return true; // Assume circular reference on error

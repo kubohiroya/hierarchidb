@@ -20,14 +20,14 @@
 ```typescript
 // CoreDB: 永続データ用
 class CoreDB extends Dexie {
-  trees!: Table<Tree, TreeId>;
+  trees!: Table<TreeTypes, TreeId>;
   treeNodes!: Table<TreeNode, TreeNodeId>;
   entities!: Table<BaseEntity, TreeNodeId>;
 }
 
 // EphemeralDB: 一時データ用
 class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopy, UUID>;
+  workingCopies!: Table<WorkingCopyTypes, UUID>;
   treeViewStates!: Table<TreeViewState, string>;
   sessions!: Table<SessionData, string>;
 }
@@ -165,11 +165,11 @@ class CommandProcessor {
 ```typescript
 class NodeTypeRegistry {
   private static instance: NodeTypeRegistry;
-  private definitions: Map<TreeNodeType, NodeTypeDefinition>;
+  private definitions: Map<TreeNodeType, PluginDefinition>;
   private handlers: Map<TreeNodeType, EntityHandler>;
   
   register<TEntity, TSubEntity, TWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // 型定義の登録
     // エンティティハンドラーの登録
@@ -1588,7 +1588,7 @@ export class OptimisticLockManager {
     return currentNode ? currentNode.version > originalVersion : false;
   }
   
-  async checkExistingWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopy | undefined> {
+  async checkExistingWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyTypes | undefined> {
     return await this.ephemeralDB.workingCopies
       .where('workingCopyOf')
       .equals(nodeId)
@@ -1915,7 +1915,7 @@ export class MigrationTool {
     
     // hierarchidbの構造に変換
     const coreNodes: TreeNode[] = [];
-    const workingCopies: WorkingCopy[] = [];
+    const workingCopies: WorkingCopyTypes[] = [];
     
     for (const eriaNode of eriaNodes) {
       if (eriaNode.workingCopyOf) {
@@ -1964,7 +1964,7 @@ gantt
     Task 9 TreeMutation       :t9, after t3 t8, 3d
     Task 10 TreeQuery         :t10, after t1, 2d
     Task 11 TreeObservable    :t11, after t1, 2d
-    Task 12 Advanced Tree     :t12, after t9, 2d
+    Task 12 Advanced TreeTypes     :t12, after t9, 2d
     
     section プラグイン
     Task 13 Plugin Base       :t13, after t4, 2d

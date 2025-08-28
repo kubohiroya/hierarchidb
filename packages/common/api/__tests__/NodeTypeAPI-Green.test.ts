@@ -1,12 +1,12 @@
 /**
  * @file NodeTypeAPI-Green.test.ts
  * @description NodeTypeAPI のTDD Green フェーズテスト
- * 
+ *
  * TDD Green フェーズ: 最小限の実装でテストを通す
  */
-
+import { expect, describe, it, beforeEach, afterEach, test } from 'vitest';
 import type { NodeTypeAPI } from '../src/NodeTypeAPI';
-import type { NodeType, NodeId } from '@hierarchidb/common-core';
+import type { NodeType, NodeId } from '@hierarchidb/common-type';
 
 describe('NodeTypeAPI - TDD Green Phase', () => {
   let nodeTypeAPI: NodeTypeAPI;
@@ -33,18 +33,20 @@ describe('NodeTypeAPI - TDD Green Phase', () => {
         operation: 'create' | 'update' | 'delete' | 'move',
         context?: { parentId?: NodeId; targetId?: NodeId }
       ): Promise<{ valid: boolean; errors: string[] }> => {
-        if (!await nodeTypeAPI.isSupported(nodeType)) {
+        if (!(await nodeTypeAPI.isSupported(nodeType))) {
           return {
             valid: false,
-            errors: [`Node type ${nodeType} is not registered`]
+            errors: [`Node type ${nodeType} is not registered`],
           };
         }
         return { valid: true, errors: [] };
       },
 
       // 【サポート操作】: 基本的なCRUD操作を返す
-      getSupportedOperations: async (nodeType: NodeType): Promise<readonly ('create' | 'read' | 'update' | 'delete' | 'move' | 'copy')[]> => {
-        if (!await nodeTypeAPI.isSupported(nodeType)) {
+      getSupportedOperations: async (
+        nodeType: NodeType
+      ): Promise<readonly ('create' | 'read' | 'update' | 'delete' | 'move' | 'copy')[]> => {
+        if (!(await nodeTypeAPI.isSupported(nodeType))) {
           return [];
         }
         return ['create', 'read', 'update', 'delete', 'move', 'copy'] as const;
@@ -52,7 +54,7 @@ describe('NodeTypeAPI - TDD Green Phase', () => {
 
       // 【子ノードサポート】: 基本的に全てのノード型が子をサポート
       supportsChildren: async (nodeType: NodeType): Promise<boolean> => {
-        if (!await nodeTypeAPI.isSupported(nodeType)) {
+        if (!(await nodeTypeAPI.isSupported(nodeType))) {
           return false;
         }
         return nodeType !== 'leaf-only-type';
@@ -60,7 +62,7 @@ describe('NodeTypeAPI - TDD Green Phase', () => {
 
       // 【許可子タイプ】: 登録済みノード型を子として許可
       getAllowedChildTypes: async (parentType: NodeType): Promise<NodeType[]> => {
-        if (!await nodeTypeAPI.isSupported(parentType)) {
+        if (!(await nodeTypeAPI.isSupported(parentType))) {
           return [];
         }
         return await nodeTypeAPI.listSupported();
@@ -68,13 +70,13 @@ describe('NodeTypeAPI - TDD Green Phase', () => {
 
       // 【機能確認】: 基本的な機能の有無を判定
       hasCapability: async (nodeType: NodeType, capability: string): Promise<boolean> => {
-        if (!await nodeTypeAPI.isSupported(nodeType)) {
+        if (!(await nodeTypeAPI.isSupported(nodeType))) {
           return false;
         }
-        
+
         const basicCapabilities = ['create', 'ui', 'children'];
         return basicCapabilities.includes(capability);
-      }
+      },
     };
   });
 

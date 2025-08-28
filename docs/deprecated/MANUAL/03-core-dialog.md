@@ -154,7 +154,7 @@ const PluginDialog: React.FC<PluginDialogProps> = ({
   onSave
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<WorkingCopy>();
+  const [formData, setFormData] = useState<WorkingCopyTypes>();
   const [isDirty, setIsDirty] = useState(false);
 
   // ワーキングコピーの管理

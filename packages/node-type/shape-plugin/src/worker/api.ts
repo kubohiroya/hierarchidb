@@ -3,7 +3,7 @@
  * Implements ShapeAPI interface from shared layer
  */
 
-import { NodeId, EntityId } from '@hierarchidb/common-core';
+import { NodeId, EntityId } from '@hierarchidb/common-type';
 import {
   ShapeEntity,
   CreateShapeData,
@@ -65,7 +65,7 @@ export const shapePluginAPI = {
   },
 
   // ===================================
-  // WorkingCopy Management (CopyOnWrite)
+  // WorkingCopyTypes Management (CopyOnWrite)
   // ===================================
 
   createWorkingCopy: async (nodeId: NodeId): Promise<EntityId> => {
@@ -174,7 +174,7 @@ export const shapePluginAPI = {
   },
 
   // ===================================
-  // WorkingCopy-based Batch Processing
+  // WorkingCopyTypes-based Batch Processing
   // ===================================
 
   startBatchProcessing: async (

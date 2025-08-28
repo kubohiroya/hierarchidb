@@ -70,17 +70,17 @@ export class ProjectLifecycleManager {
 
 ```mermaid
 graph TD
-    A[Browse Resources Tree] --> B[Select Resource Nodes]
-    B --> C[Validate Cross-Tree References]
+    A[Browse Resources TreeTypes] --> B[Select Resource Nodes]
+    B --> C[Validate Cross-TreeTypes References]
     C --> D{Valid References?}
     D -->|No| E[Show Validation Errors]
     E --> B
-    D -->|Yes| F[Create ResourceReference Entities]
+    D -->|Yes| F[Create ResourceReference EntityTypes]
     F --> G[Update Project Aggregation Config]
     G --> H[Trigger Layer Configuration]
 ```
 
-**Cross-Tree Reference Management:**
+**Cross-TreeTypes Reference Management:**
 
 ```typescript
 export class CrossTreeReferenceManager {

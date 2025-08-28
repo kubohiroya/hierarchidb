@@ -6,10 +6,10 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { TreeObservableAdapter } from './TreeObservableAdapter';
 import type { AdapterContext, UnsubscribeFunction } from '../../types/index';
-import type { TreeNodeEvent } from '@hierarchidb/common-core';
+import type { TreeNodeEvent } from '@hierarchidb/common-type';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 import { TreeConsoleAdapterError } from '../../types/index';

@@ -5,7 +5,7 @@
  * パッケージ分離のため、簡化されたversion
  */
 
-import { TreeNode } from '@hierarchidb/common-core';
+import { TreeNode } from '@hierarchidb/common-type';
 import { atom } from 'jotai';
 import type {
   // TreeNode,

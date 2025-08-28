@@ -326,7 +326,7 @@ class SubscriptionManager {
 graph TB
     subgraph "Plugin Definition"
         PluginMetadata["Plugin Metadata"]
-        NodeTypeDefinition["Node Type Definition"]
+        PluginDefinition["Node Type Definition"]
         EntitySchema["Entity Schema"]
         UIComponents["UI Components"]
     end
@@ -353,7 +353,7 @@ graph TB
     end
     
     PluginMetadata --> ValidationStep
-    NodeTypeDefinition --> SchemaRegistration
+    PluginDefinition --> SchemaRegistration
     EntitySchema --> HandlerRegistration
     UIComponents --> UIRegistration
     
@@ -372,7 +372,7 @@ graph TB
     classDef integration fill:#fff3e0
     classDef management fill:#e8f5e9
     
-    class PluginMetadata,NodeTypeDefinition,EntitySchema,UIComponents definition
+    class PluginMetadata,PluginDefinition,EntitySchema,UIComponents definition
     class ValidationStep,SchemaRegistration,HandlerRegistration,UIRegistration registration
     class DynamicImport,TypeRegistration,ComponentMount,EventBinding integration
     class PluginRegistry,DependencyResolution,VersionManagement,ConflictResolution management
@@ -436,7 +436,7 @@ class NodeTypeRegistry {
   private registrations = new Map<string, NodeTypeRegistration>();
   
   register<TEntity, TSubEntity = never, TWorkingCopy = TEntity>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // バリデーション
     this.validateDefinition(definition);
@@ -462,7 +462,7 @@ class NodeTypeRegistry {
   }
   
   private validateDefinition<T, S, W>(
-    definition: NodeTypeDefinition<T, S, W>
+    definition: PluginDefinition<T, S, W>
   ): void {
     if (!definition.nodeType || typeof definition.nodeType !== 'string') {
       throw new Error('Invalid node type');

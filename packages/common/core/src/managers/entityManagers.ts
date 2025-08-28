@@ -5,7 +5,13 @@
  * 🟢 信頼性レベル: 設計文書に基づく実装
  */
 
-import type { PeerEntity, GroupEntity, RelationalEntity, NodeId, Timestamp } from '../types';
+import {
+  GroupEntity,
+  NodeId,
+  PeerEntity,
+  RelationalEntity,
+  Timestamp,
+} from '@hierarchidb/common-type';
 
 /**
  * 【機能概要】: グループIDを生成する

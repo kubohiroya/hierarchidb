@@ -66,7 +66,7 @@ const coreDependencies = {
     version: '6.3.1',
     usage: 'Component library',
     size: '326KB gzipped',
-    optimization: 'Tree-shakeable, use specific imports'
+    optimization: 'TreeTypes-shakeable, use specific imports'
   },
   
   'dexie': {
@@ -137,7 +137,7 @@ const devDependencies = {
 };
 ```
 
-## Dependency Tree Analysis
+## Dependency TreeTypes Analysis
 
 ### Deep Dependencies
 

@@ -9,7 +9,7 @@
  * 4. 各レベルで詳細情報を付加・更新
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseShapeError, ErrorCategory, ErrorSeverity } from '../types/ShapeErrorHierarchy';
 import { ErrorPersistenceManager } from './ErrorPersistenceStrategy';
 import { RecoveryStrategyManager } from './RecoveryStrategy';

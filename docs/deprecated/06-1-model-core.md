@@ -10,7 +10,7 @@
 
 - 機能要件
   - Dexieスキーマ定義（CoreDB/EphemeralDB）。
-  - Tree/TreeNode/TreeRootState/TreeViewStateの型定義。
+  - TreeTypes/TreeNode/TreeRootState/TreeViewStateの型定義。
   - コマンド種別・プロパティの型安全な定義。
   - 共通ユーティリティ（ID生成、時刻取得、名前正規化）。
 
@@ -45,15 +45,15 @@
 
 #### 6.1.1.2 ツリー構造関係データモデル
 
-- Tree/TreeNode（要点）
-  - Tree は treeId と各 Root 系 ID（Root/Trash/SuperRoot）を持つ。
+- TreeTypes/TreeNode（要点）
+  - TreeTypes は treeId と各 Root 系 ID（Root/Trash/SuperRoot）を持つ。
   - TreeNode は以下を保持: treeNodeType, treeNodeId, parentTreeNodeId, name, createdAt, updatedAt, version。
   - 拡張: hasChild, references, TrashItemProperties（originalParentTreeNodeId/removedAt 等）。
   - 同一 parentTreeNodeId 配下で name はユニーク（兄弟名ユニーク制約）。
 
 
 ```ts
-type Tree = {
+type TreeTypes = {
   treeId: TreeId;
   treeRootNodeId: RootNodeId;           // Root 専用ID
   treeTrashRootNodeId: TrashRootNodeId; // TrashRoot 専用ID

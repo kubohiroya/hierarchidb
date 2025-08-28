@@ -31,7 +31,7 @@ HierarchiDBのプラグインシステムは以下の設計思想に基づいて
 ├─────────────────────────────────────────────────────────────────┤
 │  Layer 2: Plugin Definition & Registration                     │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │  - NodeTypeDefinition (Declarative Configuration)      │    │
+│  │  - PluginDefinition (Declarative Configuration)      │    │
 │  │  - Entity Metadata Registration                        │    │
 │  │  - Lifecycle Hook Definition                           │    │
 │  └─────────────────────────────────────────────────────────┘    │
@@ -225,7 +225,7 @@ export class DependencyResolver {
 ### 9.4.1 NodeTypeDefinition構造
 
 ```typescript
-export interface NodeTypeDefinition<
+export interface PluginDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TSubEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties
@@ -279,7 +279,7 @@ export interface NodeTypeDefinition<
 ```typescript
 // packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
-export const StyleMapDefinition: NodeTypeDefinition = {
+export const StyleMapDefinition: PluginDefinition = {
   nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',
@@ -378,7 +378,7 @@ export const StyleMapDefinition: NodeTypeDefinition = {
 ```typescript
 // packages/plugins/_shapes_buggy/src/definitions/ShapesDefinition.ts
 
-export const ShapesDefinition: NodeTypeDefinition = {
+export const ShapesDefinition: PluginDefinition = {
   nodeType: '_shapes_buggy',
   name: 'Shapes',
   displayName: 'シェイプス',
@@ -578,11 +578,11 @@ export interface MyPluginDataEntity extends EphemeralGroupEntity {
 ```typescript
 // src/definitions/MyPluginDefinition.ts
 
-import type { NodeTypeDefinition } from '@hierarchidb/core';
+import type { PluginDefinition } from '@hierarchidb/core';
 import { MyPluginDialog, MyPluginPanel } from '../ui';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
 
-export const MyPluginDefinition: NodeTypeDefinition<
+export const MyPluginDefinition: PluginDefinition<
   MyPluginEntity,
   never,
   MyPluginWorkingCopy
@@ -991,7 +991,7 @@ describe('MyPlugin Integration', () => {
 
 3. **命名規則の統一**
    - エンティティ名: `{PluginName}Entity`
-   - ストア名: `{pluginName}Entities`
+   - ストア名: `{pluginName}EntityTypes`
 
 ### 9.8.2 パフォーマンス最適化
 

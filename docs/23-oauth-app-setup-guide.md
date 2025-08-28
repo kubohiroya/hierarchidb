@@ -101,7 +101,7 @@ Fill in the application details:
 
 - **Application name**: `HierarchiDB`
 - **Homepage URL**: `https://kubohiroya.github.io/hierarchidb`
-- **Application description**: `Tree-structured data management framework`
+- **Application description**: `TreeTypes-structured data management framework`
 - **Authorization callback URL**: `https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/callback`
 - **Enable Device Flow**: Leave unchecked
 

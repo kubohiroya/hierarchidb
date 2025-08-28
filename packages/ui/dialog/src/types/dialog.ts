@@ -5,7 +5,7 @@
 
 import type { ReactNode } from 'react';
 // Import from core package
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { SxProps, Theme } from '@mui/material/styles';
 
 /**

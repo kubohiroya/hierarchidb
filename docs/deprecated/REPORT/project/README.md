@@ -50,7 +50,7 @@ UI Layer (React) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Storage
 
 ### Key Components
 
-- **Cross-Tree References**: TreeNode reference system with circular dependency prevention
+- **Cross-TreeTypes References**: TreeNode reference system with circular dependency prevention
 - **Resource Aggregation**: Multi-layer map composition from Resources tree nodes
 - **Entity System**: Project configuration and resource reference storage
 - **API Integration**: Seamless HierarchiDB PluginAPI implementation

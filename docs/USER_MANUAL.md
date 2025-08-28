@@ -15,7 +15,7 @@
 HierarchiDB is a high-performance tree-structured data management application designed for browser environments. It provides a hierarchical organization system for managing various types of data through an intuitive web interface.
 
 ### Key Features
-- **Tree-based Organization**: Organize your data in hierarchical tree structures
+- **TreeTypes-based Organization**: Organize your data in hierarchical tree structures
 - **Plugin System**: Extend functionality with specialized node types
 - **Real-time Updates**: Changes are reflected immediately across the interface  
 - **High Performance**: Handles large datasets efficiently with virtual scrolling
@@ -32,8 +32,8 @@ HierarchiDB is a high-performance tree-structured data management application de
 ### First-Time Setup
 
 When you first access HierarchiDB, you'll see:
-- **Resources Tree (R)**: For managing resource-type data
-- **Projects Tree (P)**: For managing project-related information
+- **Resources TreeTypes (R)**: For managing resource-type data
+- **Projects TreeTypes (P)**: For managing project-related information
 
 Click on either button to enter the corresponding tree view.
 
@@ -41,7 +41,7 @@ Click on either button to enter the corresponding tree view.
 
 ### Main Navigation Elements
 
-- **Tree Toggle Buttons**: Switch between different trees (Resources/Projects)
+- **TreeTypes Toggle Buttons**: Switch between different trees (Resources/Projects)
 - **Breadcrumb Navigation**: Shows your current location in the tree hierarchy
 - **Toolbar**: Access common actions and tools
 - **Info Button (ⓘ)**: Access application information and help
@@ -51,22 +51,22 @@ Click on either button to enter the corresponding tree view.
 
 HierarchiDB uses a structured URL system:
 - `/` - Main page with tree selection
-- `/t/{treeId}` - Tree root view
+- `/t/{treeId}` - TreeTypes root view
 - `/t/{treeId}/{pageNodeId}` - Specific node view
 - `/info` - Application information page
 
 ## Working with Trees
 
-### Tree Structure
+### TreeTypes Structure
 
 - **Root Node**: The top-level node of each tree
 - **Parent Nodes**: Nodes that contain child nodes
 - **Leaf Nodes**: Nodes without children
 - **Trash**: Special container for deleted items
 
-### Tree Views
+### TreeTypes Views
 
-1. **Tree Table**: Main view showing nodes in a hierarchical table format
+1. **TreeTypes Table**: Main view showing nodes in a hierarchical table format
 2. **Node Details**: Detailed view of individual node properties
 3. **Breadcrumb**: Navigation path showing your current location
 
@@ -138,11 +138,11 @@ HierarchiDB supports different types of nodes through its plugin system:
 
 ## User Interface Features
 
-### Tree Console Components
+### TreeTypes Console Components
 
 1. **Breadcrumb Bar**: Shows navigation path
 2. **Toolbar**: Access to common actions and tools
-3. **Tree Table**: Main data display with virtual scrolling
+3. **TreeTypes Table**: Main data display with virtual scrolling
 4. **Speed Dial**: Quick access to create actions
 5. **Footer**: Status information and additional controls
 6. **Trash Bin**: Access deleted items
@@ -206,7 +206,7 @@ Right-click on nodes or tree areas to access:
 - Try refreshing the page (F5)
 - Clear browser cache if necessary
 
-**Tree Data Not Appearing**
+**TreeTypes Data Not Appearing**
 - Ensure you have proper permissions
 - Try logging out and back in
 - Check the console for error messages

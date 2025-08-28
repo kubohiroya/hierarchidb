@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-// import type { DialogStepDefinition } from '@hierarchidb/common-core';
+// import type { DialogStepDefinition } from '@hierarchidb/common-type';
 
 // まだ存在しない実装をインポート（Redフェーズなので失敗する）
 import { SpreadsheetExtension } from './definition';

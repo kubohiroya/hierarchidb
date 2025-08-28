@@ -34,7 +34,7 @@ Worker層におけるツリー格納用のデータモデル
 ```ts
 import Dexie, { Table } from 'dexie';
 
-export type TreeRow = Tree;
+export type TreeRow = TreeTypes;
 export type TreeNodeRow = TreeNode; 
 export type TreeRootStateRow = TreeRootState;
 
@@ -74,7 +74,7 @@ export class CoreDB extends Dexie {
 
 #### 6.2.2.2 EphemeralDB（短命・高頻度）
 ```ts
-export type WorkingCopyRow = WorkingCopy;
+export type WorkingCopyRow = WorkingCopyTypes;
 export type TreeViewStateRow = TreeViewState;
 
 export class EphemeralDB extends Dexie {
@@ -110,7 +110,7 @@ export class EphemeralDB extends Dexie {
   nodes.where('[parentTreeNodeId+updatedAt]').between([pid, ts], [pid, Dexie.maxKey])
   → [parentTreeNodeId+updatedAt]
 
-* WorkingCopy → 元の探索
+* WorkingCopyTypes → 元の探索
   workingCopies.where('workingCopyOf').equals(nodeId)
   → workingCopyOf
 

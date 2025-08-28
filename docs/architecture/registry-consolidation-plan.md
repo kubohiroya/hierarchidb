@@ -5,7 +5,7 @@
 現在、3つの異なるNodeTypeRegistryが存在：
 
 ### 1. `packages/core/src/registry/NodeTypeRegistry.ts`
-- **責務**: NodeTypeDefinition（AOP設計用）
+- **責務**: PluginDefinition（AOP設計用）
 - **特徴**: 
   - EntityHandler管理
   - データベーススキーマ登録

@@ -1,18 +1,18 @@
 /**
  * Plugin Dependency Resolver
- * 
+ *
  * Handles plugin dependency resolution, ordering, and circular dependency detection.
  * Supports both priority-based ordering and dependency graph resolution.
  */
 
-import type { NodeType } from '../../types';
-import type { 
-  PluginMetadata, 
-  ResolvedPlugin, 
+import {
+  NodeType,
+  PluginMetadata,
+  ResolvedPlugin,
   DependencyGraph,
   ResolutionResult,
-  DependencyError
-} from '../types/RegistryTypes';
+  DependencyError,
+} from '@hierarchidb/common-type';
 
 // Type definitions are now imported from ../types/RegistryTypes
 
@@ -51,19 +51,21 @@ export class PluginDependencyResolver {
   resolve(): ResolutionResult {
     const errors: DependencyError[] = [];
     const warnings: string[] = [];
-    
+
     // Build dependency graph
     const graph = this.buildDependencyGraph();
-    
+
     // Detect circular dependencies
     const circularDeps = this.detectCircularDependencies(graph);
     if (circularDeps.length > 0) {
-      errors.push(...circularDeps.map(cycle => ({
-        type: 'circular' as const,
-        message: `Circular dependency detected: ${cycle.join(' -> ')} -> ${cycle[0]}`,
-        nodeTypes: cycle,
-        cycle,
-      })));
+      errors.push(
+        ...circularDeps.map((cycle) => ({
+          type: 'circular' as const,
+          message: `Circular dependency detected: ${cycle.join(' -> ')} -> ${cycle[0]}`,
+          nodeTypes: cycle,
+          cycle,
+        }))
+      );
     }
 
     // Check for missing dependencies
@@ -85,7 +87,7 @@ export class PluginDependencyResolver {
 
     // Perform topological sort with priority consideration
     const resolvedOrder = this.topologicalSort(graph);
-    
+
     // Apply priority-based ordering within dependency constraints
     const finalOrder = this.applyPriorityOrdering(resolvedOrder, graph);
 
@@ -105,7 +107,7 @@ export class PluginDependencyResolver {
     if (this.resolved.size === 0) {
       const result = this.resolve();
       if (result.success) {
-        result.resolvedOrder.forEach(plugin => {
+        result.resolvedOrder.forEach((plugin) => {
           this.resolved.set(plugin.nodeType, plugin);
         });
       }
@@ -121,7 +123,7 @@ export class PluginDependencyResolver {
     if (!metadata) return false;
 
     const dependencies = this.getAllDependencies(nodeType);
-    return dependencies.every(dep => this.resolved.has(dep));
+    return dependencies.every((dep) => this.resolved.has(dep));
   }
 
   /**
@@ -165,19 +167,19 @@ export class PluginDependencyResolver {
 
     for (const [nodeType, metadata] of this.plugins) {
       const deps = new Set<NodeType>();
-      
+
       // Add explicit dependencies
       if (metadata.dependencies) {
-        metadata.dependencies.forEach(dep => deps.add(dep));
+        metadata.dependencies.forEach((dep) => deps.add(dep));
       }
-      
+
       // Add inheritance dependency
       if (metadata.extends) {
         deps.add(metadata.extends);
       }
-      
+
       edges.set(nodeType, deps);
-      
+
       // Build reverse edges
       for (const dep of deps) {
         if (!reverseEdges.has(dep)) {
@@ -196,7 +198,10 @@ export class PluginDependencyResolver {
   /**
    * Calculate topological order
    */
-  private calculateTopologicalOrder(nodes: Map<NodeType, PluginMetadata>, edges: Map<NodeType, Set<NodeType>>): NodeType[] {
+  private calculateTopologicalOrder(
+    nodes: Map<NodeType, PluginMetadata>,
+    edges: Map<NodeType, Set<NodeType>>
+  ): NodeType[] {
     const result: NodeType[] = [];
     const visited = new Set<NodeType>();
     const temp = new Set<NodeType>();
@@ -269,7 +274,7 @@ export class PluginDependencyResolver {
    */
   private detectMissingDependencies(graph: DependencyGraph): DependencyError[] {
     const errors: DependencyError[] = [];
-    
+
     for (const [nodeType, dependencies] of graph.edges) {
       for (const dep of dependencies) {
         if (!graph.nodes.has(dep)) {
@@ -297,11 +302,11 @@ export class PluginDependencyResolver {
       if (temp.has(node)) {
         throw new Error(`Circular dependency detected: ${[...path, node].join(' -> ')}`);
       }
-      
+
       if (visited.has(node)) return;
 
       temp.add(node);
-      
+
       const nodeDependencies = graph.edges.get(node) || new Set();
       for (const dep of nodeDependencies) {
         visit(dep, [...path, node]);
@@ -313,7 +318,7 @@ export class PluginDependencyResolver {
       const metadata = graph.nodes.get(node)!;
       const dependencies = Array.from(graph.edges.get(node) || new Set()) as NodeType[];
       const dependents = Array.from(graph.reverseEdges.get(node) || new Set()) as NodeType[];
-      
+
       result.push({
         nodeType: node,
         metadata,
@@ -336,10 +341,13 @@ export class PluginDependencyResolver {
   /**
    * Apply priority-based ordering within dependency constraints
    */
-  private applyPriorityOrdering(plugins: ResolvedPlugin[], graph: DependencyGraph): ResolvedPlugin[] {
+  private applyPriorityOrdering(
+    plugins: ResolvedPlugin[],
+    graph: DependencyGraph
+  ): ResolvedPlugin[] {
     // Group plugins by dependency level
     const levels = new Map<number, ResolvedPlugin[]>();
-    
+
     for (const plugin of plugins) {
       const level = this.getDependencyLevel(plugin.nodeType, graph);
       if (!levels.has(level)) {
@@ -354,7 +362,7 @@ export class PluginDependencyResolver {
 
     for (const level of sortedLevels) {
       const levelPlugins = levels.get(level)!;
-      
+
       // Sort by priority (higher priority first), then by name for stability
       levelPlugins.sort((a, b) => {
         const priorityA = a.metadata.priority || 0;
@@ -402,7 +410,7 @@ export class PluginDependencyResolver {
    * Generate plugin metadata automatically from available plugins
    */
   generateMetadata(): PluginMetadata[] {
-    return Array.from(this.plugins.values()).map(plugin => ({
+    return Array.from(this.plugins.values()).map((plugin) => ({
       nodeType: plugin.nodeType,
       name: plugin.name,
       version: plugin.version || '1.0.0',
@@ -417,9 +425,9 @@ export class PluginDependencyResolver {
   /**
    * Export dependency graph for visualization
    */
-  exportGraph(): { nodes: any[], edges: any[] } {
+  exportGraph(): { nodes: any[]; edges: any[] } {
     const graph = this.buildDependencyGraph();
-    
+
     const nodes = Array.from(graph.nodes.entries()).map(([nodeType, metadata]) => ({
       id: nodeType,
       label: metadata.name,

@@ -9,7 +9,7 @@
  */
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { useCallback } from 'react';
 import type { TreeViewController } from '../../../types/index';
 import {

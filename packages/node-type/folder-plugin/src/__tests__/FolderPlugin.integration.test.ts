@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { FolderEntityManager } from '../handlers/FolderEntityManager';
 import { FolderDefinition } from '../definitions/FolderDefinition';
 

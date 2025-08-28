@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
-import type { TreeChangeEvent, CommandResult } from '@hierarchidb/common-core';
+import type { TreeChangeEvent, CommandResult } from '@hierarchidb/common-type';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
 
 // WorkerAPI のモックを作成
@@ -93,13 +93,10 @@ describe('WorkerAPIAdapter', () => {
       let expandedCallbackCalled = false;
       let subtreeCallbackCalled = false;
 
-      const unsubscribe = await adapter.subscribeToSubtree(
-        'test-node' as any,
-        () => {
-          expandedCallbackCalled = true;
-          subtreeCallbackCalled = true;
-        }
-      );
+      const unsubscribe = await adapter.subscribeToSubtree('test-node' as any, () => {
+        expandedCallbackCalled = true;
+        subtreeCallbackCalled = true;
+      });
 
       // CommandEnvelope の構造を検証
       expect(mockWorkerAPI.observeSubtree).toHaveBeenCalledWith(
@@ -118,7 +115,7 @@ describe('WorkerAPIAdapter', () => {
       // Test callback functionality
       expect(expandedCallbackCalled).toBe(false); // Initially false
       expect(subtreeCallbackCalled).toBe(false); // Initially false
-      
+
       // クリーンアップ確認
       expect(typeof unsubscribe).toBe('function');
       unsubscribe();
@@ -128,12 +125,7 @@ describe('WorkerAPIAdapter', () => {
       const error = new Error('Connection failed');
       mockWorkerAPI.observeSubtree.mockRejectedValue(error);
 
-      await expect(
-        adapter.subscribeToSubtree(
-          'test-node' as any,
-          () => {}
-        )
-      ).rejects.toThrow();
+      await expect(adapter.subscribeToSubtree('test-node' as any, () => {})).rejects.toThrow();
     });
   });
 
@@ -264,10 +256,7 @@ describe('WorkerAPIAdapter', () => {
       const mockObservable = new Observable<TreeChangeEvent>(() => {});
       mockWorkerAPI.observeSubtree.mockResolvedValue(mockObservable);
 
-      await adapter.subscribeToSubtree(
-        'test-node' as any,
-        () => {}
-      );
+      await adapter.subscribeToSubtree('test-node' as any, () => {});
 
       let stats = adapter.getAdapterInfo().subscriptionStats;
       expect(stats.total).toBeGreaterThan(0);

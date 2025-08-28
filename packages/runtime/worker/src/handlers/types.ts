@@ -29,7 +29,7 @@ export interface EntityHandlerConfig {
 
 /**
  * Working copy base structure for worker-specific operations
- * @deprecated Use WorkingCopy from core instead
+ * @deprecated Use WorkingCopyTypes from core instead
  */
 export interface WorkingCopyBase {
   workingCopyId: string;

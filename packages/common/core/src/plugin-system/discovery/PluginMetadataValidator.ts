@@ -1,4 +1,4 @@
-import type { PluginManifest, PackageJson } from '../types';
+import { PluginManifest, PackageJson, NodeType } from '@hierarchidb/common-type';
 
 export interface ValidationResult {
   valid: boolean;
@@ -33,11 +33,11 @@ export class PluginMetadataValidator {
 
     // Collect all declared plugin dependencies from metadata
     const declaredDependencies = new Set<string>();
-    
+
     if (pluginMetadata.dependencies) {
-      pluginMetadata.dependencies.forEach(dep => declaredDependencies.add(dep));
+      pluginMetadata.dependencies.forEach((dep) => declaredDependencies.add(dep));
     }
-    
+
     if (pluginMetadata.extends) {
       declaredDependencies.add(pluginMetadata.extends);
     }
@@ -46,11 +46,11 @@ export class PluginMetadataValidator {
     for (const dep of declaredDependencies) {
       const expectedPackageName = `@hierarchidb/plugin-${dep}`;
       const alternativePackageName = `@hierarchidb/node-type-${dep}-plugin`;
-      
+
       if (packageJson.dependencies) {
         const hasOldFormat = expectedPackageName in packageJson.dependencies;
         const hasNewFormat = alternativePackageName in packageJson.dependencies;
-        
+
         if (!hasOldFormat && !hasNewFormat) {
           errors.push(
             `Plugin metadata declares dependency on "${dep}" but package.json is missing "${alternativePackageName}"`
@@ -67,14 +67,15 @@ export class PluginMetadataValidator {
         // Check if it's a plugin dependency
         const oldFormatMatch = depName.match(/^@hierarchidb\/plugin-(.+)$/);
         const newFormatMatch = depName.match(/^@hierarchidb\/node-type-(.+)-plugin$/);
-        
-        const pluginName = oldFormatMatch?.[1] || newFormatMatch?.[1];
-        
+
+        const pluginName = (oldFormatMatch?.[1] || newFormatMatch?.[1]) as NodeType;
+
         if (pluginName) {
           // Check if this dependency is declared in metadata
-          const isDeclared = pluginMetadata.dependencies?.includes(pluginName) ||
-                            pluginMetadata.extends === pluginName;
-          
+          const isDeclared =
+            pluginMetadata.dependencies?.includes(pluginName) ||
+            pluginMetadata.extends === pluginName;
+
           if (!isDeclared) {
             errors.push(
               `Package.json has dependency "${depName}" but plugin metadata does not declare "${pluginName}"`
@@ -87,7 +88,7 @@ export class PluginMetadataValidator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -96,7 +97,7 @@ export class PluginMetadataValidator {
    */
   async validateAllPlugins(pluginsDir: string): Promise<ValidationReport> {
     const report: ValidationReport = {};
-    
+
     if (!this.fileSystemMocks) {
       throw new Error('File system mocks not set. Call setFileSystemMocks first.');
     }
@@ -104,30 +105,27 @@ export class PluginMetadataValidator {
     // In a real implementation, we'd list directories here
     // For testing, we'll check known plugin paths
     const pluginNames = ['folder', 'basemap', 'shape', 'stylemap', 'spreadsheet'];
-    
+
     for (const pluginName of pluginNames) {
       const packageJsonPath = `${pluginsDir}/${pluginName}/package.json`;
       const manifestPath = `${pluginsDir}/${pluginName}/plugin.manifest.json`;
-      
+
       const packageJsonExists = await this.fileSystemMocks.exists(packageJsonPath);
       const manifestExists = await this.fileSystemMocks.exists(manifestPath);
-      
+
       if (packageJsonExists && manifestExists) {
         try {
           const packageJsonContent = await this.fileSystemMocks.readFile(packageJsonPath);
           const manifestContent = await this.fileSystemMocks.readFile(manifestPath);
-          
+
           const packageJson = JSON.parse(packageJsonContent);
           const manifest = JSON.parse(manifestContent);
-          
-          report[pluginName] = await this.validatePackageJsonDependencies(
-            packageJson,
-            manifest
-          );
+
+          report[pluginName] = await this.validatePackageJsonDependencies(packageJson, manifest);
         } catch (error) {
           report[pluginName] = {
             valid: false,
-            errors: [`Failed to validate ${pluginName}: ${String(error)}`]
+            errors: [`Failed to validate ${pluginName}: ${String(error)}`],
           };
         }
       } else {
@@ -135,13 +133,13 @@ export class PluginMetadataValidator {
           valid: false,
           errors: [
             `Missing required files for ${pluginName}:` +
-            (!packageJsonExists ? ' package.json' : '') +
-            (!manifestExists ? ' plugin.manifest.json' : '')
-          ]
+              (!packageJsonExists ? ' package.json' : '') +
+              (!manifestExists ? ' plugin.manifest.json' : ''),
+          ],
         };
       }
     }
-    
+
     return report;
   }
 
@@ -188,7 +186,7 @@ export class PluginMetadataValidator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

@@ -66,7 +66,7 @@ async moveToTrashFolder(params: {
 
 ### TreeNodeエンティティ確認必要
 ```typescript
-// packages/core/src/types/base.ts で確認が必要
+// packages/core/src/types/menu.ts で確認が必要
 interface TreeNode {
   treeNodeId: TreeNodeId;
   parentTreeNodeId: TreeNodeId;

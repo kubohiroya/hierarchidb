@@ -23,7 +23,7 @@ hierarchidb/
 | ライブラリ | tsup | ESM/CJS両対応、高速 |
 | アプリケーション | Vite | HMR、最適化 |
 | 型チェック | tsc | TypeScript公式 |
-| バンドル最適化 | Rollup (Vite内部) | Tree Shaking |
+| バンドル最適化 | Rollup (Vite内部) | TreeTypes Shaking |
 
 ## tsup設定
 
@@ -208,7 +208,7 @@ turbo run build --filter=@hierarchidb/worker
 
 ## ビルド最適化
 
-### Tree Shaking
+### TreeTypes Shaking
 ```typescript
 // sideEffects設定
 {

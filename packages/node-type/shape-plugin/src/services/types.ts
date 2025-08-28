@@ -2,7 +2,7 @@
  * Type definitions for Shape plugin services
  */
 
-import { NodeId } from '@hierarchidb/common-core';
+import { NodeId } from '@hierarchidb/common-type';
 import type { Feature } from '../types';
 import type {
   DataSourceName,

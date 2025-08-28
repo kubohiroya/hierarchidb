@@ -95,7 +95,7 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       placement: "bottom",
     },
     {
-      target: '[aria-label="Tree console toolbar"]',
+      target: '[aria-label="TreeTypes console toolbar"]',
       content: (
         <div>
           <h3>Toolbar Actions 🔧</h3>

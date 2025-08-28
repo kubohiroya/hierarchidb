@@ -17,7 +17,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Add, Delete, Save, Cancel } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { StyleMapEntity, StyleMapColorRule, StyleMapStyle } from '~/entities/StyleMapEntity';
 
 export interface StyleMapSimpleDialogProps {

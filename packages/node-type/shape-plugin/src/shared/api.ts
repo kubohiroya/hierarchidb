@@ -2,7 +2,7 @@
  * Shape API interface - UI-Worker通信契約
  */
 
-import { NodeId, EntityId } from '@hierarchidb/common-core';
+import { NodeId, EntityId } from '@hierarchidb/common-type';
 import {
   ShapeEntity,
   CreateShapeData,
@@ -28,7 +28,7 @@ export interface ShapeAPI {
   updateEntity(nodeId: NodeId, data: UpdateShapeData): Promise<void>;
   deleteEntity(nodeId: NodeId): Promise<void>;
 
-  // ✅ WorkingCopy management (CopyOnWrite pattern)
+  // ✅ WorkingCopyTypes management (CopyOnWrite pattern)
   createWorkingCopy(nodeId: NodeId): Promise<EntityId>;
   createNewDraftWorkingCopy(parentId: NodeId): Promise<EntityId>;
   getWorkingCopy(workingCopyId: EntityId): Promise<ShapeEntity | undefined>;
@@ -53,7 +53,7 @@ export interface ShapeAPI {
   ): Promise<ValidationResult>;
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
-  // ✅ Batch processing operations - WorkingCopy-based
+  // ✅ Batch processing operations - WorkingCopyTypes-based
   startBatchProcessing(
     workingCopyId: EntityId,
     config: ProcessingConfig,

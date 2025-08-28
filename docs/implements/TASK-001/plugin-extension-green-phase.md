@@ -6,7 +6,7 @@
 2024-12-20
 
 ### 実装ファイル
-`packages/common/core/src/types/plugin-extension.ts`
+`packages/common/core/src/types/plugin-pointcuts.ts`
 
 ### 実装方針
 テストケースを通すための最小限の型定義実装。複雑な型制約や詳細な実装はRefactorフェーズで改善。
@@ -120,7 +120,7 @@ export interface ExtendableNodeTypeDefinition<TBase, TExtended, TWorkingCopy> {
   extendedSteps?: DialogStepDefinition[];
   extendedFields?: ExtendedFieldDefinition[];
   extendedValidation?: ValidationExtension;
-  baseDefinition?: NodeTypeDefinition<TBase, never, any>;
+  baseDefinition?: PluginDefinition<TBase, never, any>;
   stepExtensions?: any[];
 }
 ```

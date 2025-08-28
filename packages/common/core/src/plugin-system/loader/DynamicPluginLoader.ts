@@ -1,13 +1,13 @@
 /**
  * Dynamic Plugin Loader System
- * 
+ *
  * Loads plugins dynamically using ES module imports based on resolved dependencies.
  * Handles the actual loading process after dependencies have been resolved.
  */
 
-import type { NodeType } from '../../types';
-import type { PluginManifest, LoadingResult, PluginLoadEntry, PluginAvailability } from '../types';
+import { NodeType, PluginManifest } from '@hierarchidb/common-type';
 import { PluginDependencyResolver } from '../registry/DependencyResolver';
+import { LoadingResult, PluginAvailability, PluginLoadEntry } from '../types/DiscoveryTypes';
 
 /**
  * Dynamic Plugin Loader Implementation
@@ -42,37 +42,37 @@ export class DynamicPluginLoader {
       // Step 1: Collect all plugins (requested + dependencies)
       console.log('[DynamicPluginLoader] Collecting plugin manifests...');
       const allPlugins = await this.collectAllPlugins(requested);
-      
+
       // Step 2: Load manifests for all plugins
       console.log('[DynamicPluginLoader] Loading manifests for', allPlugins.size, 'plugins...');
       await this.loadManifests(Array.from(allPlugins));
-      
+
       // Step 3: Build dependency graph
       console.log('[DynamicPluginLoader] Building dependency graph...');
       const metadata = this.buildMetadata();
       this.resolver.registerPlugins(metadata);
-      
+
       // Step 4: Resolve dependencies and determine load order
       console.log('[DynamicPluginLoader] Resolving dependencies...');
       const resolution = this.resolver.resolve();
-      
+
       if (!resolution.success) {
         results.success = false;
-        results.failed = resolution.errors.map(e => ({
+        results.failed = resolution.errors.map((e) => ({
           nodeType: e.nodeTypes[0] || ('unknown' as NodeType),
           error: e.message,
         }));
         return results;
       }
-      
-      results.loadOrder = resolution.resolvedOrder.map(p => p.nodeType);
+
+      results.loadOrder = resolution.resolvedOrder.map((p) => p.nodeType);
       results.dependencyGraph = resolution.graph;
-      
+
       // Step 5: Load plugin modules in order
       console.log('[DynamicPluginLoader] Loading plugins in order:', results.loadOrder);
       for (const nodeType of results.loadOrder) {
         const loadResult = await this.loadPlugin(nodeType, requested);
-        
+
         if (loadResult) {
           results.loaded.push(loadResult);
           this.loadResults.set(nodeType, loadResult);
@@ -80,7 +80,6 @@ export class DynamicPluginLoader {
           results.skipped.push(nodeType);
         }
       }
-      
     } catch (error) {
       results.success = false;
       results.failed.push({
@@ -88,12 +87,12 @@ export class DynamicPluginLoader {
         error: String(error),
       });
     }
-    
+
     results.totalTime = Date.now() - startTime;
-    
+
     // Log summary
     this.logLoadingSummary(results);
-    
+
     return results;
   }
 
@@ -104,17 +103,17 @@ export class DynamicPluginLoader {
     const allPlugins = new Set<NodeType>(requested);
     const visited = new Set<NodeType>();
     const queue = [...requested];
-    
+
     while (queue.length > 0) {
       const nodeType = queue.shift()!;
-      
+
       if (visited.has(nodeType)) continue;
       visited.add(nodeType);
-      
+
       // Load manifest to get dependencies
       const manifest = await this.loadManifest(nodeType);
       if (!manifest) continue;
-      
+
       // Add dependencies
       if (manifest.dependencies) {
         for (const dep of manifest.dependencies) {
@@ -124,7 +123,7 @@ export class DynamicPluginLoader {
           }
         }
       }
-      
+
       // Add extends as dependency
       if (manifest.extends) {
         allPlugins.add(manifest.extends);
@@ -132,7 +131,7 @@ export class DynamicPluginLoader {
           queue.push(manifest.extends);
         }
       }
-      
+
       // Optionally add optional dependencies
       if (manifest.optionalDependencies) {
         for (const dep of manifest.optionalDependencies) {
@@ -146,7 +145,7 @@ export class DynamicPluginLoader {
         }
       }
     }
-    
+
     return allPlugins;
   }
 
@@ -170,18 +169,18 @@ export class DynamicPluginLoader {
     if (this.manifests.has(nodeType)) {
       return this.manifests.get(nodeType)!;
     }
-    
+
     try {
       // Try to load manifest file
       const packageName = this.getPackageName(nodeType);
       const manifestPath = `${packageName}/plugin.manifest.json`;
-      
+
       // Dynamic import of manifest
       const manifest = await import(manifestPath);
       return manifest.default || manifest;
     } catch (error) {
       console.warn(`[DynamicPluginLoader] Could not load manifest for ${nodeType}:`, error);
-      
+
       // Fall back to generated manifest
       return this.generateManifest(nodeType);
     }
@@ -192,21 +191,21 @@ export class DynamicPluginLoader {
    */
   private async checkPluginAvailability(nodeType: NodeType): Promise<PluginAvailability> {
     const packageName = this.getPackageName(nodeType);
-    
+
     try {
       // Try to resolve the package
-      await import.meta.resolve?.(packageName) || require.resolve(packageName);
+      (await import.meta.resolve?.(packageName)) || require.resolve(packageName);
       return {
         nodeType,
         available: true,
-        packageName
+        packageName,
       };
     } catch (error) {
       return {
         nodeType,
         available: false,
         packageName,
-        reason: String(error)
+        reason: String(error),
       };
     }
   }
@@ -215,7 +214,7 @@ export class DynamicPluginLoader {
    * Build metadata for dependency resolver
    */
   private buildMetadata(): any[] {
-    return Array.from(this.manifests.values()).map(manifest => ({
+    return Array.from(this.manifests.values()).map((manifest) => ({
       nodeType: manifest.nodeType,
       name: manifest.name,
       version: manifest.version || '1.0.0',
@@ -235,28 +234,30 @@ export class DynamicPluginLoader {
     requested: NodeType[]
   ): Promise<PluginLoadEntry | null> {
     const startTime = Date.now();
-    
+
     try {
       const manifest = this.manifests.get(nodeType);
       if (!manifest) {
         console.warn(`[DynamicPluginLoader] No manifest for ${nodeType}`);
         return null;
       }
-      
+
       // Load the module using dynamic import
       const packageName = this.getPackageName(nodeType);
       const module = await import(packageName);
-      
+
       this.modules.set(nodeType, module);
-      
+
       // Determine source type
-      const source: 'requested' | 'dependency' | 'optional' = 
-        requested.includes(nodeType) ? 'requested' :
-        manifest.optionalDependencies ? 'optional' : 'dependency';
-      
+      const source: 'requested' | 'dependency' | 'optional' = requested.includes(nodeType)
+        ? 'requested'
+        : manifest.optionalDependencies
+          ? 'optional'
+          : 'dependency';
+
       // Build dependency chain
       const dependencyChain = this.getDependencyChain(nodeType);
-      
+
       const result: PluginLoadEntry = {
         nodeType,
         manifest,
@@ -265,9 +266,9 @@ export class DynamicPluginLoader {
         source,
         dependencyChain,
       };
-      
+
       console.log(`[DynamicPluginLoader] Loaded ${nodeType} (${source}) in ${result.loadTime}ms`);
-      
+
       return result;
     } catch (error) {
       console.error(`[DynamicPluginLoader] Failed to load ${nodeType}:`, error);
@@ -281,13 +282,13 @@ export class DynamicPluginLoader {
   private getPackageName(nodeType: NodeType): string {
     // Map node types to package names
     const packageMap: Record<string, string> = {
-      'folder': '@hierarchidb/node-type-folder-plugin-plugin',
-      'basemap': '@hierarchidb/node-type-basemap-plugin',
-      'shape': '@hierarchidb/node-type-shape-plugin-plugin',
-      'stylemap': '@hierarchidb/node-type-stylemap-plugin-plugin',
-      'spreadsheet': '@hierarchidb/node-type-spreadsheet-plugin-plugin',
+      folder: '@hierarchidb/node-type-folder-plugin-plugin',
+      basemap: '@hierarchidb/node-type-basemap-plugin',
+      shape: '@hierarchidb/node-type-shape-plugin-plugin',
+      stylemap: '@hierarchidb/node-type-stylemap-plugin-plugin',
+      spreadsheet: '@hierarchidb/node-type-spreadsheet-plugin-plugin',
     };
-    
+
     return packageMap[nodeType] || `@hierarchidb/node-type-${nodeType}-plugin`;
   }
 
@@ -312,7 +313,7 @@ export class DynamicPluginLoader {
   private getDependencyChain(nodeType: NodeType): NodeType[] {
     const chain: NodeType[] = [];
     const manifest = this.manifests.get(nodeType);
-    
+
     if (manifest) {
       if (manifest.extends) {
         chain.push(manifest.extends);
@@ -321,7 +322,7 @@ export class DynamicPluginLoader {
         chain.push(...manifest.dependencies);
       }
     }
-    
+
     return chain;
   }
 
@@ -332,14 +333,16 @@ export class DynamicPluginLoader {
     console.log('[DynamicPluginLoader] Loading Summary:');
     console.log(`  Requested: ${results.requested.join(', ')}`);
     console.log(`  Loaded: ${results.loaded.length} plugins`);
-    console.log(`  - Requested: ${results.loaded.filter(p => p.source === 'requested').length}`);
-    console.log(`  - Dependencies: ${results.loaded.filter(p => p.source === 'dependency').length}`);
-    console.log(`  - Optional: ${results.loaded.filter(p => p.source === 'optional').length}`);
+    console.log(`  - Requested: ${results.loaded.filter((p) => p.source === 'requested').length}`);
+    console.log(
+      `  - Dependencies: ${results.loaded.filter((p) => p.source === 'dependency').length}`
+    );
+    console.log(`  - Optional: ${results.loaded.filter((p) => p.source === 'optional').length}`);
     if (results.skipped.length > 0) {
       console.log(`  Skipped: ${results.skipped.join(', ')}`);
     }
     if (results.failed.length > 0) {
-      console.log(`  Failed: ${results.failed.map(f => f.nodeType).join(', ')}`);
+      console.log(`  Failed: ${results.failed.map((f) => f.nodeType).join(', ')}`);
     }
     console.log(`  Load order: ${results.loadOrder.join(' → ')}`);
     console.log(`  Total time: ${results.totalTime}ms`);
@@ -358,7 +361,7 @@ export class DynamicPluginLoader {
       .replace(/[_-]/g, ' ')
       .trim()
       .split(' ')
-      .map(word => this.capitalize(word))
+      .map((word) => this.capitalize(word))
       .join(' ');
   }
 

@@ -145,9 +145,9 @@
 
 ## プラグイン統合要件
 
-### NodeTypeDefinition
+### PluginDefinition
 
-- REQ-501: システムは NodeTypeDefinition パターンに従ってプラグインを定義しなければならない 🟢
+- REQ-501: システムは PluginDefinition パターンに従ってプラグインを定義しなければならない 🟢
 - REQ-502: システムは EntityHandler による CRUD 操作を実装しなければならない 🟢
 - REQ-503: システムは ライフサイクルフック（afterCreate, beforeDelete等）を提供しなければならない 🟢
 - REQ-504: システムは UI コンポーネント（dialogComponent, panelComponent）を登録しなければならない 🟢

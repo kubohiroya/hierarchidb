@@ -4,9 +4,9 @@
  * Plugins receive pre-configured functions instead of knowing about helpers
  */
 
-import type { NodeId } from '../types/ids';
-import type { PeerEntity, GroupEntity } from '../types/nodeDefinition';
-import type { WorkingCopyProperties } from '../types/workingCopy';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { PeerEntity, GroupEntity } from '@hierarchidb/common-type';
+import type { WorkingCopyProperties } from '@hierarchidb/common-type';
 
 /**
  * Entity handler context - provides database operations as functions
@@ -15,7 +15,7 @@ import type { WorkingCopyProperties } from '../types/workingCopy';
 export interface EntityHandlerContext<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties
+  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
 > {
   /**
    * Store operations - these are injected functions, not methods
@@ -75,7 +75,7 @@ export const entityUtils = {
     return {
       ...entity,
       updatedAt: now,
-      ...(isCreate && { createdAt: now })
+      ...(isCreate && { createdAt: now }),
     } as T & { updatedAt: number; createdAt?: number };
   },
 
@@ -102,14 +102,14 @@ export const entityUtils = {
   extractEntityData<T extends WorkingCopyProperties>(
     workingCopy: T
   ): Omit<T, keyof WorkingCopyProperties> {
-    const { 
-      originalNodeId, 
-      copiedAt, 
+    const {
+      originalNodeId,
+      copiedAt,
       hasEntityCopy,
       entityWorkingCopyId,
       originalVersion,
       hasGroupEntityCopy,
-      ...entityData 
+      ...entityData
     } = workingCopy;
     return entityData as Omit<T, keyof WorkingCopyProperties>;
   },
@@ -118,7 +118,7 @@ export const entityUtils = {
    * Check if entity needs update
    */
   hasChanges<T>(original: T, updated: Partial<T>): boolean {
-    return Object.keys(updated).some(key => {
+    return Object.keys(updated).some((key) => {
       const k = key as keyof T;
       return original[k] !== updated[k];
     });
@@ -127,10 +127,7 @@ export const entityUtils = {
   /**
    * Merge entity data safely
    */
-  mergeEntityData<T extends { nodeId: NodeId }>(
-    existing: T,
-    updates: Partial<T>
-  ): T {
+  mergeEntityData<T extends { nodeId: NodeId }>(existing: T, updates: Partial<T>): T {
     // nodeId should never be changed
     const { nodeId: _, ...safeUpdates } = updates;
     return {
@@ -138,5 +135,5 @@ export const entityUtils = {
       ...safeUpdates,
       nodeId: existing.nodeId, // Preserve original nodeId
     };
-  }
+  },
 };

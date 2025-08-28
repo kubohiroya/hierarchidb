@@ -162,7 +162,7 @@ UIPluginRegistry.getInstance().register(FolderUIPlugin);
 ### Integration
 Once registered, folders will automatically appear in:
 - Create menus (as the first option)
-- Tree views with appropriate icons
+- TreeTypes views with appropriate icons
 - Context menus with folder-specific actions
 - Bulk operation interfaces
 
@@ -185,11 +185,11 @@ This plugin is part of HierarchiDB's unified UI plugin system:
 
 ## Future Ideas
 
-### Hashtag Support with Relational Entities
+### Hashtag Support with Relational EntityTypes
 
 As a future enhancement, we could implement hashtag functionality for folders where:
 
-- **Hashtags as Relational Entities**: Each tag could be treated as a RelationalEntity in the Worker layer
+- **Hashtags as Relational EntityTypes**: Each tag could be treated as a RelationalEntity in the Worker layer
 - **Folder Characterization**: Tags would help express and identify folder characteristics
 - **Tag-based Discovery**: Users could list and browse folders that share common tags
 - **Cross-folder Relationships**: Tags would create implicit relationships between folders

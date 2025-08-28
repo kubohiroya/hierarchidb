@@ -23,7 +23,7 @@
 ### 7.2.1 ノードタイプ定義インターフェース
 
 ```typescript
-// packages/core/src/types/nodeDefinition.ts
+// packages/core/src/types/entity-types.ts
 
 // 基本的なエンティティインターフェース
 export interface BaseEntity {
@@ -130,7 +130,7 @@ export interface TypedClientAPIExtensions<T extends Record<string, ClientAPIMeth
   methods: T;
 }
 
-export interface NodeTypeDefinition<
+export interface PluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
@@ -325,7 +325,7 @@ export interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
   TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy> {
+> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
   // React Routerルーティング統合
   readonly routing: {
     actions: Record<string, PluginRouterAction>;
@@ -358,7 +358,7 @@ export class NodeTypeRegistry {
     return NodeTypeRegistry.instance;
   }
   
-  // 統合プラグイン登録（NodeTypeDefinition + Routing）
+  // 統合プラグイン登録（PluginDefinition + Routing）
   registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
     definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
@@ -392,7 +392,7 @@ export class NodeTypeRegistry {
 
   // 従来のNodeTypeDefinition登録（後方互換性）
   register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // UnifiedPluginDefinitionに変換して登録
     const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy> = {
@@ -455,7 +455,7 @@ export class NodeTypeRegistry {
   }
   
   private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // Dexieスキーマの動的登録
     const { database } = definition;
@@ -463,7 +463,7 @@ export class NodeTypeRegistry {
   }
   
   private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: NodeTypeDefinition<TEntity, TSubEntity, TWorkingCopy>
+    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
   ): void {
     // API拡張の登録
     const { api } = definition;
@@ -615,7 +615,7 @@ export interface Plugin<TContext extends PluginContext = PluginContext> {
   readonly description?: string;
   
   // ノードタイプ定義（型安全）
-  readonly nodeTypes?: Array<NodeTypeDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
+  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
   
   // 初期化（コンテキストの型を指定可能）
   initialize?(context: TContext): Promise<void>;
@@ -880,7 +880,7 @@ export class BaseMapHandler implements EntityHandler<
 ```typescript
 // packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
 
-export const BaseMapNodeDefinition: NodeTypeDefinition<
+export const BaseMapNodeDefinition: PluginDefinition<
   BaseMapEntity,
   never,
   BaseMapWorkingCopy

@@ -1,5 +1,8 @@
-import type { PackageJson, PluginLoadResult, PluginManifest } from '../types';
-import type { NodeType } from '../../types';
+//import type { PackageJson, PluginLoadResult, PluginManifest } from '../types';
+//import type { NodeType } from '../../types';
+
+import { PluginLoadResult } from '../types/DiscoveryTypes';
+import { NodeType, PluginManifest, PackageJson } from '@hierarchidb/common-type';
 
 /**
  * Plugin discovery system that uses plugin manifest files
@@ -19,7 +22,7 @@ export class ManifestFileDiscovery {
     }
 
     const plugins: NodeType[] = [];
-    
+
     for (const packageName of Object.keys(packageJson.dependencies)) {
       const pluginName = this.extractPluginName(packageName);
       if (pluginName) {
@@ -46,33 +49,33 @@ export class ManifestFileDiscovery {
   async loadPluginsWithDependencies(packageJson: PackageJson): Promise<PluginLoadResult> {
     // Discover directly referenced plugins
     const discoveredPlugins = this.discoverPluginsFromPackageJson(packageJson);
-    
+
     if (discoveredPlugins.length === 0) {
       return {
         plugins: [],
         loadOrder: [],
-        manifests: {}
+        manifests: {},
       };
     }
 
     // Collect all plugins including transitive dependencies
     const allPlugins = new Set<NodeType>();
     const toProcess = [...discoveredPlugins];
-    
+
     while (toProcess.length > 0) {
       const plugin = toProcess.shift()!;
-      
+
       if (allPlugins.has(plugin)) {
         continue;
       }
-      
+
       allPlugins.add(plugin);
-      
+
       const manifest = this.pluginManifests[plugin];
       if (!manifest) {
         throw new Error(`Plugin manifest not found for: ${plugin}`);
       }
-      
+
       // Add dependencies to process queue
       if (manifest.dependencies) {
         for (const dep of manifest.dependencies) {
@@ -81,7 +84,7 @@ export class ManifestFileDiscovery {
           }
         }
       }
-      
+
       // Handle extends relationship as implicit dependency
       if (manifest.extends && !allPlugins.has(manifest.extends)) {
         toProcess.push(manifest.extends);
@@ -91,12 +94,12 @@ export class ManifestFileDiscovery {
     // Build dependency graph
     const graph: Map<NodeType, NodeType[]> = new Map();
     const inDegree: Map<NodeType, number> = new Map();
-    
+
     for (const plugin of allPlugins) {
       graph.set(plugin, []);
       inDegree.set(plugin, 0);
     }
-    
+
     // Build edges
     for (const plugin of allPlugins) {
       const manifest = this.pluginManifests[plugin];
@@ -104,14 +107,14 @@ export class ManifestFileDiscovery {
         continue; // Skip if manifest not found
       }
       const deps: NodeType[] = [];
-      
+
       if (manifest.dependencies) {
         deps.push(...manifest.dependencies);
       }
       if (manifest.extends) {
         deps.push(manifest.extends);
       }
-      
+
       for (const dep of deps) {
         if (!graph.has(dep)) {
           graph.set(dep, []);
@@ -125,31 +128,31 @@ export class ManifestFileDiscovery {
     // Topological sort using Kahn's algorithm
     const loadOrder: NodeType[] = [];
     const queue: NodeType[] = [];
-    
+
     // Find nodes with no dependencies
     for (const [plugin, degree] of inDegree) {
       if (degree === 0) {
         queue.push(plugin);
       }
     }
-    
+
     while (queue.length > 0) {
       const plugin = queue.shift()!;
       loadOrder.push(plugin);
-      
+
       for (const dependent of graph.get(plugin) || []) {
         const newDegree = (inDegree.get(dependent) || 0) - 1;
         inDegree.set(dependent, newDegree);
-        
+
         if (newDegree === 0) {
           queue.push(dependent);
         }
       }
     }
-    
+
     // Check for circular dependencies
     if (loadOrder.length !== allPlugins.size) {
-      const remaining = Array.from(allPlugins).filter(p => !loadOrder.includes(p));
+      const remaining = Array.from(allPlugins).filter((p) => !loadOrder.includes(p));
       throw new Error(`Circular dependency detected involving: ${remaining.join(', ')}`);
     }
 
@@ -157,8 +160,8 @@ export class ManifestFileDiscovery {
       plugins: Array.from(allPlugins),
       loadOrder,
       manifests: Object.fromEntries(
-        Array.from(allPlugins).map(p => [p, this.pluginManifests[p]])
-      ) as Record<NodeType, PluginManifest>
+        Array.from(allPlugins).map((p) => [p, this.pluginManifests[p]])
+      ) as Record<NodeType, PluginManifest>,
     };
   }
 
@@ -175,9 +178,9 @@ export class ManifestFileDiscovery {
    * Generate dynamic import code for discovered plugins
    */
   generatePluginImports(loadOrder: NodeType[]): string {
-    const imports = loadOrder.map(plugin => 
-      `  await import('@hierarchidb/node-type-${plugin}-plugin');`
-    ).join('\\n');
+    const imports = loadOrder
+      .map((plugin) => `  await import('@hierarchidb/node-type-${plugin}-plugin');`)
+      .join('\\n');
 
     return `// Auto-generated plugin loader
 // DO NOT EDIT - This file is generated by ManifestFileDiscovery
@@ -211,7 +214,7 @@ export const PLUGIN_LOAD_ORDER = ${JSON.stringify(loadOrder, null, 2)};`;
     if (this.fileSystemMock) {
       return this.fileSystemMock(path);
     }
-    
+
     // In production, this would use fs.promises.readFile
     // For now, we'll throw an error indicating it needs to be implemented
     throw new Error('File system operations not implemented. Use setFileSystemMock in tests.');

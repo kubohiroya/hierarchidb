@@ -47,7 +47,7 @@ const indexConfiguration = {
 
 ## Entity Type Definitions
 
-### Core Entities
+### Core EntityTypes
 
 #### StyleMapEntity (PeerEntity)
 Main configuration entity with 1:1 correspondence to TreeNode.
