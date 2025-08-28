@@ -19,19 +19,10 @@
     "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "~/*": ["src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "plugin.config.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "src/components/StyleMapAnalytics.tsx"
-  ],
+  "include": ["src/**/*", "plugin.config.ts"],
+  "exclude": ["dist", "node_modules"],
   "references": []
 }

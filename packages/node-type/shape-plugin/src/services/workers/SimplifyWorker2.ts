@@ -1,6 +1,6 @@
 /**
  * SimplifyWorker2 - Tile-level simplification using TopoJSON
- * 
+ *
  * Responsibilities:
  * - Group simplification for shared boundaries preservation
  * - TopoJSON topology generation for efficient tile storage
@@ -9,12 +9,8 @@
  * - Topology validation and integrity checking
  */
 
-import * as Comlink from 'comlink';
-import * as topojson from 'topojson-server';
-import * as topojsonClient from 'topojson-client';
 import * as turf from '@turf/turf';
-import type { GeoJSON } from 'geojson';
-import { toGeoJSONFeature, fromGeoJSONFeature } from '../../utils/featureConverter';
+import { toGeoJSONFeature } from '../../utils/featureConverter';
 import type {
   SimplifyWorker2API,
   Simplify2Task,
@@ -22,14 +18,14 @@ import type {
   TileSimplifyConfig,
   TopoJSONResult,
   TopologyValidationResult,
-  FeatureData,
-  QualityMetrics
+  TopoJSONTopology,
+  TopoJSONObject,
 } from '../types';
 import type { Feature } from '../../types';
 
 /**
  * SimplifyWorker2 - Tile-level geometry simplification
- * 
+ *
  * Responsibilities:
  * - Tile-based coordinate quantization
  * - Shared boundary preservation
@@ -48,7 +44,7 @@ interface TileGrid {
 
 export class SimplifyWorker2 implements SimplifyWorker2API {
   private tileCache = new Map<string, any>();
-  private topologyCache = new Map<string, TopoJSONResult>();
+  //private topologyCache = new Map<string, TopoJSONResult>();
 
   constructor() {
     if (typeof self !== 'undefined') {
@@ -96,13 +92,15 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
             tileBufferIds.push(tileResult.bufferId);
             totalTilesGenerated++;
           }
-          
+
           if (!tileResult.topologyValid) {
             topologyPreserved = false;
           }
-
         } catch (error) {
-          console.warn(`SimplifyWorker2: Failed to process tile ${tile.z}/${tile.x}/${tile.y}:`, error);
+          console.warn(
+            `SimplifyWorker2: Failed to process tile ${tile.z}/${tile.x}/${tile.y}:`,
+            error
+          );
           topologyPreserved = false;
         }
       }
@@ -112,25 +110,26 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         status: 'completed',
         tileBufferIds,
         tilesGenerated: totalTilesGenerated,
-        topologyPreserved
+        topologyPreserved,
       };
 
       const processingTime = Date.now() - startTime;
       console.log(`SimplifyWorker2: Completed task ${task.taskId} in ${processingTime}ms`);
-      console.log(`Generated ${totalTilesGenerated} tiles, topology preserved: ${topologyPreserved}`);
+      console.log(
+        `Generated ${totalTilesGenerated} tiles, topology preserved: ${topologyPreserved}`
+      );
 
       return result;
-
     } catch (error) {
       console.error(`SimplifyWorker2: Task ${task.taskId} failed:`, error);
-      
+
       return {
         taskId: task.taskId,
         status: 'failed',
         tileBufferIds: [],
         tilesGenerated: 0,
         topologyPreserved: false,
-        errorMessage: error instanceof Error ? error.message : String(error)
+        errorMessage: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -158,11 +157,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         topology: quantizedTopology,
         objects,
         transform,
-        quantization: config.quantization
+        quantization: config.quantization,
       };
 
       return result;
-
     } catch (error) {
       console.error('TopoJSON processing failed:', error);
       throw error;
@@ -181,8 +179,8 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
 
     try {
       for (let i = 0; i < features.length; i++) {
-        const feature = features[i];
-        
+        const feature = features[i] as Feature;
+
         // Check individual geometry validity
         if (!this.isValidGeometry(feature.geometry)) {
           isValid = false;
@@ -208,9 +206,8 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         sharedBoundariesPreserved,
         selfIntersections,
         invalidGeometries,
-        topologyErrors
+        topologyErrors,
       };
-
     } catch (error) {
       console.error('Topology validation failed:', error);
       return {
@@ -218,7 +215,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         sharedBoundariesPreserved: false,
         selfIntersections: 0,
         invalidGeometries: [],
-        topologyErrors: [`Validation error: ${error}`]
+        topologyErrors: [`Validation error: ${error}`],
       };
     }
   }
@@ -230,7 +227,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   /**
    * Generate tile grid from features
    */
-  private async generateTileGrid(features: Feature[], config: TileSimplifyConfig): Promise<TileGrid[]> {
+  private async generateTileGrid(
+    features: Feature[],
+    config: TileSimplifyConfig
+  ): Promise<TileGrid[]> {
     // Calculate overall bounds
     const bounds = this.calculateBounds(features);
     const zoomLevel = config.zoomLevel;
@@ -247,9 +247,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
     for (let x = minTileX; x <= maxTileX; x++) {
       for (let y = minTileY; y <= maxTileY; y++) {
         const tileBbox = this.getTileBbox(x, y, zoomLevel);
-        const tileFeatures = features.filter(feature => 
-          this.intersectsBbox(feature, tileBbox)
-        );
+        const tileFeatures = features.filter((feature) => this.intersectsBbox(feature, tileBbox));
 
         if (tileFeatures.length > 0) {
           tiles.push({
@@ -257,7 +255,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
             x,
             y,
             bbox: tileBbox,
-            features: tileFeatures
+            features: tileFeatures,
           });
         }
       }
@@ -299,15 +297,14 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         metadata: {
           tile: { z: tile.z, x: tile.x, y: tile.y },
           bbox: tile.bbox,
-          quantization: config.quantization
-        }
+          quantization: config.quantization,
+        },
       };
 
       const bufferId = `tile-${taskId}-${tile.z}-${tile.x}-${tile.y}`;
       await this.saveTileBuffer(bufferId, JSON.stringify(tileGeoJson));
 
       return { bufferId, topologyValid };
-
     } catch (error) {
       console.error(`Tile processing failed for ${tile.z}/${tile.x}/${tile.y}:`, error);
       return { bufferId: null, topologyValid: false };
@@ -317,7 +314,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   /**
    * Clip features to tile boundaries
    */
-  private async clipFeaturesToTile(features: Feature[], tileBbox: [number, number, number, number]): Promise<Feature[]> {
+  private async clipFeaturesToTile(
+    features: Feature[],
+    tileBbox: [number, number, number, number]
+  ): Promise<Feature[]> {
     const clippedFeatures: Feature[] = [];
     const clipPolygon = turf.bboxPolygon(tileBbox);
 
@@ -333,15 +333,17 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
           try {
             const geoJsonFeature = toGeoJSONFeature(feature);
             // Check if geometry type is supported by bboxClip
-            if (feature.geometry.type === 'LineString' || 
-                feature.geometry.type === 'MultiLineString' || 
-                feature.geometry.type === 'Polygon' || 
-                feature.geometry.type === 'MultiPolygon') {
+            if (
+              feature.geometry.type === 'LineString' ||
+              feature.geometry.type === 'MultiLineString' ||
+              feature.geometry.type === 'Polygon' ||
+              feature.geometry.type === 'MultiPolygon'
+            ) {
               const clipped = turf.bboxClip(geoJsonFeature as any, tileBbox);
               if (clipped && clipped.geometry.coordinates.length > 0) {
                 clippedFeatures.push({
                   ...feature,
-                  geometry: clipped.geometry as any
+                  geometry: clipped.geometry as any,
                 });
               }
             } else {
@@ -372,7 +374,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   /**
    * Simplify geometries based on zoom level
    */
-  private async simplifyForZoomLevel(features: Feature[], config: TileSimplifyConfig): Promise<Feature[]> {
+  private async simplifyForZoomLevel(
+    features: Feature[],
+    config: TileSimplifyConfig
+  ): Promise<Feature[]> {
     const tolerance = this.calculateToleranceForZoom(config.zoomLevel, config.tolerance);
     const simplified: Feature[] = [];
 
@@ -380,11 +385,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
       try {
         const simplifiedFeature = turf.simplify(feature, {
           tolerance,
-          highQuality: config.preserveTopology
+          highQuality: config.preserveTopology,
         });
 
         simplified.push(simplifiedFeature);
-
       } catch (error) {
         console.warn(`Failed to simplify feature ${feature.id}:`, error);
         simplified.push(feature);
@@ -401,9 +405,9 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
     const precision = config.coordinatePrecision || 6;
     const factor = Math.pow(10, precision);
 
-    return features.map(feature => ({
+    return features.map((feature) => ({
       ...feature,
-      geometry: this.quantizeGeometry(feature.geometry, factor)
+      geometry: this.quantizeGeometry(feature.geometry, factor),
     }));
   }
 
@@ -411,8 +415,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    * Quantize individual geometry
    */
   private quantizeGeometry(geometry: any, factor: number): any {
-    const quantizeCoord = (coord: number): number => 
-      Math.round(coord * factor) / factor;
+    const quantizeCoord = (coord: number): number => Math.round(coord * factor) / factor;
 
     const quantizeCoords = (coords: any): any => {
       if (typeof coords[0] === 'number') {
@@ -423,7 +426,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
 
     return {
       ...geometry,
-      coordinates: quantizeCoords(geometry.coordinates)
+      coordinates: quantizeCoords(geometry.coordinates),
     };
   }
 
@@ -433,7 +436,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   private async preserveSharedBoundaries(features: Feature[]): Promise<Feature[]> {
     // Simplified implementation - would use proper topology preservation
     const boundaryMap = new Map<string, number[][]>();
-    
+
     // Extract all boundaries
     for (const feature of features) {
       if (feature.geometry.type === 'Polygon') {
@@ -453,7 +456,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   /**
    * Build topology from features
    */
-  private async buildTopology(features: Feature[], config: TileSimplifyConfig): Promise<any> {
+  private async buildTopology(features: Feature[], _config: TileSimplifyConfig): Promise<any> {
     // Simplified TopoJSON topology building
     const arcs: number[][][] = [];
     const objects: Record<string, any> = {};
@@ -470,7 +473,9 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
           for (const segment of segments) {
             const key = this.createSegmentKey(segment);
             if (!arcMap.has(key)) {
-              arcs.push([segment[0], segment[1]]);
+              const x = segment[0] as number[];
+              const y = segment[1] as number[];
+              arcs.push([x, y]);
               arcMap.set(key, arcIndex++);
             }
           }
@@ -481,7 +486,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
     return {
       type: 'Topology',
       arcs,
-      objects
+      objects,
     };
   }
 
@@ -490,23 +495,31 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    */
   private quantizeTopology(topology: any, quantization: number): any {
     // Apply quantization to topology arcs
-    const quantizedArcs = topology.arcs.map((arc: number[][]) =>
-      arc.map((point: number[]) => [
-        Math.round(point[0] * quantization),
-        Math.round(point[1] * quantization)
-      ])
-    );
+    const quantizedArcs = topology.arcs.map((arc: number[][]) => {
+      arc.map((point: number[]) => {
+        if (point.length < 2) {
+          throw new Error('Quantization is only supported for line segments');
+        }
+        return [
+          Math.round((point[0] as number) * quantization),
+          Math.round((point[1] as number) * quantization),
+        ];
+      });
+    });
 
     return {
       ...topology,
-      arcs: quantizedArcs
+      arcs: quantizedArcs,
     };
   }
 
   /**
    * Generate TopoJSON objects
    */
-  private generateTopoJSONObjects(features: Feature[], topology: any): Record<string, any> {
+  private generateTopoJSONObjects(
+    features: Feature[],
+    _topology: TopoJSONTopology
+  ): Record<string, TopoJSONObject> {
     const objects: Record<string, any> = {};
 
     objects.features = {
@@ -515,8 +528,8 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         type: feature.geometry.type,
         properties: feature.properties,
         id: feature.id || index,
-        arcs: [] // Would be populated with actual arc references
-      }))
+        arcs: [], // Would be populated with actual arc references
+      })),
     };
 
     return objects;
@@ -541,7 +554,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   // ============================================================================
 
   private calculateBounds(features: Feature[]): [number, number, number, number] {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
 
     for (const feature of features) {
       try {
@@ -561,10 +577,10 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   private getTileBbox(x: number, y: number, z: number): [number, number, number, number] {
     const n = Math.pow(2, z);
     const lonMin = (x / n) * 360 - 180;
-    const latMax = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
+    const latMax = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
     const lonMax = ((x + 1) / n) * 360 - 180;
-    const latMin = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))) * 180 / Math.PI;
-    
+    const latMin = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
+
     return [lonMin, latMin, lonMax, latMax];
   }
 
@@ -573,7 +589,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
       const featureBbox = turf.bbox(feature);
       const [fMinX, fMinY, fMaxX, fMaxY] = featureBbox;
       const [bMinX, bMinY, bMaxX, bMaxY] = bbox;
-      
+
       return !(fMaxX < bMinX || fMinX > bMaxX || fMaxY < bMinY || fMinY > bMaxY);
     } catch {
       return false;
@@ -587,10 +603,12 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
 
   private isValidGeometry(geometry: any): boolean {
     try {
-      return geometry && 
-             geometry.type && 
-             geometry.coordinates && 
-             this.validateCoordinates(geometry.coordinates);
+      return (
+        geometry &&
+        geometry.type &&
+        geometry.coordinates &&
+        this.validateCoordinates(geometry.coordinates)
+      );
     } catch {
       return false;
     }
@@ -615,10 +633,12 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
     }
   }
 
-  private async checkSharedBoundaries(features: Feature[]): Promise<{ preserved: boolean; errors: string[] }> {
+  private async checkSharedBoundaries(
+    _features: Feature[]
+  ): Promise<{ preserved: boolean; errors: string[] }> {
     // Simplified boundary checking
     const errors: string[] = [];
-    
+
     // This would implement proper shared boundary validation
     // For now, assume boundaries are preserved
     return { preserved: true, errors };
@@ -644,19 +664,25 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
 
   private createBoundaryKey(boundary: number[][]): string {
     // Create a consistent key for boundary segments
-    return boundary.map(coord => `${coord[0]},${coord[1]}`).join('|');
+    return boundary.map((coord) => `${coord[0]},${coord[1]}`).join('|');
   }
 
   private extractLineSegments(ring: number[][]): number[][][] {
-    const segments: number[][][] = [];
+    const segments: number[][][] = [] as number[][][];
     for (let i = 0; i < ring.length - 1; i++) {
-      segments.push([ring[i], ring[i + 1]]);
+      if (!ring[i] || !ring[i + 1]) {
+        throw new Error('Segment must have exactly two coordinates');
+      }
+      segments.push([ring[i] as number[], ring[i + 1] as number[]]);
     }
     return segments;
   }
 
   private createSegmentKey(segment: number[][]): string {
     const [start, end] = segment;
+    if (!start || !end || start.length < 2 || end.length < 2) {
+      throw new Error('Segment must have exactly two coordinates');
+    }
     const key1 = `${start[0]},${start[1]}-${end[0]},${end[1]}`;
     const key2 = `${end[0]},${end[1]}-${start[0]},${start[1]}`;
     return key1 < key2 ? key1 : key2; // Consistent ordering
@@ -674,6 +700,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
 }
 
 // Type definitions for internal use
+/*
 interface QuantizationParams {
   scale: [number, number];
   translate: [number, number];
@@ -687,6 +714,8 @@ interface BoundaryReference {
 }
 
 type SharedBoundaryMap = Map<string, BoundaryReference[]>;
+
+ */
 
 // Export for Comlink
 // Removed Comlink.expose - this worker will be wrapped by plugin registry proxy

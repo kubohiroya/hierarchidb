@@ -30,11 +30,11 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@hierarchidb/runtime-datasource": "workspace:*",
-    "@hierarchidb/runtime-fetch-metadata": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
+    "@hierarchidb/runtime-datasource": "workspace:*",
+    "@hierarchidb/runtime-fetch-metadata": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
@@ -44,7 +44,7 @@
     "@tanstack/react-virtual": "^3.2.0",
     "@turf/turf": "^7.0.0",
     "allotment": "^1.20.0",
-    "comlink": "^4.4.1",
+    "comlink": "^4.4.2",
     "dexie": "^4.0.10",
     "geohash": "^0.0.1",
     "notistack": "^3.0.1",
@@ -80,8 +80,12 @@
       "priority": 800,
       "category": "geographic",
       "extends": "folder",
-      "dependencies": ["folder"],
-      "optionalDependencies": ["basemap"],
+      "dependencies": [
+        "folder"
+      ],
+      "optionalDependencies": [
+        "basemap"
+      ],
       "exports": {
         "definition": "ShapeDefinition",
         "handler": "ShapeEntityHandler",

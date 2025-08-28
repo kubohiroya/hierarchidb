@@ -10,3 +10,6 @@ export type { StepperDialogProps, StepConfiguration } from './StepperDialog';
 
 export { default as FullScreenDialog } from './FullScreenDialog';
 export type { FullScreenDialogProps } from './FullScreenDialog';
+
+export { MultiStepDialog } from './MultiStepDialog';
+export * from './StepWizardContext';

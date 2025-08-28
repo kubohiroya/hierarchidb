@@ -63,14 +63,14 @@ export class ShapeEntityHandler {
       }),
     };
   }
-  
+
   /**
    * Create a new Shape entity
    */
   async createEntity(nodeId: NodeId, data: Partial<ShapeEntity>): Promise<ShapeEntity> {
     const entityId = generateEntityId() as EntityId;
     const now = Date.now();
-    
+
     const entity: ShapeEntity = {
       id: entityId,
       nodeId: nodeId,
@@ -102,10 +102,10 @@ export class ShapeEntityHandler {
     try {
       // Initialize plugin API if needed
       await this.ensurePluginInitialized();
-      
+
       // Store entity in database
       await this.table.add(entity);
-      
+
       console.log(`Created Shape entity: ${entityId} for node: ${nodeId}`);
       return entity;
     } catch (error) {
@@ -132,7 +132,7 @@ export class ShapeEntityHandler {
       };
 
       await this.table.put(updatedEntity);
-      
+
       console.log(`Updated Shape entity: ${entityId}`);
       return updatedEntity;
     } catch (error) {
@@ -155,10 +155,10 @@ export class ShapeEntityHandler {
 
       // Cleanup related data
       await this.cleanupEntityData(entity);
-      
+
       // Delete from database
       await this.table.delete(entityId);
-      
+
       console.log(`Deleted Shape entity: ${entityId}`);
     } catch (error) {
       console.error('Failed to delete Shape entity:', error);
@@ -198,15 +198,15 @@ export class ShapeEntityHandler {
   async listEntities(limit?: number, offset?: number): Promise<ShapeEntity[]> {
     try {
       let query = this.table.orderBy('updatedAt').reverse();
-      
+
       if (offset) {
         query = query.offset(offset);
       }
-      
+
       if (limit) {
         query = query.limit(limit);
       }
-      
+
       return await query.toArray();
     } catch (error) {
       console.error('Failed to list Shape entities:', error);
@@ -227,7 +227,7 @@ export class ShapeEntityHandler {
       let query = this.table.toCollection();
 
       if (criteria.name) {
-        query = query.filter((_entity: any) => 
+        query = query.filter((_entity: any) =>
           _entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
         );
       }
@@ -237,12 +237,14 @@ export class ShapeEntityHandler {
       }
 
       if (criteria.processingStatus) {
-        query = query.filter((_entity: any) => _entity.processingStatus === criteria.processingStatus);
+        query = query.filter(
+          (_entity: any) => _entity.processingStatus === criteria.processingStatus
+        );
       }
 
       if (criteria.hasActiveBatch !== undefined) {
-        query = query.filter((_entity: any) => 
-          true // Mock implementation
+        query = query.filter(
+          (_entity: any) => true // Mock implementation
         );
       }
 
@@ -264,7 +266,9 @@ export class ShapeEntityHandler {
    * Apply working copy changes to entity
    */
   async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(workingCopy) as Partial<ShapeEntity>;
+    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(
+      workingCopy
+    ) as Partial<ShapeEntity>;
     return this.updateEntity(entityId, updates);
   }
 
@@ -366,7 +370,7 @@ export class ShapeEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core/utils/plugin-serializer');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
     return PluginEntitySerializer.serialize(entity);
   }
 
@@ -374,7 +378,7 @@ export class ShapeEntityHandler {
    * Deserialize Shape entity with binary data restoration
    */
   async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ShapeEntity> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core/utils/plugin-serializer');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
     return PluginEntitySerializer.deserialize({ jsonData, binaryData });
   }
 
@@ -386,15 +390,18 @@ export class ShapeEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core/utils/plugin-serializer');
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
     return PluginEntitySerializer.serializeEntityArray(entities);
   }
 
   /**
    * Deserialize array of Shape entities
    */
-  async deserializeEntityArray(jsonArray: any[], binaryData: Map<string, Uint8Array>): Promise<ShapeEntity[]> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-core/utils/plugin-serializer');
+  async deserializeEntityArray(
+    jsonArray: any[],
+    binaryData: Map<string, Uint8Array>
+  ): Promise<ShapeEntity[]> {
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-core');
     return PluginEntitySerializer.deserializeEntityArray(jsonArray, binaryData);
   }
 }

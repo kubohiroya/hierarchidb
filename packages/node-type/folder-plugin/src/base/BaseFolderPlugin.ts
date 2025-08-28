@@ -1,11 +1,9 @@
-import type {
-  DialogStepDefinition,
-  ExtendableNodeTypeDefinition,
-  PluginExtensionConfig,
-  ValidationExtension,
-} from '@hierarchidb/ui-plugin-base';
 import type { FolderEntity } from '../entities/FolderEntity';
-import type { FolderExtension, FolderDialogExtension, FolderEntityExtension } from '../api/FolderExtensionAPI';
+import type {
+  FolderExtension,
+  FolderDialogExtension,
+  FolderEntityExtension,
+} from '../api/FolderExtensionAPI';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
 
 /**
@@ -43,7 +41,7 @@ export abstract class BaseFolderPlugin {
   async initialize(): Promise<void> {
     const extension = this.createExtension();
     folderExtensionRegistry.register(extension);
-    
+
     // Allow subclasses to perform additional initialization
     await this.onInitialize();
   }
@@ -54,7 +52,7 @@ export abstract class BaseFolderPlugin {
   async cleanup(): Promise<void> {
     // Allow subclasses to perform cleanup first
     await this.onCleanup();
-    
+
     folderExtensionRegistry.unregister(this.pluginId);
   }
 
@@ -111,7 +109,14 @@ export abstract class BaseFolderPlugin {
     const getExtendedData = this.getExtendedData?.bind(this);
     const saveExtendedData = this.saveExtendedData?.bind(this);
 
-    if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity && !getExtendedData && !saveExtendedData) {
+    if (
+      !additionalFields?.length &&
+      !beforeSave &&
+      !afterLoad &&
+      !validateEntity &&
+      !getExtendedData &&
+      !saveExtendedData
+    ) {
       return undefined;
     }
 
@@ -190,7 +195,10 @@ export abstract class BaseFolderPlugin {
   /**
    * Override to save extended data to entity
    */
-  protected async saveExtendedData?(_entity: FolderEntity, _data: Record<string, any>): Promise<void> {
+  protected async saveExtendedData?(
+    _entity: FolderEntity,
+    _data: Record<string, any>
+  ): Promise<void> {
     // Default implementation does nothing
   }
 
@@ -204,7 +212,11 @@ export abstract class BaseFolderPlugin {
   /**
    * Lifecycle hook: called before folder-plugin update
    */
-  protected async beforeUpdate?(_node: any, _entity: FolderEntity, _changes: Partial<FolderEntity>): Promise<void> {
+  protected async beforeUpdate?(
+    _node: any,
+    _entity: FolderEntity,
+    _changes: Partial<FolderEntity>
+  ): Promise<void> {
     // Default implementation does nothing
   }
 
@@ -256,17 +268,19 @@ export abstract class BaseFolderPlugin {
       stepNumber: config.order || 1,
       title: config.label,
       component: config.component,
-      validation: config.validation ? {
-        validate: async (data: any) => {
-          const result = await config.validation!.validate(data);
-          return {
-            isValid: result.isValid,
-            errors: result.errors || []
-          };
-        }
-      } : undefined,
+      validation: config.validation
+        ? {
+            validate: async (data: any) => {
+              const result = await config.validation!.validate(data);
+              return {
+                isValid: result.isValid,
+                errors: result.errors || [],
+              };
+            },
+          }
+        : undefined,
 
-      dependsOn: config.dependsOn?.map(dep => typeof dep === 'string' ? parseInt(dep) : dep),
+      dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
     };
   }
 
@@ -299,7 +313,7 @@ export abstract class BaseFolderPlugin {
    */
   getExtensionConfig(): PluginExtensionConfig {
     const extension = this.createExtension();
-    
+
     const config: PluginExtensionConfig = {
       dialog: {
         createSteps: extension.dialog?.createSteps,

@@ -20,11 +20,11 @@
  * - Quality scoring and validation
  */
 
-import * as turf from "@turf/turf";
-import { VectorTile } from "@mapbox/vector-tile";
-import { toGeoJSONFeature } from "../../utils/featureConverter";
-import * as Comlink from "comlink";
-import Protobuf from "pbf";
+import * as turf from '@turf/turf';
+import { VectorTile } from '@mapbox/vector-tile';
+import { toGeoJSONFeature } from '../../utils/featureConverter';
+
+import Protobuf from 'pbf';
 import type {
   VectorTileWorkerAPI,
   VectorTileTask,
@@ -33,10 +33,10 @@ import type {
   TileMetadata,
   ValidationResult,
   LayerConfig,
-  FeatureData,
-} from "../types";
-import type { Feature } from "../../types";
-import type { NodeId } from "@hierarchidb/common-core";
+  //FeatureData,
+} from '../types';
+import type { Feature } from '../../types';
+import type { NodeId } from '@hierarchidb/common-core';
 
 interface TileLayer {
   name: string;
@@ -47,19 +47,18 @@ interface TileLayer {
 
 interface TileFeature {
   id?: number | string;
-  type: "Point" | "LineString" | "Polygon";
+  type: 'Point' | 'LineString' | 'Polygon';
   geometry: number[][];
   properties: Record<string, any>;
 }
 
 export class VectorTileWorker implements VectorTileWorkerAPI {
   private tileCache = new Map<string, ArrayBuffer>();
-  private compressionEnabled = true;
 
   constructor() {
-    if (typeof self !== "undefined") {
-      self.addEventListener("error", (event) => {
-        console.error("VectorTileWorker global error:", event.error);
+    if (typeof self !== 'undefined') {
+      self.addEventListener('error', (event) => {
+        console.error('VectorTileWorker global error:', event.error);
       });
     }
   }
@@ -81,24 +80,16 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       // 2. Parse GeoJSON
       const geoJson = JSON.parse(bufferData);
       if (!geoJson.features) {
-        throw new Error("Invalid tile data: missing features");
+        throw new Error('Invalid tile data: missing features');
       }
 
-      console.log(
-        `VectorTileWorker: Processing ${geoJson.features.length} features`,
-      );
+      console.log(`VectorTileWorker: Processing ${geoJson.features.length} features`);
 
       // 3. Transform features to tile coordinates
-      const tileFeatures = await this.transformFeaturesToTile(
-        geoJson.features,
-        task.config,
-      );
+      const tileFeatures = await this.transformFeaturesToTile(geoJson.features, task.config);
 
       // 4. Group features by layers
-      const layers = this.groupFeaturesByLayers(
-        tileFeatures,
-        task.config.layers,
-      );
+      const layers = this.groupFeaturesByLayers(tileFeatures, task.config.layers);
 
       // 5. Generate MVT
       const mvtBuffer = await this.encodeMVT(layers, task.config);
@@ -110,11 +101,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         : optimizedBuffer;
 
       // 7. Calculate quality score
-      const qualityScore = this.calculateQualityScore(
-        geoJson.features,
-        tileFeatures,
-        task.config,
-      );
+      const qualityScore = this.calculateQualityScore(geoJson.features, tileFeatures, task.config);
 
       // 8. Generate tile ID and save
       const tileId = `mvt-${task.config.zoomLevel}-${task.config.tileX}-${task.config.tileY}-${Date.now()}`;
@@ -122,7 +109,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
 
       const result: VectorTileResult = {
         taskId: task.taskId,
-        status: "completed",
+        status: 'completed',
         tileId,
         mvtSize: finalBuffer.byteLength,
         featureCount: geoJson.features.length,
@@ -133,11 +120,9 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       };
 
       const processingTime = Date.now() - startTime;
+      console.log(`VectorTileWorker: Completed ${task.taskId} in ${processingTime}ms`);
       console.log(
-        `VectorTileWorker: Completed ${task.taskId} in ${processingTime}ms`,
-      );
-      console.log(
-        `Generated ${finalBuffer.byteLength} bytes MVT with quality ${qualityScore.toFixed(2)}`,
+        `Generated ${finalBuffer.byteLength} bytes MVT with quality ${qualityScore.toFixed(2)}`
       );
 
       return result;
@@ -146,8 +131,8 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
 
       return {
         taskId: task.taskId,
-        status: "failed",
-        tileId: "",
+        status: 'failed',
+        tileId: '',
         mvtSize: 0,
         featureCount: 0,
         qualityScore: 0,
@@ -162,8 +147,8 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   async optimizeTile(tile: ArrayBuffer): Promise<ArrayBuffer> {
     try {
       // Parse the MVT to analyze and optimize
-      const buffer = new Uint8Array(tile);
-      const pbf = new Protobuf(buffer);
+      // const buffer = new Uint8Array(tile);
+      // const pbf = new Protobuf(buffer);
 
       // For now, return the original tile
       // Real optimization would:
@@ -173,7 +158,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
 
       return tile;
     } catch (error) {
-      console.warn("Tile optimization failed:", error);
+      console.warn('Tile optimization failed:', error);
       return tile;
     }
   }
@@ -185,7 +170,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     const errors: Array<{
       type: string;
       message: string;
-      severity: "error" | "warning";
+      severity: 'error' | 'warning';
     }> = [];
     const warnings: string[] = [];
 
@@ -193,15 +178,15 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       // Basic size validation
       if (tile.byteLength === 0) {
         errors.push({
-          type: "EMPTY_TILE",
-          message: "Tile is empty",
-          severity: "error",
+          type: 'EMPTY_TILE',
+          message: 'Tile is empty',
+          severity: 'error',
         });
       }
 
       if (tile.byteLength > 5 * 1024 * 1024) {
         // 5MB
-        warnings.push("Tile size is very large (>5MB)");
+        warnings.push('Tile size is very large (>5MB)');
       }
 
       // Try to parse as MVT
@@ -213,21 +198,24 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         // Validate layers
         const layerNames = Object.keys(vectorTile.layers);
         if (layerNames.length === 0) {
-          warnings.push("Tile contains no layers");
+          warnings.push('Tile contains no layers');
         }
 
         // Validate each layer
         for (const layerName of layerNames) {
           const layer = vectorTile.layers[layerName];
+          if (!layer) {
+            throw new Error('Layers not found');
+          }
           if (layer.length === 0) {
             warnings.push(`Layer '${layerName}' contains no features`);
           }
         }
       } catch (parseError) {
         errors.push({
-          type: "INVALID_MVT",
+          type: 'INVALID_MVT',
           message: `Cannot parse as MVT: ${parseError}`,
-          severity: "error",
+          severity: 'error',
         });
       }
 
@@ -237,14 +225,14 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         warnings,
         metadata: {
           size: tile.byteLength,
-          format: "mvt",
+          format: 'mvt',
         },
       };
     } catch (error) {
       errors.push({
-        type: "VALIDATION_ERROR",
+        type: 'VALIDATION_ERROR',
         message: `Validation failed: ${error}`,
-        severity: "error",
+        severity: 'error',
       });
 
       return {
@@ -268,7 +256,9 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       const layers = Object.keys(vectorTile.layers).map((layerName) => {
         const layer = vectorTile.layers[layerName];
         const fields = new Set<string>();
-
+        if (!layer) {
+          throw new Error('Layers not found');
+        }
         // Collect all property keys from features
         for (let i = 0; i < layer.length; i++) {
           const feature = layer.feature(i);
@@ -284,15 +274,12 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         };
       });
 
-      const totalFeatures = layers.reduce(
-        (sum, layer) => sum + layer.featureCount,
-        0,
-      );
+      const totalFeatures = layers.reduce((sum, layer) => sum + layer.featureCount, 0);
 
       return {
         exists: true,
-        nodeId: "" as NodeId, // Would be provided by caller
-        tileKey: "", // Would be provided by caller
+        nodeId: '' as NodeId, // Would be provided by caller
+        tileKey: '', // Would be provided by caller
         z: 0, // Would be provided by caller
         x: 0, // Would be provided by caller
         y: 0, // Would be provided by caller
@@ -304,7 +291,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         version: 1,
       };
     } catch (error) {
-      console.error("Failed to get tile metadata:", error);
+      console.error('Failed to get tile metadata:', error);
       throw error;
     }
   }
@@ -318,7 +305,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private async transformFeaturesToTile(
     features: Feature[],
-    config: VectorTileTaskConfig,
+    config: VectorTileTaskConfig
   ): Promise<TileFeature[]> {
     const { zoomLevel, tileX, tileY, extent, buffer } = config;
     const tileFeatures: TileFeature[] = [];
@@ -344,21 +331,14 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         }
 
         // Transform geometry coordinates
-        const tileGeometry = this.transformGeometry(
-          feature.geometry,
-          tileBounds,
-          extent,
-        );
+        const tileGeometry = this.transformGeometry(feature.geometry, tileBounds, extent);
 
         if (tileGeometry.length > 0) {
           tileFeatures.push({
             id: feature.id,
             type: this.getGeometryType(feature.geometry),
             geometry: tileGeometry,
-            properties: this.filterProperties(
-              feature.properties,
-              config.layers,
-            ),
+            properties: this.filterProperties(feature.properties, config.layers),
           });
         }
       } catch (error) {
@@ -372,15 +352,12 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   /**
    * Group features by layers based on configuration
    */
-  private groupFeaturesByLayers(
-    features: TileFeature[],
-    layerConfigs: LayerConfig[],
-  ): TileLayer[] {
+  private groupFeaturesByLayers(features: TileFeature[], layerConfigs: LayerConfig[]): TileLayer[] {
     const layers: TileLayer[] = [];
 
     for (const layerConfig of layerConfigs) {
       const layerFeatures = features.filter((feature) =>
-        this.featureMatchesLayer(feature, layerConfig),
+        this.featureMatchesLayer(feature, layerConfig)
       );
 
       if (layerFeatures.length > 0) {
@@ -401,7 +378,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private async encodeMVT(
     layers: TileLayer[],
-    config: VectorTileTaskConfig,
+    _config: VectorTileTaskConfig
   ): Promise<ArrayBuffer> {
     // This is a simplified MVT encoding
     // Real implementation would use proper MVT encoder like @mapbox/vector-tile
@@ -440,7 +417,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   private calculateQualityScore(
     originalFeatures: Feature[],
     tileFeatures: TileFeature[],
-    config: VectorTileTaskConfig,
+    config: VectorTileTaskConfig
   ): number {
     try {
       // Feature preservation ratio
@@ -457,14 +434,11 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       const layerCompleteness = expectedLayers > 0 ? 1 : 0;
 
       // Overall quality score (weighted average)
-      const quality =
-        featureRatio * 0.4 +
-        coordinatePrecision * 0.3 +
-        layerCompleteness * 0.3;
+      const quality = featureRatio * 0.4 + coordinatePrecision * 0.3 + layerCompleteness * 0.3;
 
       return Math.max(0, Math.min(1, quality));
     } catch (error) {
-      console.warn("Quality score calculation failed:", error);
+      console.warn('Quality score calculation failed:', error);
       return 0.5; // Default neutral score
     }
   }
@@ -475,7 +449,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   private transformGeometry(
     geometry: any,
     tileBounds: { minX: number; minY: number; maxX: number; maxY: number },
-    extent: number,
+    extent: number
   ): number[][] {
     const scaleX = extent / (tileBounds.maxX - tileBounds.minX);
     const scaleY = extent / (tileBounds.maxY - tileBounds.minY);
@@ -486,7 +460,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     ];
 
     const transformCoords = (coords: any): any => {
-      if (typeof coords[0] === "number") {
+      if (typeof coords[0] === 'number') {
         return transformPoint(coords as [number, number]);
       }
       return coords.map(transformCoords);
@@ -495,7 +469,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     try {
       return transformCoords(geometry.coordinates);
     } catch (error) {
-      console.warn("Geometry transformation failed:", error);
+      console.warn('Geometry transformation failed:', error);
       return [];
     }
   }
@@ -507,10 +481,8 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     const n = Math.pow(2, z);
     const minX = (x / n) * 360 - 180;
     const maxX = ((x + 1) / n) * 360 - 180;
-    const minY =
-      (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
-    const maxY =
-      (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
+    const minY = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
+    const maxY = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
 
     return { minX, minY, maxX, maxY };
   }
@@ -520,7 +492,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private featureIntersectsTile(
     feature: Feature,
-    bounds: { minX: number; minY: number; maxX: number; maxY: number },
+    bounds: { minX: number; minY: number; maxX: number; maxY: number }
   ): boolean {
     try {
       const featureBbox = turf.bbox(toGeoJSONFeature(feature));
@@ -540,19 +512,19 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   /**
    * Get geometry type from GeoJSON geometry
    */
-  private getGeometryType(geometry: any): "Point" | "LineString" | "Polygon" {
+  private getGeometryType(geometry: any): 'Point' | 'LineString' | 'Polygon' {
     switch (geometry.type) {
-      case "Point":
-      case "MultiPoint":
-        return "Point";
-      case "LineString":
-      case "MultiLineString":
-        return "LineString";
-      case "Polygon":
-      case "MultiPolygon":
-        return "Polygon";
+      case 'Point':
+      case 'MultiPoint':
+        return 'Point';
+      case 'LineString':
+      case 'MultiLineString':
+        return 'LineString';
+      case 'Polygon':
+      case 'MultiPolygon':
+        return 'Polygon';
       default:
-        return "Point";
+        return 'Point';
     }
   }
 
@@ -561,11 +533,11 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private getGeometryTypeCode(type: string): number {
     switch (type) {
-      case "Point":
+      case 'Point':
         return 1;
-      case "LineString":
+      case 'LineString':
         return 2;
-      case "Polygon":
+      case 'Polygon':
         return 3;
       default:
         return 1;
@@ -575,13 +547,13 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   /**
    * Encode geometry for MVT
    */
-  private encodeGeometry(geometry: number[][], type: string): number[] {
+  private encodeGeometry(geometry: number[][], _type: string): number[] {
     // Simplified geometry encoding for MVT
     // Real implementation would use proper MVT geometry encoding
     const encoded: number[] = [];
 
     const encodeCoords = (coords: any) => {
-      if (typeof coords[0] === "number") {
+      if (typeof coords[0] === 'number') {
         encoded.push(coords[0], coords[1]);
       } else {
         coords.forEach(encodeCoords);
@@ -597,15 +569,13 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private filterProperties(
     properties: Record<string, any>,
-    layerConfigs: LayerConfig[],
+    layerConfigs: LayerConfig[]
   ): Record<string, any> {
     const filtered: Record<string, any> = {};
 
     // Get all allowed properties from all layers
     const allowedProps = new Set<string>();
-    layerConfigs.forEach((config) =>
-      config.properties.forEach((prop) => allowedProps.add(prop)),
-    );
+    layerConfigs.forEach((config) => config.properties.forEach((prop) => allowedProps.add(prop)));
 
     // Filter properties
     for (const [key, value] of Object.entries(properties)) {
@@ -620,24 +590,19 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   /**
    * Check if feature matches layer configuration
    */
-  private featureMatchesLayer(
-    feature: TileFeature,
-    layerConfig: LayerConfig,
-  ): boolean {
+  private featureMatchesLayer(feature: TileFeature, layerConfig: LayerConfig): boolean {
     // Simplified matching - could be more sophisticated
     // Check if feature has any of the layer's required properties
-    return layerConfig.properties.some(
-      (prop) => feature.properties[prop] !== undefined,
-    );
+    return layerConfig.properties.some((prop) => feature.properties[prop] !== undefined);
   }
 
   /**
    * Calculate hash for tile content
    */
   private async calculateHash(data: ArrayBuffer): Promise<string> {
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }
 
   /**
@@ -658,6 +623,8 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     this.tileCache.set(tileId, tile);
   }
 }
+
+/*
 
 // Type definitions for internal use
 interface TileData {
@@ -707,3 +674,4 @@ interface ParsedMVT {
 
 // Also export the class for direct usage if needed
 export default VectorTileWorker;
+*/

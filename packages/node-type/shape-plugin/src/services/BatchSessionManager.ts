@@ -3,14 +3,14 @@
  * @description ERIA-Cartograph移植: バッチセッション管理実装
  */
 
-import type { TreeNodeId } from '@hierarchidb/core';
+import type { NodeId } from '@hierarchidb/common-core';
 import type { BatchConfig } from '../types/BatchConfig';
 import type { BatchTaskLike, BatchStage } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';
 
 export interface BatchSessionStatus {
   sessionId: string;
-  treeNodeId: TreeNodeId;
+  nodeId: NodeId;
   stage: BatchStage;
   totalTasks: number;
   completedTasks: number;
@@ -45,7 +45,7 @@ export class BatchSessionManager {
    * Start batch processing session
    */
   async startBatchSession(
-    treeNodeId: TreeNodeId,
+    treeNodeId: NodeId,
     config: BatchConfig,
     countries: string[],
     adminLevels: number[],
@@ -60,7 +60,7 @@ export class BatchSessionManager {
     }
 
     // Check for invalid countries
-    const invalidCountries = countries.filter(country => country.includes('INVALID'));
+    const invalidCountries = countries.filter((country) => country.includes('INVALID'));
     if (invalidCountries.length > 0) {
       throw new Error('Invalid batch configuration');
     }
@@ -92,7 +92,7 @@ export class BatchSessionManager {
     // Initialize session status
     const sessionStatus: BatchSessionStatus = {
       sessionId,
-      treeNodeId,
+      nodeId: treeNodeId,
       stage: 'download',
       totalTasks,
       completedTasks: 0,
@@ -103,7 +103,7 @@ export class BatchSessionManager {
 
     this.sessions.set(sessionId, sessionStatus);
     this.tasks.set(sessionId, batchTasks);
-    
+
     if (progressCallback) {
       this.progressCallbacks.set(sessionId, progressCallback);
     }
@@ -153,13 +153,13 @@ export class BatchSessionManager {
     // Emit progress event
     this.emitProgressEvent(sessionId, {
       sessionId,
-      treeNodeId: status.treeNodeId,
+      treeNodeId: status.nodeId,
       stage: 'download',
       progress: 25,
       completedTasks: status.completedTasks,
       totalTasks: status.totalTasks,
       currentTask: 'Download completed',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return {
@@ -188,13 +188,13 @@ export class BatchSessionManager {
     // Emit progress event
     this.emitProgressEvent(sessionId, {
       sessionId,
-      treeNodeId: status.treeNodeId,
+      treeNodeId: status.nodeId,
       stage: 'simplify1',
       progress: 50,
       completedTasks: status.completedTasks,
       totalTasks: status.totalTasks,
       currentTask: 'Feature processing completed',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return {
@@ -223,13 +223,13 @@ export class BatchSessionManager {
     // Emit progress event
     this.emitProgressEvent(sessionId, {
       sessionId,
-      treeNodeId: status.treeNodeId,
+      treeNodeId: status.nodeId,
       stage: 'simplify2',
       progress: 75,
       completedTasks: status.completedTasks,
       totalTasks: status.totalTasks,
       currentTask: 'Tile processing completed',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return {
@@ -258,13 +258,13 @@ export class BatchSessionManager {
     // Emit progress event
     this.emitProgressEvent(sessionId, {
       sessionId,
-      treeNodeId: status.treeNodeId,
+      treeNodeId: status.nodeId,
       stage: 'vectorTiles',
       progress: 100,
       completedTasks: status.completedTasks,
       totalTasks: status.totalTasks,
       currentTask: 'Vector tiles generation completed',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return {
@@ -311,6 +311,6 @@ export class BatchSessionManager {
    * Simulate processing delay
    */
   private async simulateProcessing(delayMs: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, delayMs));
+    return new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 }

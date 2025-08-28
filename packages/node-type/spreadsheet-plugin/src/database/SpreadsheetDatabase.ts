@@ -24,27 +24,30 @@ export class SpreadsheetDatabase extends Dexie {
   rawFileMetadata!: Table<RawFileMetadata>;
   rowChunks!: Table<RowChunk>;
   spreadsheetRows!: Table<SpreadsheetRow>;
-  
+
   // PersistentPeerEntity Tables
   spreadsheetEntities!: Table<SpreadsheetEntity>;
   workingCopies!: Table<SpreadsheetEntityWorkingCopy>;
 
   constructor(dbName: string = 'SpreadsheetDB') {
     super(dbName);
-    
+
     this.version(1).stores({
       // 【RawFileMetadataテーブル】: 元ファイル情報
-      rawFileMetadata: '&id, fileName, contentHash, uploadedAt, parsedAt, createdAt, updatedAt, totalRows',
-      
+      rawFileMetadata:
+        '&id, fileName, contentHash, uploadedAt, parsedAt, createdAt, updatedAt, totalRows',
+
       // 【RowChunksテーブル】: チャンク化された行データ
-      rowChunks: '&id, rawFileMetadataId, chunkIndex, startRowIndex, endRowIndex, createdAt, updatedAt',
-      
+      rowChunks:
+        '&id, rawFileMetadataId, chunkIndex, startRowIndex, endRowIndex, createdAt, updatedAt',
+
       // 【SpreadsheetRowsテーブル】: フィルタ済み行データ
-      spreadsheetRows: '&id, spreadsheetEntityId, originalRowIndex, filterScore, createdAt, updatedAt',
-      
+      spreadsheetRows:
+        '&id, spreadsheetEntityId, originalRowIndex, filterScore, createdAt, updatedAt',
+
       // 【SpreadsheetEntitiesテーブル】: メインEntity（TreeNodeと紐づき）
       spreadsheetEntities: '&id, nodeId, rawFileMetadataId, createdAt, updatedAt',
-      
+
       // 【WorkingCopiesテーブル】: 編集中のワーキングコピー
       workingCopies: '&id, nodeId, originalNodeId, copiedAt, updatedAt',
     });
@@ -95,10 +98,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: インデックス検索
    */
   async findRawFileMetadataByHash(contentHash: string): Promise<RawFileMetadata | undefined> {
-    return await this.rawFileMetadata
-      .where('contentHash')
-      .equals(contentHash)
-      .first();
+    return await this.rawFileMetadata.where('contentHash').equals(contentHash).first();
   }
 
   /**
@@ -210,10 +210,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: インデックス検索
    */
   async getSpreadsheetEntityByNodeId(nodeId: NodeId): Promise<SpreadsheetEntity | undefined> {
-    return await this.spreadsheetEntities
-      .where('nodeId')
-      .equals(nodeId)
-      .first();
+    return await this.spreadsheetEntities.where('nodeId').equals(nodeId).first();
   }
 
   /**
@@ -280,16 +277,14 @@ export class SpreadsheetDatabase extends Dexie {
     spreadsheetEntityId: EntityId,
     limit?: number
   ): Promise<SpreadsheetRow[]> {
-    let query = this.spreadsheetRows
-      .where('spreadsheetEntityId')
-      .equals(spreadsheetEntityId);
+    let query = this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId);
 
     const results = await query.sortBy('filterScore');
-    
+
     if (limit && limit > 0) {
       return results.slice(0, limit);
     }
-    
+
     return results;
   }
 
@@ -327,10 +322,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: インデックス検索
    */
   async getWorkingCopyByNodeId(nodeId: NodeId): Promise<SpreadsheetEntityWorkingCopy | undefined> {
-    return await this.workingCopies
-      .where('nodeId')
-      .equals(nodeId)
-      .first();
+    return await this.workingCopies.where('nodeId').equals(nodeId).first();
   }
 
   /**
@@ -339,11 +331,8 @@ export class SpreadsheetDatabase extends Dexie {
    * 【テスト対応】: トランザクションテスト
    * 🟢 信頼性レベル: ACID特性保証
    */
-  async performTransaction<T>(
-    operation: () => Promise<T>,
-    tables: string[] = []
-  ): Promise<T> {
-    const tablesToUse = tables.map(t => (this as any)[t]);
+  async performTransaction<T>(operation: () => Promise<T>, tables: string[] = []): Promise<T> {
+    const tablesToUse = tables.map((t) => (this as any)[t]);
     // Ensure at least one table for TypeScript
     if (tablesToUse.length === 0) {
       return await operation();
@@ -401,9 +390,7 @@ export class SpreadsheetDatabase extends Dexie {
     return await this.rowChunks
       .where('rawFileMetadataId')
       .equals(rawFileMetadataId)
-      .filter(chunk => 
-        chunk.endRowIndex >= startRow && chunk.startRowIndex <= endRow
-      )
+      .filter((chunk) => chunk.endRowIndex >= startRow && chunk.startRowIndex <= endRow)
       .sortBy('chunkIndex');
   }
 
@@ -447,10 +434,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟡 信頼性レベル: 一括削除
    */
   async clearFilteredRows(spreadsheetEntityId: EntityId): Promise<void> {
-    await this.spreadsheetRows
-      .where('spreadsheetEntityId')
-      .equals(spreadsheetEntityId)
-      .delete();
+    await this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId).delete();
   }
 
   /**
@@ -472,10 +456,10 @@ export class SpreadsheetDatabase extends Dexie {
       for (const row of rows) {
         // 新しいカラムマッピングに基づいてcellValuesを再構築
         // row.columnMappingは現在のマッピング [0,1,2,3,4]、newColumnMappingは新しいマッピング [1,3,4]
-        const newCellValues = newColumnMapping.map(colIndex => {
+        const newCellValues = newColumnMapping.map((colIndex) => {
           // colIndexが現在のcolumnMappingの何番目にあるかを見つける
           const currentIndex = row.columnMapping.indexOf(colIndex);
-          return currentIndex >= 0 ? row.cellValues[currentIndex] : null;
+          return (currentIndex >= 0 ? row.cellValues[currentIndex] : null) ?? null;
         });
 
         await this.spreadsheetRows.update(row.id, {
@@ -537,15 +521,16 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟡 信頼性レベル: データ整合性維持
    */
   async cleanupOrphanedChunks(): Promise<number> {
-    const metadataIds = await this.rawFileMetadata.toArray()
-      .then(metadata => metadata.map(m => m.id));
+    const metadataIds = await this.rawFileMetadata
+      .toArray()
+      .then((metadata) => metadata.map((m) => m.id));
 
     const orphanedChunks = await this.rowChunks
-      .filter(chunk => !metadataIds.includes(chunk.rawFileMetadataId))
+      .filter((chunk) => !metadataIds.includes(chunk.rawFileMetadataId))
       .toArray();
 
     if (orphanedChunks.length > 0) {
-      const orphanedIds = orphanedChunks.map(c => c.id);
+      const orphanedIds = orphanedChunks.map((c) => c.id);
       await this.rowChunks.bulkDelete(orphanedIds);
     }
 
@@ -564,27 +549,29 @@ export class SpreadsheetDatabase extends Dexie {
     deletedRows: number;
     deletedWorkingCopies: number; // 【テスト対応】ワーキングコピー削除数を返却 🟡
   }> {
-    const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
     let deletedMetadata = 0;
     let deletedChunks = 0;
     let deletedRows = 0;
     let deletedWorkingCopies = 0; // 【ワーキングコピー削除数追跡】🟡
 
-    await this.transaction('rw', 
+    await this.transaction(
+      'rw',
       this.rawFileMetadata,
       this.rowChunks,
       this.spreadsheetRows,
       this.workingCopies,
       async () => {
         // 【孤立チャンクの事前削除】: メタデータ削除前に孤立チャンクをチェック 🟡
-        const allMetadataIds = await this.rawFileMetadata.toArray()
-          .then(metadata => metadata.map(m => m.id));
+        const allMetadataIds = await this.rawFileMetadata
+          .toArray()
+          .then((metadata) => metadata.map((m) => m.id));
         const orphanedChunks = await this.rowChunks
-          .filter(chunk => !allMetadataIds.includes(chunk.rawFileMetadataId))
+          .filter((chunk) => !allMetadataIds.includes(chunk.rawFileMetadataId))
           .toArray();
         if (orphanedChunks.length > 0) {
           deletedChunks += orphanedChunks.length;
-          const orphanedIds = orphanedChunks.map(c => c.id);
+          const orphanedIds = orphanedChunks.map((c) => c.id);
           await this.rowChunks.bulkDelete(orphanedIds);
         }
 
@@ -600,43 +587,31 @@ export class SpreadsheetDatabase extends Dexie {
             .where('rawFileMetadataId')
             .equals(metadata.id)
             .toArray();
-          
+
           deletedChunks += chunksToDelete.length;
-          
-          await this.rowChunks
-            .where('rawFileMetadataId')
-            .equals(metadata.id)
-            .delete();
+
+          await this.rowChunks.where('rawFileMetadataId').equals(metadata.id).delete();
 
           await this.rawFileMetadata.delete(metadata.id);
           deletedMetadata++;
         }
 
         // 【古いフィルタ結果削除】: 期限切れのフィルタ結果を削除
-        const oldRows = await this.spreadsheetRows
-          .where('createdAt')
-          .below(cutoffTime)
-          .toArray();
-        
+        const oldRows = await this.spreadsheetRows.where('createdAt').below(cutoffTime).toArray();
+
         deletedRows = oldRows.length;
-        
-        await this.spreadsheetRows
-          .where('createdAt')
-          .below(cutoffTime)
-          .delete();
+
+        await this.spreadsheetRows.where('createdAt').below(cutoffTime).delete();
 
         // 【期限切れワーキングコピー削除】: 古いワーキングコピーを削除
         const oldWorkingCopies = await this.workingCopies
           .where('copiedAt')
           .below(cutoffTime)
           .toArray();
-        
+
         deletedWorkingCopies = oldWorkingCopies.length;
-        
-        await this.workingCopies
-          .where('copiedAt')
-          .below(cutoffTime)
-          .delete();
+
+        await this.workingCopies.where('copiedAt').below(cutoffTime).delete();
       }
     );
 
@@ -662,11 +637,12 @@ export class SpreadsheetDatabase extends Dexie {
     averageRowsPerFile: number;
   }> {
     const baseStats = await this.getDatabaseStats();
-    
+
     // 【フィールド名変換】: テスト期待値に合わせてフィールド名を変換 🟡
     const metadataArray = await this.rawFileMetadata.toArray();
     const totalRows = metadataArray.reduce((acc, metadata) => acc + metadata.totalRows, 0);
-    const averageRowsPerFile = metadataArray.length > 0 ? Math.round(totalRows / metadataArray.length) : 0;
+    const averageRowsPerFile =
+      metadataArray.length > 0 ? Math.round(totalRows / metadataArray.length) : 0;
 
     return {
       totalFiles: baseStats.rawFileMetadataCount,
@@ -711,10 +687,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: 順序保証実装
    */
   async getRowChunksByMetadataId(metadataId: EntityId): Promise<RowChunk[]> {
-    return await this.rowChunks
-      .where('rawFileMetadataId')
-      .equals(metadataId)
-      .sortBy('chunkIndex');
+    return await this.rowChunks.where('rawFileMetadataId').equals(metadataId).sortBy('chunkIndex');
   }
 
   /**
@@ -736,6 +709,6 @@ export class SpreadsheetDatabase extends Dexie {
       .where('spreadsheetEntityId')
       .equals(entityId)
       .sortBy('originalRowIndex')
-      .then(sorted => sorted.slice(offset, offset + limit));
+      .then((sorted) => sorted.slice(offset, offset + limit));
   }
 }

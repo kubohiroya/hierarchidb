@@ -41,7 +41,7 @@ interface ShapeViewPanelProps {
 }
 
 export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
-  nodeId,
+  nodeId: _nodeId,
   entity,
   onEdit,
   onRefresh,
@@ -60,7 +60,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // In a real implementation, this would call the worker API
       // For now, we'll simulate the response
       const mockStatus: BatchStatus = {
@@ -118,7 +118,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
         warnings: [],
         estimatedTimeRemaining: 180000,
       };
-      
+
       setBatchStatus(mockStatus);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch batch status');
@@ -130,12 +130,12 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
   // Auto-refresh batch status
   useEffect(() => {
     fetchBatchStatus();
-    
+
     let interval: NodeJS.Timeout | null = null;
     if (entity.batchSessionId && entity.processingStatus === 'processing') {
       interval = setInterval(fetchBatchStatus, 5000); // Refresh every 5 seconds
     }
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -148,13 +148,13 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // In a real implementation, this would call the worker API
       console.log(`${action} batch processing for session:`, entity.batchSessionId);
-      
+
       // Simulate action delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Refresh status after action
       await fetchBatchStatus();
       onRefresh(); // Refresh parent component
@@ -167,12 +167,18 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'running': return 'primary';
-      case 'completed': return 'success';
-      case 'failed': return 'error';
-      case 'paused': return 'warning';
-      case 'cancelled': return 'default';
-      default: return 'default';
+      case 'running':
+        return 'primary';
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'paused':
+        return 'warning';
+      case 'cancelled':
+        return 'default';
+      default:
+        return 'default';
     }
   };
 
@@ -217,44 +223,41 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
             <StorageIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Configuration
           </Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Data Source
               </Typography>
-              <Typography variant="body1">
-                {entity.dataSourceName.toUpperCase()}
-              </Typography>
+              <Typography variant="body1">{entity.dataSourceName.toUpperCase()}</Typography>
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
-              <Typography variant="body2" color="text.secondary">
-                Status
-              </Typography>
-              <Chip
-                label={entity.processingStatus}
-                color={getStatusColor(entity.processingStatus)}
-                size="small"
-              />
+              {entity.processingStatus && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Chip
+                    label={entity.processingStatus}
+                    color={getStatusColor(entity.processingStatus)}
+                    size="small"
+                  />
+                </>
+              )}
             </Grid>
-            
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Countries Selected
               </Typography>
-              <Typography variant="body1">
-                {entity.selectedCountries.length || 'None'}
-              </Typography>
+              <Typography variant="body1">{entity.selectedCountries.length || 'None'}</Typography>
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
                 Admin Levels
               </Typography>
-              <Typography variant="body1">
-                {entity.adminLevels.join(', ') || 'None'}
-              </Typography>
+              <Typography variant="body1">{entity.adminLevels.join(', ') || 'None'}</Typography>
             </Grid>
           </Grid>
 
@@ -264,9 +267,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
               <Typography variant="body2" color="text.secondary">
                 Description
               </Typography>
-              <Typography variant="body1">
-                {entity.description}
-              </Typography>
+              <Typography variant="body1">{entity.description}</Typography>
             </>
           )}
         </CardContent>
@@ -276,12 +277,14 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       {batchStatus && (
         <Card sx={{ mb: 2 }}>
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+            >
               <Typography variant="h6">
                 <TimelineIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                 Batch Processing
               </Typography>
-              
+
               <Stack direction="row" spacing={1}>
                 {batchStatus.session.status === 'running' && (
                   <Button
@@ -294,7 +297,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
                     Pause
                   </Button>
                 )}
-                
+
                 {batchStatus.session.status === 'paused' && (
                   <Button
                     size="small"
@@ -306,8 +309,9 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
                     Resume
                   </Button>
                 )}
-                
-                {(batchStatus.session.status === 'running' || batchStatus.session.status === 'paused') && (
+
+                {(batchStatus.session.status === 'running' ||
+                  batchStatus.session.status === 'paused') && (
                   <Button
                     size="small"
                     variant="outlined"
@@ -326,7 +330,8 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2">
-                  Overall Progress ({batchStatus.session.progress.completed}/{batchStatus.session.progress.total})
+                  Overall Progress ({batchStatus.session.progress.completed}/
+                  {batchStatus.session.progress.total})
                 </Typography>
                 <Typography variant="body2">
                   {Math.round(batchStatus.session.progress.percentage)}%
@@ -362,10 +367,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
                         variant="outlined"
                       />
                     </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={stageStatus.progress * 100}
-                    />
+                    <LinearProgress variant="determinate" value={stageStatus.progress * 100} />
                     <Typography variant="caption" color="text.secondary">
                       {stageStatus.tasksCompleted}/{stageStatus.tasksTotal} tasks
                       {stageStatus.tasksFailed > 0 && ` (${stageStatus.tasksFailed} failed)`}
@@ -395,7 +397,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
               <MapIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
               Actions
             </Typography>
-            
+
             <Button
               variant="contained"
               startIcon={<PlayIcon />}

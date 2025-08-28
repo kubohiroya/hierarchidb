@@ -3,17 +3,15 @@
   "version": "0.0.1",
   "description": "Fetch and transform metadata from various open data sources",
   "type": "module",
-  "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "fetch-metadata": "./dist/cli.js"
+    "fetch-metadata": "./bin/fetch-metadata"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./output/gadm.json": "./output/gadm.json",
     "./output/geoboundaries.json": "./output/geoboundaries.json",

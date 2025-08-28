@@ -9,24 +9,17 @@
  * - Quality metrics calculation
  */
 
-import * as Comlink from "comlink";
-import * as turf from "@turf/turf";
-import type { GeoJSON, Geometry } from "geojson";
-import {
-  toGeoJSONFeature,
-  fromGeoJSONFeature,
-} from "../../utils/featureConverter";
+import * as turf from '@turf/turf';
+import type { Geometry } from 'geojson';
+import { toGeoJSONFeature } from '../../utils/featureConverter';
 import type {
   SimplifyWorker1API,
   Simplify1Task,
   Simplify1Result,
   SimplifyTaskConfig,
   QualityMetrics,
-  FeatureData,
-  ValidationResult,
-  FeatureIndex,
-} from "../types";
-import type { Feature } from "../../types";
+} from '../types';
+import type { Feature } from '../../types';
 
 /**
  * SimplifyWorker1 - Feature-level geometry simplification
@@ -41,17 +34,20 @@ import type { Feature } from "../../types";
 
 export class SimplifyWorker1 implements SimplifyWorker1API {
   private processingCache = new Map<string, any>();
+
+  /*
   private qualityThresholds = {
     geometricAccuracy: 0.85,
     topologicalIntegrity: 0.9,
     visualQuality: 0.8,
     compressionEfficiency: 0.7,
   };
+   */
 
   constructor() {
-    if (typeof self !== "undefined") {
-      self.addEventListener("error", (event) => {
-        console.error("SimplifyWorker1 global error:", event.error);
+    if (typeof self !== 'undefined') {
+      self.addEventListener('error', (event) => {
+        console.error('SimplifyWorker1 global error:', event.error);
       });
     }
   }
@@ -73,38 +69,30 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       // 2. Parse GeoJSON
       const geoJson = JSON.parse(inputData);
       if (!geoJson.features || !Array.isArray(geoJson.features)) {
-        throw new Error("Invalid GeoJSON: missing features array");
+        throw new Error('Invalid GeoJSON: missing features array');
       }
 
       const originalFeatureCount = geoJson.features.length;
-      console.log(
-        `SimplifyWorker1: Processing ${originalFeatureCount} features`,
-      );
+      console.log(`SimplifyWorker1: Processing ${originalFeatureCount} features`);
 
       // 3. Simplify features
-      const simplifiedFeatures = await this.simplifyFeatures(
-        geoJson.features,
-        task.config,
-      );
+      const simplifiedFeatures = await this.simplifyFeatures(geoJson.features, task.config);
 
       // 4. Calculate quality metrics
       const qualityMetrics = await this.calculateQualityMetrics(
         geoJson.features,
         simplifiedFeatures,
-        task.config,
+        task.config
       );
 
       // 5. Generate output buffer
       const outputGeoJson = {
-        type: "FeatureCollection",
+        type: 'FeatureCollection',
         features: simplifiedFeatures,
       };
 
       const outputBufferId = `simplified1-${task.taskId}-${Date.now()}`;
-      await this.saveOutputBuffer(
-        outputBufferId,
-        JSON.stringify(outputGeoJson),
-      );
+      await this.saveOutputBuffer(outputBufferId, JSON.stringify(outputGeoJson));
 
       // 6. Calculate reduction metrics
       const originalSize = JSON.stringify(geoJson).length;
@@ -113,7 +101,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
       const result: Simplify1Result = {
         taskId: task.taskId,
-        status: "completed",
+        status: 'completed',
         outputBufferId,
         originalFeatureCount,
         simplifiedFeatureCount: simplifiedFeatures.length,
@@ -122,11 +110,9 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       };
 
       const processingTime = Date.now() - startTime;
+      console.log(`SimplifyWorker1: Completed task ${task.taskId} in ${processingTime}ms`);
       console.log(
-        `SimplifyWorker1: Completed task ${task.taskId} in ${processingTime}ms`,
-      );
-      console.log(
-        `Reduction: ${(reductionRatio * 100).toFixed(1)}%, Quality: ${qualityMetrics.geometricAccuracy.toFixed(2)}`,
+        `Reduction: ${(reductionRatio * 100).toFixed(1)}%, Quality: ${qualityMetrics.geometricAccuracy.toFixed(2)}`
       );
 
       return result;
@@ -135,8 +121,8 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
       return {
         taskId: task.taskId,
-        status: "failed",
-        outputBufferId: "",
+        status: 'failed',
+        outputBufferId: '',
         originalFeatureCount: 0,
         simplifiedFeatureCount: 0,
         reductionRatio: 0,
@@ -151,7 +137,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
    */
   private async simplifyFeatures(
     features: Feature[],
-    config: SimplifyTaskConfig,
+    config: SimplifyTaskConfig
   ): Promise<Feature[]> {
     const simplifiedFeatures: Feature[] = [];
     let processedCount = 0;
@@ -172,15 +158,10 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
         // Report progress every 100 features
         if (processedCount % 100 === 0) {
-          console.log(
-            `SimplifyWorker1: Processed ${processedCount}/${features.length} features`,
-          );
+          console.log(`SimplifyWorker1: Processed ${processedCount}/${features.length} features`);
         }
       } catch (error) {
-        console.warn(
-          `Failed to simplify feature ${feature.id || processedCount}:`,
-          error,
-        );
+        console.warn(`Failed to simplify feature ${feature.id || processedCount}:`, error);
         // Keep original feature on error
         simplifiedFeatures.push(feature);
       }
@@ -192,14 +173,11 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   /**
    * Simplify individual feature
    */
-  private async simplifyFeature(
-    feature: Feature,
-    config: SimplifyTaskConfig,
-  ): Promise<Feature> {
+  private async simplifyFeature(feature: Feature, config: SimplifyTaskConfig): Promise<Feature> {
     if (
       !feature.geometry ||
-      feature.geometry.type === "GeometryCollection" ||
-      !("coordinates" in feature.geometry)
+      feature.geometry.type === 'GeometryCollection' ||
+      !('coordinates' in feature.geometry)
     ) {
       return feature;
     }
@@ -208,18 +186,12 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       let simplifiedGeometry: any;
 
       switch (config.algorithm) {
-        case "douglas-peucker":
-          simplifiedGeometry = this.douglasPeuckerSimplify(
-            feature.geometry,
-            config,
-          );
+        case 'douglas-peucker':
+          simplifiedGeometry = this.douglasPeuckerSimplify(feature.geometry, config);
           break;
 
-        case "visvalingam":
-          simplifiedGeometry = this.visvalingamSimplify(
-            feature.geometry,
-            config,
-          );
+        case 'visvalingam':
+          simplifiedGeometry = this.visvalingamSimplify(feature.geometry, config);
           break;
 
         default:
@@ -232,17 +204,11 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
       // Apply additional constraints
       if (config.maxVertices) {
-        simplifiedGeometry = this.limitVertices(
-          simplifiedGeometry,
-          config.maxVertices,
-        );
+        simplifiedGeometry = this.limitVertices(simplifiedGeometry, config.maxVertices);
       }
 
       if (config.minimumArea) {
-        simplifiedGeometry = this.enforceMinimumArea(
-          simplifiedGeometry,
-          config.minimumArea,
-        );
+        simplifiedGeometry = this.enforceMinimumArea(simplifiedGeometry, config.minimumArea);
       }
 
       return {
@@ -258,35 +224,27 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   /**
    * Douglas-Peucker simplification implementation
    */
-  private douglasPeuckerSimplify(
-    geometry: any,
-    config: SimplifyTaskConfig,
-  ): any {
+  private douglasPeuckerSimplify(geometry: any, config: SimplifyTaskConfig): any {
     switch (geometry.type) {
-      case "LineString":
+      case 'LineString':
         return {
           ...geometry,
-          coordinates: this.douglasPeuckerLine(
-            geometry.coordinates,
-            config.tolerance,
-          ),
+          coordinates: this.douglasPeuckerLine(geometry.coordinates, config.tolerance),
         };
 
-      case "Polygon":
+      case 'Polygon':
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((ring: number[][]) =>
-            this.douglasPeuckerLine(ring, config.tolerance),
+            this.douglasPeuckerLine(ring, config.tolerance)
           ),
         };
 
-      case "MultiPolygon":
+      case 'MultiPolygon':
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((polygon: number[][][]) =>
-            polygon.map((ring: number[][]) =>
-              this.douglasPeuckerLine(ring, config.tolerance),
-            ),
+            polygon.map((ring: number[][]) => this.douglasPeuckerLine(ring, config.tolerance))
           ),
         };
 
@@ -298,20 +256,25 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   /**
    * Douglas-Peucker algorithm for line simplification
    */
-  private douglasPeuckerLine(
-    points: number[][],
-    tolerance: number,
-  ): number[][] {
+  private douglasPeuckerLine(points: number[][], tolerance: number): number[][] {
     if (points.length <= 2) return points;
 
     // Find the point with maximum distance from line segment
     let maxDistance = 0;
     let maxIndex = 0;
+
     const start = points[0];
     const end = points[points.length - 1];
 
+    if (start === undefined || end === undefined) {
+      throw new Error('Invalid point array');
+    }
+
     for (let i = 1; i < points.length - 1; i++) {
-      const distance = this.perpendicularDistance(points[i], start, end);
+      if (!points[i]) {
+        throw new Error('Invalid point array');
+      }
+      const distance = this.perpendicularDistance(points[i] as number[], start, end);
       if (distance > maxDistance) {
         maxDistance = distance;
         maxIndex = i;
@@ -320,14 +283,8 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
     // If max distance is greater than tolerance, recursively simplify
     if (maxDistance > tolerance) {
-      const leftPart = this.douglasPeuckerLine(
-        points.slice(0, maxIndex + 1),
-        tolerance,
-      );
-      const rightPart = this.douglasPeuckerLine(
-        points.slice(maxIndex),
-        tolerance,
-      );
+      const leftPart = this.douglasPeuckerLine(points.slice(0, maxIndex + 1), tolerance);
+      const rightPart = this.douglasPeuckerLine(points.slice(maxIndex), tolerance);
 
       // Combine results (remove duplicate point at junction)
       return leftPart.slice(0, -1).concat(rightPart);
@@ -343,20 +300,17 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   private visvalingamSimplify(geometry: any, config: SimplifyTaskConfig): any {
     // Simplified implementation - would use proper Visvalingam algorithm
     switch (geometry.type) {
-      case "LineString":
+      case 'LineString':
         return {
           ...geometry,
-          coordinates: this.visvalingamLine(
-            geometry.coordinates,
-            config.tolerance,
-          ),
+          coordinates: this.visvalingamLine(geometry.coordinates, config.tolerance),
         };
 
-      case "Polygon":
+      case 'Polygon':
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((ring: number[][]) =>
-            this.visvalingamLine(ring, config.tolerance),
+            this.visvalingamLine(ring, config.tolerance)
           ),
         };
 
@@ -375,19 +329,23 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     const areas = new Array(points.length).fill(Infinity);
 
     for (let i = 1; i < points.length - 1; i++) {
-      areas[i] = this.triangleArea(points[i - 1], points[i], points[i + 1]);
+      areas[i] = this.triangleArea(
+        points[i - 1] as number[],
+        points[i] as number[],
+        points[i + 1] as number[]
+      );
     }
 
     // Remove points with area below tolerance
-    const result = [points[0]]; // Always keep first point
+    const result = [points[0]] as number[][]; // Always keep first point
 
     for (let i = 1; i < points.length - 1; i++) {
-      if (areas[i] >= tolerance) {
-        result.push(points[i]);
+      if (areas[i] >= tolerance && points[i]) {
+        result.push(points[i] as number[]);
       }
     }
 
-    result.push(points[points.length - 1]); // Always keep last point
+    result.push(points[points.length - 1] as number[]); // Always keep last point
     return result;
   }
 
@@ -397,54 +355,45 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   private async calculateQualityMetrics(
     originalFeatures: Feature[],
     simplifiedFeatures: Feature[],
-    config: SimplifyTaskConfig,
+    _config: SimplifyTaskConfig
   ): Promise<QualityMetrics> {
     let totalGeometricAccuracy = 0;
     let totalTopologicalIntegrity = 0;
     let totalVisualQuality = 0;
     let validComparisons = 0;
 
-    for (
-      let i = 0;
-      i < Math.min(originalFeatures.length, simplifiedFeatures.length);
-      i++
-    ) {
+    for (let i = 0; i < Math.min(originalFeatures.length, simplifiedFeatures.length); i++) {
       try {
         const original = originalFeatures[i];
         const simplified = simplifiedFeatures[i];
 
+        if (!original) {
+          continue;
+        }
+        if (!simplified) {
+          continue;
+        }
+
         // Geometric accuracy (using area difference)
         const originalArea = await this.calculateComplexity(original.geometry);
-        const simplifiedArea = await this.calculateComplexity(
-          simplified.geometry,
-        );
-        const geometricAccuracy =
-          originalArea > 0 ? Math.min(1, simplifiedArea / originalArea) : 1;
+        const simplifiedArea = await this.calculateComplexity(simplified.geometry);
+        const geometricAccuracy = originalArea > 0 ? Math.min(1, simplifiedArea / originalArea) : 1;
 
         // Topological integrity (check for self-intersections)
-        const topologicalIntegrity = (await this.validateGeometry(
-          simplified.geometry,
-        ))
-          ? 1
-          : 0;
+        const topologicalIntegrity = (await this.validateGeometry(simplified.geometry)) ? 1 : 0;
 
         // Visual quality (vertex count preservation ratio)
         const originalVertices = this.countVertices(original.geometry);
         const simplifiedVertices = this.countVertices(simplified.geometry);
         const visualQuality =
-          originalVertices > 0
-            ? Math.min(1, simplifiedVertices / originalVertices)
-            : 1;
+          originalVertices > 0 ? Math.min(1, simplifiedVertices / originalVertices) : 1;
 
         totalGeometricAccuracy += geometricAccuracy;
         totalTopologicalIntegrity += topologicalIntegrity;
         totalVisualQuality += visualQuality;
         validComparisons++;
       } catch (error) {
-        console.warn(
-          `Quality metric calculation failed for feature ${i}:`,
-          error,
-        );
+        console.warn(`Quality metric calculation failed for feature ${i}:`, error);
       }
     }
 
@@ -481,13 +430,13 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       if (!isValidCoords) return false;
 
       // Check for self-intersections (simplified)
-      if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
+      if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
         return this.validatePolygonTopology(geometry);
       }
 
       return true;
     } catch (error) {
-      console.warn("Geometry validation error:", error);
+      console.warn('Geometry validation error:', error);
       return false;
     }
   }
@@ -500,34 +449,30 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       if (!geometry || !geometry.coordinates) return 0;
 
       switch (geometry.type) {
-        case "Point":
+        case 'Point':
           return 1;
 
-        case "LineString":
+        case 'LineString':
           return geometry.coordinates.length;
 
-        case "Polygon":
+        case 'Polygon':
           return geometry.coordinates.reduce(
             (sum: number, ring: number[][]) => sum + ring.length,
-            0,
+            0
           );
 
-        case "MultiPolygon":
+        case 'MultiPolygon':
           return geometry.coordinates.reduce(
             (sum: number, polygon: number[][][]) =>
-              sum +
-              polygon.reduce(
-                (ringSum: number, ring: number[][]) => ringSum + ring.length,
-                0,
-              ),
-            0,
+              sum + polygon.reduce((ringSum: number, ring: number[][]) => ringSum + ring.length, 0),
+            0
           );
 
         default:
           return this.countVertices(geometry);
       }
     } catch (error) {
-      console.warn("Complexity calculation error:", error);
+      console.warn('Complexity calculation error:', error);
       return 0;
     }
   }
@@ -547,7 +492,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
         // Skip features that are too small
         const complexity = await this.calculateComplexity(feature.geometry);
-        if (complexity < 3 && feature.geometry.type !== "Point") {
+        if (complexity < 3 && feature.geometry.type !== 'Point') {
           continue;
         }
 
@@ -564,14 +509,21 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   // Utility Methods
   // ============================================================================
 
-  private perpendicularDistance(
-    point: number[],
-    lineStart: number[],
-    lineEnd: number[],
-  ): number {
+  private perpendicularDistance(point: number[], lineStart: number[], lineEnd: number[]): number {
     const [x, y] = point;
     const [x1, y1] = lineStart;
     const [x2, y2] = lineEnd;
+
+    if (
+      x === undefined ||
+      y === undefined ||
+      x1 === undefined ||
+      y1 === undefined ||
+      x2 === undefined ||
+      y2 === undefined
+    ) {
+      throw new Error('Invalid point array');
+    }
 
     const A = x - x1;
     const B = y - y1;
@@ -603,11 +555,21 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   }
 
   private triangleArea(p1: number[], p2: number[], p3: number[]): number {
+    if (
+      p1.length === 0 ||
+      p2.length <= 1 ||
+      p3.length <= 1 ||
+      p1[0] === undefined ||
+      p2[0] === undefined ||
+      p3[0] === undefined ||
+      p1[1] === undefined ||
+      p2[1] === undefined ||
+      p3[1] === undefined
+    ) {
+      throw new Error('Invalid point array');
+    }
     return Math.abs(
-      (p1[0] * (p2[1] - p3[1]) +
-        p2[0] * (p3[1] - p1[1]) +
-        p3[0] * (p1[1] - p2[1])) /
-        2,
+      (p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1])) / 2
     );
   }
 
@@ -615,7 +577,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     let count = 0;
 
     const countCoords = (coords: any) => {
-      if (typeof coords[0] === "number") {
+      if (typeof coords[0] === 'number') {
         count++;
       } else {
         coords.forEach(countCoords);
@@ -631,7 +593,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
   private validateCoordinates(coords: any): boolean {
     const validate = (coord: any): boolean => {
-      if (typeof coord === "number") {
+      if (typeof coord === 'number') {
         return isFinite(coord) && !isNaN(coord);
       }
       if (Array.isArray(coord)) {
@@ -646,12 +608,12 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   private validatePolygonTopology(geometry: any): boolean {
     // Simplified topology validation
     try {
-      if (geometry.type === "Polygon") {
+      if (geometry.type === 'Polygon') {
         return geometry.coordinates.every(
           (ring: number[][]) =>
             ring.length >= 4 &&
-            ring[0][0] === ring[ring.length - 1][0] &&
-            ring[0][1] === ring[ring.length - 1][1],
+            ring[0]?.[0] === ring[ring.length - 1]?.[0] &&
+            ring[0]?.[1] === ring[ring.length - 1]?.[1]
         );
       }
       return true;
@@ -669,11 +631,11 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     // Use more aggressive simplification
     try {
       return turf.simplify(
-        { type: "Feature" as const, geometry, properties: {} },
+        { type: 'Feature' as const, geometry, properties: {} },
         {
           tolerance: 0.01,
           highQuality: false,
-        },
+        }
       ).geometry;
     } catch {
       return geometry;
@@ -682,9 +644,9 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 
   private enforceMinimumArea(geometry: Geometry, minimumArea: number): any {
     // Remove small polygons
-    if (geometry.type === "Polygon") {
+    if (geometry.type === 'Polygon') {
       try {
-        const area = turf.area({ type: "Feature", geometry, properties: {} });
+        const area = turf.area({ type: 'Feature', geometry, properties: {} });
         return area >= minimumArea ? geometry : null;
       } catch {
         return geometry;
@@ -707,10 +669,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     return this.processingCache.get(bufferId) || null;
   }
 
-  private async saveOutputBuffer(
-    bufferId: string,
-    data: string,
-  ): Promise<void> {
+  private async saveOutputBuffer(bufferId: string, data: string): Promise<void> {
     // Mock implementation - would save to actual buffer storage
     this.processingCache.set(bufferId, data);
   }

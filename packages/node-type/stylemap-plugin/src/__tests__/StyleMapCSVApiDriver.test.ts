@@ -5,7 +5,7 @@
 
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SpreadsheetCSVApiDriver } from '../../spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver';
+import { SpreadsheetCSVApiDriver } from '@hierarchidb/node-type-spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager';
 import type {
   CSVTableMetadata,
@@ -23,7 +23,7 @@ vi.mock('../utils/hashUtils', () => ({
       let hash = 0;
       for (let i = 0; i < content.length; i++) {
         const char = content.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
+        hash = (hash << 5) - hash + char;
         hash = hash & hash; // Convert to 32bit integer
       }
       return Promise.resolve(`mock-hash-${Math.abs(hash)}`);
@@ -309,9 +309,9 @@ Jane,25`;
         statusText: 'Not Found',
       });
 
-      await expect(
-        csvApi.downloadCSVFromUrl('https://example.com/missing.csv')
-      ).rejects.toThrow('Failed to download: 404 Not Found');
+      await expect(csvApi.downloadCSVFromUrl('https://example.com/missing.csv')).rejects.toThrow(
+        'Failed to download: 404 Not Found'
+      );
     });
   });
 
@@ -343,7 +343,7 @@ Jane,25`;
 
       expect(result.total).toBe(2); // table1.csv and table3.csv
       expect(result.tables).toHaveLength(2);
-      expect(result.tables.every(t => t.referencingPlugins.includes('plugin1'))).toBe(true);
+      expect(result.tables.every((t) => t.referencingPlugins.includes('plugin1'))).toBe(true);
     });
 
     it('should support pagination', async () => {
@@ -359,13 +359,14 @@ Jane,25`;
     it('should handle large CSV files (10MB limit)', async () => {
       // Create a large CSV content (close to 10MB)
       const largeRows: string[] = ['name,age,description'];
-      const rowContent = 'John Doe Smith Johnson,30,A very long description with many words that takes up significant space in the CSV file to test large file handling capabilities';
-      
+      const rowContent =
+        'John Doe Smith Johnson,30,A very long description with many words that takes up significant space in the CSV file to test large file handling capabilities';
+
       // Generate enough rows to approach 10MB
       for (let i = 0; i < 50000; i++) {
         largeRows.push(`${rowContent}_${i},${30 + (i % 50)},${rowContent}_description_${i}`);
       }
-      
+
       const csvContent = largeRows.join('\n');
       const file = new File([csvContent], 'large.csv', { type: 'text/csv' });
 
@@ -384,7 +385,7 @@ Jane,25`;
       // Create CSV with many columns
       const columnNames = Array.from({ length: 1000 }, (_, i) => `col_${i}`);
       const columnValues = Array.from({ length: 1000 }, (_, i) => `value_${i}`);
-      
+
       const csvContent = `${columnNames.join(',')}
 ${columnValues.join(',')}`;
       const file = new File([csvContent], 'wide.csv', { type: 'text/csv' });
@@ -396,12 +397,12 @@ ${columnValues.join(',')}`;
 
     it('should handle CSV with 100,000 rows', async () => {
       const rows: string[] = ['id,name,value'];
-      
+
       // Generate 100,000 rows
       for (let i = 1; i <= 100000; i++) {
         rows.push(`${i},name_${i},${i * 10}`);
       }
-      
+
       const csvContent = rows.join('\n');
       const file = new File([csvContent], 'long.csv', { type: 'text/csv' });
 
@@ -432,7 +433,7 @@ Bob,35,,No notes`;
 
       const result = await csvApi.uploadCSVFile(file);
       expect(result.totalRows).toBe(4);
-      
+
       const preview = await csvApi.getFilteredPreview(result.id, [], 10);
       expect(preview.rows[0].notes).toBe('');
       expect(preview.rows[1].age).toBe('');
@@ -456,35 +457,36 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
 
   describe('additional error handling tests', () => {
     it('should handle network timeout for URL downloads', async () => {
-      global.fetch = vi.fn().mockImplementation(() => 
-        new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Network timeout')), 100);
-        })
+      global.fetch = vi.fn().mockImplementation(
+        () =>
+          new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Network timeout')), 100);
+          })
       );
 
-      await expect(
-        csvApi.downloadCSVFromUrl('https://slow-server.com/data.csv')
-      ).rejects.toThrow('Network timeout');
+      await expect(csvApi.downloadCSVFromUrl('https://slow-server.com/data.csv')).rejects.toThrow(
+        'Network timeout'
+      );
     });
 
     it('should handle invalid table ID in getFilteredPreview', async () => {
       const invalidTableId = 'non-existent-table-id';
-      
-      await expect(
-        csvApi.getFilteredPreview(invalidTableId, [], 10)
-      ).rejects.toThrow('Table not found');
+
+      await expect(csvApi.getFilteredPreview(invalidTableId, [], 10)).rejects.toThrow(
+        'Table not found'
+      );
     });
 
     it('should handle invalid table ID in reference management', async () => {
       const invalidTableId = 'non-existent-table-id';
-      
-      await expect(
-        csvApi.addTableReference(invalidTableId, 'plugin1')
-      ).rejects.toThrow('Table not found');
 
-      await expect(
-        csvApi.removeTableReference(invalidTableId, 'plugin1')
-      ).rejects.toThrow('Table not found');
+      await expect(csvApi.addTableReference(invalidTableId, 'plugin1')).rejects.toThrow(
+        'Table not found'
+      );
+
+      await expect(csvApi.removeTableReference(invalidTableId, 'plugin1')).rejects.toThrow(
+        'Table not found'
+      );
     });
 
     it('should handle corrupted CSV content', async () => {
@@ -503,7 +505,7 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
 
     it('should handle binary file uploaded as CSV', async () => {
       // Create binary content that's not CSV
-      const binaryData = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]); // JPEG header
+      const binaryData = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]); // JPEG header
       const file = new File([binaryData], 'image.csv', { type: 'text/csv' });
 
       await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('Invalid CSV format');
@@ -513,12 +515,12 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
       const longText = 'a'.repeat(100000); // 100KB in a single cell
       const csvContent = `name,description
 John,"${longText}"`;
-      
+
       const file = new File([csvContent], 'long-cell.csv', { type: 'text/csv' });
 
       const result = await csvApi.uploadCSVFile(file);
       expect(result.totalRows).toBe(1);
-      
+
       const preview = await csvApi.getFilteredPreview(result.id, [], 1);
       expect(preview.rows[0].description).toBe(longText);
     });
@@ -556,7 +558,7 @@ John,"${longText}"`;
       for (let i = 0; i < 50000; i++) {
         rows.push(`${i},category_${i % 10},${Math.random() * 1000}`);
       }
-      
+
       const csvContent = rows.join('\n');
       const file = new File([csvContent], 'large-filter.csv', { type: 'text/csv' });
       const result = await csvApi.uploadCSVFile(file);
@@ -592,11 +594,11 @@ John,"${longText}"`;
       ];
 
       // Upload concurrently
-      const promises = files.map(file => csvApi.uploadCSVFile(file));
+      const promises = files.map((file) => csvApi.uploadCSVFile(file));
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.id).toBeDefined();
         expect(result.totalRows).toBeGreaterThan(0);
       });

@@ -1,6 +1,6 @@
 /**
  * DownloadWorker - Geographic data download and preprocessing
- * 
+ *
  * Responsibilities:
  * - Download from multiple data sources (GADM, Natural Earth, OSM, GeoBoundaries)
  * - Data validation and format conversion
@@ -9,7 +9,7 @@
  * - Error handling with retry logic
  */
 
-import * as Comlink from 'comlink';
+//import * as Comlink from 'comlink';
 import * as turf from '@turf/turf';
 import * as geohash from 'geohash';
 import type {
@@ -19,7 +19,7 @@ import type {
   DownloadTaskConfig,
   ValidationResult,
   FeatureIndex,
-  DataSourceName
+  //DataSourceName
 } from '../types';
 
 /**
@@ -27,11 +27,15 @@ import type {
  */
 export class DownloadWorker implements DownloadWorkerAPI {
   private cache = new Map<string, ArrayBuffer>();
-  private readonly maxCacheSize = 100 * 1024 * 1024; // 100MB cache limit
-  
+  //private readonly maxCacheSize = 100 * 1024 * 1024; // 100MB cache limit
+
   constructor() {
     // Set up global error handling (only in Worker environment)
-    if (typeof self !== 'undefined' && self.addEventListener && typeof self.addEventListener === 'function') {
+    if (
+      typeof self !== 'undefined' &&
+      self.addEventListener &&
+      typeof self.addEventListener === 'function'
+    ) {
       self.addEventListener('error', (event) => {
         console.error('DownloadWorker global error:', event.error);
       });
@@ -68,7 +72,9 @@ export class DownloadWorker implements DownloadWorkerAPI {
       // 4. Validate and parse data
       const validationResult = await this.validateData(rawData);
       if (!validationResult.isValid) {
-        throw new Error(`Invalid data: ${validationResult.errors.map(e => e.message).join(', ')}`);
+        throw new Error(
+          `Invalid data: ${validationResult.errors.map((e) => e.message).join(', ')}`
+        );
       }
 
       // 5. Parse GeoJSON
@@ -89,15 +95,16 @@ export class DownloadWorker implements DownloadWorkerAPI {
         downloadTime,
         downloadSize: rawData.byteLength,
         compressionRatio,
-        spatialIndices
+        spatialIndices,
       };
 
-      console.log(`DownloadWorker: Completed task ${task.taskId} in ${downloadTime}ms (${fromCache ? 'from cache' : 'downloaded'})`);
+      console.log(
+        `DownloadWorker: Completed task ${task.taskId} in ${downloadTime}ms (${fromCache ? 'from cache' : 'downloaded'})`
+      );
       return result;
-
     } catch (error) {
       console.error(`DownloadWorker: Task ${task.taskId} failed:`, error);
-      
+
       return {
         taskId: task.taskId,
         status: 'failed',
@@ -107,7 +114,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
         downloadSize: 0,
         compressionRatio: 0,
         spatialIndices: [],
-        errorMessage: error instanceof Error ? error.message : String(error)
+        errorMessage: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -117,20 +124,20 @@ export class DownloadWorker implements DownloadWorkerAPI {
    */
   private async downloadFromSource(config: DownloadTaskConfig): Promise<ArrayBuffer> {
     let lastError: Error | undefined;
-    
+
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         console.log(`DownloadWorker: Downloading from ${config.url} (attempt ${attempt + 1})`);
-        
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
         const response = await fetch(config.url, {
           signal: controller.signal,
           headers: {
-            'Accept': 'application/json, application/geo+json, */*',
-            'User-Agent': 'HierarchiDB-Shape-Plugin/1.0'
-          }
+            Accept: 'application/json, application/geo+json, */*',
+            'User-Agent': 'HierarchiDB-Shape-Plugin/1.0',
+          },
         });
 
         clearTimeout(timeoutId);
@@ -141,17 +148,16 @@ export class DownloadWorker implements DownloadWorkerAPI {
 
         const arrayBuffer = await response.arrayBuffer();
         console.log(`DownloadWorker: Downloaded ${arrayBuffer.byteLength} bytes`);
-        
-        return arrayBuffer;
 
+        return arrayBuffer;
       } catch (error) {
         lastError = error as Error;
         console.warn(`DownloadWorker: Download attempt ${attempt + 1} failed:`, error);
-        
+
         if (attempt < 2) {
           // Exponential backoff
           const delay = config.retryDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -163,7 +169,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
    * Validate downloaded data
    */
   async validateData(data: ArrayBuffer): Promise<ValidationResult> {
-    const errors: Array<{type: string; message: string; severity: 'error' | 'warning'}> = [];
+    const errors: Array<{ type: string; message: string; severity: 'error' | 'warning' }> = [];
     const warnings: string[] = [];
 
     try {
@@ -172,22 +178,23 @@ export class DownloadWorker implements DownloadWorkerAPI {
         errors.push({
           type: 'EMPTY_DATA',
           message: 'Downloaded data is empty',
-          severity: 'error'
+          severity: 'error',
         });
       }
 
-      if (data.byteLength > 100 * 1024 * 1024) { // 100MB
+      if (data.byteLength > 100 * 1024 * 1024) {
+        // 100MB
         warnings.push('Data size is very large (>100MB), processing may be slow');
       }
 
       // Try to parse as text to check format
       const text = new TextDecoder().decode(data.slice(0, 1024)); // First 1KB
-      
+
       if (text.includes('<?xml')) {
         errors.push({
           type: 'UNSUPPORTED_FORMAT',
           message: 'XML format detected, expected GeoJSON',
-          severity: 'error'
+          severity: 'error',
         });
       }
 
@@ -195,7 +202,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
         errors.push({
           type: 'INVALID_FORMAT',
           message: 'Data does not appear to be valid GeoJSON',
-          severity: 'error'
+          severity: 'error',
         });
       }
 
@@ -205,22 +212,21 @@ export class DownloadWorker implements DownloadWorkerAPI {
         warnings,
         metadata: {
           size: data.byteLength,
-          estimatedType: this.detectDataType(text)
-        }
+          estimatedType: this.detectDataType(text),
+        },
       };
-
     } catch (error) {
       errors.push({
         type: 'VALIDATION_ERROR',
         message: `Validation failed: ${error}`,
-        severity: 'error'
+        severity: 'error',
       });
 
       return {
         isValid: false,
         errors,
         warnings: [],
-        metadata: {}
+        metadata: {},
       };
     }
   }
@@ -230,13 +236,13 @@ export class DownloadWorker implements DownloadWorkerAPI {
    */
   private async parseData(data: ArrayBuffer, expectedFormat: string): Promise<any> {
     const text = new TextDecoder().decode(data);
-    
+
     try {
       switch (expectedFormat) {
         case 'geojson':
         default:
           return JSON.parse(text);
-        
+
         case 'topojson':
           // TopoJSON parsing would require additional library
           const parsed = JSON.parse(text);
@@ -256,20 +262,35 @@ export class DownloadWorker implements DownloadWorkerAPI {
    */
   private async generateSpatialIndices(geoJson: any, nodeId: string): Promise<FeatureIndex[]> {
     const indices: FeatureIndex[] = [];
-    
+
     if (!geoJson.features || !Array.isArray(geoJson.features)) {
       return indices;
     }
 
     for (let i = 0; i < geoJson.features.length; i++) {
       const feature = geoJson.features[i];
-      
+
       try {
         // Use Turf.js for accurate geospatial calculations
         const bbox = turf.bbox(feature);
         const centroid = turf.centroid(feature);
         const area = turf.area(feature);
-        const geohashCode = geohash.encode(centroid.geometry.coordinates[1], centroid.geometry.coordinates[0], 12);
+
+        if (
+          !centroid.geometry.coordinates ||
+          centroid.geometry.coordinates.length < 2 ||
+          centroid.geometry.coordinates[0] === undefined ||
+          centroid.geometry.coordinates[1] === undefined
+        ) {
+          console.warn('>>> Invalid centroid coordinates: ', centroid.geometry.coordinates);
+          continue;
+        }
+
+        const geohashCode = geohash.encode(
+          centroid.geometry.coordinates[1],
+          centroid.geometry.coordinates[0],
+          12
+        );
         const complexity = this.calculateComplexity(feature.geometry);
 
         indices.push({
@@ -279,9 +300,8 @@ export class DownloadWorker implements DownloadWorkerAPI {
           bbox: bbox as [number, number, number, number],
           centroid: centroid.geometry.coordinates as [number, number],
           area,
-          complexity
+          complexity,
         });
-
       } catch (error) {
         console.warn(`DownloadWorker: Failed to index feature ${i}:`, error);
       }
@@ -295,11 +315,12 @@ export class DownloadWorker implements DownloadWorkerAPI {
    */
   async cacheData(key: string, data: ArrayBuffer): Promise<void> {
     // Simple LRU cache implementation
-    if (this.cache.size > 10) { // Max 10 entries
+    if (this.cache.size > 10) {
+      // Max 10 entries
       const firstKey = this.cache.keys().next().value;
       this.cache.delete(firstKey);
     }
-    
+
     this.cache.set(key, data);
   }
 
@@ -332,19 +353,24 @@ export class DownloadWorker implements DownloadWorkerAPI {
     return 'unknown';
   }
 
-  private convertTopoJSONToGeoJSON(topology: any): any {
+  private convertTopoJSONToGeoJSON(_topology: any): any {
     // Simplified TopoJSON to GeoJSON conversion
     // In practice, you'd use a proper library like topojson-client
     return {
       type: 'FeatureCollection',
-      features: []
+      features: [],
     };
   }
 
+  /*
+
   private calculateBoundingBox(geometry: any): [number, number, number, number] {
     // Simplified bbox calculation
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
     const processCoords = (coords: any) => {
       if (typeof coords[0] === 'number') {
         minX = Math.min(minX, coords[0]);
@@ -363,20 +389,6 @@ export class DownloadWorker implements DownloadWorkerAPI {
     return [minX, minY, maxX, maxY];
   }
 
-  private calculateCentroid(bbox: [number, number, number, number]): [number, number] {
-    return [
-      (bbox[0] + bbox[2]) / 2,
-      (bbox[1] + bbox[3]) / 2
-    ];
-  }
-
-  private calculateMortonCode(lon: number, lat: number): number {
-    // Simplified Morton code calculation
-    const x = Math.floor(((lon + 180) / 360) * 0xFFFF);
-    const y = Math.floor(((lat + 90) / 180) * 0xFFFF);
-    return this.interleave(x, y);
-  }
-
   private interleave(x: number, y: number): number {
     let result = 0;
     for (let i = 0; i < 16; i++) {
@@ -385,15 +397,27 @@ export class DownloadWorker implements DownloadWorkerAPI {
     return result;
   }
 
+  private calculateCentroid(bbox: [number, number, number, number]): [number, number] {
+    return [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
+  }
+
+  private calculateMortonCode(lon: number, lat: number): number {
+    // Simplified Morton code calculation
+    const x = Math.floor(((lon + 180) / 360) * 0xffff);
+    const y = Math.floor(((lat + 90) / 180) * 0xffff);
+    return this.interleave(x, y);
+  }
+
   private calculateArea(geometry: any): number {
     // Simplified area calculation - would use proper library in practice
     return 1000; // Placeholder
   }
+   */
 
   private calculateComplexity(geometry: any): number {
     // Count vertices as complexity measure
     let vertexCount = 0;
-    
+
     const countVertices = (coords: any) => {
       if (typeof coords[0] === 'number') {
         vertexCount++;
@@ -408,7 +432,6 @@ export class DownloadWorker implements DownloadWorkerAPI {
 
     return vertexCount;
   }
-
 }
 
 // Export for Comlink

@@ -1,5 +1,5 @@
 {
-  "name": "@hiearachidb/@fetch-datasource",
+  "name": "@hiearachidb/runtime-fetch-metadata",
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",

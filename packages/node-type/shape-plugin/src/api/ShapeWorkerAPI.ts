@@ -3,7 +3,6 @@
  * Connects with HierarchiDB Worker layer via Comlink
  */
 
-import * as Comlink from 'comlink';
 import { NodeId } from '@hierarchidb/common-core';
 import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI';
 
@@ -128,7 +127,11 @@ export class ShapeWorkerAPI {
     return this.pluginAPI.getFeatureById(nodeId, featureId);
   }
 
-  async getFeaturesByBbox(nodeId: NodeId, bbox: [number, number, number, number], options?: any): Promise<any[]> {
+  async getFeaturesByBbox(
+    nodeId: NodeId,
+    bbox: [number, number, number, number],
+    options?: any
+  ): Promise<any[]> {
     this.ensureInitialized();
     return this.pluginAPI.getFeaturesByBbox(nodeId, bbox, options);
   }

@@ -8,13 +8,13 @@ import type { CountryMetadata as FetchedCountryMetadata } from '@hierarchidb/run
 export class MetadataLoader {
   private static instance: MetadataLoader | null = null;
   private metadataCache: Map<string, CountryMetadata[]> = new Map();
-  
+
   // Mapping of data source names to metadata file names
   private readonly dataSourceFileMap: Record<string, string> = {
-    'GADM': 'gadm.json',
-    'GeoBoundaries': 'geoboundaries.json',
-    'NaturalEarth': 'naturalearth.json',
-    'OpenStreetMap': 'osm.json',
+    GADM: 'gadm.json',
+    GeoBoundaries: 'geoboundaries.json',
+    NaturalEarth: 'naturalearth.json',
+    OpenStreetMap: 'osm.json',
   };
 
   private constructor() {}
@@ -44,30 +44,38 @@ export class MetadataLoader {
     try {
       // Import metadata from 02-fetch-metadata package
       let rawData: any[];
-      
+
       switch (dataSource) {
         case 'GADM':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/gadm.json').then(m => m.default);
+          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/gadm.json').then(
+            (m) => m.default
+          );
           break;
         case 'GeoBoundaries':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/geoboundaries.json').then(m => m.default);
+          rawData = await import(
+            '@hierarchidb/runtime-fetch-metadata/output/geoboundaries.json'
+          ).then((m) => m.default);
           break;
         case 'NaturalEarth':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/naturalearth.json').then(m => m.default);
+          rawData = await import(
+            '@hierarchidb/runtime-fetch-metadata/output/naturalearth.json'
+          ).then((m) => m.default);
           break;
         case 'OpenStreetMap':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/osm.json').then(m => m.default);
+          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/osm.json').then(
+            (m) => m.default
+          );
           break;
         default:
           console.warn(`Unknown data source: ${dataSource}`);
           return [];
       }
-      
+
       const metadata = this.transformMetadata(rawData, dataSource);
-      
+
       // Cache the result
       this.metadataCache.set(dataSource, metadata);
-      
+
       return metadata;
     } catch (error) {
       console.error(`Error loading metadata for ${dataSource}:`, error);
@@ -78,8 +86,11 @@ export class MetadataLoader {
   /**
    * Transform raw metadata to CountryMetadata format
    */
-  private transformMetadata(rawData: FetchedCountryMetadata[], dataSource: string): CountryMetadata[] {
-    return rawData.map(item => ({
+  private transformMetadata(
+    rawData: FetchedCountryMetadata[],
+    _dataSource: string
+  ): CountryMetadata[] {
+    return rawData.map((item) => ({
       countryCode: item.iso3 || item.countryCode || item.id,
       countryName: item.name || item.countryName || '',
       continent: item.continent || '',
@@ -109,7 +120,7 @@ export class MetadataLoader {
   ): Promise<CountryMetadata | undefined> {
     const allMetadata = await this.loadMetadata(dataSource);
     return allMetadata.find(
-      country => 
+      (country) =>
         country.countryCode === countryCode ||
         country.countryCode.toLowerCase() === countryCode.toLowerCase()
     );
@@ -123,11 +134,9 @@ export class MetadataLoader {
     countryCodes: string[]
   ): Promise<CountryMetadata[]> {
     const allMetadata = await this.loadMetadata(dataSource);
-    const lowerCodes = countryCodes.map(code => code.toLowerCase());
-    
-    return allMetadata.filter(country =>
-      lowerCodes.includes(country.countryCode.toLowerCase())
-    );
+    const lowerCodes = countryCodes.map((code) => code.toLowerCase());
+
+    return allMetadata.filter((country) => lowerCodes.includes(country.countryCode.toLowerCase()));
   }
 
   /**

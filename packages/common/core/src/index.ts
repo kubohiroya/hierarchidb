@@ -21,15 +21,7 @@ export { NodeDefinitionRegistry as NodeTypeRegistry } from './registry/NodeDefin
 export * from './plugin-system';
 
 // Re-export from types (already explicit in types/index.ts)
-export {
-  // ID Types (re-exported from types, but originally from types/ids.ts)
-  toNodeId,
-  toEntityId,
-  toTreeId,
-  // Enums
-  NodeAction,
-  SortOrder,
-} from './types';
+export * from './types';
 
 export type {
   // ID Types
