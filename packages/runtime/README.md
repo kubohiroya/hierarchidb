@@ -110,7 +110,7 @@ graph TB
 // コマンド実行例
 await workerAPI.executeCommand({
   type: 'CreateNode',
-  payload: { name: 'New Folder', nodeType: 'folder' }
+  payload: { name: 'New Folder', nodeType: 'folder-plugin' }
 });
 
 // Undo/Redo

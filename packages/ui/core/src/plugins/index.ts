@@ -63,7 +63,7 @@ export function registerAllUIPlugins(): void {
       const ShapeUIPlugin = {
         nodeType: 'shape',
         displayName: 'Geographic Shapes',
-        description: 'Manage geographic shape data with batch processing capabilities',
+        description: 'Manage geographic shape-plugin data with batch processing capabilities',
         
         components: {
           icon: () => null, // Will be replaced with actual icon

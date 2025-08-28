@@ -259,7 +259,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       fontSize: '0.975rem',
                     }}
                   >
-                    <IconComponent nodeType={node.nodeType || node.type || 'folder'} size="small" />
+                    <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}
                   </Typography>
                 );
@@ -284,7 +284,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       gap: 0.5,
                     }}
                   >
-                    <IconComponent nodeType={node.nodeType || node.type || 'folder'} size="small" />
+                    <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}
                   </Link>
                   <IconButton
@@ -313,7 +313,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         open={Boolean(contextMenuAnchor)}
         onClose={handleContextMenuClose}
         nodeId={contextMenuNode?.id || contextMenuNode?.id || ''}
-        nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder'}
+        nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder-plugin'}
         nodeName={contextMenuNode?.name}
         canCreate={true}
         canEdit={true}

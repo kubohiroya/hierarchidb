@@ -208,7 +208,7 @@ export default function TrashDialog() {
         // Navigate to trash root
         navigate(`/t/${treeId}/${pageNodeId}/trash/${mode}`);
       } else {
-        // Navigate to specific folder in trash
+        // Navigate to specific folder-plugin in trash
         navigate(`/t/${treeId}/${pageNodeId}/${nodeId}/${mode}`);
       }
     },
@@ -249,7 +249,7 @@ export default function TrashDialog() {
   const breadcrumbItems = useMemo(() => {
     const items = [{ id: 'trash', name: 'Trash', nodeType: 'folder' as const }];
 
-    // If we're not at trash root, add current folder to breadcrumbs
+    // If we're not at trash root, add current folder-plugin to breadcrumbs
     if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetTreeNode) {
       items.push({
         id: data.targetTreeNode.id,
@@ -265,7 +265,7 @@ export default function TrashDialog() {
   const getDialogTitle = () => {
     const baseTitle = isRecoverMode ? 'Restore from Trash' : isDeleteMode ? 'Empty Trash' : 'Trash';
 
-    // Add current folder context if not at root
+    // Add current folder-plugin context if not at root
     if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetTreeNode) {
       return `${baseTitle} - ${data.targetTreeNode.name}`;
     }
@@ -384,7 +384,7 @@ export default function TrashDialog() {
           <Alert severity="info" sx={{ m: 2 }}>
             {targetNodeId === 'trash' || targetNodeId === data.trashRootId
               ? '🗑️ The trash is empty. Deleted items will appear here.'
-              : '📁 This folder is empty.'}
+              : '📁 This folder-plugin is empty.'}
           </Alert>
         )}
 

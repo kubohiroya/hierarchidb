@@ -70,7 +70,7 @@ describe('ノード変更の購読と通知', () => {
     const initialNode: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Initial Name',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -115,7 +115,7 @@ describe('ノード変更の購読と通知', () => {
 
 ```typescript
 it('特定のノードタイプのみ監視できる', async () => {
-  const folderNodeId = 'folder-node' as TreeNodeId;
+  const folderNodeId = 'folder-plugin-node' as TreeNodeId;
   const fileNodeId = 'file-node' as TreeNodeId;
   const receivedEvents: TreeChangeEvent[] = [];
 
@@ -124,7 +124,7 @@ it('特定のノードタイプのみ監視できる', async () => {
     {
       treeNodeId: folderNodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Test Folder',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -146,7 +146,7 @@ it('特定のノードタイプのみ監視できる', async () => {
     type: 'observeNode',
     payload: { 
       nodeId: folderNodeId,
-      filter: { nodeTypes: ['folder'] }
+      filter: { nodeTypes: ['folder-plugin'] }
     },
     commandId: 'cmd-filter',
     timestamp: Date.now(),
@@ -183,7 +183,7 @@ describe('複数購読者のイベント配信', () => {
     const node: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Multi Subscriber Test',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -248,7 +248,7 @@ describe('サブツリー変更の購読', () => {
     const parentNode: TreeNode = {
       treeNodeId: parentId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Parent',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -258,7 +258,7 @@ describe('サブツリー変更の購読', () => {
     const childNode: TreeNode = {
       treeNodeId: childId,
       parentTreeNodeId: parentId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Child',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -307,7 +307,7 @@ describe('サブツリー変更の購読', () => {
       {
         treeNodeId: rootId,
         parentTreeNodeId: 'root' as TreeNodeId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'Deep Root',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -316,7 +316,7 @@ describe('サブツリー変更の購読', () => {
       {
         treeNodeId: level1Id,
         parentTreeNodeId: rootId,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'Level 1',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -325,7 +325,7 @@ describe('サブツリー変更の購読', () => {
       {
         treeNodeId: level2Id,
         parentTreeNodeId: level1Id,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'Level 2',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -334,7 +334,7 @@ describe('サブツリー変更の購読', () => {
       {
         treeNodeId: level3Id,
         parentTreeNodeId: level2Id,
-        treeNodeType: 'folder',
+        treeNodeType: 'folder-plugin',
         name: 'Level 3',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -385,7 +385,7 @@ describe('購読のライフサイクル管理', () => {
     const node: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Lifecycle Test',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -506,7 +506,7 @@ describe('パフォーマンステスト', () => {
     const node: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'Performance Test',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -631,7 +631,7 @@ describe('エラーハンドリング', () => {
     const node: TreeNode = {
       treeNodeId: nodeId,
       parentTreeNodeId: 'root' as TreeNodeId,
-      treeNodeType: 'folder',
+      treeNodeType: 'folder-plugin',
       name: 'DB Error Test',
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -740,7 +740,7 @@ it('イベントタイミングの詳細調査', async () => {
   await coreDB.nodes.add({
     treeNodeId: nodeId,
     parentTreeNodeId: 'root' as TreeNodeId,
-    treeNodeType: 'folder',
+    treeNodeType: 'folder-plugin',
     name: 'Timing Test',
     createdAt: Date.now(),
     updatedAt: Date.now(),

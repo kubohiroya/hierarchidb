@@ -212,7 +212,7 @@ export class HierarchicalPluginRouter {
         currentNode: {
           id: pageNodeId || 'root',
           name: `Node ${pageNodeId || 'root'}`,
-          type: 'folder',
+          type: 'folder-plugin',
         },
         breadcrumbs: [],
         expandedNodes: [],

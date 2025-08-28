@@ -1,7 +1,7 @@
 -- ================================================================================
--- plugin-stylemap Database Schema Design
+-- plugin-stylemap-plugin Database Schema Design
 -- ================================================================================
--- @description IndexedDB schema definitions for plugin-stylemap
+-- @description IndexedDB schema definitions for plugin-stylemap-plugin
 -- @based_on eria-cartograph StyleMapDB implementation
 -- @framework hierarchidb with Dexie.js wrapper
 -- @version 1.0.0
@@ -66,7 +66,7 @@ CREATE TABLE style_map_entities (
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Entity metadata (TreeEntity inheritance)
-    type VARCHAR(50) DEFAULT 'stylemap',
+    type VARCHAR(50) DEFAULT 'stylemap-plugin',
     parentId VARCHAR(255),
     isDraft BOOLEAN DEFAULT FALSE,
     
@@ -316,7 +316,7 @@ CREATE TABLE file_cache_metadata (
 /*
 -- StyleMap entity validation
 ALTER TABLE style_map_entities 
-ADD CONSTRAINT chk_stylemap_type CHECK (type = 'stylemap');
+ADD CONSTRAINT chk_stylemap_type CHECK (type = 'stylemap-plugin');
 
 ALTER TABLE style_map_entities
 ADD CONSTRAINT chk_stylemap_node_id CHECK (LENGTH(nodeId) > 0);
@@ -355,7 +355,7 @@ CREATE SCHEMA IF NOT EXISTS stylemap_v1;
 
 -- Insert schema version
 INSERT INTO schema_versions (plugin_name, version, applied_at)
-VALUES ('plugin-stylemap', 1, CURRENT_TIMESTAMP);
+VALUES ('plugin-stylemap-plugin', 1, CURRENT_TIMESTAMP);
 */
 
 -- 🟡 Future Schema Version 2 Migration (Example)
@@ -369,7 +369,7 @@ ADD COLUMN compressionType VARCHAR(50);
 
 -- Update schema version
 INSERT INTO schema_versions (plugin_name, version, applied_at)
-VALUES ('plugin-stylemap', 2, CURRENT_TIMESTAMP);
+VALUES ('plugin-stylemap-plugin', 2, CURRENT_TIMESTAMP);
 */
 
 -- ================================================================================
@@ -504,7 +504,7 @@ SELECT JSON_OBJECT(
     )
 ) as backup_data
 FROM style_map_entities
-WHERE type = 'stylemap';
+WHERE type = 'stylemap-plugin';
 
 -- Export table metadata with deduplication
 SELECT JSON_OBJECT(
@@ -583,6 +583,6 @@ FROM JSON_TABLE(:backup_data, '$.entities[*]' COLUMNS (
 - Backup/recovery procedures
 
 This schema design ensures efficient storage, data integrity, and optimal performance
-for the plugin-stylemap functionality while maintaining compatibility with the
+for the plugin-stylemap-plugin functionality while maintaining compatibility with the
 hierarchidb framework and eria-cartograph patterns.
 */

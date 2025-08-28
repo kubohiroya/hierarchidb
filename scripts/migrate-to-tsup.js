@@ -25,10 +25,10 @@ const packagesToMigrate = [
   'packages/ui-landingpage',
 
   // Plugin packages
-  'packages/plugins/folder',
+  'packages/plugins/folder-plugin',
   'packages/plugins/basemap',
   'packages/plugins/_shapes_buggy',
-  'packages/plugins/stylemap',
+  'packages/plugins/stylemap-plugin',
 ];
 
 // Packages that should keep existing build tools

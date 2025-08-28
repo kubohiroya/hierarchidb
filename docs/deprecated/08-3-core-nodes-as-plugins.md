@@ -69,9 +69,9 @@
 ### 1. Folder プラグイン
 
 ```typescript
-// packages/plugins/core-folder/src/worker/definition.ts
+// packages/plugins/core-folder-plugin/src/worker/definition.ts
 export const FolderPluginDefinition: WorkerPluginDefinition<FolderEntity> = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   name: 'Folder',
   version: '1.0.0',
   
@@ -90,7 +90,7 @@ export const FolderPluginDefinition: WorkerPluginDefinition<FolderEntity> = {
         parentId,
         name: data.name || 'New Folder',
         description: data.description || '',
-        icon: data.icon || 'folder',
+        icon: data.icon || 'folder-plugin',
         color: data.color || null,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -113,7 +113,7 @@ export const FolderPluginDefinition: WorkerPluginDefinition<FolderEntity> = {
       const children = await getChildren(nodeId);
       if (children.length > 0) {
         const confirm = await requestConfirmation(
-          'This folder contains items. Delete all?'
+          'This folder-plugin contains items. Delete all?'
         );
         if (!confirm) throw new Error('Deletion cancelled');
       }
@@ -198,7 +198,7 @@ class CoreDB {
   // TreeNode専用のメソッド
   async createTreeNode(data: TreeNodeData) {
     // 特別な処理
-    if (data.type === 'folder') {
+    if (data.type === 'folder-plugin') {
       // フォルダ用の処理
     } else {
       // エンティティ付きノード用の処理
@@ -226,7 +226,7 @@ class CoreDB {
 interface NodeReference {
   nodeId: string;
   parentId: string | null;
-  pluginType: string; // 'folder', 'document', 'basemap' など
+  pluginType: string; // 'folder-plugin', 'document', 'basemap' など
   sortOrder: number;
 }
 
@@ -331,7 +331,7 @@ async function migrateToPluginArchitecture() {
     await db.nodeReferences.add({
       nodeId: node.treeNodeId,
       parentId: node.parentId,
-      pluginType: node.treeNodeType === 'folder' ? 'folder' : node.treeNodeType
+      pluginType: node.treeNodeType === 'folder-plugin' ? 'folder-plugin' : node.treeNodeType
     });
     
     // 対応するプラグインエンティティ作成
@@ -354,8 +354,8 @@ export const CORE_PLUGINS = [
 ];
 
 // システム起動時に必須チェック
-if (!registry.has('folder')) {
-  throw new Error('Core plugin "folder" is required');
+if (!registry.has('folder-plugin')) {
+  throw new Error('Core plugin "folder-plugin" is required');
 }
 ```
 
@@ -430,7 +430,7 @@ const MIGRATION_FLAGS = {
 ```typescript
 // Before: 複雑な分岐
 async function createNode(type: string, data: any) {
-  if (type === 'folder') {
+  if (type === 'folder-plugin') {
     // フォルダ専用処理
     return createFolder(data);
   } else if (ENTITY_TYPES.includes(type)) {
@@ -454,7 +454,7 @@ async function createNode(type: string, data: any) {
 // スマートフォルダプラグイン（基本Folderを拡張）
 export const SmartFolderPlugin: PluginDefinition = {
   ...FolderPluginDefinition,
-  nodeType: 'smart-folder',
+  nodeType: 'smart-folder-plugin',
   name: 'Smart Folder',
   
   // 動的な子要素を持つ

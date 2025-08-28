@@ -1,0 +1,77 @@
+{
+  "name": "@hierarchidb/node-type-spreadsheet-plugin",
+  "version": "0.0.1",
+  "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-core": "workspace:*",
+    "@hierarchidb/node-type-folder-plugin": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@types/pako": "^2.0.3",
+    "dexie": "^3.2.4",
+    "pako": "^2.1.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "fake-indexeddb": "^5.0.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "spreadsheet",
+      "name": "Spreadsheet Plugin",
+      "priority": 600,
+      "category": "data",
+      "extends": "folder",
+      "dependencies": [
+        "folder"
+      ],
+      "exports": {
+        "definition": "SpreadsheetDefinition",
+        "handler": "SpreadsheetEntityHandler",
+        "components": [
+          "SpreadsheetDialog",
+          "SpreadsheetPanel"
+        ]
+      },
+      "capabilities": {
+        "canHaveChildren": false,
+        "canBeRoot": false,
+        "canBeDeleted": true,
+        "canBeRenamed": true,
+        "canBeMoved": true,
+        "canBeCopied": true
+      },
+      "schema": {
+        "inherits": "folder",
+        "fields": [
+          {
+            "name": "spreadsheetData",
+            "type": "object",
+            "required": true
+          },
+          {
+            "name": "formulas",
+            "type": "object",
+            "required": false
+          }
+        ]
+      }
+    }
+  }
+}

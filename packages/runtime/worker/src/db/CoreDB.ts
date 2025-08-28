@@ -33,7 +33,7 @@ export class CoreDB extends Dexie {
     super(`${name}-CoreDB`);
 
     // Increment version to force schema update
-    this.version(3)
+    this.version(4)
       .stores({
         trees: '&id, rootId, trashRootId, superRootId',
         nodes: [
@@ -42,6 +42,7 @@ export class CoreDB extends Dexie {
           '&[parentId+name]',
           '[parentId+updatedAt]',
           'removedAt',
+          'isRemoved',
           'originalParentId',
           '*references',
         ].join(', '),
@@ -96,6 +97,7 @@ await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () =
             id: NodeIdGenerator.rootNode(treeId),
             nodeType: TREE_ROOT_NODE_TYPES.ROOT,
             name: treeId === 'r' ? 'Resources' : 'Projects',
+            depth: 0, // Root nodes have depth 0
             createdAt: now,
             updatedAt: now,
             version: 1,
@@ -105,6 +107,7 @@ await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () =
             id: NodeIdGenerator.trashNode(treeId),
             nodeType: TREE_ROOT_NODE_TYPES.TRASH,
             name: 'Trash',
+            depth: 0, // Trash root also has depth 0
             createdAt: now,
             updatedAt: now,
             version: 1,
@@ -197,6 +200,7 @@ try {
         parentId: node.parentId,
         nodeType: node.nodeType,
         name: node.name,
+        depth: node.depth,
         createdAt: node.createdAt,
         updatedAt: node.updatedAt,
         version: node.version,
@@ -211,6 +215,23 @@ try {
   }
 
   async createNode(node: TreeNode): Promise<NodeId> {
+    // Calculate depth if not provided
+    if (node.depth === undefined || node.depth === null) {
+      if (!node.parentId || node.parentId === '' as NodeId) {
+        // Root nodes have depth 0
+        node.depth = 0;
+      } else {
+        // Get parent node to calculate depth
+        const parentNode = await this.nodes.get(node.parentId);
+        if (parentNode) {
+          node.depth = (parentNode.depth || 0) + 1;
+        } else {
+          // Default to depth 1 if parent not found
+          node.depth = 1;
+        }
+      }
+    }
+    
     await this.nodes.add(node);
 
     // 作成イベントを通知
@@ -282,6 +303,7 @@ try {
       parentId: node.parentId,
       nodeType: node.nodeType,
       name: node.name,
+      depth: node.depth,
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
       version: node.version,
@@ -362,5 +384,406 @@ try {
         timestamp: Date.now(),
       });
     });
+  }
+
+  /**
+   * Move a node to a new parent and update depths for the subtree
+   */
+  async moveNode(nodeId: NodeId, newParentId: NodeId): Promise<void> {
+    const node = await this.nodes.get(nodeId);
+    if (!node) {
+      throw new Error(`Node ${nodeId} not found`);
+    }
+
+    const newParent = await this.nodes.get(newParentId);
+    if (!newParent) {
+      throw new Error(`Parent node ${newParentId} not found`);
+    }
+
+    const oldDepth = node.depth;
+    const newDepth = newParent.depth + 1;
+    const depthDifference = newDepth - oldDepth;
+
+    // Update the node's parent and depth
+    node.parentId = newParentId;
+    node.depth = newDepth;
+    node.updatedAt = Date.now();
+    node.version++;
+    
+    await this.updateNode(node);
+
+    // If depth changed, update all descendants
+    if (depthDifference !== 0) {
+      await this.updateSubtreeDepth(nodeId, depthDifference);
+    }
+  }
+
+  /**
+   * Recursively update depths for all descendants
+   */
+  private async updateSubtreeDepth(parentId: NodeId, depthDifference: number): Promise<void> {
+    const children = await this.nodes
+      .where('parentId')
+      .equals(parentId)
+      .toArray();
+
+    for (const child of children) {
+      child.depth += depthDifference;
+      child.updatedAt = Date.now();
+      child.version++;
+      await this.nodes.put(child);
+
+      // Recursively update descendants
+      await this.updateSubtreeDepth(child.id, depthDifference);
+    }
+  }
+
+  /**
+   * Get nodes by depth level
+   */
+  async getNodesByDepth(depth: number): Promise<TreeNode[]> {
+    const nodes = await this.nodes
+      .filter(node => node.depth === depth)
+      .toArray();
+
+    // Return plain objects
+    return nodes.map((node): TreeNode => ({
+      id: node.id,
+      parentId: node.parentId,
+      nodeType: node.nodeType,
+      name: node.name,
+      depth: node.depth,
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      version: node.version,
+      ...(node.removedAt && { removedAt: node.removedAt }),
+      ...(node.originalParentId && { originalParentId: node.originalParentId }),
+      ...(node.references && { references: node.references }),
+    }));
+  }
+
+  /**
+   * Migrate existing nodes to include depth property
+   */
+  async migrateNodeWithDepth(node: TreeNode): Promise<TreeNode> {
+    if (node.depth !== undefined && node.depth !== null) {
+      return node; // Already has depth
+    }
+
+    // Calculate depth based on parent
+    if (!node.parentId || node.parentId === '' as NodeId) {
+      node.depth = 0;
+    } else {
+      const parent = await this.nodes.get(node.parentId);
+      if (parent && parent.depth !== undefined) {
+        node.depth = parent.depth + 1;
+      } else {
+        // Need to calculate parent's depth first
+        const parentWithDepth = await this.migrateNodeWithDepth(parent || {} as TreeNode);
+        node.depth = (parentWithDepth.depth || 0) + 1;
+      }
+    }
+
+    await this.nodes.put(node);
+    return node;
+  }
+
+  /**
+   * Batch migrate all nodes in the database to include depth
+   */
+  async migrateAllNodesWithDepth(): Promise<{ success: boolean; migratedCount: number }> {
+    let migratedCount = 0;
+    
+    try {
+      // Start with root nodes
+      const rootNodes = await this.nodes
+        .filter(node => !node.parentId || node.parentId === '' as NodeId)
+        .toArray();
+
+      // Process in breadth-first order
+      const queue: TreeNode[] = [...rootNodes];
+      const processed = new Set<NodeId>();
+
+      while (queue.length > 0) {
+        const node = queue.shift()!;
+        
+        if (processed.has(node.id)) {
+          continue;
+        }
+
+        // Set depth for root nodes
+        if (!node.parentId || node.parentId === '' as NodeId) {
+          node.depth = 0;
+        } else {
+          const parent = await this.nodes.get(node.parentId);
+          if (parent && parent.depth !== undefined) {
+            node.depth = parent.depth + 1;
+          } else {
+            // Skip this node for now, will process when parent is ready
+            queue.push(node);
+            continue;
+          }
+        }
+
+        await this.nodes.put(node);
+        processed.add(node.id);
+        migratedCount++;
+
+        // Add children to queue
+        const children = await this.nodes
+          .where('parentId')
+          .equals(node.id)
+          .toArray();
+        
+        queue.push(...children);
+      }
+
+      return { success: true, migratedCount };
+    } catch (error) {
+      console.error('Migration failed:', error);
+      return { success: false, migratedCount };
+    }
+  }
+
+  /**
+   * Duplicate a node with correct depth calculation
+   */
+  async duplicateNode(sourceNodeId: NodeId, targetParentId: NodeId, newNodeId?: NodeId): Promise<NodeId> {
+    const sourceNode = await this.nodes.get(sourceNodeId);
+    if (!sourceNode) {
+      throw new Error(`Source node ${sourceNodeId} not found`);
+    }
+
+    const targetParent = await this.nodes.get(targetParentId);
+    if (!targetParent) {
+      throw new Error(`Target parent ${targetParentId} not found`);
+    }
+
+    const duplicatedNodeId = newNodeId || (crypto.randomUUID() as NodeId);
+    const duplicatedNode: TreeNode = {
+      ...sourceNode,
+      id: duplicatedNodeId,
+      parentId: targetParentId,
+      depth: targetParent.depth + 1, // 正しい深度を設定
+      name: sourceNode.name + ' (Copy)',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    };
+
+    await this.createNode(duplicatedNode);
+    return duplicatedNodeId;
+  }
+
+  /**
+   * Duplicate a subtree with correct depth calculation
+   */
+  async duplicateSubtree(sourceRootId: NodeId, targetParentId: NodeId): Promise<NodeId> {
+    const sourceRoot = await this.nodes.get(sourceRootId);
+    if (!sourceRoot) {
+      throw new Error(`Source root ${sourceRootId} not found`);
+    }
+
+    const targetParent = await this.nodes.get(targetParentId);
+    if (!targetParent) {
+      throw new Error(`Target parent ${targetParentId} not found`);
+    }
+
+    // Create mapping for old ID -> new ID
+    const idMapping = new Map<NodeId, NodeId>();
+    const newRootId = crypto.randomUUID() as NodeId;
+    idMapping.set(sourceRootId, newRootId);
+
+    // Collect all nodes in subtree
+    const subtreeNodes: TreeNode[] = [];
+    const collectNodes = async (nodeId: NodeId): Promise<void> => {
+      const node = await this.nodes.get(nodeId);
+      if (node) {
+        subtreeNodes.push(node);
+        const children = await this.listChildren(nodeId);
+        for (const child of children) {
+          await collectNodes(child.id);
+        }
+      }
+    };
+
+    await collectNodes(sourceRootId);
+
+    // Generate new IDs for all nodes
+    for (const node of subtreeNodes) {
+      if (!idMapping.has(node.id)) {
+        idMapping.set(node.id, crypto.randomUUID() as NodeId);
+      }
+    }
+
+    // Create duplicated nodes with correct depths
+    const duplicatedNodes: TreeNode[] = [];
+    for (const originalNode of subtreeNodes) {
+      const newNodeId = idMapping.get(originalNode.id)!;
+      let newParentId: NodeId;
+      let newDepth: number;
+
+      if (originalNode.id === sourceRootId) {
+        // Root of duplicated subtree
+        newParentId = targetParentId;
+        newDepth = targetParent.depth + 1;
+      } else {
+        // Child nodes
+        newParentId = idMapping.get(originalNode.parentId)!;
+        const newParent = duplicatedNodes.find(n => n.id === newParentId);
+        newDepth = newParent ? newParent.depth + 1 : 0;
+      }
+
+      const duplicatedNode: TreeNode = {
+        ...originalNode,
+        id: newNodeId,
+        parentId: newParentId,
+        depth: newDepth,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      };
+
+      duplicatedNodes.push(duplicatedNode);
+    }
+
+    // Create all nodes
+    await this.bulkCreateNodes(duplicatedNodes);
+    return newRootId;
+  }
+
+  /**
+   * Restore node from trash with correct depth
+   */
+  async restoreFromTrash(nodeId: NodeId, newParentId: NodeId): Promise<void> {
+    const node = await this.nodes.get(nodeId);
+    if (!node || !node.isRemoved) {
+      throw new Error(`Node ${nodeId} is not in trash`);
+    }
+
+    const newParent = await this.nodes.get(newParentId);
+    if (!newParent) {
+      throw new Error(`Target parent ${newParentId} not found`);
+    }
+
+    // Update node with new location and correct depth
+    const restoredNode: TreeNode = {
+      ...node,
+      parentId: newParentId,
+      depth: newParent.depth + 1,
+      isRemoved: false,
+      removedAt: undefined,
+      updatedAt: Date.now(),
+      version: node.version + 1,
+    };
+
+    await this.updateNode(restoredNode);
+
+    // Update depths for all descendants
+    await this.updateSubtreeDepthFromParent(nodeId);
+  }
+
+  /**
+   * Paste nodes with correct depth calculation
+   */
+  async pasteNodes(nodeIds: NodeId[], targetParentId: NodeId): Promise<NodeId[]> {
+    const targetParent = await this.nodes.get(targetParentId);
+    if (!targetParent) {
+      throw new Error(`Target parent ${targetParentId} not found`);
+    }
+
+    const pastedNodeIds: NodeId[] = [];
+    
+    for (const nodeId of nodeIds) {
+      const sourceNode = await this.nodes.get(nodeId);
+      if (!sourceNode) continue;
+
+      const newNodeId = crypto.randomUUID() as NodeId;
+      const pastedNode: TreeNode = {
+        ...sourceNode,
+        id: newNodeId,
+        parentId: targetParentId,
+        depth: targetParent.depth + 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      };
+
+      await this.createNode(pastedNode);
+      pastedNodeIds.push(newNodeId);
+
+      // If node has children, paste them recursively
+      const children = await this.listChildren(nodeId);
+      if (children.length > 0) {
+        await this.pasteNodes(children.map(c => c.id), newNodeId);
+      }
+    }
+
+    return pastedNodeIds;
+  }
+
+  /**
+   * Update subtree depth based on parent's depth
+   */
+  private async updateSubtreeDepthFromParent(parentId: NodeId): Promise<void> {
+    const parent = await this.nodes.get(parentId);
+    if (!parent) return;
+
+    const children = await this.listChildren(parentId);
+    for (const child of children) {
+      child.depth = parent.depth + 1;
+      child.updatedAt = Date.now();
+      child.version++;
+      
+      await this.nodes.put(child);
+      
+      // Recursively update descendants
+      await this.updateSubtreeDepthFromParent(child.id);
+    }
+  }
+
+  /**
+   * Import nodes with depth validation and recalculation
+   */
+  async importNodesWithDepthValidation(nodes: TreeNode[]): Promise<void> {
+    // Create all nodes first
+    await this.bulkCreateNodes(nodes);
+    
+    // Then recalculate depths to ensure consistency
+    const nodeIds = nodes.map(n => n.id);
+    for (const nodeId of nodeIds) {
+      const node = await this.nodes.get(nodeId);
+      if (node) {
+        const correctDepth = await this.calculateCorrectDepth(nodeId);
+        if (node.depth !== correctDepth) {
+          node.depth = correctDepth;
+          node.updatedAt = Date.now();
+          node.version++;
+          await this.nodes.put(node);
+        }
+      }
+    }
+  }
+
+  /**
+   * Calculate correct depth for a node based on its parent chain
+   */
+  private async calculateCorrectDepth(nodeId: NodeId): Promise<number> {
+    const node = await this.nodes.get(nodeId);
+    if (!node) return 0;
+    
+    if (!node.parentId || node.parentId === '' as NodeId) {
+      return 0; // Root node
+    }
+    
+    const parentDepth = await this.calculateCorrectDepth(node.parentId);
+    return parentDepth + 1;
+  }
+
+  /**
+   * Reset singleton instance for testing
+   */
+  static resetInstance(): void {
+    SingletonMixin.terminate(CoreDB.name);
   }
 }

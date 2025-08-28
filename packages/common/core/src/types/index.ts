@@ -147,13 +147,12 @@ export type {
   PluginValidationConfig,
   PluginI18nConfig,
   PluginDefinition,
-  PluginRoutingConfig,
-  ExtendedNodeDefinition
+  PluginRoutingConfig
 } from './plugin';
 
 // Plugin Extension System Types
 export type {
-  ExtendableNodeTypeDefinition,
+  ExtendingNodeTypeDefinition,
   BaseNodeDefinition,
   DialogStepDefinition,
   ExtendedFieldDefinition,

@@ -31,7 +31,7 @@ function getIconByType(nodeType: string) {
   switch (nodeType) {
     case 'ProjectFolder':
     case 'ResourceFolder':
-    case 'folder':
+    case 'folder-plugin':
       return FolderIcon;
     case 'file':
       return FileIcon;

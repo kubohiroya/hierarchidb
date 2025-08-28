@@ -206,7 +206,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
   validation: {
     namePattern: /^[a-zA-Z0-9_-]+$/,
     maxChildren: 100,
-    allowedChildTypes: ['folder', 'myplugin']
+    allowedChildTypes: ['folder-plugin', 'myplugin']
   },
   
   // メタデータ

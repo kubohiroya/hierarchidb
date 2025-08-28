@@ -734,7 +734,7 @@ export class WorkerAPIImpl {
         return await import(`@hierarchidb/plugin-myplugin/services/MyPluginService`);
       case 'basemap':
         return await import(`@hierarchidb/plugin-basemap/services/BaseMapService`);
-      case 'stylemap':
+      case 'stylemap-plugin':
         return await import(`@hierarchidb/plugin-stylemap/services/StyleMapService`);
       default:
         throw new Error(`Unknown plugin service: ${pluginName}`);
@@ -962,7 +962,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
   validation: {
     namePattern: /^[a-zA-Z0-9_-]+$/,
     maxChildren: 100,
-    allowedChildTypes: ['folder', 'myplugin']
+    allowedChildTypes: ['folder-plugin', 'myplugin']
   },
 
   // メタデータ

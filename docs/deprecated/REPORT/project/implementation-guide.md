@@ -234,7 +234,7 @@ export class CrossTreeReferenceService {
         id: child.id,
         name: child.name,
         nodeType: child.nodeType,
-        children: child.nodeType === 'folder' 
+        children: child.nodeType === 'folder-plugin' 
           ? await this.buildTreeStructure(child) 
           : undefined,
         isSelectable: this.isSelectableNodeType(child.nodeType)
@@ -253,7 +253,7 @@ export class CrossTreeReferenceService {
   }
 
   private isSelectableNodeType(nodeType: string): boolean {
-    const selectableTypes = ['basemap', 'shape', 'stylemap', 'location', 'route'];
+    const selectableTypes = ['basemap', 'shape', 'stylemap-plugin', 'location', 'route'];
     return selectableTypes.includes(nodeType);
   }
 

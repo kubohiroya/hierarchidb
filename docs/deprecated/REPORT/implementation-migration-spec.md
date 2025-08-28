@@ -364,7 +364,7 @@ export class BaseMapHandler implements EntityHandler<
 
 #### After: 6分類対応型定義
 ```typescript
-// packages/plugins/stylemap/src/types/StyleMapEntity.ts (改修後)
+// packages/plugins/stylemap-plugin/src/types/StyleMapEntity.ts (改修後)
 import { PeerEntity, RelationalEntity, WorkingCopyProperties } from '@hierarchidb/core';
 
 // StyleMap固有プロパティ
@@ -401,9 +401,9 @@ export type TableMetadataEntity = RelationalEntity & TableMetadataProperties;
 
 #### After: 複合エンティティ対応
 ```typescript
-// packages/plugins/stylemap/src/definitions/StyleMapDefinition.ts (改修後)
+// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts (改修後)
 export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   version: '2.0.0',
   
@@ -457,9 +457,9 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
 
 #### After: マルチステップ対応UI定義
 ```typescript
-// packages/plugins/stylemap/src/ui/StyleMapUIPlugin.tsx (改修後)
+// packages/plugins/stylemap-plugin/src/ui/StyleMapUIPlugin.tsx (改修後)
 export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   displayName: 'Style Map',
   
   // 6分類システム対応（複合エンティティ）
@@ -525,7 +525,7 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
     },
     
     onExport: async ({ nodeId, format }) => {
-      const data = await nodeAdapter.getNodeData(nodeId, 'stylemap');
+      const data = await nodeAdapter.getNodeData(nodeId, 'stylemap-plugin');
       
       if (format === 'csv') {
         const csvData = await exportStyleMapAsCSV(data);
@@ -551,7 +551,7 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
 // packages/worker/src/plugins/PluginRegistration.ts (新規)
 import { AutoEntityLifecycleManager } from '@hierarchidb/core';
 import { BaseMapWorkerPlugin } from '@hierarchidb/plugin-basemap';
-import { StyleMapWorkerPlugin } from '@hierarchidb/plugin-stylemap';
+import { StyleMapWorkerPlugin } from '@hierarchidb/plugin-stylemap-plugin';
 
 const lifecycleManager = AutoEntityLifecycleManager.getInstance();
 
@@ -595,7 +595,7 @@ export class BaseMapDatabase extends Dexie {
 ### 5.3 RelationalEntityの自動管理
 
 ```typescript
-// packages/plugins/stylemap/src/managers/TableMetadataManager.ts (改修後)
+// packages/plugins/stylemap-plugin/src/managers/TableMetadataManager.ts (改修後)
 export class TableMetadataManager extends RelationalEntityManager<TableMetadataEntity> {
   constructor() {
     super();

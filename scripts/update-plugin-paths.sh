@@ -3,7 +3,7 @@
 echo "=== Updating plugin package names and import paths ==="
 
 # Update node-type plugin package names
-for plugin in folder basemap stylemap shape; do
+for plugin in folder-plugin basemap stylemap-plugin shape-plugin; do
   echo "Updating node-type-plugin: $plugin"
   
   # Update package.json name
@@ -16,7 +16,7 @@ done
 # Update feature plugin package names  
 echo "Updating feature-plugin: import-export"
 if [ -f "packages/feature-plugins/import-export/package.json" ]; then
-  sed -i '' 's|"@hierarchidb/plugin-import-export"|"@hierarchidb/feature-import-export"|g' \
+  sed -i '' 's|"@hierarchidb/plugin-import-export-plugin"|"@hierarchidb/feature-import-export-plugin"|g' \
     "packages/feature-plugins/import-export/package.json"
 fi
 
@@ -24,7 +24,7 @@ fi
 echo "Updating imports across the codebase..."
 
 # Node-type plugins
-for plugin in folder basemap stylemap shape; do
+for plugin in folder-plugin basemap stylemap-plugin shape-plugin; do
   find packages -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
     -exec sed -i '' \
     -e "s|'@hierarchidb/plugin-$plugin'|'@hierarchidb/node-type-$plugin'|g" \

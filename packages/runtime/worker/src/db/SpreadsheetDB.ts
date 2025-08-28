@@ -67,7 +67,7 @@ export class SpreadsheetDB extends Dexie {
   // PeerEntity table
   spreadsheetRefs!: Table<SpreadsheetRefEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-spreadsheet') {
+  constructor(name: string = 'hierarchidb-spreadsheet-plugin') {
     super(name);
 
     this.version(1).stores({

@@ -102,7 +102,7 @@ export class PluginAPIRegistry {
    * @example
    * ```typescript
    * registry.register({
-   *   nodeType: 'spreadsheet',
+   *   nodeType: 'spreadsheet-plugin',
    *   methods: {
    *     getCellValue: async (nodeId, cell) => { ... }
    *   }
@@ -123,7 +123,7 @@ export class PluginAPIRegistry {
    * 
    * @example
    * ```typescript
-   * registry.unregister('spreadsheet');
+   * registry.unregister('spreadsheet-plugin');
    * ```
    */
   unregister(nodeType: NodeType): void {
@@ -175,7 +175,7 @@ export class PluginAPIRegistry {
    * 
    * // With multiple arguments
    * await registry.invokeMethod(
-   *   'spreadsheet',
+   *   'spreadsheet-plugin',
    *   'setCellValue',
    *   nodeId,
    *   'A1',
@@ -226,7 +226,7 @@ export class PluginAPIRegistry {
    * 
    * @example
    * ```typescript
-   * const methods = registry.getAvailableMethods('spreadsheet');
+   * const methods = registry.getAvailableMethods('spreadsheet-plugin');
    * console.log('Spreadsheet methods:', methods);
    * // Output: ['getCellValue', 'setCellValue', 'getRange', ...]
    * ```

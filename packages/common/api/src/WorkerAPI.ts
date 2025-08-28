@@ -9,6 +9,7 @@
 
 import type { TreeQueryAPI } from './TreeQueryAPI';
 import type { TreeMutationAPI } from './TreeMutationAPI';
+import type { ImportExportAPI } from './ImportExportAPI';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
 import type { PluginRegistryAPI } from './PluginRegistryAPI';
 import type { WorkingCopyAPI } from './WorkingCopyAPI';
@@ -47,7 +48,7 @@ export interface WorkerAPI {
    * ```typescript
    * const mutationAPI = await workerAPI.getMutationAPI();
    * const result = await mutationAPI.createNode({
-   *   nodeType: 'folder',
+   *   nodeType: 'folder-plugin',
    *   name: 'New Folder'
    * });
    * ```
@@ -128,7 +129,7 @@ export interface WorkerAPI {
    * @example
    * ```typescript
    * const nodeTypeAPI = workerAPI.getNodeTypeAPI();
-   * const isSupported = await nodeTypeAPI.isSupported('folder');
+   * const isSupported = await nodeTypeAPI.isSupported('folder-plugin');
    * ```
    */
   getNodeTypeAPI(): NodeTypeAPI & ProxyMarked;
@@ -148,6 +149,27 @@ export interface WorkerAPI {
    * ```
    */
   getPluginManagementAPI(): PluginManagementAPI & ProxyMarked;
+
+  /**
+   * Get Import/Export API for data transfer operations
+   * 
+   * Provides functionality for importing and exporting tree nodes
+   * in various formats including JSON, CSV, and XML.
+   * 
+   * @returns Import/Export API facade instance
+   * 
+   * @example
+   * ```typescript
+   * const importExportAPI = workerAPI.getImportExportAPI();
+   * const result = await importExportAPI.importNodes({
+   *   treeId: 'my-tree' as TreeId,
+   *   targetParentId: 'parent-node' as NodeId,
+   *   data: { nodes: [...] },
+   *   format: 'json'
+   * });
+   * ```
+   */
+  getImportExportAPI(): ImportExportAPI & ProxyMarked;
 
   /**
    * Simple ping method for health check
@@ -212,24 +234,53 @@ export interface WorkerAPI {
    */
   // Backwards compatibility methods
   // These provide direct access to common operations without going through sub-APIs
-  getTree(params: { treeId: TreeId }): Promise<Tree | undefined>;
-  listTrees(): Promise<Tree[]>;
+  
   /**
-   * @deprecated Use listTrees() instead. This is a naming mistake.
+   * @deprecated Use getQueryAPI().getTree() instead. Will be removed in v2.0.
+   */
+  getTree(params: { treeId: TreeId }): Promise<Tree | undefined>;
+  
+  /**
+   * @deprecated Use getQueryAPI().listTrees() instead. Will be removed in v2.0.
+   */
+  listTrees(): Promise<Tree[]>;
+  
+  /**
+   * @deprecated Use getQueryAPI().listTrees() instead. This is a naming mistake. Will be removed in v2.0.
    */
   getTrees(): Promise<Tree[]>;
+  
+  /**
+   * @deprecated Use getQueryAPI().getNode() instead. Will be removed in v2.0.
+   */
   getNode(nodeId: NodeId): Promise<TreeNode | undefined>;
+  
+  /**
+   * @deprecated Use getQueryAPI().listChildren() instead. Will be removed in v2.0.
+   */
   getChildren(params: { parentId: NodeId }): Promise<TreeNode[]>;
+  
+  /**
+   * @deprecated Use getMutationAPI().createNode() instead. Will be removed in v2.0.
+   */
   create(params: any): Promise<any>;
+  
+  /**
+   * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
+   */
   recoverFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: boolean; error?: string }>;
+  
   /**
-   * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety and structure.
-   * This method provides backward compatibility but delegates to the new PluginTreeAPI facade.
+   * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety and structure. Will be removed in v2.0.
    */
   getPluginsForTree(treeId: TreeId): Promise<any[]>;
+  
+  /**
+   * @deprecated Use getMutationAPI().removeNodes() instead. Will be removed in v2.0.
+   */
   removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 }
 

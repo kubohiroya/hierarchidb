@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Tooltip, Paper, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/common-core';
-import { devWarn } from '../../utils/logger';
+import { devWarn } from '@hierarchidb/common-core';
 
 interface MemoryUsageChartProps {
   /** 幅 (例: '300px', '100%') */

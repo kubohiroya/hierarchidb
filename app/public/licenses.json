@@ -92,7 +92,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
-  "@typescript-eslint/visitor-keys@7.18.0": {
+  "@typescript-eslint/visitor-keys@5.62.0": {
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
@@ -100,6 +100,17 @@
     "licenses": "MIT",
     "repository": "https://github.com/vitejs/vite-plugin-react",
     "publisher": "Evan You"
+  },
+  "eslint-config-prettier@10.1.8": {
+    "licenses": "MIT",
+    "repository": "https://github.com/prettier/eslint-config-prettier",
+    "publisher": "Simon Lydell"
+  },
+  "eslint-plugin-deprecation@3.0.0": {
+    "licenses": "LGPL-3.0-or-later",
+    "repository": "https://github.com/gund/eslint-plugin-deprecation",
+    "publisher": "Alex Malkevich",
+    "email": "malkevich.alex@gmail.com"
   },
   "eslint-plugin-react-hooks@5.2.0": {
     "licenses": "MIT",

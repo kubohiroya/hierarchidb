@@ -279,7 +279,7 @@ export interface TreeNodeData extends TreeNode {
   nodeType: NodeType;
   children?: TreeNodeData[];
   // UI specific properties
-  depth?: number;
+  depth: number;
   hasChildren?: boolean;
   deletedAt?: string | number;
   type?: NodeType; // backward compatibility

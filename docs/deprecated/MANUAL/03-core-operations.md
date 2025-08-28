@@ -52,11 +52,11 @@ CRUD（Create, Read, Update, Delete）は、あらゆるデータ管理システ
 // TreeMutationAPIを使用した新規ノード作成
 const mutationAPI = await workerAPI.getMutationAPI();
 const result = await mutationAPI.createNode({
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   treeId: currentTreeId,
   parentNodeId: parentId,
   name: 'New Folder',
-  description: 'This is a new folder'
+  description: 'This is a new folder-plugin'
 });
 
 if (result.success) {

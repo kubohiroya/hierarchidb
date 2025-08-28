@@ -7,6 +7,8 @@ export { TreeToggleButtonGroup } from './components/TreeToggleButtonGroup';
 export type { TreeConfig } from './components/TreeToggleButtonGroup';
 export { BaseIcon, createSvgIcon, createMuiIconWrapper } from './components/BaseIcon';
 export type { BaseIconProps, SvgIconDefinition } from './components/BaseIcon';
+export { DropdownMenu } from './components/DropdownMenu/DropdownMenu';
+export type { DropdownMenuItemType } from './components/DropdownMenu/DropdownMenuItemType';
 
 
 // Hook Exports
@@ -16,8 +18,19 @@ export { useFormState } from './hooks/useFormState';
 export type { UseFormStateOptions, UseFormStateResult, FormFieldError } from './hooks/useFormState';
 
 // Utility Exports
-export { createLogger } from './utils/logger';
-export type { Logger } from './utils/logger';
+// Logger now exported from @hierarchidb/common-core
+export {
+  getThemeIcon,
+  getThemeDisplayName,
+  getBackgroundColorForTheme,
+  getTextColorForTheme,
+  getThemeBackgroundColor,
+  getThemeTextColor,
+  getStoredThemeMode,
+  getSystemTheme,
+  getActualTheme
+} from './utils/theme';
+export type { ThemeMode } from './utils/theme';
 
 // Type Exports (explicitly import to avoid conflicts with plugin types)
 export type { 

@@ -1,7 +1,7 @@
 /**
- * @file plugin-stylemap TypeScript Interface Definitions
- * @description Type definitions for plugin-stylemap based on eria-cartograph implementation
- * @module @hierarchidb/plugin-stylemap/types
+ * @file plugin-stylemap-plugin TypeScript Interface Definitions
+ * @description Type definitions for plugin-stylemap-plugin based on eria-cartograph implementation
+ * @module @hierarchidb/plugin-stylemap-plugin/types
  */
 
 import { UUID } from '@hierarchidb/core/types/UUID';
@@ -480,7 +480,7 @@ export interface StyleMapPreviewProps {
  */
 export interface StyleMapNodeTypeDefinition {
   /** Node type identifier */
-  nodeType: 'stylemap';
+  nodeType: 'stylemap-plugin';
   /** Database configuration */
   database: {
     entityStore: 'styleMapEntities';

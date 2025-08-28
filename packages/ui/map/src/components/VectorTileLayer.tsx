@@ -5,7 +5,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type {
-  FilterSpecification,
   GetResourceResponse,
   Map as MapLibreMapInstance,
   RequestParameters,
@@ -13,76 +12,35 @@ import type {
   VectorSourceSpecification,
 } from 'maplibre-gl';
 import { addProtocol } from 'maplibre-gl';
+import type { VectorTileProps } from '../types/unified-map-props';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;
 
-export interface VectorTileLayerProps {
-  /** MapLibre map instance */
-  map?: MapLibreMapInstance;
-  
-  /** Database name for Dexie protocol */
-  dbName?: string;
-  
-  /** Node ID for data lookup */
-  nodeId?: string;
-  
-  /** Layer ID for MapLibre */
-  layerId: string;
-  
-  /** Source ID for MapLibre */
-  sourceId: string;
-  
-  /** Vector tile URLs or custom protocol URLs */
-  tiles?: string[];
-  
-  /** Paint properties for the layer */
-  paint?: Record<string, unknown>;
-  
-  /** Layout properties for the layer */
-  layout?: Record<string, unknown>;
-  
-  /** Layer filter */
-  filter?: FilterSpecification;
-  
-  /** Minimum zoom level */
-  minzoom?: number;
-  
-  /** Maximum zoom level */
-  maxzoom?: number;
-  
-  /** Layer visibility */
-  visible?: boolean;
-  
-  /** Layer type */
-  layerType?: 'fill' | 'line' | 'circle' | 'symbol' | 'raster' | 'background';
-  
-  /** Source layer name (for vector tiles) */
-  sourceLayer?: string;
-  
-  /** Custom tile data provider function */
-  tileDataProvider?: (z: number, x: number, y: number, nodeId?: string) => Promise<ArrayBuffer | null>;
+// Use unified props with map instance required
+export interface VectorTileLayerProps extends VectorTileProps {
+  /** MapLibre map instance (required for this component) */
+  map: MapLibreMapInstance;
 }
 
-const defaultPaint = {
-  'fill-color': 'rgba(0, 136, 136, 0.7)',
-  'fill-outline-color': '#004444',
-};
+import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
+
+const defaultPaint = DEFAULT_MAP_CONFIG.vectorTileLayer.paint;
 
 export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   map,
   dbName,
   nodeId,
-  layerId,
-  sourceId,
+  layerId = DEFAULT_MAP_CONFIG.vectorTileLayer.layerId,
+  sourceId = DEFAULT_MAP_CONFIG.vectorTileLayer.sourceId,
   tiles,
   paint = defaultPaint,
   layout = {},
   filter,
-  minzoom = 0,
-  maxzoom = 22,
-  visible = true,
-  layerType = 'fill',
+  minzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.minzoom,
+  maxzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.maxzoom,
+  visible = DEFAULT_MAP_CONFIG.vectorTileLayer.visible,
+  layerType = DEFAULT_MAP_CONFIG.vectorTileLayer.layerType,
   sourceLayer,
   tileDataProvider,
 }) => {
@@ -163,11 +121,11 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
 
     // Remove existing source and layer if they exist
-    if (mapRef.getSource && mapRef.getSource(sourceId)) {
-      if (mapRef.getLayer && mapRef.getLayer(layerId)) {
-        mapRef.removeLayer(layerId);
+    if (mapRef.getSource && mapRef.getSource(sourceId!)) {
+      if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
+        mapRef.removeLayer(layerId!);
       }
-      mapRef.removeSource(sourceId);
+      mapRef.removeSource(sourceId!);
     }
 
     // Create vector tile source
@@ -179,7 +137,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     };
 
     try {
-      mapRef.addSource(sourceId, vectorTileSource as SourceSpecification);
+      mapRef.addSource(sourceId!, vectorTileSource as SourceSpecification);
       setSourceAdded(true);
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
@@ -194,11 +152,11 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
           if (style && style.layers) {
-            if (mapRef.getLayer && mapRef.getLayer(layerId)) {
-              mapRef.removeLayer(layerId);
+            if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
+              mapRef.removeLayer(layerId!);
             }
-            if (mapRef.getSource && mapRef.getSource(sourceId)) {
-              mapRef.removeSource(sourceId);
+            if (mapRef.getSource && mapRef.getSource(sourceId!)) {
+              mapRef.removeSource(sourceId!);
             }
           }
         }
@@ -215,15 +173,15 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
 
     // Remove existing layer if it exists
-    if (mapRef.getLayer && mapRef.getLayer(layerId)) {
-      mapRef.removeLayer(layerId);
+    if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
+      mapRef.removeLayer(layerId!);
     }
 
     try {
       const layerConfig: any = {
-        id: layerId,
+        id: layerId!,
         type: layerType,
-        source: sourceId,
+        source: sourceId!,
         paint,
         layout: {
           visibility: visible ? 'visible' : 'none',
@@ -254,8 +212,8 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       try {
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (style && style.layers && mapRef.getLayer && mapRef.getLayer(layerId)) {
-            mapRef.removeLayer(layerId);
+          if (style && style.layers && mapRef.getLayer && mapRef.getLayer(layerId!)) {
+            mapRef.removeLayer(layerId!);
           }
         }
       } catch (error) {
@@ -266,10 +224,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Update visibility
   useEffect(() => {
-    if (!map || !map.getLayer || !map.getLayer(layerId)) return;
+    if (!map || !map.getLayer || !map.getLayer(layerId!)) return;
 
     try {
-      map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+      map.setLayoutProperty(layerId!, 'visibility', visible ? 'visible' : 'none');
     } catch (error) {
       console.warn('VectorTileLayer visibility update error:', error);
     }

@@ -27,7 +27,7 @@ import type {
  * const nodeTypeAPI = workerAPI.getNodeTypeAPI();
  * 
  * // Check if a node type is supported
- * const isSupported = await nodeTypeAPI.isSupported('folder');
+ * const isSupported = await nodeTypeAPI.isSupported('folder-plugin');
  * 
  * // Get supported operations
  * const operations = await nodeTypeAPI.getSupportedOperations('document');
@@ -46,7 +46,7 @@ export interface NodeTypeAPI {
    * @example
    * ```typescript
    * const nodeTypes = await nodeTypeAPI.listSupported();
-   * console.log('Available types:', nodeTypes); // ['folder', 'document', 'basemap']
+   * console.log('Available types:', nodeTypes); // ['folder-plugin', 'document', 'basemap']
    * ```
    */
   listSupported(): Promise<NodeType[]>;

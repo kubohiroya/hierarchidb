@@ -1,4 +1,5 @@
 // Export interfaces
+// Registry interfaces remain in old location for backwards compatibility
 export type {
   INodeTypeRegistry,
   IPluginRegistry,
@@ -15,6 +16,9 @@ export { NodeDefinitionRegistry } from './registry/NodeDefinitionRegistry';
 
 // Direct export as NodeTypeRegistry for immediate migration
 export { NodeDefinitionRegistry as NodeTypeRegistry } from './registry/NodeDefinitionRegistry';
+
+// Plugin system exports
+export * from './plugin-system';
 
 // Re-export from types (already explicit in types/index.ts)
 export {
@@ -126,7 +130,7 @@ export type {
   PluginDefinition,
   BaseEntityExtension,
   PluginRoutingConfig,
-  ExtendedNodeDefinition,
+  ExtendedPluginDefinition,
   // State Types
   TreeRootState,
   ExpandedStateChanges,
@@ -183,7 +187,7 @@ export type {
 } from './types/entityWorkingCopy';
 
 // Patterns
-export { BaseReferenceCountingHandler } from './patterns';
+export { BaseReferenceCountingHandler } from './base';
 
 // Utils - Command Builder
 export { createCommand, createBatchCommand, CommandActions } from './utils/commandBuilder';
@@ -271,6 +275,10 @@ export {
   cleanSerialize,
   analyzeDataStructure,
 } from './utils/serialization';
+
+// Utils - Plugin Serialization
+export { PluginEntitySerializer } from './utils/plugin-serializer';
+export type { SerializationResult, DeserializationInput } from './types/plugin-serialization';
 
 // Utils - Entity Handler Context
 export type { EntityHandlerContext } from './utils/entityHandlerContext';

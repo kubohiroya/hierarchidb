@@ -33,7 +33,7 @@ export class StyleMapDB extends Dexie {
   // PeerEntity table only - StyleMapはRelationalEntityを持たない
   styleMapEntities!: Table<StyleMapEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-stylemap') {
+  constructor(name: string = 'hierarchidb-stylemap-plugin') {
     super(name);
 
     this.version(1).stores({

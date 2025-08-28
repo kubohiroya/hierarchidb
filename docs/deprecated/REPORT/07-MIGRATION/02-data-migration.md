@@ -268,7 +268,7 @@ export class SchemaTransformer {
   
   private mapNodeType(v1Type: string): string {
     const typeMap = {
-      'folder': 'folder',
+      'folder': 'folder-plugin',
       'document': 'file',
       'root': 'Root',
       'trash': 'Trash'

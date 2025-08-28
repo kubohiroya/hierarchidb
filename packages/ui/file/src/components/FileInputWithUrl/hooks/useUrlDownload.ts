@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // import { convertCorsProxyURL } from "@/domains/resources/_shapes_buggy/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
-import { createLogger } from '@hierarchidb/ui-core';
-
-const logger = createLogger('File');
-import { validateExternalURL } from '../../../utils/validation';
+import { devLog, validateExternalURL } from '@hierarchidb/common-core';
 import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 
 interface UseUrlDownloadProps {
@@ -93,7 +90,7 @@ export function useUrlDownload({
     if (!contentType) return '';
 
     if (contentType.includes('csv')) return '.csv';
-    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '.xlsx';
+    if (contentType.includes('excel') || contentType.includes('spreadsheet-plugin')) return '.xlsx';
     if (contentType.includes('zip')) return '.zip';
     if (contentType.includes('json')) return '.json';
     if (contentType.includes('xml')) return '.xml';
@@ -212,7 +209,7 @@ export function useUrlDownload({
       if (errorMessage.includes('Authentication') || errorMessage.includes('401')) {
         // Try to refresh token once before giving up
         if (retryCountRef.current === 0) {
-          logger.devLog('Received auth error, attempting token refresh...');
+          devLog('Received auth error, attempting token refresh...');
           retryCountRef.current++;
 
           try {
@@ -233,7 +230,7 @@ export function useUrlDownload({
               }
             }
           } catch (refreshError) {
-            logger.devLog('Token refresh failed:', String(refreshError));
+            devLog('Token refresh failed:', String(refreshError));
           }
         }
 

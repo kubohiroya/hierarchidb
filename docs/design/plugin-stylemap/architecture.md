@@ -39,7 +39,7 @@ EphemeralDB (WorkingCopy + PreviewState)
 ```typescript
 // Plugin Registration
 const StyleMapNodeDefinition: NodeTypeDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   database: { entityStore: 'styleMapEntities', schema: StyleMapEntity },
   entityHandler: new StyleMapEntityHandler(),
   lifecycle: { afterCreate, beforeDelete },

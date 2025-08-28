@@ -10,7 +10,7 @@
     ],
     "module": "ESNext",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "moduleResolution": "node",
     "noEmit": false,
     "emitDeclarationOnly": false,
@@ -22,10 +22,12 @@
       ]
     },
     "tsBuildInfoFile": "dist/.tsbuildinfo",
-    "skipLibCheck": true  // Required for ast-types compatibility with isolatedModules
+    "skipLibCheck": true,  // Required for ast-types compatibility with isolatedModules
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "vitest.setup.ts"
   ],
   "exclude": [
     "node_modules",

@@ -132,7 +132,7 @@ describe('TreeSubscriptionService - Subtree Observation', () => {
         kind: 'subscribeSubtree',
         payload: {
           rootId: 'root' as NodeId,
-          maxDepth: 2, // root -> folder -> subfolder まで
+          maxDepth: 2, // root -> folder-plugin -> subfolder まで
           includeInitialSnapshot: false,
         },
         issuedAt: Date.now() as Timestamp,

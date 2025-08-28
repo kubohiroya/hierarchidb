@@ -443,7 +443,7 @@ export interface PluginExtensionConfig<TBase, TExtended extends TBase> {
 /**
  * 拡張可能なノードタイプ定義
  */
-export interface ExtendableNodeTypeDefinition<
+export interface ExtendingNodeTypeDefinition<
   TBase extends PeerEntity,
   TExtended extends TBase,
   TWorkingCopy extends TExtended & WorkingCopyProperties

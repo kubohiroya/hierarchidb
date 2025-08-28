@@ -487,7 +487,7 @@ export interface UnifiedNodeData {
 ```typescript
 // packages/ui-core/src/plugins/basic/FolderUIPlugin.tsx
 export const FolderUIPlugin: UIPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   displayName: 'Folder',
   description: 'Organize files and other items',
   
@@ -546,13 +546,13 @@ export const FolderUIPlugin: UIPluginDefinition = {
       
       // 重複チェック
       const siblings = await nodeAdapter.getChildren(parentNodeId);
-      if (siblings.some(s => s.name === formData.name && s.type === 'folder')) {
+      if (siblings.some(s => s.name === formData.name && s.type === 'folder-plugin')) {
         errors.name = 'Folder name already exists';
       }
       
       // 名前形式チェック
       if (formData.name && !/^[^<>:"/\\|?*]+$/.test(formData.name)) {
-        errors.name = 'Invalid characters in folder name';
+        errors.name = 'Invalid characters in folder-plugin name';
       }
       
       return {
@@ -618,7 +618,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
   
   style: {
     primaryColor: '#FFA726',
-    icon: 'folder'
+    icon: 'folder-plugin'
   }
 };
 
@@ -994,8 +994,8 @@ export const ProjectUIPlugin: UIPluginDefinition = {
     
     afterCreate: async ({ nodeId, data }) => {
       // プロジェクト作成後、デフォルトフォルダを作成
-      await nodeAdapter.createNode(nodeId, 'folder', { name: 'Maps' });
-      await nodeAdapter.createNode(nodeId, 'folder', { name: 'Documentation' });
+      await nodeAdapter.createNode(nodeId, 'folder-plugin', { name: 'Maps' });
+      await nodeAdapter.createNode(nodeId, 'folder-plugin', { name: 'Documentation' });
       
       return {
         showMessage: `Project "${data.name}" created with default folders`,

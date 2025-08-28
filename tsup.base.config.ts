@@ -4,29 +4,29 @@ import { defineConfig, Options } from 'tsup';
  * Base tsup configuration for all packages
  */
 export const createTsupConfig = (options: Partial<Options> = {}): Options => {
-  const isProduction = process.env.NODE_ENV === 'production';
-
   return defineConfig({
-    // Default entry point
-    entry: ['app/src/entry.client.ts'],
+    // Default entry point for packages
+    entry: ['src/index.ts'],
 
     // Output formats
-    format: ['esm', 'cjs'],
+    format: ['esm'],
+    
+    // TypeScript configuration
+    target: 'es2022',
 
-    // Generate .d.ts files
-    dts: true,
+    // Generate .d.ts files with optimized settings
+    dts: {
+      compilerOptions: {
+        composite: false,
+        incremental: false,
+        tsBuildInfoFile: undefined,
+      },
+    },
 
-    // Clean output directory before build
+    // Build settings
+    splitting: false,
+    sourcemap: true,
     clean: true,
-
-    // Generate source maps
-    sourcemap: !isProduction,
-
-    // Enable tree shaking
-    treeshake: true,
-
-    // Default output directory
-    outDir: 'dist',
 
     // Common external dependencies
     external: [
@@ -36,7 +36,6 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
       '@mui/icons-material',
       '@emotion/react',
       '@emotion/styled',
-      'dexie',
     ],
 
     // Merge with package-specific options

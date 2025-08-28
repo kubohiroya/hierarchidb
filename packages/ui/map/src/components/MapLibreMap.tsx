@@ -7,70 +7,24 @@ import React, { useRef, useState, useCallback } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import type { Map as MapLibreMapInstance } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
-export interface MapViewState {
-  longitude: number;
-  latitude: number;
-  zoom: number;
-  bearing?: number;
-  pitch?: number;
-}
+// Re-export types for backward compatibility
+export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props';
 
-export interface MapLibreMapProps {
-  /** Initial view state */
-  initialViewState: MapViewState;
-  
-  /** Map style URL or style object */
-  mapStyle?: string;
-  
-  /** Map container width */
-  width?: string | number;
-  
-  /** Map container height */
-  height?: string | number;
-  
-  /** Additional CSS styles for the container */
-  style?: React.CSSProperties;
-  
-  /** Callback when map loads */
-  onLoad?: (map: MapLibreMapInstance) => void;
-  
-  /** Callback when view state changes */
-  onViewStateChange?: (viewState: MapViewState) => void;
-  
-  /** Callback when map is clicked */
-  onClick?: (event: any) => void;
-  
+export interface MapLibreMapProps extends BaseMapProps {
   /** Children components (layers, markers, etc.) */
   children?: React.ReactNode;
-  
-  /** Additional map options */
-  mapOptions?: {
-    interactive?: boolean;
-    scrollZoom?: boolean;
-    dragPan?: boolean;
-    dragRotate?: boolean;
-    doubleClickZoom?: boolean;
-    touchZoomRotate?: boolean;
-  };
 }
 
-const defaultMapStyle = 'https://demotiles.maplibre.org/style.json';
-
-const defaultMapOptions = {
-  interactive: true,
-  scrollZoom: true,
-  dragPan: true,
-  dragRotate: true,
-  doubleClickZoom: true,
-  touchZoomRotate: true,
-};
+// Default values from unified config
+const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   initialViewState,
   mapStyle = defaultMapStyle,
-  width = '100%',
-  height = '400px',
+  width = DEFAULT_MAP_CONFIG.dimensions.width,
+  height = DEFAULT_MAP_CONFIG.dimensions.height,
   style,
   onLoad,
   onViewStateChange,

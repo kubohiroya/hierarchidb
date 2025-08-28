@@ -1,16 +1,16 @@
-import { AuthProviderType } from './AuthProviderType';
-import { AuthUser } from './AuthUser';
+/**
+ * @file AuthContextType.ts
+ * @description Type definitions for authentication context
+ */
+
+import type { AuthUser } from './AuthUser';
+import type { AuthProviderType } from './AuthProviderType';
 
 export interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signIn: (options?: {
-    returnUrl?: string;
-    isUserInitiated?: boolean;
-    provider?: AuthProviderType;
-    method?: 'redirect' | 'popup';
-  }) => void;
+  signIn: (options?: { returnUrl?: string; provider?: AuthProviderType }) => void;
   signOut: () => void;
   getAccessToken: () => string | null;
   getIdToken: () => string | null;

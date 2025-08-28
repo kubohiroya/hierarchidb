@@ -451,9 +451,9 @@ describe('StyleMapConfiguration', () => {
 
 ```typescript
 // 🟢 完全なスタイルマップ作成フロー
-test('Complete stylemap creation flow', async ({ page }) => {
+test('Complete stylemap-plugin creation flow', async ({ page }) => {
   // Given: Project page is open
-  // When: Create stylemap through all steps
+  // When: Create stylemap-plugin through all steps
   // Then: Stylemap is saved and displayed correctly
 });
 

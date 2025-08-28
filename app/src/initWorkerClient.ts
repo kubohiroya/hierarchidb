@@ -1,6 +1,5 @@
-/// <reference types="vite-plugin-comlink/client" />
 /**
- * Initialize Worker with vite-plugin-comlink
+ * Initialize Worker with Comlink
  */
 
 import type { Remote } from 'comlink';
@@ -10,11 +9,24 @@ import type WorkerModule from './worker';
 
 // Global instance - properly typed
 let workerInstance: Remote<typeof WorkerModule> | null = null;
+let rawWorkerInstance: Worker | null = null;
 
 /**
  * Initialize the Worker
  */
 export async function initializeWorker(): Promise<Remote<typeof WorkerModule>> {
+  // Auto-load plugins before initializing worker
+  try {
+    const { autoLoadPlugins } = await import('./plugins/auto-load');
+    console.log('[initWorker] Auto-loading plugins from package.json...');
+    await autoLoadPlugins();
+    console.log('[initWorker] Plugins loaded successfully');
+  } catch (error) {
+    console.error('[initWorker] Failed to auto-load plugins:', error);
+    // Continue with initialization even if plugin loading fails
+    // Plugins might be loaded manually later
+  }
+
   const RETRY_DELAYS = [2000, 3000, 7000]; // 2, 3, 7 seconds
   
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
@@ -35,17 +47,24 @@ export async function initializeWorker(): Promise<Remote<typeof WorkerModule>> {
         workerInstance = null;
       }
 
-      console.log('[initWorker] Creating new Worker with ComlinkWorker...');
+      console.log('[initWorker] Creating new Worker...');
 
-      // Create Worker instance - ComlinkWorker automatically wraps with Remote
-      const worker = new ComlinkWorker<typeof WorkerModule>(
-        new URL('./worker', import.meta.url), 
-        {
-          type: 'module',
-        }
+      // First create the raw Worker instance
+      rawWorkerInstance = new Worker(
+        new URL('./worker', import.meta.url),
+        { type: 'module' }
       );
       
-      console.log('[initWorker] ComlinkWorker created:', typeof worker);
+      console.log('[initWorker] Raw Worker created');
+      
+      // Import Comlink to wrap the Worker
+      const Comlink = await import('comlink');
+      
+      // Wrap the raw Worker with Comlink
+      const worker = Comlink.wrap<typeof WorkerModule>(rawWorkerInstance);
+      
+      console.log('[initWorker] Worker wrapped with Comlink:', typeof worker);
+      console.log('[initWorker] Raw Worker instance available:', !!rawWorkerInstance);
       
       // Test connection immediately with timeout
       console.log('[initWorker] Testing connection with ping...');
@@ -98,4 +117,11 @@ export async function getWorkerClient(): Promise<Remote<typeof WorkerModule>> {
     return await initializeWorker();
   }
   return workerInstance;
+}
+
+/**
+ * Get the raw Worker instance for initialization detection
+ */
+export function getRawWorkerInstance(): Worker | null {
+  return rawWorkerInstance;
 }

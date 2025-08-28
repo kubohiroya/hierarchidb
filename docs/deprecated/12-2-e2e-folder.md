@@ -51,25 +51,25 @@ describe('Folder CRUD Operations', () => {
       await expect(page.locator('[data-testid="speed-dial-menu"]')).toBeVisible();
 
       // フォルダ作成オプションを選択
-      await page.locator('[data-testid="create-folder-action"]').click();
+      await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
       // フォルダ作成ダイアログの確認
-      await expect(page.locator('[data-testid="folder-create-dialog"]')).toBeVisible();
-      await expect(page.locator('[data-testid="folder-name-input"]')).toBeFocused();
+      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-name-input"]')).toBeFocused();
 
       // フォルダ名入力
       const folderName = `Test Folder ${Date.now()}`;
-      await page.locator('[data-testid="folder-name-input"]').fill(folderName);
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
 
       // 説明の入力（オプション）
-      await page.locator('[data-testid="folder-description-input"]')
+      await page.locator('[data-testid="folder-plugin-description-input"]')
         .fill('E2E テスト用フォルダです');
 
       // 作成ボタンクリック
-      await page.locator('[data-testid="create-folder-confirm"]').click();
+      await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
       // ダイアログの閉じるのを待つ
-      await expect(page.locator('[data-testid="folder-create-dialog"]')).not.toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
 
       // 新しいフォルダがツリーに表示されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`))
@@ -77,7 +77,7 @@ describe('Folder CRUD Operations', () => {
 
       // フォルダアイコンの確認
       const folderNode = page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`);
-      await expect(folderNode.locator('[data-testid="folder-icon"]')).toBeVisible();
+      await expect(folderNode.locator('[data-testid="folder-plugin-icon"]')).toBeVisible();
 
       // Working Copy の作成確認
       await expect(page.locator('[data-testid="working-copy-indicator"]')).toBeVisible();
@@ -85,7 +85,7 @@ describe('Folder CRUD Operations', () => {
 
     test('コンテキストメニューからのフォルダ作成', async ({ page }) => {
       // 親フォルダを右クリック
-      const parentFolder = page.locator('[data-testid="tree-node"][data-node-type="folder"]').first();
+      const parentFolder = page.locator('[data-testid="tree-node"][data-node-type="folder-plugin"]').first();
       await parentFolder.click({ button: 'right' });
 
       // コンテキストメニューの表示確認
@@ -96,14 +96,14 @@ describe('Folder CRUD Operations', () => {
       await expect(page.locator('[data-testid="create-submenu"]')).toBeVisible();
 
       // フォルダ作成を選択
-      await page.locator('[data-testid="create-submenu-folder"]').click();
+      await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
       // フォルダ作成フローの確認（上記と同様）
-      await expect(page.locator('[data-testid="folder-create-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
       
       const folderName = `Child Folder ${Date.now()}`;
-      await page.locator('[data-testid="folder-name-input"]').fill(folderName);
-      await page.locator('[data-testid="create-folder-confirm"]').click();
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
+      await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
       // 親フォルダ内に子フォルダが作成されることを確認
       const parentId = await parentFolder.getAttribute('data-node-id');
@@ -113,24 +113,24 @@ describe('Folder CRUD Operations', () => {
 
     test('フォルダ作成時のバリデーション', async ({ page }) => {
       await page.locator('[data-testid="speed-dial-fab"]').click();
-      await page.locator('[data-testid="create-folder-action"]').click();
+      await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
       // 空の名前でのエラー確認
-      await page.locator('[data-testid="create-folder-confirm"]').click();
+      await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
       await expect(page.locator('[data-testid="name-error"]')).toHaveText('フォルダ名は必須です');
 
       // 長すぎる名前でのエラー確認
       const longName = 'a'.repeat(256);
-      await page.locator('[data-testid="folder-name-input"]').fill(longName);
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill(longName);
       await expect(page.locator('[data-testid="name-error"]')).toHaveText('フォルダ名は255文字以下である必要があります');
 
       // 無効な文字でのエラー確認
-      await page.locator('[data-testid="folder-name-input"]').fill('folder/with\\invalid:chars');
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill('folder-plugin/with\\invalid:chars');
       await expect(page.locator('[data-testid="name-error"]')).toHaveText('フォルダ名に無効な文字が含まれています');
 
       // 重複名でのエラー確認
-      await page.locator('[data-testid="folder-name-input"]').fill('Documents'); // 既存フォルダ名
-      await page.locator('[data-testid="create-folder-confirm"]').click();
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill('Documents'); // 既存フォルダ名
+      await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
       await expect(page.locator('[data-testid="name-error"]')).toHaveText('同名のフォルダが既に存在します');
     });
   });
@@ -148,23 +148,23 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="context-menu-edit"]').click();
 
       // 編集ダイアログの確認
-      await expect(page.locator('[data-testid="folder-edit-dialog"]')).toBeVisible();
-      await expect(page.locator('[data-testid="folder-name-input"]')).toHaveValue(originalName);
+      await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-name-input"]')).toHaveValue(originalName);
 
       // 名前を変更
       const newName = `Renamed Folder ${Date.now()}`;
-      await page.locator('[data-testid="folder-name-input"]').clear();
-      await page.locator('[data-testid="folder-name-input"]').fill(newName);
+      await page.locator('[data-testid="folder-plugin-name-input"]').clear();
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill(newName);
 
       // 説明も更新
-      await page.locator('[data-testid="folder-description-input"]')
+      await page.locator('[data-testid="folder-plugin-description-input"]')
         .fill('名前変更されたフォルダです');
 
       // 変更を保存
-      await page.locator('[data-testid="save-folder-changes"]').click();
+      await page.locator('[data-testid="save-folder-plugin-changes"]').click();
 
       // ダイアログが閉じることを確認
-      await expect(page.locator('[data-testid="folder-edit-dialog"]')).not.toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).not.toBeVisible();
 
       // 新しい名前でフォルダが表示されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${newName}")`))
@@ -186,14 +186,14 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="context-menu-edit"]').click();
 
       // リアルタイムバリデーションのテスト
-      await page.locator('[data-testid="folder-name-input"]').clear();
+      await page.locator('[data-testid="folder-plugin-name-input"]').clear();
       await expect(page.locator('[data-testid="name-error"]')).toBeVisible();
-      await expect(page.locator('[data-testid="save-folder-changes"]')).toBeDisabled();
+      await expect(page.locator('[data-testid="save-folder-plugin-changes"]')).toBeDisabled();
 
       // 有効な名前を入力
-      await page.locator('[data-testid="folder-name-input"]').fill('Valid Name');
+      await page.locator('[data-testid="folder-plugin-name-input"]').fill('Valid Name');
       await expect(page.locator('[data-testid="name-error"]')).not.toBeVisible();
-      await expect(page.locator('[data-testid="save-folder-changes"]')).toBeEnabled();
+      await expect(page.locator('[data-testid="save-folder-plugin-changes"]')).toBeEnabled();
     });
   });
 
@@ -251,9 +251,9 @@ async function createTestFolder(page: Page, name: string): Promise<string> {
   const folderName = `${name} ${timestamp}`;
   
   await page.locator('[data-testid="speed-dial-fab"]').click();
-  await page.locator('[data-testid="create-folder-action"]').click();
-  await page.locator('[data-testid="folder-name-input"]').fill(folderName);
-  await page.locator('[data-testid="create-folder-confirm"]').click();
+  await page.locator('[data-testid="create-folder-plugin-action"]').click();
+  await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
+  await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
   
   await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`))
     .toBeVisible({ timeout: 5000 });
@@ -631,9 +631,9 @@ async function createChildFolder(page: Page, parentNode: Locator, name: string):
   
   await parentNode.click({ button: 'right' });
   await page.locator('[data-testid="context-menu-create"]').hover();
-  await page.locator('[data-testid="create-submenu-folder"]').click();
-  await page.locator('[data-testid="folder-name-input"]').fill(folderName);
-  await page.locator('[data-testid="create-folder-confirm"]').click();
+  await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
+  await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
+  await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
   
   return folderName;
 }

@@ -33,7 +33,7 @@
 
 ```ts
 export const StyleMapUnifiedDefinition: UnifiedPluginDefinition<StyleMapEntity, never, never> = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'Style Map',
   database: { entityStore: 'stylemaps', schema: {}, version: 1 },

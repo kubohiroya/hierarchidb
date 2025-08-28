@@ -70,7 +70,7 @@ export function SpeedDialMenu({
           onClick={() => handleActionClick(action.onClick)}
           sx={action.color ? { color: action.color } : {}}
           data-testid={
-            action.name === 'Create Folder' ? 'create-folder-action' :
+            action.name === 'Create Folder' ? 'create-folder-plugin-action' :
             action.name === 'Create Note' ? 'create-note-action' :
             action.name === 'Create File' ? 'create-file-action' :
             `speed-dial-action-${index}`

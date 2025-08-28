@@ -1,5 +1,5 @@
 /**
- * @file openstreetmap-type.ts
+ * @file index.ts
  * @description Shared map components for HierarchiDB
  */
 
@@ -8,10 +8,25 @@ export { MapLibreMap } from './components/MapLibreMap';
 export { VectorTileLayer } from './components/VectorTileLayer';
 export { MapWithVectorTiles } from './components/MapWithVectorTiles';
 
-// Type exports
-export type { MapViewState, MapLibreMapProps } from './components/MapLibreMap';
+// Type exports - unified props
+export type {
+  MapViewState,
+  MapInteractionOptions,
+  MapDimensionsProps,
+  MapEventHandlers,
+  BaseMapProps,
+  VectorTileLayerConfig,
+  VectorTileDataSource,
+  VectorTileProps,
+} from './types/unified-map-props';
+
+// Default configuration
+export { DEFAULT_MAP_CONFIG } from './types/unified-map-props';
+
+// Component-specific props
+export type { MapLibreMapProps } from './components/MapLibreMap';
 export type { VectorTileLayerProps } from './components/VectorTileLayer';
-export type { LayerOptions, MapWithVectorTilesProps } from './components/MapWithVectorTiles';
+export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles';
 
 // Re-export important MapLibre types for convenience
 export type {

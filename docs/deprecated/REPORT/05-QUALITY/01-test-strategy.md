@@ -120,7 +120,7 @@ describe('WorkerAPI Integration', () => {
   it('should create and retrieve node', async () => {
     const createResult = await worker.createNode({
       parentNodeId: 'root' as NodeId,
-      nodeType: 'folder',
+      nodeType: 'folder-plugin',
       name: 'Test Folder'
     });
     
@@ -280,7 +280,7 @@ export const createMockNode = (
 ): TreeNode => ({
   id: generateNodeId(),
   parentNodeId: 'root' as NodeId,
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   name: 'Test Node',
   hasChild: false,
   createdAt: Date.now(),

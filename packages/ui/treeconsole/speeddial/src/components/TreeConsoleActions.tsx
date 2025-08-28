@@ -24,7 +24,7 @@ function getDefaultSpeedDialActions(): SpeedDialActionType[] {
       icon: <CreateFolderIcon />,
       name: 'Create Folder',
       onClick: () => {
-        console.log('Create folder - TODO: Connect to controller');
+        console.log('Create folder-plugin - TODO: Connect to controller');
       },
     },
     {

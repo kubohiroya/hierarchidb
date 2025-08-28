@@ -138,6 +138,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
       description: (entity as any)?.description,
       value: (entity as any)?.value,
       data: (entity as any)?.data,
+      depth: 0, // Will be calculated by database operations
       workingCopyId: this.generateNodeId(),
       workingCopyOf: nodeId,
       copiedAt: now,

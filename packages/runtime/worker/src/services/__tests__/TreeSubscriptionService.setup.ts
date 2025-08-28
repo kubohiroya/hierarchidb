@@ -24,7 +24,7 @@ export type MockCoreDB = {
  * @param id ノードID
  * @param parentId 親ノードID
  * @param name ノード名
- * @param type ノード種別（デフォルト: 'folder'）
+ * @param type ノード種別（デフォルト: 'folder-plugin'）
  * @returns テスト用TreeNodeオブジェクト
  */
 export const createTestNode = (
@@ -37,6 +37,7 @@ export const createTestNode = (
   parentId: parentId as NodeId,
   name,
   nodeType: type,
+  depth: 0, // Will be calculated by database operations
   createdAt: Date.now() as Timestamp,
   updatedAt: Date.now() as Timestamp,
   version: 1,

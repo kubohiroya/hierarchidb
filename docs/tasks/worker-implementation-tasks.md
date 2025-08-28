@@ -1752,7 +1752,7 @@ describe('Worker Integration Tests', () => {
     
     // 2. Draft編集
     await api.updateWorkingCopy(draftId, {
-      description: 'Test folder'
+      description: 'Test folder-plugin'
     });
     
     // 3. Commit
@@ -1772,7 +1772,7 @@ describe('Worker Integration Tests', () => {
     });
     
     expect(node?.name).toBe('New Folder');
-    expect(node?.description).toBe('Test folder');
+    expect(node?.description).toBe('Test folder-plugin');
   });
 });
 ```

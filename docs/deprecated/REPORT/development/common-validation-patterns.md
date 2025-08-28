@@ -185,7 +185,7 @@ function MyForm() {
 
 **Before:**
 ```typescript
-// In folder plugin
+// In folder-plugin plugin
 function validateFolderName(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
     return { isValid: false, error: 'Folder name is required' };
@@ -206,7 +206,7 @@ const result = validateNodeName(folderName);
 function validateFolderData(data: FolderData) {
   const commonValidation = validateCommonNodeData(data);
   
-  // Add folder-specific validation
+  // Add folder-plugin-specific validation
   if (data.someSpecificField && !isValidSpecificField(data.someSpecificField)) {
     commonValidation.errors.push('Specific field is invalid');
     commonValidation.isValid = false;

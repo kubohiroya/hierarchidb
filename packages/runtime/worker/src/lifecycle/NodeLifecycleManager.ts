@@ -1,7 +1,7 @@
 import type { TreeNode, NodeId, NodeType, EntityReferenceHints } from '@hierarchidb/common-core';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
-import type { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
+import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { workerError } from '../utils/workerLogger';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './types';
 import { isReferenceCountingHandler } from '../handlers/ReferenceCountingHandler';

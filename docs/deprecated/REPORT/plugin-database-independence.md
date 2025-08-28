@@ -141,7 +141,7 @@ export class SpreadsheetDB extends Dexie {
   // PeerEntity: ノード紐付け
   spreadsheetRefs!: Table<SpreadsheetRefEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-spreadsheet') {
+  constructor(name: string = 'hierarchidb-spreadsheet-plugin') {
     super(name);
     this.version(1).stores({
       spreadsheetMetadata: '&id, contentHash, createdAt, lastAccessedAt',
@@ -182,7 +182,7 @@ export class StyleMapDB extends Dexie {
   // PeerEntityのみ - RelationalEntityは持たない
   styleMapEntities!: Table<StyleMapEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-stylemap') {
+  constructor(name: string = 'hierarchidb-stylemap-plugin') {
     super(name);
     this.version(1).stores({
       styleMapEntities: '&nodeId, spreadsheetMetadataId, keyColumn, updatedAt'
@@ -225,7 +225,7 @@ export function createSpreadsheetPlugin(): PluginDefinition {
   const handler = new SpreadsheetWorkerHandler(pluginDB);
 
   return {
-    nodeType: 'spreadsheet',
+    nodeType: 'spreadsheet-plugin',
     name: 'Spreadsheet',
     
     async initialize() {

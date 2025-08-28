@@ -78,7 +78,7 @@ packages/
 
 #### 1.3 型定義の追加
 ```typescript
-// packages/core/src/types/import-export.ts
+// packages/core/src/types/import-export-plugin.ts
 export interface ImportManifest {
   version: string;
   name: string;
@@ -242,7 +242,7 @@ const handleAction = (action: string, params?: any) => {
 
 #### 3.3 テンプレート選択UIの実装
 ```typescript
-// packages/_app/src/features/import-export/containers/TemplateMenu.tsx
+// packages/_app/src/features/import-export-plugin/containers/TemplateMenu.tsx
 export const IMPORT_TEMPLATES = [
   {
     id: 'population-2023',
@@ -288,7 +288,7 @@ test.describe('Template Import', () => {
 
 #### 4.2 統合テストの追加
 ```typescript
-// packages/worker/src/__tests__/integration/import-export.test.ts
+// packages/worker/src/__tests__/integration/import-export-plugin.test.ts
 describe('Import/Export Integration', () => {
   it('should import template data', async () => {
     const api = new WorkerAPIImpl('test-db');

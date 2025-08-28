@@ -106,6 +106,38 @@ export interface BulkOperationResult {
   };
 }
 
+export interface PluginResetOptions {
+  nodeType: NodeType;
+  resetMode: 'individual' | 'folder' | 'system';
+  createBackup?: boolean;
+}
+
+export interface PluginResetResult {
+  success: boolean;
+  nodeType: NodeType;
+  deletedEntities: {
+    groupEntities?: number;
+    relationalEntities?: number;
+    treeNodes?: number;  // Only for folder-plugin/system reset
+    peerEntities?: number;  // Only for folder-plugin/system reset
+  };
+  backupLocation?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface PluginDeleteResult {
+  success: boolean;
+  nodeType: NodeType;
+  warnings?: string[];
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
 /**
  * Plugin lifecycle management API
  *
@@ -120,7 +152,7 @@ export interface BulkOperationResult {
  * const result = await pluginMgmtAPI.register(myPluginDefinition);
  * 
  * // Check plugin health
- * const health = await pluginMgmtAPI.checkHealth('folder');
+ * const health = await pluginMgmtAPI.checkHealth('folder-plugin');
  * ```
  */
 export interface PluginManagementAPI {
@@ -190,6 +222,45 @@ export interface PluginManagementAPI {
    * @returns 操作結果とサマリー情報
    */
   bulkOperation(options: BulkOperationOptions): Promise<BulkOperationResult>;
+
+  // ==================
+  // Plugin Reset and Delete Operations
+  // ==================
+
+  /**
+   * 【機能概要】: プラグインに関連するエンティティをリセットする
+   * 【動作仕様】:
+   *   - individual mode: GroupEntity, RelationalEntityのみ削除（TreeNode, PeerEntity保持）
+   *   - folder-plugin mode: すべてのエンティティを削除（完全リセット）
+   *   - system mode: すべてのプラグインの全データを削除
+   * 【テスト対応】: resetPlugin()の各モード/バックアップケースをテスト
+   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
+   * @param options - リセット設定（モード、バックアップ）
+   * @returns リセット結果と削除数
+   */
+  resetPlugin(options: PluginResetOptions): Promise<PluginResetResult>;
+
+  /**
+   * 【機能概要】: プラグインを完全に削除する
+   * 【制約条件】:
+   *   - folderプラグインは削除不可（コアプラグイン）
+   *   - 依存されているプラグインの削除時は警告
+   * 【テスト対応】: deletePlugin()の成功/制約/警告ケースをテスト
+   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
+   * @param nodeType - 削除するプラグインのノードタイプ
+   * @returns 削除結果と警告情報
+   */
+  deletePlugin(nodeType: NodeType): Promise<PluginDeleteResult>;
+
+  /**
+   * 【機能概要】: システム全体をリセットする
+   * 【動作仕様】: すべてのプラグインの全データを削除
+   * 【テスト対応】: resetSystem()の完全リセットケースをテスト
+   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
+   * @param createBackup - バックアップ作成フラグ
+   * @returns システムリセット結果
+   */
+  resetSystem(createBackup?: boolean): Promise<PluginResetResult>;
 }
 
 /**

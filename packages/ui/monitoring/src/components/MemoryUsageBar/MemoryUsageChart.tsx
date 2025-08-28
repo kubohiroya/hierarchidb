@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 
-import { devWarn } from '../../utils/logger';
+import { devWarn } from '@hierarchidb/common-core';
 import { formatBytes } from '@hierarchidb/common-core';
 interface MemoryDataPoint {
   timestamp: number;

@@ -406,7 +406,7 @@ useEffect(() => {
 
 ```typescript
 const styleMapUIPlugin: UIPlugin = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   components: {
     dialog: () => import('./components/StyleMapDialog'),
     view: () => import('./components/StyleMapView'),
@@ -415,7 +415,7 @@ const styleMapUIPlugin: UIPlugin = {
   },
   routes: [
     {
-      path: '/stylemap/:nodeId',
+      path: '/stylemap-plugin/:nodeId',
       component: () => import('./routes/StyleMapRoute'),
     },
   ],

@@ -230,7 +230,7 @@ describe('WorkerAPI Integration Tests', () => {
         parentId: rootNodeId,
         nodeType: 'folder',
         name: 'Project Alpha',
-        description: 'Alpha project folder',
+        description: 'Alpha project folder-plugin',
       });
       
       const doc1 = await mutationAPI.createNode({
@@ -312,7 +312,7 @@ describe('WorkerAPI Integration Tests', () => {
       const allChildren = await queryAPI.getChildren(rootNodeId);
       expect(allChildren).toHaveLength(3);
       
-      // 4. Move multiple nodes to folder
+      // 4. Move multiple nodes to folder-plugin
       const folderNode = nodes[2];
       const docNodes = nodes.slice(0, 2);
       
@@ -326,7 +326,7 @@ describe('WorkerAPI Integration Tests', () => {
       expect(folderChildren).toHaveLength(2);
       
       const rootChildren = await queryAPI.getChildren(rootNodeId);
-      expect(rootChildren).toHaveLength(1); // Only the folder remains
+      expect(rootChildren).toHaveLength(1); // Only the folder-plugin remains
       
       // 6. Delete multiple nodes
       const deleteResult = await mutationAPI.deleteNodes([folderNode.nodeId]);

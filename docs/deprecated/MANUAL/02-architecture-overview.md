@@ -221,7 +221,7 @@ const handleCreateFolder = async () => {
   // 2. WorkingCopyAPIでドラフトを作成
   const workingCopyAPI = await workerAPI.getWorkingCopyAPI();
   const draft = await workingCopyAPI.createDraftWorkingCopy(
-    'folder',
+    'folder-plugin',
     currentParentId
   );
   

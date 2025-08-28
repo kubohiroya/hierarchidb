@@ -372,7 +372,7 @@ describe('プラグインシステム6分類エンティティ対応', () => {
       const lifecycleManager = new AutoEntityLifecycleManager();
       lifecycleManager.registerPlugin(pluginDefinition);
       
-      const nodeId: NodeId = 'stylemap-001' as NodeId;
+      const nodeId: NodeId = 'stylemap-plugin-001' as NodeId;
       const tableMetadataId = 'table-meta-001';
       
       await lifecycleManager.handleNodeCreation(nodeId, {

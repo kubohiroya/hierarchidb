@@ -74,13 +74,11 @@ async function retryComlinkCall<T>(
 ): Promise<T> {
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
     try {
-      console.log(`[${operationName}] Attempt ${attempt + 1}/${retryDelays.length + 1}`);
+
       
       const result = await operation();
       
-      if (attempt > 0) {
-        console.log(`👍 [${operationName}] Successful after ${attempt} retries!`);
-      }
+
       
       return result;
       
@@ -128,7 +126,6 @@ async function retryComlinkCall<T>(
 }
 
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
-  console.log('[loadWorkerAPIClient] Getting Worker client...');
   const appConfig = loadAppConfig();
 
   try {
@@ -142,14 +139,9 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
       await WorkerAPIClient.initialize();
     }
 
-    // 🕐 実験: Worker側の初期化完了を待つために10秒待機
-    console.log('[loadWorkerAPIClient] 🕐 Waiting 10 seconds for Worker initialization to complete...');
-    await new Promise(resolve => setTimeout(resolve, 10000));
-    console.log('[loadWorkerAPIClient] ✅ 10-second wait completed');
-
     // 同期的に取得 - WorkerAPIClientは既にworkerインスタンスを返す
     const client = WorkerAPIClient.getSingleton();
-    console.log('[loadWorkerAPIClient] Worker client obtained successfully');
+
 
     return {
       ...appConfig,
@@ -167,7 +159,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 }
 
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
-  console.log('[loadTree] Loading tree with ID:', treeId);
+
   
   if (!treeId) {
     throw new Error('treeId is required');
@@ -178,13 +170,15 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
       // Get fresh client each time to handle reconnections
       const workerAPIClientReturn = await loadWorkerAPIClient();
       const client = workerAPIClientReturn.client;
-      console.log('[loadTree] Got client, calling getTree');
-      return client.getTree({ treeId });
+      
+      // Use facade API instead of deprecated direct method
+      const queryAPI = await client.getQueryAPI();
+      return queryAPI.getTree(treeId as TreeId);
     },
     'loadTree.getTree'
   );
   
-  console.log('[loadTree] Loaded tree:', tree);
+
 
   // Get final client state for return
   const workerAPIClientReturn = await loadWorkerAPIClient();

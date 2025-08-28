@@ -27,12 +27,10 @@ export class WorkerAPIClient {
    * Initialize the Worker (must be called once at app startup)
    */
   static async initialize(): Promise<void> {
-    console.log(`[WorkerAPIClient.initialize] Current state: ${this.state}`);
-
     // Handle based on current state
     switch (this.state) {
       case 'initialized':
-        console.log('[WorkerAPIClient.initialize] Already initialized, returning immediately');
+
         return;
 
       case 'initializing':
@@ -49,22 +47,21 @@ export class WorkerAPIClient {
         break;
 
       case 'error':
-        console.log('[WorkerAPIClient.initialize] Previous initialization failed, retrying');
-        console.log('[WorkerAPIClient.initialize] Last error was:', this.lastError);
+
         break;
 
       case 'uninitialized':
-        console.log('[WorkerAPIClient.initialize] First initialization attempt');
+
         break;
     }
 
     // Start new initialization
-    console.log('[WorkerAPIClient.initialize] Starting new initialization');
+
     this.state = 'initializing';
 
     this.initializationPromise = this.doInitialize()
       .then(() => {
-        console.log('[WorkerAPIClient.initialize] Initialization successful');
+
         this.state = 'initialized';
         this.lastError = null;
         this.initializationPromise = null;
@@ -81,18 +78,16 @@ export class WorkerAPIClient {
   }
 
   private static async doInitialize(): Promise<void> {
-    console.log('[WorkerAPIClient.doInitialize] Starting at', new Date().toISOString());
+
 
     try {
-      console.log('[WorkerAPIClient.doInitialize] Calling getWorkerClient()...');
+
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
-      console.log('[WorkerAPIClient.doInitialize] Remote worker obtained:', !!remoteWorker);
+
 
       // Test the connection immediately
-      console.log('[WorkerAPIClient.doInitialize] Testing worker connection...');
       try {
         const pingResult = await remoteWorker.ping();
-        console.log('[WorkerAPIClient.doInitialize] Worker connection test successful:', pingResult);
         
         // Check if this was a retry (error state indicates previous failure)
         if (this.lastError) {
@@ -110,7 +105,7 @@ export class WorkerAPIClient {
         throw new Error('getWorkerClient returned null');
       }
 
-      console.log('[WorkerAPIClient.doInitialize] Initialization completed successfully');
+
     } catch (error) {
       console.error('[WorkerAPIClient.doInitialize] Failed:', error);
       console.error('[WorkerAPIClient.doInitialize] Error stack:', (error as Error)?.stack);
@@ -125,7 +120,6 @@ export class WorkerAPIClient {
    * Get singleton Worker instance directly
    */
   static getSingleton(): WorkerInterface {
-    console.log(`[WorkerAPIClient.getSingleton] Current state: ${this.state}`);
 
     if (this.state !== 'initialized' || !this.workerInstance) {
       console.error('[WorkerAPIClient.getSingleton] Not initialized', {
@@ -136,7 +130,7 @@ export class WorkerAPIClient {
       throw new NotInitializedError();
     }
 
-    console.log('[WorkerAPIClient.getSingleton] Returning worker instance');
+
     return this.workerInstance;
   }
 
@@ -145,25 +139,7 @@ export class WorkerAPIClient {
    * Useful when connection fails and needs to be retried
    */
   static reset(): void {
-    console.log('[WorkerAPIClient.reset] Resetting client state');
-    
-    // Try to clean up existing worker instance
-    if (this.workerInstance) {
-      try {
-        if ('terminate' in this.workerInstance) {
-          (this.workerInstance as any).terminate();
-        }
-      } catch (error) {
-        console.warn('[WorkerAPIClient.reset] Failed to terminate worker:', error);
-      }
-    }
-    
-    this.state = 'uninitialized';
-    this.workerInstance = null;
-    this.lastError = null;
-    this.initializationPromise = null;
-    
-    console.log('[WorkerAPIClient.reset] Reset complete');
+
   }
 
 

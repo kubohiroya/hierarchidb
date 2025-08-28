@@ -26,6 +26,7 @@
   "dependencies": {
     "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/runtime-plugin-registry": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
     "jotai": "^2.13.1",

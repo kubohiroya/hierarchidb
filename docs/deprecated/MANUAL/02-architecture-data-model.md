@@ -589,7 +589,7 @@ export class IntegratedLifecycleManager {
 ```typescript
 // StyleMapプラグインの定義例
 export const StyleMapPluginDefinition: PluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   entities: [
     {
       classification: 'persistent-peer',

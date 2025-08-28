@@ -445,7 +445,24 @@ export class TreeSubscriptionService {
 
     // Apply depth filter for new API
     if (options?.depth !== undefined) {
-      // TODO: Implement depth checking - for now allow all
+      // Check exact depth match
+      if (!event.node || event.node.depth !== options.depth) {
+        return false;
+      }
+    }
+    
+    // Apply maxDepth filter
+    if (options?.maxDepth !== undefined) {
+      if (!event.node || event.node.depth > options.maxDepth) {
+        return false;
+      }
+    }
+    
+    // Apply minDepth filter
+    if (options?.minDepth !== undefined) {
+      if (!event.node || event.node.depth < options.minDepth) {
+        return false;
+      }
     }
 
     return true;

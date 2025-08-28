@@ -300,7 +300,7 @@ export const BaseMapWorkerPlugin: WorkerPluginDefinition = {
 
 ```typescript
 export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   version: '1.0.0',
   
@@ -840,7 +840,7 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   
   const handleComplete = async () => {
     // StyleMapエンティティ + TableMetadataエンティティの作成
-    const entity = await workerAPI.createNode('stylemap', formData);
+    const entity = await workerAPI.createNode('stylemap-plugin', formData);
     onComplete(entity);
   };
   
@@ -929,7 +929,7 @@ export const ShapesBatchProcessor: React.FC<BatchProcessorProps> = ({
 ```typescript
 // Worker層
 export const FolderWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
@@ -942,7 +942,7 @@ export const FolderWorkerPlugin: WorkerPluginDefinition = {
 
 // UI層
 export const FolderUIPlugin: UIPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   capabilities: {
     canHaveChildren: true,
     supportsWorkingCopy: false,
@@ -994,7 +994,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 ```typescript
 // Worker層
 export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
@@ -1012,7 +1012,7 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
 
 // UI層
 export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   capabilities: {
     supportsWorkingCopy: true,
     supportsMultiStep: true,

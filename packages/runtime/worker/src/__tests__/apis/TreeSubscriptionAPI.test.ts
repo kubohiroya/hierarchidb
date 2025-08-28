@@ -252,7 +252,7 @@ describe('TreeSubscriptionAPI', () => {
         { includeTypes: ['document'] }
       );
       
-      // Update folder (should not trigger)
+      // Update folder-plugin (should not trigger)
       const folder = await coreDB.nodes.get('node1' as NodeId);
       if (folder) {
         await coreDB.updateNode({

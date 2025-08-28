@@ -374,7 +374,7 @@ function createTestNode(id: string, parentId: string | null, name: string): Tree
     treeNodeId: id as TreeNodeId,
     parentTreeNodeId: parentId as TreeNodeId,
     name,
-    treeNodeType: 'folder',
+    treeNodeType: 'folder-plugin',
     createdAt: Date.now() as Timestamp,
     updatedAt: Date.now() as Timestamp,
     version: 1

@@ -59,7 +59,7 @@ export interface PeerEntityCore {
 #### 9.3.4.1 エンティティ定義
 
 ```typescript
-// packages/plugins/stylemap/src/types/StyleMapEntity.ts
+// packages/plugins/stylemap-plugin/src/types/StyleMapEntity.ts
 
 // StyleMapのプロパティ定義
 export interface StyleMapProperties {
@@ -87,7 +87,7 @@ export interface TableMetadataEntity extends RelationalEntity {
 #### 9.3.4.2 エンティティハンドラー実装
 
 ```typescript
-// packages/plugins/stylemap/src/handlers/StyleMapEntityHandler.ts
+// packages/plugins/stylemap-plugin/src/handlers/StyleMapEntityHandler.ts
 
 export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, never, StyleMapWorkingCopy> {
   constructor(
@@ -153,7 +153,7 @@ export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, 
 #### 9.3.4.3 RelationalEntityManager実装
 
 ```typescript
-// packages/plugins/stylemap/src/managers/TableMetadataManager.ts
+// packages/plugins/stylemap-plugin/src/managers/TableMetadataManager.ts
 
 export class TableMetadataManager implements RelationalEntityManager<TableMetadataEntity> {
   constructor(private database: StyleMapDatabase) {}
@@ -224,10 +224,10 @@ export class TableMetadataManager implements RelationalEntityManager<TableMetada
 #### 9.3.4.4 ノードタイプ定義登録
 
 ```typescript
-// packages/plugins/stylemap/src/definitions/StyleMapDefinition.ts
+// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
 export const StyleMapDefinition: NodeTypeDefinition<StyleMapEntity, never, StyleMapWorkingCopy> = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',
   icon: 'palette',

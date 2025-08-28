@@ -152,7 +152,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     {
       icon: <PaletteIcon />,
       name: 'Create StyleMap',
-      onClick: () => props.onContextMenuAction('create:stylemap', {} as TreeNodeData),
+      onClick: () => props.onContextMenuAction('create:stylemap-plugin', {} as TreeNodeData),
     },
     {
       icon: <PublicIcon />,

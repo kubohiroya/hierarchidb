@@ -1,4 +1,9 @@
-import { AuthProviderType } from './AuthProviderType';
+/**
+ * @file AuthProviderConfig.ts
+ * @description Type definitions for OAuth provider configuration
+ */
+
+import type { AuthProviderType } from './AuthProviderType';
 
 export interface AuthProviderConfig {
   type: AuthProviderType;

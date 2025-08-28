@@ -34,7 +34,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       {
         nodeType: 'folder' as NodeType,
         displayName: 'Folder',
-        description: 'Basic folder plugin',
+        description: 'Basic folder-plugin plugin',
         menuGroup: 'container',
         createOrder: 1,
         creatable: true,

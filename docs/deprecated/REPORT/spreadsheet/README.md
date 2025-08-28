@@ -147,7 +147,7 @@ Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理プ
 ### 基本的な使用方法
 
 ```typescript
-import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet';
+import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet-plugin';
 
 // プラグインの初期化
 const spreadsheet = new SpreadsheetPlugin({

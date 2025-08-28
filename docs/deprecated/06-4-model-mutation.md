@@ -198,7 +198,7 @@ try {
   await api.moveNodes(command);
 } catch (error) {
   if (error.code === 'E_CIRCULAR_REFERENCE') {
-    showError('Cannot move folder into itself or its subfolders');
+    showError('Cannot move folder-plugin into itself or its subfolders');
   }
 }
 ```

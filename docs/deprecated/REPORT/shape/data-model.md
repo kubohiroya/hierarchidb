@@ -122,7 +122,7 @@ Manages batch processing sessions with multiple related tasks. **Constraint: Eac
 export interface BatchSessionEntity extends GroupEntity {
   // Base GroupEntity properties
   sessionId: string;         // Primary key
-  parentNodeId: TreeNodeId;  // Parent shape node (EXCLUSIVE - only one session per node)
+  parentNodeId: TreeNodeId;  // Parent shape-plugin node (EXCLUSIVE - only one session per node)
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: SessionStatus;
@@ -166,7 +166,7 @@ export interface BatchTaskEntity extends GroupEntity {
   // Base GroupEntity properties
   taskId: string;            // Primary key: "nodeId-taskType-details"
   sessionId: string;         // Parent session reference
-  nodeId: TreeNodeId;        // Associated shape node
+  nodeId: TreeNodeId;        // Associated shape-plugin node
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: TaskStatus;

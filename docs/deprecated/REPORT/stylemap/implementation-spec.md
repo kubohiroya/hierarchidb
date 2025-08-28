@@ -45,7 +45,7 @@ packages/plugins/stylemap/
 ```typescript
 // entities/StyleMapEntity.ts
 import type { NodeId } from '@hierarchidb/core';
-import type { FilterRule } from '@hierarchidb/plugin-spreadsheet';
+import type { FilterRule } from '@hierarchidb/plugin-spreadsheet-plugin';
 
 export interface StyleMapEntity {
   // 識別子
@@ -92,7 +92,7 @@ export interface ColorSchemeConfig {
 
 ```typescript
 // StyleMapPlugin.ts
-import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet';
+import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet-plugin';
 import { ColorMappingEngine } from './services/ColorMappingEngine';
 import { StyleGenerator } from './services/StyleGenerator';
 
@@ -404,9 +404,9 @@ export class StyleGenerator {
       },
       layers: [
         {
-          id: 'stylemap-layer',
+          id: 'stylemap-plugin-layer',
           type: 'fill',
-          source: 'stylemap-source',
+          source: 'stylemap-plugin-source',
           'source-layer': 'default',
           paint: paintStyle
         }

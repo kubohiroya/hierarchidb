@@ -79,7 +79,7 @@ describe('TreeNodeUtils', () => {
 
 ### 実装例
 ```typescript
-// packages/worker/src/__tests__/integration/folder-operations.test.ts
+// packages/worker/src/__tests__/integration/folder-plugin-operations.test.ts
 describe('フォルダ操作の統合テスト', () => {
   let api: WorkerAPIImpl;
   
@@ -92,7 +92,7 @@ describe('フォルダ操作の統合テスト', () => {
   it('フォルダを作成できる', async () => {
     const result = await api.createWorkingCopyForCreate({
       parentNodeId: 'root',
-      nodeType: 'folder',
+      nodeType: 'folder-plugin',
       initialData: { name: 'Test Folder' }
     });
     

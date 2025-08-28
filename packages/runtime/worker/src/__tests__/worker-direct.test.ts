@@ -13,7 +13,7 @@ import { TreeMutationService } from '../services/TreeMutationService';
 import { TreeSubscriptionService } from '../services/TreeSubscriptionService';
 import { CommandProcessor } from '../command/CommandProcessor';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
-import { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
+import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import type { NodeId, Tree, TreeNode } from '@hierarchidb/common-core';
 
 describe('Worker層直接呼び出しテスト', () => {

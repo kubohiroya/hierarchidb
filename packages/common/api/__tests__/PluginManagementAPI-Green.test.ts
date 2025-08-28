@@ -315,7 +315,7 @@ describe('PluginManagementAPI - TDD Green Phase', () => {
   describe('register() - プラグイン登録機能', () => {
     test('🔴 有効なプラグイン定義を登録できる', async () => {
       const pluginDefinition: PluginDefinition = {
-        nodeType: 'custom-folder' as NodeType,
+        nodeType: 'custom-folder-plugin' as NodeType,
         database: {
           entityStore: 'customFolders',
           schema: {
@@ -329,7 +329,7 @@ describe('PluginManagementAPI - TDD Green Phase', () => {
         meta: {
           name: 'Custom Folder Plugin',
           version: '1.0.0',
-          description: 'Custom folder implementation'
+          description: 'Custom folder-plugin implementation'
         }
       };
 
@@ -337,7 +337,7 @@ describe('PluginManagementAPI - TDD Green Phase', () => {
       
       expect(result.success).toBe(true);
       expect(result.pluginId).toBeDefined();
-      expect(result.registeredNodeType).toBe('custom-folder');
+      expect(result.registeredNodeType).toBe('custom-folder-plugin');
     });
 
     test('🔴 重複するnodeTypeの登録で適切なエラーを返す', async () => {

@@ -5,7 +5,7 @@
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
 import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMetadata, NodeLifecycleHooks, TreeNode } from '@hierarchidb/common-core';
-import type { SimpleNodeTypeRegistry } from '../registry/SimpleNodeTypeRegistry';
+import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import type { TreeQueryService } from './TreeQueryService';
 import {
   isNodeTypeRegistered,

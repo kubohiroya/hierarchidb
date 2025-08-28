@@ -277,10 +277,10 @@ export interface NodeTypeDefinition<
 ### 9.4.2 実装例：StyleMapプラグイン
 
 ```typescript
-// packages/plugins/stylemap/src/definitions/StyleMapDefinition.ts
+// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
 
 export const StyleMapDefinition: NodeTypeDefinition = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap-plugin',
   name: 'StyleMap',
   displayName: 'スタイルマップ',
   icon: 'palette',

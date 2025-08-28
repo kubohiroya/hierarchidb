@@ -242,7 +242,7 @@ interface UnifiedNodeData {
 ```typescript
 // packages/ui-core/src/plugins/basic/FolderPlugin.tsx
 export const FolderUIPlugin: UIPluginDefinition = {
-  nodeType: 'folder',
+  nodeType: 'folder-plugin',
   displayName: 'Folder',
   
   dataSource: {
@@ -270,7 +270,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     beforeCreate: async ({ parentId, formData }) => {
       // フォルダ名の重複チェック
       const siblings = await nodeAdapter.getChildren(parentId);
-      if (siblings.some(s => s.name === formData.name && s.type === 'folder')) {
+      if (siblings.some(s => s.name === formData.name && s.type === 'folder-plugin')) {
         return {
           proceed: false,
           message: 'Folder name already exists'

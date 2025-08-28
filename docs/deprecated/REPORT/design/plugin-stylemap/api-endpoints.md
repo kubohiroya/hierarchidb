@@ -99,7 +99,7 @@ interface StyleMapEntity extends PrimaryResourceEntity {
 
 **使用例**:
 ```typescript
-const styleMap = await styleMapAPI.getStyleMap('stylemap-456');
+const styleMap = await styleMapAPI.getStyleMap('stylemap-plugin-456');
 if (styleMap) {
   console.log('StyleMap config:', styleMap.styleMapConfig);
   console.log('Filter rules:', styleMap.filterRules);
@@ -128,7 +128,7 @@ interface UpdateStyleMapRequest {
 
 **使用例**:
 ```typescript
-await styleMapAPI.updateStyleMap('stylemap-456', {
+await styleMapAPI.updateStyleMap('stylemap-plugin-456', {
   name: 'Updated Population Map',
   styleMapConfig: {
     algorithm: 'logarithmic',
@@ -150,7 +150,7 @@ deleteStyleMap(nodeId: TreeNodeId): Promise<void>
 
 **使用例**:
 ```typescript
-await styleMapAPI.deleteStyleMap('stylemap-456');
+await styleMapAPI.deleteStyleMap('stylemap-plugin-456');
 console.log('StyleMap deleted successfully');
 ```
 
@@ -263,7 +263,7 @@ interface StyleMapWorkingCopy extends StyleMapEntity {
 
 **使用例**:
 ```typescript
-const workingCopyResult = await styleMapAPI.createWorkingCopy('stylemap-456');
+const workingCopyResult = await styleMapAPI.createWorkingCopy('stylemap-plugin-456');
 if (workingCopyResult.success) {
   const workingCopyId = workingCopyResult.workingCopyId;
   // 作業コピーで編集開始
@@ -412,7 +412,7 @@ generateMapLibreStyle(styleMapId: TreeNodeId): Promise<Record<string, any>>
 
 **使用例**:
 ```typescript
-const mapLibreStyle = await styleMapAPI.generateMapLibreStyle('stylemap-456');
+const mapLibreStyle = await styleMapAPI.generateMapLibreStyle('stylemap-plugin-456');
 console.log('MapLibre style spec:', mapLibreStyle);
 
 // MapLibre GL JS に適用

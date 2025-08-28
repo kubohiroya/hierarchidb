@@ -11,7 +11,7 @@ import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDyna
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
-import { useWorkerContext } from '~/contexts/WorkerProvider';
+import { useWorkerClient } from '~/contexts/WorkerProvider';
 import {
   TopPageGuidedTour,
   ProjectsGuidedTour,
@@ -65,11 +65,11 @@ const TreeConsoleIntegrationInner: React.FC<
     const checkTrashItems = async () => {
       if (workerClient && treeId) {
         try {
-          const api = workerClient;
-          // Get trash root node and check if it has children
-          const tree = await api.getTree({ treeId: treeId as TreeId });
+          // Use facade APIs instead of deprecated direct methods
+          const queryAPI = await workerClient.getQueryAPI();
+          const tree = await queryAPI.getTree(treeId as TreeId);
           if (tree?.trashRootId) {
-            const trashChildren = await api.getChildren(tree.trashRootId as string);
+            const trashChildren = await queryAPI.listChildren(tree.trashRootId as NodeId);
             setHasTrashItems(trashChildren.length > 0);
           }
         } catch (error) {
@@ -281,24 +281,13 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   });
 
   // Get the Worker API client from WorkerProvider
-  const { client: workerClient, isReady, error } = useWorkerContext();
+  const { client: workerClient, isConnected } = useWorkerClient();
 
-  // Show loading if client is not ready
-  if (!isReady || !workerClient) {
-    console.log('[TreeConsoleIntegration] Worker not ready:', { isReady, workerClient: !!workerClient });
+  // Check connection status
+  if (!isConnected || !workerClient) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100%">
         <CircularProgress />
-      </Box>
-    );
-  }
-  
-  // Show error if initialization failed
-  if (error) {
-    console.error('[TreeConsoleIntegration] Worker error:', error);
-    return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="error">Failed to initialize Worker: {error.message}</Alert>
       </Box>
     );
   }

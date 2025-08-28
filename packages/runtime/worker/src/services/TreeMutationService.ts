@@ -64,6 +64,7 @@ export class TreeMutationService implements TreeMutationAPI {
         parentId: params.parentId,
         nodeType: params.nodeType,
         name: params.name,
+        depth: 0, // Will be calculated by database operations
         createdAt: now,
         updatedAt: now,
         version: 1,
@@ -250,6 +251,7 @@ export class TreeMutationService implements TreeMutationAPI {
       name: 'New Folder',
       nodeType: 'folder',
       status: 'draft',
+      depth: 0, // Will be calculated by database operations
       createdAt: now,
       updatedAt: now,
       changes: {
@@ -318,6 +320,7 @@ export class TreeMutationService implements TreeMutationAPI {
         parentId: workingCopy.parentId,
         nodeType: workingCopy.nodeType || 'folder',
         name: workingCopy.originalName || 'New Folder',
+        depth: 0, // Will be calculated by database operations
         createdAt: now,
         updatedAt: now,
         version: 1,
@@ -591,7 +594,7 @@ export class TreeMutationService implements TreeMutationAPI {
   /**
    * 【機能概要】: ノードをゴミ箱に移動し、復元用の情報を保存する
    * 【実装方針】: isRemovedフラグとremovedAtタイムスタンプを設定して完全なゴミ箱状態を実現
-   * 【テスト対応】: folder-operations.test.tsの isRemoved 期待値を満たすための実装
+   * 【テスト対応】: folder-plugin-operations.test.tsの isRemoved 期待値を満たすための実装
    * 🟢 信頼性レベル: docs/13-trash-operations-analysis.mdの実装方針に完全準拠
    */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
@@ -664,7 +667,7 @@ export class TreeMutationService implements TreeMutationAPI {
   /**
    * 【機能概要】: ゴミ箱からノードを復元し、元の場所または指定された場所に戻す
    * 【実装方針】: isRemovedフラグをfalseに設定し、復元用プロパティをクリアする
-   * 【テスト対応】: folder-operations.test.tsの復元テストでisRemovedがfalseになることを確認
+   * 【テスト対応】: folder-plugin-operations.test.tsの復元テストでisRemovedがfalseになることを確認
    * 🟢 信頼性レベル: docs/13-trash-operations-analysis.mdの復元実装方針に準拠
    */
   async recoverFromTrash(

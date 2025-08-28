@@ -1,0 +1,363 @@
+/**
+ * @file colorUtils.ts
+ * @description Color conversion and manipulation utilities
+ * 【機能概要】: 色変換・操作ユーティリティ関数群
+ * 【実装方針】: HSV/RGB/Hex間の変換、補間計算を提供
+ * 🟢 信頼性レベル: 標準的な色変換アルゴリズム
+ */
+
+import type { ColorCalculationResult, StyleMapConfig } from '../types/styleMapTypes';
+
+/**
+ * 【機能概要】: HSVからRGBへの変換
+ * 【実装方針】: 標準的なHSV→RGB変換アルゴリズム
+ * 🟢 信頼性レベル: 確立されたアルゴリズム
+ * @param h - Hue (0-360)
+ * @param s - Saturation (0-1)
+ * @param v - Value/Brightness (0-1)
+ * @returns [r, g, b] - RGB values (0-255)
+ */
+export function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
+  h = h % 360;
+  if (h < 0) h += 360;
+
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  if (h >= 0 && h < 60) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (h >= 60 && h < 120) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (h >= 120 && h < 180) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (h >= 180 && h < 240) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (h >= 240 && h < 300) {
+    r = x;
+    g = 0;
+    b = c;
+  } else if (h >= 300 && h < 360) {
+    r = c;
+    g = 0;
+    b = x;
+  }
+
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+}
+
+/**
+ * 【機能概要】: RGBからHSVへの変換
+ * 【実装方針】: 標準的なRGB→HSV変換アルゴリズム
+ * 🟢 信頼性レベル: 確立されたアルゴリズム
+ * @param r - Red (0-255)
+ * @param g - Green (0-255)
+ * @param b - Blue (0-255)
+ * @returns [h, s, v] - HSV values
+ */
+export function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const diff = max - min;
+
+  let h = 0;
+  const s = max === 0 ? 0 : diff / max;
+  const v = max;
+
+  if (diff !== 0) {
+    if (max === r) {
+      h = ((g - b) / diff + (g < b ? 6 : 0)) * 60;
+    } else if (max === g) {
+      h = ((b - r) / diff + 2) * 60;
+    } else {
+      h = ((r - g) / diff + 4) * 60;
+    }
+  }
+
+  return [h, s, v];
+}
+
+/**
+ * 【機能概要】: RGB値からHex文字列への変換
+ * 【実装方針】: RGB値を16進数文字列に変換
+ * 🟢 信頼性レベル: 標準的な変換
+ * @param r - Red (0-255)
+ * @param g - Green (0-255)
+ * @param b - Blue (0-255)
+ * @returns Hex color string (e.g., "#ff0000")
+ */
+export function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (n: number) => {
+    const hex = Math.round(Math.max(0, Math.min(255, n))).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * 【機能概要】: Hex文字列からRGB値への変換
+ * 【実装方針】: 16進数文字列をRGB値に変換
+ * 🟢 信頼性レベル: 標準的な変換
+ * @param hex - Hex color string
+ * @returns [r, g, b] - RGB values (0-255)
+ */
+export function hexToRgb(hex: string): [number, number, number] {
+  // Remove # if present
+  hex = hex.replace(/^#/, '');
+
+  // Handle 3-digit hex
+  if (hex.length === 3) {
+    hex = hex
+      .split('')
+      .map((char) => char + char)
+      .join('');
+  }
+
+  const bigint = parseInt(hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+
+  return [r, g, b];
+}
+
+/**
+ * 【機能概要】: 線形補間による色計算
+ * 【実装方針】: 最小値から最大値への線形補間
+ * 🟢 信頼性レベル: 標準的な補間アルゴリズム
+ * @param value - Input value
+ * @param config - StyleMap configuration
+ * @returns Calculated color result
+ */
+export function calculateLinearColor(
+  value: number,
+  config: StyleMapConfig
+): ColorCalculationResult {
+  const { mapping, colorSpace } = config;
+  const { min, max } = mapping;
+
+  // Normalize value to 0-1 range
+  const normalizedValue = max === min ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)));
+
+  if (colorSpace === 'hsv') {
+    const { hueStart, hueEnd, saturation, brightness } = mapping;
+
+    // Interpolate hue
+    let hue = hueStart + (hueEnd - hueStart) * normalizedValue;
+
+    // Handle hue wrapping
+    if (hueEnd < hueStart) {
+      hue = hueStart + (hueEnd + 360 - hueStart) * normalizedValue;
+      if (hue >= 360) hue -= 360;
+    }
+
+    const [r, g, b] = hsvToRgb(hue, saturation, brightness);
+    const color = rgbToHex(r, g, b);
+
+    return {
+      color,
+      opacity: config.opacity,
+      metadata: {
+        hue,
+        saturation,
+        brightness,
+        r,
+        g,
+        b,
+      },
+    };
+  } else if (colorSpace === 'rgb') {
+    // RGB interpolation
+    const startColor = mapping.startColor || '#ff0000';
+    const endColor = mapping.endColor || '#00ff00';
+
+    const [r1, g1, b1] = hexToRgb(startColor);
+    const [r2, g2, b2] = hexToRgb(endColor);
+
+    const r = Math.round(r1 + (r2 - r1) * normalizedValue);
+    const g = Math.round(g1 + (g2 - g1) * normalizedValue);
+    const b = Math.round(b1 + (b2 - b1) * normalizedValue);
+
+    const color = rgbToHex(r, g, b);
+
+    return {
+      color,
+      opacity: config.opacity,
+      metadata: {
+        r,
+        g,
+        b,
+      },
+    };
+  }
+
+  // Fallback to grayscale
+  const gray = Math.round(255 * normalizedValue);
+  return {
+    color: rgbToHex(gray, gray, gray),
+    opacity: config.opacity,
+  };
+}
+
+/**
+ * 【機能概要】: 分位数による色計算
+ * 【実装方針】: データ分布に基づく色割り当て
+ * 🟡 信頼性レベル: 基本実装、拡張予定
+ * @param value - Input value
+ * @param allValues - All values for quantile calculation
+ * @param config - StyleMap configuration
+ * @returns Calculated color result
+ */
+export function calculateQuantileColor(
+  value: number,
+  allValues: number[],
+  config: StyleMapConfig
+): ColorCalculationResult {
+  // Sort values
+  const sorted = [...allValues].sort((a, b) => a - b);
+  const position = sorted.findIndex((v) => v >= value);
+
+  // Calculate quantile (0-1)
+  const quantile = position === -1 ? 1 : position / sorted.length;
+
+  // Use linear interpolation with quantile
+  const mockConfig = {
+    ...config,
+    mapping: {
+      ...config.mapping,
+      min: 0,
+      max: 1,
+    },
+  };
+
+  return calculateLinearColor(quantile, mockConfig);
+}
+
+/**
+ * 【機能概要】: カラースケールのグラデーション生成
+ * 【実装方針】: 複数ポイントの色を生成してグラデーション作成
+ * 🟢 信頼性レベル: UI表示用ユーティリティ
+ * @param config - StyleMap configuration
+ * @param steps - Number of gradient steps
+ * @returns CSS gradient string
+ */
+export function generateColorGradient(config: StyleMapConfig, steps: number = 20): string {
+  const colors: string[] = [];
+  const { min, max } = config.mapping;
+
+  for (let i = 0; i < steps; i++) {
+    const value = min + (max - min) * (i / (steps - 1));
+    const result = calculateLinearColor(value, config);
+    colors.push(result.color);
+  }
+
+  return `linear-gradient(to right, ${colors.join(', ')})`;
+}
+
+/**
+ * 【機能概要】: 値から色への変換（メイン関数）
+ * 【実装方針】: アルゴリズムに応じた色計算
+ * 🟢 信頼性レベル: 複数アルゴリズム対応
+ * @param value - Input value
+ * @param config - StyleMap configuration
+ * @param allValues - All values (for quantile/jenks)
+ * @returns Calculated color result
+ */
+export function valueToColor(
+  value: number | null | undefined,
+  config: StyleMapConfig,
+  allValues?: number[]
+): ColorCalculationResult {
+  // Handle null/undefined values
+  if (value === null || value === undefined) {
+    return {
+      color: '#cccccc',
+      opacity: 0.5,
+    };
+  }
+
+  // Apply algorithm
+  switch (config.algorithm) {
+    case 'linear':
+      return calculateLinearColor(value, config);
+
+    case 'quantile':
+      if (allValues) {
+        return calculateQuantileColor(value, allValues, config);
+      }
+      return calculateLinearColor(value, config);
+
+    case 'jenks':
+    case 'equal':
+      // TODO: Implement Jenks natural breaks and equal interval
+      // For now, fallback to linear
+      return calculateLinearColor(value, config);
+
+    default:
+      return calculateLinearColor(value, config);
+  }
+}
+
+/**
+ * 【機能概要】: 色の明度調整
+ * 【実装方針】: HSV変換による明度調整
+ * 🟢 信頼性レベル: 標準的な実装
+ * @param color - Input color (hex)
+ * @param factor - Brightness factor (0-2, 1 = no change)
+ * @returns Adjusted color (hex)
+ */
+export function adjustBrightness(color: string, factor: number): string {
+  const [r, g, b] = hexToRgb(color);
+  const [h, s, v] = rgbToHsv(r, g, b);
+
+  const newV = Math.max(0, Math.min(1, v * factor));
+  const [newR, newG, newB] = hsvToRgb(h, s, newV);
+
+  return rgbToHex(newR, newG, newB);
+}
+
+/**
+ * 【機能概要】: コントラスト比の計算
+ * 【実装方針】: WCAG準拠のコントラスト比計算
+ * 🟢 信頼性レベル: アクセシビリティ標準準拠
+ * @param color1 - First color (hex)
+ * @param color2 - Second color (hex)
+ * @returns Contrast ratio
+ */
+export function getContrastRatio(color1: string, color2: string): number {
+  const getLuminance = (r: number, g: number, b: number): number => {
+    const [rs, gs, bs] = [r, g, b].map((c): number => {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rs! + 0.7152 * gs! + 0.0722 * bs!;
+  };
+
+  const [r1, g1, b1] = hexToRgb(color1);
+  const [r2, g2, b2] = hexToRgb(color2);
+
+  const l1 = getLuminance(r1, g1, b1);
+  const l2 = getLuminance(r2, g2, b2);
+
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+
+  return (lighter + 0.05) / (darker + 0.05);
+}
