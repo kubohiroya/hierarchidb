@@ -1,17 +1,17 @@
 /**
+import type { NodeId } from '@hierarchidb/common-type';
  * @file PluginAPI.test.ts
  * @description Test suite for PluginAPI extension system
  */
 
 import { describe, expect, it, beforeEach } from 'vitest';
-import { PluginAPIRegistry } from '@hierarchidb/common-api';
-import type { NodeId } from '@hierarchidb/common-core';
+import { PluginExtensionRegistry } from '@hierarchidb/common-api';
 
-describe('PluginAPI', () => {
-  let registry: PluginAPIRegistry;
+describe('PluginExtensionAPI', () => {
+  let registry: PluginExtensionRegistry;
 
   beforeEach(() => {
-    registry = new PluginAPIRegistry();
+    registry = new PluginExtensionRegistry();
   });
 
   describe('registration', () => {

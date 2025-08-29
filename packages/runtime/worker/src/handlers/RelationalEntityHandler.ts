@@ -1,10 +1,10 @@
 /**
+import type { RelationalEntity, NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
  * @file RelationalEntityHandler.ts
  * @description Specialized handler for RelationalEntity (N:N relationship)
  * Based on 3-classification entity system
  */
 
-import type { RelationalEntity, NodeId, EntityId, PeerEntity } from '@hierarchidb/common-core';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**

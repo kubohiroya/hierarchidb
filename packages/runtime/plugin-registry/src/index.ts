@@ -6,7 +6,6 @@
 // Export plugin discovery
 export { SimplePluginDiscovery } from './discovery/SimplePluginDiscovery';
 
-
 // Export registries
 export { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';
 export { UnifiedNodeTypeRegistry } from './registry/UnifiedNodeTypeRegistry';
@@ -17,6 +16,15 @@ export type {
   PluginRegistryConfig,
   PluginDiscoveryOptions
 } from './types';
+
+// Export plugin types
+export type { 
+  WorkingCopyProperties,
+  PluginDefinition,
+  EntityHandler,
+  PeerEntity,
+  GroupEntity 
+} from './registry/plugin';
 
 // Export API functions
 export {

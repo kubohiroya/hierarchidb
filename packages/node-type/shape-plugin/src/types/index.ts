@@ -1,4 +1,8 @@
-import type { NodeId, PeerEntity, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, PeerEntity, EntityId, TagId } from '@hierarchidb/common-type';
+
+// Category types
+export type { ShapeCategory } from './category-types';
+export { SHAPE_CATEGORIES, DEFAULT_SHAPE_CATEGORY, getCategoryOption, getCategoryLabel, getCategoryColor } from './category-types';
 import type { Geometry, BBox } from 'geojson';
 
 // Types are imported from shared/types.ts via shared/openstreetmap-type.ts
@@ -11,6 +15,8 @@ export interface ShapeEntity extends PeerEntity {
   // Basic Information (Step 1)
   name: string;
   description?: string;
+  tags: TagId[];
+  category: ShapeCategory;
 
   // Data Source (Step 2)
   dataSourceName: DataSourceName;
@@ -374,10 +380,12 @@ export interface CacheStatistics {
 // ================================
 
 export interface ProgressInfo {
+  sessionId?: string;
+  stage?: BatchStage;
   total: number;
   completed: number;
   failed: number;
-  skipped: number;
+  skipped?: number;
   percentage: number;
   currentStage?: string;
   currentTask?: string;

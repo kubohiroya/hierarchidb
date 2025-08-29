@@ -1,7 +1,8 @@
 /**
  * @file NodeDefinitionRegistry.ts
- * @description Registry for PluginDefinition (AOP-based node definitions)
- * This is the refactored version of the original NodeTypeRegistry in core
+ * @deprecated This file has been moved to the worker package.
+ * Import from @hierarchidb/runtime-worker instead.
+ * @see @hierarchidb/runtime-worker/src/registry/NodeDefinitionRegistry.ts
  */
 
 import { NodeType, WorkingCopyProperties } from '@hierarchidb/common-type';
@@ -15,7 +16,7 @@ import type {
 } from '@hierarchidb/common-type';
 
 import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
-import type { INodeDefinitionRegistry } from './INodeTypeRegistry';
+import type { INodeDefinitionRegistry } from '@hierarchidb/common-type';
 
 /**
  * Registry for managing PluginDefinition instances

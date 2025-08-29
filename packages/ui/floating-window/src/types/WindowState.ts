@@ -1,0 +1,45 @@
+/**
+ * @file WindowState.ts
+ * @description Window state types for floating window
+ */
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface WindowState {
+  position: Position;
+  size: Size;
+  isMinimized: boolean;
+  isVisible: boolean;
+  zIndex?: number;
+}
+
+export interface WindowConstraints {
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
+export interface FloatingWindowProps {
+  title: string;
+  children: React.ReactNode;
+  initialState?: Partial<WindowState>;
+  onStateChange?: (state: WindowState) => void;
+  onClose?: () => void;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  resizable?: boolean;
+  draggable?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}

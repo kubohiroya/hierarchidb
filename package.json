@@ -40,7 +40,8 @@
     "fix:exports": "node scripts/fix-all-package-exports.cjs",
     "count:lines": "node scripts/count-lines.js",
     "analyze:ui": "node scripts/analyze-ui-duplication.js",
-    "check:sabotage": "tsx scripts/check-sabotage.ts"
+    "check:sabotage": "tsx scripts/check-sabotage.ts",
+    "vibe-kanban": "npx vibe-kanban"
   },
   "dependencies": {
     "react": "^18.3.1",

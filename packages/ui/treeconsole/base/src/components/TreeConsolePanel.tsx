@@ -16,7 +16,7 @@ import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 //import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
+// import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
 import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 import type { TreeNodeData } from '../types/index';
@@ -26,7 +26,7 @@ export interface TreeConsolePanelProps {
   readonly rootNodeId?: string;
   readonly data: readonly TreeNodeData[];
   readonly columns: readonly TreeTableColumn[];
-  readonly breadcrumbItems: readonly BreadcrumbNode[];
+  readonly breadcrumbItems: readonly any[];
   readonly loading?: boolean;
   readonly error?: string;
   readonly selectedIds: readonly string[];
@@ -57,7 +57,7 @@ export interface TreeConsolePanelProps {
   readonly onSort: (columnId: string) => void;
   readonly onFilterChange: (filter: string) => void;
   readonly onViewModeChange: (mode: 'list' | 'grid') => void;
-  readonly onBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => void;
+  readonly onBreadcrumbNavigate: (nodeId: string, node?: any) => void;
   readonly onNavigateBack?: () => void;
   readonly onNavigateForward?: () => void;
   readonly canGoBack?: boolean;
@@ -79,6 +79,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       ...node,
       nodeType: node.nodeType || 'folder',
       type: node.nodeType,
+      name: node.name || '',
       hasChildren: node.hasChildren || false,
     })) as TreeNodeInUI[];
 
@@ -96,7 +97,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       expandedRowIds,
       onNodeClick: (_nodeId: string, node?: TreeNodeInUI) => {
         if (node && props.onNodeClick) {
-          props.onNodeClick(node as TreeNodeData);
+          // Cast TreeNodeInUI to TreeNodeData for callback
+          // TreeNodeInUI is compatible with TreeNodeData
+          const nodeData: TreeNodeData = {
+            ...node,
+            type: node.type || node.nodeType,
+          };
+          props.onNodeClick(nodeData);
         }
       },
       onNodeSelect: (nodeIds: string[], selected: boolean) => {
@@ -238,7 +245,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           rowClickAction="Select"
           selectionMode="multiple"
           onRowContextMenu={(node: TreeNodeInUI, event: React.MouseEvent) => {
-            handleContextMenu(event as React.MouseEvent, node as TreeNodeData);
+            // Cast TreeNodeInUI to TreeNodeData for callback  
+            const nodeData: TreeNodeData = {
+              ...node,
+              type: node.type || node.nodeType,
+            };
+            handleContextMenu(event as React.MouseEvent, nodeData);
           }}
         />
       </Box>

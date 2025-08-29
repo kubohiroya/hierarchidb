@@ -1,11 +1,10 @@
 /**
+import type { NodeId, NodeType, EntityMetadata } from '@hierarchidb/common-type';
  * @file AutoLifecycleManager.test.ts
  * @description Tests for AutoLifecycleManager
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, NodeType } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import 'fake-indexeddb/auto';
 import { AutoLifecycleManager } from './AutoLifecycleManager';

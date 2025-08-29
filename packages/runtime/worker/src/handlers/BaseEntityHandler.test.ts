@@ -1,15 +1,10 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { PeerEntity, GroupEntity, WorkingCopyProperties, NodeId, EntityId } from '@hierarchidb/common-type';
  * @file BaseEntityHandler.test.ts
  * @description Unit tests for BaseEntityHandler abstract class
  */
 
-import type {
-  PeerEntity,
-  GroupEntity,
-  WorkingCopyProperties,
-  NodeId,
-  EntityId,
-} from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

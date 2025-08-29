@@ -1,10 +1,10 @@
-import type { NodeTypeDefinition, NodeId } from '@hierarchidb/common-type';
+import type { NodeTypeDefinition, NodeId, NodeType } from '@hierarchidb/common-type';
 import type { FolderEntity, FolderEntityWorkingCopy } from '../types/index';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import { FolderValidation } from '../shared/metadata';
 
 export const FolderDefinition: NodeTypeDefinition<FolderEntity, never, FolderEntityWorkingCopy> = {
-  nodeType: 'folder',
+  nodeType: 'folder' as NodeType,
   name: 'folder',
   displayName: 'Folder',
   icon: 'folder',

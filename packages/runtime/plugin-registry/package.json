@@ -27,7 +27,8 @@
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-core": "workspace:*",
-    "dexie": "^4.2.0"
+    "dexie": "^4.2.0",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

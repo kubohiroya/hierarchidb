@@ -1,0 +1,37 @@
+{
+  "name": "@hierarchidb/util",
+  "version": "1.0.0",
+  "description": "General purpose utility functions for HierarchiDB",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [
+    "hierarchidb",
+    "utilities",
+    "helpers"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.1.0",
+    "tsup": "^8.1.2",
+    "typescript": "^5.5.3",
+    "vitest": "^1.6.1"
+  }
+}

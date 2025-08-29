@@ -13,7 +13,7 @@ const notify = {
 };
 
 // import { devError } from "@/shared/utils/logger";
-const devError = (msg: string, error?: any) => console.error(msg, error);
+// const devError = (msg: string, error?: any) => console.error(msg, error);
 import { AuthContextType } from '../types/AuthContextType';
 import { AuthUser } from '../types/AuthUser';
 
@@ -67,7 +67,11 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
   // Handle authentication errors
   useEffect(() => {
     if (auth.error) {
-      devError(`OIDC Authentication error:${auth.error}`);
+      if (import.meta.env.DEV) {
+
+        console.error(`OIDC Authentication error:${auth.error}`);
+
+      }
       notify.error('Authentication failed. Please try again.');
     }
   }, [auth.error]);
@@ -95,7 +99,11 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
     try {
       await auth.signoutRedirect();
     } catch (error) {
-      devError(`Logout error: ${error}`);
+      if (import.meta.env.DEV) {
+
+        console.error(`Logout error: ${error}`);
+
+      }
       // Fallback: redirect to home page
       window.location.href = fallbackPath;
     }
@@ -180,7 +188,11 @@ export function OIDCAuthProvider({ fallbackPath, children }: OIDCAuthProviderPro
   };
 
   if (!secureConfig.oidcClientId) {
-    devError('Google Client ID is not configured');
+    if (import.meta.env.DEV) {
+
+      console.error('Google Client ID is not configured');
+
+    }
     // Return a placeholder theme when clientId is missing
     return (
       <OIDCAuthContext.Provider

@@ -482,7 +482,9 @@ export class PluginRegistry implements IPluginRegistry {
       pluginInfo.executionCount++;
       pluginInfo.lastExecuted = Date.now();
       
-      const result = (hook as any)(...args);
+      // Type-safe hook execution with spread operator
+      const hookFunction = hook as (...params: unknown[]) => unknown;
+      const result = hookFunction(...args);
       
       this.debug(`Hook ${hookName} executed successfully in plugin ${pluginInfo.plugin.name}`);
       return result;

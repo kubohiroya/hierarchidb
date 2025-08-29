@@ -1,10 +1,6 @@
-import {
-  generateEntityId,
-  type NodeId,
-  type EntityId,
-  type PeerEntity,
-  type WorkingCopyProperties,
-} from '@hierarchidb/common-core';
+import {  } from '@hierarchidb/common-core';
+import { generateEntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-type';
 import { WorkerErrorCode } from '../command/types';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';

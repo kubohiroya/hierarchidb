@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Tooltip, Paper, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { formatBytes } from '@hierarchidb/common-core';
-import { devWarn } from '@hierarchidb/common-core';
+import { formatBytes } from '@hierarchidb/util';
 
 interface MemoryUsageChartProps {
   /** 幅 (例: '300px', '100%') */
@@ -114,7 +113,11 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         return newPoints;
       });
     } catch (error) {
-      devWarn('Memory measurement failed:', String(error));
+      if (import.meta.env.DEV) {
+
+        console.warn('Memory measurement failed:', String(error));
+
+      }
     }
   }, [maxMemory, maxDataPoints]);
 

@@ -3,7 +3,8 @@
  * @description Automatic entity handler that uses lifecycle management for CRUD operations
  */
 
-import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-core';
+import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-type';
+
 import type Dexie from 'dexie';
 import { AutoLifecycleManager } from '../services/AutoLifecycleManager';
 import { WorkingCopySession } from '../services/WorkingCopyManager';

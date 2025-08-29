@@ -3,9 +3,12 @@
  * @description Worker API methods for plugin registry access
  */
 
+import type { TreeId, NodeType } from '@hierarchidb/common-type';
 import { UnifiedNodeTypeRegistry } from '../registry/UnifiedNodeTypeRegistry';
-import type { PluginDefinition } from '@hierarchidb/common-core';
-import type { TreeId } from '@hierarchidb/common-core';
+
+// TODO: Import PluginDefinition from worker package when available
+// For now, use 'any' as a temporary workaround
+type PluginDefinition = any;
 
 /**
  * Get all registered plugins from the registry
@@ -34,7 +37,7 @@ export async function getPluginDefinition(
   nodeType: string
 ): Promise<PluginDefinition | null> {
   const registry = UnifiedNodeTypeRegistry.getInstance();
-  return (registry.get(nodeType) as PluginDefinition) || null;
+  return (registry.get(nodeType as NodeType) as PluginDefinition) || null;
 }
 
 /**
@@ -42,7 +45,7 @@ export async function getPluginDefinition(
  */
 export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
   const registry = UnifiedNodeTypeRegistry.getInstance();
-  return registry.has(nodeType);
+  return registry.has(nodeType as NodeType);
 }
 
 /**

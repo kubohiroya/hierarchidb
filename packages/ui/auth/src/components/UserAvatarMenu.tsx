@@ -17,7 +17,7 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { devError } from '@hierarchidb/common-core';
+
 import { DropdownMenu } from '@hierarchidb/ui-core';
 import { DeleteForever } from '@mui/icons-material';
 // Working copy cleanup removed - functionality was deprecated
@@ -65,7 +65,11 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch (error) {
-      devError('Failed to clear cache:', error);
+      if (import.meta.env.DEV) {
+
+        console.error('Failed to clear cache:', error);
+
+      }
       alert('Failed to clear some cache data. Please try again.');
     }
   };

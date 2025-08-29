@@ -1,21 +1,53 @@
 /**
  * Shape API hook - PluginRegistryAPIを使用してプラグインAPIにアクセス
- * NOTE: This hook should be provided by the host application context
- * or replaced with a proper plugin API pattern
+ * アプリケーションコンテキスト経由でWorkerAPIClientにアクセスし、
+ * PluginRegistryAPIからShapeプラグインのAPI拡張を取得
  */
 
 import { useMemo } from 'react';
 import type { ShapeAPI } from '../../shared';
 
+// WorkerAPIClientへの条件付きインポート（アプリケーション実行時のみ利用可能）
+let useWorkerAPIClientHook: (() => any) | null = null;
+
+try {
+  // アプリケーション実行時にのみ利用可能
+  const { useWorkerAPIClient } = require('@hierarchidb/app/src/hooks/useWorkerAPIClient');
+  useWorkerAPIClientHook = useWorkerAPIClient;
+} catch (error) {
+  // テストやスタンドアロン環境では利用できない
+  console.debug('WorkerAPIClient hook not available, falling back to error mode');
+}
+
 /**
  * Shape APIにアクセスするためのhook
- * 既存のPluginRegistryAPIシステムを使用
+ * WorkerAPIClient経由でPluginRegistryAPIからShapeプラグインのAPI拡張を取得
  */
 export function useShapeAPI(): Promise<ShapeAPI> {
-  // TODO: This should be provided by the application context
-  // For now, returning a mock implementation
   return useMemo(async () => {
-    throw new Error('useShapeAPI requires application context - not yet implemented');
+    if (!useWorkerAPIClientHook) {
+      throw new Error('useShapeAPI requires application context - WorkerAPIClient not available');
+    }
+
+    const client = useWorkerAPIClientHook();
+    if (!client) {
+      throw new Error('WorkerAPIClient not initialized');
+    }
+
+    try {
+      const workerAPI = client.getAPI();
+      const pluginRegistry = await workerAPI.getPluginRegistryAPI();
+      const shapeAPI = await pluginRegistry.getExtension('shape');
+      
+      if (!shapeAPI) {
+        throw new Error('Shape plugin API extension not found');
+      }
+
+      return shapeAPI as ShapeAPI;
+    } catch (error) {
+      console.error('Failed to get Shape API:', error);
+      throw new Error(`Shape API initialization failed: ${error}`);
+    }
   }, []);
 }
 
@@ -24,10 +56,31 @@ export function useShapeAPI(): Promise<ShapeAPI> {
  * Use this when you need the API in event handlers or effects
  */
 export function useShapeAPIGetter(): () => Promise<ShapeAPI> {
-  // TODO: This should be provided by the application context
   return useMemo(() => {
     return async (): Promise<ShapeAPI> => {
-      throw new Error('useShapeAPIGetter requires application context - not yet implemented');
+      if (!useWorkerAPIClientHook) {
+        throw new Error('useShapeAPIGetter requires application context - WorkerAPIClient not available');
+      }
+
+      const client = useWorkerAPIClientHook();
+      if (!client) {
+        throw new Error('WorkerAPIClient not initialized');
+      }
+
+      try {
+        const workerAPI = client.getAPI();
+        const pluginRegistry = await workerAPI.getPluginRegistryAPI();
+        const shapeAPI = await pluginRegistry.getExtension('shape');
+        
+        if (!shapeAPI) {
+          throw new Error('Shape plugin API extension not found');
+        }
+
+        return shapeAPI as ShapeAPI;
+      } catch (error) {
+        console.error('Failed to get Shape API:', error);
+        throw new Error(`Shape API initialization failed: ${error}`);
+      }
     };
   }, []);
 }

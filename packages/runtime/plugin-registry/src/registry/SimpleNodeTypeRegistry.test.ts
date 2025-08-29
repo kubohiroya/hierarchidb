@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SimpleNodeTypeRegistry } from './SimpleNodeTypeRegistry';
 

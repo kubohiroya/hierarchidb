@@ -11,7 +11,8 @@ import type {
   EntityId,
   PeerEntity,
   GroupEntity,
-  Timestamp
+  Timestamp,
+  TagId
 } from '@hierarchidb/common-type';
 
 /**
@@ -25,6 +26,8 @@ export interface FolderEntity extends PeerEntity {
   // フォルダ基本情報
   name: string;
   description?: string;
+  tags: TagId[]; // タグ機能追加
+  category?: string; // カテゴリ追加
   
   // Simplified settings for compatibility with existing code
   settings?: FolderSettings;
@@ -38,9 +41,6 @@ export interface FolderEntity extends PeerEntity {
     lastAccessedAt?: Timestamp;
     accessCount?: number;
   };
-  
-  // メタデータ (for compatibility with shared code)
-  tags?: string[];
   
   // タイムスタンプ（PeerEntityから継承）
   createdAt: Timestamp;
@@ -106,6 +106,10 @@ export interface FolderBookmark extends GroupEntity {
   // 並び順
   sortOrder?: number;
   
+  // テスト互換性のための追加フィールド
+  type: string;
+  version: number;
+  
   // タイムスタンプ（GroupEntityから継承）
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -138,6 +142,10 @@ export interface FolderTemplate extends GroupEntity {
   // カテゴリと並び順
   category?: string;
   sortOrder?: number;
+  
+  // テスト互換性のための追加フィールド
+  type: string;
+  version: number;
   
   // タイムスタンプ（GroupEntityから継承）
   createdAt: Timestamp;

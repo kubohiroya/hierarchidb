@@ -9,9 +9,6 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
 
-// Re-export core types for convenience
-export type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-type';
-
 /**
  * 選択モード定義（既存コードから移植）
  */
@@ -274,15 +271,19 @@ export interface TreeViewController {
 export type { SpeedDialActionType as SpeedDialAction };
 
 // TreeNodeData - UI用のノードデータ型
+// TreeNodeInUIと互換性を持たせるため、プロパティを調整
 export interface TreeNodeData extends TreeNode {
-  id: NodeId;
-  nodeType: NodeType;
+  // TreeNode already has these properties:
+  // id: NodeId;
+  // nodeType: NodeType;
+  // name: string;
+  // depth: number;
+  
   children?: TreeNodeData[];
-  // UI specific properties
-  depth: number;
+  // UI specific properties  
   hasChildren?: boolean;
   deletedAt?: string | number;
-  type?: NodeType; // backward compatibility
+  type?: string; // backward compatibility - UI uses string
 }
 
 // 追加のUI状態型

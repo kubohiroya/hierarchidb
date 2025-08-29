@@ -1,4 +1,5 @@
-import { formatBytes } from '@hierarchidb/common-core';
+import { formatBytes } from '@hierarchidb/util';
+
 import type { MemoryData } from '../hooks/useMemoryData';
 
 /**

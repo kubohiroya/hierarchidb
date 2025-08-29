@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // import { convertCorsProxyURL } from "@/domains/resources/_shapes_buggy/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
-import { devLog, validateExternalURL } from '@hierarchidb/common-core';
+import { validateExternalURL } from '@hierarchidb/util';
+
 import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 
 interface UseUrlDownloadProps {
@@ -190,7 +191,7 @@ export function useUrlDownload({
       const finalFile = file;
       /*
       if (downloadInfo?.deduplicationInfo?.wasDeduped) {
-        devLog(
+        console.log(
           `✓ Content deduplication saved ${downloadInfo.deduplicationInfo.savedBytes} bytes`,
         );
       }
@@ -209,7 +210,11 @@ export function useUrlDownload({
       if (errorMessage.includes('Authentication') || errorMessage.includes('401')) {
         // Try to refresh token once before giving up
         if (retryCountRef.current === 0) {
-          devLog('Received auth error, attempting token refresh...');
+          if (import.meta.env.DEV) {
+
+            console.log('Received auth error, attempting token refresh...');
+
+          }
           retryCountRef.current++;
 
           try {
@@ -230,7 +235,11 @@ export function useUrlDownload({
               }
             }
           } catch (refreshError) {
-            devLog('Token refresh failed:', String(refreshError));
+            if (import.meta.env.DEV) {
+
+              console.log('Token refresh failed:', String(refreshError));
+
+            }
           }
         }
 

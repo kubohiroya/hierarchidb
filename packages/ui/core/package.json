@@ -14,8 +14,10 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/common-core": "workspace:*",
-    "react-gravatar": "^2.6.3"
+    
+    "react-gravatar": "^2.6.3",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,10 +1,9 @@
 /**
+import type { NodeId, NodeType, EntityMetadata } from '@hierarchidb/common-type';
  * @file AutoLifecycleManager.ts
  * @description Automatic lifecycle management for entities based on TreeNode operations
  */
 
-import type { NodeId, NodeType } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import type Dexie from 'dexie';
 import { EntityRegistrationService } from './EntityRegistrationService';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';

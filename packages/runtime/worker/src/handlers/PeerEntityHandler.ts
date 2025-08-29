@@ -1,10 +1,10 @@
 /**
+import type { PeerEntity, NodeId } from '@hierarchidb/common-type';
  * @file PeerEntityHandler.ts
  * @description Specialized handler for PeerEntity (1:1 relationship)
  * Based on 3-classification entity system
  */
 
-import type { PeerEntity, NodeId } from '@hierarchidb/common-core';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**

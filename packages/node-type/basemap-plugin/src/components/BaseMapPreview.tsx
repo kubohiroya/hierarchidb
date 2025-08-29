@@ -351,7 +351,6 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
           </>
         )}
 
-
       </Box>
     </Paper>
   );

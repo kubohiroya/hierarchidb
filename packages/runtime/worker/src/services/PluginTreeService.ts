@@ -5,6 +5,7 @@
 
 import type {
   PluginTreeAPI,
+  TreePluginAnalyzer,
   GetPluginsForTreeRequest,
   GetPluginsForTreeResponse,
   TreePluginInfo,
@@ -16,7 +17,7 @@ import type {
   GraphOptions,
   MetricOptions,
 } from '@hierarchidb/common-api';
-import type { TreeId, NodeType, NodeId, NodeCapability } from '@hierarchidb/common-core';
+import type { TreeId, NodeType, NodeId, NodeCapability } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { TreeQueryService } from './TreeQueryService';
 import {
@@ -30,7 +31,7 @@ import {
 /**
  * Service implementation for tree-specific plugin operations
  */
-export class PluginTreeService implements PluginTreeAPI {
+export class PluginTreeService implements PluginTreeAPI, TreePluginAnalyzer {
   constructor(
     private coreDB: CoreDB,
     private queryService: TreeQueryService
@@ -46,8 +47,8 @@ export class PluginTreeService implements PluginTreeAPI {
           plugins: [],
           error: {
             code: 'TREE_NOT_FOUND',
-            message: `Tree ${request.treeId} not found`
-          }
+            message: `Tree ${request.treeId} not found`,
+          },
         };
       }
 
@@ -67,7 +68,7 @@ export class PluginTreeService implements PluginTreeAPI {
           const searchResult = await this.queryService.searchNodes({
             rootNodeId: tree.rootId,
             query: '', // Empty query to get all nodes
-            maxResults: 1000 // Large limit to get approximate count
+            maxResults: 1000, // Large limit to get approximate count
           });
           nodeCount = searchResult?.length || 0;
         }
@@ -85,8 +86,8 @@ export class PluginTreeService implements PluginTreeAPI {
           meta: {
             name: plugin.name || plugin.nodeType,
             version: '1.0.0', // Default version as plugin definition doesn't include version
-            category: definition.category?.menuGroup
-          }
+            category: definition.category?.menuGroup,
+          },
         };
 
         plugins.push(pluginInfo);
@@ -96,18 +97,18 @@ export class PluginTreeService implements PluginTreeAPI {
       let filteredPlugins = plugins;
       if (request.filters) {
         if (request.filters.nodeTypes) {
-          filteredPlugins = filteredPlugins.filter(p => 
+          filteredPlugins = filteredPlugins.filter((p) =>
             request.filters!.nodeTypes!.includes(p.nodeType)
           );
         }
         if (request.filters.categories) {
-          filteredPlugins = filteredPlugins.filter(p => 
+          filteredPlugins = filteredPlugins.filter((p) =>
             request.filters!.categories!.includes(p.menuGroup)
           );
         }
         if (request.filters.capabilities) {
-          filteredPlugins = filteredPlugins.filter(p => 
-            request.filters!.capabilities!.every(cap => p.capabilities.includes(cap))
+          filteredPlugins = filteredPlugins.filter((p) =>
+            request.filters!.capabilities!.every((cap) => p.capabilities.includes(cap))
           );
         }
       }
@@ -132,9 +133,8 @@ export class PluginTreeService implements PluginTreeAPI {
       return {
         success: true,
         treeId: request.treeId,
-        plugins: filteredPlugins
+        plugins: filteredPlugins,
       };
-
     } catch (error) {
       return {
         success: false,
@@ -142,13 +142,17 @@ export class PluginTreeService implements PluginTreeAPI {
         plugins: [],
         error: {
           code: 'INTERNAL_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        }
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
     }
   }
 
-  async getPluginUsageStats(treeId: TreeId, nodeType: NodeType, period?: { from: number; to: number }): Promise<PluginUsageStats> {
+  async getPluginUsageStats(
+    treeId: TreeId,
+    nodeType: NodeType,
+    period?: { from: number; to: number }
+  ): Promise<PluginUsageStats> {
     // Get tree and use searchNodes as substitute for countNodesByType
     const tree = await this.queryService.getTree(treeId);
     let totalNodes = 0;
@@ -156,7 +160,7 @@ export class PluginTreeService implements PluginTreeAPI {
       const searchResult = await this.queryService.searchNodes({
         rootNodeId: tree.rootId,
         query: '', // Empty query to get all nodes
-        maxResults: 10000 // Large limit for stats
+        maxResults: 10000, // Large limit for stats
       });
       totalNodes = searchResult?.length || 0;
     }
@@ -164,11 +168,11 @@ export class PluginTreeService implements PluginTreeAPI {
     const lastUsed = Date.now();
 
     const operationStats = this.generateOperationStats(totalNodes, activeNodes, lastUsed);
-    
+
     let filteredOperationStats = operationStats;
     if (period) {
-      filteredOperationStats = operationStats.filter(stat => 
-        stat.timestamp >= period.from && stat.timestamp <= period.to
+      filteredOperationStats = operationStats.filter(
+        (stat) => stat.timestamp >= period.from && stat.timestamp <= period.to
       );
     }
 
@@ -179,19 +183,22 @@ export class PluginTreeService implements PluginTreeAPI {
       activeNodes,
       lastUsed,
       period,
-      operationStats: filteredOperationStats
+      operationStats: filteredOperationStats,
     };
   }
 
-  async getPluginCompatibility(treeId: TreeId, nodeTypes: NodeType[]): Promise<CompatibilityResult> {
+  async getPluginCompatibility(
+    treeId: TreeId,
+    nodeTypes: NodeType[]
+  ): Promise<CompatibilityResult> {
     const conflicts: CompatibilityResult['conflicts'] = [];
     const warnings: string[] = [];
     const suggestions: string[] = [];
 
     const pluginDefinitions = await Promise.all(
-      nodeTypes.map(async nodeType => ({
+      nodeTypes.map(async (nodeType) => ({
         nodeType,
-        definition: await getPluginDefinition(nodeType)
+        definition: await getPluginDefinition(nodeType),
       }))
     );
 
@@ -215,7 +222,7 @@ export class PluginTreeService implements PluginTreeAPI {
               nodeType1: types[i],
               nodeType2: types[j],
               severity: 'error',
-              description: `Both plugins use the same entity store: ${storeName}`
+              description: `Both plugins use the same entity store: ${storeName}`,
             });
           }
         }
@@ -223,10 +230,10 @@ export class PluginTreeService implements PluginTreeAPI {
     }
 
     return {
-      compatible: conflicts.filter(c => c.severity === 'error').length === 0,
+      compatible: conflicts.filter((c) => c.severity === 'error').length === 0,
       conflicts,
       warnings,
-      suggestions: suggestions.length > 0 ? suggestions : undefined
+      suggestions: suggestions.length > 0 ? suggestions : undefined,
     };
   }
 
@@ -238,9 +245,9 @@ export class PluginTreeService implements PluginTreeAPI {
 
     const recommendations: OptimizationResult['recommendations'] = [];
     const allPlugins = await getRegisteredPlugins();
-    
+
     const usageAnalysis = await Promise.all(
-      allPlugins.map(async plugin => {
+      allPlugins.map(async (plugin) => {
         try {
           const stats = await this.getPluginUsageStats(treeId, plugin.nodeType);
           return { plugin, stats };
@@ -251,8 +258,8 @@ export class PluginTreeService implements PluginTreeAPI {
     );
 
     // Detect unused plugins
-    const unusedPlugins = usageAnalysis.filter(({ stats }) => 
-      stats && stats.totalNodes === 0 && stats.lastUsed === 0
+    const unusedPlugins = usageAnalysis.filter(
+      ({ stats }) => stats && stats.totalNodes === 0 && stats.lastUsed === 0
     );
 
     for (const { plugin } of unusedPlugins) {
@@ -260,25 +267,23 @@ export class PluginTreeService implements PluginTreeAPI {
         type: 'disable',
         nodeType: plugin.nodeType,
         reason: `Plugin ${plugin.displayName || plugin.nodeType} is not being used`,
-        priority: 7
+        priority: 7,
       });
     }
 
     const currentPerformance = {
-      score: Math.max(0.1, Math.min(1.0, 
-        1.0 - (unusedPlugins.length * 0.1)
-      ))
+      score: Math.max(0.1, Math.min(1.0, 1.0 - unusedPlugins.length * 0.1)),
     };
 
     const expectedImprovement = {
-      performanceGain: Math.min(0.3, unusedPlugins.length * 0.05)
+      performanceGain: Math.min(0.3, unusedPlugins.length * 0.05),
     };
 
     return {
       treeId,
       recommendations,
       currentPerformance,
-      expectedImprovement
+      expectedImprovement,
     };
   }
 
@@ -296,7 +301,7 @@ export class PluginTreeService implements PluginTreeAPI {
       nodes.push({
         nodeType: plugin.nodeType,
         label: plugin.displayName || plugin.nodeType,
-        metrics: {} // Add empty metrics object as expected by the interface
+        metrics: {}, // Add empty metrics object as expected by the interface
       });
     }
 
@@ -306,16 +311,20 @@ export class PluginTreeService implements PluginTreeAPI {
       edges,
       metadata: {
         totalPlugins: nodes.length,
-        hasCycles: false
+        hasCycles: false,
       },
-      layout: options?.layout || 'hierarchical'
+      layout: options?.layout || 'hierarchical',
     };
   }
 
-  async getPluginMetrics(treeId: TreeId, nodeType: NodeType, options?: MetricOptions): Promise<PluginMetrics> {
+  async getPluginMetrics(
+    treeId: TreeId,
+    nodeType: NodeType,
+    options?: MetricOptions
+  ): Promise<PluginMetrics> {
     const [tree, pluginDefinition] = await Promise.all([
       this.queryService.getTree(treeId),
-      getPluginDefinition(nodeType)
+      getPluginDefinition(nodeType),
     ]);
 
     if (!tree) {
@@ -335,11 +344,11 @@ export class PluginTreeService implements PluginTreeAPI {
       performance: {
         averageResponseTime: responseTime,
         throughput: Math.floor(stats.totalNodes / 10),
-        errorRate: 0.01
+        errorRate: 0.01,
       },
       resourceUsage: {
-        memoryMB: 5 + Math.floor(stats.totalNodes * 0.1)
-      }
+        memoryMB: 5 + Math.floor(stats.totalNodes * 0.1),
+      },
     };
 
     if (options?.timeRange) {
@@ -351,33 +360,37 @@ export class PluginTreeService implements PluginTreeAPI {
 
   private extractCapabilities(definition: any): NodeCapability[] {
     const capabilities: NodeCapability[] = [];
-    
+
     if (definition.ui?.dialogComponentPath) {
       capabilities.push('create', 'update');
     }
     capabilities.push('read', 'delete', 'move');
-    
+
     if (definition.entityHandler) {
       capabilities.push('export', 'validation');
     }
-    
+
     if (definition.lifecycle) {
       capabilities.push('lifecycle');
     }
-    
+
     capabilities.push('search', 'offline');
-    
+
     return capabilities;
   }
 
-  private generateOperationStats(totalNodes: number, activeNodes: number, lastUsed: number): Array<{ operation: string; count: number; timestamp: number }> {
+  private generateOperationStats(
+    totalNodes: number,
+    activeNodes: number,
+    lastUsed: number
+  ): Array<{ operation: string; count: number; timestamp: number }> {
     const operations = ['create', 'edit', 'delete', 'move'];
     const stats: Array<{ operation: string; count: number; timestamp: number }> = [];
-    
+
     for (const operation of operations) {
       let count = 0;
       const baseTimestamp = lastUsed || Date.now();
-      
+
       switch (operation) {
         case 'create':
           count = Math.floor(totalNodes * 1.2);
@@ -392,32 +405,45 @@ export class PluginTreeService implements PluginTreeAPI {
           count = Math.floor(activeNodes * 0.5);
           break;
       }
-      
+
       stats.push({
         operation,
         count,
-        timestamp: baseTimestamp - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
+        timestamp: baseTimestamp - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000),
       });
     }
-    
+
     return stats;
   }
 
-  private generateMetricHistory(baseMetrics: PluginMetrics, timeRange: { start: number; end: number }): Array<{ timestamp: number; averageResponseTime: number; throughput: number; errorRate: number }> {
-    const history: Array<{ timestamp: number; averageResponseTime: number; throughput: number; errorRate: number }> = [];
+  private generateMetricHistory(
+    baseMetrics: PluginMetrics,
+    timeRange: { start: number; end: number }
+  ): Array<{
+    timestamp: number;
+    averageResponseTime: number;
+    throughput: number;
+    errorRate: number;
+  }> {
+    const history: Array<{
+      timestamp: number;
+      averageResponseTime: number;
+      throughput: number;
+      errorRate: number;
+    }> = [];
     const duration = timeRange.end - timeRange.start;
     const intervalMs = Math.max(60000, Math.floor(duration / 100));
-    
+
     for (let timestamp = timeRange.start; timestamp <= timeRange.end; timestamp += intervalMs) {
-      const variation = 0.8 + (Math.random() * 0.4);
+      const variation = 0.8 + Math.random() * 0.4;
       history.push({
         timestamp,
         averageResponseTime: Math.floor(baseMetrics.performance.averageResponseTime * variation),
         throughput: Math.floor(baseMetrics.performance.throughput * variation),
-        errorRate: Math.max(0, Math.min(0.1, baseMetrics.performance.errorRate * variation))
+        errorRate: Math.max(0, Math.min(0.1, baseMetrics.performance.errorRate * variation)),
       });
     }
-    
+
     return history;
   }
 }

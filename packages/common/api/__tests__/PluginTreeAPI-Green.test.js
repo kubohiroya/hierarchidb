@@ -69,7 +69,7 @@ var vitest_1 = require("vitest");
                 creatable: true,
                 isActive: true,
                 usageCount: 45,
-                capabilities: ['create', 'edit', 'delete'],
+                capabilities: ['create', 'update', 'delete'],
                 meta: { name: 'Folder Plugin', version: '1.0.0', category: 'core' },
             },
             {
@@ -81,7 +81,7 @@ var vitest_1 = require("vitest");
                 creatable: true,
                 isActive: false,
                 usageCount: 23,
-                capabilities: ['create', 'edit'],
+                capabilities: ['create', 'update'],
                 meta: { name: 'Document Plugin', version: '1.0.0', category: 'core' },
             },
             {
@@ -93,7 +93,7 @@ var vitest_1 = require("vitest");
                 creatable: true,
                 isActive: true,
                 usageCount: 78,
-                capabilities: ['create', 'edit', 'delete', 'export'],
+                capabilities: ['create', 'update', 'delete', 'export'],
                 meta: { name: 'Project Plugin', version: '2.0.0', category: 'extension' },
             },
         ];
@@ -362,12 +362,12 @@ var vitest_1 = require("vitest");
             }); },
         };
     });
-    afterEach(function () {
+    (0, vitest_1.afterEach)(function () {
         // 【テスト後処理】: リソースのクリーンアップ
         pluginTreeAPI = null;
     });
     (0, vitest_1.describe)('getPluginsForTree() - ツリー固有プラグイン取得機能', function () {
-        test('🔴 指定ツリーで利用可能な全プラグインを取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 指定ツリーで利用可能な全プラグインを取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var request, response, firstPlugin;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -391,7 +391,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 フィルター条件でプラグインを絞り込める', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 フィルター条件でプラグインを絞り込める', function () { return __awaiter(void 0, void 0, void 0, function () {
             var request, response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -401,7 +401,7 @@ var vitest_1 = require("vitest");
                             filters: {
                                 nodeTypes: ['folder', 'document'],
                                 categories: ['core'],
-                                capabilities: ['create', 'edit'],
+                                capabilities: ['create', 'update'],
                             },
                         };
                         return [4 /*yield*/, pluginTreeAPI.getPluginsForTree(request)];
@@ -411,13 +411,13 @@ var vitest_1 = require("vitest");
                         response.plugins.forEach(function (plugin) {
                             (0, vitest_1.expect)(['folder', 'document']).toContain(plugin.nodeType);
                             (0, vitest_1.expect)(plugin.meta.category).toBe('core');
-                            (0, vitest_1.expect)(plugin.capabilities.some(function (cap) { return ['create', 'edit'].includes(cap); })).toBe(true);
+                            (0, vitest_1.expect)(plugin.capabilities.some(function (cap) { return ['create', 'update'].includes(cap); })).toBe(true);
                         });
                         return [2 /*return*/];
                 }
             });
         }); });
-        test('🔴 ソート条件でプラグインを並び替えられる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 ソート条件でプラグインを並び替えられる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var request, response, i;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -438,7 +438,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 非アクティブプラグインを含む一覧を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 非アクティブプラグインを含む一覧を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var request, response, activePlugins, inactivePlugins;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -459,7 +459,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 存在しないツリーIDで適切なエラーを返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 存在しないツリーIDで適切なエラーを返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var request, response;
             var _a, _b;
             return __generator(this, function (_c) {
@@ -480,7 +480,7 @@ var vitest_1 = require("vitest");
         }); });
     });
     (0, vitest_1.describe)('getPluginUsageStats() - プラグイン使用統計取得', function () {
-        test('🔴 指定ツリーでのプラグイン使用統計を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 指定ツリーでのプラグイン使用統計を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var treeId, nodeType, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -501,7 +501,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 使用されていないプラグインでゼロ統計を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 使用されていないプラグインでゼロ統計を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -516,7 +516,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 期間指定での使用統計を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 期間指定での使用統計を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var fromDate, toDate, result;
             var _a, _b;
             return __generator(this, function (_c) {
@@ -537,7 +537,7 @@ var vitest_1 = require("vitest");
         }); });
     });
     (0, vitest_1.describe)('getPluginCompatibility() - プラグイン互換性確認', function () {
-        test('🔴 互換性のあるプラグイン組み合わせで成功を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 互換性のあるプラグイン組み合わせで成功を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var nodeTypes, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -554,12 +554,15 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 互換性のないプラグイン組み合わせで詳細な競合情報を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 互換性のないプラグイン組み合わせで詳細な競合情報を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var conflictingTypes, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        conflictingTypes = ['conflicting-plugin-a', 'conflicting-plugin-b'];
+                        conflictingTypes = [
+                            'conflicting-plugin-a',
+                            'conflicting-plugin-b',
+                        ];
                         return [4 /*yield*/, pluginTreeAPI.getPluginCompatibility('compat-tree', conflictingTypes)];
                     case 1:
                         result = _a.sent();
@@ -571,7 +574,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 依存関係の欠如で適切な警告を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 依存関係の欠如で適切な警告を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var dependentType, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -588,7 +591,7 @@ var vitest_1 = require("vitest");
         }); });
     });
     (0, vitest_1.describe)('optimizePluginConfiguration() - プラグイン設定最適化', function () {
-        test('🔴 ツリーに最適化されたプラグイン設定を提案できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 ツリーに最適化されたプラグイン設定を提案できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var treeId, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -606,7 +609,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 使用パターンに基づく具体的な推奨事項を提供する', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 使用パターンに基づく具体的な推奨事項を提供する', function () { return __awaiter(void 0, void 0, void 0, function () {
             var result, recommendation;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -623,7 +626,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 既に最適化されたツリーで最小限の推奨事項を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 既に最適化されたツリーで最小限の推奨事項を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -639,7 +642,7 @@ var vitest_1 = require("vitest");
         }); });
     });
     (0, vitest_1.describe)('getPluginDependencyGraph() - プラグイン依存関係グラフ', function () {
-        test('🔴 ツリー内プラグインの依存関係グラフを生成できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 ツリー内プラグインの依存関係グラフを生成できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var treeId, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -657,7 +660,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 循環依存を含む依存関係グラフで警告を含む結果を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 循環依存を含む依存関係グラフで警告を含む結果を返す', function () { return __awaiter(void 0, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -673,7 +676,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 グラフレイアウトオプションで異なる形式を生成できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 グラフレイアウトオプションで異なる形式を生成できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var options, result;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -695,7 +698,7 @@ var vitest_1 = require("vitest");
         }); });
     });
     (0, vitest_1.describe)('getPluginMetrics() - プラグインパフォーマンス指標', function () {
-        test('🔴 指定プラグインの詳細パフォーマンス指標を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 指定プラグインの詳細パフォーマンス指標を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var metrics;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -712,7 +715,7 @@ var vitest_1 = require("vitest");
                 }
             });
         }); });
-        test('🔴 期間指定でのパフォーマンス履歴を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
+        (0, vitest_1.test)('🔴 期間指定でのパフォーマンス履歴を取得できる', function () { return __awaiter(void 0, void 0, void 0, function () {
             var timeRange, metrics;
             return __generator(this, function (_a) {
                 switch (_a.label) {

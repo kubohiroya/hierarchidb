@@ -1,10 +1,10 @@
 /**
+import type { NodeId, TreeId, TreeNode, Tree } from '@hierarchidb/common-type';
  * @file TreeQueryAPI.test.ts
  * @description Comprehensive test suite for TreeQueryAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode, Tree } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { TreeQueryService } from '../../services/TreeQueryService';
 import { CoreDB } from '../../db/CoreDB';

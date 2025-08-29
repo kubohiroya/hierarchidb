@@ -4,8 +4,8 @@
  */
 
 // import { devLog, devWarn } from '@/shared/utils/logger';
-const devLog = (msg: string, data?: any) => console.log(msg, data);
-const devWarn = (msg: string, data?: any) => console.warn(msg, data);
+// const devLog = (msg: string, data?: any) => console.log(msg, data);
+// const devWarn = (msg: string, data?: any) => console.warn(msg, data);
 
 const POPUP_CAPABILITY_KEY = 'eria-popup-capability';
 const POPUP_TEST_TIMEOUT = 2000; // 2 seconds
@@ -34,7 +34,11 @@ export class PopupDetectionService {
     const stored = localStorage.getItem(POPUP_CAPABILITY_KEY);
     if (stored === 'supported' || stored === 'blocked') {
       this.capability = stored;
-      devLog(`Loaded popup capability: ${stored}`);
+      if (import.meta.env.DEV) {
+
+        console.log(`Loaded popup capability: ${stored}`);
+
+      }
     }
   }
 
@@ -83,7 +87,11 @@ export class PopupDetectionService {
 
         if (!popup) {
           // Popup was blocked
-          devWarn('Popup blocked by browser');
+          if (import.meta.env.DEV) {
+
+            console.warn('Popup blocked by browser');
+
+          }
           this.saveCapability('blocked');
           resolve('blocked');
           return;
@@ -99,7 +107,11 @@ export class PopupDetectionService {
           }
         } catch (e) {
           // COOP error detected
-          devWarn('COOP restrictions detected:', e);
+          if (import.meta.env.DEV) {
+
+            console.warn('COOP restrictions detected:', e);
+
+          }
           hasCOOPIssue = true;
         }
 
@@ -152,7 +164,11 @@ export class PopupDetectionService {
         }, POPUP_TEST_TIMEOUT);
       } catch (error) {
         // Any error means popups are blocked
-        devWarn('Popup test failed:', error);
+        if (import.meta.env.DEV) {
+
+          console.warn('Popup test failed:', error);
+
+        }
         this.saveCapability('blocked');
         resolve('blocked');
       }

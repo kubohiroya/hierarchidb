@@ -6,6 +6,29 @@ import type {
 } from '../api/FolderExtensionAPI';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
 
+// Temporary type definitions for missing types
+interface DialogStepDefinition {
+  id: string;
+  title: string;
+  component: React.ComponentType<any>;
+  validation?: any;
+}
+
+interface ValidationExtension {
+  validate: (data: any) => boolean | string;
+}
+
+interface PluginExtensionConfig {
+  id: string;
+  name: string;
+  version: string;
+}
+
+interface ExtendableNodeTypeDefinition {
+  nodeType: string;
+  extensions: any[];
+}
+
 /**
  * Base class for plugins that extend the folder-plugin plugin
  */

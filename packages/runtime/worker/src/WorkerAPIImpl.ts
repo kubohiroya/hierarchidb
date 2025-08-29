@@ -1,19 +1,22 @@
+import { SingletonMixin } from '@hierarchidb/common-core';
+import type { Tree, TreeId, TreeNode, NodeId, NodeType, WorkingCopyId, CommitResult } from '@hierarchidb/common-type';
 import type {
   WorkerAPI,
   TreeQueryAPI,
   TreeMutationAPI,
   TreeSubscriptionAPI,
   PluginRegistryAPI,
+  NodeTypeRegistryAPI,
   WorkingCopyAPI,
   PluginTreeAPI,
+  TreePluginAnalyzer,
   NodeTypeAPI,
   PluginManagementAPI,
+  PluginLifecycleAPI,
   ImportExportAPI,
 } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
-import type { Tree, TreeId, TreeNode, NodeId, NodeType, WorkingCopy, CommitResult } from '@hierarchidb/common-core';
-import { SingletonMixin } from '@hierarchidb/common-core';
 import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
@@ -32,6 +35,7 @@ import { NodeTypeService } from './services/NodeTypeService';
 import { PluginManagementService } from './services/PluginManagementService';
 import { ImportExportAPIImpl } from './apis/ImportExportAPIImpl';
 // import { importExportPluginRegistry } from '@hierarchidb/feature-import-export-plugin-plugin'; // Disabled due to build issues
+import { TagService } from './services/TagService';
 
 /**
  * Worker API Facade Implementation
@@ -64,6 +68,9 @@ export class WorkerAPIImpl implements WorkerAPI {
   private importService!: ImportService;
   private exportService!: ExportService;
   private importExportAPI!: ImportExportAPIImpl;
+  
+  // Tag service
+  private tagService!: any;
   
   constructor(dbName: string = 'default-worker-db') {
     this.dbName = dbName;
@@ -137,6 +144,9 @@ export class WorkerAPIImpl implements WorkerAPI {
     this.importService = new ImportService(this.coreDB, this.mutationService);
     this.exportService = new ExportService(this.coreDB, this.queryService);
     this.importExportAPI = await ImportExportAPIImpl.getInstance();
+    
+    // Initialize tag service
+    this.tagService = new TagService(this.coreDB);
     
     this.isInitialized = true;
     console.log('[WorkerAPIImpl] Initialization complete');
@@ -391,6 +401,11 @@ export class WorkerAPIImpl implements WorkerAPI {
     return Comlink.proxy(this.pluginTreeService);
   }
 
+  getTreePluginAnalyzer(): TreePluginAnalyzer & Comlink.ProxyMarked {
+    // Return the same service with the new interface name
+    return Comlink.proxy(this.pluginTreeService) as unknown as TreePluginAnalyzer & Comlink.ProxyMarked;
+  }
+
   getNodeTypeAPI(): NodeTypeAPI & Comlink.ProxyMarked {
     return Comlink.proxy(this.nodeTypeService);
   }
@@ -399,8 +414,17 @@ export class WorkerAPIImpl implements WorkerAPI {
     return Comlink.proxy(this.pluginManagementService);
   }
 
+  getPluginLifecycleAPI(): PluginLifecycleAPI & Comlink.ProxyMarked {
+    // Return the same service with the new interface name
+    return Comlink.proxy(this.pluginManagementService) as unknown as PluginLifecycleAPI & Comlink.ProxyMarked;
+  }
+
   getImportExportAPI(): ImportExportAPI & Comlink.ProxyMarked {
     return Comlink.proxy(this.importExportAPI);
+  }
+
+  getTagService(): any & Comlink.ProxyMarked {
+    return Comlink.proxy(this.tagService);
   }
 
   /**
@@ -483,6 +507,87 @@ export class WorkerAPIImpl implements WorkerAPI {
     };
     
     return legacyAdapter as unknown as PluginRegistryAPI & Comlink.ProxyMarked;
+  }
+
+  getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & Comlink.ProxyMarked {
+    // Create an adapter that delegates to the appropriate services
+    const adapter = {
+      // Node Type Operations
+      listSupportedNodeTypes: async () => this.nodeTypeService.listSupported(),
+      isSupportedNodeType: async (nodeType: NodeType) => this.nodeTypeService.isSupported(nodeType),
+      getNodeDefinition: async (nodeType: NodeType) => {
+        const { getPluginDefinition } = await import('./registry/plugin-registry-api');
+        return getPluginDefinition(nodeType);
+      },
+      validateNodeTypeOperation: async (nodeType: NodeType, operation: any, context?: any) => {
+        return this.nodeTypeService.validateOperation(nodeType, operation, context);
+      },
+      
+      // Plugin Management
+      listRegisteredPlugins: async () => this.pluginManagementService.listRegistered(),
+      getPluginsForTree: async (treeId: string) => {
+        const response = await this.pluginTreeService.getPluginsForTree({ 
+          treeId: treeId as TreeId, 
+          includeInactive: false 
+        });
+        return response.plugins;
+      },
+      getPluginMetadata: async (pluginId: string) => undefined,
+      isPluginActive: async (pluginId: string) => false,
+      
+      // Plugin Registry Operations
+      registerPlugin: async (definition: any) => {
+        return this.pluginManagementService.register(definition);
+      },
+      unregisterPlugin: async (nodeType: NodeType) => {
+        const result = await this.pluginManagementService.unregister(nodeType);
+        return {
+          success: result.success,
+          cleanedUpNodes: 0,
+          error: result.error?.message
+        };
+      },
+      reloadPlugin: async (nodeType: NodeType, definition: any) => {
+        return { success: false, affectedNodes: 0, error: 'Not implemented' };
+      },
+      
+      // Plugin Validation
+      validatePluginDefinition: async (definition: any) => {
+        return this.pluginManagementService.validatePlugin(definition);
+      },
+      checkPluginCompatibility: async (nodeType: NodeType) => {
+        return { 
+          compatible: false, 
+          version: '0.0.0', 
+          requiredVersion: '0.0.0' 
+        };
+      },
+      getPluginSystemHealth: async () => {
+        return {
+          totalPlugins: 0,
+          activePlugins: 0,
+          failedPlugins: 0,
+          systemErrors: [],
+          performance: {
+            averageLoadTime: 0,
+            totalMemoryUsage: 0
+          }
+        };
+      },
+      
+      // Node Type Capabilities
+      getSupportedOperations: async (nodeType: NodeType) => {
+        return [] as Array<'create' | 'read' | 'update' | 'delete' | 'move' | 'copy'>;
+      },
+      supportsChildren: async (nodeType: NodeType) => false,
+      getAllowedChildTypes: async (parentType: NodeType) => [],
+      
+      // Plugin API Extensions
+      getExtension: async (nodeType: NodeType) => undefined,
+      registerExtension: async (nodeType: NodeType, api: any) => {}
+    };
+    
+    return adapter as unknown as NodeTypeRegistryAPI & Comlink.ProxyMarked;
   }
 
   // ==================

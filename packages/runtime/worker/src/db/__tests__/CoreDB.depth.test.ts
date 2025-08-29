@@ -1,4 +1,5 @@
 /**
+import type { TreeNode, NodeId } from '@hierarchidb/common-type';
  * @file CoreDB.depth.test.ts
  * @description Tests for TreeNode depth property in CoreDB
  */
@@ -7,7 +8,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CoreDB } from '../CoreDB';
-import type { TreeNode, NodeId } from '@hierarchidb/common-core';
 
 describe('CoreDB Depth Functionality', () => {
   let coreDB: CoreDB;

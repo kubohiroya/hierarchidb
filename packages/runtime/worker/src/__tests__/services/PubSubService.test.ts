@@ -1,4 +1,5 @@
 /**
+import type { NodeId, TreeNode, TreeChangeEvent } from '@hierarchidb/common-type';
  * Pub/Sub サービスのNode環境統合テスト
  *
  * React非依存でPub/Subメカニズムをテストします
@@ -7,7 +8,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { TreeSubscriptionService } from '../../services/TreeSubscriptionService';
 import { CoreDB } from '../../db/CoreDB';
-import type { NodeId, TreeNode, TreeChangeEvent } from '@hierarchidb/common-core';
 
 describe('Pub/Sub Service Node環境テスト', () => {
   let coreDB: CoreDB;

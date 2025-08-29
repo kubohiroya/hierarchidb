@@ -1,9 +1,9 @@
 /**
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
  * @file PeerEntityHandler.test.ts
  * @description Unit tests for PeerEntityHandler concrete implementation
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PeerEntityImpl, GroupEntityImpl, PeerWorkingCopy } from './SimpleEntityHandler';

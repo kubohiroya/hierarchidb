@@ -1,0 +1,39 @@
+{
+  "name": "@hierarchidb/node-type-location-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-plugin-base": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/node-type-shape-plugin": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@mui/material": "^5.14.20",
+    "@mui/icons-material": "^5.14.19",
+    "dexie": "^3.2.4",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  }
+}

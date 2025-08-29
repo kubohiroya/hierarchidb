@@ -1,13 +1,13 @@
 /**
+import type { NodeType, PluginDefinition, TreeId } from '@hierarchidb/common-type';
  * @file PluginManagementAPI.test.ts
  * @description Comprehensive test suite for PluginManagementAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeType, PluginDefinition, TreeId } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
-import type { PluginManagementAPI, PluginRegistrationResult } from '@hierarchidb/common-api';
+import type { PluginLifecycleAPI, PluginRegistrationResultNew as PluginRegistrationResult } from '@hierarchidb/common-api';
 
 // Mock plugin definitions for testing
 const mockPluginDefinition1: PluginDefinition = {
@@ -42,8 +42,8 @@ const mockPluginDefinition2: PluginDefinition = {
   },
 };
 
-describe('PluginManagementAPI', () => {
-  let api: PluginManagementAPI;
+describe('PluginLifecycleAPI', () => {
+  let api: PluginLifecycleAPI;
   let workerAPI: WorkerAPIImpl;
   let coreDB: CoreDB;
 
@@ -54,7 +54,7 @@ describe('PluginManagementAPI', () => {
     
     // Initialize WorkerAPI
     workerAPI = new WorkerAPIImpl();
-    api = workerAPI.getPluginManagementAPI();
+    api = workerAPI.getPluginLifecycleAPI();
   });
 
   afterEach(async () => {

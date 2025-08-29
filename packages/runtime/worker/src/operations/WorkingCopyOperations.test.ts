@@ -1,4 +1,4 @@
-import type { TreeNode, NodeId, NodeType, EntityId, WorkingCopy } from '@hierarchidb/common-core';
+import type { TreeNode, NodeId, NodeType, EntityId, WorkingCopy } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkerErrorCode } from '../command/types';
 import {

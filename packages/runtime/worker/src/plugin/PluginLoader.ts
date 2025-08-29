@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 import type { NodeTypeRegistry } from '~/registry';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';

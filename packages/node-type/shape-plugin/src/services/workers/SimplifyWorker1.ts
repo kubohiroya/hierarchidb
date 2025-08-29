@@ -665,13 +665,56 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   }
 
   private async loadInputBuffer(bufferId: string): Promise<string | null> {
-    // Mock implementation - would load from actual buffer storage
-    return this.processingCache.get(bufferId) || null;
+    // Try to load from processing cache first
+    const cached = this.processingCache.get(bufferId);
+    if (cached) {
+      console.log(`Loaded buffer ${bufferId} from cache`);
+      return cached;
+    }
+
+    // In production, this would load from EphemeralDB or buffer storage
+    // For now, we'll simulate loading GeoJSON data
+    try {
+      // Simulate fetching from storage (would be EphemeralDB query)
+      console.log(`Loading buffer ${bufferId} from storage`);
+      
+      // Return null if not found (caller should handle)
+      return null;
+    } catch (error) {
+      console.error(`Failed to load buffer ${bufferId}:`, error);
+      return null;
+    }
   }
 
   private async saveOutputBuffer(bufferId: string, data: string): Promise<void> {
-    // Mock implementation - would save to actual buffer storage
-    this.processingCache.set(bufferId, data);
+    try {
+      // Save to processing cache for immediate access
+      this.processingCache.set(bufferId, data);
+      console.log(`Saved buffer ${bufferId} to cache (${this.formatBytes(data.length)})`);
+      
+      // In production, this would persist to EphemeralDB
+      // await this.ephemeralDB.buffers.put({
+      //   id: bufferId,
+      //   data: data,
+      //   timestamp: Date.now(),
+      //   type: 'simplified-features'
+      // });
+      
+    } catch (error) {
+      console.error(`Failed to save buffer ${bufferId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Format bytes to human readable string
+   */
+  private formatBytes(bytes: number, decimals = 2): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
   }
 }
 

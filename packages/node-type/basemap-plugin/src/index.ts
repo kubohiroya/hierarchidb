@@ -1,42 +1,39 @@
 /**
- * BaseMap Plugin - Folder Extension
- * Following the Spreadsheet plugin pattern for clean folder-plugin extension
+ * BaseMap Plugin - Standard Structure Export
+ * Following HierarchiDB plugin standard conventions
  */
 
-// Main extension export (following spreadsheet-plugin pattern)
+// === Core Exports (Standard Structure) ===
+
+// Entity exports
+export * from './entities';
+export * from './handlers';
+export * from './definitions';
+
+// UI components
+export * from './components';
+export * from './hooks';
+
+// Shared code
+export * from './shared';
+export * from './types';
+
+// Database
+export * from './database';
+
+// === Extension Exports (Legacy Compatibility) ===
+
+// Main extension export (legacy compatibility)
 export { BaseMapExtension } from './extension/definition';
 
-// Type exports for external usage
-export type { 
-  BaseMapEntity,
-  BaseMapWorkingCopy
-} from './extension/definition';
-
-export type {
-  BaseMapExtendedFields
-} from './types/BaseMapEntity';
-
-// Entity handler and database exports  
-export { BaseMapEntityHandler } from './handlers/BaseMapEntityHandler';
-export { BaseMapDatabase } from './database/BaseMapDatabase';
-
-// Step components export
+// Extension components
 export { MapStyleStep } from './extension/components/MapStyleStep';
 export { MapViewportStep } from './extension/components/MapViewportStep';
 export { DisplayOptionsStep } from './extension/components/DisplayOptionsStep';
 export { PreviewStep } from './extension/components/PreviewStep';
 
-// Display components export
-export { BaseMapDisplay } from './components/BaseMapDisplay';
-export { BaseMapPreview } from './components/BaseMapPreview';
+// === Constants and Metadata ===
 
-// Hooks export
-export { useBaseMapEntity, useBaseMapConfiguration, useBaseMapValidation } from './hooks/useBaseMapEntity';
-
-// Constants export
-export { BUILT_IN_STYLES, getBuiltInStyleUrl, getStyleAttribution } from './constants/builtInStyles';
-
-// Shared constants and utilities
 export const BASEMAP_CONSTANTS = {
   DEFAULT_VIEWPORT: {
     center: [139.6917, 35.6895] as [number, number], // Tokyo

@@ -37,11 +37,16 @@
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
-    "dexie": "^4.0.8"
+    "@hierarchidb/runtime-dialog": "workspace:*",
+    "dexie": "^4.0.8",
+    "react-tag-input": "^6.10.3",
+    "@mui/x-date-pickers": "^7.0.0",
+    "react-hook-form": "^7.50.1",
+    "@hookform/resolvers": "^3.3.4",
+    "yup": "^1.4.0",
+    "uuid": "^9.0.1"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -56,7 +61,8 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^5.0.1",
     "fake-indexeddb": "^6.1.0",
-    "jsdom": "^26.1.0"
+    "jsdom": "^26.1.0",
+    "@types/uuid": "^9.0.7"
   },
   "keywords": [
     "hierarchidb",

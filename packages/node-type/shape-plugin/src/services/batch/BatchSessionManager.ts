@@ -11,9 +11,8 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import { shapeDB, type BatchSessionRecord, type BatchTaskRecord } from '../database/ShapeDB';
-import { WorkerPoolManager } from '../workers/WorkerPoolManager';
+import { SessionController } from './SessionController';
 import type {
-  BatchProcessConfig,
   BatchSession,
   BatchStatus,
   //TaskStatus,
@@ -23,6 +22,7 @@ import type {
   //ErrorInfo,
   //ResourceUsage,
 } from '../types';
+import type { BatchProcessConfig } from './types';
 import type { UrlMetadata } from '../../types';
 
 export interface BatchSessionOptions {
@@ -33,28 +33,14 @@ export interface BatchSessionOptions {
 }
 
 export class BatchSessionManager {
-  private workerPoolManager: WorkerPoolManager;
   private activeSessions = new Map<string, SessionController>();
   private progressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
 
   constructor() {
-    this.workerPoolManager = new WorkerPoolManager({
-      downloadWorkers: 2,
-      simplify1Workers: 2,
-      simplify2Workers: 1,
-      vectorTileWorkers: 1,
-      workerOptions: {
-        timeout: 300000,
-        retries: 3,
-        maxMemoryPerWorker: 512 * 1024 * 1024,
-        restartThreshold: 5,
-      },
-    });
+    // WorkerPoolManager is now created per session by SessionController
   }
 
   async initialize(): Promise<void> {
-    await this.workerPoolManager.initialize();
-
     // Resume any incomplete sessions from previous runs
     await this.resumeIncompleteSessions();
   }
@@ -64,8 +50,7 @@ export class BatchSessionManager {
     for (const [sessionId] of this.activeSessions) {
       await this.cancelSession(sessionId);
     }
-
-    await this.workerPoolManager.shutdown();
+    // WorkerPools are now managed by individual SessionControllers
   }
 
   // Session Lifecycle Management
@@ -108,11 +93,12 @@ export class BatchSessionManager {
       },
     });
 
-    // Create session controller
+    // Create session controller with per-session worker pool
     const controller = new SessionController(
       session.sessionId,
+      nodeId,
       urlMetadata,
-      this.workerPoolManager,
+      config,
       options
     );
 
@@ -149,8 +135,10 @@ export class BatchSessionManager {
       const urlMetadata = await this.reconstructUrlMetadata(session);
       const newController = new SessionController(
         session.sessionId,
+        session.nodeId,
         urlMetadata,
-        this.workerPoolManager
+        session.config,
+        {} // Use default options for resumed sessions
       );
 
       this.activeSessions.set(sessionId, newController);
@@ -167,7 +155,7 @@ export class BatchSessionManager {
   async cancelSession(sessionId: string): Promise<void> {
     const controller = this.activeSessions.get(sessionId);
     if (controller) {
-      await controller.cancel();
+      await controller.abort();
       this.activeSessions.delete(sessionId);
     }
 
@@ -335,159 +323,3 @@ export class BatchSessionManager {
   }
 }
 
-/**
- * SessionController - Controls individual batch session execution
- */
-class SessionController {
-  public readonly sessionId: string;
-  private isPaused = false;
-  private isCancelled = false;
-  private taskQueue: BatchTaskRecord[] = [];
-  private runningTasks = new Set<string>();
-
-  constructor(
-    sessionId: string,
-    private urlMetadata: UrlMetadata[],
-    private options: BatchSessionOptions = {}
-  ) {
-    this.sessionId = sessionId;
-  }
-
-  async start(): Promise<void> {
-    // Create initial download tasks
-    await this.createDownloadTasks();
-
-    // Start processing queue
-    this.processTaskQueue();
-  }
-
-  async pause(): Promise<void> {
-    this.isPaused = true;
-  }
-
-  async resume(): Promise<void> {
-    this.isPaused = false;
-    this.processTaskQueue();
-  }
-
-  async cancel(): Promise<void> {
-    this.isCancelled = true;
-    this.isPaused = true;
-
-    // Cancel running tasks
-    for (const _taskId of this.runningTasks) {
-      // Would cancel actual worker tasks
-    }
-    this.runningTasks.clear();
-  }
-
-  private async createDownloadTasks(): Promise<void> {
-    for (let i = 0; i < this.urlMetadata.length; i++) {
-      const metadata = this.urlMetadata[i];
-      const task = await shapeDB.createBatchTask({
-        sessionId: this.sessionId,
-        type: 'download',
-        status: 'waiting',
-        index: i,
-        progress: 0,
-        inputData: metadata,
-      });
-      this.taskQueue.push(task);
-    }
-  }
-
-  private async processTaskQueue(): Promise<void> {
-    while (!this.isPaused && !this.isCancelled && this.taskQueue.length > 0) {
-      const maxConcurrent = this.options.maxConcurrentTasks || 3;
-
-      if (this.runningTasks.size >= maxConcurrent) {
-        await this.waitForTaskCompletion();
-        continue;
-      }
-
-      const task = this.taskQueue.shift();
-      if (!task) continue;
-
-      this.executeTask(task);
-    }
-  }
-
-  private async executeTask(task: BatchTaskRecord): Promise<void> {
-    this.runningTasks.add(task.taskId);
-
-    try {
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'running',
-        startedAt: Date.now(),
-      });
-
-      // Execute based on task type
-      switch (task.type) {
-        case 'download':
-          await this.executeDownloadTask(task);
-          break;
-        case 'simplify1':
-          await this.executeSimplify1Task(task);
-          break;
-        case 'simplify2':
-          await this.executeSimplify2Task(task);
-          break;
-        case 'vectortile':
-          await this.executeVectorTileTask(task);
-          break;
-      }
-
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'completed',
-        completedAt: Date.now(),
-        progress: 100,
-      });
-    } catch (error) {
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'failed',
-        completedAt: Date.now(),
-        errorMessage: error instanceof Error ? error.message : String(error),
-        retryCount: (task.retryCount || 0) + 1,
-      });
-
-      // Retry if attempts remaining
-      if ((task.retryCount || 0) < (this.options.retryAttempts || 3)) {
-        this.taskQueue.push(task);
-      }
-    } finally {
-      this.runningTasks.delete(task.taskId);
-    }
-  }
-
-  private async executeDownloadTask(task: BatchTaskRecord): Promise<void> {
-    // Would use download worker
-    console.log(`Executing download task ${task.taskId}`);
-  }
-
-  private async executeSimplify1Task(task: BatchTaskRecord): Promise<void> {
-    // Would use simplify worker 1
-    console.log(`Executing simplify1 task ${task.taskId}`);
-  }
-
-  private async executeSimplify2Task(task: BatchTaskRecord): Promise<void> {
-    // Would use simplify worker 2
-    console.log(`Executing simplify2 task ${task.taskId}`);
-  }
-
-  private async executeVectorTileTask(task: BatchTaskRecord): Promise<void> {
-    // Would use vector tile worker
-    console.log(`Executing vector tile task ${task.taskId}`);
-  }
-
-  private async waitForTaskCompletion(): Promise<void> {
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        const maxConcurrent = this.options.maxConcurrentTasks || 3;
-        if (this.runningTasks.size < maxConcurrent) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-    });
-  }
-}

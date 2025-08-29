@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 
 /**
  * Configuration for a node type

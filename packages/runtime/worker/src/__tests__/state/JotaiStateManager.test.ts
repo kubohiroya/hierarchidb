@@ -1,4 +1,5 @@
 /**
+import type { NodeId } from '@hierarchidb/common-type';
  * Jotai State Manager Node環境テスト
  * 
  * React非依存でJotai atomsの状態管理をテストします
@@ -7,7 +8,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { createStore, atom } from 'jotai';
 import type { WritableAtom } from 'jotai';
-import type { NodeId } from '@hierarchidb/common-core';
 
 // ヘルパー関数：書き込み可能なatomを作成
 function createWritableAtom<T>(initialValue: T) {

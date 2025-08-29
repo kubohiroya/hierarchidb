@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
-import { formatBytes } from '@hierarchidb/common-core';
+import { formatBytes } from '@hierarchidb/util';
+
 import { useMemoryData } from './hooks/useMemoryData';
 import { CanvasRenderer } from './services/CanvasRenderer';
 

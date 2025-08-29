@@ -1,10 +1,8 @@
 /**
+import type { NodeType, EntityMetadata, EntityType } from '@hierarchidb/common-type';
  * @file EntityRegistrationService.ts
  * @description Service for registering and managing entity metadata for automatic lifecycle management
  */
-
-import type { NodeType } from '@hierarchidb/common-core';
-import type { EntityMetadata, EntityType } from '@hierarchidb/common-core';
 
 /**
  * Service for registering and retrieving entity metadata

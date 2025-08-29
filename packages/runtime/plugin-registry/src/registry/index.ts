@@ -14,7 +14,7 @@ export * from './types';
 export type {
   PeerEntity,
   GroupEntity,
-  WorkingCopy,
+  WorkingCopyProperties,
   EntityBackup,
   EntityHandler,
   ExtendedNodeTypeConfig,

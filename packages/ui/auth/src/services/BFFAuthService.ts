@@ -150,7 +150,6 @@ export class BFFAuthService {
     // Build OAuth2 authorization URL
     const authUrl = this.buildAuthorizationUrl(provider, codeChallenge, 'redirect');
 
-
     // Redirect to OAuth2 provider
     window.location.href = authUrl.toString();
 

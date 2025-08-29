@@ -1,13 +1,13 @@
 /**
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
  * @file PluginTreeAPI.test.ts
  * @description Comprehensive test suite for PluginTreeAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
-import type { PluginTreeAPI } from '@hierarchidb/common-api';
+import type { TreePluginAnalyzer } from '@hierarchidb/common-api';
 
 // Mock plugin implementations
 const mockPlugin1 = {
@@ -62,8 +62,8 @@ const mockPlugin2 = {
   },
 };
 
-describe('PluginTreeAPI', () => {
-  let api: PluginTreeAPI;
+describe('TreePluginAnalyzer', () => {
+  let api: TreePluginAnalyzer;
   let workerAPI: WorkerAPIImpl;
   let coreDB: CoreDB;
 
@@ -124,7 +124,7 @@ describe('PluginTreeAPI', () => {
     
     // Initialize WorkerAPI
     workerAPI = new WorkerAPIImpl(coreDB);
-    api = workerAPI.getPluginTreeAPI();
+    api = workerAPI.getTreePluginAnalyzer();
   });
 
   afterEach(async () => {

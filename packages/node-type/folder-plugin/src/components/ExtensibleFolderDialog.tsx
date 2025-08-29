@@ -1,11 +1,14 @@
 import React, { useCallback, useMemo } from 'react';
 import { TextField, Grid } from '@mui/material';
+import { Folder as FolderIcon } from '@mui/icons-material';
 import {
   MultiStepDialog,
+  type IconGroupSettings,
   type DialogStepDefinition,
   type ValidationResult,
-  type StepValidation,
-} from '@hierarchidb/ui-plugin-base';
+  useDialogUrlParams,
+} from '@hierarchidb/runtime-dialog';
+import type { StepValidation } from '@hierarchidb/common-type';
 
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types';
 import { NodeId } from '@hierarchidb/common-type';
@@ -71,6 +74,11 @@ export interface ExtensibleFolderDialogProps {
    * Title for the dialog
    */
   title?: string;
+
+  /**
+   * Icon group display settings
+   */
+  iconGroupSettings?: IconGroupSettings;
 }
 
 /**
@@ -172,15 +180,28 @@ const FolderBaseStep: React.FC<{
 export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   mode,
   parentId: _parentId,
-  nodeId: _nodeId,
+  nodeId,
   currentData,
   onSubmit,
   onCancel,
   open = true,
   additionalSteps = [],
-  icon: _icon, // TODO: MultiStepDialog doesn't support icons yet
+  icon = <FolderIcon />,
   title,
+  iconGroupSettings,
 }) => {
+  // URLパラメータを取得
+  const {
+    initialStep,
+    initialFullscreen,
+    mapParams,
+    updateStep,
+    updateDialogMode,
+    clearParams,
+  } = useDialogUrlParams({
+    syncToUrl: true,
+    defaultDialogMode: 'normal',
+  });
   // Build the base step definition
   const baseStep = useMemo<DialogStepDefinition>(
     () => ({
@@ -213,6 +234,12 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       description: '',
     };
   }, [mode, currentData]);
+
+  // ダイアログを閉じる際にURLパラメータもクリア
+  const handleClose = useCallback(() => {
+    clearParams();
+    onCancel();
+  }, [clearParams, onCancel]);
 
   // Handle dialog submission
   const handleSubmit = useCallback(
@@ -247,28 +274,64 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         // Include all data for create mode
         await onSubmit({ ...finalData, ...folderData });
       }
+      
+      // 送信成功時にURLパラメータをクリア
+      clearParams();
     },
-    [mode, currentData, onSubmit]
+    [mode, currentData, onSubmit, clearParams]
   );
 
   // Determine dialog title
   const dialogTitle = title || (mode === 'create' ? 'Create New Folder' : 'Edit Folder');
 
-  // Determine dialog icon
+  // Combine title with icon for display
+  const displayTitle = (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {icon}
+      {dialogTitle}
+    </span>
+  );
 
+  // 拡張データに地図パラメータを含める
+  const enhancedInitialData = useMemo(() => {
+    const data = { ...initialData };
+    
+    // 地図パラメータがあれば初期データに含める
+    if (mapParams) {
+      data.mapInitialParams = mapParams;
+    }
+    
+    return data;
+  }, [initialData, mapParams]);
+
+  // 地図パラメータ変更のハンドラー
+  const handleMapParamsChange = useCallback((params: { zoom: number; lng: number; lat: number } | undefined) => {
+    // updateMapParamsはuseDialogUrlParamsから取得した関数
+    // この関数でURLパラメータを更新
+    if (params) {
+      updateMapParams(params);
+    }
+  }, [updateMapParams]);
 
   return (
     <MultiStepDialog
       open={open}
-      title={dialogTitle}
-
+      title={displayTitle}
       steps={allSteps}
-      initialData={initialData}
+      initialData={enhancedInitialData}
       onComplete={handleSubmit}
-      onClose={onCancel}
-
+      onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      nodeId={nodeId}
+      nodeType="folder-plugin"
+      iconGroupSettings={iconGroupSettings}
+      initialStepFromUrl={initialStep}
+      initialFullscreenFromUrl={initialFullscreen}
+      initialMapParamsFromUrl={mapParams}
+      onStepChange={updateStep}
+      onFullscreenChange={(isFullscreen) => updateDialogMode(isFullscreen ? 'full' : 'normal')}
+      onMapParamsChange={handleMapParamsChange}
     />
   );
 };

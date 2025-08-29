@@ -1,5 +1,8 @@
 "use strict";
 /**
+ * @deprecated Use PluginLifecycleAPI instead. This file will be removed in the next major version.
+ * @see PluginLifecycleAPI
+ *
  * @file PluginManagementAPI.ts
  * @description Plugin lifecycle management API
  *

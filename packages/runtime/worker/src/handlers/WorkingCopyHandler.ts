@@ -1,16 +1,11 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { PeerEntity, GroupEntity, WorkingCopy, NodeId, EntityId } from '@hierarchidb/common-type';
  * @file WorkingCopyHandler.ts
  * @description Advanced working copy management handler
  * Implements Copy-on-Write pattern with conflict resolution and version control
  */
 
-import type {
-  PeerEntity,
-  GroupEntity,
-  WorkingCopy,
-  NodeId,
-  EntityId,
-} from '@hierarchidb/common-core';
 import type Dexie from 'dexie';
 import type { PeerEntityImpl, GroupEntityImpl, PeerWorkingCopy } from './SimpleEntityHandler';
 // GroupEntityImpl interface was removed, using GroupEntityImpl instead

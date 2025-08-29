@@ -1,15 +1,14 @@
 /**
+import type { NodeType } from '@hierarchidb/common-type';
  * @file Plugin Registry Types
  * @description Type definitions for the plugin registry system
  */
 
-import type { NodeType } from '@hierarchidb/common-core';
-
 export interface PluginMetadata {
-  nodeType: NodeType;
+  nodeType: string;
   name: string;
   version: string;
-  dependencies?: NodeType[];
+  dependencies?: string[];
   category?: string;
   extends?: string;
 }

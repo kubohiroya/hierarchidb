@@ -1,3 +1,4 @@
+import type { NodeId } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 // Local type definitions for SpreadsheetDB (plugin types not available in worker)
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };
@@ -53,7 +54,6 @@ export interface SpreadsheetRefEntity {
   updatedAt: number;
   version: number;
 }
-import type { NodeId } from '@hierarchidb/common-core';
 
 /**
  * SpreadsheetDB - 独立したスプレッドシート専用データベース

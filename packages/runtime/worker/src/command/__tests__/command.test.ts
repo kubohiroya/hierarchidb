@@ -1,4 +1,4 @@
-import type { Seq, Timestamp, NodeId, EntityId } from '@hierarchidb/common-core';
+import type { Seq, Timestamp, NodeId, EntityId } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   type CommandEnvelope,

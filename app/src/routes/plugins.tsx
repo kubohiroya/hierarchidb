@@ -645,9 +645,9 @@ export default function PluginsPage() {
       setLoading(true);
       const client = await WorkerAPIClient.getSingleton();
       
-      // Use new PluginTreeAPI facade for better type safety and structure
-      const pluginTreeAPI = await client.getPluginTreeAPI();
-      const response = await pluginTreeAPI.getPluginsForTree({
+      // Use new TreePluginAnalyzer for better type safety and structure
+      const treePluginAnalyzer = await client.getTreePluginAnalyzer();
+      const response = await treePluginAnalyzer.getPluginsForTree({
         treeId: '*' as TreeId,
         filters: { includeDisabled: true },
         sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' }

@@ -11,7 +11,7 @@ import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { useImportExport } from '@hierarchidb/feature-import-export-plugin';
+import { useImportExport } from '@hierarchidb/ui-import-export';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
 
 export interface UseTreeConsoleIntegrationParams {

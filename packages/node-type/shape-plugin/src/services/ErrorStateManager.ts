@@ -361,7 +361,7 @@ export class ErrorStateManager {
       }
       return {
         code: latest.taskId,
-        name: '', // FIXME
+        name: `ShapeError_${latest.type}`,
         type: latest.type,
         category: 'system' as ErrorCategory,
         severity: ErrorSeverity.ERROR,

@@ -1,16 +1,10 @@
 /**
+import type { EntityHandlerContext, NodeId, PeerEntity, GroupEntity, WorkingCopyProperties } from '@hierarchidb/common-type';
  * @file createEntityHandlerContext.ts
  * @description Factory to create EntityHandlerContext from database
  * This bridges the gap between plugins and database implementation
  */
 
-import type { 
-  EntityHandlerContext,
-  NodeId,
-  PeerEntity,
-  GroupEntity,
-  WorkingCopyProperties
-} from '@hierarchidb/common-core';
 import type { Dexie } from 'dexie';
 
 /**

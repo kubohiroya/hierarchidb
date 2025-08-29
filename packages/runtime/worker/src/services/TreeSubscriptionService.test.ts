@@ -1,4 +1,7 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { CommandEnvelope, SubscribeChildrenPayload, ObserveNodePayload, ObserveSubtreePayload, ObserveWorkingCopiesPayload, Timestamp, TreeChangeEvent, TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-type';
  * TreeSubscriptionService 統合テストスイート
  *
  * リファクタリング後の実装に対する包括的なテストを提供します。
@@ -13,19 +16,6 @@
  * - TreeSubscriptionService.error.test.ts: エラーハンドリング・リソース管理
  */
 
-import type {
-  CommandEnvelope,
-  SubscribeChildrenPayload,
-  ObserveNodePayload,
-  ObserveSubtreePayload,
-  ObserveWorkingCopiesPayload,
-  Timestamp,
-  TreeChangeEvent,
-  TreeNode,
-  NodeId,
-  NodeType,
-} from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
 import { firstValueFrom, Subject, take, timeout, toArray } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoreDB } from '../db/CoreDB';

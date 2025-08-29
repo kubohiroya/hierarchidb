@@ -1,240 +1,310 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+/**
+ * @file FolderEntityHandler.ts
+ * @description Folder entity handler using common base classes
+ */
 
-import type { FolderEntity, FolderEntityWorkingCopy, FolderBookmark, FolderTemplate } from '../types/index';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { Table } from 'dexie';
+import { 
+  HierarchicalEntityHandler,
+  MetadataEntityHandler,
+  type HierarchicalEntity,
+  type MetadataEntity,
+  type HierarchicalSearchCriteria,
+  type MetadataSearchCriteria
+} from '@hierarchidb/plugin-base';
+
+import type { 
+  FolderEntity, 
+  FolderEntityWorkingCopy, 
+  FolderBookmark, 
+  FolderTemplate,
+  FolderSettings 
+} from '../types';
 import { FolderDatabase } from '../database/FolderDatabase';
 
-export class FolderEntityHandler {
+/**
+ * Combined entity type with hierarchical and metadata support
+ */
+export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity, MetadataEntity {}
+
+/**
+ * Combined search criteria
+ */
+export interface FolderSearchCriteria extends HierarchicalSearchCriteria, MetadataSearchCriteria {
+  category?: string;
+  hasBookmarks?: boolean;
+  hasTemplates?: boolean;
+}
+
+/**
+ * Folder entity handler with hierarchical and metadata support
+ */
+export class FolderEntityHandler extends HierarchicalEntityHandler<
+  FolderEntityExtended,
+  FolderEntityWorkingCopy,
+  Partial<FolderEntity>,
+  FolderSearchCriteria
+> {
   public folderDB: FolderDatabase;
+  protected table: Table<FolderEntityExtended, EntityId>;
+  
+  // Compose MetadataEntityHandler functionality
+  private metadataHandler: MetadataEntityHandler<
+    FolderEntityExtended,
+    FolderEntityWorkingCopy,
+    Partial<FolderEntity>,
+    FolderSearchCriteria
+  >;
 
   constructor() {
+    super();
     this.folderDB = new FolderDatabase();
+    this.table = this.folderDB.folders as any;
+    
+    // Initialize metadata handler with same table
+    this.metadataHandler = new MetadataEntityHandlerAdapter(this.table);
   }
 
-  async createEntity(nodeId: NodeId, data?: Partial<FolderEntity>): Promise<FolderEntity> {
-    const entityId = crypto.randomUUID() as EntityId;
+  /**
+   * Build folder entity
+   */
+  protected buildEntity(
+    nodeId: NodeId,
+    entityId: EntityId,
+    data: Partial<FolderEntity>
+  ): FolderEntityExtended {
     const now = Date.now();
     
-    const entity: FolderEntity = {
+    return {
       id: entityId,
       nodeId,
-      name: data?.name || 'New Folder',
-      description: data?.description || '',
-      settings: data?.settings || {
+      name: data.name || 'New Folder',
+      description: data.description || '',
+      tags: data.tags || [],
+      category: data.category,
+      settings: data.settings || {
         allowNestedFolders: true,
         maxDepth: 10,
         sortOrder: 'name'
       },
-      metadata: data?.metadata || {},
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-    };
-
-    await this.folderDB.folders.add(entity);
-    return entity;
+      metadata: data.metadata || {},
+      createdAt: data.createdAt || now,
+      updatedAt: data.updatedAt || now,
+      version: data.version || 1,
+      // Hierarchical fields
+      parentId: data.parentId,
+      depth: data.depth || 0,
+      path: data.path || `/${nodeId}`,
+      childCount: 0,
+      // Custom fields
+      customFields: data.customFields || {},
+    } as FolderEntityExtended;
   }
 
-  async getEntity(nodeId: NodeId): Promise<FolderEntity | undefined> {
-    return await this.folderDB.folders.where('nodeId').equals(nodeId).first();
-  }
-
-  async updateEntity(nodeId: NodeId, data: Partial<FolderEntity>): Promise<void> {
-    const existing = await this.getEntity(nodeId);
-    if (!existing) {
-      throw new Error(`Folder entity for node ${nodeId} not found`);
-    }
-
-    const updated: FolderEntity = {
-      ...existing,
-      ...data,
-      id: existing.id,
-      nodeId: existing.nodeId,
-      updatedAt: Date.now(),
-      version: existing.version + 1,
-    };
-
-    await this.folderDB.folders.put(updated);
-  }
-
-  async deleteEntity(nodeId: NodeId): Promise<void> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      return; // Already deleted
-    }
-
-    await this.folderDB.transaction('rw', this.folderDB.folders, this.folderDB.bookmarks, this.folderDB.templates, async () => {
-      await this.folderDB.folders.delete(entity.id);
-      await this.folderDB.bookmarks.where('folderId').equals(entity.id).delete();
-      await this.folderDB.templates.where('folderId').equals(entity.id).delete();
-    });
-  }
-
-  async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
-    const entity = await this.getEntity(nodeId);
-    const workingCopyId = crypto.randomUUID() as EntityId;
-    const now = Date.now();
-
-    const workingCopy: FolderEntityWorkingCopy = entity ? {
-      id: workingCopyId,
-      nodeId,
-      name: entity.name,
-      description: entity.description,
-      settings: entity.settings || {
-        allowNestedFolders: true,
-        maxDepth: 10,
-        sortOrder: 'name'
-      },
-      metadata: entity.metadata || {},
-      createdAt: now,
-      updatedAt: now,
-      version: entity.version,
-      copiedAt: now,
-      originalNodeId: nodeId,
-      originalVersion: entity.version,
-    } : {
-      id: workingCopyId,
-      nodeId,
-      name: 'New Folder',
-      description: '',
-      settings: {
-        allowNestedFolders: true,
-        maxDepth: 10,
-        sortOrder: 'name'
-      },
-      metadata: {},
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      copiedAt: now,
-    };
-
-    await this.folderDB.workingCopies.add(workingCopy);
-    return workingCopy;
-  }
-
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityWorkingCopy): Promise<void> {
-    const existingEntity = await this.getEntity(nodeId);
+  /**
+   * Clean up folder-specific data
+   */
+  protected async cleanupEntityData(entity: FolderEntityExtended): Promise<void> {
+    // Remove bookmarks
+    await this.folderDB.bookmarks
+      .where('folderId')
+      .equals(entity.nodeId)
+      .delete();
     
-    if (existingEntity) {
-      await this.updateEntity(nodeId, {
-        name: workingCopy.name,
-        description: workingCopy.description,
-        settings: workingCopy.settings,
-        metadata: workingCopy.metadata,
+    // Remove templates
+    await this.folderDB.templates
+      .where('folderId')
+      .equals(entity.nodeId)
+      .delete();
+  }
+
+  // ========== Folder-specific methods ==========
+
+  /**
+   * Add bookmark to folder
+   */
+  async addBookmark(nodeId: NodeId, bookmark: Omit<FolderBookmark, 'id' | 'folderId'>): Promise<void> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      throw new Error(`Folder not found: ${nodeId}`);
+    }
+
+    const bookmarkRecord: FolderBookmark = {
+      id: crypto.randomUUID(),
+      folderId: nodeId,
+      ...bookmark,
+      createdAt: Date.now()
+    };
+
+    await this.folderDB.bookmarks.add(bookmarkRecord);
+  }
+
+  /**
+   * Remove bookmark from folder
+   */
+  async removeBookmark(nodeId: NodeId, bookmarkId: string): Promise<void> {
+    await this.folderDB.bookmarks
+      .where('id')
+      .equals(bookmarkId)
+      .and(item => item.folderId === nodeId)
+      .delete();
+  }
+
+  /**
+   * Get bookmarks for folder
+   */
+  async getBookmarks(nodeId: NodeId): Promise<FolderBookmark[]> {
+    return await this.folderDB.bookmarks
+      .where('folderId')
+      .equals(nodeId)
+      .toArray();
+  }
+
+  /**
+   * Add template to folder
+   */
+  async addTemplate(nodeId: NodeId, template: Omit<FolderTemplate, 'id' | 'folderId'>): Promise<void> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      throw new Error(`Folder not found: ${nodeId}`);
+    }
+
+    const templateRecord: FolderTemplate = {
+      id: crypto.randomUUID(),
+      folderId: nodeId,
+      ...template,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    await this.folderDB.templates.add(templateRecord);
+  }
+
+  /**
+   * Remove template from folder
+   */
+  async removeTemplate(nodeId: NodeId, templateId: string): Promise<void> {
+    await this.folderDB.templates
+      .where('id')
+      .equals(templateId)
+      .and(item => item.folderId === nodeId)
+      .delete();
+  }
+
+  /**
+   * Get templates for folder
+   */
+  async getTemplates(nodeId: NodeId): Promise<FolderTemplate[]> {
+    return await this.folderDB.templates
+      .where('folderId')
+      .equals(nodeId)
+      .toArray();
+  }
+
+  /**
+   * Search folders with extended criteria
+   */
+  async searchFolders(criteria: FolderSearchCriteria): Promise<FolderEntityExtended[]> {
+    let results = await this.searchEntities(criteria);
+
+    // Apply folder-specific filters
+    if (criteria.category) {
+      results = results.filter(f => f.category === criteria.category);
+    }
+
+    if (criteria.hasBookmarks !== undefined) {
+      const folderIds = await this.getFoldersWithBookmarks();
+      results = results.filter(f => {
+        const hasBookmarks = folderIds.includes(f.nodeId);
+        return hasBookmarks === criteria.hasBookmarks;
       });
-    } else {
-      await this.createEntity(nodeId, workingCopy);
     }
 
-    await this.folderDB.workingCopies.delete(workingCopy.id);
-  }
-
-  async discardWorkingCopy(nodeId: NodeId): Promise<void> {
-    const workingCopy = await this.folderDB.workingCopies.where('nodeId').equals(nodeId).first();
-    if (workingCopy) {
-      await this.folderDB.workingCopies.delete(workingCopy.id);
+    if (criteria.hasTemplates !== undefined) {
+      const folderIds = await this.getFoldersWithTemplates();
+      results = results.filter(f => {
+        const hasTemplates = folderIds.includes(f.nodeId);
+        return hasTemplates === criteria.hasTemplates;
+      });
     }
+
+    return results;
   }
 
-  async cleanup(nodeId: NodeId): Promise<void> {
-    await this.discardWorkingCopy(nodeId);
+  /**
+   * Get folders that have bookmarks
+   */
+  private async getFoldersWithBookmarks(): Promise<NodeId[]> {
+    const bookmarks = await this.folderDB.bookmarks.toArray();
+    return [...new Set(bookmarks.map(b => b.folderId))];
+  }
+
+  /**
+   * Get folders that have templates
+   */
+  private async getFoldersWithTemplates(): Promise<NodeId[]> {
+    const templates = await this.folderDB.templates.toArray();
+    return [...new Set(templates.map(t => t.folderId))];
+  }
+
+  /**
+   * Clean up expired working copies
+   */
+  async cleanup(): Promise<void> {
     await this.folderDB.cleanupExpiredWorkingCopies();
   }
 
-  // Additional methods for folder-plugin-specific functionality
-  async updateWorkingCopy(workingCopyId: EntityId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy> {
-    const existing = await this.folderDB.workingCopies.get(workingCopyId);
-    if (!existing) {
-      throw new Error(`Working copy ${workingCopyId} not found`);
-    }
+  // ========== Metadata delegation methods ==========
 
-    const updated: FolderEntityWorkingCopy = {
-      ...existing,
-      ...updates,
-      id: workingCopyId,
-      updatedAt: Date.now(),
-    };
-
-    await this.folderDB.workingCopies.put(updated);
-    return updated;
+  /**
+   * Set metadata (delegated to metadata handler)
+   */
+  async setMetadata(entityId: EntityId, key: string, value: any): Promise<any> {
+    return await this.metadataHandler.setMetadata(entityId, key, value);
   }
 
-  async addBookmark(nodeId: NodeId, bookmark: Omit<FolderBookmark, 'id' | 'folderId' | 'createdAt'>): Promise<FolderBookmark> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      throw new Error(`Folder entity for node ${nodeId} not found`);
-    }
-
-    const bookmarkId = crypto.randomUUID() as EntityId;
-    const newBookmark: FolderBookmark = {
-      id: bookmarkId,
-      folderId: entity.id,
-      ...bookmark,
-      nodeId: bookmark.nodeId || entity.nodeId,
-      groupId: bookmark.groupId || crypto.randomUUID(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-      type: 'group',
-    };
-
-    await this.folderDB.bookmarks.add(newBookmark);
-    return newBookmark;
+  /**
+   * Get metadata (delegated to metadata handler)
+   */
+  async getMetadata(entityId: EntityId, key: string): Promise<any> {
+    return await this.metadataHandler.getMetadata(entityId, key);
   }
 
-  async removeBookmark(bookmarkId: EntityId): Promise<void> {
-    await this.folderDB.bookmarks.delete(bookmarkId);
+  /**
+   * Add tag (delegated to metadata handler)
+   */
+  async addTag(entityId: EntityId, tag: string): Promise<void> {
+    return await this.metadataHandler.addTag(entityId, tag);
   }
 
-  async getBookmarks(nodeId: NodeId): Promise<FolderBookmark[]> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      return [];
-    }
-    return await this.folderDB.bookmarks.where('folderId').equals(entity.id).toArray();
+  /**
+   * Remove tag (delegated to metadata handler)
+   */
+  async removeTag(entityId: EntityId, tag: string): Promise<void> {
+    return await this.metadataHandler.removeTag(entityId, tag);
   }
 
-  async addTemplate(nodeId: NodeId, template: Omit<FolderTemplate, 'id' | 'folderId' | 'createdAt'>): Promise<FolderTemplate> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      throw new Error(`Folder entity for node ${nodeId} not found`);
-    }
-
-    const templateId = crypto.randomUUID() as EntityId;
-    const newTemplate: FolderTemplate = {
-      id: templateId,
-      folderId: entity.id,
-      ...template,
-      nodeId: template.nodeId || entity.nodeId,
-      groupId: template.groupId || crypto.randomUUID(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-      type: 'group',
-    };
-
-    await this.folderDB.templates.add(newTemplate);
-    return newTemplate;
+  /**
+   * Get tags (delegated to metadata handler)
+   */
+  async getTags(entityId: EntityId): Promise<string[]> {
+    return await this.metadataHandler.getTags(entityId);
   }
+}
 
-  async removeTemplate(templateId: EntityId): Promise<void> {
-    await this.folderDB.templates.delete(templateId);
+/**
+ * Adapter class to make MetadataEntityHandler work with composition
+ */
+class MetadataEntityHandlerAdapter<
+  TEntity extends FolderEntityExtended,
+  TWorkingCopy extends FolderEntityWorkingCopy
+> extends MetadataEntityHandler<TEntity, TWorkingCopy> {
+  constructor(protected table: Table<TEntity, EntityId>) {
+    super();
   }
-
-  async getTemplates(nodeId: NodeId): Promise<FolderTemplate[]> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      return [];
-    }
-    return await this.folderDB.templates.where('folderId').equals(entity.id).toArray();
-  }
-
-  async searchFolders(query: string): Promise<FolderEntity[]> {
-    const lowerQuery = query.toLowerCase();
-    const folders = await this.folderDB.folders.toArray();
-    return folders.filter(folder => 
-      folder.name.toLowerCase().includes(lowerQuery) ||
-      (folder.description && folder.description.toLowerCase().includes(lowerQuery))
-    );
+  
+  protected buildEntity(): TEntity {
+    throw new Error('Not used in adapter');
   }
 }

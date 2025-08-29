@@ -1,0 +1,68 @@
+{
+  "name": "@hierarchidb/project-plugin",
+  "version": "0.0.1",
+  "description": "Project management plugin for HierarchiDB with Deck.gl visualization",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.0.0",
+    "@deck.gl/core": "^9.0.0",
+    "@deck.gl/extensions": "^9.0.0",
+    "@deck.gl/geo-layers": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
+    "@deck.gl/mapbox": "^9.0.0",
+    "@deck.gl/mesh-layers": "^9.0.0",
+    "@hello-pangea/dnd": "^16.6.0",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/ui-map": "workspace:*",
+    "@mui/material": "^6.1.8",
+    "@mui/icons-material": "^6.1.8",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/x-date-pickers": "^6.0.0",
+    "@turf/turf": "^7.0.0",
+    "@watergis/maplibre-gl-export": "^4.0.1",
+    "d3-scale": "^4.0.0",
+    "date-fns": "^3.0.0",
+    "dexie": "^4.0.10",
+    "h3-js": "^4.1.0",
+    "jspdf": "^2.5.0",
+    "maplibre-gl": "^4.0.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/d3-scale": "^4.0.0",
+    "@types/geojson": "^7946.0.10",
+    "@types/react": "^18.3.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

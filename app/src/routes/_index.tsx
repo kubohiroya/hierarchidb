@@ -1,9 +1,10 @@
-import { Box, Typography, Container, Stack, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Container, Stack, IconButton, Tooltip, Button } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import InfoIcon from '@mui/icons-material/Info';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ExtensionIcon from '@mui/icons-material/Extension';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 import { TreeToggleButtonGroup, type TreeConfig } from '@hierarchidb/ui-core';
 import { Folder, AccountTree } from '@mui/icons-material';
@@ -12,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TitleLogo } from '../components/TitleLogo';
+import { TopPageGuidedTour } from '@hierarchidb/runtime-tour';
 
 // Temporary type definition until TreeToggleButtonGroup is available
 
@@ -63,6 +65,9 @@ export default function Index() {
 
   // Track if we're in browser environment to avoid SSR/hydration mismatch
   const [isClient, setIsClient] = useState(false);
+  
+  // State for controlling the guided tour
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -156,17 +161,41 @@ export default function Index() {
             showProgress={false}
           />
 
-          {/* TreeTypes selection buttons */}
-          <TreeToggleButtonGroup
-            trees={treeButtonConfigs}
-            selectedTreeId={null}
-            getSavedPageNodeId={getSavedPageNodeId}
-            savePageNodeId={savePageNodeId}
-            onTreeSelect={handleTreeSelect}
-            orientation="horizontal"
-            size="large"
-            sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
-          />
+          {/* TreeTypes selection buttons and Tags button */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TreeToggleButtonGroup
+              trees={treeButtonConfigs}
+              selectedTreeId={null}
+              getSavedPageNodeId={getSavedPageNodeId}
+              savePageNodeId={savePageNodeId}
+              onTreeSelect={handleTreeSelect}
+              orientation="horizontal"
+              size="large"
+              sx={{ backgroundColor: 'background.paper', borderRadius: 2, p: 1 }}
+            />
+            
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<LocalOfferIcon />}
+              onClick={() => navigate('/tags')}
+              sx={{
+                height: '56px', // Match toggle button height
+                px: 3,
+                textTransform: 'none',
+                borderRadius: 2,
+                borderColor: 'divider',
+                color: 'text.primary',
+                backgroundColor: 'background.paper',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  backgroundColor: 'action.hover',
+                },
+              }}
+            >
+              Tags
+            </Button>
+          </Box>
 
           {/* Bottom-left corner buttons */}
           <div
@@ -182,10 +211,7 @@ export default function Index() {
             {/* 1. Help/Tour - User onboarding and assistance */}
             <Tooltip title="Open Guided Tour">
               <IconButton
-                onClick={() => {
-                  // TODO: Implement guided tour functionality
-                  console.log('Guided tour not yet implemented');
-                }}
+                onClick={() => setIsTourOpen(true)}
                 size="small"
                 sx={{
                   color: 'text.secondary',
@@ -251,6 +277,14 @@ export default function Index() {
             )}
           </div>
       </div>
+      
+      {/* Guided Tour Component */}
+      {isTourOpen && (
+        <TopPageGuidedTour
+          run={isTourOpen}
+          onFinish={() => setIsTourOpen(false)}
+        />
+      )}
     </>
   );
 }

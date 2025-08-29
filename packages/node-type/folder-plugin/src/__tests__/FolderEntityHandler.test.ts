@@ -91,9 +91,9 @@ describe('FolderEntityHandler', () => {
         url: 'https://example.com',
         description: 'A test bookmark',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'test-group',
-        version: 1,
         updatedAt: Date.now()
       });
 
@@ -112,9 +112,9 @@ describe('FolderEntityHandler', () => {
         name: 'Test Bookmark',
         url: 'https://example.com',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'test-group',
-        version: 1,
         updatedAt: Date.now()
       });
 
@@ -134,9 +134,9 @@ describe('FolderEntityHandler', () => {
         content: { type: 'folder', children: [] },
         description: 'A test template',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'test-group',
-        version: 1,
         updatedAt: Date.now()
       });
 

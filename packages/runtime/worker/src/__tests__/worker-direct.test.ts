@@ -1,4 +1,5 @@
 /**
+import type { NodeId, Tree, TreeNode } from '@hierarchidb/common-type';
  * Worker層直接呼び出しテスト
  *
  * Comlink経由ではなく、Worker内部のサービスを直接テストします。
@@ -14,7 +15,6 @@ import { TreeSubscriptionService } from '../services/TreeSubscriptionService';
 import { CommandProcessor } from '../command/CommandProcessor';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
 import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
-import type { NodeId, Tree, TreeNode } from '@hierarchidb/common-core';
 
 describe('Worker層直接呼び出しテスト', () => {
   let coreDB: CoreDB;

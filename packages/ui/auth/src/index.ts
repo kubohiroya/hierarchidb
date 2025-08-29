@@ -7,6 +7,8 @@ export { AuthProviderDialog } from './components/AuthProviderDialog';
 export type { AuthProviderOption } from './components/AuthProviderOption';
 export { AuthProviderOptions } from './components/AuthProviderOptions';
 export { AuthProviderPrompt, AuthRequiredPrompt } from './components/AuthProviderPrompt';
+export { AuthRequiredDialog } from './components/AuthRequiredDialog';
+export type { AuthRequiredDialogProps } from './components/AuthRequiredDialog';
 export { MicrosoftIcon } from './components/MicrosoftIcon';
 export { OAuthCallback } from './components/OAuthCallback';
 export { OidcProvider } from './components/OidcProvider';

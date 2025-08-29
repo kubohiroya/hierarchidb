@@ -19,6 +19,9 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@hierarchidb/common-auth": [
+        "../../common/auth/dist/index.d.ts"
       ]
     },
     "tsBuildInfoFile": "dist/.tsbuildinfo",

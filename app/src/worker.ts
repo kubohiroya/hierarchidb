@@ -97,6 +97,11 @@ class WorkerAPIProxy {
     return instance.getPluginRegistryAPI();
   }
 
+  async getNodeTypeRegistryAPI() {
+    const instance = await this.getInstance();
+    return instance.getNodeTypeRegistryAPI();
+  }
+
   async getWorkingCopyAPI() {
     const instance = await this.getInstance();
     return instance.getWorkingCopyAPI();
@@ -107,6 +112,11 @@ class WorkerAPIProxy {
     return instance.getPluginTreeAPI();
   }
 
+  async getTreePluginAnalyzer() {
+    const instance = await this.getInstance();
+    return instance.getTreePluginAnalyzer();
+  }
+
   async getNodeTypeAPI() {
     const instance = await this.getInstance();
     return instance.getNodeTypeAPI();
@@ -115,6 +125,11 @@ class WorkerAPIProxy {
   async getPluginManagementAPI() {
     const instance = await this.getInstance();
     return instance.getPluginManagementAPI();
+  }
+
+  async getPluginLifecycleAPI() {
+    const instance = await this.getInstance();
+    return instance.getPluginLifecycleAPI();
   }
 
   /**

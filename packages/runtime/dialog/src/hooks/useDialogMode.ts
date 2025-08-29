@@ -1,0 +1,231 @@
+/**
+ * @file useDialogMode.ts
+ * @description PeerEntityを使用したダイアログモード管理フック
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { PeerEntity } from '@hierarchidb/common-type';
+
+/**
+ * 地図パラメータの型定義
+ */
+export interface MapParams {
+  zoom: number;
+  lng: number;
+  lat: number;
+}
+
+/**
+ * ダイアログモード管理フックの戻り値
+ */
+export interface UseDialogModeReturn {
+  /** 現在のダイアログモード */
+  dialogMode: 'normal' | 'full';
+  /** ダイアログモードを設定 */
+  setDialogMode: (mode: 'normal' | 'full') => Promise<void>;
+  /** 再開ステップ番号 */
+  resumeStep?: number;
+  /** 再開ステップを設定 */
+  setResumeStep: (step: number | undefined) => Promise<void>;
+  /** 再開ステップをクリア */
+  clearResumeStep: () => Promise<void>;
+  /** 地図パラメータ */
+  mapParams?: MapParams;
+  /** 地図パラメータを設定 */
+  setMapParams: (params: MapParams | undefined) => Promise<void>;
+  /** 読み込み中フラグ */
+  isLoading: boolean;
+  /** エラー */
+  error: Error | null;
+}
+
+/**
+ * PeerEntityベースのダイアログモード管理フック
+ * @param nodeId - 対象ノードのID
+ * @param nodeType - ノードタイプ
+ * @param defaultMode - デフォルトモード
+ * @returns ダイアログモード管理オブジェクト
+ */
+export function useDialogMode(
+  nodeId?: NodeId,
+  nodeType?: string,
+  defaultMode: 'normal' | 'full' = 'normal'
+): UseDialogModeReturn {
+  //const workerAPI = useWorkerAPI();
+  const [dialogMode, setDialogModeState] = useState<'normal' | 'full'>(defaultMode);
+  const [resumeStep, setResumeStepState] = useState<number | undefined>(undefined);
+  const [mapParams, setMapParamsState] = useState<MapParams | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // PeerEntityからダイアログモードを読み込み
+  useEffect(() => {
+    if (!nodeId || !nodeType) {
+      return;
+    }
+
+    const loadDialogMode = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // PeerEntityを取得
+        const entity = await workerAPI.pluginTreeAPI.getPeerEntity(nodeId, nodeType);
+
+        if (entity) {
+          if (entity.dialogMode) {
+            setDialogModeState(entity.dialogMode);
+          }
+          if (entity.resumeStep !== undefined) {
+            setResumeStepState(entity.resumeStep);
+          }
+          if (entity.mapParams) {
+            setMapParamsState(entity.mapParams);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load dialog mode from PeerEntity:', err);
+        setError(err instanceof Error ? err : new Error('Failed to load dialog mode'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDialogMode();
+  }, [nodeId, nodeType, workerAPI]);
+
+  // ダイアログモードをPeerEntityに保存
+  const setDialogMode = useCallback(
+    async (mode: 'normal' | 'full') => {
+      if (!nodeId || !nodeType || !workerAPI) {
+        setDialogModeState(mode);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // PeerEntityを取得
+        const entity = await workerAPI.pluginTreeAPI.getPeerEntity(nodeId, nodeType);
+
+        if (entity) {
+          // dialogModeを更新
+          const updatedEntity: Partial<PeerEntity> = {
+            ...entity,
+            dialogMode: mode,
+          };
+
+          // PeerEntityを更新
+          await workerAPI.pluginTreeAPI.updatePeerEntity(nodeId, nodeType, updatedEntity);
+        }
+
+        setDialogModeState(mode);
+      } catch (err) {
+        console.error('Failed to save dialog mode to PeerEntity:', err);
+        setError(err instanceof Error ? err : new Error('Failed to save dialog mode'));
+        // エラーが発生しても状態は更新（ローカルで機能するように）
+        setDialogModeState(mode);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [nodeId, nodeType, workerAPI]
+  );
+
+  // 再開ステップを設定
+  const setResumeStep = useCallback(
+    async (step: number | undefined) => {
+      if (!nodeId || !nodeType || !workerAPI) {
+        setResumeStepState(step);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // PeerEntityを取得
+        const entity = await workerAPI.pluginTreeAPI.getPeerEntity(nodeId, nodeType);
+
+        if (entity) {
+          // resumeStepを更新
+          const updatedEntity: Partial<PeerEntity> = {
+            ...entity,
+            resumeStep: step,
+          };
+
+          // PeerEntityを更新
+          await workerAPI.pluginTreeAPI.updatePeerEntity(nodeId, nodeType, updatedEntity);
+        }
+
+        setResumeStepState(step);
+      } catch (err) {
+        console.error('Failed to save resume step to PeerEntity:', err);
+        setError(err instanceof Error ? err : new Error('Failed to save resume step'));
+        // エラーが発生しても状態は更新（ローカルで機能するように）
+        setResumeStepState(step);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [nodeId, nodeType, workerAPI]
+  );
+
+  // 再開ステップをクリア
+  const clearResumeStep = useCallback(async () => {
+    await setResumeStep(undefined);
+  }, [setResumeStep]);
+
+  // 地図パラメータを設定
+  const setMapParams = useCallback(
+    async (params: MapParams | undefined) => {
+      if (!nodeId || !nodeType || !workerAPI) {
+        setMapParamsState(params);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // PeerEntityを取得
+        const entity = await workerAPI.pluginTreeAPI.getPeerEntity(nodeId, nodeType);
+
+        if (entity) {
+          // mapParamsを更新
+          const updatedEntity: Partial<PeerEntity> = {
+            ...entity,
+            mapParams: params,
+          };
+
+          // PeerEntityを更新
+          await workerAPI.pluginTreeAPI.updatePeerEntity(nodeId, nodeType, updatedEntity);
+        }
+
+        setMapParamsState(params);
+      } catch (err) {
+        console.error('Failed to save map params to PeerEntity:', err);
+        setError(err instanceof Error ? err : new Error('Failed to save map params'));
+        // エラーが発生しても状態は更新（ローカルで機能するように）
+        setMapParamsState(params);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [nodeId, nodeType, workerAPI]
+  );
+
+  return {
+    dialogMode,
+    setDialogMode,
+    resumeStep,
+    setResumeStep,
+    clearResumeStep,
+    mapParams,
+    setMapParams,
+    isLoading,
+    error,
+  };
+}

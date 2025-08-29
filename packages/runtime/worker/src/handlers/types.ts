@@ -1,19 +1,64 @@
 /**
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
  * @file types.ts
  * @description Re-export handler types from core to avoid duplication
  */
 
-// Re-export all handler types from core
+// Re-export all handler types from common-type
 export type {
   BaseEntity,
   GroupEntity,
   WorkingCopy,
-  EntityBackup,
+  PeerEntity,
+  RelationalEntity,
+  EntityMetadata,
+  WorkingCopyProperties,
+  Timestamp,
   EntityHandler,
-} from '@hierarchidb/common-core';
+  EntityBackup,
+  ValidationResult,
+  ValidationFunction,
+  PluginMetadata,
+  NodeTypeDefinition,
+  PluginDatabaseConfig,
+  PluginUIConfig,
+  PluginAPIConfig,
+  PluginValidationConfig,
+  EntityReferenceHints,
+  EntityWorkingCopy,
+  EntityWorkingCopySession,
+  EntityWorkingCopyStats,
+  PeerEntityWorkingCopy,
+  GroupEntityWorkingCopy,
+  RelationalEntityWorkingCopy,
+  ExportOptions,
+  ExportResult,
+  ImportResult,
+  ImportProgress,
+  ExportProgress,
+  ImportManifest,
+  ExportManifest,
+  TreeNodeExportData,
+  FileImportOptions,
+  TemplateImportOptions,
+  IdMapping,
+  CommandEnvelope,
+  ImportNodesPayload,
+  EntityType,
+  IPluginRegistry,
+  CorePeerEntity,
+  CoreGroupEntity,
+  WorkerPluginRouterAction,
+  IconDefinition,
+  CategoryDefinition,
+  CoreValidationRule,
+  CoreNodeLifecycleHooks,
+  CorePluginDefinition,
+  PluginRoutingConfig,
+  NodeTypeConfig,
+} from '@hierarchidb/common-type';
 
 // Worker-specific extensions (if needed)
-import type { NodeId } from '@hierarchidb/common-core';
 
 /**
  * Configuration for entity handler

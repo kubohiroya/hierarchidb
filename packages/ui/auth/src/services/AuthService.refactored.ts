@@ -5,7 +5,6 @@
  * 🟢 信頼性レベル: OAuth2.0標準仕様準拠
  */
 
-import { devError, devLog, devWarn } from '@hierarchidb/common-core';
 import { AuthConfig, AUTH_CONSTANTS, AuthConfigValidator } from './AuthServiceConfig';
 import { AuthTokenManager, AuthToken } from './AuthTokenManager';
 import { AuthSecurityUtils } from './AuthSecurityUtils';
@@ -65,9 +64,17 @@ export class AuthService {
   static initialize(config: AuthConfig): void {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService(config);
-      devLog('AuthService初期化完了');
+      if (import.meta.env.DEV) {
+
+        console.log('AuthService初期化完了');
+
+      }
     } else {
-      devWarn('AuthServiceは既に初期化済みです。再初期化は無視されました。');
+      if (import.meta.env.DEV) {
+
+        console.warn('AuthServiceは既に初期化済みです。再初期化は無視されました。');
+
+      }
     }
   }
 
@@ -98,7 +105,11 @@ export class AuthService {
    * 🟡 信頼性レベル: 将来の拡張を考慮
    */
   setAuthMethod(method: AuthMethod): void {
-    devLog(`認証方式変更リクエスト: ${method}（現在はpopupのみサポート）`);
+    if (import.meta.env.DEV) {
+
+      console.log(`認証方式変更リクエスト: ${method}（現在はpopupのみサポート）`);
+
+    }
   }
 
   /**
@@ -133,7 +144,11 @@ export class AuthService {
       return result;
     } catch (error) {
       // 【エラーログ】: デバッグ用の詳細ログ
-      devError('認証エラー:', error);
+      if (import.meta.env.DEV) {
+
+        console.error('認証エラー:', error);
+
+      }
       throw error;
     } finally {
       // 【状態リセット】: 必ずフラグをリセット
@@ -165,7 +180,11 @@ export class AuthService {
       throw new Error('ポップアップがブロックされました。ブラウザの設定を確認してください。');
     }
 
-    devLog('認証ポップアップを開きました');
+    if (import.meta.env.DEV) {
+
+      console.log('認証ポップアップを開きました');
+
+    }
 
     return new Promise((resolve, reject) => {
       // 【タイムアウト設定】: 長時間の待機を防ぐ
@@ -178,13 +197,21 @@ export class AuthService {
       const messageHandler = (event: MessageEvent) => {
         // 【Origin検証】: セキュリティのため厳密に検証
         if (!AuthSecurityUtils.isValidMessageOrigin(event.origin, this.config.authOrigin)) {
-          devLog(`不正なOriginからのメッセージを無視: ${event.origin}`);
+          if (import.meta.env.DEV) {
+
+            console.log(`不正なOriginからのメッセージを無視: ${event.origin}`);
+
+          }
           return;
         }
 
         // 【成功処理】: 認証成功時の処理
         if (event.data.type === 'auth-success') {
-          devLog('認証成功');
+          if (import.meta.env.DEV) {
+
+            console.log('認証成功');
+
+          }
           
           const result: AuthResult = {
             accessToken: event.data.accessToken,
@@ -200,7 +227,11 @@ export class AuthService {
         
         // 【エラー処理】: 認証失敗時の処理
         else if (event.data.type === 'auth-error') {
-          devError('認証エラー:', event.data.error);
+          if (import.meta.env.DEV) {
+
+            console.error('認証エラー:', event.data.error);
+
+          }
           
           clearTimeout(timeoutId);
           this.cleanupPopupAuth(popup, messageHandler);
@@ -325,7 +356,11 @@ export class AuthService {
         popup.close();
       } catch (e) {
         // ポップアップが既に閉じられている可能性
-        devLog('ポップアップクローズエラー（無視可能）:', e);
+        if (import.meta.env.DEV) {
+
+          console.log('ポップアップクローズエラー（無視可能）:', e);
+
+        }
       }
     }
     
@@ -343,7 +378,11 @@ export class AuthService {
       try {
         handler();
       } catch (e) {
-        devError('クリーンアップエラー:', e);
+        if (import.meta.env.DEV) {
+
+          console.error('クリーンアップエラー:', e);
+
+        }
       }
     });
     this.cleanupHandlers.clear();
@@ -404,7 +443,11 @@ export class AuthService {
     
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        devLog(`認証試行 ${attempt}/${this.maxRetries}`);
+        if (import.meta.env.DEV) {
+
+          console.log(`認証試行 ${attempt}/${this.maxRetries}`);
+
+        }
         return await this.authenticate();
       } catch (error) {
         lastError = error as Error;
@@ -412,7 +455,11 @@ export class AuthService {
         if (attempt < this.maxRetries) {
           // 【指数バックオフ】: 2^attempt * 1000ms
           const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
-          devLog(`${delay}ms後にリトライします...`);
+          if (import.meta.env.DEV) {
+
+            console.log(`${delay}ms後にリトライします...`);
+
+          }
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -439,12 +486,20 @@ export class AuthService {
     const refreshToken = this.tokenManager.getRefreshToken();
     
     if (!refreshToken) {
-      devWarn('リフレッシュトークンが存在しません');
+      if (import.meta.env.DEV) {
+
+        console.warn('リフレッシュトークンが存在しません');
+
+      }
       return null;
     }
 
     // TODO: リフレッシュトークンフローの実装
-    devWarn('リフレッシュトークン機能は未実装です');
+    if (import.meta.env.DEV) {
+
+      console.warn('リフレッシュトークン機能は未実装です');
+
+    }
     return null;
   }
 
@@ -478,7 +533,11 @@ export class AuthService {
           try {
             window.close();
           } catch (e) {
-            devLog('ウィンドウを閉じることができませんでした:', e);
+            if (import.meta.env.DEV) {
+
+              console.log('ウィンドウを閉じることができませんでした:', e);
+
+            }
           }
         }
       }, 1000);

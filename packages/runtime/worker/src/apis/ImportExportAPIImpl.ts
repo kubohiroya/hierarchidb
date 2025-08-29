@@ -1,3 +1,5 @@
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-core';
 import type {
   ImportExportAPI,
   ImportNodesParams,
@@ -11,8 +13,7 @@ import type {
   ImportProgress,
   ExportProgress,
 } from '@hierarchidb/common-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 import { CoreDB } from '../db/CoreDB';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
 
@@ -111,7 +112,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
           const node: TreeNode = {
             id: nodeId,
             parentId: params.targetParentId,
-            nodeType: nodeData.nodeType || 'folder',
+            nodeType: (nodeData.nodeType || 'folder') as NodeType,
             name: nodeData.name,
             description: nodeData.description,
             depth: 0, // Will be calculated by database operations

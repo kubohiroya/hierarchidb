@@ -1,12 +1,6 @@
-import type {
-  CommandEnvelope,
-  Timestamp,
-  TreeNode,
-  NodeId,
-  NodeType,
-  WorkingCopy,
-} from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
+import {  } from '@hierarchidb/common-core';
+import type { CommandEnvelope, Timestamp, TreeNode, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../command/CommandProcessor';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';

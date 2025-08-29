@@ -1,4 +1,4 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GroupEntity, WorkingCopy } from './types';
 import { BaseEntityHandler } from './EntityHandler';

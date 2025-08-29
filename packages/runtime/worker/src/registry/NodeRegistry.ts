@@ -1,11 +1,11 @@
 /**
+import type { IPluginRegistry, NodeType } from '@hierarchidb/common-type';
  * @file NodeRegistry.ts
  * @description Extended NodeTypeRegistry with PluginDefinition support
  * Singleton pattern implementation for centralized plugin management
  * References: docs/7-aop-architecture.md, ../eria-cartograph/app0/src/shared/services/ResourceDefinitionRegistry.ts
  */
 
-import type { IPluginRegistry, NodeType } from '@hierarchidb/common-core';
 import { workerLog, workerWarn } from '../utils/workerLogger';
 import type { NodeTypeConfig } from './types';
 import type {

@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 
-import { devWarn } from '@hierarchidb/common-core';
-import { formatBytes } from '@hierarchidb/common-core';
+import { formatBytes } from '@hierarchidb/util';
+
 interface MemoryDataPoint {
   timestamp: number;
   used: number;
@@ -191,7 +191,11 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         return newPoints;
       });
     } catch (error) {
-      devWarn('Memory measurement failed:', error);
+      if (import.meta.env.DEV) {
+
+        console.warn('Memory measurement failed:', error);
+
+      }
     }
   }, [isPaused, maxMemory, categorizeMemory, maxDataPoints]);
 

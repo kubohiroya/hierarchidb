@@ -1,5 +1,5 @@
-import type { CommandEnvelope, ObserveNodePayload, Timestamp, NodeId } from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
+import type { CommandEnvelope, ObserveNodePayload, Timestamp, NodeId } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-type';
 import { firstValueFrom, take, timeout } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TreeSubscriptionService } from '../TreeSubscriptionService';

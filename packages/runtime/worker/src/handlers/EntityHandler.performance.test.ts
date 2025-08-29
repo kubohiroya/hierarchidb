@@ -1,10 +1,10 @@
 /**
+import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-type';
  * @file EntityHandler.performance.test.ts
  * @description Performance and stress tests for EntityHandler implementations
  * Tests scalability, memory usage, and concurrent operations
  */
 
-import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

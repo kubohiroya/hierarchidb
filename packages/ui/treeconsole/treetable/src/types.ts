@@ -10,11 +10,11 @@ import { TreeNode } from '@hierarchidb/common-type';
 
 // Base TreeNode interface (simplified from core)
 export interface TreeNodeInUI extends TreeNode {
-  nodeType: string;
   type?: string;
   name: string;
   hasChildren?: boolean;
   isExpanded?: boolean;
+  depth: number;
   // [key: string]: any;
 }
 

@@ -1,10 +1,10 @@
 /**
+import type { NodeId, TreeId, TreeNode, SubscriptionId, TreeNodeEvent } from '@hierarchidb/common-type';
  * @file TreeSubscriptionAPI.test.ts  
  * @description Comprehensive test suite for TreeSubscriptionAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode, SubscriptionId, TreeNodeEvent } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
 import type { TreeSubscriptionAPI } from '@hierarchidb/common-api';

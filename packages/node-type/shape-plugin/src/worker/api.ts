@@ -30,6 +30,15 @@ import {
 } from '../shared';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader';
+import { BatchSessionManager } from '../services/BatchSessionManager';
+import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB';
+import * as Comlink from 'comlink';
+
+// Create singleton instance of BatchSessionManager
+const batchSessionManager = new BatchSessionManager();
+
+// Progress callback registry
+const progressCallbacks = new Map<string, (event: any) => void>();
 
 export const shapePluginAPI = {
   // ===================================
@@ -180,51 +189,202 @@ export const shapePluginAPI = {
   startBatchProcessing: async (
     workingCopyId: EntityId,
     config: ProcessingConfig,
-    _urlMetadata: UrlMetadata[]
+    urlMetadata: UrlMetadata[],
+    progressCallback?: (event: any) => void
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
 
-    const sessionId = generateSessionId();
-    console.log(
-      `Started batch processing session: ${sessionId} for working copy: ${workingCopyId}`
+    // Get working copy to find the associated nodeId
+    const handler = new ShapeEntityHandler();
+    const workingCopy = await handler.getWorkingCopy(workingCopyId);
+    if (!workingCopy) {
+      throw new Error(`Working copy not found: ${workingCopyId}`);
+    }
+
+    // Convert ProcessingConfig to BatchConfig
+    const batchConfig = {
+      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl || '',
+      dataSource: config.dataSource,
+      download: {
+        concurrentDownloads: config.downloadConfig?.maxConcurrent || 4,
+        deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles || false,
+      },
+      simplify1: {
+        concurrentProcesses: config.simplificationConfig?.level1Workers || 2,
+        enableFeatureFiltering: config.simplificationConfig?.enableFiltering || true,
+        featureAreaThreshold: config.simplificationConfig?.areaThreshold || 0.5,
+        minVertexCountForAreaFilter: 25,
+        aspectRatioThreshold: 5,
+        featureFilterMethod: 'hybrid' as const,
+        hybridFilterConfig: {
+          quickRejectThreshold: 0.1,
+          regularShapeMinRatio: 0.5,
+          regularShapeMaxRatio: 2.0,
+          simpleShapeVertexThreshold: 50,
+          elongatedShapeCorrectionFactor: 0.8,
+        },
+        deleteOnComplete: false,
+      },
+      simplify2: {
+        concurrentProcesses: config.simplificationConfig?.level2Workers || 2,
+        quantize: 1e4,
+        simplify: config.simplificationConfig?.tolerance || 0.01,
+        tolerance: 0.1,
+        enablePerFeatureSimplification: true,
+        deleteOnComplete: false,
+      },
+      vectorTiles: {
+        concurrentProcesses: config.tileConfig?.workers || 2,
+        maxZoom: config.tileConfig?.maxZoom || 14,
+        tileCountThresholdForZoomStop: 5000,
+      },
+    };
+
+    // Create URL tasks from metadata
+    const urlTasks = urlMetadata.map(meta => ({
+      urlString: meta.url,
+      adminLevel: meta.adminLevel,
+      countryCode: meta.countryCode,
+    }));
+
+    // Start batch session - authentication is handled internally by BatchSessionManager
+    const sessionId = await batchSessionManager.startBatchSession(
+      workingCopy.nodeId,
+      batchConfig,
+      urlTasks
     );
+
+    // Register progress callback if provided
+    if (progressCallback) {
+      const proxiedCallback = Comlink.proxy(progressCallback);
+      progressCallbacks.set(sessionId, proxiedCallback);
+      batchSessionManager.onProgress(sessionId, proxiedCallback);
+    }
+
+    // Save session ID to working copy
+    await handler.updateWorkingCopy(workingCopyId, {
+      batchSessionId: sessionId,
+    });
+
     return sessionId;
   },
 
   pauseBatchProcessing: async (workingCopyId: EntityId): Promise<void> => {
-    console.log(`Pausing batch processing for working copy: ${workingCopyId}`);
+    const handler = new ShapeEntityHandler();
+    const workingCopy = await handler.getWorkingCopy(workingCopyId);
+    if (!workingCopy || !workingCopy.batchSessionId) {
+      throw new Error(`No active batch session for working copy: ${workingCopyId}`);
+    }
+
+    await batchSessionManager.pauseBatchSession(workingCopy.batchSessionId);
   },
 
   resumeBatchProcessing: async (workingCopyId: EntityId): Promise<string> => {
-    console.log(`Resuming batch processing for working copy: ${workingCopyId}`);
-    return generateSessionId();
+    const handler = new ShapeEntityHandler();
+    const workingCopy = await handler.getWorkingCopy(workingCopyId);
+    if (!workingCopy || !workingCopy.batchSessionId) {
+      throw new Error(`No batch session to resume for working copy: ${workingCopyId}`);
+    }
+
+    await batchSessionManager.resumeBatchSession(workingCopy.batchSessionId);
+    return workingCopy.batchSessionId;
   },
 
   cancelBatchProcessing: async (workingCopyId: EntityId): Promise<void> => {
-    console.log(`Cancelling batch processing for working copy: ${workingCopyId}`);
+    const handler = new ShapeEntityHandler();
+    const workingCopy = await handler.getWorkingCopy(workingCopyId);
+    if (!workingCopy || !workingCopy.batchSessionId) {
+      throw new Error(`No active batch session for working copy: ${workingCopyId}`);
+    }
+
+    await batchSessionManager.cancelBatchSession(workingCopy.batchSessionId);
+    
+    // Clear session ID from working copy
+    await handler.updateWorkingCopy(workingCopyId, {
+      batchSessionId: undefined,
+    });
   },
 
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
-    console.log(`Getting batch session: ${sessionId}`);
-    return undefined;
+    const ephemeralDB = getEphemeralShapeDB();
+    const session = await ephemeralDB.sessions.get(sessionId);
+    
+    if (!session) {
+      return undefined;
+    }
+
+    return {
+      sessionId: session.id,
+      workingCopyId: session.nodeId as unknown as EntityId, // Convert NodeId to EntityId
+      status: session.status,
+      progress: session.progress,
+      stage: session.stage,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      config: session.config,
+      totalTasks: session.totalTasks,
+      completedTasks: session.completedTasks,
+      failedTasks: session.failedTasks,
+      error: session.error,
+    };
   },
 
   getBatchTasks: async (sessionId: string): Promise<BatchTask[]> => {
-    console.log(`Getting batch tasks for session: ${sessionId}`);
-    return [];
+    const ephemeralDB = getEphemeralShapeDB();
+    const tasks = await ephemeralDB.tasks.where('sessionId').equals(sessionId).toArray();
+    
+    return tasks.map(task => ({
+      id: task.id,
+      sessionId: task.sessionId,
+      stage: task.stage,
+      url: task.urlString,
+      status: task.status,
+      progress: task.progress || 0,
+      error: task.error,
+      startTime: task.startTime,
+      endTime: task.endTime,
+      retryCount: task.retryCount || 0,
+      metadata: {
+        adminLevel: task.adminLevel,
+        countryCode: task.countryCode,
+      },
+    }));
   },
 
   getBatchProgress: async (workingCopyId: EntityId): Promise<ProgressInfo> => {
-    console.log(`Getting batch progress for working copy: ${workingCopyId}`);
+    const handler = new ShapeEntityHandler();
+    const workingCopy = await handler.getWorkingCopy(workingCopyId);
+    if (!workingCopy || !workingCopy.batchSessionId) {
+      return {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      };
+    }
+
+    const session = await shapePluginAPI.getBatchSession(workingCopy.batchSessionId);
+    if (!session) {
+      return {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+      };
+    }
+
     return {
-      total: 0,
-      completed: 0,
-      failed: 0,
+      total: session.totalTasks || 0,
+      completed: session.completedTasks || 0,
+      failed: session.failedTasks || 0,
       skipped: 0,
-      percentage: 0,
+      percentage: session.progress || 0,
+      currentStage: session.stage,
     };
   },
 
@@ -309,6 +469,52 @@ export const shapePluginAPI = {
       expiredBatchSessions: 0,
       estimatedSpaceUsed: 0,
       lastCleanupAt: Date.now(),
+    };
+  },
+
+  // ===================================
+  // Real-time Progress Subscription
+  // ===================================
+
+  subscribeToProgress: (sessionId: string, callback: (event: any) => void): (() => void) => {
+    // Register callback with Comlink proxy
+    const proxiedCallback = Comlink.proxy(callback);
+    progressCallbacks.set(sessionId, proxiedCallback);
+    batchSessionManager.onProgress(sessionId, proxiedCallback);
+    
+    // Return unsubscribe function
+    return () => {
+      progressCallbacks.delete(sessionId);
+      // Note: BatchSessionManager should handle cleanup of inactive callbacks
+      batchSessionManager.cleanupInactiveSubscriptions();
+    };
+  },
+
+  getProcessingStatus: async (nodeId: NodeId): Promise<ProcessingStatus> => {
+    const handler = new ShapeEntityHandler();
+    const entity = await handler.getEntityByNodeId(nodeId);
+    
+    if (!entity || !entity.batchSessionId) {
+      return {
+        status: 'idle',
+        lastUpdated: Date.now(),
+      };
+    }
+
+    const session = await shapePluginAPI.getBatchSession(entity.batchSessionId);
+    if (!session) {
+      return {
+        status: 'idle',
+        lastUpdated: Date.now(),
+      };
+    }
+
+    return {
+      status: session.status,
+      stage: session.stage,
+      progress: session.progress,
+      lastUpdated: Date.now(),
+      error: session.error,
     };
   },
 

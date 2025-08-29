@@ -1,15 +1,12 @@
-// Define local types instead of importing from ui-plugin-base for now
+// Import types from correct common-type package
 import type { TreeNode } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../entities/FolderEntity';
 import type {
   DialogStepDefinition,
   ValidationExtension,
   BaseEntityExtension,
-  ExtensionMetadata,
-  PluginExtensionConfig,
-  ExtendableNodeTypeDefinition
-} from '@hierarchidb/ui-plugin-base';
-
+  ExtendingNodeTypeDefinition
+} from '@hierarchidb/common-type';
 
 /**
  * Extension point for folder-plugin dialogs
@@ -83,7 +80,13 @@ export interface FolderExtension {
   /**
    * Extension metadata
    */
-  metadata: ExtensionMetadata;
+  metadata: {
+    id: string;
+    name: string;
+    version: string;
+    description?: string;
+    dependencies?: string[];
+  };
 
   /**
    * Dialog extensions
@@ -378,7 +381,7 @@ export class FolderExtensionRegistry {
   /**
    * Build plugin extension config from registered extensions
    */
-  buildExtensionConfig(): PluginExtensionConfig {
+  buildExtensionConfig() {
     const extensions = this.getExtensionsInOrder();
     
     // Combine all dialog steps from extensions
@@ -407,7 +410,7 @@ export class FolderExtensionRegistry {
       }
     }
 
-    const config: PluginExtensionConfig = {
+    const config = {
       dialog: {
         createSteps: createSteps.length > 0 ? createSteps : undefined,
         editSteps: editSteps.length > 0 ? editSteps : undefined,
@@ -427,17 +430,27 @@ export class FolderExtensionRegistry {
   }
 
   /**
-   * Create an ExtendableNodeTypeDefinition from the base folder-plugin definition and extensions
+   * Create an ExtendingNodeTypeDefinition from the base folder-plugin definition and extensions
    */
   createExtendableDefinition(
-    baseDefinition: ExtendableNodeTypeDefinition
-  ): ExtendableNodeTypeDefinition {
+    baseDefinition: ExtendingNodeTypeDefinition
+  ): ExtendingNodeTypeDefinition {
     const config = this.buildExtensionConfig();
+    const extensions = this.getExtensionsInOrder();
 
     return {
+      extends: baseDefinition.extends,
       nodeType: baseDefinition.nodeType,
+      name: baseDefinition.name,
+      displayName: baseDefinition.displayName,
+      extendedSteps: config.dialog?.createSteps || config.dialog?.editSteps,
+      extendedFields: extensions.flatMap(ext => ext.metadata.dependencies || []).map(dep => ({
+        name: dep,
+        type: 'string',
+        required: false
+      })),
+      extendedValidation: config.validation,
       baseDefinition: baseDefinition.baseDefinition,
-      extensions: [config],
     };
   }
 
@@ -491,7 +504,6 @@ export class FolderExtensionRegistry {
 
     return dependents;
   }
-
 
 }
 

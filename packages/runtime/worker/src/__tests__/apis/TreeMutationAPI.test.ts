@@ -1,10 +1,10 @@
 /**
+import type { NodeId, TreeId, TreeNode, WorkingCopyId } from '@hierarchidb/common-type';
  * @file TreeMutationAPI.test.ts
  * @description Comprehensive test suite for TreeMutationAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode, WorkingCopyId } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
 import { EphemeralDB } from '../../db/EphemeralDB';

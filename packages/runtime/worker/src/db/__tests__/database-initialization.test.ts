@@ -1,5 +1,5 @@
+import type { NodeId, TreeNode, WorkingCopy } from '@hierarchidb/common-type';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId, TreeNode, WorkingCopy } from '@hierarchidb/common-core';
 import { CoreDB } from '../CoreDB';
 import { EphemeralDB } from '../EphemeralDB';
 

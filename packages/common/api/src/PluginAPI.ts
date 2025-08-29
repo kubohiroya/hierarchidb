@@ -6,6 +6,9 @@ import type {
 } from '@hierarchidb/common-type';
 
 /**
+ * @deprecated Use PluginExtensionAPI instead. This file will be removed in the next major version.
+ * @see PluginExtensionAPI
+ * 
  * @file PluginAPI.ts
  * @description Plugin-specific API extension system
  *
@@ -36,6 +39,9 @@ import type {
  *   }
  * };
  * ```
+ */
+/**
+ * @deprecated Use PluginExtensionAPI instead
  */
 export interface PluginAPI<
   TMethods extends Record<string, WorkerAPIMethod> = Record<string, WorkerAPIMethod>,
@@ -88,6 +94,9 @@ export type InvokeResult<
  *   const bounds = await registry.invokeMethod('map', 'getMapBounds', nodeId);
  * }
  * ```
+ */
+/**
+ * @deprecated Use PluginExtensionRegistry instead
  */
 export class PluginAPIRegistry {
   /** Internal storage for registered plugin extensions */

@@ -31,14 +31,13 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-datasource": "workspace:*",
     "@hierarchidb/runtime-fetch-metadata": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "@tanstack/react-virtual": "^3.2.0",
@@ -51,7 +50,8 @@
     "pako": "^2.1.0",
     "pbf": "^4.0.1",
     "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1"
+    "topojson-server": "^3.0.1",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.2",

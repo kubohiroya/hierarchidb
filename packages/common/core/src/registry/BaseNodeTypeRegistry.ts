@@ -1,10 +1,12 @@
 /**
  * @file BaseNodeTypeRegistry.ts
- * @description Abstract base class for all node type registries
+ * @deprecated This file has been moved to worker and plugin-registry packages.
+ * Import from those packages directly instead.
+ * @see @hierarchidb/runtime-worker/src/registry/BaseNodeTypeRegistry.ts
+ * @see @hierarchidb/runtime-plugin-registry/src/registry/BaseNodeTypeRegistry.ts
  */
 
-import type { NodeType } from '@hierarchidb/common-type';
-import type { INodeTypeRegistry } from './INodeTypeRegistry';
+import type { NodeType, INodeTypeRegistry } from '@hierarchidb/common-type';
 
 /**
  * Abstract base implementation for node type registries

@@ -26,3 +26,6 @@ export {
 export { ShapeMetadata } from './shared/metadata';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types';
 export type { ShapeAPI } from './shared/api';
+
+// Batch processing exports (for Location and Route plugins)
+export { BatchSessionManager } from './services/BatchSessionManager';

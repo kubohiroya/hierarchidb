@@ -75,7 +75,7 @@ var vitest_1 = require("vitest");
                             filters: {
                                 nodeTypes: ['folder-plugin', 'document'],
                                 categories: ['core'],
-                                capabilities: ['create', 'edit'],
+                                capabilities: ['create', 'update'],
                             },
                         };
                         return [4 /*yield*/, pluginTreeAPI.getPluginsForTree(request)];
@@ -85,7 +85,7 @@ var vitest_1 = require("vitest");
                         response.plugins.forEach(function (plugin) {
                             (0, vitest_1.expect)(['folder-plugin', 'document']).toContain(plugin.nodeType);
                             (0, vitest_1.expect)(plugin.meta.category).toBe('core');
-                            (0, vitest_1.expect)(plugin.capabilities.some(function (cap) { return ['create', 'edit'].includes(cap); })).toBe(true);
+                            (0, vitest_1.expect)(plugin.capabilities.some(function (cap) { return ['create', 'update'].includes(cap); })).toBe(true);
                         });
                         return [2 /*return*/];
                 }
@@ -234,12 +234,15 @@ var vitest_1 = require("vitest");
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        conflictingTypes = ['conflicting-plugin-a', 'conflicting-plugin-b'];
+                        conflictingTypes = [
+                            'conflicting-plugin-a',
+                            'conflicting-plugin-b',
+                        ];
                         return [4 /*yield*/, pluginTreeAPI.getPluginCompatibility('compat-tree', conflictingTypes)];
                     case 1:
                         result = _a.sent();
                         (0, vitest_1.expect)(result.compatible).toBe(false);
-                        (0, vitest_1.expect)(result.conflicts).toHaveLength.greaterThan(0);
+                        (0, vitest_1.expect)(result.conflicts).greaterThan(0);
                         (0, vitest_1.expect)(result.conflicts[0].severity).toMatch(/^(error|warning|info)$/);
                         (0, vitest_1.expect)(result.conflicts[0].description).toBeDefined();
                         return [2 /*return*/];
@@ -255,7 +258,7 @@ var vitest_1 = require("vitest");
                         return [4 /*yield*/, pluginTreeAPI.getPluginCompatibility('compat-tree', dependentType)];
                     case 1:
                         result = _a.sent();
-                        (0, vitest_1.expect)(result.warnings).toHaveLength.greaterThan(0);
+                        (0, vitest_1.expect)(result.warnings).greaterThan(0);
                         (0, vitest_1.expect)(result.warnings.some(function (w) { return w.includes('dependency') || w.includes('required'); })).toBe(true);
                         return [2 /*return*/];
                 }
@@ -305,7 +308,7 @@ var vitest_1 = require("vitest");
                     case 0: return [4 /*yield*/, pluginTreeAPI.optimizePluginConfiguration('optimized-tree')];
                     case 1:
                         result = _a.sent();
-                        (0, vitest_1.expect)(result.recommendations).toHaveLength.lessThan(3);
+                        (0, vitest_1.expect)(result.recommendations).lessThan(3);
                         (0, vitest_1.expect)(result.currentPerformance.score).toBeGreaterThan(0.8); // 高いパフォーマンススコア
                         (0, vitest_1.expect)(result.expectedImprovement.performanceGain).toBeLessThan(0.1); // 改善余地小
                         return [2 /*return*/];
@@ -340,7 +343,7 @@ var vitest_1 = require("vitest");
                     case 1:
                         result = _a.sent();
                         (0, vitest_1.expect)(result.metadata.hasCycles).toBe(true);
-                        (0, vitest_1.expect)(result.warnings).toHaveLength.greaterThan(0);
+                        (0, vitest_1.expect)(result.warnings).greaterThan(0);
                         (0, vitest_1.expect)(result.warnings.some(function (w) { return w.includes('circular'); })).toBe(true);
                         (0, vitest_1.expect)(result.cyclicPaths).toBeDefined();
                         (0, vitest_1.expect)(result.cyclicPaths.length).toBeGreaterThan(0);

@@ -1,4 +1,6 @@
-import { generateNodeId, type TreeNode, type NodeId, type Timestamp, type Seq } from '@hierarchidb/common-core';
+import { generateNodeId } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
+import type { TreeNode, NodeId, Timestamp, Seq } from '@hierarchidb/common-type';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './types';
 import { WorkerErrorCode } from './types';
 import type { CoreDB } from '../db/CoreDB';
@@ -617,7 +619,7 @@ export class CommandProcessor {
         const restoredNode = {
           id: payload.nodeId,
           parentId: payload.parentId,
-          nodeType: payload.nodeType || 'folder',
+          nodeType: (payload.nodeType || 'folder') as NodeType,
           name: payload.name,
           description: payload.description,
           depth: 0, // Will be calculated by database operations

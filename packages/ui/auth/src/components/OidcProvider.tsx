@@ -16,15 +16,19 @@ const getSecureConfig = () => ({
 const validateOAuthConfig = (_config: any) => true;
 
 // import { devWarn, devError } from "@/shared/utils/logger";
-const devWarn = (msg: string) => console.warn(msg);
-const devError = (msg: string) => console.error(msg);
+// const devWarn = (msg: string) => console.warn(msg);
+// const devError = (msg: string) => console.error(msg);
 export const OidcProvider = ({ children }: { children: ReactNode }) => {
   const secureConfig = getSecureConfig();
 
   // Validate OAuth configuration
   const isValid = validateOAuthConfig(secureConfig);
   if (!isValid && secureConfig.isProduction) {
-    devError('OAuth configuration is invalid. Authentication may not work properly.');
+    if (import.meta.env.DEV) {
+
+      console.error('OAuth configuration is invalid. Authentication may not work properly.');
+
+    }
   }
 
   const redirect_uri = getOAuthRedirectUri();
@@ -83,7 +87,11 @@ export const OidcProvider = ({ children }: { children: ReactNode }) => {
 
   // Don't render AuthProvider if configuration is invalid
   if (!secureConfig.oidcAuthority || !secureConfig.oidcClientId) {
-    devWarn('OAuth is not configured. Authentication features will be disabled.');
+    if (import.meta.env.DEV) {
+
+      console.warn('OAuth is not configured. Authentication features will be disabled.');
+
+    }
     return <>{children}</>;
   }
 

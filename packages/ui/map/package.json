@@ -21,7 +21,6 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
-    "@hierarchidb/common-core": "workspace:*",
     "@vis.gl/react-maplibre": "^8.0.4",
     "maplibre-gl": "^4.0.0"
   },

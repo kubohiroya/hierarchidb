@@ -5,7 +5,8 @@
  * References: docs/7-aop-architecture.md, ../eria-cartograph/app0/src/shared/services/ResourceDefinitionRegistry.ts
  */
 
-import type { IPluginRegistry, NodeType } from '@hierarchidb/common-core';
+import type { IPluginRegistry, NodeType } from '@hierarchidb/common-type';
+
 // Simple logging functions to replace workerLogger
 const workerLog = console.log;
 const workerWarn = console.warn;
@@ -219,7 +220,7 @@ export class NodeRegistry implements INodeRegistry {
     }
 
     return Array.from(this.pluginDefinitions.values()).filter(
-      (definition) => definition.meta?.tags?.includes(tag) ?? false
+      (definition) => (definition.meta as any)?.tags?.includes(tag) ?? false
     );
   }
 

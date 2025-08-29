@@ -1,10 +1,12 @@
 /**
+import type { NodeType } from '@hierarchidb/common-type';
  * @file PluginManagementService.ts
  * @description Plugin lifecycle management service implementation
  */
 
 import type {
   PluginManagementAPI,
+  PluginLifecycleAPI,
   PluginRegistrationResult,
   UnregistrationResult,
   PluginValidationResult,
@@ -15,7 +17,6 @@ import type {
   BulkOperationOptions,
   BulkOperationResult,
 } from '@hierarchidb/common-api';
-import type { NodeType } from '@hierarchidb/common-core';
 
 // Local type definitions for interfaces not exported from common-api
 interface PluginResetOptions {
@@ -61,7 +62,7 @@ import {
  * Service implementation for plugin management operations
  */
 
-export class PluginManagementService implements PluginManagementAPI {
+export class PluginManagementService implements PluginManagementAPI, PluginLifecycleAPI {
   constructor(
     private nodeTypeRegistry: SimpleNodeTypeRegistry
   ) {}

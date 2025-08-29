@@ -1,11 +1,10 @@
 /**
+import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties, EntityMetadata } from '@hierarchidb/common-type';
  * @file AutoLifecycleIntegration.test.ts
  * @description Integration tests for the complete automatic lifecycle management system
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import 'fake-indexeddb/auto';
 

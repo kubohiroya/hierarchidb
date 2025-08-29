@@ -4,8 +4,9 @@
  * This replaces the old NodeTypeRegistry.ts in the worker package
  */
 
-import type { ISimpleNodeTypeRegistry, NodeTypeConfig } from '@hierarchidb/common-core';
-import { BaseNodeTypeRegistry, NodeType, SingletonMixin } from '@hierarchidb/common-core';
+import { SingletonMixin } from '@hierarchidb/common-core';
+import type { ISimpleNodeTypeRegistry, NodeTypeConfig, NodeType } from '@hierarchidb/common-type';
+import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
 
 /**
  * Simple registry for managing basic node type configurations
@@ -160,7 +161,7 @@ export class SimpleNodeTypeRegistry
   /**
    * Get sorted node types by their sort order
    */
-  getSortedNodeTypes(): NodeType[] {
+  getSortedNodeTypes(): string[] {
     const types = Array.from(this.registry.entries());
 
     return types

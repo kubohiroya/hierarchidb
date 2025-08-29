@@ -11,7 +11,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { enUS, ja } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
-import { devError, devWarn } from "@hierarchidb/common-core";
 
 // Language configuration
 export interface LanguageConfig {
@@ -206,7 +205,11 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
   const changeLanguage = async (languageCode: string): Promise<void> => {
     const targetLanguage = SUPPORTED_LANGUAGES.find((lang) => lang.code === languageCode);
     if (!targetLanguage) {
-      devWarn(`Language ${languageCode} not supported`);
+      if (import.meta.env.DEV) {
+
+        console.warn(`Language ${languageCode} not supported`);
+
+      }
       return;
     }
 
@@ -227,7 +230,11 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
         localStorage.setItem('preferred-language', languageCode);
       }
     } catch (error) {
-      devError('Failed to change language:', error);
+      if (import.meta.env.DEV) {
+
+        console.error('Failed to change language:', error);
+
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,17 +1,11 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { PeerEntity, GroupEntity, RelationalEntity, WorkingCopyProperties, EntityBackup, NodeId } from '@hierarchidb/common-type';
  * @file BaseEntityHandler.ts
  * @description Abstract base class for entity handlers
  * Provides common functionality for all entity handlers
  */
 
-import type {
-  PeerEntity,
-  GroupEntity,
-  RelationalEntity,
-  WorkingCopyProperties,
-  EntityBackup,
-  NodeId,
-} from '@hierarchidb/common-core';
 import type Dexie from 'dexie';
 import { workerLog } from '../utils/workerLogger';
 

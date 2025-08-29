@@ -1,5 +1,8 @@
 "use strict";
 /**
+ * @deprecated Use TreePluginAnalyzer instead. This file will be removed in the next major version.
+ * @see TreePluginAnalyzer
+ *
  * @file PluginTreeAPI.ts
  * @description TreeTypes-specific plugin management facade API
  *

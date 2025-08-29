@@ -12,7 +12,7 @@
 
 // import React from 'react'; // Not needed with new JSX transform
 import { Box, Typography } from '@mui/material';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+// import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeConsoleHeaderProps } from '../types/index';
 
 /**
@@ -29,14 +29,14 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
     isRootNode: _isRootNode,
     currentNodeInfo,
     controller: _controller,
-    previousNodePath,
+    previousNodePath: _previousNodePath,
     isTrashPage,
     isProjectsPage,
     isResourcesPage,
     currentNodeId,
     onClose,
     canPreviewNode = false,
-    depthOffset = 0,
+    depthOffset: _depthOffset = 0,
   } = props;
 
   // ページタイプ判定
@@ -75,7 +75,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         <Typography variant="h6" component="h1" noWrap>
           {title}
         </Typography>
-        {/* パンくずリスト */}
+        {/* パンくずリスト - 一時的にコメントアウト */}
+        {/*
         {previousNodePath.length > 0 && (
           <TreeConsoleBreadcrumb
             nodePath={previousNodePath}
@@ -84,17 +85,14 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
             context={{
               isTrashPage,
               isProjectsPage,
-              // isResourcesPage, // Temporarily commented out due to interface mismatch
             }}
             onNodeClick={(nodeId: string, node?: any) => {
               console.log('Navigate to node:', nodeId, node);
-              // TODO: 実装時にナビゲーション処理を追加
             }}
             variant={'default' as any}
-            // showIcons={true} // Commented out - not supported by current interface
-            // maxWidth={600} // Commented out - not supported by current interface
           />
         )}
+        */}
         {/* 現在のノード情報 */}
         {currentNodeInfo && (
           <Box sx={{ mt: 0.5 }}>

@@ -99,6 +99,21 @@ export interface PeerEntity extends BaseEntity {
   // TreeNodeと1対1で対応するエンティティ
   // TreeNodeのライフサイクルと同期
   nodeId: NodeId;
+  // ダイアログ表示モードの設定（オプション）
+  dialogMode?: 'normal' | 'full';
+  // ダイアログの再開ステップ番号（オプション）
+  resumeStep?: number;
+  // 地図表示パラメータ（zoom, lng, lat）（オプション）
+  mapParams?: {
+    zoom: number;
+    lng: number;
+    lat: number;
+  };
+  // ノードの表示・検索からの除外設定（オプション）
+  // デフォルト: undefined（有効）
+  // true: このノード（フォルダの場合は子孫含む）を除外
+  // 実際の適用値は親階層からの論理和で決定される
+  disabled?: boolean;
 }
 
 /**

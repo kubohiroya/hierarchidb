@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use NodeTypeRegistryAPI instead. This file will be removed in the next major version.
+ * @see NodeTypeRegistryAPI
+ * 
  * @file PluginRegistryAPI.ts
  * @description Plugin registration and node type management API
  *
@@ -24,6 +27,9 @@ import type {
  * - Plugin method extensions → Use PluginAPI
  *
  * This legacy API remains for backward compatibility but will be removed in v2.0.
+ */
+/**
+ * @deprecated Use NodeTypeRegistryAPI instead
  */
 export interface PluginRegistryAPI {
   // ==================

@@ -2,11 +2,11 @@
  * Folder plugin metadata - UI・Worker共通メタデータ
  */
 
-import type { PluginMetadata } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
 
 export const FolderMetadata: PluginMetadata = {
   id: '@hierarchidb/node-type-folder-plugin-plugin',
-  nodeType: 'folder',
+  nodeType: 'folder' as NodeType,
   name: 'Folder',
   description: 'Hierarchical folder-plugin organization plugin',
   version: '1.0.0',

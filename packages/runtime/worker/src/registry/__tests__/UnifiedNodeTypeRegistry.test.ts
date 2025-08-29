@@ -1,9 +1,9 @@
 /**
+import type { NodeId, NodeType, WorkingCopyProperties } from '@hierarchidb/common-type';
  * @file UnifiedNodeTypeRegistry.test.ts
  * @description Unit tests for UnifiedNodeTypeRegistry
  */
 
-import type { NodeId, NodeType, WorkingCopyProperties } from '@hierarchidb/common-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   PeerEntity,

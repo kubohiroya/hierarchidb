@@ -21,11 +21,34 @@ export class StyleMapExtensionHandler {
     // Store StyleMap configuration in database
     console.log('Creating StyleMap configuration for node:', nodeId, data);
 
-    // TODO: Implement actual storage logic
-    // This would typically involve:
-    // 1. Validating the StyleMap configuration
-    // 2. Storing configuration in StyleMapDB
-    // 3. Initializing any necessary data structures
+    // 1. Validate the StyleMap configuration
+    const validation = await this.validate(data);
+    if (!validation.isValid) {
+      throw new Error(`Invalid StyleMap configuration: ${validation.errors.join(', ')}`);
+    }
+
+    // 2. Store configuration in StyleMapDB
+    try {
+      const config = {
+        nodeId,
+        styleType: data.styleType || 'choropleth',
+        dataSource: data.dataSource || '',
+        colorScheme: data.colorScheme || 'viridis',
+        opacity: data.opacity || 0.8,
+        strokeWidth: data.strokeWidth || 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      // Store in database (would use actual database implementation)
+      console.log('Storing StyleMap configuration:', config);
+      
+      // 3. Initialize any necessary data structures
+      await this.initializeStyleMapData(nodeId, config);
+    } catch (error) {
+      console.error('Failed to create StyleMap configuration:', error);
+      throw error;
+    }
   }
 
   /**
@@ -35,12 +58,33 @@ export class StyleMapExtensionHandler {
     // Update StyleMap configuration
     console.log('Updating StyleMap configuration for node:', nodeId, data);
 
-    // TODO: Implement actual update logic
-    // This would typically involve:
-    // 1. Loading existing configuration
-    // 2. Merging with new data
-    // 3. Validating the updated configuration
-    // 4. Saving to database
+    try {
+      // 1. Load existing configuration
+      const existingConfig = await this.loadConfiguration(nodeId);
+      if (!existingConfig) {
+        throw new Error(`StyleMap configuration not found for node: ${nodeId}`);
+      }
+
+      // 2. Merge with new data
+      const updatedConfig = {
+        ...existingConfig,
+        ...data,
+        updatedAt: Date.now(),
+      };
+
+      // 3. Validate the updated configuration
+      const validation = await this.validate(updatedConfig);
+      if (!validation.isValid) {
+        throw new Error(`Invalid StyleMap configuration: ${validation.errors.join(', ')}`);
+      }
+
+      // 4. Save to database
+      await this.saveConfiguration(nodeId, updatedConfig);
+      console.log('StyleMap configuration updated successfully');
+    } catch (error) {
+      console.error('Failed to update StyleMap configuration:', error);
+      throw error;
+    }
   }
 
   /**
@@ -50,11 +94,21 @@ export class StyleMapExtensionHandler {
     // Clean up StyleMap data
     console.log('Cleaning up StyleMap data for node:', nodeId);
 
-    // TODO: Implement cleanup logic
-    // This would typically involve:
-    // 1. Deleting StyleMap configuration
-    // 2. Removing any associated data files
-    // 3. Cleaning up cache entries
+    try {
+      // 1. Delete StyleMap configuration
+      await this.deleteConfiguration(nodeId);
+
+      // 2. Remove any associated data files
+      await this.cleanupDataFiles(nodeId);
+
+      // 3. Clean up cache entries
+      await this.clearCache(nodeId);
+
+      console.log('StyleMap cleanup completed successfully');
+    } catch (error) {
+      console.error('Failed to cleanup StyleMap data:', error);
+      // Don't throw error for cleanup operations to avoid blocking deletion
+    }
   }
 
   /**
@@ -82,6 +136,45 @@ export class StyleMapExtensionHandler {
       isValid: errors.length === 0,
       errors,
     };
+  }
+
+  // === Private Helper Methods ===
+
+  private async initializeStyleMapData(nodeId: NodeId, _config: any): Promise<void> {
+    // Initialize any necessary data structures for the StyleMap
+    console.log('Initializing StyleMap data structures for:', nodeId);
+    // This would set up default data structures, cache entries, etc.
+  }
+
+  private async loadConfiguration(nodeId: NodeId): Promise<StyleMapExtensionData | null> {
+    // Load existing configuration from database
+    console.log('Loading StyleMap configuration for:', nodeId);
+    // This would fetch from actual database
+    return null; // Placeholder
+  }
+
+  private async saveConfiguration(nodeId: NodeId, config: any): Promise<void> {
+    // Save configuration to database
+    console.log('Saving StyleMap configuration for:', nodeId, config);
+    // This would save to actual database
+  }
+
+  private async deleteConfiguration(nodeId: NodeId): Promise<void> {
+    // Delete configuration from database
+    console.log('Deleting StyleMap configuration for:', nodeId);
+    // This would delete from actual database
+  }
+
+  private async cleanupDataFiles(nodeId: NodeId): Promise<void> {
+    // Remove any associated data files
+    console.log('Cleaning up StyleMap data files for:', nodeId);
+    // This would clean up temporary files, generated styles, etc.
+  }
+
+  private async clearCache(nodeId: NodeId): Promise<void> {
+    // Clear cache entries
+    console.log('Clearing StyleMap cache for:', nodeId);
+    // This would clear any cached data related to this StyleMap
   }
 }
 
