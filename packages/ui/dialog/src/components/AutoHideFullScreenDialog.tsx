@@ -51,6 +51,10 @@ export interface AutoHideFullScreenDialogProps {
    * Delay before hiding header/footer (ms)
    */
   hideDelay?: number;
+  /**
+   * Height of the hover detection zone (px)
+   */
+  hoverZoneHeight?: number;
 }
 
 /**
@@ -67,6 +71,7 @@ export function AutoHideFullScreenDialog({
   footerActions,
   autoHide = true,
   hideDelay = 300,
+  hoverZoneHeight = 40,
 }: AutoHideFullScreenDialogProps) {
   const [headerVisible, setHeaderVisible] = useState(!autoHide);
   const [footerVisible, setFooterVisible] = useState(!autoHide);
@@ -112,29 +117,31 @@ export function AutoHideFullScreenDialog({
       fullScreen
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          m: 2,
-          height: 'calc(100% - 32px)',
-          width: 'calc(100% - 32px)',
-          maxHeight: 'calc(100% - 32px)',
-          maxWidth: 'calc(100% - 32px)',
+          borderRadius: 0,
+          m: 0,
+          height: '100%',
+          width: '100%',
+          maxHeight: '100%',
+          maxWidth: '100%',
           position: 'relative',
           overflow: 'hidden',
         },
       }}
     >
-      {/* Header hover trigger zone */}
+      {/* Header hover trigger zone - transparent area at the very top */}
       {autoHide && (
         <Box
           onMouseEnter={handleHeaderMouseEnter}
           onMouseLeave={handleHeaderMouseLeave}
           sx={{
-            position: 'absolute',
+            position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
-            height: 20,
-            zIndex: 1301,
+            height: `${hoverZoneHeight}px`,
+            zIndex: 1302,
+            backgroundColor: 'transparent',
+            pointerEvents: 'auto',
           }}
         />
       )}
@@ -144,7 +151,7 @@ export function AutoHideFullScreenDialog({
         onMouseEnter={handleHeaderMouseEnter}
         onMouseLeave={handleHeaderMouseLeave}
         sx={{
-          position: autoHide ? 'absolute' : 'relative',
+          position: autoHide ? 'fixed' : 'relative',
           top: 0,
           left: 0,
           right: 0,
@@ -155,13 +162,14 @@ export function AutoHideFullScreenDialog({
           borderColor: 'divider',
           pb: 2,
           backgroundColor: 'background.paper',
-          zIndex: 1300,
+          zIndex: 1301,
           transform: autoHide
             ? headerVisible
               ? 'translateY(0)'
               : 'translateY(-100%)'
             : 'none',
           transition: 'transform 0.3s ease-in-out',
+          boxShadow: headerVisible && autoHide ? 2 : 0,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
@@ -212,18 +220,20 @@ export function AutoHideFullScreenDialog({
         {children}
       </DialogContent>
 
-      {/* Footer hover trigger zone */}
+      {/* Footer hover trigger zone - transparent area at the very bottom */}
       {autoHide && footerActions && (
         <Box
           onMouseEnter={handleFooterMouseEnter}
           onMouseLeave={handleFooterMouseLeave}
           sx={{
-            position: 'absolute',
+            position: 'fixed',
             bottom: 0,
             left: 0,
             right: 0,
-            height: 20,
-            zIndex: 1301,
+            height: `${hoverZoneHeight}px`,
+            zIndex: 1302,
+            backgroundColor: 'transparent',
+            pointerEvents: 'auto',
           }}
         />
       )}
@@ -234,20 +244,21 @@ export function AutoHideFullScreenDialog({
           onMouseEnter={handleFooterMouseEnter}
           onMouseLeave={handleFooterMouseLeave}
           sx={{
-            position: autoHide ? 'absolute' : 'relative',
+            position: autoHide ? 'fixed' : 'relative',
             bottom: 0,
             left: 0,
             right: 0,
             borderTop: 1,
             borderColor: 'divider',
             backgroundColor: 'background.paper',
-            zIndex: 1300,
+            zIndex: 1301,
             transform: autoHide
               ? footerVisible
                 ? 'translateY(0)'
                 : 'translateY(100%)'
               : 'none',
             transition: 'transform 0.3s ease-in-out',
+            boxShadow: footerVisible && autoHide ? 2 : 0,
             p: 2,
           }}
         >
