@@ -21,7 +21,9 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest"
+    "test": "vitest",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@hierarchidb/common-core": "workspace:*",

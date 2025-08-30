@@ -30,6 +30,8 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "storybook:ui-core": "pnpm --filter @hierarchidb/ui-core storybook",
     "check:licenses": "npx license-checker --production --summary",
     "analyze:licenses": "node scripts/analyze-licenses.js",

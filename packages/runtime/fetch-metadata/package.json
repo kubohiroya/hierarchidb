@@ -26,6 +26,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:run": "vitest run",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "fetch:gadm": "node dist/cli.js fetch gadm output gadm.json",
     "fetch:naturalearth": "node dist/cli.js fetch naturalearth output naturalearth.json",
     "fetch:osm": "node dist/cli.js fetch osm output osm.json",
