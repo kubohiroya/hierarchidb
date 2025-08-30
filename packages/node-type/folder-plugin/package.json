@@ -29,6 +29,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",

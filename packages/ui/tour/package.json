@@ -14,7 +14,9 @@
     "build": "tsup && node scripts/fix-dts.js",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc && tsc-alias"
+    "build:tsc": "tsc && tsc-alias",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

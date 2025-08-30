@@ -23,7 +23,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint src --ext .ts,.tsx",
-    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "keywords": [
     "worker",

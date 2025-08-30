@@ -20,7 +20,9 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@mui/icons-material": "^7.3.1",

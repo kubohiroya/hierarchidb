@@ -7,7 +7,9 @@
     "build": "tsup",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc"
+    "build:tsc": "tsc",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
