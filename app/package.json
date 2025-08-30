@@ -17,7 +17,9 @@
     "deploy": "gh-pages -d build/client -r git@github.com:kubohiroya/hierarchidb.git",
     "test:github-pages": "node scripts/test-github-pages.js",
     "debug:copy": "cp scripts/debug-*.html build/client/ && cp scripts/minimal-*.html build/client/",
-    "debug:serve": "npx serve build/client -l 8080"
+    "debug:serve": "npx serve build/client -l 8080",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
