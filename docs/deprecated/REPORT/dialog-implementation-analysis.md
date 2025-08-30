@@ -72,7 +72,7 @@
 
 ### 2.2 共通化可能なコンポーネント
 
-1. **CommonPluginDialog** - 基本ダイアログラッパー
+1. **CommonDialog** - 基本ダイアログラッパー
 2. **CommonDialogTitle** - 統一されたタイトル部
 3. **CommonDialogActions** - 統一されたアクション部
 4. **UnsavedChangesDialog** - Discard確認ダイアログ
@@ -86,7 +86,7 @@
 packages/ui-dialog/
 ├── src/
 │   ├── components/
-│   │   ├── CommonPluginDialog.tsx      # 基本ダイアログラッパー
+│   │   ├── CommonDialog.tsx      # 基本ダイアログラッパー
 │   │   ├── CommonDialogTitle.tsx       # タイトル部
 │   │   ├── CommonDialogActions.tsx     # アクション部
 │   │   ├── UnsavedChangesDialog.tsx    # Discard確認
@@ -104,7 +104,7 @@ packages/ui-dialog/
 ### 3.2 実装優先度
 
 #### Phase 1: 基盤整備（高優先度）
-1. **CommonPluginDialog** コンポーネント作成
+1. **CommonDialog** コンポーネント作成
    - MUI Dialog のラッパー
    - 基本的な開閉処理
    - Loading/Error状態管理
@@ -144,8 +144,8 @@ packages/ui-dialog/
 #### Step 1: ui-dialog パッケージ作成
 ```bash
 # 新パッケージ作成
-mkdir packages/ui-dialog
-cd packages/ui-dialog
+mkdir packages/ui-base-dialog
+cd packages/ui-base-dialog
 pnpm init
 
 # 依存関係追加
@@ -179,7 +179,7 @@ shapes_obsolate にある CommonDialog 実装を参考に、改善版を作成
 ## 4. 推奨実装順序
 
 1. **即座に実装すべき項目**
-   - CommonPluginDialog 基本実装
+   - CommonDialog 基本実装
    - useWorkingCopy フック
    - UnsavedChangesDialog
 

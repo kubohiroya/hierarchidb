@@ -922,7 +922,7 @@ describe('MyPluginDefinition', () => {
     expect(entity.nodeId).toBe(nodeId);
   });
   
-  it('should cleanup ephemeral entities on dialog close', async () => {
+  it('should cleanup ephemeral entities on base-dialog close', async () => {
     const nodeId = 'test-node-123';
     
     // エンティティ作成
@@ -933,7 +933,7 @@ describe('MyPluginDefinition', () => {
     expect(ephemeralEntities.length).toBeGreaterThan(0);
     
     // ダイアログクローズイベント
-    await lifecycleManager.onDialogClose(nodeId, 'my-plugin-dialog');
+    await lifecycleManager.onDialogClose(nodeId, 'my-plugin-base-dialog');
     
     // EphemeralGroupEntityが削除されることを確認
     ephemeralEntities = await lifecycleManager.getEntitiesByNode('ephemeral-group', 'myPluginDataEntities', nodeId);

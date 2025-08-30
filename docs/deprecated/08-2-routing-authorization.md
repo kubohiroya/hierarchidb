@@ -60,7 +60,7 @@ BFF は、OAuth2/OIDC プロバイダーとのやり取り（認証開始、コ�
 典型的には「保護ルート」に入る手前で、認証状態に応じてガードする。
 
 ```tsx
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'provider-router-dom';
 import { useBFFAuth } from '@hierarchidb/ui-auth';
 
 export function RequireAuth({ children }: { children: JSX.Element }) {

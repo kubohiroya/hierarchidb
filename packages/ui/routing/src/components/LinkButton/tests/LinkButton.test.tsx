@@ -10,9 +10,9 @@ import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { LinkButton } from '../LinkButton';
 import { useLinkButton } from '../useLinkButton';
 
-// Mock react-router-dom
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+// Mock provider-router-dom
+vi.mock('provider-router-dom', async () => {
+  const actual = await vi.importActual('provider-router-dom');
   return {
     ...actual,
     useNavigate: vi.fn(),
@@ -149,7 +149,7 @@ describe('LinkButton Component', () => {
   });
 
   describe('Confirmation Dialog', () => {
-    it('shows confirmation dialog when configured', async () => {
+    it('shows confirmation base-dialog when configured', async () => {
       render(
         <BrowserRouter>
           <LinkButton
@@ -173,7 +173,7 @@ describe('LinkButton Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
         expect(screen.getByText('Are you sure?')).toBeInTheDocument();
         expect(
-          screen.getByRole('button', { name: 'cancel-confirmation-dialog' })
+          screen.getByRole('button', { name: 'cancel-confirmation-base-dialog' })
         ).toBeInTheDocument();
       });
     });
@@ -229,7 +229,9 @@ describe('LinkButton Component', () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        const cancelButton = screen.getByRole('button', { name: 'cancel-confirmation-dialog' });
+        const cancelButton = screen.getByRole('button', {
+          name: 'cancel-confirmation-base-dialog',
+        });
         fireEvent.click(cancelButton);
       });
 

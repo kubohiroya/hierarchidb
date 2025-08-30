@@ -48,13 +48,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const [stepValidation, setStepValidation] = useState<boolean[]>([false, false, false]);
 
   const steps = [
-    t('dialog.steps.basicInfo', 'Basic Information'),
-    t('dialog.steps.routeSelection', 'Route Selection'),
-    t('dialog.steps.processing', 'Processing'),
+    t('base-dialog.steps.basicInfo', 'Basic Information'),
+    t('base-dialog.steps.routeSelection', 'Route Selection'),
+    t('base-dialog.steps.processing', 'Processing'),
   ];
 
   const handleStepValidationChange = (stepIndex: number, isValid: boolean) => {
-    setStepValidation(prev => {
+    setStepValidation((prev) => {
       const newValidation = [...prev];
       newValidation[stepIndex] = isValid;
       return newValidation;
@@ -63,13 +63,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const handleNext = () => {
     if (activeStep < steps.length - 1) {
-      setActiveStep(prev => prev + 1);
+      setActiveStep((prev) => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (activeStep > 0) {
-      setActiveStep(prev => prev - 1);
+      setActiveStep((prev) => prev - 1);
     }
   };
 
@@ -92,20 +92,18 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const isLastStep = activeStep === steps.length - 1;
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { height: '80vh', display: 'flex', flexDirection: 'column' }
+        sx: { height: '80vh', display: 'flex', flexDirection: 'column' },
       }}
     >
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            {t('dialog.title', 'Route Configuration')}
-          </Typography>
+          <Typography variant="h6">{t('base-dialog.title', 'Route Configuration')}</Typography>
           <IconButton onClick={onClose} size="small">
             <Close />
           </IconButton>
@@ -117,10 +115,11 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         <Box sx={{ px: 3, pt: 2, pb: 1 }}>
           <Stepper activeStep={activeStep} alternativeLabel>
             {steps.map((label, index) => (
-              <Step key={label} completed={index < activeStep || (isStepValid(index) ? true : false)}>
-                <StepLabel error={index === activeStep && !isStepValid(index)}>
-                  {label}
-                </StepLabel>
+              <Step
+                key={label}
+                completed={index < activeStep || (isStepValid(index) ? true : false)}
+              >
+                <StepLabel error={index === activeStep && !isStepValid(index)}>{label}</StepLabel>
               </Step>
             ))}
           </Stepper>
@@ -137,7 +136,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
               onValidationChange={(isValid: boolean) => handleStepValidationChange(0, isValid)}
             />
           )}
-          
+
           {activeStep === 1 && (
             <RouteSelectionStep
               workingCopy={workingCopy}
@@ -145,7 +144,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
               onValidationChange={(isValid: boolean) => handleStepValidationChange(1, isValid)}
             />
           )}
-          
+
           {activeStep === 2 && (
             <RouteProcessingStep
               workingCopy={workingCopy}
@@ -160,20 +159,14 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
       <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
         <Box>
-          <Button
-            onClick={handleBack}
-            disabled={activeStep === 0}
-            startIcon={<ArrowBack />}
-          >
-            {t('dialog.back', 'Back')}
+          <Button onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowBack />}>
+            {t('base-dialog.back', 'Back')}
           </Button>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button onClick={handleCancel}>
-            {t('dialog.cancel', 'Cancel')}
-          </Button>
-          
+          <Button onClick={handleCancel}>{t('base-dialog.cancel', 'Cancel')}</Button>
+
           {!isLastStep ? (
             <Button
               variant="contained"
@@ -181,7 +174,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
               disabled={!canProceed()}
               endIcon={<ArrowForward />}
             >
-              {t('dialog.next', 'Next')}
+              {t('base-dialog.next', 'Next')}
             </Button>
           ) : (
             <Button
@@ -190,7 +183,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
               disabled={!canProceed()}
               startIcon={<Save />}
             >
-              {t('dialog.save', 'Save Route')}
+              {t('base-dialog.save', 'Save Route')}
             </Button>
           )}
         </Box>

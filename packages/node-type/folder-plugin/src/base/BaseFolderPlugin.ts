@@ -101,7 +101,7 @@ export abstract class BaseFolderPlugin {
   }
 
   /**
-   * Create dialog extension configuration
+   * Create base-dialog extension configuration
    */
   protected createDialogExtension(): FolderDialogExtension | undefined {
     const createSteps = this.getCreateDialogSteps();
@@ -153,21 +153,21 @@ export abstract class BaseFolderPlugin {
   }
 
   /**
-   * Override to provide additional dialog steps for create mode
+   * Override to provide additional base-dialog steps for create mode
    */
   protected getCreateDialogSteps(): DialogStepDefinition[] | undefined {
     return undefined;
   }
 
   /**
-   * Override to provide additional dialog steps for edit mode
+   * Override to provide additional base-dialog steps for edit mode
    */
   protected getEditDialogSteps(): DialogStepDefinition[] | undefined {
     return undefined;
   }
 
   /**
-   * Override to transform dialog data before submission
+   * Override to transform base-dialog data before submission
    */
   protected transformDialogData?(data: Record<string, any>): Record<string, any> {
     return data;
@@ -272,7 +272,7 @@ export abstract class BaseFolderPlugin {
   }
 
   /**
-   * Helper method to create a dialog step definition
+   * Helper method to create a base-dialog step definition
    */
   protected createDialogStep<T>(config: {
     id: string;

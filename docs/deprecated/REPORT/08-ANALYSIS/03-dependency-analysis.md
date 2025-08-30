@@ -107,7 +107,7 @@ const devDependencies = {
     version: '6.0.7',
     usage: 'Build tool',
     plugins: [
-      '@vitejs/plugin-react',
+      '@vitejs/plugin-provider',
       'vite-plugin-checker',
       'vite-tsconfig-paths'
     ]
@@ -129,8 +129,8 @@ const devDependencies = {
     version: '9.18.0',
     usage: 'Linting',
     plugins: [
-      'eslint-plugin-react',
-      'eslint-plugin-react-hooks',
+      'eslint-plugin-provider',
+      'eslint-plugin-provider-hooks',
       '@typescript-eslint/eslint-plugin'
     ]
   }
@@ -147,7 +147,7 @@ const deepDependencies = [
   {
     package: '@mui/material',
     depth: 8,
-    chain: '@mui/material -> @mui/system -> @emotion/react -> ...',
+    chain: '@mui/material -> @mui/system -> @emotion/provider -> ...',
     issue: 'Long dependency chain increases vulnerability surface',
     mitigation: 'Regular security audits'
   },
@@ -264,9 +264,9 @@ const bundleAnalysis = {
   largest: [
     { name: 'maplibre-gl', size: '745KB', gzipped: '245KB' },
     { name: '@mui/material', size: '991KB', gzipped: '326KB' },
-    { name: 'react-dom', size: '135KB', gzipped: '42KB' },
+    { name: 'provider-dom', size: '135KB', gzipped: '42KB' },
     { name: 'dexie', size: '89KB', gzipped: '29KB' },
-    { name: '@tanstack/react-virtual', size: '45KB', gzipped: '15KB' }
+    { name: '@tanstack/provider-virtual', size: '45KB', gzipped: '15KB' }
   ],
   
   optimization_opportunities: [
@@ -346,7 +346,7 @@ const updatePolicy = {
 ```typescript
 const pendingUpdates = [
   {
-    package: '@types/react',
+    package: '@types/provider',
     current: '18.2.0',
     latest: '19.0.0',
     type: 'major',
@@ -483,7 +483,7 @@ graph TD
 ```typescript
 const packageHealth = {
   wellMaintained: [
-    { name: 'react', lastPublish: '1 month ago', weekly_downloads: '25M' },
+    { name: 'provider', lastPublish: '1 month ago', weekly_downloads: '25M' },
     { name: 'vite', lastPublish: '2 weeks ago', weekly_downloads: '8M' },
     { name: 'typescript', lastPublish: '1 week ago', weekly_downloads: '45M' }
   ],

@@ -1,4 +1,4 @@
-import type { StorybookConfig } from '@storybook/react-vite';
+import type { StorybookConfig } from '@storybook/provider-vite';
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -8,7 +8,7 @@ const config: StorybookConfig = {
     '@storybook/addon-links',
   ],
   framework: {
-    name: '@storybook/react-vite',
+    name: '@storybook/provider-vite',
     options: {},
   },
   core: {
@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   },
   typescript: {
     check: false,
-    reactDocgen: 'react-docgen-typescript',
+    reactDocgen: 'provider-docgen-typescript',
   },
 };
 

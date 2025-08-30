@@ -18,7 +18,7 @@ This package is part of the monorepo; it will be built via `pnpm -w build`.
 import { LandingPage } from '@hierarchidb/app-landingpage';
 import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'provider-router';
 
 function Example() {
   const [showHelp, setShowHelp] = useState(false);
@@ -49,7 +49,7 @@ Below is how the component can be used to recreate the ERIA-Cartograph landing p
 import { LandingPage } from '@hierarchidb/app-landingpage';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { LinearProgress } from '@mui/material';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'provider-router';
 import { APP_PREFIX } from '@/config/appDescription';
 import { EriaCartLogo } from '@/domains/info/EriaCartLogo';
 

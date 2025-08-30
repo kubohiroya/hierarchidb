@@ -16,7 +16,7 @@ The Project Plugin UI provides comprehensive resource aggregation and map compos
 
 ```typescript
 interface ProjectUIArchitecture {
-  // Main dialog component
+  // Main base-dialog component
   ProjectDialog: React.FC<ProjectDialogProps>;
   
   // Step-based workflow components
@@ -631,7 +631,7 @@ const useLayerLoading = (layerConfigs: LayerConfiguration[]) => {
 ### HierarchiDB Integration
 
 ```typescript
-// Plugin dialog integration
+// Plugin base-dialog integration
 export const ProjectDialogWrapper: React.FC<DialogWrapperProps> = ({ nodeId }) => {
   const { isOpen, onClose } = usePluginDialog();
   const { saveEntity } = useEntityHandler<ProjectEntity>();

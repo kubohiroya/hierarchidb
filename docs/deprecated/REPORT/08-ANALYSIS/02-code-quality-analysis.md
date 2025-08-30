@@ -235,7 +235,7 @@ const dependencyHealth = {
   
   problematicDependencies: [
     {
-      package: '@types/react',
+      package: '@types/provider',
       issue: 'Major version behind',
       current: '18.2.0',
       latest: '19.0.0',

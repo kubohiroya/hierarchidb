@@ -279,7 +279,7 @@ describe('ExtensibleFolderDialog', () => {
       expect(mockOnCancel).toHaveBeenCalled();
     });
 
-    it('should handle dialog close', async () => {
+    it('should handle base-dialog close', async () => {
       const { rerender } = render(
         <ExtensibleFolderDialog
           mode="create"
@@ -292,7 +292,7 @@ describe('ExtensibleFolderDialog', () => {
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-      // Close dialog
+      // Close base-dialog
       rerender(
         <ExtensibleFolderDialog
           mode="create"

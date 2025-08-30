@@ -1,9 +1,9 @@
 /**
  * @file LicenseStep.tsx
- * @description License step wrapper for Shape extension dialog
- * 
+ * @description License step wrapper for Shape extension base-dialog
+ *
  * This component adapts the existing Step3License component to work
- * with the plugin extension dialog interface.
+ * with the plugin extension base-dialog interface.
  */
 
 import React from 'react';
@@ -17,12 +17,7 @@ export interface LicenseStepProps {
   errors?: string[];
 }
 
-export const LicenseStep: React.FC<LicenseStepProps> = ({
-  data,
-  onNext,
-  onPrevious,
-  errors
-}) => {
+export const LicenseStep: React.FC<LicenseStepProps> = ({ data, onNext, onPrevious, errors }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
@@ -34,30 +29,26 @@ export const LicenseStep: React.FC<LicenseStepProps> = ({
           }}
           disabled={false}
         />
-        
+
         {errors?.map((error, index) => (
           <Box key={index} sx={{ color: 'error.main', mt: 1, fontSize: '0.875rem' }}>
             {error}
           </Box>
         ))}
       </Box>
-      
-      <Box sx={{ 
-        mt: 3, 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        borderTop: 1,
-        borderColor: 'divider',
-        pt: 2
-      }}>
-        <Button onClick={onPrevious}>
-          Previous
-        </Button>
-        <Button 
-          variant="contained" 
-          onClick={() => onNext(data)}
-          disabled={!data.licenseAgreement}
-        >
+
+      <Box
+        sx={{
+          mt: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          borderTop: 1,
+          borderColor: 'divider',
+          pt: 2,
+        }}
+      >
+        <Button onClick={onPrevious}>Previous</Button>
+        <Button variant="contained" onClick={() => onNext(data)} disabled={!data.licenseAgreement}>
           Next
         </Button>
       </Box>

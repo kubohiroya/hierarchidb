@@ -18,14 +18,7 @@ import {
   Badge,
   Divider,
 } from '@mui/material';
-import {
-  ArrowBack,
-  Search,
-  Edit,
-  LocalOffer,
-  Sort,
-  FilterList,
-} from '@mui/icons-material';
+import { ArrowBack, Search, Edit, LocalOffer, Sort, FilterList } from '@mui/icons-material';
 import { useWorker } from '../contexts/WorkerProvider';
 import type { TagEntity } from '@hierarchidb/common-type';
 
@@ -71,7 +64,7 @@ export default function TagsPage() {
   }, [worker, sortBy, sortOrder]);
 
   // Filter tags based on search query
-  const filteredTags = tags.filter(tag => {
+  const filteredTags = tags.filter((tag) => {
     const query = searchQuery.toLowerCase();
     return (
       tag.name.toLowerCase().includes(query) ||
@@ -81,19 +74,22 @@ export default function TagsPage() {
   });
 
   // Group tags by category
-  const tagsByCategory = filteredTags.reduce((acc, tag) => {
-    const category = tag.category || 'uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(tag);
-    return acc;
-  }, {} as Record<string, TagEntity[]>);
+  const tagsByCategory = filteredTags.reduce(
+    (acc, tag) => {
+      const category = tag.category || 'uncategorized';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(tag);
+      return acc;
+    },
+    {} as Record<string, TagEntity[]>
+  );
 
   // Toggle sort order
   const toggleSort = (field: 'name' | 'usageCount') => {
     if (sortBy === field) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
       setSortOrder('desc');
@@ -109,7 +105,7 @@ export default function TagsPage() {
   // Handle tag edit
   const handleTagEdit = (tag: TagEntity, event: React.MouseEvent) => {
     event.stopPropagation();
-    // TODO: Open tag edit dialog
+    // TODO: Open tag edit base-dialog
     console.log('Edit tag:', tag);
   };
 
@@ -125,19 +121,19 @@ export default function TagsPage() {
             <IconButton onClick={() => navigate('/')} size="large">
               <ArrowBack />
             </IconButton>
-            
+
             <LocalOffer color="primary" />
-            
+
             <Typography variant="h5" component="h1" sx={{ flexGrow: 0 }}>
               Tags
             </Typography>
-            
+
             <Typography variant="body2" color="text.secondary">
               {tags.length} tags
             </Typography>
-            
+
             <Box sx={{ flexGrow: 1 }} />
-            
+
             {/* Search field */}
             <TextField
               placeholder="Search tags..."
@@ -154,7 +150,7 @@ export default function TagsPage() {
                 ),
               }}
             />
-            
+
             {/* Sort buttons */}
             <Button
               variant={sortBy === 'name' ? 'contained' : 'outlined'}
@@ -164,7 +160,7 @@ export default function TagsPage() {
             >
               Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
             </Button>
-            
+
             <Button
               variant={sortBy === 'usageCount' ? 'contained' : 'outlined'}
               size="small"
@@ -203,7 +199,7 @@ export default function TagsPage() {
                       {category}
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    
+
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                       {categoryTags.map((tag) => (
                         <Badge

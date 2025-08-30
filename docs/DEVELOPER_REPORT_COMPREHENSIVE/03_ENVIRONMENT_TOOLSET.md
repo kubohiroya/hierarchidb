@@ -324,7 +324,7 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@mui/material'],
+      external: ['provider', 'provider-dom', '@mui/material'],
       output: {
         globals: {
           react: 'React',
@@ -438,8 +438,8 @@ graph TB
   "extends": [
     "@typescript-eslint/recommended",
     "@typescript-eslint/recommended-requiring-type-checking",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended"
+    "plugin:provider/recommended",
+    "plugin:provider-hooks/recommended"
   ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error",

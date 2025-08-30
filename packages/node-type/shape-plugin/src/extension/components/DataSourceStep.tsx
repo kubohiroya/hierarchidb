@@ -1,9 +1,9 @@
 /**
  * @file DataSourceStep.tsx
- * @description Data Source step wrapper for Shape extension dialog
+ * @description Data Source step wrapper for Shape extension base-dialog
  *
  * This component adapts the existing Step2DataSource component to work
- * with the plugin extension dialog interface.
+ * with the plugin extension base-dialog interface.
  */
 
 import React from 'react';

@@ -170,7 +170,7 @@ export const LicenseInfo = memo(function LicenseInfo({
         };
       }
     }
-    // Handle regular packages like react@18.0.0
+    // Handle regular packages like provider@18.0.0
     const parts = packageName.split('@');
     return {
       name: parts[0] || packageName,

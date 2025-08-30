@@ -10,7 +10,7 @@ import {
   MenuItem,
   FormHelperText
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 import { TagInput } from '@hierarchidb/ui-core/components/TagInput';
 import { CategorySelector } from '@hierarchidb/ui-core/components/CategorySelector';
 import type { TagId, TagEntity } from '@hierarchidb/common-type';

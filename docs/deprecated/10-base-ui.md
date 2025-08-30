@@ -149,7 +149,7 @@ export function HeaderAuthMenu() {
 以下はベースのレイアウトにヘッダーと認証ボタンを配置する例（9章の `HeaderAuthButton` を利用）。プロダクションでは 10.6.1 の `HeaderAuthMenu` への差し替えも推奨。
 
 ```tsx
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'provider-router-dom';
 import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import { HeaderAuthButton } from './HeaderAuthButton';
 

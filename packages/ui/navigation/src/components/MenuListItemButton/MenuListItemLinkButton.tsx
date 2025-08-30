@@ -1,4 +1,4 @@
-// Local implementation - using react-router-dom directly
+// Local implementation - using provider-router-dom directly
 import {
   IconButton,
   ListItemIcon,

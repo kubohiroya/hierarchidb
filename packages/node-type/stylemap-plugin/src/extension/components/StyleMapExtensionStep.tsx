@@ -1,9 +1,9 @@
 /**
- * StyleMap extension step component for folder-plugin dialog
+ * StyleMap extension step component for folder-plugin base-dialog
  */
 
 import React, { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 import {
   Grid,
   TextField,
@@ -82,7 +82,9 @@ export const StyleMapExtensionStep: React.FC<StyleMapExtensionStepProps> = ({
             onChange={handleStyleTypeChange}
             label={t('extension.styleType.label', 'Style Type')}
           >
-            <MenuItem value="choropleth">{t('extension.styleType.choropleth', 'Choropleth Map')}</MenuItem>
+            <MenuItem value="choropleth">
+              {t('extension.styleType.choropleth', 'Choropleth Map')}
+            </MenuItem>
             <MenuItem value="heatmap">{t('extension.styleType.heatmap', 'Heat Map')}</MenuItem>
             <MenuItem value="points">{t('extension.styleType.points', 'Point Map')}</MenuItem>
             <MenuItem value="lines">{t('extension.styleType.lines', 'Line Map')}</MenuItem>

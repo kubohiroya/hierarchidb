@@ -12,7 +12,7 @@
     </Container>
   );
  */
-// import { useOutletContext } from 'react-router-dom';
+// import { useOutletContext } from 'provider-router-dom';
 import { InfoPage } from '~/pages/Info/InfoPage';
 import { useLoaderData } from 'react-router';
 import { loadAppConfig } from '~/loadAppConfig';

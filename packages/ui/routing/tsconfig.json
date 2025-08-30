@@ -23,7 +23,7 @@
         "../ui-core/dist/index.d.ts"
       ]
     },
-    "skipLibCheck": true  // Required for react-router-dom, vitest, and workspace dependency compatibility
+    "skipLibCheck": true  // Required for provider-router-dom, vitest, and workspace dependency compatibility
   },
   "include": [
     "src"

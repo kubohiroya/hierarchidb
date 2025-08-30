@@ -1,25 +1,12 @@
 /**
- * @fileoverview CommonPluginDialog - Base dialog component for plugins
+ * @fileoverview CommonDialog - Base base-dialog component for plugins
  */
 
 import React, { useState, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  IconButton,
-  Stack,
-  Box,
-} from '@mui/material';
-import {
-  Close as CloseIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-} from '@mui/icons-material';
-import { UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
+import { Dialog, DialogContent } from '@mui/material';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { CommonDialogActions } from './CommonDialogActions';
+import { CommonDialogTitle } from './CommonDialogTitle';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit';
@@ -27,6 +14,8 @@ export interface CommonPluginDialogProps {
   nodeId?: string;
   parentId?: string;
   title: string;
+  subtitle?: string;
+  isDraft?: boolean;
   icon?: React.ReactNode;
   children: React.ReactNode;
 
@@ -49,12 +38,14 @@ export interface CommonPluginDialogProps {
   headerActions?: React.ReactNode;
 }
 
-export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
+export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
   mode,
   open,
   nodeId,
   parentId: _parentId, // TODO: Use for create mode
   title,
+  subtitle,
+  isDraft = false,
   icon,
   children,
   maxWidth = 'md',
@@ -66,13 +57,12 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
   onSaveDraft,
   onCancel,
   additionalActions,
-  headerActions,
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Handle dialog close
+  // Handle base-dialog close
   const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
       setShowUnsavedChangesDialog(true);
@@ -129,50 +119,44 @@ export const CommonPluginDialog: React.FC<CommonPluginDialogProps> = ({
         fullWidth={!isFullscreen}
         fullScreen={isFullscreen}
         disableEscapeKeyDown={hasUnsavedChanges}
+        PaperProps={
+          isFullscreen
+            ? {
+                sx: {
+                  borderRadius: 2,
+                  m: 2,
+                  height: 'calc(100% - 32px)',
+                  width: 'calc(100% - 32px)',
+                  maxHeight: 'calc(100% - 32px)',
+                  maxWidth: 'calc(100% - 32px)',
+                },
+              }
+            : {}
+        }
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              {icon}
-              <Typography variant="h6">{title}</Typography>
-              {mode === 'edit' && nodeId && (
-                <Typography variant="caption" color="text.secondary">
-                  ({nodeId})
-                </Typography>
-              )}
-            </Stack>
-
-            <Stack direction="row" spacing={1}>
-              {/* Fullscreen toggle */}
-              <IconButton
-                onClick={toggleFullscreen}
-                color="inherit"
-                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              >
-                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-              </IconButton>
-
-              {headerActions}
-
-              <IconButton onClick={handleClose} color="inherit" aria-label="Close dialog">
-                <CloseIcon />
-              </IconButton>
-            </Stack>
-          </Box>
-        </DialogTitle>
+        <CommonDialogTitle
+          title={title}
+          subtitle={subtitle}
+          onClose={handleClose}
+          icon={icon}
+          mode={mode}
+          nodeId={nodeId}
+          isDraft={isDraft}
+          isFullscreen={isFullscreen}
+          toggleFullscreen={toggleFullscreen}
+        />
 
         <DialogContent sx={{ flex: 1, minHeight: 0 }}>{children}</DialogContent>
 
-        <DialogActions>
-          <CommonDialogActions
-            mode={mode}
-            isValid={isValid}
-            isSubmitting={isSubmitting}
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            additionalActions={additionalActions}
-          />
-        </DialogActions>
+        <CommonDialogActions
+          mode={mode}
+          isValid={isValid}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onCancel={handleClose}
+          isFullscreen={isFullscreen}
+          additionalActions={additionalActions}
+        />
       </Dialog>
 
       {/* Unsaved Changes Dialog */}

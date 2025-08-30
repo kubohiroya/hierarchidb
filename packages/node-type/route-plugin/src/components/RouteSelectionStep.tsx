@@ -1,5 +1,5 @@
 /**
- * RouteSelectionStep - Step 2 of route creation dialog
+ * RouteSelectionStep - Step 2 of route creation base-dialog
  * Allows users to select waypoints and configure route options
  */
 
@@ -44,20 +44,22 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
-    { id: '1', name: t('dialog.routeSelection.startPoint', 'Start Point') },
-    { id: '2', name: t('dialog.routeSelection.endPoint', 'End Point') },
+    { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
+    { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },
   ]);
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [avoidHighways, setAvoidHighways] = useState(false);
-  const [routeAlgorithm, setRouteAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>('fastest');
+  const [routeAlgorithm, setRouteAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>(
+    'fastest'
+  );
   const [isCalculating, setIsCalculating] = useState(false);
 
   const handleAddWaypoint = () => {
     const newWaypoint: Waypoint = {
       id: `waypoint-${Date.now()}`,
-      name: t('dialog.routeSelection.waypoint', 'Waypoint') + ` ${waypoints.length - 1}`,
+      name: t('base-dialog.routeSelection.waypoint', 'Waypoint') + ` ${waypoints.length - 1}`,
     };
-    
+
     // Insert before the last waypoint (end point)
     const newWaypoints = [...waypoints];
     newWaypoints.splice(-1, 0, newWaypoint);
@@ -66,20 +68,21 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 
   const handleRemoveWaypoint = (waypointId: string) => {
     if (waypoints.length <= 2) return; // Keep at least start and end points
-    
-    const newWaypoints = waypoints.filter(wp => wp.id !== waypointId);
+
+    const newWaypoints = waypoints.filter((wp) => wp.id !== waypointId);
     setWaypoints(newWaypoints);
   };
 
   const handleWaypointChange = (waypointId: string, field: keyof Waypoint, value: string) => {
-    const newWaypoints = waypoints.map(wp =>
+    const newWaypoints = waypoints.map((wp) =>
       wp.id === waypointId ? { ...wp, [field]: value } : wp
     );
     setWaypoints(newWaypoints);
-    
+
     // Validate that start and end points have names
-    const hasValidStartEnd = Boolean(newWaypoints[0]?.name?.trim()) && 
-                           Boolean(newWaypoints[newWaypoints.length - 1]?.name?.trim());
+    const hasValidStartEnd =
+      Boolean(newWaypoints[0]?.name?.trim()) &&
+      Boolean(newWaypoints[newWaypoints.length - 1]?.name?.trim());
     onValidationChange(hasValidStartEnd);
   };
 
@@ -92,8 +95,8 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const newWaypoints = waypoints.map(wp =>
-          wp.id === waypointId 
+        const newWaypoints = waypoints.map((wp) =>
+          wp.id === waypointId
             ? { ...wp, coordinates: [longitude, latitude] as [number, number] }
             : wp
         );
@@ -108,16 +111,16 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 
   const handleCalculateRoute = async () => {
     setIsCalculating(true);
-    
+
     try {
       // Simulate route calculation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // Update working copy with route configuration
       onUpdate({
         waypoints: waypoints
-          .map(wp => wp.coordinates)
-          .filter(coords => coords !== undefined) as [number, number][],
+          .map((wp) => wp.coordinates)
+          .filter((coords) => coords !== undefined) as [number, number][],
         updatedAt: Date.now(),
         version: workingCopy.version + 1,
       });
@@ -131,43 +134,48 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
-        {t('dialog.routeSelection.title', 'Route Selection')}
+        {t('base-dialog.routeSelection.title', 'Route Selection')}
       </Typography>
-      
+
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t('dialog.routeSelection.description', 'Configure waypoints and route options')}
+        {t('base-dialog.routeSelection.description', 'Configure waypoints and route options')}
       </Typography>
 
       {/* Waypoints */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
-          {t('dialog.routeSelection.waypoints', 'Waypoints')}
+          {t('base-dialog.routeSelection.waypoints', 'Waypoints')}
         </Typography>
-        
+
         <Stack spacing={2}>
           {waypoints.map((waypoint, index) => (
             <Box key={waypoint.id} sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <Chip
                 label={index === 0 ? 'S' : index === waypoints.length - 1 ? 'E' : `${index}`}
-                color={index === 0 ? 'success' : index === waypoints.length - 1 ? 'error' : 'primary'}
+                color={
+                  index === 0 ? 'success' : index === waypoints.length - 1 ? 'error' : 'primary'
+                }
                 size="small"
                 sx={{ minWidth: 32 }}
               />
-              
+
               <TextField
                 fullWidth
                 size="small"
                 value={waypoint.name}
                 onChange={(e) => handleWaypointChange(waypoint.id, 'name', e.target.value)}
                 placeholder={
-                  index === 0 
-                    ? t('dialog.routeSelection.startPlaceholder', 'Enter start location')
-                    : index === waypoints.length - 1 
-                    ? t('dialog.routeSelection.endPlaceholder', 'Enter destination')
-                    : t('dialog.routeSelection.waypointPlaceholder', 'Enter waypoint location')
+                  index === 0
+                    ? t('base-dialog.routeSelection.startPlaceholder', 'Enter start location')
+                    : index === waypoints.length - 1
+                      ? t('base-dialog.routeSelection.endPlaceholder', 'Enter destination')
+                      : t(
+                          'base-dialog.routeSelection.waypointPlaceholder',
+                          'Enter waypoint location'
+                        )
                 }
               />
-              
+
               <Button
                 size="small"
                 variant="outlined"
@@ -175,9 +183,9 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                 startIcon={<MyLocation />}
                 sx={{ minWidth: 120 }}
               >
-                {t('dialog.routeSelection.currentLocation', 'Current')}
+                {t('base-dialog.routeSelection.currentLocation', 'Current')}
               </Button>
-              
+
               {waypoints.length > 2 && index !== 0 && index !== waypoints.length - 1 && (
                 <Button
                   size="small"
@@ -191,14 +199,10 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
             </Box>
           ))}
         </Stack>
-        
+
         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-          <Button
-            startIcon={<Add />}
-            onClick={handleAddWaypoint}
-            disabled={waypoints.length >= 10}
-          >
-            {t('dialog.routeSelection.addWaypoint', 'Add Waypoint')}
+          <Button startIcon={<Add />} onClick={handleAddWaypoint} disabled={waypoints.length >= 10}>
+            {t('base-dialog.routeSelection.addWaypoint', 'Add Waypoint')}
           </Button>
         </Box>
       </Box>
@@ -206,39 +210,36 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
       {/* Route Options */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
-          {t('dialog.routeSelection.routeOptions', 'Route Options')}
+          {t('base-dialog.routeSelection.routeOptions', 'Route Options')}
         </Typography>
-        
+
         <Stack spacing={2}>
           <FormControl size="small">
-            <InputLabel>{t('dialog.routeSelection.algorithm', 'Route Algorithm')}</InputLabel>
+            <InputLabel>{t('base-dialog.routeSelection.algorithm', 'Route Algorithm')}</InputLabel>
             <Select
               value={routeAlgorithm}
-              label={t('dialog.routeSelection.algorithm', 'Route Algorithm')}
+              label={t('base-dialog.routeSelection.algorithm', 'Route Algorithm')}
               onChange={(e) => setRouteAlgorithm(e.target.value as typeof routeAlgorithm)}
             >
               <MenuItem value="fastest">
-                {t('dialog.routeSelection.fastest', 'Fastest Route')}
+                {t('base-dialog.routeSelection.fastest', 'Fastest Route')}
               </MenuItem>
               <MenuItem value="shortest">
-                {t('dialog.routeSelection.shortest', 'Shortest Route')}
+                {t('base-dialog.routeSelection.shortest', 'Shortest Route')}
               </MenuItem>
               <MenuItem value="scenic">
-                {t('dialog.routeSelection.scenic', 'Scenic Route')}
+                {t('base-dialog.routeSelection.scenic', 'Scenic Route')}
               </MenuItem>
             </Select>
           </FormControl>
-          
+
           <FormControlLabel
             control={
-              <Switch
-                checked={avoidTolls}
-                onChange={(e) => setAvoidTolls(e.target.checked)}
-              />
+              <Switch checked={avoidTolls} onChange={(e) => setAvoidTolls(e.target.checked)} />
             }
-            label={t('dialog.routeSelection.avoidTolls', 'Avoid Tolls')}
+            label={t('base-dialog.routeSelection.avoidTolls', 'Avoid Tolls')}
           />
-          
+
           <FormControlLabel
             control={
               <Switch
@@ -246,7 +247,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                 onChange={(e) => setAvoidHighways(e.target.checked)}
               />
             }
-            label={t('dialog.routeSelection.avoidHighways', 'Avoid Highways')}
+            label={t('base-dialog.routeSelection.avoidHighways', 'Avoid Highways')}
           />
         </Stack>
       </Box>
@@ -259,16 +260,15 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
           disabled={isCalculating || !waypoints[0]?.name || !waypoints[waypoints.length - 1]?.name}
           startIcon={isCalculating ? <CircularProgress size={20} /> : null}
         >
-          {isCalculating 
-            ? t('dialog.routeSelection.calculating', 'Calculating...')
-            : t('dialog.routeSelection.calculateRoute', 'Calculate Route')
-          }
+          {isCalculating
+            ? t('base-dialog.routeSelection.calculating', 'Calculating...')
+            : t('base-dialog.routeSelection.calculateRoute', 'Calculate Route')}
         </Button>
       </Box>
 
       {workingCopy.waypoints && workingCopy.waypoints.length > 0 && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          {t('dialog.routeSelection.routeCalculated', 'Route calculated successfully!')}
+          {t('base-dialog.routeSelection.routeCalculated', 'Route calculated successfully!')}
         </Alert>
       )}
     </Box>

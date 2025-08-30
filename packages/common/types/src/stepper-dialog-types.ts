@@ -1,9 +1,9 @@
 /**
- * @file stepper-dialog-types.ts
+ * @file stepper-base-dialog-types.ts
  * @description プラグイン拡張システムの基本型定義
  */
 
-//import type { ComponentType } from 'react';
+//import type { ComponentType } from 'provider';
 
 /**
  * Reactコンポーネントのプロパティ基底型

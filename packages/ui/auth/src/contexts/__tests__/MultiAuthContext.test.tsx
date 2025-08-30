@@ -9,11 +9,11 @@ import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext';
 
 import type { AuthUser } from '../../types/AuthUser';
 
-// Mock @react-oauth/google
+// Mock @provider-oauth/google
 const mockGoogleLogin = vi.fn();
 const mockUseGoogleLogin = vi.fn().mockReturnValue(mockGoogleLogin);
 
-vi.mock('@react-oauth/google', () => ({
+vi.mock('@provider-oauth/google', () => ({
   useGoogleLogin: (config: any) => {
     mockUseGoogleLogin(config);
     return mockGoogleLogin;

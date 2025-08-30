@@ -1,5 +1,5 @@
 /**
- * @fileoverview UnsavedChangesDialog - Confirmation dialog for discarding unsaved changes
+ * @fileoverview UnsavedChangesDialog - Confirmation base-dialog for discarding unsaved changes
  */
 
 import React from 'react';
@@ -46,36 +46,27 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
   onCancel,
 }) => {
   return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" spacing={2} alignItems="center">
           <WarningIcon color="warning" />
           <Typography variant="h6">{title}</Typography>
         </Stack>
       </DialogTitle>
-      
+
       <DialogContent>
         <Alert severity="warning" sx={{ mb: 2 }}>
           <AlertTitle>Unsaved Changes</AlertTitle>
           <Typography variant="body2">{message}</Typography>
         </Alert>
-        
+
         {/* Display specific unsaved changes if provided */}
-        {children && (
-          <Stack sx={{ mb: 2, mt: 2 }}>
-            {children}
-          </Stack>
-        )}
-        
+        {children && <Stack sx={{ mb: 2, mt: 2 }}>{children}</Stack>}
+
         <Typography variant="body2" color="text.secondary">
           Choose one of the following options:
         </Typography>
-        
+
         <Stack spacing={1} sx={{ mt: 2 }}>
           <Typography variant="body2">
             • <strong>Cancel</strong>: Continue editing and keep your changes
@@ -90,16 +81,12 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           </Typography>
         </Stack>
       </DialogContent>
-      
+
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button
-          onClick={onCancel}
-          variant="outlined"
-          size="large"
-        >
+        <Button onClick={onCancel} variant="outlined" size="large">
           Cancel
         </Button>
-        
+
         {showSaveDraft && onSaveDraft && (
           <Button
             onClick={onSaveDraft}
@@ -111,7 +98,7 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
             Save as Draft
           </Button>
         )}
-        
+
         <Button
           onClick={onDiscard}
           variant="contained"

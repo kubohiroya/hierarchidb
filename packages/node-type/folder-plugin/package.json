@@ -40,7 +40,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "dexie": "^4.0.8",
     "react-tag-input": "^6.10.3",
     "@mui/x-date-pickers": "^7.0.0",

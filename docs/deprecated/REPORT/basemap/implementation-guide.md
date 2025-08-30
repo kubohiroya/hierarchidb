@@ -628,7 +628,7 @@ test.describe('BaseMap Plugin E2E', () => {
   test('complete basemap creation flow', async ({ page }) => {
     await page.goto('/app');
     
-    // Open create dialog
+    // Open create base-dialog
     await page.click('[data-testid="create-node-button"]');
     await page.click('[data-testid="node-type-basemap"]');
     
@@ -788,8 +788,8 @@ export default defineConfig({
   dts: true,
   clean: true,
   external: [
-    'react',
-    'react-dom',
+    'provider',
+    'provider-dom',
     '@mui/material',
     '@mui/icons-material',
     'maplibre-gl',

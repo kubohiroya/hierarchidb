@@ -30,7 +30,7 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-// import { VariableSizeList as List } from 'react-window';
+// import { VariableSizeList as List } from 'provider-window';
 
 import type { StyleMapConfig } from '../../types/styleMapTypes';
 import { valueToColor } from '../../utils/colorUtils';

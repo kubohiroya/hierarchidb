@@ -525,7 +525,7 @@ class ProjectWorkerAPI implements ProjectAPI {
 // tsup.config.ts
 export default defineConfig([
   { entry: ['src/shared/openstreetmap-type.ts'], outDir: 'dist/shared' },
-  { entry: ['src/ui/openstreetmap-type.ts'], outDir: 'dist/ui', external: ['react'] },
+  { entry: ['src/ui/openstreetmap-type.ts'], outDir: 'dist/ui', external: ['provider'] },
   { entry: ['src/worker/openstreetmap-type.ts'], outDir: 'dist/worker', external: ['@hierarchidb/worker'] },
 ]);
 ```

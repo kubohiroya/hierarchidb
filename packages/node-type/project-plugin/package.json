@@ -34,7 +34,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@mui/material": "^6.1.8",

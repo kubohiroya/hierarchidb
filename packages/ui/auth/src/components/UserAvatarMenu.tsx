@@ -24,7 +24,7 @@ import { DeleteForever } from '@mui/icons-material';
 
 export const UserProfile = (props: { auth: AuthContextProps }) => {
   // 【機能概要】: ユーザープロファイル表示コンポーネント
-  // 【実装方針】: react-oidc-contextのAuthContextPropsを使用
+  // 【実装方針】: provider-oidc-contextのAuthContextPropsを使用
   // 【テスト対応】: UserAvatarMenu.test.tsxのテストケースを通すための実装
   // 🟢 信頼性レベル: テストと既存実装から推測
   const auth = props.auth;
@@ -61,14 +61,12 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       // Clear localStorage
       localStorage.clear();
 
-      // Close dialog and reload page to apply changes
+      // Close base-dialog and reload page to apply changes
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch (error) {
       if (import.meta.env.DEV) {
-
         console.error('Failed to clear cache:', error);
-
       }
       alert('Failed to clear some cache data. Please try again.');
     }
@@ -172,14 +170,14 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       {/* <Dialog
         open={clearWorkingCopyDialogOpen}
         onClose={() => setClearWorkingCopyDialogOpen(false)}
-        aria-labelledby="clear-workingcopy-dialog-title"
-        aria-describedby="clear-workingcopy-dialog-description"
+        aria-labelledby="clear-workingcopy-base-dialog-title"
+        aria-describedby="clear-workingcopy-base-dialog-description"
       >
-        <DialogTitle id="clear-workingcopy-dialog-title">
+        <DialogTitle id="clear-workingcopy-base-dialog-title">
           Clear WorkingCopyTypes Garbage?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="clear-workingcopy-dialog-description" component="div">
+          <DialogContentText id="clear-workingcopy-base-dialog-description" component="div">
             {workingCopyStats ? (
               <>
                 <Typography variant="body2" gutterBottom>

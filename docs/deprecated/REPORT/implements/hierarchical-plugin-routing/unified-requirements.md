@@ -83,7 +83,7 @@ pluginRegistry.set('basemap', {
 ### 動的ルートコンポーネント
 ```tsx
 // packages/src/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
-import { useParams, useLoaderData } from 'react-router-dom';
+import { useParams, useLoaderData } from 'provider-router-dom';
 import { pluginRegistry } from '@/plugins/registry';
 import { NotFound } from '@/containers/NotFound';
 import { Forbidden } from '@/containers/Forbidden';

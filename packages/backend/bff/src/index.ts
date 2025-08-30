@@ -463,7 +463,7 @@ app.post('/auth/logout', async (c) => {
 });
 
 // ============================================================================
-// OpenID Connect Discovery (for react-oidc-theme compatibility)
+// OpenID Connect Discovery (for provider-oidc-theme compatibility)
 // ============================================================================
 
 // OpenID discovery configuration handler

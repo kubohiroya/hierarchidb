@@ -3,8 +3,8 @@
 // export { default as i18n } from './i18n';
 // export { LanguageProvider, useLanguage } from './i18n/LanguageProvider';
 
-// Re-export commonly used i18next hooks (when react-i18next is available)
-// export { useTranslation, Trans, Translation } from 'react-i18next';
+// Re-export commonly used i18next hooks (when provider-i18next is available)
+// export { useTranslation, Trans, Translation } from 'provider-i18next';
 
 // Export i18n utilities
 export * from './utils/i18nLogger';

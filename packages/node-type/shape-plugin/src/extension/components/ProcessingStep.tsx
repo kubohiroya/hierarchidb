@@ -1,9 +1,9 @@
 /**
  * @file ProcessingStep.tsx
- * @description Processing step wrapper for Shape extension dialog
- * 
+ * @description Processing step wrapper for Shape extension base-dialog
+ *
  * This component adapts the existing Step4Processing component to work
- * with the plugin extension dialog interface.
+ * with the plugin extension base-dialog interface.
  */
 
 import React from 'react';
@@ -21,16 +21,16 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({
   data,
   onNext,
   onPrevious,
-  errors
+  errors,
 }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step4Processing
-          workingCopy={{ 
-            ...data, 
+          workingCopy={{
+            ...data,
             selectedAdminLevels: data.selectedAdminLevels || [],
-            batchConfig: data.batchConfig
+            batchConfig: data.batchConfig,
           }}
           onUpdate={(updates) => {
             const updatedData = { ...data, ...updates };
@@ -38,27 +38,27 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({
           }}
           disabled={false}
         />
-        
+
         {errors?.map((error, index) => (
           <Box key={index} sx={{ color: 'error.main', mt: 1, fontSize: '0.875rem' }}>
             {error}
           </Box>
         ))}
       </Box>
-      
-      <Box sx={{ 
-        mt: 3, 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        borderTop: 1,
-        borderColor: 'divider',
-        pt: 2
-      }}>
-        <Button onClick={onPrevious}>
-          Previous
-        </Button>
-        <Button 
-          variant="contained" 
+
+      <Box
+        sx={{
+          mt: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          borderTop: 1,
+          borderColor: 'divider',
+          pt: 2,
+        }}
+      >
+        <Button onClick={onPrevious}>Previous</Button>
+        <Button
+          variant="contained"
           onClick={() => onNext(data)}
           disabled={!data.selectedAdminLevels || data.selectedAdminLevels.length === 0}
         >

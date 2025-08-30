@@ -33,7 +33,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     plugins,
     resolve: {
       // @emotion/reactとreactの重複を解決
-      dedupe: ['@emotion/react', '@emotion/styled', 'react', 'react-dom'],
+      dedupe: ['@emotion/react', '@emotion/styled', 'provider', 'provider-dom'],
       alias: [
         // ローカルソースのエイリアスのみ
         { find: '~', replacement: path.resolve(__dirname, './src') },

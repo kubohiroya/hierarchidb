@@ -10,6 +10,19 @@
 // Hooks
 export { useWorkingCopy } from './hooks/useWorkingCopy';
 export { useDialogContext, DialogProvider } from './hooks/useDialogContext';
+
+export type { CommonDialogActionsProps } from '~/types/commonDialogActionsProps';
+export type { CommonDialogTitleProps } from '~/types/commonDialogTitleProps';
+export type { UnsavedChangesDialogProps } from '~/types/unsavedChangesDialogProps';
+export type { DialogContextValue } from '~/types/dialogContextValue';
+export type { WorkingCopyState } from '~/types/workingCopyState';
+export type { StepperDialogProps } from '~/types/stepperDialogProps';
+export type { DialogStep } from '~/types/dialogStep';
+export type { PluginDialogProps } from '~/types/pluginDialogProps';
+export type { DialogMode } from '~/types/dialogMode';
+export type { DialogVariant } from '~/types/dialogVariant';
+export * from './dialog';
+
 export { useDialogUrlParams } from './hooks/useDialogUrlParams.ts.bak';
 export type { UseDialogUrlParamsReturn } from './hooks/useDialogUrlParams.ts.bak';
 export { useDialogMode } from './hooks/useDialogMode.ts.bak';

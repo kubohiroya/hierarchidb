@@ -859,7 +859,7 @@ Create `packages/ui-treeconsole/vitest.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-provider';
 
 export default defineConfig({
   plugins: [react()],
@@ -916,7 +916,7 @@ Create `packages/ui-treeconsole/src/test/utils.tsx`:
 
 ```typescript
 import React from 'react';
-import { render, type RenderOptions } from '@testing-library/react';
+import { render, type RenderOptions } from '@testing-library/provider';
 import { ThemeProvider } from '@hierarchidb/ui-theme';
 import { createTestTree, createTestNode } from './fixtures';
 
@@ -930,7 +930,7 @@ const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) 
 const customRender = (ui: React.ReactElement, options?: RenderOptions) =>
   render(ui, { wrapper: AllTheProviders, ...options });
 
-export * from '@testing-library/react';
+export * from '@testing-library/provider';
 export { customRender as render };
 
 // Test data factories
@@ -1055,7 +1055,7 @@ describe('Virtualization Performance', () => {
 ```typescript
 // packages/ui-treeconsole/src/test/accessibility/tree-console.a11y.test.tsx
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/provider';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { TreeConsole } from '~/containers/console/TreeConsole';
 
@@ -1232,7 +1232,7 @@ export default config;
 Create example stories in `packages/ui-treeconsole/src/components/console/TreeConsole.stories.tsx`:
 
 ```typescript
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/provider';
 import { TreeConsole } from './TreeConsole';
 import { createTestTree } from '../../test/fixtures';
 

@@ -257,7 +257,7 @@ export function useLinkButton(props: LinkButtonProps): UseLinkButtonReturn {
         }
       }
 
-      // Show confirmation dialog if configured
+      // Show confirmation base-dialog if configured
       if (confirmDialog?.enabled) {
         setConfirmOpen(true);
         return;

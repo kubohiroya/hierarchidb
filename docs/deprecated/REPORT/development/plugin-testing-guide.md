@@ -304,7 +304,7 @@ describe('ProjectEntityHandler', () => {
 ```typescript
 // src/ui/__tests__/hooks/useProjectAPI.test.tsx
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/provider';
 import { useProjectAPI } from '../../hooks/useProjectAPI';
 
 // Mock dependencies
@@ -371,7 +371,7 @@ describe('useProjectAPI Hook', () => {
 ```typescript
 // src/ui/__tests__/components/ProjectDialog.test.tsx
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/provider';
 import userEvent from '@testing-library/user-event';
 import { ProjectDialog, ProjectDialogProps } from '../../components/ProjectDialog';
 
@@ -391,7 +391,7 @@ describe('ProjectDialog Component', () => {
     onCancel: vi.fn()
   };
 
-  it('should render create dialog correctly', () => {
+  it('should render create base-dialog correctly', () => {
     render(<ProjectDialog {...defaultProps} />);
     
     expect(screen.getByText('Create Project')).toBeInTheDocument();

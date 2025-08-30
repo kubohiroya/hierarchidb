@@ -14,7 +14,7 @@ HierarchiDBのWorker初期化システムに関する包括的な分析と実装
 
 ### 2.2 根本原因
 - Worker初期化の競合状態
-- 複数の初期化パスが存在（root.tsx、WorkerProvider、loader.ts）
+- 複数の初期化パスが存在（root.tsx、WorkerSingletonProvider、loader.ts）
 - 初期化状態の管理が不完全
 - ログ出力の不足により問題の特定が困難
 
@@ -27,7 +27,7 @@ sequenceDiagram
     participant Browser as Browser
     participant Root as root.tsx
     participant App as App Component
-    participant WP as WorkerProvider
+    participant WP as WorkerSingletonProvider
     participant WAC as WorkerAPIClient
     participant IW as initWorkerClient.ts
     participant W as Worker Thread
@@ -38,7 +38,7 @@ sequenceDiagram
     Note over Root: モジュールのロードのみ
     
     Root->>App: <App />をレンダリング
-    App->>WP: <WorkerProvider>でラップ
+    App->>WP: <WorkerSingletonProvider>でラップ
     
     %% WorkerProvider内での初期化
     rect rgb(240, 240, 255)
@@ -163,7 +163,7 @@ class WorkerAPIClient {
 ## 5. 実装した修正内容
 
 ### 5.1 WorkerProviderコンポーネント
-**ファイル**: `app/src/contexts/WorkerProvider.tsx`
+**ファイル**: `app/src/contexts/WorkerSingletonProvider.tsx`
 
 #### 主要機能：
 - Worker APIクライアントの初期化を一元管理
@@ -193,8 +193,8 @@ class WorkerAPIClient {
 
 ### 6.1 チェックリスト
 
-- [ ] ブラウザのコンソールに `[WorkerProvider] Component rendering` が表示されるか
-- [ ] `[WorkerProvider] useEffect triggered` が表示されるか
+- [ ] ブラウザのコンソールに `[WorkerSingletonProvider] Component rendering` が表示されるか
+- [ ] `[WorkerSingletonProvider] useEffect triggered` が表示されるか
 - [ ] `[WorkerAPIClient.initialize] Current state:` が表示されるか
 - [ ] `[initWorker] Starting worker initialization` が表示されるか
 - [ ] Worker のコンソール（別タブ）にログが出ているか
@@ -203,11 +203,11 @@ class WorkerAPIClient {
 ### 6.2 期待されるログ順序
 
 ```
-[WorkerProvider] Component rendering, initial state setup
-[WorkerProvider] useEffect triggered
-[WorkerProvider] initializeWorker function started
-[WorkerProvider] Initialization attempt 1/3 at [timestamp]
-[WorkerProvider] Calling WorkerAPIClient.initialize()...
+[WorkerSingletonProvider] Component rendering, initial state setup
+[WorkerSingletonProvider] useEffect triggered
+[WorkerSingletonProvider] initializeWorker function started
+[WorkerSingletonProvider] Initialization attempt 1/3 at [timestamp]
+[WorkerSingletonProvider] Calling WorkerAPIClient.initialize()...
 [WorkerAPIClient.initialize] Current state: uninitialized
 [WorkerAPIClient.initialize] First initialization attempt
 [WorkerAPIClient.initialize] Starting new initialization
@@ -220,14 +220,14 @@ class WorkerAPIClient {
 [WorkerAPIClient.doInitialize] Worker instance obtained: true
 [WorkerAPIClient.doInitialize] Initialization completed successfully
 [WorkerAPIClient.initialize] Initialization successful
-[WorkerProvider] WorkerAPIClient.initialize() completed
-[WorkerProvider] Calling WorkerAPIClient.getSingleton()...
+[WorkerSingletonProvider] WorkerAPIClient.initialize() completed
+[WorkerSingletonProvider] Calling WorkerAPIClient.getSingleton()...
 [WorkerAPIClient.getSingleton] Current state: initialized
 [WorkerAPIClient.getSingleton] Returning worker instance
-[WorkerProvider] WorkerAPIClient.getSingleton() returned: [object]
-[WorkerProvider] Setting state with ready client
-[WorkerProvider] Initialization successful
-[WorkerProvider] Rendering children with context
+[WorkerSingletonProvider] WorkerAPIClient.getSingleton() returned: [object]
+[WorkerSingletonProvider] Setting state with ready client
+[WorkerSingletonProvider] Initialization successful
+[WorkerSingletonProvider] Rendering children with context
 ```
 
 ## 7. 現在の問題と対策
@@ -332,21 +332,21 @@ sequenceDiagram
     participant User
     participant Browser
     participant React
-    participant WorkerProvider
+    participant WorkerSingletonProvider
     participant WorkerAPIClient
     participant Worker
     participant Console
     
     User->>Browser: http://localhost:4201/hierarchidb/t/r
     Browser->>React: ページロード
-    React->>WorkerProvider: コンポーネントマウント
+    React->>WorkerSingletonProvider: コンポーネントマウント
     
     Note over Worker: worker.js は読み込み成功
     
     rect rgb(255, 200, 200)
         Note over Console: メインスレッドのログが出力されない
-        WorkerProvider--xConsole: [WorkerProvider] Component rendering ❌
-        WorkerProvider--xConsole: [WorkerProvider] useEffect triggered ❌
+        WorkerSingletonProvider--xConsole: [WorkerSingletonProvider] Component rendering ❌
+        WorkerSingletonProvider--xConsole: [WorkerSingletonProvider] useEffect triggered ❌
         WorkerAPIClient--xConsole: [WorkerAPIClient.initialize] ❌
     end
     

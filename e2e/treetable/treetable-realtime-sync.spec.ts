@@ -252,7 +252,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // フィルター設定
     await page.locator('[data-testid="subscription-filter-button"]').click();
-    await expect(page.locator('[data-testid="filter-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="filter-base-dialog"]')).toBeVisible();
 
     await page.locator('[data-testid="filter-parent-input"]').fill(parentId || '');
     await page.locator('[data-testid="apply-filter"]').click();

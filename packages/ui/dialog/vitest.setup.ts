@@ -1,5 +1,5 @@
 /**
- * dialog Test Setup
+ * base-dialog Test Setup
  * Uses base vitest setup configuration
  */
 

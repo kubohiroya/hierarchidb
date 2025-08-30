@@ -69,7 +69,6 @@ export function useTreeConsoleIntegration({
   pageNodeId,
   pageTreeNode,
 }: UseTreeConsoleIntegrationParams) {
-
   // TreeTypes data state
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
@@ -183,7 +182,7 @@ export function useTreeConsoleIntegration({
         if (folderName && folderName.trim()) {
           console.log('Creating folder-plugin:', folderName.trim());
           // For E2E testing purposes, we'll use a simple prompt
-          // In a real implementation, this would open a proper dialog
+          // In a real implementation, this would open a proper base-dialog
         }
       },
 
@@ -272,7 +271,7 @@ export function useTreeConsoleIntegration({
             if (client && pageNodeId) {
               // Generate a user-friendly name based on the node type
               const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
-              
+
               const mutationAPI = await client.getMutationAPI();
               const result = await mutationAPI.createNode({
                 nodeType: nodeType,
@@ -288,7 +287,7 @@ export function useTreeConsoleIntegration({
                 if (client && pageNodeId) {
                   try {
                     const queryAPI = await client.getQueryAPI();
-          const children = await queryAPI.listChildren(pageNodeId as NodeId);
+                    const children = await queryAPI.listChildren(pageNodeId as NodeId);
                     const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
                     setTreeData(treeNodeData);
                   } catch (refreshError) {
@@ -364,9 +363,9 @@ export function useTreeConsoleIntegration({
               await actions.handleRefresh();
             } catch (error) {
               console.error('Import failed:', error);
-              setState((prev) => ({ 
-                ...prev, 
-                error: `Import failed: ${error}` 
+              setState((prev) => ({
+                ...prev,
+                error: `Import failed: ${error}`,
               }));
             }
           }
@@ -380,7 +379,7 @@ export function useTreeConsoleIntegration({
           console.warn('No nodes selected for export');
           return;
         }
-        
+
         try {
           const blob = await importExport.exportNodes({
             nodeIds: selectedIds,
@@ -390,7 +389,7 @@ export function useTreeConsoleIntegration({
               console.log('Export progress:', progress);
             },
           });
-          
+
           // Create download link
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -400,13 +399,13 @@ export function useTreeConsoleIntegration({
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          
+
           console.log('Export completed');
         } catch (error) {
           console.error('Export failed:', error);
-          setState((prev) => ({ 
-            ...prev, 
-            error: `Export failed: ${error}` 
+          setState((prev) => ({
+            ...prev,
+            error: `Export failed: ${error}`,
           }));
         }
       },
@@ -417,7 +416,12 @@ export function useTreeConsoleIntegration({
   // Load tree data when client is ready
   useEffect(() => {
     if (!client || !pageNodeId) {
-      console.log('[useTreeConsoleIntegration] Skipping load - client:', !!client, 'pageNodeId:', pageNodeId);
+      console.log(
+        '[useTreeConsoleIntegration] Skipping load - client:',
+        !!client,
+        'pageNodeId:',
+        pageNodeId
+      );
       return;
     }
 

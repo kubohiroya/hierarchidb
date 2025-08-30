@@ -3,7 +3,7 @@
  * @description Authentication method settings component (currently disabled)
  */
 
-// import React from 'react'; // RemovedProperties: unused import
+// import React from 'provider'; // RemovedProperties: unused import
 import {
   Alert,
   Box,

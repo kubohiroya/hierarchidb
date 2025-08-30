@@ -8,7 +8,7 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 export interface AutoHideFullScreenDialogProps {
   /**
@@ -50,7 +50,7 @@ export interface AutoHideFullScreenDialogProps {
   /**
    * Delay before hiding header/footer (ms)
    */
-  hideDelay?: number;
+  autoHideDelay?: number;
   /**
    * Height of the hover detection zone (px)
    */
@@ -70,7 +70,7 @@ export function AutoHideFullScreenDialog({
   titleActions,
   footerActions,
   autoHide = true,
-  hideDelay = 300,
+  autoHideDelay = 300,
   hoverZoneHeight = 40,
 }: AutoHideFullScreenDialogProps) {
   const [headerVisible, setHeaderVisible] = useState(!autoHide);
@@ -90,9 +90,9 @@ export function AutoHideFullScreenDialog({
       clearTimeout(headerTimeoutRef.current);
       headerTimeoutRef.current = setTimeout(() => {
         setHeaderVisible(false);
-      }, hideDelay);
+      }, autoHideDelay);
     }
-  }, [autoHide, hideDelay]);
+  }, [autoHide, autoHideDelay]);
 
   const handleFooterMouseEnter = useCallback(() => {
     if (autoHide) {
@@ -106,9 +106,9 @@ export function AutoHideFullScreenDialog({
       clearTimeout(footerTimeoutRef.current);
       footerTimeoutRef.current = setTimeout(() => {
         setFooterVisible(false);
-      }, hideDelay);
+      }, autoHideDelay);
     }
-  }, [autoHide, hideDelay]);
+  }, [autoHide, autoHideDelay]);
 
   return (
     <Dialog
@@ -163,21 +163,13 @@ export function AutoHideFullScreenDialog({
           pb: 2,
           backgroundColor: 'background.paper',
           zIndex: 1301,
-          transform: autoHide
-            ? headerVisible
-              ? 'translateY(0)'
-              : 'translateY(-100%)'
-            : 'none',
+          transform: autoHide ? (headerVisible ? 'translateY(0)' : 'translateY(-100%)') : 'none',
           transition: 'transform 0.3s ease-in-out',
           boxShadow: headerVisible && autoHide ? 2 : 0,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-          {icon && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {icon}
-            </Box>
-          )}
+          {icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{icon}</Box>}
           <Box>
             <Typography variant="h6" component="div">
               {title}
@@ -189,7 +181,7 @@ export function AutoHideFullScreenDialog({
             )}
           </Box>
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {titleActions}
           <IconButton
@@ -207,7 +199,7 @@ export function AutoHideFullScreenDialog({
           </IconButton>
         </Box>
       </DialogTitle>
-      
+
       {/* Content */}
       <DialogContent
         sx={{
@@ -252,11 +244,7 @@ export function AutoHideFullScreenDialog({
             borderColor: 'divider',
             backgroundColor: 'background.paper',
             zIndex: 1301,
-            transform: autoHide
-              ? footerVisible
-                ? 'translateY(0)'
-                : 'translateY(100%)'
-              : 'none',
+            transform: autoHide ? (footerVisible ? 'translateY(0)' : 'translateY(100%)') : 'none',
             transition: 'transform 0.3s ease-in-out',
             boxShadow: footerVisible && autoHide ? 2 : 0,
             p: 2,

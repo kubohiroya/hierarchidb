@@ -211,7 +211,7 @@ describe('TreeTable Drag and Drop', () => {
       .toHaveAttribute('data-parent-id', targetId);
 
     // 確認ダイアログの処理
-    await expect(page.locator('[data-testid="move-confirmation-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="move-confirmation-base-dialog"]')).toBeVisible();
     await page.locator('[data-testid="confirm-move-button"]').click();
 
     // SubTree更新の確認
@@ -269,7 +269,7 @@ describe('TreeTable Drag and Drop', () => {
     await page.mouse.up();
 
     // 複数ノード移動の確認ダイアログ
-    await expect(page.locator('[data-testid="bulk-move-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="bulk-move-base-dialog"]')).toBeVisible();
     await expect(page.locator('[data-testid="move-count"]')).toHaveText('2');
     await page.locator('[data-testid="confirm-bulk-move-button"]').click();
 

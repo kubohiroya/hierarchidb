@@ -125,7 +125,7 @@ export default defineConfig([
     format: ['esm'],
     dts: true,
     treeshake: true,
-    external: ['react', 'react-dom', '@mui/material'],
+    external: ['provider', 'provider-dom', '@mui/material'],
   },
   // Worker entry
   {
@@ -474,7 +474,7 @@ export const MyPluginUIPlugin: UIPlugin = {
     },
     
     beforeDelete: async (entity: MyPluginEntity) => {
-      // Show confirmation dialog
+      // Show confirmation base-dialog
       const confirmed = confirm(`Delete plugin "${entity.name}"?`);
       if (!confirmed) {
         throw new Error('Delete cancelled by user');
@@ -728,7 +728,7 @@ interface SomeService {
 
 ```typescript
 // src/ui/__tests__/MyPluginDialog.test.tsx
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/provider';
 import { MyPluginDialog } from '../components/MyPluginDialog';
 
 describe('MyPluginDialog', () => {
@@ -802,7 +802,7 @@ packages/plugins/my-plugin/src/
 
 ```bash
 # テスト実行環境のセットアップ
-pnpm add -D vitest @testing-library/react @testing-library/user-event happy-dom fake-indexeddb
+pnpm add -D vitest @testing-library/provider @testing-library/user-event happy-dom fake-indexeddb
 ```
 
 ```typescript

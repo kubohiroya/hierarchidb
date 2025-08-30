@@ -344,7 +344,7 @@ export const MyComponent = memo(MyComponentImpl);
 import { UIComponentRegistry } from '@hierarchidb/ui-core';
 
 // コンポーネント登録
-UIComponentRegistry.register('my-plugin-dialog', {
+UIComponentRegistry.register('my-plugin-base-dialog', {
   component: MyPluginDialog,
   displayName: 'My Plugin Dialog',
   category: 'dialog'
@@ -358,7 +358,7 @@ const DialogComponent = UIComponentRegistry.get('my-plugin-dialog');
 
 ```typescript
 // i18n統合
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 
 export function MyComponent() {
   const { t } = useTranslation('my-namespace');
@@ -408,7 +408,7 @@ export function MyComponent() {
 
 ```typescript
 // 仮想化テーブル
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/provider-virtual';
 
 export function VirtualizedList({ items }) {
   const virtualizer = useVirtualizer({
@@ -471,7 +471,7 @@ export function App() {
 
 ```typescript
 // Testing Library使用例
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/provider';
 import { MyComponent } from './MyComponent';
 
 describe('MyComponent', () => {
@@ -538,8 +538,8 @@ export default {
   dts: true,
   clean: true,
   external: [
-    'react',
-    'react-dom', 
+    'provider',
+    'provider-dom', 
     '@mui/material',
     '@mui/icons-material'
   ]

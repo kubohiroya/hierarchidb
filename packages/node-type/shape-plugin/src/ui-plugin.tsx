@@ -95,7 +95,7 @@ export const ShapeUIPlugin: UIPluginDefinition = {
   // Lifecycle hooks
   hooks: {
     beforeShowCreateDialog: async ({ parentId, context }) => {
-      console.log('Opening Shape create dialog for parent:', parentId);
+      console.log('Opening Shape create base-dialog for parent:', parentId);
       return { proceed: true };
     },
 

@@ -30,11 +30,11 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
 
     // Common external dependencies
     external: [
-      'react',
-      'react-dom',
+      'provider',
+      'provider-dom',
       '@mui/material',
       '@mui/icons-material',
-      '@emotion/react',
+      '@emotion/provider',
       '@emotion/styled',
     ],
 

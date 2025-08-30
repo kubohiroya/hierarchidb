@@ -1,19 +1,12 @@
 /**
  * @file BaseMapPreview.tsx
- * @description BaseMap preview component for dialog and panel views
+ * @description BaseMap preview component for base-dialog and panel views
  * Shows a live preview of the configured basemap settings
  */
 
 import React, { useMemo } from 'react';
 import { Box, Typography, Paper, Chip, Stack } from '@mui/material';
-import { 
-  Map as MapIcon,
-  Terrain,
-  Satellite,
-  DarkMode,
-  LightMode,
-  Tune
-} from '@mui/icons-material';
+import { Map as MapIcon, Terrain, Satellite, DarkMode, LightMode, Tune } from '@mui/icons-material';
 import { MapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles';
 
@@ -63,7 +56,7 @@ const STYLE_ICONS: Record<string, React.ReactElement> = {
   terrain: <Terrain />,
   dark: <DarkMode />,
   light: <LightMode />,
-  custom: <Tune />
+  custom: <Tune />,
 };
 
 /**
@@ -79,16 +72,19 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   height = 300,
   showMetadata = true,
   interactive = false,
-  title = 'BaseMap Preview'
+  title = 'BaseMap Preview',
 }) => {
   // Convert to MapLibre view state
-  const initialViewState = useMemo<MapViewState>(() => ({
-    longitude: viewport.center[0],
-    latitude: viewport.center[1],
-    zoom: viewport.zoom,
-    bearing: viewport.bearing || 0,
-    pitch: viewport.pitch || 0
-  }), [viewport]);
+  const initialViewState = useMemo<MapViewState>(
+    () => ({
+      longitude: viewport.center[0],
+      latitude: viewport.center[1],
+      zoom: viewport.zoom,
+      bearing: viewport.bearing || 0,
+      pitch: viewport.pitch || 0,
+    }),
+    [viewport]
+  );
 
   // Generate zxy string from viewport if not provided
   const zxyString = useMemo(() => {
@@ -100,7 +96,9 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   const handleMapClick = () => {
     if (!interactive) {
       const baseUrl = window.location.origin;
-      const basePath = import.meta.env.VITE_APP_PREFIX ? `/${import.meta.env.VITE_APP_PREFIX}/` : '/';
+      const basePath = import.meta.env.VITE_APP_PREFIX
+        ? `/${import.meta.env.VITE_APP_PREFIX}/`
+        : '/';
       const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
       window.open(mapUrl, '_blank');
     }
@@ -131,13 +129,13 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   }, [mapStyle, displayOptions.attribution]);
 
   return (
-    <Paper 
+    <Paper
       elevation={1}
-      sx={{ 
-        width, 
+      sx={{
+        width,
         overflow: 'hidden',
         borderRadius: 2,
-        position: 'relative'
+        position: 'relative',
       }}
     >
       {/* Header */}
@@ -148,22 +146,17 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
             <Typography variant="subtitle1" fontWeight="medium">
               {title}
             </Typography>
-            <Chip 
-              label={mapStyle.style} 
-              size="small" 
-              variant="outlined"
-              color="primary"
-            />
+            <Chip label={mapStyle.style} size="small" variant="outlined" color="primary" />
           </Stack>
         </Box>
       )}
 
       {/* Map Preview */}
-      <Box 
-        sx={{ 
-          position: 'relative', 
+      <Box
+        sx={{
+          position: 'relative',
           height,
-          cursor: !interactive ? 'pointer' : 'grab'
+          cursor: !interactive ? 'pointer' : 'grab',
         }}
         onClick={handleMapClick}
         title={!interactive ? `Click to open map at ${zxyString}` : undefined}
@@ -179,20 +172,20 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
             dragPan: interactive,
             dragRotate: interactive,
             doubleClickZoom: interactive,
-            touchZoomRotate: interactive
+            touchZoomRotate: interactive,
           }}
           onLoad={(map) => {
             // Apply display options
             if (!displayOptions.showLabels) {
               // Hide all label layers
               const layers = map.getStyle().layers;
-              layers.forEach(layer => {
+              layers.forEach((layer) => {
                 if (layer.type === 'symbol' && layer.id.includes('label')) {
                   map.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
               });
             }
-            
+
             // Add 3D buildings if requested and available
             if (displayOptions.show3dBuildings) {
               // Check if the style supports 3D buildings
@@ -200,39 +193,42 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 // Add a simple 3D building layer if not present
                 const layers = map.getStyle().layers;
                 const labelLayerId = layers.find(
-                  layer => layer.type === 'symbol' && layer.layout?.['text-field']
+                  (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
                 )?.id;
 
                 if (map.getSource('openmaptiles') || map.getSource('composite')) {
-                  map.addLayer({
-                    id: 'building-3d',
-                    source: map.getSource('openmaptiles') ? 'openmaptiles' : 'composite',
-                    'source-layer': 'building',
-                    type: 'fill-extrusion',
-                    minzoom: 15,
-                    paint: {
-                      'fill-extrusion-color': '#aaa',
-                      'fill-extrusion-height': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        15,
-                        0,
-                        15.05,
-                        ['get', 'height']
-                      ],
-                      'fill-extrusion-base': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        15,
-                        0,
-                        15.05,
-                        ['get', 'min_height']
-                      ],
-                      'fill-extrusion-opacity': 0.6
-                    }
-                  }, labelLayerId);
+                  map.addLayer(
+                    {
+                      id: 'building-3d',
+                      source: map.getSource('openmaptiles') ? 'openmaptiles' : 'composite',
+                      'source-layer': 'building',
+                      type: 'fill-extrusion',
+                      minzoom: 15,
+                      paint: {
+                        'fill-extrusion-color': '#aaa',
+                        'fill-extrusion-height': [
+                          'interpolate',
+                          ['linear'],
+                          ['zoom'],
+                          15,
+                          0,
+                          15.05,
+                          ['get', 'height'],
+                        ],
+                        'fill-extrusion-base': [
+                          'interpolate',
+                          ['linear'],
+                          ['zoom'],
+                          15,
+                          0,
+                          15.05,
+                          ['get', 'min_height'],
+                        ],
+                        'fill-extrusion-opacity': 0.6,
+                      },
+                    },
+                    labelLayerId
+                  );
                 }
               }
             }
@@ -252,17 +248,18 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 px: 1.5,
                 py: 0.5,
                 borderRadius: 1,
-                boxShadow: 1
+                boxShadow: 1,
               }}
             >
               <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                {viewport.center[0].toFixed(4)}, {viewport.center[1].toFixed(4)} | z{viewport.zoom.toFixed(1)}
+                {viewport.center[0].toFixed(4)}, {viewport.center[1].toFixed(4)} | z
+                {viewport.zoom.toFixed(1)}
               </Typography>
             </Box>
 
             {/* Display Options */}
-            {(displayOptions.show3dBuildings || 
-              displayOptions.showTerrain || 
+            {(displayOptions.show3dBuildings ||
+              displayOptions.showTerrain ||
               displayOptions.showTraffic ||
               displayOptions.showTransit) && (
               <Box
@@ -274,7 +271,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                   px: 1.5,
                   py: 0.5,
                   borderRadius: 1,
-                  boxShadow: 1
+                  boxShadow: 1,
                 }}
               >
                 <Stack direction="row" spacing={0.5}>
@@ -301,28 +298,28 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                   position: 'absolute',
                   bottom: 8,
                   left: 8,
-                  maxWidth: '60%'
+                  maxWidth: '60%',
                 }}
               >
                 <Stack direction="row" spacing={0.5} flexWrap="wrap">
                   {displayOptions.tags.slice(0, 3).map((tag, index) => (
-                    <Chip 
+                    <Chip
                       key={index}
-                      label={tag} 
-                      size="small" 
-                      sx={{ 
+                      label={tag}
+                      size="small"
+                      sx={{
                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '0.7rem'
-                      }} 
+                        fontSize: '0.7rem',
+                      }}
                     />
                   ))}
                   {displayOptions.tags.length > 3 && (
-                    <Chip 
-                      label={`+${displayOptions.tags.length - 3}`} 
+                    <Chip
+                      label={`+${displayOptions.tags.length - 3}`}
                       size="small"
-                      sx={{ 
+                      sx={{
                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '0.7rem'
+                        fontSize: '0.7rem',
                       }}
                     />
                   )}
@@ -341,7 +338,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 py: 0.25,
                 fontSize: '10px',
                 maxWidth: '40%',
-                textAlign: 'right'
+                textAlign: 'right',
               }}
             >
               <Typography variant="caption" sx={{ fontSize: '10px' }}>
@@ -350,7 +347,6 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
             </Box>
           </>
         )}
-
       </Box>
     </Paper>
   );

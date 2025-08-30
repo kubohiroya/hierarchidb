@@ -36,7 +36,7 @@ export const UserLoginButton: React.FC = () => {
   const { t } = useTranslation();
   const isLoading = auth.isLoading;
   const isAuthenticated = auth.isAuthenticated;
-  
+
   // Menu state management
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [themeMenuAnchorEl, setThemeMenuAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -100,7 +100,7 @@ export const UserLoginButton: React.FC = () => {
     window.dispatchEvent(
       new CustomEvent('memoryMonitorToggle', {
         detail: { visible: newVisibility },
-      }),
+      })
     );
   }, [memoryMonitorVisible]);
 
@@ -118,9 +118,7 @@ export const UserLoginButton: React.FC = () => {
       // Clear Cache API
       if ('caches' in window) {
         const cacheNames = await caches.keys();
-        await Promise.all(
-          cacheNames.map((cacheName) => caches.delete(cacheName)),
-        );
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
       }
 
       // Clear IndexedDB
@@ -136,14 +134,14 @@ export const UserLoginButton: React.FC = () => {
               });
             }
             return Promise.resolve();
-          }),
+          })
         );
       }
 
       // Clear localStorage
       localStorage.clear();
 
-      // Close dialog and reload page to apply changes
+      // Close base-dialog and reload page to apply changes
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch (error) {
@@ -208,7 +206,7 @@ export const UserLoginButton: React.FC = () => {
       <IconButton onClick={handleMenuOpen} sx={{ p: 0 }} aria-label="User menu">
         <UserAvatar pictureUrl={userPicture} email={userEmail} name={userName} size={40} />
       </IconButton>
-      
+
       {/* Main User Menu */}
       <Menu
         anchorEl={anchorEl}
@@ -230,7 +228,7 @@ export const UserLoginButton: React.FC = () => {
           )}
         </Box>
         <Divider />
-        
+
         {/* Theme Selection */}
         <MenuItem onClick={handleThemeMenuOpen} aria-label="Theme Selection">
           <ListItemIcon>{getThemeIcon(themeMode)}</ListItemIcon>
@@ -248,7 +246,7 @@ export const UserLoginButton: React.FC = () => {
             </Box>
           </ListItemText>
         </MenuItem>
-        
+
         {/* Language Selection */}
         {supportedLanguages.length > 0 && (
           <MenuItem onClick={handleLanguageMenuOpen} aria-label="Language Selection">
@@ -278,11 +276,7 @@ export const UserLoginButton: React.FC = () => {
         {false && (
           <MenuItem
             onClick={handleToggleMemoryMonitor}
-            aria-label={
-              memoryMonitorVisible
-                ? 'Hide Memory Monitor'
-                : 'Show Memory Monitor'
-            }
+            aria-label={memoryMonitorVisible ? 'Hide Memory Monitor' : 'Show Memory Monitor'}
           >
             <ListItemIcon>
               {memoryMonitorVisible ? (
@@ -300,11 +294,7 @@ export const UserLoginButton: React.FC = () => {
                   width: '100%',
                 }}
               >
-                <span>
-                  {memoryMonitorVisible
-                    ? 'Hide Memory Monitor'
-                    : 'Show Memory Monitor'}
-                </span>
+                <span>{memoryMonitorVisible ? 'Hide Memory Monitor' : 'Show Memory Monitor'}</span>
                 {memoryMonitorVisible && (
                   <CheckIcon
                     fontSize="small"
@@ -318,22 +308,19 @@ export const UserLoginButton: React.FC = () => {
             </ListItemText>
           </MenuItem>
         )}
-        
+
         <Divider />
-        
+
         {/* Clear All Data */}
-        <MenuItem
-          onClick={() => setClearCacheDialogOpen(true)}
-          aria-label="Clear All Data"
-        >
+        <MenuItem onClick={() => setClearCacheDialogOpen(true)} aria-label="Clear All Data">
           <ListItemIcon>
             <DeleteForeverIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Clear All Data</ListItemText>
         </MenuItem>
-        
+
         <Divider />
-        
+
         {/* Logout */}
         <MenuItem onClick={handleLogout} aria-label="Logout">
           <ListItemIcon>
@@ -447,35 +434,22 @@ export const UserLoginButton: React.FC = () => {
         aria-labelledby="clear-all-data-dialog-title"
         aria-describedby="clear-all-data-dialog-description"
       >
-        <DialogTitle id="clear-all-data-dialog-title">
-          Clear All Data?
-        </DialogTitle>
+        <DialogTitle id="clear-all-data-dialog-title">Clear All Data?</DialogTitle>
         <DialogContent>
-          <DialogContentText
-            id="clear-cache-dialog-description"
-            component="div"
-          >
+          <DialogContentText id="clear-cache-dialog-description" component="div">
             This will clear all data including:
             <ul style={{ marginTop: 8, marginBottom: 8 }}>
               <li>Cache API data</li>
               <li>All IndexedDB databases (projects, maps, shapes, etc.)</li>
               <li>localStorage data</li>
             </ul>
-            <strong>Warning:</strong> This action cannot be undone and will
-            delete all your local data. The page will reload after clearing the
-            cache.
+            <strong>Warning:</strong> This action cannot be undone and will delete all your local
+            data. The page will reload after clearing the cache.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setClearCacheDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleClearCache}
-            color="error"
-            variant="contained"
-            autoFocus
-          >
+          <Button onClick={() => setClearCacheDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleClearCache} color="error" variant="contained" autoFocus>
             Clear All Data
           </Button>
         </DialogActions>

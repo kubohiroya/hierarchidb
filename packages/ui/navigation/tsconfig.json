@@ -19,7 +19,7 @@
         "src/*"
       ]
     },
-    "skipLibCheck": true  // Required for react-router-dom and MUI compatibility
+    "skipLibCheck": true  // Required for provider-router-dom and MUI compatibility
   },
   "include": [
     "src"

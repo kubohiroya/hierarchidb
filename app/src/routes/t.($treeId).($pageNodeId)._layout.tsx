@@ -16,7 +16,7 @@ import { loadPageNode, LoadPageNodeArgs } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import { Tree, type NodeId } from '@hierarchidb/common-core';
+import { Tree, type NodeId } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadPageNodeArgs;
@@ -39,7 +39,7 @@ export default function TLayout() {
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string>(data.tree?.id || '');
-  
+
   // Check if the node exists
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
 

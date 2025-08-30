@@ -181,7 +181,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor: ['provider', 'provider-dom'],
           mui: ['@mui/material'],
           maplibre: ['maplibre-gl'],
           dexie: ['dexie']

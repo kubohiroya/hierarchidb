@@ -310,7 +310,7 @@ export interface NodeLifecycleHooks<
 ```typescript
 // packages/core/src/registry/NodeTypeRegistry.ts
 
-import type { LoaderFunction, ActionFunction } from 'react-router-dom';
+import type { LoaderFunction, ActionFunction } from 'provider-router-dom';
 
 // React Routerアクション定義
 export interface PluginRouterAction {

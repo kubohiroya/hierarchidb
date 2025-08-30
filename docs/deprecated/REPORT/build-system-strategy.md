@@ -57,7 +57,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['react', 'react-dom'],
+  external: ['provider', 'provider-dom'],
 });
 ```
 
@@ -143,7 +143,7 @@ export const createTsupConfig = (options = {}) => defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['react', 'react-dom', '@mui/material', '@emotion/react'],
+  external: ['provider', 'provider-dom', '@mui/material', '@emotion/provider'],
   ...options,
 });
 ```

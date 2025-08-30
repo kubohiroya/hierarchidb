@@ -93,7 +93,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "allowImportingTsExtensions": false,
-    "jsx": "react-jsx"
+    "jsx": "provider-jsx"
   }
 }
 ```
@@ -110,7 +110,7 @@
     "incremental": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "jsx": "react-jsx"
+    "jsx": "provider-jsx"
   }
 }
 ```

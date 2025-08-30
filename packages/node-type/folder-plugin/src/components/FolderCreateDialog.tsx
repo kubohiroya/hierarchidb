@@ -24,12 +24,12 @@ export interface FolderCreateDialogProps {
   onSubmit: (data: FolderCreateData) => Promise<void>;
 
   /**
-   * Called when user cancels the dialog
+   * Called when user cancels the base-dialog
    */
   onCancel: () => void;
 
   /**
-   * Whether the dialog is open
+   * Whether the base-dialog is open
    */
   open?: boolean;
 }

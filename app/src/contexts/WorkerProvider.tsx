@@ -1,13 +1,13 @@
 /**
- * WorkerProvider wrapper for the app
+ * WorkerSingletonProvider wrapper for the app
  * Uses @hierarchidb/runtime-worker-init-notifier for initialization detection
  */
 
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { 
+import {
   WorkerProvider as BaseWorkerProvider,
-  useWorker 
+  useWorker,
 } from '@hierarchidb/runtime-worker-init-notifier';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { getRawWorkerInstance } from '../initWorkerClient';
@@ -64,7 +64,7 @@ const ErrorComponent: React.FC<{ error: Error }> = ({ error }) => (
       {error.message || 'Unknown error'}
     </Typography>
     <Box sx={{ mt: 3 }}>
-      <button 
+      <button
         onClick={() => window.location.reload()}
         style={{
           padding: '8px 16px',
@@ -99,17 +99,14 @@ export const WorkerProvider: React.FC<AppWorkerProviderProps> = ({ children }) =
   );
 };
 
-// Re-export the useWorker hook
-export { useWorker };
-
 // Create useWorkerClient hook for compatibility
 export const useWorkerClient = () => {
   const workerContext = useWorker();
-  
+
   if (!workerContext) {
-    throw new Error('useWorkerClient must be used within WorkerProvider');
+    throw new Error('useWorkerClient must be used within WorkerSingletonProvider');
   }
-  
+
   return {
     client: workerContext.workerClient,
     isConnected: workerContext.isInitialized,

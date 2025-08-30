@@ -1,8 +1,8 @@
 /**
  * @file AuthRequiredDialog.tsx
- * @description Authentication required dialog for batch processing interruption
- * 
- * This dialog is shown when batch processing encounters authentication errors
+ * @description Authentication required base-dialog for batch processing interruption
+ *
+ * This base-dialog is shown when batch processing encounters authentication errors
  * and needs user intervention to continue.
  */
 
@@ -20,13 +20,11 @@ import {
   AccordionSummary,
   AccordionDetails,
   LinearProgress,
-
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   IconButton,
-
 } from '@mui/material';
 import {
   Lock as LockIcon,
@@ -47,7 +45,7 @@ import { AuthProviderType } from '../types/AuthProviderType';
 import type { AuthRequiredNotification } from '@hierarchidb/common-auth';
 
 export interface AuthRequiredDialogProps {
-  /** Whether the dialog is open */
+  /** Whether the base-dialog is open */
   open: boolean;
   /** Dialog title */
   title?: string;
@@ -111,16 +109,9 @@ export function AuthRequiredDialog({
   const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);
 
   const { context } = notification;
-  const {
-    url,
-    errorMessage,
-    sessionId,
-    pluginType,
-    retryCount = 0,
-    errorCode,
-  } = context;
+  const { url, errorMessage, sessionId, pluginType, retryCount = 0, errorCode } = context;
 
-  // Clear error when dialog opens/closes
+  // Clear error when base-dialog opens/closes
   useEffect(() => {
     if (open) {
       setAuthError(null);
@@ -135,61 +126,54 @@ export function AuthRequiredDialog({
     }
   }, [isAuthenticated, user, isAuthenticating]);
 
-  const handleSignIn = useCallback(async (provider: AuthProvider) => {
-    setIsAuthenticating(true);
-    setSelectedProvider(provider);
-    setAuthError(null);
+  const handleSignIn = useCallback(
+    async (provider: AuthProvider) => {
+      setIsAuthenticating(true);
+      setSelectedProvider(provider);
+      setAuthError(null);
 
-    try {
-      console.log(`🔐 Starting ${provider} authentication for batch processing`);
-      
-      await signIn({
-        provider: provider as AuthProviderType,
-        // Context is not part of BFFSignInOptions, so we remove it
-      });
+      try {
+        console.log(`🔐 Starting ${provider} authentication for batch processing`);
 
-      // After successful signIn, use the user from useAuth
-      if (user) {
-        console.log(`✅ Authentication successful with ${provider}`);
-        onSuccess(
-          user.access_token,
-          user.expires_at,
-          {
+        await signIn({
+          provider: provider as AuthProviderType,
+          // Context is not part of BFFSignInOptions, so we remove it
+        });
+
+        // After successful signIn, use the user from useAuth
+        if (user) {
+          console.log(`✅ Authentication successful with ${provider}`);
+          onSuccess(user.access_token, user.expires_at, {
             id: user.profile.sub,
             email: user.profile.email,
             name: user.profile.name,
             picture: user.profile.picture,
-          }
+          });
+        } else {
+          throw new Error('Authentication failed');
+        }
+      } catch (error) {
+        console.error(`❌ Authentication failed with ${provider}:`, error);
+        setAuthError(
+          error instanceof Error ? error.message : 'Authentication failed. Please try again.'
         );
-      } else {
-        throw new Error('Authentication failed');
+      } finally {
+        setIsAuthenticating(false);
+        setSelectedProvider(null);
       }
-    } catch (error) {
-      console.error(`❌ Authentication failed with ${provider}:`, error);
-      setAuthError(
-        error instanceof Error 
-          ? error.message 
-          : 'Authentication failed. Please try again.'
-      );
-    } finally {
-      setIsAuthenticating(false);
-      setSelectedProvider(null);
-    }
-  }, [signIn, onSuccess, sessionId, pluginType, context.requestId]);
+    },
+    [signIn, onSuccess, sessionId, pluginType, context.requestId]
+  );
 
   const handleUseCurrentSession = useCallback(() => {
     if (user) {
       console.log('✅ Using current authentication session for batch processing');
-      onSuccess(
-        user.access_token,
-        user.expires_at,
-        {
-          id: user.profile.sub,
-          email: user.profile.email,
-          name: user.profile.name,
-          picture: user.profile.picture,
-        }
-      );
+      onSuccess(user.access_token, user.expires_at, {
+        id: user.profile.sub,
+        email: user.profile.email,
+        name: user.profile.name,
+        picture: user.profile.picture,
+      });
     }
   }, [user, onSuccess]);
 
@@ -233,14 +217,14 @@ export function AuthRequiredDialog({
         startIcon={
           isSelected && isAuthenticating ? (
             <Box sx={{ width: 20, height: 20 }}>
-              <LinearProgress 
-                variant="indeterminate" 
-                sx={{ 
+              <LinearProgress
+                variant="indeterminate"
+                sx={{
                   borderRadius: 1,
                   '& .MuiLinearProgress-bar': {
                     backgroundColor: 'white',
-                  }
-                }} 
+                  },
+                }}
               />
             </Box>
           ) : (
@@ -261,7 +245,7 @@ export function AuthRequiredDialog({
           },
           '&:disabled': {
             opacity: 0.5,
-          }
+          },
         }}
       >
         {isSelected && isAuthenticating ? 'Signing in...' : info.name}
@@ -285,7 +269,7 @@ export function AuthRequiredDialog({
               {title}
             </Typography>
           </Box>
-          
+
           <IconButton
             onClick={handleCancel}
             disabled={isAuthenticating}
@@ -299,13 +283,10 @@ export function AuthRequiredDialog({
 
       <DialogContent>
         {/* Main Alert */}
-        <Alert 
-          severity={getErrorSeverity()} 
-          icon={<LockIcon />}
-          sx={{ mb: 3 }}
-        >
+        <Alert severity={getErrorSeverity()} icon={<LockIcon />} sx={{ mb: 3 }}>
           <Typography variant="body1">
-            {message || `The ${pluginType} plugin requires authentication to continue batch processing.`}
+            {message ||
+              `The ${pluginType} plugin requires authentication to continue batch processing.`}
           </Typography>
           {retryCount > 0 && (
             <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
@@ -330,10 +311,7 @@ export function AuthRequiredDialog({
 
         {/* Error Details */}
         <Accordion sx={{ mb: 3 }}>
-          <AccordionSummary 
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="error-details-content"
-          >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="error-details-content">
             <Typography variant="subtitle2" display="flex" alignItems="center" gap={1}>
               <InfoIcon fontSize="small" />
               Technical Details
@@ -345,19 +323,13 @@ export function AuthRequiredDialog({
                 <ListItemIcon>
                   <ErrorIcon color="error" fontSize="small" />
                 </ListItemIcon>
-                <ListItemText
-                  primary="Error Code"
-                  secondary={errorCode}
-                />
+                <ListItemText primary="Error Code" secondary={errorCode} />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
                   <WarningIcon color="warning" fontSize="small" />
                 </ListItemIcon>
-                <ListItemText
-                  primary="Error Message"
-                  secondary={errorMessage}
-                />
+                <ListItemText primary="Error Message" secondary={errorMessage} />
               </ListItem>
               <ListItem>
                 <ListItemIcon>
@@ -385,8 +357,8 @@ export function AuthRequiredDialog({
 
         {/* Current Session */}
         {isAuthenticated && user && (
-          <Alert 
-            severity="success" 
+          <Alert
+            severity="success"
             action={
               <Button
                 color="inherit"
@@ -401,7 +373,8 @@ export function AuthRequiredDialog({
             sx={{ mb: 3 }}
           >
             <Typography variant="body2">
-              You are currently signed in as <strong>{user.profile.name || user.profile.email}</strong>
+              You are currently signed in as{' '}
+              <strong>{user.profile.name || user.profile.email}</strong>
             </Typography>
           </Alert>
         )}
@@ -411,21 +384,16 @@ export function AuthRequiredDialog({
           <Typography variant="h6" gutterBottom>
             Sign in to continue processing:
           </Typography>
-          
-          <Box 
-            display="flex" 
-            flexDirection="column" 
-            gap={2} 
-            alignItems="stretch"
-            sx={{ mt: 2 }}
-          >
+
+          <Box display="flex" flexDirection="column" gap={2} alignItems="stretch" sx={{ mt: 2 }}>
             {(Object.keys(AUTH_PROVIDERS) as AuthProvider[]).map(getProviderButton)}
           </Box>
         </Box>
 
         {/* Help Text */}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-          Authentication is required to access external APIs securely. Your session will be used only for this batch processing operation.
+          Authentication is required to access external APIs securely. Your session will be used
+          only for this batch processing operation.
         </Typography>
       </DialogContent>
 
@@ -443,7 +411,7 @@ export function AuthRequiredDialog({
               </Button>
             )}
           </Box>
-          
+
           <Box display="flex" gap={1}>
             <Button
               onClick={handleCancel}
@@ -454,7 +422,7 @@ export function AuthRequiredDialog({
             >
               {sessionId ? 'Cancel Processing' : 'Cancel'}
             </Button>
-            
+
             {isAuthenticated && user && (
               <Button
                 variant="contained"

@@ -95,9 +95,9 @@ export const RowContextMenu = memo(
 
     const handleEditClick = () => {
       const onEdit = propsRef.current.onEdit;
-      // Close the menu first before opening Edit dialog
+      // Close the menu first before opening Edit base-dialog
       handleMainMenuClose();
-      // Open Edit dialog after a slight delay
+      // Open Edit base-dialog after a slight delay
       requestAnimationFrame(() => {
         onEdit();
       });

@@ -229,7 +229,7 @@ React Router v7 のファイルベース・ルーティングを採用してお�
 以下はベースのレイアウトにヘッダーと認証ボタンを配置する例。プロダクションでは `HeaderAuthMenu` への差し替えも推奨。
 
 ```tsx
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'provider-router-dom';
 import { AppBar, Toolbar, Typography, Box } from '@mui/material';
 import { HeaderAuthButton } from './HeaderAuthButton';
 
@@ -509,7 +509,7 @@ export default function Index() {
 
 **SPAモード設定:**
 ```typescript
-// packages/_app/react-router.config.ts
+// packages/_app/provider-router.config.ts
 const config: ReactRouterConfig = {
   appDirectory: 'src',
   prerender: false,
@@ -525,8 +525,8 @@ const config: ReactRouterConfig = {
 ```tsx
 // packages/_app/src/entry.client.tsx
 import { StrictMode, startTransition } from 'react';
-import { hydrateRoot } from 'react-dom/client';
-import { HydratedRouter } from 'react-router/dom';
+import { hydrateRoot } from 'provider-dom/client';
+import { HydratedRouter } from 'provider-router/dom';
 
 startTransition(() => {
   hydrateRoot(
@@ -546,16 +546,16 @@ startTransition(() => {
 export default defineConfig({
   resolve: {
     // @emotion/reactとreactの重複を解決
-    dedupe: ['@emotion/react', '@emotion/styled', 'react', 'react-dom'],
+    dedupe: ['@emotion/provider', '@emotion/styled', 'provider', 'provider-dom'],
   },
   optimizeDeps: {
     include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
+      'provider',
+      'provider-dom',
+      'provider-router-dom',
       '@mui/material',
       '@mui/icons-material',
-      '@emotion/react',
+      '@emotion/provider',
       '@emotion/styled',
     ],
   },

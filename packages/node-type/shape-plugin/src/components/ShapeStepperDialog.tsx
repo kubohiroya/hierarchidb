@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import { PlayArrow as PlayArrowIcon, Category as CategoryIcon } from '@mui/icons-material';
-import { StepperDialog, useWorkingCopy } from '@hierarchidb/runtime-dialog';
+import { StepperDialog, useWorkingCopy } from '@hierarchidb/runtime-base-dialog';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/types';
 import { DEFAULT_PROCESSING_CONFIG } from '~/types';
@@ -43,7 +43,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
 }) => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
 
-  // Working Copy management using ui-dialog hook
+  // Working Copy management using ui-base-dialog hook
   const {
     workingCopy,
     updateWorkingCopy,
@@ -100,21 +100,21 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
     // Update working copy with URL metadata
     updateWorkingCopy({ urlMetadata });
 
-    // Open batch dialog
+    // Open batch base-dialog
     setBatchDialogOpen(true);
   }, [workingCopy, updateWorkingCopy]);
 
-  // Handle batch dialog close
+  // Handle batch base-dialog close
   const handleBatchDialogClose = useCallback(() => {
     setBatchDialogOpen(false);
-    // Return to main dialog (don't close it)
+    // Return to main base-dialog (don't close it)
   }, []);
 
   // Handle batch completion
   const handleBatchCompleted = useCallback(() => {
-    // Close batch dialog
+    // Close batch base-dialog
     setBatchDialogOpen(false);
-    // Commit changes and close main dialog
+    // Commit changes and close main base-dialog
     commitChanges();
     onClose();
   }, [commitChanges, onClose]);

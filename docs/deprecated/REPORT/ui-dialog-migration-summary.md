@@ -8,7 +8,7 @@
 **`@hierarchidb/ui-dialog`** パッケージを作成し、以下のコンポーネントを実装:
 
 ##### コンポーネント
-- `CommonPluginDialog` - 基本ダイアログラッパー
+- `CommonDialog` - 基本ダイアログラッパー
 - `StepperDialog` - マルチステップダイアログ  
 - `UnsavedChangesDialog` - Discard確認ダイアログ
 - `CommonDialogTitle` - 統一タイトル部
@@ -81,7 +81,7 @@
 
 #### シンプルなダイアログ（folder）
 ```tsx
-<CommonPluginDialog
+<CommonDialog
   mode="create"
   open={open}
   title="Create New Folder"
@@ -93,7 +93,7 @@
   isValid={isValid}
 >
   {/* フォーム内容 */}
-</CommonPluginDialog>
+</CommonDialog>
 ```
 
 #### マルチステップダイアログ（stylemap）

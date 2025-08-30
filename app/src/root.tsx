@@ -27,7 +27,7 @@ if (typeof window !== 'undefined' && !(window as any).__uiPluginsRegistered) {
   (window as any).__uiPluginsRegistered = true;
 }
 
-// Pre-load WorkerAPIClient module to ensure it's available when WorkerProvider needs it
+// Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
   import('./WorkerAPIClient').then(({ WorkerAPIClient }) => {

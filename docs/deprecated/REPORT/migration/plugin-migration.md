@@ -429,7 +429,7 @@ export default defineConfig([
     format: ['esm'],
     dts: true,
     treeshake: true,
-    external: ['react', 'react-dom', '@mui/material'],
+    external: ['provider', 'provider-dom', '@mui/material'],
   },
   // Worker entry
   {

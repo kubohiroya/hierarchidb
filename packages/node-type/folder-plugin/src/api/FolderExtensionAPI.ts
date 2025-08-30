@@ -5,7 +5,7 @@ import type {
   DialogStepDefinition,
   ValidationExtension,
   BaseEntityExtension,
-  ExtendingNodeTypeDefinition
+  ExtendingNodeTypeDefinition,
 } from '@hierarchidb/common-type';
 
 /**
@@ -13,12 +13,12 @@ import type {
  */
 export interface FolderDialogExtension {
   /**
-   * Additional steps for create dialog
+   * Additional steps for create base-dialog
    */
   createSteps?: DialogStepDefinition[];
 
   /**
-   * Additional steps for edit dialog
+   * Additional steps for edit base-dialog
    */
   editSteps?: DialogStepDefinition[];
 
@@ -103,7 +103,11 @@ export interface FolderExtension {
    */
   lifecycle?: {
     afterCreate?: (node: TreeNode, entity: FolderEntity) => Promise<void>;
-    beforeUpdate?: (node: TreeNode, entity: FolderEntity, changes: Partial<FolderEntity>) => Promise<void>;
+    beforeUpdate?: (
+      node: TreeNode,
+      entity: FolderEntity,
+      changes: Partial<FolderEntity>
+    ) => Promise<void>;
     afterUpdate?: (node: TreeNode, entity: FolderEntity) => Promise<void>;
     beforeDelete?: (node: TreeNode, entity: FolderEntity) => Promise<void>;
   };
@@ -140,18 +144,14 @@ export class FolderExtensionRegistry {
   register(extension: FolderExtension): void {
     // Check for circular dependencies
     if (this.wouldCreateCircularDependency(extension)) {
-      throw new Error(
-        `Circular dependency detected when registering extension: ${extension.id}`
-      );
+      throw new Error(`Circular dependency detected when registering extension: ${extension.id}`);
     }
 
     // Validate dependencies exist
     const dependencies = extension.metadata.dependencies || [];
     for (const dep of dependencies) {
       if (!this.extensions.has(dep)) {
-        throw new Error(
-          `Extension ${extension.id} depends on ${dep}, which is not registered`
-        );
+        throw new Error(`Extension ${extension.id} depends on ${dep}, which is not registered`);
       }
     }
 
@@ -224,7 +224,7 @@ export class FolderExtensionRegistry {
   }
 
   /**
-   * Get all dialog steps for create mode
+   * Get all base-dialog steps for create mode
    */
   getCreateDialogSteps(): DialogStepDefinition[] {
     const steps: DialogStepDefinition[] = [];
@@ -241,7 +241,7 @@ export class FolderExtensionRegistry {
   }
 
   /**
-   * Get all dialog steps for edit mode
+   * Get all base-dialog steps for edit mode
    */
   getEditDialogSteps(): DialogStepDefinition[] {
     const steps: DialogStepDefinition[] = [];
@@ -383,15 +383,15 @@ export class FolderExtensionRegistry {
    */
   buildExtensionConfig() {
     const extensions = this.getExtensionsInOrder();
-    
-    // Combine all dialog steps from extensions
+
+    // Combine all base-dialog steps from extensions
     const createSteps: DialogStepDefinition[] = [];
     const editSteps: DialogStepDefinition[] = [];
     let combinedValidation: ValidationExtension | undefined;
     let combinedEntity: BaseEntityExtension<any> | undefined;
 
     for (const ext of extensions) {
-      // Collect dialog steps
+      // Collect base-dialog steps
       if (ext.dialog?.createSteps) {
         createSteps.push(...ext.dialog.createSteps);
       }
@@ -422,8 +422,8 @@ export class FolderExtensionRegistry {
         name: 'Combined Folder Extensions',
         version: '1.0.0',
         description: 'Combined configuration from all folder-plugin extensions',
-        dependencies: extensions.flatMap(ext => ext.metadata.dependencies || []),
-      }
+        dependencies: extensions.flatMap((ext) => ext.metadata.dependencies || []),
+      },
     };
 
     return config;
@@ -444,11 +444,13 @@ export class FolderExtensionRegistry {
       name: baseDefinition.name,
       displayName: baseDefinition.displayName,
       extendedSteps: config.dialog?.createSteps || config.dialog?.editSteps,
-      extendedFields: extensions.flatMap(ext => ext.metadata.dependencies || []).map(dep => ({
-        name: dep,
-        type: 'string',
-        required: false
-      })),
+      extendedFields: extensions
+        .flatMap((ext) => ext.metadata.dependencies || [])
+        .map((dep) => ({
+          name: dep,
+          type: 'string',
+          required: false,
+        })),
       extendedValidation: config.validation,
       baseDefinition: baseDefinition.baseDefinition,
     };
@@ -458,7 +460,7 @@ export class FolderExtensionRegistry {
 
   private wouldCreateCircularDependency(extension: FolderExtension): boolean {
     const dependencies = extension.metadata.dependencies || [];
-    
+
     for (const dep of dependencies) {
       if (this.hasPathTo(dep, extension.id)) {
         return true;
@@ -504,7 +506,6 @@ export class FolderExtensionRegistry {
 
     return dependents;
   }
-
 }
 
 /**

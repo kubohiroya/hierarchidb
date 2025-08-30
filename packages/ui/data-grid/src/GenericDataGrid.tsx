@@ -33,7 +33,7 @@ import {
   Download,
   Refresh,
 } from '@mui/icons-material';
-// import { useVirtualizer } from '@tanstack/react-virtual';
+// import { useVirtualizer } from '@tanstack/provider-virtual';
 
 /**
  * Generic column definition

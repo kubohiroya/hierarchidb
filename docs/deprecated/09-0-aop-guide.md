@@ -807,7 +807,7 @@ const myPluginLifecycle: NodeLifecycleHooks<MyPluginEntity, MyPluginWorkingCopy>
 // packages/plugins/[plugin-name]/src/ui/MyPluginView.tsx
 import { useEffect, useState } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData } from 'provider-router-dom';
 import type { MyPluginEntity } from '../types';
 
 export function MyPluginView() {
@@ -842,7 +842,7 @@ export function MyPluginView() {
 // packages/plugins/[plugin-name]/src/ui/MyPluginEditor.tsx
 import { useState } from 'react';
 import { Box, TextField, Button } from '@mui/material';
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData } from 'provider-router-dom';
 import type { MyPluginEntity } from '../types';
 
 export function MyPluginEditor() {

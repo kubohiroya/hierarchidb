@@ -25,16 +25,18 @@ test.describe('Folder CRUD Operations', () => {
     // Navigate to specific tree with valid IDs to avoid routing issues
     // Using 'default' as treeId and 'defaultRoot' as pageTreeNodeId
     await page.goto('http://localhost:4202/hierarchidb/t/r');
-    
-    // If a dialog is open, close it
-    const dialog = page.locator('[role="dialog"]');
+
+    // If a base-dialog is open, close it
+    const dialog = page.locator('[role="base-dialog"]');
     if (await dialog.isVisible()) {
-      const closeButton = dialog.locator('button[aria-label="close"]').or(dialog.locator('text=Cancel'));
+      const closeButton = dialog
+        .locator('button[aria-label="close"]')
+        .or(dialog.locator('text=Cancel'));
       if (await closeButton.isVisible()) {
         await closeButton.click();
       }
     }
-    
+
     await dismissGuidedTour(page);
     // Wait for the page to be ready
     await page.waitForLoadState('networkidle');
@@ -64,14 +66,16 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
     // 作成ダイアログの確認
-    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
 
     const folderName = `Context Menu Folder ${Date.now()}`;
     await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
     await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // フォルダが作成されることを確認
-    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
+    await expect(
+      page.locator('[data-testid="folder-plugin-create-base-dialog"]')
+    ).not.toBeVisible();
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).toBeVisible({
       timeout: 5000,
     });
@@ -110,7 +114,7 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="context-menu-edit"]').click();
 
     // 編集ダイアログの確認
-    await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-edit-base-dialog"]')).toBeVisible();
 
     // 新しい名前を入力
     const newName = `Edited Name ${Date.now()}`;
@@ -120,7 +124,7 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="edit-folder-plugin-confirm"]').click();
 
     // 名前が変更されることを確認
-    await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-edit-base-dialog"]')).not.toBeVisible();
     await waitForWorkingCopyUpdate(page);
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${newName}")`)).toBeVisible({
       timeout: 5000,
@@ -170,7 +174,7 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="trash-menu-restore"]').click();
 
     // 復元確認
-    await expect(page.locator('[data-testid="restore-confirmation-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="restore-confirmation-base-dialog"]')).toBeVisible();
     await page.locator('[data-testid="confirm-restore"]').click();
 
     // ゴミ箱を閉じる
@@ -201,7 +205,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // 削除確認
     await expect(
-      page.locator('[data-testid="permanent-delete-confirmation-dialog"]')
+      page.locator('[data-testid="permanent-delete-confirmation-base-dialog"]')
     ).toBeVisible();
     await page.locator('[data-testid="confirm-permanent-delete"]').click();
 
@@ -217,7 +221,7 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
     // 空の名前で作成を試行
-    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+    await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
     await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // エラーメッセージの確認
@@ -237,7 +241,9 @@ test.describe('Folder CRUD Operations', () => {
 
     // ダイアログをキャンセル
     await page.locator('[data-testid="cancel-folder-plugin-create"]').click();
-    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
+    await expect(
+      page.locator('[data-testid="folder-plugin-create-base-dialog"]')
+    ).not.toBeVisible();
   });
 
   test('重複名のハンドリング', async ({ page }) => {
@@ -253,7 +259,9 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
     // 重複名処理の確認（自動的に番号が付与される）
-    await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
+    await expect(
+      page.locator('[data-testid="folder-plugin-create-base-dialog"]')
+    ).not.toBeVisible();
 
     // 元のフォルダと新しいフォルダの両方が存在することを確認
     const allFolders = page.locator(`[data-testid="tree-node"]:has-text("${originalName}")`);
@@ -273,7 +281,9 @@ test.describe('Folder CRUD Operations', () => {
     await page.locator('[data-testid="context-menu-properties"]').click();
 
     // プロパティダイアログの確認
-    await expect(page.locator('[data-testid="folder-plugin-properties-dialog"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="folder-plugin-properties-base-dialog"]')
+    ).toBeVisible();
 
     // 基本情報の確認
     await expect(page.locator('[data-testid="property-name"]')).toHaveText(folderName);
@@ -283,7 +293,9 @@ test.describe('Folder CRUD Operations', () => {
 
     // ダイアログを閉じる
     await page.locator('[data-testid="close-properties"]').click();
-    await expect(page.locator('[data-testid="folder-plugin-properties-dialog"]')).not.toBeVisible();
+    await expect(
+      page.locator('[data-testid="folder-plugin-properties-base-dialog"]')
+    ).not.toBeVisible();
   });
 
   test('フォルダの複製', async ({ page }) => {
@@ -330,7 +342,9 @@ test.describe('Folder CRUD Operations', () => {
 
     // 一括削除を実行
     await page.locator('[data-testid="context-menu-remove"]').click();
-    await expect(page.locator('[data-testid="batch-trash-confirmation-dialog"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="batch-trash-confirmation-base-dialog"]')
+    ).toBeVisible();
     await page.locator('[data-testid="confirm-batch-trash"]').click();
 
     // すべてのフォルダが削除されることを確認

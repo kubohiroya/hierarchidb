@@ -31,7 +31,7 @@ export const ShapeExtension = {
   icon: 'place',
   color: '#4CAF50',
 
-  // 3. Extended dialog steps
+  // 3. Extended base-dialog steps
   // Step 1 (Name/Description) is automatically inherited from folder-plugin
   extendedSteps: [
     {

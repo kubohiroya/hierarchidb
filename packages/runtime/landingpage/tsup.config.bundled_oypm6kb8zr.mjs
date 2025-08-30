@@ -16,10 +16,10 @@ var tsup_config_default = defineConfig({
   outDir: "dist",
   external: [
     "react",
-    "react-dom",
+    "provider-dom",
     "@mui/material",
     "@mui/icons-material",
-    "@emotion/react",
+    "@emotion/provider",
     "@emotion/styled",
     "dexie",
     "comlink",

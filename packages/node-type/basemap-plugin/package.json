@@ -28,7 +28,7 @@
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "dexie": "^4.0.0",

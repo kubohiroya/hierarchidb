@@ -18,7 +18,13 @@ vi.mock('../utils/logger', () => ({
 // Mock external components that are not implemented yet
 vi.mock('../UserAvatar', () => ({
   UserAvatar: ({ pictureUrl, email, name, size }: any) => (
-    <div data-testid="user-avatar" data-picture-url={pictureUrl} data-email={email} data-name={name} data-size={size}>
+    <div
+      data-testid="user-avatar"
+      data-picture-url={pictureUrl}
+      data-email={email}
+      data-name={name}
+      data-size={size}
+    >
       Avatar
     </div>
   ),
@@ -29,7 +35,7 @@ vi.mock('@hierarchidb/ui-core', () => ({
     <div data-testid="dropdown-menu" data-id={id}>
       {children}
       <div data-testid="dropdown-items">
-        {items?.map((item: any, index: number) => 
+        {items?.map((item: any, index: number) =>
           item ? (
             <button
               key={index}
@@ -49,8 +55,8 @@ vi.mock('@hierarchidb/ui-core', () => ({
   ),
 }));
 
-// Mock react-oidc-context
-vi.mock('react-oidc-context', () => ({
+// Mock provider-oidc-context
+vi.mock('provider-oidc-context', () => ({
   withAuth: (component: any) => component,
 }));
 
@@ -129,16 +135,12 @@ describe('UserProfile', () => {
   };
 
   const renderWithTheme = (component: React.ReactElement) => {
-    return render(
-      <ThemeProvider theme={theme}>
-        {component}
-      </ThemeProvider>
-    );
+    return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
   };
 
   beforeEach(() => {
     originalWindow = globalThis.window;
-    
+
     // Mock browser APIs
     Object.assign(globalThis.window, {
       ...originalWindow,
@@ -222,7 +224,7 @@ describe('UserProfile', () => {
 
       // Check for logout option
       expect(screen.getByTestId('dropdown-item-0')).toHaveTextContent('Logout');
-      
+
       // Check for separator
       expect(screen.getByTestId('dropdown-separator-1')).toBeInTheDocument();
 
@@ -259,7 +261,7 @@ describe('UserProfile', () => {
       ]);
     });
 
-    it('should open clear cache dialog when menu item is clicked', () => {
+    it('should open clear cache base-dialog when menu item is clicked', () => {
       renderWithTheme(<UserProfile auth={mockAuthenticatedUser} />);
 
       const clearCacheButton = screen.getByTestId('dropdown-item-2');
@@ -269,14 +271,14 @@ describe('UserProfile', () => {
       expect(screen.getByText(/This will clear all cached data including:/)).toBeInTheDocument();
     });
 
-    it('should close dialog when cancel is clicked', () => {
+    it('should close base-dialog when cancel is clicked', () => {
       renderWithTheme(<UserProfile auth={mockAuthenticatedUser} />);
 
-      // Open dialog
+      // Open base-dialog
       const clearCacheButton = screen.getByTestId('dropdown-item-2');
       fireEvent.click(clearCacheButton);
 
-      // Close dialog
+      // Close base-dialog
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
       fireEvent.click(cancelButton);
 
@@ -292,7 +294,7 @@ describe('UserProfile', () => {
 
       renderWithTheme(<UserProfile auth={mockAuthenticatedUser} />);
 
-      // Open dialog
+      // Open base-dialog
       const clearCacheButton = screen.getByTestId('dropdown-item-2');
       fireEvent.click(clearCacheButton);
 
@@ -323,13 +325,13 @@ describe('UserProfile', () => {
     it('should handle errors during cache clearing', async () => {
       const { devError } = require('../utils/logger');
       mockCaches.keys.mockRejectedValue(new Error('Cache error'));
-      
+
       // Mock window.alert
       globalThis.window.alert = vi.fn();
 
       renderWithTheme(<UserProfile auth={mockAuthenticatedUser} />);
 
-      // Open dialog and confirm
+      // Open base-dialog and confirm
       const clearCacheButton = screen.getByTestId('dropdown-item-2');
       fireEvent.click(clearCacheButton);
 
@@ -338,7 +340,9 @@ describe('UserProfile', () => {
 
       await waitFor(() => {
         expect(devError).toHaveBeenCalledWith('Failed to clear cache:', expect.any(Error));
-        expect(globalThis.window.alert).toHaveBeenCalledWith('Failed to clear some cache data. Please try again.');
+        expect(globalThis.window.alert).toHaveBeenCalledWith(
+          'Failed to clear some cache data. Please try again.'
+        );
       });
     });
 
@@ -366,17 +370,17 @@ describe('UserProfile', () => {
   });
 
   describe('Dialog Accessibility', () => {
-    it('should have proper ARIA labels on clear cache dialog', () => {
+    it('should have proper ARIA labels on clear cache base-dialog', () => {
       renderWithTheme(<UserProfile auth={mockAuthenticatedUser} />);
 
       const clearCacheButton = screen.getByTestId('dropdown-item-2');
       fireEvent.click(clearCacheButton);
 
       const dialog = screen.getByRole('dialog');
-      expect(dialog).toHaveAttribute('aria-labelledby', 'clear-cache-dialog-title');
+      expect(dialog).toHaveAttribute('aria-labelledby', 'clear-cache-base-dialog-title');
 
       const dialogContent = screen.getByText(/This will clear all cached data including:/);
-      expect(dialogContent).toHaveAttribute('id', 'clear-cache-dialog-description');
+      expect(dialogContent).toHaveAttribute('id', 'clear-cache-base-dialog-description');
     });
 
     it('should focus confirm button by default', () => {

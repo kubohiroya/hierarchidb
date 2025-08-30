@@ -40,7 +40,7 @@ BatchProcessingMonitorDialog（全画面）→
 5ステップのウィザード形式で地理データの設定を行う。
 
 ```tsx
-import { StepperDialog, useWorkingCopy, useDialogContext } from '@hierarchidb/ui-dialog';
+import { StepperDialog, useWorkingCopy, useDialogContext } from '@hierarchidb/ui-base-dialog';
 import { FullscreenIcon, FullscreenExitIcon, PlayArrowIcon } from '@hierarchidb/ui-core/icons';
 
 export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => {

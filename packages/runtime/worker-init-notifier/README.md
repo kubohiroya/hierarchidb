@@ -115,7 +115,7 @@ if (result.success) {
 ```tsx
 // App.tsx
 import React from 'react';
-import { WorkerProvider } from '@hierarchidb/runtime-worker-init-notifier';
+import { WorkerSingletonProvider } from '@hierarchidb/runtime-worker-init-notifier';
 import { WorkerAPIClient } from './WorkerAPIClient';
 import { MainApp } from './MainApp';
 
@@ -141,7 +141,7 @@ const ErrorScreen = ({ error }) => (
 
 function App() {
   return (
-    <WorkerProvider
+    <WorkerSingletonProvider
       getWorkerClient={async () => {
         // Initialize your worker client
         await WorkerAPIClient.initialize();
@@ -155,7 +155,7 @@ function App() {
       errorComponent={ErrorScreen}
     >
       <MainApp />
-    </WorkerProvider>
+    </WorkerSingletonProvider>
   );
 }
 ```

@@ -1,6 +1,6 @@
 /**
  * Shape Dialog Component - UI Layer
- * Main dialog for creating and editing Shape entities
+ * Main base-dialog for creating and editing Shape entities
  */
 
 import { useState, useCallback, useEffect } from 'react';

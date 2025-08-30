@@ -23,7 +23,7 @@ export interface ToastConfig {
 }
 
 /**
- * Confirmation dialog configuration
+ * Confirmation base-dialog configuration
  */
 export interface ConfirmDialogConfig {
   enabled: boolean;
@@ -78,7 +78,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
   validationErrors?: string[];
 
   /**
-   * Confirmation dialog configuration
+   * Confirmation base-dialog configuration
    */
   confirmDialog?: ConfirmDialogConfig;
 
@@ -199,7 +199,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
  *   Submit
  * </LinkButton>
  *
- * // With confirmation dialog
+ * // With confirmation base-dialog
  * <LinkButton
  *   confirmDialog={{
  *     enabled: true,

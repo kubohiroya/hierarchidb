@@ -14,7 +14,7 @@ export { WorkerInitializationChannel } from './WorkerInitializationChannel';
 export { WorkerInitializationReporter } from './WorkerInitializationReporter';
 
 // React components
-export { WorkerProvider, useWorker } from './react/WorkerProvider';
+export { WorkerSingletonProvider, useWorker } from '~/provider/WorkerSingletonProvider';
 
 
 

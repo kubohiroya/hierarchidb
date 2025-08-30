@@ -1,5 +1,5 @@
 /**
- * WorkerProvider - Manages Worker initialization and startup
+ * WorkerSingletonProvider - Manages Worker initialization and startup
  * 
  * This provider ensures the Worker process is started and initialized
  * before rendering child components. It handles the initial Worker creation
@@ -27,7 +27,7 @@ interface WorkerProviderProps {
 
 const WorkerContext = createContext<WorkerState | null>(null);
 
-export const WorkerProvider: React.FC<WorkerProviderProps> = ({ 
+export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
   children, 
   loadingComponent,
   errorComponent: ErrorComponent,
@@ -149,7 +149,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 export const useWorker = () => {
   const context = useContext(WorkerContext);
   if (!context) {
-    throw new Error('useWorker must be used within WorkerProvider');
+    throw new Error('useWorker must be used within WorkerSingletonProvider');
   }
   return context;
 };

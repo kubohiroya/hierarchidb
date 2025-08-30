@@ -431,7 +431,7 @@ const discardChanges = async () => {
 
 ```typescript
 // ARIA属性の適切な設定
-<IconButton onClick={onClose} size="small" aria-label="Close dialog">
+<IconButton onClick={onClose} size="small" aria-label="Close base-dialog">
   <CloseIcon />
 </IconButton>
 
@@ -478,7 +478,7 @@ const renderStepContent = useMemo(() => (step: number) => {
 
 ```typescript
 // i18nextを使用した国際化
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 
 const { t } = useTranslation('plugin-basemap');
 
@@ -525,7 +525,7 @@ const { t } = useTranslation('plugin-basemap');
 
 ```typescript
 // Jest + React Testing Libraryを使用
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/provider';
 import { BaseMapStepperDialog } from './BaseMapStepperDialog';
 
 describe('BaseMapStepperDialog', () => {
@@ -577,7 +577,7 @@ test('BaseMap creation flow', async ({ page }) => {
   await page.click('[data-testid="create-basemap-button"]');
   
   // ダイアログが表示される
-  await expect(page.locator('[role="dialog"]')).toBeVisible();
+  await expect(page.locator('[role="base-dialog"]')).toBeVisible();
   
   // 基本情報を入力
   await page.fill('[data-testid="map-name-input"]', 'Test Map');

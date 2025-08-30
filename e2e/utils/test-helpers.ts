@@ -54,36 +54,36 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   // Open SpeedDial menu using aria-label
   // The SpeedDial has role="presentation" and aria-label="Create new item"
   const speedDialButton = page.locator('[aria-label="Create new item"]');
-  
+
   // Scroll to make SpeedDial button visible in viewport
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(500);
-  
-  // Try force click to open the menu  
+
+  // Try force click to open the menu
   await speedDialButton.click({ force: true });
-  
+
   // Wait for SpeedDial menu to open - SpeedDialAction creates button elements with tooltipTitle
   // MUI SpeedDialAction creates button elements, not menuitem elements
   await page.waitForTimeout(1000); // Give time for menu to open
-  
+
   // Try to find SpeedDialAction button by tooltip title (aria-label)
-  const createFolderAction = page.locator('button[aria-label="Create Folder"]').or(
-    page.locator('button').filter({ hasText: 'Create Folder' })
-  );
+  const createFolderAction = page
+    .locator('button[aria-label="Create Folder"]')
+    .or(page.locator('button').filter({ hasText: 'Create Folder' }));
   await expect(createFolderAction).toBeVisible({ timeout: 5000 });
-  
+
   // Click folder-plugin creation action
   await createFolderAction.click();
 
-  // Handle the browser prompt dialog for folder-plugin creation
-  page.on('dialog', async dialog => {
+  // Handle the browser prompt base-dialog for folder-plugin creation
+  page.on('dialog', async (dialog) => {
     console.log('Dialog appeared:', dialog.type(), dialog.message());
     if (dialog.type() === 'prompt') {
       await dialog.accept(folderName);
     }
   });
-  
-  // Wait a moment for the dialog to be handled
+
+  // Wait a moment for the base-dialog to be handled
   await page.waitForTimeout(1000);
 
   // For SpeedDial testing, we just verify the UI interaction worked
@@ -115,13 +115,13 @@ export async function createChildFolder(
   // Click folder-plugin creation
   await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
-  // Fill dialog
-  await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+  // Fill base-dialog
+  await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
   await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
   await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
   // Wait for creation
-  await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
+  await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).not.toBeVisible();
 
   return folderName;
 }
@@ -137,7 +137,7 @@ export async function moveToTrash(page: Page, folderName: string): Promise<void>
   await page.locator('[data-testid="context-menu-remove"]').click();
 
   // Confirm deletion
-  await expect(page.locator('[data-testid="trash-confirmation-dialog"]')).toBeVisible();
+  await expect(page.locator('[data-testid="trash-confirmation-base-dialog"]')).toBeVisible();
   await page.locator('[data-testid="confirm-trash"]').click();
 
   // Wait for folder-plugin to disappear from main view

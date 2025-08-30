@@ -134,7 +134,7 @@ Records | Individual | Batch | Speedup
 
 ### 仮想スクロール効果
 ```typescript
-// @tanstack/react-virtual使用時
+// @tanstack/provider-virtual使用時
 Visible Rows: 50
 Total Rows: 100,000
 DOM Nodes: ~100 (一定)

@@ -7,7 +7,7 @@ import {
   type DialogStepDefinition,
   type ValidationResult,
   useDialogUrlParams,
-} from '@hierarchidb/runtime-dialog';
+} from '@hierarchidb/runtime-base-dialog';
 import type { StepValidation } from '@hierarchidb/common-type';
 
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types';
@@ -22,11 +22,11 @@ export interface FolderStepData {
 }
 
 /**
- * Props for the extensible folder-plugin dialog
+ * Props for the extensible folder-plugin base-dialog
  */
 export interface ExtensibleFolderDialogProps {
   /**
-   * Mode of the dialog
+   * Mode of the base-dialog
    */
   mode: 'create' | 'edit';
 
@@ -46,17 +46,17 @@ export interface ExtensibleFolderDialogProps {
   currentData?: FolderDisplayData;
 
   /**
-   * Called when dialog is submitted with final data
+   * Called when base-dialog is submitted with final data
    */
   onSubmit: (data: FolderCreateData | FolderEditData) => Promise<void>;
 
   /**
-   * Called when dialog is cancelled
+   * Called when base-dialog is cancelled
    */
   onCancel: () => void;
 
   /**
-   * Whether the dialog is open
+   * Whether the base-dialog is open
    */
   open?: boolean;
 
@@ -66,12 +66,12 @@ export interface ExtensibleFolderDialogProps {
   additionalSteps?: DialogStepDefinition[];
 
   /**
-   * Icon to display in dialog title
+   * Icon to display in base-dialog title
    */
   icon?: React.ReactNode;
 
   /**
-   * Title for the dialog
+   * Title for the base-dialog
    */
   title?: string;
 
@@ -136,12 +136,12 @@ const FolderBaseStep: React.FC<{
     [data, onChange]
   );
 
-  const nameError = errors?.find(e => e.includes('name'));
-  const descriptionError = errors?.find(e => e.includes('Description'));
+  const nameError = errors?.find((e) => e.includes('name'));
+  const descriptionError = errors?.find((e) => e.includes('Description'));
 
   return (
     <Grid container spacing={2}>
-      <Grid item xs={12}>
+      <Grid>
         <TextField
           autoFocus
           fullWidth
@@ -156,7 +156,7 @@ const FolderBaseStep: React.FC<{
         />
       </Grid>
 
-      <Grid item xs={12}>
+      <Grid>
         <TextField
           fullWidth
           multiline
@@ -175,7 +175,7 @@ const FolderBaseStep: React.FC<{
 };
 
 /**
- * Extensible folder-plugin dialog that supports additional steps from plugins
+ * Extensible folder-plugin base-dialog that supports additional steps from plugins
  */
 export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   mode,
@@ -191,17 +191,11 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   iconGroupSettings,
 }) => {
   // URLパラメータを取得
-  const {
-    initialStep,
-    initialFullscreen,
-    mapParams,
-    updateStep,
-    updateDialogMode,
-    clearParams,
-  } = useDialogUrlParams({
-    syncToUrl: true,
-    defaultDialogMode: 'normal',
-  });
+  const { initialStep, initialFullscreen, mapParams, updateStep, updateDialogMode, clearParams } =
+    useDialogUrlParams({
+      syncToUrl: true,
+      defaultDialogMode: 'normal',
+    });
   // Build the base step definition
   const baseStep = useMemo<DialogStepDefinition>(
     () => ({
@@ -209,17 +203,14 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       title: 'Basic Information',
       component: FolderBaseStep,
       validation: {
-        validate: (data: any) => new FolderStepValidation().validate(data)
+        validate: (data: any) => new FolderStepValidation().validate(data),
       },
     }),
     []
   );
 
   // Combine base step with additional steps
-  const allSteps = useMemo(
-    () => [baseStep, ...additionalSteps],
-    [baseStep, additionalSteps]
-  );
+  const allSteps = useMemo(() => [baseStep, ...additionalSteps], [baseStep, additionalSteps]);
 
   // Set initial data based on mode
   const initialData = useMemo(() => {
@@ -241,7 +232,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     onCancel();
   }, [clearParams, onCancel]);
 
-  // Handle dialog submission
+  // Handle base-dialog submission
   const handleSubmit = useCallback(
     async (finalData: Record<string, any>) => {
       // Extract base folder-plugin data
@@ -253,17 +244,17 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       // In edit mode, only send changed fields
       if (mode === 'edit' && currentData) {
         const changes: FolderEditData = {};
-        
+
         if (folderData.name !== currentData.name) {
           changes.name = folderData.name;
         }
-        
+
         if (folderData.description !== currentData.description) {
           changes.description = folderData.description;
         }
 
         // Include extension data in changes
-        Object.keys(finalData).forEach(key => {
+        Object.keys(finalData).forEach((key) => {
           if (key !== 'name' && key !== 'description') {
             (changes as any)[key] = (finalData as any)[key];
           }
@@ -274,14 +265,14 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         // Include all data for create mode
         await onSubmit({ ...finalData, ...folderData });
       }
-      
+
       // 送信成功時にURLパラメータをクリア
       clearParams();
     },
     [mode, currentData, onSubmit, clearParams]
   );
 
-  // Determine dialog title
+  // Determine base-dialog title
   const dialogTitle = title || (mode === 'create' ? 'Create New Folder' : 'Edit Folder');
 
   // Combine title with icon for display
@@ -295,23 +286,26 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   // 拡張データに地図パラメータを含める
   const enhancedInitialData = useMemo(() => {
     const data = { ...initialData };
-    
+
     // 地図パラメータがあれば初期データに含める
     if (mapParams) {
       data.mapInitialParams = mapParams;
     }
-    
+
     return data;
   }, [initialData, mapParams]);
 
   // 地図パラメータ変更のハンドラー
-  const handleMapParamsChange = useCallback((params: { zoom: number; lng: number; lat: number } | undefined) => {
-    // updateMapParamsはuseDialogUrlParamsから取得した関数
-    // この関数でURLパラメータを更新
-    if (params) {
-      updateMapParams(params);
-    }
-  }, [updateMapParams]);
+  const handleMapParamsChange = useCallback(
+    (params: { zoom: number; lng: number; lat: number } | undefined) => {
+      // updateMapParamsはuseDialogUrlParamsから取得した関数
+      // この関数でURLパラメータを更新
+      if (params) {
+        updateMapParams(params);
+      }
+    },
+    [updateMapParams]
+  );
 
   return (
     <MultiStepDialog
@@ -330,7 +324,9 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       initialFullscreenFromUrl={initialFullscreen}
       initialMapParamsFromUrl={mapParams}
       onStepChange={updateStep}
-      onFullscreenChange={(isFullscreen) => updateDialogMode(isFullscreen ? 'full' : 'normal')}
+      onFullscreenChange={(isFullscreen: string) =>
+        updateDialogMode(isFullscreen ? 'full' : 'normal')
+      }
       onMapParamsChange={handleMapParamsChange}
     />
   );

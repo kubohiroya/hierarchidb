@@ -144,7 +144,7 @@ export function createWorkerClientProvider<T>() {
           clearInterval(healthCheckTimer);
         }
         
-        // Note: We don't terminate the Worker here as it's managed by WorkerProvider
+        // Note: We don't terminate the Worker here as it's managed by WorkerSingletonProvider
       };
     }, [worker, wrapWorker, debug, healthCheckInterval, onClientReady]);
 

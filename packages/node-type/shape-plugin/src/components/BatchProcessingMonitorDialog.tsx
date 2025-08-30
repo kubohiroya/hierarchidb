@@ -47,21 +47,24 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
   const [batchStatus, setBatchStatus] = useState<BatchStatus>('preparing');
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-  
-  // Error console management  
+
+  // Error console management
   const { errors, addError, clearErrors, errorCount, hasErrors } = useErrorConsole();
-  
+
   // Enhanced error reporting with context
-  const addErrorWithContext = useCallback((
-    message: string,
-    level: ErrorLogEntry['level'] = 'error',
-    phase: string = 'processing',
-    rowNumber?: number,
-    columnName?: string
-  ) => {
-    addError(message, { level, phase, rowNumber, columnName });
-  }, [addError]);
-  
+  const addErrorWithContext = useCallback(
+    (
+      message: string,
+      level: ErrorLogEntry['level'] = 'error',
+      phase: string = 'processing',
+      rowNumber?: number,
+      columnName?: string
+    ) => {
+      addError(message, { level, phase, rowNumber, columnName });
+    },
+    [addError]
+  );
+
   // Batch worker console hook (mock implementation)
   const {
     downloadTasks,
@@ -87,15 +90,15 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
     if (canStart && !hasStarted) {
       handleStart().catch((error) => {
         addErrorWithContext(
-          `Failed to start batch processing: ${error.message}`, 
-          'critical', 
+          `Failed to start batch processing: ${error.message}`,
+          'critical',
           'startup'
         );
         setBatchStatus('error');
       });
     }
   }, [canStart, hasStarted, handleStart, addErrorWithContext]);
-  
+
   // Generate test errors for demonstration (can be removed in production)
   useEffect(() => {
     if (hasStarted && errors.length === 0) {
@@ -103,23 +106,29 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
       setTimeout(() => {
         addErrorWithContext('Connection timeout to data source', 'warning', 'download');
       }, 2000);
-      
+
       setTimeout(() => {
         addErrorWithContext('Invalid geometry in row 1,245', 'error', 'simplify', 1245, 'geometry');
       }, 4000);
-      
+
       setTimeout(() => {
         addErrorWithContext('Memory usage approaching limit (85%)', 'warning', 'processing');
       }, 6000);
-      
+
       setTimeout(() => {
         addErrorWithContext('Database connection lost', 'critical', 'storage');
       }, 8000);
-      
+
       setTimeout(() => {
-        addErrorWithContext('Duplicate key found in administrative data', 'error', 'validation', 892, 'admin_code');
+        addErrorWithContext(
+          'Duplicate key found in administrative data',
+          'error',
+          'validation',
+          892,
+          'admin_code'
+        );
       }, 10000);
-      
+
       setTimeout(() => {
         addErrorWithContext('Vector tile generation completed with warnings', 'info', 'vectortile');
       }, 12000);
@@ -133,9 +142,9 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
     } else if (hasFinished) {
       setBatchStatus('completed');
     } else if (downloadTasks.length > 0) {
-      if (simplify1Tasks.some(t => t.stage === 'process')) {
+      if (simplify1Tasks.some((t) => t.stage === 'process')) {
         setBatchStatus('processing');
-      } else if (vectorTileTasks.some(t => t.stage === 'process')) {
+      } else if (vectorTileTasks.some((t) => t.stage === 'process')) {
         setBatchStatus('generating');
       } else {
         setBatchStatus('downloading');
@@ -146,9 +155,9 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
   // Handle batch completion
   useEffect(() => {
     if (hasFinished && onBatchCompleted) {
-      enqueueSnackbar('All batch processes completed successfully!', { 
+      enqueueSnackbar('All batch processes completed successfully!', {
         variant: 'success',
-        autoHideDuration: 5000 
+        autoHideDuration: 5000,
       });
       // Delay to allow user to see completion status
       setTimeout(() => {
@@ -157,7 +166,7 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
     }
   }, [hasFinished, onBatchCompleted, enqueueSnackbar]);
 
-  // Handle dialog close
+  // Handle base-dialog close
   const handleClose = useCallback(() => {
     if (hasStarted && !hasFinished) {
       setShowCloseConfirmation(true);
@@ -170,21 +179,17 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
   const overallProgress = useMemo(() => {
     const allTasks = [...downloadTasks, ...simplify1Tasks, ...simplify2Tasks, ...vectorTileTasks];
     if (allTasks.length === 0) return 0;
-    
-    const completedTasks = allTasks.filter(t => t.stage === 'success').length;
+
+    const completedTasks = allTasks.filter((t) => t.stage === 'success').length;
     return Math.round((completedTasks / allTasks.length) * 100);
   }, [downloadTasks, simplify1Tasks, simplify2Tasks, vectorTileTasks]);
 
   return (
     <>
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        maxWidth="xl"
-        fullScreen
-        disableEscapeKeyDown
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Dialog open={open} onClose={handleClose} maxWidth="xl" fullScreen disableEscapeKeyDown>
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <Stack direction="row" spacing={2} alignItems="center">
             <Typography variant="h5">Batch Processing Monitor</Typography>
             <BatchStatusChip status={batchStatus} />
@@ -192,10 +197,10 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
               {overallProgress}% Complete
             </Typography>
           </Stack>
-          
+
           <Stack direction="row" spacing={1}>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={handleStopAll}
               disabled={!hasStarted || hasFinished}
               color="error"
@@ -208,31 +213,35 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
             </IconButton>
           </Stack>
         </DialogTitle>
-        
+
         <DialogContent sx={{ p: 0, height: '100%' }}>
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Tab Navigation */}
             <Paper sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)} variant="fullWidth">
+              <Tabs
+                value={selectedTab}
+                onChange={(_, newValue) => setSelectedTab(newValue)}
+                variant="fullWidth"
+              >
                 <Tab icon={<TimelineIcon />} label="Progress" iconPosition="start" />
-                <Tab 
-                  icon={<MapIcon />} 
-                  label="Map Preview" 
+                <Tab
+                  icon={<MapIcon />}
+                  label="Map Preview"
                   iconPosition="start"
                   disabled={!hasStarted || downloadTasks.length === 0}
                 />
-                <Tab 
+                <Tab
                   icon={
                     <Badge badgeContent={hasErrors ? errorCount : 0} color="error">
                       <BugReportIcon />
                     </Badge>
-                  } 
-                  label="Error Report" 
+                  }
+                  label="Error Report"
                   iconPosition="start"
                 />
               </Tabs>
             </Paper>
-            
+
             {/* Tab Content */}
             <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
               {selectedTab === 0 && (
@@ -246,7 +255,7 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
                   onResumeTask={handleResumeTask}
                 />
               )}
-              
+
               {selectedTab === 1 && (
                 <Box sx={{ height: '100%', p: 2 }}>
                   <MapPreview
@@ -257,7 +266,7 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
                   />
                 </Box>
               )}
-              
+
               {selectedTab === 2 && (
                 <ErrorReportPanel
                   errors={errors}
@@ -272,32 +281,29 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
                 />
               )}
             </Box>
-
           </Box>
         </DialogContent>
       </Dialog>
-      
+
       {/* Error Console Dialog */}
-      <ErrorConsoleDialog 
+      <ErrorConsoleDialog
         open={errorDialogOpen}
         onClose={() => setErrorDialogOpen(false)}
         errors={errors}
         onClearErrors={clearErrors}
       />
-      
+
       {/* Close Confirmation Dialog */}
       <Dialog open={showCloseConfirmation} onClose={() => setShowCloseConfirmation(false)}>
         <DialogContent>
           <Typography>
-            Batch processing is still running. Are you sure you want to close?
-            The process will continue in the background.
+            Batch processing is still running. Are you sure you want to close? The process will
+            continue in the background.
           </Typography>
           <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
-            <Button onClick={() => setShowCloseConfirmation(false)}>
-              Continue Monitoring
-            </Button>
-            <Button 
-              variant="contained" 
+            <Button onClick={() => setShowCloseConfirmation(false)}>Continue Monitoring</Button>
+            <Button
+              variant="contained"
               color="warning"
               onClick={() => {
                 setShowCloseConfirmation(false);

@@ -40,7 +40,7 @@ export class UnifiedNodeOperations {
         return;
       }
 
-      // 2. Show creation dialog
+      // 2. Show creation base-dialog
       await this.showCreateDialog(plugin, parentId, nodeType);
     } catch (error) {
       console.error('Error creating node:', error);
@@ -73,7 +73,7 @@ export class UnifiedNodeOperations {
         return;
       }
 
-      // Show edit dialog
+      // Show edit base-dialog
       await this.showEditDialog(plugin, nodeId, nodeData.combinedData);
     } catch (error) {
       console.error('Error editing node:', error);
@@ -112,7 +112,7 @@ export class UnifiedNodeOperations {
         }
       }
 
-      // Show confirmation dialog if needed
+      // Show confirmation base-dialog if needed
       if (confirmMessages.length > 0) {
         const confirmed = await this.dialogService.showConfirmDialog({
           title: 'Confirm Deletion',
@@ -474,8 +474,8 @@ export class UnifiedNodeOperations {
     _parentId: NodeId,
     _nodeType: string
   ): Promise<void> {
-    // TODO: Implement default create dialog
-    // Show default create dialog
+    // TODO: Implement default create base-dialog
+    // Show default create base-dialog
   }
 
   private async showDefaultEditDialog(
@@ -483,7 +483,7 @@ export class UnifiedNodeOperations {
     nodeId: NodeId,
     _currentData: any
   ): Promise<void> {
-    // TODO: Implement default edit dialog
+    // TODO: Implement default edit base-dialog
     console.log(`Show default edit dialog for ${nodeId}`);
   }
 }

@@ -11,7 +11,7 @@ var tsup_config_default = defineConfig({
   },
   clean: true,
   sourcemap: true,
-  external: ["react", "react-dom", "@mui/material", "@emotion/react", "@emotion/styled"],
+  external: ["react", "provider-dom", "@mui/material", "@emotion/provider", "@emotion/styled"],
   target: "es2022"
 });
 export {

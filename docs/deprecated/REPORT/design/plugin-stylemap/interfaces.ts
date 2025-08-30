@@ -223,7 +223,7 @@ export interface StyleMapDialogState {
   maxReachedStep: number;
   /** Form validation state per step */
   stepValidation: Record<number, boolean>;
-  /** Whether dialog has unsaved changes */
+  /** Whether base-dialog has unsaved changes */
   hasUnsavedChanges: boolean;
   /** Loading state */
   isLoading: boolean;
@@ -670,7 +670,7 @@ export interface StyleMapPluginConfig {
     enableStepValidation: boolean;
     /** Show advanced options */
     showAdvancedOptions: boolean;
-    /** Default dialog size */
+    /** Default base-dialog size */
     defaultDialogSize: 'sm' | 'md' | 'lg' | 'xl';
   };
 }

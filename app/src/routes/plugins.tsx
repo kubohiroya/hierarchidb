@@ -48,16 +48,20 @@ import {
   Storage as StorageIcon,
 } from '@mui/icons-material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import { type PluginDefinition, type PluginDatabaseConfig, type TreeId } from '@hierarchidb/common-core';
+import {
+  type PluginDefinition,
+  type PluginDatabaseConfig,
+  type TreeId,
+} from '@hierarchidb/common-core';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
-import { FullScreenDialog } from '@hierarchidb/ui-dialog';
+import { FullScreenDialog } from '@hierarchidb/ui-base-dialog';
 import { useNavigate } from 'react-router';
 
 // Meta function for React Router v7
 export function meta() {
   return [
     { title: 'Plugin Registry - HierarchiDB' },
-    { name: 'description', content: 'View and manage all registered plugins' }
+    { name: 'description', content: 'View and manage all registered plugins' },
   ];
 }
 
@@ -90,18 +94,18 @@ interface ResetPluginDialogProps {
 }
 
 // Enhanced Plugin Row with Dependencies and Operations
-function EnhancedPluginRow({ 
-  plugin, 
-  index, 
-  dependencies, 
-  onDelete, 
+function EnhancedPluginRow({
+  plugin,
+  index,
+  dependencies,
+  onDelete,
   onReload,
-  disabled = false 
+  disabled = false,
 }: EnhancedPluginRowProps) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
-  
+
   // Folder plugin cannot be deleted as it's the foundation plugin
   const isFolderPlugin = plugin.nodeType === 'folder';
   const canDelete = !isFolderPlugin;
@@ -115,7 +119,7 @@ function EnhancedPluginRow({
   };
 
   const handleReset = () => {
-    onReload(plugin.nodeType, true);  // Reset always clears database
+    onReload(plugin.nodeType, true); // Reset always clears database
     handleMenuClose();
   };
 
@@ -129,11 +133,7 @@ function EnhancedPluginRow({
     <>
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
+          <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
@@ -148,18 +148,16 @@ function EnhancedPluginRow({
             </Typography>
           </Stack>
         </TableCell>
-        <TableCell>
-          {plugin.displayName}
-        </TableCell>
+        <TableCell>{plugin.displayName}</TableCell>
         <TableCell>
           {dependencies.length > 0 ? (
             <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
               <LinkIcon fontSize="small" color="action" />
-              {dependencies.map(dep => (
-                <Chip 
+              {dependencies.map((dep) => (
+                <Chip
                   key={dep}
-                  label={dep} 
-                  size="small" 
+                  label={dep}
+                  size="small"
                   variant="outlined"
                   icon={<AccountTreeIcon />}
                   sx={{ m: 0.25 }}
@@ -174,35 +172,16 @@ function EnhancedPluginRow({
         </TableCell>
         <TableCell>
           <Stack direction="row" spacing={1}>
-            {plugin.ui && (
-              <Chip
-                label="UI"
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            )}
+            {plugin.ui && <Chip label="UI" size="small" color="primary" variant="outlined" />}
             {plugin.database && (
-              <Chip
-                label="DB"
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
+              <Chip label="DB" size="small" color="secondary" variant="outlined" />
             )}
             {plugin.lifecycle && (
-              <Chip
-                label="Lifecycle"
-                size="small"
-                color="success"
-                variant="outlined"
-              />
+              <Chip label="Lifecycle" size="small" color="success" variant="outlined" />
             )}
           </Stack>
         </TableCell>
-        <TableCell align="center">
-          {plugin.category?.createOrder || 'N/A'}
-        </TableCell>
+        <TableCell align="center">{plugin.category?.createOrder || 'N/A'}</TableCell>
         <TableCell>
           <IconButton
             aria-label="more"
@@ -249,7 +228,7 @@ function EnhancedPluginRow({
               <Typography variant="h6" gutterBottom component="div">
                 Plugin Details
               </Typography>
-              
+
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
@@ -263,27 +242,29 @@ function EnhancedPluginRow({
                     </Box>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      {isFolderPlugin 
-                        ? 'Core plugin - Foundation for all other plugins' 
+                      {isFolderPlugin
+                        ? 'Core plugin - Foundation for all other plugins'
                         : 'This plugin has no dependencies'}
                     </Typography>
                   )}
                 </Box>
-                
+
                 {isFolderPlugin && (
                   <Box>
                     <Alert severity="info" icon={<AccountTreeIcon />}>
                       <Typography variant="body2">
-                        <strong>Core Plugin:</strong> This plugin cannot be deleted as it provides the foundation for all other plugins.
+                        <strong>Core Plugin:</strong> This plugin cannot be deleted as it provides
+                        the foundation for all other plugins.
                       </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Reset behavior:</strong> Resetting the folder plugin will completely clear ALL data:
-                        TreeNodes, PeerEntity, GroupEntity, and RelationalEntity for all plugins, then recreate initial trees.
+                        <strong>Reset behavior:</strong> Resetting the folder plugin will completely
+                        clear ALL data: TreeNodes, PeerEntity, GroupEntity, and RelationalEntity for
+                        all plugins, then recreate initial trees.
                       </Typography>
                     </Alert>
                   </Box>
                 )}
-                
+
                 {plugin.database && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
@@ -311,10 +292,10 @@ function ResetPluginDialog({
   isProduction,
   onConfirm,
   onCancel,
-  loading = false
+  loading = false,
 }: ResetPluginDialogProps) {
   const isFolderPlugin = pluginName === 'folder';
-  
+
   return (
     <Dialog
       open={open}
@@ -336,52 +317,54 @@ function ResetPluginDialog({
       <DialogContent>
         <Stack spacing={2}>
           <DialogContentText id="reset-dialog-description">
-            {isFolderPlugin ? (
-              'This will reset the entire system, clearing ALL data including TreeNodes, all plugin entities, and recreating initial trees and root nodes.'
-            ) : (
-              'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and PeerEntity data will be preserved.'
-            )}
+            {isFolderPlugin
+              ? 'This will reset the entire system, clearing ALL data including TreeNodes, all plugin entities, and recreating initial trees and root nodes.'
+              : 'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and PeerEntity data will be preserved.'}
           </DialogContentText>
-          
+
           {affectedPlugins.length > 1 && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 The following plugins will be reset:
               </Typography>
               <List dense>
-                {affectedPlugins.map(plugin => (
+                {affectedPlugins.map((plugin) => (
                   <ListItem key={plugin}>
-                    <ListItemText 
+                    <ListItemText
                       primary={plugin}
-                      secondary={plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'}
+                      secondary={
+                        plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'
+                      }
                     />
                   </ListItem>
                 ))}
               </List>
             </Box>
           )}
-          
+
           {isProduction && isFolderPlugin && (
             <Alert severity="error" icon={<WarningIcon />}>
               <Typography variant="subtitle2" gutterBottom>
                 <strong>DANGER! ALL DATA WILL BE DELETED!</strong>
               </Typography>
               <Typography variant="body2">
-                This action will permanently delete ALL data including TreeNodes, all plugin entities (PeerEntity, GroupEntity, RelationalEntity), 
-                and cannot be undone. The system will be reset to its initial state with new trees and root nodes.
+                This action will permanently delete ALL data including TreeNodes, all plugin
+                entities (PeerEntity, GroupEntity, RelationalEntity), and cannot be undone. The
+                system will be reset to its initial state with new trees and root nodes.
               </Typography>
             </Alert>
           )}
-          
+
           {!isFolderPlugin && (
             <Alert severity="warning">
               <Typography variant="body2">
-                This action will clear <strong>GroupEntity</strong> and <strong>RelationalEntity</strong> data for this plugin type.
+                This action will clear <strong>GroupEntity</strong> and{' '}
+                <strong>RelationalEntity</strong> data for this plugin type.
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
-                • TreeNodes will be <strong>preserved</strong><br/>
-                • PeerEntity data will be <strong>preserved</strong><br/>
-                • Only plugin-specific group and relational data will be deleted
+                • TreeNodes will be <strong>preserved</strong>
+                <br />• PeerEntity data will be <strong>preserved</strong>
+                <br />• Only plugin-specific group and relational data will be deleted
               </Typography>
             </Alert>
           )}
@@ -398,7 +381,7 @@ function ResetPluginDialog({
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
         >
-          {loading ? 'Resetting...' : (isFolderPlugin ? 'Reset Entire System' : 'Reset Plugin')}
+          {loading ? 'Resetting...' : isFolderPlugin ? 'Reset Entire System' : 'Reset Plugin'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -412,7 +395,7 @@ function DeletePluginDialog({
   affectedPlugins,
   onConfirm,
   onCancel,
-  loading = false
+  loading = false,
 }: DeletePluginDialogProps) {
   const [clearDatabase, setClearDatabase] = useState(true);
 
@@ -436,25 +419,27 @@ function DeletePluginDialog({
           <DialogContentText id="delete-dialog-description">
             This action will delete the selected plugin and all plugins that depend on it.
           </DialogContentText>
-          
+
           {affectedPlugins.length > 1 && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 The following plugins will be affected:
               </Typography>
               <List dense>
-                {affectedPlugins.map(plugin => (
+                {affectedPlugins.map((plugin) => (
                   <ListItem key={plugin}>
-                    <ListItemText 
+                    <ListItemText
                       primary={plugin}
-                      secondary={plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'}
+                      secondary={
+                        plugin === pluginName ? 'Selected plugin' : 'Depends on selected plugin'
+                      }
                     />
                   </ListItem>
                 ))}
               </List>
             </Box>
           )}
-          
+
           <FormControlLabel
             control={
               <Checkbox
@@ -465,9 +450,10 @@ function DeletePluginDialog({
             }
             label="Clear database tables for affected plugins"
           />
-          
+
           <Alert severity="warning">
-            This action cannot be undone. All data associated with these plugins will be permanently deleted.
+            This action cannot be undone. All data associated with these plugins will be permanently
+            deleted.
           </Alert>
         </Stack>
       </DialogContent>
@@ -500,7 +486,7 @@ export default function PluginsPage() {
   const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
   const [affectedPlugins, setAffectedPlugins] = useState<string[]>([]);
   const [operationInProgress, setOperationInProgress] = useState(false);
-  
+
   // Check if running in production mode
   const isProduction = import.meta.env.MODE === 'production';
 
@@ -508,11 +494,11 @@ export default function PluginsPage() {
   const loadPluginDependencies = () => {
     // This would be loaded from the plugin metadata in package.json
     const dependencies: Record<string, string[]> = {
-      'folder': [],
-      'basemap': ['folder'],
-      'shape': ['folder'],
-      'spreadsheet': ['folder'],
-      'stylemap': ['spreadsheet'],  // stylemap-plugin depends on spreadsheet-plugin for CSV/TSV handling
+      folder: [],
+      basemap: ['folder'],
+      shape: ['folder'],
+      spreadsheet: ['folder'],
+      stylemap: ['spreadsheet'], // stylemap-plugin depends on spreadsheet-plugin for CSV/TSV handling
     };
     setPluginDependencies(dependencies);
   };
@@ -521,10 +507,10 @@ export default function PluginsPage() {
   const calculateAffectedPlugins = (pluginName: string): string[] => {
     const affected = new Set<string>([pluginName]);
     const queue = [pluginName];
-    
+
     while (queue.length > 0) {
       const current = queue.shift()!;
-      
+
       // Find all plugins that depend on the current one
       for (const [plugin, deps] of Object.entries(pluginDependencies)) {
         if (deps.includes(current) && !affected.has(plugin)) {
@@ -533,7 +519,7 @@ export default function PluginsPage() {
         }
       }
     }
-    
+
     return Array.from(affected);
   };
 
@@ -548,18 +534,18 @@ export default function PluginsPage() {
   // Confirm delete operation
   const confirmDelete = async (clearDatabase: boolean) => {
     if (!selectedPlugin) return;
-    
+
     setOperationInProgress(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
-      
+
       // Delete plugin and its descendants
       for (const plugin of affectedPlugins) {
         console.log(`Deleting plugin: ${plugin}, clearDatabase: ${clearDatabase}`);
         // TODO: Implement actual deletion logic with Worker API
         // await client.deletePlugin(plugin, { clearDatabase });
       }
-      
+
       // Reload plugins
       await loadPlugins();
     } catch (err) {
@@ -584,12 +570,12 @@ export default function PluginsPage() {
   // Confirm reset operation
   const confirmReset = async () => {
     if (!selectedPlugin) return;
-    
+
     setOperationInProgress(true);
     try {
       const client = await WorkerAPIClient.getSingleton();
       const affected = affectedPlugins;
-      
+
       // Reset plugin and its descendants
       if (selectedPlugin === 'folder') {
         // Special case: Complete system reset
@@ -598,7 +584,7 @@ export default function PluginsPage() {
         // This would:
         // 1. Clear ALL TreeNodes
         // 2. Clear ALL PeerEntity data
-        // 3. Clear ALL GroupEntity data  
+        // 3. Clear ALL GroupEntity data
         // 4. Clear ALL RelationalEntity data
         // 5. Recreate initial trees and root nodes
         // await client.resetSystem();
@@ -618,7 +604,7 @@ export default function PluginsPage() {
           // await client.resetPluginEntities(plugin, { preserveTreeNodes: true, preservePeerEntities: true });
         }
       }
-      
+
       // Reload plugins
       await loadPlugins();
     } catch (err) {
@@ -644,17 +630,17 @@ export default function PluginsPage() {
     try {
       setLoading(true);
       const client = await WorkerAPIClient.getSingleton();
-      
+
       // Use new TreePluginAnalyzer for better type safety and structure
       const treePluginAnalyzer = await client.getTreePluginAnalyzer();
       const response = await treePluginAnalyzer.getPluginsForTree({
         treeId: '*' as TreeId,
         filters: { includeDisabled: true },
-        sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' }
+        sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' },
       });
-      
+
       // Convert TreePluginInfo back to PluginDefinition format for compatibility
-      const plugins = response.plugins.map(info => ({
+      const plugins = response.plugins.map((info) => ({
         nodeType: info.nodeType,
         name: info.nodeType, // Use nodeType as name for compatibility
         displayName: info.displayName,
@@ -666,14 +652,14 @@ export default function PluginsPage() {
         database: {
           entityStore: `${info.nodeType}s`,
           schema: {},
-          version: 1
+          version: 1,
         },
         ui: {
-          dialogComponentPath: info.creatable ? 'mock-dialog-path' : undefined,
-        }
+          dialogComponentPath: info.creatable ? 'mock-base-dialog-path' : undefined,
+        },
       }));
-      setWorkerPlugins((plugins as unknown) as PluginDefinition[] || []);
-      
+      setWorkerPlugins((plugins as unknown as PluginDefinition[]) || []);
+
       // Load dependencies
       loadPluginDependencies();
     } catch (err) {
@@ -696,7 +682,7 @@ export default function PluginsPage() {
     return (
       <FullScreenDialog
         open={true}
-        onClose={() => navigate("/")}
+        onClose={() => navigate('/')}
         title="Plugin Registry"
         subtitle="View and manage all registered plugins"
         icon={<ExtensionIcon />}
@@ -712,7 +698,7 @@ export default function PluginsPage() {
     return (
       <FullScreenDialog
         open={true}
-        onClose={() => navigate("/")}
+        onClose={() => navigate('/')}
         title="Plugin Registry"
         subtitle="View and manage all registered plugins"
         icon={<ExtensionIcon />}
@@ -725,7 +711,7 @@ export default function PluginsPage() {
   return (
     <FullScreenDialog
       open={true}
-      onClose={() => navigate("/")}
+      onClose={() => navigate('/')}
       title="Plugin Registry"
       subtitle="View and manage all registered plugins in the HierarchiDB system"
       icon={<ExtensionIcon />}
@@ -738,23 +724,19 @@ export default function PluginsPage() {
               <Typography color="text.secondary" gutterBottom>
                 Worker Plugins
               </Typography>
-              <Typography variant="h4">
-                {workerPlugins.length}
-              </Typography>
+              <Typography variant="h4">{workerPlugins.length}</Typography>
             </CardContent>
           </Card>
-          
+
           <Card sx={{ flex: 1 }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
                 UI Plugins
               </Typography>
-              <Typography variant="h4">
-                {uiPlugins.length}
-              </Typography>
+              <Typography variant="h4">{uiPlugins.length}</Typography>
             </CardContent>
           </Card>
-          
+
           <Card sx={{ flex: 1 }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -770,14 +752,12 @@ export default function PluginsPage() {
         {/* Enhanced Worker Plugins Table with Dependencies and Operations */}
         <Paper elevation={2}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6">
-              Worker Layer Plugins with Dependencies
-            </Typography>
+            <Typography variant="h6">Worker Layer Plugins with Dependencies</Typography>
             <Typography variant="body2" color="text.secondary">
               Plugins registered in the Worker layer with dependency management
             </Typography>
           </Box>
-          
+
           <TableContainer>
             <Table aria-label="worker plugins table">
               <TableHead>
@@ -841,14 +821,12 @@ export default function PluginsPage() {
         {/* UI Plugins Table */}
         <Paper elevation={2}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6">
-              UI Layer Plugins
-            </Typography>
+            <Typography variant="h6">UI Layer Plugins</Typography>
             <Typography variant="body2" color="text.secondary">
               Plugins registered in the UI layer for user interface components
             </Typography>
           </Box>
-          
+
           <TableContainer>
             <Table aria-label="ui plugins table">
               <TableHead>
@@ -885,9 +863,7 @@ export default function PluginsPage() {
                         )}
                       </Stack>
                     </TableCell>
-                    <TableCell align="center">
-                      {plugin.menu?.createOrder || 'N/A'}
-                    </TableCell>
+                    <TableCell align="center">{plugin.menu?.createOrder || 'N/A'}</TableCell>
                     <TableCell>
                       <Tooltip title="Plugin is active">
                         <CheckCircleIcon color="success" fontSize="small" />

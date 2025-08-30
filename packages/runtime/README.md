@@ -33,7 +33,7 @@ HierarchiDB のランタイム実行環境を構成するパッケージ群で�
   - 複数形式対応（JSON、CSV、画像等）
   - キャッシュ機能
 
-### 💬 [@hierarchidb/plugin-dialog](./plugin-dialog/)
+### 💬 [@hierarchidb/plugin-dialog](plugin-dialog/)
 **プラグインダイアログシステム**
 
 - **役割**: プラグイン固有のダイアログUI管理

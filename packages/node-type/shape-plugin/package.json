@@ -39,7 +39,7 @@
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "@tanstack/react-virtual": "^3.2.0",

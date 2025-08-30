@@ -275,7 +275,7 @@ describe('StyleMap Core', () => {
 // Phase 2: Integration Tests  
 describe('StyleMap Integration', () => {
   // UI workflow
-  test('Complete dialog workflow');
+  test('Complete base-dialog workflow');
   test('Step navigation and validation');
   test('Data persistence');
   
@@ -301,7 +301,7 @@ describe('StyleMap Performance', () => {
 npm install @hierarchidb/core @hierarchidb/worker @hierarchidb/ui-core
 
 # Development dependencies
-npm install --save-dev vitest @testing-library/react
+npm install --save-dev vitest @testing-library/provider
 
 # Optional: CSV processing libraries
 npm install papaparse xlsx

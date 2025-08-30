@@ -12,15 +12,15 @@ import {
 import { Info as InfoIcon } from '@mui/icons-material';
 export interface InfoDialogProps {
   /**
-   * Whether the dialog is open
+   * Whether the base-dialog is open
    */
   open: boolean;
   /**
-   * Callback when the dialog should close
+   * Callback when the base-dialog should close
    */
   onClose: () => void;
   /**
-   * Title of the dialog
+   * Title of the base-dialog
    */
   title?: ReactNode;
   /**
@@ -28,15 +28,15 @@ export interface InfoDialogProps {
    */
   titleIcon?: ReactNode;
   /**
-   * Content to display in the dialog
+   * Content to display in the base-dialog
    */
   children: ReactNode;
   /**
-   * Whether to show the dialog in fullscreen mode
+   * Whether to show the base-dialog in fullscreen mode
    */
   fullScreen?: boolean;
   /**
-   * Maximum width of the dialog content
+   * Maximum width of the base-dialog content
    */
   maxWidth?: string | number;
   /**
@@ -54,8 +54,8 @@ export interface InfoDialogProps {
 }
 
 /**
- * A generic information dialog component that can display any content
- * in a modal dialog with consistent styling and behavior.
+ * A generic information base-dialog component that can display any content
+ * in a modal base-dialog with consistent styling and behavior.
  */
 export const InfoDialog = ({
   open,

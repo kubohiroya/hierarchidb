@@ -4,19 +4,14 @@
     "rootDir": "src",
     "composite": true,
     "incremental": true,
+    "isolatedModules": true,
     "outDir": "dist",
     "declarationDir": "dist",
     "jsx": "react-jsx",
     "paths": {
-      "~/*": [
-        "./src/*"
-      ]
+      "~/*": ["./src/*"]
     },
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
   "include": [
     "src/**/*"

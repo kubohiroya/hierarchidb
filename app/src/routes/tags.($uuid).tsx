@@ -1,23 +1,23 @@
 import React, { useMemo } from 'react';
 import { useParams, Link as RouterLink } from 'react-router';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  Chip, 
+import {
+  Container,
+  Typography,
+  Box,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
   Link,
   Card,
   CardContent,
   Grid,
-  Breadcrumbs
+  Breadcrumbs,
 } from '@mui/material';
 import { LocalOffer as TagIcon, FolderOpen as NodeIcon } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
-import { useWorkerClient } from '~/contexts/WorkerProvider';
+import { useQuery } from '@tanstack/provider-query';
+import { useWorkerClient } from '~/contexts/WorkerSingletonProvider';
 import type { TagEntity, NodeTagAssociation } from '~/common/types/src/tag-entity-types';
 import type { TreeNode, NodeId, TreeId } from '@hierarchidb/core';
 
@@ -57,29 +57,29 @@ export default function TagsPage() {
     queryKey: ['tag', uuid, 'nodes'],
     queryFn: async (): Promise<TaggedNode[]> => {
       if (!uuid) return [];
-      
+
       const tagService = await workerClient.getTagService();
       const associations = await tagService.getNodesByTag(uuid as TagEntity['id']);
-      
+
       const taggedNodesData: TaggedNode[] = [];
-      
+
       for (const association of associations) {
         try {
           // ノード情報を取得
           const queryAPI = await workerClient.getQueryAPI();
           const node = await queryAPI.getNode(association.nodeId);
-          
+
           if (node) {
             // ツリーIDを取得（ノードからツリーIDを特定）
             const trees = await queryAPI.listTrees();
             let nodeTreeId: TreeId | undefined;
-            
+
             for (const tree of trees) {
               // 簡単な実装：ツリーが存在すればそのツリーに属すると仮定
               nodeTreeId = tree.id;
               break;
             }
-            
+
             if (nodeTreeId) {
               taggedNodesData.push({
                 node,
@@ -92,7 +92,7 @@ export default function TagsPage() {
           console.warn('Failed to load node:', association.nodeId, error);
         }
       }
-      
+
       return taggedNodesData;
     },
     enabled: !!uuid && isConnected,
@@ -110,7 +110,8 @@ export default function TagsPage() {
     return (
       <Grid container spacing={2}>
         {allTags.map((tag) => (
-          <Grid item xs={12} sm={6} md={4} key={tag.id}>
+          <Gridkey={tag.id}>
+            //  xs={12} md={4} sm={6}
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
@@ -125,13 +126,13 @@ export default function TagsPage() {
                     {tag.name}
                   </Link>
                 </Box>
-                
+
                 {tag.description && (
                   <Typography variant="body2" color="text.secondary" mb={1}>
                     {tag.description}
                   </Typography>
                 )}
-                
+
                 <Box display="flex" alignItems="center" gap={1}>
                   <Chip
                     size="small"
@@ -172,17 +173,17 @@ export default function TagsPage() {
         <Typography variant="h6" gutterBottom>
           タグ付けされたノード ({taggedNodes.length}件)
         </Typography>
-        
+
         <List>
           {taggedNodes.map(({ node, treeId, tagAssociation }) => (
             <ListItem
               key={`${treeId}-${node.id}`}
-              sx={{ 
-                border: 1, 
-                borderColor: 'divider', 
-                borderRadius: 1, 
+              sx={{
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
                 mb: 1,
-                '&:hover': { backgroundColor: 'action.hover' }
+                '&:hover': { backgroundColor: 'action.hover' },
               }}
             >
               <NodeIcon sx={{ mr: 2, color: 'primary.main' }} />
@@ -234,11 +235,7 @@ export default function TagsPage() {
         <Link component={RouterLink} to="/hierarchidb/tags" color="inherit">
           タグ
         </Link>
-        {uuid && specificTag && (
-          <Typography color="text.primary">
-            {specificTag.name}
-          </Typography>
-        )}
+        {uuid && specificTag && <Typography color="text.primary">{specificTag.name}</Typography>}
       </Breadcrumbs>
 
       {uuid ? (
@@ -248,31 +245,29 @@ export default function TagsPage() {
             <Paper sx={{ p: 3, mb: 3 }}>
               <Box display="flex" alignItems="center" gap={2} mb={2}>
                 <TagIcon sx={{ color: specificTag.color, fontSize: 32 }} />
-                <Typography variant="h4">
-                  {specificTag.name}
-                </Typography>
+                <Typography variant="h4">{specificTag.name}</Typography>
                 <Chip
                   label={specificTag.category}
                   color={specificTag.category === 'system' ? 'primary' : 'default'}
                 />
               </Box>
-              
+
               {specificTag.description && (
                 <Typography variant="body1" color="text.secondary" mb={2}>
                   {specificTag.description}
                 </Typography>
               )}
-              
+
               <Typography variant="body2" color="text.secondary">
-                使用回数: {specificTag.usageCount} | 
-                作成日時: {new Date(specificTag.createdAt).toLocaleString()}
+                使用回数: {specificTag.usageCount} | 作成日時:{' '}
+                {new Date(specificTag.createdAt).toLocaleString()}
                 {specificTag.updatedAt && specificTag.updatedAt !== specificTag.createdAt && (
                   <>| 更新日時: {new Date(specificTag.updatedAt).toLocaleString()}</>
                 )}
               </Typography>
             </Paper>
           )}
-          
+
           {renderTaggedNodes()}
         </Box>
       ) : (
@@ -284,7 +279,7 @@ export default function TagsPage() {
           <Typography variant="body1" color="text.secondary" paragraph>
             定義済みのタグ一覧です。タグ名をクリックすると、そのタグが付けられたノードの一覧を表示します。
           </Typography>
-          
+
           {renderTagList()}
         </Box>
       )}

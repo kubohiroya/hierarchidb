@@ -918,7 +918,7 @@ import { CommonDialog } from '@hierarchidb/ui-core/containers/dialogs/CommonDial
 import { useShapesManager } from '../hooks/useShapesManager';
 import { useDraftChipState } from '@hierarchidb/ui-core/hooks/useDraftChipState';
 import { useResourceDialogLifecycle } from '@hierarchidb/ui-core/hooks/useResourceDialogLifecycle';
-import type { BaseResourceDialogProps } from '@hierarchidb/ui-core/types/dialog';
+import type { BaseResourceDialogProps } from '@hierarchidb/ui-core/types/base-dialog';
 import type { ShapesEntity } from '../types';
 
 export interface ShapesDialogProps extends BaseResourceDialogProps {

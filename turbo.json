@@ -53,6 +53,10 @@
       "dependsOn": ["build"],
       "outputs": ["playwright-report/**"],
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
+    },
+    "clean": {
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$"]
     }
   },
   "globalEnv": ["NODE_ENV", "VITE_*"],

@@ -55,7 +55,7 @@ const initializeI18n = () => {
     .use(HttpBackend)
     // Detect user language
     .use(LanguageDetector)
-    // Pass the i18n instance to react-i18next
+    // Pass the i18n instance to provider-i18next
     .use(initReactI18next)
     // Initialize i18next
     .init<{
@@ -148,7 +148,7 @@ const initializeI18n = () => {
       // Post processor options
       postProcess: false,
 
-      // Additional options for react-i18next
+      // Additional options for provider-i18next
       initImmediate: false,
 
       // Language detection configuration (for LanguageDetector plugin)

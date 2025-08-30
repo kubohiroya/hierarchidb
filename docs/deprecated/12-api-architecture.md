@@ -287,7 +287,7 @@ interface ProjectTemplate {
 // Usage
 await api.createProjectStructure({
   name: 'React App',
-  template: 'react-typescript',
+  template: 'provider-typescript',
   features: ['testing', 'storybook'],
 });
 ```

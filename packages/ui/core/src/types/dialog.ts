@@ -1,23 +1,23 @@
 /**
  * Base Dialog Type Definitions
  *
- * Provides standardized interfaces for dialog containers
+ * Provides standardized interfaces for base-dialog containers
  * to ensure consistency across the application.
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
 
 /**
- * Base props for all dialog containers
+ * Base props for all base-dialog containers
  */
 export interface BaseDialogProps<T = any> {
   /**
-   * Controls the visibility of the dialog
+   * Controls the visibility of the base-dialog
    */
   readonly open: boolean;
 
   /**
-   * Callback fired when the dialog should be closed
+   * Callback fired when the base-dialog should be closed
    */
   readonly onCancel: () => void;
 
@@ -30,7 +30,7 @@ export interface BaseDialogProps<T = any> {
 }
 
 /**
- * Extended dialog props for node-related dialogs
+ * Extended base-dialog props for node-related dialogs
  */
 export interface NodeDialogProps<T = any> extends BaseDialogProps<T> {
   /**
@@ -54,7 +54,7 @@ export interface EditDialogProps<T = any> extends NodeDialogProps<T> {
   readonly initialData?: Partial<T>;
 
   /**
-   * Whether the dialog is in edit mode (vs create mode)
+   * Whether the base-dialog is in edit mode (vs create mode)
    */
   readonly isEdit?: boolean;
 }
@@ -64,12 +64,12 @@ export interface EditDialogProps<T = any> extends NodeDialogProps<T> {
  */
 export interface ConfirmDialogProps extends Omit<BaseDialogProps<void>, 'onSubmit'> {
   /**
-   * The title of the confirmation dialog
+   * The title of the confirmation base-dialog
    */
   readonly title: string;
 
   /**
-   * The message to display in the confirmation dialog
+   * The message to display in the confirmation base-dialog
    */
   readonly message: string;
 
@@ -115,16 +115,16 @@ export interface BaseFormData {
 }
 
 /**
- * Standard dialog result
+ * Standard base-dialog result
  */
 export interface DialogResult<T = any> {
   /**
-   * Whether the dialog was confirmed (vs cancelled)
+   * Whether the base-dialog was confirmed (vs cancelled)
    */
   confirmed: boolean;
 
   /**
-   * The data returned from the dialog (if confirmed)
+   * The data returned from the base-dialog (if confirmed)
    */
   data?: T;
 }

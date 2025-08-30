@@ -4,7 +4,7 @@
  */
 
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
-// @ts-ignore - react-router not available in ui-core
+// @ts-ignore - provider-router not available in ui-core
 const useNavigate = () => (_path: string, _options?: any) => {}; // Placeholder until moved to proper package
 // import { AttachmentIcon, MapIcon } from '~/icons';
 import AttachmentIcon from '@mui/icons-material/Attachment';

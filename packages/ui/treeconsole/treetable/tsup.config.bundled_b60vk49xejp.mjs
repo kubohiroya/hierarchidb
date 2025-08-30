@@ -13,12 +13,12 @@ var tsup_config_default = defineConfig({
   sourcemap: true,
   external: [
     "react",
-    "react-dom",
+    "provider-dom",
     "@mui/material",
-    "@emotion/react",
+    "@emotion/provider",
     "@emotion/styled",
-    "@tanstack/react-table",
-    "@tanstack/react-virtual",
+    "@tanstack/provider-table",
+    "@tanstack/provider-virtual",
     "jotai"
   ],
   target: "es2022"

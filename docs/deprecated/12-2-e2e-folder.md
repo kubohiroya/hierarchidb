@@ -54,7 +54,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="create-folder-plugin-action"]').click();
 
       // フォルダ作成ダイアログの確認
-      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="folder-plugin-name-input"]')).toBeFocused();
 
       // フォルダ名入力
@@ -69,7 +69,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="create-folder-plugin-confirm"]').click();
 
       // ダイアログの閉じるのを待つ
-      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).not.toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).not.toBeVisible();
 
       // 新しいフォルダがツリーに表示されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`))
@@ -99,7 +99,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="create-submenu-folder-plugin"]').click();
 
       // フォルダ作成フローの確認（上記と同様）
-      await expect(page.locator('[data-testid="folder-plugin-create-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-create-base-dialog"]')).toBeVisible();
       
       const folderName = `Child Folder ${Date.now()}`;
       await page.locator('[data-testid="folder-plugin-name-input"]').fill(folderName);
@@ -148,7 +148,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="context-menu-edit"]').click();
 
       // 編集ダイアログの確認
-      await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-edit-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="folder-plugin-name-input"]')).toHaveValue(originalName);
 
       // 名前を変更
@@ -164,7 +164,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="save-folder-plugin-changes"]').click();
 
       // ダイアログが閉じることを確認
-      await expect(page.locator('[data-testid="folder-plugin-edit-dialog"]')).not.toBeVisible();
+      await expect(page.locator('[data-testid="folder-plugin-edit-base-dialog"]')).not.toBeVisible();
 
       // 新しい名前でフォルダが表示されることを確認
       await expect(page.locator(`[data-testid="tree-node"]:has-text("${newName}")`))
@@ -208,7 +208,7 @@ describe('Folder CRUD Operations', () => {
       await page.locator('[data-testid="context-menu-remove"]').click();
 
       // 確認ダイアログの表示
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="delete-confirmation-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="delete-message"]'))
         .toHaveText(/フォルダ ".*" をゴミ箱に移動しますか？/);
 
@@ -240,7 +240,7 @@ describe('Folder CRUD Operations', () => {
         .toBeVisible();
 
       // ダイアログが閉じることを確認
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+      await expect(page.locator('[data-testid="delete-confirmation-base-dialog"]')).not.toBeVisible();
     });
   });
 });
@@ -310,7 +310,7 @@ describe('Folder Drag and Drop Operations', () => {
       await page.mouse.up();
 
       // 移動確認ダイアログの処理
-      await expect(page.locator('[data-testid="move-confirmation-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="move-confirmation-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="move-source"]')).toHaveText(sourceFolder);
       await expect(page.locator('[data-testid="move-target"]')).toHaveText(targetFolder);
       
@@ -395,11 +395,11 @@ describe('Folder Drag and Drop Operations', () => {
       await page.mouse.up();
 
       // エラーダイアログの表示確認
-      await expect(page.locator('[data-testid="move-error-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="move-error-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="error-message"]'))
         .toHaveText('循環参照が発生するため、この操作は実行できません');
 
-      await page.locator('[data-testid="close-error-dialog"]').click();
+      await page.locator('[data-testid="close-error-base-dialog"]').click();
 
       // フォルダが移動していないことを確認
       await parentNode.locator('[data-testid="expand-button"]').click();
@@ -438,8 +438,8 @@ describe('Folder Drag and Drop Operations', () => {
       await page.mouse.up();
 
       // 権限エラーダイアログの確認
-      await expect(page.locator('[data-testid="permission-error-dialog"]')).toBeVisible();
-      await page.locator('[data-testid="close-error-dialog"]').click();
+      await expect(page.locator('[data-testid="permission-error-base-dialog"]')).toBeVisible();
+      await page.locator('[data-testid="close-error-base-dialog"]').click();
     });
 
     test('同名フォルダの移動時の競合解決', async ({ page }) => {
@@ -457,7 +457,7 @@ describe('Folder Drag and Drop Operations', () => {
       await performDragDrop(page, sourceNode, targetNode);
 
       // 競合解決ダイアログの表示
-      await expect(page.locator('[data-testid="name-conflict-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="name-conflict-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="conflict-message"]'))
         .toHaveText('同名のフォルダが既に存在します。どのように処理しますか？');
 
@@ -518,7 +518,7 @@ describe('Folder Drag and Drop Operations', () => {
       await page.mouse.up();
 
       // 一括移動の確認ダイアログ
-      await expect(page.locator('[data-testid="bulk-move-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="bulk-move-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="move-item-list"]')).toContainText(folder1);
       await expect(page.locator('[data-testid="move-item-list"]')).toContainText(folder2);
       await expect(page.locator('[data-testid="move-item-list"]')).toContainText(folder3);
@@ -662,7 +662,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-remove"]').click();
 
       // 削除確認ダイアログ
-      await expect(page.locator('[data-testid="trash-confirmation-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="trash-confirmation-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="trash-message"]'))
         .toContainText(`"${folderName}" をゴミ箱に移動しますか？`);
 
@@ -700,7 +700,7 @@ describe('Folder Trash Operations', () => {
       await page.keyboard.press('Delete');
 
       // 一括削除確認ダイアログ
-      await expect(page.locator('[data-testid="bulk-trash-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="bulk-trash-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="trash-count"]')).toHaveText('3');
       await page.locator('[data-testid="confirm-bulk-trash"]').click();
 
@@ -729,7 +729,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-remove"]').click();
 
       // 子フォルダも含む削除の確認
-      await expect(page.locator('[data-testid="nested-trash-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="nested-trash-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="nested-count"]')).toHaveText('2'); // 親+子
       await expect(page.locator('[data-testid="nested-warning"]'))
         .toHaveText('このフォルダには子フォルダが含まれています。すべて一緒にゴミ箱に移動されます。');
@@ -760,7 +760,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-restore"]').click();
 
       // 復元確認ダイアログ
-      await expect(page.locator('[data-testid="restore-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="restore-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="restore-target"]'))
         .toHaveText('元の場所に復元します');
 
@@ -799,7 +799,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="bulk-restore-button"]').click();
 
       // 一括復元確認
-      await expect(page.locator('[data-testid="bulk-restore-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="bulk-restore-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="restore-count"]')).toHaveText('3');
       await page.locator('[data-testid="confirm-bulk-restore"]').click();
 
@@ -828,7 +828,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-restore"]').click();
 
       // 競合解決ダイアログ
-      await expect(page.locator('[data-testid="restore-conflict-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="restore-conflict-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="conflict-message"]'))
         .toHaveText('復元先に同名のフォルダが存在します');
 
@@ -858,7 +858,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="context-menu-delete-permanently"]').click();
 
       // 完全削除確認ダイアログ
-      await expect(page.locator('[data-testid="permanent-delete-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="permanent-delete-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="permanent-warning"]'))
         .toHaveText('この操作は取り消せません。本当に完全削除しますか？');
 
@@ -882,7 +882,7 @@ describe('Folder Trash Operations', () => {
       await page.locator('[data-testid="empty-trash-button"]').click();
 
       // 警告ダイアログ
-      await expect(page.locator('[data-testid="empty-trash-dialog"]')).toBeVisible();
+      await expect(page.locator('[data-testid="empty-trash-base-dialog"]')).toBeVisible();
       await expect(page.locator('[data-testid="empty-warning"]'))
         .toHaveText('ゴミ箱内のすべてのアイテムが完全に削除されます。この操作は取り消せません。');
 

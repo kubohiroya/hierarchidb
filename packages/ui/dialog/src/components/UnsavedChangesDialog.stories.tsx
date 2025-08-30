@@ -54,6 +54,8 @@ export const Default: Story = {
     open: true,
     title: '未保存の変更',
     message: '変更が保存されていません。このまま移動すると、変更は失われます。',
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -63,6 +65,9 @@ export const WithSaveDraft: Story = {
     title: '未保存の変更',
     message: '編集中の内容が保存されていません。',
     showSaveDraft: true,
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -84,6 +89,8 @@ export const WithDetails: Story = {
         </ListItem>
       </List>
     ),
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -116,6 +123,9 @@ export const WithModifiedFiles: Story = {
         </List>
       </Box>
     ),
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -125,6 +135,9 @@ export const LongMessage: Story = {
     title: 'プロジェクト設定の変更',
     message: 'プロジェクトの重要な設定が変更されています。これらの変更を保存せずに終了すると、すべての設定変更が失われ、デフォルト値にリセットされます。変更を確認してから続行してください。',
     showSaveDraft: true,
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -141,6 +154,8 @@ export const WithWarning: Story = {
         </Typography>
       </Box>
     ),
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -163,6 +178,8 @@ export const DataMigration: Story = {
         </Typography>
       </Box>
     ),
+    onDiscard: () => {},
+    onCancel: () => {},
   },
 };
 
@@ -184,7 +201,7 @@ export const FormValidation: Story = {
         <ListItem>
           <ListItemText 
             primary="パスワード" 
-            secondary="8文字以上必要です"
+            secondary="8文字以上で入力してください"
             secondaryTypographyProps={{ color: 'error' }}
           />
         </ListItem>
@@ -197,5 +214,8 @@ export const FormValidation: Story = {
         </ListItem>
       </List>
     ),
+    onDiscard: () => {},
+    onSaveDraft: () => {},
+    onCancel: () => {},
   },
 };

@@ -756,7 +756,7 @@ export default defineConfig([
     format: ['esm'],
     dts: true,
     clean: true,
-    external: ['react', '@mui/material']
+    external: ['provider', '@mui/material']
   },
   // UI専用ビルド
   {
@@ -764,7 +764,7 @@ export default defineConfig([
     outDir: 'dist/ui',
     format: ['esm'],
     dts: true,
-    external: ['react', '@mui/material']
+    external: ['provider', '@mui/material']
   },
   // Worker専用ビルド
   {

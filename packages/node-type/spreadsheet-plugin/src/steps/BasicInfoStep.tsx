@@ -13,7 +13,7 @@ import {
   Divider 
 } from '@mui/material';
 import { TableChart as TableIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 import type { TagId } from '@hierarchidb/common-type';
 import { TagInput } from '@hierarchidb/node-type-folder-plugin';
 import { CategorySelector } from '@hierarchidb/node-type-folder-plugin';

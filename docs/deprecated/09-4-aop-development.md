@@ -195,7 +195,7 @@ pluginRegistry.registerPlugin(basemapPlugin);
 
 ```tsx
 // packages/src/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
-import { useParams, useLoaderData } from 'react-router-dom';
+import { useParams, useLoaderData } from 'provider-router-dom';
 import { pluginRegistry } from '@/plugins/registry';
 import { NotFound } from '@/containers/NotFound';
 import { Forbidden } from '@/containers/Forbidden';
@@ -552,7 +552,7 @@ export async function generatePluginRegistry() {
 
 ```tsx
 // packages/src/src/root.tsx
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'provider-router-dom';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -605,8 +605,8 @@ packages/app/app/routes/
 
 ```tsx
 // packages/src/src/routes/t.($treeId).($pageTreeNodeId).($targetTreeNodeId).($treeNodeType).($action).tsx
-import { Outlet, useLoaderData } from 'react-router-dom';
-import type { LoaderFunctionArgs } from 'react-router-dom';
+import { Outlet, useLoaderData } from 'provider-router-dom';
+import type { LoaderFunctionArgs } from 'provider-router-dom';
 import { loadTreeNodeAction, LoadTreeNodeActionArgs } from '~/loader';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
@@ -658,7 +658,7 @@ export async function loadPageTreeNode({ treeId, pageTreeNodeId }: { treeId: str
 
 ```ts
 // packages/src/src/loader.ts（抜粋）
-import { useRouteLoaderData } from 'react-router';
+import { useRouteLoaderData } from 'provider-router';
 
 export function useTree() {
   return useRouteLoaderData('t/($treeId)');
@@ -1017,7 +1017,7 @@ export const PLUGIN_METADATA = {
 ```tsx
 // packages/plugins/basemap/src/containers/BasemapEdit.tsx
 import React from 'react';
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData } from 'provider-router-dom';
 import type { HierarchicalRouteData } from '@hierarchidb/ui-routing';
 import type { BasemapEntity } from '../types';
 

@@ -9,7 +9,7 @@ export { GuidedTourStateManager } from './managers/GuidedTourStateManager';
 // Types
 export type { GenericGuidedTourProps } from './components/GuidedTour/GenericGuidedTour';
 
-// Re-export react-joyride types with new names to avoid conflicts
+// Re-export provider-joyride types with new names to avoid conflicts
 import type { Step as ReactJoyrideStep, CallBackProps as ReactJoyrideCallBackProps } from 'react-joyride';
 export type TourStep = ReactJoyrideStep;
 export type TourCallBackProps = ReactJoyrideCallBackProps;

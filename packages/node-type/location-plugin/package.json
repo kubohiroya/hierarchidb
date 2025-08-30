@@ -24,7 +24,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-plugin-base": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-dialog": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@mui/material": "^7.3.1",

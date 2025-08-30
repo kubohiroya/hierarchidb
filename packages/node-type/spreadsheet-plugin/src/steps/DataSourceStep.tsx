@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'provider-i18next';
 
 /**
  * 【型定義】: DataSourceStepのプロパティ型

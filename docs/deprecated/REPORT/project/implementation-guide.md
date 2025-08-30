@@ -861,7 +861,7 @@ export const IntegratedMapView: React.FC<IntegratedMapViewProps> = ({
 ```typescript
 // src/__tests__/components/ProjectDialog.test.tsx
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/provider';
 import { describe, it, expect, vi } from 'vitest';
 import { ProjectDialog } from '../../components/ProjectDialog';
 
@@ -873,7 +873,7 @@ describe('ProjectDialog', () => {
     onSave: vi.fn()
   };
 
-  it('should render dialog with stepper navigation', () => {
+  it('should render base-dialog with stepper navigation', () => {
     render(<ProjectDialog {...mockProps} />);
     
     expect(screen.getByText('プロジェクト設定')).toBeInTheDocument();
@@ -1055,8 +1055,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: [
-    'react',
-    'react-dom',
+    'provider',
+    'provider-dom',
     '@mui/material',
     '@mui/x-tree-view',
     'maplibre-gl'

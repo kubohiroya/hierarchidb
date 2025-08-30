@@ -10,7 +10,7 @@
  * 3. 段階的に高度機能を追加
  */
 
-// import React from 'react'; // Not needed with new JSX transform
+// import React from 'provider'; // Not needed with new JSX transform
 import { Box, Typography } from '@mui/material';
 // import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeConsoleHeaderProps } from '../types/index';

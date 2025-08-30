@@ -40,7 +40,7 @@ export default defineConfig({
   sourcemap: true,        // ソースマップ
   clean: true,            // ビルド前クリーン
   target: 'es2022',       // ターゲット
-  external: ['react'],    // 外部依存
+  external: ['provider'],    // 外部依存
 });
 ```
 
@@ -83,8 +83,8 @@ export default defineConfig([
 ```typescript
 // packages/_app/vite.config.ts
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { reactRouter } from '@react-router/dev/vite';
+import react from '@vitejs/plugin-provider';
+import { reactRouter } from '@provider-router/dev/vite';
 
 export default defineConfig({
   plugins: [
@@ -102,7 +102,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
+          'vendor-react': ['provider', 'provider-dom'],
           'vendor-mui': ['@mui/material'],
           'vendor-map': ['maplibre-gl'],
         },

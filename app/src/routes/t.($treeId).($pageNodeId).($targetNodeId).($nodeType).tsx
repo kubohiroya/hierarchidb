@@ -22,7 +22,7 @@ import {
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import { NodeId, TreeNode } from '@hierarchidb/common-core';
+import { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
 
@@ -77,7 +77,7 @@ export default function TrashDialog() {
   const navigate = useNavigate();
   const data = useLoaderData() as any;
 
-  // If targetNodeId or nodeType is missing/undefined, don't render the dialog
+  // If targetNodeId or nodeType is missing/undefined, don't render the base-dialog
   if (!targetNodeId || targetNodeId === 'undefined' || !nodeType || nodeType === 'undefined') {
     return null;
   }
@@ -93,7 +93,7 @@ export default function TrashDialog() {
   const isRecoverMode = mode === 'recover';
   const isDeleteMode = mode === 'delete';
 
-  // Handle dialog close
+  // Handle base-dialog close
   const handleClose = () => {
     navigate(`/t/${treeId}/${pageNodeId}`);
   };
@@ -105,7 +105,7 @@ export default function TrashDialog() {
       return;
     }
 
-    // Show confirmation dialog for multiple items
+    // Show confirmation base-dialog for multiple items
     if (selectedIds.length > 1) {
       if (
         !confirm(`Are you sure you want to restore ${selectedIds.length} items from the trash?`)
@@ -127,7 +127,7 @@ export default function TrashDialog() {
       });
 
       if (result.success) {
-        // Success - show success message briefly, then close dialog
+        // Success - show success message briefly, then close base-dialog
         setError(null);
         // TODO: Show success notification instead of alert
         setTimeout(() => {
@@ -152,7 +152,7 @@ export default function TrashDialog() {
       return;
     }
 
-    // Enhanced confirmation dialog
+    // Enhanced confirmation base-dialog
     const itemCount = data.trashItems.length;
     const confirmMessage = `Are you sure you want to permanently remove all ${itemCount} items from the trash?
 
@@ -175,7 +175,7 @@ export default function TrashDialog() {
       const result = await mutationAPI.removeNodes(allIds);
 
       if (result.success) {
-        // Success - show success message briefly, then close dialog
+        // Success - show success message briefly, then close base-dialog
         setError(null);
         // TODO: Show success notification instead of alert
         setTimeout(() => {
@@ -261,7 +261,7 @@ export default function TrashDialog() {
     return items;
   }, [targetNodeId, data.trashRootId, data.targetTreeNode]);
 
-  // Get dialog title with context
+  // Get base-dialog title with context
   const getDialogTitle = () => {
     const baseTitle = isRecoverMode ? 'Restore from Trash' : isDeleteMode ? 'Empty Trash' : 'Trash';
 

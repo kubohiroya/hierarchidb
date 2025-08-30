@@ -41,7 +41,7 @@
 ```typescript
 /**
  * 【機能概要】: ユーザープロファイル表示コンポーネント
- * 【実装方針】: react-oidc-contextのAuthContextPropsを使用
+ * 【実装方針】: provider-oidc-contextのAuthContextPropsを使用
  * 【テスト対応】: UserAvatarMenu.test.tsxのテストケースを通すための実装
  * 🟢 信頼性レベル: テストと既存実装から推測
  */

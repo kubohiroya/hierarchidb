@@ -87,12 +87,12 @@ const TreeConsoleIntegrationInner: React.FC<
 
       switch (action) {
         case 'restore':
-          // Navigate to trash dialog in recover mode
+          // Navigate to trash base-dialog in recover mode
           // Use the trash root as the target for now, will be refined based on selection
           navigate(`/t/${treeId}/${currentPageNodeId}/trash/recover`);
           break;
         case 'empty':
-          // Navigate to trash dialog in delete mode
+          // Navigate to trash base-dialog in delete mode
           navigate(`/t/${treeId}/${currentPageNodeId}/trash/delete`);
           break;
         case 'undo':
@@ -280,7 +280,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     pageTreeNode,
   });
 
-  // Get the Worker API client from WorkerProvider
+  // Get the Worker API client from WorkerSingletonProvider
   const { client: workerClient, isConnected } = useWorkerClient();
 
   // Check connection status
