@@ -383,7 +383,7 @@ export class ErrorPersistenceManager {
     // 3. CoreDB にサマリーを保存（長期分析用）
     await this.saveToCoreDB({
       id: `${sessionId}-${Date.now()}`,
-      nodeId: '' as NodeId, // TODO: 実際のNodeIdを取得
+      nodeId: treeNodeId as NodeId, // TreeNodeIdをNodeIdとして使用
       treeNodeId,
       sessionId,
       errorType: error.type,
@@ -509,7 +509,16 @@ export class ErrorPersistenceManager {
    * CoreDBへの保存（Worker経由で実行される想定）
    */
   private async saveToCoreDB(summary: CoreErrorSummary): Promise<void> {
-    // TODO: WorkerAPI経由でCoreDBに保存
-    console.log('Save to CoreDB:', summary);
+    try {
+      // WorkerAPI経由でCoreDBにエラーサマリーを保存
+      // 実装時は適切なWorkerAPIメソッドを呼び出す
+      await this.coreDB.transaction('rw', this.coreDB.errorSummaries, async () => {
+        await this.coreDB.errorSummaries.add(summary);
+      });
+      console.log('Successfully saved error summary to CoreDB:', summary.id);
+    } catch (error) {
+      console.error('Failed to save error summary to CoreDB:', error);
+      // エラー保存の失敗はシステムログに記録するが、元のエラー処理は継続
+    }
   }
 }

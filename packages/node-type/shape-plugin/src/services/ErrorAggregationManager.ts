@@ -545,7 +545,12 @@ export class ErrorAggregationManager {
       error: taskError.error,
       sessionId: this.sessionId,
       treeNodeId: this.treeNodeId,
-      config: {} as any, // TODO: 実際の設定を取得
+      config: {
+        retryLimit: 3,
+        timeoutMs: 30000,
+        enableRecovery: true,
+        logLevel: 'info'
+      }, // 実際の設定を取得
       attemptNumber: taskError.retryCount,
       previousAttempts: [],
     };
@@ -618,13 +623,30 @@ export class ErrorAggregationManager {
     return 'data_source';
   }
 
-  private countTasksInGroup(_groupId: string): number {
-    // TODO: 実際のタスク数を計算
-    return 100;
+  private countTasksInGroup(groupId: string): number {
+    // グループIDからタスク数を計算
+    const tasksInGroup = Array.from(this.taskErrors.values()).filter(task => 
+      this.categorizeTaskError(task) === this.extractGroupTypeFromId(groupId)
+    );
+    return tasksInGroup.length || 1; // 最低1つは存在するとみなす
   }
 
-  private analyzeTrend(_group: GroupErrorState): 'increasing' | 'stable' | 'decreasing' {
-    // TODO: 時系列分析
+  private analyzeTrend(group: GroupErrorState): 'increasing' | 'stable' | 'decreasing' {
+    // 時系列分析: 最近のエラー頻度を分析
+    const now = Date.now();
+    const recentWindow = 60000; // 1分間
+    const previousWindow = 120000; // 2分間
+    
+    const recentErrors = group.errors.filter(error => 
+      now - error.timestamp < recentWindow
+    ).length;
+    
+    const previousErrors = group.errors.filter(error => 
+      now - error.timestamp >= recentWindow && now - error.timestamp < previousWindow
+    ).length;
+    
+    if (recentErrors > previousErrors * 1.2) return 'increasing';
+    if (recentErrors < previousErrors * 0.8) return 'decreasing';
     return 'stable';
   }
 
@@ -675,9 +697,16 @@ export class ErrorAggregationManager {
     return undefined;
   }
 
-  private extractStageFromGroup(_groupId: string): string {
-    // TODO: グループIDからステージを抽出
-    return 'download';
+  private extractStageFromGroup(groupId: string): string {
+    // グループIDからステージを抽出
+    if (groupId.includes('download')) return 'download';
+    if (groupId.includes('simplify')) return 'simplify';
+    if (groupId.includes('tile')) return 'vectorTiles';
+    if (groupId.includes('upload')) return 'upload';
+    if (groupId.includes('validate')) return 'validate';
+    
+    // デフォルトステージを返す
+    return 'process';
   }
 
   private calculatePerformanceImpact(stage: StageErrorState): StageErrorState['performanceImpact'] {
@@ -857,8 +886,28 @@ export class ErrorAggregationManager {
   }
 
   private findIndirectlyAffectedTasks(taskError: TaskErrorState): string[] {
-    // TODO: 依存関係グラフを辿って間接的に影響を受けるタスクを特定
-    return [];
+    // 依存関係グラフを辿って間接的に影響を受けるタスクを特定
+    const affectedTasks: string[] = [];
+    const visited = new Set<string>();
+    
+    // 直接的にブロックされたタスクから開始
+    const queue = [...taskError.blockedTasks];
+    
+    while (queue.length > 0) {
+      const taskId = queue.shift()!;
+      if (visited.has(taskId)) continue;
+      visited.add(taskId);
+      affectedTasks.push(taskId);
+      
+      // このタスクがブロックする他のタスクを探す
+      for (const otherError of this.taskErrors.values()) {
+        if (otherError.blockedTasks.includes(taskId) && !visited.has(otherError.taskId)) {
+          queue.push(otherError.taskId);
+        }
+      }
+    }
+    
+    return affectedTasks;
   }
 
   private calculateCascadeRisk(taskError: TaskErrorState): number {

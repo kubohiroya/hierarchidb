@@ -1,4 +1,4 @@
-import { generateNodeId, type NodeId } from '@hierarchidb/common-core';
+import { generateNodeId, type NodeId } from '@hierarchidb/common-type';
 import { workerWarn } from '../utils/workerLogger';
 
 /**

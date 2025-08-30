@@ -1,4 +1,5 @@
 /**
+import type { PeerEntity, GroupEntity, RelationalEntity, Timestamp } from '@hierarchidb/common-type';
  * Dexie Integration for Entity Managers
  * 
  * EntityManagersをDexie（IndexedDB）と統合する実装
@@ -9,12 +10,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
-import type {
-  PeerEntity,
-  GroupEntity,
-  RelationalEntity,
-  Timestamp
-} from '@hierarchidb/common-core';
+import type { PeerEntity, GroupEntity, RelationalEntity, Timestamp } from '@hierarchidb/common-type';
 
 /**
  * EntityManager用のDexieデータベース基底クラス

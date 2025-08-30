@@ -4,32 +4,27 @@
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
 
-import type {
-  NodeTypeConfig,
-  WorkingCopyProperties,
-  PeerEntity as CorePeerEntity,
-  GroupEntity as CoreGroupEntity,
-  NodeLifecycleHooks as CoreNodeLifecycleHooks,
+import type { 
+  NodeTypeConfig, 
+  WorkingCopyProperties, 
+  PeerEntity as CorePeerEntity, 
+  GroupEntity as CoreGroupEntity, 
+  NodeLifecycleHooks as CoreNodeLifecycleHooks, 
   ValidationRule as CoreValidationRule,
-  // IconDefinition as CoreIconDefinition, - Unused
-  // CategoryDefinition as CoreCategoryDefinition, - Unused
-  // WorkerPluginRouterAction as CoreWorkerPluginRouterAction, - Unused
   PluginDatabaseConfig,
-  PluginUIConfig,
-  PluginAPIConfig,
-  PluginValidationConfig,
-  PluginDefinition as CorePluginDefinition,
-  PluginRoutingConfig,
+  PluginUIConfig, 
+  PluginAPIConfig, 
+  PluginValidationConfig, 
+  BasePluginDefinition as CorePluginDefinition, 
+  PluginRoutingConfig, 
   PluginMetadata,
-} from '@hierarchidb/common-core';
+  EntityHandler as BaseEntityHandler
+} from '@hierarchidb/common-type';
 
 // Re-export core types for consistency
 export type { WorkingCopyProperties };
 export type PeerEntity = CorePeerEntity;
 export type GroupEntity = CoreGroupEntity;
-export type { WorkingCopy } from '@hierarchidb/common-core';
-
-import { EntityHandler as BaseEntityHandler } from '@hierarchidb/common-core';
 
 // BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
 
@@ -48,13 +43,12 @@ export type NodeLifecycleHooks<
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
 > = CoreNodeLifecycleHooks<TEntity, TWorkingCopy>;
 
-// Re-export core types directly instead of creating aliases
-export type {
-  WorkerPluginRouterAction,
-  IconDefinition,
-  CategoryDefinition,
-} from '@hierarchidb/common-core';
+// These types should be imported from common-type if available
+// For now, create local aliases or skip if not needed
 export type ValidationRule<TEntity extends PeerEntity = PeerEntity> = CoreValidationRule<TEntity>;
+
+// Temporary type definition until proper import is available
+export type WorkerPluginRouterAction = any;
 
 // Node definition with entity handler (worker-specific extension of core)
 export interface NodeDefinition<

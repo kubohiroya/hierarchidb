@@ -53,6 +53,11 @@ export interface CSVTableMetadata {
   referenceCount: number;
   /** List of plugin IDs that reference this table */
   referencingPlugins: string[];
+  
+  /** Whether data is stored in chunks for large files */
+  isChunked?: boolean;
+  /** Number of chunks if data is chunked */
+  chunkCount?: number;
 }
 
 /**
@@ -139,6 +144,15 @@ export interface CSVDataResult {
   rows: Array<Record<string, string | number | null>>;
   /** Total number of rows after filtering */
   totalRows: number;
+  
+  /** Whether result is from chunked data */
+  isChunked?: boolean;
+  /** Chunk information if applicable */
+  chunkInfo?: {
+    currentChunk: number;
+    totalChunks: number;
+    chunkSize: number;
+  };
 }
 
 /**

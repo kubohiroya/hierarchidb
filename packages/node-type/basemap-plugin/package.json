@@ -25,15 +25,14 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "dexie": "^4.0.0",
-    "maplibre-gl": "^4.0.0"
+    "maplibre-gl": "^4.0.0",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
@@ -42,8 +41,8 @@
   },
   "peerDependencies": {
     "react": ">=18.0.0",
-    "@mui/material": "^5.0.0",
-    "@mui/icons-material": "^5.0.0",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1"
   },

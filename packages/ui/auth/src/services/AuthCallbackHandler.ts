@@ -8,7 +8,7 @@ const getSecureConfig = () => ({
 });
 
 // import { devError } from "@/shared/utils/logger";
-const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
+// const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
 import { AuthUser } from '../types/AuthUser';
 
 const STORAGE_KEY = 'multi-auth-user';
@@ -32,7 +32,11 @@ export class AuthCallbackHandler {
     // Get provider from storage
     const provider = localStorage.getItem(PROVIDER_KEY) as AuthProviderType | null;
     if (!provider) {
-      devError('No auth provider found in storage');
+      if (import.meta.env.DEV) {
+
+        console.error('No auth provider found in storage');
+
+      }
       return false;
     }
 
@@ -49,7 +53,11 @@ export class AuthCallbackHandler {
     }
 
     if (!token && !code) {
-      devError('No token or code found in callback');
+      if (import.meta.env.DEV) {
+
+        console.error('No token or code found in callback');
+
+      }
       return false;
     }
 
@@ -94,7 +102,11 @@ export class AuthCallbackHandler {
 
       return true;
     } catch (error) {
-      devError('Auth callback error:', error);
+      if (import.meta.env.DEV) {
+
+        console.error('Auth callback error:', error);
+
+      }
       return false;
     }
   }

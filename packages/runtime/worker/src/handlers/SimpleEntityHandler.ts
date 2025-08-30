@@ -1,17 +1,12 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { PeerEntity, GroupEntity, WorkingCopyProperties, NodeId, EntityId } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-type';
  * @file PeerEntityImplHandler.ts
  * @description Concrete implementation of BaseEntityHandler for simple entities
  * Provides basic CRUD operations with Dexie integration
  */
 
-import type {
-  PeerEntity,
-  GroupEntity,
-  WorkingCopyProperties,
-  NodeId,
-  EntityId,
-} from '@hierarchidb/common-core';
-import { generateNodeId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { workerWarn } from '../utils/workerLogger';
 import { BaseEntityHandler } from './BaseEntityHandler';

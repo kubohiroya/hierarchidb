@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material';
 import type { TreeTableCoreProps } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { NodeType, TreeNode } from '@hierarchidb/common-type';
+import { TreeNode } from '@hierarchidb/common-type';
 
 // スタイル定義（元のTreeTable.cssを再現）
 const StyledTableContainer = styled(Box)`
@@ -197,7 +197,7 @@ export function TreeTableCore({
     const nodeMap = new Map<string, TreeNode>();
     const depthMap = new Map<string, number>();
 
-    rawData.forEach((node) => nodeMap.set(node.id, node));
+    rawData.forEach((node) => nodeMap.set(node.id, node as TreeNode));
 
     function getDepth(nodeId: string): number {
       if (depthMap.has(nodeId)) return depthMap.get(nodeId)!;
@@ -237,7 +237,7 @@ export function TreeTableCore({
   };
 
   // Column definitions
-  const columns = useMemo<ColumnDef<TreeNode>[]>(() => {
+  const columns = useMemo<ColumnDef<any>[]>(() => {
     const baseColumns: ColumnDef<TreeNode>[] = [
       {
         id: 'selection',
@@ -622,7 +622,7 @@ export function TreeTableCore({
         canEdit={true}
         canRemove={true}
         canDuplicate={true}
-        onCreate={(type: NodeType) => {
+        onCreate={(type: string) => {
           if (contextMenuState.node) {
             controller?.onCreate?.(contextMenuState.node.id, type);
           }

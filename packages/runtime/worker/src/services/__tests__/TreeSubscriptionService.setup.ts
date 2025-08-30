@@ -1,4 +1,4 @@
-import type { Timestamp, TreeChangeEvent, TreeNode, NodeId, NodeType } from '@hierarchidb/common-core';
+import type { Timestamp, TreeChangeEvent, TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
 import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 

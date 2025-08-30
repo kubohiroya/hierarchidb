@@ -10,7 +10,8 @@
 import React, { memo, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { TreeConsoleContentProps, NodeId } from '../types/index';
+import type { TreeConsoleContentProps } from '../types/index';
+import type { NodeId } from '@hierarchidb/common-type';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 
 const StyledDialogContent = styled(Box)`

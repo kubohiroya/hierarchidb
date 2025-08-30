@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseReferenceCountingHandler } from './ReferenceCountingHandler';
 import { StyleMapDB, type StyleMapEntity, type SpreadsheetMetadataId } from '../db/StyleMapDB';
 

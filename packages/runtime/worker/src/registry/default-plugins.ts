@@ -1,11 +1,11 @@
 /**
+import type { NodeId } from '@hierarchidb/common-type';
  * @file default-plugin.ts
  * @description Default plugin definitions for the system
  */
 
 import type { PluginDefinition, PeerEntity, GroupEntity, WorkingCopyProperties } from './plugin';
 import { BaseEntityHandler } from '../handlers';
-import type { NodeId } from '@hierarchidb/common-core';
 
 // Basic working entity handler for default plugins
 class DefaultEntityHandler extends BaseEntityHandler<
@@ -347,6 +347,48 @@ export const spreadsheetPlugin: PluginDefinition<
 };
 
 /**
+ * PropertyResolver plugin definition
+ */
+export const propertyResolverPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
+  nodeType: 'propertyresolver',
+  name: 'PropertyResolver',
+  displayName: 'Property Resolver',
+  icon: {
+    muiIconName: 'Transform',
+    emoji: '🔄',
+    color: '#9c27b0',
+  },
+  category: {
+    treeId: '*',
+    menuGroup: 'advanced',
+    createOrder: 100,
+  },
+  database: {
+    dbName: 'PropertyResolverDB',
+    tableName: 'propertyResolvers',
+    schema: '&id, nodeId, name, sourceSchema, targetSchema, mappingRules, createdAt, updatedAt, version',
+    version: 1,
+  },
+  meta: {
+    id: 'propertyresolver-plugin',
+    name: 'PropertyResolver',
+    nodeType: 'propertyresolver',
+    status: 'active',
+    version: '1.0.0',
+    tags: ['mapping', 'transformation', 'schema'],
+  },
+  entityHandler: defaultEntityHandler,
+  routing: {
+    actions: {},
+    defaultAction: undefined,
+  },
+};
+
+/**
  * Get all default plugins
  */
 export function getDefaultPlugins(): PluginDefinition[] {
@@ -358,6 +400,7 @@ export function getDefaultPlugins(): PluginDefinition[] {
     projectPlugin,
     notePlugin,
     spreadsheetPlugin,
+    propertyResolverPlugin,
   ];
 }
 

@@ -41,13 +41,15 @@ export function usePluginsForTree(
 
     try {
       // Use both old registry API and new facade API
-      const pluginRegistryAPI = await workerClient.getPluginRegistryAPI();
-      const pluginDefinitions = await pluginRegistryAPI.getPluginsForTree(treeId);
+      // Use new NodeTypeRegistryAPI instead of deprecated PluginRegistryAPI
+      const nodeTypeRegistryAPI = await workerClient.getNodeTypeRegistryAPI();
+      const pluginDefinitions = await nodeTypeRegistryAPI.getPluginsForTree(treeId);
       setPlugins(pluginDefinitions);
       
       // Also get structured plugin info via new facade
-      const pluginTreeAPI = await workerClient.getPluginTreeAPI();
-      const response = await pluginTreeAPI.getPluginsForTree({
+      // Use new TreePluginAnalyzer instead of deprecated PluginTreeAPI
+      const treePluginAnalyzer = await workerClient.getTreePluginAnalyzer();
+      const response = await treePluginAnalyzer.getPluginsForTree({
         treeId,
         filters: { capabilities: ['create'] },
         sortBy: 'createOrder',

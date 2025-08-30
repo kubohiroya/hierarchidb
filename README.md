@@ -20,7 +20,7 @@ High-performance tree-structured data management framework for browser environme
 
 ## 技術スタック
 
-- **Frontend**: React 18, React Router v7, Material-UI v7
+- **Frontend**: React 18, React Router v7, Material-UI v6
 - **State Management**: Dexie (IndexedDB), Comlink (Worker通信)
 - **Build Tools**: Vite 6, Turborepo, TypeScript 5.7
 - **Package Manager**: pnpm 10
@@ -32,78 +32,115 @@ High-performance tree-structured data management framework for browser environme
 
 ```
 hierarchidb/
+├── app/                # メインアプリケーション (React Router v7)
 ├── packages/
-│   ├── core/           # コア型定義・データモデル
-│   ├── api/            # UI-Worker インターフェース契約
-│   ├── worker/         # Worker層実装（DB操作、コマンド処理）
-│   ├── app/            # メインアプリケーション (React Router)
-│   ├── ui-*/           # UI コンポーネントパッケージ群
-│   │   ├── ui-core/    # 基本UIコンポーネント
-│   │   ├── ui-auth/    # 認証関連コンポーネント
-│   │   ├── ui-client/  # Worker クライアント
-│   │   ├── ui-i18n/    # 国際化
-│   │   └── ...
-│   ├── plugins/        # プラグインパッケージ
-│   │   ├── basemap/    # ベースマッププラグイン
-│   │   ├── shape/      # 図形プラグイン
-│   │   └── stylemap/   # スタイルマッププラグイン
-│   ├── bff/            # Backend for Frontend (Cloudflare Worker)
-│   └── cors-proxy/     # CORS プロキシ (Cloudflare Worker)
+│   ├── common/         # 共通コア機能
+│   │   ├── api/        # UI-Worker インターフェース契約
+│   │   ├── auth/       # 認証共通ロジック
+│   │   ├── core/       # コア型定義・データモデル
+│   │   ├── plugin-base/# プラグイン基底クラス
+│   │   └── types/      # 共通型定義
+│   ├── runtime/        # ランタイム機能
+│   │   ├── worker/     # Worker層実装（DB操作、コマンド処理）
+│   │   ├── plugin-registry/    # プラグイン登録管理
+│   │   ├── plugin-dialog/      # プラグインダイアログ
+│   │   ├── worker-init-notifier/ # Worker初期化通知
+│   │   ├── datasource/         # データソース管理
+│   │   ├── router/             # ルーティング
+│   │   ├── landingpage/        # ランディングページ
+│   │   ├── tour/               # チュートリアル
+│   │   └── fetch-metadata/     # メタデータ取得
+│   ├── ui/             # UI コンポーネント群
+│   │   ├── core/       # 基本UIコンポーネント
+│   │   ├── auth/       # 認証UI
+│   │   ├── theme/      # MUIテーマ設定
+│   │   ├── i18n/       # 国際化
+│   │   ├── routing/    # ルーティングヘルパー
+│   │   ├── layout/     # レイアウト
+│   │   ├── navigation/ # ナビゲーション
+│   │   ├── monitoring/ # パフォーマンス監視
+│   │   ├── file/       # ファイル操作
+│   │   ├── dialog/     # ダイアログ
+│   │   ├── map/        # 地図コンポーネント
+│   │   ├── treeconsole/# ツリーコンソール
+│   │   ├── import-export/      # インポート/エクスポート
+│   │   ├── usermenu/           # ユーザーメニュー
+│   │   ├── csv-extract/        # CSV処理
+│   │   ├── data-grid/          # データグリッド
+│   │   └── ...                 # その他UI部品
+│   ├── node-type/      # ノードタイププラグイン
+│   │   ├── folder-plugin/      # フォルダー
+│   │   ├── project-plugin/     # プロジェクト
+│   │   ├── basemap-plugin/     # ベースマップ
+│   │   ├── shape-plugin/       # 図形
+│   │   ├── spreadsheet-plugin/ # スプレッドシート
+│   │   ├── stylemap-plugin/    # スタイルマップ
+│   │   ├── location-plugin/    # ロケーション
+│   │   ├── route-plugin/       # ルート
+│   │   └── propertyresolver-plugin/ # プロパティ解決
+│   ├── backend/        # バックエンドサービス
+│   │   ├── bff/        # Backend for Frontend (Cloudflare Worker)
+│   │   └── cors-proxy/ # CORS プロキシ (Cloudflare Worker)
+│   └── util/           # ユーティリティ
 ├── docs/               # アーキテクチャドキュメント
+│   └── _analysis.md    # ドキュメント分析レポート（自動生成）
 ├── scripts/            # ビルド・開発用スクリプト
 └── CLAUDE.md          # AI アシスタント用プロジェクトガイド
 ```
 
-### ドキュメント運用
 
-- 命名規則: `docs/番号-タイトル.md` 形式（例: `01-overview.md`, `05-0-architecture.md`）
-- 番号順ソートで論理的な順序を保証
 
-#### ドキュメント分析ツールの使い方（本作業の成果物）
+## アーキテクチャ詳細
 
-本リポジトリには、docs 配下の SS-MMM-title.md 形式のドキュメントを「ファイル名順」に並べた時の流れを自動チェックするツールが含まれています。
+## 4層アーキテクチャ
 
-- 成果物（スクリプト）: scripts/analyze-docs.cjs
-- 出力レポート: docs/_analysis.md
-
-使い方:
-
-```bash
-# 依存関係のインストール（初回のみ）
-pnpm install
-
-# 分析の実行（レポートを docs/_analysis.md に生成）
-pnpm analyze:docs
+```mermaid
+graph TB
+    UI[UI Layer<br/>React/MUI] 
+    RPC[Comlink RPC]
+    Worker[Worker Layer<br/>Command Processing]
+    DB[Database Layer<br/>Dexie/IndexedDB]
+    
+    UI <--> RPC
+    RPC <--> Worker
+    Worker <--> DB
 ```
 
-レポートの読み方（要点）:
-- Similarity: 隣接するファイル同士の「上位キーワードのジャッカード類似度」。極端に低いと話題の断絶、極端に高いと重複の可能性。
-- Flags:
-  - LOW_SIM_WITH_PREV / LOW_SIM_WITH_NEXT: 前/次章とのつながりが弱い可能性（橋渡しの説明や導入文を検討）
-  - HIGH_SIM_WITH_PREV / HIGH_SIM_WITH_NEXT: 前/次章と重複が多い可能性（統合・差別化を検討）
-- Suggested sections to consider adding: よくある章（概要/目的/背景/設計/実装/エッジケース/データフロー/受け入れ基準/利点/移行）の不足候補。
-- Outline (H1/H2): ページの大まかな見出し構成。
+1. **UI層**: React Router v7, Material-UI v6, TanStack Virtual
+2. **RPC層**: Comlink による型安全な Worker 通信
+3. **Worker層**: コマンド処理、Undo/Redo、差分検出、購読管理
+4. **Database層**: 
+   - **CoreDB**: 永続化データ（Tree, Node, State）
+   - **EphemeralDB**: 一時データ（WorkingCopy, ViewState）
 
-推奨ワークフロー:
-1. docs の各ファイル名を SS-MMM-title.md（例: 09-001-plugin-architecture.md）の形式に統一。
-2. `pnpm analyze:docs` を実行し、docs/_analysis.md を開く。
-3. LOW_SIM の箇所は、章間の橋渡し（概要/背景/導入文）や配置見直しを検討。
-4. HIGH_SIM の箇所は、重複解消（統合/差別化）を検討。
-5. 「Suggested sections…」に挙がった不足セクションを必要に応じて補完。
-6. 修正後にもう一度 `pnpm analyze:docs` を実行して改善を確認。
+## プラグインアーキテクチャ
 
-注意:
-- 本リポジトリは package.json の `"type": "module"` 設定のため、CommonJS 版（scripts/analyze-docs.cjs）を使用しています。`pnpm analyze:docs` は .cjs を呼び出します。
-- 出力の数値やフラグはヒューリスティック（目安）です。最終判断は人間のレビューで行ってください。
+```typescript
+interface PluginDefinition {
+  nodeType: string;
+  database: DatabaseConfig;
+  entityHandler: EntityHandler;
+  lifecycle: LifecycleHooks;
+  ui: UIComponents;
+  api: APIExtensions;
+}
+```
 
-## セットアップ
+## Working Copy パターン
 
-### 前提条件
+1. **作成**: オリジナルから作業コピーを作成
+2. **編集**: EphemeralDB で編集を実行
+3. **コミット/破棄**: CoreDB への反映または破棄
+4. **履歴管理**: リングバッファによる Undo/Redo
+
+# セットアップ
+
+## 前提条件
 
 - Node.js >= 20.0.0
 - pnpm >= 10.0.0
 
-### クイックスタート
+## クイックスタート
 
 ```bash
 # リポジトリのクローン
@@ -119,16 +156,16 @@ pnpm dev
 
 アプリケーションは http://localhost:4200 で起動します。
 
-### 環境変数の設定
+## 環境変数の設定
 
 開発環境と本番環境で異なる設定を使用できます：
 
 ```bash
 # 開発環境用の設定をコピー
-cp packages/src/.env.example packages/src/.env.development
+cp app/.env.example app/.env.development
 
 # 本番環境用の設定をコピー
-cp packages/src/.env.example packages/src/.env.production
+cp app/.env.example app/.env.production
 ```
 
 主な環境変数：
@@ -137,12 +174,12 @@ cp packages/src/.env.example packages/src/.env.production
 - `VITE_BFF_BASE_URL`: BFF サービスの URL
 - `VITE_USE_HASH_ROUTING`: ハッシュルート方式を有効化
 
-### Cloudflare Workers のセットアップ
+## Cloudflare Workers のセットアップ
 
 #### BFF (Backend for Frontend)
 
 ```bash
-cd packages/bff
+cd packages/backend/bff
 
 # wrangler.toml を作成
 cp wrangler.toml.template wrangler.toml
@@ -158,7 +195,7 @@ pnpm deploy
 #### CORS Proxy
 
 ```bash
-cd packages/cors-proxy
+cd packages/backend/cors-proxy
 
 # wrangler.toml を作成
 cp wrangler.toml.template wrangler.toml
@@ -172,7 +209,7 @@ pnpm deploy
 
 ## 開発
 
-### 利用可能なコマンド
+## 利用可能なコマンド
 
 ```bash
 # 開発サーバー起動（全パッケージ）
@@ -199,22 +236,8 @@ pnpm license-check:csv    # CSV形式で出力
 
 # パッケージ指定の実行
 pnpm --filter @hierarchidb/worker test
-pnpm --filter @hierarchidb/src dev
+pnpm --filter @hierarchidb/app dev
 ```
-
-### コーディング規約
-
-#### TypeScript
-- ✅ 絶対インポート（`~/`）を使用
-- ❌ 相対インポート（`../`）は禁止
-- ❌ `any` 型は使用禁止（`unknown` を使用）
-- ❌ 非 null アサーション（`!`）は禁止
-
-#### React
-- ✅ 関数コンポーネントを使用
-- ✅ カスタムフックで状態管理
-- ✅ MUI テーマトークンを使用
-- ❌ インラインスタイルは避ける
 
 #### コミット規約
 ```bash
@@ -226,49 +249,6 @@ refactor: リファクタリング
 test: テストの追加・修正
 chore: ビルドプロセスやツールの変更
 ```
-
-## アーキテクチャ
-
-### 4層アーキテクチャ
-
-```mermaid
-graph TB
-    UI[UI Layer<br/>React/MUI] 
-    RPC[Comlink RPC]
-    Worker[Worker Layer<br/>Command Processing]
-    DB[Database Layer<br/>Dexie/IndexedDB]
-    
-    UI <--> RPC
-    RPC <--> Worker
-    Worker <--> DB
-```
-
-1. **UI層**: React Router v7, Material-UI v7, TanStack Virtual
-2. **RPC層**: Comlink による型安全な Worker 通信
-3. **Worker層**: コマンド処理、Undo/Redo、差分検出、購読管理
-4. **Database層**: 
-   - **CoreDB**: 永続化データ（TreeTypes, Node, State）
-   - **EphemeralDB**: 一時データ（WorkingCopyTypes, ViewState）
-
-### プラグインアーキテクチャ
-
-```typescript
-interface PluginDefinition {
-  nodeType: string;
-  database: DatabaseConfig;
-  entityHandler: EntityHandler;
-  lifecycle: LifecycleHooks;
-  ui: UIComponents;
-  api: APIExtensions;
-}
-```
-
-### Working Copy パターン
-
-1. **作成**: オリジナルから作業コピーを作成
-2. **編集**: EphemeralDB で編集を実行
-3. **コミット/破棄**: CoreDB への反映または破棄
-4. **履歴管理**: リングバッファによる Undo/Redo
 
 ## パフォーマンス最適化
 
@@ -285,6 +265,22 @@ interface PluginDefinition {
 - **CORS プロキシ**: 認証付きクロスオリジンリクエスト
 - **環境変数分離**: 開発/本番環境の設定分離
 - **依存関係監査**: `pnpm audit` による脆弱性チェック
+
+## デプロイ
+
+### GitHub Pages デプロイ
+```bash
+# 環境変数を設定
+export VITE_APP_NAME=hierarchidb
+
+# ビルド実行
+pnpm build
+
+# app/dist ディレクトリを GitHub Pages にデプロイ
+```
+
+### Cloudflare Workers デプロイ
+上記の「Cloudflare Workers のセットアップ」セクションを参照してください。
 
 ## 貢献
 

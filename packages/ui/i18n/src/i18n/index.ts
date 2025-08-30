@@ -8,7 +8,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
-const devWarn = (msg: string) => console.warn(msg);
+
 
 const isDevelopment = import.meta.env.MODE === 'development';
 const APP_PREFIX = import.meta.env.VITE_APP_PREFIX || '';
@@ -129,7 +129,11 @@ const initializeI18n = () => {
       // Parser options
       parseMissingKeyHandler: (key: string, defaultValue?: string) => {
         if (isDevelopment) {
-          devWarn(`Missing translation key: ${key}`);
+          if (import.meta.env.DEV) {
+
+            console.warn(`Missing translation key: ${key}`);
+
+          }
         }
         return defaultValue || key;
       },

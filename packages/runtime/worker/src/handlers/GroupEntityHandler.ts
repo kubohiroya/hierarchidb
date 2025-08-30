@@ -1,10 +1,10 @@
 /**
+import type { GroupEntity, NodeId, EntityId } from '@hierarchidb/common-type';
  * @file GroupEntityHandler.ts
  * @description Specialized handler for GroupEntity (1:N relationship)
  * Based on 3-classification entity system
  */
 
-import type { GroupEntity, NodeId, EntityId } from '@hierarchidb/common-core';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**

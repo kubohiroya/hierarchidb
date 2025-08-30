@@ -3,9 +3,9 @@
  * @description Default plugin definitions for the system
  */
 
+import type { EntityHandler, NodeId, NodeType } from '@hierarchidb/common-type';
+
 import type { PluginDefinition, PeerEntity, GroupEntity, WorkingCopyProperties } from './plugin';
-import { EntityHandler } from '@hierarchidb/common-core';
-import type { NodeId } from '@hierarchidb/common-core';
 
 // Basic working entity handler for default plugins
 class DefaultEntityHandler
@@ -87,7 +87,7 @@ export const folderPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'folder',
+  nodeType: 'folder' as NodeType,
   name: 'Folder',
   displayName: 'Folder',
   icon: {
@@ -107,12 +107,9 @@ export const folderPlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'folder-plugin-plugin',
-    name: 'Folder',
-    nodeType: 'folder',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['container', 'basic'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -129,7 +126,7 @@ export const basemapPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'basemap',
+  nodeType: 'basemap' as NodeType,
   name: 'BaseMap',
   displayName: 'Base Map',
   icon: {
@@ -149,12 +146,9 @@ export const basemapPlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'basemap-plugin',
-    name: 'BaseMap',
-    nodeType: 'basemap',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['map', 'visualization'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -171,7 +165,7 @@ export const stylemapPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'stylemap',
+  nodeType: 'stylemap' as NodeType,
   name: 'StyleMap',
   displayName: 'Style Map',
   icon: {
@@ -191,12 +185,9 @@ export const stylemapPlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'stylemap-plugin-plugin',
-    name: 'StyleMap',
-    nodeType: 'stylemap',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['styling', 'visualization'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -213,7 +204,7 @@ export const shapePlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'shape',
+  nodeType: 'shape' as NodeType,
   name: 'Shape',
   displayName: 'Geographic Shape',
   icon: {
@@ -233,12 +224,9 @@ export const shapePlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'shape-plugin-plugin',
-    name: 'Shape',
-    nodeType: 'shape',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['geography', 'boundaries'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -255,7 +243,7 @@ export const projectPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'project',
+  nodeType: 'project' as NodeType,
   name: 'Project',
   displayName: 'Project',
   icon: {
@@ -275,12 +263,9 @@ export const projectPlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'project-plugin',
-    name: 'Project',
-    nodeType: 'project',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['container', 'project-management'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -297,7 +282,7 @@ export const notePlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'note',
+  nodeType: 'note' as NodeType,
   name: 'Note',
   displayName: 'Note',
   icon: {
@@ -317,12 +302,9 @@ export const notePlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'note-plugin',
-    name: 'Note',
-    nodeType: 'note',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['document', 'text'],
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -339,7 +321,7 @@ export const spreadsheetPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'spreadsheet',
+  nodeType: 'spreadsheet' as NodeType,
   name: 'Spreadsheet',
   displayName: 'Spreadsheet',
   icon: {
@@ -359,12 +341,48 @@ export const spreadsheetPlugin: PluginDefinition<
     version: 1,
   },
   meta: {
-    id: 'spreadsheet-plugin-plugin',
-    name: 'Spreadsheet',
-    nodeType: 'spreadsheet',
-    status: 'active',
+    name: '$1',
+    nodeType: '$2' as NodeType,
     version: '1.0.0',
-    tags: ['data', 'table'],
+  },
+  entityHandler: defaultEntityHandler,
+  routing: {
+    actions: {},
+    defaultAction: undefined,
+  },
+};
+
+/**
+ * PropertyResolver plugin definition
+ */
+export const propertyResolverPlugin: PluginDefinition<
+  PeerEntity,
+  GroupEntity,
+  PeerEntity & WorkingCopyProperties
+> = {
+  nodeType: 'propertyresolver' as NodeType,
+  name: 'PropertyResolver',
+  displayName: 'Property Resolver',
+  icon: {
+    muiIconName: 'Transform',
+    emoji: '🔄',
+    color: '#9c27b0',
+  },
+  category: {
+    treeId: '*',
+    menuGroup: 'advanced',
+    createOrder: 100,
+  },
+  database: {
+    dbName: 'PropertyResolverDB',
+    tableName: 'propertyResolvers',
+    schema: '&id, nodeId, name, sourceSchema, targetSchema, mappingRules, createdAt, updatedAt, version',
+    version: 1,
+  },
+  meta: {
+    name: '$1',
+    nodeType: '$2' as NodeType,
+    version: '1.0.0',
   },
   entityHandler: defaultEntityHandler,
   routing: {
@@ -385,6 +403,7 @@ export function getDefaultPlugins(): PluginDefinition[] {
     projectPlugin,
     notePlugin,
     spreadsheetPlugin,
+    propertyResolverPlugin,
   ];
 }
 

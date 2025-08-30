@@ -55,7 +55,6 @@ export function registerAllUIPlugins(): void {
   const registry = getUIPluginRegistry();
   
 
-
   // Register Shape plugin (check if not already registered)
   if (!registry.isRegistered('shape')) {
     try {
@@ -113,6 +112,5 @@ export function registerAllUIPlugins(): void {
       console.error('Failed to register Shape UI Plugin:', error);
     }
   }
-
 
 }

@@ -308,9 +308,8 @@ describe('SpreadsheetCSVApiDriver', () => {
       const result = await driver.uploadCSVFile(largeFile, mockConfig);
       
       // Assert: Based on mock parseCSVContent (returns only 2 rows), won't be chunked
-      // TODO: Add isChunked and chunkCount to CSVTableMetadata type
-      // expect(result.isChunked).toBe(false);
-      // expect(result.chunkCount).toBe(1);
+      expect(result.isChunked).toBe(false);
+      expect(result.chunkCount).toBe(1);
       expect(result.totalRows).toBe(2); // Based on mock parseCSVContent
     });
 
@@ -321,9 +320,8 @@ describe('SpreadsheetCSVApiDriver', () => {
       const result = await driver.uploadCSVFile(mockFile, mockConfig);
       
       // Assert: Should not be chunked
-      // TODO: Add isChunked and chunkCount to CSVTableMetadata type
-      // expect(result.isChunked).toBe(false);
-      // expect(result.chunkCount).toBe(1);
+      expect(result.isChunked).toBe(false);
+      expect(result.chunkCount).toBe(1);
       expect(result.totalRows).toBe(2); // 2 data rows + header
     });
 
@@ -364,9 +362,8 @@ describe('SpreadsheetCSVApiDriver', () => {
       // Assert: Should filter across all chunks (based on mock, not chunked)
       expect(filteredResult.rows.length).toBeLessThanOrEqual(1000);
       expect(filteredResult.totalRows).toBeGreaterThan(0);
-      // TODO: Add isChunked and chunkInfo to CSVDataResult type
-      // expect(filteredResult.isChunked).toBe(false); // Based on mock parseCSVContent
-      // expect(filteredResult.chunkInfo).toBeUndefined();
+      expect(filteredResult.isChunked).toBe(false); // Based on mock parseCSVContent
+      expect(filteredResult.chunkInfo).toBeUndefined();
     });
   });
 
@@ -516,7 +513,7 @@ describe('SpreadsheetCSVApiDriver', () => {
       // Assert: Should complete within 10 seconds
       expect(processingTime).toBeLessThan(10000);
       expect(metadata.totalRows).toBe(2); // Based on mock parseCSVContent
-      // TODO: Add isChunked to CSVTableMetadata type
+      expect(metadata.isChunked).toBe(false);
       // expect(metadata.isChunked).toBe(false); // Mock doesn't generate enough rows for chunking
     });
 

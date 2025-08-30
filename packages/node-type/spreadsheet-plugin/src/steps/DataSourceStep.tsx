@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 【型定義】: DataSourceStepのプロパティ型
@@ -30,13 +31,15 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
   onPrevious,
   errors
 }) => {
+  const { t } = useTranslation('spreadsheet-plugin');
+  
   // 【最小実装】: テストを通すためのスタブコンポーネント
   // 【TODO】: Refactorフェーズで実際のファイルアップロードUI等を実装
   return (
     <div>
       {/* 【プレースホルダー】: 実装予定のUI要素 */}
-      <h3>データソース選択</h3>
-      <p>Step 2: データソースを選択してください</p>
+      <h3>{t('dataSource.title', 'Data Source Selection')}</h3>
+      <p>{t('dataSource.description', 'Step 2: Select your data source')}</p>
       
       {/* 【エラー表示】: バリデーションエラーの表示領域 */}
       {errors && errors.length > 0 && (
@@ -48,8 +51,8 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
       )}
       
       {/* 【ナビゲーションボタン】: ステップ間の移動 */}
-      <button onClick={onPrevious}>戻る</button>
-      <button onClick={() => onNext(data)}>次へ</button>
+      <button onClick={onPrevious}>{t('navigation.previous', 'Previous')}</button>
+      <button onClick={() => onNext(data)}>{t('navigation.next', 'Next')}</button>
     </div>
   );
 };

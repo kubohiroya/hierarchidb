@@ -1,13 +1,13 @@
 /**
+import type { NodeType, PluginDefinition, TreeId, NodeId } from '@hierarchidb/common-type';
  * @file PluginRegistryAPI.test.ts
  * @description Comprehensive test suite for PluginRegistryAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeType, PluginDefinition, TreeId, NodeId } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
-import type { PluginRegistryAPI } from '@hierarchidb/common-api';
+import type { NodeTypeRegistryAPI } from '@hierarchidb/common-api';
 
 // Mock plugin definition for testing
 const mockPluginDefinition: PluginDefinition = {
@@ -26,8 +26,8 @@ const mockPluginDefinition: PluginDefinition = {
   },
 };
 
-describe('PluginRegistryAPI', () => {
-  let api: PluginRegistryAPI;
+describe('NodeTypeRegistryAPI', () => {
+  let api: NodeTypeRegistryAPI;
   let workerAPI: WorkerAPIImpl;
   let coreDB: CoreDB;
 
@@ -38,7 +38,7 @@ describe('PluginRegistryAPI', () => {
     
     // Initialize WorkerAPI
     workerAPI = new WorkerAPIImpl();
-    api = workerAPI.getPluginRegistryAPI();
+    api = workerAPI.getNodeTypeRegistryAPI();
   });
 
   afterEach(async () => {

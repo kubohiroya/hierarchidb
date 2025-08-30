@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use PluginLifecycleAPI instead. This file will be removed in the next major version.
+ * @see PluginLifecycleAPI
+ * 
  * @file PluginManagementAPI.ts
  * @description Plugin lifecycle management API
  *
@@ -151,6 +154,9 @@ export interface PluginDeleteResult {
  * // Check plugin health
  * const health = await pluginMgmtAPI.checkHealth('folder-plugin');
  * ```
+ */
+/**
+ * @deprecated Use PluginLifecycleAPI instead
  */
 export interface PluginManagementAPI {
   // ==================

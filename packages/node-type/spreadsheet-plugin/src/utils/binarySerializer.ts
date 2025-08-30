@@ -312,7 +312,6 @@ function createBinaryFormat(format: ChunkBinaryFormat, data: Uint8Array): ArrayB
   return buffer;
 }
 
-
 /**
  * 【機能概要】: 配列の等価性をチェックする
  * 【実装方針】: 浅い比較による高速な等価性判定

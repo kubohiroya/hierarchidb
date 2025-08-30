@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseReferenceCountingHandler } from './ReferenceCountingHandler';
 import { SpreadsheetDB, type SpreadsheetMetadata, type SpreadsheetMetadataId, type SpreadsheetRefEntity, type SpreadsheetChunk } from '../db/SpreadsheetDB';
 

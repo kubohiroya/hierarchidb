@@ -13,7 +13,9 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
 
   useEffect(() => {
     const handleAuthErrorEvent = (_event: CustomEvent) => {
-      // devLog("認証エラーを検出しました:", event.detail?.message);
+      // if (import.meta.env.DEV) {
+      console.log("認証エラーを検出しました:", _event.detail?.message);
+      // }
 
       // 現在のパスをセッションストレージに保存
       sessionStorage.setItem('oidc.redirect', window.location.pathname);

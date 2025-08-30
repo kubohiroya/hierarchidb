@@ -1,4 +1,5 @@
 /**
+import type { TreeNode, NodeId, TreeId } from '@hierarchidb/common-type';
  * @file TreeNode.depth.test.ts
  * @description TDD tests for TreeNode depth property implementation
  * 
@@ -13,7 +14,6 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CoreDB } from '../../db/CoreDB';
 import { TreeSubscriptionService } from '../TreeSubscriptionService';
-import type { TreeNode, NodeId, TreeId } from '@hierarchidb/common-core';
 
 describe('TreeNode Depth Property', () => {
   let coreDB: CoreDB;

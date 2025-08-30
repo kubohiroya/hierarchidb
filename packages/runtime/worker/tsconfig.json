@@ -10,7 +10,7 @@
     "composite": false,
     "incremental": false,
 
-    "noEmit": false,
+    "noEmit": true,
     "emitDeclarationOnly": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -23,11 +23,5 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/__tests__/**",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts"
-  ]
+  "exclude": ["node_modules", "dist", "src/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }

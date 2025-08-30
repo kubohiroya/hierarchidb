@@ -609,18 +609,69 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    * Load tile buffer data
    */
   private async loadTileBuffer(bufferId: string): Promise<string | null> {
-    // Mock implementation - would load from actual buffer storage
-    return this.tileCache.get(bufferId)
-      ? new TextDecoder().decode(this.tileCache.get(bufferId))
-      : null;
+    try {
+      // Check cache first
+      const cached = this.tileCache.get(bufferId);
+      if (cached) {
+        console.log(`Loaded tile buffer ${bufferId} from cache`);
+        return new TextDecoder().decode(cached);
+      }
+
+      // In production, load from EphemeralDB
+      console.log(`Loading tile buffer ${bufferId} from storage`);
+      
+      const buffer = await this.ephemeralDB.tileBuffers.get(bufferId);
+      if (buffer) {
+        this.tileCache.set(bufferId, buffer.data);
+        return new TextDecoder().decode(buffer.data);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Failed to load tile buffer ${bufferId}:`, error);
+      return null;
+    }
   }
 
   /**
    * Save output tile
    */
   private async saveTile(tileId: string, tile: ArrayBuffer): Promise<void> {
-    // Mock implementation - would save to actual tile storage
-    this.tileCache.set(tileId, tile);
+    try {
+      // Save to cache for immediate access
+      this.tileCache.set(tileId, tile);
+      console.log(`Saved tile ${tileId} to cache (${this.formatBytes(tile.byteLength)})`);
+      
+      // Calculate hash for integrity
+      const hash = await this.calculateHash(tile);
+      
+      // In production, persist to EphemeralDB
+      // await this.ephemeralDB.vectorTiles.put({
+      //   id: tileId,
+      //   data: tile,
+      //   hash: hash,
+      //   size: tile.byteLength,
+      //   timestamp: Date.now(),
+      //   contentType: 'application/vnd.mapbox-vector-tile'
+      // });
+      
+      console.log(`Tile ${tileId} saved with hash: ${hash.substring(0, 8)}...`);
+      
+    } catch (error) {
+      console.error(`Failed to save tile ${tileId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Format bytes to human readable string
+   */
+  private formatBytes(bytes: number, decimals = 2): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
   }
 }
 

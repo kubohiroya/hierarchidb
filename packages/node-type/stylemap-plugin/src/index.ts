@@ -20,6 +20,15 @@ export type {
 } from './entities/StyleMapEntity';
 
 export type {
+  StylemapCategory,
+  StylemapCategoryConfig,
+} from './types/category-types';
+
+export type {
+  StylemapBasicInfoData,
+} from './steps/BasicInfoStep';
+
+export type {
   StyleMapConfig,
   MapLibreStyleProperty,
   ColorAlgorithm,
@@ -61,6 +70,9 @@ export {
   adjustBrightness,
   getContrastRatio,
 } from './utils/colorUtils';
+
+// Step components
+export { BasicInfoStep } from './steps/BasicInfoStep';
 
 // Legacy components (for backward compatibility)
 export { StyleMapSimpleDialog } from './components/StyleMapSimpleDialog';

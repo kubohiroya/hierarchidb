@@ -1,4 +1,4 @@
-# @hierarchidb/ui-dialog
+# @hierarchidb/runtime-dialog
 
 Common dialog components and utilities for HierarchiDB plugin system.
 
@@ -18,7 +18,7 @@ This package provides reusable dialog components that implement the dialog speci
 ## Installation
 
 ```bash
-pnpm add @hierarchidb/ui-dialog
+pnpm add @hierarchidb/runtime-dialog
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ pnpm add @hierarchidb/ui-dialog
 ### Simple Dialog
 
 ```tsx
-import { CommonPluginDialog } from '@hierarchidb/ui-dialog';
+import { CommonPluginDialog } from '@hierarchidb/runtime-dialog';
 
 function MyPluginDialog({ open, onClose }) {
   const [formData, setFormData] = useState({ name: '', description: '' });
@@ -59,7 +59,7 @@ function MyPluginDialog({ open, onClose }) {
 ### Multi-step Dialog with Custom Footer
 
 ```tsx
-import { StepperDialog, CustomFooterProps } from '@hierarchidb/ui-dialog';
+import { StepperDialog, CustomFooterProps } from '@hierarchidb/runtime-dialog';
 
 function MyStepperDialog({ open, onClose }) {
   const [canStartBatch, setCanStartBatch] = useState(false);
@@ -134,7 +134,7 @@ function MyStepperDialog({ open, onClose }) {
 ### Working Copy Hook
 
 ```tsx
-import { useWorkingCopy } from '@hierarchidb/ui-dialog';
+import { useWorkingCopy } from '@hierarchidb/runtime-dialog';
 
 function MyEditDialog({ nodeId }) {
   const {

@@ -1,10 +1,10 @@
 /**
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
  * @file WorkerAPI.integration.test.ts
  * @description Integration test suite for WorkerAPI and all specialized APIs
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
 import { EphemeralDB } from '../../db/EphemeralDB';

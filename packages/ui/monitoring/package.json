@@ -18,12 +18,12 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "react": "^18.3.1",
-    "recharts": "^3.1.2"
+    "recharts": "^3.1.2",
+    "@hierarchidb/util": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js"

@@ -1,9 +1,9 @@
 /**
+import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-type';
  * @file GroupEntityHandler.test.ts
  * @description Unit tests for GroupEntityHandler advanced group entity operations
  */
 
-import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

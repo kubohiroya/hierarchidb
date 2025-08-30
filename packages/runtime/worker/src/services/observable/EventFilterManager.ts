@@ -1,4 +1,4 @@
-import type { SubscriptionFilter, TreeChangeEvent, NodeId } from '@hierarchidb/common-core';
+import type { SubscriptionFilter, TreeChangeEvent, NodeId } from '@hierarchidb/common-type';
 
 /**
  * イベントフィルタリング機能を提供するクラス

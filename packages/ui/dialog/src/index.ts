@@ -1,18 +1,12 @@
-/**
- * @fileoverview UI Dialog package exports
- *
- * This package provides generic, reusable dialog components.
- * Plugin-specific components are located in @hierarchidb/runtime-plugin-dialog
- */
+// Type exports
+export * from "./types/dialog";
 
-// Generic dialog components
+// Component exports
+export { AutoHideFullScreenDialog } from "./components/AutoHideFullScreenDialog";
+export type { AutoHideFullScreenDialogProps } from "./components/AutoHideFullScreenDialog";
 
-// Hooks
-export { useWorkingCopy } from './hooks/useWorkingCopy';
-export { useDialogContext, DialogProvider } from './hooks/useDialogContext';
+export { FullScreenDialog } from "./components/FullScreenDialog";
+export type { FullScreenDialogProps } from "./components/FullScreenDialog";
 
-// Providers
-export { NotificationProvider } from './providers/NotificationProvider';
-
-// Types
-export * from './components';
+export { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
+// Note: UnsavedChangesDialogProps is already exported from types/dialog

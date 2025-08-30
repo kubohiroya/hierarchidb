@@ -1,0 +1,46 @@
+{
+  "name": "@hierarchidb/common-auth",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Common authentication notification system for HierarchiDB",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc && tsc-alias"
+  },
+  "dependencies": {
+    "@hierarchidb/common-type": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "keywords": [
+    "hierarchidb",
+    "authentication",
+    "notification",
+    "worker",
+    "batch-processing"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

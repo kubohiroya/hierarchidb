@@ -1,0 +1,32 @@
+{
+  "name": "@hierarchidb/ui-data-grid",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^5.16.11",
+    "@tanstack/react-virtual": "^3.10.8",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.8",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}

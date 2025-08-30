@@ -1,5 +1,6 @@
 import { expect, describe, it } from 'vitest';
 import type { NodeType, TreeId, NodeId } from '@hierarchidb/common-type';
+import { GetPluginsForTreeRequest, PluginManagementAPI, PluginTreeAPI } from '../src/index';
 
 describe('PluginTreeAPI - TDD Red Phase', () => {
   // テスト対象のAPIインスタンス（実装は未完成のため、テストは失敗する予定）
@@ -34,7 +35,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
         filters: {
           nodeTypes: ['folder-plugin', 'document'] as NodeType[],
           categories: ['core'],
-          capabilities: ['create', 'edit'],
+          capabilities: ['create', 'update'],
         },
       };
 
@@ -44,7 +45,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       response.plugins.forEach((plugin) => {
         expect(['folder-plugin', 'document']).toContain(plugin.nodeType);
         expect(plugin.meta.category).toBe('core');
-        expect(plugin.capabilities.some((cap) => ['create', 'edit'].includes(cap))).toBe(true);
+        expect(plugin.capabilities.some((cap) => ['create', 'update'].includes(cap))).toBe(true);
       });
     });
 
@@ -156,7 +157,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
   describe('getPluginCompatibility() - プラグイン互換性確認', () => {
     it('🔴 互換性のあるプラグイン組み合わせで成功を返す', async () => {
       // 互換性確認の成功ケース
-      const nodeTypes: NodeType[] = ['folder-plugin', 'document', 'image'];
+      const nodeTypes: NodeType[] = ['folder-plugin', 'document', 'image'] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility('compat-tree' as TreeId, nodeTypes);
 
@@ -168,7 +169,10 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
 
     it('🔴 互換性のないプラグイン組み合わせで詳細な競合情報を返す', async () => {
       // 互換性問題の検出テスト
-      const conflictingTypes: NodeType[] = ['conflicting-plugin-a', 'conflicting-plugin-b'];
+      const conflictingTypes: NodeType[] = [
+        'conflicting-plugin-a',
+        'conflicting-plugin-b',
+      ] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
         'compat-tree' as TreeId,
@@ -176,21 +180,21 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       );
 
       expect(result.compatible).toBe(false);
-      expect(result.conflicts).toHaveLength.greaterThan(0);
+      expect(result.conflicts).greaterThan(0);
       expect(result.conflicts[0].severity).toMatch(/^(error|warning|info)$/);
       expect(result.conflicts[0].description).toBeDefined();
     });
 
     it('🔴 依存関係の欠如で適切な警告を返す', async () => {
       // 依存関係不足の検出テスト
-      const dependentType: NodeType[] = ['requires-dependency'];
+      const dependentType: NodeType[] = ['requires-dependency'] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
         'compat-tree' as TreeId,
         dependentType
       );
 
-      expect(result.warnings).toHaveLength.greaterThan(0);
+      expect(result.warnings).greaterThan(0);
       expect(result.warnings.some((w) => w.includes('dependency') || w.includes('required'))).toBe(
         true
       );
@@ -228,7 +232,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       // 最適化済みツリーのテスト
       const result = await pluginTreeAPI.optimizePluginConfiguration('optimized-tree' as TreeId);
 
-      expect(result.recommendations).toHaveLength.lessThan(3);
+      expect(result.recommendations).lessThan(3);
       expect(result.currentPerformance.score).toBeGreaterThan(0.8); // 高いパフォーマンススコア
       expect(result.expectedImprovement.performanceGain).toBeLessThan(0.1); // 改善余地小
     });
@@ -253,7 +257,7 @@ describe('PluginTreeAPI - TDD Red Phase', () => {
       const result = await pluginTreeAPI.getPluginDependencyGraph('cyclic-tree' as TreeId);
 
       expect(result.metadata.hasCycles).toBe(true);
-      expect(result.warnings).toHaveLength.greaterThan(0);
+      expect(result.warnings).greaterThan(0);
       expect(result.warnings.some((w) => w.includes('circular'))).toBe(true);
       expect(result.cyclicPaths).toBeDefined();
       expect(result.cyclicPaths!.length).toBeGreaterThan(0);

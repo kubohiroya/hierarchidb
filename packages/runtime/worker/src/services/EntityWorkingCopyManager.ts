@@ -1,26 +1,13 @@
 /**
+import {  } from '@hierarchidb/common-core';
+import type { NodeId, EntityId, PeerEntity, GroupEntity, RelationalEntity, EntityWorkingCopy, PeerEntityWorkingCopy, GroupEntityWorkingCopy, RelationalEntityWorkingCopy, EntityWorkingCopySession, EntityWorkingCopyConflict, EntityWorkingCopyValidation, EntityWorkingCopyStats } from '@hierarchidb/common-type';
+import { generateEntityId } from '@hierarchidb/common-type';
  * @file EntityWorkingCopyManager.ts
  * @description Manager for entity working copies with session support
  * Provides entity-level working copy functionality beyond TreeNode working copies
  */
 
-import type {
-  NodeId,
-  EntityId,
-  PeerEntity,
-  GroupEntity,
-  RelationalEntity,
-  EntityWorkingCopy,
-  PeerEntityWorkingCopy,
-  GroupEntityWorkingCopy,
-  RelationalEntityWorkingCopy,
-  EntityWorkingCopySession,
-  EntityWorkingCopyConflict,
-  EntityWorkingCopyValidation,
-  EntityWorkingCopyStats,
-} from '@hierarchidb/common-core';
 import type { EphemeralDB } from '../db/EphemeralDB';
-import { generateEntityId } from '@hierarchidb/common-core';
 
 /**
  * Manager for entity working copies

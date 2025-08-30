@@ -26,7 +26,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@hierarchidb/common-core": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-treeconsole-footer": "workspace:*",

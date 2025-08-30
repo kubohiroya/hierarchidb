@@ -1,5 +1,6 @@
 import React from 'react';
 import { memo } from 'react';
+import type { TreeNode } from '@hierarchidb/common-type';
 import {
   Box,
   Table,
@@ -142,7 +143,9 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
         {/* Main content cells */}
         {columns.map((column, columnIndex) => {
           const isFirstColumn = columnIndex === 0;
-          const cellValue = (node as any)[column.id];
+          // Type-safe property access with index signature
+          const nodeWithIndex = node as TreeNode & { [key: string]: unknown };
+          const cellValue = nodeWithIndex[column.id];
 
           return (
             <TableCell

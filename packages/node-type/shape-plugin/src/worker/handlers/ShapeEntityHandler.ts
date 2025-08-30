@@ -335,53 +335,85 @@ export class ShapeEntityHandler {
   }
 
   async getWorkingCopy(workingCopyId: EntityId): Promise<ShapeWorkingCopy | undefined> {
-    // Mock implementation - would fetch from EphemeralDB
-    console.log(`Getting working copy: ${workingCopyId}`);
-    return undefined;
+    try {
+      const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
+      return workingCopy as ShapeWorkingCopy | undefined;
+    } catch (error) {
+      console.error('Failed to get working copy:', error);
+      return undefined;
+    }
   }
 
   async updateWorkingCopy(
     workingCopyId: EntityId,
     data: Partial<ShapeEntity>
   ): Promise<ShapeWorkingCopy> {
-    // Mock implementation - would update in EphemeralDB
-    console.log(`Updating working copy: ${workingCopyId}`, data);
+    try {
+      const existing = await this.getWorkingCopy(workingCopyId);
+      if (!existing) {
+        throw new Error(`Working copy not found: ${workingCopyId}`);
+      }
 
-    const mockUpdated: ShapeWorkingCopy = {
-      id: workingCopyId,
-      nodeId: '' as NodeId,
-      name: data.name || '',
-      description: data.description || '',
-      dataSourceName: data.dataSourceName || 'naturalearth',
-      licenseAgreement: data.licenseAgreement || false,
-      processingConfig: data.processingConfig || DEFAULT_PROCESSING_CONFIG,
-      checkboxState: data.checkboxState || '',
-      selectedCountries: data.selectedCountries || [],
-      adminLevels: data.adminLevels || [],
-      urlMetadata: data.urlMetadata || [],
-      isDraft: false,
-      createdAt: Date.now() - 10000,
-      updatedAt: Date.now(),
-      version: 1,
-    };
+      const updated: ShapeWorkingCopy = {
+        ...existing,
+        ...data,
+        updatedAt: Date.now(),
+      };
 
-    return mockUpdated;
+      await this.ephemeralDB.workingCopies.put(updated);
+      console.log(`Updated working copy: ${workingCopyId}`);
+      return updated;
+    } catch (error) {
+      console.error('Failed to update working copy:', error);
+      throw error;
+    }
   }
 
   async commitWorkingCopy(workingCopyId: EntityId): Promise<NodeId> {
-    // Mock implementation - would:
-    // 1. Get working copy from EphemeralDB
-    // 2. Create/update entity in CoreDB
-    // 3. Create tree node if it's a new draft
-    // 4. Remove working copy from EphemeralDB
-    console.log(`Committing working copy: ${workingCopyId}`);
+    try {
+      // 1. Get working copy from EphemeralDB
+      const workingCopy = await this.getWorkingCopy(workingCopyId);
+      if (!workingCopy) {
+        throw new Error(`Working copy not found: ${workingCopyId}`);
+      }
 
-    const nodeId = generateEntityId() as unknown as NodeId;
-    return nodeId;
+      // 2. Create/update entity in CoreDB
+      let nodeId: NodeId;
+      if (workingCopy.isDraft) {
+        // Create new entity and node
+        const entityData: CreateShapeData = {
+          name: workingCopy.name,
+          description: workingCopy.description,
+          dataSourceName: workingCopy.dataSourceName,
+          processingConfig: workingCopy.processingConfig,
+        };
+        const entity = await this.createEntity('' as NodeId, entityData);
+        nodeId = entity.nodeId;
+      } else {
+        // Update existing entity
+        await this.updateEntity(workingCopy.id, workingCopy);
+        nodeId = workingCopy.nodeId;
+      }
+
+      // 4. Remove working copy from EphemeralDB
+      await this.discardWorkingCopy(workingCopyId);
+      
+      console.log(`Committed working copy: ${workingCopyId} to node: ${nodeId}`);
+      return nodeId;
+    } catch (error) {
+      console.error('Failed to commit working copy:', error);
+      throw error;
+    }
   }
 
   async discardWorkingCopy(workingCopyId: EntityId): Promise<void> {
-    // Mock implementation - would remove from EphemeralDB
+    try {
+      await this.ephemeralDB.workingCopies.delete(workingCopyId);
+      console.log(`Discarded working copy: ${workingCopyId}`);
+    } catch (error) {
+      console.error('Failed to discard working copy:', error);
+      throw error;
+    }
     console.log(`Discarding working copy: ${workingCopyId}`);
   }
 

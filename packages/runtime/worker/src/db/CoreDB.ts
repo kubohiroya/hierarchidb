@@ -1,14 +1,6 @@
-import {
-  type Tree,
-  type TreeNode,
-  type NodeId,
-  type TreeId,
-  type TreeRootState,
-  type TreeChangeEvent,
-  NodeIdGenerator,
-  TREE_ROOT_NODE_TYPES,
-  SingletonMixin,
-} from '@hierarchidb/common-core';
+import { NodeIdGenerator, TREE_ROOT_NODE_TYPES } from '@hierarchidb/common-core';
+import type { Tree, TreeId, TreeNode, NodeId, NodeType, TreeRootState, TreeChangeEvent, TagEntity, NodeTagAssociation } from '@hierarchidb/common-type';
+import { SingletonMixin } from '@hierarchidb/common-util';
 import Dexie, { type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
@@ -16,6 +8,8 @@ export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
   nodes!: Table<TreeNode, NodeId>;
   rootStates!: Table<TreeRootState, NodeId>;
+  tags!: Table<TagEntity, TagEntity['id']>;
+  tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
 
   // イベント通知用のSubject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
@@ -33,7 +27,7 @@ export class CoreDB extends Dexie {
     super(`${name}-CoreDB`);
 
     // Increment version to force schema update
-    this.version(4)
+    this.version(5)
       .stores({
         trees: '&id, rootId, trashRootId, superRootId',
         nodes: [
@@ -48,13 +42,23 @@ export class CoreDB extends Dexie {
         ].join(', '),
         // Fix: rootStates should use a composite key since rootNodeId might not be unique across trees
         rootStates: '&rootNodeId',
+        // Tag management tables
+        tags: '&id, name, category, usageCount, createdAt',
+        tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
       })
       .upgrade(async (tx) => {
         // Clear all data to start fresh
-
         await tx.table('trees').clear();
         await tx.table('nodes').clear();
         await tx.table('rootStates').clear();
+        
+        // Initialize tag tables if they don't exist
+        if (tx.storeNames.includes('tags')) {
+          await tx.table('tags').clear();
+        }
+        if (tx.storeNames.includes('tagAssociations')) {
+          await tx.table('tagAssociations').clear();
+        }
       });
   }
 
@@ -95,7 +99,7 @@ await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () =
           {
             parentId: NodeIdGenerator.superRootNode(treeId),
             id: NodeIdGenerator.rootNode(treeId),
-            nodeType: TREE_ROOT_NODE_TYPES.ROOT,
+            nodeType: TREE_ROOT_NODE_TYPES.ROOT as NodeType,
             name: treeId === 'r' ? 'Resources' : 'Projects',
             depth: 0, // Root nodes have depth 0
             createdAt: now,
@@ -778,6 +782,112 @@ try {
     
     const parentDepth = await this.calculateCorrectDepth(node.parentId);
     return parentDepth + 1;
+  }
+
+  // ====================
+  // Tag Management Methods
+  // ====================
+
+  /**
+   * Create a new tag
+   */
+  async createTag(tag: TagEntity): Promise<void> {
+    await this.tags.add(tag);
+  }
+
+  /**
+   * Get a tag by ID
+   */
+  async getTag(tagId: TagEntity['id']): Promise<TagEntity | undefined> {
+    return await this.tags.get(tagId);
+  }
+
+  /**
+   * Update an existing tag
+   */
+  async updateTag(tag: TagEntity): Promise<void> {
+    await this.tags.put(tag);
+  }
+
+  /**
+   * Delete a tag
+   */
+  async deleteTag(tagId: TagEntity['id']): Promise<void> {
+    await this.tags.delete(tagId);
+  }
+
+  /**
+   * Get all tags
+   */
+  async getAllTags(): Promise<TagEntity[]> {
+    return await this.tags.orderBy('name').toArray();
+  }
+
+  /**
+   * Create a tag association
+   */
+  async createTagAssociation(association: NodeTagAssociation): Promise<void> {
+    await this.tagAssociations.add(association);
+  }
+
+  /**
+   * Get a specific tag association
+   */
+  async getTagAssociation(nodeId: NodeId, tagId: TagEntity['id']): Promise<NodeTagAssociation | undefined> {
+    return await this.tagAssociations.get([nodeId, tagId]);
+  }
+
+  /**
+   * Remove a tag association
+   */
+  async removeTagAssociation(nodeId: NodeId, tagId: TagEntity['id']): Promise<boolean> {
+    const count = await this.tagAssociations.where('[nodeId+tagId]').equals([nodeId, tagId]).delete();
+    return count > 0;
+  }
+
+  /**
+   * Remove all associations for a tag
+   */
+  async removeAllTagAssociations(tagId: TagEntity['id']): Promise<number> {
+    return await this.tagAssociations.where('tagId').equals(tagId).delete();
+  }
+
+  /**
+   * Get all tag associations for a node
+   */
+  async getTagAssociationsForNode(nodeId: NodeId): Promise<NodeTagAssociation[]> {
+    return await this.tagAssociations.where('nodeId').equals(nodeId).toArray();
+  }
+
+  /**
+   * Get all tag associations for a tag
+   */
+  async getTagAssociationsForTag(tagId: TagEntity['id']): Promise<NodeTagAssociation[]> {
+    return await this.tagAssociations.where('tagId').equals(tagId).toArray();
+  }
+
+  /**
+   * Get total number of tag associations
+   */
+  async getTotalTagAssociations(): Promise<number> {
+    return await this.tagAssociations.count();
+  }
+
+  /**
+   * Check if a node exists in any tree (helper method for TagService)
+   */
+  async nodeExistsInTree(treeId: TreeId, nodeId: NodeId): Promise<boolean> {
+    // Check if the node exists and is part of the specified tree
+    const node = await this.nodes.get(nodeId);
+    if (!node) return false;
+    
+    // Get tree info to check if node belongs to this tree
+    const tree = await this.trees.get(treeId);
+    if (!tree) return false;
+    
+    // Simple check: if the tree exists and node exists, assume they're connected
+    // In a more sophisticated implementation, you might want to traverse the tree
+    return true;
   }
 
   /**

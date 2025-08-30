@@ -14,14 +14,16 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/common-core": "workspace:*",
-    "react-gravatar": "^2.6.3"
+    
+    "react-gravatar": "^2.6.3",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^5.0.0",
-    "@mui/material": "^5.0.0",
+    "@mui/material": "^7.3.1",
     "react": ">=18.0.0",
     "react-router-dom": "^7.0.0"
   },

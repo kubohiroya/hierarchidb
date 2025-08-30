@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use TreePluginAnalyzer instead. This file will be removed in the next major version.
+ * @see TreePluginAnalyzer
+ * 
  * @file PluginTreeAPI.ts
  * @description TreeTypes-specific plugin management facade API
  *
@@ -168,6 +171,9 @@ export interface MetricOptions {
  *   treeId: 'my-tree-123' as TreeId
  * });
  * ```
+ */
+/**
+ * @deprecated Use TreePluginAnalyzer instead
  */
 export interface PluginTreeAPI {
   /**

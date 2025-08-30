@@ -1,4 +1,6 @@
 /**
+import { NodeDefinitionRegistry } from '@hierarchidb/common-core';
+import type { NodeTypeDefinition, PeerEntity, GroupEntity, WorkingCopyProperties, PluginDatabaseConfig, NodeId, EntityId } from '@hierarchidb/common-type';
  * @file NodeDefinitionRegistry.dynamicSchema.test.ts
  * @description TDD tests for dynamic Dexie schema registration
  */
@@ -6,17 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
-import { NodeDefinitionRegistry } from '@hierarchidb/common-core';
 import { PluginDatabaseManager } from '../PluginDatabaseManager';
-import type { 
-  NodeTypeDefinition, 
-  PeerEntity, 
-  GroupEntity, 
-  WorkingCopyProperties,
-  PluginDatabaseConfig,
-  NodeId,
-  EntityId 
-} from '@hierarchidb/common-core';
 
 // Mock Entity types for testing
 interface TestEntity extends PeerEntity {

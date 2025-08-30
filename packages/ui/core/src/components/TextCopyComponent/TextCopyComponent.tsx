@@ -8,7 +8,9 @@ export const TextCopyComponent = ({ createText }: { createText: () => string }) 
   const copyTextToClipboard = useCallback(async () => {
     try {
       const text = createText();
-      // devLog("text", text);
+      // if (import.meta.env.DEV) {
+      console.log("text", text);
+      // }
       await navigator.clipboard.writeText(text);
       setCopyResult(true);
     } catch (err) {

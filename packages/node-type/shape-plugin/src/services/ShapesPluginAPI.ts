@@ -3,7 +3,7 @@
  * Extends HierarchiDB Worker with shape-plugin-specific methods via PluginAPI
  */
 
-import { PluginAPI } from '@hierarchidb/common-api';
+import { PluginExtensionAPI } from '@hierarchidb/common-api';
 import { NodeType, NodeId } from '@hierarchidb/common-type';
 import type {
   ShapesAPIMethods,
@@ -34,7 +34,7 @@ import { UrlMetadata } from '~/types/index';
  * Shape plugin API implementation
  * Provides Worker methods for shape-plugin data processing
  */
-export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
+export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
   readonly nodeType: NodeType = 'shape';
   readonly methods: ShapesAPIMethods;
 
@@ -157,7 +157,7 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
     return this.dataSourceManager.validateDataSource(
       dataSource,
       config.countryCode,
-      config.adminLevels.length // FIXME, this may cause trouble
+      config.adminLevels // 管理レベル配列を直接渡す
     );
   }
 

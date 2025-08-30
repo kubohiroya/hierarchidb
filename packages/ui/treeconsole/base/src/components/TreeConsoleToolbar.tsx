@@ -49,7 +49,8 @@ import {
   ChevronRight,
 } from '@mui/icons-material';
 
-import type { TreeConsoleToolbarProps, NodeId } from '../types/index';
+import type { TreeConsoleToolbarProps } from '../types/index';
+import type { NodeId } from '@hierarchidb/common-type';
 
 /**
  * 検索専用ツールバー

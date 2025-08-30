@@ -6,6 +6,7 @@
 
 import type { TreeTablePlugin } from '../plugin/types';
 import type { TreeNodeInUI } from '../types';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import { KeyboardEvent } from 'react';
 
 /**
@@ -122,7 +123,18 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
       onBeforeNodeUpdate: async (nodeId, newData) => {
         if (validateBeforeSave && newData.name) {
           // 型変換のための仮の実装
-          const node = { id: nodeId, name: newData.name } as TreeNodeInUI;
+          // Create a minimal TreeNodeInUI object for validation
+          const node: TreeNodeInUI = {
+            id: nodeId as NodeId,
+            parentId: '' as NodeId,
+            nodeType: 'unknown' as NodeType,
+            name: newData.name,
+            hasChildren: false,
+            depth: 0,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            version: 1
+          };
           const isValid = await validateBeforeSave(node, newData.name);
           return isValid;
         }

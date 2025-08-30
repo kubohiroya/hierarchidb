@@ -1,4 +1,6 @@
 /**
+import { serializeTreeNode, deserializeTreeNode } from '@hierarchidb/common-core';
+import type { TreeNode, NodeId } from '@hierarchidb/common-type';
  * @file CoreDB.depth.operations.test.ts
  * @description Comprehensive TDD tests for depth consistency in all operations
  * Tests: Import/Export, Duplicate, Restore from Trash, Copy/Paste, Undo/Redo
@@ -8,8 +10,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CoreDB } from '../CoreDB';
-import { serializeTreeNode, deserializeTreeNode } from '@hierarchidb/common-core';
-import type { TreeNode, NodeId } from '@hierarchidb/common-core';
 
 describe('CoreDB Depth Operations Consistency', () => {
   let coreDB: CoreDB;

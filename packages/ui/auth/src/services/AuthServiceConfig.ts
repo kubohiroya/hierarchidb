@@ -5,8 +5,6 @@
  * 🟢 信頼性レベル: OAuth2.0標準仕様に基づく実装
  */
 
-import { devWarn } from '@hierarchidb/common-core';
-
 /**
  * 【型定義】: 認証設定インターフェース
  * 【セキュリティ】: 全項目必須でnull/undefined防止
@@ -94,7 +92,7 @@ export class AuthConfigValidator {
     ];
 
     for (const field of requiredFields) {
-      if (!config[field] || (typeof config[field] === 'string' && !config[field].trim())) {
+      if (!config[field] || (typeof config[field] === 'string' && !(config[field] as string).trim())) {
         throw new Error(`設定エラー: ${field}は必須項目です`);
       }
     }
@@ -135,12 +133,20 @@ export class AuthConfigValidator {
     // 【Response Type検証】: サポートされる認証フローの確認
     const validResponseTypes = ['code', 'token', 'id_token'];
     if (!validResponseTypes.includes(config.responseType)) {
-      devWarn(`非標準のresponseType: ${config.responseType}`);
+      if (import.meta.env.DEV) {
+
+        console.warn(`非標準のresponseType: ${config.responseType}`);
+
+      }
     }
 
     // 【Scope検証】: 最低限必要なスコープの確認
     if (!config.scope.includes('openid')) {
-      devWarn('OpenID Connectを使用する場合、scopeに"openid"を含めることを推奨します');
+      if (import.meta.env.DEV) {
+
+        console.warn('OpenID Connectを使用する場合、scopeに"openid"を含めることを推奨します');
+
+      }
     }
   }
 

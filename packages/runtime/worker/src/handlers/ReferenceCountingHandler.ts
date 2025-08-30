@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
 

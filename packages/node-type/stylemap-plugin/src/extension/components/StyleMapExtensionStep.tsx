@@ -3,6 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Grid,
   TextField,
@@ -36,6 +37,7 @@ export const StyleMapExtensionStep: React.FC<StyleMapExtensionStepProps> = ({
   errors,
   isSubmitting,
 }) => {
+  const { t } = useTranslation('stylemap-plugin');
   const handleStyleTypeChange = useCallback(
     (event: any) => {
       onChange({ ...data, styleType: event.target.value });
@@ -68,22 +70,22 @@ export const StyleMapExtensionStep: React.FC<StyleMapExtensionStepProps> = ({
     <Grid container spacing={3}>
       <Grid item xs={12}>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          Configure StyleMap visualization settings for this folder
+          {t('extension.description', 'Configure StyleMap visualization settings for this folder')}
         </Typography>
       </Grid>
 
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>Style Type</InputLabel>
+          <InputLabel>{t('extension.styleType.label', 'Style Type')}</InputLabel>
           <Select
             value={data.styleType || 'choropleth'}
             onChange={handleStyleTypeChange}
-            label="Style Type"
+            label={t('extension.styleType.label', 'Style Type')}
           >
-            <MenuItem value="choropleth">Choropleth Map</MenuItem>
-            <MenuItem value="heatmap">Heat Map</MenuItem>
-            <MenuItem value="points">Point Map</MenuItem>
-            <MenuItem value="lines">Line Map</MenuItem>
+            <MenuItem value="choropleth">{t('extension.styleType.choropleth', 'Choropleth Map')}</MenuItem>
+            <MenuItem value="heatmap">{t('extension.styleType.heatmap', 'Heat Map')}</MenuItem>
+            <MenuItem value="points">{t('extension.styleType.points', 'Point Map')}</MenuItem>
+            <MenuItem value="lines">{t('extension.styleType.lines', 'Line Map')}</MenuItem>
           </Select>
         </FormControl>
       </Grid>
@@ -91,27 +93,27 @@ export const StyleMapExtensionStep: React.FC<StyleMapExtensionStepProps> = ({
       <Grid item xs={12} sm={6}>
         <TextField
           fullWidth
-          label="Data Source"
+          label={t('extension.dataSource.label', 'Data Source')}
           value={data.dataSource || ''}
           onChange={handleDataSourceChange}
           disabled={isSubmitting}
-          placeholder="e.g., CSV file path or URL"
+          placeholder={t('extension.dataSource.placeholder', 'e.g., CSV file path or URL')}
         />
       </Grid>
 
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>Color Scheme</InputLabel>
+          <InputLabel>{t('extension.colorScheme.label', 'Color Scheme')}</InputLabel>
           <Select
             value={data.colorScheme || 'blues'}
             onChange={handleColorSchemeChange}
-            label="Color Scheme"
+            label={t('extension.colorScheme.label', 'Color Scheme')}
           >
-            <MenuItem value="blues">Blues</MenuItem>
-            <MenuItem value="reds">Reds</MenuItem>
-            <MenuItem value="greens">Greens</MenuItem>
-            <MenuItem value="viridis">Viridis</MenuItem>
-            <MenuItem value="plasma">Plasma</MenuItem>
+            <MenuItem value="blues">{t('extension.colorScheme.blues', 'Blues')}</MenuItem>
+            <MenuItem value="reds">{t('extension.colorScheme.reds', 'Reds')}</MenuItem>
+            <MenuItem value="greens">{t('extension.colorScheme.greens', 'Greens')}</MenuItem>
+            <MenuItem value="viridis">{t('extension.colorScheme.viridis', 'Viridis')}</MenuItem>
+            <MenuItem value="plasma">{t('extension.colorScheme.plasma', 'Plasma')}</MenuItem>
           </Select>
         </FormControl>
       </Grid>
@@ -119,7 +121,7 @@ export const StyleMapExtensionStep: React.FC<StyleMapExtensionStepProps> = ({
       <Grid item xs={12} sm={6}>
         <Box>
           <Typography gutterBottom>
-            Opacity: {data.opacity || 0.7}
+            {t('extension.opacity.label', 'Opacity')}: {data.opacity || 0.7}
           </Typography>
           <Slider
             value={data.opacity || 0.7}

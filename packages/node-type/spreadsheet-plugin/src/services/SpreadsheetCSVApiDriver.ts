@@ -90,36 +90,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         // 【EntityID生成】: 適切なキャストでDexieキーエラーを回避 🟢
         const tableId = crypto.randomUUID();
         const metadata: CSVTableMetadata = {
-          id: tableId,
-          filename: file.name,
-          columns: this.reconstructColumnsFromMetadata(existingMetadata),
-          totalRows: existingMetadata.totalRows,
-          contentHash: existingMetadata.contentHash,
-          createdAt: Date.now(),
-          fileSizeBytes: 0, // Add required field
-          // StyleMap compatibility: Initialize reference fields
-          referencingPlugins: [],
-          referenceCount: 0,
-        };
-
-        // 【参照管理】: 既存チャンクデータを参照する新しいSpreadsheetEntityを作成
-        // 注意: ここではCSVTableMetadataを返すが、実際のSpreadsheetEntityは別途作成される
-        console.log(`Reusing existing raw data (hash: ${contentHash}) for new spreadsheet entity`);
-        return metadata;
-      }
-
-      // 【ファイル処理】: 各種形式の処理
-      const { content, detectedConfig } = await this.processFile(file, config);
-
-      // 【CSVパース】: チャンク分割対応パース
-      const { chunkedData, columns } = await this.parseCSVWithChunking(content, {
-        ...config,
-        ...detectedConfig,
-      });
-
-      // 【メタデータ作成】: テーブル情報の構築
-      const tableId = crypto.randomUUID();
-      const metadata: CSVTableMetadata = {
         id: tableId,
         filename: file.name,
         columns,
@@ -130,6 +100,9 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         // StyleMap compatibility: Initialize reference fields
         referencingPlugins: [],
         referenceCount: 0,
+        // Chunking support: Determine if data is chunked based on size
+        isChunked: chunkedData.totalRows > 10000, // Threshold for chunking
+        chunkCount: Math.ceil(chunkedData.totalRows / 10000) || 1,
       };
 
       // 【データ保存】: チャンク化されたデータの保存
@@ -230,6 +203,13 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       columns: metadata.columns,
       rows: filteredRows,
       totalRows: totalFilteredRows,
+      // Chunking information
+      isChunked: metadata.isChunked || false,
+      chunkInfo: metadata.isChunked ? {
+        currentChunk: Math.floor(startRow / 10000) + 1,
+        totalChunks: metadata.chunkCount || 1,
+        chunkSize: 10000
+      } : undefined,
     };
   }
 

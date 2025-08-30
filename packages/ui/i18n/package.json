@@ -21,7 +21,6 @@
     "build:tsc": "tsc && tsc-alias"
   },
   "dependencies": {
-    "@hierarchidb/common-core": "workspace:^",
     "@mui/x-date-pickers": "^8.10.2",
     "date-fns": "^4.1.0",
     "i18next": "^25.4.2",

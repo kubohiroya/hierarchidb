@@ -1,16 +1,10 @@
 /**
+import type { NodeType, PluginDatabaseConfig, PeerEntity, GroupEntity, WorkingCopyProperties } from '@hierarchidb/common-type';
  * @file PluginDatabaseManager.ts
  * @description Manages dynamic Dexie database creation for plugins
  */
 
 import Dexie, { Table } from 'dexie';
-import type { 
-  NodeType,
-  PluginDatabaseConfig,
-  PeerEntity,
-  GroupEntity,
-  WorkingCopyProperties 
-} from '@hierarchidb/common-core';
 
 /**
  * Plugin-specific database instance

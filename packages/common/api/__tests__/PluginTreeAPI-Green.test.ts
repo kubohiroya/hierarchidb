@@ -5,7 +5,7 @@
  * TDD Green フェーズ: 最小限の実装でテストを通す
  */
 
-import { expect, describe, beforeEach } from 'vitest';
+import { expect, describe, beforeEach, afterEach, test } from 'vitest';
 import type {
   PluginTreeAPI,
   GetPluginsForTreeRequest,
@@ -41,7 +41,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         creatable: true,
         isActive: true,
         usageCount: 45,
-        capabilities: ['create', 'edit', 'delete'],
+        capabilities: ['create', 'update', 'delete'],
         meta: { name: 'Folder Plugin', version: '1.0.0', category: 'core' },
       },
       {
@@ -53,7 +53,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         creatable: true,
         isActive: false,
         usageCount: 23,
-        capabilities: ['create', 'edit'],
+        capabilities: ['create', 'update'],
         meta: { name: 'Document Plugin', version: '1.0.0', category: 'core' },
       },
       {
@@ -65,7 +65,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         creatable: true,
         isActive: true,
         usageCount: 78,
-        capabilities: ['create', 'edit', 'delete', 'export'],
+        capabilities: ['create', 'update', 'delete', 'export'],
         meta: { name: 'Project Plugin', version: '2.0.0', category: 'extension' },
       },
     ];
@@ -215,12 +215,12 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         const conflicts: CompatibilityResult['conflicts'] = [];
 
         if (
-          nodeTypes.includes('conflicting-plugin-a') &&
-          nodeTypes.includes('conflicting-plugin-b')
+          nodeTypes.includes('conflicting-plugin-a' as NodeType) &&
+          nodeTypes.includes('conflicting-plugin-b' as NodeType)
         ) {
           conflicts.push({
-            nodeType1: 'conflicting-plugin-a',
-            nodeType2: 'conflicting-plugin-b',
+            nodeType1: 'conflicting-plugin-a' as NodeType,
+            nodeType2: 'conflicting-plugin-b' as NodeType,
             severity: 'error',
             description: 'These plugins have conflicting database schemas',
           });
@@ -228,7 +228,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
         // 【依存関係警告】: 依存関係不足の警告
         const warnings: string[] = [];
-        if (nodeTypes.includes('requires-dependency')) {
+        if (nodeTypes.includes('requires-dependency' as NodeType)) {
           warnings.push(
             'Plugin requires-dependency needs additional dependencies to function properly'
           );
@@ -305,7 +305,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
               hasCycles: true,
             },
             warnings: ['Circular dependency detected between plugin-a and plugin-b'],
-            cyclicPaths: [['plugin-a', 'plugin-b', 'plugin-a']],
+            cyclicPaths: [['plugin-a', 'plugin-b', 'plugin-a'] as NodeType[]],
           };
         }
 
@@ -407,7 +407,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         filters: {
           nodeTypes: ['folder', 'document'] as NodeType[],
           categories: ['core'],
-          capabilities: ['create', 'edit'],
+          capabilities: ['create', 'update'],
         },
       };
 
@@ -417,7 +417,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       response.plugins.forEach((plugin) => {
         expect(['folder', 'document']).toContain(plugin.nodeType);
         expect(plugin.meta.category).toBe('core');
-        expect(plugin.capabilities.some((cap) => ['create', 'edit'].includes(cap))).toBe(true);
+        expect(plugin.capabilities.some((cap) => ['create', 'update'].includes(cap))).toBe(true);
       });
     });
 
@@ -520,7 +520,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
   describe('getPluginCompatibility() - プラグイン互換性確認', () => {
     test('🔴 互換性のあるプラグイン組み合わせで成功を返す', async () => {
-      const nodeTypes: NodeType[] = ['folder', 'document', 'project'];
+      const nodeTypes: NodeType[] = ['folder', 'document', 'project'] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility('compat-tree' as TreeId, nodeTypes);
 
@@ -531,7 +531,10 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 互換性のないプラグイン組み合わせで詳細な競合情報を返す', async () => {
-      const conflictingTypes: NodeType[] = ['conflicting-plugin-a', 'conflicting-plugin-b'];
+      const conflictingTypes: NodeType[] = [
+        'conflicting-plugin-a',
+        'conflicting-plugin-b',
+      ] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
         'compat-tree' as TreeId,
@@ -545,7 +548,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 依存関係の欠如で適切な警告を返す', async () => {
-      const dependentType: NodeType[] = ['requires-dependency'];
+      const dependentType: NodeType[] = ['requires-dependency'] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
         'compat-tree' as TreeId,

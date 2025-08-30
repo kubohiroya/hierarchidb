@@ -1,4 +1,5 @@
 /**
+import type { TreeNode, NodeId } from '@hierarchidb/common-type';
  * @file CoreDB.undo.redo.depth.test.ts
  * @description TDD tests for depth consistency in Undo/Redo operations
  */
@@ -7,7 +8,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { CoreDB } from '../CoreDB';
-import type { TreeNode, NodeId } from '@hierarchidb/common-core';
 
 // Mock command history for testing Undo/Redo
 interface CommandSnapshot {

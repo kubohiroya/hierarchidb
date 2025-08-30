@@ -1,5 +1,5 @@
 // import { devError } from "@/shared/utils/logger.ts";
-const devError = (msg: string, error?: any) => console.error(msg, error);
+// const devError = (msg: string, error?: any) => console.error(msg, error);
 import { handleAuthError } from './handleAuthError';
 
 /**
@@ -20,7 +20,11 @@ export async function fetchWithAuthErrorHandling(
 
     return response;
   } catch (error) {
-    devError('Fetch error:', error);
+    if (import.meta.env.DEV) {
+
+      console.error('Fetch error:', error);
+
+    }
     throw error;
   }
 }

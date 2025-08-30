@@ -1,11 +1,11 @@
 /**
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
  * @file EntityHandler.integration.test.ts
  * @description Integration tests for all EntityHandler implementations
  * Tests the complete workflow across BaseEntityHandler, PeerEntityHandler,
  * GroupEntityHandler, and WorkingCopyHandler
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

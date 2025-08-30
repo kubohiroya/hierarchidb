@@ -1,9 +1,9 @@
 /**
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
  * @file WorkingCopyHandler.test.ts
  * @description Unit tests for WorkingCopyHandler advanced working copy operations
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkingCopyHandler } from './WorkingCopyHandler';

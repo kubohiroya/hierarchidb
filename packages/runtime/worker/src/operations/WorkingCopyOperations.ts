@@ -1,4 +1,4 @@
-import type { Timestamp, TreeNode, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-core';
+import type { Timestamp, TreeNode, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
 import { generateNodeId } from '@hierarchidb/common-core';
 import type { CommandResult } from '../command/types';
 import { WorkerErrorCode } from '../command/types';

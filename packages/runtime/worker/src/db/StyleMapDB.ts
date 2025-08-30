@@ -1,5 +1,5 @@
+import type { NodeId } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-core';
 
 // Local type definitions for StyleMapDB (plugin types not available in worker)
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };

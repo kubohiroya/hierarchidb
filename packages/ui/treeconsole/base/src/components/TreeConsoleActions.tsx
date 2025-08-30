@@ -13,7 +13,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import type { TreeConsoleActionsProps } from '../types/index';
-import { getPageButtonColor } from '@hierarchidb/common-type';
+// import { getPageButtonColor } from '@hierarchidb/common-type'; // Function not found
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
 /**
  * TreeConsoleActions メインコンポーネント
@@ -23,8 +23,9 @@ export function TreeConsoleActions(props: TreeConsoleActionsProps): React.JSX.El
   const { isProjectsPage, isResourcesPage, controller } = props;
 
   // ページタイプと色の決定
-  const pageType = isProjectsPage ? 'projects' : isResourcesPage ? 'resources' : 'preview';
-  const buttonColor = getPageButtonColor(pageType);
+  // const pageType = isProjectsPage ? 'projects' : isResourcesPage ? 'resources' : 'preview';
+  // const buttonColor = getPageButtonColor(pageType); // Function not found
+  const buttonColor = 'primary'; // fallback
 
   // SpeedDialのアクション定義（ダミー実装）
   const speedDialActions = [

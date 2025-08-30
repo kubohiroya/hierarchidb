@@ -1,11 +1,10 @@
 /**
+import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties, EntityMetadata } from '@hierarchidb/common-type';
  * @file AutoEntityHandler.test.ts
  * @description Tests for AutoEntityHandler
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, NodeType, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import 'fake-indexeddb/auto';
 import { AutoEntityHandler } from './AutoEntityHandler';

@@ -1,10 +1,10 @@
 /**
+import type { NodeId, NodeTypeDefinition, EntityHandler, PeerEntity, GroupEntity, WorkingCopyProperties, EntityId, TreeNode } from '@hierarchidb/common-type';
  * @file NodeTypeAPI.test.ts
  * @description Comprehensive test suite for NodeTypeAPI implementation
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, NodeTypeDefinition, EntityHandler, PeerEntity, GroupEntity, WorkingCopyProperties, EntityId, TreeNode } from '@hierarchidb/common-core';
 import { WorkerAPIImpl } from '../../WorkerAPIImpl';
 import { CoreDB } from '../../db/CoreDB';
 import type { NodeTypeAPI } from '@hierarchidb/common-api';

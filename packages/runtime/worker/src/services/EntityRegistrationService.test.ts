@@ -1,11 +1,10 @@
 /**
+import type { NodeType, EntityMetadata } from '@hierarchidb/common-type';
  * @file EntityRegistrationService.test.ts
  * @description Tests for EntityRegistrationService
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { NodeType } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import { EntityRegistrationService } from './EntityRegistrationService';
 
 describe('EntityRegistrationService', () => {

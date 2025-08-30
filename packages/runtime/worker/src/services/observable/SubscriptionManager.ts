@@ -1,4 +1,4 @@
-import type { SubscriptionFilter, TreeChangeEvent, NodeId } from '@hierarchidb/common-core';
+import type { SubscriptionFilter, TreeChangeEvent, NodeId } from '@hierarchidb/common-type';
 import type { Subject } from 'rxjs';
 
 /**

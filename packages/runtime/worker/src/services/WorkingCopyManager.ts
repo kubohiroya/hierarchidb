@@ -1,10 +1,9 @@
 /**
+import type { NodeId, PeerEntity, WorkingCopyProperties, EntityMetadata } from '@hierarchidb/common-type';
  * @file WorkingCopyManager.ts
  * @description Service for managing working copies with manual commit/discard
  */
 
-import type { NodeId, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import type Dexie from 'dexie';
 
 /**

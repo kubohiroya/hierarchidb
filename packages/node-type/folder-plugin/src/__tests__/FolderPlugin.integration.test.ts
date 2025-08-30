@@ -33,9 +33,9 @@ describe('Folder Plugin Integration', () => {
         url: 'https://github.com/project/repo',
         description: 'Main repository',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'bookmark-group-1',
-        version: 1,
         updatedAt: Date.now()
       });
 
@@ -44,9 +44,9 @@ describe('Folder Plugin Integration', () => {
         url: 'https://docs.project.com',
         description: 'Project documentation',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'bookmark-group-2',
-        version: 1,
         updatedAt: Date.now()
       });
 
@@ -66,9 +66,9 @@ describe('Folder Plugin Integration', () => {
         },
         description: 'Standard project structure',
         type: 'group',
+        version: 1,
         nodeId: testNodeId,
         groupId: 'template-group-1',
-        version: 1,
         updatedAt: Date.now()
       });
 

@@ -20,6 +20,7 @@ import type {
   UndoRedoCommand,
 } from '../types/index';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
   useCopyPasteOperations,
@@ -141,8 +142,15 @@ export function useTreeViewController(
 
   // WorkerAPI接続（オプショナル - 直接提供またはコンテキストから取得）
   const workerClient = providedWorkerClient || null;
-  const api =
-    ((workerClient as any)?.getAPI ? (workerClient as any).getAPI() : null) || stateManager || {};
+  
+  // Type guard for workerClient with getAPI method
+  const hasGetAPI = (client: unknown): client is { getAPI(): WorkerAPI } => {
+    return client != null && typeof client === 'object' && 'getAPI' in client;
+  };
+  
+  const api: WorkerAPI | Record<string, unknown> | null = hasGetAPI(workerClient) 
+    ? workerClient.getAPI() 
+    : (stateManager as Record<string, unknown> | null) || null;
 
   // WorkerAPIAdapterのセットアップ
   const workerAdapter = useMemo(() => {
@@ -150,7 +158,12 @@ export function useTreeViewController(
       return workerService;
     }
 
-    if (!api || !api.workerAPI) {
+    // Type guard to check if api is WorkerAPI
+    const isWorkerAPI = (obj: unknown): obj is WorkerAPI => {
+      return obj != null && typeof obj === 'object' && 'getQueryAPI' in obj;
+    };
+
+    if (!isWorkerAPI(api)) {
       return null;
     }
 
@@ -248,8 +261,13 @@ export function useTreeViewController(
         // Range select with Shift key - simplified implementation for testing
         // Get all children from state manager (mocked in tests)
         // TODO: Implement getChildren when API is available
-        if ((stateManager as any)?.getChildren) {
-          const children = await (stateManager as any).getChildren('root');
+        // Type guard for stateManager with getChildren method
+        const hasGetChildren = (manager: unknown): manager is { getChildren(id: string): Promise<TreeNode[]> } => {
+          return manager != null && typeof manager === 'object' && 'getChildren' in manager;
+        };
+        
+        if (hasGetChildren(stateManager)) {
+          const children = await stateManager.getChildren('root');
           if (children && Array.isArray(children)) {
             const nodeIds = children.map((child: unknown) => (child as TreeNode).id);
             const startIdx = nodeIds.indexOf(lastSelectedNode);
@@ -276,9 +294,14 @@ export function useTreeViewController(
 
       // Fetch and set current node
       // TODO: Implement getNode when API is available
-      if ((stateManager as any)?.getNode && !ctrlKey && !shiftKey) {
+      // Type guard for stateManager with getNode method
+      const hasGetNode = (manager: unknown): manager is { getNode(id: string): Promise<TreeNode> } => {
+        return manager != null && typeof manager === 'object' && 'getNode' in manager;
+      };
+      
+      if (hasGetNode(stateManager) && !ctrlKey && !shiftKey) {
         try {
-          const node = await (stateManager as any).getNode(nodeId);
+          const node = await stateManager.getNode(nodeId);
           if (node) {
             setCurrentNode(node as TreeNode);
           }
@@ -287,9 +310,16 @@ export function useTreeViewController(
         }
       } else if (api && !ctrlKey && !shiftKey) {
         try {
-          const node = await (api as any).getNode?.(nodeId);
-          if (node) {
-            setCurrentNode(node as TreeNode);
+          // Type guard for api with getNode method
+          const hasApiGetNode = (obj: unknown): obj is { getNode: (id: string) => Promise<TreeNode> } => {
+            return obj != null && typeof obj === 'object' && 'getNode' in obj;
+          };
+          
+          if (hasApiGetNode(api)) {
+            const node = await api.getNode(nodeId);
+            if (node) {
+              setCurrentNode(node as TreeNode);
+            }
           }
         } catch (error) {
           console.error('Failed to fetch node:', error);

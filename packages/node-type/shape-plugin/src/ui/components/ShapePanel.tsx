@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { NodeId, EntityId } from '@hierarchidb/common-type';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
+import { useShapeEntityProgress } from '../hooks/useShapeProgress';
 import {
   ShapeEntity,
   ProcessingStatus,
@@ -49,10 +50,20 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
   // State management
   const [entity, setEntity] = useState<ShapeEntity | null>(null);
-  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
-  const [batchProgress, setBatchProgress] = useState<ProgressInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Real-time progress monitoring
+  const {
+    progress: batchProgress,
+    status: processingStatus,
+    error: progressError,
+    isSubscribed,
+    refresh: refreshProgress,
+  } = useShapeEntityProgress(nodeId, {
+    autoSubscribe: true,
+    pollingInterval: 3000,
+  });
 
   // Load entity data
   const loadEntity = useCallback(async () => {
@@ -60,16 +71,6 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
       const api = await getShapeAPI();
       const entityData = await api.getEntity(nodeId);
       setEntity(entityData || null);
-
-      if (entityData) {
-        const status = await api.getProcessingStatus(nodeId);
-        setProcessingStatus(status);
-
-        if (entityData.batchSessionId) {
-          const progress = await api.getBatchProgress(entityData.batchSessionId as EntityId);
-          setBatchProgress(progress);
-        }
-      }
     } catch (error) {
       console.error('Failed to load shape entity:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to load entity'));
@@ -81,14 +82,28 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
   // Refresh data
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadEntity();
-    setRefreshing(false);
-  }, [loadEntity]);
+    try {
+      await Promise.all([
+        loadEntity(),
+        refreshProgress(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadEntity, refreshProgress]);
 
   // Initial load
   useEffect(() => {
     loadEntity();
   }, [loadEntity]);
+
+  // Handle progress errors
+  useEffect(() => {
+    if (progressError && progressError !== progressError) {
+      console.error('Progress monitoring error:', progressError);
+      onError?.(progressError);
+    }
+  }, [progressError, onError]);
 
   // Batch processing actions
   const handleStartProcessing = useCallback(async () => {

@@ -114,6 +114,7 @@ export const StyleMapStep5: React.FC<StyleMapStep5Props> = ({
         selectedKeyColumn={data?.selectedKeyColumn}
         selectedValueColumn={data?.selectedValueColumn}
         onColumnSelect={handleColumnSelect}
+        csvData={csvData}
       />
     </Box>
   );

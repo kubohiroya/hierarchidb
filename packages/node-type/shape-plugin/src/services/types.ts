@@ -13,7 +13,6 @@ import type {
   AdminLevelInfo,
 } from '@hierarchidb/runtime-datasource';
 
-
 // === API Method Signatures ===
 
 export interface ShapesAPIMethods extends Record<string, any> {

@@ -32,7 +32,9 @@ export const MenuListItemLinkButton = ({
 
   const handleMenuItemClick = useCallback((_url: string) => {
     setAnchorElem(null);
-    // devLog(_url);
+    // if (import.meta.env.DEV) {
+    console.log(_url);
+    // }
   }, []);
 
   return (

@@ -47,7 +47,7 @@ export interface WorkingCopyProperties {
  * Complete working copy stored in EphemeralDB
  * Working copy is essentially a TreeNode with additional working copy properties
  */
-//export type WorkingCopyTypes = TreeNode & WorkingCopyProperties;
+export type WorkingCopy = TreeNode & WorkingCopyProperties;
 
 // Working Copy関連の型定義
 export interface CommitResult {

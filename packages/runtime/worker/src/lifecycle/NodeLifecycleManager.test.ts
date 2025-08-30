@@ -1,4 +1,4 @@
-import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-core';
+import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NodeLifecycleManager } from './NodeLifecycleManager';
 import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';

@@ -10,14 +10,21 @@ export type {
   FolderStructureNode,
 } from '../entities/FolderEntity';
 
+// Import tag-related types
+export type { TagId, TagSuggestion } from '@hierarchidb/common-type';
+
+
+
 // Keep existing simple types for backward compatibility if needed
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, TagId } from '@hierarchidb/common-type';
 
 export interface FolderEntityWorkingCopy {
   id: EntityId;
   nodeId: NodeId;
   name: string;
-  description?: string; // Make optional to match comprehensive version
+  description?: string;
+  tags: TagId[];
+  category?: string;
   settings: FolderSettings;
   metadata: Record<string, any>;
   createdAt: number;

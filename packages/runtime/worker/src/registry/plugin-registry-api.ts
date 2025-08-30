@@ -1,11 +1,11 @@
 /**
+import type { TreeId } from '@hierarchidb/common-type';
  * @file plugin-registry-api.ts
  * @description Worker API methods for plugin registry access
  */
 
 import { UnifiedNodeTypeRegistry } from './UnifiedNodeTypeRegistry';
 import type { PluginDefinition } from './plugin';
-import type { TreeId } from '@hierarchidb/common-core';
 
 /**
  * Get all registered plugins from the registry

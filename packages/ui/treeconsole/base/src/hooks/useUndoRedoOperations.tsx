@@ -57,41 +57,58 @@ export function useUndoRedoOperations(
   // 現在は未実装なので、これらのテストは失敗するはずです
   // ================================================================
 
+  // Type guards for stateManager methods
+  interface UndoRedoManager {
+    canUndo?: () => boolean;
+    canRedo?: () => boolean;
+    getUndoHistory?: () => UndoRedoCommand[];
+    getRedoHistory?: () => UndoRedoCommand[];
+    undo?: () => Promise<UndoRedoResult>;
+    redo?: () => Promise<UndoRedoResult>;
+    clearHistory?: () => Promise<{ success: boolean; error?: string }>;
+  }
+
+  const hasUndoRedoMethods = (manager: unknown): manager is UndoRedoManager => {
+    return manager != null && typeof manager === 'object';
+  };
+
+  const undoRedoManager = hasUndoRedoMethods(stateManager) ? stateManager : null;
+
   // Undo/Redoの状態管理（プレースホルダー）
   const canUndo = useMemo(() => {
-    if ((stateManager as any)?.canUndo) {
-      return (stateManager as any).canUndo();
+    if (undoRedoManager?.canUndo) {
+      return undoRedoManager.canUndo();
     }
     return false; // 未実装のため常にfalse
-  }, [stateManager]);
+  }, [undoRedoManager]);
 
   const canRedo = useMemo(() => {
-    if ((stateManager as any)?.canRedo) {
-      return (stateManager as any).canRedo();
+    if (undoRedoManager?.canRedo) {
+      return undoRedoManager.canRedo();
     }
     return false; // 未実装のため常にfalse
-  }, [stateManager]);
+  }, [undoRedoManager]);
 
   const undoHistory = useMemo(() => {
-    if ((stateManager as any)?.getUndoHistory) {
-      return (stateManager as any).getUndoHistory();
+    if (undoRedoManager?.getUndoHistory) {
+      return undoRedoManager.getUndoHistory();
     }
     return []; // 未実装のため空配列
-  }, [stateManager]);
+  }, [undoRedoManager]);
 
   const redoHistory = useMemo(() => {
-    if ((stateManager as any)?.getRedoHistory) {
-      return (stateManager as any).getRedoHistory();
+    if (undoRedoManager?.getRedoHistory) {
+      return undoRedoManager.getRedoHistory();
     }
     return []; // 未実装のため空配列
-  }, [stateManager]);
+  }, [undoRedoManager]);
 
   // Undo操作の実装（プレースホルダー）
   const undo = useCallback(async (): Promise<UndoRedoResult> => {
-    if ((stateManager as any)?.undo) {
+    if (undoRedoManager?.undo) {
       setIsLoading?.(true);
       try {
-        const result = await (stateManager as any).undo();
+        const result = await undoRedoManager.undo();
 
         // 成功時の状態変更通知
         if (result.success && onStateChange && currentState) {
@@ -121,10 +138,10 @@ export function useUndoRedoOperations(
 
   // Redo操作の実装（プレースホルダー）
   const redo = useCallback(async (): Promise<UndoRedoResult> => {
-    if ((stateManager as any)?.redo) {
+    if (undoRedoManager?.redo) {
       setIsLoading?.(true);
       try {
-        const result = await (stateManager as any).redo();
+        const result = await undoRedoManager.redo();
 
         // 成功時の状態変更通知
         if (result.success && onStateChange && currentState) {
@@ -154,10 +171,10 @@ export function useUndoRedoOperations(
 
   // 履歴クリア操作の実装（プレースホルダー）
   const clearHistory = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    if ((stateManager as any)?.clearHistory) {
+    if (undoRedoManager?.clearHistory) {
       setIsLoading?.(true);
       try {
-        return await (stateManager as any).clearHistory();
+        return await undoRedoManager.clearHistory();
       } catch (error) {
         return {
           success: false,

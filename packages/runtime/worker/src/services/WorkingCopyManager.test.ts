@@ -1,11 +1,10 @@
 /**
+import type { NodeId, PeerEntity, WorkingCopyProperties, EntityMetadata } from '@hierarchidb/common-type';
  * @file WorkingCopyManager.test.ts
  * @description Tests for WorkingCopyManager
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { NodeId, PeerEntity, WorkingCopyProperties } from '@hierarchidb/common-core';
-import type { EntityMetadata } from '@hierarchidb/common-core';
 import Dexie from 'dexie';
 import 'fake-indexeddb/auto';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';
