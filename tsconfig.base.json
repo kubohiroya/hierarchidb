@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
+    "target": "es2022",
+    "module": "nodenext",
     "lib": ["ES2022", "dom"],
     "moduleResolution": "node",
     "strict": true,
@@ -27,11 +27,5 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    ".turbo"
-  ]
+  "exclude": ["node_modules", "dist", "build", "coverage", ".turbo"]
 }

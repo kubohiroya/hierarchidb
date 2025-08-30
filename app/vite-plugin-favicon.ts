@@ -1,6 +1,6 @@
 import { Plugin } from 'vite';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Vite plugin to serve favicon.ico at root path
@@ -16,12 +16,12 @@ export function faviconPlugin(): Plugin {
         if (req.url === '/favicon.ico' || req.url === '/favicon.svg') {
           const ext = path.extname(req.url);
           const faviconPath = path.join(process.cwd(), 'public', `favicon${ext}`);
-          
+
           // Check if favicon exists
           if (fs.existsSync(faviconPath)) {
             const favicon = fs.readFileSync(faviconPath);
             const contentType = ext === '.ico' ? 'image/x-icon' : 'image/svg+xml';
-            
+
             res.writeHead(200, {
               'Content-Type': contentType,
               'Cache-Control': 'public, max-age=3600',
