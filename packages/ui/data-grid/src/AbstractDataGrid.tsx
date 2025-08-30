@@ -1,6 +1,6 @@
 /**
  * AbstractDataGrid Component
- * 
+ *
  * A data grid component that works with abstract data providers,
  * completely decoupled from specific data types or storage implementations.
  */
@@ -54,7 +54,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   columns: ColumnDefinition<T>[];
   /** Initial query parameters */
   initialQuery?: QueryParams;
-  
+
   // Features
   /** Enable pagination */
   paginate?: boolean;
@@ -76,7 +76,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   realtime?: boolean;
   /** Enable column visibility toggle */
   columnToggle?: boolean;
-  
+
   // Virtualization
   /** Enable virtual scrolling for large datasets */
   virtual?: boolean;
@@ -84,7 +84,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   rowHeight?: number;
   /** Container height */
   height?: number | string;
-  
+
   // Appearance
   /** Dense mode */
   dense?: boolean;
@@ -94,7 +94,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   striped?: boolean;
   /** Show grid lines */
   gridLines?: boolean;
-  
+
   // Callbacks
   /** Row click handler */
   onRowClick?: (item: T) => void;
@@ -106,7 +106,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   onExport?: (format: 'csv' | 'json' | 'excel') => Promise<void>;
   /** Error handler */
   onError?: (error: Error) => void;
-  
+
   // Customization
   /** Custom empty state */
   emptyMessage?: string;
@@ -163,11 +163,11 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
   const [columns, setColumns] = useState(initialColumns);
   const [showFilters, setShowFilters] = useState(false);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
-  
+
   // Refs
   const parentRef = useRef<HTMLDivElement>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  
+
   // Virtual scrolling
   const virtualizer = useVirtualizer({
     count: data.length,
@@ -176,43 +176,43 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
     overscan: 5,
     enabled: virtual,
   });
-  
+
   // Build query parameters
   const queryParams = useMemo((): QueryParams => {
     const params: QueryParams = {};
-    
+
     if (paginate) {
       params.pagination = { page, pageSize };
     }
-    
+
     if (sort.length > 0) {
       params.sort = sort;
     }
-    
+
     if (filters.length > 0) {
       params.filters = filters;
     }
-    
+
     if (search) {
       params.search = search;
     }
-    
+
     const visibleFields = columns
-      .filter(col => col.visible !== false)
-      .map(col => String(col.field));
-    
+      .filter((col) => col.visible !== false)
+      .map((col) => String(col.field));
+
     if (visibleFields.length > 0) {
       params.fields = visibleFields;
     }
-    
+
     return params;
   }, [page, pageSize, sort, filters, search, columns, paginate]);
-  
+
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const result: QueryResult<T> = await dataProvider.query(queryParams);
       setData(result.data);
@@ -225,50 +225,52 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
       setLoading(false);
     }
   }, [dataProvider, queryParams, onError]);
-  
+
   // Fetch data on query change
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-  
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (!realtime || !dataProvider.subscribe) return;
-    
-    const handleUpdate = (event: DataChangeEvent<T>) => {
+
+    const handleUpdate = (_event: DataChangeEvent<T>) => {
       // Simple implementation - refetch data
       // Could be optimized to update locally
       fetchData();
     };
-    
+
     unsubscribeRef.current = dataProvider.subscribe(handleUpdate);
-    
+
     return () => {
       unsubscribeRef.current?.();
     };
   }, [realtime, dataProvider, fetchData]);
-  
+
   // Selected items
+  /*
   const selectedItems = useMemo(() => {
     return data.filter(item => selectedIds.has(item.id));
   }, [data, selectedIds]);
-  
+   */
+
   // Handlers
   const handlePageChange = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
-  
+
   const handlePageSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPageSize(parseInt(event.target.value, 10));
     setPage(0);
   };
-  
+
   const handleSort = (field: string) => {
     if (!sortable) return;
-    
-    const existingSort = sort.find(s => s.field === field);
+
+    const existingSort = sort.find((s) => s.field === field);
     let newSort: SortParams[];
-    
+
     if (!existingSort) {
       newSort = [{ field, direction: 'asc' }];
     } else if (existingSort.direction === 'asc') {
@@ -276,15 +278,15 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
     } else {
       newSort = [];
     }
-    
+
     setSort(newSort);
     setPage(0);
   };
-  
+
   const handleFilterChange = (field: string, value: string) => {
     if (!filterable) return;
-    
-    const newFilters = filters.filter(f => f.field !== field);
+
+    const newFilters = filters.filter((f) => f.field !== field);
     if (value) {
       newFilters.push({
         field,
@@ -292,31 +294,31 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
         value,
       });
     }
-    
+
     setFilters(newFilters);
     setPage(0);
   };
-  
+
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(0);
   };
-  
+
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      setSelectedIds(new Set(data.map(item => item.id)));
+      setSelectedIds(new Set(data.map((item) => item.id)));
     } else {
       setSelectedIds(new Set());
     }
-    
+
     onSelectionChange?.(event.target.checked ? data : []);
   };
-  
+
   const handleSelectRow = (item: T) => {
     if (!selectable) return;
-    
+
     const newSelection = new Set(selectedIds);
-    
+
     if (selectionMode === 'single') {
       newSelection.clear();
       newSelection.add(item.id);
@@ -327,16 +329,16 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
         newSelection.add(item.id);
       }
     }
-    
+
     setSelectedIds(newSelection);
-    
-    const selected = data.filter(d => newSelection.has(d.id));
+
+    const selected = data.filter((d) => newSelection.has(d.id));
     onSelectionChange?.(selected);
   };
-  
+
   const handleExport = async (format: 'csv' | 'json' | 'excel') => {
     if (!exportable) return;
-    
+
     if (onExport) {
       await onExport(format);
     } else if (dataProvider.export) {
@@ -355,26 +357,19 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
       }
     }
   };
-  
+
   const handleColumnToggle = (field: string) => {
-    setColumns(prev =>
-      prev.map(col =>
-        String(col.field) === field
-          ? { ...col, visible: !col.visible }
-          : col
-      )
+    setColumns((prev) =>
+      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col))
     );
   };
-  
+
   // Visible columns
-  const visibleColumns = useMemo(
-    () => columns.filter(col => col.visible !== false),
-    [columns]
-  );
-  
+  const visibleColumns = useMemo(() => columns.filter((col) => col.visible !== false), [columns]);
+
   // Current sort state
   const currentSort = sort[0];
-  
+
   // Render error state
   if (error && !loading) {
     if (errorComponent) {
@@ -386,7 +381,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
       </Alert>
     );
   }
-  
+
   // Render empty state
   if (!loading && data.length === 0) {
     return (
@@ -395,7 +390,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
       </Box>
     );
   }
-  
+
   return (
     <Box>
       {/* Toolbar */}
@@ -416,7 +411,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             sx={{ flexGrow: 1, maxWidth: 400 }}
           />
         )}
-        
+
         {filterable && (
           <Tooltip title="Toggle Filters">
             <IconButton onClick={() => setShowFilters(!showFilters)}>
@@ -424,7 +419,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             </IconButton>
           </Tooltip>
         )}
-        
+
         {columnToggle && (
           <Tooltip title="Column Visibility">
             <IconButton onClick={() => setShowColumnSelector(!showColumnSelector)}>
@@ -432,7 +427,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             </IconButton>
           </Tooltip>
         )}
-        
+
         {refreshable && (
           <Tooltip title="Refresh">
             <IconButton onClick={fetchData} disabled={loading}>
@@ -440,7 +435,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             </IconButton>
           </Tooltip>
         )}
-        
+
         {exportable && (
           <Tooltip title="Export">
             <IconButton onClick={() => handleExport('csv')}>
@@ -448,16 +443,12 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             </IconButton>
           </Tooltip>
         )}
-        
+
         {toolbarActions}
-        
-        <Chip
-          label={`${total} items`}
-          size="small"
-          color="primary"
-        />
+
+        <Chip label={`${total} items`} size="small" color="primary" />
       </Box>
-      
+
       {/* Column selector */}
       {showColumnSelector && (
         <Paper sx={{ p: 2, mb: 2 }}>
@@ -465,7 +456,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             Visible Columns
           </Typography>
           <Box display="flex" flexWrap="wrap" gap={1}>
-            {columns.map(col => (
+            {columns.map((col) => (
               <Chip
                 key={String(col.field)}
                 label={col.header}
@@ -478,20 +469,22 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           </Box>
         </Paper>
       )}
-      
+
       {/* Loading indicator */}
       {loading && (loadingComponent || <LinearProgress />)}
-      
+
       {/* Table */}
       <TableContainer
         component={Paper}
         sx={{
           height: virtual ? height : undefined,
           maxHeight: !virtual ? height : undefined,
-          '& .MuiTableCell-root': gridLines ? {
-            border: '1px solid',
-            borderColor: 'divider',
-          } : undefined,
+          '& .MuiTableCell-root': gridLines
+            ? {
+                border: '1px solid',
+                borderColor: 'divider',
+              }
+            : undefined,
         }}
         ref={virtual ? parentRef : undefined}
       >
@@ -509,7 +502,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                   )}
                 </TableCell>
               )}
-              {visibleColumns.map(column => (
+              {visibleColumns.map((column) => (
                 <TableCell
                   key={String(column.field)}
                   align={column.align}
@@ -542,19 +535,15 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             {showFilters && filterable && (
               <TableRow>
                 {selectable && <TableCell />}
-                {visibleColumns.map(column => (
+                {visibleColumns.map((column) => (
                   <TableCell key={`filter-${String(column.field)}`}>
                     {column.filterable && (
                       <TextField
                         size="small"
                         fullWidth
                         placeholder={`Filter ${column.header}`}
-                        value={
-                          filters.find(f => f.field === String(column.field))?.value || ''
-                        }
-                        onChange={(e) =>
-                          handleFilterChange(String(column.field), e.target.value)
-                        }
+                        value={filters.find((f) => f.field === String(column.field))?.value || ''}
+                        onChange={(e) => handleFilterChange(String(column.field), e.target.value)}
                       />
                     )}
                   </TableCell>
@@ -563,64 +552,62 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             )}
           </TableHead>
           <TableBody>
-            {(virtual ? virtualizer.getVirtualItems() : data.map((item, index) => ({ index }))).map(
-              virtualRow => {
-                const item = data[virtualRow.index];
-                if (!item) return null;
-                
-                const isSelected = selectedIds.has(item.id);
-                
-                return (
-                  <TableRow
-                    key={item.id}
-                    hover
-                    selected={isSelected}
-                    onClick={() => onRowClick?.(item)}
-                    onDoubleClick={() => onRowDoubleClick?.(item)}
-                    sx={{
-                      cursor: onRowClick || onRowDoubleClick ? 'pointer' : undefined,
-                      backgroundColor: striped && virtualRow.index % 2 === 0
-                        ? 'action.hover'
-                        : undefined,
-                      ...(virtual && {
-                        height: rowHeight,
-                        transform: `translateY(${virtualRow.start}px)`,
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                      }),
-                    }}
-                  >
-                    {selectable && (
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          checked={isSelected}
-                          onChange={() => handleSelectRow(item)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
+            {(virtual
+              ? virtualizer.getVirtualItems()
+              : data.map((_item, index) => ({ index }))
+            ).map((virtualRow) => {
+              const item = data[virtualRow.index];
+              if (!item) return null;
+
+              const isSelected = selectedIds.has(item.id);
+
+              return (
+                <TableRow
+                  key={item.id}
+                  hover
+                  selected={isSelected}
+                  onClick={() => onRowClick?.(item)}
+                  onDoubleClick={() => onRowDoubleClick?.(item)}
+                  sx={{
+                    cursor: onRowClick || onRowDoubleClick ? 'pointer' : undefined,
+                    backgroundColor:
+                      striped && virtualRow.index % 2 === 0 ? 'action.hover' : undefined,
+                    ...(virtual && {
+                      height: rowHeight,
+                      transform: `translateY(${virtualRow.index}px)`,
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                    }),
+                  }}
+                >
+                  {selectable && (
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => handleSelectRow(item)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </TableCell>
+                  )}
+                  {visibleColumns.map((column) => {
+                    const value = (item as any)[column.field];
+                    const formatted = column.formatter ? column.formatter(value, item) : value;
+
+                    return (
+                      <TableCell key={String(column.field)} align={column.align}>
+                        {formatted}
                       </TableCell>
-                    )}
-                    {visibleColumns.map(column => {
-                      const value = (item as any)[column.field];
-                      const formatted = column.formatter
-                        ? column.formatter(value, item)
-                        : value;
-                      
-                      return (
-                        <TableCell key={String(column.field)} align={column.align}>
-                          {formatted}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              }
-            )}
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       {/* Pagination */}
       {paginate && !virtual && (
         <TablePagination

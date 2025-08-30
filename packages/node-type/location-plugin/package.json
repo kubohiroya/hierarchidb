@@ -25,10 +25,10 @@
     "@hierarchidb/runtime-dialog": "workspace:*",
     "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@mui/material": "^5.14.20",
-    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
     "dexie": "^3.2.4",
-    "react": "^18.2.0"
+    "react": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",

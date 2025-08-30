@@ -1,11 +1,11 @@
 /**
  * GenericDataGrid Component
- * 
+ *
  * A completely generic, type-safe data grid component with no application-specific dependencies.
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { useMemo, useState, useCallback, ReactNode } from 'react';
+import React, { useMemo, useState, ReactNode } from 'react';
 import {
   Box,
   Table,
@@ -33,7 +33,7 @@ import {
   Download,
   Refresh,
 } from '@mui/icons-material';
-import { useVirtualizer } from '@tanstack/react-virtual';
+// import { useVirtualizer } from '@tanstack/react-virtual';
 
 /**
  * Generic column definition
@@ -75,11 +75,11 @@ export interface GenericDataGridProps<T = any> {
   loading?: boolean;
   /** Error message */
   error?: string;
-  
+
   // Identification
   /** Function to get unique ID for each row */
   getRowId?: (row: T) => string | number;
-  
+
   // Pagination
   /** Current page (0-indexed) */
   page?: number;
@@ -91,7 +91,7 @@ export interface GenericDataGridProps<T = any> {
   onPageChange?: (page: number) => void;
   /** Rows per page change handler */
   onRowsPerPageChange?: (rowsPerPage: number) => void;
-  
+
   // Sorting
   /** Current sort column */
   sortColumn?: string;
@@ -99,7 +99,7 @@ export interface GenericDataGridProps<T = any> {
   sortDirection?: 'asc' | 'desc';
   /** Sort handler */
   onSort?: (column: string, direction: 'asc' | 'desc') => void;
-  
+
   // Filtering
   /** Current filters */
   filters?: Record<string, string>;
@@ -109,7 +109,7 @@ export interface GenericDataGridProps<T = any> {
   searchValue?: string;
   /** Search change handler */
   onSearchChange?: (value: string) => void;
-  
+
   // Selection
   /** Enable row selection */
   selectable?: boolean;
@@ -119,7 +119,7 @@ export interface GenericDataGridProps<T = any> {
   selectedRows?: Set<string | number>;
   /** Selection change handler */
   onSelectionChange?: (selectedRows: Set<string | number>) => void;
-  
+
   // Actions
   /** Export handler */
   onExport?: () => void;
@@ -129,7 +129,7 @@ export interface GenericDataGridProps<T = any> {
   onRowClick?: (row: T) => void;
   /** Row double-click handler */
   onRowDoubleClick?: (row: T) => void;
-  
+
   // Virtualization
   /** Enable virtual scrolling */
   enableVirtualization?: boolean;
@@ -137,7 +137,7 @@ export interface GenericDataGridProps<T = any> {
   rowHeight?: number;
   /** Container max height */
   maxHeight?: number | string;
-  
+
   // Appearance
   /** Dense padding */
   dense?: boolean;
@@ -149,7 +149,7 @@ export interface GenericDataGridProps<T = any> {
   striped?: boolean;
   /** Row hover effect */
   hover?: boolean;
-  
+
   // Customization
   /** Custom empty state component */
   emptyComponent?: ReactNode;
@@ -192,7 +192,6 @@ export function GenericDataGrid<T = any>({
   onRowClick,
   onRowDoubleClick,
   enableVirtualization = false,
-  rowHeight = 52,
   maxHeight = 600,
   dense = false,
   stickyHeader = true,
@@ -206,26 +205,27 @@ export function GenericDataGrid<T = any>({
 }: GenericDataGridProps<T>) {
   const [showFilters, setShowFilters] = useState(false);
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
-  
+
   // Virtual scrolling setup
   const parentRef = React.useRef<HTMLDivElement>(null);
-  
-  const virtualizer = useVirtualizer({
+  /*
+  const _virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: useCallback(() => rowHeight, [rowHeight]),
     overscan: 5,
   });
-  
+   */
+
   // Filter rows based on search and filters
   const filteredRows = useMemo(() => {
     let result = [...rows];
-    
+
     // Apply global search
     const searchTerm = onSearchChange ? searchValue : localSearchValue;
     if (searchTerm) {
-      result = result.filter(row => {
-        return columns.some(col => {
+      result = result.filter((row) => {
+        return columns.some((col) => {
           if (col.hidden) return false;
           const value = (row as any)[col.id];
           if (value == null) return false;
@@ -233,15 +233,15 @@ export function GenericDataGrid<T = any>({
         });
       });
     }
-    
+
     // Apply column filters
     Object.entries(filters).forEach(([columnId, filterValue]) => {
       if (!filterValue) return;
-      
-      const column = columns.find(c => c.id === columnId);
+
+      const column = columns.find((c) => c.id === columnId);
       if (!column) return;
-      
-      result = result.filter(row => {
+
+      result = result.filter((row) => {
         const value = (row as any)[columnId];
         if (column.filterPredicate) {
           return column.filterPredicate(value, filterValue);
@@ -250,10 +250,10 @@ export function GenericDataGrid<T = any>({
         return String(value).toLowerCase().includes(filterValue.toLowerCase());
       });
     });
-    
+
     return result;
   }, [rows, searchValue, localSearchValue, onSearchChange, filters, columns]);
-  
+
   // Handle pagination
   const displayRows = useMemo(() => {
     if (enableVirtualization) {
@@ -262,40 +262,40 @@ export function GenericDataGrid<T = any>({
     const start = page * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
   }, [filteredRows, page, rowsPerPage, enableVirtualization]);
-  
+
   const handleChangePage = (_event: unknown, newPage: number) => {
     onPageChange?.(newPage);
   };
-  
+
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     onRowsPerPageChange?.(newRowsPerPage);
     onPageChange?.(0);
   };
-  
+
   const handleSort = (columnId: string) => {
     if (!onSort) return;
     const newDirection = sortColumn === columnId && sortDirection === 'asc' ? 'desc' : 'asc';
     onSort(columnId, newDirection);
   };
-  
+
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!onSelectionChange) return;
-    
+
     if (event.target.checked) {
-      const allIds = new Set(displayRows.map((row, index) => getRowId(row, index)));
+      const allIds = new Set(displayRows.map((row) => getRowId(row)));
       onSelectionChange(allIds);
     } else {
       onSelectionChange(new Set());
     }
   };
-  
-  const handleSelectRow = (row: T, index: number) => {
+
+  const handleSelectRow = (row: T) => {
     if (!onSelectionChange) return;
-    
-    const rowId = getRowId(row, index);
+
+    const rowId = getRowId(row);
     const newSelection = new Set(selectedRows);
-    
+
     if (selectionMode === 'single') {
       newSelection.clear();
       newSelection.add(rowId);
@@ -306,15 +306,12 @@ export function GenericDataGrid<T = any>({
         newSelection.add(rowId);
       }
     }
-    
+
     onSelectionChange(newSelection);
   };
-  
-  const visibleColumns = useMemo(
-    () => columns.filter(col => !col.hidden),
-    [columns]
-  );
-  
+
+  const visibleColumns = useMemo(() => columns.filter((col) => !col.hidden), [columns]);
+
   // Render error state
   if (error) {
     if (errorComponent) {
@@ -326,7 +323,7 @@ export function GenericDataGrid<T = any>({
       </Box>
     );
   }
-  
+
   // Render empty state
   if (!loading && rows.length === 0) {
     if (emptyComponent) {
@@ -338,7 +335,7 @@ export function GenericDataGrid<T = any>({
       </Box>
     );
   }
-  
+
   return (
     <Box>
       {/* Toolbar */}
@@ -364,13 +361,13 @@ export function GenericDataGrid<T = any>({
             }}
             sx={{ flexGrow: 1, maxWidth: 400 }}
           />
-          
+
           <Tooltip title="Toggle Filters">
             <IconButton onClick={() => setShowFilters(!showFilters)}>
               <FilterList />
             </IconButton>
           </Tooltip>
-          
+
           {onRefresh && (
             <Tooltip title="Refresh">
               <IconButton onClick={onRefresh}>
@@ -378,7 +375,7 @@ export function GenericDataGrid<T = any>({
               </IconButton>
             </Tooltip>
           )}
-          
+
           {onExport && (
             <Tooltip title="Export Data">
               <IconButton onClick={onExport}>
@@ -386,24 +383,22 @@ export function GenericDataGrid<T = any>({
               </IconButton>
             </Tooltip>
           )}
-          
-          <Chip
-            label={`${totalRows ?? filteredRows.length} rows`}
-            size="small"
-            color="primary"
-          />
+
+          <Chip label={`${totalRows ?? filteredRows.length} rows`} size="small" color="primary" />
         </Box>
       )}
-      
+
       {/* Loading indicator */}
       {loading && (loadingComponent || <LinearProgress />)}
-      
+
       {/* Table */}
-      <TableContainer 
-        component={Paper} 
-        sx={{ 
+      <TableContainer
+        component={Paper}
+        sx={{
           maxHeight: enableVirtualization ? maxHeight : undefined,
-          '& .MuiTableCell-root': showGridLines ? { border: '1px solid rgba(224, 224, 224, 1)' } : undefined,
+          '& .MuiTableCell-root': showGridLines
+            ? { border: '1px solid rgba(224, 224, 224, 1)' }
+            : undefined,
         }}
         ref={enableVirtualization ? parentRef : undefined}
       >
@@ -414,7 +409,9 @@ export function GenericDataGrid<T = any>({
                 <TableCell padding="checkbox">
                   {selectionMode === 'multiple' && (
                     <Checkbox
-                      indeterminate={selectedRows.size > 0 && selectedRows.size < displayRows.length}
+                      indeterminate={
+                        selectedRows.size > 0 && selectedRows.size < displayRows.length
+                      }
                       checked={displayRows.length > 0 && selectedRows.size === displayRows.length}
                       onChange={handleSelectAll}
                     />
@@ -426,7 +423,7 @@ export function GenericDataGrid<T = any>({
                   key={String(column.id)}
                   align={column.align || 'left'}
                   width={column.width}
-                  sx={{ 
+                  sx={{
                     fontWeight: 'bold',
                     backgroundColor: stickyHeader ? 'background.paper' : undefined,
                   }}
@@ -440,7 +437,11 @@ export function GenericDataGrid<T = any>({
                         sx={{ ml: 'auto' }}
                       >
                         {sortColumn === column.id ? (
-                          sortDirection === 'asc' ? <KeyboardArrowUp /> : <KeyboardArrowDown />
+                          sortDirection === 'asc' ? (
+                            <KeyboardArrowUp />
+                          ) : (
+                            <KeyboardArrowDown />
+                          )
                         ) : (
                           <KeyboardArrowUp sx={{ opacity: 0.3 }} />
                         )}
@@ -474,9 +475,9 @@ export function GenericDataGrid<T = any>({
           </TableHead>
           <TableBody>
             {displayRows.map((row, index) => {
-              const rowId = getRowId(row, index);
+              const rowId = getRowId(row);
               const isSelected = selectedRows.has(rowId);
-              
+
               return (
                 <TableRow
                   key={rowId}
@@ -491,10 +492,7 @@ export function GenericDataGrid<T = any>({
                 >
                   {selectable && (
                     <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={isSelected}
-                        onChange={() => handleSelectRow(row, index)}
-                      />
+                      <Checkbox checked={isSelected} onChange={() => handleSelectRow(row)} />
                     </TableCell>
                   )}
                   {visibleColumns.map((column) => {
@@ -511,7 +509,7 @@ export function GenericDataGrid<T = any>({
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       {/* Pagination */}
       {!enableVirtualization && onPageChange && (
         <TablePagination
