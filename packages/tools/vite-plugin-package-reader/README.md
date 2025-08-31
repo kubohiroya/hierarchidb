@@ -1,6 +1,8 @@
 # @hierarchidb/tools-vite-plugin-package-reader
 
-Universal Vite plugin for automatic package detection and virtual module generation in monorepo and standard npm environments.
+モノレポ環境でパッケージを自動検出し、Virtual Moduleとして利用可能にする汎用的なViteプラグインです。
+
+[English](#english) | [日本語](#japanese)
 
 ## Features
 
