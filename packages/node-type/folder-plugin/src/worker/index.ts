@@ -4,19 +4,19 @@
  */
 
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
-import type { NodeLifecycleHooks, PluginRoutingConfig } from '@hierarchidb/common-type';
-import type { FolderEntity } from '../types';
+import type { NodeLifecycleHooks, PluginRoutingConfig, NodeId } from '@hierarchidb/common-type';
+import type { FolderEntity } from '../entities/FolderEntity';
 
 // Create singleton instance of entity handler
 export const entityHandler = new FolderEntityHandler();
 
 // Lifecycle hooks for folder operations
 export const lifecycle: NodeLifecycleHooks<FolderEntity> = {
-  afterCreate: async (nodeId, entity) => {
+  afterCreate: async (nodeId: NodeId, entity: FolderEntity) => {
     console.log(`Folder created: ${nodeId}`, entity.name);
   },
   
-  beforeDelete: async (nodeId) => {
+  beforeDelete: async (nodeId: NodeId) => {
     console.log(`Folder will be deleted: ${nodeId}`);
     // Clean up bookmarks and templates via entity handler
     const bookmarks = await entityHandler.getBookmarks(nodeId);
@@ -30,15 +30,15 @@ export const lifecycle: NodeLifecycleHooks<FolderEntity> = {
     }
   },
   
-  afterDelete: async (nodeId) => {
+  afterDelete: async (nodeId: NodeId) => {
     console.log(`Folder deleted: ${nodeId}`);
   },
   
-  beforeMove: async (nodeId, newParentId) => {
+  beforeMove: async (nodeId: NodeId, newParentId: NodeId) => {
     console.log(`Folder ${nodeId} will be moved to ${newParentId}`);
   },
   
-  afterMove: async (nodeId, newParentId) => {
+  afterMove: async (nodeId: NodeId, newParentId: NodeId) => {
     console.log(`Folder ${nodeId} moved to ${newParentId}`);
   },
 };

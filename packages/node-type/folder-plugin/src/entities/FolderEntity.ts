@@ -11,8 +11,7 @@ import type {
   EntityId,
   PeerEntity,
   GroupEntity,
-  Timestamp,
-  TagId
+  Timestamp
 } from '@hierarchidb/common-type';
 
 /**
@@ -199,7 +198,7 @@ export interface FolderOperationResult {
  */
 export interface FolderSearchQuery {
   name?: string;
-  tags?: string[];
+  // Tags should be queried via NodeTagAssociation
   parentId?: NodeId;
   hasChildren?: boolean;
   createdAfter?: Timestamp;

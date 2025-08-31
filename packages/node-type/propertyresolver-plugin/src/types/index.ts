@@ -1,11 +1,9 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
 
 /**
  * PropertyResolver entity represents a property mapping configuration
  */
-export interface PropertyResolverEntity {
-  id: EntityId;
-  nodeId: NodeId;
+export interface PropertyResolverEntity extends PeerEntity {
   name: string;
   description?: string;
   sourceSchema: string;
@@ -19,9 +17,6 @@ export interface PropertyResolverEntity {
   lastCompiled?: number;
   compiledFunction?: string;
   compiledMetadata?: Record<string, unknown>;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
 }
 
 /**
@@ -82,14 +77,10 @@ export interface PreviewConfig {
  * Working copy types for PropertyResolver
  */
 export interface PropertyResolverWorkingCopyEntity extends PropertyResolverEntity {
-  /** When this working copy was created */
-  copiedAt: number;
-  
-  /** Whether the working copy has been modified */
+  /** Working copy specific fields from WorkingCopy interface */
+  workingCopyId?: EntityId;
+  originalId: EntityId;
   isDirty: boolean;
-  
-  /** Original version number for conflict detection */
-  originalVersion: number;
   
   /** Fields that have been modified */
   modifiedFields: string[];
