@@ -7,11 +7,8 @@ import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { Table, Collection } from 'dexie';
 import { 
   BaseEntityHandler,
-  MetadataEntityHandler,
-  type MetadataEntity,
-  type BaseSearchCriteria,
-  type MetadataSearchCriteria
-} from '@hierarchidb/common-plugin-base';
+  type BaseSearchCriteria
+} from '@hierarchidb/node-type-base-plugin';
 
 import type { 
   RouteEntity,
@@ -53,13 +50,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
   private routeGenerator: RouteGenerator;
   private locationResolver: LocationResolver;
   
-  // Compose MetadataEntityHandler functionality
-  private metadataHandler: MetadataEntityHandler<
-    RouteEntity,
-    RouteWorkingCopy,
-    Partial<RouteEntity>,
-    RouteSearchCriteria
-  >;
+
 
   constructor() {
     super();
@@ -69,7 +60,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
     this.locationResolver = new LocationResolver();
     
     // Initialize metadata handler
-    this.metadataHandler = new MetadataHandlerAdapter(this.table);
+
   }
 
   /**
@@ -476,18 +467,3 @@ export class RouteEntityHandler extends BaseEntityHandler<
   }
 }
 
-/**
- * Adapter class for metadata functionality
- */
-class MetadataHandlerAdapter<
-  TEntity extends RouteEntity,
-  TWorkingCopy extends RouteWorkingCopy
-> extends MetadataEntityHandler<TEntity, TWorkingCopy> {
-  constructor(protected table: Table<TEntity, EntityId>) {
-    super();
-  }
-  
-  protected buildEntity(): TEntity {
-    throw new Error('Not used in adapter');
-  }
-}

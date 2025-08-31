@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/common-plugin-base": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/node-type-shape-plugin": "workspace:*",

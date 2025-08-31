@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { BaseEntity, MetadataEntity } from '@hierarchidb/common-plugin-base';
+import type { BaseEntity } from '@hierarchidb/common-type';
 
 /**
  * Transport mode types
@@ -52,7 +52,7 @@ export interface RouteCategory {
 /**
  * Route entity extending base and metadata entities
  */
-export interface RouteEntity extends BaseEntity, MetadataEntity {
+export interface RouteEntity extends BaseEntity {
   // Basic information
   name: string;
   description?: string;

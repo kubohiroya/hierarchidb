@@ -5,7 +5,7 @@
 
 import type { Table } from 'dexie';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { MetadataEntityHandler } from '@hierarchidb/common-plugin-base';
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import type {
   LocationEntity,
   LocationWorkingCopy,
@@ -29,7 +29,7 @@ export interface CreateLocationData extends Partial<LocationEntity> {
 /**
  * Location entity handler with full CRUD operations
  */
-export class LocationEntityHandler extends MetadataEntityHandler<
+export class LocationEntityHandler extends BaseEntityHandler<
   LocationEntity,
   LocationWorkingCopy,
   CreateLocationData,
@@ -495,5 +495,187 @@ export class LocationEntityHandler extends MetadataEntityHandler<
     // For now, return null as placeholder
     console.log('Reverse geocoding:', coordinates);
     return null;
+  }
+
+  // ==================
+  // 多段階ダイアログサポート
+  // ==================
+
+  /**
+   * ロケーション作成の多段階ダイアログのステップ能力を評価
+   */
+  async getStepCapabilities(data: any, step: number): Promise<{
+    canNavigateTo: boolean;
+    canStartBatch: boolean;
+    canSave: boolean;
+    canProceedToNext: boolean;
+    canBackToPrevious: boolean;
+  }> {
+    // ロケーションは4段階のステップを持つ
+    // Step 0: 基本情報 (名前、説明、種類)
+    // Step 1: 位置情報 (座標、住所)
+    // Step 2: 詳細情報 (カテゴリー、タグ、メタデータ)
+    // Step 3: 検証と最終確認
+
+    switch (step) {
+      case 0: // 基本情報ステップ
+        return {
+          canNavigateTo: true,
+          canStartBatch: false, // 基本情報が必要
+          canSave: false, // 位置情報が必要
+          canProceedToNext: !!(data.name && data.name.trim().length > 0 && data.locationType),
+          canBackToPrevious: false // 最初のステップ
+        };
+
+      case 1: // 位置情報ステップ
+        const hasBasicInfo = !!(data.name && data.name.trim().length > 0 && data.locationType);
+        const hasLocation = !!(
+          (data.latitude !== undefined && data.longitude !== undefined) || 
+          (data.address && data.address.trim().length > 0)
+        );
+        
+        return {
+          canNavigateTo: hasBasicInfo,
+          canStartBatch: hasBasicInfo && hasLocation, // 位置情報があればバッチ処理可能
+          canSave: hasBasicInfo && hasLocation, // 最低限の情報で保存可能
+          canProceedToNext: hasLocation,
+          canBackToPrevious: true
+        };
+
+      case 2: // 詳細情報ステップ
+        const hasMinimalInfo = !!(
+          data.name && data.name.trim().length > 0 && 
+          data.locationType &&
+          ((data.latitude !== undefined && data.longitude !== undefined) || 
+           (data.address && data.address.trim().length > 0))
+        );
+        
+        return {
+          canNavigateTo: hasMinimalInfo,
+          canStartBatch: hasMinimalInfo,
+          canSave: hasMinimalInfo,
+          canProceedToNext: hasMinimalInfo,
+          canBackToPrevious: true
+        };
+
+      case 3: // 検証と最終確認ステップ
+        const isComplete = !!(
+          data.name && data.name.trim().length > 0 && 
+          data.locationType &&
+          ((data.latitude !== undefined && data.longitude !== undefined) || 
+           (data.address && data.address.trim().length > 0))
+        );
+        
+        return {
+          canNavigateTo: isComplete,
+          canStartBatch: isComplete,
+          canSave: isComplete,
+          canProceedToNext: false, // 最終ステップ
+          canBackToPrevious: true
+        };
+
+      default:
+        return {
+          canNavigateTo: false,
+          canStartBatch: false,
+          canSave: false,
+          canProceedToNext: false,
+          canBackToPrevious: false
+        };
+    }
+  }
+
+  /**
+   * ロケーションデータのバリデーション
+   */
+  async validate(data: any): Promise<{ valid: boolean; errors: string[]; warnings?: string[] }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 必須フィールドのチェック
+    if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
+      errors.push('ロケーション名は必須です');
+    } else if (data.name.trim().length > 255) {
+      errors.push('ロケーション名は255文字以下である必要があります');
+    }
+
+    if (!data.locationType) {
+      errors.push('ロケーションタイプは必須です');
+    }
+
+    // 位置情報のチェック
+    const hasCoordinates = data.latitude !== undefined && data.longitude !== undefined;
+    const hasAddress = data.address && typeof data.address === 'string' && data.address.trim().length > 0;
+
+    if (!hasCoordinates && !hasAddress) {
+      errors.push('座標または住所のいずれかは必須です');
+    }
+
+    // 座標の妥当性チェック
+    if (hasCoordinates) {
+      if (typeof data.latitude !== 'number' || data.latitude < -90 || data.latitude > 90) {
+        errors.push('緯度は-90から90の数値である必要があります');
+      }
+      if (typeof data.longitude !== 'number' || data.longitude < -180 || data.longitude > 180) {
+        errors.push('経度は-180から180の数値である必要があります');
+      }
+    }
+
+    // 住所の形式チェック
+    if (hasAddress && data.address.length > 500) {
+      warnings.push('住所が長すぎます（500文字以下を推奨）');
+    }
+
+    // 説明の長さチェック
+    if (data.description && typeof data.description === 'string' && data.description.length > 1000) {
+      warnings.push('説明が長すぎます（1000文字以下を推奨）');
+    }
+
+    // カテゴリーのチェック
+    if (data.category && typeof data.category !== 'string') {
+      errors.push('カテゴリーは文字列である必要があります');
+    }
+
+    // タグのチェック
+    if (data.tags && !Array.isArray(data.tags)) {
+      errors.push('タグは配列である必要があります');
+    } else if (data.tags) {
+      for (const tag of data.tags) {
+        if (typeof tag !== 'string') {
+          errors.push('タグは文字列の配列である必要があります');
+          break;
+        }
+      }
+    }
+
+    // 営業時間のチェック
+    if (data.businessHours && typeof data.businessHours !== 'object') {
+      errors.push('営業時間の形式が正しくありません');
+    }
+
+    // 連絡先情報のチェック
+    if (data.contact) {
+      if (typeof data.contact !== 'object') {
+        errors.push('連絡先情報の形式が正しくありません');
+      } else {
+        if (data.contact.phone && typeof data.contact.phone !== 'string') {
+          errors.push('電話番号は文字列である必要があります');
+        }
+        if (data.contact.email && typeof data.contact.email !== 'string') {
+          errors.push('メールアドレスは文字列である必要があります');
+        } else if (data.contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact.email)) {
+          warnings.push('メールアドレスの形式が正しくない可能性があります');
+        }
+        if (data.contact.website && typeof data.contact.website !== 'string') {
+          errors.push('ウェブサイトのURLは文字列である必要があります');
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 }

@@ -26,12 +26,10 @@ export interface FolderEntity extends PeerEntity {
   // フォルダ基本情報
   name: string;
   description?: string;
-  tags: TagId[]; // タグ機能追加
   category?: string; // カテゴリ追加
   
   // Simplified settings for compatibility with existing code
   settings?: FolderSettings;
-  metadata?: Record<string, any>;
   
   // フォルダ統計 (for compatibility with shared code)
   statistics?: {

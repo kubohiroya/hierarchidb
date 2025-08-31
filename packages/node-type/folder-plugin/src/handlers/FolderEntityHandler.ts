@@ -7,12 +7,9 @@ import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
 import {
   HierarchicalEntityHandler,
-  MetadataEntityHandler,
   type HierarchicalEntity,
-  type MetadataEntity,
   type HierarchicalSearchCriteria,
-  type MetadataSearchCriteria,
-} from '@hierarchidb/common-plugin-base';
+} from '@hierarchidb/node-type-base-plugin';
 
 import type {
   FolderEntity,
@@ -24,21 +21,21 @@ import type {
 import { FolderDatabase } from '../database/FolderDatabase';
 
 /**
- * Combined entity type with hierarchical and metadata support
+ * Combined entity type with hierarchical support
  */
-export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity, MetadataEntity {}
+export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity {}
 
 /**
  * Combined search criteria
  */
-export interface FolderSearchCriteria extends HierarchicalSearchCriteria, MetadataSearchCriteria {
+export interface FolderSearchCriteria extends HierarchicalSearchCriteria {
   category?: string;
   hasBookmarks?: boolean;
   hasTemplates?: boolean;
 }
 
 /**
- * Folder entity handler with hierarchical and metadata support
+ * Folder entity handler with hierarchical support
  */
 export class FolderEntityHandler extends HierarchicalEntityHandler<
   FolderEntityExtended,
@@ -49,21 +46,10 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
   public folderDB: FolderDatabase;
   protected table: Table<FolderEntityExtended, EntityId>;
 
-  // Compose MetadataEntityHandler functionality
-  private metadataHandler: MetadataEntityHandler<
-    FolderEntityExtended,
-    FolderEntityWorkingCopy,
-    Partial<FolderEntity>,
-    FolderSearchCriteria
-  >;
-
   constructor() {
     super();
     this.folderDB = new FolderDatabase();
     this.table = this.folderDB.folders as any;
-
-    // Initialize metadata handler with same table
-    this.metadataHandler = new MetadataEntityHandlerAdapter(this.table);
   }
 
   /**
@@ -81,14 +67,12 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
       nodeId,
       name: data.name || 'New Folder',
       description: data.description || '',
-      tags: data.tags || [],
       category: data.category,
       settings: data.settings || {
         allowNestedFolders: true,
         maxDepth: 10,
         sortOrder: 'name',
       },
-      metadata: data.metadata || {},
       createdAt: data.createdAt || now,
       updatedAt: data.updatedAt || now,
       version: data.version || 1,
@@ -249,56 +233,130 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     await this.folderDB.cleanupExpiredWorkingCopies();
   }
 
-  // ========== Metadata delegation methods ==========
+  // ==================
+  // 多段階ダイアログサポート
+  // ==================
 
   /**
-   * Set metadata (delegated to metadata handler)
+   * フォルダー作成の多段階ダイアログのステップ能力を評価
    */
-  async setMetadata(entityId: EntityId, key: string, value: any): Promise<any> {
-    return await this.metadataHandler.setMetadata(entityId, key, value);
+  async getStepCapabilities(data: any, step: number): Promise<{
+    canNavigateTo: boolean;
+    canStartBatch: boolean;
+    canSave: boolean;
+    canProceedToNext: boolean;
+    canBackToPrevious: boolean;
+  }> {
+    // フォルダーは3段階のステップを持つ
+    // Step 0: 基本情報 (名前、説明)
+    // Step 1: 権限設定
+    // Step 2: テンプレートとブックマーク設定
+
+    const totalSteps = 3;
+    
+    switch (step) {
+      case 0: // 基本情報ステップ
+        return {
+          canNavigateTo: true,
+          canStartBatch: false, // 基本情報が必要なので初期ステップではバッチ処理不可
+          canSave: false, // 最低限の情報が必要
+          canProceedToNext: !!(data.name && data.name.trim().length > 0),
+          canBackToPrevious: false // 最初のステップ
+        };
+
+      case 1: // 権限設定ステップ
+        const hasBasicInfo = !!(data.name && data.name.trim().length > 0);
+        return {
+          canNavigateTo: hasBasicInfo,
+          canStartBatch: hasBasicInfo, // 基本情報があればバッチ処理可能
+          canSave: hasBasicInfo, // 基本情報があれば保存可能
+          canProceedToNext: true, // 権限設定はオプション
+          canBackToPrevious: true
+        };
+
+      case 2: // テンプレートとブックマーク設定ステップ
+        const canNavigateToFinal = !!(data.name && data.name.trim().length > 0);
+        return {
+          canNavigateTo: canNavigateToFinal,
+          canStartBatch: canNavigateToFinal,
+          canSave: canNavigateToFinal,
+          canProceedToNext: false, // 最終ステップ
+          canBackToPrevious: true
+        };
+
+      default:
+        return {
+          canNavigateTo: false,
+          canStartBatch: false,
+          canSave: false,
+          canProceedToNext: false,
+          canBackToPrevious: false
+        };
+    }
   }
 
   /**
-   * Get metadata (delegated to metadata handler)
+   * フォルダーデータのバリデーション
    */
-  async getMetadata(entityId: EntityId, key: string): Promise<any> {
-    return await this.metadataHandler.getMetadata(entityId, key);
+  async validate(data: any): Promise<{ valid: boolean; errors: string[]; warnings?: string[] }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 必須フィールドのチェック
+    if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
+      errors.push('フォルダー名は必須です');
+    } else if (data.name.trim().length > 255) {
+      errors.push('フォルダー名は255文字以下である必要があります');
+    }
+
+    // 名前の形式チェック
+    if (data.name && typeof data.name === 'string') {
+      const invalidChars = /[<>:"/\\|?*]/;
+      if (invalidChars.test(data.name)) {
+        errors.push('フォルダー名に無効な文字が含まれています');
+      }
+    }
+
+    // 説明の長さチェック
+    if (data.description && typeof data.description === 'string' && data.description.length > 1000) {
+      warnings.push('説明が長すぎます（1000文字以下を推奨）');
+    }
+
+    // 権限設定のチェック
+    if (data.permissions) {
+      if (typeof data.permissions !== 'object') {
+        errors.push('権限設定の形式が正しくありません');
+      } else {
+        const validPermissions = ['read', 'write', 'delete', 'share'];
+        for (const [user, perms] of Object.entries(data.permissions)) {
+          if (!Array.isArray(perms)) {
+            errors.push(`${user}の権限設定が配列ではありません`);
+            continue;
+          }
+          for (const perm of perms as string[]) {
+            if (!validPermissions.includes(perm)) {
+              errors.push(`無効な権限: ${perm}`);
+            }
+          }
+        }
+      }
+    }
+
+    // テンプレートのチェック
+    if (data.templates && !Array.isArray(data.templates)) {
+      errors.push('テンプレート設定は配列である必要があります');
+    }
+
+    // ブックマークのチェック
+    if (data.bookmarks && !Array.isArray(data.bookmarks)) {
+      errors.push('ブックマーク設定は配列である必要があります');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 
-  /**
-   * Add tag (delegated to metadata handler)
-   */
-  async addTag(entityId: EntityId, tag: string): Promise<void> {
-    return await this.metadataHandler.addTag(entityId, tag);
-  }
-
-  /**
-   * Remove tag (delegated to metadata handler)
-   */
-  async removeTag(entityId: EntityId, tag: string): Promise<void> {
-    return await this.metadataHandler.removeTag(entityId, tag);
-  }
-
-  /**
-   * Get tags (delegated to metadata handler)
-   */
-  async getTags(entityId: EntityId): Promise<string[]> {
-    return await this.metadataHandler.getTags(entityId);
-  }
-}
-
-/**
- * Adapter class to make MetadataEntityHandler work with composition
- */
-class MetadataEntityHandlerAdapter<
-  TEntity extends FolderEntityExtended,
-  TWorkingCopy extends FolderEntityWorkingCopy,
-> extends MetadataEntityHandler<TEntity, TWorkingCopy> {
-  constructor(protected table: Table<TEntity, EntityId>) {
-    super();
-  }
-
-  protected buildEntity(): TEntity {
-    throw new Error('Not used in adapter');
-  }
 }

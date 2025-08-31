@@ -3,8 +3,7 @@
  * @description Location entity definition extending Shape plugin
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { BaseEntity, MetadataEntity, MetadataSearchCriteria } from '@hierarchidb/common-plugin-base';
+import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
 
 /**
  * Location type categories
@@ -116,7 +115,7 @@ export interface LocationAttributes {
 /**
  * Location entity extending base and metadata entities
  */
-export interface LocationEntity extends BaseEntity, MetadataEntity {
+export interface LocationEntity extends BaseEntity {
   // Basic information
   name: string;
   description?: string;

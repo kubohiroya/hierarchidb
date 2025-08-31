@@ -39,7 +39,7 @@
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-plugin-base": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "dexie": "^4.0.8",

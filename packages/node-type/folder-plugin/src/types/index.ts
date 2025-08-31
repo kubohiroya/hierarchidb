@@ -23,10 +23,8 @@ export interface FolderEntityWorkingCopy {
   nodeId: NodeId;
   name: string;
   description?: string;
-  tags: TagId[];
   category?: string;
   settings: FolderSettings;
-  metadata: Record<string, any>;
   createdAt: number;
   updatedAt: number;
   version: number;
