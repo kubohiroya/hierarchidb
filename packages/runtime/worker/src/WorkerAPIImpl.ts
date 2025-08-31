@@ -30,7 +30,7 @@ import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
 import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { registerDefaultPlugins } from './registry/default-plugins';
-import { PluginIntegrationBuilder } from './plugin/PluginIntegrationBuilder';
+import { PluginIntegrationBuilder } from '@hierarchidb/runtime-plugin-registry/loader';
 import type { PluginIntegrated, PluginDefinition } from '@hierarchidb/common-type';
 
 // Services
