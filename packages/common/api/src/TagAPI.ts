@@ -24,7 +24,7 @@ export interface TagAssociationRequest {
   tagId: TagEntity['id'];
 }
 
-export interface ITagAPI {
+export interface TagAPI {
   /**
    * Create a new tag
    */

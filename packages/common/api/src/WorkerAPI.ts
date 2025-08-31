@@ -11,17 +11,13 @@ import type { TreeQueryAPI } from './TreeQueryAPI';
 import type { TreeMutationAPI } from './TreeMutationAPI';
 import type { ImportExportAPI } from './ImportExportAPI';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
-// import type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
-// import type { PluginExtensionAPI } from './PluginExtensionAPI'; // Will be used in future
+import type { PluginExtensionAPI } from './PluginExtensionAPI';
 import type { WorkingCopyAPI } from './WorkingCopyAPI';
 import type { PluginTreeAPI } from './PluginTreeAPI';
-// import type { TreePluginAnalyzer } from './TreePluginAnalyzer';
 import type { NodeTypeAPI } from './NodeTypeAPI';
-// import type { PluginManagementAPI } from './PluginManagementAPI';
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 import type { ProxyMarked } from 'comlink';
-import { ITagAPI } from './ITagAPI';
-import { PluginExtensionAPI } from './PluginExtensionAPI';
+import { TagAPI } from './TagAPI';
 import type { MultiStepDialogAPI } from './MultiStepDialogAPI';
 
 /**
@@ -184,7 +180,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getTagAPI(): ITagAPI & ProxyMarked;
+  getTagAPI(): TagAPI & ProxyMarked;
 
   // ----------------------------------------------------------------//
   /**
