@@ -550,6 +550,15 @@ importers:
 
   packages/node-type/location-plugin:
     dependencies:
+      '@emotion/react':
+        specifier: ^11.11.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.11.0
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
@@ -569,17 +578,20 @@ importers:
         specifier: workspace:*
         version: link:../../ui/core
       '@mui/icons-material':
-        specifier: ^7.3.1
-        version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+        specifier: ^6.0.0
+        version: 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@mui/material':
-        specifier: ^7.3.1
-        version: 7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^6.0.0
+        version: 6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dexie:
         specifier: ^3.2.4
         version: 3.2.7
       react:
         specifier: ^18.3.1
         version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
         specifier: ^18.3.24
@@ -763,6 +775,12 @@ importers:
 
   packages/node-type/route-plugin:
     dependencies:
+      '@emotion/react':
+        specifier: ^11.11.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.11.0
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -775,9 +793,21 @@ importers:
       '@hierarchidb/node-type-shape-plugin':
         specifier: workspace:*
         version: link:../shape-plugin
+      '@mui/icons-material':
+        specifier: ^6.0.0
+        version: 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@mui/material':
+        specifier: ^6.0.0
+        version: 6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       dexie:
         specifier: ^3.2.4
         version: 3.2.7
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/node':
         specifier: ^20.10.5

@@ -28,6 +28,14 @@
     "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "dexie": "^3.2.4"
   },
+  "peerDependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^6.0.0",
+    "@mui/material": "^6.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "tsup": "^8.0.1",

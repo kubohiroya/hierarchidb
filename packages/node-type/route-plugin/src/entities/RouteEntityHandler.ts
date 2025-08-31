@@ -10,6 +10,14 @@ import {
   type BaseSearchCriteria
 } from '@hierarchidb/node-type-base-plugin';
 
+/**
+ * Metadata search criteria
+ */
+export interface MetadataSearchCriteria {
+  tags?: string[];
+  metadata?: Record<string, any>;
+}
+
 import type { 
   RouteEntity,
   RouteWorkingCopy,
@@ -158,7 +166,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
    * Update route with geometry regeneration if needed
    */
   async updateEntity(entityId: EntityId, updates: Partial<RouteEntity>): Promise<RouteEntity> {
-    const existing = await this.getEntity(entityId);
+    const existing = await this.get(entityId);
     if (!existing) {
       throw new Error(`Route not found: ${entityId}`);
     }

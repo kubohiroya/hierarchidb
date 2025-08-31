@@ -53,11 +53,21 @@ export interface RouteCategory {
  * Route entity extending base and metadata entities
  */
 export interface RouteEntity extends BaseEntity {
+  // Entity ID
+  id: EntityId;
+  
   // Basic information
   name: string;
   description?: string;
   category: RouteCategory;
   tags?: string[];
+  
+  // Metadata fields
+  metadata?: Record<string, any>;
+  customFields?: Record<string, any>;
+  createdAt?: number;
+  updatedAt?: number;
+  version?: number;
   
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference

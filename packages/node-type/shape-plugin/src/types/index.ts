@@ -16,7 +16,7 @@ export interface ShapeEntity extends PeerEntity {
   name: string;
   description?: string;
   tags: TagId[];
-  category: ShapeCategory;
+  category: ShapeCategory | string;
 
   // Data Source (Step 2)
   dataSourceName: DataSourceName;
@@ -442,3 +442,12 @@ export const SHAPE_LEVELS = [
   { level: 4, label: 'Ward/Borough', icon: '🏠' },
   { level: 5, label: 'Neighborhood', icon: '📍' },
 ] as const;
+
+// ================================
+// Batch Processing Types
+// ================================
+
+export type { BatchTask, BatchStage } from './BatchTaskLike';
+export type { BatchTaskLike } from './BatchTaskLike';
+export type { BatchConfig } from './BatchConfig';
+export type { BatchProgressEvent } from './BatchProgressEvent';
