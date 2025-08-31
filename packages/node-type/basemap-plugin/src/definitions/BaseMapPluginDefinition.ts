@@ -1,79 +1,165 @@
 /**
  * @file BaseMapPluginDefinition.ts
- * @description BaseMap plugin definition following standard structure
+ * @description BaseMap plugin definition extending folder plugin
  */
 
-import type { ExtendableNodeTypeDefinition } from '@hierarchidb/common-type';
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { PluginDefinition } from '@hierarchidb/node-type-base-plugin';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../entities/BaseMapEntity';
+import type { BaseMapEntity, BaseMapWorkingCopy } from '../types';
 
-export const BaseMapPluginDefinition: ExtendableNodeTypeDefinition<
-  FolderEntity,
-  BaseMapEntity,
-  BaseMapWorkingCopy
-> = {
-  // Extension configuration
-  extends: 'folder-plugin',
-  nodeType: 'basemap-plugin',
+/**
+ * BaseMap Plugin Definition
+ * Extends folder plugin with map-specific functionality
+ */
+export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWorkingCopy> = {
+  // Basic metadata
+  nodeType: 'basemap',
   name: 'BaseMap Plugin',
-  displayName: 'ベースマッププラグイン',
+  displayName: 'ベースマップ',
+  description: 'Geographic base layer configuration and management',
+  version: '1.0.0',
   
-  // Entity handler
-  entityHandler: new BaseMapEntityHandler(),
+  // Extension configuration
+  extends: 'folder',
   
-  // Database schema
-  database: {
-    entityStore: 'basemap_entities',
-    schema: {
-      '&id': 'EntityId',
-      'nodeId': 'NodeId',
-      'name, styleUrl, stylePreset': '',
-      'center, zoom, bearing, pitch': '',
-      'showAttribution, showNavigation, enableInteraction': '',
-      'createdAt, updatedAt, version': '',
-    },
-    version: 1
+  // Handler instance
+  handler: new BaseMapEntityHandler(),
+  
+  // Icon and UI
+  icon: 'Map',
+  color: '#4285F4',
+  
+  // Capabilities
+  capabilities: {
+    canHaveChildren: true,
+    canBeRoot: false,
+    canBeDeleted: true,
+    canBeRenamed: true,
+    canBeMoved: true,
+    canBeCopied: true,
+    supportsWorkingCopy: true,
+    supportsVersioning: true,
   },
-  
-  // Extension steps
-  extendedSteps: [
-    { stepNumber: 2, title: 'マップスタイル', component: 'MapStyleStep' },
-    { stepNumber: 3, title: 'ビューポート設定', component: 'MapViewportStep' },
-    { stepNumber: 4, title: '表示オプション', component: 'DisplayOptionsStep' },
-    { stepNumber: 5, title: 'プレビュー', component: 'PreviewStep' }
-  ],
-  
-  // Extended fields
-  extendedFields: [
-    { name: 'styleUrl', type: 'string', required: true },
-    { name: 'stylePreset', type: 'string', required: true },
-    { name: 'center', type: 'array', required: true },
-    { name: 'zoom', type: 'number', required: true },
-    { name: 'bearing', type: 'number', required: false },
-    { name: 'pitch', type: 'number', required: false },
-    { name: 'showAttribution', type: 'boolean', required: false },
-    { name: 'showNavigation', type: 'boolean', required: false },
-    { name: 'enableInteraction', type: 'boolean', required: false }
-  ],
   
   // Category settings
   category: {
-    primary: 'visualization',
-    secondary: 'mapping',
-    treeTypes: ['data-tree', 'project-tree']
+    primary: 'geographic',
+    secondary: 'visualization',
+    tags: ['map', 'gis', 'geographic', 'spatial'],
+  },
+  
+  // UI Components
+  components: {
+    display: 'BaseMapDisplay',
+    preview: 'BaseMapPreview',
+    editor: 'BaseMapPanel',
+    icon: 'MapIcon',
+  },
+  
+  // Dialog steps for creation/editing
+  dialogSteps: [
+    {
+      id: 'basic',
+      title: '基本情報',
+      component: 'BasicInfoStep',
+      required: true,
+    },
+    {
+      id: 'mapStyle',
+      title: 'マップスタイル',
+      component: 'MapStyleStep',
+      required: true,
+    },
+    {
+      id: 'viewport',
+      title: 'ビューポート設定',
+      component: 'MapViewportStep',
+      required: true,
+    },
+    {
+      id: 'displayOptions',
+      title: '表示オプション',
+      component: 'DisplayOptionsStep',
+      required: false,
+    },
+    {
+      id: 'preview',
+      title: 'プレビュー',
+      component: 'PreviewStep',
+      required: false,
+    },
+  ],
+  
+  // Default values
+  defaults: {
+    mapStyle: {
+      style: 'streets',
+    },
+    viewport: {
+      center: [139.6917, 35.6895], // Tokyo
+      zoom: 10,
+      bearing: 0,
+      pitch: 0,
+    },
+    displayOptions: {
+      show3dBuildings: false,
+      showTraffic: false,
+      showTransit: false,
+      showTerrain: false,
+      showLabels: true,
+    },
   },
   
   // Validation rules
-  extendedValidation: {
-    extendedRules: {
-      validateCenter: (center: [number, number]) => {
+  validation: {
+    name: {
+      required: true,
+      minLength: 1,
+      maxLength: 255,
+    },
+    custom: {
+      viewport: (viewport: any) => {
+        if (!viewport) return { valid: false, message: 'Viewport is required' };
+        
+        const { center, zoom } = viewport;
+        if (!Array.isArray(center) || center.length !== 2) {
+          return { valid: false, message: 'Invalid center coordinates' };
+        }
+        
         const [lng, lat] = center;
-        return lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90;
+        if (lng < -180 || lng > 180) {
+          return { valid: false, message: 'Longitude must be between -180 and 180' };
+        }
+        if (lat < -90 || lat > 90) {
+          return { valid: false, message: 'Latitude must be between -90 and 90' };
+        }
+        if (zoom < 0 || zoom > 24) {
+          return { valid: false, message: 'Zoom must be between 0 and 24' };
+        }
+        
+        return { valid: true };
       },
-      validateZoom: (zoom: number) => zoom >= 0 && zoom <= 24,
-      validateBearing: (bearing: number) => bearing >= 0 && bearing <= 360,
-      validatePitch: (pitch: number) => pitch >= 0 && pitch <= 60
-    }
-  }
+    },
+  },
+  
+  // Export/Import configuration
+  exportConfig: {
+    includeChildren: true,
+    format: 'json',
+    fields: ['name', 'description', 'mapStyle', 'viewport', 'displayOptions'],
+  },
+  
+  // Search configuration
+  searchConfig: {
+    searchableFields: ['name', 'description', 'mapStyle.style'],
+    sortableFields: ['name', 'createdAt', 'updatedAt'],
+  },
+  
+  // Permission settings
+  permissions: {
+    create: ['admin', 'editor'],
+    read: ['admin', 'editor', 'viewer'],
+    update: ['admin', 'editor'],
+    delete: ['admin'],
+  },
 };

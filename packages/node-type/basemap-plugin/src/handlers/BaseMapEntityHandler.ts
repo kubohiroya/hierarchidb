@@ -1,234 +1,206 @@
 /**
  * @file BaseMapEntityHandler.ts
- * @description BaseMap entity handler implementing CRUD operations and serialization
- *
- * BaseMap extends Folder plugin, so this handler extends FolderEntityHandler
- * to provide BaseMap-specific functionality.
+ * @description BaseMap entity handler extending FolderEntityHandler
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { FolderEntityHandler } from '@hierarchidb/node-type-folder-plugin';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
+import type { Table } from 'dexie';
+import { 
+  FolderEntityHandler, 
+  type FolderEntityExtended,
+  type FolderSearchCriteria,
+  type FolderEntity 
+} from '@hierarchidb/node-type-folder-plugin';
+import type {
+  BaseMapEntity,
+  BaseMapWorkingCopy,
+  CreateBaseMapData,
+  BaseMapSearchCriteria,
+  MapStyle,
+  MapViewport,
+  DisplayOptions,
+} from '../types';
 import { BaseMapDatabase } from '../database/BaseMapDatabase';
+
+/**
+ * Default values for BaseMap configuration
+ */
+const DEFAULT_MAP_STYLE: MapStyle = {
+  style: 'streets',
+};
+
+const DEFAULT_VIEWPORT: MapViewport = {
+  center: [139.6917, 35.6895], // Tokyo
+  zoom: 10,
+  bearing: 0,
+  pitch: 0,
+};
+
+const DEFAULT_DISPLAY_OPTIONS: DisplayOptions = {
+  show3dBuildings: false,
+  showTraffic: false,
+  showTransit: false,
+  showTerrain: false,
+  showLabels: true,
+};
+
+/**
+ * Combined entity type for BaseMap
+ */
+export interface BaseMapEntityExtended extends BaseMapEntity, FolderEntityExtended {}
+
+/**
+ * Combined search criteria for BaseMap entities
+ */
+export interface BaseMapExtendedSearchCriteria extends FolderSearchCriteria, BaseMapSearchCriteria {}
 
 /**
  * BaseMap Entity Handler
  * Extends FolderEntityHandler to provide BaseMap-specific operations
  */
-export class BaseMapEntityHandler extends FolderEntityHandler {
+export class BaseMapEntityHandler extends FolderEntityHandler<
+  BaseMapEntityExtended,
+  BaseMapWorkingCopy,
+  CreateBaseMapData,
+  BaseMapExtendedSearchCriteria
+> {
   public baseMapDB: BaseMapDatabase;
+  protected table: Table<BaseMapEntityExtended, EntityId>;
+  protected workingCopyTable: Table<BaseMapWorkingCopy, EntityId>;
 
   constructor() {
     super();
     this.baseMapDB = new BaseMapDatabase();
+    this.table = this.baseMapDB.baseMaps as Table<BaseMapEntityExtended, EntityId>;
+    this.workingCopyTable = this.baseMapDB.workingCopies as Table<BaseMapWorkingCopy, EntityId>;
+  }
+
+  /**
+   * Build BaseMap entity with specific fields
+   */
+  protected buildEntity(
+    nodeId: NodeId,
+    entityId: EntityId,
+    data: Partial<BaseMapEntityExtended>
+  ): BaseMapEntityExtended {
+    // Get base folder entity
+    const folderEntity = super.buildEntity(nodeId, entityId, {
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      settings: data.settings,
+    });
+
+    // Add BaseMap-specific fields
+    return {
+      ...folderEntity,
+      baseMapMetadataId: data.baseMapMetadataId,
+      mapStyle: data.mapStyle || DEFAULT_MAP_STYLE,
+      viewport: data.viewport || DEFAULT_VIEWPORT,
+      displayOptions: data.displayOptions || DEFAULT_DISPLAY_OPTIONS,
+    } as BaseMapEntityExtended;
+  }
+
+  /**
+   * Clean up BaseMap-specific data
+   */
+  protected async cleanupEntityData(entity: BaseMapEntityExtended): Promise<void> {
+    // Clean up folder-specific data first
+    await super.cleanupEntityData(entity);
+
+    // Clean up BaseMap-specific data if needed
+    // (Currently no additional cleanup needed for BaseMap)
   }
 
   /**
    * Create a new BaseMap entity
-   * Extends the folder-plugin creation with BaseMap-specific fields
    */
-  async createEntity(nodeId: NodeId, data?: Partial<BaseMapEntity>): Promise<BaseMapEntity> {
-    // Create base folder-plugin entity first
-    const folderEntity = await super.createEntity(nodeId, {
-      name: data?.name || 'New BaseMap',
-      description: data?.description || 'A new basemap configuration',
-    });
-
-    // Create BaseMap-specific entity
-    const baseMapEntity: BaseMapEntity = {
-      ...folderEntity,
-      // BaseMap-specific fields
-      baseMapMetadataId: data?.baseMapMetadataId,
-      mapStyle: data?.mapStyle || {
-        style: 'streets',
-        customStyleUrl: undefined,
-        customStyleConfig: undefined,
-      },
-      viewport: data?.viewport || {
-        center: [0, 0], // Default to [longitude=0, latitude=0]
-        zoom: 2, // World view
-        bearing: 0,
-        pitch: 0,
-      },
-      displayOptions: data?.displayOptions || {
-        show3dBuildings: false,
-        showTraffic: false,
-        showTransit: false,
-        showTerrain: false,
-        showLabels: true,
-        attribution: undefined,
-        tags: [],
-      },
-    };
-
-    await this.baseMapDB.baseMaps.add(baseMapEntity);
-    return baseMapEntity;
-  }
-
-  /**
-   * Get BaseMap entity by node ID
-   */
-  async getEntity(nodeId: NodeId): Promise<BaseMapEntity | undefined> {
-    return await this.baseMapDB.baseMaps.where('nodeId').equals(nodeId).first();
-  }
-
-  /**
-   * Update BaseMap entity
-   */
-  async updateEntity(nodeId: NodeId, data: Partial<BaseMapEntity>): Promise<void> {
-    const existing = await this.getEntity(nodeId);
-    if (!existing) {
-      throw new Error(`BaseMap entity for node ${nodeId} not found`);
-    }
-
-    // Update folder-plugin-level fields if provided
-    if (data.name !== undefined || data.description !== undefined || data.settings !== undefined) {
-      await super.updateEntity(nodeId, {
-        name: data.name,
-        description: data.description,
-        settings: data.settings,
-      });
-    }
-
-    // Update BaseMap-specific fields
-    const updated: BaseMapEntity = {
-      ...existing,
+  async createEntity(
+    nodeId: NodeId,
+    data?: CreateBaseMapData
+  ): Promise<BaseMapEntityExtended> {
+    // Use parent class createEntity with BaseMap-specific data
+    return await super.createEntity(nodeId, {
       ...data,
-      id: existing.id,
-      nodeId: existing.nodeId,
-      updatedAt: Date.now(),
-      version: existing.version + 1,
-    };
-
-    await this.baseMapDB.baseMaps.put(updated);
+      mapStyle: data?.mapStyle || DEFAULT_MAP_STYLE,
+      viewport: data?.viewport || DEFAULT_VIEWPORT,
+      displayOptions: data?.displayOptions || DEFAULT_DISPLAY_OPTIONS,
+    } as Partial<FolderEntity>);
   }
 
   /**
-   * Delete BaseMap entity
+   * Create working copy for BaseMap
    */
-  async deleteEntity(nodeId: NodeId): Promise<void> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      return; // Already deleted
+  async createWorkingCopy(
+    nodeId: NodeId
+  ): Promise<BaseMapWorkingCopy> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    const now = Date.now();
+    const workingCopyId = crypto.randomUUID() as EntityId;
+
+    if (entity) {
+      const workingCopy: BaseMapWorkingCopy = {
+        ...entity,
+        id: workingCopyId,
+        isDraft: true,
+        originalId: entity.id,
+        copiedAt: now,
+        updatedAt: now,
+      };
+      await this.workingCopyTable.add(workingCopy);
+      return workingCopy;
     }
 
-    // Delete BaseMap-specific data
-    await this.baseMapDB.transaction('rw', this.baseMapDB.baseMaps, async () => {
-      await this.baseMapDB.baseMaps.delete(entity.id);
-    });
-
-    // Delete base folder-plugin entity
-    await super.deleteEntity(nodeId);
-  }
-
-  /**
-   * Create BaseMap working copy
-   * Separate method to avoid base class type conflicts
-   */
-  async createBaseMapWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy> {
-    const entity = await this.getEntity(nodeId);
-    const workingCopyId = crypto.randomUUID() as EntityId;
-    const now = Date.now();
-
-    const workingCopy: BaseMapWorkingCopy = entity
-      ? {
-          ...entity,
-          id: workingCopyId,
-          isDraft: true,
-          originalId: entity.id,
-          copiedAt: now,
-          updatedAt: now,
-        }
-      : {
-          id: workingCopyId,
-          nodeId,
-          name: 'New BaseMap',
-          description: '',
-          settings: {
-            allowNestedFolders: true,
-            maxDepth: 10,
-            sortOrder: 'name',
-          },
-          metadata: {},
-          // BaseMap-specific defaults
-          mapStyle: {
-            style: 'streets',
-          },
-          viewport: {
-            center: [0, 0],
-            zoom: 2,
-            bearing: 0,
-            pitch: 0,
-          },
-          displayOptions: {
-            show3dBuildings: false,
-            showTraffic: false,
-            showTransit: false,
-            showTerrain: false,
-            showLabels: true,
-            tags: [],
-          },
-          isDraft: true,
-          createdAt: now,
-          updatedAt: now,
-          copiedAt: now,
-          version: 1,
-        };
-
-    await this.baseMapDB.workingCopies.add(workingCopy);
+    // Create new BaseMap working copy with defaults
+    const workingCopy: BaseMapWorkingCopy = {
+      id: workingCopyId,
+      nodeId,
+      name: 'New BaseMap',
+      description: '',
+      settings: {
+        allowNestedFolders: true,
+        maxDepth: 10,
+        sortOrder: 'name',
+      },
+      baseMapMetadataId: undefined,
+      mapStyle: DEFAULT_MAP_STYLE,
+      viewport: DEFAULT_VIEWPORT,
+      displayOptions: DEFAULT_DISPLAY_OPTIONS,
+      isDraft: true,
+      createdAt: now,
+      updatedAt: now,
+      copiedAt: now,
+      version: 1,
+    } as BaseMapWorkingCopy;
+    
+    await this.workingCopyTable.add(workingCopy);
     return workingCopy;
   }
 
-  /**
-   * Commit BaseMap working copy
-   * Separate method to avoid base class type conflicts
-   */
-  async commitBaseMapWorkingCopy(nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<void> {
-    const existingEntity = await this.getEntity(nodeId);
-
-    if (existingEntity) {
-      await this.updateEntity(nodeId, {
-        name: workingCopy.name,
-        description: workingCopy.description,
-        settings: workingCopy.settings,
-        metadata: workingCopy.metadata,
-        mapStyle: workingCopy.mapStyle,
-        viewport: workingCopy.viewport,
-        displayOptions: workingCopy.displayOptions,
-      });
-    } else {
-      await this.createEntity(nodeId, workingCopy);
-    }
-
-    await this.baseMapDB.workingCopies.delete(workingCopy.id);
-  }
-
-  /**
-   * Discard BaseMap working copy
-   */
-  async discardBaseMapWorkingCopy(nodeId: NodeId): Promise<void> {
-    const workingCopy = await this.baseMapDB.workingCopies.where('nodeId').equals(nodeId).first();
-    if (workingCopy) {
-      await this.baseMapDB.workingCopies.delete(workingCopy.id);
-    }
-  }
-
-  // ==========================================
-  // BaseMap-specific methods
-  // ==========================================
+  // ========== BaseMap-specific methods ==========
 
   /**
    * Update map style configuration
    */
-  async updateMapStyle(nodeId: NodeId, mapStyle: BaseMapEntity['mapStyle']): Promise<void> {
-    await this.updateEntity(nodeId, { mapStyle });
+  async updateMapStyle(nodeId: NodeId, mapStyle: MapStyle): Promise<BaseMapEntityExtended> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      throw new Error(`BaseMap entity for node ${nodeId} not found`);
+    }
+
+    return await this.updateEntity(entity.id, { mapStyle });
   }
 
   /**
    * Update viewport configuration
    */
-  async updateViewport(nodeId: NodeId, viewport: BaseMapEntity['viewport']): Promise<void> {
-    await this.updateEntity(nodeId, { viewport });
+  async updateViewport(nodeId: NodeId, viewport: MapViewport): Promise<BaseMapEntityExtended> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      throw new Error(`BaseMap entity for node ${nodeId} not found`);
+    }
+
+    return await this.updateEntity(entity.id, { viewport });
   }
 
   /**
@@ -236,20 +208,25 @@ export class BaseMapEntityHandler extends FolderEntityHandler {
    */
   async updateDisplayOptions(
     nodeId: NodeId,
-    displayOptions: BaseMapEntity['displayOptions']
-  ): Promise<void> {
-    await this.updateEntity(nodeId, { displayOptions });
+    displayOptions: DisplayOptions
+  ): Promise<BaseMapEntityExtended> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      throw new Error(`BaseMap entity for node ${nodeId} not found`);
+    }
+
+    return await this.updateEntity(entity.id, { displayOptions });
   }
 
   /**
    * Get BaseMap configuration for export
    */
   async getConfiguration(nodeId: NodeId): Promise<{
-    mapStyle: BaseMapEntity['mapStyle'];
-    viewport: BaseMapEntity['viewport'];
-    displayOptions: BaseMapEntity['displayOptions'];
+    mapStyle: MapStyle;
+    viewport: MapViewport;
+    displayOptions: DisplayOptions;
   } | null> {
-    const entity = await this.getEntity(nodeId);
+    const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) return null;
 
     return {
@@ -262,7 +239,7 @@ export class BaseMapEntityHandler extends FolderEntityHandler {
   /**
    * Validate BaseMap configuration
    */
-  async validateConfiguration(config: Partial<BaseMapEntity>): Promise<{
+  async validateConfiguration(config: Partial<BaseMapEntityExtended>): Promise<{
     isValid: boolean;
     errors: string[];
   }> {
@@ -320,27 +297,145 @@ export class BaseMapEntityHandler extends FolderEntityHandler {
   /**
    * Search BaseMaps by criteria
    */
-  async searchBaseMaps(criteria: {
-    name?: string;
-    mapStyle?: string;
-    tags?: string[];
-  }): Promise<BaseMapEntity[]> {
-    const baseMaps = await this.baseMapDB.baseMaps.toArray();
+  async searchBaseMaps(criteria: BaseMapExtendedSearchCriteria): Promise<BaseMapEntityExtended[]> {
+    // Use parent class search method with extended criteria
+    return await this.searchEntities(criteria);
+  }
 
-    return baseMaps.filter((baseMap) => {
-      if (criteria.name && !baseMap.name.toLowerCase().includes(criteria.name.toLowerCase())) {
-        return false;
-      }
-      if (criteria.mapStyle && baseMap.mapStyle.style !== criteria.mapStyle) {
-        return false;
-      }
-      if (criteria.tags && criteria.tags.length > 0) {
-        const baseMapTags = baseMap.displayOptions.tags || [];
-        if (!criteria.tags.some((tag) => baseMapTags.includes(tag))) {
-          return false;
-        }
-      }
-      return true;
+  /**
+   * Apply additional search criteria for BaseMap entities
+   */
+  protected applyAdditionalSearchCriteria(
+    collection: any,
+    criteria: BaseMapExtendedSearchCriteria
+  ): any {
+    // Apply parent criteria first
+    collection = super.applyAdditionalSearchCriteria(collection, criteria);
+
+    // Apply BaseMap-specific criteria
+    if (criteria.mapStyle) {
+      collection = collection.filter((entity: BaseMapEntityExtended) => 
+        entity.mapStyle.style === criteria.mapStyle
+      );
+    }
+
+    return collection;
+  }
+
+  /**
+   * Get BaseMaps by map style
+   */
+  async getByMapStyle(style: string): Promise<BaseMapEntityExtended[]> {
+    return await this.searchBaseMaps({ mapStyle: style });
+  }
+
+  /**
+   * Get nearby BaseMaps based on location
+   */
+  async getNearbyBaseMaps(
+    center: [number, number],
+    radiusKm: number
+  ): Promise<BaseMapEntityExtended[]> {
+    const allBaseMaps = await this.getAll();
+    
+    return allBaseMaps.filter((baseMap) => {
+      const distance = this.calculateDistance(center, baseMap.viewport.center);
+      return distance <= radiusKm;
     });
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   */
+  private calculateDistance(
+    point1: [number, number],
+    point2: [number, number]
+  ): number {
+    const R = 6371; // Earth's radius in km
+    const lat1 = (point1[1] * Math.PI) / 180;
+    const lat2 = (point2[1] * Math.PI) / 180;
+    const deltaLat = ((point2[1] - point1[1]) * Math.PI) / 180;
+    const deltaLon = ((point2[0] - point1[0]) * Math.PI) / 180;
+
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  /**
+   * Import BaseMap configuration
+   */
+  async importConfiguration(
+    nodeId: NodeId,
+    config: {
+      mapStyle: MapStyle;
+      viewport: MapViewport;
+      displayOptions: DisplayOptions;
+    }
+  ): Promise<BaseMapEntityExtended> {
+    const validation = await this.validateConfiguration(config);
+    if (!validation.isValid) {
+      throw new Error(`Invalid configuration: ${validation.errors.join(', ')}`);
+    }
+
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      // Create new entity with imported config
+      return await this.createEntity(nodeId, {
+        name: 'Imported BaseMap',
+        ...config,
+      } as CreateBaseMapData);
+    }
+
+    // Update existing entity
+    return await this.updateEntity(entity.id, config);
+  }
+
+  /**
+   * Clone BaseMap to a new node
+   */
+  async cloneToNode(sourceNodeId: NodeId, targetNodeId: NodeId): Promise<BaseMapEntityExtended> {
+    const sourceEntity = await this.getEntityByNodeId(sourceNodeId);
+    if (!sourceEntity) {
+      throw new Error(`Source BaseMap ${sourceNodeId} not found`);
+    }
+
+    const { id, nodeId, createdAt, updatedAt, version, ...cloneData } = sourceEntity;
+    
+    return await this.createEntity(targetNodeId, {
+      ...cloneData,
+      name: `${sourceEntity.name} (Copy)`,
+    } as CreateBaseMapData);
+  }
+
+  /**
+   * Get all map styles used in the system
+   */
+  async getUsedMapStyles(): Promise<string[]> {
+    const allBaseMaps = await this.table.toArray();
+    const styles = new Set(allBaseMaps.map(bm => bm.mapStyle.style));
+    return Array.from(styles);
+  }
+
+  /**
+   * Batch update viewport for multiple BaseMaps
+   */
+  async batchUpdateViewport(
+    nodeIds: NodeId[],
+    viewport: Partial<MapViewport>
+  ): Promise<void> {
+    for (const nodeId of nodeIds) {
+      const entity = await this.getEntityByNodeId(nodeId);
+      if (entity) {
+        const updatedViewport = {
+          ...entity.viewport,
+          ...viewport,
+        };
+        await this.updateViewport(nodeId, updatedViewport);
+      }
+    }
   }
 }

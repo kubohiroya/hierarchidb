@@ -48,7 +48,7 @@ export interface EnhancedWorkingCopy extends Omit<WorkingCopy, 'id'> {
   metadata: {
     author?: string;
     description?: string;
-    tags?: string[];
+    // Tags are managed via NodeTagAssociation, not stored directly
     autoSave?: boolean;
     lastAutoSave?: number;
   };

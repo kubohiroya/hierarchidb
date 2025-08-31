@@ -15,7 +15,7 @@ export interface ShapeEntity extends PeerEntity {
   // Basic Information (Step 1)
   name: string;
   description?: string;
-  tags: TagId[];
+  // Tags are managed via NodeTagAssociation, not stored directly
   category: ShapeCategory;
 
   // Data Source (Step 2)
