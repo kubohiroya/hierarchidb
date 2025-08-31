@@ -40,16 +40,25 @@ hierarchidb/
 │   │   ├── core/       # コア型定義・データモデル
 │   │   ├── plugin-base/# プラグイン基底クラス
 │   │   └── types/      # 共通型定義
-│   ├── runtime/        # ランタイム機能
-│   │   ├── worker/     # Worker層実装（DB操作、コマンド処理）
-│   │   ├── plugin-registry/    # プラグイン登録管理
+│   ├── runtime-ui/     # UI層ランタイム
+│   │   ├── datasource/         # データソースUIコンポーネント
 │   │   ├── plugin-dialog/      # プラグインダイアログ
-│   │   ├── worker-init-notifier/ # Worker初期化通知
-│   │   ├── datasource/         # データソース管理
-│   │   ├── router/             # ルーティング
-│   │   ├── landingpage/        # ランディングページ
-│   │   ├── tour/               # チュートリアル
-│   │   └── fetch-metadata/     # メタデータ取得
+│   │   ├── search-result-window/ # 検索結果ウィンドウ
+│   │   ├── tour/               # ツアーコンポーネント
+│   │   ├── appbar/             # アプリケーションバー
+│   │   └── landingpage/        # ランディングページ
+│   ├── runtime-worker/ # Worker層ランタイム
+│   │   ├── worker/             # Worker層実装（DB操作、コマンド処理）
+│   │   ├── plugin-registry/    # プラグイン登録管理
+│   │   └── worker-bootstrap/   # Worker初期化
+│   ├── runtime-shared/ # 共有ランタイム
+│   │   ├── fetch-metadata/     # メタデータ取得
+│   │   ├── client/             # クライアント機能
+│   │   ├── batch-processor/    # バッチ処理
+│   │   ├── shape-datasource/   # シェイプデータソース定義
+│   │   ├── location-datasource/# ロケーションデータソース定義
+│   │   ├── route-datasource/   # ルートデータソース定義
+│   │   └── folder-datasource/  # フォルダデータソース定義
 │   ├── ui/             # UI コンポーネント群
 │   │   ├── core/       # 基本UIコンポーネント
 │   │   ├── auth/       # 認証UI
@@ -69,6 +78,7 @@ hierarchidb/
 │   │   ├── data-grid/          # データグリッド
 │   │   └── ...                 # その他UI部品
 │   ├── node-type/      # ノードタイププラグイン
+│   │   ├── base-plugin/        # プラグイン基底クラス
 │   │   ├── folder-plugin/      # フォルダー
 │   │   ├── project-plugin/     # プロジェクト
 │   │   ├── basemap-plugin/     # ベースマップ

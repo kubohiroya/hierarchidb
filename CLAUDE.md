@@ -58,11 +58,24 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB
 - `@hierarchidb/common-type` - Shared type definitions
 - `@hierarchidb/common-plugin-base` - Base plugin classes
 
-#### Runtime Packages
-- `@hierarchidb/runtime-worker` - Worker implementation
-- `@hierarchidb/runtime-dialog` - Dialog components
-- `@hierarchidb/runtime-plugin-dialog` - Plugin dialog components
-- `@hierarchidb/runtime-plugin-registry` - Plugin registry
+#### Runtime UI Packages
+- `@hierarchidb/runtime-ui-datasource` - Data source UI components
+- `@hierarchidb/runtime-ui-plugin-dialog` - Plugin dialog components
+- `@hierarchidb/runtime-ui-search-result-window` - Search result window
+- `@hierarchidb/runtime-ui-tour` - Tour components
+- `@hierarchidb/runtime-ui-appbar` - Application bar
+- `@hierarchidb/runtime-ui-landingpage` - Landing page
+
+#### Runtime Worker Packages
+- `@hierarchidb/runtime-worker-worker` - Worker implementation
+- `@hierarchidb/runtime-worker-plugin-registry` - Plugin registry
+- `@hierarchidb/runtime-worker-worker-bootstrap` - Worker initialization
+
+#### Runtime Shared Packages
+- `@hierarchidb/runtime-shared-fetch-metadata` - Metadata fetching
+- `@hierarchidb/runtime-shared-client` - Client functionality
+- `@hierarchidb/runtime-shared-batch-processor` - Batch processing
+- `@hierarchidb/runtime-shared-*-datasource` - Data source definitions (shape, location, route, folder)
 
 #### UI Packages
 - `@hierarchidb/ui-core` - Base UI components
@@ -70,7 +83,7 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB
 - `@hierarchidb/ui-treeconsole-*` - TreeConsole component parts
 
 #### Plugin Packages
-- `@hierarchidb/node-type-*-plugin` - Node type plugins (e.g., folder-plugin, shape-plugin)
+- `@hierarchidb/*-plugin` - Node type plugins (e.g., folder-plugin, shape-plugin)
 
 ### Core Patterns
 
