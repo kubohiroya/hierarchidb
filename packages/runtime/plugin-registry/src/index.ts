@@ -3,6 +3,9 @@
  * @description Central plugin management system for HierarchiDB
  */
 
+// Export main registry class
+export { PluginRegistry } from './registry/PluginRegistry';
+
 // Export API functions
 export {
   isNodeTypeRegistered,

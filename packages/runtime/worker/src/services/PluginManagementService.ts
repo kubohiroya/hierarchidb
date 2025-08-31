@@ -64,7 +64,7 @@ import {
  */
 
 export class PluginManagementService implements PluginManagementAPI, PluginLifecycleAPI {
-  constructor(private nodeTypeRegistry: SimpleNodeTypeRegistry) {}
+  constructor(private nodeTypeRegistry: PluginRegistry) {}
 
   async register(definition: any): Promise<PluginRegistrationResult> {
     const validationResult = await this.validatePlugin(definition);

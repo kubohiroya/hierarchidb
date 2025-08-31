@@ -1,18 +1,17 @@
 /**
-import {  } from '@hierarchidb/common-core';
-import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMetadata, NodeLifecycleHooks, TreeNode } from '@hierarchidb/common-type';
  * @file NodeTypeService.ts
  * @description Node type management service implementation
  */
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
 import type { TreeQueryService } from './TreeQueryService';
+import type { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 import {
   isNodeTypeRegistered,
   getPluginDefinition,
   getCreatableNodeTypes,
 } from '../registry/plugin-registry-api';
-import {
+import type {
   NodeId,
   NodeLifecycleHooks,
   NodeType,
@@ -20,14 +19,14 @@ import {
   TreeNode,
   ValidationResult,
 } from '@hierarchidb/common-type';
-import { NodeTypeDefinition } from '..';
+import type { NodeTypeDefinition } from '..';
 
 /**
  * Service implementation for node type operations
  */
 export class NodeTypeService implements NodeTypeAPI {
   constructor(
-    private nodeTypeRegistry: SimpleNodeTypeRegistry,
+    private nodeTypeRegistry: PluginRegistry,
     private queryService: TreeQueryService
   ) {}
 

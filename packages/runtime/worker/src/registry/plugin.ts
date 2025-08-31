@@ -1,10 +1,31 @@
 /**
-import {  } from '@hierarchidb/common-core';
-import type { NodeTypeConfig, WorkingCopyProperties, PeerEntity as CorePeerEntity, GroupEntity as CoreGroupEntity, NodeLifecycleHooks as CoreNodeLifecycleHooks, ValidationRule as CoreValidationRule, IconDefinition as CoreIconDefinition, CategoryDefinition as CoreCategoryDefinition, WorkerPluginRouterAction as CoreWorkerPluginRouterAction, PluginDatabaseConfig, PluginUIConfig, PluginAPIConfig, PluginValidationConfig, PluginDefinition as CorePluginDefinition, PluginRoutingConfig, PluginMetadata } from '@hierarchidb/common-type';
  * @file plugin.ts
  * @description PluginDefinition interface and related types
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
+
+import type { 
+  NodeTypeConfig, 
+  WorkingCopyProperties, 
+  PeerEntity,
+  GroupEntity,
+  NodeLifecycleHooks as CoreNodeLifecycleHooks,
+  ValidationRule as CoreValidationRule,
+  PluginDatabaseConfig,
+  PluginUIConfig,
+  PluginAPIConfig,
+  PluginValidationConfig,
+  PluginDefinition as CorePluginDefinition,
+  PluginRoutingConfig,
+  EntityHandler as BaseEntityHandler
+} from '@hierarchidb/common-type';
+
+// PluginMetadata is defined locally if not available in common-type
+interface PluginMetadata {
+  version?: string;
+  author?: string;
+  description?: string;
+}
 
 // BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
 

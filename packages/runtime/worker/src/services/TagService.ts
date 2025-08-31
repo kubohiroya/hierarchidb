@@ -7,7 +7,12 @@ import type {
   TagSuggestion,
 } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
-import { ITagService } from '~/services/ITagService';
+import type { 
+  ITagAPI,
+  CreateTagRequest,
+  UpdateTagRequest,
+  TagAssociationRequest
+} from '@hierarchidb/common-api';
 
 /**
  * TagService - Worker layer service for tag management
@@ -16,7 +21,7 @@ import { ITagService } from '~/services/ITagService';
  * from UI through WorkerAPI. Handles CRUD operations for tags and
  * tag-node associations.
  */
-export class TagService implements ITagService {
+export class TagService implements ITagAPI {
   constructor(private coreDB: CoreDB) {}
 
   /**

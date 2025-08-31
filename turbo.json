@@ -14,6 +14,22 @@
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
       "env": ["NODE_ENV", "VITE_APP_NAME", "VITE_USE_HASH_ROUTING"]
     },
+    "@hierarchidb/bff#build": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "@hierarchidb/bff#typecheck": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "@hierarchidb/cors-proxy#build": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "@hierarchidb/cors-proxy#typecheck": {
+      "dependsOn": [],
+      "outputs": []
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "build/**"],
