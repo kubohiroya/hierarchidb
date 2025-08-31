@@ -128,9 +128,11 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
       throw new Error(`PropertyResolver entity not found for nodeId: ${nodeId}`);
     }
     
+    const workingCopyId = crypto.randomUUID() as EntityId;
     const workingCopy: PropertyResolverWorkingCopy = {
       ...entity,
-      workingCopyId: crypto.randomUUID() as EntityId,
+      id: workingCopyId, // Use id as primary key for database
+      workingCopyId: workingCopyId,
       originalId: entity.id,
       isDirty: false,
       modifiedFields: [],
@@ -193,9 +195,9 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
     }
 
     // Remove working copy specific fields
-    const { workingCopyId: _, originalId, isDirty, modifiedFields, ...entityData } = workingCopy;
+    const { id: _, workingCopyId: __, originalId, isDirty, modifiedFields, ...entityData } = workingCopy;
     
-    // Update the main entity
+    // Update the main entity using the original entity id
     const updatedEntity = await this.updateEntity(originalId, entityData);
     
     // Delete the working copy

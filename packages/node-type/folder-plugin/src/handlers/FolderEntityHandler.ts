@@ -13,10 +13,12 @@ import {
 
 import type {
   FolderEntity,
-  FolderEntityWorkingCopy,
   FolderBookmark,
   FolderTemplate,
   FolderSettings,
+} from '../entities/FolderEntity';
+import type {
+  FolderEntityWorkingCopy,
 } from '../types';
 import { FolderDatabase } from '../database/FolderDatabase';
 

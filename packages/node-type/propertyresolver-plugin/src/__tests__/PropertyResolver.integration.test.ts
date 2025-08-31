@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import 'fake-indexeddb/auto';
+import type { NodeId } from '@hierarchidb/common-type';
 import { PropertyResolverEntityHandler } from '../handlers/PropertyResolverEntityHandler';
 import { propertyResolverDB } from '../database/PropertyResolverDatabase';
-import type { PropertyResolverEntity } from '../types';
-
-// Mock Dexie
-vi.mock('dexie');
 
 describe('PropertyResolver Integration Tests', () => {
   let handler: PropertyResolverEntityHandler;
@@ -13,12 +10,19 @@ describe('PropertyResolver Integration Tests', () => {
 
   beforeEach(() => {
     handler = new PropertyResolverEntityHandler();
-    vi.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    // Clean up database after each test
+    await propertyResolverDB.propertyResolvers.clear();
+    await propertyResolverDB.workingCopies.clear();
   });
 
   describe('Entity Creation', () => {
     it('should create a PropertyResolver entity with default values', async () => {
-      const entity = await handler.createEntity(testNodeId);
+      const entity = await handler.createEntity(testNodeId, {
+        name: 'New PropertyResolver'
+      });
 
       expect(entity).toBeDefined();
       expect(entity.nodeId).toBe(testNodeId);
@@ -64,31 +68,29 @@ describe('PropertyResolver Integration Tests', () => {
         name: 'Test Resolver',
       });
 
-      // Mock the getEntity method to return the created entity
-      vi.spyOn(handler, 'getEntity').mockResolvedValue(entity);
-
       // Create working copy
       const workingCopy = await handler.createWorkingCopy(testNodeId);
 
       expect(workingCopy).toBeDefined();
-      expect(workingCopy.id).toBe(entity.id);
+      expect(workingCopy.originalId).toBe(entity.id);
       expect(workingCopy.name).toBe('Test Resolver');
       expect(workingCopy.isDirty).toBe(false);
-      expect(workingCopy.originalVersion).toBe(entity.version);
     });
 
     it('should commit working copy changes', async () => {
-      const entity = await handler.createEntity(testNodeId);
-      vi.spyOn(handler, 'getEntity').mockResolvedValue(entity);
+      const entity = await handler.createEntity(testNodeId, {
+        name: 'Original Name',
+      });
 
       const workingCopy = await handler.createWorkingCopy(testNodeId);
-      workingCopy.name = 'Updated Resolver';
-      workingCopy.isDirty = true;
+      
+      await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
+        name: 'Updated Resolver',
+      });
 
-      await handler.commitWorkingCopy(testNodeId, workingCopy);
+      const committed = await handler.commitWorkingCopy(workingCopy.workingCopyId!);
 
-      // Verify update was called
-      expect(workingCopy.name).toBe('Updated Resolver');
+      expect(committed.name).toBe('Updated Resolver');
     });
   });
 
@@ -196,65 +198,88 @@ describe('PropertyResolver Integration Tests', () => {
   });
 
   describe('Compilation', () => {
-    it('should track compilation status', async () => {
+    it('should compile mapping rules', async () => {
       const entity = await handler.createEntity(testNodeId, {
         name: 'Compilable Resolver',
-        isCompiled: true,
-        lastCompiled: Date.now(),
-        compiledFunction: 'function transform(data) { return data; }',
-        compiledMetadata: {
-          version: '1.0.0',
-          optimizations: ['inline', 'cache'],
-        },
+        sourceSchema: 'source',
+        targetSchema: 'target',
+        mappingRules: [
+          {
+            id: 'rule1',
+            sourceProperty: 'prop1',
+            targetProperty: 'prop2',
+            isRequired: true,
+          },
+        ],
       });
 
-      expect(entity.isCompiled).toBe(true);
-      expect(entity.lastCompiled).toBeDefined();
-      expect(entity.compiledFunction).toContain('function transform');
-      expect(entity.compiledMetadata?.optimizations).toContain('cache');
+      await handler.compileMapping(entity.id);
+
+      const compiled = await handler.getEntity(entity.id);
+      expect(compiled?.isCompiled).toBe(true);
+      expect(compiled?.lastCompiled).toBeDefined();
+    });
+
+    it('should clear compiled data', async () => {
+      const entity = await handler.createEntity(testNodeId, {
+        name: 'Clear Compile Test',
+      });
+
+      await handler.compileMapping(entity.id);
+      await handler.clearCompiledMapping(entity.id);
+
+      const cleared = await handler.getEntity(entity.id);
+      expect(cleared?.isCompiled).toBe(false);
+      expect(cleared?.lastCompiled).toBeUndefined();
     });
   });
 
   describe('Entity Lifecycle', () => {
     it('should handle entity duplication', async () => {
-      const originalEntity = await handler.createEntity(testNodeId, {
+      await handler.createEntity(testNodeId, {
         name: 'Original Resolver',
+        sourceSchema: 'source',
+        mappingRules: [
+          {
+            id: 'rule1',
+            sourceProperty: 'prop1',
+            targetProperty: 'prop2',
+            isRequired: true,
+          },
+        ],
       });
-
-      vi.spyOn(handler, 'getEntity').mockResolvedValue(originalEntity);
 
       const newNodeId = 'new-node-456' as NodeId;
-      await handler.duplicate(testNodeId, newNodeId);
+      const duplicate = await handler.duplicate(testNodeId, newNodeId);
 
-      // The duplicate method should create a new entity with "(Copy)" suffix
-      expect(originalEntity.name).toBe('Original Resolver');
+      expect(duplicate.name).toBe('Original Resolver (Copy)');
+      expect(duplicate.sourceSchema).toBe('source');
+      expect(duplicate.mappingRules).toHaveLength(1);
     });
 
-    it('should handle entity backup and restore', async () => {
+    it('should validate mapping configuration', async () => {
       const entity = await handler.createEntity(testNodeId, {
-        name: 'Backup Test',
+        name: 'Validation Test',
+        mappingRules: [
+          {
+            id: 'rule1',
+            sourceProperty: 'prop1',
+            targetProperty: 'sameProp',
+            isRequired: true,
+          },
+          {
+            id: 'rule2',
+            sourceProperty: 'prop2',
+            targetProperty: 'sameProp',
+            isRequired: true,
+          },
+        ],
       });
 
-      vi.spyOn(handler, 'getEntity').mockResolvedValue(entity);
+      const validation = await handler.validateMapping(entity.id);
 
-      const backup = await handler.backup(testNodeId);
-
-      expect(backup).toBeDefined();
-      expect(backup.entity.name).toBe('Backup Test');
-      expect(backup.metadata.nodeType).toBe('propertyresolver-plugin');
-
-      // Restore from backup
-      await handler.restore(testNodeId, backup);
-    });
-
-    it('should cleanup related data on deletion', async () => {
-      const entity = await handler.createEntity(testNodeId);
-      vi.spyOn(handler, 'getEntity').mockResolvedValue(entity);
-
-      await handler.cleanup(testNodeId);
-
-      // Cleanup should remove working copies
-      expect(entity).toBeDefined();
+      expect(validation.isValid).toBe(false);
+      expect(validation.errors).toContain('Duplicate target property: sameProp');
     });
   });
 });
