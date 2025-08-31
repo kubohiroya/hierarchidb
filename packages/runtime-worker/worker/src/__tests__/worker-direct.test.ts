@@ -14,7 +14,7 @@ import { TreeMutationService } from '../services/TreeMutationService';
 import { TreeSubscriptionService } from '../services/TreeSubscriptionService';
 import { CommandProcessor } from '../command/CommandProcessor';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
-import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-worker-worker-plugin-registry';
+import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-worker-plugin-registry';
 
 describe('Worker層直接呼び出しテスト', () => {
   let coreDB: CoreDB;

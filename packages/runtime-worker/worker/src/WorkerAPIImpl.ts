@@ -45,7 +45,7 @@ import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
-import { PluginRegistry } from '@hierarchidb/runtime-worker-plugin-registry';
+import { PluginRegistryFacade } from '@hierarchidb/runtime-worker-plugin-registry';
 import { TreeQueryService } from './services/TreeQueryService';
 import { TreeMutationService } from './services/TreeMutationService';
 import { NodeTypeService } from './services/NodeTypeService';
@@ -68,7 +68,7 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Core dependencies
   private coreDB!: CoreDB;
   private ephemeralDB!: EphemeralDB;
-  private nodeTypeRegistry!: PluginRegistry;
+  private nodeTypeRegistry!: PluginRegistryFacade;
   private nodeLifecycleManager!: NodeLifecycleManager;
   private commandProcessor!: CommandProcessor;
 

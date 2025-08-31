@@ -9,7 +9,6 @@ import {
   Paper,
   Typography,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Checkbox,
@@ -20,7 +19,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Button,
   Chip,
   Alert,
   Accordion,
@@ -28,17 +26,14 @@ import {
   AccordionDetails,
   FormControlLabel,
   Switch,
-  Divider,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   SwapHoriz as SwapHorizIcon,
 } from '@mui/icons-material';
 import type { 
   CSVTableMetadata, 
-  CSVColumnInfo, 
   CSVColumnMapping,
   CSVColumnType,
   CSVDataResult 
@@ -152,10 +147,6 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
   };
 
   const getSelectedColumns = () => columnMappings.filter(m => m.included);
-  const getUnmappedTargetColumns = () => {
-    const mappedTargets = new Set(columnMappings.map(m => m.targetColumn));
-    return targetColumns.filter(tc => !mappedTargets.has(tc.name));
-  };
 
   const getMappingValidation = () => {
     const errors: string[] = [];

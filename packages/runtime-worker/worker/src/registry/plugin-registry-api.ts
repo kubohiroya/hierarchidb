@@ -6,13 +6,14 @@
 
 import { TreeId, NodeType } from '@hierarchidb/common-type';
 import type { PluginDefinition } from '@hierarchidb/common-type';
-import { PluginRegistry } from '@hierarchidb/runtime-worker-plugin-registry';
+import { PluginRegistryFacade, PluginRepository } from '@hierarchidb/runtime-worker-plugin-registry';
 
 /**
  * Get all registered plugins from the registry
  */
 export async function getRegisteredPlugins(): Promise<PluginDefinition<any, any, any>[]> {
-  const registry = PluginRegistry.getInstance();
+  const repository = new PluginRepository();
+  const registry = new PluginRegistryFacade(repository);
   const plugins: PluginDefinition[] = [];
 
   // Get all registered node types
@@ -32,7 +33,8 @@ export async function getRegisteredPlugins(): Promise<PluginDefinition<any, any,
  * Get a specific plugin definition by node type
  */
 export async function getPluginDefinition(nodeType: string): Promise<PluginDefinition | null> {
-  const registry = PluginRegistry.getInstance();
+  const repository = new PluginRepository();
+  const registry = new PluginRegistryFacade(repository);
   return registry.get(nodeType as NodeType) || null;
 }
 
@@ -40,7 +42,8 @@ export async function getPluginDefinition(nodeType: string): Promise<PluginDefin
  * Check if a node type is registered
  */
 export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
-  const registry = PluginRegistry.getInstance();
+  const repository = new PluginRepository();
+  const registry = new PluginRegistryFacade(repository);
   return registry.has(nodeType as NodeType);
 }
 
@@ -48,7 +51,8 @@ export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
  * Get all node types that can be created (have UI containers)
  */
 export async function getCreatableNodeTypes(): Promise<string[]> {
-  const registry = PluginRegistry.getInstance();
+  const repository = new PluginRepository();
+  const registry = new PluginRegistryFacade(repository);
   const creatableTypes: string[] = [];
 
   const nodeTypes = registry.getAllNodeTypes();
@@ -68,7 +72,8 @@ export async function getCreatableNodeTypes(): Promise<string[]> {
 export async function getPluginsForTree(
   treeId: TreeId
 ): Promise<PluginDefinition<any, any, any>[]> {
-  const registry = PluginRegistry.getInstance();
+  const repository = new PluginRepository();
+  const registry = new PluginRegistryFacade(repository);
   const plugins: PluginDefinition<any, any, any>[] = [];
 
   const nodeTypes = registry.getAllNodeTypes();

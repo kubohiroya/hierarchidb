@@ -7,7 +7,7 @@ import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMeta
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
 import type { TreeQueryService } from './TreeQueryService';
-import type { PluginRepository } from '@hierarchidb/runtime-worker-worker-plugin-registry';
+import type { PluginRepository } from '@hierarchidb/runtime-worker-plugin-registry';
 import {
   isNodeTypeRegistered,
   getPluginDefinition,

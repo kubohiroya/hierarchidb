@@ -1,5 +1,5 @@
 /**
- * @hierarchidb/runtime-worker-worker-plugin-registry
+ * @hierarchidb/runtime-worker-plugin-registry
  * 
  * プラグインレジストリパッケージのエントリーポイント
  * Worker側で動作するプラグインシステムを提供
@@ -97,6 +97,15 @@ export {
   getWorkerPluginAPI,
   resetWorkerPluginSystem,
 } from './orchestrator/WorkerPluginBootstrapper';
+
+// === Registry実装 ===
+export { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';
+export { PluginRegistry } from './registry/PluginRegistry';
+export {
+  isNodeTypeRegistered,
+  getPluginDefinition,
+  getRegisteredPlugins,
+} from './registry/plugin-registry-api';
 
 // === 型定義 ===
 export type {

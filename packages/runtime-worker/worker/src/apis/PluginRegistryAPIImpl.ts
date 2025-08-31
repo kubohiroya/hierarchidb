@@ -5,7 +5,7 @@
 
 import type { PluginRegistryAPI, PluginInfo } from '@hierarchidb/common-api';
 import type { NodeType, PluginIntegrated } from '@hierarchidb/common-type';
-import type { PluginRegistry } from '@hierarchidb/runtime-worker-worker-plugin-registry';
+import type { PluginRegistryFacade } from '@hierarchidb/runtime-worker-plugin-registry';
 
 /**
  * Plugin Registry API Implementation
@@ -15,7 +15,7 @@ import type { PluginRegistry } from '@hierarchidb/runtime-worker-worker-plugin-r
  */
 export class PluginRegistryAPIImpl implements PluginRegistryAPI {
   constructor(
-    private registry: PluginRegistry,
+    private registry: PluginRegistryFacade,
     private integratedPlugins: Map<NodeType, PluginIntegrated>,
     private loadOrder: NodeType[]
   ) {}
