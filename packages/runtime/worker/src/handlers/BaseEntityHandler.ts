@@ -1,5 +1,5 @@
 /**
-import {  } from '@hierarchidb/common-core';
+
 import type { PeerEntity, GroupEntity, RelationalEntity, WorkingCopyProperties, EntityBackup, NodeId } from '@hierarchidb/common-type';
  * @file BaseEntityHandler.ts
  * @description Abstract base class for entity handlers

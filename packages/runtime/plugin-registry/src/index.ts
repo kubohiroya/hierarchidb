@@ -13,3 +13,6 @@ export {
 // Export PluginRegistry class
 export { PluginRegistry } from './registry/PluginRegistry';
 export type { IPluginRegistry } from './registry/IPluginRegistry';
+
+// Export SimpleNodeTypeRegistry
+export { SimpleNodeTypeRegistry } from './registry/SimpleNodeTypeRegistry';

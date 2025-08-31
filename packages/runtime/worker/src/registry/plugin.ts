@@ -1,19 +1,52 @@
 /**
-import {  } from '@hierarchidb/common-core';
-import type { NodeTypeConfig, WorkingCopyProperties, PeerEntity as CorePeerEntity, GroupEntity as CoreGroupEntity, NodeLifecycleHooks as CoreNodeLifecycleHooks, ValidationRule as CoreValidationRule, IconDefinition as CoreIconDefinition, CategoryDefinition as CoreCategoryDefinition, WorkerPluginRouterAction as CoreWorkerPluginRouterAction, PluginDatabaseConfig, PluginUIConfig, PluginAPIConfig, PluginValidationConfig, PluginDefinition as CorePluginDefinition, PluginRoutingConfig, PluginMetadata } from '@hierarchidb/common-type';
  * @file plugin.ts
  * @description PluginDefinition interface and related types
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
 
-// BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
+import { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
+import type { 
+  NodeTypeConfig, 
+  WorkingCopyProperties, 
+  PeerEntity,
+  GroupEntity,
+  NodeLifecycleHooks as CoreNodeLifecycleHooks, 
+  ValidationRule as CoreValidationRule, 
+  PluginDatabaseConfig, 
+  PluginUIConfig, 
+  PluginAPIConfig, 
+  PluginValidationConfig, 
+  PluginDefinition as CorePluginDefinition, 
+  PluginRoutingConfig, 
+  PluginMetadata 
+} from '@hierarchidb/common-type';
+
+// Re-export types to make them public
+export type { 
+  BaseEntityHandler,
+  PeerEntity,
+  GroupEntity,
+  WorkingCopyProperties,
+  NodeTypeConfig,
+  PluginDatabaseConfig,
+  PluginUIConfig,
+  PluginAPIConfig,
+  PluginValidationConfig,
+  PluginRoutingConfig,
+  PluginMetadata,
+  NodeLifecycleHooks as CoreNodeLifecycleHooks,
+  ValidationRule as CoreValidationRule,
+  PluginDefinition as CorePluginDefinition
+} from '@hierarchidb/common-type';
+export { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
+
 
 // Re-export with same names for compatibility
 export type EntityHandler<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> = BaseEntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
+> = BaseEntityHandler<TEntity, TWorkingCopy>;
 
 export type EntityBackup<_TEntity extends PeerEntity = PeerEntity> = {}; //CoreEntityBackup<TEntity>;
 

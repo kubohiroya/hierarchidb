@@ -52,7 +52,7 @@ import {
   type PluginDefinition,
   type PluginDatabaseConfig,
   type TreeId,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { FullScreenDialog } from '@hierarchidb/ui-base-dialog';
 import { useNavigate } from 'react-router';

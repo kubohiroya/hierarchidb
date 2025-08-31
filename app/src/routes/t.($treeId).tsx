@@ -16,7 +16,7 @@ import { loadTree, LoadTreeArgs } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { Tree } from '@hierarchidb/common-core';
+import type { Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   console.log('[t.($treeId).tsx] clientLoader called with params:', args.params);

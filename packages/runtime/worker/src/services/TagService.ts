@@ -6,6 +6,11 @@ import type {
   TagEntity,
   TagSuggestion,
 } from '@hierarchidb/common-type';
+import type { 
+  CreateTagRequest,
+  UpdateTagRequest,
+  TagAssociationRequest 
+} from '@hierarchidb/common-api';
 import type { CoreDB } from '../db/CoreDB';
 import { ITagService } from '~/services/ITagService';
 

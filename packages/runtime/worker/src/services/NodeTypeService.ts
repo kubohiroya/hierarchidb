@@ -1,5 +1,5 @@
 /**
-import {  } from '@hierarchidb/common-core';
+
 import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMetadata, NodeLifecycleHooks, TreeNode } from '@hierarchidb/common-type';
  * @file NodeTypeService.ts
  * @description Node type management service implementation
@@ -7,6 +7,7 @@ import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMeta
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
 import type { TreeQueryService } from './TreeQueryService';
+import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import {
   isNodeTypeRegistered,
   getPluginDefinition,

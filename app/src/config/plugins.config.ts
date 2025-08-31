@@ -5,7 +5,7 @@
  * The system will automatically resolve dependencies and load in correct order.
  */
 
-import type { NodeType } from '@hierarchidb/common-core';
+import type { NodeType } from '@hierarchidb/common-type';
 
 /**
  * Plugin selection configuration

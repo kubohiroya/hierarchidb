@@ -1,5 +1,5 @@
 /**
-import {  } from '@hierarchidb/common-core';
+
 import type { PeerEntity, GroupEntity, WorkingCopy, NodeId, EntityId } from '@hierarchidb/common-type';
  * @file WorkingCopyHandler.ts
  * @description Advanced working copy management handler

@@ -1,4 +1,4 @@
-import type { TreeNode, NodeId, NodeType, EntityReferenceHints } from '@hierarchidb/common-type';
+import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
 import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
@@ -246,9 +246,7 @@ export class NodeLifecycleManager {
   private async handleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
       const config = this.registry.getNodeTypeConfig(nodeType);
-      const entityHints = (config as any)?.metadata?.entityHints as
-        | EntityReferenceHints
-        | undefined;
+      const entityHints = (config as any)?.metadata?.entityHints;
 
       if (!entityHints?.relRefField) {
         return; // No RelationalEntity to manage
@@ -276,9 +274,7 @@ export class NodeLifecycleManager {
   private async handleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
       const config = this.registry.getNodeTypeConfig(nodeType);
-      const entityHints = (config as any)?.metadata?.entityHints as
-        | EntityReferenceHints
-        | undefined;
+      const entityHints = (config as any)?.metadata?.entityHints;
 
       if (!entityHints?.relRefField) {
         return; // No RelationalEntity to manage

@@ -1,5 +1,5 @@
 /**
-import {  } from '@hierarchidb/common-core';
+
 import type { NodeId, EntityId, PeerEntity, GroupEntity, RelationalEntity, EntityWorkingCopy, PeerEntityWorkingCopy, GroupEntityWorkingCopy, RelationalEntityWorkingCopy, EntityWorkingCopySession, EntityWorkingCopyConflict, EntityWorkingCopyValidation, EntityWorkingCopyStats } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
  * @file EntityWorkingCopyManager.ts
