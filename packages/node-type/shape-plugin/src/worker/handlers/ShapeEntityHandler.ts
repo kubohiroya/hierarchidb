@@ -4,7 +4,7 @@
  */
 
 import type { Table } from 'dexie';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, NodeType } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import {
@@ -133,9 +133,22 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    */
   async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
     const workingCopy: ShapeWorkingCopy = {
-      id: entity.id,
+      // Convert EntityId to NodeId for TreeNode compatibility
+      id: (entity.id as string) as NodeId,
+      parentId: entity.nodeId, // Use nodeId as parentId for working copy
+      nodeType: 'shape' as NodeType,
       nodeId: entity.nodeId,
       name: entity.name,
+      depth: 0, // Set appropriate depth
+      
+      // WorkingCopyProperties
+      originalNodeId: entity.nodeId,
+      copiedAt: Date.now(),
+      hasEntityCopy: true,
+      entityWorkingCopyId: entity.id,
+      originalVersion: entity.version,
+      
+      // Shape entity properties
       description: entity.description,
       dataSourceName: entity.dataSourceName,
       licenseAgreement: false, // Reset for editing
@@ -158,12 +171,21 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    * Create new draft working copy
    */
   async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
-    const workingCopyId = generateEntityId() as EntityId;
+    const workingCopyId = (generateEntityId() as string) as NodeId;
 
     const workingCopy: ShapeWorkingCopy = {
+      // TreeNode required properties
       id: workingCopyId,
+      parentId: parentId,
+      nodeType: 'shape' as NodeType,
       nodeId: '' as NodeId, // Will be set when committed
       name: '',
+      depth: 0, // Set appropriate depth
+      
+      // WorkingCopyProperties
+      copiedAt: Date.now(),
+      
+      // Shape entity properties
       description: '',
       dataSourceName: 'naturalearth',
       licenseAgreement: false,
