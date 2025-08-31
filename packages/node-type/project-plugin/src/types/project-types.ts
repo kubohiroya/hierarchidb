@@ -621,9 +621,27 @@ export interface ProjectTile {
 
 // ==================== Working Copy ====================
 
+// ProjectWorkingCopy extends the entity with working copy properties
+// To satisfy the WorkingCopy constraint, we need TreeNode properties
 export interface ProjectWorkingCopy extends ProjectEntity {
+  // TreeNode required properties (from NodeBase)
+  id: EntityId;
+  parentId: NodeId;
+  nodeType: string;
+  nodeId: NodeId;
+  name: string;
+  depth: number;
+  
+  // WorkingCopyProperties
+  originalNodeId?: NodeId;
+  copiedAt: number;
+  hasEntityCopy?: boolean;
+  entityWorkingCopyId?: EntityId;
+  originalVersion?: number;
+  hasGroupEntityCopy?: Record<string, boolean>;
+  
+  // Project-specific working copy properties
   isWorkingCopy: boolean;
   originalId: EntityId;
   isDirty: boolean;
-  copiedAt: number;
 }

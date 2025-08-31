@@ -50,7 +50,7 @@ export interface ProjectFilterCriteria {
  */
 export class ProjectEntityHandler extends BaseEntityHandler<
   ProjectEntity,
-  any, // ProjectWorkingCopy - temporarily using any due to type constraint issues
+  ProjectWorkingCopy,
   CreateProjectData,
   ProjectFilterCriteria
 > {

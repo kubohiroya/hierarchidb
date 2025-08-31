@@ -44,7 +44,7 @@ export interface ShapeFilterCriteria {
  */
 export class ShapeEntityHandler extends BaseEntityHandler<
   ShapeEntity,
-  any, // ShapeWorkingCopy - temporarily using any due to type constraint issues
+  ShapeWorkingCopy,
   CreateShapeData,
   ShapeFilterCriteria
 > {

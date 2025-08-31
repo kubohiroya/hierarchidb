@@ -43,9 +43,26 @@ export interface ShapeEntity extends PeerEntity {
   version: number;
 }
 
+// ShapeWorkingCopy extends the entity with working copy properties
+// To satisfy the WorkingCopy constraint, we need TreeNode properties
 export interface ShapeWorkingCopy extends ShapeEntity {
+  // TreeNode required properties (from NodeBase)
   id: EntityId;
+  parentId: NodeId;
+  nodeType: string;
   nodeId: NodeId;
+  name: string;
+  depth: number;
+  
+  // WorkingCopyProperties
+  originalNodeId?: NodeId;
+  copiedAt: number;
+  hasEntityCopy?: boolean;
+  entityWorkingCopyId?: EntityId;
+  originalVersion?: number;
+  hasGroupEntityCopy?: Record<string, boolean>;
+  
+  // Shape-specific working copy properties
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
 }
