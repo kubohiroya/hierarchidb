@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '~/types/index.js';
 
 /**
@@ -7,6 +8,7 @@ import type { MapHighlightState, MapHighlightStyles } from '~/types/index.js';
 export class MapHighlightService {
   private searchMatchedNodes = new Set<NodeId>();
   private selectedNodes = new Set<NodeId>();
+  private focusedNode: NodeId | null = null;
   private onStateChangeCallback?: (state: MapHighlightState) => void;
 
   private defaultStyles: MapHighlightStyles = {

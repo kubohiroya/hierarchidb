@@ -49,23 +49,23 @@ function MapHighlightDemo() {
   ];
 
   const handleSetSearchMatched = () => {
-    setSearchMatched([sampleNodeIds[0], sampleNodeIds[1], sampleNodeIds[2]]);
+    setSearchMatched([sampleNodeIds[0]!, sampleNodeIds[1]!, sampleNodeIds[2]!]);
   };
 
   const handleSetSelected = () => {
-    setSelected([sampleNodeIds[1], sampleNodeIds[3]]);
+    setSelected([sampleNodeIds[1]!, sampleNodeIds[3]!]);
   };
 
   const handleAddSearchMatched = () => {
-    addSearchMatched(sampleNodeIds[4]);
+    addSearchMatched(sampleNodeIds[4]!);
   };
 
   const handleAddSelected = () => {
-    addSelected(sampleNodeIds[0]);
+    addSelected(sampleNodeIds[0]!);
   };
 
   const handleSetFocused = () => {
-    setFocused(sampleNodeIds[2]);
+    setFocused(sampleNodeIds[2]!);
   };
 
   const handleUpdateStyles = () => {
