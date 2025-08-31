@@ -800,6 +800,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/node-type-base-plugin':
+        specifier: workspace:*
+        version: link:../base-plugin
       '@hierarchidb/node-type-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin

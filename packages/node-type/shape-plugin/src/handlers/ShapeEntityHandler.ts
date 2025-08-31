@@ -1,10 +1,8 @@
 /**
- * Shape Entity Handler
- * Manages CRUD operations for Shape entities
+ * Shape Entity Handler - UI Layer
+ * Communicates with Worker layer via Comlink API
  */
 
-// Shape plugin uses its own entity management approach via Comlink API
-// No direct dependency on worker's BaseEntityHandler
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
 import type { ShapeEntity, ShapeWorkingCopy } from '~/types';
@@ -12,101 +10,40 @@ import { shapePluginAPI } from '~/api/ShapePluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 
 /**
- * Entity handler for Shape plugin
- * Extends BaseEntityHandler to provide Shape-specific CRUD operations
+ * Create shape data interface (UI layer)
+ */
+export interface CreateShapeData {
+  name: string;
+  description?: string;
+  dataSourceName: string;
+  processingConfig?: any;
+  selectedCountries?: string[];
+  adminLevels?: number[];
+}
+
+/**
+ * Shape filter criteria for searching
+ */
+export interface ShapeFilterCriteria {
+  name?: string;
+  dataSource?: string;
+  processingStatus?: string;
+  hasActiveBatch?: boolean;
+}
+
+/**
+ * Entity handler for Shape plugin in UI layer
+ * Acts as a proxy to Worker layer operations via Comlink API
  */
 export class ShapeEntityHandler {
-  private table: any;
-
-  constructor() {
-    // Initialize with plugin-specific database interface
-    // This would typically connect to the Shapes plugin API via Comlink
-    this.table = {
-      add: async (_entity: any): Promise<any> => _entity,
-      get: async (_id: any): Promise<any> => null,
-      put: async (_entity: any): Promise<any> => _entity,
-      delete: async (_id: any): Promise<void> => {},
-      where: (_field: string) => ({
-        equals: (_value: any) => ({
-          first: async (): Promise<any> => null,
-          toArray: async (): Promise<any[]> => [],
-        }),
-      }),
-      orderBy: (_field: string) => ({
-        reverse: () => ({
-          offset: (_n: number) => ({
-            limit: (_n: number) => ({
-              toArray: async (): Promise<any[]> => [],
-            }),
-            toArray: async (): Promise<any[]> => [],
-          }),
-          limit: (_n: number) => ({
-            toArray: async (): Promise<any[]> => [],
-          }),
-          toArray: async (): Promise<any[]> => [],
-        }),
-        offset: (_n: number) => ({
-          limit: (_n: number) => ({
-            toArray: async (): Promise<any[]> => [],
-          }),
-          toArray: async (): Promise<any[]> => [],
-        }),
-        limit: (_n: number) => ({
-          toArray: async (): Promise<any[]> => [],
-        }),
-        toArray: async (): Promise<any[]> => [],
-      }),
-      toCollection: () => ({
-        filter: (_predicate: any) => ({
-          toArray: async (): Promise<any[]> => [],
-        }),
-      }),
-    };
-  }
-
   /**
    * Create a new Shape entity
    */
-  async createEntity(nodeId: NodeId, data: Partial<ShapeEntity>): Promise<ShapeEntity> {
-    const entityId = generateEntityId() as EntityId;
-    const now = Date.now();
-
-    const entity: ShapeEntity = {
-      id: entityId,
-      nodeId: nodeId,
-      name: data.name || '',
-      description: data.description || '',
-      dataSourceName: data.dataSourceName || 'naturalearth',
-      licenseAgreement: data.licenseAgreement || false,
-      checkboxState: data.checkboxState || '[]', // Serialized empty array
-      processingConfig: data.processingConfig || {
-        concurrentDownloads: 2,
-        corsProxyBaseURL: '',
-        enableFeatureFiltering: false,
-        featureFilterMethod: 'hybrid',
-        featureAreaThreshold: 0.1,
-        concurrentProcesses: 2,
-        maxZoomLevel: 12,
-        tileBufferSize: 256,
-        simplificationTolerance: 0.01,
-      },
-      adminLevels: data.adminLevels || [],
-      selectedCountries: data.selectedCountries || [],
-      urlMetadata: data.urlMetadata || [],
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-    };
-
-    // Store in database via the shapes plugin API
+  async createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> {
     try {
-      // Initialize plugin API if needed
-      await this.ensurePluginInitialized();
-
-      // Store entity in database
-      await this.table.add(entity);
-
-      console.log(`Created Shape entity: ${entityId} for node: ${nodeId}`);
+      // Use Comlink API to create entity in Worker
+      const entity = await shapePluginAPI.createShapeEntity(nodeId, data);
+      console.log(`Created Shape entity for node: ${nodeId}`);
       return entity;
     } catch (error) {
       console.error('Failed to create Shape entity:', error);
@@ -119,22 +56,10 @@ export class ShapeEntityHandler {
    */
   async updateEntity(entityId: EntityId, updates: Partial<ShapeEntity>): Promise<ShapeEntity> {
     try {
-      const existing = await this.table.get(entityId);
-      if (!existing) {
-        throw new Error(`Shape entity not found: ${entityId}`);
-      }
-
-      const updatedEntity: ShapeEntity = {
-        ...existing,
-        ...updates,
-        updatedAt: Date.now(),
-        version: existing.version + 1,
-      };
-
-      await this.table.put(updatedEntity);
-
+      // Use Comlink API to update entity in Worker
+      const entity = await shapePluginAPI.updateShapeEntity(entityId, updates);
       console.log(`Updated Shape entity: ${entityId}`);
-      return updatedEntity;
+      return entity;
     } catch (error) {
       console.error('Failed to update Shape entity:', error);
       throw error;
@@ -146,19 +71,8 @@ export class ShapeEntityHandler {
    */
   async deleteEntity(entityId: EntityId): Promise<void> {
     try {
-      const entity = await this.table.get(entityId);
-      if (!entity) {
-        throw new Error(`Shape entity not found: ${entityId}`);
-      }
-
-      // Note: Batch session checking would be implemented in full version
-
-      // Cleanup related data
-      await this.cleanupEntityData(entity);
-
-      // Delete from database
-      await this.table.delete(entityId);
-
+      // Use Comlink API to delete entity in Worker
+      await shapePluginAPI.deleteShapeEntity(entityId);
       console.log(`Deleted Shape entity: ${entityId}`);
     } catch (error) {
       console.error('Failed to delete Shape entity:', error);
@@ -171,7 +85,7 @@ export class ShapeEntityHandler {
    */
   async getEntity(entityId: EntityId): Promise<ShapeEntity | null> {
     try {
-      const entity = await this.table.get(entityId);
+      const entity = await shapePluginAPI.getShapeEntity(entityId);
       return entity || null;
     } catch (error) {
       console.error('Failed to get Shape entity:', error);
@@ -184,7 +98,7 @@ export class ShapeEntityHandler {
    */
   async getEntityByNodeId(nodeId: NodeId): Promise<ShapeEntity | null> {
     try {
-      const entity = await this.table.where('nodeId').equals(nodeId).first();
+      const entity = await shapePluginAPI.getShapeEntityByNodeId(nodeId);
       return entity || null;
     } catch (error) {
       console.error('Failed to get Shape entity by node ID:', error);
@@ -197,17 +111,8 @@ export class ShapeEntityHandler {
    */
   async listEntities(limit?: number, offset?: number): Promise<ShapeEntity[]> {
     try {
-      let query = this.table.orderBy('updatedAt').reverse();
-
-      if (offset) {
-        query = query.offset(offset);
-      }
-
-      if (limit) {
-        query = query.limit(limit);
-      }
-
-      return await query.toArray();
+      const entities = await shapePluginAPI.listShapeEntities(limit, offset);
+      return entities;
     } catch (error) {
       console.error('Failed to list Shape entities:', error);
       throw error;
@@ -217,38 +122,10 @@ export class ShapeEntityHandler {
   /**
    * Search Shape entities by criteria
    */
-  async searchEntities(criteria: {
-    name?: string;
-    dataSource?: string;
-    processingStatus?: string;
-    hasActiveBatch?: boolean;
-  }): Promise<ShapeEntity[]> {
+  async searchEntities(criteria: ShapeFilterCriteria): Promise<ShapeEntity[]> {
     try {
-      let query = this.table.toCollection();
-
-      if (criteria.name) {
-        query = query.filter((_entity: any) =>
-          _entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
-        );
-      }
-
-      if (criteria.dataSource) {
-        query = query.filter((_entity: any) => _entity.dataSourceName === criteria.dataSource);
-      }
-
-      if (criteria.processingStatus) {
-        query = query.filter(
-          (_entity: any) => _entity.processingStatus === criteria.processingStatus
-        );
-      }
-
-      if (criteria.hasActiveBatch !== undefined) {
-        query = query.filter(
-          (_entity: any) => true // Mock implementation
-        );
-      }
-
-      return await query.toArray();
+      const entities = await shapePluginAPI.searchShapeEntities(criteria);
+      return entities;
     } catch (error) {
       console.error('Failed to search Shape entities:', error);
       throw error;
@@ -256,49 +133,107 @@ export class ShapeEntityHandler {
   }
 
   /**
-   * Create working copy from entity
+   * Create working copy from entity (UI-side operation)
    */
-  async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
-    return createWorkingCopyFromEntity(entity) as ShapeWorkingCopy;
+  createWorkingCopy(entity: ShapeEntity): ShapeWorkingCopy {
+    const workingCopy = createWorkingCopyFromEntity(entity);
+    console.log(`Created working copy for entity: ${entity.id}`);
+    return workingCopy;
   }
 
   /**
-   * Apply working copy changes to entity
+   * Create new draft working copy (UI-side operation)
+   */
+  createNewDraftWorkingCopy(_parentId: NodeId): ShapeWorkingCopy {
+    const workingCopyId = generateEntityId() as EntityId;
+
+    const workingCopy: ShapeWorkingCopy = {
+      id: workingCopyId,
+      nodeId: '' as NodeId, // Will be set when committed
+      name: '',
+      description: '',
+      dataSourceName: 'naturalearth',
+      licenseAgreement: false,
+      processingConfig: {
+        simplifyTolerance: 0.01,
+        featureLimit: 10000,
+        tileSizeKB: 500,
+      },
+      checkboxState: '',
+      selectedCountries: [],
+      adminLevels: [],
+      urlMetadata: [],
+      isDraft: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    };
+
+    console.log(`Created new draft working copy: ${workingCopyId}`);
+    return workingCopy;
+  }
+
+  /**
+   * Apply working copy changes to entity (commit via API)
    */
   async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(
-      workingCopy
-    ) as Partial<ShapeEntity>;
-    return this.updateEntity(entityId, updates);
+    const updates = mapWorkingCopyToUpdates(workingCopy);
+    return this.updateEntity(entityId, updates as Partial<ShapeEntity>);
   }
 
   /**
-   * Start batch processing for an entity
+   * Update processing status via API
    */
-  async startBatchProcessing(entityId: EntityId): Promise<string> {
+  async updateProcessingStatus(
+    entityId: EntityId,
+    status: 'idle' | 'processing' | 'completed' | 'failed',
+    batchSessionId?: string
+  ): Promise<void> {
     try {
-      const entity = await this.getEntity(entityId);
-      if (!entity) {
-        throw new Error(`Shape entity not found: ${entityId}`);
-      }
+      await shapePluginAPI.updateProcessingStatus(entityId, status, batchSessionId);
+      console.log(`Updated processing status for entity: ${entityId} to ${status}`);
+    } catch (error) {
+      console.error('Failed to update processing status:', error);
+      throw error;
+    }
+  }
 
-      await this.ensurePluginInitialized();
+  /**
+   * Get processing statistics via API
+   */
+  async getProcessingStats(entityId: EntityId): Promise<{
+    featureCount: number;
+    tileCount: number;
+    storageUsed: number;
+    lastProcessed?: number;
+  }> {
+    try {
+      const stats = await shapePluginAPI.getProcessingStats(entityId);
+      return stats;
+    } catch (error) {
+      console.error('Failed to get processing stats:', error);
+      throw error;
+    }
+  }
 
-      // Create batch configuration from entity
-      const batchConfig = {
-        dataSource: entity.dataSourceName as any,
-        countryCode: entity.selectedCountries[0] || 'global',
-        adminLevels: entity.adminLevels,
-        ...entity.processingConfig,
-      };
-
-      // Start batch process
-      const batchSession = await shapePluginAPI.startBatchProcess(entity.nodeId, batchConfig);
-
-      // Note: Entity update with session ID would be implemented in full version
-      // await this.updateEntity(entityId, { batchSessionId: batchSession.sessionId });
-
-      return batchSession.sessionId;
+  /**
+   * Start batch processing for entity
+   */
+  async startBatchProcessing(
+    entityId: EntityId,
+    config: any,
+    countries: string[],
+    adminLevels: number[]
+  ): Promise<string> {
+    try {
+      const sessionId = await shapePluginAPI.startBatchProcessing(
+        entityId,
+        config,
+        countries,
+        adminLevels
+      );
+      console.log(`Started batch processing session: ${sessionId} for entity: ${entityId}`);
+      return sessionId;
     } catch (error) {
       console.error('Failed to start batch processing:', error);
       throw error;
@@ -306,102 +241,28 @@ export class ShapeEntityHandler {
   }
 
   /**
-   * Get batch status for an entity
+   * Cancel batch processing session
    */
-  async getBatchStatus(entityId: EntityId): Promise<any> {
+  async cancelBatchProcessing(sessionId: string): Promise<void> {
     try {
-      const entity = await this.getEntity(entityId);
-      if (!entity) {
-        return null;
-      }
-
-      // Note: Batch status checking would be implemented in full version
-      return null;
+      await shapePluginAPI.cancelBatchProcessing(sessionId);
+      console.log(`Cancelled batch processing session: ${sessionId}`);
     } catch (error) {
-      console.error('Failed to get batch status:', error);
+      console.error('Failed to cancel batch processing:', error);
       throw error;
     }
   }
 
   /**
-   * Private helper methods
+   * Get batch processing progress
    */
-
-  private async ensurePluginInitialized(): Promise<void> {
-    // The plugin API should be initialized by the plugin system
-    // This is a safety check
+  async getBatchProgress(sessionId: string): Promise<any> {
     try {
-      await shapePluginAPI.getHealthStatus();
+      const progress = await shapePluginAPI.getBatchProgress(sessionId);
+      return progress;
     } catch (error) {
-      console.warn('Shape plugin API not ready, initializing...');
-      await shapePluginAPI.initialize();
+      console.error('Failed to get batch progress:', error);
+      throw error;
     }
-  }
-
-  private async cleanupEntityData(entity: ShapeEntity): Promise<void> {
-    try {
-      await this.ensurePluginInitialized();
-
-      // Note: Batch session cancellation would be implemented in full version
-
-      // Clear cached data for this node
-      try {
-        await shapePluginAPI.clearCache(entity.nodeId);
-      } catch (error) {
-        console.warn('Failed to clear cache during cleanup:', error);
-      }
-
-      console.log(`Cleaned up data for Shape entity: ${entity.id}`);
-    } catch (error) {
-      console.error('Error during entity cleanup:', error);
-      // Don't throw - cleanup is best effort
-    }
-  }
-
-  // ==========================================
-  // Serialization methods
-  // ==========================================
-
-  /**
-   * Serialize Shape entity with Uint8Array handling
-   */
-  async serialize(entity: ShapeEntity): Promise<{
-    jsonData: any;
-    binaryData: Map<string, Uint8Array>;
-    binaryFilenames: Map<string, string>;
-  }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.serialize(entity);
-  }
-
-  /**
-   * Deserialize Shape entity with binary data restoration
-   */
-  async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ShapeEntity> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.deserialize({ jsonData, binaryData });
-  }
-
-  /**
-   * Serialize array of Shape entities
-   */
-  async serializeEntityArray(entities: ShapeEntity[]): Promise<{
-    jsonArray: any[];
-    binaryData: Map<string, Uint8Array>;
-    binaryFilenames: Map<string, string>;
-  }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.serializeEntityArray(entities);
-  }
-
-  /**
-   * Deserialize array of Shape entities
-   */
-  async deserializeEntityArray(
-    jsonArray: any[],
-    binaryData: Map<string, Uint8Array>
-  ): Promise<ShapeEntity[]> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.deserializeEntityArray(jsonArray, binaryData);
   }
 }
