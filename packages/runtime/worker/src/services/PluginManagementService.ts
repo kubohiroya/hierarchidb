@@ -49,7 +49,7 @@ interface PluginDeleteResult {
     message: string;
   };
 }
-import type { PluginRegistry, SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
+import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 // Import from plugin-registry package
 import {
   isNodeTypeRegistered,
@@ -62,7 +62,7 @@ import {
  */
 
 export class PluginManagementService implements PluginLifecycleAPI {
-  constructor(private nodeTypeRegistry: PluginRegistry) {}
+  constructor(private nodeTypeRegistry: SimpleNodeTypeRegistry) {}
 
   async register(definition: any): Promise<PluginRegistrationResult> {
     const validationResult = await this.validatePlugin(definition);
