@@ -13,7 +13,7 @@ describe('FolderEntityHandler', () => {
   });
 
   afterEach(async () => {
-    await handler.cleanup(testNodeId);
+    await handler.cleanup();
   });
 
   describe('createEntity', () => {

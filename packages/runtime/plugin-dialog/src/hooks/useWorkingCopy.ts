@@ -3,10 +3,8 @@
  * Manages working copy lifecycle for dialog editing with Worker communication
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
-import { WorkingCopyService, WorkingCopyState, StepCapabilitiesState } from '../services/WorkingCopyService';
-import { useWorkerAPI } from '../hooks/useWorkerAPI';
 
 export interface WorkingCopyData {
   treeNodeId: NodeId;

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { DialogStepDefinition } from '@hierarchidb/common-plugin-base';
+import type { DialogStepDefinition } from '@hierarchidb/common-type';
 
 describe('ExtensibleFolderDialog', () => {
   const mockOnSubmit = vi.fn();
