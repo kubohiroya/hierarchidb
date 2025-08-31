@@ -14,7 +14,9 @@ import { BaseEntityHandler } from '../handlers';
 // Basic working entity handler for default plugins
 class DefaultEntityHandler extends BaseEntityHandler<
   PeerEntity,
-  PeerEntity & WorkingCopyProperties
+  PeerEntity & WorkingCopyProperties,
+  Partial<PeerEntity>,
+  any
 > {
   protected table: any = null;
   
@@ -96,15 +98,10 @@ export const folderPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'folder-plugin-plugin',
-    name: 'Folder',
-    nodeType: 'folder' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['container', 'basic'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -139,15 +136,10 @@ export const basemapPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'basemap-plugin',
-    name: 'BaseMap',
-    nodeType: 'basemap' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['map', 'visualization'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -182,15 +174,10 @@ export const stylemapPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'stylemap-plugin-plugin',
-    name: 'StyleMap',
-    nodeType: 'stylemap' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['styling', 'visualization'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -225,15 +212,10 @@ export const shapePlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'shape-plugin-plugin',
-    name: 'Shape',
-    nodeType: 'shape' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['geography', 'boundaries'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -268,15 +250,10 @@ export const projectPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'project-plugin',
-    name: 'Project',
-    nodeType: 'project' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['container', 'project-management'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -311,15 +288,10 @@ export const notePlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'note-plugin',
-    name: 'Note',
-    nodeType: 'note' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['document', 'text'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -354,15 +326,10 @@ export const spreadsheetPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'spreadsheet-plugin-plugin',
-    name: 'Spreadsheet',
-    nodeType: 'spreadsheet' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['data', 'table'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,
@@ -397,15 +364,10 @@ export const propertyResolverPlugin: PluginDefinition<
     },
     version: 1,
   },
-  meta: {
-    id: 'propertyresolver-plugin',
-    name: 'PropertyResolver',
-    nodeType: 'propertyresolver' as NodeType,
-    status: 'active',
-    version: '1.0.0',
-    tags: ['mapping', 'transformation', 'schema'],
-  },
   entityHandler: defaultEntityHandler,
+  version: "1.0.0",
+  dependencies: [],
+  priority: 0,
   routing: {
     actions: {},
     defaultAction: undefined,

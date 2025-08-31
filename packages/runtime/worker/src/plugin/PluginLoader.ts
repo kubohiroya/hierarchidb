@@ -240,15 +240,9 @@ export class PluginLoader {
    * エンティティハンドラーを登録
    */
   private registerEntityHandlers(plugin: PluginConfig): void {
-    for (const [nodeType, _handler] of Object.entries(plugin.entityHandlers)) {
-      // NodeTypeRegistryに登録 (without entityHandler which is stored separately)
-      this.registry.register(nodeType as NodeType, {
-        displayName: nodeType,
-        canBeDeleted: true,
-        canBeRenamed: true,
-        canBeMoved: true,
-      });
-    }
+    // Entity handlers are registered via PluginIntegrated definitions
+    // This method is kept for compatibility but doesn't need to do anything
+    // as the registration happens in WorkerAPIImpl via PluginRegistry.registerPlugin
   }
 
   /**
