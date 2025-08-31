@@ -76,13 +76,11 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
       createdAt: data.createdAt || now,
       updatedAt: data.updatedAt || now,
       version: data.version || 1,
-      // Hierarchical fields
-      parentId: data.parentId,
-      depth: data.depth || 0,
-      path: data.path || `/${nodeId}`,
+      // Hierarchical fields (from HierarchicalEntity)
+      parentId: undefined,
+      depth: 0,
+      path: `/${nodeId}`,
       childCount: 0,
-      // Custom fields
-      customFields: data.customFields || {},
     } as FolderEntityExtended;
   }
 

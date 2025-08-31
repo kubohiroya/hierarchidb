@@ -5,18 +5,20 @@ import type { NodeType } from '@hierarchidb/common-type';
  */
 
 import type {
-  PluginManagementAPI,
   PluginLifecycleAPI,
-  PluginRegistrationResult,
-  UnregistrationResult,
-  PluginValidationResult,
-  PluginHealthStatus,
-  PluginRegistrationInfo,
-  PluginListOptions,
-  PluginDependencyInfo,
-  BulkOperationOptions,
-  BulkOperationResult,
+  PluginRegistrationResultNew as PluginRegistrationResult,
+  UnregistrationResultNew as UnregistrationResult,
+  PluginValidationResultNew as PluginValidationResult,
+  PluginHealthStatusNew as PluginHealthStatus,
+  PluginRegistrationInfoNew as PluginRegistrationInfo,
+  PluginListOptionsNew as PluginListOptions,
+  PluginDependencyInfoNew as PluginDependencyInfo,
+  BulkOperationOptionsNew as BulkOperationOptions,
+  BulkOperationResultNew as BulkOperationResult,
 } from '@hierarchidb/common-api';
+
+// Define PluginManagementAPI locally if not exported
+type PluginManagementAPI = PluginLifecycleAPI;
 import { NodeType } from '@hierarchidb/common-type';
 
 // Local type definitions for interfaces not exported from common-api

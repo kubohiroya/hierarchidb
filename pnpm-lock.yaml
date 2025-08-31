@@ -1158,6 +1158,9 @@ importers:
 
   packages/runtime/plugin-dialog:
     dependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
@@ -1311,6 +1314,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/node-type-base-plugin':
+        specifier: workspace:*
+        version: link:../../node-type/base-plugin
       '@hierarchidb/runtime-plugin-registry':
         specifier: workspace:*
         version: link:../plugin-registry
