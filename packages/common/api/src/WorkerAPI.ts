@@ -22,6 +22,7 @@ import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 import type { ProxyMarked } from 'comlink';
 import { ITagAPI } from './ITagAPI';
 import { PluginExtensionAPI } from './PluginExtensionAPI';
+import type { MultiStepDialogAPI } from './MultiStepDialogAPI';
 
 /**
  * Main worker facade API
@@ -194,6 +195,23 @@ export interface WorkerAPI {
    *
    * @returns Promise that resolves to "pong" with timestamp
    */
+  /**
+   * Get Multi-Step Dialog API for managing multi-step dialog workflows
+   *
+   * Provides functionality for creating and managing working copies
+   * for multi-step dialog workflows with validation and capabilities.
+   *
+   * @returns Multi-Step Dialog API facade instance
+   *
+   * @example
+   * ```typescript
+   * const dialogAPI = workerAPI.getMultiStepDialogAPI();
+   * const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+   * const capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
+   * ```
+   */
+  getMultiStepDialogAPI(): MultiStepDialogAPI & ProxyMarked;
+
   ping(): { response: 'pong'; timestamp: number };
 
   /**

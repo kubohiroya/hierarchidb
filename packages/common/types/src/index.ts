@@ -11,6 +11,7 @@ export * from './id-types';
 export * from './import-export-types';
 export * from './menu-types';
 export * from './plugin-definition';
+export * from './plugin-metadata';
 export * from './plugin-resolution';
 export * from './plugin-pointcuts';
 export * from './plugin-serialization';

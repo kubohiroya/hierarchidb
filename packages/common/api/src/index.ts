@@ -8,7 +8,7 @@ export type {
   ImportResult,
   ExportResult,
   ValidateImportParams,
-  ValidationResult,
+  ValidationResult as ImportExportValidationResult,
   ValidationError,
   ValidationWarning,
   ImportProgress,
@@ -63,3 +63,11 @@ export { PluginExtensionRegistry } from './PluginExtensionAPI';
 // Plugin Registry API
 export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
 export * from './ITagAPI';
+
+// Multi-Step Dialog API
+export type { 
+  MultiStepDialogAPI,
+  WorkingCopyData,
+  ValidationResult,
+  StepCapabilities 
+} from './MultiStepDialogAPI';

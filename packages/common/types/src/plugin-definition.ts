@@ -16,6 +16,12 @@ export interface PluginDefinition {
   readonly displayName: string;
   readonly description?: string;
 
+  // Visibility configuration
+  readonly visibility?: {
+    showInCreateMenu?: boolean;  // Show in "Create new node" menu (default: true)
+    showInPluginList?: boolean;  // Show in plugin list/settings (default: true)
+  };
+
   // i18n configuration
   readonly i18n?: PluginI18nConfig;
 
