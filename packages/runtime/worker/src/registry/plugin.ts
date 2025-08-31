@@ -6,14 +6,6 @@ import type { NodeTypeConfig, WorkingCopyProperties, PeerEntity as CorePeerEntit
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
 
-// Re-export core types for consistency
-export type { WorkingCopyProperties };
-export type PeerEntity = CorePeerEntity;
-export type GroupEntity = CoreGroupEntity;
-export type { WorkingCopy } from '@hierarchidb/common-core';
-
-import { BaseEntityHandler } from '../handlers';
-
 // BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
 
 // Re-export with same names for compatibility
@@ -31,12 +23,6 @@ export type NodeLifecycleHooks<
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
 > = CoreNodeLifecycleHooks<TEntity, TWorkingCopy>;
 
-// Re-export core types directly instead of creating aliases
-export type {
-  WorkerPluginRouterAction,
-  IconDefinition,
-  CategoryDefinition,
-} from '@hierarchidb/common-core';
 export type ValidationRule<TEntity extends PeerEntity = PeerEntity> = CoreValidationRule<TEntity>;
 
 // Node definition with entity handler (worker-specific extension of core)

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import * as path from 'path';
 
 export default defineConfig({
   test: {
@@ -9,7 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/common-core': path.resolve(__dirname, '../../common/core/src'),
+      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/type/src'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
       '~': path.resolve(__dirname, './src'),
     },

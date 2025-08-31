@@ -11,17 +11,17 @@ import type { TreeQueryAPI } from './TreeQueryAPI';
 import type { TreeMutationAPI } from './TreeMutationAPI';
 import type { ImportExportAPI } from './ImportExportAPI';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
-import type { PluginRegistryAPI } from './PluginRegistryAPI';
-import type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
+// import type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
 // import type { PluginExtensionAPI } from './PluginExtensionAPI'; // Will be used in future
 import type { WorkingCopyAPI } from './WorkingCopyAPI';
 import type { PluginTreeAPI } from './PluginTreeAPI';
-import type { TreePluginAnalyzer } from './TreePluginAnalyzer';
+// import type { TreePluginAnalyzer } from './TreePluginAnalyzer';
 import type { NodeTypeAPI } from './NodeTypeAPI';
-import type { PluginManagementAPI } from './PluginManagementAPI';
+// import type { PluginManagementAPI } from './PluginManagementAPI';
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 import type { ProxyMarked } from 'comlink';
-import type { Tree, TreeId, TreeNode, NodeId } from '@hierarchidb/common-type';
+import { ITagAPI } from './ITagAPI';
+import { PluginExtensionAPI } from './PluginExtensionAPI';
 
 /**
  * Main worker facade API
@@ -76,26 +76,11 @@ export interface WorkerAPI {
   getSubscriptionAPI(): TreeSubscriptionAPI & ProxyMarked;
 
   /**
-   * Get the plugin registry API for plugin system management
-   *
-   * @deprecated Use specialized APIs instead: getNodeTypeAPI(), getPluginManagementAPI(), getPluginTreeAPI()
-   *
-   * This legacy API will be removed in v2.0. Migration guide:
-   * - Node type operations → getNodeTypeAPI()
-   * - Plugin management → getPluginManagementAPI()
-   * - TreeTypes-specific queries → getPluginTreeAPI()
-   */
-  /**
-   * @deprecated Use getNodeTypeRegistryAPI() instead. Will be removed in v2.0.
-   */
-  getPluginRegistryAPI(): PluginRegistryAPI & ProxyMarked;
-
-  /**
    * Get NodeTypeRegistryAPI for node type registration and management
    *
+   getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & ProxyMarked;
    * @returns Proxy to NodeTypeRegistryAPI implementation
    */
-  getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & ProxyMarked;
 
   /**
    * Get the working copy API for draft and edit operations
@@ -112,6 +97,14 @@ export interface WorkerAPI {
    * ```
    */
   getWorkingCopyAPI(): WorkingCopyAPI & ProxyMarked;
+
+  // ----------------------------------------------------------------//
+  /**
+   * Get PluginLifecycleAPI for plugin lifecycle management
+   *
+   * @returns Proxy to PluginLifecycleAPI implementation
+   */
+  getPluginLifecycleAPI(): PluginLifecycleAPI & ProxyMarked;
 
   /**
    * Get Plugin TreeTypes API facade
@@ -130,17 +123,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  /**
-   * @deprecated Use getTreePluginAnalyzer() instead. Will be removed in v2.0.
-   */
-  getPluginTreeAPI(): PluginTreeAPI & ProxyMarked;
-
-  /**
-   * Get TreePluginAnalyzer for TreeTypes-specific plugin analysis and optimization
-   *
-   * @returns Proxy to TreePluginAnalyzer implementation
-   */
-  getTreePluginAnalyzer(): TreePluginAnalyzer & ProxyMarked;
+  getPluginExtensionAPI(): PluginExtensionAPI & ProxyMarked;
 
   /**
    * Get Node Type API facade
@@ -157,33 +140,9 @@ export interface WorkerAPI {
    * ```
    */
   getNodeTypeAPI(): NodeTypeAPI & ProxyMarked;
+  getPluginTreeAPI(): PluginTreeAPI & ProxyMarked;
 
-  /**
-   * Get Plugin Management API facade
-   *
-   * Provides comprehensive plugin lifecycle management including registration,
-   * validation, and health monitoring.
-   *
-   * @returns Plugin Management API facade instance
-   *
-   * @example
-   * ```typescript
-   * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
-   * const result = await pluginMgmtAPI.register(myPluginDefinition);
-   * ```
-   */
-  /**
-   * @deprecated Use getPluginLifecycleAPI() instead. Will be removed in v2.0.
-   */
-  getPluginManagementAPI(): PluginManagementAPI & ProxyMarked;
-
-  /**
-   * Get PluginLifecycleAPI for plugin lifecycle management
-   *
-   * @returns Proxy to PluginLifecycleAPI implementation
-   */
-  getPluginLifecycleAPI(): PluginLifecycleAPI & ProxyMarked;
-
+  // ----------------------------------------------------------------//
   /**
    * Get Import/Export API for data transfer operations
    *
@@ -205,8 +164,9 @@ export interface WorkerAPI {
    */
   getImportExportAPI(): ImportExportAPI & ProxyMarked;
 
+  // ----------------------------------------------------------------//
   /**
-   * Get Tag Service for tag management operations
+   * Get Tag Service API for tag management operations
    *
    * Provides functionality for creating, managing, and associating tags
    * with tree nodes across the entire system.
@@ -215,7 +175,7 @@ export interface WorkerAPI {
    *
    * @example
    * ```typescript
-   * const tagService = await workerAPI.getTagService();
+   * const tagService = await workerAPI.getTagAPI();
    * const tag = await tagService.createTag({
    *   name: 'Important',
    *   color: '#ff0000',
@@ -223,8 +183,9 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getTagService(): any & ProxyMarked;
+  getTagAPI(): ITagAPI & ProxyMarked;
 
+  // ----------------------------------------------------------------//
   /**
    * Simple ping method for health check
    *
@@ -280,65 +241,33 @@ export interface WorkerAPI {
     };
     uptime: number;
   }>;
-
-  /**
-   * @deprecated These methods are for backwards compatibility only.
-   * New code should use getQueryAPI(), getMutationAPI(), etc. instead.
-   * Will be removed in v2.0.
-   */
-  // Backwards compatibility methods
-  // These provide direct access to common operations without going through sub-APIs
-
-  /**
-   * @deprecated Use getQueryAPI().getTree() instead. Will be removed in v2.0.
-   */
-  getTree(params: { treeId: TreeId }): Promise<Tree | undefined>;
-
-  /**
-   * @deprecated Use getQueryAPI().listTrees() instead. Will be removed in v2.0.
-   */
-  listTrees(): Promise<Tree[]>;
-
-  /**
-   * @deprecated Use getQueryAPI().listTrees() instead. This is a naming mistake. Will be removed in v2.0.
-   */
-  getTrees(): Promise<Tree[]>;
-
-  /**
-   * @deprecated Use getQueryAPI().getNode() instead. Will be removed in v2.0.
-   */
-  getNode(nodeId: NodeId): Promise<TreeNode | undefined>;
-
-  /**
-   * @deprecated Use getQueryAPI().listChildren() instead. Will be removed in v2.0.
-   */
-  getChildren(params: { parentId: NodeId }): Promise<TreeNode[]>;
-
-  /**
-   * @deprecated Use getMutationAPI().createNode() instead. Will be removed in v2.0.
-   */
-  create(params: any): Promise<any>;
-
-  /**
-   * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
-   */
-  recoverFromTrash(params: {
-    nodeIds: NodeId[];
-    toParentId?: NodeId;
-  }): Promise<{ success: boolean; error?: string }>;
-
-  /**
-   * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety and structure. Will be removed in v2.0.
-   */
-  getPluginsForTree(treeId: TreeId): Promise<any[]>;
-
-  /**
-   * @deprecated Use getMutationAPI().removeNodes() instead. Will be removed in v2.0.
-   */
-  removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 }
 
 /**
  * Default export for the WorkerAPI interface
  */
 export default WorkerAPI;
+/**
+ * Get TreePluginAnalyzer for TreeTypes-specific plugin analysis and optimization
+ *
+ * @returns Proxy to TreePluginAnalyzer implementation
+ getTreePluginAnalyzer(): TreePluginAnalyzer & ProxyMarked;
+ */
+/**
+ * Get Plugin Management API facade
+ *
+ * Provides comprehensive plugin lifecycle management including registration,
+ * validation, and health monitoring.
+ *
+ * @returns Plugin Management API facade instance
+ *
+ * @example
+ * ```typescript
+ * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
+ * const result = await pluginMgmtAPI.register(myPluginDefinition);
+ * ```
+ */
+/**
+ * @deprecated Use getPluginLifecycleAPI() instead. Will be removed in v2.0.
+ getPluginManagementAPI(): PluginManagementAPI & ProxyMarked;
+ */

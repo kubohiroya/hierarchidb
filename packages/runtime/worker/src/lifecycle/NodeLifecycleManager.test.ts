@@ -1,8 +1,12 @@
-import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
+import type {
+  TreeNode,
+  NodeId,
+  NodeType,
+  PluginDefinition,
+  PluginIntegrated,
+} from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NodeLifecycleManager } from './NodeLifecycleManager';
-import { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
-import type { NodeTypeDefinition } from './types';
 
 // Mock implementations
 class MockCoreDB {
@@ -70,7 +74,7 @@ describe('NodeLifecycleManager', () => {
       const nodeType = 'testType' as NodeType;
 
       // Register node type with hooks
-      const definition: Partial<NodeTypeDefinition> = {
+      const definition: Partial<PluginIntegrated> = {
         nodeType,
         lifecycle: {
           beforeCreate: hookCalls.beforeCreate,

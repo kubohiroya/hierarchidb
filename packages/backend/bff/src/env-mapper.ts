@@ -28,7 +28,7 @@ export function mapEnvironmentVariables(env: Record<string, any>): Record<string
   };
 }
 
-import { Env } from './types';
+import { Env } from './types.js';
 
 // Type definition for the mapped environment
 export interface MappedEnv extends Env {

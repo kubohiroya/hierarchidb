@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Backend for Frontend - OAuth2 authentication for hierarchidb",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
     "dev:manual": "wrangler dev",
     "build": "tsc --noEmit",

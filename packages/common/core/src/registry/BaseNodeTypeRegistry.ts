@@ -6,8 +6,6 @@
  * @see @hierarchidb/runtime-plugin-registry/src/registry/BaseNodeTypeRegistry.ts
  */
 
-import type { NodeType, INodeTypeRegistry } from '@hierarchidb/common-type';
-
 /**
  * Abstract base implementation for node type registries
  * Provides common functionality for all registry types

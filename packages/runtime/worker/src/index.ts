@@ -5,12 +5,7 @@ export { createWorkerClient, createWorkerClientFromInstance } from '~/client';
 
 // Command exports
 export { CommandProcessor } from '~/command';
-export type {
-  CommandEnvelope,
-  CommandMeta,
-  CommandResult,
-  CommandEvent
-} from '~/command/types';
+export type { CommandEnvelope, CommandMeta, CommandResult, CommandEvent } from '~/command/types';
 export { WorkerErrorCode } from '~/command/types';
 
 // Database exports
@@ -18,20 +13,20 @@ export { CoreDB } from '~/db/CoreDB';
 export { EphemeralDB } from '~/db/EphemeralDB';
 export { StyleMapDB } from '~/db/StyleMapDB';
 export { SpreadsheetDB } from '~/db/SpreadsheetDB';
-export { EntityDatabase, DexieAdapter, ExpirationCleaner, TransactionManager, DexieEntityManagerFactory } from '~/db/dexieIntegration';
-export type { 
-  WorkingCopyRow,
-  TreeViewStateRow
-} from '~/db/EphemeralDB';
-export type {
-  ColorRule,
-  StyleMapEntity
-} from '~/db/StyleMapDB';
+export {
+  EntityDatabase,
+  DexieAdapter,
+  ExpirationCleaner,
+  TransactionManager,
+  DexieEntityManagerFactory,
+} from '~/db/dexieIntegration';
+export type { WorkingCopyRow, TreeViewStateRow } from '~/db/EphemeralDB';
+export type { ColorRule, StyleMapEntity } from '~/db/StyleMapDB';
 export type {
   SpreadsheetMetadata,
   SpreadsheetChunk,
   SpreadsheetRefEntity,
-  SpreadsheetMetadataId
+  SpreadsheetMetadataId,
 } from '~/db/SpreadsheetDB';
 // Handler exports
 export {
@@ -51,9 +46,8 @@ export { AutoEntityHandler } from '~/handlers/AutoEntityHandler';
 export { NodeLifecycleManager } from '~/lifecycle/NodeLifecycleManager';
 export type {
   NodeLifecycleHooks as LifecycleHooks,
-  NodeTypeDefinition as LifecycleNodeTypeDefinition,
   LifecycleContext,
-  LifecycleEvent
+  LifecycleEvent,
 } from '~/lifecycle/types';
 
 // Operations exports
@@ -66,24 +60,19 @@ export {
   discardWorkingCopy,
   getChildNames,
   getWorkingCopy,
-  updateWorkingCopy
+  updateWorkingCopy,
 } from '~/operations/WorkingCopyOperations';
 
 // Registry exports
-export type { 
-  PeerEntity, 
-  GroupEntity,
+export type {
   NodeLifecycleHooks,
   PluginDefinition,
-  WorkerPluginRouterAction,
   NodeDefinition,
   NodeTypeDefinition, // @deprecated - for testing ESLint deprecation detection
   ValidationRule,
   EntityHandler,
   EntityBackup,
-  IconDefinition
 } from '~/registry/plugin';
-export { UnifiedNodeTypeRegistry } from '~/registry/UnifiedNodeTypeRegistry';
 
 // Service exports (needed for WorkerAPIImpl return types)
 export { TreeQueryService } from '~/services/TreeQueryService';

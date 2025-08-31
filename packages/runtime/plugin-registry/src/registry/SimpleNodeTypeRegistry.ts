@@ -4,7 +4,7 @@
  * This replaces the old NodeTypeRegistry.ts in the worker package
  */
 
-import { SingletonMixin } from '@hierarchidb/common-core';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { ISimpleNodeTypeRegistry, NodeTypeConfig, NodeType } from '@hierarchidb/common-type';
 import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
 
@@ -22,7 +22,7 @@ export class SimpleNodeTypeRegistry
       return instance;
     });
   }
-  
+
   private constructor() {
     super();
     this.initializeDefaultTypes();

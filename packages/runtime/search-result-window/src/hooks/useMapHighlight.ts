@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/core';
-import type { MapHighlightState, MapHighlightStyles } from '~/types';
-import { MapHighlightService } from '~/services/MapHighlightService';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
+import { MapHighlightService } from '~/services/MapHighlightService.js';
 
 interface UseMapHighlightProps {
   mapInstance?: any; // MapLibre GL JSインスタンス

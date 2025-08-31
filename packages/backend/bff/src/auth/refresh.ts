@@ -1,7 +1,7 @@
 import { Context } from 'hono';
-import { Env } from '../types';
-import { extractBearerToken, createSessionToken } from '../utils/jwt';
-import { KVStorageManager } from '../utils/kv-storage';
+import { Env } from '../types.js';
+import { extractBearerToken, createSessionToken } from '../utils/jwt.js';
+import { KVStorageManager } from '../utils/kv-storage.js';
 
 /**
  * Refresh token endpoint handler
@@ -10,7 +10,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
   try {
     const authHeader = c.req.header('Authorization');
     const token = extractBearerToken(authHeader);
-    
+
     // リフレッシュトークンIDをボディから取得（オプション）
     const body = await c.req.json().catch(() => ({}));
     const { refresh_token_id } = body;
@@ -49,8 +49,8 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
 
     // Refresh with new token and rotation
     const result = await kvManager.refreshUserToken(
-      token, 
-      newSessionToken, 
+      token,
+      newSessionToken,
       sessionDuration,
       refresh_token_id
     );
@@ -58,15 +58,21 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
     if (!result.success) {
       // セキュリティ違反の場合は詳細なエラーを返す
       if (result.error === 'Token reuse detected - all sessions revoked') {
-        return c.json({ 
-          error: 'security_violation',
-          error_description: result.error 
-        }, 403);
+        return c.json(
+          {
+            error: 'security_violation',
+            error_description: result.error,
+          },
+          403
+        );
       }
-      return c.json({ 
-        error: 'invalid_grant',
-        error_description: result.error || 'Invalid or expired refresh token' 
-      }, 401);
+      return c.json(
+        {
+          error: 'invalid_grant',
+          error_description: result.error || 'Invalid or expired refresh token',
+        },
+        401
+      );
     }
 
     return c.json({

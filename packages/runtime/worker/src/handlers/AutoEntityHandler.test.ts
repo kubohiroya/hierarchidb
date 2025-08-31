@@ -11,6 +11,13 @@ import { AutoEntityHandler } from './AutoEntityHandler';
 import { AutoLifecycleManager } from '../services/AutoLifecycleManager';
 import { EntityRegistrationService } from '../services/EntityRegistrationService';
 import { WorkingCopyManager, WorkingCopySession } from '../services/WorkingCopyManager';
+import {
+  EntityMetadata,
+  NodeId,
+  NodeType,
+  PeerEntity,
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 
 // Test entity interface
 interface TestEntity extends PeerEntity {

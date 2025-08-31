@@ -3,18 +3,8 @@
  * @description Registry module exports for worker package
  */
 
-// Export registries
-// Direct export for immediate usage
-export {
-  SimpleNodeTypeRegistry,
-  SimpleNodeTypeRegistry as NodeTypeRegistry,
-} from '@hierarchidb/runtime-plugin-registry';
 // Export types
-export * from './types';
 export type {
-  PeerEntity,
-  GroupEntity,
-  WorkingCopy,
   EntityBackup,
   EntityHandler,
   ExtendedNodeTypeConfig,
@@ -22,7 +12,6 @@ export type {
   NodeTypeDefinition,
   PluginDefinition,
   ValidationRule,
-  WorkerPluginRouterAction,
 } from './plugin';
 // Export interfaces
 export type { IUnifiedNodeTypeRegistry } from './UnifiedNodeTypeRegistry';

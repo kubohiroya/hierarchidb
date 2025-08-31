@@ -4,14 +4,7 @@
  * Moved from common-core/src/registry/INodeTypeRegistry.ts
  */
 
-import type {
-  PeerEntity,
-  GroupEntity,
-  EntityHandler,
-  WorkingCopyProperties,
-  NodeTypeDefinition,
-  NodeType,
-} from './index';
+import type { EntityHandler, NodeType, PluginDefinition } from './index';
 
 /**
  * Base interface for all node type registries
@@ -88,34 +81,21 @@ export interface IPluginRegistry extends INodeTypeRegistry<unknown> {
 /**
  * Interface for node type definition registry (original core registry)
  */
-export interface INodeDefinitionRegistry
-  extends INodeTypeRegistry<
-    NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
-  > {
+export interface INodeDefinitionRegistry extends INodeTypeRegistry<PluginDefinition> {
   /**
    * Register a node type definition
    */
-  registerDefinition<
-    TPeerEntity extends PeerEntity,
-    TGroupEntity extends GroupEntity,
-    TWorkingCopy extends TPeerEntity & WorkingCopyProperties,
-  >(
-    definition: NodeTypeDefinition<TPeerEntity, TGroupEntity, TWorkingCopy>
-  ): void;
+  registerDefinition(definition: PluginDefinition): void;
 
   /**
    * Get node type definition
    */
-  getDefinition(
-    nodeType: NodeType
-  ): NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> | undefined;
+  getDefinition(nodeType: NodeType): PluginDefinition | undefined;
 
   /**
    * Get entity handler
    */
-  getHandler(
-    nodeType: NodeType
-  ): EntityHandler<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> | undefined;
+  getHandler(nodeType: NodeType): EntityHandler | undefined;
 }
 
 /**

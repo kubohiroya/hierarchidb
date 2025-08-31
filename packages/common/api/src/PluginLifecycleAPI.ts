@@ -6,7 +6,7 @@
  * It's focused on the management aspects of plugins, separated from node type queries.
  */
 
-import type { NodeType, NodeTypeDefinition } from '@hierarchidb/common-type';
+import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
 
 // 【型定義】: テストで期待される結果型の定義
 // 🟡 信頼性レベル: テスト仕様から推測した型構造
@@ -83,7 +83,7 @@ export interface PluginDependencyInfo {
 
 export interface BulkOperationOptions {
   operation: 'register' | 'unregister';
-  definition?: NodeTypeDefinition[];
+  definition?: PluginDefinition[];
   nodeTypes?: NodeType[];
 }
 
@@ -164,7 +164,7 @@ export interface PluginLifecycleAPI {
    * @param definition - 登録するプラグインの定義
    * @returns 登録結果とプラグインID
    */
-  register(definition: NodeTypeDefinition): Promise<PluginRegistrationResult>;
+  register(definition: PluginDefinition): Promise<PluginRegistrationResult>;
 
   /**
    * 【機能概要】: 登録済みプラグインをシステムから削除する
@@ -182,7 +182,7 @@ export interface PluginLifecycleAPI {
    * @param definition - 検証するプラグイン定義
    * @returns 検証結果と詳細エラー情報
    */
-  validatePlugin(definition: NodeTypeDefinition): Promise<PluginValidationResult>;
+  validatePlugin(definition: PluginDefinition): Promise<PluginValidationResult>;
 
   /**
    * 【機能概要】: プラグインの動作状況とパフォーマンスを監視する

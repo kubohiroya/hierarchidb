@@ -3,25 +3,18 @@
  * Combines core node definition with worker-side entity handler
  */
 
-import { ClientAPIExtensions, WorkerAPIExtensions } from './api-types';
-import { DatabaseSchema } from './database-types';
 import { EntityHandler } from './entity-handler-types';
-import { GroupEntity, PeerEntity } from './entity-types';
+import { PeerEntity } from './entity-types';
 import { NodeType, TreeId } from './id-types';
-import { PluginMetadata } from './plugin-metadata';
 import { NodeLifecycleHooks } from './tree-node-lifecycle-hooks';
 import { ValidationRule } from './validation-types';
-import { WorkingCopyProperties } from './working-copy-types';
 
-export interface BasePluginDefinition<
-  TEntity extends PeerEntity = PeerEntity,
-  TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> {
+export interface PluginDefinition {
   // Basic node information
   readonly nodeType: NodeType;
   readonly name: string;
   readonly displayName: string;
+  readonly description?: string;
 
   // i18n configuration
   readonly i18n?: PluginI18nConfig;
@@ -31,12 +24,6 @@ export interface BasePluginDefinition<
 
   // Category configuration - defines which tree(s) this plugin is available in
   readonly category: CategoryDefinition;
-
-  // Entity handler - manages CRUD operations
-  readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
-
-  // Lifecycle hooks with actual implementations
-  readonly lifecycle?: NodeLifecycleHooks<TEntity, TWorkingCopy>;
 
   // Database configuration
   readonly database: PluginDatabaseConfig;
@@ -49,8 +36,15 @@ export interface BasePluginDefinition<
 
   // Validation configuration (optional)
   readonly validation?: PluginValidationConfig;
+
+  readonly extends?: string;
+  readonly dependencies: string[];
+
+  readonly priority: number;
+  readonly version: string;
 }
 
+/*
 // ノード型定義（Core層専用、UI非依存）
 export interface NodeTypeDefinition<
   TEntity extends PeerEntity = PeerEntity,
@@ -92,6 +86,7 @@ export interface NodeTypeDefinition<
     customValidators?: ValidationRule<TEntity>[];
   };
 }
+ */
 
 export interface NodeTypeIconDefinition {
   // MUI icon name (e.g., 'Folder', 'Description', 'Map')
@@ -159,8 +154,7 @@ export interface WorkerPluginRouterAction {
 // Database configuration for plugins
 export interface PluginDatabaseConfig {
   dbName: string;
-  tableName: string;
-  schema: string; // Dexie schema
+  schema: DatabaseSchema; // Dexie schema
   version: number;
 }
 
@@ -219,6 +213,11 @@ export interface PluginI18nConfig {
   };
 }
 
+// データベーススキーマ定義
+export interface DatabaseSchema {
+  [storeName: string]: string; // Dexie schema string
+}
+
 // CoreNodeDefinition removed - use PluginDefinition directly
 // This reduces type confusion and improves clarity
 
@@ -231,15 +230,19 @@ export interface PluginRoutingConfig {
 /**
  * Full plugin definition (extends EntityTypes with routing and metadata)
  * This is the complete definition used for plugin registration
+ * @deprecated
  */
-export interface ExtendedPluginDefinition<
-  TEntity extends PeerEntity = PeerEntity,
-  TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> extends BasePluginDefinition<TEntity, TGroupEntity, TWorkingCopy> {
+export interface ExtendedPluginDefinition extends PluginDefinition {
   // Worker-side routing configuration
-  readonly routing: PluginRoutingConfig;
-
   // Plugin metadata
-  readonly metadata: PluginMetadata;
+}
+
+export interface PluginIntegrated extends PluginDefinition {
+  // Entity handler - manages CRUD operations
+  readonly entityHandler: EntityHandler;
+
+  // Lifecycle hooks with actual implementations
+  readonly lifecycle?: NodeLifecycleHooks;
+
+  readonly routing: PluginRoutingConfig;
 }

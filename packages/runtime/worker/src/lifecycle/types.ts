@@ -29,25 +29,6 @@ export interface NodeLifecycleHooks {
 }
 
 /**
- * Node type definition with lifecycle hooks
- */
-export interface NodeTypeDefinition {
-  nodeType: NodeType;
-  displayName?: string;
-  icon?: string;
-  color?: string;
-  lifecycle?: NodeLifecycleHooks;
-  validation?: {
-    namePattern?: RegExp;
-    allowedChildTypes?: NodeType[];
-    maxChildren?: number;
-    customValidators?: Array<{
-      validate: (node: TreeNode) => Promise<{ valid: boolean; message?: string }>;
-    }>;
-  };
-}
-
-/**
  * Context provided to lifecycle hooks
  */
 export interface LifecycleContext {

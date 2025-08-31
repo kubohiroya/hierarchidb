@@ -3,7 +3,7 @@
  * @description Base types for all HierarchiDB plugins
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 
 /**
  * Base entity interface that all plugin entities must extend

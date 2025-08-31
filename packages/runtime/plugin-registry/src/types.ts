@@ -4,15 +4,6 @@ import type { NodeType } from '@hierarchidb/common-type';
  * @description Type definitions for the plugin registry system
  */
 
-export interface PluginMetadata {
-  nodeType: string;
-  name: string;
-  version: string;
-  dependencies?: string[];
-  category?: string;
-  extends?: string;
-}
-
 export interface PluginRegistryConfig {
   autoDiscovery?: boolean;
   strictDependencyChecking?: boolean;

@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import Dexie from 'dexie';
 import 'fake-indexeddb/auto';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';
+import { EntityMetadata, NodeId, PeerEntity } from '@hierarchidb/common-type';
 
 // Test entity interface
 interface TestEntity extends PeerEntity {

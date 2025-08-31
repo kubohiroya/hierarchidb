@@ -1,4 +1,4 @@
-import { generateCodeVerifier, generateCodeChallenge, generateState } from '../utils/pkce';
+import { generateCodeVerifier, generateCodeChallenge, generateState } from '../utils/pkce.js';
 
 export interface GoogleOAuth2Config {
   clientId: string;

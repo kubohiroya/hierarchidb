@@ -1,5 +1,5 @@
-import type { NodeId } from '@hierarchidb/core';
-import type { MapHighlightState, MapHighlightStyles } from '~/types';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { MapHighlightState, MapHighlightStyles } from '~/types/index.js';
 
 /**
  * 地図上の要素の強調表示を管理するサービス
@@ -11,11 +11,11 @@ export class MapHighlightService {
 
   private defaultStyles: MapHighlightStyles = {
     searchMatch: {
-      fillColor: '#FFE082',    // 黄色系の塗りつぶし
+      fillColor: '#FFE082', // 黄色系の塗りつぶし
       fillOpacity: 0.6,
     },
     selection: {
-      strokeColor: '#1976D2',  // 青色の線
+      strokeColor: '#1976D2', // 青色の線
       strokeWidth: 3,
       strokeOpacity: 0.9,
     },
@@ -42,7 +42,7 @@ export class MapHighlightService {
    */
   setSearchMatched(nodeIds: NodeId[]): void {
     this.searchMatchedNodes.clear();
-    nodeIds.forEach(id => this.searchMatchedNodes.add(id));
+    nodeIds.forEach((id) => this.searchMatchedNodes.add(id));
     this.notifyStateChange();
     this.updateMapHighlight();
   }
@@ -52,7 +52,7 @@ export class MapHighlightService {
    */
   setSelected(nodeIds: NodeId[]): void {
     this.selectedNodes.clear();
-    nodeIds.forEach(id => this.selectedNodes.add(id));
+    nodeIds.forEach((id) => this.selectedNodes.add(id));
     this.notifyStateChange();
     this.updateMapHighlight();
   }
@@ -211,7 +211,7 @@ export class MapHighlightService {
       const searchMatchFilter = [
         'in',
         ['get', 'nodeId'],
-        ['literal', Array.from(this.searchMatchedNodes)]
+        ['literal', Array.from(this.searchMatchedNodes)],
       ];
 
       if (this.mapInstance.getLayer('search-highlight-fill')) {
@@ -222,13 +222,12 @@ export class MapHighlightService {
       const selectionFilter = [
         'in',
         ['get', 'nodeId'],
-        ['literal', Array.from(this.selectedNodes)]
+        ['literal', Array.from(this.selectedNodes)],
       ];
 
       if (this.mapInstance.getLayer('selection-highlight-line')) {
         this.mapInstance.setFilter('selection-highlight-line', selectionFilter);
       }
-
     } catch (error) {
       console.warn('Failed to update map highlight:', error);
     }

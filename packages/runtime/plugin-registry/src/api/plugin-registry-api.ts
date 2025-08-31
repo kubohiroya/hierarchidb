@@ -4,7 +4,7 @@
  */
 
 import type { TreeId, NodeType } from '@hierarchidb/common-type';
-import { UnifiedNodeTypeRegistry } from '../registry/UnifiedNodeTypeRegistry';
+import { PluginRegistry } from '~/registry/PluginRegistry';
 
 // TODO: Import PluginDefinition from worker package when available
 // For now, use 'any' as a temporary workaround
@@ -14,29 +14,27 @@ type PluginDefinition = any;
  * Get all registered plugins from the registry
  */
 export async function getRegisteredPlugins(): Promise<PluginDefinition[]> {
-  const registry = UnifiedNodeTypeRegistry.getInstance();
+  const registry = PluginRegistry.getInstance();
   const plugins: PluginDefinition[] = [];
-  
+
   // Get all registered node types
   const nodeTypes = registry.getAllNodeTypes();
-  
+
   for (const nodeType of nodeTypes) {
     const definition = registry.get(nodeType);
     if (definition) {
       plugins.push(definition as PluginDefinition);
     }
   }
-  
+
   return plugins;
 }
 
 /**
  * Get a specific plugin definition by node type
  */
-export async function getPluginDefinition(
-  nodeType: string
-): Promise<PluginDefinition | null> {
-  const registry = UnifiedNodeTypeRegistry.getInstance();
+export async function getPluginDefinition(nodeType: string): Promise<PluginDefinition | null> {
+  const registry = PluginRegistry.getInstance();
   return (registry.get(nodeType as NodeType) as PluginDefinition) || null;
 }
 
@@ -44,7 +42,7 @@ export async function getPluginDefinition(
  * Check if a node type is registered
  */
 export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
-  const registry = UnifiedNodeTypeRegistry.getInstance();
+  const registry = PluginRegistry.getInstance();
   return registry.has(nodeType as NodeType);
 }
 
@@ -52,9 +50,9 @@ export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
  * Get all node types that can be created (have UI containers)
  */
 export async function getCreatableNodeTypes(): Promise<string[]> {
-  const registry = UnifiedNodeTypeRegistry.getInstance();
+  const registry = PluginRegistry.getInstance();
   const creatableTypes: string[] = [];
-  
+
   const nodeTypes = registry.getAllNodeTypes();
   for (const nodeType of nodeTypes) {
     const definition = registry.get(nodeType);
@@ -62,7 +60,7 @@ export async function getCreatableNodeTypes(): Promise<string[]> {
       creatableTypes.push(nodeType);
     }
   }
-  
+
   return creatableTypes;
 }
 
@@ -70,16 +68,16 @@ export async function getCreatableNodeTypes(): Promise<string[]> {
  * Get plugins filtered by tree ID and sorted by create order
  */
 export async function getPluginsForTree(treeId: TreeId): Promise<PluginDefinition[]> {
-  const registry = UnifiedNodeTypeRegistry.getInstance();
+  const registry = PluginRegistry.getInstance();
   const plugins: PluginDefinition[] = [];
-  
+
   const nodeTypes = registry.getAllNodeTypes();
-  
+
   for (const nodeType of nodeTypes) {
     const definition = registry.get(nodeType);
     if (definition) {
       // If treeId is '*', return all plugins
-      if (treeId === '*' as TreeId) {
+      if (treeId === ('*' as TreeId)) {
         plugins.push(definition as PluginDefinition);
       } else {
         // Check if plugin is available for this tree
@@ -90,23 +88,28 @@ export async function getPluginsForTree(treeId: TreeId): Promise<PluginDefinitio
       }
     }
   }
-  
+
   // Sort by menu group and create order
   return plugins.sort((a, b) => {
     const aGroup = a.category.menuGroup || 'basic';
     const bGroup = b.category.menuGroup || 'basic';
     const aOrder = a.category.createOrder || 999;
     const bOrder = b.category.createOrder || 999;
-    
+
     // Define group priority
-    const groupPriority: Record<string, number> = { basic: 1, container: 2, document: 3, advanced: 4 };
+    const groupPriority: Record<string, number> = {
+      basic: 1,
+      container: 2,
+      document: 3,
+      advanced: 4,
+    };
     const aPriority = groupPriority[aGroup as string] || 999;
     const bPriority = groupPriority[bGroup as string] || 999;
-    
+
     if (aPriority !== bPriority) {
       return aPriority - bPriority;
     }
-    
+
     return aOrder - bOrder;
   });
 }
@@ -117,6 +120,6 @@ export async function getPluginsForTree(treeId: TreeId): Promise<PluginDefinitio
 export async function getCreatableNodeTypesForTree(treeId: TreeId): Promise<string[]> {
   const plugins = await getPluginsForTree(treeId);
   return plugins
-    .filter(plugin => plugin.ui?.dialogComponentPath)
-    .map(plugin => plugin.nodeType);
+    .filter((plugin) => plugin.ui?.dialogComponentPath)
+    .map((plugin) => plugin.nodeType);
 }

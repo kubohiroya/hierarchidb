@@ -5,26 +5,15 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "~/*": ["src/*"]
     },
-    "types": [
-      "@cloudflare/workers-types"
-    ],
-    "lib": [
-      "ES2022"
-    ],
-    "target": "ES2022",
-    "module": "ES2022",
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["es2022", "dom", "webworker", "dom.iterable", "esnext.asynciterable"],
+    "target": "es2022",
+    "module": "esnext",
     "moduleResolution": "node",
-    "skipLibCheck": true  // Required for Cloudflare Workers environment
+    "skipLibCheck": true // Required for Cloudflare Workers environment
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

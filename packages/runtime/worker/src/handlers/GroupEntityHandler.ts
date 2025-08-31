@@ -5,6 +5,7 @@ import type { GroupEntity, NodeId, EntityId } from '@hierarchidb/common-type';
  * Based on 3-classification entity system
  */
 
+import { EntityId, GroupEntity, NodeId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**

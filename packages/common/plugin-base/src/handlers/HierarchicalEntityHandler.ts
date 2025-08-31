@@ -3,7 +3,7 @@
  * @description Base handler for entities with hierarchical parent-child relationships
  */
 
-import type { NodeId } from '@hierarchidb/common-core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { Collection } from 'dexie';
 import { BaseEntityHandler } from './BaseEntityHandler';
 import type { BaseEntity, BaseWorkingCopy, BaseSearchCriteria } from '../types';
@@ -45,18 +45,14 @@ export abstract class HierarchicalEntityHandler<
   TEntity extends HierarchicalEntity,
   TWorkingCopy extends BaseWorkingCopy,
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
-  TSearchCriteria extends HierarchicalSearchCriteria = HierarchicalSearchCriteria
+  TSearchCriteria extends HierarchicalSearchCriteria = HierarchicalSearchCriteria,
 > extends BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria> {
-  
   /**
    * Get direct children of a node
    */
   async getChildren(parentId: NodeId): Promise<TEntity[]> {
     try {
-      return await this.table
-        .where('parentId')
-        .equals(parentId)
-        .toArray();
+      return await this.table.where('parentId').equals(parentId).toArray();
     } catch (error) {
       console.error('Failed to get children:', error);
       throw error;
@@ -74,9 +70,9 @@ export abstract class HierarchicalEntityHandler<
       while (queue.length > 0) {
         const currentId = queue.shift()!;
         const children = await this.getChildren(currentId);
-        
+
         descendants.push(...children);
-        queue.push(...children.map(child => child.nodeId));
+        queue.push(...children.map((child) => child.nodeId));
       }
 
       return descendants;
@@ -117,12 +113,12 @@ export abstract class HierarchicalEntityHandler<
   async getPath(nodeId: NodeId): Promise<TEntity[]> {
     const ancestors = await this.getAncestors(nodeId);
     ancestors.reverse(); // Root first
-    
+
     const node = await this.getEntityByNodeId(nodeId);
     if (node) {
       ancestors.push(node);
     }
-    
+
     return ancestors;
   }
 
@@ -134,7 +130,7 @@ export abstract class HierarchicalEntityHandler<
     const rootNodes: TreeNode<TEntity>[] = [];
 
     // Create tree nodes
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       nodeMap.set(entity.nodeId, {
         entity,
         children: [],
@@ -142,9 +138,9 @@ export abstract class HierarchicalEntityHandler<
     });
 
     // Build parent-child relationships
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const node = nodeMap.get(entity.nodeId)!;
-      
+
       if (entity.parentId === rootParentId) {
         rootNodes.push(node);
       } else if (entity.parentId) {
@@ -193,13 +189,13 @@ export abstract class HierarchicalEntityHandler<
     }
 
     const children = await this.getChildren(node.entity.nodeId);
-    
+
     for (const child of children) {
       const childNode: TreeNode<TEntity> = {
         entity: child,
         children: [],
       };
-      
+
       node.children.push(childNode);
       await this.populateSubtree(childNode, maxDepth, currentDepth + 1);
     }
@@ -245,8 +241,8 @@ export abstract class HierarchicalEntityHandler<
     }
 
     const descendants = await this.getDescendants(nodeId);
-    const descendantIds = descendants.map(d => d.nodeId);
-    
+    const descendantIds = descendants.map((d) => d.nodeId);
+
     if (descendantIds.includes(newParentId)) {
       throw new Error('Cannot move node to its descendant');
     }
@@ -290,10 +286,7 @@ export abstract class HierarchicalEntityHandler<
    */
   async countChildren(nodeId: NodeId): Promise<number> {
     try {
-      return await this.table
-        .where('parentId')
-        .equals(nodeId)
-        .count();
+      return await this.table.where('parentId').equals(nodeId).count();
     } catch (error) {
       console.error('Failed to count children:', error);
       throw error;
@@ -313,9 +306,7 @@ export abstract class HierarchicalEntityHandler<
    */
   async getRootNodes(): Promise<TEntity[]> {
     try {
-      return await this.table
-        .filter(entity => !entity.parentId)
-        .toArray();
+      return await this.table.filter((entity) => !entity.parentId).toArray();
     } catch (error) {
       console.error('Failed to get root nodes:', error);
       throw error;
@@ -340,7 +331,7 @@ export abstract class HierarchicalEntityHandler<
       }
 
       if (!includeSelf) {
-        siblings = siblings.filter(s => s.nodeId !== nodeId);
+        siblings = siblings.filter((s) => s.nodeId !== nodeId);
       }
 
       return siblings;
@@ -365,7 +356,10 @@ export abstract class HierarchicalEntityHandler<
   /**
    * Delete node and optionally its descendants
    */
-  async deleteNodeWithDescendants(nodeId: NodeId, deleteDescendants: boolean = true): Promise<void> {
+  async deleteNodeWithDescendants(
+    nodeId: NodeId,
+    deleteDescendants: boolean = true
+  ): Promise<void> {
     try {
       const entity = await this.getEntityByNodeId(nodeId);
       if (!entity) {
@@ -402,21 +396,21 @@ export abstract class HierarchicalEntityHandler<
     criteria: TSearchCriteria
   ): Collection<TEntity, any> {
     if (criteria.parentId !== undefined) {
-      query = query.filter(entity => entity.parentId === criteria.parentId);
+      query = query.filter((entity) => entity.parentId === criteria.parentId);
     }
 
     if (criteria.maxDepth !== undefined) {
-      query = query.filter(entity => (entity.depth || 0) <= criteria.maxDepth!);
+      query = query.filter((entity) => (entity.depth || 0) <= criteria.maxDepth!);
     }
 
     if (criteria.minDepth !== undefined) {
-      query = query.filter(entity => (entity.depth || 0) >= criteria.minDepth!);
+      query = query.filter((entity) => (entity.depth || 0) >= criteria.minDepth!);
     }
 
     if (criteria.hasChildren !== undefined) {
       // This requires async check, so we'll need to handle it differently
       // For now, we'll check childCount if available
-      query = query.filter(entity => {
+      query = query.filter((entity) => {
         const hasChildren = (entity.childCount || 0) > 0;
         return hasChildren === criteria.hasChildren;
       });

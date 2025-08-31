@@ -4,6 +4,12 @@ import type { NodeId, PeerEntity, WorkingCopyProperties, EntityMetadata } from '
  * @description Service for managing working copies with manual commit/discard
  */
 
+import {
+  EntityMetadata,
+  NodeId,
+  PeerEntity,
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 import type Dexie from 'dexie';
 
 /**
@@ -53,11 +59,7 @@ export class WorkingCopySession {
   /**
    * Create session from existing working copy
    */
-  static fromWorkingCopy(
-    nodeId: NodeId,
-    tableName: string,
-    workingCopy: any
-  ): WorkingCopySession {
+  static fromWorkingCopy(nodeId: NodeId, tableName: string, workingCopy: any): WorkingCopySession {
     const session = new WorkingCopySession(nodeId);
     session.addWorkingCopy(tableName, workingCopy);
     return session;
@@ -84,18 +86,16 @@ export class WorkingCopyManager {
 
     // Get original entity
     let originalEntity: T;
-    
+
     if (entityMeta.relationship.type === 'one-to-one') {
-      originalEntity = await this.database
-        .table(entityMeta.tableName)
-        .get(nodeId) as T;
+      originalEntity = (await this.database.table(entityMeta.tableName).get(nodeId)) as T;
     } else {
       // For one-to-many relationships, get the first entity with matching foreign key
-      originalEntity = await this.database
+      originalEntity = (await this.database
         .table(entityMeta.tableName)
         .where(entityMeta.relationship.foreignKeyField)
         .equals(nodeId)
-        .first() as T;
+        .first()) as T;
     }
 
     if (!originalEntity) {
@@ -121,10 +121,7 @@ export class WorkingCopyManager {
   /**
    * Commit working copy changes to main entity
    */
-  async commit(
-    session: WorkingCopySession,
-    entityMeta: EntityMetadata
-  ): Promise<void> {
+  async commit(session: WorkingCopySession, entityMeta: EntityMetadata): Promise<void> {
     const workingCopy = session.getWorkingCopy(entityMeta.tableName);
     if (!workingCopy) return;
 
@@ -147,10 +144,7 @@ export class WorkingCopyManager {
   /**
    * Discard working copy without saving changes
    */
-  async discard(
-    session: WorkingCopySession,
-    entityMeta: EntityMetadata
-  ): Promise<void> {
+  async discard(session: WorkingCopySession, entityMeta: EntityMetadata): Promise<void> {
     const workingCopy = session.getWorkingCopy(entityMeta.tableName);
     if (!workingCopy) return;
 
@@ -174,7 +168,7 @@ export class WorkingCopyManager {
 
     const { countField, nodeListField, autoDeleteWhenZero } = entityMeta.referenceManagement;
     const table = this.database.table(entityMeta.tableName);
-    
+
     const resource = await table.get(resourceId);
     if (!resource) return;
 

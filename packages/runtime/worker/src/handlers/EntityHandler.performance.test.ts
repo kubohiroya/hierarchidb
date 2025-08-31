@@ -5,6 +5,7 @@ import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-type';
  * Tests scalability, memory usage, and concurrent operations
  */
 
+import { EntityId, GroupEntity, NodeId } from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

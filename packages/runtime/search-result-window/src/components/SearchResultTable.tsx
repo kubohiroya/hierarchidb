@@ -13,8 +13,8 @@ import {
   Paper,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { SearchResult } from '~/types';
-import type { NodeId } from '@hierarchidb/core';
+import type { SearchResult } from '../types/index.js';
+import type { NodeId } from '@hierarchidb/common-type';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: 400,
@@ -75,14 +75,20 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
   onResultSelect,
   onMapFocus,
 }) => {
-  const handleRowClick = useCallback((result: SearchResult, event: React.MouseEvent) => {
-    const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-    onResultSelect(result, isMultiSelect);
-  }, [onResultSelect]);
+  const handleRowClick = useCallback(
+    (result: SearchResult, event: React.MouseEvent) => {
+      const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
+      onResultSelect(result, isMultiSelect);
+    },
+    [onResultSelect]
+  );
 
-  const handleRowDoubleClick = useCallback((result: SearchResult) => {
-    onMapFocus(result);
-  }, [onMapFocus]);
+  const handleRowDoubleClick = useCallback(
+    (result: SearchResult) => {
+      onMapFocus(result);
+    },
+    [onMapFocus]
+  );
 
   const renderRowData = useCallback((result: SearchResult) => {
     if (!result.rowData || !result.displayColumns) {
@@ -96,10 +102,11 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
           if (value === undefined || value === null || value === '') {
             return null;
           }
-          
-          const displayValue = typeof value === 'object' 
-            ? JSON.stringify(value).slice(0, 20) + '...'
-            : String(value).slice(0, 15);
+
+          const displayValue =
+            typeof value === 'object'
+              ? JSON.stringify(value).slice(0, 20) + '...'
+              : String(value).slice(0, 15);
 
           return (
             <Chip
@@ -115,28 +122,31 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
     );
   }, []);
 
-  const allSelected = useMemo(() => 
-    results.length > 0 && results.every(result => selectedResults.has(result.nodeId)),
+  const allSelected = useMemo(
+    () => results.length > 0 && results.every((result) => selectedResults.has(result.nodeId)),
     [results, selectedResults]
   );
 
-  const someSelected = useMemo(() =>
-    results.some(result => selectedResults.has(result.nodeId)),
+  const someSelected = useMemo(
+    () => results.some((result) => selectedResults.has(result.nodeId)),
     [results, selectedResults]
   );
 
-  const handleSelectAll = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      results.forEach(result => onResultSelect(result, true));
-    } else {
-      // 全選択解除は個別に処理（実装は親コンポーネント側で）
-      results.forEach(result => {
-        if (selectedResults.has(result.nodeId)) {
-          onResultSelect(result, false);
-        }
-      });
-    }
-  }, [results, selectedResults, onResultSelect]);
+  const handleSelectAll = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.checked) {
+        results.forEach((result) => onResultSelect(result, true));
+      } else {
+        // 全選択解除は個別に処理（実装は親コンポーネント側で）
+        results.forEach((result) => {
+          if (selectedResults.has(result.nodeId)) {
+            onResultSelect(result, false);
+          }
+        });
+      }
+    },
+    [results, selectedResults, onResultSelect]
+  );
 
   if (results.length === 0) {
     return (
@@ -149,7 +159,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
   }
 
   return (
-    <StyledTableContainer component={Paper} elevation={0}>
+    <StyledTableContainer>
       <Table stickyHeader size="small">
         <TableHead>
           <TableRow>
@@ -162,15 +172,19 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
               />
             </TableCell>
             <CompactCell>StyleMap</CompactCell>
-            <TableCell align="center" sx={{ width: 60 }}>行</TableCell>
+            <TableCell align="center" sx={{ width: 60 }}>
+              行
+            </TableCell>
             <RowDataCell>データ</RowDataCell>
-            <TableCell align="center" sx={{ width: 50 }}>信頼度</TableCell>
+            <TableCell align="center" sx={{ width: 50 }}>
+              信頼度
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {results.map((result) => {
             const isSelected = selectedResults.has(result.nodeId);
-            
+
             return (
               <StyledTableRow
                 key={`${result.nodeId}-${result.rowIndex || 0}`}
@@ -185,31 +199,31 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                     onClick={(event) => event.stopPropagation()}
                   />
                 </TableCell>
-                
+
                 <CompactCell>
-                  <Typography
-                    variant="body2"
-                    title={result.styleMapNodeName || result.nodeName}
-                  >
+                  <Typography variant="body2" title={result.styleMapNodeName || result.nodeName}>
                     {result.styleMapNodeName || result.nodeName}
                   </Typography>
                 </CompactCell>
-                
+
                 <TableCell align="center">
                   <Typography variant="caption" color="primary">
                     {typeof result.rowIndex === 'number' ? result.rowIndex + 1 : '—'}
                   </Typography>
                 </TableCell>
-                
-                <RowDataCell>
-                  {renderRowData(result)}
-                </RowDataCell>
-                
+
+                <RowDataCell>{renderRowData(result)}</RowDataCell>
+
                 <TableCell align="center">
                   <Typography
                     variant="caption"
-                    color={result.confidence > 0.8 ? 'success.main' : 
-                           result.confidence > 0.6 ? 'warning.main' : 'error.main'}
+                    color={
+                      result.confidence > 0.8
+                        ? 'success.main'
+                        : result.confidence > 0.6
+                          ? 'warning.main'
+                          : 'error.main'
+                    }
                   >
                     {Math.round(result.confidence * 100)}%
                   </Typography>

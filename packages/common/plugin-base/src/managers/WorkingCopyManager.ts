@@ -3,7 +3,7 @@
  * @description Unified manager for working copy operations across all plugins
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { BaseEntity, BaseWorkingCopy } from '../types';
 import type { BaseEntityHandler } from '../handlers/BaseEntityHandler';
 import { generateEntityId } from '../utils/id-generator';
@@ -22,9 +22,9 @@ export interface IWorkingCopyStorage<TWorkingCopy extends BaseWorkingCopy> {
 /**
  * In-memory working copy storage implementation
  */
-export class MemoryWorkingCopyStorage<TWorkingCopy extends BaseWorkingCopy> 
-  implements IWorkingCopyStorage<TWorkingCopy> {
-  
+export class MemoryWorkingCopyStorage<TWorkingCopy extends BaseWorkingCopy>
+  implements IWorkingCopyStorage<TWorkingCopy>
+{
   private storage = new Map<EntityId, TWorkingCopy>();
 
   async get(id: EntityId): Promise<TWorkingCopy | undefined> {
@@ -60,10 +60,7 @@ export interface ValidationResult {
 /**
  * Working copy manager for handling entity editing sessions
  */
-export class WorkingCopyManager<
-  TEntity extends BaseEntity,
-  TWorkingCopy extends BaseWorkingCopy
-> {
+export class WorkingCopyManager<TEntity extends BaseEntity, TWorkingCopy extends BaseWorkingCopy> {
   constructor(
     private entityHandler: BaseEntityHandler<TEntity, TWorkingCopy>,
     private storage: IWorkingCopyStorage<TWorkingCopy> = new MemoryWorkingCopyStorage()
@@ -97,13 +94,9 @@ export class WorkingCopyManager<
     initialData?: Partial<TEntity>
   ): Promise<TWorkingCopy> {
     const workingCopyId = generateEntityId() as EntityId;
-    
-    const workingCopy = this.buildDraftWorkingCopy(
-      workingCopyId,
-      parentNodeId,
-      initialData
-    );
-    
+
+    const workingCopy = this.buildDraftWorkingCopy(workingCopyId, parentNodeId, initialData);
+
     await this.storage.set(workingCopyId, workingCopy);
     return workingCopy;
   }
@@ -150,9 +143,7 @@ export class WorkingCopyManager<
     // Validate before commit
     const validation = await this.validateWorkingCopy(workingCopy);
     if (!validation.valid) {
-      throw new Error(
-        `Working copy validation failed: ${validation.errors?.join(', ')}`
-      );
+      throw new Error(`Working copy validation failed: ${validation.errors?.join(', ')}`);
     }
 
     let nodeId: NodeId;
@@ -269,7 +260,7 @@ export class WorkingCopyManager<
 
     const reverted = this.buildWorkingCopy(entity);
     await this.storage.set(workingCopyId, reverted);
-    
+
     return reverted;
   }
 
@@ -312,7 +303,7 @@ export class WorkingCopyManager<
       copiedAt: Date.now(),
       originalVersion: entity.version,
       modifiedFields: [],
-    } as TWorkingCopy;
+    } as unknown as TWorkingCopy;
   }
 
   /**
@@ -321,12 +312,12 @@ export class WorkingCopyManager<
    */
   protected buildDraftWorkingCopy(
     workingCopyId: EntityId,
-    parentNodeId?: NodeId,
+    _parentNodeId?: NodeId,
     initialData?: Partial<TEntity>
   ): TWorkingCopy {
     return {
       id: workingCopyId,
-      nodeId: '' as NodeId, // Will be set on commit
+      nodeId: '' as NodeId,
       isDraft: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -334,19 +325,16 @@ export class WorkingCopyManager<
       copiedAt: Date.now(),
       modifiedFields: [],
       ...initialData,
-    } as TWorkingCopy;
+    } as unknown as TWorkingCopy;
   }
 
   /**
    * Track modified fields
    */
-  protected trackModifiedFields(
-    existing: TWorkingCopy,
-    updates: Partial<TWorkingCopy>
-  ): string[] {
+  protected trackModifiedFields(existing: TWorkingCopy, updates: Partial<TWorkingCopy>): string[] {
     const modifiedFields = existing.modifiedFields || [];
     const newFields = Object.keys(updates).filter(
-      key => !['updatedAt', 'modifiedFields'].includes(key)
+      (key) => !['updatedAt', 'modifiedFields'].includes(key)
     );
 
     // Add new fields to modified list if not already there
@@ -364,7 +352,7 @@ export class WorkingCopyManager<
    */
   protected prepareEntityData(workingCopy: TWorkingCopy): Partial<TEntity> {
     const { isDraft, copiedAt, originalVersion, modifiedFields, ...entityData } = workingCopy;
-    return entityData as Partial<TEntity>;
+    return entityData as unknown as Partial<TEntity>;
   }
 
   /**
@@ -372,14 +360,14 @@ export class WorkingCopyManager<
    */
   protected prepareEntityUpdates(workingCopy: TWorkingCopy): Partial<TEntity> {
     const { isDraft, copiedAt, originalVersion, modifiedFields, ...updates } = workingCopy;
-    return updates as Partial<TEntity>;
+    return updates as unknown as Partial<TEntity>;
   }
 
   /**
    * Perform additional validation (can be overridden)
    */
   protected async performAdditionalValidation(
-    workingCopy: TWorkingCopy
+    _workingCopy: TWorkingCopy
   ): Promise<ValidationResult> {
     return { valid: true };
   }
@@ -399,10 +387,7 @@ export class WorkingCopyManager<
   /**
    * Restore working copy from snapshot
    */
-  async restoreFromSnapshot(
-    workingCopyId: EntityId,
-    snapshot: TWorkingCopy
-  ): Promise<void> {
+  async restoreFromSnapshot(workingCopyId: EntityId, snapshot: TWorkingCopy): Promise<void> {
     await this.storage.set(workingCopyId, { ...snapshot });
   }
 
@@ -427,10 +412,7 @@ export class WorkingCopyManager<
 
     merged.updatedAt = Date.now();
     merged.modifiedFields = [
-      ...new Set([
-        ...(target.modifiedFields || []),
-        ...(source.modifiedFields || []),
-      ]),
+      ...new Set([...(target.modifiedFields || []), ...(source.modifiedFields || [])]),
     ];
 
     await this.storage.set(targetWorkingCopyId, merged as TWorkingCopy);

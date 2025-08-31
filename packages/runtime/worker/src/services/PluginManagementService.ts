@@ -17,6 +17,7 @@ import type {
   BulkOperationOptions,
   BulkOperationResult,
 } from '@hierarchidb/common-api';
+import { NodeType } from '@hierarchidb/common-type';
 
 // Local type definitions for interfaces not exported from common-api
 interface PluginResetOptions {
@@ -31,8 +32,8 @@ interface PluginResetResult {
   deletedEntities: {
     groupEntities?: number;
     relationalEntities?: number;
-    treeNodes?: number;  // Only for folder-plugin/system reset
-    peerEntities?: number;  // Only for folder-plugin/system reset
+    treeNodes?: number; // Only for folder-plugin/system reset
+    peerEntities?: number; // Only for folder-plugin/system reset
   };
   backupLocation?: string;
   error?: {
@@ -50,7 +51,7 @@ interface PluginDeleteResult {
     message: string;
   };
 }
-import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
+import type { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 // Import from plugin-registry package
 import {
   isNodeTypeRegistered,
@@ -63,9 +64,7 @@ import {
  */
 
 export class PluginManagementService implements PluginManagementAPI, PluginLifecycleAPI {
-  constructor(
-    private nodeTypeRegistry: SimpleNodeTypeRegistry
-  ) {}
+  constructor(private nodeTypeRegistry: SimpleNodeTypeRegistry) {}
 
   async register(definition: any): Promise<PluginRegistrationResult> {
     const validationResult = await this.validatePlugin(definition);
@@ -74,12 +73,12 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         success: false,
         error: {
           code: 'INVALID_DEFINITION',
-          message: 'Plugin definition validation failed'
+          message: 'Plugin definition validation failed',
         },
-        validationErrors: validationResult.errors.map(e => ({
+        validationErrors: validationResult.errors.map((e) => ({
           field: e.field,
-          message: e.message
-        }))
+          message: e.message,
+        })),
       };
     }
 
@@ -89,8 +88,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         success: false,
         error: {
           code: 'DUPLICATE_NODE_TYPE',
-          message: `Node type ${definition.nodeType} is already registered`
-        }
+          message: `Node type ${definition.nodeType} is already registered`,
+        },
       };
     }
 
@@ -98,25 +97,24 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       // Convert definition to NodeTypeConfig by extracting compatible fields
       const nodeTypeConfig = {
         ...definition,
-        icon: typeof definition.icon === 'object' ? definition.icon?.name : definition.icon
+        icon: typeof definition.icon === 'object' ? definition.icon?.name : definition.icon,
       };
       this.nodeTypeRegistry.register(definition.nodeType, nodeTypeConfig);
-      
+
       const pluginId = `plugin-${definition.nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       return {
         success: true,
         pluginId,
-        registeredNodeType: definition.nodeType
+        registeredNodeType: definition.nodeType,
       };
-      
     } catch (error) {
       return {
         success: false,
         error: {
           code: 'REGISTRATION_FAILED',
-          message: error instanceof Error ? error.message : 'Plugin registration failed'
-        }
+          message: error instanceof Error ? error.message : 'Plugin registration failed',
+        },
       };
     }
   }
@@ -128,8 +126,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         success: false,
         error: {
           code: 'PLUGIN_NOT_FOUND',
-          message: `Plugin with node type ${nodeType} not found`
-        }
+          message: `Plugin with node type ${nodeType} not found`,
+        },
       };
     }
 
@@ -138,7 +136,9 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       const warnings: string[] = [];
 
       if (dependencyInfo.dependents.length > 0) {
-        warnings.push(`Plugin has ${dependencyInfo.dependents.length} dependents that may be affected`);
+        warnings.push(
+          `Plugin has ${dependencyInfo.dependents.length} dependents that may be affected`
+        );
       }
 
       try {
@@ -150,16 +150,19 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
           warnings.push('No trees found for node count verification');
           return { success: false, error: { code: 'NO_TREES', message: 'No trees available' } };
         }
-        
+
         // TODO: Implement proper node retrieval
         const rootNode = null; // await this.queryService.getNode(trees[0].rootId);
         if (!rootNode) {
           warnings.push('Root node not found for node count verification');
-          return { success: false, error: { code: 'ROOT_NODE_NOT_FOUND', message: 'Root node not available' } };
+          return {
+            success: false,
+            error: { code: 'ROOT_NODE_NOT_FOUND', message: 'Root node not available' },
+          };
         }
-        
+
         // TODO: Implement proper node searching
-        const searchResult = { nodes: [] }; 
+        const searchResult = { nodes: [] };
         /*
         await this.queryService.searchNodes({
           rootNodeId: rootNode.id,
@@ -179,29 +182,32 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       return {
         success: true,
         unregisteredNodeType: nodeType,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
-
     } catch (error) {
       return {
         success: false,
         error: {
           code: 'UNREGISTRATION_FAILED',
-          message: error instanceof Error ? error.message : 'Plugin unregistration failed'
-        }
+          message: error instanceof Error ? error.message : 'Plugin unregistration failed',
+        },
       };
     }
   }
 
   async validatePlugin(definition: any): Promise<PluginValidationResult> {
-    const errors: Array<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }> = [];
+    const errors: Array<{
+      field: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+    }> = [];
     const warnings: Array<{ field: string; message: string }> = [];
 
     if (!definition) {
       errors.push({
         field: 'root',
         message: 'Plugin definition is required',
-        severity: 'error'
+        severity: 'error',
       });
       return { isValid: false, errors, warnings };
     }
@@ -210,7 +216,7 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       errors.push({
         field: 'nodeType',
         message: 'Node type is required and must be a string',
-        severity: 'error'
+        severity: 'error',
       });
     } else {
       const nodeTypeRegex = /^[a-z][a-zA-Z0-9_]*$/;
@@ -218,7 +224,7 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         errors.push({
           field: 'nodeType',
           message: 'Node type must start with lowercase letter',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -227,14 +233,14 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       errors.push({
         field: 'database',
         message: 'Database configuration is required',
-        severity: 'error'
+        severity: 'error',
       });
     } else {
       if (!definition.database.tableName) {
         errors.push({
           field: 'database.tableName',
           message: 'Table name is required',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -243,14 +249,14 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       errors.push({
         field: 'entityHandler',
         message: 'Entity handler is required',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -299,19 +305,20 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         issues: issues.length > 0 ? issues : undefined,
         performance: {
           avgResponseTime: responseTime,
-          errorRate: status === 'unhealthy' ? 1 : 0
-        }
+          errorRate: status === 'unhealthy' ? 1 : 0,
+        },
       };
-
     } catch (error) {
       return {
         status: 'unhealthy',
         lastCheck: Date.now(),
-        issues: [`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+        issues: [
+          `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
         performance: {
           avgResponseTime: Date.now() - startTime,
-          errorRate: 1
-        }
+          errorRate: 1,
+        },
       };
     }
   }
@@ -330,47 +337,47 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
             meta: {
               name: plugin.name || plugin.nodeType,
               version: '1.0.0', // Default version as plugin definition doesn't include version
-              category: plugin.category?.menuGroup
+              category: plugin.category?.menuGroup,
             },
             registrationTime: Date.now(),
-            healthStatus
+            healthStatus,
           };
 
           result.push(registrationInfo);
-
         } catch {
           result.push({
             nodeType: plugin.nodeType,
             meta: {
               name: plugin.name || plugin.nodeType,
               version: '1.0.0', // Default version as plugin definition doesn't include version
-              category: plugin.category?.menuGroup
+              category: plugin.category?.menuGroup,
             },
             registrationTime: Date.now(),
             healthStatus: {
               status: 'unhealthy',
               lastCheck: Date.now(),
               issues: ['Health check failed'],
-              performance: { avgResponseTime: 0, errorRate: 1 }
-            }
+              performance: { avgResponseTime: 0, errorRate: 1 },
+            },
           });
         }
       }
 
       if (options?.status) {
-        result = result.filter(plugin => plugin.healthStatus.status === options.status);
+        result = result.filter((plugin) => plugin.healthStatus.status === options.status);
       }
 
       if (options?.category) {
-        result = result.filter(plugin => plugin.meta.category === options.category);
+        result = result.filter((plugin) => plugin.meta.category === options.category);
       }
 
       result.sort((a, b) => a.meta.name.localeCompare(b.meta.name));
 
       return result;
-
     } catch (error) {
-      throw new Error(`Failed to list registered plugins: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to list registered plugins: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -386,8 +393,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
     }
 
     try {
-      const dependencies: string[] = [];
-      const dependents: string[] = [];
+      const dependencies: NodeType[] = [];
+      const dependents: NodeType[] = [];
       const warnings: string[] = [];
 
       const allPlugins = await getRegisteredPlugins();
@@ -404,11 +411,12 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         dependencies,
         dependents,
         circularDependencies: false,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
-
     } catch (error) {
-      throw new Error(`Failed to analyze dependencies for ${nodeType}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to analyze dependencies for ${nodeType}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -421,56 +429,54 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         for (const plugin of options.plugins) {
           try {
             const result = await this.register(plugin);
-            
+
             if (result.success) {
               successful.push({
                 nodeType: plugin.nodeType,
                 result: {
                   pluginId: result.pluginId,
-                  registeredNodeType: result.registeredNodeType
-                }
+                  registeredNodeType: result.registeredNodeType,
+                },
               });
             } else {
               failed.push({
                 nodeType: plugin.nodeType,
-                error: result.error?.message || 'Registration failed'
+                error: result.error?.message || 'Registration failed',
               });
             }
           } catch (error) {
             failed.push({
               nodeType: plugin.nodeType,
-              error: error instanceof Error ? error.message : 'Unknown registration error'
+              error: error instanceof Error ? error.message : 'Unknown registration error',
             });
           }
         }
-
       } else if (options.operation === 'unregister' && options.nodeTypes) {
         for (const nodeType of options.nodeTypes) {
           try {
             const result = await this.unregister(nodeType);
-            
+
             if (result.success) {
               successful.push({
                 nodeType,
                 result: {
                   unregisteredNodeType: result.unregisteredNodeType,
-                  warnings: result.warnings
-                }
+                  warnings: result.warnings,
+                },
               });
             } else {
               failed.push({
                 nodeType,
-                error: result.error?.message || 'Unregistration failed'
+                error: result.error?.message || 'Unregistration failed',
               });
             }
           } catch (error) {
             failed.push({
               nodeType,
-              error: error instanceof Error ? error.message : 'Unknown unregistration error'
+              error: error instanceof Error ? error.message : 'Unknown unregistration error',
             });
           }
         }
-
       } else {
         throw new Error('Invalid bulk operation: missing required parameters');
       }
@@ -481,12 +487,13 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         summary: {
           total: successful.length + failed.length,
           success: successful.length,
-          failed: failed.length
-        }
+          failed: failed.length,
+        },
       };
-
     } catch (error) {
-      throw new Error(`Bulk operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Bulk operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -495,7 +502,7 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
    */
   async resetPlugin(options: PluginResetOptions): Promise<PluginResetResult> {
     const { nodeType, resetMode, createBackup = false } = options;
-    
+
     try {
       // Check if plugin is registered
       if (!this.nodeTypeRegistry.has(nodeType as NodeType)) {
@@ -505,8 +512,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
           deletedEntities: {},
           error: {
             code: 'PLUGIN_NOT_FOUND',
-            message: `Plugin '${nodeType}' is not registered`
-          }
+            message: `Plugin '${nodeType}' is not registered`,
+          },
         };
       }
 
@@ -550,8 +557,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
               },
               error: {
                 code: 'INVALID_RESET_MODE',
-                message: `Reset mode 'folder' is only valid for folder plugin`
-              }
+                message: `Reset mode 'folder' is only valid for folder plugin`,
+              },
             };
           }
           // TODO: Implement complete data deletion
@@ -577,8 +584,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
             deletedEntities: {},
             error: {
               code: 'INVALID_RESET_MODE',
-              message: `Invalid reset mode: ${resetMode}`
-            }
+              message: `Invalid reset mode: ${resetMode}`,
+            },
           };
       }
 
@@ -586,9 +593,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         success: true,
         nodeType: nodeType as NodeType,
         deletedEntities,
-        ...(backupLocation && { backupLocation })
+        ...(backupLocation && { backupLocation }),
       };
-
     } catch (error) {
       return {
         success: false,
@@ -601,8 +607,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         },
         error: {
           code: 'RESET_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        }
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
     }
   }
@@ -619,8 +625,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
           nodeType,
           error: {
             code: 'CORE_PLUGIN',
-            message: 'The folder-plugin plugin is a core plugin and cannot be deleted'
-          }
+            message: 'The folder-plugin plugin is a core plugin and cannot be deleted',
+          },
         };
       }
 
@@ -631,8 +637,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
           nodeType,
           error: {
             code: 'PLUGIN_NOT_FOUND',
-            message: `Plugin '${nodeType}' is not registered`
-          }
+            message: `Plugin '${nodeType}' is not registered`,
+          },
         };
       }
 
@@ -642,7 +648,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       for (const registeredNodeType of registeredNodeTypes) {
         const pluginDefinition = this.nodeTypeRegistry.get(registeredNodeType);
         // Cast to our plugin definition to access dependencies property
-        const typedDefinition = pluginDefinition as unknown as import('../registry/plugin').PluginDefinition;
+        const typedDefinition =
+          pluginDefinition as unknown as import('../registry/plugin').PluginDefinition;
         if (typedDefinition?.meta?.dependencies?.includes(nodeType)) {
           warnings.push(`Plugin '${registeredNodeType}' depends on '${nodeType}'`);
         }
@@ -654,17 +661,16 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
       return {
         success: true,
         nodeType,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
-
     } catch (error) {
       return {
         success: false,
         nodeType,
         error: {
           code: 'DELETE_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        }
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
     }
   }
@@ -676,7 +682,7 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
     return this.resetPlugin({
       nodeType: 'folder' as NodeType, // Use 'folder-plugin' as the target for system reset
       resetMode: 'system',
-      createBackup
+      createBackup,
     });
   }
 }

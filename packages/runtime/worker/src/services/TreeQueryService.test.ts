@@ -1,5 +1,17 @@
-import {  } from '@hierarchidb/common-core';
-import type { CopyNodesPayload, ExportNodesPayload, GetAncestorsPayload, GetChildrenPayload, GetDescendantsPayload, GetNodePayload, SearchNodesPayload, Timestamp, TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
+import {} from '@hierarchidb/common-core';
+import type {
+  CopyNodesPayload,
+  ExportNodesPayload,
+  GetAncestorsPayload,
+  GetChildrenPayload,
+  GetDescendantsPayload,
+  GetNodePayload,
+  SearchNodesPayload,
+  Timestamp,
+  TreeNode,
+  NodeId,
+  NodeType,
+} from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoreDB } from '../db/CoreDB';
 import { TreeQueryService } from './TreeQueryService';
@@ -22,7 +34,7 @@ describe('TreeQueryService', () => {
     id: string,
     parentId: string,
     name: string,
-    type: NodeType = 'folder'
+    type: NodeType
   ): TreeNode => ({
     id: id as NodeId,
     parentId: parentId as NodeId,
@@ -31,6 +43,7 @@ describe('TreeQueryService', () => {
     createdAt: Date.now() as Timestamp,
     updatedAt: Date.now() as Timestamp,
     version: 1,
+    depth: 1,
   });
 
   beforeEach(() => {

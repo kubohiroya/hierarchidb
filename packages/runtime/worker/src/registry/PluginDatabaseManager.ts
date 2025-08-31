@@ -4,6 +4,7 @@ import type { NodeType, PluginDatabaseConfig, PeerEntity, GroupEntity, WorkingCo
  * @description Manages dynamic Dexie database creation for plugins
  */
 
+import { NodeType, PluginDatabaseConfig } from '@hierarchidb/common-type';
 import Dexie, { Table } from 'dexie';
 
 /**
@@ -19,7 +20,7 @@ export class PluginDatabase extends Dexie {
   ) {
     // Use plugin-specific database name
     super(`HierarchiDB-${pluginNodeType}-${config.version}`);
-    
+
     this.setupSchema();
   }
 
@@ -28,20 +29,20 @@ export class PluginDatabase extends Dexie {
    */
   private setupSchema(): void {
     const { schema, version } = this.config;
-    
+
     // Convert schema object to Dexie schema string
     const dexieSchema: { [tableName: string]: string } = {};
-    
+
     if (typeof schema === 'object' && schema !== null) {
       // Extract table name from config
       const tableName = this.config.tableName || `${this.pluginNodeType}_entities`;
-      
+
       // Convert schema object to Dexie format
       const schemaEntries = Object.entries(schema);
       const schemaString = schemaEntries
         .map(([key, value]) => `${key}${value ? `, ${value}` : ''}`)
         .join(', ');
-      
+
       dexieSchema[tableName] = schemaString;
     } else if (typeof schema === 'string') {
       // Direct Dexie schema string
@@ -53,13 +54,13 @@ export class PluginDatabase extends Dexie {
     this.version(version).stores(dexieSchema);
 
     // Create table properties
-    Object.keys(dexieSchema).forEach(tableName => {
+    Object.keys(dexieSchema).forEach((tableName) => {
       if (!this[tableName]) {
         // Dynamic table creation
         Object.defineProperty(this, tableName, {
           get: () => this.table(tableName),
           enumerable: true,
-          configurable: true
+          configurable: true,
         });
       }
     });
@@ -77,8 +78,8 @@ export class PluginDatabase extends Dexie {
    * Clean all data from plugin tables
    */
   async clearAllData(): Promise<void> {
-    const tableNames = this.tables.map(table => table.name);
-    
+    const tableNames = this.tables.map((table) => table.name);
+
     await this.transaction('rw', this.tables, async () => {
       for (const tableName of tableNames) {
         await this.table(tableName).clear();
@@ -139,11 +140,11 @@ export class PluginDatabaseManager {
 
     // Create and initialize database
     const database = new PluginDatabase(nodeType, config);
-    
+
     try {
       await database.open();
       this.databases.set(nodeType, database);
-      
+
       console.log(`[PluginDatabaseManager] Registered database for plugin: ${nodeType}`);
       return database;
     } catch (error) {
@@ -190,10 +191,13 @@ export class PluginDatabaseManager {
 
       this.databases.delete(nodeType);
       this.dependencies.delete(nodeType);
-      
+
       console.log(`[PluginDatabaseManager] Unregistered database for plugin: ${nodeType}`);
     } catch (error) {
-      console.error(`[PluginDatabaseManager] Failed to unregister database for ${nodeType}:`, error);
+      console.error(
+        `[PluginDatabaseManager] Failed to unregister database for ${nodeType}:`,
+        error
+      );
       throw error;
     }
   }
@@ -213,7 +217,7 @@ export class PluginDatabaseManager {
     if (!dependencies?.has(dependencyType)) {
       throw new Error(`Plugin ${nodeType} does not have dependency ${dependencyType}`);
     }
-    
+
     return this.databases.get(dependencyType);
   }
 
@@ -229,13 +233,13 @@ export class PluginDatabaseManager {
    */
   private getDependents(nodeType: NodeType): NodeType[] {
     const dependents: NodeType[] = [];
-    
+
     for (const [plugin, deps] of this.dependencies.entries()) {
       if (deps.has(nodeType)) {
         dependents.push(plugin);
       }
     }
-    
+
     return dependents;
   }
 
@@ -244,7 +248,7 @@ export class PluginDatabaseManager {
    */
   async clearAll(): Promise<void> {
     const nodeTypes = Array.from(this.databases.keys());
-    
+
     // Unregister in reverse dependency order
     for (const nodeType of nodeTypes.reverse()) {
       try {

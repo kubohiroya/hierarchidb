@@ -1,4 +1,4 @@
-import { PluginManifest } from './plugin-manifest';
+import { PluginDefinition } from './plugin-definition';
 
 /**
  * Package.json structure for plugin discovery
@@ -12,6 +12,6 @@ export interface PackageJson {
   devDependencies?: Record<string, string>;
   /** Plugin-specific configuration */
   hierarchidb?: {
-    plugin?: Partial<PluginManifest>;
+    plugin?: Partial<PluginDefinition>;
   };
 }

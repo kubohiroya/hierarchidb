@@ -1,27 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": false,
+    "noEmit": true,
     "composite": true,
     "incremental": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
-    "lib": [
-      "ES2020",
-      "DOM"
-    ],
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "~/*": ["src/*"]
     }
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "references": []
 }

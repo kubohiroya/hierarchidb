@@ -6,6 +6,7 @@ import type { NodeId, EntityId } from '@hierarchidb/common-type';
  * GroupEntityHandler, and WorkingCopyHandler
  */
 
+import { EntityId, NodeId } from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

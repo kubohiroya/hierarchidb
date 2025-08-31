@@ -10,6 +10,7 @@ import type Dexie from 'dexie';
 import type { PeerEntityImpl, GroupEntityImpl, PeerWorkingCopy } from './SimpleEntityHandler';
 // GroupEntityImpl interface was removed, using GroupEntityImpl instead
 import { GroupEntityHandler } from './GroupEntityHandler';
+import { EntityId, GroupEntity, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
 
 /**
  * Enhanced working copy with additional tracking
@@ -127,7 +128,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
       id: crypto.randomUUID() as EntityId,
       nodeId,
       type: entity?.type || 'working-copy',
-      nodeType: 'simple' as const,
+      nodeType: 'simple' as NodeType,
       parentId: undefined as any,
       name: (entity as any)?.name || '', // Required by SimpleWorkingCopy
       description: (entity as any)?.description,

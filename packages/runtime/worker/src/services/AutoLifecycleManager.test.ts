@@ -10,6 +10,7 @@ import 'fake-indexeddb/auto';
 import { AutoLifecycleManager } from './AutoLifecycleManager';
 import { EntityRegistrationService } from './EntityRegistrationService';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';
+import { EntityMetadata, NodeId, NodeType } from '@hierarchidb/common-type';
 
 describe('AutoLifecycleManager', () => {
   let db: Dexie;

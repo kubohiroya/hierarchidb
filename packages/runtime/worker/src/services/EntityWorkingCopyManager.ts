@@ -7,6 +7,20 @@ import { generateEntityId } from '@hierarchidb/common-type';
  * Provides entity-level working copy functionality beyond TreeNode working copies
  */
 
+import {
+  EntityId,
+  EntityWorkingCopySession,
+  EntityWorkingCopyStats,
+  EntityWorkingCopyValidation,
+  generateEntityId,
+  GroupEntity,
+  GroupEntityWorkingCopy,
+  NodeId,
+  PeerEntity,
+  PeerEntityWorkingCopy,
+  RelationalEntity,
+  RelationalEntityWorkingCopy,
+} from '@hierarchidb/common-type';
 import type { EphemeralDB } from '../db/EphemeralDB';
 
 /**
@@ -102,12 +116,22 @@ export class EntityWorkingCopyManager {
     if (validator) {
       const validation = await validator(workingCopy as T);
       if (!validation.isValid) {
-        throw new Error(`Validation failed: ${validation.errors.map(e => e.errorMessage).join(', ')}`);
+        throw new Error(
+          `Validation failed: ${validation.errors.map((e) => e.errorMessage).join(', ')}`
+        );
       }
     }
 
     // Extract working copy specific fields
-    const { workingCopyId: _, workingCopyOf, entityType, copiedAt, isDirty, sessionId, ...entityData } = workingCopy;
+    const {
+      workingCopyId: _,
+      workingCopyOf,
+      entityType,
+      copiedAt,
+      isDirty,
+      sessionId,
+      ...entityData
+    } = workingCopy;
 
     // Create committed entity
     const committedEntity: T = {
@@ -192,8 +216,12 @@ export class EntityWorkingCopyManager {
 
     // Add to session
     if (sessionId && workingCopies.length > 0) {
-      const workingCopyIds = workingCopies.map(wc => wc.workingCopyId);
-      await this.addToSession(sessionId, workingCopyIds, workingCopies[0]?.nodeId ?? ('' as NodeId));
+      const workingCopyIds = workingCopies.map((wc) => wc.workingCopyId);
+      await this.addToSession(
+        sessionId,
+        workingCopyIds,
+        workingCopies[0]?.nodeId ?? ('' as NodeId)
+      );
     }
 
     return workingCopies;
@@ -269,17 +297,20 @@ export class EntityWorkingCopyManager {
   /**
    * Get entity working copy by ID
    */
-  async getEntityWorkingCopy<T extends EntityWorkingCopy>(
+  async getEntityWorkingCopy<T extends PeerEntityWorkingCopy>(
     workingCopyId: EntityId
   ): Promise<T | undefined> {
-    return await this.ephemeralDB.table('entityWorkingCopies').get(workingCopyId) as T | undefined;
+    return (await this.ephemeralDB.table('entityWorkingCopies').get(workingCopyId)) as
+      | T
+      | undefined;
   }
 
   /**
    * Get all working copies for a node
    */
-  async getWorkingCopiesForNode(nodeId: NodeId): Promise<EntityWorkingCopy[]> {
-    return await this.ephemeralDB.table('entityWorkingCopies')
+  async getWorkingCopiesForNode(nodeId: NodeId): Promise<PeerEntityWorkingCopy[]> {
+    return await this.ephemeralDB
+      .table('entityWorkingCopies')
       .where('nodeId')
       .equals(nodeId)
       .toArray();
@@ -290,7 +321,7 @@ export class EntityWorkingCopyManager {
    */
   async discardEntityWorkingCopy(workingCopyId: EntityId): Promise<void> {
     const workingCopy = await this.getEntityWorkingCopy(workingCopyId);
-    
+
     if (workingCopy) {
       // Remove from session
       if (workingCopy.sessionId) {
@@ -314,7 +345,7 @@ export class EntityWorkingCopyManager {
    */
   async discardAllWorkingCopiesForNode(nodeId: NodeId): Promise<number> {
     const workingCopies = await this.getWorkingCopiesForNode(nodeId);
-    
+
     for (const workingCopy of workingCopies) {
       await this.discardEntityWorkingCopy(workingCopy.workingCopyId);
     }
@@ -352,12 +383,12 @@ export class EntityWorkingCopyManager {
    * Add working copy to session
    */
   private async addToSession(
-    sessionId: string, 
-    workingCopyId: EntityId | EntityId[], 
+    sessionId: string,
+    workingCopyId: EntityId | EntityId[],
     nodeId: NodeId
   ): Promise<void> {
     let session = this.activeSessions.get(sessionId);
-    
+
     if (!session) {
       // Create session if it doesn't exist
       await this.createSession(nodeId);
@@ -375,7 +406,7 @@ export class EntityWorkingCopyManager {
   private async removeFromSession(sessionId: string, workingCopyId: EntityId): Promise<void> {
     const session = this.activeSessions.get(sessionId);
     if (session) {
-      session.workingCopyIds = session.workingCopyIds.filter(id => id !== workingCopyId);
+      session.workingCopyIds = session.workingCopyIds.filter((id) => id !== workingCopyId);
       session.lastActivityAt = Date.now();
 
       // Remove session if no working copies remain
@@ -434,17 +465,17 @@ export class EntityWorkingCopyManager {
    */
   async getWorkingCopyStats(): Promise<EntityWorkingCopyStats> {
     const allWorkingCopies = await this.ephemeralDB.table('entityWorkingCopies').toArray();
-    
+
     const stats: EntityWorkingCopyStats = {
       totalWorkingCopies: allWorkingCopies.length,
       workingCopiesByType: {
-        peer: allWorkingCopies.filter(wc => wc.entityType === 'peer').length,
-        group: allWorkingCopies.filter(wc => wc.entityType === 'group').length,
-        relational: allWorkingCopies.filter(wc => wc.entityType === 'relational').length,
+        peer: allWorkingCopies.filter((wc) => wc.entityType === 'peer').length,
+        group: allWorkingCopies.filter((wc) => wc.entityType === 'group').length,
+        relational: allWorkingCopies.filter((wc) => wc.entityType === 'relational').length,
       },
       workingCopiesByNode: {},
       oldestWorkingCopyAge: 0,
-      dirtyWorkingCopies: allWorkingCopies.filter(wc => wc.isDirty).length,
+      dirtyWorkingCopies: allWorkingCopies.filter((wc) => wc.isDirty).length,
       averageChangesPerWorkingCopy: 0, // Would need change tracking
       sessionsWithUnsavedChanges: this.activeSessions.size,
     };
@@ -457,7 +488,7 @@ export class EntityWorkingCopyManager {
     // Calculate oldest working copy age
     if (allWorkingCopies.length > 0) {
       const now = Date.now();
-      stats.oldestWorkingCopyAge = Math.max(...allWorkingCopies.map(wc => now - wc.copiedAt));
+      stats.oldestWorkingCopyAge = Math.max(...allWorkingCopies.map((wc) => now - wc.copiedAt));
     }
 
     return stats;
@@ -472,9 +503,12 @@ export class EntityWorkingCopyManager {
    */
   private setupCleanupInterval(): void {
     // Clean up every 5 minutes
-    setInterval(() => {
-      this.cleanupStaleWorkingCopies();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupStaleWorkingCopies();
+      },
+      5 * 60 * 1000
+    );
   }
 
   /**
@@ -482,7 +516,8 @@ export class EntityWorkingCopyManager {
    */
   async cleanupStaleWorkingCopies(maxAgeMs = 24 * 60 * 60 * 1000): Promise<number> {
     const cutoffTime = Date.now() - maxAgeMs;
-    const staleWorkingCopies = await this.ephemeralDB.table('entityWorkingCopies')
+    const staleWorkingCopies = await this.ephemeralDB
+      .table('entityWorkingCopies')
       .where('copiedAt')
       .below(cutoffTime)
       .toArray();

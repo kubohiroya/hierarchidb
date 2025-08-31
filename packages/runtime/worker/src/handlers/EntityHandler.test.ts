@@ -1,6 +1,5 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-type';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GroupEntity, WorkingCopy } from './types';
 import { BaseEntityHandler } from './EntityHandler';
 import { WorkingCopyHandler } from './WorkingCopyHandler';
 
@@ -26,7 +25,7 @@ type TestWorkingCopy = TestEntity & {
   copiedAt: number;
   hasEntityCopy: boolean;
   updatedAt: number;
-}
+};
 
 // Mock database classes for testing
 class MockCoreDB {
@@ -259,7 +258,7 @@ describe.skip('EntityHandler (needs update to new API)', () => {
 
       it('should throw error if working copy does not exist', async () => {
         const nodeId = 'node-14' as NodeId;
-        
+
         // Try to commit a non-existent working copy
         await expect(handler.commitWorkingCopy(nodeId, {} as any)).rejects.toThrow();
       });
@@ -281,9 +280,7 @@ describe.skip('EntityHandler (needs update to new API)', () => {
       });
 
       it('should not throw error when discarding non-existent working copy', async () => {
-        await expect(
-          handler.discardWorkingCopy('non-existent' as NodeId)
-        ).resolves.not.toThrow();
+        await expect(handler.discardWorkingCopy('non-existent' as NodeId)).resolves.not.toThrow();
       });
     });
   });

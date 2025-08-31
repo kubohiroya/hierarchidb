@@ -1,6 +1,16 @@
-import { NodeIdGenerator, TREE_ROOT_NODE_TYPES } from '@hierarchidb/common-core';
-import type { Tree, TreeId, TreeNode, NodeId, NodeType, TreeRootState, TreeChangeEvent, TagEntity, NodeTagAssociation } from '@hierarchidb/common-type';
-import { SingletonMixin } from '@hierarchidb/common-util';
+//import { NodeIdGenerator, TREE_ROOT_NODE_TYPES } from '@hierarchidb/common-core';
+import {
+  Tree,
+  TreeId,
+  TreeNode,
+  NodeType,
+  TreeRootState,
+  TreeChangeEvent,
+  TagEntity,
+  NodeTagAssociation,
+  NodeId,
+} from '@hierarchidb/common-type';
+import { SingletonMixin } from '@hierarchidb/util';
 import Dexie, { type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
@@ -51,7 +61,7 @@ export class CoreDB extends Dexie {
         await tx.table('trees').clear();
         await tx.table('nodes').clear();
         await tx.table('rootStates').clear();
-        
+
         // Initialize tag tables if they don't exist
         if (tx.storeNames.includes('tags')) {
           await tx.table('tags').clear();
@@ -67,7 +77,7 @@ export class CoreDB extends Dexie {
   }
 
   async initialize(): Promise<void> {
-await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
+    await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
       const now = Date.now();
 
       // Check database state
@@ -75,7 +85,7 @@ await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () =
       const nodesCount = await this.nodes.count();
       const rootStatesCount = await this.rootStates.count();
 
-// If database is partially initialized, clear it and start fresh
+      // If database is partially initialized, clear it and start fresh
       if (treesCount != 2 || rootStatesCount != 4) {
         console.warn('Database is in an inconsistent state. Clearing and reinitializing...');
         await this.trees.clear();
@@ -83,56 +93,59 @@ await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () =
         await this.rootStates.clear();
       }
 
+      type RootNodeId = NodeId;
+      function getRootNodeId(treeId: string, nodeId: string): RootNodeId {
+        return `${treeId}:${nodeId}` as RootNodeId;
+      }
+
       if (treesCount === 0) {
         await this.trees.bulkPut(
           ['r', 'p'].map((treeId) => ({
             id: treeId as TreeId,
             name: treeId === 'r' ? 'Resources' : 'Projects',
-            rootId: NodeIdGenerator.rootNode(treeId),
-            trashRootId: NodeIdGenerator.trashNode(treeId),
-            superRootId: NodeIdGenerator.superRootNode(treeId),
+            superRootId: getRootNodeId(treeId, 'superRoot'),
+            rootId: getRootNodeId(treeId, 'root'),
+            trashRootId: getRootNodeId(treeId, 'trash'),
           }))
         );
       }
       if (nodesCount === 0) {
-        const data = ['r', 'p'].flatMap((treeId) => [
-          {
-            parentId: NodeIdGenerator.superRootNode(treeId),
-            id: NodeIdGenerator.rootNode(treeId),
-            nodeType: TREE_ROOT_NODE_TYPES.ROOT as NodeType,
-            name: treeId === 'r' ? 'Resources' : 'Projects',
-            depth: 0, // Root nodes have depth 0
-            createdAt: now,
-            updatedAt: now,
-            version: 1,
-          },
-          {
-            parentId: NodeIdGenerator.superRootNode(treeId),
-            id: NodeIdGenerator.trashNode(treeId),
-            nodeType: TREE_ROOT_NODE_TYPES.TRASH,
-            name: 'Trash',
-            depth: 0, // Trash root also has depth 0
-            createdAt: now,
-            updatedAt: now,
-            version: 1,
-          },
-        ]) satisfies TreeNode[];
-await this.nodes.bulkAdd(data);
+        await this.nodes.bulkAdd(
+          ['r', 'p'].flatMap((treeId) => [
+            {
+              parentId: getRootNodeId(treeId, 'superRoot'),
+              id: getRootNodeId(treeId, 'root'),
+              nodeType: 'folder' as NodeType,
+              name: treeId === 'r' ? 'Resources' : 'Projects',
+              depth: 0, // Root nodes have depth 0
+              createdAt: now,
+              updatedAt: now,
+              version: 1,
+            },
+            {
+              parentId: getRootNodeId(treeId, 'superRoot'),
+              id: getRootNodeId(treeId, 'trash'),
+              nodeType: 'trash' as NodeType,
+              name: 'Trash',
+              depth: 0, // Trash root also has depth 0
+              createdAt: now,
+              updatedAt: now,
+              version: 1,
+            },
+          ]) satisfies TreeNode[]
+        );
       }
 
       if (rootStatesCount === 0) {
         const rootStateData = ['r', 'p'].flatMap((treeId) =>
-          [TREE_ROOT_NODE_TYPES.ROOT, TREE_ROOT_NODE_TYPES.TRASH].map((treeRootNodeType) => ({
+          ['root', 'trash'].map((treeRootNodeType) => ({
             treeId: treeId as TreeId,
-            rootNodeId:
-              treeRootNodeType === TREE_ROOT_NODE_TYPES.ROOT
-                ? NodeIdGenerator.rootNode(treeId)
-                : NodeIdGenerator.trashNode(treeId),
+            rootNodeId: getRootNodeId(treeId, treeRootNodeType),
             expanded: {},
           }))
         );
 
-try {
+        try {
           await this.rootStates.bulkAdd(rootStateData);
         } catch (error) {
           console.error('Failed to initialize rootStates:', error);
@@ -145,8 +158,7 @@ try {
           throw error;
         }
       }
-      
-});
+    });
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
@@ -154,7 +166,7 @@ try {
     try {
       const tree = await this.trees.get(treeId);
       console.log('[CoreDB] getTree result:', tree);
-      
+
       // Ensure we return a plain object that can be serialized by Comlink
       if (tree) {
         const plainTree: Tree = {
@@ -166,7 +178,7 @@ try {
         };
         return plainTree;
       }
-      
+
       return undefined;
     } catch (error) {
       console.error('[CoreDB] getTree error:', error);
@@ -176,15 +188,17 @@ try {
 
   async listTrees(): Promise<Tree[]> {
     const trees = await this.trees.toArray();
-    
+
     // Ensure we return plain objects that can be serialized by Comlink
-    return trees.map((tree): Tree => ({
-      id: tree.id,
-      name: tree.name,
-      rootId: tree.rootId,
-      trashRootId: tree.trashRootId,
-      superRootId: tree.superRootId,
-    }));
+    return trees.map(
+      (tree): Tree => ({
+        id: tree.id,
+        name: tree.name,
+        rootId: tree.rootId,
+        trashRootId: tree.trashRootId,
+        superRootId: tree.superRootId,
+      })
+    );
   }
 
   // CRUD operations for TreeNode
@@ -196,7 +210,7 @@ try {
     }
 
     const node = await this.nodes.get(nodeId);
-    
+
     // Ensure we return a plain object that can be serialized by Comlink
     if (node) {
       const plainNode: TreeNode = {
@@ -214,14 +228,14 @@ try {
       };
       return plainNode;
     }
-    
+
     return undefined;
   }
 
   async createNode(node: TreeNode): Promise<NodeId> {
     // Calculate depth if not provided
     if (node.depth === undefined || node.depth === null) {
-      if (!node.parentId || node.parentId === '' as NodeId) {
+      if (!node.parentId || node.parentId === ('' as NodeId)) {
         // Root nodes have depth 0
         node.depth = 0;
       } else {
@@ -235,7 +249,7 @@ try {
         }
       }
     }
-    
+
     await this.nodes.add(node);
 
     // 作成イベントを通知
@@ -302,19 +316,21 @@ try {
       .sortBy('createdAt');
 
     // Ensure we return plain objects that can be serialized by Comlink
-    return children.map((node): TreeNode => ({
-      id: node.id,
-      parentId: node.parentId,
-      nodeType: node.nodeType,
-      name: node.name,
-      depth: node.depth,
-      createdAt: node.createdAt,
-      updatedAt: node.updatedAt,
-      version: node.version,
-      ...(node.removedAt && { removedAt: node.removedAt }),
-      ...(node.originalParentId && { originalParentId: node.originalParentId }),
-      ...(node.references && { references: node.references }),
-    }));
+    return children.map(
+      (node): TreeNode => ({
+        id: node.id,
+        parentId: node.parentId,
+        nodeType: node.nodeType,
+        name: node.name,
+        depth: node.depth,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
+        version: node.version,
+        ...(node.removedAt && { removedAt: node.removedAt }),
+        ...(node.originalParentId && { originalParentId: node.originalParentId }),
+        ...(node.references && { references: node.references }),
+      })
+    );
   }
 
   /**
@@ -413,7 +429,7 @@ try {
     node.depth = newDepth;
     node.updatedAt = Date.now();
     node.version++;
-    
+
     await this.updateNode(node);
 
     // If depth changed, update all descendants
@@ -426,10 +442,7 @@ try {
    * Recursively update depths for all descendants
    */
   private async updateSubtreeDepth(parentId: NodeId, depthDifference: number): Promise<void> {
-    const children = await this.nodes
-      .where('parentId')
-      .equals(parentId)
-      .toArray();
+    const children = await this.nodes.where('parentId').equals(parentId).toArray();
 
     for (const child of children) {
       child.depth += depthDifference;
@@ -446,24 +459,24 @@ try {
    * Get nodes by depth level
    */
   async getNodesByDepth(depth: number): Promise<TreeNode[]> {
-    const nodes = await this.nodes
-      .filter(node => node.depth === depth)
-      .toArray();
+    const nodes = await this.nodes.filter((node) => node.depth === depth).toArray();
 
     // Return plain objects
-    return nodes.map((node): TreeNode => ({
-      id: node.id,
-      parentId: node.parentId,
-      nodeType: node.nodeType,
-      name: node.name,
-      depth: node.depth,
-      createdAt: node.createdAt,
-      updatedAt: node.updatedAt,
-      version: node.version,
-      ...(node.removedAt && { removedAt: node.removedAt }),
-      ...(node.originalParentId && { originalParentId: node.originalParentId }),
-      ...(node.references && { references: node.references }),
-    }));
+    return nodes.map(
+      (node): TreeNode => ({
+        id: node.id,
+        parentId: node.parentId,
+        nodeType: node.nodeType,
+        name: node.name,
+        depth: node.depth,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
+        version: node.version,
+        ...(node.removedAt && { removedAt: node.removedAt }),
+        ...(node.originalParentId && { originalParentId: node.originalParentId }),
+        ...(node.references && { references: node.references }),
+      })
+    );
   }
 
   /**
@@ -475,7 +488,7 @@ try {
     }
 
     // Calculate depth based on parent
-    if (!node.parentId || node.parentId === '' as NodeId) {
+    if (!node.parentId || node.parentId === ('' as NodeId)) {
       node.depth = 0;
     } else {
       const parent = await this.nodes.get(node.parentId);
@@ -483,7 +496,7 @@ try {
         node.depth = parent.depth + 1;
       } else {
         // Need to calculate parent's depth first
-        const parentWithDepth = await this.migrateNodeWithDepth(parent || {} as TreeNode);
+        const parentWithDepth = await this.migrateNodeWithDepth(parent || ({} as TreeNode));
         node.depth = (parentWithDepth.depth || 0) + 1;
       }
     }
@@ -497,11 +510,11 @@ try {
    */
   async migrateAllNodesWithDepth(): Promise<{ success: boolean; migratedCount: number }> {
     let migratedCount = 0;
-    
+
     try {
       // Start with root nodes
       const rootNodes = await this.nodes
-        .filter(node => !node.parentId || node.parentId === '' as NodeId)
+        .filter((node) => !node.parentId || node.parentId === ('' as NodeId))
         .toArray();
 
       // Process in breadth-first order
@@ -510,13 +523,13 @@ try {
 
       while (queue.length > 0) {
         const node = queue.shift()!;
-        
+
         if (processed.has(node.id)) {
           continue;
         }
 
         // Set depth for root nodes
-        if (!node.parentId || node.parentId === '' as NodeId) {
+        if (!node.parentId || node.parentId === ('' as NodeId)) {
           node.depth = 0;
         } else {
           const parent = await this.nodes.get(node.parentId);
@@ -534,11 +547,8 @@ try {
         migratedCount++;
 
         // Add children to queue
-        const children = await this.nodes
-          .where('parentId')
-          .equals(node.id)
-          .toArray();
-        
+        const children = await this.nodes.where('parentId').equals(node.id).toArray();
+
         queue.push(...children);
       }
 
@@ -552,7 +562,11 @@ try {
   /**
    * Duplicate a node with correct depth calculation
    */
-  async duplicateNode(sourceNodeId: NodeId, targetParentId: NodeId, newNodeId?: NodeId): Promise<NodeId> {
+  async duplicateNode(
+    sourceNodeId: NodeId,
+    targetParentId: NodeId,
+    newNodeId?: NodeId
+  ): Promise<NodeId> {
     const sourceNode = await this.nodes.get(sourceNodeId);
     if (!sourceNode) {
       throw new Error(`Source node ${sourceNodeId} not found`);
@@ -634,7 +648,7 @@ try {
       } else {
         // Child nodes
         newParentId = idMapping.get(originalNode.parentId)!;
-        const newParent = duplicatedNodes.find(n => n.id === newParentId);
+        const newParent = duplicatedNodes.find((n) => n.id === newParentId);
         newDepth = newParent ? newParent.depth + 1 : 0;
       }
 
@@ -697,7 +711,7 @@ try {
     }
 
     const pastedNodeIds: NodeId[] = [];
-    
+
     for (const nodeId of nodeIds) {
       const sourceNode = await this.nodes.get(nodeId);
       if (!sourceNode) continue;
@@ -719,7 +733,10 @@ try {
       // If node has children, paste them recursively
       const children = await this.listChildren(nodeId);
       if (children.length > 0) {
-        await this.pasteNodes(children.map(c => c.id), newNodeId);
+        await this.pasteNodes(
+          children.map((c) => c.id),
+          newNodeId
+        );
       }
     }
 
@@ -738,9 +755,9 @@ try {
       child.depth = parent.depth + 1;
       child.updatedAt = Date.now();
       child.version++;
-      
+
       await this.nodes.put(child);
-      
+
       // Recursively update descendants
       await this.updateSubtreeDepthFromParent(child.id);
     }
@@ -752,9 +769,9 @@ try {
   async importNodesWithDepthValidation(nodes: TreeNode[]): Promise<void> {
     // Create all nodes first
     await this.bulkCreateNodes(nodes);
-    
+
     // Then recalculate depths to ensure consistency
-    const nodeIds = nodes.map(n => n.id);
+    const nodeIds = nodes.map((n) => n.id);
     for (const nodeId of nodeIds) {
       const node = await this.nodes.get(nodeId);
       if (node) {
@@ -775,11 +792,11 @@ try {
   private async calculateCorrectDepth(nodeId: NodeId): Promise<number> {
     const node = await this.nodes.get(nodeId);
     if (!node) return 0;
-    
-    if (!node.parentId || node.parentId === '' as NodeId) {
+
+    if (!node.parentId || node.parentId === ('' as NodeId)) {
       return 0; // Root node
     }
-    
+
     const parentDepth = await this.calculateCorrectDepth(node.parentId);
     return parentDepth + 1;
   }
@@ -833,7 +850,10 @@ try {
   /**
    * Get a specific tag association
    */
-  async getTagAssociation(nodeId: NodeId, tagId: TagEntity['id']): Promise<NodeTagAssociation | undefined> {
+  async getTagAssociation(
+    nodeId: NodeId,
+    tagId: TagEntity['id']
+  ): Promise<NodeTagAssociation | undefined> {
     return await this.tagAssociations.get([nodeId, tagId]);
   }
 
@@ -841,7 +861,10 @@ try {
    * Remove a tag association
    */
   async removeTagAssociation(nodeId: NodeId, tagId: TagEntity['id']): Promise<boolean> {
-    const count = await this.tagAssociations.where('[nodeId+tagId]').equals([nodeId, tagId]).delete();
+    const count = await this.tagAssociations
+      .where('[nodeId+tagId]')
+      .equals([nodeId, tagId])
+      .delete();
     return count > 0;
   }
 
@@ -880,11 +903,11 @@ try {
     // Check if the node exists and is part of the specified tree
     const node = await this.nodes.get(nodeId);
     if (!node) return false;
-    
+
     // Get tree info to check if node belongs to this tree
     const tree = await this.trees.get(treeId);
     if (!tree) return false;
-    
+
     // Simple check: if the tree exists and node exists, assume they're connected
     // In a more sophisticated implementation, you might want to traverse the tree
     return true;
@@ -896,4 +919,7 @@ try {
   static resetInstance(): void {
     SingletonMixin.terminate(CoreDB.name);
   }
+}
+function generateNodeId(treeId: string): any {
+  throw new Error('Function not implemented.');
 }

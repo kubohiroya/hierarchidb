@@ -28,15 +28,15 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-core": "workspace:*",
-    "dexie": "^4.2.0",
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "@types/node": "^22.18.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.9"
   }
 }

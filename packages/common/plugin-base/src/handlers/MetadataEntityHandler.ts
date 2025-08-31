@@ -3,7 +3,7 @@
  * @description Base handler for entities with extensible metadata
  */
 
-import type { EntityId } from '@hierarchidb/common-core';
+import type { EntityId } from '@hierarchidb/common-type';
 import type { Collection } from 'dexie';
 import { BaseEntityHandler } from './BaseEntityHandler';
 import type { BaseEntity, BaseWorkingCopy, BaseSearchCriteria } from '../types';
@@ -44,17 +44,12 @@ export abstract class MetadataEntityHandler<
   TEntity extends MetadataEntity,
   TWorkingCopy extends BaseWorkingCopy,
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
-  TSearchCriteria extends MetadataSearchCriteria = MetadataSearchCriteria
+  TSearchCriteria extends MetadataSearchCriteria = MetadataSearchCriteria,
 > extends BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria> {
-  
   /**
    * Set metadata value for a key
    */
-  async setMetadata(
-    entityId: EntityId,
-    key: string,
-    value: any
-  ): Promise<MetadataOperationResult> {
+  async setMetadata(entityId: EntityId, key: string, value: any): Promise<MetadataOperationResult> {
     try {
       const entity = await this.getEntity(entityId);
       if (!entity) {
@@ -146,10 +141,7 @@ export abstract class MetadataEntityHandler<
   /**
    * Batch set metadata
    */
-  async batchSetMetadata(
-    entityId: EntityId,
-    metadata: Record<string, any>
-  ): Promise<void> {
+  async batchSetMetadata(entityId: EntityId, metadata: Record<string, any>): Promise<void> {
     try {
       const entity = await this.getEntity(entityId);
       if (!entity) {
@@ -228,7 +220,7 @@ export abstract class MetadataEntityHandler<
         return;
       }
 
-      const tags = entity.tags.filter(t => t !== tag);
+      const tags = entity.tags.filter((t) => t !== tag);
       await this.updateEntity(entityId, { tags } as Partial<TEntity>);
     } catch (error) {
       console.error('Failed to remove tag:', error);
@@ -353,14 +345,9 @@ export abstract class MetadataEntityHandler<
   /**
    * Search by metadata
    */
-  async searchByMetadata(
-    key: string,
-    value: any
-  ): Promise<TEntity[]> {
+  async searchByMetadata(key: string, value: any): Promise<TEntity[]> {
     try {
-      return await this.table
-        .filter(entity => entity.metadata?.[key] === value)
-        .toArray();
+      return await this.table.filter((entity) => entity.metadata?.[key] === value).toArray();
     } catch (error) {
       console.error('Failed to search by metadata:', error);
       throw error;
@@ -370,21 +357,18 @@ export abstract class MetadataEntityHandler<
   /**
    * Search by tags
    */
-  async searchByTags(
-    tags: string[],
-    matchAll: boolean = false
-  ): Promise<TEntity[]> {
+  async searchByTags(tags: string[], matchAll: boolean = false): Promise<TEntity[]> {
     try {
       return await this.table
-        .filter(entity => {
+        .filter((entity) => {
           if (!entity.tags || entity.tags.length === 0) {
             return false;
           }
-          
+
           if (matchAll) {
-            return tags.every(tag => entity.tags!.includes(tag));
+            return tags.every((tag) => entity.tags!.includes(tag));
           } else {
-            return tags.some(tag => entity.tags!.includes(tag));
+            return tags.some((tag) => entity.tags!.includes(tag));
           }
         })
         .toArray();
@@ -402,27 +386,27 @@ export abstract class MetadataEntityHandler<
     criteria: TSearchCriteria
   ): Collection<TEntity, any> {
     if (criteria.hasMetadata !== undefined) {
-      query = query.filter(entity => {
+      query = query.filter((entity) => {
         const hasMetadata = entity.metadata && Object.keys(entity.metadata).length > 0;
         return hasMetadata === criteria.hasMetadata;
       });
     }
 
     if (criteria.metadataKeys && criteria.metadataKeys.length > 0) {
-      query = query.filter(entity => {
+      query = query.filter((entity) => {
         if (!entity.metadata) return false;
-        return criteria.metadataKeys!.every(key => entity.metadata!.hasOwnProperty(key));
+        return criteria.metadataKeys!.every((key) => entity.metadata!.hasOwnProperty(key));
       });
     }
 
     if (criteria.tags && criteria.tags.length > 0) {
-      query = query.filter(entity => {
+      query = query.filter((entity) => {
         if (!entity.tags || entity.tags.length === 0) return false;
-        
+
         if (criteria.tagMatch === 'all') {
-          return criteria.tags!.every(tag => entity.tags!.includes(tag));
+          return criteria.tags!.every((tag) => entity.tags!.includes(tag));
         } else {
-          return criteria.tags!.some(tag => entity.tags!.includes(tag));
+          return criteria.tags!.some((tag) => entity.tags!.includes(tag));
         }
       });
     }
@@ -460,10 +444,7 @@ export abstract class MetadataEntityHandler<
   /**
    * Copy metadata from one entity to another
    */
-  async copyMetadata(
-    sourceEntityId: EntityId,
-    targetEntityId: EntityId
-  ): Promise<void> {
+  async copyMetadata(sourceEntityId: EntityId, targetEntityId: EntityId): Promise<void> {
     try {
       const source = await this.getEntity(sourceEntityId);
       if (!source) {

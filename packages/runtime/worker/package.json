@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/common-core": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-plugin-registry": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",

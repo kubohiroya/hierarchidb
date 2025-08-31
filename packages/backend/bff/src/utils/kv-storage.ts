@@ -2,7 +2,7 @@
  * KV Storage utilities with optimized transaction support
  */
 
-import { deriveKey, encrypt, decrypt, generateSecureToken } from './encryption';
+import { deriveKey, encrypt, decrypt, generateSecureToken } from './encryption.js';
 
 /**
  * Combined data structure to reduce KV operations
@@ -151,8 +151,10 @@ export class KVStorageManager {
       }
 
       // 現在のトークンまたは前のトークン（グレースピリオド）でない場合は拒否
-      if (refreshTokenId !== userAuthData.refreshToken.id && 
-          refreshTokenId !== userAuthData.refreshToken.previousTokenId) {
+      if (
+        refreshTokenId !== userAuthData.refreshToken.id &&
+        refreshTokenId !== userAuthData.refreshToken.previousTokenId
+      ) {
         return { success: false, error: 'Invalid refresh token' };
       }
     }

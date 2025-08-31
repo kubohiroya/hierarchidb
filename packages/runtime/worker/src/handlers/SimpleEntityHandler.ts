@@ -7,6 +7,13 @@ import { generateNodeId } from '@hierarchidb/common-type';
  * Provides basic CRUD operations with Dexie integration
  */
 
+import {
+  EntityId,
+  GroupEntity,
+  NodeId,
+  PeerEntity,
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { workerWarn } from '../utils/workerLogger';
 import { BaseEntityHandler } from './BaseEntityHandler';

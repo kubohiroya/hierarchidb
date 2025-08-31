@@ -1,36 +1,36 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { Hono, Context } from 'hono';
-import { Env } from './types';
-import { getCORSHeaders, parseAllowedOrigins } from './utils/cors';
-import { extractBearerToken, verifySessionToken, createSessionToken } from './utils/jwt';
+import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
+import { extractBearerToken, verifySessionToken, createSessionToken } from './utils/jwt.js';
 import {
   initiateGoogleAuth,
   exchangeCodeForTokens,
   getGoogleUserInfo,
   type GoogleOAuth2Config,
-} from './auth/google';
-import { initiateGitHubAuth, type GitHubOAuth2Config } from './auth/github';
-import { initiateMicrosoftAuth, type MicrosoftOAuth2Config } from './auth/microsoft';
-import { handleOAuth2Callback, exchangeCodeForToken } from './auth/callback';
-import { refreshToken, revokeToken } from './auth/refresh';
-import { mapEnvironmentVariables, MappedEnv } from './env-mapper';
-import { getDynamicRedirectUri } from './utils/redirect-uri';
-import { StateManager } from './utils/state-manager';
+} from './auth/google.js';
+import { initiateGitHubAuth, type GitHubOAuth2Config } from './auth/github.js';
+import { initiateMicrosoftAuth, type MicrosoftOAuth2Config } from './auth/microsoft.js';
+import { handleOAuth2Callback, exchangeCodeForToken } from './auth/callback.js';
+import { refreshToken, revokeToken } from './auth/refresh.js';
+import { mapEnvironmentVariables, MappedEnv } from './env-mapper.js';
+import { getDynamicRedirectUri } from './utils/redirect-uri.js';
+import { StateManager } from './utils/state-manager.js';
 import { validateOrigin } from './middleware/origin-validator';
 import { requireTurnstile } from './utils/turnstile';
+import { Env } from './types';
 
 const app = new Hono<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>();
 
 // Environment mapping middleware
-app.use('*', async (c, next) => {
+app.use('*', async (c: any, next: any) => {
   // Map prefixed environment variables to non-prefixed names
   c.env = mapEnvironmentVariables(c.env) as MappedEnv;
   await next();
 });
 
 // CORS middleware for all requests
-app.use('*', async (c, next) => {
+app.use('*', async (c: any, next: any) => {
   const origin = c.req.header('Origin');
   const allowedOrigins = parseAllowedOrigins(c.env.ALLOWED_ORIGINS);
   const corsHeaders = getCORSHeaders(origin, { allowedOrigins });

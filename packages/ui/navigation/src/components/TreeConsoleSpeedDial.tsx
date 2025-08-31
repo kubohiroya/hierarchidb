@@ -14,13 +14,15 @@ import {
   Extension as ExtensionIcon,
 } from '@mui/icons-material';
 
-import type { PluginDefinition as CorePluginDefinition } from '@hierarchidb/common-type';
+import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
 // 拡張型定義（UIコンポーネント用のプロパティを追加）
-interface PluginDefinition extends CorePluginDefinition {
+/*
+interface CorePluginDefinition extends BasePluginDefinition {
   description?: string;
   priority?: number;
 }
+ */
 
 interface TreeConsoleSpeedDialProps {
   plugins?: PluginDefinition[];
@@ -145,9 +147,9 @@ export function TreeConsoleSpeedDial({
 /**
  * デフォルトのプラグイン設定例
  */
-export const defaultPlugins: PluginDefinition[] = [
+export const defaultPlugins: Partial<PluginDefinition>[] = [
   {
-    nodeType: 'folder',
+    nodeType: 'folder' as NodeType,
     name: 'Folder',
     displayName: 'Folder',
     description:
@@ -164,13 +166,12 @@ export const defaultPlugins: PluginDefinition[] = [
     },
     database: {
       dbName: 'CoreDB',
-      tableName: 'folders',
-      schema: 'id, nodeId, name',
+      schema: { folders: 'id, nodeId, name' },
       version: 1,
     },
   },
   {
-    nodeType: 'basemap',
+    nodeType: 'basemap' as NodeType,
     name: 'BaseMap',
     displayName: 'Base Map',
     description:
@@ -187,13 +188,12 @@ export const defaultPlugins: PluginDefinition[] = [
     },
     database: {
       dbName: 'CoreDB',
-      tableName: 'basemaps',
-      schema: 'id, nodeId, name',
+      schema: { basemaps: 'id, nodeId, name' },
       version: 1,
     },
   },
   {
-    nodeType: 'stylemap',
+    nodeType: 'stylemap' as NodeType,
     name: 'StyleMap',
     displayName: 'Style Map',
     description:
@@ -210,13 +210,12 @@ export const defaultPlugins: PluginDefinition[] = [
     },
     database: {
       dbName: 'CoreDB',
-      tableName: 'stylemaps',
-      schema: 'id, nodeId, name',
+      schema: { stylemaps: 'id, nodeId, name' },
       version: 1,
     },
   },
   {
-    nodeType: 'shape',
+    nodeType: 'shape' as NodeType,
     name: 'Shape',
     displayName: 'Geographic Shape',
     description:
@@ -233,8 +232,7 @@ export const defaultPlugins: PluginDefinition[] = [
     },
     database: {
       dbName: 'CoreDB',
-      tableName: 'shapes',
-      schema: 'id, nodeId, name',
+      schema: { shapes: 'id, nodeId, name' },
       version: 1,
     },
   },

@@ -1,33 +1,27 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "noEmit": false,
+    "lib": ["ES2022", "DOM"],
     "outDir": "./dist",
-    "jsx": "react-jsx",
-    "lib": [
-      "ES2020",
-      "DOM"
-    ],
+    "rootDir": "./src",
     "module": "ESNext",
+    "target": "ES2022",
     "moduleResolution": "node",
-    "baseUrl": ".",
+    "composite": false,
+    "incremental": false,
+
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strictNullChecks": false,
+    "strict": true,
+    "noImplicitAny": false,
+    "baseUrl": "./",
     "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "@hierarchidb/ui-tour": [
-        "../../ui/tour/dist/index.d.ts"
-      ]
-    },
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+      "~/*": ["src/*"]
+    }
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "./node_modules",
-    "./dist"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "src/__tests__/**", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }

@@ -1,5 +1,11 @@
-import {  } from '@hierarchidb/common-core';
-import type { CommandEnvelope, Timestamp, TreeNode, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
+import type {
+  CommandEnvelope,
+  Timestamp,
+  TreeNode,
+  NodeId,
+  NodeType,
+  WorkingCopy,
+} from '@hierarchidb/common-type';
 import { generateNodeId } from '@hierarchidb/common-type';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../command/CommandProcessor';
@@ -132,6 +138,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const workingCopyId = generateNodeId();
@@ -169,6 +176,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'createWorkingCopy', any> = {
@@ -264,7 +272,9 @@ describe('TreeMutationService', () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect((result as { success: false; error: string; code: any }).code).toBe('NAME_NOT_UNIQUE');
+          expect((result as { success: false; error: string; code: any }).code).toBe(
+            'NAME_NOT_UNIQUE'
+          );
         }
       });
     });
@@ -328,7 +338,9 @@ describe('TreeMutationService', () => {
 
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect((result as { success: false; error: string; code: any }).code).toBe('STALE_VERSION');
+          expect((result as { success: false; error: string; code: any }).code).toBe(
+            'STALE_VERSION'
+          );
         }
       });
     });
@@ -346,6 +358,7 @@ describe('TreeMutationService', () => {
           updatedAt: Date.now() as Timestamp,
           version: 1,
           copiedAt: Date.now() as Timestamp,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'discardWorkingCopy', any> = {
@@ -379,6 +392,7 @@ describe('TreeMutationService', () => {
             createdAt: Date.now() as Timestamp,
             updatedAt: Date.now() as Timestamp,
             version: 1,
+            depth: 0,
           });
         });
 
@@ -419,6 +433,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         coreDB.treeNodes.set(childId, {
@@ -429,6 +444,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'moveNodes', any> = {
@@ -464,6 +480,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'duplicateNodes', any> = {
@@ -507,6 +524,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         coreDB.treeNodes.set(childId, {
@@ -517,6 +535,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'duplicateNodes', any> = {
@@ -552,6 +571,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'moveToTrash', any> = {
@@ -591,6 +611,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'recoverFromTrash', any> = {
@@ -631,6 +652,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'recoverFromTrash', any> = {
@@ -668,6 +690,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'remove', any> = {
@@ -696,6 +719,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         coreDB.treeNodes.set(childId, {
@@ -706,6 +730,7 @@ describe('TreeMutationService', () => {
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,
+          depth: 0,
         });
 
         const cmd: CommandEnvelope<'remove', any> = {

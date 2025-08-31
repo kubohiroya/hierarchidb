@@ -1,4 +1,4 @@
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-type';
 
 /**
  * Import/Export API for data transfer operations
@@ -23,13 +23,13 @@ export interface ImportExportAPI {
    * Get supported import formats
    * @returns List of supported import format identifiers
    */
-  getSupportedImportFormats(): Promise<string[]>;
+  getSupportedImportFormats(): Promise<NodeType[]>;
 
   /**
    * Get supported export formats
    * @returns List of supported export format identifiers
    */
-  getSupportedExportFormats(): Promise<string[]>;
+  getSupportedExportFormats(): Promise<NodeType[]>;
 
   /**
    * Validate import data without performing actual import

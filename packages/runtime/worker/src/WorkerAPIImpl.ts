@@ -1,11 +1,17 @@
-import { SingletonMixin } from '@hierarchidb/common-core';
-import type { Tree, TreeId, TreeNode, NodeId, NodeType, WorkingCopyId, CommitResult } from '@hierarchidb/common-type';
+import { SingletonMixin } from '@hierarchidb/util';
+import type {
+  Tree,
+  TreeId,
+  TreeNode,
+  NodeId,
+  NodeType,
+  WorkingCopy,
+} from '@hierarchidb/common-type';
 import type {
   WorkerAPI,
   TreeQueryAPI,
   TreeMutationAPI,
   TreeSubscriptionAPI,
-  PluginRegistryAPI,
   NodeTypeRegistryAPI,
   WorkingCopyAPI,
   PluginTreeAPI,
@@ -14,6 +20,7 @@ import type {
   PluginManagementAPI,
   PluginLifecycleAPI,
   ImportExportAPI,
+  PluginRegistryAPI,
 } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
@@ -21,7 +28,7 @@ import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
-import { SimpleNodeTypeRegistry, UnifiedNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
+import {} from '@hierarchidb/runtime-plugin-registry';
 import { registerDefaultPlugins } from './registry/default-plugins';
 
 // Services
@@ -39,39 +46,39 @@ import { TagService } from './services/TagService';
 
 /**
  * Worker API Facade Implementation
- * 
+ *
  * Pure facade that delegates to specialized service classes.
  * Maintains single responsibility: routing API calls to appropriate services.
  */
 export class WorkerAPIImpl implements WorkerAPI {
   private dbName: string;
   private isInitialized: boolean = false;
-  
+
   // Core dependencies
   private coreDB!: CoreDB;
   private ephemeralDB!: EphemeralDB;
-  private nodeTypeRegistry!: SimpleNodeTypeRegistry;
+  private nodeTypeRegistry!: PluginRegistry;
   private nodeLifecycleManager!: NodeLifecycleManager;
   private commandProcessor!: CommandProcessor;
-  
+
   // Query/Mutation services
   private queryService!: TreeQueryService;
   private mutationService!: TreeMutationService;
   private subscriptionService!: TreeSubscriptionService;
-  
+
   // Plugin services
   private pluginTreeService!: PluginTreeService;
   private nodeTypeService!: NodeTypeService;
   private pluginManagementService!: PluginManagementService;
-  
+
   // Import/Export services
   private importService!: ImportService;
   private exportService!: ExportService;
   private importExportAPI!: ImportExportAPIImpl;
-  
+
   // Tag service
-  private tagService!: any;
-  
+  private tagService!: TagService;
+
   constructor(dbName: string = 'default-worker-db') {
     this.dbName = dbName;
   }
@@ -86,7 +93,7 @@ export class WorkerAPIImpl implements WorkerAPI {
 
   async initialize(): Promise<void> {
     console.log('[WorkerAPIImpl] Starting initialization...');
-    
+
     if (this.isInitialized) {
       console.log('[WorkerAPIImpl] Already initialized');
       return;
@@ -95,12 +102,12 @@ export class WorkerAPIImpl implements WorkerAPI {
     // Initialize databases
     this.coreDB = await CoreDB.getSingleton(this.dbName);
     this.ephemeralDB = await EphemeralDB.getSingleton(this.dbName);
-    
+
     // Initialize registries
-    this.nodeTypeRegistry = await SimpleNodeTypeRegistry.getSingleton();
-    const unifiedRegistry = UnifiedNodeTypeRegistry.getInstance();
+    this.nodeTypeRegistry = await PluginRegistry.getSingleton();
+    const unifiedRegistry = PluginRegistry.getInstance();
     registerDefaultPlugins(unifiedRegistry);
-    
+
     // Register Import/Export plugins with dependency resolution
     try {
       // const registrationResult = await importExportPluginRegistry.registerAllPlugins(unifiedRegistry); // Disabled due to build issues
@@ -112,17 +119,17 @@ export class WorkerAPIImpl implements WorkerAPI {
     } catch (error) {
       console.error('[WorkerAPIImpl] Failed to register Import/Export plugins:', error);
     }
-    
+
     // Initialize lifecycle manager
     this.nodeLifecycleManager = new NodeLifecycleManager(
       this.nodeTypeRegistry,
       this.coreDB,
       this.ephemeralDB
     );
-    
+
     // Initialize command processor
     this.commandProcessor = new CommandProcessor();
-    
+
     // Initialize core services
     this.queryService = new TreeQueryService(this.coreDB);
     this.subscriptionService = new TreeSubscriptionService(this.coreDB);
@@ -132,22 +139,20 @@ export class WorkerAPIImpl implements WorkerAPI {
       this.commandProcessor,
       this.nodeLifecycleManager
     );
-    
+
     // Initialize plugin services
     this.pluginTreeService = new PluginTreeService(this.coreDB, this.queryService);
     this.nodeTypeService = new NodeTypeService(this.nodeTypeRegistry, this.queryService);
-    this.pluginManagementService = new PluginManagementService(
-      this.nodeTypeRegistry
-    );
-    
+    this.pluginManagementService = new PluginManagementService(this.nodeTypeRegistry);
+
     // Initialize import/export services
     this.importService = new ImportService(this.coreDB, this.mutationService);
     this.exportService = new ExportService(this.coreDB, this.queryService);
     this.importExportAPI = await ImportExportAPIImpl.getInstance();
-    
+
     // Initialize tag service
     this.tagService = new TagService(this.coreDB);
-    
+
     this.isInitialized = true;
     console.log('[WorkerAPIImpl] Initialization complete');
   }
@@ -180,42 +185,41 @@ export class WorkerAPIImpl implements WorkerAPI {
         // Use the new API method that directly accepts callback
         return await this.subscriptionService.subscribeNode(nodeId, callback, options);
       },
-      
+
       subscribeSubtree: async (nodeId, callback, options) => {
         // Use the new API method that directly accepts callback
         return await this.subscriptionService.subscribeSubtree(nodeId, callback, options);
       },
-      
+
       subscribeTree: async (treeId, callback, options) => {
         // Use the new API method that directly accepts callback
         return await this.subscriptionService.subscribeTree(treeId, callback, options);
       },
-      
+
       unsubscribe: async (subscriptionId) => {
         return await this.subscriptionService.unsubscribe(subscriptionId);
       },
-      
+
       unsubscribeNode: async (nodeId) => {
         return await this.subscriptionService.unsubscribeNode(nodeId);
       },
-      
+
       unsubscribeTree: async (treeId) => {
         return await this.subscriptionService.unsubscribeTree(treeId);
       },
 
-      
       unsubscribeAll: async () => {
         return this.subscriptionService.unsubscribeAll();
       },
-      
+
       listActiveSubscriptions: async () => {
         return [];
       },
-      
+
       isSubscriptionActive: async (subscriptionId) => {
         return false;
       },
-      
+
       getSubscriptionStats: async () => {
         return {
           totalActive: 0,
@@ -223,19 +227,19 @@ export class WorkerAPIImpl implements WorkerAPI {
           subtreeSubscriptions: 0,
           treeSubscriptions: 0,
           eventsProcessedToday: 0,
-          averageEventLatency: 0
+          averageEventLatency: 0,
         };
       },
-      
+
       getRecentEvents: async (nodeId, limit = 50) => {
         return [];
       },
-      
+
       getEventHistory: async (startTime, endTime, nodeId) => {
         return [];
-      }
+      },
     };
-    
+
     return Comlink.proxy(subscriptionAPI);
   }
 
@@ -255,7 +259,7 @@ export class WorkerAPIImpl implements WorkerAPI {
           updatedAt: Date.now(),
           version: 1,
           copiedAt: Date.now(), // Required by WorkingCopyProperties
-          ...initialData
+          ...initialData,
         };
         await this.ephemeralDB.createWorkingCopy(workingCopy);
         return workingCopy;
@@ -283,7 +287,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         const updatedWorkingCopy: WorkingCopy = {
           ...workingCopy,
           ...updates,
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
         };
         await this.ephemeralDB.updateWorkingCopy(updatedWorkingCopy);
         return updatedWorkingCopy;
@@ -295,7 +299,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         const workingCopy = await this.ephemeralDB.getWorkingCopy(nodeId);
         return !!workingCopy;
       },
-      
+
       // Commit and discard operations
       commitWorkingCopy: async (nodeId: NodeId) => {
         const workingCopy = await this.ephemeralDB.getWorkingCopy(nodeId);
@@ -317,7 +321,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         }
         return workingCopies.length;
       },
-      
+
       // Validation operations
       validateWorkingCopy: async (nodeId: NodeId) => {
         // Basic validation implementation
@@ -331,7 +335,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         const workingCopy = await this.ephemeralDB.getWorkingCopy(nodeId);
         return !!workingCopy;
       },
-      
+
       // Bulk operations
       commitMultipleWorkingCopies: async (nodeIds: NodeId[]) => {
         const results = [];
@@ -346,7 +350,10 @@ export class WorkerAPIImpl implements WorkerAPI {
               results.push({ success: false, error: 'Working copy not found' });
             }
           } catch (error) {
-            results.push({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+            results.push({
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
           }
         }
         return results;
@@ -357,9 +364,9 @@ export class WorkerAPIImpl implements WorkerAPI {
           try {
             const node = await this.coreDB.getNode(nodeId);
             if (node) {
-              const workingCopy: WorkingCopy = { 
+              const workingCopy: WorkingCopy = {
                 ...node,
-                copiedAt: Date.now() // Required by WorkingCopyProperties
+                copiedAt: Date.now(), // Required by WorkingCopyProperties
               };
               await this.ephemeralDB.createWorkingCopy(workingCopy);
               results.push(workingCopy);
@@ -370,30 +377,33 @@ export class WorkerAPIImpl implements WorkerAPI {
         }
         return results;
       },
-      
+
       // Working Copy Status
       getWorkingCopyStats: async () => {
         const workingCopies = await this.ephemeralDB.listWorkingCopies();
         const now = Date.now();
         return {
           total: workingCopies.length,
-          drafts: workingCopies.filter(wc => (wc as any).isDraft).length,
-          edits: workingCopies.filter(wc => !(wc as any).isDraft).length,
-          oldestTimestamp: workingCopies.reduce((oldest, wc) => Math.min(oldest, wc.updatedAt), now),
-          newestTimestamp: workingCopies.reduce((newest, wc) => Math.max(newest, wc.updatedAt), 0)
+          drafts: workingCopies.filter((wc) => (wc as any).isDraft).length,
+          edits: workingCopies.filter((wc) => !(wc as any).isDraft).length,
+          oldestTimestamp: workingCopies.reduce(
+            (oldest, wc) => Math.min(oldest, wc.updatedAt),
+            now
+          ),
+          newestTimestamp: workingCopies.reduce((newest, wc) => Math.max(newest, wc.updatedAt), 0),
         };
       },
-      
+
       cleanupOldWorkingCopies: async (olderThan: number) => {
         const workingCopies = await this.ephemeralDB.listWorkingCopies();
-        const toDelete = workingCopies.filter(wc => wc.updatedAt < olderThan);
+        const toDelete = workingCopies.filter((wc) => wc.updatedAt < olderThan);
         for (const wc of toDelete) {
           await this.ephemeralDB.discardWorkingCopy(wc.id);
         }
         return toDelete.length;
-      }
+      },
     };
-    
+
     return Comlink.proxy(workingCopyAPI);
   }
 
@@ -403,7 +413,8 @@ export class WorkerAPIImpl implements WorkerAPI {
 
   getTreePluginAnalyzer(): TreePluginAnalyzer & Comlink.ProxyMarked {
     // Return the same service with the new interface name
-    return Comlink.proxy(this.pluginTreeService) as unknown as TreePluginAnalyzer & Comlink.ProxyMarked;
+    return Comlink.proxy(this.pluginTreeService) as unknown as TreePluginAnalyzer &
+      Comlink.ProxyMarked;
   }
 
   getNodeTypeAPI(): NodeTypeAPI & Comlink.ProxyMarked {
@@ -416,14 +427,15 @@ export class WorkerAPIImpl implements WorkerAPI {
 
   getPluginLifecycleAPI(): PluginLifecycleAPI & Comlink.ProxyMarked {
     // Return the same service with the new interface name
-    return Comlink.proxy(this.pluginManagementService) as unknown as PluginLifecycleAPI & Comlink.ProxyMarked;
+    return Comlink.proxy(this.pluginManagementService) as unknown as PluginLifecycleAPI &
+      Comlink.ProxyMarked;
   }
 
   getImportExportAPI(): ImportExportAPI & Comlink.ProxyMarked {
     return Comlink.proxy(this.importExportAPI);
   }
 
-  getTagService(): any & Comlink.ProxyMarked {
+  getTagAPI(): TagService & Comlink.ProxyMarked {
     return Comlink.proxy(this.tagService);
   }
 
@@ -445,9 +457,9 @@ export class WorkerAPIImpl implements WorkerAPI {
       },
       listRegisteredPlugins: async () => this.pluginManagementService.listRegistered(),
       getPluginsForTree: async (treeId: TreeId) => {
-        const response = await this.pluginTreeService.getPluginsForTree({ 
-          treeId, 
-          includeInactive: false 
+        const response = await this.pluginTreeService.getPluginsForTree({
+          treeId,
+          includeInactive: false,
         });
         return response.plugins;
       },
@@ -471,7 +483,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         return {
           success: result.success,
           cleanedUpNodes: 0,
-          error: result.error?.message
+          error: result.error?.message,
         };
       },
       registerExtension: async (nodeType: NodeType, api: any) => {
@@ -503,9 +515,9 @@ export class WorkerAPIImpl implements WorkerAPI {
       },
       getPluginHealth: async (nodeType: NodeType) => {
         return this.pluginManagementService.checkHealth(nodeType);
-      }
+      },
     };
-    
+
     return legacyAdapter as unknown as PluginRegistryAPI & Comlink.ProxyMarked;
   }
 
@@ -522,19 +534,19 @@ export class WorkerAPIImpl implements WorkerAPI {
       validateNodeTypeOperation: async (nodeType: NodeType, operation: any, context?: any) => {
         return this.nodeTypeService.validateOperation(nodeType, operation, context);
       },
-      
+
       // Plugin Management
       listRegisteredPlugins: async () => this.pluginManagementService.listRegistered(),
       getPluginsForTree: async (treeId: string) => {
-        const response = await this.pluginTreeService.getPluginsForTree({ 
-          treeId: treeId as TreeId, 
-          includeInactive: false 
+        const response = await this.pluginTreeService.getPluginsForTree({
+          treeId: treeId as TreeId,
+          includeInactive: false,
         });
         return response.plugins;
       },
       getPluginMetadata: async (pluginId: string) => undefined,
       isPluginActive: async (pluginId: string) => false,
-      
+
       // Plugin Registry Operations
       registerPlugin: async (definition: any) => {
         return this.pluginManagementService.register(definition);
@@ -544,22 +556,22 @@ export class WorkerAPIImpl implements WorkerAPI {
         return {
           success: result.success,
           cleanedUpNodes: 0,
-          error: result.error?.message
+          error: result.error?.message,
         };
       },
       reloadPlugin: async (nodeType: NodeType, definition: any) => {
         return { success: false, affectedNodes: 0, error: 'Not implemented' };
       },
-      
+
       // Plugin Validation
       validatePluginDefinition: async (definition: any) => {
         return this.pluginManagementService.validatePlugin(definition);
       },
       checkPluginCompatibility: async (nodeType: NodeType) => {
-        return { 
-          compatible: false, 
-          version: '0.0.0', 
-          requiredVersion: '0.0.0' 
+        return {
+          compatible: false,
+          version: '0.0.0',
+          requiredVersion: '0.0.0',
         };
       },
       getPluginSystemHealth: async () => {
@@ -570,23 +582,23 @@ export class WorkerAPIImpl implements WorkerAPI {
           systemErrors: [],
           performance: {
             averageLoadTime: 0,
-            totalMemoryUsage: 0
-          }
+            totalMemoryUsage: 0,
+          },
         };
       },
-      
+
       // Node Type Capabilities
       getSupportedOperations: async (nodeType: NodeType) => {
         return [] as Array<'create' | 'read' | 'update' | 'delete' | 'move' | 'copy'>;
       },
       supportsChildren: async (nodeType: NodeType) => false,
       getAllowedChildTypes: async (parentType: NodeType) => [],
-      
+
       // Plugin API Extensions
       getExtension: async (nodeType: NodeType) => undefined,
-      registerExtension: async (nodeType: NodeType, api: any) => {}
+      registerExtension: async (nodeType: NodeType, api: any) => {},
     };
-    
+
     return adapter as unknown as NodeTypeRegistryAPI & Comlink.ProxyMarked;
   }
 
@@ -686,7 +698,10 @@ export class WorkerAPIImpl implements WorkerAPI {
   /**
    * @deprecated Use getMutationAPI().recoverNodesFromTrash() instead. Will be removed in v2.0.
    */
-  async recoverFromTrash(params: { nodeIds: NodeId[]; toParentId?: NodeId }): Promise<{ success: boolean; error?: string }> {
+  async recoverFromTrash(params: {
+    nodeIds: NodeId[];
+    toParentId?: NodeId;
+  }): Promise<{ success: boolean; error?: string }> {
     // The mutation service expects a CommandEnvelope, but for legacy compatibility we create a simple response
     try {
       const result = await this.mutationService.recoverNodesFromTrash(params);
@@ -700,9 +715,9 @@ export class WorkerAPIImpl implements WorkerAPI {
    * @deprecated Use getPluginTreeAPI().getPluginsForTree() instead for better type safety. Will be removed in v2.0.
    */
   async getPluginsForTree(treeId: TreeId): Promise<any[]> {
-    const response = await this.pluginTreeService.getPluginsForTree({ 
-      treeId, 
-      includeInactive: false 
+    const response = await this.pluginTreeService.getPluginsForTree({
+      treeId,
+      includeInactive: false,
     });
     return response.plugins;
   }

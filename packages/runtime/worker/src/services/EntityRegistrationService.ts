@@ -4,6 +4,8 @@ import type { NodeType, EntityMetadata, EntityType } from '@hierarchidb/common-t
  * @description Service for registering and managing entity metadata for automatic lifecycle management
  */
 
+import { EntityMetadata, EntityType, NodeType } from '@hierarchidb/common-type';
+
 /**
  * Service for registering and retrieving entity metadata
  */

@@ -4,6 +4,7 @@ import type { NodeType, EntityMetadata } from '@hierarchidb/common-type';
  * @description Tests for EntityRegistrationService
  */
 
+import { EntityMetadata, NodeType } from '@hierarchidb/common-type';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EntityRegistrationService } from './EntityRegistrationService';
 

@@ -1,10 +1,9 @@
 import type { Timestamp, TreeNode, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
-import { generateNodeId } from '@hierarchidb/common-core';
 import type { CommandResult } from '../command/types';
 import { WorkerErrorCode } from '../command/types';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
-
+import crypto from 'crypto';
 /**
  * Create a new draft working copy for creating a new node
  * Working copy is a TreeNode stored in EphemeralDB
@@ -21,7 +20,7 @@ export async function createNewDraftWorkingCopy(
   const uniqueName = createNewName(siblingNames, baseName);
 
   // Generate new ID for the draft (will be used as both treeNodeId and workingCopyOf)
-  const newNodeId = generateNodeId() as NodeId;
+  const newNodeId = crypto.randomUUID() as NodeId;
   const now = Date.now() as Timestamp;
 
   const workingCopy: WorkingCopy = {

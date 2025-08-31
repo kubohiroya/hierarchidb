@@ -13,7 +13,7 @@ export type {
   ValidationWarning,
   ImportProgress,
   ExportProgress,
-  OperationStatus
+  OperationStatus,
 } from './ImportExportAPI';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
 export type { TreeQueryAPI } from './TreeQueryAPI';
@@ -33,7 +33,7 @@ export type {
   PluginListOptions,
   PluginDependencyInfo,
   BulkOperationOptions,
-  BulkOperationResult
+  BulkOperationResult,
 } from './PluginManagementAPI';
 
 // New exports from PluginLifecycleAPI
@@ -54,9 +54,9 @@ export type {
 } from './PluginLifecycleAPI';
 export type {
   // Legacy export (deprecated)
-  PluginTreeAPI, 
-  TreePluginInfo, 
-  GetPluginsForTreeRequest, 
+  PluginTreeAPI,
+  TreePluginInfo,
+  GetPluginsForTreeRequest,
   GetPluginsForTreeResponse,
   PluginUsageStats,
   CompatibilityResult,
@@ -65,7 +65,7 @@ export type {
   PluginMetrics,
   TimePeriod,
   GraphOptions,
-  MetricOptions
+  MetricOptions,
 } from './PluginTreeAPI';
 
 // New exports from TreePluginAnalyzer (with aliased names to avoid conflicts)
@@ -97,3 +97,5 @@ export type { PluginRegistryAPI } from './PluginRegistryAPI';
 
 // New export
 export type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
+
+export * from './ITagAPI';

@@ -10,10 +10,9 @@ import type {
   NodeType,
   NodeId,
   ValidationResult,
-  NodeTypeDefinition,
   TreeNode,
   NodeLifecycleHooks,
-  PluginMetadata,
+  PluginDefinition,
 } from '@hierarchidb/common-type';
 
 /**
@@ -130,7 +129,7 @@ export interface NodeTypeAPI {
    * @param nodeTypeDefinition - Complete node type definition
    * @throws Error if node type is already registered
    */
-  registerNodeType(nodeTypeDefinition: NodeTypeDefinition<any, any, any>): Promise<void>;
+  registerNodeType(nodeTypeDefinition: PluginDefinition): Promise<void>;
 
   /**
    * Unregister an existing node type
@@ -153,7 +152,7 @@ export interface NodeTypeAPI {
    * @param nodeType - Node type identifier
    * @returns Node type definition, or null if not registered
    */
-  getNodeTypeDefinition(nodeType: NodeType): Promise<NodeTypeDefinition<any, any, any> | null>;
+  getNodeTypeDefinition(nodeType: NodeType): Promise<PluginDefinition | null>;
 
   /**
    * Check if a specific node type is registered
@@ -194,7 +193,7 @@ export interface NodeTypeAPI {
    * @param nodeType - Node type identifier
    * @returns Node type metadata, or null if not registered
    */
-  getNodeTypeMetadata(nodeType: NodeType): Promise<PluginMetadata | null>;
+  getNodeTypeMetadata(nodeType: NodeType): Promise<PluginDefinition | null>;
 
   /**
    * Update metadata for a registered node type
@@ -203,7 +202,7 @@ export interface NodeTypeAPI {
    * @param metadata - New metadata to set
    * @throws Error if node type is not registered
    */
-  updateNodeTypeMetadata(nodeType: NodeType, metadata: PluginMetadata): Promise<void>;
+  updateNodeTypeMetadata(nodeType: NodeType, metadata: PluginDefinition): Promise<void>;
 
   // ==================
   // Node Type Validation

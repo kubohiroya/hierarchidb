@@ -5,6 +5,19 @@ import type { ImportManifest, ImportProgress, ImportResult, TemplateImportOption
  * @module worker/services/ImportService
  */
 
+import {
+  CommandEnvelope,
+  FileImportOptions,
+  IdMapping,
+  ImportManifest,
+  ImportNodesPayload,
+  ImportProgress,
+  ImportResult,
+  NodeId,
+  TemplateImportOptions,
+  TreeNode,
+  TreeNodeExportData,
+} from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { TreeMutationService } from './TreeMutationService';
 // Use native crypto.randomUUID() instead of uuid package

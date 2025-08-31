@@ -55,15 +55,6 @@ class MockEphemeralDB {
     return this.workingCopies.get(id);
   }
 
-  async getWorkingCopyByNodeId(nodeId: NodeId): Promise<WorkingCopy | undefined> {
-    for (const wc of this.workingCopies.values()) {
-      if (wc.id === nodeId) {
-        return wc;
-      }
-    }
-    return undefined;
-  }
-
   async createWorkingCopy(wc: WorkingCopy): Promise<void> {
     this.workingCopies.set(wc.id, wc);
   }
@@ -101,6 +92,7 @@ describe.skip('WorkingCopyOperations', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      depth: 0,
     };
 
     const folder1: TreeNode = {
@@ -111,6 +103,7 @@ describe.skip('WorkingCopyOperations', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      depth: 0,
     };
 
     const folder2: TreeNode = {
@@ -121,6 +114,7 @@ describe.skip('WorkingCopyOperations', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      depth: 0,
     };
 
     coreDB.nodes.set(rootNode.id, rootNode);
@@ -342,6 +336,7 @@ describe.skip('WorkingCopyOperations', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
+        depth: 0,
       };
       await coreDB.createNode(conflictNode);
 

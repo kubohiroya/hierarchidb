@@ -2,6 +2,7 @@
   "name": "@hierarchidb/ui-tour",
   "version": "1.0.0",
   "type": "module",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsup && node scripts/fix-dts.js",
+    "build": "tsup",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "tsc && tsc-alias",
@@ -23,7 +24,7 @@
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
     "react": "^18.3.1",
-    "react-joyride": "^2.9.3"
+    "react-joyride": "^3.0.0-7"
   },
   "license": "MIT",
   "module": "dist/index.js"

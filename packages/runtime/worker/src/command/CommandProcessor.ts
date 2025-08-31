@@ -1,5 +1,5 @@
-import { generateNodeId } from '@hierarchidb/common-core';
-import type { NodeType } from '@hierarchidb/common-type';
+import crypto from 'crypto';
+import type { CommandId, NodeType } from '@hierarchidb/common-type';
 import type { TreeNode, NodeId, Timestamp, Seq } from '@hierarchidb/common-type';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './types';
 import { WorkerErrorCode } from './types';
@@ -122,12 +122,12 @@ export class CommandProcessor {
     payload: TPayload,
     meta?: Partial<CommandMeta>
   ): CommandEnvelope<TType, TPayload> {
-    const commandId = meta?.commandId ?? generateNodeId();
+    const commandId = meta?.commandId ?? (crypto.randomUUID() as CommandId);
     const timestamp = meta?.timestamp ?? (Date.now() as Timestamp);
 
     return {
       commandId,
-      groupId: generateNodeId(), // Auto-generate group ID
+      groupId: crypto.randomUUID(), // Auto-generate group ID
       kind: type,
       payload,
       issuedAt: timestamp,

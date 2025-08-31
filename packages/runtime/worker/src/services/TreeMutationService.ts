@@ -1,8 +1,30 @@
-import {  } from '@hierarchidb/common-core';
-import type { CommandEnvelope, CommitWorkingCopyForCreatePayload, CommitWorkingCopyPayload, CommandResult as CoreCommandResult, CreateWorkingCopyForCreatePayload, CreateWorkingCopyPayload, DiscardWorkingCopyPayload, DuplicateNodesPayload, ErrorCode, ImportNodesPayload, MoveNodesPayload, MoveToTrashPayload, PasteNodesPayload, RemovePayload, RecoverFromTrashPayload, RedoPayload, Timestamp, TreeNode, NodeType, TreeId, NodeId, UndoPayload } from '@hierarchidb/common-type';
-import { generateNodeId } from '@hierarchidb/common-core';
+import type {
+  CommandEnvelope,
+  CommitWorkingCopyForCreatePayload,
+  CommitWorkingCopyPayload,
+  CommandResult as CoreCommandResult,
+  CreateWorkingCopyForCreatePayload,
+  CreateWorkingCopyPayload,
+  DiscardWorkingCopyPayload,
+  DuplicateNodesPayload,
+  ErrorCode,
+  ImportNodesPayload,
+  MoveNodesPayload,
+  MoveToTrashPayload,
+  PasteNodesPayload,
+  RemovePayload,
+  RecoverFromTrashPayload,
+  RedoPayload,
+  Timestamp,
+  TreeNode,
+  NodeType,
+  TreeId,
+  NodeId,
+  UndoPayload,
+} from '@hierarchidb/common-type';
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
 import type { CommandProcessor } from '../command/CommandProcessor';
+import crypto from 'crypto';
 import type { CommandResult } from '../command/types';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
@@ -34,7 +56,7 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      const nodeId = generateNodeId() as NodeId;
+      const nodeId = crypto.randomUUID() as NodeId;
       const now = Date.now();
 
       const node: TreeNode = {
@@ -224,10 +246,10 @@ export class TreeMutationService implements TreeMutationAPI {
     const now = Date.now();
     const workingCopy = {
       workingCopyId,
-      id: generateNodeId(),
+      id: crypto.randomUUID() as NodeId,
       parentId,
       name: 'New Folder',
-      nodeType: 'folder',
+      nodeType: 'folder' as NodeType,
       status: 'draft',
       depth: 0, // Will be calculated by database operations
       createdAt: now,
@@ -289,14 +311,14 @@ export class TreeMutationService implements TreeMutationAPI {
       }
 
       // 新しいノードIDを生成
-      const newNodeId = generateNodeId() as NodeId;
+      const newNodeId = crypto.randomUUID() as NodeId;
       const now = Date.now();
 
       // TreeNodeを作成
       const newNode: TreeNode = {
         id: newNodeId,
         parentId: workingCopy.parentId,
-        nodeType: workingCopy.nodeType || 'folder',
+        nodeType: (workingCopy.nodeType || 'folder') as NodeType,
         name: workingCopy.originalName || 'New Folder',
         depth: 0, // Will be calculated by database operations
         createdAt: now,
@@ -491,7 +513,7 @@ export class TreeMutationService implements TreeMutationAPI {
           continue;
         }
 
-        const newNodeId = generateNodeId() as NodeId;
+        const newNodeId = crypto.randomUUID() as NodeId;
 
         // 【効率的な名前衝突解決】: Set使用で高速チェック 🟡
         let newName = sourceNode.name;
@@ -736,7 +758,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
     // First pass: create ID mappings
     for (const nodeId of nodeIds) {
-      const newNodeId = generateNodeId() as NodeId;
+      const newNodeId = crypto.randomUUID() as NodeId;
       idMapping.set(nodeId, newNodeId);
       newNodeIds.push(newNodeId);
     }
@@ -821,7 +843,7 @@ export class TreeMutationService implements TreeMutationAPI {
     const sourceNode = await this.coreDB.getNode?.(sourceId);
     if (!sourceNode) return;
 
-    const newNodeId = generateNodeId() as NodeId;
+    const newNodeId = crypto.randomUUID() as NodeId;
     idMapping.set(sourceId, newNodeId);
 
     // Create duplicated node

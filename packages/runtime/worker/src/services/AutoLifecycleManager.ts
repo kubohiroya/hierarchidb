@@ -4,6 +4,7 @@ import type { NodeId, NodeType, EntityMetadata } from '@hierarchidb/common-type'
  * @description Automatic lifecycle management for entities based on TreeNode operations
  */
 
+import { EntityMetadata, NodeId, NodeType } from '@hierarchidb/common-type';
 import type Dexie from 'dexie';
 import { EntityRegistrationService } from './EntityRegistrationService';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';

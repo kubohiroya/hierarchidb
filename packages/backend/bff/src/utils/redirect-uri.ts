@@ -3,7 +3,7 @@
  */
 
 import { Context } from 'hono';
-import { parseAllowedOrigins } from './cors';
+import { parseAllowedOrigins } from './cors.js';
 
 /**
  * Gets dynamic redirect URI based on request origin
@@ -57,18 +57,18 @@ export function getAppCallbackUrlFromState(c: Context, state: string | null): st
   // プロダクション環境: ALLOWED_ORIGINSと厳密に一致チェック
   if (env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production') {
     const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
-    
+
     // stateのoriginをチェック
     if (stateOrigin && allowedOrigins.includes(stateOrigin)) {
       return stateOrigin;
     }
-    
+
     // Originヘッダーをチェック
     const origin = c.req.header('Origin');
     if (origin && allowedOrigins.includes(origin)) {
       return origin;
     }
-    
+
     // プロダクションではデフォルト値を返さず、設定値を要求
     return env.APP_BASE_URL || env.ALLOWED_ORIGINS?.split(',')[0] || '';
   }
@@ -76,12 +76,15 @@ export function getAppCallbackUrlFromState(c: Context, state: string | null): st
   // 開発環境: localhostのみ許可
   // stateのoriginをチェック
   if (stateOrigin) {
-    if (stateOrigin.startsWith('http://localhost:') || stateOrigin.startsWith('http://127.0.0.1:')) {
+    if (
+      stateOrigin.startsWith('http://localhost:') ||
+      stateOrigin.startsWith('http://127.0.0.1:')
+    ) {
       return stateOrigin;
     }
     console.warn(`Rejected non-localhost origin from state in development: ${stateOrigin}`);
   }
-  
+
   // Originヘッダーをチェック
   const origin = c.req.header('Origin');
   if (origin) {
@@ -106,7 +109,7 @@ export function getAppCallbackUrl(c: Context): string {
   }
 
   const origin = c.req.header('Origin');
-  
+
   // プロダクション環境: ALLOWED_ORIGINSと厳密に一致チェック
   if (env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production') {
     if (origin) {
@@ -119,7 +122,7 @@ export function getAppCallbackUrl(c: Context): string {
     // プロダクションではデフォルト値を返さず、設定値を要求
     return env.APP_BASE_URL || env.ALLOWED_ORIGINS?.split(',')[0] || '';
   }
-  
+
   // 開発環境: localhostのみ許可
   if (origin) {
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
@@ -138,11 +141,11 @@ export function getAppCallbackUrl(c: Context): string {
  */
 export function validateRedirectUri(redirectUri: string, c: Context): boolean {
   const env = c.env as any;
-  
+
   try {
     const url = new URL(redirectUri);
     const origin = `${url.protocol}//${url.host}`;
-    
+
     // プロダクション環境
     if (env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production') {
       // 環境変数で設定されたredirect_uriと完全一致チェック
@@ -155,25 +158,27 @@ export function validateRedirectUri(redirectUri: string, c: Context): boolean {
       if (env.MICROSOFT_REDIRECT_URI && redirectUri === env.MICROSOFT_REDIRECT_URI) {
         return true;
       }
-      
+
       // ALLOWED_ORIGINSに含まれるオリジンからのredirect_uriを許可
       const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
       if (allowedOrigins.includes(origin)) {
         return true;
       }
-      
+
       console.warn(`Invalid redirect_uri in production: ${redirectUri}`);
       return false;
     }
-    
+
     // 開発環境: localhostのみ許可
-    if (origin.startsWith('http://localhost:') || 
-        origin.startsWith('http://127.0.0.1:') ||
-        origin.startsWith('https://localhost:') ||
-        origin.startsWith('https://127.0.0.1:')) {
+    if (
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      origin.startsWith('https://localhost:') ||
+      origin.startsWith('https://127.0.0.1:')
+    ) {
       return true;
     }
-    
+
     console.warn(`Invalid redirect_uri in development (not localhost): ${redirectUri}`);
     return false;
   } catch (error) {

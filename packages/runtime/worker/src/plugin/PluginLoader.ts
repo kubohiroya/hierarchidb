@@ -1,9 +1,8 @@
-import type { NodeType } from '@hierarchidb/common-type';
-import type { NodeTypeRegistry } from '~/registry';
+import type { EntityHandler, NodeType } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
-import type { EntityHandler } from '../handlers/types';
 import { workerError } from '../utils/workerLogger';
+import { PluginRegistryAPI } from '@hierarchidb/common-api';
 
 /**
  * プラグイン設定の型定義
@@ -17,7 +16,7 @@ export interface PluginConfig {
   readonly database: DatabaseConfig;
   readonly dependencies?: DependencyConfig;
   readonly lifecycle?: LifecycleConfig;
-  readonly entityHandlers: Record<string, EntityHandler<any, any, any>>;
+  readonly entityHandlers: Record<string, EntityHandler>;
 }
 
 export interface NodeTypeConfig {
@@ -83,7 +82,7 @@ export class PluginLoader {
   constructor(
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB,
-    private registry: NodeTypeRegistry
+    private registry: PluginRegistryAPI
   ) {}
 
   /**

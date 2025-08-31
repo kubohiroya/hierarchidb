@@ -6,3 +6,4 @@
  * plugin runtime operations, including creation, editing, and management
  * of plugin-based entities.
  */
+export function dummy() {}

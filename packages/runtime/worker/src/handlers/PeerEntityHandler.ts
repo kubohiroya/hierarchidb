@@ -5,6 +5,7 @@ import type { PeerEntity, NodeId } from '@hierarchidb/common-type';
  * Based on 3-classification entity system
  */
 
+import { NodeId, PeerEntity } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 /**

@@ -5,6 +5,13 @@ import type { PeerEntity, GroupEntity, WorkingCopyProperties, NodeId, EntityId }
  * @description Unit tests for BaseEntityHandler abstract class
  */
 
+import {
+  EntityId,
+  GroupEntity,
+  NodeId,
+  PeerEntity,
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

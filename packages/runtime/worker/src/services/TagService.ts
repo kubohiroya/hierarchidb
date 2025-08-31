@@ -1,34 +1,22 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { TagEntity, TagSuggestion, NodeTagAssociation, NodeId } from '@hierarchidb/common-type';
+import type {
+  EntityId,
+  NodeId,
+  NodeTagAssociation,
+  TagEntity,
+  TagSuggestion,
+} from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
-
-export interface CreateTagRequest {
-  name: string;
-  color: string;
-  description?: string;
-  category: 'system' | 'user' | 'auto';
-}
-
-export interface UpdateTagRequest {
-  name?: string;
-  color?: string;
-  description?: string;
-  category?: 'system' | 'user' | 'auto';
-}
-
-export interface TagAssociationRequest {
-  nodeId: NodeId;
-  tagId: TagEntity['id'];
-}
+import { ITagService } from '~/services/ITagService';
 
 /**
  * TagService - Worker layer service for tag management
- * 
+ *
  * Provides centralized tag management functionality that can be accessed
  * from UI through WorkerAPI. Handles CRUD operations for tags and
  * tag-node associations.
  */
-export class TagService {
+export class TagService implements ITagService {
   constructor(private coreDB: CoreDB) {}
 
   /**
@@ -37,7 +25,7 @@ export class TagService {
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
     const tagId = this.generateTagId();
     const now = Date.now();
-    
+
     const tag: TagEntity = {
       id: tagId,
       name: request.name.trim(),
@@ -52,7 +40,7 @@ export class TagService {
 
     // Store tag in a dedicated table (implementation depends on CoreDB schema)
     await this.coreDB.createTag(tag);
-    
+
     return tag;
   }
 
@@ -66,7 +54,10 @@ export class TagService {
   /**
    * Update an existing tag
    */
-  async updateTag(tagId: TagEntity['id'], updates: UpdateTagRequest): Promise<TagEntity | undefined> {
+  async updateTag(
+    tagId: TagEntity['id'],
+    updates: UpdateTagRequest
+  ): Promise<TagEntity | undefined> {
     const existing = await this.getTag(tagId);
     if (!existing) {
       throw new Error(`Tag ${tagId} not found`);
@@ -94,10 +85,10 @@ export class TagService {
 
     // Remove all associations first
     await this.coreDB.removeAllTagAssociations(tagId);
-    
+
     // Remove the tag
     await this.coreDB.deleteTag(tagId);
-    
+
     return true;
   }
 
@@ -114,10 +105,8 @@ export class TagService {
   async searchTags(query: string): Promise<TagEntity[]> {
     const allTags = await this.getAllTags();
     const normalizedQuery = query.toLowerCase().trim();
-    
-    return allTags.filter(tag => 
-      tag.name.toLowerCase().includes(normalizedQuery)
-    );
+
+    return allTags.filter((tag) => tag.name.toLowerCase().includes(normalizedQuery));
   }
 
   /**
@@ -125,11 +114,11 @@ export class TagService {
    */
   async getTagSuggestions(query: string, limit: number = 10): Promise<TagSuggestion[]> {
     const matchingTags = await this.searchTags(query);
-    
+
     return matchingTags
       .sort((a, b) => b.usageCount - a.usageCount) // Sort by usage count
       .slice(0, limit)
-      .map(tag => ({
+      .map((tag) => ({
         id: tag.id,
         name: tag.name,
         color: tag.color,
@@ -160,7 +149,7 @@ export class TagService {
     };
 
     await this.coreDB.createTagAssociation(association);
-    
+
     // Update tag usage count
     await this.updateTag(request.tagId, {
       ...tag,
@@ -175,7 +164,7 @@ export class TagService {
    */
   async removeTagFromNode(request: TagAssociationRequest): Promise<boolean> {
     const removed = await this.coreDB.removeTagAssociation(request.nodeId, request.tagId);
-    
+
     if (removed) {
       // Update tag usage count
       const tag = await this.getTag(request.tagId);
@@ -186,7 +175,7 @@ export class TagService {
         });
       }
     }
-    
+
     return removed;
   }
 
@@ -196,14 +185,14 @@ export class TagService {
   async getTagsForNode(nodeId: NodeId): Promise<TagEntity[]> {
     const associations = await this.coreDB.getTagAssociationsForNode(nodeId);
     const tags: TagEntity[] = [];
-    
+
     for (const association of associations) {
-      const tag = await this.getTag(association.tagId);
+      const tag = await this.getTag(association.tagId as unknown as EntityId);
       if (tag) {
         tags.push(tag);
       }
     }
-    
+
     return tags;
   }
 
@@ -219,12 +208,12 @@ export class TagService {
    */
   async getTagsForNodes(nodeIds: NodeId[]): Promise<Map<NodeId, TagEntity[]>> {
     const result = new Map<NodeId, TagEntity[]>();
-    
+
     for (const nodeId of nodeIds) {
       const tags = await this.getTagsForNode(nodeId);
       result.set(nodeId, tags);
     }
-    
+
     return result;
   }
 
@@ -239,15 +228,11 @@ export class TagService {
   }> {
     const allTags = await this.getAllTags();
     const totalAssociations = await this.coreDB.getTotalTagAssociations();
-    
-    const mostUsedTags = [...allTags]
-      .sort((a, b) => b.usageCount - a.usageCount)
-      .slice(0, 5);
-      
-    const recentTags = [...allTags]
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 5);
-    
+
+    const mostUsedTags = [...allTags].sort((a, b) => b.usageCount - a.usageCount).slice(0, 5);
+
+    const recentTags = [...allTags].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
+
     return {
       totalTags: allTags.length,
       totalAssociations,
@@ -259,7 +244,7 @@ export class TagService {
   /**
    * Generate a unique tag ID using UUID
    */
-  private generateTagId(): TagEntity['id'] {
+  generateTagId(): TagEntity['id'] {
     return `tag_${uuidv4()}` as TagEntity['id'];
   }
 }

@@ -7,15 +7,16 @@ import type { IPluginRegistry, NodeType } from '@hierarchidb/common-type';
  */
 
 import { workerLog, workerWarn } from '../utils/workerLogger';
-import type { NodeTypeConfig } from './types';
-import type {
-  PeerEntity,
+import type { EntityHandler, PluginDefinition } from './plugin';
+import { NodeTypeConfig } from '~/registry/nodeTypeConfig';
+import {
   GroupEntity,
-  WorkingCopyProperties,
-  EntityHandler,
-  PluginDefinition,
+  IPluginRegistry,
+  NodeType,
+  PeerEntity,
   WorkerPluginRouterAction,
-} from './plugin';
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 
 /**
  * Extended registry interface with PluginDefinition support

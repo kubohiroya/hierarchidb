@@ -7,7 +7,7 @@ import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkingCopyHandler } from './WorkingCopyHandler';
-import { GroupEntityImpl } from '~/handlers/SimpleEntityHandler';
+import { EntityId, NodeId } from '@hierarchidb/common-type';
 
 describe.skip('WorkingCopyHandler', () => {
   let db: Dexie;

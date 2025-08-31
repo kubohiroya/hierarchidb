@@ -1,0 +1,35 @@
+{
+  "name": "@hierarchidb/common-util",
+  "version": "0.0.1",
+  "description": "Core Utilities for hierarchidb",
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:tsc": "tsc && tsc-alias",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
+  },
+  "dependencies": {
+    "@hierarchidb/common-type": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0"
+  },
+  "license": "MIT"
+}

@@ -4,7 +4,7 @@
  */
 
 import type { Table, Collection } from 'dexie';
-import type { NodeId, EntityId } from '@hierarchidb/common-core';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type {
   BaseEntity,
   BaseWorkingCopy,
@@ -23,7 +23,7 @@ export abstract class BaseEntityHandler<
   TEntity extends BaseEntity,
   _TWorkingCopy extends BaseWorkingCopy,
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
-  TSearchCriteria extends BaseSearchCriteria = BaseSearchCriteria
+  TSearchCriteria extends BaseSearchCriteria = BaseSearchCriteria,
 > {
   protected abstract table: Table<TEntity, EntityId>;
   protected lifecycleHooks: EntityLifecycleHooks<TEntity> = {};
@@ -188,12 +188,12 @@ export abstract class BaseEntityHandler<
     try {
       const offset = (page - 1) * pageSize;
       const total = await this.table.count();
-      
+
       let query = this.table.orderBy(orderBy);
       if (orderBy === 'updatedAt' || orderBy === 'createdAt') {
         query = query.reverse();
       }
-      
+
       const items = await query.offset(offset).limit(pageSize).toArray();
 
       return {
@@ -287,7 +287,7 @@ export abstract class BaseEntityHandler<
   ): Promise<TEntity[]> {
     try {
       const entities: TEntity[] = [];
-      
+
       for (const item of items) {
         const entityId = generateEntityId() as EntityId;
         const entity = this.buildEntity(item.nodeId, entityId, item.data);
@@ -324,7 +324,8 @@ export abstract class BaseEntityHandler<
       return {
         success: errors.length === 0,
         data: updatedEntities,
-        error: errors.length > 0 ? new Error(`Failed to update ${errors.length} entities`) : undefined,
+        error:
+          errors.length > 0 ? new Error(`Failed to update ${errors.length} entities`) : undefined,
       };
     } catch (error) {
       console.error('Failed to batch update entities:', error);
@@ -349,7 +350,8 @@ export abstract class BaseEntityHandler<
 
       return {
         success: errors.length === 0,
-        error: errors.length > 0 ? new Error(`Failed to delete ${errors.length} entities`) : undefined,
+        error:
+          errors.length > 0 ? new Error(`Failed to delete ${errors.length} entities`) : undefined,
       };
     } catch (error) {
       console.error('Failed to batch delete entities:', error);
@@ -361,11 +363,7 @@ export abstract class BaseEntityHandler<
    * Abstract method to build entity from data
    * Must be implemented by derived classes
    */
-  protected abstract buildEntity(
-    nodeId: NodeId,
-    entityId: EntityId,
-    data: TCreateData
-  ): TEntity;
+  protected abstract buildEntity(nodeId: NodeId, entityId: EntityId, data: TCreateData): TEntity;
 
   /**
    * Optional method to cleanup related data when entity is deleted

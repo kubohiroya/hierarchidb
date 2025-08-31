@@ -5,21 +5,21 @@
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
-import { 
+import {
   HierarchicalEntityHandler,
   MetadataEntityHandler,
   type HierarchicalEntity,
   type MetadataEntity,
   type HierarchicalSearchCriteria,
-  type MetadataSearchCriteria
-} from '@hierarchidb/plugin-base';
+  type MetadataSearchCriteria,
+} from '@hierarchidb/common-plugin-base';
 
-import type { 
-  FolderEntity, 
-  FolderEntityWorkingCopy, 
-  FolderBookmark, 
+import type {
+  FolderEntity,
+  FolderEntityWorkingCopy,
+  FolderBookmark,
   FolderTemplate,
-  FolderSettings 
+  FolderSettings,
 } from '../types';
 import { FolderDatabase } from '../database/FolderDatabase';
 
@@ -48,7 +48,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 > {
   public folderDB: FolderDatabase;
   protected table: Table<FolderEntityExtended, EntityId>;
-  
+
   // Compose MetadataEntityHandler functionality
   private metadataHandler: MetadataEntityHandler<
     FolderEntityExtended,
@@ -61,7 +61,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     super();
     this.folderDB = new FolderDatabase();
     this.table = this.folderDB.folders as any;
-    
+
     // Initialize metadata handler with same table
     this.metadataHandler = new MetadataEntityHandlerAdapter(this.table);
   }
@@ -75,7 +75,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     data: Partial<FolderEntity>
   ): FolderEntityExtended {
     const now = Date.now();
-    
+
     return {
       id: entityId,
       nodeId,
@@ -86,7 +86,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
       settings: data.settings || {
         allowNestedFolders: true,
         maxDepth: 10,
-        sortOrder: 'name'
+        sortOrder: 'name',
       },
       metadata: data.metadata || {},
       createdAt: data.createdAt || now,
@@ -107,16 +107,10 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
    */
   protected async cleanupEntityData(entity: FolderEntityExtended): Promise<void> {
     // Remove bookmarks
-    await this.folderDB.bookmarks
-      .where('folderId')
-      .equals(entity.nodeId)
-      .delete();
-    
+    await this.folderDB.bookmarks.where('folderId').equals(entity.nodeId).delete();
+
     // Remove templates
-    await this.folderDB.templates
-      .where('folderId')
-      .equals(entity.nodeId)
-      .delete();
+    await this.folderDB.templates.where('folderId').equals(entity.nodeId).delete();
   }
 
   // ========== Folder-specific methods ==========
@@ -124,7 +118,10 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
   /**
    * Add bookmark to folder
    */
-  async addBookmark(nodeId: NodeId, bookmark: Omit<FolderBookmark, 'id' | 'folderId'>): Promise<void> {
+  async addBookmark(
+    nodeId: NodeId,
+    bookmark: Omit<FolderBookmark, 'id' | 'folderId'>
+  ): Promise<void> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
       throw new Error(`Folder not found: ${nodeId}`);
@@ -134,7 +131,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
       id: crypto.randomUUID(),
       folderId: nodeId,
       ...bookmark,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     await this.folderDB.bookmarks.add(bookmarkRecord);
@@ -147,7 +144,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     await this.folderDB.bookmarks
       .where('id')
       .equals(bookmarkId)
-      .and(item => item.folderId === nodeId)
+      .and((item) => item.folderId === nodeId)
       .delete();
   }
 
@@ -155,16 +152,16 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
    * Get bookmarks for folder
    */
   async getBookmarks(nodeId: NodeId): Promise<FolderBookmark[]> {
-    return await this.folderDB.bookmarks
-      .where('folderId')
-      .equals(nodeId)
-      .toArray();
+    return await this.folderDB.bookmarks.where('folderId').equals(nodeId).toArray();
   }
 
   /**
    * Add template to folder
    */
-  async addTemplate(nodeId: NodeId, template: Omit<FolderTemplate, 'id' | 'folderId'>): Promise<void> {
+  async addTemplate(
+    nodeId: NodeId,
+    template: Omit<FolderTemplate, 'id' | 'folderId'>
+  ): Promise<void> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
       throw new Error(`Folder not found: ${nodeId}`);
@@ -175,7 +172,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
       folderId: nodeId,
       ...template,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
 
     await this.folderDB.templates.add(templateRecord);
@@ -188,7 +185,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     await this.folderDB.templates
       .where('id')
       .equals(templateId)
-      .and(item => item.folderId === nodeId)
+      .and((item) => item.folderId === nodeId)
       .delete();
   }
 
@@ -196,10 +193,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
    * Get templates for folder
    */
   async getTemplates(nodeId: NodeId): Promise<FolderTemplate[]> {
-    return await this.folderDB.templates
-      .where('folderId')
-      .equals(nodeId)
-      .toArray();
+    return await this.folderDB.templates.where('folderId').equals(nodeId).toArray();
   }
 
   /**
@@ -210,12 +204,12 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 
     // Apply folder-specific filters
     if (criteria.category) {
-      results = results.filter(f => f.category === criteria.category);
+      results = results.filter((f) => f.category === criteria.category);
     }
 
     if (criteria.hasBookmarks !== undefined) {
       const folderIds = await this.getFoldersWithBookmarks();
-      results = results.filter(f => {
+      results = results.filter((f) => {
         const hasBookmarks = folderIds.includes(f.nodeId);
         return hasBookmarks === criteria.hasBookmarks;
       });
@@ -223,7 +217,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 
     if (criteria.hasTemplates !== undefined) {
       const folderIds = await this.getFoldersWithTemplates();
-      results = results.filter(f => {
+      results = results.filter((f) => {
         const hasTemplates = folderIds.includes(f.nodeId);
         return hasTemplates === criteria.hasTemplates;
       });
@@ -237,7 +231,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
    */
   private async getFoldersWithBookmarks(): Promise<NodeId[]> {
     const bookmarks = await this.folderDB.bookmarks.toArray();
-    return [...new Set(bookmarks.map(b => b.folderId))];
+    return [...new Set(bookmarks.map((b) => b.folderId))];
   }
 
   /**
@@ -245,7 +239,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
    */
   private async getFoldersWithTemplates(): Promise<NodeId[]> {
     const templates = await this.folderDB.templates.toArray();
-    return [...new Set(templates.map(t => t.folderId))];
+    return [...new Set(templates.map((t) => t.folderId))];
   }
 
   /**
@@ -298,12 +292,12 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
  */
 class MetadataEntityHandlerAdapter<
   TEntity extends FolderEntityExtended,
-  TWorkingCopy extends FolderEntityWorkingCopy
+  TWorkingCopy extends FolderEntityWorkingCopy,
 > extends MetadataEntityHandler<TEntity, TWorkingCopy> {
   constructor(protected table: Table<TEntity, EntityId>) {
     super();
   }
-  
+
   protected buildEntity(): TEntity {
     throw new Error('Not used in adapter');
   }

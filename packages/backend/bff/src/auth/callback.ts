@@ -1,20 +1,24 @@
 import { Context } from 'hono';
-import { Env } from '../types';
-import { exchangeCodeForTokens, getGoogleUserInfo, type GoogleOAuth2Config } from './google';
+import { Env } from '../types.js';
+import { exchangeCodeForTokens, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   getGitHubUserInfo,
   type GitHubOAuth2Config,
-} from './github';
+} from './github.js';
 import {
   exchangeCodeForTokens as exchangeMicrosoftCodeForTokens,
   getMicrosoftUserInfo,
   type MicrosoftOAuth2Config,
-} from './microsoft';
-import { createSessionToken } from '../utils/jwt';
-import { KVStorageManager } from '../utils/kv-storage';
-import { getAppCallbackUrlFromState, getDynamicRedirectUri, validateRedirectUri } from '../utils/redirect-uri';
-import { StateManager } from '../utils/state-manager';
+} from './microsoft.js';
+import { createSessionToken } from '../utils/jwt.js';
+import { KVStorageManager } from '../utils/kv-storage.js';
+import {
+  getAppCallbackUrlFromState,
+  getDynamicRedirectUri,
+  validateRedirectUri,
+} from '../utils/redirect-uri.js';
+import { StateManager } from '../utils/state-manager.js';
 
 /**
  * Handle OAuth2 callback from OAuth providers
@@ -32,7 +36,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
       const env = c.env as any;
       const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
       const stateData = await stateManager.validateState(state);
-      
+
       if (!stateData) {
         // 無効なstateの場合はエラーを返す
         const appBaseUrl = getAppCallbackUrlFromState(c, state);
@@ -106,10 +110,13 @@ export async function exchangeCodeForToken(
     // redirect_uriの検証
     if (redirect_uri && !validateRedirectUri(redirect_uri, c)) {
       console.error(`Invalid redirect_uri received: ${redirect_uri}`);
-      return c.json({ 
-        error: 'invalid_request',
-        error_description: 'Invalid redirect_uri parameter' 
-      }, 400);
+      return c.json(
+        {
+          error: 'invalid_request',
+          error_description: 'Invalid redirect_uri parameter',
+        },
+        400
+      );
     }
 
     const env = c.env as any;

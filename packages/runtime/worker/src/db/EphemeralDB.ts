@@ -1,4 +1,4 @@
-import { SingletonMixin } from '@hierarchidb/common-core';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { TreeViewState, WorkingCopy } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 

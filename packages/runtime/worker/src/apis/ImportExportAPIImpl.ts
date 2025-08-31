@@ -1,5 +1,4 @@
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
-import { generateNodeId } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type {
   ImportExportAPI,
   ImportNodesParams,
@@ -10,12 +9,11 @@ import type {
   ValidationResult,
   ValidationError,
   OperationStatus,
-  ImportProgress,
-  ExportProgress,
 } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-type';
 import { CoreDB } from '../db/CoreDB';
 import { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
+import crypto from 'crypto';
 
 /**
  * Import/Export API implementation for Worker layer
@@ -73,7 +71,9 @@ export class ImportExportAPIImpl implements ImportExportAPI {
         });
 
         if (!validation.valid) {
-          throw new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+          throw new Error(
+            `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`
+          );
         }
       }
 
@@ -95,10 +95,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
         try {
           // Check for conflicts
           if (params.conflictResolution === 'skip') {
-            const existingNode = await this.findNodeByName(
-              params.targetParentId,
-              nodeData.name
-            );
+            const existingNode = await this.findNodeByName(params.targetParentId, nodeData.name);
             if (existingNode) {
               skippedCount++;
               continue;
@@ -106,7 +103,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
           }
 
           // Generate node ID
-          const nodeId = generateNodeId();
+          const nodeId = crypto.randomUUID() as NodeId;
 
           // Create the node
           const node: TreeNode = {
@@ -168,7 +165,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
       operation.status = 'failed';
       operation.completedAt = Date.now();
       operation.error = String(error);
-      
+
       throw error;
     } finally {
       this.abortControllers.delete(operationId);
@@ -274,7 +271,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
       operation.status = 'failed';
       operation.completedAt = Date.now();
       operation.error = String(error);
-      
+
       throw error;
     } finally {
       this.abortControllers.delete(operationId);
@@ -380,7 +377,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
     }
 
     controller.abort();
-    
+
     const operation = this.operations.get(operationId);
     if (operation && operation.status === 'running') {
       operation.status = 'cancelled';
@@ -398,7 +395,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
 
   private async findNodeByName(parentId: NodeId, name: string): Promise<TreeNode | null> {
     const children = await this.db.listChildren(parentId);
-    return children.find(node => node.name === name) || null;
+    return children.find((node) => node.name === name) || null;
   }
 
   private async collectChildNodes(parentId: NodeId): Promise<TreeNode[]> {
@@ -418,7 +415,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
       version: '1.0',
       exportDate: new Date().toISOString(),
       nodeCount: nodes.length,
-      nodes: nodes.map(node => {
+      nodes: nodes.map((node) => {
         const exported: any = {
           name: node.name,
           nodeType: node.nodeType,
@@ -439,16 +436,18 @@ export class ImportExportAPIImpl implements ImportExportAPI {
   private formatAsCSV(nodes: TreeNode[], columns?: string[]): string {
     const cols = columns || ['name', 'nodeType', 'description'];
     const headers = cols.join(',');
-    
-    const rows = nodes.map(node => {
-      return cols.map(col => {
-        const value = (node as any)[col] || '';
-        // Escape CSV values
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return String(value);
-      }).join(',');
+
+    const rows = nodes.map((node) => {
+      return cols
+        .map((col) => {
+          const value = (node as any)[col] || '';
+          // Escape CSV values
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return String(value);
+        })
+        .join(',');
     });
 
     return [headers, ...rows].join('\n');

@@ -5,14 +5,11 @@
  * Moved from common-core to keep implementation details internal to worker
  */
 
-import { NodeType, WorkingCopyProperties } from '@hierarchidb/common-type';
+import { NodeType, PluginDefinition, WorkingCopyProperties } from '@hierarchidb/common-type';
 import type {
   PeerEntity,
   GroupEntity,
   EntityHandler,
-  NodeTypeDefinition,
-  NodeLifecycleHooks,
-  EntityBackup,
   INodeDefinitionRegistry,
 } from '@hierarchidb/common-type';
 
@@ -24,7 +21,7 @@ import { BaseNodeTypeRegistry } from './BaseNodeTypeRegistry';
  */
 export class NodeDefinitionRegistry
   extends BaseNodeTypeRegistry<
-    NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
+    PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
   >
   implements INodeDefinitionRegistry
 {
@@ -33,7 +30,7 @@ export class NodeDefinitionRegistry
     NodeType,
     EntityHandler<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
   > = new Map();
-  
+
   // Add database manager support
   private databaseManager: any; // PluginDatabaseManager type
 
@@ -63,7 +60,7 @@ export class NodeDefinitionRegistry
       NodeDefinitionRegistry.instance = null as any;
     }
   }
-  
+
   /**
    * Set database manager
    */
@@ -78,20 +75,15 @@ export class NodeDefinitionRegistry
     TPeerEntity extends PeerEntity,
     TGroupEntity extends GroupEntity,
     TWorkingCopy extends TPeerEntity & WorkingCopyProperties,
-  >(definition: NodeTypeDefinition<TPeerEntity, TGroupEntity, TWorkingCopy>): void {
+  >(definition: PluginDefinition<TPeerEntity, GroupEntity, TWorkingCopy>): void {
     this.validateDefinition(definition);
 
     const nodeType = definition.nodeType;
-    
+
     // Store the definition with type assertion
-    const storedDef = definition as NodeTypeDefinition<
-      PeerEntity,
-      GroupEntity,
-      PeerEntity & WorkingCopyProperties
-    >;
-    
-    this.registry.set(nodeType, storedDef);
-    
+
+    this.registry.set(nodeType, definition);
+
     // Store entity handler separately
     if (definition.entityHandler) {
       const handler = definition.entityHandler as EntityHandler<
@@ -102,13 +94,16 @@ export class NodeDefinitionRegistry
       this.handlers.set(nodeType, handler);
     }
 
-    this.onRegister(nodeType, storedDef);
+    this.onRegister(nodeType, definition);
   }
 
   /**
    * Register implementation (required by abstract class)
    */
-  register(nodeType: NodeType, config: NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>): void {
+  register(
+    nodeType: NodeType,
+    config: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
+  ): void {
     this.registerDefinition(config);
   }
 
@@ -117,7 +112,7 @@ export class NodeDefinitionRegistry
    */
   getDefinition(
     nodeType: NodeType
-  ): NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> | undefined {
+  ): PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties> | undefined {
     return this.registry.get(nodeType);
   }
 
@@ -133,10 +128,13 @@ export class NodeDefinitionRegistry
   /**
    * Unregister override to clean up handlers
    */
-  override unregister(nodeType: NodeType, options?: { clearData?: boolean; dropDatabase?: boolean }): void {
+  override unregister(
+    nodeType: NodeType,
+    options?: { clearData?: boolean; dropDatabase?: boolean }
+  ): void {
     this.handlers.delete(nodeType);
     super.unregister(nodeType);
-    
+
     // Handle cleanup options if database manager is available
     if (this.databaseManager && options) {
       if (options.clearData) {
@@ -185,7 +183,11 @@ export class NodeDefinitionRegistry
   /**
    * Get all definitions (type-safe)
    */
-  getAllDefinitions(): NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>[] {
+  getAllDefinitions(): PluginDefinition<
+    PeerEntity,
+    GroupEntity,
+    PeerEntity & WorkingCopyProperties
+  >[] {
     return Array.from(this.registry.values());
   }
 
@@ -196,7 +198,7 @@ export class NodeDefinitionRegistry
     TPeerEntity extends PeerEntity,
     TGroupEntity extends GroupEntity,
     TWorkingCopy extends TPeerEntity & WorkingCopyProperties,
-  >(definition: NodeTypeDefinition<TPeerEntity, TGroupEntity, TWorkingCopy>): void {
+  >(definition: PluginDefinition<TPeerEntity, TGroupEntity, TWorkingCopy>): void {
     if (!definition) {
       throw new Error('Definition cannot be null or undefined');
     }
@@ -220,10 +222,10 @@ export class NodeDefinitionRegistry
    */
   protected override onRegister(
     nodeType: NodeType,
-    config: NodeTypeDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
+    config: PluginDefinition<PeerEntity, GroupEntity, PeerEntity & WorkingCopyProperties>
   ): void {
     this.logRegistration(nodeType, 'register');
-    
+
     // Initialize plugin database if configured
     if (this.databaseManager && config.database) {
       // Database initialization logic

@@ -4,6 +4,7 @@ import type { NodeId, EntityId, GroupEntity } from '@hierarchidb/common-type';
  * @description Unit tests for GroupEntityHandler advanced group entity operations
  */
 
+import { EntityId, GroupEntity, NodeId } from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';

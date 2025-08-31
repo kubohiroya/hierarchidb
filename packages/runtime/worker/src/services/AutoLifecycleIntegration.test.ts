@@ -13,6 +13,7 @@ import { EntityRegistrationService } from './EntityRegistrationService';
 import { WorkingCopyManager, WorkingCopySession } from './WorkingCopyManager';
 import { AutoLifecycleManager } from './AutoLifecycleManager';
 import { AutoEntityHandler } from '../handlers/AutoEntityHandler';
+import { EntityMetadata, NodeId, NodeType, PeerEntity } from '@hierarchidb/common-type';
 
 // Test entities
 interface StyleMapEntity extends PeerEntity {

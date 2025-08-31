@@ -11,11 +11,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./plugin-system/*": {
-      "types": "./dist/plugin-system/*.d.ts",
-      "import": "./dist/plugin-system/*.js",
-      "default": "./dist/plugin-system/*.js"
     }
   },
   "scripts": {

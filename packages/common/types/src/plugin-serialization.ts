@@ -28,27 +28,6 @@ export interface PluginSerializationConfig {
 }
 
 /**
- * Extended plugin definition with serialization metadata
- */
-export interface PluginDefinitionWithSerialization {
-  nodeType: string;
-  name?: string;
-  version?: string;
-  database: {
-    entityStore: string;
-    schema: any;
-    version: number;
-  };
-  entityHandler: any;
-  lifecycle?: any;
-  ui?: any;
-  category?: any;
-  
-  /** Custom serialization configuration */
-  serialization?: PluginSerializationConfig;
-}
-
-/**
  * Serialization result with binary data separated
  */
 export interface SerializationResult {

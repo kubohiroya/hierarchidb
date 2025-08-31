@@ -6,13 +6,21 @@ import type { NodeType, NodeId, ValidationResult, NodeTypeDefinition, PluginMeta
  */
 
 import type { NodeTypeAPI } from '@hierarchidb/common-api';
-import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import type { TreeQueryService } from './TreeQueryService';
 import {
   isNodeTypeRegistered,
   getPluginDefinition,
   getCreatableNodeTypes,
 } from '../registry/plugin-registry-api';
+import {
+  NodeId,
+  NodeLifecycleHooks,
+  NodeType,
+  PluginDefinition,
+  TreeNode,
+  ValidationResult,
+} from '@hierarchidb/common-type';
+import { NodeTypeDefinition } from '..';
 
 /**
  * Service implementation for node type operations
@@ -292,7 +300,7 @@ export class NodeTypeService implements NodeTypeAPI {
   // Additional methods expected by tests
   async registerNodeType(nodeType: NodeTypeDefinition<any, any, any>): Promise<void> {
     // Map PluginDefinition (core) to SimpleNodeTypeRegistry config (lightweight)
-    const config: Partial<import('@hierarchidb/common-core').NodeTypeConfig> = {
+    const config: Partial<import('@hierarchidb/common-type').NodeTypeConfig> = {
       icon: nodeType.icon,
       allowedChildren: nodeType.validation?.allowedChildTypes,
       maxChildren: nodeType.validation?.maxChildren,
@@ -343,12 +351,12 @@ export class NodeTypeService implements NodeTypeAPI {
     return allowedChildTypes.includes(childType);
   }
 
-  async getNodeTypeMetadata(nodeType: NodeType): Promise<PluginMetadata | null> {
+  async getNodeTypeMetadata(nodeType: NodeType): Promise<PluginDefinition | null> {
     const pluginDef = await getPluginDefinition(nodeType);
     return (pluginDef as any)?.meta ?? null;
   }
 
-  async updateNodeTypeMetadata(_nodeType: NodeType, _metadata: PluginMetadata): Promise<void> {
+  async updateNodeTypeMetadata(_nodeType: NodeType, _metadata: PluginDefinition): Promise<void> {
     // Metadata updates are not supported in the simple registry bridge.
     // In a full implementation, this would update the plugin definition in the registry.
     throw new Error('Updating node type metadata is not supported in this environment');

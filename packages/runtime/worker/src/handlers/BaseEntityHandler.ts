@@ -6,6 +6,14 @@ import type { PeerEntity, GroupEntity, RelationalEntity, WorkingCopyProperties, 
  * Provides common functionality for all entity handlers
  */
 
+import {
+  EntityBackup,
+  GroupEntity,
+  NodeId,
+  PeerEntity,
+  RelationalEntity,
+  WorkingCopyProperties,
+} from '@hierarchidb/common-type';
 import type Dexie from 'dexie';
 import { workerLog } from '../utils/workerLogger';
 
