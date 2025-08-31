@@ -5,7 +5,10 @@
 
 import type { Table } from 'dexie';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { 
+  BaseEntityHandler,
+  type BaseSearchCriteria 
+} from '@hierarchidb/node-type-base-plugin';
 import type {
   LocationEntity,
   LocationWorkingCopy,

@@ -3,7 +3,7 @@
  * @description Route entity handler using common base classes
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, TagId } from '@hierarchidb/common-type';
 import type { Table, Collection } from 'dexie';
 import { 
   BaseEntityHandler,
@@ -14,7 +14,7 @@ import {
  * Metadata search criteria
  */
 export interface MetadataSearchCriteria {
-  tags?: string[];
+  tags?: TagId[];
   metadata?: Record<string, any>;
 }
 
