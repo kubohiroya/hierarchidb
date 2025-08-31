@@ -22,19 +22,6 @@ export type { WorkerAPI } from './WorkerAPI';
 
 // Plugin-related APIs (new architecture)
 export type { NodeTypeAPI } from './NodeTypeAPI';
-export type {
-  // Legacy export (deprecated)
-  PluginManagementAPI,
-  PluginRegistrationResult,
-  UnregistrationResult,
-  PluginValidationResult,
-  PluginHealthStatus,
-  PluginRegistrationInfo,
-  PluginListOptions,
-  PluginDependencyInfo,
-  BulkOperationOptions,
-  BulkOperationResult,
-} from './PluginManagementAPI';
 
 // New exports from PluginLifecycleAPI
 export type {
@@ -68,34 +55,10 @@ export type {
   MetricOptions,
 } from './PluginTreeAPI';
 
-// New exports from TreePluginAnalyzer (with aliased names to avoid conflicts)
-export type {
-  TreePluginAnalyzer,
-  TreePluginInfo as TreePluginInfoNew,
-  GetPluginsForTreeRequest as GetPluginsForTreeRequestNew,
-  GetPluginsForTreeResponse as GetPluginsForTreeResponseNew,
-  PluginUsageStats as PluginUsageStatsNew,
-  CompatibilityResult as CompatibilityResultNew,
-  OptimizationResult as OptimizationResultNew,
-  DependencyGraph as DependencyGraphNew,
-  PluginMetrics as PluginMetricsNew,
-  TimePeriod as TimePeriodNew,
-  GraphOptions as GraphOptionsNew,
-  MetricOptions as MetricOptionsNew,
-} from './TreePluginAnalyzer';
-// Legacy exports (deprecated)
-export type { PluginAPI, InvokeResult } from './PluginAPI';
-export { PluginAPIRegistry } from './PluginAPI';
 
 // New exports
 export type { PluginExtensionAPI } from './PluginExtensionAPI';
 export { PluginExtensionRegistry } from './PluginExtensionAPI';
 
-// Legacy APIs (deprecated)
-// Legacy export (deprecated)
-export type { PluginRegistryAPI } from './PluginRegistryAPI';
-
-// New export
-export type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
 
 export * from './ITagAPI';
