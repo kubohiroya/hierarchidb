@@ -3,8 +3,8 @@
  * @description Route entity handler using common base classes
  */
 
-import type { NodeId, EntityId, TagId } from '@hierarchidb/common-type';
-import type { Table, Collection } from 'dexie';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { Collection } from 'dexie';
 import { 
   BaseEntityHandler,
   type BaseSearchCriteria
@@ -14,7 +14,6 @@ import {
  * Metadata search criteria
  */
 export interface MetadataSearchCriteria {
-  tags?: TagId[];
   metadata?: Record<string, any>;
 }
 
@@ -47,13 +46,8 @@ export interface RouteSearchCriteria extends BaseSearchCriteria, MetadataSearchC
 /**
  * Route entity handler with metadata support
  */
-export class RouteEntityHandler extends BaseEntityHandler<
-  RouteEntity,
-  RouteWorkingCopy,
-  Partial<RouteEntity>,
-  RouteSearchCriteria
-> {
-  protected table: Table<RouteEntity, EntityId>;
+export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
+  protected table: any;
   private routeDB: RouteDatabase;
   private routeGenerator: RouteGenerator;
   private locationResolver: LocationResolver;
@@ -63,7 +57,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
   constructor() {
     super();
     this.routeDB = new RouteDatabase();
-    this.table = this.routeDB.routes;
+    this.table = this.routeDB.routes as any;
     this.routeGenerator = new RouteGenerator();
     this.locationResolver = new LocationResolver();
     
@@ -87,7 +81,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
       name: data.name || 'New Route',
       description: data.description,
       category: data.category || { primary: 'road' },
-      tags: data.tags || [],
+      // Tags are managed by Folder plugin
       
       // Location references
       startLocationId: data.startLocationId,
@@ -166,7 +160,7 @@ export class RouteEntityHandler extends BaseEntityHandler<
    * Update route with geometry regeneration if needed
    */
   async updateEntity(entityId: EntityId, updates: Partial<RouteEntity>): Promise<RouteEntity> {
-    const existing = await this.get(entityId);
+    const existing = await this.table.get(entityId);
     if (!existing) {
       throw new Error(`Route not found: ${entityId}`);
     }

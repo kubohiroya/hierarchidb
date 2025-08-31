@@ -7,7 +7,6 @@ import type {
   NodeId, 
   EntityId,
   BaseEntity,
-  TagId,
   Timestamp
 } from '@hierarchidb/common-type';
 
@@ -60,19 +59,20 @@ export interface RouteCategory {
 export interface RouteEntity extends BaseEntity {
   // Entity ID
   id: EntityId;
+  nodeId: NodeId;
   
   // Basic information
   name: string;
   description?: string;
   category: RouteCategory;
-  tags?: TagId[];
+  // Note: Tags are managed by Folder plugin, not stored here
   
   // Metadata fields
   metadata?: Record<string, any>;
   customFields?: Record<string, any>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  version?: number;
+  version: number;
   
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference

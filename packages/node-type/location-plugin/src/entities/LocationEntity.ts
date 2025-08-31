@@ -7,7 +7,6 @@ import type {
   NodeId, 
   EntityId, 
   BaseEntity,
-  TagId,
   Timestamp 
 } from '@hierarchidb/common-type';
 
@@ -131,14 +130,14 @@ export interface LocationEntity extends BaseEntity {
   description?: string;
   category: LocationCategory;
   type: LocationType;
-  tags?: TagId[];
+  // Note: Tags are managed by Folder plugin, not stored here
   
   // Metadata fields
   metadata?: Record<string, any>;
   customFields?: Record<string, any>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  version?: number;
+  version: number;
   
   // Geographic information
   point: LocationPoint;
@@ -226,23 +225,13 @@ export interface LocationWorkingCopy extends LocationEntity {
  * Metadata search criteria
  */
 export interface MetadataSearchCriteria {
-  tags?: TagId[];
   metadata?: Record<string, any>;
-}
-
-/**
- * Base search criteria
- */
-export interface BaseSearchCriteria {
-  searchTerm?: string;
-  limit?: number;
-  offset?: number;
 }
 
 /**
  * Location filter criteria
  */
-export interface LocationFilterCriteria extends BaseSearchCriteria, MetadataSearchCriteria {
+export interface LocationFilterCriteria extends MetadataSearchCriteria {
   categories?: LocationCategory[];
   types?: LocationType[];
   dataSources?: LocationDataSource[];
