@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import type { FolderEntity } from '../types/index';
+import type { FolderEntityExtended } from '../handlers/FolderEntityHandler';
 
 describe('FolderEntityHandler', () => {
   let handler: FolderEntityHandler;
@@ -13,12 +14,12 @@ describe('FolderEntityHandler', () => {
   });
 
   afterEach(async () => {
-    await handler.cleanup(testNodeId);
+    await handler.cleanup();
   });
 
   describe('createEntity', () => {
     it('should create a folder-plugin entity with default values', async () => {
-      const entity = await handler.createEntity(testNodeId, {});
+      const entity = await handler.createEntity(testNodeId, {}) as FolderEntityExtended;
       
       expect(entity.nodeId).toBe(testNodeId);
       expect(entity.name).toBe('New Folder');
@@ -40,7 +41,7 @@ describe('FolderEntityHandler', () => {
         }
       };
 
-      const entity = await handler.createEntity(testNodeId, customData);
+      const entity = await handler.createEntity(testNodeId, customData) as FolderEntityExtended;
       
       expect(entity.name).toBe('Custom Folder');
       expect(entity.description).toBe('A custom description');
