@@ -220,7 +220,7 @@ export const updateWorkingCopyAtom = atom(
     });
     
     // Mark as having unsaved changes
-    set(dialogStateAtom, (prev) => ({
+    set(dialogStateAtom, (prev: DialogState) => ({
       ...prev,
       hasUnsavedChanges: true,
     }));
@@ -232,8 +232,8 @@ export const updateWorkingCopyAtom = atom(
  */
 export const updateDialogStateAtom = atom(
   null,
-  (get, set, update: Partial<DialogState>) => {
-    set(dialogStateAtom, (prev) => ({
+  (_get, set, update: Partial<DialogState>) => {
+    set(dialogStateAtom, (prev: DialogState) => ({
       ...prev,
       ...update,
     }));
@@ -261,8 +261,8 @@ export const setValidationResultAtom = atom(
  */
 export const setStepCapabilitiesAtom = atom(
   null,
-  (get, set, stepIndex: number, capabilities: StepCapabilities) => {
-    const caps = new Map(get(stepCapabilitiesAtom));
+  (_get, set, stepIndex: number, capabilities: StepCapabilities) => {
+    const caps = new Map(_get(stepCapabilitiesAtom));
     caps.set(stepIndex, capabilities);
     set(stepCapabilitiesAtom, caps);
   }

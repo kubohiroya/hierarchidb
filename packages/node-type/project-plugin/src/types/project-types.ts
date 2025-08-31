@@ -618,3 +618,12 @@ export interface ProjectTile {
   lastAccessed: number;
   accessCount: number;
 }
+
+// ==================== Working Copy ====================
+
+export interface ProjectWorkingCopy extends ProjectEntity {
+  isWorkingCopy: boolean;
+  originalId: EntityId;
+  isDirty: boolean;
+  copiedAt: number;
+}
