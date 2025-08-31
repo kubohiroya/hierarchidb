@@ -8,6 +8,7 @@ export type {
   FolderSearchQuery,
   FolderStatsSummary,
   FolderStructureNode,
+  FolderSettings,
 } from '../entities/FolderEntity';
 
 // Import tag-related types
@@ -16,15 +17,17 @@ export type { TagId, TagSuggestion } from '@hierarchidb/common-type';
 
 
 // Keep existing simple types for backward compatibility if needed
-import type { NodeId, EntityId, TagId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { FolderSettings as ImportedFolderSettings } from '../entities/FolderEntity';
 
+// Export FolderEntityWorkingCopy for UI components
 export interface FolderEntityWorkingCopy {
   id: EntityId;
   nodeId: NodeId;
   name: string;
   description?: string;
   category?: string;
-  settings: FolderSettings;
+  settings: ImportedFolderSettings;
   createdAt: number;
   updatedAt: number;
   version: number;
@@ -34,12 +37,6 @@ export interface FolderEntityWorkingCopy {
   entityWorkingCopyId?: EntityId;
   originalVersion?: number;
   hasGroupEntityCopy?: Record<string, boolean>;
-}
-
-export interface FolderSettings {
-  allowNestedFolders?: boolean;
-  maxDepth?: number;
-  sortOrder?: 'name' | 'date' | 'type' | 'size';
 }
 
 // Additional display types for UI
@@ -56,6 +53,6 @@ export interface FolderDisplayData {
 export interface FolderEditData {
   name: string;
   description?: string;
-  settings: FolderSettings;
+  settings: ImportedFolderSettings;
   [key: string]: any; // Allow additional properties for extensibility
 }
