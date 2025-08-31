@@ -26,7 +26,7 @@ import type { NodeTypeDefinition } from '..';
  */
 export class NodeTypeService implements NodeTypeAPI {
   constructor(
-    private nodeTypeRegistry: PluginRegistry,
+    private pluginRegistry: PluginRegistry,
     private queryService: TreeQueryService
   ) {}
 
@@ -308,15 +308,15 @@ export class NodeTypeService implements NodeTypeAPI {
       canBeRenamed: true,
       canBeMoved: true,
     };
-    this.nodeTypeRegistry.register(nodeType.nodeType, config as any);
+    this.pluginRegistry.register(nodeType.nodeType, config as any);
   }
 
   async unregisterNodeType(nodeType: NodeType): Promise<void> {
-    return this.nodeTypeRegistry.unregister(nodeType);
+    return this.pluginRegistry.unregister(nodeType);
   }
 
   async listNodeTypes(): Promise<NodeType[]> {
-    return this.nodeTypeRegistry.getAll();
+    return this.pluginRegistry.getAll();
   }
 
   async getNodeTypeDefinition(

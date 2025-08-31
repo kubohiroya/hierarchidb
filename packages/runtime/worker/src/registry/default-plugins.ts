@@ -1,9 +1,13 @@
 /**
-import type { NodeId } from '@hierarchidb/common-type';
  * @file default-plugin.ts
  * @description Default plugin definitions for the system
  */
 
+import type { 
+  NodeId, 
+  NodeType, 
+  DatabaseSchema 
+} from '@hierarchidb/common-type';
 import type { PluginDefinition, PeerEntity, GroupEntity, WorkingCopyProperties } from './plugin';
 import { BaseEntityHandler } from '../handlers';
 

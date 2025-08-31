@@ -49,7 +49,7 @@ interface PluginDeleteResult {
     message: string;
   };
 }
-import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
+import type { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 // Import from plugin-registry package
 import {
   isNodeTypeRegistered,
@@ -62,7 +62,7 @@ import {
  */
 
 export class PluginManagementService implements PluginLifecycleAPI {
-  constructor(private nodeTypeRegistry: SimpleNodeTypeRegistry) {}
+  constructor(private pluginRegistry: PluginRegistry) {}
 
   async register(definition: any): Promise<PluginRegistrationResult> {
     const validationResult = await this.validatePlugin(definition);
@@ -98,7 +98,7 @@ export class PluginManagementService implements PluginLifecycleAPI {
         icon: typeof definition.icon === 'object' ? definition.icon?.name : definition.icon,
       };
       // TODO: Fix this - need to convert definition to PluginIntegrated
-      // this.nodeTypeRegistry.registerPlugin(definition);
+      // this.pluginRegistry.registerPlugin(definition);
 
       const pluginId = `plugin-${definition.nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -176,7 +176,7 @@ export class PluginManagementService implements PluginLifecycleAPI {
         warnings.push('Could not verify active node count');
       }
 
-      this.nodeTypeRegistry.unregister(nodeType);
+      this.pluginRegistry.unregister(nodeType);
 
       return {
         success: true,
@@ -504,7 +504,7 @@ export class PluginManagementService implements PluginLifecycleAPI {
 
     try {
       // Check if plugin is registered
-      if (!this.nodeTypeRegistry.has(nodeType as NodeType)) {
+      if (!this.pluginRegistry.has(nodeType as NodeType)) {
         return {
           success: false,
           nodeType,
@@ -630,7 +630,7 @@ export class PluginManagementService implements PluginLifecycleAPI {
       }
 
       // Check if plugin exists
-      if (!this.nodeTypeRegistry.has(nodeType)) {
+      if (!this.pluginRegistry.has(nodeType)) {
         return {
           success: false,
           nodeType,
@@ -643,15 +643,10 @@ export class PluginManagementService implements PluginLifecycleAPI {
 
       // Check for dependent plugins
       const warnings: string[] = [];
-      const registeredNodeTypes = this.nodeTypeRegistry.getAll();
+      const registeredNodeTypes = this.pluginRegistry.getAll();
       for (const registeredNodeType of registeredNodeTypes) {
-        const pluginDefinition = this.nodeTypeRegistry.get(registeredNodeType);
-        // Cast to our plugin definition to access dependencies property
-        const typedDefinition =
-          pluginDefinition as unknown as import('../registry/plugin').PluginDefinition;
-        if (typedDefinition?.meta?.dependencies?.includes(nodeType)) {
-          warnings.push(`Plugin '${registeredNodeType}' depends on '${nodeType}'`);
-        }
+        // TODO: Check plugin dependencies when unregistering
+        // Dependencies information needs to be retrieved from the plugin registry
       }
 
       // Unregister the plugin

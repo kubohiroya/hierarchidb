@@ -59,7 +59,7 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Core dependencies
   private coreDB!: CoreDB;
   private ephemeralDB!: EphemeralDB;
-  private nodeTypeRegistry!: PluginRegistry;
+  private pluginRegistry!: PluginRegistry;
   private nodeLifecycleManager!: NodeLifecycleManager;
   private commandProcessor!: CommandProcessor;
 
@@ -130,7 +130,7 @@ export class WorkerAPIImpl implements WorkerAPI {
 
     // Initialize lifecycle manager
     this.nodeLifecycleManager = new NodeLifecycleManager(
-      this.nodeTypeRegistry,
+      this.pluginRegistry,
       this.coreDB,
       this.ephemeralDB
     );
@@ -150,8 +150,8 @@ export class WorkerAPIImpl implements WorkerAPI {
 
     // Initialize plugin services
     this.pluginTreeService = new PluginTreeService(this.coreDB, this.queryService);
-    this.nodeTypeService = new NodeTypeService(this.nodeTypeRegistry, this.queryService);
-    this.pluginManagementService = new PluginManagementService(this.nodeTypeRegistry);
+    this.nodeTypeService = new NodeTypeService(this.pluginRegistry, this.queryService);
+    this.pluginManagementService = new PluginManagementService(this.pluginRegistry);
 
     // Initialize import/export services
     this.importService = new ImportService(this.coreDB, this.mutationService);
@@ -164,7 +164,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     // Initialize Plugin Registry API
     const integratedPlugins = new Map();
     const pluginLoadOrder: NodeType[] = [];
-    const pluginsInOrder = this.nodeTypeRegistry.getPluginsInDependencyOrder();
+    const pluginsInOrder = this.pluginRegistry.getPluginsInDependencyOrder();
     
     for (const plugin of pluginsInOrder) {
       integratedPlugins.set(plugin.nodeType, plugin);
@@ -172,7 +172,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     }
     
     this.pluginRegistryAPI = new PluginRegistryAPIImpl(
-      this.nodeTypeRegistry,
+      this.pluginRegistry,
       integratedPlugins,
       pluginLoadOrder
     );
@@ -204,9 +204,9 @@ export class WorkerAPIImpl implements WorkerAPI {
       );
 
       // レジストリ登録
-      this.nodeTypeRegistry = PluginRegistry.getInstance();
+      this.pluginRegistry = PluginRegistry.getInstance();
       for (const [nodeType, integrated] of this.integratedPlugins) {
-        this.nodeTypeRegistry.registerPlugin(integrated);
+        this.pluginRegistry.registerPlugin(integrated);
       }
 
       console.log(`[WorkerAPIImpl] Loaded ${this.integratedPlugins.size} plugins`);
@@ -216,8 +216,8 @@ export class WorkerAPIImpl implements WorkerAPI {
 
       // フォールバック処理
       console.log('[WorkerAPIImpl] Falling back to default plugins');
-      this.nodeTypeRegistry = PluginRegistry.getInstance();
-      registerDefaultPlugins(this.nodeTypeRegistry);
+      this.pluginRegistry = PluginRegistry.getInstance();
+      registerDefaultPlugins(this.pluginRegistry);
 
       this.integratedPlugins = new Map();
       this.pluginLoadOrder = [];
@@ -705,7 +705,7 @@ export class WorkerAPIImpl implements WorkerAPI {
         query: !!this.queryService,
         mutation: !!this.mutationService,
         subscription: !!this.subscriptionService,
-        plugin: !!this.nodeTypeRegistry,
+        plugin: !!this.pluginRegistry,
         workingCopy: !!this.ephemeralDB,
       },
       memory: {

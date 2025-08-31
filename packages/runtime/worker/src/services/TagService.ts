@@ -5,19 +5,15 @@ import type {
   NodeTagAssociation,
   TagEntity,
   TagSuggestion,
+  TagId,
 } from '@hierarchidb/common-type';
 import type { 
+  ITagAPI,
   CreateTagRequest,
   UpdateTagRequest,
   TagAssociationRequest 
 } from '@hierarchidb/common-api';
 import type { CoreDB } from '../db/CoreDB';
-import type { 
-  ITagAPI,
-  CreateTagRequest,
-  UpdateTagRequest,
-  TagAssociationRequest
-} from '@hierarchidb/common-api';
 
 /**
  * TagService - Worker layer service for tag management
@@ -154,17 +150,19 @@ export class TagService implements ITagAPI {
 
     const association: NodeTagAssociation = {
       nodeId: request.nodeId,
-      tagId: request.tagId,
+      tagId: request.tagId as TagId,
       createdAt: Date.now(),
     };
 
     await this.coreDB.createTagAssociation(association);
 
-    // Update tag usage count
-    await this.updateTag(request.tagId, {
+    // Update tag usage count by directly updating the database
+    const updated = {
       ...tag,
       usageCount: tag.usageCount + 1,
-    });
+      updatedAt: Date.now(),
+    };
+    await this.coreDB.updateTag(updated);
 
     return association;
   }
@@ -179,10 +177,12 @@ export class TagService implements ITagAPI {
       // Update tag usage count
       const tag = await this.getTag(request.tagId);
       if (tag && tag.usageCount > 0) {
-        await this.updateTag(request.tagId, {
+        const updated = {
           ...tag,
           usageCount: tag.usageCount - 1,
-        });
+          updatedAt: Date.now(),
+        };
+        await this.coreDB.updateTag(updated);
       }
     }
 

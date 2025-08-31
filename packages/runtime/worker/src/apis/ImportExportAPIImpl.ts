@@ -281,15 +281,15 @@ export class ImportExportAPIImpl implements ImportExportAPI {
   /**
    * Get supported import formats
    */
-  async getSupportedImportFormats(): Promise<string[]> {
-    return ['json', 'csv', 'xml'];
+  async getSupportedImportFormats(): Promise<NodeType[]> {
+    return ['json' as NodeType, 'csv' as NodeType, 'xml' as NodeType];
   }
 
   /**
    * Get supported export formats
    */
-  async getSupportedExportFormats(): Promise<string[]> {
-    return ['json', 'csv', 'xml'];
+  async getSupportedExportFormats(): Promise<NodeType[]> {
+    return ['json' as NodeType, 'csv' as NodeType, 'xml' as NodeType];
   }
 
   /**

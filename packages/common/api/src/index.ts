@@ -62,4 +62,6 @@ export { PluginExtensionRegistry } from './PluginExtensionAPI';
 
 // Plugin Registry API
 export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
+export type { NodeTypeRegistryAPI } from './NodeTypeRegistryAPI';
+export type { TreePluginAnalyzer } from './TreePluginAnalyzer';
 export * from './ITagAPI';
