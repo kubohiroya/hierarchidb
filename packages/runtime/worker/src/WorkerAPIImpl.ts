@@ -17,7 +17,6 @@ import type {
   PluginTreeAPI,
   TreePluginAnalyzer,
   NodeTypeAPI,
-  PluginManagementAPI,
   PluginLifecycleAPI,
   ImportExportAPI,
   PluginRegistryAPI,
@@ -489,7 +488,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     return Comlink.proxy(this.nodeTypeService);
   }
 
-  getPluginManagementAPI(): PluginManagementAPI & Comlink.ProxyMarked {
+  getPluginManagementAPI(): PluginLifecycleAPI & Comlink.ProxyMarked {
     return Comlink.proxy(this.pluginManagementService);
   }
 

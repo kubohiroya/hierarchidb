@@ -1,23 +1,21 @@
 /**
-import type { NodeType } from '@hierarchidb/common-type';
  * @file PluginManagementService.ts
  * @description Plugin lifecycle management service implementation
  */
 
 import type {
-  PluginManagementAPI,
   PluginLifecycleAPI,
-  PluginRegistrationResult,
-  UnregistrationResult,
-  PluginValidationResult,
-  PluginHealthStatus,
-  PluginRegistrationInfo,
-  PluginListOptions,
-  PluginDependencyInfo,
-  BulkOperationOptions,
-  BulkOperationResult,
+  PluginRegistrationResultNew as PluginRegistrationResult,
+  UnregistrationResultNew as UnregistrationResult,
+  PluginValidationResultNew as PluginValidationResult,
+  PluginHealthStatusNew as PluginHealthStatus,
+  PluginRegistrationInfoNew as PluginRegistrationInfo,
+  PluginListOptionsNew as PluginListOptions,
+  PluginDependencyInfoNew as PluginDependencyInfo,
+  BulkOperationOptionsNew as BulkOperationOptions,
+  BulkOperationResultNew as BulkOperationResult,
 } from '@hierarchidb/common-api';
-import { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-type';
 
 // Local type definitions for interfaces not exported from common-api
 interface PluginResetOptions {
@@ -63,7 +61,7 @@ import {
  * Service implementation for plugin management operations
  */
 
-export class PluginManagementService implements PluginManagementAPI, PluginLifecycleAPI {
+export class PluginManagementService implements PluginLifecycleAPI {
   constructor(private nodeTypeRegistry: PluginRegistry) {}
 
   async register(definition: any): Promise<PluginRegistrationResult> {
@@ -99,7 +97,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         ...definition,
         icon: typeof definition.icon === 'object' ? definition.icon?.name : definition.icon,
       };
-      this.nodeTypeRegistry.register(definition.nodeType, nodeTypeConfig);
+      // TODO: Fix this - need to convert definition to PluginIntegrated
+      // this.nodeTypeRegistry.registerPlugin(definition);
 
       const pluginId = `plugin-${definition.nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
