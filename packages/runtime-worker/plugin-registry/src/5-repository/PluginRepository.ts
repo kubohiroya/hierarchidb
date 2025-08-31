@@ -75,7 +75,7 @@ export class PluginRepository implements IPluginRepository {
   }
   
   // Legacy compatibility methods for PluginManagementService
-  async registerPlugin(nodeType: NodeType): Promise<void> {
+  async registerPlugin(_nodeType: NodeType): Promise<void> {
     // This is a no-op for compatibility
     // Actual registration happens via save()
   }
