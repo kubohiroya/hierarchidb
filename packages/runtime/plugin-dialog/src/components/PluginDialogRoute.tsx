@@ -47,7 +47,7 @@ export const PluginDialogRoute: React.FC = () => {
   // Validate access
   useEffect(() => {
     async function checkAccess() {
-      const canAccess = await registry.validateAccess(nodeType, nodeId as string);
+      const canAccess = await registry.validateAccess(nodeType, targetNodeId as string);
       setHasAccess(canAccess);
       
       if (!canAccess) {
@@ -59,7 +59,7 @@ export const PluginDialogRoute: React.FC = () => {
     if (nodeType) {
       checkAccess();
     }
-  }, [nodeType, nodeId, registry, navigate]);
+  }, [nodeType, targetNodeId, registry, navigate]);
 
   // Handle close
   const handleClose = () => {

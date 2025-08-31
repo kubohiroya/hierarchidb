@@ -222,6 +222,7 @@ export class SamplePluginProvider implements PluginStepProvider {
           canProceedToNext: (data) => {
             return !!(data?.setting1 && data?.setting1.trim());
           },
+          canBackToPrevious: () => true,
           canSave: (data) => {
             return !!(data?.setting1 && data?.setting1.trim());
           },
@@ -249,6 +250,7 @@ export class SamplePluginProvider implements PluginStepProvider {
           canProceedToNext: (data) => {
             return !!(data?.batchSize && data?.batchSize > 0);
           },
+          canBackToPrevious: () => true,
           canSave: () => true,
           canStartBatch: (data) => {
             // Batch update is available when batch is properly configured
@@ -278,6 +280,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             return !!(data?.setting1 && data?.setting1.trim());
           },
           canProceedToNext: () => false,
+          canBackToPrevious: () => true,
           canSave: () => true,
           canStartBatch: (data) => {
             return !!(data?.batchSize && 
@@ -296,71 +299,6 @@ export class SamplePluginProvider implements PluginStepProvider {
     
     // In a real implementation, this would check permissions
     // For example, check if the user owns the node or has edit permissions
-    return true;
-  }
-} {}}
-            setValid={() => {}}
-            setError={() => {}}
-          />
-        ),
-        validate: () => true,
-      },
-      {
-        id: 'review',
-        label: 'Review',
-        component: (
-          <ReviewStep
-            mode="create"
-            data={{}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
-          />
-        ),
-        optional: true,
-      },
-    ];
-  }
-
-  getEditSteps(nodeId: string, data?: any): DialogStep[] {
-    return [
-      {
-        id: 'configuration',
-        label: 'Configuration',
-        icon: <FolderIcon />,
-        component: (
-          <ConfigurationStep
-            mode="edit"
-            nodeId={nodeId}
-            data={data || {}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
-          />
-        ),
-        validate: () => true,
-      },
-      {
-        id: 'review',
-        label: 'Review',
-        component: (
-          <ReviewStep
-            mode="edit"
-            nodeId={nodeId}
-            data={data || {}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
-          />
-        ),
-        optional: true,
-      },
-    ];
-  }
-
-  async validateAccess(nodeId?: string): Promise<boolean> {
-    // Example: Check if user has access to this node
-    console.log('Validating access for node:', nodeId);
     return true;
   }
 }
