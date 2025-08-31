@@ -28,8 +28,10 @@ import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
-import {} from '@hierarchidb/runtime-plugin-registry';
+import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { registerDefaultPlugins } from './registry/default-plugins';
+import { PluginIntegrationBuilder } from './plugin/PluginIntegrationBuilder';
+import type { PluginIntegrated, PluginDefinition } from '@hierarchidb/common-type';
 
 // Services
 import { TreeMutationService } from './services/TreeMutationService';
@@ -60,6 +62,11 @@ export class WorkerAPIImpl implements WorkerAPI {
   private nodeTypeRegistry!: PluginRegistry;
   private nodeLifecycleManager!: NodeLifecycleManager;
   private commandProcessor!: CommandProcessor;
+
+  // Plugin integration properties
+  private pluginIntegrationBuilder!: PluginIntegrationBuilder;
+  private integratedPlugins!: Map<NodeType, PluginIntegrated>;
+  private pluginLoadOrder!: NodeType[];
 
   // Query/Mutation services
   private queryService!: TreeQueryService;
@@ -103,10 +110,8 @@ export class WorkerAPIImpl implements WorkerAPI {
     this.coreDB = await CoreDB.getSingleton(this.dbName);
     this.ephemeralDB = await EphemeralDB.getSingleton(this.dbName);
 
-    // Initialize registries
-    this.nodeTypeRegistry = await PluginRegistry.getSingleton();
-    const unifiedRegistry = PluginRegistry.getInstance();
-    registerDefaultPlugins(unifiedRegistry);
+    // Initialize plugins
+    await this.initializePlugins();
 
     // Register Import/Export plugins with dependency resolution
     try {
@@ -155,6 +160,49 @@ export class WorkerAPIImpl implements WorkerAPI {
 
     this.isInitialized = true;
     console.log('[WorkerAPIImpl] Initialization complete');
+  }
+
+  private async initializePlugins(): Promise<void> {
+    console.log('[WorkerAPIImpl] Loading plugins...');
+
+    try {
+      // Virtual moduleから読み込み
+      const { pluginDefinitions, pluginLoadOrder } =
+        await import('virtual:plugin-definitions');
+
+      this.pluginLoadOrder = pluginLoadOrder;
+
+      // PluginDefinitionマップ作成
+      const definitionMap = new Map<NodeType, PluginDefinition>(
+        pluginDefinitions.map(def => [def.nodeType, def])
+      );
+
+      // PluginIntegrated構築
+      this.pluginIntegrationBuilder = new PluginIntegrationBuilder();
+      this.integratedPlugins = await this.pluginIntegrationBuilder.buildAll(
+        definitionMap,
+        pluginLoadOrder
+      );
+
+      // レジストリ登録
+      this.nodeTypeRegistry = PluginRegistry.getInstance();
+      for (const [nodeType, integrated] of this.integratedPlugins) {
+        this.nodeTypeRegistry.registerPlugin(integrated);
+      }
+
+      console.log(`[WorkerAPIImpl] Loaded ${this.integratedPlugins.size} plugins`);
+      console.log('[WorkerAPIImpl] Load order:', pluginLoadOrder);
+    } catch (error) {
+      console.error('[WorkerAPIImpl] Failed to load plugins:', error);
+
+      // フォールバック処理
+      console.log('[WorkerAPIImpl] Falling back to default plugins');
+      this.nodeTypeRegistry = PluginRegistry.getInstance();
+      registerDefaultPlugins(this.nodeTypeRegistry);
+
+      this.integratedPlugins = new Map();
+      this.pluginLoadOrder = [];
+    }
   }
 
   async shutdown(): Promise<void> {
@@ -647,6 +695,18 @@ export class WorkerAPIImpl implements WorkerAPI {
       },
       uptime: Date.now() - Date.now(), // Would need to track initialization time
     };
+  }
+
+  // ==================
+  // Helper Methods
+  // ==================
+  
+  getLoadedPlugins(): Map<NodeType, PluginIntegrated> {
+    return this.integratedPlugins || new Map();
+  }
+
+  getPluginLoadOrder(): NodeType[] {
+    return this.pluginLoadOrder || [];
   }
 
   // ==================
