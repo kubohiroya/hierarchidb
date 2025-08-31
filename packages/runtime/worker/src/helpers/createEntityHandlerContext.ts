@@ -5,7 +5,6 @@
  */
 
 import {
-  EntityHandlerContext,
   GroupEntity,
   NodeId,
   PeerEntity,
@@ -13,6 +12,30 @@ import {
   WorkingCopyProperties,
 } from '@hierarchidb/common-type';
 import type { Dexie } from 'dexie';
+
+// EntityHandlerContext type definition
+export interface EntityHandlerContext {
+  store: {
+    create: (entity: PeerEntity) => Promise<PeerEntity>;
+    get: (nodeId: NodeId) => Promise<PeerEntity | undefined>;
+    update: (nodeId: NodeId, data: Partial<PeerEntity>) => Promise<void>;
+    delete: (nodeId: NodeId) => Promise<void>;
+    exists: (nodeId: NodeId) => Promise<boolean>;
+  };
+  workingCopy: {
+    create: (entity: PeerEntity) => Promise<PeerEntity & WorkingCopyProperties>;
+    get: (nodeId: NodeId) => Promise<(PeerEntity & WorkingCopyProperties) | undefined>;
+    commit: (workingCopy: PeerEntity & WorkingCopyProperties) => Promise<void>;
+    discard: (nodeId: NodeId) => Promise<void>;
+  };
+  groups?: {
+    create: (nodeId: NodeId, group: GroupEntity) => Promise<GroupEntity>;
+    getAll: (nodeId: NodeId) => Promise<GroupEntity[]>;
+    delete: (nodeId: NodeId, groupId: string) => Promise<void>;
+    deleteAll: (nodeId: NodeId) => Promise<void>;
+  };
+  transaction: <T>(operation: () => Promise<T>) => Promise<T>;
+}
 
 /**
  * Create an EntityHandlerContext for a plugin
