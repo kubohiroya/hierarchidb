@@ -199,7 +199,7 @@ export interface FolderOperationResult {
  */
 export interface FolderSearchQuery {
   name?: string;
-  tags?: string[];
+  // Tags should be queried via NodeTagAssociation
   parentId?: NodeId;
   hasChildren?: boolean;
   createdAfter?: Timestamp;
