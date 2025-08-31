@@ -27,13 +27,14 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "dexie": "^4.0.0",
-    "maplibre-gl": "^4.0.0",
-    "@hierarchidb/common-type": "workspace:*"
+    "maplibre-gl": "^4.0.0"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
