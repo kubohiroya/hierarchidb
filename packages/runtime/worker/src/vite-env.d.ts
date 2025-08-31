@@ -7,3 +7,12 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Virtual module for plugin definitions
+declare module 'virtual:plugin-definitions' {
+  import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
+
+  export const pluginDefinitions: PluginDefinition[];
+  export const pluginLoadOrder: NodeType[];
+  export const pluginPackageMap: Record<string, string>;
+}

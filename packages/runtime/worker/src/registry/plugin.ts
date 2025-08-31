@@ -19,7 +19,7 @@ import type {
   PluginRoutingConfig
 } from '@hierarchidb/common-type';
 
-import { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
+import type { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
 
 // Re-export types to make them public
 export type { 
@@ -37,7 +37,7 @@ export type {
   PluginDefinition as CorePluginDefinition
 } from '@hierarchidb/common-type';
 
-export { BaseEntityHandler };
+export type { BaseEntityHandler };
 
 // Re-export with same names for compatibility
 export type EntityHandler<

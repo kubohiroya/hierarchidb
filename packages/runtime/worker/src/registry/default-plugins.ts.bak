@@ -14,12 +14,11 @@ import { BaseEntityHandler } from '../handlers';
 // Basic working entity handler for default plugins
 class DefaultEntityHandler extends BaseEntityHandler<
   PeerEntity,
+  GroupEntity,
   PeerEntity & WorkingCopyProperties
 > {
-  protected table: any = null;
-  
   constructor() {
-    super();
+    super(null as any, null as any, null as any);
   }
 
   async createEntity(nodeId: NodeId, data?: Partial<PeerEntity>): Promise<PeerEntity> {
@@ -53,17 +52,6 @@ class DefaultEntityHandler extends BaseEntityHandler<
     console.log(`Getting entity for node ${nodeId}`);
     return null; // Return null for now as we don't have persistent storage
   }
-
-  protected buildEntity(nodeId: NodeId, entityId: any, data: Partial<PeerEntity>): PeerEntity {
-    return {
-      id: entityId,
-      nodeId,
-      createdAt: Date.now() as any,
-      updatedAt: Date.now() as any,
-      version: 1,
-      ...data
-    };
-  }
 }
 
 const defaultEntityHandler = new DefaultEntityHandler();
@@ -76,7 +64,7 @@ export const folderPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'folder' as NodeType,
+  nodeType: 'folder',
   name: 'Folder',
   displayName: 'Folder',
   icon: {
@@ -91,15 +79,14 @@ export const folderPlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      folders: '&id, nodeId, name, description, createdAt, updatedAt, version'
-    },
+    tableName: 'folders',
+    schema: '&id, nodeId, name, description, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'folder-plugin-plugin',
     name: 'Folder',
-    nodeType: 'folder' as NodeType,
+    nodeType: 'folder',
     status: 'active',
     version: '1.0.0',
     tags: ['container', 'basic'],
@@ -119,7 +106,7 @@ export const basemapPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'basemap' as NodeType,
+  nodeType: 'basemap',
   name: 'BaseMap',
   displayName: 'Base Map',
   icon: {
@@ -134,15 +121,14 @@ export const basemapPlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      basemaps: '&id, nodeId, name, mapConfig, createdAt, updatedAt, version'
-    },
+    tableName: 'basemaps',
+    schema: '&id, nodeId, name, mapConfig, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'basemap-plugin',
     name: 'BaseMap',
-    nodeType: 'basemap' as NodeType,
+    nodeType: 'basemap',
     status: 'active',
     version: '1.0.0',
     tags: ['map', 'visualization'],
@@ -162,7 +148,7 @@ export const stylemapPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'stylemap' as NodeType,
+  nodeType: 'stylemap',
   name: 'StyleMap',
   displayName: 'Style Map',
   icon: {
@@ -177,15 +163,14 @@ export const stylemapPlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      stylemaps: '&id, nodeId, name, styleRules, createdAt, updatedAt, version'
-    },
+    tableName: 'stylemaps',
+    schema: '&id, nodeId, name, styleRules, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'stylemap-plugin-plugin',
     name: 'StyleMap',
-    nodeType: 'stylemap' as NodeType,
+    nodeType: 'stylemap',
     status: 'active',
     version: '1.0.0',
     tags: ['styling', 'visualization'],
@@ -205,7 +190,7 @@ export const shapePlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'shape' as NodeType,
+  nodeType: 'shape',
   name: 'Shape',
   displayName: 'Geographic Shape',
   icon: {
@@ -220,15 +205,14 @@ export const shapePlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      shapes: '&id, nodeId, name, geoData, createdAt, updatedAt, version'
-    },
+    tableName: 'shapes',
+    schema: '&id, nodeId, name, geoData, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'shape-plugin-plugin',
     name: 'Shape',
-    nodeType: 'shape' as NodeType,
+    nodeType: 'shape',
     status: 'active',
     version: '1.0.0',
     tags: ['geography', 'boundaries'],
@@ -248,7 +232,7 @@ export const projectPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'project' as NodeType,
+  nodeType: 'project',
   name: 'Project',
   displayName: 'Project',
   icon: {
@@ -263,15 +247,14 @@ export const projectPlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      projects: '&id, nodeId, name, description, status, createdAt, updatedAt, version'
-    },
+    tableName: 'projects',
+    schema: '&id, nodeId, name, description, status, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'project-plugin',
     name: 'Project',
-    nodeType: 'project' as NodeType,
+    nodeType: 'project',
     status: 'active',
     version: '1.0.0',
     tags: ['container', 'project-management'],
@@ -291,7 +274,7 @@ export const notePlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'note' as NodeType,
+  nodeType: 'note',
   name: 'Note',
   displayName: 'Note',
   icon: {
@@ -306,15 +289,14 @@ export const notePlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      notes: '&id, nodeId, name, content, createdAt, updatedAt, version'
-    },
+    tableName: 'notes',
+    schema: '&id, nodeId, name, content, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'note-plugin',
     name: 'Note',
-    nodeType: 'note' as NodeType,
+    nodeType: 'note',
     status: 'active',
     version: '1.0.0',
     tags: ['document', 'text'],
@@ -334,7 +316,7 @@ export const spreadsheetPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'spreadsheet' as NodeType,
+  nodeType: 'spreadsheet',
   name: 'Spreadsheet',
   displayName: 'Spreadsheet',
   icon: {
@@ -349,15 +331,14 @@ export const spreadsheetPlugin: PluginDefinition<
   },
   database: {
     dbName: 'CoreDB',
-    schema: {
-      spreadsheets: '&id, nodeId, name, data, createdAt, updatedAt, version'
-    },
+    tableName: 'spreadsheets',
+    schema: '&id, nodeId, name, data, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'spreadsheet-plugin-plugin',
     name: 'Spreadsheet',
-    nodeType: 'spreadsheet' as NodeType,
+    nodeType: 'spreadsheet',
     status: 'active',
     version: '1.0.0',
     tags: ['data', 'table'],
@@ -377,7 +358,7 @@ export const propertyResolverPlugin: PluginDefinition<
   GroupEntity,
   PeerEntity & WorkingCopyProperties
 > = {
-  nodeType: 'propertyresolver' as NodeType,
+  nodeType: 'propertyresolver',
   name: 'PropertyResolver',
   displayName: 'Property Resolver',
   icon: {
@@ -392,15 +373,14 @@ export const propertyResolverPlugin: PluginDefinition<
   },
   database: {
     dbName: 'PropertyResolverDB',
-    schema: {
-      propertyResolvers: '&id, nodeId, name, sourceSchema, targetSchema, mappingRules, createdAt, updatedAt, version'
-    },
+    tableName: 'propertyResolvers',
+    schema: '&id, nodeId, name, sourceSchema, targetSchema, mappingRules, createdAt, updatedAt, version',
     version: 1,
   },
   meta: {
     id: 'propertyresolver-plugin',
     name: 'PropertyResolver',
-    nodeType: 'propertyresolver' as NodeType,
+    nodeType: 'propertyresolver',
     status: 'active',
     version: '1.0.0',
     tags: ['mapping', 'transformation', 'schema'],

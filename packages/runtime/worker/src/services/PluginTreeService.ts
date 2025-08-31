@@ -203,18 +203,18 @@ export class PluginTreeService implements PluginTreeAPI, TreePluginAnalyzer {
     );
 
     // Check for database conflicts
-    const entityStores = new Map<string, NodeType[]>();
+    const dbNames = new Map<string, NodeType[]>();
     for (const { nodeType, definition } of pluginDefinitions) {
-      if (definition?.database?.tableName) {
-        const storeName = definition.database.tableName;
-        if (!entityStores.has(storeName)) {
-          entityStores.set(storeName, []);
+      if (definition?.database?.dbName) {
+        const dbName = definition.database.dbName;
+        if (!dbNames.has(dbName)) {
+          dbNames.set(dbName, []);
         }
-        entityStores.get(storeName)!.push(nodeType);
+        dbNames.get(dbName)!.push(nodeType);
       }
     }
 
-    for (const [storeName, types] of entityStores) {
+    for (const [dbName, types] of dbNames) {
       if (types.length > 1) {
         for (let i = 0; i < types.length - 1; i++) {
           for (let j = i + 1; j < types.length; j++) {
@@ -222,7 +222,7 @@ export class PluginTreeService implements PluginTreeAPI, TreePluginAnalyzer {
               nodeType1: types[i],
               nodeType2: types[j],
               severity: 'error',
-              description: `Both plugins use the same entity store: ${storeName}`,
+              description: `Both plugins use the same database name: ${dbName}`,
             });
           }
         }

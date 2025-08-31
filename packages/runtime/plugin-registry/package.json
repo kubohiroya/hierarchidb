@@ -2,19 +2,17 @@
   "name": "@hierarchidb/runtime-plugin-registry",
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./loader": {
-      "types": "./dist/loader/index.d.ts",
-      "import": "./dist/loader/index.js",
-      "require": "./dist/loader/index.cjs"
+      "types": "./dist/loader.d.ts",
+      "import": "./dist/loader.js"
     }
   },
   "files": [

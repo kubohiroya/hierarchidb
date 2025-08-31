@@ -2,7 +2,7 @@ import type { EntityHandler, NodeType } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
 import { workerError } from '../utils/workerLogger';
-import { PluginRegistryAPI } from '@hierarchidb/common-api';
+import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 
 /**
  * プラグイン設定の型定義
@@ -82,7 +82,7 @@ export class PluginLoader {
   constructor(
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB,
-    private registry: PluginRegistryAPI
+    private registry: PluginRegistry
   ) {}
 
   /**

@@ -39,6 +39,9 @@ export class TagService implements ITagAPI {
       description: request.description?.trim(),
       category: request.category,
       usageCount: 0,
+      nodeIds: [],
+      referenceCount: 0,
+      lastAccessedAt: now,
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -125,7 +128,7 @@ export class TagService implements ITagAPI {
       .sort((a, b) => b.usageCount - a.usageCount) // Sort by usage count
       .slice(0, limit)
       .map((tag) => ({
-        id: tag.id,
+        id: tag.id as unknown as TagId,
         name: tag.name,
         color: tag.color,
         usageCount: tag.usageCount,
@@ -149,9 +152,10 @@ export class TagService implements ITagAPI {
     }
 
     const association: NodeTagAssociation = {
+      id: `assoc_${uuidv4()}` as EntityId,
       nodeId: request.nodeId,
-      tagId: request.tagId as TagId,
-      createdAt: Date.now(),
+      tagId: request.tagId as unknown as TagId,
+      assignedAt: Date.now(),
     };
 
     await this.coreDB.createTagAssociation(association);
@@ -254,7 +258,7 @@ export class TagService implements ITagAPI {
   /**
    * Generate a unique tag ID using UUID
    */
-  generateTagId(): TagEntity['id'] {
-    return `tag_${uuidv4()}` as TagEntity['id'];
+  generateTagId(): EntityId {
+    return `tag_${uuidv4()}` as EntityId;
   }
 }

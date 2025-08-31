@@ -108,8 +108,8 @@ export class NodeRegistry implements INodeRegistry {
     }
 
     // Validate dependencies
-    if (definition.meta?.dependencies) {
-      for (const dep of definition.meta.dependencies) {
+    if (definition.dependencies) {
+      for (const dep of definition.dependencies) {
         if (!this.pluginDefinitions.has(dep as NodeType)) {
           // Error level - should rollback
           throw new Error(`Missing dependency: ${dep} for plugin ${nodeType}`);
@@ -336,11 +336,11 @@ export class NodeRegistry implements INodeRegistry {
    */
   validateDependencies(nodeType: NodeType): boolean {
     const definition = this.pluginDefinitions.get(nodeType);
-    if (!definition || !definition.meta?.dependencies) {
+    if (!definition || !definition.dependencies) {
       return true;
     }
 
-    for (const dep of definition.meta.dependencies) {
+    for (const dep of definition.dependencies) {
       if (!this.pluginDefinitions.has(dep as NodeType)) {
         return false;
       }

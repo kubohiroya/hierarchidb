@@ -20,6 +20,7 @@ import type {
   PluginLifecycleAPI,
   ImportExportAPI,
   PluginRegistryAPI,
+  PluginExtensionAPI,
 } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
@@ -28,7 +29,7 @@ import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
 import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
-import { registerDefaultPlugins } from './registry/default-plugins';
+import { registerDefaultPlugins, getDefaultPlugins } from './registry/default-plugins';
 import { PluginIntegrationBuilder } from '@hierarchidb/runtime-plugin-registry/loader';
 import type { PluginIntegrated, PluginDefinition } from '@hierarchidb/common-type';
 
@@ -217,10 +218,28 @@ export class WorkerAPIImpl implements WorkerAPI {
       // フォールバック処理
       console.log('[WorkerAPIImpl] Falling back to default plugins');
       this.pluginRegistry = PluginRegistry.getInstance();
-      registerDefaultPlugins(this.pluginRegistry);
-
-      this.integratedPlugins = new Map();
-      this.pluginLoadOrder = [];
+      
+      // デフォルトプラグインを取得してIntegratedに変換
+      const defaultPlugins = getDefaultPlugins();
+      const defaultPluginMap = new Map<NodeType, PluginDefinition>(
+        defaultPlugins.map(def => [def.nodeType, def])
+      );
+      const defaultLoadOrder = defaultPlugins.map(p => p.nodeType);
+      
+      // PluginIntegrated構築
+      this.pluginIntegrationBuilder = new PluginIntegrationBuilder();
+      this.integratedPlugins = await this.pluginIntegrationBuilder.buildAll(
+        defaultPluginMap,
+        defaultLoadOrder
+      );
+      
+      // レジストリに登録
+      for (const [nodeType, integrated] of this.integratedPlugins) {
+        this.pluginRegistry.registerPlugin(integrated);
+      }
+      
+      this.pluginLoadOrder = defaultLoadOrder;
+      console.log(`[WorkerAPIImpl] Loaded ${this.integratedPlugins.size} default plugins`);
     }
   }
 
@@ -504,6 +523,15 @@ export class WorkerAPIImpl implements WorkerAPI {
 
   getTagAPI(): TagService & Comlink.ProxyMarked {
     return Comlink.proxy(this.tagService);
+  }
+
+  getPluginExtensionAPI(): PluginExtensionAPI & Comlink.ProxyMarked {
+    // Stub implementation - plugin extensions will be implemented in a future task
+    const stubAPI: PluginExtensionAPI = {
+      nodeType: 'Root' as NodeType,
+      methods: {},
+    };
+    return Comlink.proxy(stubAPI);
   }
 
   /**
