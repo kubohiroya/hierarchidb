@@ -154,6 +154,16 @@ export class WorkerAPIClient {
     return ready;
   }
 
+  /**
+   * Get raw Worker instance for initialization detection
+   */
+  static getRawWorkerInstance(): Worker | null {
+    // Import the function from initWorkerClient
+    // @ts-ignore - dynamic import
+    const { getRawWorkerInstance } = require('./initWorkerClient');
+    return getRawWorkerInstance();
+  }
+
 
 }
 

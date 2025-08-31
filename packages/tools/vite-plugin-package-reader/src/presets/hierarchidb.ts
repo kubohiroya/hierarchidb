@@ -99,7 +99,7 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
       
       for (const [name, pkg] of packages) {
         const nodeType = pkg.__metadata?.nodeType || 
-          name.replace('@hierarchidb/node-type-', '').replace('-plugin', '');
+          name.replace('@hierarchidb/', '').replace('-plugin', '');
         
         definitions.push({
           name: nodeType,

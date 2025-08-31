@@ -70,7 +70,7 @@ export default defineConfig({
           name: 'hierarchidb-plugins',
           pattern: /@hierarchidb\/node-type-.*-plugin$/,
           metadataExtractor: (pkg) => ({
-            nodeType: pkg.name.replace('@hierarchidb/node-type-', '').replace('-plugin', ''),
+            nodeType: pkg.name.replace('@hierarchidb/', '').replace('-plugin', ''),
             config: pkg.hierarchidb?.plugin
           })
         })

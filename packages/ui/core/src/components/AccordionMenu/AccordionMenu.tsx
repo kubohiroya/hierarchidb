@@ -1,6 +1,6 @@
 import { MouseEvent, ReactNode, useCallback } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/material';
-import { ExpandMoreIcon } from '~/icons';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export const AccordionMenu = ({
   id,

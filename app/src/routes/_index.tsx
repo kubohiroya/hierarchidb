@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TitleLogo } from '../components/TitleLogo';
-import { TopPageGuidedTour } from '@hierarchidb/runtime-tour';
+import { TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 
 // Temporary type definition until TreeToggleButtonGroup is available
 

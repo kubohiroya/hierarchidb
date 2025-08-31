@@ -16,7 +16,7 @@ import {
   TopPageGuidedTour,
   ProjectsGuidedTour,
   ResourcesGuidedTour,
-} from '@hierarchidb/runtime-tour';
+} from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';

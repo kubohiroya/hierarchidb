@@ -25,7 +25,8 @@ import {
   MemoryOutlined as MemoryOutlinedIcon,
 } from '@mui/icons-material';
 import { AuthProviderType, UserAvatar, AuthProviderDialog, useAuth } from '@hierarchidb/ui-auth';
-import { useThemeMode, getThemeIcon, getThemeDisplayName, ThemeMode } from '@hierarchidb/ui-theme';
+import { useThemeMode, ThemeMode } from '@hierarchidb/ui-theme';
+import { getThemeIcon, getThemeDisplayName } from '@hierarchidb/ui-core';
 import { useLanguage, type LanguageConfig } from '@hierarchidb/ui-i18n';
 import { useTranslation } from 'react-i18next';
 

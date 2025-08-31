@@ -14,12 +14,7 @@ import {
   Stack,
   Alert,
 } from '@mui/material';
-import {
-  LocationOn,
-  Folder,
-  Settings,
-  Check,
-} from '@mui/icons-material';
+import { LocationOn, Folder, Settings, Check } from '@mui/icons-material';
 import React, { useState } from 'react';
 import type { DialogStep } from '../types/MultiStepDialog.types';
 
@@ -45,7 +40,7 @@ const meta = {
       control: 'text',
       description: 'ダイアログのタイトル',
     },
-    currentStep: {
+    activeStep: {
       control: 'number',
       description: '現在のステップ（0ベース）',
     },
@@ -155,14 +150,14 @@ const ReviewStep = ({ data }: any) => (
       <Alert severity="info">
         以下の内容で作成されます。問題なければ「作成」ボタンをクリックしてください。
       </Alert>
-      
+
       <Box>
         <Typography variant="subtitle2" color="text.secondary">
           名前
         </Typography>
         <Typography>{data?.name || '未設定'}</Typography>
       </Box>
-      
+
       {data?.description && (
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
@@ -171,7 +166,7 @@ const ReviewStep = ({ data }: any) => (
           <Typography>{data.description}</Typography>
         </Box>
       )}
-      
+
       {data?.address && (
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
@@ -180,24 +175,31 @@ const ReviewStep = ({ data }: any) => (
           <Typography>{data.address}</Typography>
         </Box>
       )}
-      
+
       {data?.latitude && data?.longitude && (
         <Box>
           <Typography variant="subtitle2" color="text.secondary">
             座標
           </Typography>
-          <Typography>{data.latitude}, {data.longitude}</Typography>
+          <Typography>
+            {data.latitude}, {data.longitude}
+          </Typography>
         </Box>
       )}
-      
+
       <Box>
         <Typography variant="subtitle2" color="text.secondary">
           権限
         </Typography>
-        <Chip 
-          label={data?.permissions === 'private' ? 'プライベート' : 
-                data?.permissions === 'shared' ? '共有' : 'パブリック'} 
-          size="small" 
+        <Chip
+          label={
+            data?.permissions === 'private'
+              ? 'プライベート'
+              : data?.permissions === 'shared'
+                ? '共有'
+                : 'パブリック'
+          }
+          size="small"
         />
       </Box>
     </Stack>
@@ -266,15 +268,17 @@ export const BasicFolderCreation: Story = {
     open: true,
     title: 'フォルダーを作成',
     steps: folderSteps,
-    currentStep: 0,
+    activeStep: 0,
     maxWidth: 'sm',
-    fullWidth: true,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
   },
   render: (args) => {
-    const [currentStep, setCurrentStep] = useState(args.currentStep || 0);
+    const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
     const [data, setData] = useState({});
 
-    const stepsWithData = folderSteps.map(step => ({
+    const stepsWithData = folderSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -286,9 +290,9 @@ export const BasicFolderCreation: Story = {
       <MultiStepDialog
         {...args}
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
         onStepChange={setCurrentStep}
-        data={data}
+
       />
     );
   },
@@ -299,15 +303,17 @@ export const LocationCreation: Story = {
     open: true,
     title: 'ロケーションを作成',
     steps: locationSteps,
-    currentStep: 0,
+    activeStep: 0,
     maxWidth: 'md',
-    fullWidth: true,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
   },
   render: (args) => {
-    const [currentStep, setCurrentStep] = useState(args.currentStep || 0);
+    const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
     const [data, setData] = useState({});
 
-    const stepsWithData = locationSteps.map(step => ({
+    const stepsWithData = locationSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -319,9 +325,9 @@ export const LocationCreation: Story = {
       <MultiStepDialog
         {...args}
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
         onStepChange={setCurrentStep}
-        data={data}
+
       />
     );
   },
@@ -332,16 +338,18 @@ export const NonLinearNavigation: Story = {
     open: true,
     title: 'ノンリニアナビゲーション',
     steps: folderSteps,
-    currentStep: 0,
+    activeStep: 0,
     nonLinear: true,
     maxWidth: 'sm',
-    fullWidth: true,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
   },
   render: (args) => {
-    const [currentStep, setCurrentStep] = useState(args.currentStep || 0);
+    const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
     const [data, setData] = useState({ name: '事前入力済み' }); // 事前データで全ステップ移動可能
 
-    const stepsWithData = folderSteps.map(step => ({
+    const stepsWithData = folderSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -353,9 +361,9 @@ export const NonLinearNavigation: Story = {
       <MultiStepDialog
         {...args}
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
         onStepChange={setCurrentStep}
-        data={data}
+
       />
     );
   },
@@ -363,12 +371,21 @@ export const NonLinearNavigation: Story = {
 
 // Enhanced版のストーリー
 export const EnhancedDialog: Story = {
+  args: {
+    open: true,
+    title: '拡張マルチステップダイアログ',
+    steps: folderSteps,
+    activeStep: 0,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
+  },
   render: () => {
     const [open, setOpen] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [data, setData] = useState({});
 
-    const stepsWithData = folderSteps.map(step => ({
+    const stepsWithData = folderSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -381,31 +398,40 @@ export const EnhancedDialog: Story = {
         open={open}
         title="拡張マルチステップダイアログ"
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
+        mode="create"
         onStepChange={setCurrentStep}
         onClose={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
         onSubmit={async (finalData) => {
           console.log('提出されたデータ:', finalData);
           setOpen(false);
         }}
         maxWidth="md"
-        fullWidth
-        enableFullscreen
         supportsDraft
-        isBatchDialog
-        data={data}
+
+
       />
     );
   },
 };
 
 export const FullscreenMode: Story = {
+  args: {
+    open: true,
+    title: 'フルスクリーンモード',
+    steps: locationSteps,
+    activeStep: 0,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
+  },
   render: () => {
     const [open, setOpen] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [data, setData] = useState({});
 
-    const stepsWithData = locationSteps.map(step => ({
+    const stepsWithData = locationSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -418,30 +444,40 @@ export const FullscreenMode: Story = {
         open={open}
         title="フルスクリーンモード"
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
+        mode="create"
         onStepChange={setCurrentStep}
         onClose={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
         onSubmit={async (finalData) => {
           console.log('提出されたデータ:', finalData);
           setOpen(false);
         }}
         fullScreen
-        enableFullscreen
         autoHideHeader
         autoHideFooter
-        data={data}
+
       />
     );
   },
 };
 
 export const BatchProcessingMode: Story = {
+  args: {
+    open: true,
+    title: 'バッチ処理モード',
+    steps: folderSteps,
+    activeStep: 0,
+    mode: 'create' as const,
+    onSubmit: async () => {},
+    onCancel: () => {},
+  },
   render: () => {
     const [open, setOpen] = useState(true);
     const [currentStep, setCurrentStep] = useState(0);
     const [data, setData] = useState({ name: 'バッチ処理用データ' });
 
-    const stepsWithData = folderSteps.map(step => ({
+    const stepsWithData = folderSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
         data,
@@ -454,17 +490,16 @@ export const BatchProcessingMode: Story = {
         open={open}
         title="バッチ処理ダイアログ"
         steps={stepsWithData}
-        currentStep={currentStep}
+        activeStep={currentStep}
+        mode="create"
         onStepChange={setCurrentStep}
         onClose={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
         onSubmit={async (finalData) => {
           console.log('バッチ処理データ:', finalData);
           setOpen(false);
         }}
-        isBatchDialog
         nonLinear
-        data={data}
-        batchText="バッチ処理開始"
       />
     );
   },

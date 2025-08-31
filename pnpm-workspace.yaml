@@ -2,7 +2,9 @@ packages:
   - app
   - packages/util
   - packages/common/*
-  - packages/runtime/*
+  - packages/runtime-ui/*
+  - packages/runtime-worker/*
+  - packages/runtime-shared/*
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/backend/*

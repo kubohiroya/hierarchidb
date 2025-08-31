@@ -28,7 +28,8 @@ export type { MapLibreMapProps } from './components/MapLibreMap';
 export type { VectorTileLayerProps } from './components/VectorTileLayer';
 export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles';
 
-// Re-export important MapLibre types for convenience
+// NOTE: These type re-exports are intentional to provide a stable API surface
+// Users of this package should not need to install maplibre-gl separately
 export type {
   Map as MapLibreMapInstance,
   FilterSpecification,

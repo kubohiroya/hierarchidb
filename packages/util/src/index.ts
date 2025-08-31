@@ -13,3 +13,4 @@ export * from './format';
 // Validation utilities
 export * from './validation';
 export { SingletonMixin } from './SingletonMixin';
+export { generateId } from './generateId';

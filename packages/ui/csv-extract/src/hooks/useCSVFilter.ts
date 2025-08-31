@@ -3,13 +3,9 @@
  * @description Hook for managing CSV filtering and preview
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCSVApi } from '~/context/CSVContext';
-import type { 
-  CSVFilterRule, 
-  CSVDataResult,
-  CSVSelectionConfig 
-} from '~/types';
+import type { CSVFilterRule, CSVDataResult, CSVSelectionConfig } from '~/types';
 
 /**
  * Options for useCSVFilter hook
@@ -41,7 +37,7 @@ export interface UseCSVFilterResult {
   isLoading: boolean;
   /** Error message */
   error: string | null;
-  
+
   /** Get filtered preview */
   getFilteredPreview: (rules: CSVFilterRule[]) => Promise<void>;
   /** Validate filter rules */
@@ -75,15 +71,14 @@ const generateRuleId = (): string => {
 export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult => {
   const {
     tableId,
-    pluginId,
     initialRules = [],
     maxPreviewRows = 10,
     debounceMs = 300,
     autoRefresh = true,
   } = options;
-  
+
   const csvApi = useCSVApi();
-  
+
   const [filterRules, setFilterRules] = useState<CSVFilterRule[]>(initialRules);
   const [previewData, setPreviewData] = useState<CSVDataResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,50 +87,56 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
 
   /**
    * Get enabled filter rules
-   */
   const enabledRules = useMemo(() => {
     return filterRules.filter(rule => rule.enabled);
   }, [filterRules]);
+   */
 
   /**
    * Fetch preview data
    */
-  const fetchPreview = useCallback(async (rules: CSVFilterRule[]) => {
-    if (!tableId) return;
+  const fetchPreview = useCallback(
+    async (rules: CSVFilterRule[]) => {
+      if (!tableId) return;
 
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const data = await csvApi.getFilteredPreview(
-        tableId,
-        rules.filter(rule => rule.enabled),
-        maxPreviewRows
-      );
-      
-      setPreviewData(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch preview';
-      setError(message);
-      setPreviewData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [csvApi, tableId, maxPreviewRows]);
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data = await csvApi.getFilteredPreview(
+          tableId,
+          rules.filter((rule) => rule.enabled),
+          maxPreviewRows
+        );
+
+        setPreviewData(data);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch preview';
+        setError(message);
+        setPreviewData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [csvApi, tableId, maxPreviewRows]
+  );
 
   /**
    * Get filtered preview with specific rules
    */
-  const getFilteredPreview = useCallback(async (rules: CSVFilterRule[]) => {
-    await fetchPreview(rules);
-  }, [fetchPreview]);
+  const getFilteredPreview = useCallback(
+    async (rules: CSVFilterRule[]) => {
+      await fetchPreview(rules);
+    },
+    [fetchPreview]
+  );
 
   /**
    * Validate filter rules
    */
   const validateFilters = useCallback((rules: CSVFilterRule[]) => {
     const errors: string[] = [];
-    
+
     for (const rule of rules) {
       if (!rule.column) {
         errors.push(`Filter rule ${rule.id}: Column is required`);
@@ -149,7 +150,7 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
         errors.push(`Filter rule ${rule.id}: Value is required for operator ${rule.operator}`);
       }
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -177,24 +178,22 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
       ...rule,
       id: generateRuleId(),
     };
-    
-    setFilterRules(prev => [...prev, newRule]);
+
+    setFilterRules((prev) => [...prev, newRule]);
   }, []);
 
   /**
    * Update existing filter rule
    */
   const updateRule = useCallback((id: string, updates: Partial<CSVFilterRule>) => {
-    setFilterRules(prev => prev.map(rule => 
-      rule.id === id ? { ...rule, ...updates } : rule
-    ));
+    setFilterRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, ...updates } : rule)));
   }, []);
 
   /**
    * Remove filter rule
    */
   const removeRule = useCallback((id: string) => {
-    setFilterRules(prev => prev.filter(rule => rule.id !== id));
+    setFilterRules((prev) => prev.filter((rule) => rule.id !== id));
   }, []);
 
   /**
@@ -207,12 +206,15 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
   /**
    * Toggle rule enabled state
    */
-  const toggleRule = useCallback((id: string) => {
-    updateRule(id, { enabled: undefined }); // Will be inverted by the update logic
-    setFilterRules(prev => prev.map(rule => 
-      rule.id === id ? { ...rule, enabled: !rule.enabled } : rule
-    ));
-  }, [updateRule]);
+  const toggleRule = useCallback(
+    (id: string) => {
+      updateRule(id, { enabled: undefined }); // Will be inverted by the update logic
+      setFilterRules((prev) =>
+        prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule))
+      );
+    },
+    [updateRule]
+  );
 
   /**
    * Manually refresh preview
@@ -231,7 +233,7 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
   // Initial preview load
   useEffect(() => {
     if (tableId && autoRefresh) {
-      setRefreshCounter(prev => prev + 1);
+      setRefreshCounter((prev) => prev + 1);
     }
   }, [tableId, autoRefresh]);
 
@@ -278,7 +280,7 @@ export interface UseCSVSelectionResult {
   loading: boolean;
   /** Error message */
   error: string | null;
-  
+
   /** Set key column */
   setKeyColumn: (column: string | undefined) => void;
   /** Set value columns */
@@ -299,15 +301,10 @@ export interface UseCSVSelectionResult {
  * Hook for managing CSV column selection
  */
 export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectionResult => {
-  const {
-    tableMetadataId,
-    filterRules,
-    initialSelection = {},
-    previewRowCount = 10,
-  } = options;
-  
+  const { tableMetadataId, filterRules, initialSelection = {}, previewRowCount = 10 } = options;
+
   const csvApi = useCSVApi();
-  
+
   const [selection, setSelection] = useState<CSVSelectionConfig>({
     keyColumn: undefined,
     valueColumns: [],
@@ -315,7 +312,7 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
     customMappings: [],
     ...initialSelection,
   });
-  
+
   const [previewData, setPreviewData] = useState<CSVDataResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -329,13 +326,13 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await csvApi.getFilteredPreview(
         tableMetadataId,
-        filterRules.filter(rule => rule.enabled),
+        filterRules.filter((rule) => rule.enabled),
         previewRowCount
       );
-      
+
       setPreviewData(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch preview';
@@ -350,21 +347,21 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
    * Set key column
    */
   const setKeyColumn = useCallback((column: string | undefined) => {
-    setSelection(prev => ({ ...prev, keyColumn: column }));
+    setSelection((prev) => ({ ...prev, keyColumn: column }));
   }, []);
 
   /**
    * Set value columns
    */
   const setValueColumns = useCallback((columns: string[]) => {
-    setSelection(prev => ({ ...prev, valueColumns: columns }));
+    setSelection((prev) => ({ ...prev, valueColumns: columns }));
   }, []);
 
   /**
    * Add value column
    */
   const addValueColumn = useCallback((column: string) => {
-    setSelection(prev => ({
+    setSelection((prev) => ({
       ...prev,
       valueColumns: [...prev.valueColumns, column],
     }));
@@ -374,9 +371,9 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
    * Remove value column
    */
   const removeValueColumn = useCallback((column: string) => {
-    setSelection(prev => ({
+    setSelection((prev) => ({
       ...prev,
-      valueColumns: prev.valueColumns.filter(col => col !== column),
+      valueColumns: prev.valueColumns.filter((col) => col !== column),
     }));
   }, []);
 
@@ -384,14 +381,14 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
    * Set custom mappings
    */
   const setCustomMappings = useCallback((mappings: CSVSelectionConfig['customMappings']) => {
-    setSelection(prev => ({ ...prev, customMappings: mappings }));
+    setSelection((prev) => ({ ...prev, customMappings: mappings }));
   }, []);
 
   /**
    * Update entire selection
    */
   const updateSelection = useCallback((updates: Partial<CSVSelectionConfig>) => {
-    setSelection(prev => ({ ...prev, ...updates }));
+    setSelection((prev) => ({ ...prev, ...updates }));
   }, []);
 
   /**
@@ -403,7 +400,7 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
 
   // Update filter rules in selection when they change
   useEffect(() => {
-    setSelection(prev => ({ ...prev, filterRules }));
+    setSelection((prev) => ({ ...prev, filterRules }));
   }, [filterRules]);
 
   // Auto-refresh preview when selection changes

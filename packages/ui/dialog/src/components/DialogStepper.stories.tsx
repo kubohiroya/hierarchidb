@@ -215,6 +215,12 @@ export const LongStepNames: Story = {
 };
 
 export const Interactive: Story = {
+  args: {
+    steps: folderSteps,
+    activeStep: 0,
+    completedSteps: new Set<number>(),
+    nonLinear: true,
+  },
   render: () => {
     const [activeStep, setActiveStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState(new Set<number>());
@@ -294,10 +300,15 @@ export const WithOptionalSteps: Story = {
 };
 
 export const ErrorState: Story = {
+  args: {
+    steps: folderSteps,
+    activeStep: 1,
+    completedSteps: new Set([0]),
+  },
   render: () => {
     const [activeStep, setActiveStep] = useState(1);
     const [completedSteps] = useState(new Set([0]));
-    const [errorSteps] = useState(new Set([1])); // エラー状態のステップ
+    useState(new Set([1])); // エラー状態のステップ
 
     return (
       <DialogStepper
