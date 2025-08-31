@@ -5,7 +5,7 @@
  */
 
 // Import from base-plugin package
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/node-type-base-plugin';
 
 import type { 
   NodeTypeConfig, 
@@ -56,8 +56,8 @@ export type { PluginMetadata } from '@hierarchidb/common-type';
 export type EntityHandler<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> = BaseEntityHandler<TEntity, TWorkingCopy>;
+  TWorkingCopy = any, // Simplified type constraint to avoid complex type issues
+> = BaseEntityHandler<TEntity, any, Partial<TEntity>, BaseSearchCriteria>;
 
 export type EntityBackup<_TEntity extends PeerEntity = PeerEntity> = {}; //CoreEntityBackup<TEntity>;
 
@@ -74,7 +74,21 @@ export interface NodeDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> extends Omit<PluginDefinition, 'lifecycle' | 'database' | 'ui' | 'api'> {
+> {
+  // Basic properties from PluginDefinition
+  readonly nodeType: NodeType;
+  readonly name: string;
+  readonly displayName: string;
+  readonly description?: string;
+  readonly version: string;
+  readonly priority: number;
+  readonly dependencies: string[];
+  readonly category: any;
+  readonly extends?: string;
+  readonly icon?: any;
+  readonly i18n?: any;
+  readonly visibility?: any;
+  
   // Entity handler - this is worker-specific and not in core
   readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
 
