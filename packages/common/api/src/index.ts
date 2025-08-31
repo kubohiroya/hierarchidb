@@ -60,5 +60,6 @@ export type {
 export type { PluginExtensionAPI } from './PluginExtensionAPI';
 export { PluginExtensionRegistry } from './PluginExtensionAPI';
 
-
+// Plugin Registry API
+export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
 export * from './ITagAPI';

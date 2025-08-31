@@ -5,6 +5,7 @@
 
 // Export main registry class
 export { PluginRegistry } from './registry/PluginRegistry';
+export type { IPluginRegistry } from './registry/IPluginRegistry';
 
 // Export API functions
 export {
