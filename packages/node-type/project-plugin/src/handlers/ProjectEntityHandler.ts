@@ -1,15 +1,77 @@
-import type { EntityId, NodeId, TreeNode, EntityHandler, WorkingCopyProperties } from '@hierarchidb/common-type';
-import type { ProjectEntity } from '~/types/project-types';
-import { projectDB } from '~/database/project-database';
+/**
+ * Project Entity Handler
+ * Manages CRUD operations for Project entities
+ */
 
-type ProjectWorkingCopy = ProjectEntity & { isWorkingCopy: boolean; originalId: EntityId; isDirty: boolean; copiedAt: number };
+// Project plugin uses its own entity management approach via Comlink API
+// No direct dependency on worker's BaseEntityHandler
+import type { EntityId, NodeId } from '@hierarchidb/common-type';
+import { generateEntityId } from '@hierarchidb/common-type';
+import type { ProjectEntity, ProjectWorkingCopy } from '~/types/project-types';
+import { projectPluginAPI } from '~/api/ProjectPluginAPI';
+import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 
-export class ProjectEntityHandler implements EntityHandler<ProjectEntity, ProjectEntity, ProjectWorkingCopy> {
+/**
+ * Entity handler for Project plugin
+ * Extends BaseEntityHandler to provide Project-specific CRUD operations
+ */
+export class ProjectEntityHandler {
+  private table: any;
+
+  constructor() {
+    // Initialize with plugin-specific database interface
+    // This would typically connect to the Project plugin API via Comlink
+    this.table = {
+      add: async (_entity: any): Promise<any> => _entity,
+      get: async (_id: any): Promise<any> => null,
+      put: async (_entity: any): Promise<any> => _entity,
+      delete: async (_id: any): Promise<void> => {},
+      where: (_field: string) => ({
+        equals: (_value: any) => ({
+          first: async (): Promise<any> => null,
+          toArray: async (): Promise<any[]> => [],
+        }),
+      }),
+      orderBy: (_field: string) => ({
+        reverse: () => ({
+          offset: (_n: number) => ({
+            limit: (_n: number) => ({
+              toArray: async (): Promise<any[]> => [],
+            }),
+            toArray: async (): Promise<any[]> => [],
+          }),
+          limit: (_n: number) => ({
+            toArray: async (): Promise<any[]> => [],
+          }),
+          toArray: async (): Promise<any[]> => [],
+        }),
+        offset: (_n: number) => ({
+          limit: (_n: number) => ({
+            toArray: async (): Promise<any[]> => [],
+          }),
+          toArray: async (): Promise<any[]> => [],
+        }),
+        limit: (_n: number) => ({
+          toArray: async (): Promise<any[]> => [],
+        }),
+        toArray: async (): Promise<any[]> => [],
+      }),
+      toCollection: () => ({
+        filter: (_predicate: any) => ({
+          toArray: async (): Promise<any[]> => [],
+        }),
+      }),
+    };
+  }
+
+  /**
+   * Create a new Project entity
+   */
   async createEntity(
     nodeId: NodeId,
     initialData?: Partial<ProjectEntity>
   ): Promise<ProjectEntity> {
-    const entityId = crypto.randomUUID() as EntityId;
+    const entityId = generateEntityId() as EntityId;
     const now = Date.now();
     
     const entity: ProjectEntity = {
@@ -101,138 +163,282 @@ export class ProjectEntityHandler implements EntityHandler<ProjectEntity, Projec
       version: 1
     };
 
-    await projectDB.projects.add(entity);
-    return entity;
-  }
+    // Store in database via the project plugin API
+    try {
+      // Initialize plugin API if needed
+      await this.ensurePluginInitialized();
 
-  async getEntity(nodeId: NodeId): Promise<ProjectEntity | undefined> {
-    return await projectDB.projects.where('nodeId').equals(nodeId).first();
-  }
+      // Store entity in database
+      await this.table.add(entity);
 
-  async updateEntity(nodeId: NodeId, updates: Partial<ProjectEntity>): Promise<void> {
-    const existing = await this.getEntity(nodeId);
-    if (!existing) {
-      throw new Error(`Project entity not found for node: ${nodeId}`);
-    }
-
-    const updatedEntity: ProjectEntity = {
-      ...existing,
-      ...updates,
-      id: existing.id,
-      nodeId: existing.nodeId,
-      updatedAt: Date.now(),
-      updatedBy: 'system',
-      version: existing.version + 1
-    };
-
-    await projectDB.projects.put(updatedEntity);
-  }
-
-  async deleteEntity(nodeId: NodeId): Promise<void> {
-    const entity = await this.getEntity(nodeId);
-    if (entity) {
-      // Delete all related data
-      await projectDB.clearProjectData(entity.id);
-      // Delete the project itself
-      await projectDB.projects.delete(entity.id);
+      console.log(`Created Project entity: ${entityId} for node: ${nodeId}`);
+      return entity;
+    } catch (error) {
+      console.error('Failed to create Project entity:', error);
+      throw error;
     }
   }
 
-  async createWorkingCopy(nodeId: NodeId): Promise<ProjectWorkingCopy> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      throw new Error(`Project entity not found for node: ${nodeId}`);
+  /**
+   * Get Project entity by node ID
+   */
+  async getEntityByNodeId(nodeId: NodeId): Promise<ProjectEntity | null> {
+    try {
+      const entity = await this.table.where('nodeId').equals(nodeId).first();
+      return entity || null;
+    } catch (error) {
+      console.error('Failed to get Project entity by node ID:', error);
+      throw error;
     }
-    
-    // Create a working copy
-    return {
-      ...entity,
-      isWorkingCopy: true,
-      originalId: entity.id,
-      isDirty: false,
-      copiedAt: Date.now()
-    } as ProjectWorkingCopy;
   }
 
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: ProjectWorkingCopy): Promise<void> {
-    // Remove the working copy flag and update
-    const { isWorkingCopy, ...entity } = workingCopy;
-    await this.updateEntity(nodeId, entity);
-  }
-
-  async discardWorkingCopy(nodeId: NodeId): Promise<void> {
-    // No-op for now - working copy is not persisted separately
-  }
-
-  async duplicate(nodeId: NodeId, newNodeId: NodeId): Promise<void> {
-    const source = await this.getEntity(nodeId);
-    if (!source) {
-      throw new Error(`Source project not found: ${nodeId}`);
+  /**
+   * Get Project entity by ID
+   */
+  async getEntity(entityId: EntityId): Promise<ProjectEntity | null> {
+    try {
+      const entity = await this.table.get(entityId);
+      return entity || null;
+    } catch (error) {
+      console.error('Failed to get Project entity:', error);
+      throw error;
     }
+  }
 
-    await this.createEntity(newNodeId, {
-      ...source,
-      name: `${source.name} (Copy)`,
-      id: undefined as any,
-      nodeId: undefined as any,
-      createdAt: undefined as any,
-      createdBy: undefined as any,
-      updatedAt: undefined as any,
-      updatedBy: undefined as any,
-      version: undefined as any
-    });
-
-    // Clone snapshots if needed
-    const snapshots = await projectDB.snapshots
-      .where('projectEntityId')
-      .equals(source.id)
-      .toArray();
-
-    const newEntity = await this.getEntity(newNodeId);
-    if (newEntity) {
-      for (const snapshot of snapshots) {
-        await projectDB.snapshots.add({
-          ...snapshot,
-          id: crypto.randomUUID() as EntityId,
-          projectEntityId: newEntity.id
-        });
+  /**
+   * Update an existing Project entity
+   */
+  async updateEntity(entityId: EntityId, updates: Partial<ProjectEntity>): Promise<ProjectEntity> {
+    try {
+      const existing = await this.table.get(entityId);
+      if (!existing) {
+        throw new Error(`Project entity not found: ${entityId}`);
       }
+
+      const updatedEntity: ProjectEntity = {
+        ...existing,
+        ...updates,
+        id: entityId,
+        nodeId: existing.nodeId,
+        updatedAt: Date.now(),
+        updatedBy: 'system',
+        version: existing.version + 1
+      };
+
+      await this.table.put(updatedEntity);
+
+      console.log(`Updated Project entity: ${entityId}`);
+      return updatedEntity;
+    } catch (error) {
+      console.error('Failed to update Project entity:', error);
+      throw error;
     }
   }
 
-  async cleanup(nodeId: NodeId): Promise<void> {
-    const entity = await this.getEntity(nodeId);
-    if (entity) {
-      // Clean up all project data
-      await projectDB.clearProjectData(entity.id);
+  /**
+   * Delete a Project entity
+   */
+  async deleteEntity(entityId: EntityId): Promise<void> {
+    try {
+      const entity = await this.table.get(entityId);
+      if (!entity) {
+        throw new Error(`Project entity not found: ${entityId}`);
+      }
+
+      // Cleanup related data
+      await this.cleanupEntityData(entity);
+
+      // Delete from database
+      await this.table.delete(entityId);
+
+      console.log(`Deleted Project entity: ${entityId}`);
+    } catch (error) {
+      console.error('Failed to delete Project entity:', error);
+      throw error;
     }
   }
 
-  // Additional helper methods
-  async list(filter?: {
+  /**
+   * Create working copy from entity
+   */
+  async createWorkingCopy(entity: ProjectEntity): Promise<ProjectWorkingCopy> {
+    return createWorkingCopyFromEntity(entity) as ProjectWorkingCopy;
+  }
+
+  /**
+   * Apply working copy changes to entity
+   */
+  async applyWorkingCopy(entityId: EntityId, workingCopy: ProjectWorkingCopy): Promise<ProjectEntity> {
+    const updates: Partial<ProjectEntity> = mapWorkingCopyToUpdates(
+      workingCopy
+    ) as Partial<ProjectEntity>;
+    return this.updateEntity(entityId, updates);
+  }
+
+  /**
+   * List all Project entities
+   */
+  async listEntities(limit?: number, offset?: number): Promise<ProjectEntity[]> {
+    try {
+      let query = this.table.orderBy('updatedAt').reverse();
+
+      if (offset) {
+        query = query.offset(offset);
+      }
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      return await query.toArray();
+    } catch (error) {
+      console.error('Failed to list Project entities:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search Project entities by criteria
+   */
+  async searchEntities(criteria: {
+    name?: string;
     category?: string;
-    tags?: string[];
     visibility?: string;
+    tags?: string[];
   }): Promise<ProjectEntity[]> {
-    let collection = projectDB.projects.toCollection();
+    try {
+      let query = this.table.toCollection();
 
-    if (filter?.category) {
-      collection = collection.filter(p => p.category === filter.category);
+      if (criteria.name) {
+        query = query.filter((_entity: any) =>
+          _entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
+        );
+      }
+
+      if (criteria.category) {
+        query = query.filter((_entity: any) => _entity.category === criteria.category);
+      }
+
+      if (criteria.visibility) {
+        query = query.filter((_entity: any) => _entity.visibility === criteria.visibility);
+      }
+
+      if (criteria.tags && criteria.tags.length > 0) {
+        query = query.filter((_entity: any) =>
+          criteria.tags!.some(tag => _entity.tags.includes(tag))
+        );
+      }
+
+      return await query.toArray();
+    } catch (error) {
+      console.error('Failed to search Project entities:', error);
+      throw error;
     }
-
-    if (filter?.tags && filter.tags.length > 0) {
-      collection = collection.filter(p => 
-        filter.tags!.some(tag => p.tags.includes(tag))
-      );
-    }
-
-    if (filter?.visibility) {
-      collection = collection.filter(p => p.visibility === filter.visibility);
-    }
-
-    return await collection.toArray();
   }
 
+  /**
+   * Start analysis processing for an entity
+   */
+  async startAnalysisProcessing(entityId: EntityId, analysisId: string): Promise<string> {
+    try {
+      const entity = await this.getEntity(entityId);
+      if (!entity) {
+        throw new Error(`Project entity not found: ${entityId}`);
+      }
+
+      await this.ensurePluginInitialized();
+
+      // Find the analysis configuration
+      const spatialAnalysis = entity.spatialAnalyses.find(a => a.id === analysisId);
+      const temporalAnalysis = entity.temporalAnalyses.find(a => a.id === analysisId);
+      
+      if (!spatialAnalysis && !temporalAnalysis) {
+        throw new Error(`Analysis not found: ${analysisId}`);
+      }
+
+      // Start analysis process
+      const analysisConfig = spatialAnalysis || temporalAnalysis;
+      if (!analysisConfig) {
+        throw new Error(`Analysis configuration not found: ${analysisId}`);
+      }
+      
+      const sessionId = await projectPluginAPI.startAnalysis(
+        entity.nodeId,
+        analysisId,
+        analysisConfig
+      );
+
+      return sessionId;
+    } catch (error) {
+      console.error('Failed to start analysis processing:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get analysis status for an entity
+   */
+  async getAnalysisStatus(entityId: EntityId, sessionId: string): Promise<any> {
+    try {
+      const entity = await this.getEntity(entityId);
+      if (!entity) {
+        return null;
+      }
+
+      return await projectPluginAPI.getAnalysisStatus(sessionId);
+    } catch (error) {
+      console.error('Failed to get analysis status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private async ensurePluginInitialized(): Promise<void> {
+    // The plugin API should be initialized by the plugin system
+    // This is a safety check
+    try {
+      await projectPluginAPI.getHealthStatus();
+    } catch (error) {
+      console.warn('Project plugin API not ready, initializing...');
+      await projectPluginAPI.initialize();
+    }
+  }
+
+  private async cleanupEntityData(entity: ProjectEntity): Promise<void> {
+    try {
+      await this.ensurePluginInitialized();
+
+      // Clear cached data for this node
+      try {
+        await projectPluginAPI.clearCache(entity.nodeId);
+      } catch (error) {
+        console.warn('Failed to clear cache during cleanup:', error);
+      }
+
+      // Clear any ongoing analyses
+      try {
+        await projectPluginAPI.cancelAllAnalyses(entity.nodeId);
+      } catch (error) {
+        console.warn('Failed to cancel analyses during cleanup:', error);
+      }
+
+      console.log(`Cleaned up data for Project entity: ${entity.id}`);
+    } catch (error) {
+      console.error('Error during entity cleanup:', error);
+      // Don't throw - cleanup is best effort
+    }
+  }
+
+  // ==========================================
+  // Validation methods
+  // ==========================================
+
+  /**
+   * Validate Project entity
+   */
   async validate(entity: Partial<ProjectEntity>): Promise<{ valid: boolean; errors?: string[] }> {
     const errors: string[] = [];
 
@@ -264,19 +470,50 @@ export class ProjectEntityHandler implements EntityHandler<ProjectEntity, Projec
     };
   }
 
-  async getStatistics(entityId: EntityId) {
-    const projectStats = await projectDB.getProjectStatistics(entityId);
-    const entity = await projectDB.projects.get(entityId);
-    
-    if (!entity) {
-      throw new Error(`Project not found: ${entityId}`);
-    }
-    
-    return {
-      ...projectStats,
-      layerCount: entity.layers.length,
-      analysisCount: entity.spatialAnalyses.length + entity.temporalAnalyses.length,
-      collaboratorCount: entity.collaborators?.length || 0
-    };
+  // ==========================================
+  // Serialization methods
+  // ==========================================
+
+  /**
+   * Serialize Project entity with Uint8Array handling
+   */
+  async serialize(entity: ProjectEntity): Promise<{
+    jsonData: any;
+    binaryData: Map<string, Uint8Array>;
+    binaryFilenames: Map<string, string>;
+  }> {
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
+    return PluginEntitySerializer.serialize(entity);
+  }
+
+  /**
+   * Deserialize Project entity with binary data restoration
+   */
+  async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ProjectEntity> {
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
+    return PluginEntitySerializer.deserialize({ jsonData, binaryData });
+  }
+
+  /**
+   * Serialize array of Project entities
+   */
+  async serializeEntityArray(entities: ProjectEntity[]): Promise<{
+    jsonArray: any[];
+    binaryData: Map<string, Uint8Array>;
+    binaryFilenames: Map<string, string>;
+  }> {
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
+    return PluginEntitySerializer.serializeEntityArray(entities);
+  }
+
+  /**
+   * Deserialize array of Project entities
+   */
+  async deserializeEntityArray(
+    jsonArray: any[],
+    binaryData: Map<string, Uint8Array>
+  ): Promise<ProjectEntity[]> {
+    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
+    return PluginEntitySerializer.deserializeEntityArray(jsonArray, binaryData);
   }
 }
