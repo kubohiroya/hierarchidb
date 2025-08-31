@@ -22,15 +22,19 @@
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^6.0.0",
+    "@mui/icons-material": "^6.0.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
     "dexie": "^3.2.4",
-    "react": "^18.3.1"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",

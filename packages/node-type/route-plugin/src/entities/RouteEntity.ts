@@ -3,8 +3,12 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { BaseEntity } from '@hierarchidb/common-type';
+import type { 
+  NodeId, 
+  EntityId,
+  BaseEntity,
+  Timestamp
+} from '@hierarchidb/common-type';
 
 /**
  * Transport mode types
@@ -53,11 +57,22 @@ export interface RouteCategory {
  * Route entity extending base and metadata entities
  */
 export interface RouteEntity extends BaseEntity {
+  // Entity ID
+  id: EntityId;
+  nodeId: NodeId;
+  
   // Basic information
   name: string;
   description?: string;
   category: RouteCategory;
-  tags?: string[];
+  // Note: Tags are managed by Folder plugin, not stored here
+  
+  // Metadata fields
+  metadata?: Record<string, any>;
+  customFields?: Record<string, any>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  version: number;
   
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference

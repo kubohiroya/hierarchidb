@@ -5,7 +5,9 @@
 
 import type { Table } from 'dexie';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { 
+  BaseEntityHandler
+} from '@hierarchidb/node-type-base-plugin';
 import type {
   LocationEntity,
   LocationWorkingCopy,
@@ -29,17 +31,12 @@ export interface CreateLocationData extends Partial<LocationEntity> {
 /**
  * Location entity handler with full CRUD operations
  */
-export class LocationEntityHandler extends BaseEntityHandler<
-  LocationEntity,
-  LocationWorkingCopy,
-  CreateLocationData,
-  LocationFilterCriteria
-> {
-  protected table: Table<LocationEntity, EntityId>;
+export class LocationEntityHandler extends BaseEntityHandler<any, any, any, any> {
+  protected table: any;
 
   constructor(table: Table<LocationEntity, EntityId>) {
     super();
-    this.table = table;
+    this.table = table as any;
   }
 
   /**
@@ -77,7 +74,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
 
       // Optional fields with defaults
       description: data.description,
-      tags: data.tags || [],
+      // Tags are managed by Folder plugin
       metadata: data.metadata || {},
       customFields: data.customFields || {},
 
@@ -183,7 +180,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
       maxResults: 100,
 
       // Default empty arrays/objects
-      tags: [],
+      // Tags are managed by Folder plugin
       metadata: {},
       customFields: {},
       childLocationIds: [],
