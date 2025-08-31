@@ -163,6 +163,37 @@ const {
 - `@hierarchidb/common-type`: 共通型定義
 - `@hierarchidb/ui-floating-window`: フローティングウィンドウ
 
+## Storybook
+
+### 実行方法
+
+プロジェクトルートから：
+```bash
+# Storybookを起動
+pnpm storybook:ui-core
+```
+
+### 利用可能なStories
+
+1. **SearchResultTable**
+   - `SearchResult/SearchResultTable`
+   - 基本表示、選択状態、大量データなどのバリエーション
+
+2. **MapHighlightProvider** 
+   - `SearchResult/MapHighlightProvider`
+   - ハイライト状態管理のデモとテスト
+
+3. **useMultiSelection**
+   - `SearchResult/useMultiSelection` 
+   - 複数選択機能のインタラクティブデモ
+
+### Storybookでテストできる機能
+
+- **複数選択**: 単一選択、範囲選択、全選択の操作
+- **ハイライト管理**: 検索マッチ、選択状態、フォーカスの制御
+- **パフォーマンス**: 大量データでの動作確認
+- **コールバック**: 状態変更イベントのモニタリング
+
 ## 今後の拡張予定
 
 - [ ] 仮想スクロール対応（大量データ対応）
