@@ -1,18 +1,10 @@
 /**
- * Shared layer exports - UI・Worker共通エクスポート
+ * @file shared/index.ts
+ * @description Shared exports for Folder plugin (used by both UI and Worker)
  */
 
-// API interface definitions
-export * from './api';
+// Export shared types
+export * from '../types';
 
-// Type definitions
-export * from './types';
-
-// Metadata
-export * from './metadata';
-
-// Constants
-export * from './constants';
-
-// Utilities
-export * from './utils';
+// Export entity definition
+export * from '../entities/FolderEntity';
