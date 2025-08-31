@@ -30,6 +30,7 @@
     "@emotion/styled": "^11.13.0",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@mui/icons-material": "^6.1.8",
     "@mui/material": "^6.1.8",
