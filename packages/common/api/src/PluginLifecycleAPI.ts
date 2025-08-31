@@ -83,7 +83,7 @@ export interface PluginDependencyInfo {
 
 export interface BulkOperationOptions {
   operation: 'register' | 'unregister';
-  definition?: PluginDefinition[];
+  plugins?: PluginDefinition[]; // Added for bulk registration
   nodeTypes?: NodeType[];
 }
 

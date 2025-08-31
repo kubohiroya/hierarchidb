@@ -10,7 +10,7 @@ import {
   Terrain as EnvironmentalIcon,
   Business as EconomicIcon,
 } from '@mui/icons-material';
-import type { CategoryOption } from '@hierarchidb/node-type-folder-plugin/ui';
+import type { CategoryOption } from '@hierarchidb/folder-plugin/ui';
 
 /**
  * ShapeCategory - 地理形状カテゴリのブランド型

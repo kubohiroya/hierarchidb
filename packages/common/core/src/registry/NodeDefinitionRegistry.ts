@@ -1,8 +1,8 @@
 /**
  * @file NodeDefinitionRegistry.ts
  * @deprecated This file has been moved to the worker package.
- * Import from @hierarchidb/runtime-worker instead.
- * @see @hierarchidb/runtime-worker/src/registry/NodeDefinitionRegistry.ts
+ * Import from @hierarchidb/runtime-worker-worker instead.
+ * @see @hierarchidb/runtime-worker-worker/src/registry/NodeDefinitionRegistry.ts
  */
 
 import { NodeType, WorkingCopyProperties } from '@hierarchidb/common-type';

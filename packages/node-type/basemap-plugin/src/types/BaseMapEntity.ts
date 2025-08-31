@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, EntityId, WorkingCopy } from '@hierarchidb/common-type';
-import type { FolderEntity, FolderEntityWorkingCopy } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity, FolderEntityWorkingCopy } from '@hierarchidb/folder-plugin';
 
 /**
  * Map style configuration

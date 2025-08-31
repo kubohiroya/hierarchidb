@@ -261,13 +261,13 @@ The plugin includes comprehensive test coverage:
 
 ```bash
 # Run all shape-plugin plugin tests
-pnpm --filter @hierarchidb/node-type-shape-plugin-plugin test
+pnpm --filter @hierarchidb/shape-plugin test
 
 # Run specific test file
-pnpm --filter @hierarchidb/node-type-shape-plugin-plugin test ErrorHandlingMigration
+pnpm --filter @hierarchidb/shape-plugin test ErrorHandlingMigration
 
 # Run tests in watch mode
-pnpm --filter @hierarchidb/node-type-shape-plugin-plugin test --watch
+pnpm --filter @hierarchidb/shape-plugin test --watch
 ```
 
 ## Development
@@ -276,13 +276,13 @@ pnpm --filter @hierarchidb/node-type-shape-plugin-plugin test --watch
 
 ```bash
 # Build plugin
-pnpm --filter @hierarchidb/node-type-shape-plugin-plugin build
+pnpm --filter @hierarchidb/shape-plugin build
 
 # Build with dependencies
-turbo run build --filter @hierarchidb/node-type-shape-plugin-plugin
+turbo run build --filter @hierarchidb/shape-plugin
 
 # Development mode with hot reload
-pnpm --filter @hierarchidb/node-type-shape-plugin-plugin dev
+pnpm --filter @hierarchidb/shape-plugin dev
 ```
 
 ### Project Structure

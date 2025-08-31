@@ -6,7 +6,7 @@
 import type { Table } from 'dexie';
 import type { NodeId, EntityId, NodeType } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import {
   ShapeEntity,
   ShapeWorkingCopy,

@@ -13,7 +13,7 @@ export function createWorkingCopyFromEntity(entity: ProjectEntity): ProjectWorki
     isWorkingCopy: true,
     originalId: entity.id,
     isDirty: false,
-    copiedAt: Date.now()
+    copiedAt: Date.now(),
   };
 }
 
@@ -23,19 +23,12 @@ export function createWorkingCopyFromEntity(entity: ProjectEntity): ProjectWorki
 export function mapWorkingCopyToUpdates(workingCopy: ProjectWorkingCopy): Partial<ProjectEntity> {
   // Remove working copy specific fields
   const { isWorkingCopy, originalId, isDirty, copiedAt, ...updates } = workingCopy;
-  
+
   return {
     ...updates,
     updatedAt: Date.now(),
-    updatedBy: 'system'
+    updatedBy: 'system',
   };
-}
-
-/**
- * Generate a unique ID for entities
- */
-export function generateId(): string {
-  return crypto.randomUUID();
 }
 
 /**
@@ -110,12 +103,7 @@ export function isPointInBoundingBox(
   }
 ): boolean {
   const [lon, lat] = point;
-  return (
-    lon >= bbox.minLon &&
-    lon <= bbox.maxLon &&
-    lat >= bbox.minLat &&
-    lat <= bbox.maxLat
-  );
+  return lon >= bbox.minLon && lon <= bbox.maxLon && lat >= bbox.minLat && lat <= bbox.maxLat;
 }
 
 /**

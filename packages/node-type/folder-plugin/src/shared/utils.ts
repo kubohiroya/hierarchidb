@@ -2,10 +2,7 @@
  * Folder plugin utilities - UI・Worker共通ユーティリティ
  */
 
-import {
-  NodeId,
-  EntityId,
-} from '@hierarchidb/common-type';
+import { NodeId, EntityId } from '@hierarchidb/common-type';
 import {
   FolderEntity,
   FolderDisplayData,
@@ -53,11 +50,11 @@ export function validateFolderName(name: string): { isValid: boolean; error?: st
 export function validateFolderData(data: CreateFolderData): { isValid: boolean; errors: string[] } {
   // Simple validation for folder data
   const errors: string[] = [];
-  
+
   if (!data.name || data.name.trim().length === 0) {
     errors.push('Name is required');
   }
-  
+
   if (data.name && data.name.length > 255) {
     errors.push('Name is too long');
   }
@@ -111,30 +108,6 @@ export function sanitizeFolderName(name: string): string {
     .substring(0, FOLDER_VALIDATION.NAME_MAX_LENGTH);
 }
 
-/**
- * Entity conversion utilities
- */
-export function folderEntityToDisplayData(
-  entity: FolderEntity,
-  childCount: number = 0
-): FolderDisplayData {
-  return {
-    id: entity.nodeId,
-    name: entity.name,
-    description: entity.description,
-    iconColor: entity.settings?.displayOptions?.iconColor || getDefaultIconColor(),
-    hasChildren: childCount > 0,
-    childCount,
-    isReadOnly: entity.settings?.permissions?.isReadOnly || false,
-    isPublic: entity.settings?.permissions?.isPublic || false,
-    tags: entity.tags || [],
-    createdAt: entity.createdAt,
-    updatedAt: entity.updatedAt,
-    lastAccessedAt: entity.statistics?.lastAccessedAt,
-    accessCount: entity.statistics?.accessCount,
-  };
-}
-
 export function createEmptyFolderEntity(nodeId: NodeId, name: string): FolderEntity {
   const now = Date.now();
 
@@ -167,8 +140,6 @@ export function createEmptyFolderEntity(nodeId: NodeId, name: string): FolderEnt
       descendantCount: 0,
       accessCount: 0,
     },
-    tags: [],
-    metadata: {},
     createdAt: now,
     updatedAt: now,
     version: 1,

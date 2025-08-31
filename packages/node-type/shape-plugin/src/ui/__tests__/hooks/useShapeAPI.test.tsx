@@ -7,7 +7,7 @@ import { renderHook } from '@testing-library/react';
 import { useShapeAPI, useShapeAPIGetter } from '../../hooks/useShapeAPI';
 import type { ShapeAPI } from '../../../shared';
 
-// Mock @hierarchidb/runtime-client
+// Mock @hierarchidb/runtime-shared-client
 const mockWorkerAPI = {
   getPluginRegistryAPI: vi.fn()
 };

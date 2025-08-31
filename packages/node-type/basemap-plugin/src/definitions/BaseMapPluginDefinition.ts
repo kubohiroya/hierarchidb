@@ -3,7 +3,7 @@
  * @description BaseMap plugin definition extending folder plugin
  */
 
-import type { PluginDefinition } from '@hierarchidb/node-type-base-plugin';
+import { PluginDefinition } from '@hierarchidb/common-type';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types';
 
@@ -18,17 +18,17 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
   displayName: 'ベースマップ',
   description: 'Geographic base layer configuration and management',
   version: '1.0.0',
-  
+
   // Extension configuration
   extends: 'folder',
-  
+
   // Handler instance
   handler: new BaseMapEntityHandler(),
-  
+
   // Icon and UI
   icon: 'Map',
   color: '#4285F4',
-  
+
   // Capabilities
   capabilities: {
     canHaveChildren: true,
@@ -40,14 +40,14 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
     supportsWorkingCopy: true,
     supportsVersioning: true,
   },
-  
+
   // Category settings
   category: {
     primary: 'geographic',
     secondary: 'visualization',
     tags: ['map', 'gis', 'geographic', 'spatial'],
   },
-  
+
   // UI Components
   components: {
     display: 'BaseMapDisplay',
@@ -55,7 +55,7 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
     editor: 'BaseMapPanel',
     icon: 'MapIcon',
   },
-  
+
   // Dialog steps for creation/editing
   dialogSteps: [
     {
@@ -89,7 +89,7 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
       required: false,
     },
   ],
-  
+
   // Default values
   defaults: {
     mapStyle: {
@@ -109,7 +109,7 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
       showLabels: true,
     },
   },
-  
+
   // Validation rules
   validation: {
     name: {
@@ -120,12 +120,12 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
     custom: {
       viewport: (viewport: any) => {
         if (!viewport) return { valid: false, message: 'Viewport is required' };
-        
+
         const { center, zoom } = viewport;
         if (!Array.isArray(center) || center.length !== 2) {
           return { valid: false, message: 'Invalid center coordinates' };
         }
-        
+
         const [lng, lat] = center;
         if (lng < -180 || lng > 180) {
           return { valid: false, message: 'Longitude must be between -180 and 180' };
@@ -136,25 +136,25 @@ export const BaseMapPluginDefinition: PluginDefinition<BaseMapEntity, BaseMapWor
         if (zoom < 0 || zoom > 24) {
           return { valid: false, message: 'Zoom must be between 0 and 24' };
         }
-        
+
         return { valid: true };
       },
     },
   },
-  
+
   // Export/Import configuration
   exportConfig: {
     includeChildren: true,
     format: 'json',
     fields: ['name', 'description', 'mapStyle', 'viewport', 'displayOptions'],
   },
-  
+
   // Search configuration
   searchConfig: {
     searchableFields: ['name', 'description', 'mapStyle.style'],
     sortableFields: ['name', 'createdAt', 'updatedAt'],
   },
-  
+
   // Permission settings
   permissions: {
     create: ['admin', 'editor'],

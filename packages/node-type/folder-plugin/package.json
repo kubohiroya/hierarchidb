@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/node-type-folder-plugin",
+  "name": "@hierarchidb/folder-plugin",
   "version": "1.0.0",
   "description": "Basic folder plugin for HierarchiDB UI layer",
   "types": "dist/index.d.ts",
@@ -37,18 +37,18 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/node-type-base-plugin": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "dexie": "^4.0.8",
-    "react-tag-input": "^6.10.3",
-    "@mui/x-date-pickers": "^7.0.0",
-    "react-hook-form": "^7.50.1",
-    "@hookform/resolvers": "^3.3.4",
-    "yup": "^1.4.0",
-    "uuid": "^9.0.1"
+    "@hookform/resolvers": "^3.10.0",
+    "@mui/x-date-pickers": "^7.29.4",
+    "dexie": "^4.2.0",
+    "react-hook-form": "^7.62.0",
+    "react-tag-input": "^6.10.6",
+    "uuid": "^9.0.1",
+    "yup": "^1.7.0"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -61,10 +61,10 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@vitejs/plugin-react": "^5.0.1",
-    "fake-indexeddb": "^6.1.0",
-    "jsdom": "^26.1.0",
-    "@types/uuid": "^9.0.7"
+    "@types/uuid": "^9.0.8",
+    "@vitejs/plugin-react": "^5.0.2",
+    "fake-indexeddb": "^6.2.2",
+    "jsdom": "^26.1.0"
   },
   "keywords": [
     "hierarchidb",

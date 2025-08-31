@@ -3,7 +3,6 @@ import type {
   TreeNode,
   NodeId,
   NodeType,
-  EntityId,
   TreeId,
 } from '@hierarchidb/common-type';
 import { ProjectEntityHandler } from './handlers/ProjectEntityHandler';
@@ -11,16 +10,7 @@ import { projectDB } from './database/project-database';
 import type { ProjectEntity } from './types/project-types';
 
 // Main plugin definition
-export const ProjectPluginDefinition: PluginDefinition<
-  ProjectEntity,
-  ProjectEntity,
-  ProjectEntity & {
-    isWorkingCopy: boolean;
-    originalId: EntityId;
-    isDirty: boolean;
-    copiedAt: number;
-  }
-> = {
+export const ProjectPluginDefinition: PluginDefinition = {
   nodeType: 'project-plugin' as NodeType,
   name: 'project-plugin',
   displayName: 'Project',
@@ -31,8 +21,9 @@ export const ProjectPluginDefinition: PluginDefinition<
 
   database: {
     dbName: 'projectDB',
-    tableName: 'projects',
-    schema: '&id, nodeId, type, name, category, [category+name], createdAt, updatedAt',
+    schema: {
+      projects: '&id, nodeId, type, name, category, [category+name], createdAt, updatedAt',
+    },
     version: 1,
   },
 
@@ -77,11 +68,6 @@ export const ProjectPluginDefinition: PluginDefinition<
   },
 
   validation: {
-    canCreate: async (_parentNode: TreeNode, _context: any) => {
-      // Projects can be created anywhere
-      return { valid: true };
-    },
-
     canUpdate: async (
       _node: TreeNode,
       entity: ProjectEntity,

@@ -93,7 +93,7 @@ export class MappingCompiler {
     const {
       optimizationLevel = 'aggressive',
       enableCache = true,
-      parallelThreshold = 1000,
+      parallelThreshold: _parallelThreshold = 1000,
     } = options;
 
     // Generate cache key

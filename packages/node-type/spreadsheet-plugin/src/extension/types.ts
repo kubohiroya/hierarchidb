@@ -5,7 +5,7 @@
  * 🟢 信頼性レベル: TypeScriptベストプラクティスに基づく
  */
 
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/folder-plugin';
 import type { DataSourceType } from './constants';
 
 // =========================================

@@ -14,7 +14,7 @@ import { shapePluginAPI } from './api/ShapePluginAPI';
 export async function registerShapePlugin(): Promise<void> {
   try {
     // Register node type definition with the plugin system
-    // Note: In actual implementation, this would import from '@hierarchidb/runtime-worker'
+    // Note: In actual implementation, this would import from '@hierarchidb/runtime-worker-worker'
     // For now, we'll use a mock implementation
     const registry = {
       register: async (definition: any) => {
@@ -62,7 +62,7 @@ export async function unregisterShapePlugin(): Promise<void> {
     }
     
     // Unregister from plugin system
-    // Note: In actual implementation, this would import from '@hierarchidb/runtime-worker'
+    // Note: In actual implementation, this would import from '@hierarchidb/runtime-worker-worker'
     const registry = {
       unregister: async (nodeType: string) => {
         console.log('Mock registry: unregistering plugin', nodeType);

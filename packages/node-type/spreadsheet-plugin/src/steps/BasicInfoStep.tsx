@@ -15,8 +15,8 @@ import {
 import { TableChart as TableIcon } from '@mui/icons-material';
 import { useTranslation } from 'provider-i18next';
 import type { TagId } from '@hierarchidb/common-type';
-import { TagInput } from '@hierarchidb/node-type-folder-plugin';
-import { CategorySelector } from '@hierarchidb/node-type-folder-plugin';
+import { TagInput } from '@hierarchidb/folder-plugin';
+import { CategorySelector } from '@hierarchidb/folder-plugin';
 import type { SpreadsheetCategory } from '../types/category-types';
 
 export interface BasicInfoStepProps {

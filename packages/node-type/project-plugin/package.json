@@ -23,7 +23,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@hierarchidb/node-type-base-plugin": "workspace:*",
+    "@hierarchidb/base-plugin": "workspace:*",
     "@deck.gl/aggregation-layers": "^9.0.0",
     "@deck.gl/core": "^9.0.0",
     "@deck.gl/extensions": "^9.0.0",
@@ -35,7 +35,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@mui/material": "^6.1.8",

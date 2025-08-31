@@ -5,7 +5,7 @@
  * 🟢 信頼性レベル: EXTENDING_FOLDER_PLUGIN.mdの仕様に基づく
  */
 
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/folder-plugin';
 
 // Step コンポーネントのインポート（将来の拡張用）
 // import { DataSourceStep } from '../steps/DataSourceStep';

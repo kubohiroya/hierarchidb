@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/node-type-location-plugin",
+  "name": "@hierarchidb/location-plugin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -23,10 +23,10 @@
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/node-type-base-plugin": "workspace:*",
+    "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "@hierarchidb/node-type-shape-plugin": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@mui/material": "^6.0.0",
     "@mui/icons-material": "^6.0.0",

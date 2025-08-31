@@ -15,7 +15,7 @@ import { ShapePluginDefinition } from '~/definitions/ShapePluginDefinition';
 import { ShapeEntityHandler } from '~/handlers/ShapeEntityHandler';
 
 // Mock external dependencies
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   BaseEntityHandler: class MockBaseEntityHandler {
     constructor() {}
   },

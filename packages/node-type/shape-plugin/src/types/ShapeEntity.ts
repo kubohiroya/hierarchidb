@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/core';
-import type { DataSourceName } from '@hierarchidb/runtime-datasource';
+import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 import type { BatchConfig } from './BatchConfig';
 
 /**

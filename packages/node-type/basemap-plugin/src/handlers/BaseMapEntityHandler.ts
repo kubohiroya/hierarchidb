@@ -10,7 +10,7 @@ import {
   type FolderEntityExtended,
   type FolderSearchCriteria,
   type FolderEntity 
-} from '@hierarchidb/node-type-folder-plugin';
+} from '@hierarchidb/folder-plugin';
 import type {
   BaseMapEntity,
   BaseMapWorkingCopy,

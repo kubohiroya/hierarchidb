@@ -4,7 +4,7 @@ import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 
 // Mock the FolderEntityHandler since BaseMapEntityHandler extends it
-vi.mock('@hierarchidb/node-type-folder-plugin-plugin', () => ({
+vi.mock('@hierarchidb/folder-plugin', () => ({
   FolderEntityHandler: class {
     async createEntity(nodeId: NodeId, data?: any) {
       return {

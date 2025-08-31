@@ -8,14 +8,14 @@
  * - 無効な国コード処理のエラーハンドリングを検証
  * 
  * 前提条件：
- * - @hierarchidb/runtime-datasourceパッケージの統合が完了
+ * - @hierarchidb/runtime-ui-datasourceパッケージの統合が完了
  * - fetch-metadataパッケージからのメタデータ読み込み機能が実装済み
  * - DataSourceManagerの各戦略クラスが実装済み
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DataSourceManager } from '@hierarchidb/runtime-datasource';
-import type { DataSourceName } from '@hierarchidb/runtime-datasource';
+import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
+import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 
 describe('DataSourceManager Migration Tests', () => {
   let dataSourceManager: DataSourceManager;

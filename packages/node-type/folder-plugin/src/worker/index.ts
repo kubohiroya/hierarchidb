@@ -48,19 +48,19 @@ export const routing: PluginRoutingConfig = {
   actions: {
     view: {
       path: 'view',
-      componentPath: '@hierarchidb/node-type-folder-plugin/ui/FolderView',
+      componentPath: '@hierarchidb/folder-plugin/ui/FolderView',
     },
     edit: {
       path: 'edit',
-      componentPath: '@hierarchidb/node-type-folder-plugin/ui/FolderEditDialog',
+      componentPath: '@hierarchidb/folder-plugin/ui/FolderEditDialog',
     },
     create: {
       path: 'create',
-      componentPath: '@hierarchidb/node-type-folder-plugin/ui/FolderCreateDialog',
+      componentPath: '@hierarchidb/folder-plugin/ui/FolderCreateDialog',
     },
     settings: {
       path: 'settings',
-      componentPath: '@hierarchidb/node-type-folder-plugin/ui/FolderSettings',
+      componentPath: '@hierarchidb/folder-plugin/ui/FolderSettings',
     },
   },
   defaultAction: 'view',

@@ -1,15 +1,7 @@
-import type { PluginDefinition, NodeId } from '@hierarchidb/common-type';
-import type { PropertyResolverEntity, PropertyResolverWorkingCopy } from '../types';
-import { PropertyResolverEntityHandler } from '../handlers/PropertyResolverEntityHandler';
+import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
-export const PropertyResolverDefinition: Partial<
-  PluginDefinition<
-    PropertyResolverEntity,
-    never, // No sub-entities
-    PropertyResolverWorkingCopy
-  >
-> = {
-  nodeType: 'propertyresolver-plugin',
+export const PropertyResolverDefinition: Partial<PluginDefinition> = {
+  nodeType: 'propertyresolver-plugin' as NodeType,
   name: 'PropertyResolver',
   displayName: 'Property Resolver',
 
@@ -20,7 +12,7 @@ export const PropertyResolverDefinition: Partial<
   },
 
   database: {
-    entityStore: 'propertyResolvers',
+    dbName: 'propertyResolvers',
     schema: {
       '&id': 'EntityId',
       nodeId: 'NodeId',
@@ -34,21 +26,9 @@ export const PropertyResolverDefinition: Partial<
     version: 1,
   },
 
-  entityHandler: new PropertyResolverEntityHandler(),
-
-  lifecycle: {
-    afterCreate: async (node, context) => {
-      console.log(`PropertyResolver node created: ${node.id}`);
-    },
-
-    beforeDelete: async (node, context) => {
-      console.log(`PropertyResolver node deleting: ${node.id}`);
-    },
-  },
-
   ui: {
     // These will be set by the UI plugin registration
-    dialogComponent: null,
-    panelComponent: null,
+    dialogComponentPath: undefined,
+    panelComponentPath: undefined,
   },
 };

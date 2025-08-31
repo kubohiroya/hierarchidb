@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/node-type-basemap-plugin",
+  "name": "@hierarchidb/basemap-plugin",
   "version": "1.0.0",
   "type": "module",
   "description": "BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management",
@@ -28,25 +28,25 @@
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/node-type-base-plugin": "workspace:*",
-    "@hierarchidb/node-type-folder-plugin": "workspace:*",
-    "dexie": "^4.0.0",
-    "maplibre-gl": "^4.0.0"
+    "dexie": "^4.2.0",
+    "maplibre-gl": "^4.7.1"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.0.0",
-    "jsdom": "^22.0.0",
-    "fake-indexeddb": "^4.0.0"
+    "@testing-library/react": "^14.3.1",
+    "fake-indexeddb": "^4.0.2",
+    "jsdom": "^22.1.0"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1"
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "react": ">=18.0.0"
   },
   "keywords": [
     "hierarchidb",

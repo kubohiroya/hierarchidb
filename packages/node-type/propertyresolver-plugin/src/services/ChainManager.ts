@@ -1,5 +1,4 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { PropertyResolverEntity } from '~/types';
 
 /**
  * Chain execution strategies
@@ -78,7 +77,7 @@ export interface ChainExecutionResult {
  */
 export class ChainManager {
   private chains: Map<string, ResolverChain> = new Map();
-  private resolverCache: Map<NodeId, PropertyResolverEntity> = new Map();
+  // private resolverCache: Map<NodeId, PropertyResolverEntity> = new Map();
 
   /**
    * Create a new resolver chain
@@ -104,7 +103,7 @@ export class ChainManager {
   async executeChain(
     chainId: string, 
     data: any,
-    options?: {
+    _options?: {
       timeout?: number;
       parallel?: boolean;
       cache?: boolean;
@@ -349,28 +348,28 @@ export class ChainManager {
     strategy: ConflictResolution
   ): any {
     if (results.length === 0) return null;
-    if (results.length === 1) return results[0].data;
+    if (results.length === 1) return results[0]?.data;
 
     switch (strategy) {
       case 'last-wins':
-        return results[results.length - 1].data;
+        return results[results.length - 1]?.data;
       
       case 'first-wins':
-        return results[0].data;
+        return results[0]?.data;
       
       case 'merge':
         // Deep merge all results
-        return results.reduce((acc, r) => this.deepMerge(acc, r.data), {});
+        return results.reduce((acc, r) => this.deepMerge(acc, r?.data), {});
       
       case 'error':
         throw new Error('Conflict detected in parallel execution');
       
       case 'custom':
         // Would use custom resolver function
-        return results[0].data;
+        return results[0]?.data;
       
       default:
-        return results[0].data;
+        return results[0]?.data;
     }
   }
 
@@ -384,9 +383,9 @@ export class ChainManager {
     const result = { ...target };
     
     for (const key in source) {
-      if (source.hasOwnProperty(key)) {
-        if (typeof source[key] === 'object' && !Array.isArray(source[key])) {
-          result[key] = this.deepMerge(target[key], source[key]);
+      if (Object.hasOwn(source, key)) {
+        if (typeof source[key] === 'object' && !Array.isArray(source[key]) && source[key] !== null) {
+          result[key] = this.deepMerge(target?.[key], source[key]);
         } else {
           result[key] = source[key];
         }

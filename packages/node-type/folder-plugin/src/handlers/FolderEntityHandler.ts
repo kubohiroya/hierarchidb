@@ -9,17 +9,9 @@ import {
   HierarchicalEntityHandler,
   type HierarchicalEntity,
   type HierarchicalSearchCriteria,
-} from '@hierarchidb/node-type-base-plugin';
+} from '@hierarchidb/base-plugin';
 
-import type {
-  FolderEntity,
-  FolderBookmark,
-  FolderTemplate,
-  FolderSettings,
-} from '../entities/FolderEntity';
-import type {
-  FolderEntityWorkingCopy,
-} from '../types';
+import type { FolderEntity, FolderBookmark, FolderTemplate } from '../entities/FolderEntity';
 import { FolderDatabase } from '../database/FolderDatabase';
 
 /**
@@ -240,7 +232,10 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
   /**
    * フォルダー作成の多段階ダイアログのステップ能力を評価
    */
-  async getStepCapabilities(data: any, step: number): Promise<{
+  async getStepCapabilities(
+    data: any,
+    step: number
+  ): Promise<{
     canNavigateTo: boolean;
     canStartBatch: boolean;
     canSave: boolean;
@@ -253,7 +248,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     // Step 2: テンプレートとブックマーク設定
 
     const totalSteps = 3;
-    
+
     switch (step) {
       case 0: // 基本情報ステップ
         return {
@@ -261,7 +256,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
           canStartBatch: false, // 基本情報が必要なので初期ステップではバッチ処理不可
           canSave: false, // 最低限の情報が必要
           canProceedToNext: !!(data.name && data.name.trim().length > 0),
-          canBackToPrevious: false // 最初のステップ
+          canBackToPrevious: false, // 最初のステップ
         };
 
       case 1: // 権限設定ステップ
@@ -271,7 +266,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
           canStartBatch: hasBasicInfo, // 基本情報があればバッチ処理可能
           canSave: hasBasicInfo, // 基本情報があれば保存可能
           canProceedToNext: true, // 権限設定はオプション
-          canBackToPrevious: true
+          canBackToPrevious: true,
         };
 
       case 2: // テンプレートとブックマーク設定ステップ
@@ -281,7 +276,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
           canStartBatch: canNavigateToFinal,
           canSave: canNavigateToFinal,
           canProceedToNext: false, // 最終ステップ
-          canBackToPrevious: true
+          canBackToPrevious: true,
         };
 
       default:
@@ -290,7 +285,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
           canStartBatch: false,
           canSave: false,
           canProceedToNext: false,
-          canBackToPrevious: false
+          canBackToPrevious: false,
         };
     }
   }
@@ -318,7 +313,11 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     }
 
     // 説明の長さチェック
-    if (data.description && typeof data.description === 'string' && data.description.length > 1000) {
+    if (
+      data.description &&
+      typeof data.description === 'string' &&
+      data.description.length > 1000
+    ) {
       warnings.push('説明が長すぎます（1000文字以下を推奨）');
     }
 
@@ -355,8 +354,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
-
 }

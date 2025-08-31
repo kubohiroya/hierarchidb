@@ -5,7 +5,7 @@
 import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
 
 export const FolderMetadata: PluginMetadata = {
-  id: '@hierarchidb/node-type-folder-plugin-plugin',
+  id: '@hierarchidb/folder-plugin',
   nodeType: 'folder' as NodeType,
   name: 'Folder',
   description: 'Hierarchical folder-plugin organization plugin',

@@ -11,11 +11,11 @@ import {
   Typography,
   FormHelperText,
 } from '@mui/material';
-import { BaseFolderPlugin } from '@hierarchidb/node-type-folder-plugin';
+import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
 import type {
   FolderEntity,
   FolderNodeDefinition,
-} from '@hierarchidb/node-type-folder-plugin';
+} from '@hierarchidb/folder-plugin';
 
 /**
  * StyleMap extension data

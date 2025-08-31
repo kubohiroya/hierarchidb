@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph移植: バッチ処理設定の型定義
  */
 
-import type { DataSourceName } from '@hierarchidb/runtime-datasource';
+import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 
 export type FeatureFilterMethod = "bbox_only" | "polygon_only" | "hybrid";
 

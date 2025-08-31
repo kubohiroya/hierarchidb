@@ -25,7 +25,7 @@ const mockEphemeralDB = {
   },
 };
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   EphemeralDB: {
     getInstance: () => mockEphemeralDB,
   },

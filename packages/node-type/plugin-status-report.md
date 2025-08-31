@@ -21,7 +21,7 @@
 ## 主要な問題パターン
 
 ### 1. 共通の型定義エラー
-- `@hierarchidb/common-plugin-base` が `@hierarchidb/node-type-base-plugin` に変更されたことによる参照エラー
+- `@hierarchidb/common-plugin-base` が `@hierarchidb/base-plugin` に変更されたことによる参照エラー
 - `FolderEntity`, `FolderEntityWorkingCopy` などの型がエクスポートされていない
 - `tags` と `metadata` フィールドが削除されたことによる不整合
 
@@ -73,7 +73,7 @@ export * from './FolderEntityWorkingCopy';
 // 変更前
 import { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
 // 変更後
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 ```
 
 3. **削除されたフィールドの除去**

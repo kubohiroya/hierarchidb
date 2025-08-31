@@ -11,7 +11,7 @@ import type {
   ValidationResult,
   BoundingBox,
   AdminLevelInfo,
-} from '@hierarchidb/runtime-datasource';
+} from '@hierarchidb/runtime-ui-datasource';
 
 // === API Method Signatures ===
 
@@ -186,7 +186,7 @@ export interface ResourceUsage {
 }
 
 // === Data Source Types ===
-// Types imported from @hierarchidb/runtime-datasource
+// Types imported from @hierarchidb/runtime-ui-datasource
 
 export interface ValidationError {
   code: string;

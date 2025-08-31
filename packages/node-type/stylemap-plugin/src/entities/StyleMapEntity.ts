@@ -67,7 +67,7 @@ export interface StyleMapColorRule {
  * 【継承関係】: SpreadsheetEntity -> FolderEntity -> BaseEntity
  * 🟢 信頼性レベル: プラグイン拡張仕様準拠
  */
-//import type { SpreadsheetEntity } from '@hierarchidb/node-type-spreadsheet-plugin';
+//import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { StyleMapConfig } from '../types/styleMapTypes';
 
 // 【色変換で使用する型定義群】

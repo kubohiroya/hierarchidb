@@ -8,7 +8,7 @@ import type { Collection } from 'dexie';
 import { 
   BaseEntityHandler,
   type BaseSearchCriteria
-} from '@hierarchidb/node-type-base-plugin';
+} from '@hierarchidb/base-plugin';
 
 /**
  * Metadata search criteria

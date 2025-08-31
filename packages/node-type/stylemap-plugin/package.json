@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/node-type-stylemap-plugin",
+  "name": "@hierarchidb/stylemap-plugin",
   "version": "1.0.0",
   "type": "module",
   "description": "StyleMap Plugin for HierarchiDB - CSV/TSV data to MapLibre style mapping",
@@ -38,8 +38,8 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/node-type-spreadsheet-plugin": "workspace:*",
-    "@hierarchidb/node-type-folder-plugin": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:^",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@mui/icons-material": "^6.1.6",
@@ -90,7 +90,7 @@
       "category": "visualization",
       "extends": "spreadsheet",
       "dependencies": [
-        "@hierarchidb/node-type-spreadsheet-plugin"
+        "@hierarchidb/spreadsheet-plugin"
       ],
       "exports": {
         "definition": "StyleMapDefinition",

@@ -5,7 +5,7 @@
 
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SpreadsheetCSVApiDriver as StyleMapCSVApiDriver } from '../../services';
+import { SpreadsheetCSVApiDriver as StyleMapCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
 import type {
   CSVTableMetadata,
@@ -208,11 +208,11 @@ Australia,25690000,51812,Oceania,2021`;
     expect(finalData.rows[0]).toHaveProperty('gdp_per_capita');
 
     // Step 5: Reference management
-    await csvApi.addTableReference(tableMetadata.id, 'stylemap-plugin-plugin');
+    await csvApi.addTableReference(tableMetadata.id, 'stylemap-plugin');
 
     const referencedTable = await csvApi.getTableMetadata(tableMetadata.id);
     expect(referencedTable?.referenceCount).toBe(1);
-    expect(referencedTable?.referencingPlugins).toContain('stylemap-plugin-plugin');
+    expect(referencedTable?.referencingPlugins).toContain('stylemap-plugin');
 
     // Step 6: Verify data quality for StyleMap usage
     // Test that all required fields have valid data

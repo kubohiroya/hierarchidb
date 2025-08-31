@@ -26,7 +26,7 @@ import type {
 } from './types';
 import { WorkerPoolManager } from './workers/WorkerPoolManager';
 import { BatchSessionManager } from './batch/BatchSessionManager';
-import { DataSourceManager } from '@hierarchidb/runtime-datasource';
+import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
 import { VectorTileService } from './tiles/VectorTileService';
 import { UrlMetadata } from '~/types/index';
 

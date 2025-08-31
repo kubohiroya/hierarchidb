@@ -73,7 +73,7 @@ my-plugin/
 ### 1. package.json
 ```json
 {
-  "name": "@hierarchidb/node-type-my-plugin",
+  "name": "@hierarchidb/my-plugin",
   "version": "1.0.0",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

@@ -1,5 +1,5 @@
 import type { CountryMetadata } from '~/types';
-import type { CountryMetadata as FetchedCountryMetadata } from '@hierarchidb/runtime-fetch-metadata';
+import type { CountryMetadata as FetchedCountryMetadata } from '@hierarchidb/runtime-shared-fetch-metadata';
 
 /**
  * MetadataLoader service
@@ -47,22 +47,22 @@ export class MetadataLoader {
 
       switch (dataSource) {
         case 'GADM':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/gadm.json').then(
+          rawData = await import('@hierarchidb/runtime-shared-fetch-metadata/output/gadm.json').then(
             (m) => m.default
           );
           break;
         case 'GeoBoundaries':
           rawData = await import(
-            '@hierarchidb/runtime-fetch-metadata/output/geoboundaries.json'
+            '@hierarchidb/runtime-shared-fetch-metadata/output/geoboundaries.json'
           ).then((m) => m.default);
           break;
         case 'NaturalEarth':
           rawData = await import(
-            '@hierarchidb/runtime-fetch-metadata/output/naturalearth.json'
+            '@hierarchidb/runtime-shared-fetch-metadata/output/naturalearth.json'
           ).then((m) => m.default);
           break;
         case 'OpenStreetMap':
-          rawData = await import('@hierarchidb/runtime-fetch-metadata/output/osm.json').then(
+          rawData = await import('@hierarchidb/runtime-shared-fetch-metadata/output/osm.json').then(
             (m) => m.default
           );
           break;

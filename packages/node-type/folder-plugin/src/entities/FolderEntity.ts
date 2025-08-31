@@ -1,17 +1,17 @@
 /**
  * Folder Entity Definitions
  * 6分類エンティティシステム対応
- * 
+ *
  * FolderはTreeNodeそのものに近い存在だが、
  * フォルダ固有のメタデータや設定を管理するためのエンティティを定義
  */
 
-import type { 
+import type {
   NodeId,
   EntityId,
   PeerEntity,
   GroupEntity,
-  Timestamp
+  Timestamp,
 } from '@hierarchidb/common-type';
 
 /**
@@ -21,15 +21,15 @@ import type {
 export interface FolderEntity extends PeerEntity {
   id: EntityId; // Add explicit id field for compatibility
   nodeId: NodeId;
-  
+
   // フォルダ基本情報
   name: string;
   description?: string;
   category?: string; // カテゴリ追加
-  
+
   // Simplified settings for compatibility with existing code
   settings?: FolderSettings;
-  
+
   // フォルダ統計 (for compatibility with shared code)
   statistics?: {
     childCount: number;
@@ -38,7 +38,7 @@ export interface FolderEntity extends PeerEntity {
     lastAccessedAt?: Timestamp;
     accessCount?: number;
   };
-  
+
   // タイムスタンプ（PeerEntityから継承）
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -52,7 +52,7 @@ export interface FolderSettings {
   allowNestedFolders?: boolean;
   maxDepth?: number;
   sortOrder?: 'name' | 'date' | 'type' | 'size';
-  
+
   // Extended settings from the complex version
   displayOptions?: {
     iconColor?: string;
@@ -61,14 +61,14 @@ export interface FolderSettings {
     sortDirection?: 'asc' | 'desc';
     viewMode?: 'list' | 'grid' | 'tree';
   };
-  
+
   permissions?: {
     isPublic?: boolean;
     isReadOnly?: boolean;
     allowedUsers?: string[];
     deniedUsers?: string[];
   };
-  
+
   rules?: {
     maxChildren?: number;
     allowedChildTypes?: string[];
@@ -86,7 +86,7 @@ export interface FolderBookmark extends GroupEntity {
   folderId: EntityId; // Reference to folder-plugin entity (for compatibility with tests)
   nodeId: NodeId; // ブックマークを持つユーザーのルートノード
   groupId: string;
-  
+
   // ブックマーク情報 - compatible with test expectations
   name: string; // ユーザーが付けた名前
   url: string; // Bookmark URL
@@ -95,18 +95,18 @@ export interface FolderBookmark extends GroupEntity {
   label?: string; // Alternative name (optional)
   color?: string; // 視覚的な識別用の色
   icon?: string; // カスタムアイコン
-  
+
   // 使用統計
   accessCount?: number;
   lastAccessedAt?: Timestamp;
-  
+
   // 並び順
   sortOrder?: number;
-  
+
   // テスト互換性のための追加フィールド
   type: string;
   version: number;
-  
+
   // タイムスタンプ（GroupEntityから継承）
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -121,29 +121,29 @@ export interface FolderTemplate extends GroupEntity {
   folderId: EntityId; // Reference to folder-plugin entity (for compatibility with tests)
   nodeId: NodeId; // テンプレートを所有するノード
   groupId: string;
-  
+
   // テンプレート情報 - compatible with test expectations
   name: string; // Template name (for compatibility with tests)
   content: any; // Template content (for compatibility with tests)
   description?: string; // Optional description
   templateName?: string; // Alternative name (optional)
   templateDescription?: string;
-  
+
   // フォルダ構造定義
   structure?: FolderStructureNode;
-  
+
   // 使用統計
   usageCount?: number;
   lastUsedAt?: Timestamp;
-  
+
   // カテゴリと並び順
   category?: string;
   sortOrder?: number;
-  
+
   // テスト互換性のための追加フィールド
   type: string;
   version: number;
-  
+
   // タイムスタンプ（GroupEntityから継承）
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -169,7 +169,7 @@ export interface FolderWorkingCopy extends FolderEntity {
   workingCopyOf: NodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
-  
+
   // 編集中の変更追跡
   changes?: {
     renamedFrom?: string;
@@ -177,7 +177,7 @@ export interface FolderWorkingCopy extends FolderEntity {
     settingsChanged?: boolean;
     childrenModified?: boolean;
   };
-  
+
   // 24時間後に自動削除
   expiresAt?: Timestamp;
 }
@@ -198,7 +198,6 @@ export interface FolderOperationResult {
  */
 export interface FolderSearchQuery {
   name?: string;
-  // Tags should be queried via NodeTagAssociation
   parentId?: NodeId;
   hasChildren?: boolean;
   createdAfter?: Timestamp;

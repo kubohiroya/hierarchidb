@@ -145,7 +145,7 @@ export const StyleMapExtension: ExtendableNodeTypeDefinition<
 ```typescript
 // packages/node-type-plugin/stylemap-plugin/src/entities/StyleMapEntity.ts
 
-import type { FolderEntity } from '@hierarchidb/node-type-plugin-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-folder-plugin';
 
 // FolderEntityを拡張
 export interface StyleMapEntity extends FolderEntity {
@@ -182,7 +182,7 @@ export interface StyleMapStyle {
 ```typescript
 // packages/node-type-plugin/stylemap-plugin/src/handlers/StyleMapEntityHandler.ts
 
-import { FolderEntityHandler } from '@hierarchidb/node-type-plugin-folder-plugin';
+import { FolderEntityHandler } from '@hierarchidb/plugin-folder-plugin';
 import type { BaseEntityExtension } from '@hierarchidb/common-core/types/plugin-extension';
 
 export class StyleMapEntityHandler 

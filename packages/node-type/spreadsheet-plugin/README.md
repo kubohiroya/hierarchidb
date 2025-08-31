@@ -447,7 +447,7 @@ const SpreadsheetImportWizard = () => {
 ### 内部依存
 - `@hierarchidb/core` - 基本型定義
 - `@hierarchidb/ui-csv-extract` - CSV処理UI
-- `@hierarchidb/node-type-plugin-folder` - フォルダ機能継承
+- `@hierarchidb/plugin-folder` - フォルダ機能継承
 
 ### 外部依存
 - `dexie` - IndexedDBラッパー

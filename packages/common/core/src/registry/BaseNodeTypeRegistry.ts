@@ -2,7 +2,7 @@
  * @file BaseNodeTypeRegistry.ts
  * @deprecated This file has been moved to worker and plugin-registry packages.
  * Import from those packages directly instead.
- * @see @hierarchidb/runtime-worker/src/registry/BaseNodeTypeRegistry.ts
+ * @see @hierarchidb/runtime-worker-worker/src/registry/BaseNodeTypeRegistry.ts
  * @see @hierarchidb/runtime-plugin-registry/src/registry/BaseNodeTypeRegistry.ts
  */
 

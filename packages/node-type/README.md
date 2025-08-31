@@ -373,7 +373,7 @@ npm init -y
 ```json
 // package.json
 {
-  "name": "@hierarchidb/node-type-my-plugin",
+  "name": "@hierarchidb/my-plugin",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -576,7 +576,7 @@ export * from './handlers/MyEntityHandler';
 #### 拡張定義パターン
 ```typescript
 // src/extension/definition.ts
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/folder-plugin';
 import type { ExtendableNodeTypeDefinition } from '@hierarchidb/common-type';
 
 interface MyExtendedFields {
@@ -726,7 +726,7 @@ describe('Plugin Integration', () => {
 ```typescript
 // app/src/plugins/registry.ts
 import { NodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
-import { MyPluginDefinition } from '@hierarchidb/node-type-my-plugin/worker';
+import { MyPluginDefinition } from '@hierarchidb/my-plugin/worker';
 
 // プラグイン登録
 export async function registerPlugins() {

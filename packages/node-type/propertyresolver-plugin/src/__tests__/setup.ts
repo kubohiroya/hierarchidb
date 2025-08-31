@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto';
-import { vi } from 'vitest';
 
 // Mock crypto.randomUUID if not available
 if (!global.crypto) {

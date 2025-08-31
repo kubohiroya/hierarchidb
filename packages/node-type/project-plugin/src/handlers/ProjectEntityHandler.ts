@@ -5,7 +5,7 @@
 
 import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import type { ProjectEntity, ProjectWorkingCopy } from '~/types/project-types';
 import { projectPluginAPI } from '~/api/ProjectPluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';

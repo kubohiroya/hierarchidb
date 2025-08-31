@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/node-type-spreadsheet-plugin",
+  "name": "@hierarchidb/spreadsheet-plugin",
   "version": "0.0.1",
   "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
   "main": "dist/index.js",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/node-type-folder-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@types/pako": "^2.0.3",

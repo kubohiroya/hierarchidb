@@ -4,12 +4,12 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { BatchSessionManager } from '@hierarchidb/node-type-shape-plugin/src/services/BatchSessionManager';
+import { BatchSessionManager } from '@hierarchidb/shape-plugin/src/services/BatchSessionManager';
 import type { 
   BatchConfig,
   BatchTaskLike,
   BatchProgressEvent 
-} from '@hierarchidb/node-type-shape-plugin/src/types';
+} from '@hierarchidb/shape-plugin/src/types';
 import type { RouteEntity, RouteGenerationConfig } from '../entities/RouteEntity';
 
 /**

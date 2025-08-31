@@ -80,7 +80,7 @@ vi.mock("../batch/BatchSessionManager", () => ({
 vi.mock("../workers/WorkerPoolManager", () => ({
   WorkerPoolManager: vi.fn().mockImplementation(() => ({}))
 }));
-vi.mock("@hierarchidb/runtime-datasource", () => ({
+vi.mock("@hierarchidb/runtime-ui-datasource", () => ({
   DataSourceManager: vi.fn().mockImplementation(() => ({
     getAvailableDataSources: vi.fn().mockResolvedValue([
       {

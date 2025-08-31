@@ -1,5 +1,5 @@
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import { propertyResolverDB } from '../database/PropertyResolverDatabase';
 import type { 
   PropertyResolverEntity, 
