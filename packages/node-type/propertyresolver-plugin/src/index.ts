@@ -4,6 +4,7 @@ import { PropertyResolverDefinition } from './definitions/PropertyResolverDefini
 export type {
   PropertyResolverEntity,
   PropertyResolverWorkingCopyEntity,
+  PropertyResolverWorkingCopy,
   PropertyMappingRule,
   ValidationRule,
   DuplicateResolutionStrategy,
@@ -16,7 +17,14 @@ export type {
 } from './types';
 
 // Export handlers
-export { PropertyResolverEntityHandler } from './handlers/PropertyResolverEntityHandler';
+export { 
+  PropertyResolverEntityHandler,
+  type PropertyResolverSearchCriteria,
+  type CreatePropertyResolverData,
+} from './handlers/PropertyResolverEntityHandler';
+
+// Export database
+export { propertyResolverDB } from './database/PropertyResolverDatabase';
 
 // Export components
 export {

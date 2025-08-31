@@ -11,8 +11,7 @@ import type {
   EntityId,
   PeerEntity,
   GroupEntity,
-  Timestamp,
-  TagId
+  Timestamp
 } from '@hierarchidb/common-type';
 
 /**
