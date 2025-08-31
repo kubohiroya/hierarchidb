@@ -7,11 +7,6 @@ export { FolderIcon } from '../components/FolderIcon';
 export { FolderCreateDialog } from '../components/FolderCreateDialog';
 export { FolderEditDialog } from '../components/FolderEditDialog';
 
-// Export type definitions for UI
-export type {
-  FolderEntity,
-  FolderEntityWorkingCopy,
-  FolderSettings,
-  FolderBookmark,
-  FolderTemplate,
-} from '../types';
+// Export all types from entities and types
+export * from '../entities/FolderEntity';
+export * from '../types';

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { TextField, Grid } from '@mui/material';
+import { TextField, Grid2 as Grid } from '@mui/material';
 import {
   Dialog,
   DialogTitle,
@@ -136,7 +136,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
 
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               autoFocus
               fullWidth
@@ -151,7 +151,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               multiline

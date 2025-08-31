@@ -13,7 +13,7 @@ class PropertyResolverDatabase extends Dexie {
     
     this.version(1).stores({
       propertyResolvers: '&id, nodeId, name, createdAt, updatedAt',
-      workingCopies: '&id, nodeId, originalVersion',
+      workingCopies: '&id, nodeId, originalId, originalVersion',
     });
   }
 }

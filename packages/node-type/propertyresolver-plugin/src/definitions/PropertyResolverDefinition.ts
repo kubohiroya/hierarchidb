@@ -1,6 +1,6 @@
 import type { PluginDefinition, NodeId } from '@hierarchidb/common-type';
 import type { PropertyResolverEntity, PropertyResolverWorkingCopy } from '../types';
-import { PropertyResolverEntityHandler } from '~/handlers/PropertyResolverEntityHandler';
+import { PropertyResolverEntityHandler } from '../handlers/PropertyResolverEntityHandler';
 
 export const PropertyResolverDefinition: Partial<
   PluginDefinition<
