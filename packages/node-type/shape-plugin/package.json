@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-datasource": "workspace:*",

@@ -800,6 +800,9 @@ importers:
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
+      '@hierarchidb/common-auth':
+        specifier: workspace:*
+        version: link:../../common/auth
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
