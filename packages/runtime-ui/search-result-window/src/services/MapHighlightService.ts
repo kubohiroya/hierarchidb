@@ -1,5 +1,4 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '~/types/index.js';
 
 /**
