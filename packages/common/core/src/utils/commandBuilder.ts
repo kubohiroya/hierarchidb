@@ -1,6 +1,6 @@
 /**
  * Command Builder Utility
- * 
+ *
  * Provides standardized command creation for the command pattern
  * used throughout the application.
  */
@@ -14,26 +14,22 @@ export interface CommandOptions {
 
 /**
  * Creates a standardized command object with consistent IDs and timestamps
- * 
+ *
  * @param action - The action type for the command
  * @param payload - The command payload
  * @param options - Optional configuration for the command
  * @returns A standardized command object
- * 
+ *
  * @example
  * ```typescript
  * const deleteCommand = createCommand('delete', { nodeIds: ['1', '2'] });
  * const importCommand = createCommand('import-template', { templateId: 'population-2023' });
  * ```
  */
-export function createCommand<T = any>(
-  action: string,
-  payload: T,
-  options: CommandOptions = {}
-) {
+export function createCommand<T = any>(action: string, payload: T, options: CommandOptions = {}) {
   const timestamp = Date.now();
-  const { groupId, metadata } = options;
-  
+  const { groupId, metadata } = option;
+
   return {
     commandId: `${action}-${timestamp}`,
     groupId: groupId || `group-${timestamp}`,
@@ -46,7 +42,7 @@ export function createCommand<T = any>(
 
 /**
  * Creates a batch command for multiple operations
- * 
+ *
  * @param action - The action type for the command
  * @param items - Array of items to process
  * @param payloadTransform - Function to transform each item into a payload
@@ -59,7 +55,7 @@ export function createBatchCommand<T, P = any>(
 ) {
   const timestamp = Date.now();
   const groupId = `batch-${timestamp}`;
-  
+
   return items.map((item, index) => ({
     commandId: `${action}-${timestamp}-${index}`,
     groupId,
@@ -80,17 +76,17 @@ export const CommandActions = {
   MOVE: 'move',
   COPY: 'copy',
   DUPLICATE: 'duplicate',
-  
+
   // Trash operations
   TRASH: 'trash',
   RECOVER: 'recover',
   EMPTY_TRASH: 'empty-trash',
-  
+
   // Import/Export operations
   IMPORT: 'import',
   IMPORT_TEMPLATE: 'import-template',
   EXPORT: 'export',
-  
+
   // Working copy operations
   CREATE_WORKING_COPY: 'create-working-copy',
   UPDATE_WORKING_COPY: 'update-working-copy',
@@ -98,4 +94,4 @@ export const CommandActions = {
   DISCARD_WORKING_COPY: 'discard-working-copy',
 } as const;
 
-export type CommandAction = typeof CommandActions[keyof typeof CommandActions];
+export type CommandAction = (typeof CommandActions)[keyof typeof CommandActions];

@@ -3,3 +3,7 @@ export * from './components/CommonDialog';
 export * from './components/CommonDialogTitle';
 export * from './components/CommonDialogActions';
 export * from './components/UnsavedChangesDialog';
+export * from './components/MultiStepDialog';
+export * from './components/DialogStepper';
+export * from './types/MultiStepDialog.types';
+export * from './components/MultiStepDialogEnhanced';

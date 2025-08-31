@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
-import { useMapHighlight } from '../hooks/useMapHighlight.js';
+import { useMapHighlight } from '../hooks/useMapHighlightJotai.js';
 
 interface MapHighlightContextValue {
   highlightState: MapHighlightState;
@@ -15,6 +15,7 @@ interface MapHighlightContextValue {
   clearSearchMatched: () => void;
   clearSelected: () => void;
   updateStyles: (styles: Partial<MapHighlightStyles>) => void;
+  setFocused: (nodeId: NodeId | null) => void;
 }
 
 const MapHighlightContext = createContext<MapHighlightContextValue | null>(null);

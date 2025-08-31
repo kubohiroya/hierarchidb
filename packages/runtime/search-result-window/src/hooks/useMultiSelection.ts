@@ -1,6 +1,17 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { SearchResult } from '~/types/index.js';
+import {
+  searchResultsAtom,
+  selectedNodeIdsAtom,
+  selectedResultItemsAtom,
+  selectNodeAtom,
+  toggleNodeSelectionAtom,
+  selectRangeAtom,
+  selectAllAtom,
+  clearSelectionAtom,
+} from '../state/index.js';
 
 interface UseMultiSelectionProps {
   results: SearchResult[];
@@ -23,68 +34,46 @@ export const useMultiSelection = ({
   onSelectionChange,
   onMapFocus,
 }: UseMultiSelectionProps): UseMultiSelectionReturn => {
-  const [selectedResults, setSelectedResults] = useState<Set<NodeId>>(new Set());
-  const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
+  // Atoms
+  const [, setSearchResults] = useAtom(searchResultsAtom);
+  const selectedResults = useAtomValue(selectedNodeIdsAtom);
+  const selectedResultItems = useAtomValue(selectedResultItemsAtom);
+  const selectNode = useSetAtom(selectNodeAtom);
+  const toggleNodeSelection = useSetAtom(toggleNodeSelectionAtom);
+  const selectRange = useSetAtom(selectRangeAtom);
+  const selectAllAction = useSetAtom(selectAllAtom);
+  const clearSelectionAction = useSetAtom(clearSelectionAtom);
 
-  // 選択された結果アイテムの配列
-  const selectedResultItems = useMemo(
-    () => results.filter((result) => selectedResults.has(result.nodeId)),
-    [results, selectedResults]
-  );
+  // 検索結果をatomに同期
+  useEffect(() => {
+    setSearchResults(results);
+  }, [results, setSearchResults]);
 
   // 選択状態変更の通知
-  const notifySelectionChange = useCallback(
-    (newSelectedResults: Set<NodeId>) => {
-      if (onSelectionChange) {
-        const selectedItems = results.filter((result) => newSelectedResults.has(result.nodeId));
-        onSelectionChange(selectedItems);
-      }
-    },
-    [results, onSelectionChange]
-  );
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selectedResultItems);
+    }
+  }, [selectedResultItems, onSelectionChange]);
 
   // 単一選択または複数選択の処理
   const handleResultSelect = useCallback(
     (result: SearchResult, isMultiSelect: boolean) => {
-      const resultIndex = results.findIndex((r) => r.nodeId === result.nodeId);
-
-      setSelectedResults((prev) => {
-        const newSelected = new Set(prev);
-        const isCurrentlySelected = newSelected.has(result.nodeId);
-
-        if (!isMultiSelect) {
-          // 通常のクリック：単一選択
-          newSelected.clear();
-          newSelected.add(result.nodeId);
-          setLastSelectedIndex(resultIndex);
+      if (!isMultiSelect) {
+        // 通常のクリック：単一選択
+        selectNode(result.nodeId);
+      } else {
+        // Shift/Cmd+クリック：複数選択
+        if (event && (event as any).shiftKey) {
+          // Shift+クリック：範囲選択
+          selectRange(result.nodeId);
         } else {
-          // Shift/Cmd+クリック：複数選択
-          if (event && (event as any).shiftKey && lastSelectedIndex !== -1) {
-            // Shift+クリック：範囲選択
-            const startIndex = Math.min(lastSelectedIndex, resultIndex);
-            const endIndex = Math.max(lastSelectedIndex, resultIndex);
-
-            for (let i = startIndex; i <= endIndex; i++) {
-              if (results[i] && results[i]?.nodeId) {
-                newSelected.add(results[i]?.nodeId as NodeId);
-              }
-            }
-          } else {
-            // Cmd/Ctrl+クリック：トグル選択
-            if (isCurrentlySelected) {
-              newSelected.delete(result.nodeId);
-            } else {
-              newSelected.add(result.nodeId);
-            }
-            setLastSelectedIndex(resultIndex);
-          }
+          // Cmd/Ctrl+クリック：トグル選択
+          toggleNodeSelection(result.nodeId);
         }
-
-        notifySelectionChange(newSelected);
-        return newSelected;
-      });
+      }
     },
-    [results, lastSelectedIndex, notifySelectionChange]
+    [selectNode, selectRange, toggleNodeSelection]
   );
 
   // 地図フォーカス処理
@@ -99,34 +88,20 @@ export const useMultiSelection = ({
 
   // 全選択
   const selectAll = useCallback(() => {
-    const newSelected = new Set(results.map((result) => result.nodeId));
-    setSelectedResults(newSelected);
-    notifySelectionChange(newSelected);
-  }, [results, notifySelectionChange]);
+    selectAllAction();
+  }, [selectAllAction]);
 
   // 選択解除
   const clearSelection = useCallback(() => {
-    const newSelected = new Set<NodeId>();
-    setSelectedResults(newSelected);
-    setLastSelectedIndex(-1);
-    notifySelectionChange(newSelected);
-  }, [notifySelectionChange]);
+    clearSelectionAction();
+  }, [clearSelectionAction]);
 
   // 個別トグル
   const toggleSelection = useCallback(
     (result: SearchResult) => {
-      setSelectedResults((prev) => {
-        const newSelected = new Set(prev);
-        if (newSelected.has(result.nodeId)) {
-          newSelected.delete(result.nodeId);
-        } else {
-          newSelected.add(result.nodeId);
-        }
-        notifySelectionChange(newSelected);
-        return newSelected;
-      });
+      toggleNodeSelection(result.nodeId);
     },
-    [notifySelectionChange]
+    [toggleNodeSelection]
   );
 
   return {

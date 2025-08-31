@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Table,
   TableBody,
@@ -15,6 +16,17 @@ import {
 import { styled } from '@mui/material/styles';
 import type { SearchResult } from '../types/index.js';
 import type { NodeId } from '@hierarchidb/common-type';
+import {
+  searchResultsAtom,
+  selectedNodeIdsAtom,
+  isAllSelectedAtom,
+  isSomeSelectedAtom,
+  selectNodeAtom,
+  toggleNodeSelectionAtom,
+  selectRangeAtom,
+  selectAllAtom,
+  clearSelectionAtom,
+} from '../state/index.js';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   maxHeight: 400,
@@ -71,16 +83,47 @@ interface SearchResultTableProps {
 
 export const SearchResultTable: React.FC<SearchResultTableProps> = ({
   results,
-  selectedResults,
+  selectedResults: propsSelectedResults, // propsから渡される選択状態（互換性のため保持）
   onResultSelect,
   onMapFocus,
 }) => {
+  // Jotai atoms
+  const [, setSearchResults] = useAtom(searchResultsAtom);
+  const selectedNodeIds = useAtomValue(selectedNodeIdsAtom);
+  const allSelected = useAtomValue(isAllSelectedAtom);
+  const someSelected = useAtomValue(isSomeSelectedAtom);
+  const selectNode = useSetAtom(selectNodeAtom);
+  const toggleNodeSelection = useSetAtom(toggleNodeSelectionAtom);
+  const selectRange = useSetAtom(selectRangeAtom);
+  const selectAll = useSetAtom(selectAllAtom);
+  const clearSelection = useSetAtom(clearSelectionAtom);
+  
+  // 互換性のため、propsとatomsどちらも対応
+  const selectedResults = propsSelectedResults || selectedNodeIds;
+  
+  // 検索結果をatomに同期
+  useEffect(() => {
+    setSearchResults(results);
+  }, [results, setSearchResults]);
   const handleRowClick = useCallback(
     (result: SearchResult, event: React.MouseEvent) => {
       const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-      onResultSelect(result, isMultiSelect);
+      
+      // Jotai atomsを使用
+      if (!isMultiSelect) {
+        selectNode(result.nodeId);
+      } else if (event.shiftKey) {
+        selectRange(result.nodeId);
+      } else {
+        toggleNodeSelection(result.nodeId);
+      }
+      
+      // 互換性のためコールバックも呼ぶ
+      if (onResultSelect) {
+        onResultSelect(result, isMultiSelect);
+      }
     },
-    [onResultSelect]
+    [selectNode, selectRange, toggleNodeSelection, onResultSelect]
   );
 
   const handleRowDoubleClick = useCallback(
@@ -122,30 +165,30 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
     );
   }, []);
 
-  const allSelected = useMemo(
-    () => results.length > 0 && results.every((result) => selectedResults.has(result.nodeId)),
-    [results, selectedResults]
-  );
 
-  const someSelected = useMemo(
-    () => results.some((result) => selectedResults.has(result.nodeId)),
-    [results, selectedResults]
-  );
 
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.checked) {
-        results.forEach((result) => onResultSelect(result, true));
+        selectAll();
       } else {
-        // 全選択解除は個別に処理（実装は親コンポーネント側で）
-        results.forEach((result) => {
-          if (selectedResults.has(result.nodeId)) {
-            onResultSelect(result, false);
-          }
-        });
+        clearSelection();
+      }
+      
+      // 互換性のためコールバックも呼ぶ
+      if (onResultSelect) {
+        if (event.target.checked) {
+          results.forEach((result) => onResultSelect(result, true));
+        } else {
+          results.forEach((result) => {
+            if (selectedResults.has(result.nodeId)) {
+              onResultSelect(result, false);
+            }
+          });
+        }
       }
     },
-    [results, selectedResults, onResultSelect]
+    [results, selectedResults, selectAll, clearSelection, onResultSelect]
   );
 
   if (results.length === 0) {
