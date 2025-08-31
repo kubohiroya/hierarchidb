@@ -3,22 +3,61 @@
  * Manages CRUD operations for Project entities
  */
 
-// Project plugin uses its own entity management approach via Comlink API
-// No direct dependency on worker's BaseEntityHandler
 import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import type { ProjectEntity, ProjectWorkingCopy } from '~/types/project-types';
 import { projectPluginAPI } from '~/api/ProjectPluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 
 /**
- * Entity handler for Project plugin
- * Extends BaseEntityHandler to provide Project-specific CRUD operations
+ * Create project data interface
  */
-export class ProjectEntityHandler {
-  private table: any;
+export interface CreateProjectData {
+  name: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  startDate?: Date;
+  endDate?: Date;
+  coverage?: any;
+  mapConfig?: any;
+  visibility?: string;
+  layers?: any[];
+  layerGroups?: any[];
+  spatialAnalyses?: any[];
+  temporalAnalyses?: any[];
+  outputConfig?: any;
+  permissions?: any[];
+  collaborators?: any[];
+  milestones?: any[];
+}
+
+/**
+ * Project filter criteria
+ */
+export interface ProjectFilterCriteria {
+  name?: string;
+  category?: string;
+  tags?: string[];
+  visibility?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+/**
+ * Project Entity Handler extending BaseEntityHandler
+ */
+export class ProjectEntityHandler extends BaseEntityHandler<
+  ProjectEntity,
+  ProjectWorkingCopy,
+  CreateProjectData,
+  ProjectFilterCriteria
+> {
+  protected table: any; // Mock table interface
 
   constructor() {
+    super();
     // Initialize with plugin-specific database interface
     // This would typically connect to the Project plugin API via Comlink
     this.table = {
@@ -65,33 +104,33 @@ export class ProjectEntityHandler {
   }
 
   /**
-   * Create a new Project entity
+   * Build project entity from creation data
    */
-  async createEntity(
+  protected buildEntity(
     nodeId: NodeId,
-    initialData?: Partial<ProjectEntity>
-  ): Promise<ProjectEntity> {
-    const entityId = generateEntityId() as EntityId;
+    entityId: EntityId,
+    data: CreateProjectData
+  ): ProjectEntity {
     const now = Date.now();
     
-    const entity: ProjectEntity = {
+    return {
       id: entityId,
       nodeId: nodeId,
       type: 'project',
       
       // 基本情報
-      name: initialData?.name || 'New Project',
-      description: initialData?.description || '',
-      category: initialData?.category || 'research',
-      tags: initialData?.tags || [],
+      name: data.name,
+      description: data.description || '',
+      category: data.category || 'research',
+      tags: data.tags || [],
       
       // 期間
-      startDate: initialData?.startDate || new Date(),
-      endDate: initialData?.endDate,
-      milestones: initialData?.milestones || [],
+      startDate: data.startDate || new Date(),
+      endDate: data.endDate,
+      milestones: data.milestones || [],
       
       // 地理的範囲
-      coverage: initialData?.coverage || {
+      coverage: data.coverage || {
         type: 'bbox',
         bbox: {
           minLon: 139.0,
@@ -100,7 +139,7 @@ export class ProjectEntityHandler {
           maxLat: 36.0
         }
       },
-      mapConfig: initialData?.mapConfig || {
+      mapConfig: data.mapConfig || {
         defaultView: {
           center: [139.6917, 35.6895],
           zoom: 10
@@ -109,15 +148,15 @@ export class ProjectEntityHandler {
       },
       
       // データレイヤー
-      layers: initialData?.layers || [],
-      layerGroups: initialData?.layerGroups || [],
+      layers: data.layers || [],
+      layerGroups: data.layerGroups || [],
       
       // 解析設定
-      spatialAnalyses: initialData?.spatialAnalyses || [],
-      temporalAnalyses: initialData?.temporalAnalyses || [],
+      spatialAnalyses: data.spatialAnalyses || [],
+      temporalAnalyses: data.temporalAnalyses || [],
       
       // 出力設定
-      outputConfig: initialData?.outputConfig || {
+      outputConfig: data.outputConfig || {
         report: {
           enabled: false,
           format: 'pdf',
@@ -151,9 +190,9 @@ export class ProjectEntityHandler {
       },
       
       // 共有設定
-      visibility: initialData?.visibility || 'private',
-      permissions: initialData?.permissions || [],
-      collaborators: initialData?.collaborators || [],
+      visibility: data.visibility || 'private',
+      permissions: data.permissions || [],
+      collaborators: data.collaborators || [],
       
       // メタデータ
       createdAt: now,
@@ -162,6 +201,14 @@ export class ProjectEntityHandler {
       updatedBy: 'system',
       version: 1
     };
+  }
+
+  /**
+   * Override create to use API
+   */
+  async createEntity(nodeId: NodeId, data: CreateProjectData): Promise<ProjectEntity> {
+    const entityId = generateEntityId() as EntityId;
+    const entity = this.buildEntity(nodeId, entityId, data);
 
     // Store in database via the project plugin API
     try {
@@ -300,12 +347,7 @@ export class ProjectEntityHandler {
   /**
    * Search Project entities by criteria
    */
-  async searchEntities(criteria: {
-    name?: string;
-    category?: string;
-    visibility?: string;
-    tags?: string[];
-  }): Promise<ProjectEntity[]> {
+  async searchEntities(criteria: ProjectFilterCriteria): Promise<ProjectEntity[]> {
     try {
       let query = this.table.toCollection();
 
@@ -407,7 +449,7 @@ export class ProjectEntityHandler {
     }
   }
 
-  private async cleanupEntityData(entity: ProjectEntity): Promise<void> {
+  protected async cleanupEntityData(entity: ProjectEntity): Promise<void> {
     try {
       await this.ensurePluginInitialized();
 
@@ -482,16 +524,16 @@ export class ProjectEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.serialize(entity);
+    // TODO: Implement serialization when PluginEntitySerializer is available
+    return { jsonData: entity, binaryData: new Map(), binaryFilenames: new Map() };
   }
 
   /**
    * Deserialize Project entity with binary data restoration
    */
   async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ProjectEntity> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.deserialize({ jsonData, binaryData });
+    // TODO: Implement deserialization when PluginEntitySerializer is available
+    return jsonData as ProjectEntity;
   }
 
   /**
@@ -502,8 +544,8 @@ export class ProjectEntityHandler {
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.serializeEntityArray(entities);
+    // TODO: Implement array serialization when PluginEntitySerializer is available
+    return { jsonArray: entities, binaryData: new Map(), binaryFilenames: new Map() };
   }
 
   /**
@@ -513,7 +555,7 @@ export class ProjectEntityHandler {
     jsonArray: any[],
     binaryData: Map<string, Uint8Array>
   ): Promise<ProjectEntity[]> {
-    const { PluginEntitySerializer } = await import('@hierarchidb/common-type');
-    return PluginEntitySerializer.deserializeEntityArray(jsonArray, binaryData);
+    // TODO: Implement array deserialization when PluginEntitySerializer is available
+    return jsonArray as ProjectEntity[];
   }
 }
