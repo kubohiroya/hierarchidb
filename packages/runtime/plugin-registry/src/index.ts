@@ -9,3 +9,7 @@ export {
   getPluginDefinition,
   getRegisteredPlugins,
 } from './api/plugin-registry-api';
+
+// Export PluginRegistry class
+export { PluginRegistry } from './registry/PluginRegistry';
+export type { IPluginRegistry } from './registry/IPluginRegistry';

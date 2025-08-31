@@ -41,6 +41,7 @@ import { PluginTreeService } from './services/PluginTreeService';
 import { NodeTypeService } from './services/NodeTypeService';
 import { PluginManagementService } from './services/PluginManagementService';
 import { ImportExportAPIImpl } from './apis/ImportExportAPIImpl';
+import { PluginRegistryAPIImpl } from './apis/PluginRegistryAPIImpl';
 // import { importExportPluginRegistry } from '@hierarchidb/feature-import-export-plugin-plugin'; // Disabled due to build issues
 import { TagService } from './services/TagService';
 
@@ -79,6 +80,9 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Tag service
   private tagService!: TagService;
 
+  // Plugin Registry API
+  private pluginRegistryAPI!: PluginRegistryAPIImpl;
+
   constructor(dbName: string = 'default-worker-db') {
     this.dbName = dbName;
   }
@@ -104,7 +108,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     this.ephemeralDB = await EphemeralDB.getSingleton(this.dbName);
 
     // Initialize registries
-    this.nodeTypeRegistry = await PluginRegistry.getSingleton();
+    this.nodeTypeRegistry = PluginRegistry.getInstance();
     const unifiedRegistry = PluginRegistry.getInstance();
     registerDefaultPlugins(unifiedRegistry);
 
@@ -152,6 +156,22 @@ export class WorkerAPIImpl implements WorkerAPI {
 
     // Initialize tag service
     this.tagService = new TagService(this.coreDB);
+
+    // Initialize Plugin Registry API
+    const integratedPlugins = new Map();
+    const pluginLoadOrder: NodeType[] = [];
+    const pluginsInOrder = this.nodeTypeRegistry.getPluginsInDependencyOrder();
+    
+    for (const plugin of pluginsInOrder) {
+      integratedPlugins.set(plugin.nodeType, plugin);
+      pluginLoadOrder.push(plugin.nodeType);
+    }
+    
+    this.pluginRegistryAPI = new PluginRegistryAPIImpl(
+      this.nodeTypeRegistry,
+      integratedPlugins,
+      pluginLoadOrder
+    );
 
     this.isInitialized = true;
     console.log('[WorkerAPIImpl] Initialization complete');
@@ -518,7 +538,7 @@ export class WorkerAPIImpl implements WorkerAPI {
       },
     };
 
-    return legacyAdapter as unknown as PluginRegistryAPI & Comlink.ProxyMarked;
+    return Comlink.proxy(this.pluginRegistryAPI);
   }
 
   getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & Comlink.ProxyMarked {
