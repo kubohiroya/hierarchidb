@@ -3,7 +3,12 @@
  * @description Location entity definition extending Shape plugin
  */
 
-import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
+import type { 
+  NodeId, 
+  EntityId, 
+  BaseEntity,
+  Timestamp 
+} from '@hierarchidb/common-type';
 
 /**
  * Location type categories
@@ -116,12 +121,23 @@ export interface LocationAttributes {
  * Location entity extending base and metadata entities
  */
 export interface LocationEntity extends BaseEntity {
+  // Entity ID
+  id: EntityId;
+  nodeId: NodeId;
+  
   // Basic information
   name: string;
   description?: string;
   category: LocationCategory;
   type: LocationType;
-  tags?: string[];
+  // Note: Tags are managed by Folder plugin, not stored here
+  
+  // Metadata fields
+  metadata?: Record<string, any>;
+  customFields?: Record<string, any>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  version: number;
   
   // Geographic information
   point: LocationPoint;
@@ -190,6 +206,8 @@ export interface LocationEntity extends BaseEntity {
  * Location working copy for editing
  */
 export interface LocationWorkingCopy extends LocationEntity {
+  id: EntityId;
+  nodeId: NodeId;
   isDraft: boolean;
   copiedAt?: number;
   originalVersion?: number;
@@ -201,6 +219,13 @@ export interface LocationWorkingCopy extends LocationEntity {
   checkboxState?: Record<string, boolean>;
   searchRadius?: number;
   maxResults?: number;
+}
+
+/**
+ * Metadata search criteria
+ */
+export interface MetadataSearchCriteria {
+  metadata?: Record<string, any>;
 }
 
 /**

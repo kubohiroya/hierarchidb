@@ -19,7 +19,7 @@ import {
   Select,
   MenuItem,
   InputLabel,
-  Grid
+  Grid2
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
 import type { LocationWorkingCopy, LocationType } from '../../types';
@@ -268,8 +268,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             
             {/* 空港設定 */}
             {activeType.id === 'airport' && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <Grid2 container spacing={3}>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -279,8 +279,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="ヘリポートを含む"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -290,8 +290,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="運航中のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -301,8 +301,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="商業便のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <Box>
                     <Typography gutterBottom>最小滑走路長: {typeConfig.airport.minRunwayLength}m</Typography>
                     <Slider
@@ -318,14 +318,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                       ]}
                     />
                   </Box>
-                </Grid>
-              </Grid>
+                </Grid2>
+              </Grid2>
             )}
             
             {/* 鉄道駅設定 */}
             {activeType.id === 'railway_station' && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <Grid2 container spacing={3}>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -335,8 +335,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="地下鉄駅を含む"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -346,8 +346,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="廃駅を含む"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -357,8 +357,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="都市間路線のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
                     label="最小ホーム数"
@@ -367,14 +367,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     size="small"
                     inputProps={{ min: 1, max: 20 }}
                   />
-                </Grid>
-              </Grid>
+                </Grid2>
+              </Grid2>
             )}
             
             {/* 港設定 */}
             {activeType.id === 'port' && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <Grid2 container spacing={3}>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -384,8 +384,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="マリーナを含む"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -395,8 +395,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="貨物港のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -406,8 +406,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="稼働中のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
                     label="最小水深 (m)"
@@ -416,14 +416,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     size="small"
                     inputProps={{ min: 1, max: 50, step: 0.5 }}
                   />
-                </Grid>
-              </Grid>
+                </Grid2>
+              </Grid2>
             )}
             
             {/* 行政センター設定 */}
             {activeType.id === 'government' && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <Grid2 container spacing={3}>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth size="small">
                     <InputLabel>行政レベル</InputLabel>
                     <Select
@@ -440,8 +440,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                       <MenuItem value={8}>区レベル (8)</MenuItem>
                     </Select>
                   </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
                     label="最小人口"
@@ -450,8 +450,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     size="small"
                     inputProps={{ min: 0, step: 1000 }}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -461,8 +461,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="首都のみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -472,14 +472,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="過去の首都を含む"
                   />
-                </Grid>
-              </Grid>
+                </Grid2>
+              </Grid2>
             )}
             
             {/* インターチェンジ設定 */}
             {activeType.id === 'government' && (
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
+              <Grid2 container spacing={3}>
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -489,8 +489,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="インターチェンジのみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={4}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -500,8 +500,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="名称付きのみ"
                   />
-                </Grid>
-                <Grid item xs={12} md={4}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -511,8 +511,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     }
                     label="SA/PA除外"
                   />
-                </Grid>
-              </Grid>
+                </Grid2>
+              </Grid2>
             )}
           </Box>
         )}
