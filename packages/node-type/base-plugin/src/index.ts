@@ -1,0 +1,29 @@
+/**
+ * @file index.ts
+ * @description Base plugin for inheritance - not displayed in UI
+ */
+
+// Export handlers
+export { BaseEntityHandler } from './handlers/BaseEntityHandler';
+export { HierarchicalEntityHandler } from './handlers/HierarchicalEntityHandler';
+export type { HierarchicalEntity, HierarchicalSearchCriteria, TreeNode } from './handlers/HierarchicalEntityHandler';
+
+// Export types
+export type {
+  BaseSearchCriteria,
+  PaginatedResult,
+  EntityLifecycleHooks,
+  OperationResult,
+} from './types';
+
+// Plugin definition (for inheritance only)
+export const BasePluginDefinition = {
+  nodeType: 'base',
+  name: 'Base Node',
+  displayName: 'Base Node (for inheritance)',
+  description: 'Base plugin for inheritance only - not displayed in UI',
+  visibility: {
+    showInCreateMenu: false,  // Not shown in create menu
+    showInPluginList: false   // Not shown in plugin list
+  }
+};
