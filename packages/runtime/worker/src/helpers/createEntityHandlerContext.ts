@@ -1,5 +1,5 @@
 /**
-import type { EntityHandlerContext, NodeId, PeerEntity, GroupEntity, WorkingCopyProperties } from '@hierarchidb/common-type';
+// EntityHandlerContext is defined locally
  * @file createEntityHandlerContext.ts
  * @description Factory to create EntityHandlerContext from database
  * This bridges the gap between plugins and database implementation
@@ -13,6 +13,33 @@ import {
   WorkingCopyProperties,
 } from '@hierarchidb/common-type';
 import type { Dexie } from 'dexie';
+
+/**
+ * Entity handler context interface
+ */
+interface EntityHandlerContext {
+  store: {
+    create: (entity: PeerEntity) => Promise<PeerEntity>;
+    update: (nodeId: NodeId, updates: Partial<PeerEntity>) => Promise<void>;
+    delete: (nodeId: NodeId) => Promise<void>;
+    get: (nodeId: NodeId) => Promise<PeerEntity | null>;
+    list: () => Promise<PeerEntity[]>;
+  };
+  workingCopy?: {
+    create: (workingCopy: WorkingCopy) => Promise<WorkingCopy>;
+    update: (nodeId: NodeId, updates: Partial<WorkingCopy>) => Promise<void>;
+    delete: (nodeId: NodeId) => Promise<void>;
+    get: (nodeId: NodeId) => Promise<WorkingCopy | null>;
+    list: () => Promise<WorkingCopy[]>;
+  };
+  group?: {
+    create: (groupEntity: GroupEntity) => Promise<GroupEntity>;
+    update: (id: string, updates: Partial<GroupEntity>) => Promise<void>;
+    delete: (id: string) => Promise<void>;
+    get: (id: string) => Promise<GroupEntity | null>;
+    list: () => Promise<GroupEntity[]>;
+  };
+}
 
 /**
  * Create an EntityHandlerContext for a plugin
@@ -61,9 +88,8 @@ export function createEntityHandlerContext(
         await db.table(tableName).delete(nodeId);
       },
 
-      exists: async (nodeId: NodeId): Promise<boolean> => {
-        const count = await db.table(tableName).where('nodeId').equals(nodeId).count();
-        return count > 0;
+      list: async (): Promise<PeerEntity[]> => {
+        return await db.table(tableName).toArray();
       },
     },
 
@@ -72,60 +98,41 @@ export function createEntityHandlerContext(
     // ==================
     workingCopy: workingCopyTableName
       ? {
-          create: async (entity: PeerEntity): Promise<PeerEntity & WorkingCopyProperties> => {
-            const workingCopy = {
-              ...entity,
-              workingCopyId: `wc-${entity.nodeId}-${Date.now()}`,
-              workingCopyOf: entity.nodeId,
-              copiedAt: Date.now(),
-              isDirty: false,
-              originalVersion: entity.version || 1,
-            };
+          create: async (workingCopy: WorkingCopy): Promise<WorkingCopy> => {
+            // The workingCopy parameter is already a WorkingCopy type
 
             await db.table(workingCopyTableName).add(workingCopy);
             return workingCopy;
           },
 
-          get: async (
-            nodeId: NodeId
-          ): Promise<(PeerEntity & WorkingCopyProperties) | undefined> => {
-            return await db
+          get: async (nodeId: NodeId): Promise<WorkingCopy | null> => {
+            const wc = await db
               .table(workingCopyTableName)
-              .where('workingCopyOf')
+              .where('nodeId')
               .equals(nodeId)
               .first();
+            return wc || null;
           },
 
-          commit: async (workingCopy: PeerEntity & WorkingCopyProperties): Promise<void> => {
-            const {
-              workingCopyId,
-              workingCopyOf,
-              copiedAt,
-              isDirty,
-              originalVersion,
-              ...entityData
-            } = workingCopy as any;
-
-            // Update main entity
-            await context.store.update(workingCopyOf, entityData as Partial<PeerEntity>);
-
-            // Delete working copy
-            await db.table(workingCopyTableName).delete(workingCopyId);
+          update: async (nodeId: NodeId, updates: Partial<WorkingCopy>): Promise<void> => {
+            await db.table(workingCopyTableName)
+              .where('nodeId')
+              .equals(nodeId)
+              .modify(updates);
           },
 
-          discard: async (nodeId: NodeId): Promise<void> => {
-            await db.table(workingCopyTableName).where('workingCopyOf').equals(nodeId).delete();
+          delete: async (nodeId: NodeId): Promise<void> => {
+            await db.table(workingCopyTableName)
+              .where('nodeId')
+              .equals(nodeId)
+              .delete();
+          },
+
+          list: async (): Promise<WorkingCopy[]> => {
+            return await db.table(workingCopyTableName).toArray();
           },
         }
-      : {
-          // Minimal implementation if no working copy table
-          create: async (entity: PeerEntity): Promise<PeerEntity & WorkingCopyProperties> => {
-            throw new Error('Working copy not supported');
-          },
-          get: async (): Promise<(PeerEntity & WorkingCopyProperties) | undefined> => undefined,
-          commit: async (): Promise<void> => {},
-          discard: async (): Promise<void> => {},
-        },
+      : undefined,
 
     // ==================
     // Group operations (optional)

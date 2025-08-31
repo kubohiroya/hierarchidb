@@ -10,14 +10,14 @@ import { EntityId, NodeId } from '@hierarchidb/common-type';
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityHandler } from './BaseEntityHandler';
-import { PeerEntityHandler, type PeerEntityImpl } from './SimpleEntityHandler';
+import { BasePeerEntityHandler, type BasePeerEntity } from './BasePeerEntityHandler';
 // import { RelationalEntityHandler } from './RelationalEntityHandler';
 import { WorkingCopyHandler } from './WorkingCopyHandler';
 
 describe('EntityHandler Integration Tests (needs update to new API)', () => {
   let db: Dexie;
-  let simpleHandler: PeerEntityHandler;
-  let subEntityHandler: PeerEntityHandler;
+  let simpleHandler: any; // BasePeerEntityHandler;
+  let subEntityHandler: any; // BasePeerEntityHandler;
   let workingCopyHandler: WorkingCopyHandler;
 
   const nodeId1 = 'integration-node-1' as NodeId;
@@ -36,9 +36,9 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
     await db.open();
 
     // Initialize all handlers
-    simpleHandler = new PeerEntityHandler(db, 'entities', 'workingCopies', 'subEntities');
+    simpleHandler = new BasePeerEntityHandler(db, 'entities', 'workingCopies', 'subEntities');
 
-    subEntityHandler = new PeerEntityHandler(db, 'entities', 'workingCopies', 'subEntities');
+    subEntityHandler = new BasePeerEntityHandler(db, 'entities', 'workingCopies', 'subEntities');
 
     workingCopyHandler = new WorkingCopyHandler(db, 'entities', 'workingCopies', 'subEntities');
   });
@@ -223,7 +223,7 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
 
       // Create various types of sub-entities
       const groupTypes = ['attachment', 'comment', 'task', 'note', 'link'];
-      const createdSubEntities: PeerEntityImpl[] = [];
+      const createdSubEntities: BasePeerEntity[] = [];
 
       for (let i = 0; i < groupTypes.length; i++) {
         const type = groupTypes[i]!;
@@ -468,7 +468,7 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
       const startTime = Date.now();
 
       // Create 100 entities
-      const entityPromises: Promise<PeerEntityImpl>[] = [];
+      const entityPromises: Promise<BasePeerEntity>[] = [];
       for (let i = 0; i < 100; i++) {
         entityPromises.push(
           simpleHandler.createEntity(`perf-entity-${i}` as NodeId, {
@@ -489,7 +489,7 @@ describe('EntityHandler Integration Tests (needs update to new API)', () => {
 
       // Add sub-entities to each entity
       const subEntityStartTime = Date.now();
-      const subEntityPromises: Promise<PeerEntityImpl>[] = [];
+      const subEntityPromises: Promise<BasePeerEntity>[] = [];
 
       for (let i = 0; i < 100; i++) {
         const nodeId = `perf-entity-${i}` as NodeId;

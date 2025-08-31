@@ -7,8 +7,8 @@ import type { PeerEntity, GroupEntity, WorkingCopy, NodeId, EntityId } from '@hi
  */
 
 import type Dexie from 'dexie';
-import type { PeerEntityImpl, GroupEntityImpl, PeerWorkingCopy } from './SimpleEntityHandler';
-// GroupEntityImpl interface was removed, using GroupEntityImpl instead
+// SimpleEntityHandler was removed, using types from BasePeerEntityHandler
+import type { BasePeerEntity, BaseGroupEntity, BasePeerWorkingCopy } from './BasePeerEntityHandler';
 import { GroupEntityHandler } from './GroupEntityHandler';
 import { EntityId, GroupEntity, NodeId, NodeType, WorkingCopy } from '@hierarchidb/common-type';
 
@@ -16,7 +16,7 @@ import { EntityId, GroupEntity, NodeId, NodeType, WorkingCopy } from '@hierarchi
  * Enhanced working copy with additional tracking
  */
 export interface EnhancedWorkingCopy extends Omit<WorkingCopy, 'id'> {
-  id: EntityId; // Override id type to match PeerEntityImpl
+  id: EntityId; // Override id type to match BasePeerEntity
   nodeId: NodeId;
   type: string; // Required by GroupEntity
   name: string; // Required by SimpleWorkingCopy
@@ -55,7 +55,7 @@ export interface EnhancedWorkingCopy extends Omit<WorkingCopy, 'id'> {
 
   // Entity data
   entityData: any;
-  groupEntitiesData?: Record<string, GroupEntityImpl[]>;
+  groupEntitiesData?: Record<string, BaseGroupEntity[]>;
 
   createdAt: number;
   updatedAt: number;
@@ -527,7 +527,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
    */
   private async commitGroupEntities(
     nodeId: NodeId,
-    groupEntitiesData: Record<string, GroupEntityImpl[]>
+    groupEntitiesData: Record<string, BaseGroupEntity[]>
   ): Promise<void> {
     // Delete all existing sub-entities
     if (this.groupEntityTableName) {
@@ -547,7 +547,7 @@ export class WorkingCopyHandler extends GroupEntityHandler {
           createdAt: createdAt || this.now(),
           updatedAt: updatedAt || this.now(),
           version: version || 1,
-        } as GroupEntityImpl);
+        } as BaseGroupEntity);
       }
     }
   }
@@ -824,14 +824,14 @@ export class WorkingCopyHandler extends GroupEntityHandler {
   async createGroupEntity(
     nodeId: NodeId,
     groupEntityType: string,
-    data: GroupEntityImpl
+    data: BaseGroupEntity
   ): Promise<void> {
     if (!this.groupEntityTableName) {
       throw new Error('Sub-entity table not configured');
     }
 
     const now = this.now();
-    const groupEntityData: GroupEntityImpl = {
+    const groupEntityData: BaseGroupEntity = {
       id: data.id || (this.generateNodeId() as EntityId),
       nodeId: nodeId,
       type: groupEntityType, // Required by GroupEntity

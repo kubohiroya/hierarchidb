@@ -239,16 +239,9 @@ export class PluginLoader {
   /**
    * エンティティハンドラーを登録
    */
-  private registerEntityHandlers(plugin: PluginConfig): void {
-    for (const [nodeType, _handler] of Object.entries(plugin.entityHandlers)) {
-      // NodeTypeRegistryに登録 (without entityHandler which is stored separately)
-      this.registry.register(nodeType as NodeType, {
-        displayName: nodeType,
-        canBeDeleted: true,
-        canBeRenamed: true,
-        canBeMoved: true,
-      });
-    }
+  private registerEntityHandlers(_plugin: PluginConfig): void {
+    // Registration is now handled by PluginRegistry.registerPlugin()
+    // This method is kept for compatibility but does nothing
   }
 
   /**

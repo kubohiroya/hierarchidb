@@ -24,9 +24,14 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
     "@mui/material": "^7.1.0",
     "@mui/icons-material": "^7.3.1",
-    "react": "^18.3.1"
+    "comlink": "^4.4.2",
+    "jotai": "^2.11.2",
+    "react": "^18.3.1",
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",

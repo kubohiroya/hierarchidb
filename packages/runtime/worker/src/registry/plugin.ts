@@ -4,7 +4,9 @@
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
 
-import { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
+// Import from base-plugin package
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+
 import type { 
   NodeTypeConfig, 
   WorkingCopyProperties, 
@@ -17,13 +19,15 @@ import type {
   PluginAPIConfig, 
   PluginValidationConfig, 
   PluginDefinition as CorePluginDefinition, 
-  PluginRoutingConfig, 
-  PluginMetadata 
+  PluginRoutingConfig,
+  NodeId,
+  NodeType,
+  DatabaseSchema,
+  PluginMetadata
 } from '@hierarchidb/common-type';
 
 // Re-export types to make them public
 export type { 
-  BaseEntityHandler,
   PeerEntity,
   GroupEntity,
   WorkingCopyProperties,
@@ -33,12 +37,19 @@ export type {
   PluginAPIConfig,
   PluginValidationConfig,
   PluginRoutingConfig,
-  PluginMetadata,
   NodeLifecycleHooks as CoreNodeLifecycleHooks,
   ValidationRule as CoreValidationRule,
-  PluginDefinition as CorePluginDefinition
+  PluginDefinition as CorePluginDefinition,
+  NodeId,
+  NodeType,
+  DatabaseSchema
 } from '@hierarchidb/common-type';
-export { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
+
+// Re-export BaseEntityHandler from base-plugin
+export { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
+
+// Re-export PluginMetadata from common-type
+export type { PluginMetadata } from '@hierarchidb/common-type';
 
 
 // Re-export with same names for compatibility

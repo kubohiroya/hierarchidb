@@ -1,11 +1,12 @@
 /**
-import type { TreeId } from '@hierarchidb/common-type';
+/**
  * @file plugin-registry-api.ts
  * @description Worker API methods for plugin registry access
  */
 
-import { TreeId } from '@hierarchidb/common-type';
+import { TreeId, NodeType } from '@hierarchidb/common-type';
 import type { PluginDefinition } from './plugin';
+import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 
 /**
  * Get all registered plugins from the registry
@@ -32,7 +33,7 @@ export async function getRegisteredPlugins(): Promise<PluginDefinition<any, any,
  */
 export async function getPluginDefinition(nodeType: string): Promise<PluginDefinition | null> {
   const registry = PluginRegistry.getInstance();
-  return registry.get(nodeType) || null;
+  return registry.get(nodeType as NodeType) || null;
 }
 
 /**
@@ -40,7 +41,7 @@ export async function getPluginDefinition(nodeType: string): Promise<PluginDefin
  */
 export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
   const registry = PluginRegistry.getInstance();
-  return registry.has(nodeType);
+  return registry.has(nodeType as NodeType);
 }
 
 /**

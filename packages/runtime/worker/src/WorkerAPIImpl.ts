@@ -6,6 +6,7 @@ import type {
   NodeId,
   NodeType,
   WorkingCopy,
+  EntityId,
 } from '@hierarchidb/common-type';
 import type {
   WorkerAPI,
@@ -21,6 +22,7 @@ import type {
   PluginLifecycleAPI,
   ImportExportAPI,
   PluginRegistryAPI,
+  MultiStepDialogAPI,
 } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
@@ -28,7 +30,7 @@ import { CommandProcessor } from './command/CommandProcessor';
 import { CoreDB } from './db/CoreDB';
 import { EphemeralDB } from './db/EphemeralDB';
 import { NodeLifecycleManager } from './lifecycle/NodeLifecycleManager';
-import {} from '@hierarchidb/runtime-plugin-registry';
+import { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { registerDefaultPlugins } from './registry/default-plugins';
 
 // Services
@@ -44,6 +46,8 @@ import { ImportExportAPIImpl } from './apis/ImportExportAPIImpl';
 import { PluginRegistryAPIImpl } from './apis/PluginRegistryAPIImpl';
 // import { importExportPluginRegistry } from '@hierarchidb/feature-import-export-plugin-plugin'; // Disabled due to build issues
 import { TagService } from './services/TagService';
+import type { WorkingCopyData, ValidationResult, StepCapabilities } from '@hierarchidb/common-api';
+import { generateId } from '@hierarchidb/util';
 
 /**
  * Worker API Facade Implementation
@@ -629,6 +633,170 @@ export class WorkerAPIImpl implements WorkerAPI {
   /**
    * Simple ping method for health check
    */
+  /**
+   * 多段階ダイアログAPI
+   * Working Copy の作成、バッチバリデーション、ステップ能力の評価などを提供
+   */
+  getMultiStepDialogAPI(): MultiStepDialogAPI {
+    return {
+      // Working Copy の作成
+      createWorkingCopy: async (nodeType: string, parentNodeId?: NodeId) => {
+        const workingCopyId = generateId() as EntityId;
+        const handler = this.nodeTypeRegistry.getEntityHandler(nodeType);
+        
+        if (!handler) {
+          throw new Error(`No handler found for node type: ${nodeType}`);
+        }
+
+        // EphemeralDBにWorking Copyを作成
+        await this.ephemeralDB.workingCopies.add({
+          id: workingCopyId,
+          nodeType,
+          parentNodeId,
+          data: {},
+          metadata: {
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            currentStep: 0,
+            validationState: {}
+          }
+        });
+
+        return workingCopyId;
+      },
+
+      // Working Copy の取得
+      getWorkingCopy: async (workingCopyId: EntityId) => {
+        return await this.ephemeralDB.workingCopies.get(workingCopyId);
+      },
+
+      // Working Copy の更新
+      updateWorkingCopy: async (workingCopyId: EntityId, updates: Partial<WorkingCopyData>) => {
+        const existing = await this.ephemeralDB.workingCopies.get(workingCopyId);
+        if (!existing) {
+          throw new Error(`Working copy not found: ${workingCopyId}`);
+        }
+
+        const updated = {
+          ...existing,
+          ...updates,
+          metadata: {
+            ...existing.metadata,
+            ...updates.metadata,
+            updatedAt: new Date()
+          }
+        };
+
+        await this.ephemeralDB.workingCopies.put(updated);
+        return updated;
+      },
+
+      // Working Copy の削除
+      deleteWorkingCopy: async (workingCopyId: EntityId) => {
+        await this.ephemeralDB.workingCopies.delete(workingCopyId);
+      },
+
+      // バッチバリデーション
+      batchValidate: async (workingCopyIds: EntityId[]) => {
+        const results: Record<EntityId, ValidationResult> = {};
+        
+        for (const id of workingCopyIds) {
+          const workingCopy = await this.ephemeralDB.workingCopies.get(id);
+          if (!workingCopy) continue;
+
+          const handler = this.nodeTypeRegistry.getEntityHandler(workingCopy.nodeType);
+          if (!handler?.validate) {
+            results[id] = { valid: true, errors: [] };
+            continue;
+          }
+
+          try {
+            const validationResult = await handler.validate(workingCopy.data);
+            results[id] = validationResult;
+          } catch (error) {
+            results[id] = {
+              valid: false,
+              errors: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+            };
+          }
+        }
+
+        return results;
+      },
+
+      // ステップ能力の評価
+      evaluateCapabilities: async (workingCopyId: EntityId, step: number) => {
+        const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
+        if (!workingCopy) {
+          throw new Error(`Working copy not found: ${workingCopyId}`);
+        }
+
+        const handler = this.nodeTypeRegistry.getEntityHandler(workingCopy.nodeType);
+        if (!handler?.getStepCapabilities) {
+          // デフォルトの能力を返す
+          return {
+            canNavigateTo: true,
+            canStartBatch: false,
+            canSave: step === -1, // 最終ステップでのみ保存可能
+            canProceedToNext: true,
+            canBackToPrevious: step > 0
+          };
+        }
+
+        return await handler.getStepCapabilities(workingCopy.data, step);
+      },
+
+      // バッチ能力の評価
+      batchEvaluateCapabilities: async (requests: Array<{ workingCopyId: EntityId; step: number }>) => {
+        const results: Record<EntityId, StepCapabilities> = {};
+        
+        for (const { workingCopyId, step } of requests) {
+          try {
+            results[workingCopyId] = await this.getMultiStepDialogAPI().evaluateCapabilities(workingCopyId, step);
+          } catch (error) {
+            // エラー時はデフォルト能力を返す
+            results[workingCopyId] = {
+              canNavigateTo: false,
+              canStartBatch: false,
+              canSave: false,
+              canProceedToNext: false,
+              canBackToPrevious: false
+            };
+          }
+        }
+
+        return results;
+      },
+
+      // Working Copy からエンティティを作成して保存
+      saveWorkingCopy: async (workingCopyId: EntityId) => {
+        const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
+        if (!workingCopy) {
+          throw new Error(`Working copy not found: ${workingCopyId}`);
+        }
+
+        const handler = this.nodeTypeRegistry.getEntityHandler(workingCopy.nodeType);
+        if (!handler) {
+          throw new Error(`No handler found for node type: ${workingCopy.nodeType}`);
+        }
+
+        // エンティティを作成
+        const entityId = generateId() as EntityId;
+        const entity = await handler.createEntity(entityId, workingCopy.data);
+
+        // CoreDBに保存
+        await this.coreDB.transaction('rw', this.coreDB.entities, async () => {
+          await this.coreDB.entities.add(entity);
+        });
+
+        // Working Copyを削除
+        await this.ephemeralDB.workingCopies.delete(workingCopyId);
+
+        return entityId;
+      }
+    };
+  }
+
   ping(): { response: 'pong'; timestamp: number } {
     console.log('[WorkerAPIImpl] ping() called');
     return {
