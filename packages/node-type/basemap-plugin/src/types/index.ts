@@ -5,9 +5,10 @@
 
 export type { 
   BaseMapEntity, 
-  BaseMapWorkingCopy 
-} from '../extension/definition';
-
-export type { 
-  BaseMapExtendedFields 
+  BaseMapWorkingCopy,
+  CreateBaseMapData,
+  BaseMapSearchCriteria,
+  MapStyle,
+  MapViewport,
+  DisplayOptions
 } from './BaseMapEntity';
