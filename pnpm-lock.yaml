@@ -635,6 +635,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/node-type-base-plugin':
+        specifier: workspace:*
+        version: link:../base-plugin
       '@hierarchidb/runtime-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime/plugin-dialog
@@ -803,9 +806,15 @@ importers:
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
+      '@hierarchidb/common-auth':
+        specifier: workspace:*
+        version: link:../../common/auth
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/node-type-base-plugin':
+        specifier: workspace:*
+        version: link:../base-plugin
       '@hierarchidb/node-type-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin

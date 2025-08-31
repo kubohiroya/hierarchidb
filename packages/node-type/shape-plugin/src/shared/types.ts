@@ -2,7 +2,7 @@
  * Shape plugin shared types
  */
 
-import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, NodeType, PeerEntity } from '@hierarchidb/common-type';
 import type { Geometry, BBox } from 'geojson';
 
 // ================================
@@ -43,9 +43,26 @@ export interface ShapeEntity extends PeerEntity {
   version: number;
 }
 
-export interface ShapeWorkingCopy extends ShapeEntity {
-  id: EntityId;
+// ShapeWorkingCopy extends the entity with working copy properties
+// To satisfy the WorkingCopy constraint, we need TreeNode properties
+export interface ShapeWorkingCopy extends Omit<ShapeEntity, 'id' | 'nodeId'> {
+  // TreeNode required properties (from NodeBase)
+  id: NodeId; // NodeId instead of EntityId to match TreeNode
+  parentId: NodeId;
+  nodeType: NodeType;
   nodeId: NodeId;
+  name: string;
+  depth: number;
+  
+  // WorkingCopyProperties
+  originalNodeId?: NodeId;
+  copiedAt: number;
+  hasEntityCopy?: boolean;
+  entityWorkingCopyId?: EntityId;
+  originalVersion?: number;
+  hasGroupEntityCopy?: Record<string, boolean>;
+  
+  // Shape-specific working copy properties
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
 }
