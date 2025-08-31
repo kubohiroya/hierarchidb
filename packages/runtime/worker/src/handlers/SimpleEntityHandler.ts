@@ -1,5 +1,5 @@
 /**
-import {  } from '@hierarchidb/common-core';
+
 import type { PeerEntity, GroupEntity, WorkingCopyProperties, NodeId, EntityId } from '@hierarchidb/common-type';
 import { generateNodeId } from '@hierarchidb/common-type';
  * @file PeerEntityImplHandler.ts

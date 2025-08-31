@@ -9,7 +9,7 @@ import { Box } from '@mui/material';
 import { TreeConsolePanel, type TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
 import { DynamicSpeedDial } from './DynamicSpeedDial';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { TreeId } from '@hierarchidb/common-core';
+import type { TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 

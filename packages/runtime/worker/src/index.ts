@@ -74,6 +74,19 @@ export type {
   EntityBackup,
 } from '~/registry/plugin';
 
+// Re-export types from common-type to avoid private type errors
+export type {
+  ExportOptions,
+  ExportResult,
+} from '@hierarchidb/common-type';
+
+// Re-export types from common-api to avoid private type errors
+export type {
+  CreateTagRequest,
+  UpdateTagRequest,
+  TagAssociationRequest,
+} from '@hierarchidb/common-api';
+
 // Service exports (needed for WorkerAPIImpl return types)
 export { TreeQueryService } from '~/services/TreeQueryService';
 export { TreeMutationService } from '~/services/TreeMutationService';

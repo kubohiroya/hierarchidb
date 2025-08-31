@@ -3,8 +3,8 @@
  * This file automatically discovers and loads all @hierarchidb/node-type-*-plugin packages
  */
 
-import { manifestFileDiscovery, type PluginLoadResult } from '@hierarchidb/common-core';
-import type { NodeType } from '@hierarchidb/common-core';
+import { manifestFileDiscovery, type PluginLoadResult } from '@hierarchidb/runtime-plugin-registry';
+import type { NodeType } from '@hierarchidb/common-type';
 
 // Import package.json to discover plugins
 import packageJson from '../../package.json';

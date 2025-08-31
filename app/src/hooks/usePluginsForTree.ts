@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { TreeId, PluginDefinition } from '@hierarchidb/common-core';
+import type { TreeId, PluginDefinition } from '@hierarchidb/common-type';
 import type { TreePluginInfo } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';

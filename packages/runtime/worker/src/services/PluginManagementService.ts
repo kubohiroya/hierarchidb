@@ -49,7 +49,7 @@ interface PluginDeleteResult {
     message: string;
   };
 }
-import type { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
+import type { PluginRegistry, SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 // Import from plugin-registry package
 import {
   isNodeTypeRegistered,

@@ -18,7 +18,7 @@ import {
   ResourcesGuidedTour,
 } from '@hierarchidb/runtime-tour';
 import { useLocation, useNavigate } from 'react-router';
-import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-core';
+import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 

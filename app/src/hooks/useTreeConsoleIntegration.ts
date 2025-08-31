@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-core';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';

@@ -5,7 +5,7 @@ import {
   type Tree,
   type TreeId,
   type TreeNode,
-} from '@hierarchidb/common-core';
+} from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 import { useRouteLoaderData } from 'react-router';

@@ -1,7 +1,7 @@
 import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
 import type { CoreDB } from '../db/CoreDB';
 import type { EphemeralDB } from '../db/EphemeralDB';
-import type { PluginRegistry } from '@hierarchidb/runtime-plugin-registry';
+import type { SimpleNodeTypeRegistry } from '@hierarchidb/runtime-plugin-registry';
 import { workerError } from '../utils/workerLogger';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './types';
 import { isReferenceCountingHandler } from '../handlers/ReferenceCountingHandler';
@@ -13,7 +13,7 @@ export class NodeLifecycleManager {
   private events: LifecycleEvent[] = [];
 
   constructor(
-    private registry: PluginRegistry,
+    private registry: SimpleNodeTypeRegistry,
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB
   ) {}

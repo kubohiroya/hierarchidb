@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import { usePluginsForTree } from '~/hooks/usePluginsForTree';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { TreeId, PluginDefinition } from '@hierarchidb/common-core';
+import type { TreeId, PluginDefinition } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type WorkerModule from '~/worker';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';

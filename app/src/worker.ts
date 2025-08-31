@@ -5,7 +5,7 @@
 
 import * as Comlink from 'comlink';
 import { WorkerAPIImpl } from '@hierarchidb/runtime-worker';
-import type { TreeId, NodeId } from '@hierarchidb/common-core';
+import type { TreeId, NodeId } from '@hierarchidb/common-type';
 import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-init-notifier';
 
 // Get app name from environment

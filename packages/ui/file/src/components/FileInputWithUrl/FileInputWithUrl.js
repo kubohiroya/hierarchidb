@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from 'react/jsx-run
 import { useState } from 'react';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import { Login } from '@mui/icons-material';
-import { devLog, devError } from '@hierarchidb/common-core';
+import { devLog, devError } from '../../utils/logger';
 import { useDragDrop, useFileInput, useUrlDownload } from './hooks';
 import { DragDropSection } from './DragDropSection';
 import { UrlDownloadSection } from './UrlDownloadSection';

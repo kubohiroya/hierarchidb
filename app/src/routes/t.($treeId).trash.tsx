@@ -11,7 +11,7 @@ import { loadTree, LoadTreeArgs } from '~/loader';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeNode, NodeId } from '@hierarchidb/common-core';
+import type { TreeNode, NodeId } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const treeData = await loadTree(args.params as LoadTreeArgs);

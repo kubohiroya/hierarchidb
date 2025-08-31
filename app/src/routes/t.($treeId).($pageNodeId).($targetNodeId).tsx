@@ -1,7 +1,7 @@
 import { Outlet, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
-import { type NodeId } from '@hierarchidb/common-core';
+import { type NodeId } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadTargetNodeArgs;

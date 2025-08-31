@@ -4,6 +4,7 @@
  * Based on AOP architecture document (docs/7-aop-architecture.md)
  */
 
+import { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
 import type { 
   NodeTypeConfig, 
   WorkingCopyProperties, 
@@ -16,25 +17,33 @@ import type {
   PluginAPIConfig,
   PluginValidationConfig,
   PluginDefinition as CorePluginDefinition,
-  PluginRoutingConfig,
-  EntityHandler as BaseEntityHandler
+  PluginRoutingConfig
 } from '@hierarchidb/common-type';
 
-// PluginMetadata is defined locally if not available in common-type
-interface PluginMetadata {
-  version?: string;
-  author?: string;
-  description?: string;
-}
-
-// BaseWorkingCopy is no longer needed - using WorkingCopyProperties from core
+// Re-export types to make them public
+export type { 
+  BaseEntityHandler,
+  PeerEntity,
+  GroupEntity,
+  WorkingCopyProperties,
+  NodeTypeConfig,
+  PluginDatabaseConfig,
+  PluginUIConfig,
+  PluginAPIConfig,
+  PluginValidationConfig,
+  PluginRoutingConfig,
+  NodeLifecycleHooks as CoreNodeLifecycleHooks,
+  ValidationRule as CoreValidationRule,
+  PluginDefinition as CorePluginDefinition
+} from '@hierarchidb/common-type';
+export { BaseEntityHandler } from '@hierarchidb/common-plugin-base';
 
 // Re-export with same names for compatibility
 export type EntityHandler<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
   TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> = BaseEntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
+> = BaseEntityHandler<TEntity, TWorkingCopy>;
 
 export type EntityBackup<_TEntity extends PeerEntity = PeerEntity> = {}; //CoreEntityBackup<TEntity>;
 
@@ -85,9 +94,6 @@ export interface PluginDefinition<
 
   // Worker-side routing configuration
   readonly routing: PluginRoutingConfig;
-
-  // Plugin metadata
-  readonly meta: PluginMetadata;
 }
 
 // Extended NodeTypeConfig for backward compatibility

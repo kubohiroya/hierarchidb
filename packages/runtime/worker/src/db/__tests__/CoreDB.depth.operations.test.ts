@@ -1,5 +1,15 @@
 /**
-import { serializeTreeNode, deserializeTreeNode } from '@hierarchidb/common-core';
+// Simple serialization functions for testing
+const serializeTreeNode = (node: any) => ({
+  ...node,
+  id: node.id as string,
+  parentId: node.parentId as string,
+});
+
+const deserializeTreeNode = (data: any) => ({
+  ...data,
+  depth: data.depth ?? 0, // Default depth if not provided
+});
 import type { TreeNode, NodeId } from '@hierarchidb/common-type';
  * @file CoreDB.depth.operations.test.ts
  * @description Comprehensive TDD tests for depth consistency in all operations
