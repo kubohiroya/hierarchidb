@@ -1,6 +1,5 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { TreeViewState, WorkingCopy } from '@hierarchidb/common-type';
-import { SingletonMixin } from '@hierarchidb/util';
 import Dexie, { type Table } from 'dexie';
 
 export type WorkingCopyRow = WorkingCopy;

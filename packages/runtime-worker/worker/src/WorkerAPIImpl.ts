@@ -52,7 +52,7 @@ import { NodeTypeService } from './services/NodeTypeService';
 import { ImportExportAPIImpl } from './apis/ImportExportAPIImpl';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { PluginTreeService } from './services/PluginTreeService';
-import { PluginLifecycleService } from './services/PluginLifecycleService';
+// import { PluginLifecycleService } from './services/PluginLifecycleService'; // File doesn't exist yet
 import { TagService } from './services/TagService';
 
 /**
@@ -80,7 +80,7 @@ export class WorkerAPIImpl implements WorkerAPI {
   // Plugin services
   private pluginTreeService!: PluginTreeAPI;
   private nodeTypeService!: NodeTypeAPI;
-  private pluginLifecycleService!: PluginLifecycleAPI;
+  // private pluginLifecycleService!: PluginLifecycleAPI; // Not implemented yet
 
   // Import/Export services
   private importExportService!: ImportExportAPI;
@@ -154,7 +154,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     // Initialize plugin services
     this.pluginTreeService = new PluginTreeService(this.coreDB, this.queryService);
     this.nodeTypeService = new NodeTypeService(this.nodeTypeRegistry, this.queryService);
-    this.pluginLifecycleService = new PluginLifecycleService(this.nodeTypeRegistry);
+    // this.pluginLifecycleService = new PluginLifecycleService(this.nodeTypeRegistry); // Not implemented yet
 
     // Initialize import/export services
     this.importExportService = ImportExportAPIImpl.getInstance();
@@ -442,9 +442,15 @@ export class WorkerAPIImpl implements WorkerAPI {
   }
 
   getPluginLifecycleAPI(): PluginLifecycleAPI & Comlink.ProxyMarked {
-    // Return the same service with the new interface name
-    return Comlink.proxy(this.pluginLifecycleService) as unknown as PluginLifecycleAPI &
-      Comlink.ProxyMarked;
+    // Create a stub implementation until PluginLifecycleService is implemented
+    const stubAPI: PluginLifecycleAPI = {
+      listRegistered: async () => [],
+      register: async () => ({ success: false, error: new Error('Not implemented') }),
+      unregister: async () => ({ success: false, error: new Error('Not implemented') }),
+      validatePlugin: async () => ({ valid: false, errors: ['Not implemented'] }),
+      checkHealth: async () => ({ healthy: false, reason: 'Not implemented' }),
+    };
+    return Comlink.proxy(stubAPI) as unknown as PluginLifecycleAPI & Comlink.ProxyMarked;
   }
 
   getImportExportAPI(): ImportExportAPI & Comlink.ProxyMarked {
@@ -471,7 +477,7 @@ export class WorkerAPIImpl implements WorkerAPI {
       validateNodeTypeOperation: async (nodeType: NodeType, operation: any, context?: any) => {
         return this.nodeTypeService.validateOperation(nodeType, operation, context);
       },
-      listRegisteredPlugins: async () => this.pluginLifecycleService.listRegistered(),
+      listRegisteredPlugins: async () => [], // Stub: PluginLifecycleService not implemented
       getPluginsForTree: async (treeId: TreeId) => {
         const response = await this.pluginTreeService.getPluginsForTree({
           treeId,
@@ -492,14 +498,13 @@ export class WorkerAPIImpl implements WorkerAPI {
         return false;
       },
       registerPlugin: async (definition: any) => {
-        return this.pluginLifecycleService.register(definition);
+        return { success: false, error: new Error('PluginLifecycleService not implemented') };
       },
       unregisterPlugin: async (nodeType: NodeType) => {
-        const result = await this.pluginLifecycleService.unregister(nodeType);
         return {
-          success: result.success,
+          success: false,
           cleanedUpNodes: 0,
-          error: result.error?.message,
+          error: 'PluginLifecycleService not implemented',
         };
       },
       registerExtension: async (nodeType: NodeType, api: any) => {
@@ -527,10 +532,10 @@ export class WorkerAPIImpl implements WorkerAPI {
         return undefined;
       },
       validatePluginConfiguration: async (nodeType: NodeType, config: any) => {
-        return this.pluginLifecycleService.validatePlugin(config);
+        return { valid: false, errors: ['PluginLifecycleService not implemented'] };
       },
       getPluginHealth: async (nodeType: NodeType) => {
-        return this.pluginLifecycleService.checkHealth(nodeType);
+        return { healthy: false, reason: 'PluginLifecycleService not implemented' };
       },
     };
 
@@ -552,7 +557,7 @@ export class WorkerAPIImpl implements WorkerAPI {
       },
 
       // Plugin Management
-      listRegisteredPlugins: async () => this.pluginLifecycleService.listRegistered(),
+      listRegisteredPlugins: async () => [], // Stub: PluginLifecycleService not implemented
       getPluginsForTree: async (treeId: string) => {
         const response = await this.pluginTreeService.getPluginsForTree({
           treeId: treeId as TreeId,
@@ -565,14 +570,13 @@ export class WorkerAPIImpl implements WorkerAPI {
 
       // Plugin Registry Operations
       registerPlugin: async (definition: any) => {
-        return this.pluginLifecycleService.register(definition);
+        return { success: false, error: new Error('PluginLifecycleService not implemented') };
       },
       unregisterPlugin: async (nodeType: NodeType) => {
-        const result = await this.pluginLifecycleService.unregister(nodeType);
         return {
-          success: result.success,
+          success: false,
           cleanedUpNodes: 0,
-          error: result.error?.message,
+          error: 'PluginLifecycleService not implemented',
         };
       },
       reloadPlugin: async (nodeType: NodeType, definition: any) => {
@@ -581,7 +585,7 @@ export class WorkerAPIImpl implements WorkerAPI {
 
       // Plugin Validation
       validatePluginDefinition: async (definition: any) => {
-        return this.pluginLifecycleService.validatePlugin(definition);
+        return { valid: false, errors: ['PluginLifecycleService not implemented'] };
       },
       checkPluginCompatibility: async (nodeType: NodeType) => {
         return {
