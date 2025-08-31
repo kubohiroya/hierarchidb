@@ -11,19 +11,16 @@ import { PluginRegistryFacade, PluginRepository } from '@hierarchidb/runtime-wor
 /**
  * Get all registered plugins from the registry
  */
-export async function getRegisteredPlugins(): Promise<PluginDefinition<any, any, any>[]> {
+export async function getRegisteredPlugins(): Promise<PluginDefinition[]> {
   const repository = new PluginRepository();
   const registry = new PluginRegistryFacade(repository);
   const plugins: PluginDefinition[] = [];
 
-  // Get all registered node types
-  const nodeTypes = registry.getAllNodeTypes();
-
-  for (const nodeType of nodeTypes) {
-    const definition = registry.get(nodeType);
-    if (definition) {
-      plugins.push(definition);
-    }
+  // Get all registered plugins
+  const allPlugins = await registry.getAllPlugins();
+  
+  for (const plugin of allPlugins) {
+    plugins.push(plugin as any);
   }
 
   return plugins;
@@ -35,7 +32,7 @@ export async function getRegisteredPlugins(): Promise<PluginDefinition<any, any,
 export async function getPluginDefinition(nodeType: string): Promise<PluginDefinition | null> {
   const repository = new PluginRepository();
   const registry = new PluginRegistryFacade(repository);
-  return registry.get(nodeType as NodeType) || null;
+  return await registry.getPlugin(nodeType as NodeType) || null;
 }
 
 /**
@@ -44,7 +41,7 @@ export async function getPluginDefinition(nodeType: string): Promise<PluginDefin
 export async function isNodeTypeRegistered(nodeType: string): Promise<boolean> {
   const repository = new PluginRepository();
   const registry = new PluginRegistryFacade(repository);
-  return registry.has(nodeType as NodeType);
+  return await registry.isPluginAvailable(nodeType as NodeType);
 }
 
 /**
@@ -55,11 +52,10 @@ export async function getCreatableNodeTypes(): Promise<string[]> {
   const registry = new PluginRegistryFacade(repository);
   const creatableTypes: string[] = [];
 
-  const nodeTypes = registry.getAllNodeTypes();
-  for (const nodeType of nodeTypes) {
-    const definition = registry.get(nodeType);
-    if (definition?.ui?.dialogComponentPath) {
-      creatableTypes.push(nodeType);
+  const allPlugins = await registry.getAllPlugins();
+  for (const plugin of allPlugins) {
+    if (plugin?.ui?.dialogComponentPath) {
+      creatableTypes.push(plugin.nodeType);
     }
   }
 
@@ -71,24 +67,23 @@ export async function getCreatableNodeTypes(): Promise<string[]> {
  */
 export async function getPluginsForTree(
   treeId: TreeId
-): Promise<PluginDefinition<any, any, any>[]> {
+): Promise<PluginDefinition[]> {
   const repository = new PluginRepository();
   const registry = new PluginRegistryFacade(repository);
-  const plugins: PluginDefinition<any, any, any>[] = [];
+  const plugins: PluginDefinition[] = [];
 
-  const nodeTypes = registry.getAllNodeTypes();
+  const allPlugins = await registry.getAllPlugins();
 
-  for (const nodeType of nodeTypes) {
-    const definition = registry.get(nodeType);
-    if (definition) {
+  for (const plugin of allPlugins) {
+    if (plugin) {
       // If treeId is '*', return all plugins
       if (treeId === ('*' as TreeId)) {
-        plugins.push(definition);
+        plugins.push(plugin as any);
       } else {
         // Check if plugin is available for this tree
-        const category = definition.category;
+        const category = plugin.category;
         if (category && (category.treeId === '*' || category.treeId === treeId)) {
-          plugins.push(definition);
+          plugins.push(plugin as any);
         }
       }
     }

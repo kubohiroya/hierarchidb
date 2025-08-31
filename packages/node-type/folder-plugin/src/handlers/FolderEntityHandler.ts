@@ -12,6 +12,7 @@ import {
 } from '@hierarchidb/base-plugin';
 
 import type { FolderEntity, FolderBookmark, FolderTemplate } from '../entities/FolderEntity';
+import type { FolderEntityWorkingCopy } from '../types/index';
 import { FolderDatabase } from '../database/FolderDatabase';
 
 /**

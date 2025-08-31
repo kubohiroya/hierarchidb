@@ -74,6 +74,29 @@ export class PluginRepository implements IPluginRepository {
     this.store = new PluginStore();
   }
   
+  // Legacy compatibility methods for PluginManagementService
+  async registerPlugin(nodeType: NodeType): Promise<void> {
+    // This is a no-op for compatibility
+    // Actual registration happens via save()
+  }
+  
+  async unregister(nodeType: NodeType): Promise<void> {
+    await this.store.delete(nodeType);
+  }
+  
+  async has(nodeType: NodeType): Promise<boolean> {
+    const plugin = await this.store.get(nodeType);
+    return plugin !== null;
+  }
+  
+  async get(nodeType: NodeType): Promise<PluginIntegrated | null> {
+    return await this.store.get(nodeType);
+  }
+  
+  async getAll(): Promise<PluginIntegrated[]> {
+    return await this.store.getAll();
+  }
+  
   async save(plugin: PluginIntegrated): Promise<void> {
     await this.store.set(plugin.nodeType, plugin);
   }

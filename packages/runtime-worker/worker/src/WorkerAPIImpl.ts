@@ -165,7 +165,7 @@ export class WorkerAPIImpl implements WorkerAPI {
     // Initialize Plugin Registry API
     const integratedPlugins = new Map();
     const pluginLoadOrder: NodeType[] = [];
-    const pluginsInOrder = this.nodeTypeRegistry.getPluginsInDependencyOrder();
+    const pluginsInOrder = await this.nodeTypeRegistry.getAllPlugins();
 
     for (const plugin of pluginsInOrder) {
       integratedPlugins.set(plugin.nodeType, plugin);

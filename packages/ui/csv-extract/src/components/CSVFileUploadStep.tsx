@@ -25,8 +25,7 @@ import {
 } from '@mui/icons-material';
 import type { 
   CSVProcessingConfig, 
-  CSVTableMetadata, 
-  CSVDataResult 
+  CSVTableMetadata
 } from '../types';
 import { useCSVData } from '../hooks/useCSVData';
 

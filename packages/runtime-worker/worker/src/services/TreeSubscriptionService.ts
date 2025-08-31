@@ -58,7 +58,10 @@ export class TreeSubscriptionService {
   private totalLatency = 0;
   private eventCount = 0;
 
-  constructor(private coreDB: CoreDB) {
+  constructor(
+    private coreDB: CoreDB,
+    private ephemeralDB: EphemeralDB
+  ) {
     // CoreDBのchangeSubjectを購読してグローバルな変更イベントを中継
     this.coreDB.changeSubject.subscribe({
       next: (event) => {
@@ -666,7 +669,7 @@ export class TreeSubscriptionService {
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB);
+      const queryService = new TreeQueryService(this.coreDB, this.ephemeralDB);
 
       const searchResults = await queryService.searchNodes({
         query,
@@ -706,7 +709,7 @@ export class TreeSubscriptionService {
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB);
+      const queryService = new TreeQueryService(this.coreDB, this.ephemeralDB);
 
       let searchPattern: string;
 

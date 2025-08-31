@@ -273,8 +273,8 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
     const issues: string[] = [];
 
     try {
-      // Cast to our local PluginDefinition type to access entityHandler
-      const pluginDef = definition; //as unknown as PluginDefinition;
+      // Check if this is a PluginIntegrated type with entityHandler
+      const pluginDef = definition as any;
       if (pluginDef.entityHandler) {
         const requiredMethods = ['createEntity', 'updateEntity', 'deleteEntity'];
         for (const method of requiredMethods) {
@@ -285,11 +285,11 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
         }
       }
 
-      if (definition.database?.tableName) {
+      if ((definition.database as any)?.tableName) {
         // TODO: Implement proper database table checking
         const tableExists = false; // this.coreDB.isOpen() && this.coreDB.tables.some(table => table.name === definition.database.tableName);
         if (!tableExists) {
-          issues.push(`Table ${definition.database.tableName} not found`);
+          issues.push(`Table ${(definition.database as any).tableName} not found`);
           status = 'degraded';
         }
       }

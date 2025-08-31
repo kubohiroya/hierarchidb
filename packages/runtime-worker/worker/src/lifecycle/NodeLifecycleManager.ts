@@ -26,7 +26,7 @@ export class NodeLifecycleManager {
     nodeType: NodeType,
     ...args: any[]
   ): Promise<void> {
-    const config = this.registry.getNodeTypeConfig(nodeType);
+    const config = await this.registry.getPlugin(nodeType);
     const lifecycle = (config as any)?.lifecycle as NodeLifecycleHooks | undefined;
     const hook = lifecycle?.[hookName];
 
@@ -245,7 +245,7 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      const config = this.registry.getNodeTypeConfig(nodeType);
+      const config = await this.registry.getPlugin(nodeType);
       const entityHints = (config as any)?.metadata?.entityHints;
 
       if (!entityHints?.relRefField) {
@@ -273,7 +273,7 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      const config = this.registry.getNodeTypeConfig(nodeType);
+      const config = await this.registry.getPlugin(nodeType);
       const entityHints = (config as any)?.metadata?.entityHints;
 
       if (!entityHints?.relRefField) {
