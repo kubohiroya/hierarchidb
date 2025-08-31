@@ -110,8 +110,8 @@ export default function TagsPage() {
     return (
       <Grid container spacing={2}>
         {allTags.map((tag) => (
-          <Gridkey={tag.id}>
-            //  xs={12} md={4} sm={6}
+          <Grid key={tag.id}>
+            {/*  xs={12} md={4} sm={6} */}
             <Card>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
