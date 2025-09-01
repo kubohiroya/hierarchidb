@@ -72,7 +72,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
 
         if (!validation.valid) {
           throw new Error(
-            `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`
+            `Validation failed: ${(validation as any).errors?.map((e: any) => typeof e === 'string' ? e : e.message).join(', ') || 'Unknown error'}`
           );
         }
       }
@@ -347,7 +347,7 @@ export class ImportExportAPIImpl implements ImportExportAPI {
 
     return {
       valid: errors.length === 0,
-      errors,
+      errors: errors as any,
       warnings: warnings.length > 0 ? warnings : undefined,
       statistics: {
         nodeCount,

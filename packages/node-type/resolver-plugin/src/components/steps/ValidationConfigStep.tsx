@@ -33,14 +33,14 @@ import {
   Rule as RuleIcon,
 } from '@mui/icons-material';
 import type { 
-  PropertyResolverWorkingCopyEntity, 
+  ResolverWorkingCopyEntity, 
   SchemaInfo, 
   ValidationRule,
 } from '~/types';
 
 interface ValidationConfigStepProps {
-  data: Partial<PropertyResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<PropertyResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverWorkingCopyEntity>;
+  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;

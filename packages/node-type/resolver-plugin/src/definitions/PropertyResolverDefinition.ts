@@ -1,8 +1,8 @@
 import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
-export const PropertyResolverDefinition: Partial<PluginDefinition> = {
-  nodeType: 'propertyresolver-plugin' as NodeType,
-  name: 'PropertyResolver',
+export const ResolverDefinition: Partial<PluginDefinition> = {
+  nodeType: 'resolver-plugin' as NodeType,
+  name: 'Resolver',
   displayName: 'Property Resolver',
 
   category: {
@@ -12,7 +12,7 @@ export const PropertyResolverDefinition: Partial<PluginDefinition> = {
   },
 
   database: {
-    dbName: 'propertyResolvers',
+    dbName: 'resolvers',
     schema: {
       '&id': 'EntityId',
       nodeId: 'NodeId',

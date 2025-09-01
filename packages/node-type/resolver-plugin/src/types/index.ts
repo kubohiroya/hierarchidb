@@ -1,9 +1,9 @@
 import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
 
 /**
- * PropertyResolver entity represents a property mapping configuration
+ * Resolver entity represents a property mapping configuration
  */
-export interface PropertyResolverEntity extends PeerEntity {
+export interface ResolverEntity extends PeerEntity {
   name: string;
   description?: string;
   sourceSchema: string;
@@ -74,9 +74,9 @@ export interface PreviewConfig {
 }
 
 /**
- * Working copy types for PropertyResolver
+ * Working copy types for Resolver
  */
-export interface PropertyResolverWorkingCopyEntity extends PropertyResolverEntity {
+export interface ResolverWorkingCopyEntity extends ResolverEntity {
   /** Working copy specific fields from WorkingCopy interface */
   workingCopyId?: EntityId;
   originalId: EntityId;
@@ -161,5 +161,5 @@ export interface StyleMapIntegration {
   propertyMappings: Record<string, string>; // source property -> style property
 }
 
-export type PropertyResolverWorkingCopyTypes = PropertyResolverWorkingCopyEntity;
-export type PropertyResolverWorkingCopy = PropertyResolverWorkingCopyEntity;
+export type ResolverWorkingCopyTypes = ResolverWorkingCopyEntity;
+export type ResolverWorkingCopy = ResolverWorkingCopyEntity;

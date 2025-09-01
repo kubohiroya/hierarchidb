@@ -21,11 +21,11 @@ import {
   Schema as SchemaIcon,
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
-import type { PropertyResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '~/types';
+import type { ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '~/types';
 
 interface SchemaSelectionStepProps {
-  data: Partial<PropertyResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<PropertyResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverWorkingCopyEntity>;
+  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   onSourceSchemaChange: (schema: SchemaInfo | null) => void;
   onTargetSchemaChange: (schema: SchemaInfo | null) => void;

@@ -16,26 +16,26 @@ import {
 import { Close as CloseIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { 
-  PropertyResolverEntity,
-  PropertyResolverWorkingCopyEntity,
+  ResolverEntity,
+  ResolverWorkingCopyEntity,
   SchemaInfo,
   MappingValidationResult
 } from '~/types';
 
 // Step components
-import { PropertyResolverBasicInfoStep } from './steps/PropertyResolverBasicInfoStep';
+import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep';
 import { PropertyMappingStep } from './steps/PropertyMappingStep';
 import { ValidationConfigStep } from './steps/ValidationConfigStep';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep';
 import { PreviewTestStep } from './steps/PreviewTestStep';
 
-interface PropertyResolverDialogProps {
+interface ResolverDialogProps {
   open: boolean;
   nodeId: NodeId;
-  entity?: PropertyResolverEntity;
+  entity?: ResolverEntity;
   onClose: () => void;
-  onSave: (entity: Partial<PropertyResolverWorkingCopyEntity>) => Promise<void>;
+  onSave: (entity: Partial<ResolverWorkingCopyEntity>) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -52,7 +52,7 @@ interface StepValidation {
   [key: number]: boolean;
 }
 
-export const PropertyResolverDialog: React.FC<PropertyResolverDialogProps> = ({
+export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   open,
   nodeId,
   entity,
@@ -61,7 +61,7 @@ export const PropertyResolverDialog: React.FC<PropertyResolverDialogProps> = ({
   onCancel,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [workingCopy, setWorkingCopy] = useState<Partial<PropertyResolverWorkingCopyEntity>>({});
+  const [workingCopy, setWorkingCopy] = useState<Partial<ResolverWorkingCopyEntity>>({});
   const [stepValidation, setStepValidation] = useState<StepValidation>({});
   const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(null);
   const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
@@ -108,7 +108,7 @@ export const PropertyResolverDialog: React.FC<PropertyResolverDialogProps> = ({
   }, [entity, nodeId]);
 
   const updateWorkingCopy = useCallback(
-    (updates: Partial<PropertyResolverWorkingCopyEntity>) => {
+    (updates: Partial<ResolverWorkingCopyEntity>) => {
       setWorkingCopy(prev => ({ ...prev, ...updates }));
     },
     []
@@ -148,7 +148,7 @@ export const PropertyResolverDialog: React.FC<PropertyResolverDialogProps> = ({
       await onSave(workingCopy);
       onClose();
     } catch (error) {
-      console.error('Failed to save PropertyResolver:', error);
+      console.error('Failed to save Resolver:', error);
       // TODO: Show error notification
     } finally {
       setIsSaving(false);
@@ -177,7 +177,7 @@ export const PropertyResolverDialog: React.FC<PropertyResolverDialogProps> = ({
     switch (activeStep) {
       case 0:
         return (
-          <PropertyResolverBasicInfoStep
+          <ResolverBasicInfoStep
             data={workingCopy}
             onUpdate={updateWorkingCopy}
             onValidationChange={(isValid) => handleStepValidation(0, isValid)}

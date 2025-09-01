@@ -25,13 +25,13 @@ import {
   Functions as FunctionsIcon,
 } from '@mui/icons-material';
 import type { 
-  PropertyResolverWorkingCopyEntity,
+  ResolverWorkingCopyEntity,
   DuplicateResolutionStrategy,
 } from '~/types';
 
 interface DuplicateResolutionStepProps {
-  data: Partial<PropertyResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<PropertyResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverWorkingCopyEntity>;
+  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 

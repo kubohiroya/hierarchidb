@@ -15,6 +15,7 @@ import type {
   SubscriptionOptions,
 } from '@hierarchidb/common-type';
 import type { TreeSubscriptionAPI } from '@hierarchidb/common-api';
+import type { EphemeralDB } from '../db/EphemeralDB';
 import {
   map,
   type Observable,

@@ -641,9 +641,9 @@ export class PluginManagementService implements PluginManagementAPI, PluginLifec
 
       // Check for dependent plugins
       const warnings: string[] = [];
-      const registeredNodeTypes = this.nodeTypeRegistry.getAll();
+      const registeredNodeTypes = await this.nodeTypeRegistry.getAll();
       for (const registeredNodeType of registeredNodeTypes) {
-        const pluginDefinition = this.nodeTypeRegistry.get(registeredNodeType);
+        const pluginDefinition = await this.nodeTypeRegistry.get(registeredNodeType.nodeType);
         if (pluginDefinition?.dependencies?.includes(nodeType)) {
           warnings.push(`Plugin '${registeredNodeType}' depends on '${nodeType}'`);
         }

@@ -73,11 +73,11 @@ export interface ChainExecutionResult {
 }
 
 /**
- * Manager for PropertyResolver chains
+ * Manager for Resolver chains
  */
 export class ChainManager {
   private chains: Map<string, ResolverChain> = new Map();
-  // private resolverCache: Map<NodeId, PropertyResolverEntity> = new Map();
+  // private resolverCache: Map<NodeId, ResolverEntity> = new Map();
 
   /**
    * Create a new resolver chain

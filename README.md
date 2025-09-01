@@ -87,7 +87,7 @@ hierarchidb/
 │   │   ├── stylemap-plugin/    # スタイルマップ
 │   │   ├── location-plugin/    # ロケーション
 │   │   ├── route-plugin/       # ルート
-│   │   └── propertyresolver-plugin/ # プロパティ解決
+│   │   └── resolver-plugin/ # プロパティ解決
 │   ├── backend/        # バックエンドサービス
 │   │   ├── bff/        # Backend for Frontend (Cloudflare Worker)
 │   │   └── cors-proxy/ # CORS プロキシ (Cloudflare Worker)

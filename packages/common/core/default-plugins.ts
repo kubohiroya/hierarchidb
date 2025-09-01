@@ -135,12 +135,12 @@ export const shapePlugin: PluginDefinition = {
 };
 
 /**
- * PropertyResolver plugin definition
+ * Resolver plugin definition
  */
-export const propertyResolverPlugin: PluginDefinition = {
-  nodeType: 'propertyresolver' as NodeType,
-  name: 'PropertyResolver',
-  displayName: 'Property Resolver',
+export const resolverPlugin: PluginDefinition = {
+  nodeType: 'resolver' as NodeType,
+  name: 'Resolver',
+  displayName: 'Resolver',
   icon: {
     muiIconName: 'Transform',
     emoji: '🔄',
@@ -152,9 +152,9 @@ export const propertyResolverPlugin: PluginDefinition = {
     createOrder: 100,
   },
   database: {
-    dbName: 'PropertyResolverDB',
+    dbName: 'ResolverDB',
     schema: {
-      propertyResolvers:
+      resolvers:
         '&id, nodeId, name, sourceSchema, targetSchema, mappingRules, createdAt, updatedAt, version',
     },
     version: 1,

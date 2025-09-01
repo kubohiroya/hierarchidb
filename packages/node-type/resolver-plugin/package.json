@@ -1,7 +1,7 @@
 {
-  "name": "@hierarchidb/propertyresolver-plugin",
+  "name": "@hierarchidb/resolver-plugin",
   "version": "1.0.0",
-  "description": "PropertyResolver node type plugin for property mapping between different data schemas",
+  "description": "Resolver node type plugin for property mapping between different data schemas",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

@@ -70,7 +70,7 @@ export interface CompilationStats {
 }
 
 /**
- * Compiler for PropertyResolver mappings
+ * Compiler for Resolver mappings
  * Generates optimized JavaScript functions from mapping rules
  */
 export class MappingCompiler {

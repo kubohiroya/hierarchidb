@@ -83,13 +83,13 @@ export class Bootstrap {
     // 3. ライフサイクルマネージャをシングルトンとして初期化
     const lifecycleManager = await SingletonMixin.getSingleton(
       NodeLifecycleManager.name,
-      () => new NodeLifecycleManager()
+      () => new NodeLifecycleManager(pluginRegistry, coreDB, ephemeralDB)
     );
     
     // 4. コマンドプロセッサをシングルトンとして初期化
     const commandProcessor = await SingletonMixin.getSingleton(
       CommandProcessor.name,
-      () => new CommandProcessor(coreDB, ephemeralDB)
+      () => new CommandProcessor()
     );
     
     // 5. 各サービスをシングルトンとして初期化
@@ -112,7 +112,7 @@ export class Bootstrap {
     
     const subscriptionService = await SingletonMixin.getSingleton(
       TreeSubscriptionService.name,
-      () => new TreeSubscriptionService()
+      () => new TreeSubscriptionService(coreDB, ephemeralDB)
     );
     
     const tagService = await SingletonMixin.getSingleton(
@@ -145,28 +145,29 @@ export class Bootstrap {
         },
         updateWorkingCopy: async (workingCopyId: string, updates: any) => {},
         getWorkingCopy: async (workingCopyId: string) => {
-          return workingCopyManager.getWorkingCopy(workingCopyId);
+          // TODO: Implement getWorkingCopy in WorkingCopyManager
+          return null as any;
         },
         commitWorkingCopy: async (workingCopyId: string) => {
           return 'entity-id';
         },
         discardWorkingCopy: async (workingCopyId: string) => {},
-      }) as WorkingCopyAPI & Comlink.ProxyMarked,
+      }) as unknown as WorkingCopyAPI & Comlink.ProxyMarked,
       pluginTree: Comlink.proxy({
         getPluginsForTree: async () => ({ plugins: [], totalCount: 0 }),
-      }) as PluginTreeAPI & Comlink.ProxyMarked,
+      }) as unknown as PluginTreeAPI & Comlink.ProxyMarked,
       nodeType: Comlink.proxy(nodeTypeService) as NodeTypeAPI & Comlink.ProxyMarked,
       pluginLifecycle: Comlink.proxy({
         initializePlugin: async () => {},
         destroyPlugin: async () => {},
-      }) as PluginLifecycleAPI & Comlink.ProxyMarked,
+      }) as unknown as PluginLifecycleAPI & Comlink.ProxyMarked,
       pluginExtension: Comlink.proxy({
         getExtensionsForPlugin: async () => [],
-      }) as PluginExtensionAPI & Comlink.ProxyMarked,
+      }) as unknown as PluginExtensionAPI & Comlink.ProxyMarked,
       importExport: Comlink.proxy({
         importNodes: async () => ({ importedCount: 0, errors: [] }),
         exportNodes: async () => ({ data: { nodes: [] }, format: 'json' }),
-      }) as ImportExportAPI & Comlink.ProxyMarked,
+      }) as unknown as ImportExportAPI & Comlink.ProxyMarked,
       tag: Comlink.proxy(tagService) as TagAPI & Comlink.ProxyMarked,
       multiStepDialog: Comlink.proxy({
         createWorkingCopy: async () => 'working-copy-id',
@@ -174,7 +175,7 @@ export class Bootstrap {
         evaluateCapabilities: async () => ({ canProceed: true, validationErrors: [] }),
         commitWorkingCopy: async () => 'entity-id',
         discardWorkingCopy: async () => {},
-      }) as MultiStepDialogAPI & Comlink.ProxyMarked,
+      }) as unknown as MultiStepDialogAPI & Comlink.ProxyMarked,
     };
     
     console.log('[Bootstrap] Worker initialization complete');

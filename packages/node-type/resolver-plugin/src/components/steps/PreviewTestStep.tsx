@@ -37,15 +37,15 @@ import {
   Storage as StorageIcon,
 } from '@mui/icons-material';
 import type {
-  PropertyResolverWorkingCopyEntity,
+  ResolverWorkingCopyEntity,
   SchemaInfo,
   MappingValidationResult,
   MappingPreviewResult,
 } from '~/types';
 
 interface PreviewTestStepProps {
-  data: Partial<PropertyResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<PropertyResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverWorkingCopyEntity>;
+  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;

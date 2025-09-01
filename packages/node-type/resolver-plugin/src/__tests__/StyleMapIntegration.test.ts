@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { PropertyResolverEntity } from '../types';
+import type { ResolverEntity } from '../types';
 import { MappingCompiler } from '../services/SimpleMappingCompiler';
 
-describe('StyleMap Integration with PropertyResolver', () => {
+describe('StyleMap Integration with Resolver', () => {
   let compiler: MappingCompiler;
 
   beforeEach(() => {
@@ -35,7 +35,7 @@ describe('StyleMap Integration with PropertyResolver', () => {
         ],
       };
 
-      // Direct access without PropertyResolver
+      // Direct access without Resolver
       const population = geoJsonData.properties.population;
       expect(population).toBe(1000000);
 
@@ -50,8 +50,8 @@ describe('StyleMap Integration with PropertyResolver', () => {
     });
   });
 
-  describe('PropertyResolver-Mediated Mapping', () => {
-    it('should transform properties through PropertyResolver before StyleMap', async () => {
+  describe('Resolver-Mediated Mapping', () => {
+    it('should transform properties through Resolver before StyleMap', async () => {
       // Source data with different schema
       const sourceData = {
         id: 'location-1',
@@ -63,8 +63,8 @@ describe('StyleMap Integration with PropertyResolver', () => {
         },
       };
 
-      // PropertyResolver configuration
-      const resolverEntity: Partial<PropertyResolverEntity> = {
+      // Resolver configuration
+      const resolverEntity: Partial<ResolverEntity> = {
         name: 'Location to GeoJSON Mapper',
         mappingRules: [
           {

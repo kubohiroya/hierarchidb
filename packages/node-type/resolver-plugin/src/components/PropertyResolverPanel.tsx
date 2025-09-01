@@ -39,7 +39,7 @@ import {
   Merge as MergeIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { PropertyResolverEntity } from '~/types';
+import type { ResolverEntity } from '~/types';
 
 interface MappingStatistics {
   totalSourceProperties: number;
@@ -50,9 +50,9 @@ interface MappingStatistics {
   conflicts: string[];
 }
 
-interface PropertyResolverPanelProps {
+interface ResolverPanelProps {
   nodeId: NodeId;
-  entity?: PropertyResolverEntity;
+  entity?: ResolverEntity;
   onEdit?: () => void;
   onDelete?: () => void;
   onTest?: () => void;
@@ -60,7 +60,7 @@ interface PropertyResolverPanelProps {
   onViewChain?: () => void;
 }
 
-export const PropertyResolverPanel: React.FC<PropertyResolverPanelProps> = ({
+export const ResolverPanel: React.FC<ResolverPanelProps> = ({
   nodeId: _nodeId,
   entity,
   onEdit,
@@ -165,7 +165,7 @@ export const PropertyResolverPanel: React.FC<PropertyResolverPanelProps> = ({
     return (
       <Paper sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="body1" color="text.secondary">
-          No PropertyResolver configuration found for this node.
+          No Resolver configuration found for this node.
         </Typography>
         <Button
           variant="contained"

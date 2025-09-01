@@ -1,38 +1,38 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-type';
-import { PropertyResolverEntityHandler } from '../handlers/PropertyResolverEntityHandler';
-import { propertyResolverDB } from '../database/PropertyResolverDatabase';
+import { ResolverEntityHandler } from '../handlers/ResolverEntityHandler';
+import { resolverDB } from '../database/ResolverDatabase';
 
-describe('PropertyResolver Integration Tests', () => {
-  let handler: PropertyResolverEntityHandler;
+describe('Resolver Integration Tests', () => {
+  let handler: ResolverEntityHandler;
   const testNodeId = 'test-node-123' as NodeId;
 
   beforeEach(() => {
-    handler = new PropertyResolverEntityHandler();
+    handler = new ResolverEntityHandler();
   });
 
   afterEach(async () => {
     // Clean up database after each test
-    await propertyResolverDB.propertyResolvers.clear();
-    await propertyResolverDB.workingCopies.clear();
+    await resolverDB.resolvers.clear();
+    await resolverDB.workingCopies.clear();
   });
 
   describe('Entity Creation', () => {
-    it('should create a PropertyResolver entity with default values', async () => {
+    it('should create a Resolver entity with default values', async () => {
       const entity = await handler.createEntity(testNodeId, {
-        name: 'New PropertyResolver'
+        name: 'New Resolver'
       });
 
       expect(entity).toBeDefined();
       expect(entity.nodeId).toBe(testNodeId);
-      expect(entity.name).toBe('New PropertyResolver');
+      expect(entity.name).toBe('New Resolver');
       expect(entity.mappingRules).toEqual([]);
       expect(entity.validationRules).toEqual([]);
       expect(entity.isCompiled).toBe(false);
     });
 
-    it('should create a PropertyResolver entity with custom values', async () => {
+    it('should create a Resolver entity with custom values', async () => {
       const customData = {
         name: 'Custom Resolver',
         description: 'Test resolver',

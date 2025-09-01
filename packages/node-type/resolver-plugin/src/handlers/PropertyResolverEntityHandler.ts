@@ -1,9 +1,9 @@
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
-import { propertyResolverDB } from '../database/PropertyResolverDatabase';
+import { resolverDB } from '../database/ResolverDatabase';
 import type { 
-  PropertyResolverEntity, 
-  PropertyResolverWorkingCopy,
+  ResolverEntity, 
+  ResolverWorkingCopy,
   PropertyMappingRule,
   ValidationRule,
   DuplicateResolutionStrategy,
@@ -11,9 +11,9 @@ import type {
 } from '../types';
 
 /**
- * Search criteria specific to PropertyResolver entities
+ * Search criteria specific to Resolver entities
  */
-export interface PropertyResolverSearchCriteria {
+export interface ResolverSearchCriteria {
   name?: string;
   sourceSchema?: string;
   targetSchema?: string;
@@ -25,9 +25,9 @@ export interface PropertyResolverSearchCriteria {
 }
 
 /**
- * Data required to create a PropertyResolver entity
+ * Data required to create a Resolver entity
  */
-export interface CreatePropertyResolverData {
+export interface CreateResolverData {
   name: string;
   description?: string;
   sourceSchema?: string;
@@ -39,25 +39,25 @@ export interface CreatePropertyResolverData {
 }
 
 /**
- * EntityHandler implementation for PropertyResolver plugin
+ * EntityHandler implementation for Resolver plugin
  * Extends BaseEntityHandler for common CRUD operations
  */
-export class PropertyResolverEntityHandler extends BaseEntityHandler<
-  PropertyResolverEntity,
-  any, // PropertyResolverWorkingCopy doesn't extend WorkingCopy base type
-  CreatePropertyResolverData,
-  PropertyResolverSearchCriteria
+export class ResolverEntityHandler extends BaseEntityHandler<
+  ResolverEntity,
+  any, // ResolverWorkingCopy doesn't extend WorkingCopy base type
+  CreateResolverData,
+  ResolverSearchCriteria
 > {
-  protected table = propertyResolverDB.propertyResolvers;
+  protected table = resolverDB.resolvers;
 
   /**
-   * Build a PropertyResolver entity from creation data
+   * Build a Resolver entity from creation data
    */
   protected buildEntity(
     nodeId: NodeId,
     entityId: EntityId,
-    data: CreatePropertyResolverData
-  ): PropertyResolverEntity {
+    data: CreateResolverData
+  ): ResolverEntity {
     const now = Date.now();
     
     return {
@@ -82,26 +82,26 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
   }
 
   /**
-   * Apply PropertyResolver-specific search criteria
+   * Apply Resolver-specific search criteria
    */
   protected applyAdditionalSearchCriteria(
     query: any,
-    criteria: PropertyResolverSearchCriteria
+    criteria: ResolverSearchCriteria
   ): any {
     if (criteria.sourceSchema) {
-      query = query.filter((entity: PropertyResolverEntity) =>
+      query = query.filter((entity: ResolverEntity) =>
         entity.sourceSchema?.toLowerCase().includes(criteria.sourceSchema!.toLowerCase())
       );
     }
 
     if (criteria.targetSchema) {
-      query = query.filter((entity: PropertyResolverEntity) =>
+      query = query.filter((entity: ResolverEntity) =>
         entity.targetSchema?.toLowerCase().includes(criteria.targetSchema!.toLowerCase())
       );
     }
 
     if (criteria.isCompiled !== undefined) {
-      query = query.filter((entity: PropertyResolverEntity) =>
+      query = query.filter((entity: ResolverEntity) =>
         entity.isCompiled === criteria.isCompiled
       );
     }
@@ -110,11 +110,11 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
   }
 
   /**
-   * Clean up PropertyResolver-specific data when entity is deleted
+   * Clean up Resolver-specific data when entity is deleted
    */
-  protected async cleanupEntityData(entity: PropertyResolverEntity): Promise<void> {
+  protected async cleanupEntityData(entity: ResolverEntity): Promise<void> {
     // Delete working copies associated with this entity
-    await propertyResolverDB.workingCopies.delete(entity.id);
+    await resolverDB.workingCopies.delete(entity.id);
     
     // Additional cleanup for compiled functions or cached data could go here
   }
@@ -122,14 +122,14 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
   /**
    * Create a working copy for editing
    */
-  async createWorkingCopy(nodeId: NodeId): Promise<PropertyResolverWorkingCopy> {
+  async createWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
-      throw new Error(`PropertyResolver entity not found for nodeId: ${nodeId}`);
+      throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
     }
     
     const workingCopyId = crypto.randomUUID() as EntityId;
-    const workingCopy: PropertyResolverWorkingCopy = {
+    const workingCopy: ResolverWorkingCopy = {
       ...entity,
       id: workingCopyId, // Use id as primary key for database
       workingCopyId: workingCopyId,
@@ -138,20 +138,20 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
       modifiedFields: [],
     };
     
-    await propertyResolverDB.workingCopies.put(workingCopy);
+    await resolverDB.workingCopies.put(workingCopy);
     return workingCopy;
   }
 
   /**
    * Get working copy by node ID
    */
-  async getWorkingCopy(nodeId: NodeId): Promise<PropertyResolverWorkingCopy | null> {
+  async getWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy | null> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
       return null;
     }
 
-    const workingCopy = await propertyResolverDB.workingCopies
+    const workingCopy = await resolverDB.workingCopies
       .where('originalId')
       .equals(entity.id)
       .first();
@@ -164,14 +164,14 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
    */
   async updateWorkingCopy(
     workingCopyId: EntityId,
-    updates: Partial<PropertyResolverWorkingCopy>
-  ): Promise<PropertyResolverWorkingCopy> {
-    const workingCopy = await propertyResolverDB.workingCopies.get(workingCopyId);
+    updates: Partial<ResolverWorkingCopy>
+  ): Promise<ResolverWorkingCopy> {
+    const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
     }
 
-    const updatedWorkingCopy: PropertyResolverWorkingCopy = {
+    const updatedWorkingCopy: ResolverWorkingCopy = {
       ...workingCopy,
       ...updates,
       isDirty: true,
@@ -181,15 +181,15 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
       ])),
     };
 
-    await propertyResolverDB.workingCopies.put(updatedWorkingCopy);
+    await resolverDB.workingCopies.put(updatedWorkingCopy);
     return updatedWorkingCopy;
   }
 
   /**
    * Commit working copy changes back to the entity
    */
-  async commitWorkingCopy(workingCopyId: EntityId): Promise<PropertyResolverEntity> {
-    const workingCopy = await propertyResolverDB.workingCopies.get(workingCopyId);
+  async commitWorkingCopy(workingCopyId: EntityId): Promise<ResolverEntity> {
+    const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
     }
@@ -201,7 +201,7 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
     const updatedEntity = await this.updateEntity(originalId, entityData);
     
     // Delete the working copy
-    await propertyResolverDB.workingCopies.delete(workingCopyId);
+    await resolverDB.workingCopies.delete(workingCopyId);
     
     return updatedEntity;
   }
@@ -210,19 +210,19 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
    * Discard working copy changes
    */
   async discardWorkingCopy(workingCopyId: EntityId): Promise<void> {
-    await propertyResolverDB.workingCopies.delete(workingCopyId);
+    await resolverDB.workingCopies.delete(workingCopyId);
   }
 
   /**
-   * Duplicate a PropertyResolver entity
+   * Duplicate a Resolver entity
    */
-  async duplicate(nodeId: NodeId, newNodeId: NodeId): Promise<PropertyResolverEntity> {
+  async duplicate(nodeId: NodeId, newNodeId: NodeId): Promise<ResolverEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
-      throw new Error(`PropertyResolver entity not found for nodeId: ${nodeId}`);
+      throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
     }
 
-    const duplicateData: CreatePropertyResolverData = {
+    const duplicateData: CreateResolverData = {
       name: `${entity.name} (Copy)`,
       description: entity.description,
       sourceSchema: entity.sourceSchema,
@@ -237,12 +237,12 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
   }
 
   /**
-   * Compile the PropertyResolver mapping rules
+   * Compile the Resolver mapping rules
    */
   async compileMapping(entityId: EntityId): Promise<void> {
     const entity = await this.getEntity(entityId);
     if (!entity) {
-      throw new Error(`PropertyResolver entity not found: ${entityId}`);
+      throw new Error(`Resolver entity not found: ${entityId}`);
     }
 
     // Compilation logic would go here
@@ -279,7 +279,7 @@ export class PropertyResolverEntityHandler extends BaseEntityHandler<
   }> {
     const entity = await this.getEntity(entityId);
     if (!entity) {
-      throw new Error(`PropertyResolver entity not found: ${entityId}`);
+      throw new Error(`Resolver entity not found: ${entityId}`);
     }
 
     const errors: string[] = [];

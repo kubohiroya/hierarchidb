@@ -8,15 +8,15 @@ import {
   OutlinedInput,
   FormHelperText,
 } from '@mui/material';
-import type { PropertyResolverWorkingCopyEntity } from '~/types';
+import type { ResolverWorkingCopyEntity } from '~/types';
 
-interface PropertyResolverBasicInfoStepProps {
-  data: Partial<PropertyResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<PropertyResolverWorkingCopyEntity>) => void;
+interface ResolverBasicInfoStepProps {
+  data: Partial<ResolverWorkingCopyEntity>;
+  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 
-export const PropertyResolverBasicInfoStep: React.FC<PropertyResolverBasicInfoStepProps> = ({
+export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
   data,
   onUpdate,
   onValidationChange,

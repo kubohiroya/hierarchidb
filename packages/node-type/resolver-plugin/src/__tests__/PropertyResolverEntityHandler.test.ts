@@ -1,27 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { PropertyResolverEntityHandler, type CreatePropertyResolverData } from '../handlers/PropertyResolverEntityHandler';
-import { propertyResolverDB } from '../database/PropertyResolverDatabase';
+import { ResolverEntityHandler, type CreateResolverData } from '../handlers/ResolverEntityHandler';
+import { resolverDB } from '../database/ResolverDatabase';
 
-describe('PropertyResolverEntityHandler', () => {
-  let handler: PropertyResolverEntityHandler;
+describe('ResolverEntityHandler', () => {
+  let handler: ResolverEntityHandler;
 
   beforeEach(() => {
-    handler = new PropertyResolverEntityHandler();
+    handler = new ResolverEntityHandler();
   });
 
   afterEach(async () => {
     // Clean up database after each test
-    await propertyResolverDB.propertyResolvers.clear();
-    await propertyResolverDB.workingCopies.clear();
+    await resolverDB.resolvers.clear();
+    await resolverDB.workingCopies.clear();
   });
 
   describe('createEntity', () => {
-    it('should create a new PropertyResolver entity', async () => {
+    it('should create a new Resolver entity', async () => {
       const nodeId = 'node-123' as NodeId;
-      const data: CreatePropertyResolverData = {
-        name: 'Test PropertyResolver',
+      const data: CreateResolverData = {
+        name: 'Test Resolver',
         description: 'Test description',
         sourceSchema: 'TestSource',
         targetSchema: 'TestTarget',
@@ -41,8 +41,8 @@ describe('PropertyResolverEntityHandler', () => {
 
     it('should create entity with default values when minimal data provided', async () => {
       const nodeId = 'node-456' as NodeId;
-      const data: CreatePropertyResolverData = {
-        name: 'Minimal PropertyResolver',
+      const data: CreateResolverData = {
+        name: 'Minimal Resolver',
       };
 
       const entity = await handler.createEntity(nodeId, data);
@@ -59,7 +59,7 @@ describe('PropertyResolverEntityHandler', () => {
   });
 
   describe('updateEntity', () => {
-    it('should update an existing PropertyResolver entity', async () => {
+    it('should update an existing Resolver entity', async () => {
       const nodeId = 'node-789' as NodeId;
       const entity = await handler.createEntity(nodeId, {
         name: 'Original Name',
@@ -86,7 +86,7 @@ describe('PropertyResolverEntityHandler', () => {
   });
 
   describe('deleteEntity', () => {
-    it('should delete an existing PropertyResolver entity', async () => {
+    it('should delete an existing Resolver entity', async () => {
       const nodeId = 'node-delete' as NodeId;
       const entity = await handler.createEntity(nodeId, {
         name: 'To Delete',
@@ -246,7 +246,7 @@ describe('PropertyResolverEntityHandler', () => {
   });
 
   describe('duplicate', () => {
-    it('should duplicate a PropertyResolver entity', async () => {
+    it('should duplicate a Resolver entity', async () => {
       const originalNodeId = 'node-original' as NodeId;
       const newNodeId = 'node-duplicate' as NodeId;
 
