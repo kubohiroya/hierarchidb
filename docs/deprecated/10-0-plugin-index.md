@@ -8,9 +8,9 @@
 - **ルーティング**: view（マップ表示）、edit（マップ設定編集）
 - **ライフサイクル**: afterCreate（初期地図設定）、beforeDelete（マップリソースクリーンアップ）
 
-## stylemap（スタイル情報プラグイン）
+## styler（スタイル情報プラグイン）
 - **機能**: CSVデータをもとにスタイル情報を提供
-- **エンティティ**: StyleMapEntity（CSVパス、スタイル定義、カラーマップ等）
+- **エンティティ**: StylerEntity（CSVパス、スタイル定義、カラーマップ等）
 - **ルーティング**: import（CSVインポート）、preview（スタイルプレビュー）、export（スタイル出力）
 - **API拡張**: parseCSVStyles、applyStyles、validateStyleData
 

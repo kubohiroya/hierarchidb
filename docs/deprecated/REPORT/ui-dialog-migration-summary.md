@@ -44,9 +44,9 @@
 - ✅ Slider/Select等のMUIコンポーネント活用
 - ✅ コード量: 約60%削減
 
-#### 2.3 stylemapプラグイン ✅
+#### 2.3 stylerプラグイン ✅
 **変更内容:**
-- `StyleMapCreateDialogRefactored` - StepperDialogを使用した6ステップ実装
+- `StylerCreateDialogRefactored` - StepperDialogを使用した6ステップ実装
 
 **改善点:**
 - ✅ StepperDialogによるマルチステップ管理
@@ -62,7 +62,7 @@
 | ワーキングコピーパターン | ❌ 全プラグイン未実装 | ✅ useWorkingCopyフックで対応 |
 | Discard確認ダイアログ | ❌ 全プラグイン未実装 | ✅ 全プラグインで実装 |
 | ドラフト保存機能 | ❌ 全プラグイン未実装 | ✅ 対応可能（API実装待ち） |
-| MUI Stepper | ⚠️ stylemapのみ独自実装 | ✅ StepperDialogで標準化 |
+| MUI Stepper | ⚠️ stylerのみ独自実装 | ✅ StepperDialogで標準化 |
 | UIの統一性 | ❌ 各プラグイン独自 | ✅ 完全統一 |
 
 ### 4. コード品質の向上
@@ -96,12 +96,12 @@
 </CommonDialog>
 ```
 
-#### マルチステップダイアログ（stylemap）
+#### マルチステップダイアログ（styler）
 ```tsx
 <StepperDialog
   mode="create"
   open={open}
-  title="Create StyleMap"
+  title="Create Styler"
   icon={<PaletteIcon />}
   steps={steps}
   onSubmit={onSubmit}
@@ -150,7 +150,7 @@
 - [x] 基本コンポーネント実装
 - [x] folderプラグイン移行
 - [x] basemapプラグイン移行
-- [x] stylemapプラグイン移行
+- [x] stylerプラグイン移行
 - [x] package.json依存関係更新
 - [x] テストケース作成
 - [ ] Worker層API実装（次フェーズ）

@@ -16,7 +16,7 @@ import { AutoEntityHandler } from '../handlers/AutoEntityHandler';
 import { EntityMetadata, NodeId, NodeType, PeerEntity } from '@hierarchidb/common-type';
 
 // Test entities
-interface StyleMapEntity extends PeerEntity {
+interface StylerEntity extends PeerEntity {
   nodeId: NodeId;
   name: string;
   description: string;
@@ -40,9 +40,9 @@ describe('Auto Lifecycle Management System Integration', () => {
   let registrationService: EntityRegistrationService;
   let workingCopyManager: WorkingCopyManager;
   let lifecycleManager: AutoLifecycleManager;
-  let styleMapHandler: AutoEntityHandler<StyleMapEntity>;
+  let stylerHandler: AutoEntityHandler<StylerEntity>;
 
-  const styleMapNodeType = 'stylemap' as NodeType;
+  const stylerNodeType = 'styler' as NodeType;
   const nodeId1 = 'node-1' as NodeId;
   const nodeId2 = 'node-2' as NodeId;
   const nodeId3 = 'node-3' as NodeId;
@@ -51,8 +51,8 @@ describe('Auto Lifecycle Management System Integration', () => {
     // Create comprehensive test database
     db = new Dexie('IntegrationTestDB');
     db.version(1).stores({
-      styleMapEntities: 'nodeId, createdAt',
-      styleMapWorkingCopies: 'workingCopyId, workingCopyOf',
+      stylerEntities: 'nodeId, createdAt',
+      stylerWorkingCopies: 'workingCopyId, workingCopyOf',
       tableMetadataEntities: 'id, referenceCount',
     });
 
@@ -63,10 +63,10 @@ describe('Auto Lifecycle Management System Integration', () => {
     workingCopyManager = new WorkingCopyManager(db);
     lifecycleManager = new AutoLifecycleManager(registrationService, workingCopyManager, db);
 
-    // Register StyleMap entity metadata
+    // Register Styler entity metadata
     const peerMetadata: EntityMetadata = {
       entityType: 'peer',
-      tableName: 'styleMapEntities',
+      tableName: 'stylerEntities',
       relationship: {
         type: 'one-to-one',
         foreignKeyField: 'nodeId',
@@ -74,7 +74,7 @@ describe('Auto Lifecycle Management System Integration', () => {
       },
       workingCopyConfig: {
         enabled: true,
-        tableName: 'styleMapWorkingCopies',
+        tableName: 'stylerWorkingCopies',
       },
     };
 
@@ -94,13 +94,13 @@ describe('Auto Lifecycle Management System Integration', () => {
       },
     };
 
-    registrationService.registerEntity(styleMapNodeType, 'peer', peerMetadata);
-    registrationService.registerEntity(styleMapNodeType, 'relational', relationalMetadata);
+    registrationService.registerEntity(stylerNodeType, 'peer', peerMetadata);
+    registrationService.registerEntity(stylerNodeType, 'relational', relationalMetadata);
 
     // Create entity handler
-    styleMapHandler = new AutoEntityHandler<StyleMapEntity>(
-      styleMapNodeType,
-      'styleMapEntities',
+    stylerHandler = new AutoEntityHandler<StylerEntity>(
+      stylerNodeType,
+      'stylerEntities',
       lifecycleManager
     );
   });
@@ -110,53 +110,53 @@ describe('Auto Lifecycle Management System Integration', () => {
   });
 
   describe('Complete Entity Lifecycle', () => {
-    it('should handle full CRUD lifecycle for StyleMap entity', async () => {
+    it('should handle full CRUD lifecycle for Styler entity', async () => {
       // 1. Create entity
-      const entity = await styleMapHandler.createEntity(nodeId1, {
-        name: 'Test StyleMap',
+      const entity = await stylerHandler.createEntity(nodeId1, {
+        name: 'Test Styler',
         description: 'Integration test entity',
       });
 
       expect(entity).toBeDefined();
       expect(entity.nodeId).toBe(nodeId1);
-      expect(entity.name).toBe('Test StyleMap');
+      expect(entity.name).toBe('Test Styler');
       expect(entity.createdAt).toBeDefined();
 
       // 2. Read entity
-      const retrieved = await styleMapHandler.getEntity(nodeId1);
+      const retrieved = await stylerHandler.getEntity(nodeId1);
       expect(retrieved).toBeDefined();
-      expect(retrieved!.name).toBe('Test StyleMap');
+      expect(retrieved!.name).toBe('Test Styler');
 
       // 3. Update entity
-      const updated = await styleMapHandler.updateEntity(nodeId1, {
+      const updated = await stylerHandler.updateEntity(nodeId1, {
         description: 'Updated description',
       });
       expect(updated!.description).toBe('Updated description');
       expect(updated!.updatedAt).toBeDefined();
 
       // 4. Delete entity
-      await styleMapHandler.deleteEntity(nodeId1);
-      const deleted = await styleMapHandler.getEntity(nodeId1);
+      await stylerHandler.deleteEntity(nodeId1);
+      const deleted = await stylerHandler.getEntity(nodeId1);
       expect(deleted).toBeUndefined();
     });
 
     it('should handle entity duplication correctly', async () => {
       // Create source entity
-      await styleMapHandler.createEntity(nodeId1, {
-        name: 'Source StyleMap',
+      await stylerHandler.createEntity(nodeId1, {
+        name: 'Source Styler',
         description: 'To be duplicated',
       });
 
       // Duplicate entity
-      const duplicate = await styleMapHandler.duplicateEntity(nodeId1, nodeId2);
+      const duplicate = await stylerHandler.duplicateEntity(nodeId1, nodeId2);
 
       expect(duplicate.nodeId).toBe(nodeId2);
-      expect(duplicate.name).toBe('Source StyleMap');
+      expect(duplicate.name).toBe('Source Styler');
       expect(duplicate.description).toBe('To be duplicated');
 
       // Verify both entities exist
-      const source = await styleMapHandler.getEntity(nodeId1);
-      const target = await styleMapHandler.getEntity(nodeId2);
+      const source = await stylerHandler.getEntity(nodeId1);
+      const target = await stylerHandler.getEntity(nodeId2);
 
       expect(source).toBeDefined();
       expect(target).toBeDefined();
@@ -168,7 +168,7 @@ describe('Auto Lifecycle Management System Integration', () => {
   describe('Working Copy Management Integration', () => {
     beforeEach(async () => {
       // Create base entity for working copy tests
-      await styleMapHandler.createEntity(nodeId1, {
+      await stylerHandler.createEntity(nodeId1, {
         name: 'Base Entity',
         description: 'For working copy tests',
       });
@@ -176,7 +176,7 @@ describe('Auto Lifecycle Management System Integration', () => {
 
     it('should handle complete working copy lifecycle', async () => {
       // 1. Create working copy
-      const workingCopy = await styleMapHandler.createWorkingCopy(nodeId1);
+      const workingCopy = await stylerHandler.createWorkingCopy(nodeId1);
 
       expect(workingCopy.nodeId).toBe(nodeId1);
       expect(workingCopy.nodeId).toBe(nodeId1);
@@ -189,37 +189,37 @@ describe('Auto Lifecycle Management System Integration', () => {
       (workingCopy as any).isDirty = true;
 
       // 3. Commit working copy
-      await styleMapHandler.commitWorkingCopy(nodeId1, workingCopy);
+      await stylerHandler.commitWorkingCopy(nodeId1, workingCopy);
 
       // 4. Verify changes are committed
-      const committed = await styleMapHandler.getEntity(nodeId1);
+      const committed = await stylerHandler.getEntity(nodeId1);
       expect(committed!.name).toBe('Modified in Working Copy');
       expect(committed!.description).toBe('Changed description');
       expect(committed!.updatedAt).toBeDefined();
 
       // 5. Verify working copy is deleted
-      const workingCopyCount = await db.table('styleMapWorkingCopies').count();
+      const workingCopyCount = await db.table('stylerWorkingCopies').count();
       expect(workingCopyCount).toBe(0);
     });
 
     it('should handle working copy discard correctly', async () => {
-      const originalEntity = await styleMapHandler.getEntity(nodeId1);
+      const originalEntity = await stylerHandler.getEntity(nodeId1);
 
       // Create and modify working copy
-      const workingCopy = await styleMapHandler.createWorkingCopy(nodeId1);
+      const workingCopy = await stylerHandler.createWorkingCopy(nodeId1);
       workingCopy.name = 'Modified Name';
       workingCopy.description = 'Modified Description';
 
       // Discard working copy
-      await styleMapHandler.discardWorkingCopy(nodeId1, workingCopy);
+      await stylerHandler.discardWorkingCopy(nodeId1, workingCopy);
 
       // Verify original entity is unchanged
-      const unchanged = await styleMapHandler.getEntity(nodeId1);
+      const unchanged = await stylerHandler.getEntity(nodeId1);
       expect(unchanged!.name).toBe(originalEntity!.name);
       expect(unchanged!.description).toBe(originalEntity!.description);
 
       // Verify working copy is deleted
-      const workingCopyCount = await db.table('styleMapWorkingCopies').count();
+      const workingCopyCount = await db.table('stylerWorkingCopies').count();
       expect(workingCopyCount).toBe(0);
     });
   });
@@ -239,9 +239,9 @@ describe('Auto Lifecycle Management System Integration', () => {
     });
 
     it('should handle CSV file sharing scenario', async () => {
-      // Create first StyleMap that references the CSV
-      await styleMapHandler.createEntity(nodeId1, {
-        name: 'StyleMap 1',
+      // Create first Styler that references the CSV
+      await stylerHandler.createEntity(nodeId1, {
+        name: 'Styler 1',
         description: 'Uses shared CSV',
       });
 
@@ -258,9 +258,9 @@ describe('Auto Lifecycle Management System Integration', () => {
       expect(resource.referenceCount).toBe(1);
       expect(resource.referencingNodeIds).toContain(nodeId1);
 
-      // Create second StyleMap that also references the same CSV
-      await styleMapHandler.createEntity(nodeId2, {
-        name: 'StyleMap 2',
+      // Create second Styler that also references the same CSV
+      await stylerHandler.createEntity(nodeId2, {
+        name: 'Styler 2',
         description: 'Also uses shared CSV',
       });
 
@@ -277,8 +277,8 @@ describe('Auto Lifecycle Management System Integration', () => {
       expect(resource.referencingNodeIds).toContain(nodeId1);
       expect(resource.referencingNodeIds).toContain(nodeId2);
 
-      // Delete first StyleMap
-      await styleMapHandler.deleteEntity(nodeId1);
+      // Delete first Styler
+      await stylerHandler.deleteEntity(nodeId1);
 
       // Verify reference count is decremented but resource still exists
       resource = await db.table('tableMetadataEntities').get('csv-resource-1');
@@ -287,8 +287,8 @@ describe('Auto Lifecycle Management System Integration', () => {
       expect(resource.referencingNodeIds).not.toContain(nodeId1);
       expect(resource.referencingNodeIds).toContain(nodeId2);
 
-      // Delete second StyleMap
-      await styleMapHandler.deleteEntity(nodeId2);
+      // Delete second Styler
+      await stylerHandler.deleteEntity(nodeId2);
 
       // Verify resource is auto-deleted when reference count reaches zero
       resource = await db.table('tableMetadataEntities').get('csv-resource-1');
@@ -296,8 +296,8 @@ describe('Auto Lifecycle Management System Integration', () => {
     });
 
     it('should handle entity duplication with shared resources', async () => {
-      // Create StyleMap with shared resource reference
-      await styleMapHandler.createEntity(nodeId1, {
+      // Create Styler with shared resource reference
+      await stylerHandler.createEntity(nodeId1, {
         name: 'Source with CSV',
         description: 'Has shared resource',
       });
@@ -309,8 +309,8 @@ describe('Auto Lifecycle Management System Integration', () => {
         registrationService.getEntityByKey('relational')!
       );
 
-      // Duplicate the StyleMap
-      await styleMapHandler.duplicateEntity(nodeId1, nodeId2);
+      // Duplicate the Styler
+      await stylerHandler.duplicateEntity(nodeId1, nodeId2);
 
       // Verify both entities reference the same resource
       const resource = await db.table('tableMetadataEntities').get('csv-resource-1');
@@ -326,8 +326,8 @@ describe('Auto Lifecycle Management System Integration', () => {
 
       // Create multiple entities concurrently
       const createPromises = [nodeId1, nodeId2, nodeId3].map((nodeId) =>
-        styleMapHandler.createEntity(nodeId, {
-          name: `StyleMap ${nodeId}`,
+        stylerHandler.createEntity(nodeId, {
+          name: `Styler ${nodeId}`,
           description: `Bulk created entity ${nodeId}`,
         })
       );
@@ -341,22 +341,22 @@ describe('Auto Lifecycle Management System Integration', () => {
       });
 
       // List all entities
-      const allEntities = await styleMapHandler.listEntities();
+      const allEntities = await stylerHandler.listEntities();
       expect(allEntities).toHaveLength(3);
 
       // Count entities
-      const count = await styleMapHandler.countEntities();
+      const count = await stylerHandler.countEntities();
       expect(count).toBe(3);
 
       // Delete all entities concurrently
       const deletePromises = [nodeId1, nodeId2, nodeId3].map((nodeId) =>
-        styleMapHandler.deleteEntity(nodeId)
+        stylerHandler.deleteEntity(nodeId)
       );
 
       await Promise.all(deletePromises);
 
       // Verify all entities are deleted
-      const remainingCount = await styleMapHandler.countEntities();
+      const remainingCount = await stylerHandler.countEntities();
       expect(remainingCount).toBe(0);
 
       const endTime = performance.now();
@@ -369,7 +369,7 @@ describe('Auto Lifecycle Management System Integration', () => {
     it('should handle pagination correctly', async () => {
       // Create 10 entities with different timestamps
       const entityPromises = Array.from({ length: 10 }, (_, i) =>
-        styleMapHandler.createEntity(`bulk-${i}` as NodeId, {
+        stylerHandler.createEntity(`bulk-${i}` as NodeId, {
           name: `Bulk Entity ${i}`,
           description: `Entity number ${i}`,
         })
@@ -378,10 +378,10 @@ describe('Auto Lifecycle Management System Integration', () => {
       await Promise.all(entityPromises);
 
       // Test pagination
-      const page1 = await styleMapHandler.listEntities(0, 3);
-      const page2 = await styleMapHandler.listEntities(3, 3);
-      const page3 = await styleMapHandler.listEntities(6, 3);
-      const page4 = await styleMapHandler.listEntities(9, 3);
+      const page1 = await stylerHandler.listEntities(0, 3);
+      const page2 = await stylerHandler.listEntities(3, 3);
+      const page3 = await stylerHandler.listEntities(6, 3);
+      const page4 = await stylerHandler.listEntities(9, 3);
 
       expect(page1).toHaveLength(3);
       expect(page2).toHaveLength(3);
@@ -408,14 +408,14 @@ describe('Auto Lifecycle Management System Integration', () => {
       vi.spyOn(db, 'transaction').mockImplementation((...args: any[]) => {
         return originalTransaction.apply(db, [
           'rw',
-          ['styleMapEntities'],
+          ['stylerEntities'],
           async () => {
             throw new Error('Transaction failed');
           },
         ] as any);
       });
 
-      await expect(styleMapHandler.createEntity(nodeId1, {})).rejects.toThrow('Transaction failed');
+      await expect(stylerHandler.createEntity(nodeId1, {})).rejects.toThrow('Transaction failed');
 
       // Restore original transaction
       vi.mocked(db.transaction).mockRestore();
@@ -423,15 +423,15 @@ describe('Auto Lifecycle Management System Integration', () => {
 
     it('should handle concurrent modifications correctly', async () => {
       // Create entity
-      await styleMapHandler.createEntity(nodeId1, {
+      await stylerHandler.createEntity(nodeId1, {
         name: 'Concurrent Test',
         description: 'Original',
       });
 
       // Create two working copies concurrently
       const [workingCopy1, workingCopy2] = await Promise.all([
-        styleMapHandler.createWorkingCopy(nodeId1),
-        styleMapHandler.createWorkingCopy(nodeId1),
+        stylerHandler.createWorkingCopy(nodeId1),
+        stylerHandler.createWorkingCopy(nodeId1),
       ]);
 
       // Modify both working copies
@@ -439,38 +439,38 @@ describe('Auto Lifecycle Management System Integration', () => {
       workingCopy2.description = 'Modified by WC2';
 
       // Commit first working copy
-      await styleMapHandler.commitWorkingCopy(nodeId1, workingCopy1);
+      await stylerHandler.commitWorkingCopy(nodeId1, workingCopy1);
 
       // Second commit should succeed (last writer wins)
-      await styleMapHandler.commitWorkingCopy(nodeId1, workingCopy2);
+      await stylerHandler.commitWorkingCopy(nodeId1, workingCopy2);
 
       // Verify final state
-      const final = await styleMapHandler.getEntity(nodeId1);
+      const final = await stylerHandler.getEntity(nodeId1);
       expect(final!.description).toBe('Modified by WC2');
     });
 
     it('should clean up properly on partial failures', async () => {
       // Create entity
-      await styleMapHandler.createEntity(nodeId1, {});
+      await stylerHandler.createEntity(nodeId1, {});
 
       // Create working copy
-      const workingCopy = await styleMapHandler.createWorkingCopy(nodeId1);
+      const workingCopy = await stylerHandler.createWorkingCopy(nodeId1);
 
       // Mock commit to fail after working copy is modified
       vi.spyOn(workingCopyManager, 'commit').mockRejectedValue(new Error('Commit failed'));
 
       workingCopy.name = 'Modified';
 
-      await expect(styleMapHandler.commitWorkingCopy(nodeId1, workingCopy)).rejects.toThrow(
+      await expect(stylerHandler.commitWorkingCopy(nodeId1, workingCopy)).rejects.toThrow(
         'Commit failed'
       );
 
       // Verify working copy still exists (wasn't deleted due to failed commit)
-      const remainingWorkingCopies = await db.table('styleMapWorkingCopies').count();
+      const remainingWorkingCopies = await db.table('stylerWorkingCopies').count();
       expect(remainingWorkingCopies).toBe(1);
 
       // Clean up
-      await styleMapHandler.discardWorkingCopy(nodeId1, workingCopy);
+      await stylerHandler.discardWorkingCopy(nodeId1, workingCopy);
     });
   });
 
@@ -481,7 +481,7 @@ describe('Auto Lifecycle Management System Integration', () => {
 
       // Create large number of entities
       const createPromises = Array.from({ length: ENTITY_COUNT }, (_, i) =>
-        styleMapHandler.createEntity(`perf-${i}` as NodeId, {
+        stylerHandler.createEntity(`perf-${i}` as NodeId, {
           name: `Performance Entity ${i}`,
           description: `Large scale test entity ${i}`,
         })
@@ -494,7 +494,7 @@ describe('Auto Lifecycle Management System Integration', () => {
 
       // Test listing performance
       const listStartTime = performance.now();
-      const allEntities = await styleMapHandler.listEntities(0, ENTITY_COUNT);
+      const allEntities = await stylerHandler.listEntities(0, ENTITY_COUNT);
       const listTime = performance.now();
 
       expect(allEntities).toHaveLength(ENTITY_COUNT);
@@ -502,7 +502,7 @@ describe('Auto Lifecycle Management System Integration', () => {
 
       // Test counting performance
       const countStartTime = performance.now();
-      const count = await styleMapHandler.countEntities();
+      const count = await stylerHandler.countEntities();
       const countTime = performance.now();
 
       expect(count).toBe(ENTITY_COUNT);

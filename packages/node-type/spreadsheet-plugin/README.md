@@ -123,7 +123,7 @@ HierarchiDB用のスプレッドシートプラグインです。CSV/TSV/Excel/Z
 
 ### SpreadsheetCSVApiDriver
 
-CSVデータ処理のメインAPIドライバー。StyleMapCSVApiDriverから改良。
+CSVデータ処理のメインAPIドライバー。StylerCSVApiDriverから改良。
 
 **主要機能**:
 - ✅ **チャンク対応**: 大容量ファイル（100K行+）の効率的処理

@@ -90,7 +90,7 @@
 - 🟢 **ヘッダーのみCSV**: `throw new Error('No data rows found')`  
 - 🟢 **ネットワークエラー**: `throw new Error('Failed to download: 404 Not Found')`
 - 🟢 **無効テーブルID**: `throw new Error('Table not found')`
-- **参照したEARS要件**: `docs/implements/stylemap-csv-api-driver/StyleMapCSVApiDriver-testcases.md`
+- **参照したEARS要件**: `docs/implements/styler-csv-api-driver/StylerCSVApiDriver-testcases.md`
 
 ### 境界値ケース
 - 🟡 **最大ファイルサイズ**: 50MB相当のCSVデータ
@@ -109,7 +109,7 @@
 - **アーキテクチャ**: `CLAUDE.md` - プラグインシステム、Working Copy パターン
 - **データフロー**: UIコンポーネント → Worker → Database の分離アーキテクチャ
 - **型定義**: `packages/ui/csv-extract/src/types/index.ts` - 完全なTypeScript型システム
-- **テストケース**: `docs/implements/stylemap-csv-api-driver/StyleMapCSVApiDriver-testcases.md` - CSV処理仕様
+- **テストケース**: `docs/implements/styler-csv-api-driver/StylerCSVApiDriver-testcases.md` - CSV処理仕様
 
 ### 参照した機能要件
 - **正常系**: CSVファイルアップロード、フィルタリング、参照管理（6項目）
@@ -129,6 +129,6 @@
 1. **Phase1**: FolderEntityHandlerの継承とSpreadsheetEntityHandlerの実装
 2. **Phase2**: CSV処理APIの統合（ICSVDataApi実装）
 3. **Phase3**: UI統合（csv-extractコンポーネントの組み込み）
-4. **Phase4**: テストケース実装（StyleMapCSVApiDriver-testcases.md準拠）
+4. **Phase4**: テストケース実装（StylerCSVApiDriver-testcases.md準拠）
 
 **次のお勧めステップ**: `/tdd-testcases` でテストケースの洗い出しを行います。

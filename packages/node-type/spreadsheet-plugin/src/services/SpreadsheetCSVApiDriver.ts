@@ -1,7 +1,7 @@
 /**
  * @file SpreadsheetCSVApiDriver.ts
  * @description CSV data processing API driver for Spreadsheet plugin
- * Refactored from StyleMapCSVApiDriver with chunking support for large tables
+ * Refactored from StylerCSVApiDriver with chunking support for large tables
  */
 
 import type {
@@ -50,7 +50,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: 両プラグイン対応のコンストラクタ
-   * 【統合方針】: SpreadsheetとStyleMap両方をサポート
+   * 【統合方針】: SpreadsheetとStyler両方をサポート
    * 🟢 信頼性レベル: 後方互換性を保った統合実装
    */
   constructor(pluginIdOrTableManager: string | SimpleTableMetadataManager = 'spreadsheet') {
@@ -60,16 +60,16 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       this.tableManager = new SimpleTableMetadataManager(`${pluginIdOrTableManager}DB`);
       this.spreadsheetDB = new SpreadsheetDatabase(`${pluginIdOrTableManager}DB`);
     } else {
-      // StyleMap mode: 互換性のためのモード
-      this.pluginId = 'stylemap';
+      // Styler mode: 互換性のためのモード
+      this.pluginId = 'styler';
       this.tableManager = pluginIdOrTableManager;
-      this.spreadsheetDB = null; // StyleMapモードではSpreadsheetDBを使わない
+      this.spreadsheetDB = null; // StylerモードではSpreadsheetDBを使わない
     }
   }
 
   /**
    * 【機能概要】: CSVファイルのアップロード処理（チャンク対応）
-   * 【実装方針】: StyleMapから移植、大容量ファイルのチャンク分割追加
+   * 【実装方針】: Stylerから移植、大容量ファイルのチャンク分割追加
    * 【テスト対応】: 大容量CSV（100K行）のメモリ効率テスト
    * 🟢 信頼性レベル: チャンク分割による大容量対応
    */
@@ -97,7 +97,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         contentHash,
         createdAt: Date.now(),
         fileSizeBytes: file.size,
-        // StyleMap compatibility: Initialize reference fields
+        // Styler compatibility: Initialize reference fields
         referencingPlugins: [],
         referenceCount: 0,
         // Chunking support: Determine if data is chunked based on size
@@ -126,7 +126,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: URL指定によるCSVダウンロード（チャンク対応）
-   * 【実装方針】: StyleMapから移植、SSRF攻撃対策保持
+   * 【実装方針】: Stylerから移植、SSRF攻撃対策保持
    * 【テスト対応】: 外部URL検証とチャンク処理
    * 🟢 信頼性レベル: セキュリティ検証＋チャンク対応
    */
@@ -262,13 +262,13 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     const shouldDelete =
       'removeReference' in this.tableManager
         ? await this.tableManager.removeReference(tableId, this.pluginId)
-        : false; // StyleMapの場合は直接削除
+        : false; // Stylerの場合は直接削除
 
     if (shouldDelete || !('removeReference' in this.tableManager)) {
       // 【データクリーンアップ】: メモリ上のチャンクデータ削除
       this.csvDataStorage.delete(tableId);
 
-      // StyleMapモードの場合は直接削除
+      // Stylerモードの場合は直接削除
       if (!('removeReference' in this.tableManager)) {
         // Type cast to ensure TypeScript knows forceDelete exists
         await (this.tableManager as SimpleTableMetadataManager).forceDelete(tableId);
@@ -302,9 +302,9 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: テーブル参照の追加
-   * 【実装方針】: StyleMap互換性のためのラッパーメソッド
+   * 【実装方針】: Styler互換性のためのラッパーメソッド
    * 【テスト対応】: 参照管理テストケース対応
-   * 🟢 信頼性レベル: StyleMap統合のためのブリッジメソッド
+   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
    */
   async addTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('addReference' in this.tableManager) {
@@ -316,9 +316,9 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: テーブル参照の削除
-   * 【実装方針】: StyleMap互換性のためのラッパーメソッド
+   * 【実装方針】: Styler互換性のためのラッパーメソッド
    * 【テスト対応】: 参照管理テストケース対応
-   * 🟢 信頼性レベル: StyleMap統合のためのブリッジメソッド
+   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
    */
   async removeTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('removeReference' in this.tableManager) {
@@ -330,9 +330,9 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: テーブルメタデータ取得
-   * 【実装方針】: StyleMap互換性のためのラッパーメソッド
+   * 【実装方針】: Styler互換性のためのラッパーメソッド
    * 【テスト対応】: メタデータ取得テストケース対応
-   * 🟢 信頼性レベル: StyleMap統合のためのブリッジメソッド
+   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
    */
   async getTableMetadata(tableId: string): Promise<CSVTableMetadata | null> {
     const metadata = await this.tableManager.get(tableId);
@@ -411,7 +411,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: ファイル形式別の処理
-   * 【実装方針】: StyleMapの既存実装を再利用
+   * 【実装方針】: Stylerの既存実装を再利用
    * 【テスト対応】: 各形式での正常処理確認
    * 🟢 信頼性レベル: 実証済み実装の移植
    */
@@ -557,7 +557,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
 
   /**
    * 【機能概要】: ファイル検証
-   * 【実装方針】: StyleMapの検証ロジックを再利用
+   * 【実装方針】: Stylerの検証ロジックを再利用
    * 🟢 信頼性レベル: 実証済みセキュリティ検証
    */
   private async validateFile(file: File): Promise<void> {

@@ -104,7 +104,7 @@ export class PluginMetadataValidator {
 
     // In a real implementation, we'd list directories here
     // For testing, we'll check known plugin paths
-    const pluginNames = ['folder', 'basemap', 'shape', 'stylemap', 'spreadsheet'];
+    const pluginNames = ['folder', 'basemap', 'shape', 'styler', 'spreadsheet'];
 
     for (const pluginName of pluginNames) {
       const packageJsonPath = `${pluginsDir}/${pluginName}/package.json`;

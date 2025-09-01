@@ -1,0 +1,128 @@
+{
+  "name": "@hierarchidb/styler-plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared/index.d.ts",
+      "import": "./dist/shared/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
+    "build:tsc": "tsc && tsc-alias",
+    "dev:tsc": "tsc --watch"
+  },
+  "dependencies": {
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:^",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
+    "dexie": "^4.2.0",
+    "jszip": "^3.4.1",
+    "react": "^18.3.1",
+    "react-window": "^1.8.10",
+    "xlsx": "^0.18.5",
+    "@hierarchidb/common-type": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.0.0",
+    "@types/jszip": "^3.4.1",
+    "@types/react-window": "^1.8.8",
+    "@vitest/ui": "^1.0.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": ">=5.0.0",
+    "@mui/material": ">=5.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "keywords": [
+    "hierarchidb",
+    "plugin",
+    "styler",
+    "csv",
+    "tsv",
+    "maplibre",
+    "visualization",
+    "color-mapping"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "styler",
+      "name": "Styler Plugin",
+      "priority": 700,
+      "category": "visualization",
+      "extends": "spreadsheet",
+      "dependencies": [
+        "@hierarchidb/spreadsheet-plugin"
+      ],
+      "exports": {
+        "definition": "StylerDefinition",
+        "handler": "StylerEntityHandler",
+        "components": [
+          "StylerDialog",
+          "StylerPanel"
+        ]
+      },
+      "capabilities": {
+        "canHaveChildren": false,
+        "canBeRoot": false,
+        "canBeDeleted": true,
+        "canBeRenamed": true,
+        "canBeMoved": true,
+        "canBeCopied": true
+      },
+      "schema": {
+        "inherits": "folder",
+        "fields": [
+          {
+            "name": "csvData",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "mappingConfig",
+            "type": "object",
+            "required": true
+          }
+        ]
+      }
+    }
+  }
+}

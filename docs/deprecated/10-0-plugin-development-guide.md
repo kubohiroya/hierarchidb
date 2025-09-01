@@ -38,7 +38,7 @@ HierarchiDBのプラグインシステムは、アスペクト指向プログラ
 │  ┌──────────────────────────────────────────────┐  │
 │  │            Plugin Registry                    │  │
 │  │  ┌────────┐ ┌────────┐ ┌────────┐          │  │
-│  │  │BaseMap │ │StyleMap│ │ Shapes │ ...      │  │
+│  │  │BaseMap │ │Styler│ │ Shapes │ ...      │  │
 │  │  └────────┘ └────────┘ └────────┘          │  │
 │  └──────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────┐  │
@@ -378,12 +378,12 @@ export interface BaseMapEntity extends BaseEntity {
 - 表示位置の保存・復元
 - プロジェクトからの参照に対応
 
-### 5.2 StyleMap (スタイルマップ)
+### 5.2 Styler (スタイルマップ)
 
 **機能**: CSVデータを基にした動的スタイリング
 
 ```typescript
-export interface StyleMapEntity extends BaseEntity {
+export interface StylerEntity extends BaseEntity {
   nodeId: TreeNodeId;
   name: string;
   description?: string;
@@ -391,7 +391,7 @@ export interface StyleMapEntity extends BaseEntity {
   keyColumn?: string;
   valueColumn?: string;
   tableMetadataId?: string;
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   filterRules?: FilterRule[];
   cacheKey?: string;
   createdAt: number;
@@ -542,9 +542,9 @@ if (process.env.NODE_ENV === 'development') {
 
 | 要素 | 規則 | 例 |
 |------|------|-----|
-| NodeType | 小文字、単数形 | `basemap`, `stylemap`, `shapes` |
+| NodeType | 小文字、単数形 | `basemap`, `styler`, `shapes` |
 | パッケージ名 | `@hierarchidb/plugin-[name]` | `@hierarchidb/plugin-basemap` |
-| クラス名 | PascalCase | `BaseMapHandler`, `StyleMapEntity` |
+| クラス名 | PascalCase | `BaseMapHandler`, `StylerEntity` |
 | ファイル名 | PascalCase | `BaseMapDefinition.ts` |
 
 ### 7.2 データベース設計

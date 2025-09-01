@@ -16,7 +16,7 @@ HierarchiDBのプラグインシステムは、新しいエンティティ型（
 
 ### 1.1 プラグインで実現できること
 
-- 新しいノードタイプの定義（例：basemap、stylemap、shape等）
+- 新しいノードタイプの定義（例：basemap、styler、shape等）
 - カスタムエンティティとその永続化
 - ノードのライフサイクルフック（作成、更新、削除時の処理）
 - 専用UIコンポーネント（表示、編集、インポート等）
@@ -27,7 +27,7 @@ HierarchiDBのプラグインシステムは、新しいエンティティ型（
 
 プラグインは以下のツリーに配置されます：
 
-- **Resourcesツリー**: basemap、stylemap、shape等のリソース管理
+- **Resourcesツリー**: basemap、styler、shape等のリソース管理
 - **Projectsツリー**: プロジェクト管理
 - **共通**: folder（両ツリーで使用可能）
 
@@ -734,8 +734,8 @@ export class WorkerAPIImpl {
         return await import(`@hierarchidb/plugin-myplugin/services/MyPluginService`);
       case 'basemap':
         return await import(`@hierarchidb/plugin-basemap/services/BaseMapService`);
-      case 'stylemap-plugin':
-        return await import(`@hierarchidb/plugin-stylemap/services/StyleMapService`);
+      case 'styler-plugin':
+        return await import(`@hierarchidb/plugin-styler/services/StylerService`);
       default:
         throw new Error(`Unknown plugin service: ${pluginName}`);
     }
@@ -1083,9 +1083,9 @@ if (process.env.NODE_ENV === 'development') {
 
 ### 6.1 命名規則
 
-- **NodeType**: 単数形の小文字（例: `basemap`、`stylemap`、`shape`）
+- **NodeType**: 単数形の小文字（例: `basemap`、`styler`、`shape`）
 - **パッケージ名**: `@hierarchidb/plugin-[name]`
-- **クラス名**: PascalCase（例: `BaseMapHandler`、`StyleMapEntity`）
+- **クラス名**: PascalCase（例: `BaseMapHandler`、`StylerEntity`）
 - **ファイル名**: PascalCaseまたはkebab-case
 
 ### 6.2 データベース設計
@@ -1223,7 +1223,7 @@ export class PluginRegistry { /*...*/ }
 ## 付録B: 既存プラグインの例
 
 - **basemap**: MapLibre GL JSの基本地図管理
-- **stylemap**: CSVベースのスタイル定義
+- **styler**: CSVベースのスタイル定義
 - **shape**: GeoJSON形状データ管理
 - **folder**: 汎用フォルダ機能
 

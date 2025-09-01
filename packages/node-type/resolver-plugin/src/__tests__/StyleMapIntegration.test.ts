@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { ResolverEntity } from '../types';
 import { MappingCompiler } from '../services/SimpleMappingCompiler';
 
-describe('StyleMap Integration with Resolver', () => {
+describe('Styler Integration with Resolver', () => {
   let compiler: MappingCompiler;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('StyleMap Integration with Resolver', () => {
         },
       };
 
-      // In direct mapping, StyleMap accesses properties directly
+      // In direct mapping, Styler accesses properties directly
       const styleRule = {
         property: 'population',
         stops: [
@@ -51,7 +51,7 @@ describe('StyleMap Integration with Resolver', () => {
   });
 
   describe('Resolver-Mediated Mapping', () => {
-    it('should transform properties through Resolver before StyleMap', async () => {
+    it('should transform properties through Resolver before Styler', async () => {
       // Source data with different schema
       const sourceData = {
         id: 'location-1',
@@ -122,7 +122,7 @@ describe('StyleMap Integration with Resolver', () => {
       expect(transformedData.category).toBe('city');
       expect(transformedData.economicLevel).toBe('high');
 
-      // Now StyleMap can use the transformed data
+      // Now Styler can use the transformed data
       const styleRule = {
         property: 'economicLevel',
         type: 'categorical',

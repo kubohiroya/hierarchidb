@@ -7,7 +7,7 @@
 2. **Location** - 地点データ管理（Shape拡張）
 3. **Route** - 経路データ管理（Shape拡張）
 4. **Spreadsheet** - 表形式データ処理
-5. **StyleMap** - スタイルマッピング（Spreadsheet拡張）
+5. **Styler** - スタイルマッピング（Spreadsheet拡張）
 
 ### 追加分析プラグイン群
 6. **Folder** - フォルダ階層管理（基底実装）
@@ -29,7 +29,7 @@ graph TD
     RouteHandler[RouteEntityHandler]
     
     SpreadsheetDB[SpreadsheetDatabase]
-    StyleMapHandler[StyleMapEntityHandler]
+    StylerHandler[StylerEntityHandler]
     
     PropertyResolverHandler[PropertyResolverEntityHandler]
     ProjectHandler[ProjectEntityHandler]
@@ -42,7 +42,7 @@ graph TD
     ShapeHandler --> RouteHandler
     
     BaseEntityHandler --> SpreadsheetDB
-    SpreadsheetDB --> StyleMapHandler
+    SpreadsheetDB --> StylerHandler
     
     BaseEntityHandler --> PropertyResolverHandler
     BaseEntityHandler --> ProjectHandler
@@ -60,7 +60,7 @@ graph TD
 | **Location** | 独自実装 | ✅ | ✅ | updateCoordinates |
 | **Route** | 独自実装 | ✅ | ✅ | updatePath |
 | **Spreadsheet** | DB直接 | ✅ | ✅ | createRowChunks |
-| **StyleMap** | 委譲パターン | ✅ | ✅ | applyStyles |
+| **Styler** | 委譲パターン | ✅ | ✅ | applyStyles |
 | **PropertyResolver** | 独自実装 | ✅ | ✅ | compileResolver |
 | **Project** | 独自実装 | ✅ | ✅ | addResource |
 
@@ -79,7 +79,7 @@ graph TD
 
 #### パターンC: 親クラス委譲型（2プラグイン）
 - **BaseMap**: FolderDatabaseを継承
-- **StyleMap**: SpreadsheetDatabaseを利用
+- **Styler**: SpreadsheetDatabaseを利用
 
 ### 3.3 WorkingCopy管理の実装差異
 
@@ -105,7 +105,7 @@ class Pattern2Handler {
   }
 }
 
-// パターン3: 即座返却型（StyleMap, BaseMap）
+// パターン3: 即座返却型（Styler, BaseMap）
 class Pattern3Handler {
   async createWorkingCopy(nodeId: NodeId): Promise<WorkingCopy> {
     const entity = await this.getEntity(nodeId);
@@ -266,7 +266,7 @@ export abstract class MetadataEntityHandler<
 - 空間インデックス
 - ベクトルタイル生成
 
-### 6.3 Spreadsheet/StyleMap共通化
+### 6.3 Spreadsheet/Styler共通化
 - CSV/Excelインポート
 - カラム型推定
 - チャンク処理
@@ -309,7 +309,7 @@ export abstract class MetadataEntityHandler<
 
 ### Phase 4: Spreadsheet系移行（1週間）
 - ⬜ SpreadsheetDatabaseの共通化
-- ⬜ StyleMapHandlerの移行
+- ⬜ StylerHandlerの移行
 - ⬜ CSV処理の共通化
 
 ### Phase 5: 独立系移行（1週間）

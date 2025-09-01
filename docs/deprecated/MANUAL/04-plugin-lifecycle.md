@@ -4,7 +4,7 @@
 
 この章では、HierarchiDBの自動エンティティライフサイクル管理システムの設計と実装について詳細に説明します。本章は以下のような方を対象としています：
 
-**読むべき人**: プラグイン開発者、システムアーキテクト、ライフサイクル管理を担当する開発者、データ整合性を重視する設計者、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインのような複雑なエンティティ管理が必要なプラグインを実装する方
+**読むべき人**: プラグイン開発者、システムアーキテクト、ライフサイクル管理を担当する開発者、データ整合性を重視する設計者、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインのような複雑なエンティティ管理が必要なプラグインを実装する方
 
 **前提知識**: エンティティ分類システム（2×3分類）、ワーキングコピーパターン、データベースのカスケード削除、参照整合性、非同期処理、TypeScriptの高度な型システム
 
@@ -29,8 +29,8 @@
 ### 2.2 現在の手動実装の例
 
 ```typescript
-// StyleMapプラグインでの手動実装例
-export class StyleMapEntityHandler implements EntityHandler<StyleMapEntity> {
+// Stylerプラグインでの手動実装例
+export class StylerEntityHandler implements EntityHandler<StylerEntity> {
   async deleteEntity(nodeId: TreeNodeId): Promise<void> {
     // 1. 手動でRelationエンティティの参照を削除
     const entity = await this.getEntity(nodeId);
@@ -39,7 +39,7 @@ export class StyleMapEntityHandler implements EntityHandler<StyleMapEntity> {
     }
     
     // 2. 手動でPeerEntityを削除
-    await this.database.styleMapEntities.delete(nodeId);
+    await this.database.stylerEntities.delete(nodeId);
     
     // 3. 手動でワーキングコピーを削除
     await this.database.workingCopies.where('workingCopyOf').equals(nodeId).delete();
@@ -550,20 +550,20 @@ export class DependencyResolver {
 #### 3.4.1 簡略化されたプラグイン定義
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
+// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
 
-export const StyleMapDefinition: PluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+export const StylerDefinition: PluginDefinition = {
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   displayName: 'スタイルマップ',
   
   // 自動ライフサイクル管理の設定
   autoLifecycle: {
     entities: [
-      // PeerEntity（StyleMapEntity）
+      // PeerEntity（StylerEntity）
       {
         entityType: 'peer',
-        storeName: 'styleMapEntities',
+        storeName: 'stylerEntities',
         relationship: {
           type: 'one-to-one',
           foreignKeyField: 'nodeId',
@@ -572,7 +572,7 @@ export const StyleMapDefinition: PluginDefinition = {
         },
         workingCopyConfig: {
           enabled: true,
-          storeName: 'styleMapWorkingCopies',
+          storeName: 'stylerWorkingCopies',
           autoCommitTriggers: ['onNodeSave'],
           autoDiscardTriggers: ['onNodeDelete', 'onSessionEnd'],
         },
@@ -610,8 +610,8 @@ export const StyleMapDefinition: PluginDefinition = {
   entityHandler: new AutoEntityHandler(), // 基本的なCRUD操作のみ実装
   
   ui: {
-    dialogComponent: StyleMapDialog,
-    panelComponent: StyleMapPanel,
+    dialogComponent: StylerDialog,
+    panelComponent: StylerPanel,
   },
 };
 ```
@@ -708,7 +708,7 @@ export class AutoEntityHandler<TEntity extends PeerEntity>
    - autoLifecycleフィールドの追加
    - 既存プラグインの移行サポート
 
-2. **StyleMapプラグインの移行**
+2. **Stylerプラグインの移行**
    - 新しいAutoEntityHandlerを使用した実装
    - 自動ライフサイクル管理の検証
 

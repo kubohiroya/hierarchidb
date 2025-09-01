@@ -838,15 +838,15 @@ export class SimplePluginDiscovery {
 各プラグインの`package.json`から依存関係を読み取り、推移的な依存関係を含めて解決します。
 
 ```json
-// packages/node-type-plugin/stylemap-plugin/package.json
+// packages/node-type-plugin/styler-plugin/package.json
 {
-  "name": "@hierarchidb/node-type-stylemap-plugin-plugin",
+  "name": "@hierarchidb/node-type-styler-plugin-plugin",
   "dependencies": {
     "@hierarchidb/node-type-spreadsheet-plugin": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
-      "nodeType": "stylemap-plugin",
+      "nodeType": "styler-plugin",
       "extends": "spreadsheet-plugin",
       "dependencies": ["spreadsheet-plugin"]
     }
@@ -897,12 +897,12 @@ graph TD
     basemap["basemap"]
     shape["shape"]
     spreadsheet["spreadsheet"]
-    stylemap["stylemap"]
+    styler["styler"]
     
     basemap --> folder
     shape --> folder
     spreadsheet --> folder
-    stylemap --> spreadsheet
+    styler --> spreadsheet
     
     style folder fill:#f9f,stroke:#333,stroke-width:4px
     style folder color:#000
@@ -915,7 +915,7 @@ graph TD
 | basemap | folder | フォルダ構造を継承、地理データの階層管理 |
 | shape | folder | フォルダ構造を継承、シェイプデータの組織化 |
 | spreadsheet | folder | フォルダ構造を継承、表データの管理 |
-| stylemap | spreadsheet | CSV/TSV処理機能を利用、表データ形式の継承 |
+| styler | spreadsheet | CSV/TSV処理機能を利用、表データ形式の継承 |
 
 ### 30.3 プラグイン操作仕様
 
@@ -968,8 +968,8 @@ TreeNodeが存在する状態でプラグイン固有のデータだけを削除
 | folder | ❌ 不可 | Core Plugin、システムの基盤 |
 | basemap | ✅ 可能 | 依存プラグインがない場合 |
 | shape | ✅ 可能 | 依存プラグインがない場合 |
-| spreadsheet | ⚠️ 条件付き | stylemapが存在する場合は警告 |
-| stylemap | ✅ 可能 | 最も依存度が低い |
+| spreadsheet | ⚠️ 条件付き | stylerが存在する場合は警告 |
+| styler | ✅ 可能 | 最も依存度が低い |
 
 ##### 連鎖削除
 

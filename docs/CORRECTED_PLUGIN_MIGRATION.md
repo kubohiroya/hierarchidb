@@ -18,10 +18,10 @@
 - ✅ **UI コンポーネント**: MapStyleStep, MapViewportStep, DisplayOptionsStep, PreviewStep
 - ❌ **問題**: 型名の不一致（`ExtendableNodeTypeDefinition` → `ExtendingNodeTypeDefinition`）
 
-### stylemap-plugin
+### styler-plugin
 - ✅ **実装状況**: 完成済み（SpreadsheetEntity拡張パターン）
 - ✅ **主要機能**: データ駆動型スタイルマッピング、色彩管理
-- ✅ **UI コンポーネント**: StyleMapStep5, StyleMapStep6
+- ✅ **UI コンポーネント**: StylerStep5, StylerStep6
 - ❌ **問題**: 依存関係参照の修正
 
 ## 正しい修正方針
@@ -56,7 +56,7 @@ export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
   // 実装は既に完成済み、型名のみ修正
 ```
 
-#### stylemap-plugin修正
+#### styler-plugin修正
 ```typescript
 // 依存関係の正しい参照に修正
 // 既存の機能実装は完全に保持
@@ -92,13 +92,13 @@ pnpm build
 ### 以前の誤った見積もり
 - ❌ **spreadsheet-plugin**: 3-4日
 - ❌ **basemap-plugin**: 1日  
-- ❌ **stylemap-plugin**: 2日
+- ❌ **styler-plugin**: 2日
 - ❌ **合計**: 6-7日
 
 ### 正しい見積もり
 - ✅ **spreadsheet-plugin**: 1-2時間
 - ✅ **basemap-plugin**: 1時間
-- ✅ **stylemap-plugin**: 1-2時間  
+- ✅ **styler-plugin**: 1-2時間  
 - ✅ **合計**: 3-5時間
 
 ## 重要な方針転換
@@ -122,7 +122,7 @@ pnpm build
 # 現在のエラー数を記録
 pnpm --filter @hierarchidb/node-type-spreadsheet-plugin typecheck 2>&1 | grep "error" | wc -l
 pnpm --filter @hierarchidb/node-type-basemap-plugin typecheck 2>&1 | grep "error" | wc -l  
-pnpm --filter @hierarchidb/node-type-stylemap-plugin typecheck 2>&1 | grep "error" | wc -l
+pnpm --filter @hierarchidb/node-type-styler-plugin typecheck 2>&1 | grep "error" | wc -l
 ```
 
 ### 修正後の改善確認

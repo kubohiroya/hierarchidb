@@ -77,11 +77,11 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 - **依存関係**: folder-plugin
 - **状態**: 🔄 開発中（拡張定義完成、UI実装中）
 
-#### 🎨 [stylemap-plugin](./stylemap-plugin/) - **スタイル設定拡張**
+#### 🎨 [styler-plugin](./styler-plugin/) - **スタイル設定拡張**
 **データ可視化スタイル管理**
 
 - **機能**: CSVデータに基づく地図スタイル定義
-- **継承**: folder-plugin → spreadsheet-plugin → stylemap-plugin
+- **継承**: folder-plugin → spreadsheet-plugin → styler-plugin
 - **実装パターン**: Spreadsheet拡張プラグイン
 - **特徴**:
   - スタイルルール設定
@@ -144,7 +144,7 @@ graph TB
     
     subgraph "データ管理チェーン"
         SPREADSHEET[📊 spreadsheet-plugin<br/>データソース管理]
-        STYLEMAP[🎨 stylemap-plugin<br/>スタイル設定]
+        STYLEMAP[🎨 styler-plugin<br/>スタイル設定]
     end
     
     subgraph "地理情報プラグイン"
@@ -222,14 +222,14 @@ export const ExtendingPlugin: ExtendableNodeTypeDefinition<
 
 #### 3. 複合プラグイン（多重継承）
 ```typescript
-// 例: stylemap-plugin（folder → spreadsheet → stylemap）
+// 例: styler-plugin（folder → spreadsheet → styler）
 export const ComplexPlugin: ExtendableNodeTypeDefinition<
   SpreadsheetEntity,
-  StyleMapEntity,
-  StyleMapWorkingCopy
+  StylerEntity,
+  StylerWorkingCopy
 > = {
   extends: 'spreadsheet-plugin',
-  nodeType: 'stylemap-plugin',
+  nodeType: 'styler-plugin',
   // さらなる拡張定義...
 };
 ```
@@ -259,11 +259,11 @@ export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyWorkingCopy
 
 #### 依存関係データベースアクセス
 ```typescript
-export class StyleMapEntityHandler extends BaseEntityHandler<StyleMapEntity> {
-  async createEntity(nodeId: NodeId, data: Partial<StyleMapEntity>): Promise<StyleMapEntity> {
+export class StylerEntityHandler extends BaseEntityHandler<StylerEntity> {
+  async createEntity(nodeId: NodeId, data: Partial<StylerEntity>): Promise<StylerEntity> {
     // 依存先（Spreadsheet）のデータベースにアクセス
     const registry = NodeDefinitionRegistry.getInstance();
-    const spreadsheetDB = registry.getDependencyDatabase('stylemap-plugin', 'spreadsheet-plugin');
+    const spreadsheetDB = registry.getDependencyDatabase('styler-plugin', 'spreadsheet-plugin');
     
     if (spreadsheetDB) {
       const spreadsheetTable = spreadsheetDB.getEntityTable();
@@ -785,14 +785,14 @@ export default defineConfig([
 | **basemap-plugin** | folder | ✅ 完成 | 地図ベース設定 | 4ステップフォーム | basemaps | MapLibreGL統合 |
 | **shape-plugin** | - | ✅ 完成 | 地理データ処理 | 複合ダイアログ | shapes | ベクトルタイル生成 |
 | **spreadsheet-plugin** | folder | 🔄 開発中 | データソース管理 | 2ステップ拡張 | spreadsheets | CSV/Excel処理 |
-| **stylemap-plugin** | spreadsheet | 🔄 開発中 | スタイル定義 | 1ステップ拡張 | stylemaps | カラーマップ |
+| **styler-plugin** | spreadsheet | 🔄 開発中 | スタイル定義 | 1ステップ拡張 | stylers | カラーマップ |
 
 ### 機能成熟度レベル
 
 | レベル | 説明 | 該当プラグイン | 特徴 |
 |--------|------|--------------|------|
 | **✅ プロダクション完成** | 本格運用可能 | folder, basemap, shape | 全機能実装、テスト完了、最適化済み |
-| **🔄 開発中** | 実装進行中 | spreadsheet, stylemap | 基本機能実装、UI開発中 |
+| **🔄 開発中** | 実装進行中 | spreadsheet, styler | 基本機能実装、UI開発中 |
 | **📋 計画中** | 設計段階 | - | 仕様策定、アーキテクチャ設計 |
 | **💡 構想中** | アイデア段階 | - | コンセプト検討、要求分析 |
 
@@ -802,7 +802,7 @@ export default defineConfig([
 |--------|-----------|------|-----------|
 | **🟢 シンプル** | folder | 基本的なCRUD操作のみ | 低 |
 | **🟡 標準** | basemap, spreadsheet | 拡張フォーム、外部ライブラリ統合 | 中 |
-| **🟠 複合** | stylemap | 多重継承、データ連携 | 中高 |
+| **🟠 複合** | styler | 多重継承、データ連携 | 中高 |
 | **🔴 高度** | shape | 大容量データ処理、最適化、並列処理 | 高 |
 
 ## 📚 詳細ドキュメント
@@ -818,7 +818,7 @@ export default defineConfig([
 
 ### Phase 1: データ管理プラグイン完成 (2024 Q4)
 - **spreadsheet-plugin**: UI実装完了、テスト強化
-- **stylemap-plugin**: カラーマップUI実装、MapLibreGL統合
+- **styler-plugin**: カラーマップUI実装、MapLibreGL統合
 
 ### Phase 2: 高度な地理情報機能 (2025 Q1)
 - **route-plugin**: 経路データ管理（道路、鉄道、航路）

@@ -1,4 +1,4 @@
-# StyleMap Plugin Phase 3: UI実装
+# Styler Plugin Phase 3: UI実装
 
 ## フェーズ概要
 
@@ -34,7 +34,7 @@
 - **要件リンク**: REQ-001, REQ-102, NFR-201 🟢
 - **依存タスク**: TASK-0100 (Phase 2完了)
 - **実装詳細**:
-  - StyleMapFileUpload React コンポーネント
+  - StylerFileUpload React コンポーネント
   - ドラッグ&ドロップファイルアップロード
   - ファイル形式・サイズ検証表示
   - プログレス表示・キャンセル機能
@@ -67,7 +67,7 @@
 - **要件リンク**: REQ-003, REQ-301, REQ-302 🟢
 - **依存タスク**: TASK-0101
 - **実装詳細**:
-  - StyleMapColorForm React コンポーネント
+  - StylerColorForm React コンポーネント
   - アルゴリズム選択 (linear/logarithmic/quantile/categorical)
   - 色空間選択 (HSV/RGB)
   - 色相範囲スライダー (hueStart/hueEnd)
@@ -100,7 +100,7 @@
 - **要件リンク**: REQ-105, NFR-202 🟢
 - **依存タスク**: TASK-0102
 - **実装詳細**:
-  - StyleMapPreview React コンポーネント
+  - StylerPreview React コンポーネント
   - テーブルデータ表示 (TanStack Table)
   - カラーマッピング結果の視覚的表示
   - 仮想スクローリング (大容量データ対応)
@@ -133,7 +133,7 @@
 - **要件リンク**: REQ-104, REQ-303 🟢
 - **依存タスク**: TASK-0103
 - **実装詳細**:
-  - StyleMapFilters React コンポーネント
+  - StylerFilters React コンポーネント
   - フィルタルール追加・削除UI
   - アクション選択 (Include/Exclude/Pattern)
   - 正規表現パターン入力・検証
@@ -200,7 +200,7 @@
 - **要件リンク**: REQ-504, NFR-202, TECH-007 🟢
 - **依存タスク**: TASK-0105
 - **実装詳細**:
-  - StyleMapDialog React コンポーネント
+  - StylerDialog React コンポーネント
   - MultiStepDialog基盤クラス
   - ステップナビゲーション (戻る・進む・完了)
   - 非線形ナビゲーション対応
@@ -331,7 +331,7 @@
   - Step4: フィルタルール設定
   - Step5: 最終確認・保存
   - フィルタ結果のプレビュー表示
-  - StyleMap設定サマリー表示
+  - Styler設定サマリー表示
   - 保存・キャンセル・再編集機能
 - **テスト要件**:
   - [ ] コンポーネント描画テスト

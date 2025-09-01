@@ -45,7 +45,7 @@ HierarchiDBは、階層構造データを効率的に管理・操作するため
 │  │ ▼ Root                                      │   │
 │  │   ▼ 📁 Folder1                              │   │
 │  │     📍 BaseMap - 地図設定                   │   │
-│  │     🎨 StyleMap - スタイル設定              │   │
+│  │     🎨 Styler - スタイル設定              │   │
 │  │     🌍 Shape - 地理データ                   │   │
 │  │     📊 Spreadsheet - 表データ               │   │
 │  │   ▶ 📁 Folder2                              │   │
@@ -59,7 +59,7 @@ HierarchiDBは、階層構造データを効率的に管理・操作するため
 [+] SpeedDial (右下の追加ボタン)
     ├ Create Folder
     ├ Create BaseMap  
-    ├ Create StyleMap
+    ├ Create Styler
     ├ Create Shape
     └ Create Spreadsheet
 ```

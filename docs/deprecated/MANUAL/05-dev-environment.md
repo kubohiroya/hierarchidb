@@ -14,7 +14,7 @@
 - チームメンバーの環境統一時
 - CI/CD設定時
 
-この章では、モノレポ構成、TypeScript設定、各種プラグイン（BaseMap、StyleMap、Shape、Spreadsheet、Project）の開発環境、テスト環境の構築方法を学べます。また、大容量spreadsheetデータのローカル開発時の注意点も含まれています。適切な環境構築により、効率的な開発とデバッグが可能になります。
+この章では、モノレポ構成、TypeScript設定、各種プラグイン（BaseMap、Styler、Shape、Spreadsheet、Project）の開発環境、テスト環境の構築方法を学べます。また、大容量spreadsheetデータのローカル開発時の注意点も含まれています。適切な環境構築により、効率的な開発とデバッグが可能になります。
 
 ## 2.1 開発環境の全体方針
 

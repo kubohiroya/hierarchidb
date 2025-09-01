@@ -1,7 +1,7 @@
 /**
  * @file fileProcessingUtils.ts
  * @description File format processing utilities (Excel, ZIP, etc.)
- * Refactored from StyleMap plugin for Spreadsheet plugin use
+ * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
 import type { CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';

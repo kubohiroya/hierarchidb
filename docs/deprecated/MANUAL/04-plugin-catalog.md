@@ -14,7 +14,7 @@
 - 各プラグインの制約や特徴を確認したい時
 - spreadsheetデータ処理やgeo情報管理の方法を知りたい時
 
-この章では、各プラグイン（Folder、BaseMap、StyleMap、Shape、Spreadsheet、Project）の具体的な機能、使用場面、設定方法を学べます。適切なプラグインを選択することで、効率的なデータ管理が可能になります。
+この章では、各プラグイン（Folder、BaseMap、Styler、Shape、Spreadsheet、Project）の具体的な機能、使用場面、設定方法を学べます。適切なプラグインを選択することで、効率的なデータ管理が可能になります。
 
 ## 概要
 
@@ -75,18 +75,18 @@ interface BaseMapEntity {
 - インタラクティブな位置選択
 - スタイルプレビュー
 
-## StyleMap プラグイン
+## Styler プラグイン
 
 ### 概要
 CSVデータの視覚化とフィルタリング機能を提供。
 
 ### ノードタイプ
-`stylemap`
+`styler`
 
 ### エンティティ構成
 | エンティティ | タイプ | ライフサイクル | 説明 |
 |---|---|---|---|
-| StyleMapEntity | Peer | Persistent | スタイル設定 |
+| StylerEntity | Peer | Persistent | スタイル設定 |
 | TableMetadataEntity | Relation | Persistent | 共有テーブルデータ |
 
 ### 主要機能
@@ -98,7 +98,7 @@ CSVデータの視覚化とフィルタリング機能を提供。
 
 ### データ構造
 ```typescript
-interface StyleMapEntity {
+interface StylerEntity {
   referencingNodeId: TreeNodeId;
   name: string;
   columnMappings: {
@@ -267,7 +267,7 @@ interface SpreadsheetRefEntity {
 
 ## プラグイン比較
 
-| 特徴 | Folder | BaseMap | StyleMap | Shapes | Spreadsheet | Project |
+| 特徴 | Folder | BaseMap | Styler | Shapes | Spreadsheet | Project |
 |---|---|---|---|---|---|---|
 | **複雑度** | 低 | 低 | 中 | 高 | 中 | 中 |
 | **エンティティ数** | 0 | 1 | 2 | 5 | 3 | 2 |
@@ -288,7 +288,7 @@ interface SpreadsheetRefEntity {
 - 地理的なコンテキストが必要
 - 位置情報の基準点設定
 
-### StyleMapを選ぶ場合
+### Stylerを選ぶ場合
 - CSVデータの視覚化が必要
 - データのフィルタリングと色分け
 - 複数データセットの比較

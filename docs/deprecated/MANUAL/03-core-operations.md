@@ -14,7 +14,7 @@
 - 効率的な操作手順を確認したい時
 - spreadsheetデータやgeo情報の操作方法を知りたい時
 
-この章をマスターすることで、ツリー構造の編集、各種プラグイン（BaseMap、StyleMap、Shape、Spreadsheet、Project）のデータ操作、Working Copy機能による安全な編集が可能になります。また、大容量データの効率的な処理方法についても学べます。
+この章をマスターすることで、ツリー構造の編集、各種プラグイン（BaseMap、Styler、Shape、Spreadsheet、Project）のデータ操作、Working Copy機能による安全な編集が可能になります。また、大容量データの効率的な処理方法についても学べます。
 
 ## 概要
 

@@ -1,7 +1,7 @@
 /**
- * @file plugin-stylemap-plugin TypeScript Interface Definitions
- * @description Type definitions for plugin-stylemap-plugin based on eria-cartograph implementation
- * @module @hierarchidb/plugin-stylemap-plugin/types
+ * @file plugin-styler-plugin TypeScript Interface Definitions
+ * @description Type definitions for plugin-styler-plugin based on eria-cartograph implementation
+ * @module @hierarchidb/plugin-styler-plugin/types
  */
 
 import { UUID } from '@hierarchidb/core/types/UUID';
@@ -16,7 +16,7 @@ import { PrimaryResourceEntity } from '@hierarchidb/core/types/entities';
  * 🟢 Complete style map data structure stored in IndexedDB
  * Contains metadata and reference to table store
  */
-export interface StyleMapEntity extends PrimaryResourceEntity {
+export interface StylerEntity extends PrimaryResourceEntity {
   /** Cache key for accessing the complete file data from Cache API */
   cacheKey?: string;
   /** URL that was used to download the file (for URL-based imports) */
@@ -32,7 +32,7 @@ export interface StyleMapEntity extends PrimaryResourceEntity {
   /** Filter rules to apply to the data */
   filterRules?: FilterRule[];
   /** Color mapping configuration */
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   /** File content hash for deduplication */
   contentHash?: string;
 
@@ -81,7 +81,7 @@ export interface RowEntity {
 /**
  * 🟢 Working copy for safe editing
  */
-export interface StyleMapWorkingCopy extends StyleMapEntity {
+export interface StylerWorkingCopy extends StylerEntity {
   /** Original entity ID this working copy is based on */
   originalId?: TreeNodeId;
   /** Working copy specific ID */
@@ -89,7 +89,7 @@ export interface StyleMapWorkingCopy extends StyleMapEntity {
   /** Whether this is a working copy */
   isWorkingCopy: true;
   /** Temporary changes not yet committed */
-  pendingChanges?: Partial<StyleMapEntity>;
+  pendingChanges?: Partial<StylerEntity>;
 }
 
 // ================================================================================
@@ -126,7 +126,7 @@ export type MapLibreStyleProperty =
 /**
  * 🟢 Style mapping configuration
  */
-export interface StyleMapConfig {
+export interface StylerConfig {
   /** Color mapping algorithm */
   algorithm: ColorMappingAlgorithm;
   /** Color space for calculation */
@@ -176,12 +176,12 @@ export interface FilterRule {
 // ================================================================================
 
 /**
- * 🟡 Form data for StyleMap creation/editing
+ * 🟡 Form data for Styler creation/editing
  */
-export interface StyleMapFormData {
-  /** StyleMap name */
+export interface StylerFormData {
+  /** Styler name */
   name: string;
-  /** StyleMap description */
+  /** Styler description */
   description: string;
   /** Uploaded file */
   file?: File;
@@ -192,7 +192,7 @@ export interface StyleMapFormData {
   /** Filter rules */
   filterRules?: FilterRule[];
   /** Style mapping configuration */
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   /** Download URL for file-based imports */
   downloadUrl?: string;
 }
@@ -200,7 +200,7 @@ export interface StyleMapFormData {
 /**
  * 🟡 PreviewStep state for real-time updates
  */
-export interface StyleMapPreviewState {
+export interface StylerPreviewState {
   /** Working copy ID */
   workingCopyId: UUID;
   /** Calculated style properties for preview */
@@ -216,7 +216,7 @@ export interface StyleMapPreviewState {
 /**
  * 🟡 Dialog step state
  */
-export interface StyleMapDialogState {
+export interface StylerDialogState {
   /** Current step index */
   currentStep: number;
   /** Maximum step reached */
@@ -296,34 +296,34 @@ export interface WorkingCopyResult<T = any> {
 // ================================================================================
 
 /**
- * 🟢 StyleMap Worker API interface
+ * 🟢 Styler Worker API interface
  */
-export interface StyleMapWorkerAPI {
+export interface StylerWorkerAPI {
   // File operations
   parseFile(file: File): Promise<ParseFileResult>;
   calculateFileHash(file: File): Promise<string>;
 
-  // StyleMap CRUD operations
-  createStyleMap(
+  // Styler CRUD operations
+  createStyler(
     parentId: TreeNodeId,
-    formData: StyleMapFormData
-  ): Promise<WorkingCopyResult<StyleMapEntity>>;
-  getStyleMap(nodeId: TreeNodeId): Promise<StyleMapEntity | undefined>;
-  updateStyleMap(nodeId: TreeNodeId, updates: Partial<StyleMapEntity>): Promise<void>;
-  deleteStyleMap(nodeId: TreeNodeId): Promise<void>;
+    formData: StylerFormData
+  ): Promise<WorkingCopyResult<StylerEntity>>;
+  getStyler(nodeId: TreeNodeId): Promise<StylerEntity | undefined>;
+  updateStyler(nodeId: TreeNodeId, updates: Partial<StylerEntity>): Promise<void>;
+  deleteStyler(nodeId: TreeNodeId): Promise<void>;
 
   // Working copy operations
-  createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StyleMapWorkingCopy>>;
+  createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StylerWorkingCopy>>;
   updateWorkingCopy(
     workingCopyId: UUID,
-    updates: Partial<StyleMapEntity>
+    updates: Partial<StylerEntity>
   ): Promise<WorkingCopyResult>;
   commitWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>;
   discardWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>;
 
   // Style calculation
-  calculateStyleMapping(config: StyleMapConfig, data: RowEntity[]): Promise<StyleCalculationResult>;
-  generateMapLibreStyle(styleMapId: TreeNodeId): Promise<Record<string, any>>;
+  calculateStylerping(config: StylerConfig, data: RowEntity[]): Promise<StyleCalculationResult>;
+  generateMapLibreStyle(stylerId: TreeNodeId): Promise<Record<string, any>>;
 
   // Data filtering
   applyFilters(data: RowEntity[], filters: FilterRule[], columns: string[]): Promise<RowEntity[]>;
@@ -334,15 +334,15 @@ export interface StyleMapWorkerAPI {
 }
 
 /**
- * 🟢 StyleMap Database interface
+ * 🟢 Styler Database interface
  */
-export interface StyleMapDB {
+export interface StylerDB {
   // Entity operations
-  saveStyleMapEntity(entity: StyleMapEntity): Promise<void>;
-  getStyleMapEntity(nodeId: TreeNodeId): Promise<StyleMapEntity | undefined>;
-  updateStyleMapEntity(nodeId: TreeNodeId, updates: Partial<StyleMapEntity>): Promise<void>;
-  deleteStyleMapEntity(nodeId: TreeNodeId): Promise<void>;
-  getAllStyleMapEntities(): Promise<StyleMapEntity[]>;
+  saveStylerEntity(entity: StylerEntity): Promise<void>;
+  getStylerEntity(nodeId: TreeNodeId): Promise<StylerEntity | undefined>;
+  updateStylerEntity(nodeId: TreeNodeId, updates: Partial<StylerEntity>): Promise<void>;
+  deleteStylerEntity(nodeId: TreeNodeId): Promise<void>;
+  getAllStylerEntities(): Promise<StylerEntity[]>;
 
   // Table metadata operations
   saveTableMetadata(metadata: TableMetadataEntity): Promise<void>;
@@ -357,9 +357,9 @@ export interface StyleMapDB {
   deleteRowsByTable(tableId: UUID): Promise<void>;
 
   // Working copy operations
-  commitWorkingCopy(workingCopy: StyleMapWorkingCopy): Promise<void>;
-  getWorkingCopy(workingCopyId: UUID): Promise<StyleMapWorkingCopy | undefined>;
-  updateWorkingCopy(workingCopyId: UUID, updates: Partial<StyleMapWorkingCopy>): Promise<void>;
+  commitWorkingCopy(workingCopy: StylerWorkingCopy): Promise<void>;
+  getWorkingCopy(workingCopyId: UUID): Promise<StylerWorkingCopy | undefined>;
+  updateWorkingCopy(workingCopyId: UUID, updates: Partial<StylerWorkingCopy>): Promise<void>;
   deleteWorkingCopy(workingCopyId: UUID): Promise<void>;
 
   // Cleanup operations
@@ -370,7 +370,7 @@ export interface StyleMapDB {
 /**
  * 🟡 File cache service interface
  */
-export interface StyleMapFileCacheService {
+export interface StylerFileCacheService {
   // Cache operations
   getCachedContent(url: string): ParseFileResult | undefined;
   setCachedContent(url: string, content: ParseFileResult): void;
@@ -398,9 +398,9 @@ export interface StyleMapFileCacheService {
 // ================================================================================
 
 /**
- * 🟡 StyleMap Dialog component props
+ * 🟡 Styler Dialog component props
  */
-export interface StyleMapDialogProps {
+export interface StylerDialogProps {
   /** Dialog mode */
   mode: 'create' | 'edit';
   /** Parent node ID for creation */
@@ -409,8 +409,8 @@ export interface StyleMapDialogProps {
   currentStep?: number;
   /** Step change handler */
   onStepChange?: (step: number) => void;
-  /** StyleMap ID for editing */
-  styleMapId?: string;
+  /** Styler ID for editing */
+  stylerId?: string;
   /** Target node for editing */
   targetNode?: {
     id: string;
@@ -421,26 +421,26 @@ export interface StyleMapDialogProps {
   };
   /** Preloaded data for optimization */
   preloadedData?: {
-    styleMapNode: {
+    stylerNode: {
       name: string;
       description?: string;
       type: TreeNodeType;
       isDraft: boolean;
     };
-    styleMapEntity?: StyleMapEntity;
+    stylerEntity?: StylerEntity;
     tableMetadataEntity?: TableMetadataEntity;
     rows?: RowEntity[];
   };
 }
 
 /**
- * 🟡 StyleMap Configuration component props
+ * 🟡 Styler Configuration component props
  */
-export interface StyleMapConfigurationProps {
+export interface StylerConfigurationProps {
   /** Current configuration */
-  config: StyleMapConfig;
+  config: StylerConfig;
   /** Configuration change handler */
-  onChange: (config: StyleMapConfig) => void;
+  onChange: (config: StylerConfig) => void;
   /** Value data for algorithm calculation */
   values: number[];
   /** Whether component is disabled */
@@ -450,11 +450,11 @@ export interface StyleMapConfigurationProps {
 }
 
 /**
- * 🟡 StyleMap PreviewStep component props
+ * 🟡 Styler PreviewStep component props
  */
-export interface StyleMapPreviewProps {
-  /** StyleMap entity for preview */
-  styleMapEntity?: StyleMapEntity;
+export interface StylerPreviewProps {
+  /** Styler entity for preview */
+  stylerEntity?: StylerEntity;
   /** Table metadata */
   tableMetadataEntity?: TableMetadataEntity;
   /** Selected key column */
@@ -462,7 +462,7 @@ export interface StyleMapPreviewProps {
   /** Selected value column */
   selectedValueColumn: string;
   /** Style configuration */
-  styleMapConfig: StyleMapConfig;
+  stylerConfig: StylerConfig;
   /** Filter rules */
   filterRules: FilterRule[];
   /** Table rows for preview */
@@ -478,57 +478,57 @@ export interface StyleMapPreviewProps {
 /**
  * 🟡 NodeType definition for plugin registration
  */
-export interface StyleMapNodeTypeDefinition {
+export interface StylerNodeTypeDefinition {
   /** Node type identifier */
-  nodeType: 'stylemap-plugin';
+  nodeType: 'styler-plugin';
   /** Database configuration */
   database: {
-    entityStore: 'styleMapEntities';
-    schema: typeof StyleMapEntity;
+    entityStore: 'stylerEntities';
+    schema: typeof StylerEntity;
     version: number;
   };
   /** Entity handler instance */
-  entityHandler: StyleMapEntityHandler;
+  entityHandler: StylerEntityHandler;
   /** Lifecycle hooks */
   lifecycle: {
-    afterCreate?: (nodeId: TreeNodeId, entity: StyleMapEntity) => Promise<void>;
-    beforeDelete?: (nodeId: TreeNodeId, entity: StyleMapEntity) => Promise<void>;
-    afterUpdate?: (nodeId: TreeNodeId, entity: StyleMapEntity) => Promise<void>;
+    afterCreate?: (nodeId: TreeNodeId, entity: StylerEntity) => Promise<void>;
+    beforeDelete?: (nodeId: TreeNodeId, entity: StylerEntity) => Promise<void>;
+    afterUpdate?: (nodeId: TreeNodeId, entity: StylerEntity) => Promise<void>;
   };
   /** UI containers */
   ui: {
-    dialogComponent: React.ComponentType<StyleMapDialogProps>;
+    dialogComponent: React.ComponentType<StylerDialogProps>;
     panelComponent?: React.ComponentType<any>;
     iconComponent?: React.ComponentType<any>;
   };
   /** API extensions */
   api: {
-    workerExtensions: Partial<StyleMapWorkerAPI>;
+    workerExtensions: Partial<StylerWorkerAPI>;
     clientExtensions?: Record<string, any>;
   };
 }
 
 /**
- * 🟡 Entity handler for StyleMap operations
+ * 🟡 Entity handler for Styler operations
  */
-export interface StyleMapEntityHandler {
+export interface StylerEntityHandler {
   // Core CRUD operations
-  create(parentId: TreeNodeId, data: StyleMapFormData): Promise<StyleMapEntity>;
-  read(nodeId: TreeNodeId): Promise<StyleMapEntity | undefined>;
-  update(nodeId: TreeNodeId, updates: Partial<StyleMapEntity>): Promise<void>;
+  create(parentId: TreeNodeId, data: StylerFormData): Promise<StylerEntity>;
+  read(nodeId: TreeNodeId): Promise<StylerEntity | undefined>;
+  update(nodeId: TreeNodeId, updates: Partial<StylerEntity>): Promise<void>;
   delete(nodeId: TreeNodeId): Promise<void>;
 
   // Working copy operations
-  createWorkingCopy(nodeId: TreeNodeId): Promise<StyleMapWorkingCopy>;
+  createWorkingCopy(nodeId: TreeNodeId): Promise<StylerWorkingCopy>;
   commitWorkingCopy(workingCopyId: UUID): Promise<void>;
   discardWorkingCopy(workingCopyId: UUID): Promise<void>;
 
   // Validation
-  validate(data: Partial<StyleMapFormData>): Promise<ValidationResult>;
+  validate(data: Partial<StylerFormData>): Promise<ValidationResult>;
 
   // Export/Import
   export(nodeId: TreeNodeId): Promise<any>;
-  import(data: any, parentId: TreeNodeId): Promise<StyleMapEntity>;
+  import(data: any, parentId: TreeNodeId): Promise<StylerEntity>;
 }
 
 // ================================================================================
@@ -552,16 +552,16 @@ export interface ValidationResult {
  */
 export interface ColorCalculator {
   /** Calculate color for a value using linear algorithm */
-  calculateLinear(value: number, min: number, max: number, config: StyleMapConfig): string;
+  calculateLinear(value: number, min: number, max: number, config: StylerConfig): string;
   /** Calculate color for a value using logarithmic algorithm */
-  calculateLogarithmic(value: number, min: number, max: number, config: StyleMapConfig): string;
+  calculateLogarithmic(value: number, min: number, max: number, config: StylerConfig): string;
   /** Calculate color for a value using quantile algorithm */
-  calculateQuantile(value: number, values: number[], config: StyleMapConfig): string;
+  calculateQuantile(value: number, values: number[], config: StylerConfig): string;
   /** Calculate color for a categorical value */
   calculateCategorical(
     value: string | number,
     categories: (string | number)[],
-    config: StyleMapConfig
+    config: StylerConfig
   ): string;
   /** Convert HSV to RGB */
   hsvToRgb(h: number, s: number, v: number): [number, number, number];
@@ -610,9 +610,9 @@ export interface PerformanceMetrics {
 // ================================================================================
 
 /**
- * 🟢 StyleMap specific error types
+ * 🟢 Styler specific error types
  */
-export type StyleMapErrorType =
+export type StylerErrorType =
   | 'FILE_PARSE_ERROR'
   | 'VALIDATION_ERROR'
   | 'DATABASE_ERROR'
@@ -622,11 +622,11 @@ export type StyleMapErrorType =
   | 'WORKER_ERROR';
 
 /**
- * 🟢 StyleMap error interface
+ * 🟢 Styler error interface
  */
-export interface StyleMapError extends Error {
+export interface StylerError extends Error {
   /** Error type */
-  type: StyleMapErrorType;
+  type: StylerErrorType;
   /** Error code for programmatic handling */
   code: string;
   /** Additional context data */
@@ -642,9 +642,9 @@ export interface StyleMapError extends Error {
 // ================================================================================
 
 /**
- * 🟡 StyleMap plugin configuration
+ * 🟡 Styler plugin configuration
  */
-export interface StyleMapPluginConfig {
+export interface StylerPluginConfig {
   /** Maximum file size in bytes */
   maxFileSize: number;
   /** Cache expiration time in milliseconds */
@@ -690,33 +690,33 @@ export type {
 // Default export with all interfaces
 export default {
   // Core entities
-  StyleMapEntity,
+  StylerEntity,
   TableMetadataEntity,
   RowEntity,
-  StyleMapWorkingCopy,
+  StylerWorkingCopy,
 
   // Configuration
-  StyleMapConfig,
+  StylerConfig,
   FilterRule,
 
   // UI State
-  StyleMapFormData,
-  StyleMapPreviewState,
-  StyleMapDialogState,
+  StylerFormData,
+  StylerPreviewState,
+  StylerDialogState,
 
   // API interfaces
-  StyleMapWorkerAPI,
-  StyleMapDB,
-  StyleMapFileCacheService,
+  StylerWorkerAPI,
+  StylerDB,
+  StylerFileCacheService,
 
   // Component props
-  StyleMapDialogProps,
-  StyleMapConfigurationProps,
-  StyleMapPreviewProps,
+  StylerDialogProps,
+  StylerConfigurationProps,
+  StylerPreviewProps,
 
   // Plugin integration
-  StyleMapNodeTypeDefinition,
-  StyleMapEntityHandler,
+  StylerNodeTypeDefinition,
+  StylerEntityHandler,
 
   // Utilities
   ValidationResult,
@@ -725,8 +725,8 @@ export default {
   PerformanceMetrics,
 
   // Error handling
-  StyleMapError,
+  StylerError,
 
   // Configuration
-  StyleMapPluginConfig,
+  StylerPluginConfig,
 };

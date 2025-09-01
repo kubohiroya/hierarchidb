@@ -41,7 +41,7 @@ const PACKAGE_RENAMES = new Map<string, string>([
   ['@hierarchidb/ui-usermenu', '@hierarchidb/11-ui-usermenu'],
   ['@hierarchidb/ui-treeconsole-base', '@hierarchidb/12-ui-treeconsole-base'],
   ['@hierarchidb/plugin-basemap', '@hierarchidb/20-plugin-basemap'],
-  ['@hierarchidb/plugin-stylemap-plugin', '@hierarchidb/20-plugin-stylemap-plugin'],
+  ['@hierarchidb/plugin-styler-plugin', '@hierarchidb/20-plugin-styler-plugin'],
   ['@hierarchidb/plugin-import-export-plugin', '@hierarchidb/20-plugin-import-export-plugin'],
   ['@hierarchidb/_app', '@hierarchidb/30-_app'],
   ['@hierarchidb/backend-bff', '@hierarchidb/bff'],

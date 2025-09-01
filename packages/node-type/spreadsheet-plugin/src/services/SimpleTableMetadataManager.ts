@@ -1,7 +1,7 @@
 /**
  * @file SimpleTableMetadataManager.ts
  * @description Table metadata management for Spreadsheet plugin
- * Refactored from StyleMap plugin with spreadsheet-plugin-specific database naming
+ * Refactored from Styler plugin with spreadsheet-plugin-specific database naming
  */
 
 import Dexie, { Table } from 'dexie';
@@ -9,7 +9,7 @@ import type { CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
 
 /**
  * 【機能概要】: CSVテーブルメタデータのIndexedDB管理
- * 【実装方針】: StyleMapから移植、データベース名をspreadsheetDBに変更
+ * 【実装方針】: Stylerから移植、データベース名をspreadsheetDBに変更
  * 【テスト対応】: 参照カウント管理とガベージコレクションのテスト
  * 🟢 信頼性レベル: Dexieベースの実証済み実装
  */

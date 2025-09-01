@@ -34,10 +34,10 @@ workerでのAPIサービスを、アスペクト志向でのクロスカット�
 ### 6.2.1 ツリー分類とプラグイン配置
 
 **Resourcesツリー専用プラグイン**:
-- basemap, stylemap, shapes, locations, routes, propertyresolver
+- basemap, styler, shapes, locations, routes, propertyresolver
 - 地図表示に必要な各種リソースデータを管理
 - 各プラグインは独立してリソースを提供
-- 命名規則: NodeType 識別子は原則として「1対1対応のデータを管理するプラグインは単数形（例: basemap, stylemap, propertyresolver, project）、1対n対応のデータを管理するプラグインは複数形（例: shapes, locations, routes）」とする。
+- 命名規則: NodeType 識別子は原則として「1対1対応のデータを管理するプラグインは単数形（例: basemap, styler, propertyresolver, project）、1対n対応のデータを管理するプラグインは複数形（例: shapes, locations, routes）」とする。
 
 **Projectsツリー専用プラグイン**:
 - project
@@ -89,9 +89,9 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, ne
 - **ルーティング**: view（マップ表示）、edit（マップ設定編集）
 - **ライフサイクル**: afterCreate（初期地図設定）、beforeDelete（マップリソースクリーンアップ）
 
-#### 6.2.2.2 stylemap（スタイル情報プラグイン）
+#### 6.2.2.2 styler（スタイル情報プラグイン）
 - **機能**: CSVデータをもとにスタイル情報を提供
-- **エンティティ**: StyleMapEntity（CSVパス、スタイル定義、カラーマップ等）
+- **エンティティ**: StylerEntity（CSVパス、スタイル定義、カラーマップ等）
 - **ルーティング**: import（CSVインポート）、preview（スタイルプレビュー）、export（スタイル出力）
 - **API拡張**: parseCSVStyles、applyStyles、validateStyleData
 

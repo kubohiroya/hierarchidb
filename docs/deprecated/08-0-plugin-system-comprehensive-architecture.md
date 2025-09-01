@@ -14,7 +14,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 ├─────────────────────────────────────────────────────────────────┤
 │                      UI Layer (UX統一)                          │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐  │
-│  │   Folder     │ │   BaseMap    │ │  StyleMap    │ │  Shapes  │  │
+│  │   Folder     │ │   BaseMap    │ │  Styler    │ │  Shapes  │  │
 │  │  UI Plugin   │ │  UI Plugin   │ │  UI Plugin   │ │UI Plugin │  │
 │  │              │ │              │ │              │ │          │  │
 │  │• 統一CRUD    │ │• 地図エディター │ │• 6ステップ     │ │• 4段階    │  │
@@ -31,7 +31,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  │   (既存維持)    │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │                │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• treeNodeId    │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• parentId      │    │ │StyleMap     │WorkingCopyTypes  │ Peer  │ │  │
+│  │• parentId      │    │ │Styler     │WorkingCopyTypes  │ Peer  │ │  │
 │  │• treeNodeType  │    │ │BaseMap      │ViewState    │(1:1)  │ │  │
 │  │• name, etc     │    │ ├─────────────┼─────────────┤       │ │  │
 │  │                │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -44,7 +44,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  ┌─────────────────────────────────────────────────────────────┐  │
 │  │              Plugin Definition System                        │  │
 │  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │  │
-│  │ │   BaseMap    │ │  StyleMap    │ │   Shapes     │        │  │
+│  │ │   BaseMap    │ │  Styler    │ │   Shapes     │        │  │
 │  │ │    Plugin    │ │    Plugin    │ │    Plugin    │        │  │
 │  │ │              │ │              │ │              │        │  │
 │  │ │• PeerEntity  │ │• 複合エンティティ│ │• 全分類活用   │        │  │
@@ -78,7 +78,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
                     │ (1:1関係)   │ (1:N関係)   │ (N:N関係)
 ────────────────────┼─────────────┼─────────────┼─────────────
 Persistent          │ 設定データ   │ 成果物      │ 共有リソース
-(CoreDB)            │ • StyleMap  │ • VectorTiles│ • TableMetadata
+(CoreDB)            │ • Styler  │ • VectorTiles│ • TableMetadata
 永続化データ         │ • BaseMap   │ • ShapeResult│ • SharedResource
                     │ • Settings  │ • BatchOutput│ • CacheIndex
 ────────────────────┼─────────────┼─────────────┼─────────────
@@ -296,19 +296,19 @@ export const BaseMapWorkerPlugin: WorkerPluginDefinition = {
 };
 ```
 
-#### StyleMapプラグイン（複合パターン）
+#### Stylerプラグイン（複合パターン）
 
 ```typescript
-export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+export const StylerWorkerPlugin: WorkerPluginDefinition = {
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   version: '1.0.0',
   
   // 6分類での位置づけ（複数エンティティ利用）
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       manager: 'PeerEntityManager',
       description: 'スタイル設定（1:1対応）'
     },
@@ -323,7 +323,7 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
   database: {
     dbName: 'CoreDB',
     entityManagers: {
-      'StyleMapEntity': 'PeerEntityManager',
+      'StylerEntity': 'PeerEntityManager',
       'TableMetadataEntity': 'RelationalEntityManager'
     },
     autoLifecycle: true,
@@ -334,7 +334,7 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
     }]
   },
   
-  entityHandler: new StyleMapHandler()
+  entityHandler: new StylerHandler()
 };
 ```
 
@@ -706,7 +706,7 @@ export abstract class ContainerPluginBase<TEntity extends PeerEntity> {
 
 #### ドキュメント型プラグイン（ドキュメントベース）
 - **特徴**: 単一エンティティ、WorkingCopyTypes、バージョン管理、エクスポート
-- **例**: BaseMap, StyleMap, Shapes
+- **例**: BaseMap, Styler, Shapes
 - **エンティティ**: PeerEntity, GroupEntity, RelationalEntity
 - **UI**: 編集ダイアログ、プレビュー、エクスポート
 
@@ -810,9 +810,9 @@ export const useDynamicCreateMenu = (parentNodeId: TreeNodeId) => {
 
 ## 6. マルチステップ処理システム
 
-### 6.1 StyleMapの6ステップウィザード
+### 6.1 Stylerの6ステップウィザード
 
-StyleMapプラグインは、CSVデータインポートのための6ステップウィザードを提供：
+Stylerプラグインは、CSVデータインポートのための6ステップウィザードを提供：
 
 1. **Step1: Name & Description** - 基本情報入力
 2. **Step2: File Upload** - ファイルアップロードとプレビュー
@@ -822,12 +822,12 @@ StyleMapプラグインは、CSVデータインポートのための6ステッ�
 6. **Step6: Preview & Confirm** - 最終プレビューと確認
 
 ```typescript
-export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
+export const StylerMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   onComplete,
   onCancel
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<StyleMapFormData>(getDefaultFormData());
+  const [formData, setFormData] = useState<StylerFormData>(getDefaultFormData());
   
   const steps = [
     { title: 'Name & Description', component: Step1NameDescription },
@@ -839,8 +839,8 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   ];
   
   const handleComplete = async () => {
-    // StyleMapエンティティ + TableMetadataエンティティの作成
-    const entity = await workerAPI.createNode('stylemap-plugin', formData);
+    // Stylerエンティティ + TableMetadataエンティティの作成
+    const entity = await workerAPI.createNode('styler-plugin', formData);
     onComplete(entity);
   };
   
@@ -854,7 +854,7 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
       onBack={() => setActiveStep(prev => prev - 1)}
       onComplete={handleComplete}
       onCancel={onCancel}
-      validateStep={(step, data) => validateStyleMapStep(step, data)}
+      validateStep={(step, data) => validateStylerStep(step, data)}
     />
   );
 };
@@ -987,18 +987,18 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 };
 ```
 
-### 7.3 高級パターン（StyleMap）
+### 7.3 高級パターン（Styler）
 
 複合エンティティを利用したマルチステップ処理：
 
 ```typescript
 // Worker層
-export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap-plugin',
+export const StylerWorkerPlugin: WorkerPluginDefinition = {
+  nodeType: 'styler-plugin',
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       manager: 'PeerEntityManager'
     },
     secondary: [{
@@ -1011,8 +1011,8 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
 };
 
 // UI層
-export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap-plugin',
+export const StylerUIPlugin: UIPluginDefinition = {
+  nodeType: 'styler-plugin',
   capabilities: {
     supportsWorkingCopy: true,
     supportsMultiStep: true,
@@ -1020,7 +1020,7 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
   },
   components: {
     icon: StyleIcon,
-    multiStepDialog: StyleMapImporter
+    multiStepDialog: StylerImporter
   }
 };
 ```
@@ -1091,7 +1091,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
 3. **パフォーマンス最適化**: データアクセス層の改善
 
 ### Phase 3: 高級プラグイン対応（4週間）
-1. **StyleMapプラグイン**: 複合エンティティと6ステップウィザード
+1. **Stylerプラグイン**: 複合エンティティと6ステップウィザード
 2. **RelationalEntity管理**: 参照カウントと自動クリーンアップ
 3. **マルチステップフレームワーク**: 汎用的なウィザードシステム
 

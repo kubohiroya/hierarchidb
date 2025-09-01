@@ -28,10 +28,10 @@
         "featureCount": 195
       }
     },
-    "population-stylemap-2023": {
-      "treeNodeId": "population-stylemap-2023",
+    "population-styler-2023": {
+      "treeNodeId": "population-styler-2023",
       "parentTreeNodeId": "population-folder-2023",
-      "treeNodeType": "stylemap",
+      "treeNodeType": "styler",
       "name": "Population Color Map",
       "description": "Color mapping for population density visualization",
       "createdAt": 1704067200000,
@@ -75,7 +75,7 @@
   "nodeIds": [
     "population-folder-2023",
     "population-shapes-2023",
-    "population-stylemap-2023",
+    "population-styler-2023",
     "population-table-2023"
   ],
   "rootNodeIds": ["population-folder-2023"],

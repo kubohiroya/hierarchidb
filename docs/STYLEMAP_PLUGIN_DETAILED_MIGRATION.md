@@ -1,4 +1,4 @@
-# stylemap-plugin移行計画書
+# styler-plugin移行計画書
 
 ## 現状分析結果
 
@@ -12,23 +12,23 @@
 
 ### プラグインの実装状況
 
-**✅ stylemap-pluginは完成されたプラグイン**:
-- **spreadsheet-plugin拡張**: SpreadsheetEntityを継承してStyleMapEntity定義
-- **Step5-6追加実装**: StyleMapStep5（スタイル設定）、StyleMapStep6（プレビュー）
+**✅ styler-pluginは完成されたプラグイン**:
+- **spreadsheet-plugin拡張**: SpreadsheetEntityを継承してStylerEntity定義
+- **Step5-6追加実装**: StylerStep5（スタイル設定）、StylerStep6（プレビュー）
 - **MapLibre統合**: カラーマッピング機能、スタイル仕様生成
 - **高度な機能**: 統計分析、カラーグラデーション、データ可視化
-- **完全なUI**: StyleMapConfiguration、StyleMapTablePreview
+- **完全なUI**: StylerConfiguration、StylerTablePreview
 
 ### 重要な発見
-stylemap-pluginは**spreadsheet-pluginを拡張**した高度なデータ可視化プラグインです。CSV/Excelデータから自動的にMapLibreスタイル仕様を生成する機能を持ちます。
+styler-pluginは**spreadsheet-pluginを拡張**した高度なデータ可視化プラグインです。CSV/Excelデータから自動的にMapLibreスタイル仕様を生成する機能を持ちます。
 
 ## 実装済み機能の確認
 
 ### Core機能
 ```typescript
-// StyleMapEntity - SpreadsheetEntityを拡張
-export interface StyleMapEntity extends SpreadsheetEntity, StyleMapExtendedFields {
-  styleMapConfig: StyleMapConfig;
+// StylerEntity - SpreadsheetEntityを拡張
+export interface StylerEntity extends SpreadsheetEntity, StylerExtendedFields {
+  stylerConfig: StylerConfig;
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   generatedStyle?: {
@@ -40,10 +40,10 @@ export interface StyleMapEntity extends SpreadsheetEntity, StyleMapExtendedField
 ```
 
 ### UI Components（実装済み）
-- **StyleMapStep5**: カラーマッピング設定、データ統計分析
-- **StyleMapStep6**: プレビュー機能、MapLibreスタイル確認
-- **StyleMapConfiguration**: 詳細スタイル設定
-- **StyleMapTablePreview**: データテーブルプレビュー
+- **StylerStep5**: カラーマッピング設定、データ統計分析
+- **StylerStep6**: プレビュー機能、MapLibreスタイル確認
+- **StylerConfiguration**: 詳細スタイル設定
+- **StylerTablePreview**: データテーブルプレビュー
 
 ### データ処理機能（完成済み）
 - **統計分析**: 最大値・最小値・四分位数の自動計算
@@ -65,22 +65,22 @@ import { useTranslation } from 'provider-i18next';
 import { useTranslation } from 'react-i18next';
 
 // 使用方法は変更なし
-const { t } = useTranslation('stylemap-plugin');
+const { t } = useTranslation('styler-plugin');
 ```
 
 #### 1.2 全コンポーネントの同様修正
 ```bash
 # 対象ファイル（一括修正）
 src/steps/BasicInfoStep.tsx
-src/components/steps/StyleMapStep5.tsx
-src/components/steps/StyleMapStep6.tsx
+src/components/steps/StylerStep5.tsx
+src/components/steps/StylerStep6.tsx
 ```
 
 ### Phase 2: 依存関係参照修正（folder-plugin、spreadsheet-plugin修正後）
 
 #### 2.1 folder-plugin参照の修正
 ```typescript
-// src/extensions/StyleMapFolderExtension.tsx
+// src/extensions/StylerFolderExtension.tsx
 // 修正前（エラーの原因）
 import { FolderEntityHandler } from '@hierarchidb/node-type-folder-plugin';
 
@@ -107,9 +107,9 @@ import { SpreadsheetEntityHandler } from '@hierarchidb/node-type-spreadsheet-plu
 
 **対応**: 既存のCSV処理機能を統合
 ```typescript
-// src/services/StyleMapCSVProcessor.ts（新規作成）
-export class StyleMapCSVProcessor {
-  async parseCSVForStyleMapping(file: File): Promise<StyleMapData> {
+// src/services/StylerCSVProcessor.ts（新規作成）
+export class StylerCSVProcessor {
+  async parseCSVForStylerping(file: File): Promise<StylerData> {
     const text = await file.text();
     const lines = text.split('\n');
     const headers = lines[0].split(',');
@@ -135,12 +135,12 @@ export class StyleMapCSVProcessor {
 
 #### 3.2 ImportとService統合
 ```typescript
-// src/services/StyleMapDataService.ts
+// src/services/StylerDataService.ts
 // 修正前
 import { CSVProcessor } from '@hierarchidb/ui-csv-extract';
 
 // 修正後
-import { StyleMapCSVProcessor } from './StyleMapCSVProcessor';
+import { StylerCSVProcessor } from './StylerCSVProcessor';
 
 // 使用箇所も対応するメソッド名に変更
 ```
@@ -187,10 +187,10 @@ const result = {
 ```typescript
 // src/shared/metadata.ts
 // 修正前
-nodeType: 'stylemap'  // string型エラー
+nodeType: 'styler'  // string型エラー
 
 // 修正後
-nodeType: 'stylemap' as NodeType  // branded type cast
+nodeType: 'styler' as NodeType  // branded type cast
 ```
 
 ## 作業順序と検証
@@ -205,7 +205,7 @@ nodeType: 'stylemap' as NodeType  // branded type cast
 ### 検証方法
 ```bash
 # 各Phase後にエラー数確認
-pnpm --filter @hierarchidb/node-type-stylemap-plugin typecheck
+pnpm --filter @hierarchidb/node-type-styler-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 141件 → 94件（i18next修正）
@@ -215,13 +215,13 @@ pnpm --filter @hierarchidb/node-type-stylemap-plugin typecheck
 # Phase 2完了後: 37件 → 10件以下（依存関係解決）
 
 # 最終確認
-pnpm --filter @hierarchidb/node-type-stylemap-plugin build
+pnpm --filter @hierarchidb/node-type-styler-plugin build
 ```
 
 ## 依存関係と注意点
 
 ### spreadsheet-plugin依存（重要）
-stylemap-pluginは**spreadsheet-pluginを拡張**するため：
+styler-pluginは**spreadsheet-pluginを拡張**するため：
 - ✅ **spreadsheet-pluginの修正完了が前提**
 - ✅ **SpreadsheetEntity**が正常動作している必要
 - ✅ **CSV処理機能**との統合が必要
@@ -242,7 +242,7 @@ stylemap-pluginは**spreadsheet-pluginを拡張**するため：
 ## 重要な確認
 
 ### 完成度の高いプラグイン
-stylemap-pluginは以下の高度な機能を持つ**完成されたプラグイン**です：
+styler-pluginは以下の高度な機能を持つ**完成されたプラグイン**です：
 - **データ可視化**: CSVからMapLibreスタイル自動生成
 - **統計分析**: 最大・最小・四分位数の自動計算
 - **カラーマッピング**: データ値に基づく色分け
@@ -252,4 +252,4 @@ stylemap-pluginは以下の高度な機能を持つ**完成されたプラグイ
 ### 修正の本質
 必要な修正は**依存関係とImport調整のみ**で、既存の豊富なデータ可視化機能はすべて保持されます。
 
-この計画により、stylemap-pluginの141件のエラーを**3時間で**解決し、完成されたデータ可視化機能を活用できるようになります。
+この計画により、styler-pluginの141件のエラーを**3時間で**解決し、完成されたデータ可視化機能を活用できるようになります。

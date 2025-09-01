@@ -1,10 +1,10 @@
-# StyleMap Plugin Data Model
+# Styler Plugin Data Model
 
-This document describes the comprehensive data model for the StyleMap Plugin, including all entity types used for database storage, their relationships, and the CSV processing architecture.
+This document describes the comprehensive data model for the Styler Plugin, including all entity types used for database storage, their relationships, and the CSV processing architecture.
 
 ## Overview
 
-The StyleMap Plugin implements a sophisticated data visualization system with:
+The Styler Plugin implements a sophisticated data visualization system with:
 - **CSV/TSV processing pipeline**: Import → Parse → Analyze → Filter → Style
 - **RelationalEntity pattern**: Shared table metadata with reference counting
 - **Working Copy support**: Draft editing with commit/rollback
@@ -14,18 +14,18 @@ The StyleMap Plugin implements a sophisticated data visualization system with:
 
 ### Database Structure
 
-The StyleMap Plugin uses IndexedDB with the following entity structure:
+The Styler Plugin uses IndexedDB with the following entity structure:
 
 ```typescript
-interface StyleMapDatabaseStructure {
-  // Main StyleMap entities (PeerEntity)
-  stylemaps: StyleMapEntity[];
+interface StylerDatabaseStructure {
+  // Main Styler entities (PeerEntity)
+  stylers: StylerEntity[];
   
   // Shared table metadata (RelationalEntity) 
   tableMetadata: TableMetadataEntity[];
   
   // Working copies for draft editing
-  styleMapWorkingCopies: StyleMapWorkingCopy[];
+  stylerWorkingCopies: StylerWorkingCopy[];
 }
 ```
 
@@ -34,12 +34,12 @@ interface StyleMapDatabaseStructure {
 ```typescript
 const indexConfiguration = {
   // Primary indices for core entities
-  stylemaps: '&nodeId, name, createdAt, updatedAt, tableMetadataId',
+  stylers: '&nodeId, name, createdAt, updatedAt, tableMetadataId',
   tableMetadata: '&id, contentHash, filename, referenceCount, lastAccessedAt',
-  styleMapWorkingCopies: '&workingCopyId, workingCopyOf, copiedAt',
+  stylerWorkingCopies: '&workingCopyId, workingCopyOf, copiedAt',
   
   // Performance indices for queries
-  stylemapsByTable: '[tableMetadataId+nodeId]',
+  stylersByTable: '[tableMetadataId+nodeId]',
   tablesByHash: '[contentHash+filename]',
   workingCopiesByNode: '[workingCopyOf+copiedAt]',
 };
@@ -49,23 +49,23 @@ const indexConfiguration = {
 
 ### Core EntityTypes
 
-#### StyleMapEntity (PeerEntity)
+#### StylerEntity (PeerEntity)
 Main configuration entity with 1:1 correspondence to TreeNode.
 
 ```typescript
-export interface StyleMapEntity extends PeerEntity {
+export interface StylerEntity extends PeerEntity {
   /**
-   * Unique identifier for the StyleMap entity
+   * Unique identifier for the Styler entity
    */
   id: EntityId;
   
   /**
-   * Human-readable name for the StyleMap
+   * Human-readable name for the Styler
    */
   name: string;
   
   /**
-   * Optional description of the StyleMap
+   * Optional description of the Styler
    */
   description?: string;
   
@@ -97,7 +97,7 @@ export interface StyleMapEntity extends PeerEntity {
   /**
    * Style configuration
    */
-  styleMapConfig: StyleMapConfig;
+  stylerConfig: StylerConfig;
   
   /**
    * Cache key for output styles
@@ -197,8 +197,8 @@ export interface TableMetadataEntity extends RelationalEntity {
 
 ### Working Copy System
 
-#### StyleMapWorkingCopy
-Extends StyleMapEntity with working copy properties for draft editing.
+#### StylerWorkingCopy
+Extends StylerEntity with working copy properties for draft editing.
 
 ```typescript
 export interface WorkingCopyProperties {
@@ -208,7 +208,7 @@ export interface WorkingCopyProperties {
   isDirty: boolean;
 }
 
-export type StyleMapWorkingCopy = StyleMapEntity & WorkingCopyProperties;
+export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
 ```
 
 ### Configuration Types
@@ -226,11 +226,11 @@ export interface FilterRule {
 }
 ```
 
-#### StyleMapConfig
+#### StylerConfig
 Comprehensive style configuration for MapLibre integration.
 
 ```typescript
-export interface StyleMapConfig {
+export interface StylerConfig {
   /**
    * Default colors for all elements
    */
@@ -410,7 +410,7 @@ interface StyleGenerationPipeline {
   
   // 3. Style Output
   styleGeneration: {
-    maplibreStyle: (colorMap: ColorMap, config: StyleMapConfig) => MapLibreStyle;
+    maplibreStyle: (colorMap: ColorMap, config: StylerConfig) => MapLibreStyle;
     legendGeneration: (colorMap: ColorMap) => LegendData;
     previewGeneration: (style: MapLibreStyle) => PreviewData;
   };
@@ -422,20 +422,20 @@ interface StyleGenerationPipeline {
 ### Entity Handler Implementation
 
 ```typescript
-export class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
+export class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
   private tableMetadataManager = new TableMetadataManager();
   
-  async createEntity(nodeId: NodeId, data?: Partial<StyleMapEntity>): Promise<StyleMapEntity> {
-    const entity: StyleMapEntity = {
+  async createEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<StylerEntity> {
+    const entity: StylerEntity = {
       id: crypto.randomUUID() as EntityId,
       nodeId,
-      name: data?.name || 'Untitled StyleMap',
+      name: data?.name || 'Untitled Styler',
       description: data?.description,
       filterRules: data?.filterRules || [],
       selectedKeyColumn: data?.selectedKeyColumn || '',
       selectedValueColumns: data?.selectedValueColumns || [],
       keyValueMappings: data?.keyValueMappings || [],
-      styleMapConfig: data?.styleMapConfig || this.getDefaultStyleConfig(),
+      stylerConfig: data?.stylerConfig || this.getDefaultStyleConfig(),
       tableMetadataId: data?.tableMetadataId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -465,9 +465,9 @@ export class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
 
 ```typescript
 interface WorkingCopyOperations {
-  createWorkingCopy(nodeId: NodeId): Promise<StyleMapWorkingCopy>;
-  updateWorkingCopy(workingCopyId: string, changes: Partial<StyleMapEntity>): Promise<void>;
-  commitWorkingCopy(workingCopyId: string): Promise<StyleMapEntity>;
+  createWorkingCopy(nodeId: NodeId): Promise<StylerWorkingCopy>;
+  updateWorkingCopy(workingCopyId: string, changes: Partial<StylerEntity>): Promise<void>;
+  commitWorkingCopy(workingCopyId: string): Promise<StylerEntity>;
   discardWorkingCopy(workingCopyId: string): Promise<void>;
 }
 ```

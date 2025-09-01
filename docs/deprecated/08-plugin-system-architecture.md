@@ -37,7 +37,7 @@ HierarchiDBのプラグインシステムは、Worker層とUI層で異なるア�
 │  ┌─────────────────┐  ┌─────────────────────────────┐    │
 │  │   TreeNode      │  │    Plugin System            │    │
 │  │   Management    │  │  ┌──────────┐ ┌──────────┐  │    │
-│  │   (既存維持)     │  │  │ BaseMap  │ │StyleMap  │  │    │
+│  │   (既存維持)     │  │  │ BaseMap  │ │Styler  │  │    │
 │  │                 │  │  │ Plugin   │ │ Plugin   │  │    │
 │  └─────────────────┘  │  └──────────┘ └──────────┘  │    │
 │                       └─────────────────────────────┘    │
@@ -1398,7 +1398,7 @@ export function registerAllUIPlugins(): void {
   
   // ドキュメントプラグイン
   registry.register(BaseMapUIPlugin);
-  registry.register(StyleMapUIPlugin);
+  registry.register(StylerUIPlugin);
   registry.register(RoutesUIPlugin);
   
   // コンテナプラグイン

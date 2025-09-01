@@ -13,7 +13,7 @@
 | **location-plugin** | 47 | ⚠️ 中程度 | shape-plugin依存関係 |
 | **route-plugin** | 8 | ✅ 良好 | 軽微なエラーのみ |
 | **basemap-plugin** | 15 | ⚠️ 軽微 | 型定義の調整が必要 |
-| **stylemap-plugin** | 147 | ❌ 要修正 | 大規模な型エラー |
+| **styler-plugin** | 147 | ❌ 要修正 | 大規模な型エラー |
 | **project-plugin** | 94 | ❌ 要修正 | 多数の型不整合 |
 | **spreadsheet-plugin** | 242 | ❌ 深刻 | 最も多いエラー数 |
 | **propertyresolver-plugin** | 17 | ⚠️ 軽微 | 型定義の調整が必要 |
@@ -53,7 +53,7 @@
 
 ### 🟢 低優先度（特殊機能）
 6. **route-plugin** - 比較的独立
-7. **stylemap-plugin** - スタイル定義
+7. **styler-plugin** - スタイル定義
 8. **spreadsheet-plugin** - 大規模修正が必要
 9. **propertyresolver-plugin** - 特殊用途
 
@@ -95,7 +95,7 @@ import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 #### フェーズ3: 依存プラグイン修正（2-3日）
 - location-plugin
 - route-plugin
-- stylemap-plugin
+- styler-plugin
 
 #### フェーズ4: 特殊プラグイン修正（3-4日）
 - spreadsheet-plugin（最も複雑）

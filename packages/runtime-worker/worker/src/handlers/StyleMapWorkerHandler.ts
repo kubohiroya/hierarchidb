@@ -1,17 +1,17 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import { BaseReferenceCountingHandler } from './ReferenceCountingHandler';
-import { StyleMapDB, type StyleMapEntity, type SpreadsheetMetadataId } from '../db/StyleMapDB';
+import { StylerDB, type StylerEntity, type SpreadsheetMetadataId } from '../db/StylerDB';
 
 /**
- * Worker-side implementation of StyleMapEntityHandler
- * Uses independent StyleMapDB for complete plugin isolation
+ * Worker-side implementation of StylerEntityHandler
+ * Uses independent StylerDB for complete plugin isolation
  */
-export class StyleMapWorkerHandler extends BaseReferenceCountingHandler {
-  private styleMapDB: StyleMapDB;
+export class StylerWorkerHandler extends BaseReferenceCountingHandler {
+  private stylerDB: StylerDB;
 
-  constructor(styleMapDB: StyleMapDB) {
+  constructor(stylerDB: StylerDB) {
     super(); // プラグインは独立データベースを使用するため、CoreDB/EphemeralDBは渡さない
-    this.styleMapDB = styleMapDB;
+    this.stylerDB = stylerDB;
   }
 
   // BaseReferenceCountingHandler implementation
@@ -23,63 +23,63 @@ export class StyleMapWorkerHandler extends BaseReferenceCountingHandler {
     return 'spreadsheetMetadataId'; // Custom field name from EntityReferenceHints
   }
 
-  protected async getPeerEntity(nodeId: NodeId): Promise<StyleMapEntity | null> {
+  protected async getPeerEntity(nodeId: NodeId): Promise<StylerEntity | null> {
     // 独立データベースを使用
-    const result = await this.styleMapDB.getEntity(nodeId);
+    const result = await this.stylerDB.getEntity(nodeId);
     return result || null;
   }
 
   protected async deletePeerEntity(nodeId: NodeId): Promise<void> {
     // 独立データベースを使用
-    await this.styleMapDB.deleteEntity(nodeId);
+    await this.stylerDB.deleteEntity(nodeId);
   }
 
   protected async countPeerEntitiesByRelRef(relRef: SpreadsheetMetadataId): Promise<number> {
     // 独立データベースで参照カウント
-    return await this.styleMapDB.countEntitiesBySpreadsheetMetadata(relRef);
+    return await this.stylerDB.countEntitiesBySpreadsheetMetadata(relRef);
   }
 
   protected async deleteRelationalEntity(relRef: SpreadsheetMetadataId): Promise<void> {
-    // StyleMap doesn't own the SpreadsheetMetadata
+    // Styler doesn't own the SpreadsheetMetadata
     // The RelationalEntity deletion is handled by SpreadsheetWorkerHandler
-    // This method should be empty for StyleMap
+    // This method should be empty for Styler
   }
 
   // Additional Worker-specific methods
 
   /**
-   * Create StyleMapEntity in database
+   * Create StylerEntity in database
    */
-  async createStyleMapEntity(entity: StyleMapEntity): Promise<void> {
-    await this.styleMapDB.createEntity(entity);
+  async createStylerEntity(entity: StylerEntity): Promise<void> {
+    await this.stylerDB.createEntity(entity);
   }
 
   /**
-   * Get StyleMapEntity by nodeId
+   * Get StylerEntity by nodeId
    */
-  async getStyleMapEntity(nodeId: NodeId): Promise<StyleMapEntity | null> {
-    const result = await this.styleMapDB.getEntity(nodeId);
+  async getStylerEntity(nodeId: NodeId): Promise<StylerEntity | null> {
+    const result = await this.stylerDB.getEntity(nodeId);
     return result || null;
   }
 
   /**
-   * Update StyleMapEntity
+   * Update StylerEntity
    */
-  async updateStyleMapEntity(nodeId: NodeId, updates: Partial<StyleMapEntity>): Promise<void> {
-    await this.styleMapDB.updateEntity(nodeId, updates);
+  async updateStylerEntity(nodeId: NodeId, updates: Partial<StylerEntity>): Promise<void> {
+    await this.stylerDB.updateEntity(nodeId, updates);
   }
 
   /**
-   * Delete StyleMapEntity by nodeId
+   * Delete StylerEntity by nodeId
    */
-  async deleteStyleMapEntity(nodeId: NodeId): Promise<void> {
+  async deleteStylerEntity(nodeId: NodeId): Promise<void> {
     await this.deletePeerEntity(nodeId);
   }
 
   /**
-   * Get all StyleMapEntities referencing a specific SpreadsheetMetadata
+   * Get all StylerEntities referencing a specific SpreadsheetMetadata
    */
-  async getStyleMapsBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<StyleMapEntity[]> {
-    return await this.styleMapDB.getEntitiesBySpreadsheetMetadata(metadataId);
+  async getStylersBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<StylerEntity[]> {
+    return await this.stylerDB.getEntitiesBySpreadsheetMetadata(metadataId);
   }
 }

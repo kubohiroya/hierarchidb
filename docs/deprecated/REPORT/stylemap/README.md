@@ -1,14 +1,14 @@
-# StyleMap Plugin Documentation
+# Styler Plugin Documentation
 
 ## 概要
 
-StyleMap PluginはSpreadsheet Pluginを拡張し、表データから地図スタイル（MapLibre Style Specification）を生成する専門プラグインです。CSVやExcelデータの特定カラムの値に基づいて、地図要素の色やスタイルを動的に生成します。
+Styler PluginはSpreadsheet Pluginを拡張し、表データから地図スタイル（MapLibre Style Specification）を生成する専門プラグインです。CSVやExcelデータの特定カラムの値に基づいて、地図要素の色やスタイルを動的に生成します。
 
 ## 位置付け
 
 ```
 ┌──────────────────────────────────┐
-│     StyleMap Plugin              │ ← 地図スタイル生成に特化
+│     Styler Plugin              │ ← 地図スタイル生成に特化
 ├──────────────────────────────────┤
 │     Spreadsheet Plugin           │ ← 汎用表データ処理基盤
 ├──────────────────────────────────┤
@@ -24,7 +24,7 @@ StyleMap PluginはSpreadsheet Pluginを拡張し、表データから地図ス�
 - **カラム抽出**: 特定列の値取得
 - **データ管理**: チャンク化、圧縮、リファレンスカウント
 
-### 2. StyleMap固有の機能
+### 2. Styler固有の機能
 - **色マッピング生成**: カラム値から色への自動マッピング
 - **MapLibreスタイル生成**: 地図表示用のスタイル仕様生成
 - **グラデーション生成**: 数値データからのグラデーション
@@ -36,14 +36,14 @@ StyleMap PluginはSpreadsheet Pluginを拡張し、表データから地図ス�
 ┌─────────────────────────────────────┐
 │        User Interface               │
 │  ┌─────────────────────────────┐   │
-│  │  StyleMap Dialog (UI保持)    │   │
+│  │  Styler Dialog (UI保持)    │   │
 │  │  - Step1: データ選択         │   │
 │  │  - Step2: カラムマッピング   │   │
 │  │  - Step3: 色設定            │   │
 │  │  - Step4: プレビュー        │   │
 │  └─────────────────────────────┘   │
 ├─────────────────────────────────────┤
-│       StyleMap Plugin               │
+│       Styler Plugin               │
 │  ┌─────────────────────────────┐   │
 │  │  ColorMappingEngine          │   │
 │  │  - 自動色生成                │   │
@@ -70,7 +70,7 @@ StyleMap PluginはSpreadsheet Pluginを拡張し、表データから地図ス�
 graph TD
     A[CSV/Excel File] --> B[Spreadsheet Plugin]
     B --> C[データ保存・管理]
-    C --> D[StyleMap Plugin]
+    C --> D[Styler Plugin]
     D --> E[カラム値抽出]
     E --> F[色マッピング生成]
     F --> G[MapLibreスタイル]
@@ -82,9 +82,9 @@ graph TD
 
 ## 実装構造
 
-### 1. StyleMapエンティティ（簡略化）
+### 1. Stylerエンティティ（簡略化）
 ```typescript
-interface StyleMapEntity {
+interface StylerEntity {
   nodeId: NodeId;
   
   // Spreadsheetへの参照
@@ -109,9 +109,9 @@ interface StyleMapEntity {
 }
 ```
 
-### 2. StyleMap API
+### 2. Styler API
 ```typescript
-class StyleMapPlugin {
+class StylerPlugin {
   private spreadsheet: SpreadsheetPlugin;
   
   constructor() {
@@ -166,20 +166,20 @@ class StyleMapPlugin {
 ### 基本的な使用フロー
 
 ```typescript
-import { StyleMapPlugin } from '@hierarchidb/plugin-stylemap-plugin';
+import { StylerPlugin } from '@hierarchidb/plugin-styler-plugin';
 import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet-plugin';
 
-const styleMap = new StyleMapPlugin();
+const styler = new StylerPlugin();
 
 // 1. CSVデータをインポート（Spreadsheetの機能を利用）
-const metadata = await styleMap.prepareData(nodeId, {
+const metadata = await styler.prepareData(nodeId, {
   source: 'file',
   file: csvFile,
   hasHeaders: true
 });
 
-// 2. StyleMapエンティティを作成
-const entity = await styleMap.createEntity(nodeId, {
+// 2. Stylerエンティティを作成
+const entity = await styler.createEntity(nodeId, {
   spreadsheetNodeId: metadata.nodeId,
   keyColumn: 'prefecture',
   valueColumns: ['population'],
@@ -187,7 +187,7 @@ const entity = await styleMap.createEntity(nodeId, {
 });
 
 // 3. 色マッピングを生成
-const colorMap = await styleMap.generateColorMapping(nodeId, 'prefecture', {
+const colorMap = await styler.generateColorMapping(nodeId, 'prefecture', {
   scheme: 'gradient',
   startColor: '#ffffe0',
   endColor: '#ff0000',
@@ -195,7 +195,7 @@ const colorMap = await styleMap.generateColorMapping(nodeId, 'prefecture', {
 });
 
 // 4. MapLibreスタイルを生成
-const style = await styleMap.generateStyle(nodeId);
+const style = await styler.generateStyle(nodeId);
 
 // 5. 地図に適用
 map.setStyle(style);
@@ -205,7 +205,7 @@ map.setStyle(style);
 
 ```typescript
 // 特定条件でフィルタリング
-const entity = await styleMap.updateEntity(nodeId, {
+const entity = await styler.updateEntity(nodeId, {
   filterRules: [
     { column: 'year', operator: 'equals', value: 2023 },
     { column: 'population', operator: 'greater_than', value: 1000000 }
@@ -213,14 +213,14 @@ const entity = await styleMap.updateEntity(nodeId, {
 });
 
 // フィルタ適用後のスタイルを生成
-const filteredStyle = await styleMap.generateStyle(nodeId);
+const filteredStyle = await styler.generateStyle(nodeId);
 ```
 
 ## データベース構造
 
-### StyleMapエンティティテーブル
+### Stylerエンティティテーブル
 ```typescript
-stylemap_entities: {
+styler_entities: {
   nodeId: NodeId (PK)
   spreadsheetNodeId: NodeId  // Spreadsheetデータへの参照
   keyColumn: string
@@ -235,18 +235,18 @@ stylemap_entities: {
 ```
 
 ### 関連性
-- StyleMapは独自のデータを持たず、Spreadsheet Pluginのデータを参照
+- Stylerは独自のデータを持たず、Spreadsheet Pluginのデータを参照
 - フィルタルールもSpreadsheet Pluginの機能を利用
-- 色マッピングとスタイル生成のみがStyleMap固有の処理
+- 色マッピングとスタイル生成のみがStyler固有の処理
 
 ## 利点
 
 ### 1. 責務の分離
 - **Spreadsheet Plugin**: 汎用的な表データ処理
-- **StyleMap Plugin**: 地図スタイル生成に特化
+- **Styler Plugin**: 地図スタイル生成に特化
 
 ### 2. データの再利用
-- 同じCSVデータを複数のStyleMapで共有可能
+- 同じCSVデータを複数のStylerで共有可能
 - リファレンスカウントによる効率的な管理
 
 ### 3. 拡張性
@@ -255,16 +255,16 @@ stylemap_entities: {
 
 ## 移行パス
 
-### 既存のStyleMapからの移行
+### 既存のStylerからの移行
 1. 既存のCSVデータをSpreadsheet Pluginにインポート
-2. StyleMapエンティティを簡略化された構造に変換
+2. Stylerエンティティを簡略化された構造に変換
 3. 色マッピングロジックを保持
 4. UI コンポーネントはそのまま利用
 
 ### コード例
 ```typescript
 // 旧実装
-const oldStyleMap = await getOldStyleMapEntity(nodeId);
+const oldStyler = await getOldStylerEntity(nodeId);
 
 // 新実装への移行
 // 1. データをSpreadsheetに移行
@@ -272,18 +272,18 @@ const spreadsheetNodeId = await spreadsheet.import(
   `${nodeId}_data` as NodeId,
   {
     source: 'clipboard',
-    clipboardData: oldStyleMap.csvData,
+    clipboardData: oldStyler.csvData,
     hasHeaders: true
   }
 );
 
-// 2. 新しいStyleMapエンティティ作成
-const newEntity = await styleMap.createEntity(nodeId, {
+// 2. 新しいStylerエンティティ作成
+const newEntity = await styler.createEntity(nodeId, {
   spreadsheetNodeId,
-  keyColumn: oldStyleMap.selectedKeyColumn,
-  valueColumns: oldStyleMap.selectedValueColumns,
-  colorMapping: oldStyleMap.colorConfiguration,
-  filterRules: oldStyleMap.filterRules
+  keyColumn: oldStyler.selectedKeyColumn,
+  valueColumns: oldStyler.selectedValueColumns,
+  colorMapping: oldStyler.colorConfiguration,
+  filterRules: oldStyler.filterRules
 });
 ```
 
@@ -297,7 +297,7 @@ const newEntity = await styleMap.createEntity(nodeId, {
 
 ## まとめ
 
-StyleMap PluginはSpreadsheet Pluginの上に構築された専門プラグインとして：
+Styler PluginはSpreadsheet Pluginの上に構築された専門プラグインとして：
 
 1. **データ管理はSpreadsheetに委譲** - 重複実装を避ける
 2. **スタイル生成に集中** - 本来の責務に特化

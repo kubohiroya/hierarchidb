@@ -9,9 +9,9 @@ export interface SearchResult {
   matchedValue: string;
   confidence: number;
   parentPath: string[];
-  // StyleMapデータ関連
-  styleMapNodeId?: NodeId; // マッチしたStyleMapノードのID
-  styleMapNodeName?: string; // StyleMapノード名
+  // Stylerデータ関連
+  stylerNodeId?: NodeId; // マッチしたStylerノードのID
+  stylerNodeName?: string; // Stylerノード名
   rowIndex?: number; // マッチした行のインデックス（0ベース）
   rowData?: Record<string, any>; // その行の元データ
   displayColumns?: string[]; // 簡易表示用の主要カラム名

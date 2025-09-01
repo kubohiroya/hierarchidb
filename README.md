@@ -84,7 +84,7 @@ hierarchidb/
 │   │   ├── basemap-plugin/     # ベースマップ
 │   │   ├── shape-plugin/       # 図形
 │   │   ├── spreadsheet-plugin/ # スプレッドシート
-│   │   ├── stylemap-plugin/    # スタイルマップ
+│   │   ├── styler-plugin/    # スタイルマップ
 │   │   ├── location-plugin/    # ロケーション
 │   │   ├── route-plugin/       # ルート
 │   │   └── resolver-plugin/ # プロパティ解決

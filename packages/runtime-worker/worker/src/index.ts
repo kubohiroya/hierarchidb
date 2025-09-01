@@ -11,7 +11,7 @@ export { WorkerErrorCode } from '~/command/types';
 // Database exports
 export { CoreDB } from '~/db/CoreDB';
 export { EphemeralDB } from '~/db/EphemeralDB';
-export { StyleMapDB } from '~/db/StyleMapDB';
+export { StylerDB } from '~/db/StylerDB';
 export { SpreadsheetDB } from '~/db/SpreadsheetDB';
 export {
   EntityDatabase,
@@ -21,7 +21,7 @@ export {
   DexieEntityManagerFactory,
 } from '~/db/dexieIntegration';
 export type { WorkingCopyRow, TreeViewStateRow } from '~/db/EphemeralDB';
-export type { ColorRule, StyleMapEntity } from '~/db/StyleMapDB';
+export type { ColorRule, StylerEntity } from '~/db/StylerDB';
 export type {
   SpreadsheetMetadata,
   SpreadsheetChunk,

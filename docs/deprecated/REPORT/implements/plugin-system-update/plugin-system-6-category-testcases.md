@@ -62,7 +62,7 @@
   entityId: 'table-001'
   nodeIds: ['node-003', 'node-004', 'node-005']
   ```
-  - **入力データの意味**: 複数のStyleMapから共有されるTableMetadata
+  - **入力データの意味**: 複数のStylerから共有されるTableMetadata
 - **期待される結果**: 
   ```typescript
   { id: 'table-001', referenceCount: 3, referencingNodeIds: ['node-003', 'node-004', 'node-005'] }
@@ -263,18 +263,18 @@
   - **確認ポイント**: 自動ライフサイクル管理の完全性
 - 🟢 このテストケースの信頼性レベル: 設計文書の実装例から導出
 
-### 4.2 StyleMap複合エンティティ管理
+### 4.2 Styler複合エンティティ管理
 
-- **テスト名**: StyleMapのPeerEntity+RelationalEntity統合
+- **テスト名**: StylerのPeerEntity+RelationalEntity統合
   - **何をテストするか**: 複数タイプのエンティティ協調動作
-  - **期待される動作**: StyleMapEntityとTableMetadataEntityの連携
-- **入力値**: StyleMapプラグインの6ステップウィザードデータ
+  - **期待される動作**: StylerEntityとTableMetadataEntityの連携
+- **入力値**: Stylerプラグインの6ステップウィザードデータ
   - **入力データの意味**: 実際のユーザー操作フロー
 - **期待される結果**: 両エンティティが正しく作成・関連付け
   - **期待結果の理由**: 複合エンティティパターン
 - **テストの目的**: 複数エンティティタイプの協調
   - **確認ポイント**: 参照整合性の維持
-- 🟢 このテストケースの信頼性レベル: StyleMapプラグイン仕様から導出
+- 🟢 このテストケースの信頼性レベル: Stylerプラグイン仕様から導出
 
 ## テストケース実装時の日本語コメント指針
 

@@ -21,7 +21,7 @@ export interface ImportManifest {
   nodeCount: number;
   resourceTypes: {
     shapes?: number;
-    stylemaps?: number;
+    stylers?: number;
     tables?: number;
     basemaps?: number;
   };

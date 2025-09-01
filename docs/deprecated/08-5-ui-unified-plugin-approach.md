@@ -13,11 +13,11 @@ Worker Layer（変更なし）
 ├── TreeNode (treeNodeId, parentId, treeNodeType, name, etc.)
 ├── Entity System
 │   ├── BaseMapEntity
-│   ├── StyleMapEntity
+│   ├── StylerEntity
 │   └── ...
 └── Plugin System (Entity専用)
     ├── BaseMapPlugin
-    ├── StyleMapPlugin
+    ├── StylerPlugin
     └── ...
 
 メリット：
@@ -34,7 +34,7 @@ UI Layer（新設計）
 └── Unified Plugin System
     ├── FolderUIPlugin (TreeNodeのフォルダ型を扱う)
     ├── BaseMapUIPlugin (TreeNode + BaseMapEntityを扱う)
-    ├── StyleMapUIPlugin (TreeNode + StyleMapEntityを扱う)
+    ├── StylerUIPlugin (TreeNode + StylerEntityを扱う)
     └── ProjectUIPlugin (TreeNodeのプロジェクト型を扱う)
 
 メリット：

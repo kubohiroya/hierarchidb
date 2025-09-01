@@ -13,7 +13,7 @@
 - ツリー構造やプラグインの概念に疑問が生じた時
 - 他のユーザーに操作を説明する前の予習として
 
-この章では、TreeNode、Entity、Working Copy、Plugin等のコア概念を学習します。これらの概念は、後続の操作説明やトラブルシューティングで頻繁に使用されるため、しっかりと理解しておくことが重要です。特に、プラグイン（BaseMap、StyleMap、Shape、Spreadsheet、Project）の役割分担を理解することで、適切なデータ管理が可能になります。
+この章では、TreeNode、Entity、Working Copy、Plugin等のコア概念を学習します。これらの概念は、後続の操作説明やトラブルシューティングで頻繁に使用されるため、しっかりと理解しておくことが重要です。特に、プラグイン（BaseMap、Styler、Shape、Spreadsheet、Project）の役割分担を理解することで、適切なデータ管理が可能になります。
 
 ## コア概念
 
@@ -23,7 +23,7 @@
 **主要プロパティ:**
 - `id`: 一意識別子（UUID）
 - `parentId`: 親ノードのID
-- `treeNodeType`: ノードの種類（folder, basemap, stylemap, shapes等）
+- `treeNodeType`: ノードの種類（folder, basemap, styler, shapes等）
 - `name`: 表示名
 - `description`: 説明文
 - `isDraft`: ドラフト状態フラグ
@@ -53,7 +53,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 
 | | Peer | Group | Relation |
 |---|---|---|---|
-| **Persistent** | 設定データ<br>(StyleMap, BaseMap) | 成果物データ<br>(VectorTiles) | 共有リソース<br>(TableMetadata) |
+| **Persistent** | 設定データ<br>(Styler, BaseMap) | 成果物データ<br>(VectorTiles) | 共有リソース<br>(TableMetadata) |
 | **Ephemeral** | UI状態<br>(ViewState) | 中間処理データ<br>(ProcessBuffer) | セッション管理<br>(BatchSession) |
 
 ## ワーキングコピーシステム
@@ -110,7 +110,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 **標準ノードタイプ:**
 - `folder`: フォルダ
 - `basemap`: 地図設定
-- `stylemap`: スタイルマップ
+- `styler`: スタイルマップ
 - `shapes`: 地理空間データ
 - `spreadsheet`: 表形式データ（CSV、TSV、Excel等）
 - `project`: プロジェクト管理
@@ -143,7 +143,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 複雑な設定を段階的に行うUI。
 
 **例:**
-- StyleMapの6ステップ設定
+- Stylerの6ステップ設定
 - Shapesの4段階バッチ処理
 
 ## 次のステップ

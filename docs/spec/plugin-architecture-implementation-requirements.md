@@ -35,7 +35,7 @@ hierarchidbプロジェクトにおける統合プラグインアーキテクチ
 
 ### 状態要件
 
-- REQ-201: Resourcesツリー内にある場合、システムは basemap, stylemaps, shapes, locations, routes, propertyresolver プラグインを利用可能にしなければならない 🟢
+- REQ-201: Resourcesツリー内にある場合、システムは basemap, stylers, shapes, locations, routes, propertyresolver プラグインを利用可能にしなければならない 🟢
 - REQ-202: Projectsツリー内にある場合、システムは project プラグインを利用可能にし、Resourcesツリーノードへの参照を許可しなければならない 🟢
 - REQ-203: ワーキングコピーが存在する場合、システムは commitWorkingCopy または discardWorkingCopy 操作を提供しなければならない 🟢
 
@@ -94,7 +94,7 @@ hierarchidbプロジェクトにおける統合プラグインアーキテクチ
 ### Resourcesツリー専用プラグイン
 
 - basemap: MapLibreGLJS での基本地図表示 🟢
-- stylemaps: CSV データからのスタイル情報提供 🟢
+- stylers: CSV データからのスタイル情報提供 🟢
 - shapes: GeoJSON の簡略化とベクトルタイル生成 🟢
 - locations: 地点情報（都市、港湾、空港等）の管理 🟢
 - routes: 経路情報（海路、空路、道路等）の管理 🟢

@@ -63,7 +63,7 @@
 - **deprecated/** - 廃止されたドキュメント
 - **design/** - 設計ドキュメント
   - plugin-shapes/ - Shapeプラグイン設計
-  - plugin-stylemap/ - StyleMapプラグイン設計
+  - plugin-styler/ - Stylerプラグイン設計
   - treeconsole-migration/ - TreeConsole移行設計
 - **development/** - 開発関連文書
 - **implementation/** - 実装詳細

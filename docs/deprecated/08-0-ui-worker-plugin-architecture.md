@@ -12,7 +12,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 ├─────────────────────────────────────────────────────────────────┤
 │                      UI Layer (統一プラグイン)                    │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐  │
-│  │   Folder     │ │   BaseMap    │ │  StyleMap    │ │  Shapes  │  │
+│  │   Folder     │ │   BaseMap    │ │  Styler    │ │  Shapes  │  │
 │  │  UI Plugin   │ │  UI Plugin   │ │  UI Plugin   │ │UI Plugin │  │
 │  │              │ │              │ │              │ │          │  │
 │  │• 作成ダイアログ  │ │• 地図エディター │ │• スタイルエディター│ │• Shape   │  │
@@ -29,7 +29,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  │                │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │• treeNodeId    │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• parentId      │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• treeNodeType  │    │ │StyleMap     │UI State     │ Peer  │ │  │
+│  │• treeNodeType  │    │ │Styler     │UI State     │ Peer  │ │  │
 │  │• name, etc     │    │ │BaseMap      │ViewState    │       │ │  │
 │  │                │    │ ├─────────────┼─────────────┤       │ │  │
 │  └────────────────┘    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -42,7 +42,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  ┌─────────────────────────────────────────────────────────────┐  │
 │  │              Plugin Definition System                        │  │
 │  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │  │
-│  │ │   BaseMap    │ │  StyleMap    │ │   Shapes     │        │  │
+│  │ │   BaseMap    │ │  Styler    │ │   Shapes     │        │  │
 │  │ │    Plugin    │ │    Plugin    │ │    Plugin    │        │  │
 │  │ │              │ │              │ │              │        │  │
 │  │ │• PeerEntity  │ │• PeerEntity  │ │• GroupEntity │        │  │
@@ -61,7 +61,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
                     │ Peer        │ Group       │ Relational
 ────────────────────┼─────────────┼─────────────┼─────────────
 Persistent          │ 設定データ   │ 成果物      │ 共有リソース
-(CoreDB)            │ StyleMap    │ VectorTiles │ TableMetadata
+(CoreDB)            │ Styler    │ VectorTiles │ TableMetadata
                     │ BaseMap     │ ShapeResult │ SharedResource
 ────────────────────┼─────────────┼─────────────┼─────────────
 Ephemeral           │ UI状態      │ 中間データ   │ セッション
@@ -109,17 +109,17 @@ interface BaseMapEntity extends PeerEntity {
 }
 ```
 
-#### 2. StyleMapプラグイン（複合パターン）
+#### 2. Stylerプラグイン（複合パターン）
 
 ```typescript
-export const StyleMapPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap-plugin',
+export const StylerPlugin: WorkerPluginDefinition = {
+  nodeType: 'styler-plugin',
   
   // 6分類での位置づけ（複数エンティティ利用）
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       description: 'スタイル設定（1:1対応）'
     },
     secondary: [{
@@ -131,7 +131,7 @@ export const StyleMapPlugin: WorkerPluginDefinition = {
   
   database: {
     dbName: 'CoreDB',
-    tableName: 'stylemaps',
+    tableName: 'stylers',
     entityManager: 'PeerEntityManager',
     autoLifecycle: true,
     relations: [{
@@ -142,7 +142,7 @@ export const StyleMapPlugin: WorkerPluginDefinition = {
   }
 };
 
-interface StyleMapEntity extends PeerEntity {
+interface StylerEntity extends PeerEntity {
   name: string;
   filterRules: FilterRule[];
   styleRules: StyleRule[];
@@ -747,7 +747,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
 ### Phase 3: 基本プラグインの6分類対応（2週間）
 1. Folderプラグインの統一化
 2. BaseMapプラグインの6分類対応
-3. StyleMapプラグインの複合エンティティ対応
+3. Stylerプラグインの複合エンティティ対応
 
 ### Phase 4: 高度プラグインの実装（3週間）
 1. Shapesプラグインのマルチステップ対応

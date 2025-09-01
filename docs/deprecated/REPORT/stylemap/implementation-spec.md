@@ -1,8 +1,8 @@
-# StyleMap Plugin 実装仕様書
+# Styler Plugin 実装仕様書
 
 ## 1. 概要
 
-StyleMap PluginはSpreadsheet Pluginを基盤として、表データから地図スタイルを生成する専門プラグインです。
+Styler PluginはSpreadsheet Pluginを基盤として、表データから地図スタイルを生成する専門プラグインです。
 
 ## 2. 依存関係
 
@@ -16,17 +16,17 @@ dependencies:
 ## 3. ディレクトリ構造
 
 ```
-packages/plugins/stylemap/
+packages/plugins/styler/
 ├── src/
 │   ├── openstreetmap-type.ts                    // エントリーポイント
-│   ├── StyleMapPlugin.ts           // メインプラグインクラス
+│   ├── StylerPlugin.ts           // メインプラグインクラス
 │   ├── entities/
-│   │   └── StyleMapEntity.ts       // エンティティ定義
+│   │   └── StylerEntity.ts       // エンティティ定義
 │   ├── services/
 │   │   ├── ColorMappingEngine.ts   // 色マッピング生成
 │   │   └── StyleGenerator.ts       // MapLibreスタイル生成
 │   ├── ui/                         // UIコンポーネント（保持）
-│   │   ├── StyleMapDialog.tsx
+│   │   ├── StylerDialog.tsx
 │   │   └── steps/
 │   │       ├── Step1DataSource.tsx
 │   │       ├── Step2ColumnMapping.tsx
@@ -40,14 +40,14 @@ packages/plugins/stylemap/
 
 ## 4. コアコンポーネント
 
-### 4.1 StyleMapEntity（簡略化版）
+### 4.1 StylerEntity（簡略化版）
 
 ```typescript
-// entities/StyleMapEntity.ts
+// entities/StylerEntity.ts
 import type { NodeId } from '@hierarchidb/core';
 import type { FilterRule } from '@hierarchidb/plugin-spreadsheet-plugin';
 
-export interface StyleMapEntity {
+export interface StylerEntity {
   // 識別子
   nodeId: NodeId;
   
@@ -88,23 +88,23 @@ export interface ColorSchemeConfig {
 }
 ```
 
-### 4.2 StyleMapPlugin
+### 4.2 StylerPlugin
 
 ```typescript
-// StyleMapPlugin.ts
+// StylerPlugin.ts
 import { SpreadsheetPlugin } from '@hierarchidb/plugin-spreadsheet-plugin';
 import { ColorMappingEngine } from './services/ColorMappingEngine';
 import { StyleGenerator } from './services/StyleGenerator';
 
-export class StyleMapPlugin {
+export class StylerPlugin {
   private spreadsheet: SpreadsheetPlugin;
   private colorEngine: ColorMappingEngine;
   private styleGenerator: StyleGenerator;
-  private entities: Map<NodeId, StyleMapEntity>;
+  private entities: Map<NodeId, StylerEntity>;
   
   constructor() {
     this.spreadsheet = new SpreadsheetPlugin({
-      dbName: 'StyleMapDB',
+      dbName: 'StylerDB',
       autoIndex: true
     });
     this.colorEngine = new ColorMappingEngine();
@@ -113,7 +113,7 @@ export class StyleMapPlugin {
   }
   
   /**
-   * StyleMapエンティティを作成
+   * Stylerエンティティを作成
    */
   async createEntity(
     nodeId: NodeId,
@@ -126,7 +126,7 @@ export class StyleMapPlugin {
       colorScheme: ColorSchemeConfig;
       filterRules?: FilterRule[];
     }
-  ): Promise<StyleMapEntity> {
+  ): Promise<StylerEntity> {
     // バリデーション
     const metadata = await this.spreadsheet.getMetadata(config.spreadsheetNodeId);
     if (!metadata) {
@@ -150,7 +150,7 @@ export class StyleMapPlugin {
     );
     
     // エンティティ作成
-    const entity: StyleMapEntity = {
+    const entity: StylerEntity = {
       nodeId,
       spreadsheetNodeId: config.spreadsheetNodeId,
       keyColumn: config.keyColumn,
@@ -223,8 +223,8 @@ export class StyleMapPlugin {
    */
   async updateEntity(
     nodeId: NodeId,
-    updates: Partial<StyleMapEntity>
-  ): Promise<StyleMapEntity> {
+    updates: Partial<StylerEntity>
+  ): Promise<StylerEntity> {
     const entity = await this.getEntity(nodeId);
     
     // 色設定が変更された場合は再生成
@@ -397,16 +397,16 @@ export class StyleGenerator {
     return {
       version: 8,
       sources: {
-        'stylemap-source': {
+        'styler-source': {
           type: 'vector',
           tiles: ['...'] // タイルソースURL
         }
       },
       layers: [
         {
-          id: 'stylemap-plugin-layer',
+          id: 'styler-plugin-layer',
           type: 'fill',
-          source: 'stylemap-plugin-source',
+          source: 'styler-plugin-source',
           'source-layer': 'default',
           paint: paintStyle
         }
@@ -461,30 +461,30 @@ export class StyleGenerator {
 sequenceDiagram
     participant User
     participant UI
-    participant StyleMap
+    participant Styler
     participant Spreadsheet
     participant Storage
     
     User->>UI: CSVファイル選択
-    UI->>StyleMap: importData()
-    StyleMap->>Spreadsheet: import()
+    UI->>Styler: importData()
+    Styler->>Spreadsheet: import()
     Spreadsheet->>Storage: チャンク保存
     Storage-->>Spreadsheet: metadata
-    Spreadsheet-->>StyleMap: spreadsheetNodeId
+    Spreadsheet-->>Styler: spreadsheetNodeId
     
     User->>UI: カラム選択
-    UI->>StyleMap: createEntity()
-    StyleMap->>Spreadsheet: getUniqueValues()
-    Spreadsheet-->>StyleMap: values
-    StyleMap->>StyleMap: generateColorMapping()
-    StyleMap->>Storage: エンティティ保存
+    UI->>Styler: createEntity()
+    Styler->>Spreadsheet: getUniqueValues()
+    Spreadsheet-->>Styler: values
+    Styler->>Styler: generateColorMapping()
+    Styler->>Storage: エンティティ保存
     
     User->>UI: スタイル生成
-    UI->>StyleMap: generateStyle()
-    StyleMap->>Spreadsheet: filter/extract
-    Spreadsheet-->>StyleMap: data
-    StyleMap->>StyleMap: createMapLibreStyle()
-    StyleMap-->>UI: style
+    UI->>Styler: generateStyle()
+    Styler->>Spreadsheet: filter/extract
+    Spreadsheet-->>Styler: data
+    Styler->>Styler: createMapLibreStyle()
+    Styler-->>UI: style
     UI-->>User: 地図表示
 ```
 
@@ -513,7 +513,7 @@ sequenceDiagram
 
 この設計で以下の点を達成できます：
 
-1. **StyleMapの簡略化**: データ管理をSpreadsheetに委譲
+1. **Stylerの簡略化**: データ管理をSpreadsheetに委譲
 2. **UIの保持**: 既存のUIコンポーネントは変更不要
 3. **拡張性**: 他のプラグインも同様のパターンで実装可能
 

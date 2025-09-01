@@ -136,7 +136,7 @@ interface PluginDefinition {
 
 ### 実装済みプラグイン
 1. **BaseMap**: OpenStreetMap/地理院地図統合
-2. **StyleMap**: GIS スタイル管理
+2. **Styler**: GIS スタイル管理
 3. **Shape**: 地理データ処理（バッチ処理対応）
 4. **Project**: プロジェクト管理
 5. **Spreadsheet**: 表データ処理

@@ -20,7 +20,7 @@ const packagesToProcess = [
   'packages/node-type/folder-plugin',
   'packages/node-type/shape-plugin',
   'packages/node-type/spreadsheet-plugin',
-  'packages/node-type/stylemap-plugin',
+  'packages/node-type/styler-plugin',
   // runtime packages
   'packages/runtime/plugin-dialog',
   'packages/runtime/plugin-registry',

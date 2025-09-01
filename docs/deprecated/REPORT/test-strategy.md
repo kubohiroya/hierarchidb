@@ -4,7 +4,7 @@
 
 このテスト戦略ドキュメントでは、HierarchiDBプロジェクトにおける包括的なテスト方針と実装ガイドラインについて説明します。本ドキュメントは以下のような方を対象としています：
 
-**読むべき人**: QA担当者、テストエンジニア、開発者、テクニカルリーダー、品質保証責任者、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインのテスト実装を担当する開発者
+**読むべき人**: QA担当者、テストエンジニア、開発者、テクニカルリーダー、品質保証責任者、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインのテスト実装を担当する開発者
 
 **前提知識**: Vitest、Playwright、React Testing Library、モッキング戦略、テストピラミッド、CI/CD、Web Worker テスト、IndexedDB テスト
 

@@ -44,7 +44,7 @@ packages/
 ├── 13-ui-client/         # Worker接続層
 ├── 20-plugins/           # プラグイン層
 │   ├── basemap/
-│   ├── stylemap/
+│   ├── styler/
 │   ├── folder/
 │   ├── project/
 │   ├── import-export/
@@ -118,7 +118,7 @@ packages/
 | 旧名 | 新名 | 新パス |
 |------|------|--------|
 | @hierarchidb/plugin-basemap | @hierarchidb/plugin-basemap | packages/20-plugins/basemap |
-| @hierarchidb/plugin-stylemap | @hierarchidb/plugin-stylemap | packages/20-plugins/stylemap |
+| @hierarchidb/plugin-styler | @hierarchidb/plugin-styler | packages/20-plugins/styler |
 | @hierarchidb/plugin-folder | @hierarchidb/plugin-folder | packages/20-plugins/folder |
 | @hierarchidb/plugin-project | @hierarchidb/plugin-project | packages/20-plugins/project |
 | @hierarchidb/plugin-import-export | @hierarchidb/plugin-import-export | packages/20-plugins/import-export |

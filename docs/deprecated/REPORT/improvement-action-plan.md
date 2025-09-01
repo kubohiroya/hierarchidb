@@ -4,7 +4,7 @@
 
 この改善アクションプランでは、実装分析レポートで特定された問題点に対する具体的な解決策と実行計画について説明します。本ドキュメントは以下のような方を対象としています：
 
-**読むべき人**: プロジェクトマネージャー、開発チームリーダー、アーキテクト、技術的負債解決を担当する開発者、品質改善を推進する方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインの品質向上を担当する方
+**読むべき人**: プロジェクトマネージャー、開発チームリーダー、アーキテクト、技術的負債解決を担当する開発者、品質改善を推進する方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインの品質向上を担当する方
 
 **前提知識**: 実装分析レポートの内容、プロジェクト管理、技術的負債管理、優先度付け、リファクタリング計画、品質指標
 
@@ -93,7 +93,7 @@ export abstract class RelationalEntityHandler<T extends RelationalEntity>
 
 2. **既存プラグインの移行**
    - BaseMapEntityHandler → PeerEntityHandler
-   - StyleMapEntityHandler → PeerEntityHandler + RelationalEntityHandler
+   - StylerEntityHandler → PeerEntityHandler + RelationalEntityHandler
 
 3. **プラグイン定義の更新**
    - 分類を明示するメタデータ追加
@@ -188,9 +188,9 @@ interface EntiryWorkingCopyTypes<T extends BaseEntity> {
 
 ```typescript
 // プラグインごとに独自のスキーマ定義方法
-// StyleMapDatabase.ts
+// StylerDatabase.ts
 this.version(1).stores({
-  styleMapEntities: '&nodeId, name, isActive',
+  stylerEntities: '&nodeId, name, isActive',
   // ...
 });
 

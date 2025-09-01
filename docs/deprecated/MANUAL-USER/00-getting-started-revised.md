@@ -16,7 +16,7 @@ HierarchiDBは、階層構造データをブラウザ内で管理するWebアプ
 ### 🚧 部分的実装
 - **BaseMapプラグイン**: 基本的な地図表示のみ
 - **Spreadsheetプラグイン**: データ構造のみ（UIなし）
-- **StyleMap/Shapeプラグイン**: 登録のみ（機能未実装）
+- **Styler/Shapeプラグイン**: 登録のみ（機能未実装）
 
 ### ❌ 未実装
 - プラグインの完全なUI
@@ -100,7 +100,7 @@ pnpm dev
 2. 作成したいタイプを選択:
    - Create Folder（フォルダ）
    - Create BaseMap（地図設定）※UI未完成
-   - Create StyleMap（スタイル）※UI未完成
+   - Create Styler（スタイル）※UI未完成
    - Create Shape（地理データ）※UI未完成
    - Create Spreadsheet（表データ）※UI未完成
 

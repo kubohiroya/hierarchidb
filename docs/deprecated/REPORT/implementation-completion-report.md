@@ -4,7 +4,7 @@
 
 この実装完了レポートでは、HierarchiDBの優先課題アクションプランに基づく実装作業の完了状況と成果について報告します。本レポートは以下のような方を対象としています：
 
-**読むべき人**: プロジェクトマネージャー、開発チームリーダー、ステークホルダー、品質保証担当者、進捗管理を行う方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインの実装状況を把握したい方
+**読むべき人**: プロジェクトマネージャー、開発チームリーダー、ステークホルダー、品質保証担当者、進捗管理を行う方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインの実装状況を把握したい方
 
 **前提知識**: HierarchiDBの全体設計、優先課題アクションプラン、プロジェクト管理、品質指標、実装優先度付け
 
@@ -114,7 +114,7 @@ export function validateIds(data: unknown): ValidationResult; // ID検証
 ### ✅ Phase 2 (重要課題)
 
 #### 4. 既存プラグインの分類別Handler移行
-**対象プラグイン**: BaseMap, StyleMap
+**対象プラグイン**: BaseMap, Styler
 
 **BaseMapEntityHandler**:
 ```typescript
@@ -133,18 +133,18 @@ export class BaseMapEntityHandler extends PeerEntityHandler<BaseMapEntity> {
 }
 ```
 
-**StyleMapEntityHandler**:
+**StylerEntityHandler**:
 ```typescript
 // Before: 複雑なRelationalEntity管理を手動実装
-export class StyleMapEntityHandler implements EntityHandler<...> {
+export class StylerEntityHandler implements EntityHandler<...> {
   // 手動でのTableMetadataEntity参照管理
 }
 
 // After: PeerEntityHandler + RelationalEntityManager連携
-export class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
+export class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
   private tableMetadataManager: TableMetadataManager; // RelationalEntity管理
   
-  // PeerEntity（StyleMap）とRelationalEntity（TableMetadata）の自動連携
+  // PeerEntity（Styler）とRelationalEntity（TableMetadata）の自動連携
   async createEntity(nodeId, data) {
     const entity = await super.createEntity(nodeId, data);
     if (entity.tableMetadataId) {

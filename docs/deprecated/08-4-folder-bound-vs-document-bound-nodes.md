@@ -4,7 +4,7 @@
 
 HierarchiDBのノードには2つの主要な紐づきパターンがある：
 1. **フォルダ紐づき**: Project型ノード - フォルダとしての性質を持ち、子ノードを持つ
-2. **ドキュメント紐づき**: BaseMap、StyleMap等 - 単一エンティティとして機能し、通常子ノードは持たない
+2. **ドキュメント紐づき**: BaseMap、Styler等 - 単一エンティティとして機能し、通常子ノードは持たない
 
 この設計により、階層構造を持つプロジェクト管理と、個別のドキュメント管理を適切に分離する。
 
@@ -19,7 +19,7 @@ Unified Plugin System
 │   └── Project Plugin - プロジェクト管理フォルダ
 └── Document Plugins（ドキュメント型）
     ├── BaseMap Plugin - 地図エンティティ
-    ├── StyleMap Plugin - スタイルエンティティ
+    ├── Styler Plugin - スタイルエンティティ
     └── Routes Plugin - ルートエンティティ
 ```
 
@@ -167,7 +167,7 @@ export class ProjectPlugin extends ContainerPluginBase<ProjectEntity> {
       description: data.description || '',
       settings: {
         defaultChildType: 'folder-plugin',
-        allowedChildTypes: ['folder-plugin', 'basemap', 'stylemap-plugin', 'routes', '_shapes_buggy'],
+        allowedChildTypes: ['folder-plugin', 'basemap', 'styler-plugin', 'routes', '_shapes_buggy'],
         autoSort: true
       },
       permissions: {

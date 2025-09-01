@@ -1,4 +1,4 @@
-# StyleMap Plugin Phase 2: コア機能
+# Styler Plugin Phase 2: コア機能
 
 ## フェーズ概要
 
@@ -366,7 +366,7 @@
 - **要件リンク**: REQ-103, REQ-006, TECH-003 🟢
 - **依存タスク**: TASK-0092
 - **実装詳細**:
-  - StyleMapCacheService実装
+  - StylerCacheService実装
   - SHA3ハッシュベースキャッシュ
   - キャッシュ有効期限管理 (24時間) 🟡
   - LRU (Least Recently Used) キャッシュ
@@ -393,7 +393,7 @@
 - **要件リンク**: REQ-002, TECH-005 🟢
 - **依存タスク**: TASK-0093
 - **実装詳細**:
-  - StyleMapEntity・TableMetadata・Row間同期
+  - StylerEntity・TableMetadata・Row間同期
   - 外部キー制約による整合性確保
   - トランザクション境界の適切な設定
   - データ不整合検出・修復機能
@@ -449,11 +449,11 @@
 - **要件リンク**: REQ-505, REQ-506 🟢
 - **依存タスク**: TASK-0095, TASK-0026 (WorkerAPIRegistry)
 - **実装詳細**:
-  - StyleMapWorkerAPI実装
+  - StylerWorkerAPI実装
   - processFileUpload メソッド
   - generateColorMapping メソッド
   - applyFilters メソッド
-  - getStyleMapPreview メソッド
+  - getStylerPreview メソッド
 - **テスト要件**:
   - [ ] RFC 4180準拠テスト
   - [ ] TSVファイルパーステスト
@@ -476,7 +476,7 @@
 - **要件リンク**: REQ-506 🟢
 - **依存タスク**: TASK-0096
 - **実装詳細**:
-  - StyleMapClientAPI実装
+  - StylerClientAPI実装
   - uploadFile クライアントメソッド
   - updateColorMapping クライアントメソッド
   - toggleFilter クライアントメソッド

@@ -285,7 +285,7 @@ export class DynamicPluginLoader {
       folder: '@hierarchidb/folder-plugin',
       basemap: '@hierarchidb/basemap-plugin',
       shape: '@hierarchidb/shape-plugin',
-      stylemap: '@hierarchidb/stylemap-plugin',
+      styler: '@hierarchidb/styler-plugin',
       spreadsheet: '@hierarchidb/spreadsheet-plugin',
     };
 

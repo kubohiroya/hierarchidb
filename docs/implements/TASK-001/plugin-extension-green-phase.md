@@ -50,7 +50,7 @@ export interface DialogStepDefinition {
 }
 ```
 - **実装理由**: マルチステップダイアログの基盤
-- **信頼性**: 🟢 テストケースとStyleMap要件から導出
+- **信頼性**: 🟢 テストケースとStyler要件から導出
 
 #### ExtendedFieldDefinition
 ```typescript

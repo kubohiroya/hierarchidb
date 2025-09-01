@@ -25,7 +25,7 @@ graph TB
         L1[📍 観光地<br/>Location]
         L2[📍 駅<br/>Location]
         R[🛤️ 地下鉄路線<br/>Route]
-        Style[🎨 エリア色分け<br/>StyleMap]
+        Style[🎨 エリア色分け<br/>Styler]
     end
     
     S -.->|表示| Map[🗺️ 地図]
@@ -382,7 +382,7 @@ graph TB
             Income[💰 所得<br/>Spreadsheet]
         end
         
-        subgraph "StyleMap"
+        subgraph "Styler"
             ColorCode[🎨 人口密度で色分け]
         end
     end

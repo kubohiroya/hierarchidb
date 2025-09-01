@@ -62,7 +62,7 @@ HierarchiDBのプラグインシステムは以下の設計思想に基づいて
 ### 9.1.3 プラグインで実現できること
 
 #### 基本機能
-- **新しいノードタイプの定義**: basemap、stylemap、shape等
+- **新しいノードタイプの定義**: basemap、styler、shape等
 - **カスタムエンティティの永続化**: 6分類システムによる適切な管理
 - **自動ライフサイクル管理**: 作成・更新・削除の自動処理
 - **専用UIコンポーネント**: Dialog、Panel、Form等
@@ -94,10 +94,10 @@ export type EntityClassification =
 - **用途**: ノードの設定データ、メタデータ
 - **ライフサイクル**: TreeNodeと同期
 - **削除タイミング**: TreeNode削除時に自動削除
-- **例**: StyleMapEntity、BaseMapEntity
+- **例**: StylerEntity、BaseMapEntity
 
 ```typescript
-export interface StyleMapEntity extends PersistentPeerEntity {
+export interface StylerEntity extends PersistentPeerEntity {
   nodeId: TreeNodeId;
   name: string;
   description?: string;
@@ -274,14 +274,14 @@ export interface PluginDefinition<
 }
 ```
 
-### 9.4.2 実装例：StyleMapプラグイン
+### 9.4.2 実装例：Stylerプラグイン
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
+// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
 
-export const StyleMapDefinition: PluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+export const StylerDefinition: PluginDefinition = {
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   displayName: 'スタイルマップ',
   icon: 'palette',
   color: '#2196F3',
@@ -292,7 +292,7 @@ export const StyleMapDefinition: PluginDefinition = {
       // PersistentPeer: メイン設定エンティティ
       {
         classification: 'persistent-peer',
-        storeName: 'styleMapEntities',
+        storeName: 'stylerEntities',
         relationship: {
           type: 'one-to-one',
           foreignKeyField: 'nodeId',
@@ -331,7 +331,7 @@ export const StyleMapDefinition: PluginDefinition = {
     globalHooks: {
       afterCreate: async (nodeId, entities) => {
         // ノード作成後の全体処理
-        console.log(`StyleMap node created: ${nodeId}`);
+        console.log(`Styler node created: ${nodeId}`);
       },
       beforeDelete: async (nodeId, entities) => {
         // ノード削除前の全体処理
@@ -347,9 +347,9 @@ export const StyleMapDefinition: PluginDefinition = {
   },
   
   ui: {
-    dialogComponent: StyleMapDialog,
-    panelComponent: StyleMapPanel,
-    formComponent: StyleMapForm,
+    dialogComponent: StylerDialog,
+    panelComponent: StylerPanel,
+    formComponent: StylerForm,
   },
   
   validation: {

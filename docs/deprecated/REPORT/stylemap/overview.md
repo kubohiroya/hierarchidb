@@ -1,10 +1,10 @@
-# StyleMap Plugin Overview
+# Styler Plugin Overview
 
-The StyleMap Plugin provides comprehensive CSV/TSV data visualization capabilities for HierarchiDB, enabling users to import tabular data, apply filters and transformations, and generate MapLibre-compatible styles for geographic visualization.
+The Styler Plugin provides comprehensive CSV/TSV data visualization capabilities for HierarchiDB, enabling users to import tabular data, apply filters and transformations, and generate MapLibre-compatible styles for geographic visualization.
 
 ## Architecture Overview
 
-The StyleMap Plugin follows HierarchiDB's 4-layer architecture with strict UI-Worker separation:
+The Styler Plugin follows HierarchiDB's 4-layer architecture with strict UI-Worker separation:
 
 ```
 UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Processing) ←→ IndexedDB (Storage)
@@ -38,7 +38,7 @@ interface TableMetadataEntity extends RelationalEntity {
   columns: string[];
   tableRows: Array<Array<string | number>>;
   referenceCount: number;     // RelationalEntity pattern
-  nodeIds: NodeId[];         // Referencing StyleMaps
+  nodeIds: NodeId[];         // Referencing Stylers
 }
 ```
 
@@ -59,7 +59,7 @@ interface FilterRule {
 Comprehensive style mapping for MapLibre integration:
 
 ```typescript
-interface StyleMapConfig {
+interface StylerConfig {
   defaultColors: ColorScheme;
   colorRules?: ColorRule[];
   useGradient?: boolean;
@@ -70,10 +70,10 @@ interface StyleMapConfig {
 
 ## Processing Pipeline
 
-The StyleMap Plugin implements a 6-step user workflow:
+The Styler Plugin implements a 6-step user workflow:
 
 ### Step 1: Basic Information
-- Name and description for the StyleMap
+- Name and description for the Styler
 - Initial configuration setup
 
 ### Step 2: File Upload
@@ -106,7 +106,7 @@ The StyleMap Plugin implements a 6-step user workflow:
 ### Entity Relationships
 
 ```
-StyleMapEntity (PeerEntity)
+StylerEntity (PeerEntity)
     ↓ references
 TableMetadataEntity (RelationalEntity)
     ↓ managed by
@@ -115,17 +115,17 @@ TableMetadataManager
 
 ### Key Design Patterns
 
-1. **RelationalEntity Pattern**: TableMetadataEntity is shared across multiple StyleMaps
-2. **Reference Counting**: Automatic cleanup when no StyleMaps reference a table
+1. **RelationalEntity Pattern**: TableMetadataEntity is shared across multiple Stylers
+2. **Reference Counting**: Automatic cleanup when no Stylers reference a table
 3. **Working Copy Pattern**: Draft editing with commit/rollback support
 4. **Content Hash Deduplication**: Prevents duplicate table storage
 
 ## Integration with HierarchiDB
 
-The StyleMap Plugin seamlessly integrates with HierarchiDB's core systems:
+The Styler Plugin seamlessly integrates with HierarchiDB's core systems:
 
-- **Node Type System**: Registers as `'stylemap'` node type
-- **Entity Handlers**: Implements `StyleMapEntityHandler` for database operations
+- **Node Type System**: Registers as `'styler'` node type
+- **Entity Handlers**: Implements `StylerEntityHandler` for database operations
 - **Working Copy Pattern**: Supports draft editing and commit/rollback
 - **Command Pattern**: All mutations go through CommandManager
 - **Subscription System**: UI automatically updates on data changes
@@ -151,11 +151,11 @@ The StyleMap Plugin seamlessly integrates with HierarchiDB's core systems:
 
 ### PluginAPI Compliance
 ```typescript
-const styleMapDefinition: PluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  displayName: 'StyleMap',
+const stylerDefinition: PluginDefinition = {
+  nodeType: 'styler-plugin',
+  displayName: 'Styler',
   database: {
-    entityStore: 'stylemaps',
+    entityStore: 'stylers',
     schema: {
       '&nodeId': 'NodeId',
       'name, description': '',
@@ -164,11 +164,11 @@ const styleMapDefinition: PluginDefinition = {
     },
     version: 1,
   },
-  entityHandler: new StyleMapEntityHandler(),
-  lifecycle: styleMapLifecycle,
+  entityHandler: new StylerEntityHandler(),
+  lifecycle: stylerLifecycle,
   ui: {
-    dialogComponent: () => import('./components/StyleMapDialog'),
-    iconComponent: () => import('./components/StyleMapIcon'),
+    dialogComponent: () => import('./components/StylerDialog'),
+    iconComponent: () => import('./components/StylerIcon'),
   },
 };
 ```
@@ -194,7 +194,7 @@ const styleMapDefinition: PluginDefinition = {
 
 ## Extension Points
 
-The StyleMap Plugin is designed for extensibility:
+The Styler Plugin is designed for extensibility:
 
 ### Custom Data Sources
 - Plugin interface for additional data sources

@@ -72,9 +72,9 @@ export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, Featu
   - computeStats(geojson)
 - 処理コストが高い操作は Web Worker または専用 WorkerAPI で非同期実行。
 
-## 12.3.6 PropertyResolver / StyleMap との関係
-- propertyresolver によるプロパティ正規化の後、stylemap によりスタイルを適用するパイプラインを想定。
-- shapes 単独でも簡易プレビューは可能だが、本来の色付けは stylemap と連携。
+## 12.3.6 PropertyResolver / Styler との関係
+- propertyresolver によるプロパティ正規化の後、styler によりスタイルを適用するパイプラインを想定。
+- shapes 単独でも簡易プレビューは可能だが、本来の色付けは styler と連携。
 
 ## 12.3.7 権限
 - 9章に準拠。アップロード/生成は編集権限が必要。

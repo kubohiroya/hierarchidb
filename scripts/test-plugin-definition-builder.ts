@@ -18,7 +18,7 @@ class MockPackageJsonReader {
       'project-plugin',
       'route-plugin',
       'resolver-plugin',
-      'stylemap-plugin'
+      'styler-plugin'
     ];
     
     for (const pkg of pluginPackages) {

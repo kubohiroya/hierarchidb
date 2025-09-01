@@ -27,7 +27,7 @@ const packageMappings: PackageMappings = {
   '@hierarchidb/ui-treeconsole-base': '@hierarchidb/12-ui-treeconsole-base',
   '@hierarchidb/ui-treeconsole-simple': '@hierarchidb/12-ui-treeconsole-simple',
   '@hierarchidb/plugin-basemap': '@hierarchidb/20-plugin-basemap',
-  '@hierarchidb/plugin-stylemap': '@hierarchidb/20-plugin-stylemap-plugin',
+  '@hierarchidb/plugin-styler': '@hierarchidb/20-plugin-styler-plugin',
   '@hierarchidb/plugin-shapes': '@hierarchidb/20-plugin-shapes',
   '@hierarchidb/plugin-import-export': '@hierarchidb/20-plugin-import-export-plugin',
   '@hierarchidb/app': '@hierarchidb/30-_app',

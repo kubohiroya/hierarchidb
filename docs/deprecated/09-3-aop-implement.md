@@ -26,7 +26,7 @@ HierarchiDBでは、プラグインによって管理されるエンティティ
 - TreeNodeと1対1で対応するエンティティ
 - TreeNodeのライフサイクルと完全に同期
 - TreeNodeが削除されると自動的に削除される
-- StyleMapEntity、MapDocumentEntityなど
+- StylerEntity、MapDocumentEntityなど
 
 ##### GroupEntity（1対N対応エンティティ）
 - TreeNodeと1対Nの関係を持つエンティティ
@@ -54,15 +54,15 @@ export interface PeerEntityCore {
 }
 ```
 
-### 9.3.4 実装例：StyleMapプラグイン
+### 9.3.4 実装例：Stylerプラグイン
 
 #### 9.3.4.1 エンティティ定義
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/types/StyleMapEntity.ts
+// packages/plugins/styler-plugin/src/types/StylerEntity.ts
 
-// StyleMapのプロパティ定義
-export interface StyleMapProperties {
+// Stylerのプロパティ定義
+export interface StylerProperties {
   name: string;
   description?: string;
   tableMetadataId?: string; // RelationalEntityへの参照
@@ -72,8 +72,8 @@ export interface StyleMapProperties {
 }
 
 // 型合成によるエンティティ定義
-export type StyleMapEntity = PeerEntity & StyleMapProperties;
-export type StyleMapWorkingCopy = StyleMapEntity & WorkingCopyProperties;
+export type StylerEntity = PeerEntity & StylerProperties;
+export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
 
 // RelationalEntity（TableMetadata）
 export interface TableMetadataEntity extends RelationalEntity {
@@ -87,21 +87,21 @@ export interface TableMetadataEntity extends RelationalEntity {
 #### 9.3.4.2 エンティティハンドラー実装
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/handlers/StyleMapEntityHandler.ts
+// packages/plugins/styler-plugin/src/handlers/StylerEntityHandler.ts
 
-export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, never, StyleMapWorkingCopy> {
+export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, never, StylerWorkingCopy> {
   constructor(
-    private database: StyleMapDatabase,
+    private database: StylerDatabase,
     private tableMetadataManager: TableMetadataManager
   ) {}
 
-  async createEntity(nodeId: TreeNodeId, data?: Partial<StyleMapEntity>): Promise<StyleMapEntity> {
-    const entity: StyleMapEntity = {
+  async createEntity(nodeId: TreeNodeId, data?: Partial<StylerEntity>): Promise<StylerEntity> {
+    const entity: StylerEntity = {
       nodeId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-      name: data?.name || 'New StyleMap',
+      name: data?.name || 'New Styler',
       description: data?.description,
       tableMetadataId: data?.tableMetadataId,
       filterRules: data?.filterRules || [],
@@ -109,14 +109,14 @@ export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, 
       isActive: data?.isActive ?? true,
     };
 
-    await this.database.styleMapEntities.add(entity);
+    await this.database.stylerEntities.add(entity);
     return entity;
   }
 
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<StyleMapWorkingCopy> {
+  async createWorkingCopy(nodeId: TreeNodeId): Promise<StylerWorkingCopy> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
-      throw new Error(`StyleMapEntity not found for node ${nodeId}`);
+      throw new Error(`StylerEntity not found for node ${nodeId}`);
     }
 
     return {
@@ -128,11 +128,11 @@ export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, 
     };
   }
 
-  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: StyleMapWorkingCopy): Promise<void> {
+  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: StylerWorkingCopy): Promise<void> {
     const { workingCopyId, workingCopyOf, copiedAt, isDirty, ...entityData } = workingCopy;
     
-    await this.database.transaction('rw', [this.database.styleMapEntities], async () => {
-      await this.database.styleMapEntities.put({
+    await this.database.transaction('rw', [this.database.stylerEntities], async () => {
+      await this.database.stylerEntities.put({
         ...entityData,
         updatedAt: Date.now(),
         version: entityData.version + 1,
@@ -153,10 +153,10 @@ export class StyleMapEntityHandler implements PeerEntityHandler<StyleMapEntity, 
 #### 9.3.4.3 RelationalEntityManager実装
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/managers/TableMetadataManager.ts
+// packages/plugins/styler-plugin/src/managers/TableMetadataManager.ts
 
 export class TableMetadataManager implements RelationalEntityManager<TableMetadataEntity> {
-  constructor(private database: StyleMapDatabase) {}
+  constructor(private database: StylerDatabase) {}
 
   async create(data: Omit<TableMetadataEntity, keyof RelationalEntity>): Promise<TableMetadataEntity> {
     const entity: TableMetadataEntity = {
@@ -224,45 +224,45 @@ export class TableMetadataManager implements RelationalEntityManager<TableMetada
 #### 9.3.4.4 ノードタイプ定義登録
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts
+// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
 
-export const StyleMapDefinition: PluginDefinition<StyleMapEntity, never, StyleMapWorkingCopy> = {
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+export const StylerDefinition: PluginDefinition<StylerEntity, never, StylerWorkingCopy> = {
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   displayName: 'スタイルマップ',
   icon: 'palette',
   color: '#2196F3',
   
   database: {
-    entityStore: 'styleMapEntities',
+    entityStore: 'stylerEntities',
     relationalEntityStores: ['tableMetadataEntities'],
     schema: {
-      styleMapEntities: '&nodeId, name, isActive',
+      stylerEntities: '&nodeId, name, isActive',
       tableMetadataEntities: '&id, contentHash, referenceCount',
     },
     version: 1,
   },
   
-  entityHandler: new StyleMapEntityHandler(
-    StyleMapDatabase.getInstance(),
-    new TableMetadataManager(StyleMapDatabase.getInstance())
+  entityHandler: new StylerEntityHandler(
+    StylerDatabase.getInstance(),
+    new TableMetadataManager(StylerDatabase.getInstance())
   ),
   
   relationalEntityManagers: {
-    tableMetadata: new TableMetadataManager(StyleMapDatabase.getInstance()),
+    tableMetadata: new TableMetadataManager(StylerDatabase.getInstance()),
   },
   
   lifecycle: {
     afterCreate: async (nodeId, entity) => {
       // PeerEntity作成後の処理
-      console.log(`StyleMap created for node ${nodeId}`);
+      console.log(`Styler created for node ${nodeId}`);
     },
     
     beforeDelete: async (nodeId) => {
       // RelationalEntityの参照を適切に削除
-      const entity = await StyleMapDatabase.getInstance().styleMapEntities.get(nodeId);
+      const entity = await StylerDatabase.getInstance().stylerEntities.get(nodeId);
       if (entity?.tableMetadataId) {
-        const manager = new TableMetadataManager(StyleMapDatabase.getInstance());
+        const manager = new TableMetadataManager(StylerDatabase.getInstance());
         await manager.removeReference(entity.tableMetadataId, nodeId);
       }
     },
@@ -277,8 +277,8 @@ export const StyleMapDefinition: PluginDefinition<StyleMapEntity, never, StyleMa
   },
   
   ui: {
-    dialogComponent: StyleMapDialog,
-    panelComponent: StyleMapPanel,
+    dialogComponent: StylerDialog,
+    panelComponent: StylerPanel,
   },
 };
 ```
@@ -290,7 +290,7 @@ export const StyleMapDefinition: PluginDefinition<StyleMapEntity, never, StyleMa
 **PeerEntityを使用する場合：**
 - TreeNodeと1対1で対応するデータ
 - TreeNodeのライフサイクルと完全に同期
-- 例：StyleMapEntity、MapDocumentEntity
+- 例：StylerEntity、MapDocumentEntity
 
 **GroupEntityを使用する場合：**
 - TreeNodeと1対Nの関係を持つデータ

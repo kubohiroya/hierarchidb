@@ -23,7 +23,7 @@ import { type NodeId } from "@hierarchidb/common-core";
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead
 // import { BaseMapDialog } from "@hierarchidb/basemap";
-// import { StyleMapDialog } from "@hierarchidb/stylemap-plugin";
+// import { StylerDialog } from "@hierarchidb/styler-plugin";
 
 // Mock Dialog Component for demonstration
 const MockDialog = ({ title, open, onClose, data, onSave }: any) => {
@@ -69,7 +69,7 @@ const MockDialog = ({ title, open, onClose, data, onSave }: any) => {
 
 export default function PluginDemo() {
   const [openBaseMap, setOpenBaseMap] = useState(false);
-  const [openStyleMap, setOpenStyleMap] = useState(false);
+  const [openStyler, setOpenStyler] = useState(false);
   const [lastAction, setLastAction] = useState<string>("");
 
   // モックのノードID生成
@@ -89,11 +89,11 @@ export default function PluginDemo() {
     updatedAt: Date.now(),
   };
 
-  // StyleMapのモックデータ
-  const mockStyleMapEntity = {
+  // Stylerのモックデータ
+  const mockStylerEntity = {
     nodeId: mockNodeId,
-    name: "Sample StyleMap",
-    description: "This is a demo stylemap-plugin configuration",
+    name: "Sample Styler",
+    description: "This is a demo styler-plugin configuration",
     filterRules: [],
     selectedKeyColumn: "category",
     selectedValueColumns: ["value1", "value2"],
@@ -101,7 +101,7 @@ export default function PluginDemo() {
       { key: "A", value: "Category A" },
       { key: "B", value: "Category B" },
     ],
-    styleMapConfig: {
+    stylerConfig: {
       defaultColors: {
         text: "#000000",
         background: "#ffffff",
@@ -122,10 +122,10 @@ export default function PluginDemo() {
     setOpenBaseMap(false);
   };
 
-  const handleStyleMapSave = async (data: any) => {
-    console.log("StyleMap saved:", data);
-    setLastAction(`StyleMap saved: ${JSON.stringify(data, null, 2)}`);
-    setOpenStyleMap(false);
+  const handleStylerSave = async (data: any) => {
+    console.log("Styler saved:", data);
+    setLastAction(`Styler saved: ${JSON.stringify(data, null, 2)}`);
+    setOpenStyler(false);
   };
 
   return (
@@ -172,10 +172,10 @@ export default function PluginDemo() {
           </Box>
         </Paper>
 
-        {/* StyleMap Plugin Section */}
+        {/* Styler Plugin Section */}
         <Paper elevation={2} sx={{ p: 3 }}>
           <Typography variant="h5" gutterBottom>
-            StyleMap Plugin
+            Styler Plugin
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
             データの視覚的スタイルマッピングを設定するプラグイン
@@ -185,9 +185,9 @@ export default function PluginDemo() {
             <Button
               variant="contained"
               color="secondary"
-              onClick={() => setOpenStyleMap(true)}
+              onClick={() => setOpenStyler(true)}
             >
-              Open StyleMap Dialog
+              Open Styler Dialog
             </Button>
           </Stack>
 
@@ -200,7 +200,7 @@ export default function PluginDemo() {
               overflow: 'auto',
               maxHeight: 200
             }}>
-              {JSON.stringify(mockStyleMapEntity, null, 2)}
+              {JSON.stringify(mockStylerEntity, null, 2)}
             </Typography>
           </Box>
         </Paper>
@@ -226,13 +226,13 @@ export default function PluginDemo() {
         />
       )}
 
-      {openStyleMap && (
+      {openStyler && (
         <MockDialog
-          title="StyleMap Configuration"
-          open={openStyleMap}
-          onClose={() => setOpenStyleMap(false)}
-          data={mockStyleMapEntity}
-          onSave={handleStyleMapSave}
+          title="Styler Configuration"
+          open={openStyler}
+          onClose={() => setOpenStyler(false)}
+          data={mockStylerEntity}
+          onSave={handleStylerSave}
         />
       )}
     </Container>

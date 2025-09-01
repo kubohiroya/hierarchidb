@@ -24,7 +24,7 @@ UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Aggregation)
 ### 1. Resource Selection System
 - **Hierarchical TreeTypes Display**: Interactive tree view of Resources tree content
 - **Multi-Selection Interface**: Checkbox-based selection with parent-child relationships
-- **Resource Type Filtering**: Support for basemap, shapes, stylemap, location, and route nodes
+- **Resource Type Filtering**: Support for basemap, shapes, styler, location, and route nodes
 - **Dependency Visualization**: Display relationships between selected resources
 
 ### 2. Resource Aggregation Pipeline
@@ -60,7 +60,7 @@ This documentation is organized into focused sections:
 ### Resource Integration
 - **Basemap Support**: Reference and display basemap configurations
 - **Vector Data**: Aggregate multiple shape nodes into unified layers
-- **Styling**: Apply stylemap configurations to aggregated data
+- **Styling**: Apply styler configurations to aggregated data
 - **Point Data**: Include location nodes as interactive map markers
 - **Route Data**: Display route information as map overlays
 

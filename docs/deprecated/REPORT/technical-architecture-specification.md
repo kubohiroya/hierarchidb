@@ -4,7 +4,7 @@
 
 この技術仕様書では、HierarchiDBの内部アーキテクチャと実装詳細について、システムアーキテクト・開発者向けに包括的に説明します。本ドキュメントは以下のような方を対象としています：
 
-**読むべき人**: システムアーキテクト、上級開発者、技術リーダー、システム全体の設計判断を行う方、パフォーマンス最適化を担当する方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインの深い技術理解が必要な開発者
+**読むべき人**: システムアーキテクト、上級開発者、技術リーダー、システム全体の設計判断を行う方、パフォーマンス最適化を担当する方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインの深い技術理解が必要な開発者
 
 **前提知識**: Web Worker、Comlink、TypeScript高度な型システム、Dexie.js/IndexedDB、React アーキテクチャパターン、RPC通信、データベース設計、パフォーマンス最適化
 
@@ -47,7 +47,7 @@ graph TB
     
     subgraph "Plugin System"
         BaseMap[BaseMap Plugin]
-        StyleMap[StyleMap Plugin]
+        Styler[Styler Plugin]
         Shapes[Shapes Plugin]
     end
     
@@ -61,7 +61,7 @@ graph TB
     Handlers --> EphemeralDB
     
     BaseMap --> Handlers
-    StyleMap --> Handlers
+    Styler --> Handlers
     Shapes --> Handlers
 ```
 
@@ -146,19 +146,19 @@ classDiagram
         #deriveEntityDataFromNode(nodeData: any): Partial~BaseMapEntity~
     }
 
-    class StyleMapEntityHandler {
+    class StylerEntityHandler {
         -tableMetadataManager: TableMetadataManager
         +createOrReuseTableMetadata(nodeId: NodeId, filename: string, fileContent: string, columns: string[], tableRows: any[][]): Promise~string~
         +getTableMetadata(nodeId: NodeId): Promise~TableMetadataEntity | undefined~
         +cleanupOrphanedTableMetadata(): Promise~number~
-        #getDefaultEntityData(): Partial~StyleMapEntity~
+        #getDefaultEntityData(): Partial~StylerEntity~
     }
 
     BaseEntityHandler <|-- PeerEntityHandler
     BaseEntityHandler <|-- GroupEntityHandler
     BaseEntityHandler <|-- RelationalEntityHandler
     PeerEntityHandler <|-- BaseMapEntityHandler
-    PeerEntityHandler <|-- StyleMapEntityHandler
+    PeerEntityHandler <|-- StylerEntityHandler
 ```
 
 ### 2.2 エンティティ型システム
@@ -204,14 +204,14 @@ classDiagram
         +displayOptions?: DisplayOptions
     }
 
-    class StyleMapEntity {
+    class StylerEntity {
         +nodeId: NodeId
         +name: string
         +tableMetadataId?: string
         +filterRules: FilterRule[]
         +selectedKeyColumn: string
         +selectedValueColumns: string[]
-        +styleMapConfig: StyleMapConfig
+        +stylerConfig: StylerConfig
     }
 
     class TableMetadataEntity {
@@ -229,7 +229,7 @@ classDiagram
     BaseEntity <|-- GroupEntity
     BaseEntity <|-- RelationalEntity
     PeerEntity <|-- BaseMapEntity
-    PeerEntity <|-- StyleMapEntity
+    PeerEntity <|-- StylerEntity
     RelationalEntity <|-- TableMetadataEntity
 ```
 
@@ -389,7 +389,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant SM as StyleMap Handler
+    participant SM as Styler Handler
     participant TM as TableMetadata Manager
     participant RelHandler as Relational Handler
     participant CoreDB as CoreDB
@@ -415,7 +415,7 @@ sequenceDiagram
     RelHandler-->>TM: updatedEntity
     TM-->>SM: updatedEntity
     
-    Note over SM,CoreDB: Later: Delete StyleMap
+    Note over SM,CoreDB: Later: Delete Styler
     SM->>SM: deleteEntity(nodeId)
     SM->>TM: removeReference(tableMetadataId, nodeId)
     TM->>RelHandler: removeReference(tableMetadataId, nodeId)
@@ -813,7 +813,7 @@ graph TB
     
     subgraph "Plugin Layer"
         BaseMap[plugin-basemap]
-        StyleMap[plugin-stylemap]
+        Styler[plugin-styler]
         Shapes[plugin-shapes]
         Folder[plugin-folder]
     end
@@ -838,8 +838,8 @@ graph TB
     
     BaseMap --> Worker
     BaseMap --> Core
-    StyleMap --> Worker
-    StyleMap --> Core
+    Styler --> Worker
+    Styler --> Core
     Shapes --> Worker
     Shapes --> Core
     

@@ -62,15 +62,15 @@ This report identifies unimplemented, mock, or placeholder code patterns through
   - `optimizeStorage()` (Line 217)
 - **Impact**: Shape plugin non-functional
 
-#### StyleMap Plugin - Database Operations Missing
-**File**: `packages/node-type-plugin/stylemap/src/handlers/StyleMapEntityHandler.ts`
+#### Styler Plugin - Database Operations Missing
+**File**: `packages/node-type-plugin/styler/src/handlers/StylerEntityHandler.ts`
 - **Issue**: All database operations throw "Not implemented - should be handled by Worker"
 - **Methods**:
-  - `storeStyleMapEntity()` (Line 258)
-  - `getStyleMapEntity()` (Line 262)
-  - `deleteStyleMapEntity()` (Line 266)
-  - `countStyleMapsBySpreadsheet()` (Line 270)
-- **Impact**: StyleMap plugin non-functional
+  - `storeStylerEntity()` (Line 258)
+  - `getStylerEntity()` (Line 262)
+  - `deleteStylerEntity()` (Line 266)
+  - `countStylersBySpreadsheet()` (Line 270)
+- **Impact**: Styler plugin non-functional
 
 ### 4. 🟢 LOW PRIORITY - UI Enhancements
 
@@ -110,7 +110,7 @@ These need complete implementation:
 
 1. **Default Plugin Handlers** - All methods stub
 2. **Command Processor** - Mock execution only
-3. **StyleMap Database Operations** - No implementation
+3. **Styler Database Operations** - No implementation
 
 ## Implementation Roadmap
 
@@ -126,7 +126,7 @@ These need complete implementation:
 
 ### Phase 3: Plugin Systems (Week 5-6)
 1. **Shape Plugin**: Implement core ShapesPluginAPI methods
-2. **StyleMap Plugin**: Connect handlers to Worker database operations
+2. **Styler Plugin**: Connect handlers to Worker database operations
 3. **BaseMap Plugin**: Complete PeerEntityManager operations
 
 ### Phase 4: UI Polish (Week 7-8)

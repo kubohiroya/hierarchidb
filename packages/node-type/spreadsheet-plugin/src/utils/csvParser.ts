@@ -1,7 +1,7 @@
 /**
  * @file csvParser.ts
  * @description CSV parsing and type detection utilities
- * Refactored from StyleMap plugin for Spreadsheet plugin use
+ * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
 import type { CSVProcessingConfig, CSVColumnType } from '@hierarchidb/ui-csv-extract';

@@ -10,7 +10,7 @@
   "nodeCount": 4,
   "resourceTypes": {
     "shapes": 1,
-    "stylemaps": 1,
+    "stylers": 1,
     "tables": 1
   },
   "rootNodes": ["population-folder-2023"]

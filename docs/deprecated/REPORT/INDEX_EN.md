@@ -25,7 +25,7 @@
 ### Plugin Specifications
 - **[basemap/](./basemap/)** - BaseMap Plugin
 - **[shape/](./shape/)** - Shape Plugin  
-- **[stylemap/](./stylemap/)** - StyleMap Plugin
+- **[styler/](./styler/)** - Styler Plugin
 - **[project/](./project/)** - Project Plugin
 - **[spreadsheet/](./spreadsheet/)** - Spreadsheet Plugin
 
@@ -33,7 +33,7 @@
 - **[design/](./design/)** - Design Documents
   - treeconsole-migration/
   - plugin-shapes/
-  - plugin-stylemap/
+  - plugin-styler/
 - **[spec/](./spec/)** - Specifications & Requirements
   - plugin-*-requirements.md
   - plugin-*-acceptance-criteria.md
@@ -92,7 +92,7 @@
 3. [architecture/](./architecture/) - Architecture details
 
 ### For Plugin Developers
-1. Target plugin folders (basemap/, shape/, stylemap/, project/, spreadsheet/)
+1. Target plugin folders (basemap/, shape/, styler/, project/, spreadsheet/)
 2. [spec/](./spec/) - Requirements & specifications review
 3. [development/](./development/) - Development guidelines
 

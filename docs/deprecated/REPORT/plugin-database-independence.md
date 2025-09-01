@@ -128,7 +128,7 @@ export class MyPluginWorkerHandler extends BaseReferenceCountingHandler {
 }
 ```
 
-## 実装例: SpreadsheetプラグインとStyleMapプラグイン
+## 実装例: SpreadsheetプラグインとStylerプラグイン
 
 ### SpreadsheetDB (独立データベース)
 
@@ -175,23 +175,23 @@ export class SpreadsheetDB extends Dexie {
 }
 ```
 
-### StyleMapDB (別の独立データベース)
+### StylerDB (別の独立データベース)
 
 ```typescript
-export class StyleMapDB extends Dexie {
+export class StylerDB extends Dexie {
   // PeerEntityのみ - RelationalEntityは持たない
-  styleMapEntities!: Table<StyleMapEntity, NodeId>;
+  stylerEntities!: Table<StylerEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-stylemap-plugin') {
+  constructor(name: string = 'hierarchidb-styler-plugin') {
     super(name);
     this.version(1).stores({
-      styleMapEntities: '&nodeId, spreadsheetMetadataId, keyColumn, updatedAt'
+      stylerEntities: '&nodeId, spreadsheetMetadataId, keyColumn, updatedAt'
     });
   }
 
   // SpreadsheetMetadata参照カウント (外部データベース参照)
   async countEntitiesBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<number> {
-    return await this.styleMapEntities.where('spreadsheetMetadataId').equals(metadataId).count();
+    return await this.stylerEntities.where('spreadsheetMetadataId').equals(metadataId).count();
   }
 }
 ```
@@ -208,11 +208,11 @@ export class PluginManager {
     const spreadsheetPlugin = createSpreadsheetPlugin();
     await spreadsheetPlugin.initialize(); // プラグイン独自のDB初期化
     
-    const styleMapPlugin = createStyleMapPlugin();
-    await styleMapPlugin.initialize(); // プラグイン独自のDB初期化
+    const stylerPlugin = createStylerPlugin();
+    await stylerPlugin.initialize(); // プラグイン独自のDB初期化
     
     this.registry.registerPlugin(spreadsheetPlugin);
-    this.registry.registerPlugin(styleMapPlugin);
+    this.registry.registerPlugin(stylerPlugin);
   }
 }
 ```

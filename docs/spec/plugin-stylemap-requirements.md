@@ -1,13 +1,13 @@
-# plugin-stylemap 要件定義書
+# plugin-styler 要件定義書
 
 ## 概要
 
-🟢 plugin-stylemap は、hierarchidb フレームワークにおいて、表形式データを地図可視化用のスタイル情報に変換するプラグインです。CSV/TSV ファイルからデータを読み込み、数値データに基づいてカラーマッピングを行う機能を提供します。この要件定義は、eria-cartograph プロジェクトの既存 stylemap 実装を詳細に分析して作成されています。
+🟢 plugin-styler は、hierarchidb フレームワークにおいて、表形式データを地図可視化用のスタイル情報に変換するプラグインです。CSV/TSV ファイルからデータを読み込み、数値データに基づいてカラーマッピングを行う機能を提供します。この要件定義は、eria-cartograph プロジェクトの既存 styler 実装を詳細に分析して作成されています。
 
 ## 関連文書
 
-- **ユーザストーリー**: [📖 plugin-stylemap-user-stories.md](plugin-stylemap-user-stories.md)
-- **受け入れ基準**: [✅ plugin-stylemap-acceptance-criteria.md](plugin-stylemap-acceptance-criteria.md)
+- **ユーザストーリー**: [📖 plugin-styler-user-stories.md](plugin-styler-user-stories.md)
+- **受け入れ基準**: [✅ plugin-styler-acceptance-criteria.md](plugin-styler-acceptance-criteria.md)
 
 ## 機能要件（EARS記法）
 
@@ -16,7 +16,7 @@
 - REQ-001: システムは CSV/TSV ファイルからテーブルデータを読み込みしなければならない 🟢
 - REQ-002: システムは テーブルデータをキー・値ペアにマッピングしなければならない 🟢
 - REQ-003: システムは 数値データに基づくカラーマッピング設定を管理しなければならない 🟢
-- REQ-004: システムは StyleMapEntity として永続化しなければならない 🟢
+- REQ-004: システムは StylerEntity として永続化しなければならない 🟢
 - REQ-005: システムは MapLibre GL JS 対応のスタイルプロパティを生成しなければならない 🟢
 - REQ-006: システムは ファイルコンテンツのSHA3ハッシュベースキャッシュを管理しなければならない 🟢
 - REQ-007: システムは 作業コピー機能によるアンドゥ/リドゥ操作をサポートしなければならない 🟢
@@ -32,7 +32,7 @@
 ### 状態要件
 
 - REQ-201: 編集モードにある場合、システムは 既存データを作業コピーとして読み込みしなければならない 🟢
-- REQ-202: 作成モードにある場合、システムは 新規StyleMapエンティティを初期化しなければならない 🟢
+- REQ-202: 作成モードにある場合、システムは 新規Stylerエンティティを初期化しなければならない 🟢
 - REQ-203: データが未保存状態にある場合、システムは ダイアログ終了時に確認ダイアログを表示しなければならない 🟢
 
 ### オプション要件
@@ -99,10 +99,10 @@
 
 ## データ構造要件
 
-### StyleMapEntity 構造
+### StylerEntity 構造
 
 ```typescript
-🟢 interface StyleMapEntity extends PrimaryResourceEntity {
+🟢 interface StylerEntity extends PrimaryResourceEntity {
   cacheKey?: string;              // Cache API キー
   downloadUrl?: string;           // ダウンロード元URL
   filename?: string;              // ファイル名
@@ -110,14 +110,14 @@
   keyColumn?: string;             // キーカラム名
   valueColumn?: string;           // 値カラム名
   filterRules?: FilterRule[];     // フィルタルール配列
-  styleMapConfig?: StyleMapConfig; // カラーマッピング設定
+  stylerConfig?: StylerConfig; // カラーマッピング設定
 }
 ```
 
-### StyleMapConfig 構造
+### StylerConfig 構造
 
 ```typescript
-🟢 interface StyleMapConfig {
+🟢 interface StylerConfig {
   algorithm: "linear" | "logarithmic" | "quantile" | "categorical";
   colorSpace: "rgb" | "hsv";
   mapping: {
@@ -154,8 +154,8 @@
 
 ### Worker API 拡張
 
-- REQ-505: システムは Worker 層での stylemap 専用 API を提供しなければならない 🟢
-- REQ-506: システムは クライアント側での stylemap 管理 API を提供しなければならない 🟢
+- REQ-505: システムは Worker 層での styler 専用 API を提供しなければならない 🟢
+- REQ-506: システムは クライアント側での styler 管理 API を提供しなければならない 🟢
 - REQ-507: システムは Comlink RPC によるシリアライゼーション対応を保証しなければならない 🟢
 
 ## テクニカル要件
@@ -189,7 +189,7 @@
 
 ### パッケージ構造
 
-- ARCH-005: `/packages/plugins/stylemap/` 配下に実装しなければならない 🟡
+- ARCH-005: `/packages/plugins/styler/` 配下に実装しなければならない 🟡
 - ARCH-006: 型定義は `/packages/core/` で共有しなければならない 🟡
 - ARCH-007: API契約は `/packages/api/` で定義しなければならない 🟡
 - ARCH-008: UI コンポーネントは `/packages/ui-plugins/` で実装しなければならない 🟡

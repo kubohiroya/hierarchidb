@@ -1,13 +1,13 @@
-# StyleMap Plugin API Reference
+# Styler Plugin API Reference
 
-This document provides comprehensive API documentation for the StyleMap Plugin, including all interfaces, classes, methods, and integration points.
+This document provides comprehensive API documentation for the Styler Plugin, including all interfaces, classes, methods, and integration points.
 
 ## Core API Overview
 
-The StyleMap Plugin exposes its functionality through several API layers:
+The Styler Plugin exposes its functionality through several API layers:
 
 ```
-StyleMap API Architecture
+Styler API Architecture
 ├── Plugin Definition API (PluginAPI integration)
 ├── Entity Handler API (Database operations)
 ├── Manager API (Business logic)
@@ -17,26 +17,26 @@ StyleMap API Architecture
 
 ## Plugin Definition API
 
-### StyleMapPluginDefinition
+### StylerPluginDefinition
 
 Main plugin definition for HierarchiDB integration:
 
 ```typescript
-interface StyleMapPluginDefinition extends PluginDefinition {
-  nodeType: 'stylemap-plugin';
-  displayName: 'StyleMap';
+interface StylerPluginDefinition extends PluginDefinition {
+  nodeType: 'styler-plugin';
+  displayName: 'Styler';
   database: DatabaseDefinition;
-  entityHandler: StyleMapEntityHandler;
-  lifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy>;
+  entityHandler: StylerEntityHandler;
+  lifecycle: NodeLifecycleHooks<StylerEntity, StylerWorkingCopy>;
   ui: UIPluginDefinition;
 }
 
 // Usage
-const styleMapPlugin: StyleMapPluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  displayName: 'StyleMap',
+const stylerPlugin: StylerPluginDefinition = {
+  nodeType: 'styler-plugin',
+  displayName: 'Styler',
   database: {
-    entityStore: 'stylemaps',
+    entityStore: 'stylers',
     schema: {
       '&nodeId': 'NodeId',
       'name, description': '',
@@ -45,11 +45,11 @@ const styleMapPlugin: StyleMapPluginDefinition = {
     },
     version: 1,
   },
-  entityHandler: new StyleMapEntityHandler(),
-  lifecycle: styleMapLifecycle,
+  entityHandler: new StylerEntityHandler(),
+  lifecycle: stylerLifecycle,
   ui: {
-    dialogComponent: () => import('./components/StyleMapDialog'),
-    iconComponent: () => import('./components/StyleMapIcon'),
+    dialogComponent: () => import('./components/StylerDialog'),
+    iconComponent: () => import('./components/StylerIcon'),
   },
 };
 ```
@@ -58,16 +58,16 @@ const styleMapPlugin: StyleMapPluginDefinition = {
 
 ```typescript
 // Register plugin with HierarchiDB
-function registerStyleMapPlugin(): void {
+function registerStylerPlugin(): void {
   const registry = getPluginRegistry();
-  registry.register(styleMapPlugin);
+  registry.register(stylerPlugin);
 }
 
 // Plugin initialization
-function initializeStyleMapPlugin(): Promise<void> {
+function initializeStylerPlugin(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      registerStyleMapPlugin();
+      registerStylerPlugin();
       resolve();
     } catch (error) {
       reject(error);
@@ -78,33 +78,33 @@ function initializeStyleMapPlugin(): Promise<void> {
 
 ## Entity Handler API
 
-### StyleMapEntityHandler
+### StylerEntityHandler
 
-Primary entity handler for StyleMap operations:
+Primary entity handler for Styler operations:
 
 ```typescript
-class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
+class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
   constructor(database: Database) {
-    super(database, 'stylemaps');
+    super(database, 'stylers');
   }
 
   /**
-   * Create a new StyleMap entity
+   * Create a new Styler entity
    */
   async createEntity(
     nodeId: NodeId, 
-    data?: Partial<StyleMapEntity>
-  ): Promise<StyleMapEntity> {
-    const entity: StyleMapEntity = {
+    data?: Partial<StylerEntity>
+  ): Promise<StylerEntity> {
+    const entity: StylerEntity = {
       id: crypto.randomUUID() as EntityId,
       nodeId,
-      name: data?.name || 'Untitled StyleMap',
+      name: data?.name || 'Untitled Styler',
       description: data?.description,
       filterRules: data?.filterRules || [],
       selectedKeyColumn: data?.selectedKeyColumn || '',
       selectedValueColumns: data?.selectedValueColumns || [],
       keyValueMappings: data?.keyValueMappings || [],
-      styleMapConfig: data?.styleMapConfig || this.getDefaultStyleConfig(),
+      stylerConfig: data?.stylerConfig || this.getDefaultStyleConfig(),
       tableMetadataId: data?.tableMetadataId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -116,18 +116,18 @@ class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
   }
 
   /**
-   * Update existing StyleMap entity
+   * Update existing Styler entity
    */
   async updateEntity(
     nodeId: NodeId, 
-    changes: Partial<StyleMapEntity>
-  ): Promise<StyleMapEntity> {
+    changes: Partial<StylerEntity>
+  ): Promise<StylerEntity> {
     const existing = await this.getEntity(nodeId);
     if (!existing) {
-      throw new Error('StyleMap entity not found');
+      throw new Error('Styler entity not found');
     }
     
-    const updated: StyleMapEntity = {
+    const updated: StylerEntity = {
       ...existing,
       ...changes,
       updatedAt: Date.now(),
@@ -139,7 +139,7 @@ class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
   }
 
   /**
-   * Delete StyleMap entity and cleanup references
+   * Delete Styler entity and cleanup references
    */
   async deleteEntity(nodeId: NodeId): Promise<void> {
     const entity = await this.getEntity(nodeId);
@@ -155,28 +155,28 @@ class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
   }
 
   /**
-   * Get StyleMap entity by node ID
+   * Get Styler entity by node ID
    */
-  async getEntity(nodeId: NodeId): Promise<StyleMapEntity | null> {
+  async getEntity(nodeId: NodeId): Promise<StylerEntity | null> {
     const entities = await this.table.where('nodeId').equals(nodeId).toArray();
     return entities[0] || null;
   }
 
   /**
-   * List all StyleMap entities
+   * List all Styler entities
    */
-  async listEntities(): Promise<StyleMapEntity[]> {
+  async listEntities(): Promise<StylerEntity[]> {
     return this.table.orderBy('createdAt').reverse().toArray();
   }
 
   /**
-   * Search StyleMap entities by criteria
+   * Search Styler entities by criteria
    */
   async searchEntities(criteria: {
     name?: string;
     description?: string;
     tableMetadataId?: string;
-  }): Promise<StyleMapEntity[]> {
+  }): Promise<StylerEntity[]> {
     let query = this.table.toCollection();
     
     if (criteria.name) {
@@ -201,7 +201,7 @@ class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
   /**
    * Get default style configuration
    */
-  private getDefaultStyleConfig(): StyleMapConfig {
+  private getDefaultStyleConfig(): StylerConfig {
     return {
       defaultColors: {
         text: '#000000',
@@ -361,10 +361,10 @@ class StyleGenerationManager {
   ) {}
 
   /**
-   * Generate MapLibre styles for StyleMap entity
+   * Generate MapLibre styles for Styler entity
    */
   async generateStyles(
-    entity: StyleMapEntity,
+    entity: StylerEntity,
     tableData: TableData
   ): Promise<MapLibreStyle> {
     // Check cache first
@@ -389,7 +389,7 @@ class StyleGenerationManager {
    */
   async generateColorMapping(
     values: (string | number)[],
-    config: StyleMapConfig
+    config: StylerConfig
   ): Promise<ColorMapping> {
     if (config.useGradient && this.isNumericData(values)) {
       return this.generateGradientMapping(values as number[], config);
@@ -403,7 +403,7 @@ class StyleGenerationManager {
    */
   private generateGradientMapping(
     values: number[],
-    config: StyleMapConfig
+    config: StylerConfig
   ): ColorMapping {
     const min = Math.min(...values);
     const max = Math.max(...values);
@@ -429,7 +429,7 @@ class StyleGenerationManager {
    */
   private generateCategoricalMapping(
     values: string[],
-    config: StyleMapConfig
+    config: StylerConfig
   ): ColorMapping {
     const uniqueValues = [...new Set(values)];
     const mapping: ColorMapping = new Map();
@@ -453,13 +453,13 @@ class StyleGenerationManager {
   /**
    * Generate cache key for configuration
    */
-  private generateCacheKey(entity: StyleMapEntity): string {
+  private generateCacheKey(entity: StylerEntity): string {
     const configData = {
       tableMetadataId: entity.tableMetadataId,
       filterRules: entity.filterRules,
       selectedKeyColumn: entity.selectedKeyColumn,
       selectedValueColumns: entity.selectedValueColumns,
-      styleMapConfig: entity.styleMapConfig,
+      stylerConfig: entity.stylerConfig,
     };
     
     return btoa(JSON.stringify(configData));
@@ -469,21 +469,21 @@ class StyleGenerationManager {
 
 ## Component APIs
 
-### StyleMapDialog
+### StylerDialog
 
-Main dialog component for StyleMap creation:
+Main dialog component for Styler creation:
 
 ```typescript
-interface StyleMapDialogProps {
+interface StylerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (config: Partial<StyleMapEntity>) => void | Promise<void>;
+  onSubmit: (config: Partial<StylerEntity>) => void | Promise<void>;
   nodeId: NodeId;
   initialName?: string;
   initialDescription?: string;
 }
 
-interface StyleMapDialogState {
+interface StylerDialogState {
   activeStep: number;
   isSubmitting: boolean;
   name: string;
@@ -495,17 +495,17 @@ interface StyleMapDialogState {
 }
 
 // Component API
-const StyleMapDialog: React.FC<StyleMapDialogProps> = (props) => {
+const StylerDialog: React.FC<StylerDialogProps> = (props) => {
   // Implementation
 };
 
 // Usage
-<StyleMapDialog
+<StylerDialog
   open={dialogOpen}
   onClose={() => setDialogOpen(false)}
-  onSubmit={handleStyleMapCreate}
+  onSubmit={handleStylerCreate}
   nodeId={currentNodeId}
-  initialName="My StyleMap"
+  initialName="My Styler"
 />
 ```
 
@@ -554,14 +554,14 @@ interface Step4ColumnSelectionProps {
 
 // Step 5: Color Settings
 interface Step5ColorSettingsProps {
-  styleMapConfig: StyleMapConfig;
-  onStyleMapConfigChange: (config: StyleMapConfig) => void;
+  stylerConfig: StylerConfig;
+  onStylerConfigChange: (config: StylerConfig) => void;
   previewData?: TableData;
 }
 
 // Step 6: Preview
 interface Step6PreviewProps {
-  styleMapConfig: StyleMapConfig;
+  stylerConfig: StylerConfig;
   tableData: TableData;
   filterRules: FilterRule[];
   onGeneratePreview: () => Promise<PreviewResult>;
@@ -644,7 +644,7 @@ interface StyleUtils {
    */
   generateMapLibreStyle(
     colorMapping: ColorMapping,
-    config: StyleMapConfig
+    config: StylerConfig
   ): MapLibreStyle;
 
   /**
@@ -678,21 +678,21 @@ interface StyleUtils {
 
 ## Error Types
 
-### StyleMapError
+### StylerError
 
 ```typescript
-class StyleMapError extends Error {
+class StylerError extends Error {
   constructor(
-    public type: StyleMapErrorType,
+    public type: StylerErrorType,
     message: string,
     public details?: any
   ) {
     super(message);
-    this.name = 'StyleMapError';
+    this.name = 'StylerError';
   }
 }
 
-enum StyleMapErrorType {
+enum StylerErrorType {
   INVALID_FILE_FORMAT = 'INVALID_FILE_FORMAT',
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
   PARSE_ERROR = 'PARSE_ERROR',
@@ -709,12 +709,12 @@ enum StyleMapErrorType {
 ### Lifecycle Hooks
 
 ```typescript
-interface StyleMapLifecycleHooks {
-  beforeCreate?: (data: Partial<StyleMapEntity>) => Promise<void>;
-  afterCreate?: (entity: StyleMapEntity) => Promise<void>;
-  beforeUpdate?: (entity: StyleMapEntity, changes: Partial<StyleMapEntity>) => Promise<void>;
-  afterUpdate?: (entity: StyleMapEntity) => Promise<void>;
-  beforeDelete?: (entity: StyleMapEntity) => Promise<void>;
+interface StylerLifecycleHooks {
+  beforeCreate?: (data: Partial<StylerEntity>) => Promise<void>;
+  afterCreate?: (entity: StylerEntity) => Promise<void>;
+  beforeUpdate?: (entity: StylerEntity, changes: Partial<StylerEntity>) => Promise<void>;
+  afterUpdate?: (entity: StylerEntity) => Promise<void>;
+  beforeDelete?: (entity: StylerEntity) => Promise<void>;
   afterDelete?: (nodeId: NodeId) => Promise<void>;
 }
 ```
@@ -722,9 +722,9 @@ interface StyleMapLifecycleHooks {
 ### Event Emitters
 
 ```typescript
-interface StyleMapEvents {
-  'entity:created': (entity: StyleMapEntity) => void;
-  'entity:updated': (entity: StyleMapEntity) => void;
+interface StylerEvents {
+  'entity:created': (entity: StylerEntity) => void;
+  'entity:updated': (entity: StylerEntity) => void;
   'entity:deleted': (nodeId: NodeId) => void;
   'table:imported': (table: TableMetadataEntity) => void;
   'table:cleaned': (tableId: EntityId) => void;

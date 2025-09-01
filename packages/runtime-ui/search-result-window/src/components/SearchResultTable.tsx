@@ -214,7 +214,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                 size="small"
               />
             </TableCell>
-            <CompactCell>StyleMap</CompactCell>
+            <CompactCell>Styler</CompactCell>
             <TableCell align="center" sx={{ width: 60 }}>
               行
             </TableCell>
@@ -244,8 +244,8 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                 </TableCell>
 
                 <CompactCell>
-                  <Typography variant="body2" title={result.styleMapNodeName || result.nodeName}>
-                    {result.styleMapNodeName || result.nodeName}
+                  <Typography variant="body2" title={result.stylerNodeName || result.nodeName}>
+                    {result.stylerNodeName || result.nodeName}
                   </Typography>
                 </CompactCell>
 

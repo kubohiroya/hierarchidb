@@ -14,7 +14,7 @@ HierarchiDBのコードベースにおける重複・不整合を解消し、責
 ### 2. Handler層の責務混在
 - Worker側にプラグイン固有のHandler実装が存在
   - `SpreadsheetWorkerHandler.ts`
-  - `StyleMapWorkerHandler.ts`
+  - `StylerWorkerHandler.ts`
 - 本来プラグイン側で実装すべきものがWorker側に混在
 
 ### 3. Service層の整理不足
@@ -103,7 +103,7 @@ visibility?: {
 #### 作業内容
 1. common/coreの未使用実装を削除
 2. worker側の実装をplugin-baseへ移動（プラグイン共通パターンとして）
-3. SpreadsheetWorkerHandler、StyleMapWorkerHandlerの移動時に合わせて参照を修正
+3. SpreadsheetWorkerHandler、StylerWorkerHandlerの移動時に合わせて参照を修正
 
 #### 理由
 - 参照カウント機能はプラグイン共通パターン
@@ -165,13 +165,13 @@ visibility?: {
 2. プラグイン内でのHandler登録を実装
 3. Worker側の参照を削除
 
-### Phase 6: StyleMapWorkerHandlerの移動
+### Phase 6: StylerWorkerHandlerの移動
 
 #### 対象ファイル
-- 移動: `packages/runtime/worker/src/handlers/StyleMapWorkerHandler.ts` → `packages/node-type/stylemap-plugin/src/handlers/`
+- 移動: `packages/runtime/worker/src/handlers/StylerWorkerHandler.ts` → `packages/node-type/styler-plugin/src/handlers/`
 
 #### 作業内容
-1. StyleMapWorkerHandlerをstylemap-pluginへ移動
+1. StylerWorkerHandlerをstyler-pluginへ移動
 2. プラグイン内でのHandler登録を実装
 3. Worker側の参照を削除
 
@@ -231,9 +231,9 @@ packages/node-type/
 ├── spreadsheet-plugin/
 │   └── src/handlers/
 │       └── SpreadsheetHandler.ts        # スプレッドシート機能
-├── stylemap-plugin/
+├── styler-plugin/
 │   └── src/handlers/
-│       └── StyleMapHandler.ts           # スタイルマップ機能
+│       └── StylerHandler.ts           # スタイルマップ機能
 └── example-plugin/                      # 新規作成
     └── src/handlers/
         └── BasePeerEntityHandler.ts     # サンプル実装

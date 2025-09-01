@@ -133,7 +133,7 @@ export class WorkingCopyManager<
 ### 2.3 CSV/ファイル処理ユーティリティ
 
 #### 現状の問題点
-CSV処理ロジックがSpreadsheetとStyleMapで重複：
+CSV処理ロジックがSpreadsheetとStylerで重複：
 - CSVパース処理
 - カラム型推定
 - ファイルハッシュ計算
@@ -275,7 +275,7 @@ export abstract class BasePluginDatabase {
 
 ### Phase 4: CSV/ファイル処理共通化（1週間）
 1. `CSVProcessor`クラスの実装
-2. SpreadsheetとStyleMapのCSV処理を共通化
+2. SpreadsheetとStylerのCSV処理を共通化
 3. パフォーマンステストの実施
 
 ### Phase 5: データベース操作共通化（1週間）

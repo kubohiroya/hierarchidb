@@ -159,7 +159,7 @@ export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyWorkingCopy
 
 ### 拡張プラグイン（継承パターン）
 - **spreadsheet-plugin** ← folder-plugin
-- **stylemap-plugin** ← spreadsheet-plugin  
+- **styler-plugin** ← spreadsheet-plugin  
 - **shape-plugin** ← folder-plugin
 
 ## 📋 構成検証チェックリスト
@@ -268,7 +268,7 @@ export default defineConfig({
 | folder-plugin | ✅ 95% | 軽微な構成調整 |
 | shape-plugin | ✅ 90% | Worker層統合完了 |
 | spreadsheet-plugin | ✅ 85% | CSV型統合完了 |
-| stylemap-plugin | ✅ 80% | Handler統合完了 |
+| styler-plugin | ✅ 80% | Handler統合完了 |
 | basemap-plugin | ⚠️ 70% | 構成要修正 |
 
 ## 📝 次期対応項目

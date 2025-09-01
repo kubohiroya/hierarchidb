@@ -154,7 +154,7 @@ export class PluginDefinitionBuilder {
       route: { muiIconName: 'Route', emoji: '🛣️' },
       spreadsheet: { muiIconName: 'TableChart', emoji: '📊' },
       basemap: { muiIconName: 'Map', emoji: '🗺️' },
-      stylemap: { muiIconName: 'Palette', emoji: '🎨' },
+      styler: { muiIconName: 'Palette', emoji: '🎨' },
       project: { muiIconName: 'AccountTree', emoji: '🏗️' },
     };
     

@@ -33,7 +33,7 @@
 - ❌ ドラフト保存機能未実装
 - ❌ Material UIコンポーネントをほぼ未使用
 
-### 1.3 stylemapプラグイン
+### 1.3 stylerプラグイン
 **準拠度: 80%**
 
 #### 準拠している点
@@ -156,7 +156,7 @@ pnpm add @mui/material @hierarchidb/core @hierarchidb/api
 shapes_obsolate にある CommonDialog 実装を参考に、改善版を作成
 
 #### Step 3: 各プラグインの段階的移行
-1. stylemapプラグイン（最も仕様に近い）から移行開始
+1. stylerプラグイン（最も仕様に近い）から移行開始
 2. folderプラグインを共通コンポーネント使用に更新
 3. basemapプラグインの全面的な書き換え
 

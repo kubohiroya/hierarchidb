@@ -193,8 +193,8 @@ export const defaultPlugins: Partial<PluginDefinition>[] = [
     },
   },
   {
-    nodeType: 'stylemap' as NodeType,
-    name: 'StyleMap',
+    nodeType: 'styler' as NodeType,
+    name: 'Styler',
     displayName: 'Style Map',
     description:
       'Define and manage CSV-based styling rules for map visualization. Apply data-driven styles to your map features.',
@@ -210,7 +210,7 @@ export const defaultPlugins: Partial<PluginDefinition>[] = [
     },
     database: {
       dbName: 'CoreDB',
-      schema: { stylemaps: 'id, nodeId, name' },
+      schema: { stylers: 'id, nodeId, name' },
       version: 1,
     },
   },

@@ -34,7 +34,7 @@ docs/
 │   ├── migration/        # マイグレーション計画
 │   ├── basemap/          # BaseMapプラグイン
 │   ├── shape/            # Shapeプラグイン
-│   ├── stylemap/         # StyleMapプラグイン
+│   ├── styler/         # Stylerプラグイン
 │   ├── project/          # Projectプラグイン
 │   ├── spreadsheet/      # Spreadsheetプラグイン
 │   └── [技術文書・分析レポート...]

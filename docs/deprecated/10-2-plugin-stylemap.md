@@ -1,15 +1,15 @@
-# StyleMap プラグイン仕様書
+# Styler プラグイン仕様書
 
 ## 1. 概要
 
-StyleMapプラグインは、CSVやTSVなどの表形式データを基に、地図上の要素に動的なスタイリングを適用する機能を提供します。データドリブンな可視化により、統計情報や属性に基づいた色分けやサイズ調整を実現します。
+Stylerプラグインは、CSVやTSVなどの表形式データを基に、地図上の要素に動的なスタイリングを適用する機能を提供します。データドリブンな可視化により、統計情報や属性に基づいた色分けやサイズ調整を実現します。
 
 ## 2. データモデル
 
-### 2.1 StyleMapEntity
+### 2.1 StylerEntity
 
 ```typescript
-export interface StyleMapEntity extends PeerEntity {
+export interface StylerEntity extends PeerEntity {
   nodeId: TreeNodeId;
   name: string;
   description?: string;
@@ -21,7 +21,7 @@ export interface StyleMapEntity extends PeerEntity {
   valueColumns?: string[];              // 値列（複数選択可能）
   
   // スタイル設定
-  styleMapConfig?: StyleMapConfig;      // スタイルマッピング設定
+  stylerConfig?: StylerConfig;      // スタイルマッピング設定
   filterRules?: FilterRule[];           // フィルタルール
   keyValueMappings?: KeyValueMapping[]; // キー値変換マッピング
   
@@ -35,7 +35,7 @@ export interface StyleMapEntity extends PeerEntity {
   version: number;
 }
 
-export interface StyleMapConfig {
+export interface StylerConfig {
   type: 'categorical' | 'numerical' | 'gradient';
   colorRules?: ColorRule[];            // 値ベースのカラールール
   defaultColors?: {                    // デフォルトカラー設定
@@ -72,10 +72,10 @@ export interface ColorRule {
 }
 ```
 
-### 2.2 StyleMapWorkingCopy
+### 2.2 StylerWorkingCopy
 
 ```typescript
-export interface StyleMapWorkingCopy extends BaseWorkingCopy {
+export interface StylerWorkingCopy extends BaseWorkingCopy {
   nodeId: TreeNodeId;
   workingCopyId: string;
   workingCopyOf: TreeNodeId;
@@ -87,7 +87,7 @@ export interface StyleMapWorkingCopy extends BaseWorkingCopy {
   tableMetadataId?: string;
   keyColumn?: string;
   valueColumns?: string[];
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   filterRules?: FilterRule[];
   keyValueMappings?: KeyValueMapping[];
   
@@ -109,16 +109,16 @@ export interface StyleMapWorkingCopy extends BaseWorkingCopy {
 sequenceDiagram
     participant UI as UI Layer
     participant WA as WorkerAPI
-    participant SM as StyleMapService
+    participant SM as StylerService
     participant LM as LifecycleManager
     participant EDB as EphemeralDB
-    participant PDB as StyleMapDB
+    participant PDB as StylerDB
 
     UI->>WA: importCSV(file, config)
     WA->>SM: parseCSVFile(file)
     SM-->>WA: parsedData
     
-    WA->>EDB: createWorkingCopy('stylemap', config)
+    WA->>EDB: createWorkingCopy('styler', config)
     EDB-->>WA: workingCopyId
     
     WA->>LM: triggerBeforeCreate(config)
@@ -128,8 +128,8 @@ sequenceDiagram
         WA->>SM: analyzeColumns(parsedData)
         SM-->>WA: columnMetadata
         
-        WA->>SM: generateStyleMapping(config, columnMetadata)
-        SM-->>WA: styleMapConfig
+        WA->>SM: generateStylerping(config, columnMetadata)
+        SM-->>WA: stylerConfig
         
         WA->>PDB: saveEntity(entity)
         WA->>PDB: saveTableMetadata(metadata)
@@ -148,9 +148,9 @@ sequenceDiagram
 ### 3.2 フック実装
 
 ```typescript
-const styleMapLifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy> = {
+const stylerLifecycle: NodeLifecycleHooks<StylerEntity, StylerWorkingCopy> = {
   // インポート前検証
-  beforeCreate: async (_parentId: TreeNodeId, nodeData: Partial<StyleMapEntity>) => {
+  beforeCreate: async (_parentId: TreeNodeId, nodeData: Partial<StylerEntity>) => {
     // ファイル形式検証
     if (nodeData.filename) {
       const validExtensions = ['.csv', '.tsv', '.xlsx', '.xls'];
@@ -168,20 +168,20 @@ const styleMapLifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy>
   },
   
   // インポート後処理
-  afterCreate: async (nodeId: TreeNodeId, entity: StyleMapEntity) => {
+  afterCreate: async (nodeId: TreeNodeId, entity: StylerEntity) => {
     // スタイルキャッシュ生成
-    if (entity.styleMapConfig) {
-      await generateStyleCache(nodeId, entity.styleMapConfig);
+    if (entity.stylerConfig) {
+      await generateStyleCache(nodeId, entity.stylerConfig);
     }
     
-    console.log(`StyleMap created: ${nodeId} - ${entity.filename}`);
+    console.log(`Styler created: ${nodeId} - ${entity.filename}`);
   },
   
   // 更新前検証
-  beforeUpdate: async (nodeId: TreeNodeId, changes: Partial<StyleMapEntity>) => {
+  beforeUpdate: async (nodeId: TreeNodeId, changes: Partial<StylerEntity>) => {
     // スタイル設定の整合性チェック
-    if (changes.styleMapConfig) {
-      const validation = validateStyleMapConfig(changes.styleMapConfig);
+    if (changes.stylerConfig) {
+      const validation = validateStylerConfig(changes.stylerConfig);
       if (!validation.isValid) {
         throw new Error(`Invalid style configuration: ${validation.errors.join(', ')}`);
       }
@@ -189,14 +189,14 @@ const styleMapLifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy>
   },
   
   // 更新後処理
-  afterUpdate: async (nodeId: TreeNodeId, entity: StyleMapEntity) => {
+  afterUpdate: async (nodeId: TreeNodeId, entity: StylerEntity) => {
     // キャッシュ無効化
     if (entity.cacheKey) {
       await invalidateCache(entity.cacheKey);
     }
     
     // 再生成
-    await generateStyleCache(nodeId, entity.styleMapConfig);
+    await generateStyleCache(nodeId, entity.stylerConfig);
   },
   
   // 削除前クリーンアップ
@@ -209,14 +209,14 @@ const styleMapLifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy>
   },
   
   // コミット前検証
-  beforeCommit: async (nodeId: TreeNodeId, workingCopy: StyleMapWorkingCopy) => {
+  beforeCommit: async (nodeId: TreeNodeId, workingCopy: StylerWorkingCopy) => {
     // 必須フィールドチェック
     if (!workingCopy.keyColumn) {
       throw new Error('Key column is required');
     }
     
     // スタイル設定の完全性チェック
-    if (!workingCopy.styleMapConfig) {
+    if (!workingCopy.stylerConfig) {
       throw new Error('Style configuration is required');
     }
   }
@@ -225,14 +225,14 @@ const styleMapLifecycle: NodeLifecycleHooks<StyleMapEntity, StyleMapWorkingCopy>
 
 ## 4. UI コンポーネント - 6ステップ構成
 
-### 4.1 StyleMapImporter (6ステップウィザード)
+### 4.1 StylerImporter (6ステップウィザード)
 
-StyleMapImporterは、元の実装と同様の6ステップ構成で実装されています：
+StylerImporterは、元の実装と同様の6ステップ構成で実装されています：
 
 #### ステップ構成
 
 1. **Step1NameDescription** - 名前と説明の入力
-   - StyleMapの基本情報（名前、説明）を入力
+   - Stylerの基本情報（名前、説明）を入力
    - 必須項目のバリデーション
 
 2. **Step2FileUpload** - ファイルアップロードとデータ読み込み
@@ -284,7 +284,7 @@ import { Step4ColumnSelection } from './steps/Step4ColumnSelection';
 import { Step5ColorSettings } from './steps/Step5ColorSettings';
 import { Step6Preview } from './steps/Step6Preview';
 
-export function StyleMapImporter({ onImport }: { onImport: (data: any) => void }) {
+export function StylerImporter({ onImport }: { onImport: (data: any) => void }) {
   const [activeStep, setActiveStep] = useState(0);
   
   // ステップごとのデータ管理
@@ -307,7 +307,7 @@ export function StyleMapImporter({ onImport }: { onImport: (data: any) => void }
     keyValueMappings: [],
     
     // Step 5
-    styleMapConfig: {
+    stylerConfig: {
       type: 'categorical',
       colorRules: [],
       defaultColors: {
@@ -418,8 +418,8 @@ export function StyleMapImporter({ onImport }: { onImport: (data: any) => void }
       case 4:
         return (
           <Step5ColorSettings
-            styleMapConfig={formData.styleMapConfig}
-            onConfigChange={(config) => setFormData({ ...formData, styleMapConfig: config })}
+            stylerConfig={formData.stylerConfig}
+            onConfigChange={(config) => setFormData({ ...formData, stylerConfig: config })}
             uniqueValues={getUniqueValues(formData.tableRows, formData.selectedKeyColumn)}
           />
         );
@@ -434,7 +434,7 @@ export function StyleMapImporter({ onImport }: { onImport: (data: any) => void }
             selectedKeyColumn={formData.selectedKeyColumn}
             selectedValueColumns={formData.selectedValueColumns}
             filterRules={formData.filterRules}
-            styleMapConfig={formData.styleMapConfig}
+            stylerConfig={formData.stylerConfig}
             tableRows={formData.tableRows}
             keyValueMappings={formData.keyValueMappings}
           />
@@ -526,7 +526,7 @@ export function StyleMapImporter({ onImport }: { onImport: (data: any) => void }
 ### 5.1 Worker API
 
 ```typescript
-export const styleMapWorkerExtensions = {
+export const stylerWorkerExtensions = {
   // CSVファイル解析
   parseDataFile: async (file: File): Promise<ParsedData> => {
     const content = await file.text();
@@ -584,7 +584,7 @@ export const styleMapWorkerExtensions = {
   // スタイルキャッシュ生成
   generateStyleCache: async (
     nodeId: TreeNodeId,
-    config: StyleMapConfig
+    config: StylerConfig
   ): Promise<string> => {
     const cacheKey = `style_${nodeId}_${Date.now()}`;
     const cache = new Map();
@@ -610,14 +610,14 @@ export const styleMapWorkerExtensions = {
 ## 6. データベース最適化
 
 ```typescript
-export class StyleMapDatabase extends Dexie {
-  entities!: Table<StyleMapEntity>;
-  workingCopies!: Table<StyleMapWorkingCopy>;
+export class StylerDatabase extends Dexie {
+  entities!: Table<StylerEntity>;
+  workingCopies!: Table<StylerWorkingCopy>;
   tableMetadata!: Table<TableMetadata>;
   styleCache!: Table<StyleCache>;
   
   constructor() {
-    super('StyleMapDB');
+    super('StylerDB');
     
     this.version(3).stores({
       entities: 'nodeId, filename, keyColumn, cacheKey, updatedAt',
@@ -638,7 +638,7 @@ export class StyleMapDatabase extends Dexie {
   }
   
   // パフォーマンス最適化メソッド
-  async getEntityWithCache(nodeId: TreeNodeId): Promise<StyleMapEntity | undefined> {
+  async getEntityWithCache(nodeId: TreeNodeId): Promise<StylerEntity | undefined> {
     const entity = await this.entities.get(nodeId);
     
     if (entity?.cacheKey) {
@@ -667,14 +667,14 @@ export class StyleMapDatabase extends Dexie {
 ## 7. バリデーション
 
 ```typescript
-export const styleMapValidation = {
+export const stylerValidation = {
   namePattern: /^[a-zA-Z0-9\s\-_\.]+$/,
   maxChildren: 0,
   
   customValidators: [
     {
       name: 'validFileFormat',
-      validate: async (entity: StyleMapEntity) => {
+      validate: async (entity: StylerEntity) => {
         if (!entity.filename) return true;
         
         const supportedFormats = /\.(csv|tsv|xlsx|xls)$/i;
@@ -686,7 +686,7 @@ export const styleMapValidation = {
     },
     {
       name: 'validColumnMapping',
-      validate: async (entity: StyleMapEntity) => {
+      validate: async (entity: StylerEntity) => {
         if (!entity.keyColumn) return true;
         
         if (entity.valueColumns?.includes(entity.keyColumn)) {
@@ -714,10 +714,10 @@ export const styleMapValidation = {
     },
     {
       name: 'validStyleConfiguration',
-      validate: async (entity: StyleMapEntity) => {
-        if (!entity.styleMapConfig) return true;
+      validate: async (entity: StylerEntity) => {
+        if (!entity.stylerConfig) return true;
         
-        const { type, colorRules } = entity.styleMapConfig;
+        const { type, colorRules } = entity.stylerConfig;
         
         if (!['categorical', 'numerical', 'gradient'].includes(type)) {
           return 'Invalid style type';
@@ -754,8 +754,8 @@ export const styleMapValidation = {
   },
   "steps": {
     "nameDescription": {
-      "title": "StyleMap Information",
-      "description": "Enter a name and description for your StyleMap configuration",
+      "title": "Styler Information",
+      "description": "Enter a name and description for your Styler configuration",
       "nameLabel": "Name",
       "descriptionLabel": "Description",
       "nameRequired": "Name is required"
@@ -793,7 +793,7 @@ export const styleMapValidation = {
     },
     "preview": {
       "title": "PreviewStep & Summary",
-      "description": "Review your StyleMap configuration before saving",
+      "description": "Review your Styler configuration before saving",
       "configSummary": "Configuration Summary",
       "dataConfig": "Data Configuration",
       "dataSummary": "Data Summary",
@@ -878,12 +878,12 @@ const styleConfig = {
 };
 
 // Step 6: プレビューと作成
-const entity = await workerAPI.createNode('stylemap-plugin', {
+const entity = await workerAPI.createNode('styler-plugin', {
   ...basicInfo,
   filename: 'data.csv',
   ...columnConfig,
   filterRules,
-  styleMapConfig: styleConfig
+  stylerConfig: styleConfig
 });
 
 // スタイル適用

@@ -13,7 +13,7 @@ Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理基
     ┌──────────────────────────────┬──────────────────────────────┐
     │                              │                              │
 Peer│  SpreadsheetRefEntity        │  SpreadsheetWorkingCopy      │
-    │  StyleMapEntity              │  SpreadsheetViewState        │
+    │  StylerEntity              │  SpreadsheetViewState        │
     │                              │                              │
     ├──────────────────────────────┼──────────────────────────────┤
     │                              │                              │
@@ -62,7 +62,7 @@ interface SpreadsheetRefEntity extends PersistentPeerEntity {
 SpreadsheetPlugin/
 ├── UI Layer
 │   ├── SpreadsheetDialog        # UI コンポーネント
-│   └── StyleMapDialog           # 拡張UI
+│   └── StylerDialog           # 拡張UI
 │
 ├── Plugin Layer
 │   ├── SpreadsheetPlugin        # メインプラグインクラス

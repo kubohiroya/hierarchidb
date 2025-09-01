@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 
-// Local type definitions for StyleMapDB (plugin types not available in worker)
+// Local type definitions for StylerDB (plugin types not available in worker)
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };
 
 export interface ColorRule {
@@ -15,7 +15,7 @@ export interface ColorRule {
   enabled: boolean;
 }
 
-export interface StyleMapEntity {
+export interface StylerEntity {
   nodeId: NodeId;
   spreadsheetMetadataId: SpreadsheetMetadataId;
   keyColumn: string;
@@ -26,19 +26,19 @@ export interface StyleMapEntity {
 }
 
 /**
- * StyleMapDB - 独立したスタイルマップ専用データベース
+ * StylerDB - 独立したスタイルマップ専用データベース
  * プラグインが自分で管理する独立したDexieデータベース
  */
-export class StyleMapDB extends Dexie {
-  // PeerEntity table only - StyleMapはRelationalEntityを持たない
-  styleMapEntities!: Table<StyleMapEntity, NodeId>;
+export class StylerDB extends Dexie {
+  // PeerEntity table only - StylerはRelationalEntityを持たない
+  stylerEntities!: Table<StylerEntity, NodeId>;
 
-  constructor(name: string = 'hierarchidb-stylemap-plugin') {
+  constructor(name: string = 'hierarchidb-styler-plugin') {
     super(name);
 
     this.version(1).stores({
-      // PeerEntity: StyleMapEntity (ノード紐付け、SpreadsheetMetadataを参照)
-      styleMapEntities: '&nodeId, spreadsheetMetadataId, createdAt, updatedAt, keyColumn'
+      // PeerEntity: StylerEntity (ノード紐付け、SpreadsheetMetadataを参照)
+      stylerEntities: '&nodeId, spreadsheetMetadataId, createdAt, updatedAt, keyColumn'
     });
   }
 
@@ -46,27 +46,27 @@ export class StyleMapDB extends Dexie {
    * データベース初期化
    */
   async initialize(): Promise<void> {
-    console.log('StyleMapDB initialized');
+    console.log('StylerDB initialized');
   }
 
   /**
-   * StyleMapEntity operations (PeerEntity)
+   * StylerEntity operations (PeerEntity)
    */
-  async createEntity(entity: StyleMapEntity): Promise<void> {
-    await this.styleMapEntities.add(entity);
+  async createEntity(entity: StylerEntity): Promise<void> {
+    await this.stylerEntities.add(entity);
   }
 
-  async getEntity(nodeId: NodeId): Promise<StyleMapEntity | undefined> {
-    return await this.styleMapEntities.get(nodeId);
+  async getEntity(nodeId: NodeId): Promise<StylerEntity | undefined> {
+    return await this.stylerEntities.get(nodeId);
   }
 
-  async updateEntity(nodeId: NodeId, updates: Partial<StyleMapEntity>): Promise<void> {
+  async updateEntity(nodeId: NodeId, updates: Partial<StylerEntity>): Promise<void> {
     const existing = await this.getEntity(nodeId);
     if (!existing) {
-      throw new Error(`StyleMapEntity not found: ${nodeId}`);
+      throw new Error(`StylerEntity not found: ${nodeId}`);
     }
 
-    await this.styleMapEntities.update(nodeId, {
+    await this.stylerEntities.update(nodeId, {
       ...updates,
       updatedAt: Date.now(),
       version: existing.version + 1
@@ -74,29 +74,29 @@ export class StyleMapDB extends Dexie {
   }
 
   async deleteEntity(nodeId: NodeId): Promise<void> {
-    await this.styleMapEntities.delete(nodeId);
+    await this.stylerEntities.delete(nodeId);
   }
 
   /**
    * SpreadsheetMetadata参照管理
    */
-  async getEntitiesBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<StyleMapEntity[]> {
-    return await this.styleMapEntities.where('spreadsheetMetadataId').equals(metadataId).toArray();
+  async getEntitiesBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<StylerEntity[]> {
+    return await this.stylerEntities.where('spreadsheetMetadataId').equals(metadataId).toArray();
   }
 
   async countEntitiesBySpreadsheetMetadata(metadataId: SpreadsheetMetadataId): Promise<number> {
-    return await this.styleMapEntities.where('spreadsheetMetadataId').equals(metadataId).count();
+    return await this.stylerEntities.where('spreadsheetMetadataId').equals(metadataId).count();
   }
 
   /**
    * 検索とフィルタリング
    */
-  async findByKeyColumn(keyColumn: string): Promise<StyleMapEntity[]> {
-    return await this.styleMapEntities.where('keyColumn').equals(keyColumn).toArray();
+  async findByKeyColumn(keyColumn: string): Promise<StylerEntity[]> {
+    return await this.stylerEntities.where('keyColumn').equals(keyColumn).toArray();
   }
 
-  async getRecentlyUpdated(limit = 10): Promise<StyleMapEntity[]> {
-    return await this.styleMapEntities.orderBy('updatedAt').reverse().limit(limit).toArray();
+  async getRecentlyUpdated(limit = 10): Promise<StylerEntity[]> {
+    return await this.stylerEntities.orderBy('updatedAt').reverse().limit(limit).toArray();
   }
 
   /**
@@ -108,7 +108,7 @@ export class StyleMapDB extends Dexie {
     averageRulesPerEntity: number;
     recentlyActive: number; // 過去24時間で更新されたエンティティ数
   }> {
-    const allEntities = await this.styleMapEntities.toArray();
+    const allEntities = await this.stylerEntities.toArray();
     const totalEntities = allEntities.length;
 
     // ユニークなSpreadsheetMetadata参照数
@@ -135,7 +135,7 @@ export class StyleMapDB extends Dexie {
   /**
    * バルク操作
    */
-  async bulkUpdateEntities(updates: Array<{ nodeId: NodeId; data: Partial<StyleMapEntity> }>): Promise<void> {
+  async bulkUpdateEntities(updates: Array<{ nodeId: NodeId; data: Partial<StylerEntity> }>): Promise<void> {
     const updatePromises = updates.map(({ nodeId, data }) => 
       this.updateEntity(nodeId, data)
     );
@@ -143,7 +143,7 @@ export class StyleMapDB extends Dexie {
   }
 
   async bulkDeleteEntities(nodeIds: NodeId[]): Promise<void> {
-    await this.styleMapEntities.bulkDelete(nodeIds);
+    await this.stylerEntities.bulkDelete(nodeIds);
   }
 
   /**
@@ -154,7 +154,7 @@ export class StyleMapDB extends Dexie {
     issues: string[];
   }> {
     const issues: string[] = [];
-    const entities = await this.styleMapEntities.toArray();
+    const entities = await this.stylerEntities.toArray();
 
     for (const entity of entities) {
       // 必須フィールドチェック

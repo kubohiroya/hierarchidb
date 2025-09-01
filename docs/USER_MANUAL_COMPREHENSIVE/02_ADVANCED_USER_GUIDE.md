@@ -86,7 +86,7 @@ classDiagram
         +columnMapping()
     }
     
-    class StyleMapPlugin {
+    class StylerPlugin {
         +styleRules()
         +colorMapping()
         +sizeMapping()
@@ -96,7 +96,7 @@ classDiagram
     ShapePlugin <|-- LocationPlugin
     ShapePlugin <|-- RoutePlugin
     BasePlugin <|-- SpreadsheetPlugin
-    SpreadsheetPlugin <|-- StyleMapPlugin
+    SpreadsheetPlugin <|-- StylerPlugin
 ```
 
 ---
@@ -744,7 +744,7 @@ graph TB
     
     subgraph "データ処理"
         P1[PropertyResolver<br/>統合]
-        P2[StyleMap<br/>危険度表示]
+        P2[Styler<br/>危険度表示]
         P3[最適経路計算]
     end
     

@@ -253,7 +253,7 @@ export class CrossTreeReferenceService {
   }
 
   private isSelectableNodeType(nodeType: string): boolean {
-    const selectableTypes = ['basemap', 'shape', 'stylemap-plugin', 'location', 'route'];
+    const selectableTypes = ['basemap', 'shape', 'styler-plugin', 'location', 'route'];
     return selectableTypes.includes(nodeType);
   }
 

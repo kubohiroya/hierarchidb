@@ -173,7 +173,7 @@ export interface ResourceReference extends GroupEntity {
 export type ResourceReferenceType = 
   | 'basemap'
   | 'shape'
-  | 'stylemap'
+  | 'styler'
   | 'location'
   | 'route'
   | 'folder';

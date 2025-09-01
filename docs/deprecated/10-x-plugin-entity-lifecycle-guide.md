@@ -10,14 +10,14 @@ HierarchiDBのプラグインシステムでは、ツリーノードとの紐付
 - **関係性**: TreeNodeと **1対1** で対応
 - **ライフサイクル**: TreeNodeと完全に同期
 - **特徴**: 各TreeNodeに対して必ず1つのPeerEntityが存在
-- **例**: StyleMapEntity, BaseMapEntity, ShapesEntity
+- **例**: StylerEntity, BaseMapEntity, ShapesEntity
 
 ```typescript
-interface StyleMapEntity extends PeerEntity {
+interface StylerEntity extends PeerEntity {
   id: UUID;
   referencingNodeId: TreeNodeId;        // TreeNodeとの1対1関係
   name: string;
-  styleMapConfig: StyleMapConfig;
+  stylerConfig: StylerConfig;
   // TreeNodeが削除されると自動的に削除される
 }
 ```
@@ -42,7 +42,7 @@ interface FeatureSubEntity extends GroupEntity {
 - **関係性**: 複数のTreeNodeと **N対N** で対応
 - **ライフサイクル**: **リファレンスカウント**による自動管理
 - **特徴**: 最後の参照が削除されたときに自動削除
-- **例**: TableMetadataEntity（複数のStyleMapで共有される表データ）
+- **例**: TableMetadataEntity（複数のStylerで共有される表データ）
 
 ```typescript
 interface TableMetadataEntity extends RelationalEntity {
@@ -111,17 +111,17 @@ flowchart TD
     L --> M[完了]
 ```
 
-### 3.2 StyleMap実装における設計決定
+### 3.2 Styler実装における設計決定
 
-StyleMapプラグインでは以下の設計決定を行いました：
+Stylerプラグインでは以下の設計決定を行いました：
 
-#### 2.2.1 StyleMapEntity（PeerEntity）
-- **理由**: 各StyleMapは特定のTreeNodeに1対1で対応
-- **特徴**: TreeNodeが削除されるとStyleMapEntityも削除
+#### 2.2.1 StylerEntity（PeerEntity）
+- **理由**: 各Stylerは特定のTreeNodeに1対1で対応
+- **特徴**: TreeNodeが削除されるとStylerEntityも削除
 - **実装**: 標準的なEntityHandler実装
 
 #### 2.2.2 TableMetadataEntity（RelationalEntity）
-- **理由**: 同じCSVファイルを複数のStyleMapで共有する可能性
+- **理由**: 同じCSVファイルを複数のStylerで共有する可能性
 - **特徴**: 重複データの排除、メモリ効率の向上
 - **実装**: RelationalEntityManagerによるリファレンスカウント管理
 
@@ -219,8 +219,8 @@ class MyEntityHandler {
 
 #### ✅ 良い例: 関連エンティティを同一トランザクションで操作
 ```typescript
-async updateEntity(nodeId: TreeNodeId, data: Partial<StyleMapEntity>): Promise<void> {
-  await this.db.transaction('rw', ['styleMapEntities', 'tableMetadata'], async () => {
+async updateEntity(nodeId: TreeNodeId, data: Partial<StylerEntity>): Promise<void> {
+  await this.db.transaction('rw', ['stylerEntities', 'tableMetadata'], async () => {
     // PeerEntityとRelationalEntityを一括操作
     await this.updatePeerEntity(nodeId, data);
     await this.updateRelationalReferences(nodeId, data.tableMetadataId);
@@ -230,7 +230,7 @@ async updateEntity(nodeId: TreeNodeId, data: Partial<StyleMapEntity>): Promise<v
 
 #### ❌ 悪い例: 分離されたトランザクション
 ```typescript
-async updateEntity(nodeId: TreeNodeId, data: Partial<StyleMapEntity>): Promise<void> {
+async updateEntity(nodeId: TreeNodeId, data: Partial<StylerEntity>): Promise<void> {
   await this.updatePeerEntity(nodeId, data);      // トランザクション1
   await this.updateRelationalReferences(nodeId, data.tableMetadataId);  // トランザクション2
   // データ不整合のリスクあり
@@ -266,17 +266,17 @@ async addReference(entityId: string, nodeId: TreeNodeId): Promise<void> {
 ```typescript
 async deleteEntity(nodeId: TreeNodeId): Promise<void> {
   try {
-    await this.db.transaction('rw', ['styleMapEntities', 'tableMetadata'], async () => {
+    await this.db.transaction('rw', ['stylerEntities', 'tableMetadata'], async () => {
       const entity = await this.getEntity(nodeId);
       
       if (entity?.tableMetadataId) {
         await this.tableMetadataManager.removeReference(entity.tableMetadataId, nodeId);
       }
       
-      await this.db.table('styleMapEntities').delete(nodeId);
+      await this.db.table('stylerEntities').delete(nodeId);
     });
   } catch (error) {
-    console.error(`Failed to delete StyleMapEntity ${nodeId}:`, error);
+    console.error(`Failed to delete StylerEntity ${nodeId}:`, error);
     throw new Error(`Entity deletion failed: ${error.message}`);
   }
 }
@@ -319,13 +319,13 @@ async cleanupOrphanedEntities(): Promise<number> {
 ### 6.1 PeerEntityのテスト
 
 ```typescript
-describe('StyleMapEntity (PeerEntity)', () => {
+describe('StylerEntity (PeerEntity)', () => {
   it('should create entity with TreeNode lifecycle sync', async () => {
     const nodeId = 'test-node-1';
-    const entity = await handler.createEntity(nodeId, { name: 'Test StyleMap' });
+    const entity = await handler.createEntity(nodeId, { name: 'Test Styler' });
     
     expect(entity.nodeId).toBe(nodeId);
-    expect(entity.name).toBe('Test StyleMap');
+    expect(entity.name).toBe('Test Styler');
     
     // TreeNode削除時の自動削除をテスト
     await handler.deleteEntity(nodeId);

@@ -14,7 +14,7 @@
 - カスタム開発や拡張を検討している時
 - プラグイン開発を始める前の事前学習
 
-この章では、4層アーキテクチャ、Web Worker活用による並列処理、プラグインシステム（BaseMap、StyleMap、Shape、Spreadsheet、Project）の技術基盤を理解できます。特に、大容量spreadsheetデータ処理やリアルタイム地図表示の仕組みについても解説します。具体的な開発手順は、REPORT配下の技術文書で詳しく説明されています。
+この章では、4層アーキテクチャ、Web Worker活用による並列処理、プラグインシステム（BaseMap、Styler、Shape、Spreadsheet、Project）の技術基盤を理解できます。特に、大容量spreadsheetデータ処理やリアルタイム地図表示の仕組みについても解説します。具体的な開発手順は、REPORT配下の技術文書で詳しく説明されています。
 
 ## はじめに
 
@@ -64,7 +64,7 @@ graph TB
     
     subgraph "Plugin System"
         BaseMap[BaseMap Plugin]
-        StyleMap[StyleMap Plugin]
+        Styler[Styler Plugin]
         Shapes[Shapes Plugin]
     end
     
@@ -78,7 +78,7 @@ graph TB
     Handlers --> EphemeralDB
     
     BaseMap --> Handlers
-    StyleMap --> Handlers
+    Styler --> Handlers
     Shapes --> Handlers
 ```
 
@@ -367,7 +367,7 @@ graph LR
 ### プラグイン層
 - **@hierarchidb/plugin-folder**: フォルダノード
 - **@hierarchidb/plugin-basemap**: ベースマップ
-- **@hierarchidb/plugin-stylemap**: スタイルマップ
+- **@hierarchidb/plugin-styler**: スタイルマップ
 - **@hierarchidb/plugin-shape**: シェイプデータ
 
 ### バックエンド層

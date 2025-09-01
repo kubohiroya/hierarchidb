@@ -85,11 +85,11 @@ export const spreadsheetPlugin: PluginDefinition = {
 };
 
 /**
- * StyleMap plugin definition
+ * Styler plugin definition
  */
-export const stylemapPlugin: PluginDefinition = {
-  nodeType: 'stylemap' as NodeType,
-  name: 'StyleMap',
+export const stylerPlugin: PluginDefinition = {
+  nodeType: 'styler' as NodeType,
+  name: 'Styler',
   displayName: 'Style Map',
   icon: {
     muiIconName: 'Palette',
@@ -103,7 +103,7 @@ export const stylemapPlugin: PluginDefinition = {
   },
   database: {
     dbName: 'CoreDB',
-    schema: { stylemaps: '&id, nodeId, name, styleRules, createdAt, updatedAt, version' },
+    schema: { stylers: '&id, nodeId, name, styleRules, createdAt, updatedAt, version' },
     version: 1,
   },
   priority: 30,
@@ -195,7 +195,7 @@ export function getDefaultPlugins(): PluginDefinition[] {
     folderPlugin,
     basemapPlugin,
     spreadsheetPlugin,
-    stylemapPlugin,
+    stylerPlugin,
     shapePlugin,
     //locationPlugin,
     //routePlugin,

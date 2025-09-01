@@ -47,7 +47,7 @@ Ephemeral     │ Peer×Ephemeral │ Group×Ephemeral│ Relation×Ephemeral
 ### 3.1 PeerEntity（1対1関係）
 - **特徴**: 各TreeNodeに対して必ず1つのPeerEntityが存在
 - **ライフサイクル**: TreeNodeのライフサイクルと同期
-- **例**: StyleMapEntity、BaseMapEntity
+- **例**: StylerEntity、BaseMapEntity
 
 ```typescript
 /**
@@ -56,7 +56,7 @@ Ephemeral     │ Peer×Ephemeral │ Group×Ephemeral│ Relation×Ephemeral
  * TreeNodeのライフサイクルと同期して作成・削除される。
  * 各TreeNodeに対して必ず1つのPeerEntityが存在する。
  * 
- * @example StyleMapEntity, BaseMapEntity
+ * @example StylerEntity, BaseMapEntity
  */
 export interface PeerEntity extends BaseEntity {
   // TreeNodeと1対1で対応するエンティティ
@@ -90,7 +90,7 @@ export interface GroupEntity extends BaseEntity {
 ### 3.3 RelationalEntity（N対N関係）
 - **特徴**: リファレンスカウントによるライフサイクル管理
 - **ライフサイクル**: 最後の参照が削除されたときに自動削除
-- **例**: TableMetadataEntity（複数のStyleMapで共有される表データ）
+- **例**: TableMetadataEntity（複数のStylerで共有される表データ）
 
 ```typescript
 /**
@@ -99,7 +99,7 @@ export interface GroupEntity extends BaseEntity {
  * リファレンスカウントによるライフサイクル管理。
  * 最後の参照が削除されたときに自動削除される。
  * 
- * @example TableMetadataEntity（複数のStyleMapで共有される表データ）
+ * @example TableMetadataEntity（複数のStylerで共有される表データ）
  */
 export interface RelationalEntity extends BaseEntity {
   referencingNodeIds: TreeNodeId[];

@@ -84,7 +84,7 @@ The project uses a monorepo structure with 43 packages organized in dependency l
 - **`@hierarchidb/plugin-project`** - Project node type
 - **`@hierarchidb/plugin-shape`** - Geographic shape data
 - **`@hierarchidb/plugin-spreadsheet`** - Spreadsheet functionality
-- **`@hierarchidb/plugin-stylemap`** - Map styling
+- **`@hierarchidb/plugin-styler`** - Map styling
 
 ### Application Layer (Depth 4)
 - **`@hierarchidb/app`** - Main React application with routing

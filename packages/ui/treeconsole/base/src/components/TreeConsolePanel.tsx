@@ -158,8 +158,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     },
     {
       icon: <PaletteIcon />,
-      name: 'Create StyleMap',
-      onClick: () => props.onContextMenuAction('create:stylemap-plugin', {} as TreeNodeData),
+      name: 'Create Styler',
+      onClick: () => props.onContextMenuAction('create:styler-plugin', {} as TreeNodeData),
     },
     {
       icon: <PublicIcon />,
@@ -265,7 +265,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       {/* Context Menu */}
       <RowContextMenu
         nodeType={(contextMenuState.node as TreeNodeData)?.nodeType || 'folder'}
-        addMenuNodeTypes={['folder', 'basemap', 'shapes', 'stylemap']}
+        addMenuNodeTypes={['folder', 'basemap', 'shapes', 'styler']}
         parentElem={contextMenuState.anchorEl}
         onClose={handleContextMenuClose}
         onOpen={() => handleContextMenuAction('open')}

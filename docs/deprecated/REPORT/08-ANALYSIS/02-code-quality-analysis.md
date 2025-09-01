@@ -186,7 +186,7 @@ const duplicationAnalysis = {
   
   hotspots: [
     {
-      location: 'plugins/basemap and plugins/stylemap-plugin',
+      location: 'plugins/basemap and plugins/styler-plugin',
       type: 'Handler implementation',
       lines: 245,
       suggestion: 'Extract BasePluginHandler class'

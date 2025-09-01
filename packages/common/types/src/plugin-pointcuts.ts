@@ -27,7 +27,7 @@ export interface StepComponent {
  * 【機能概要】: ダイアログステップの定義
  * 【実装方針】: マルチステップダイアログの各ステップ構造を表現
  * 【テスト対応】: ファイルアップロード等の拡張ステップ定義で使用
- * 🟢 信頼性レベル: テストケースとStyleMap要件から導出
+ * 🟢 信頼性レベル: テストケースとStyler要件から導出
  */
 export interface DialogStepDefinition {
   // 【ステップ番号】: ダイアログ内での表示順序
@@ -215,7 +215,7 @@ export interface PluginExtensionConfig {
 /**
  * 【機能概要】: 拡張可能なノードタイプ定義
  * 【実装方針】: プラグインが他プラグインを継承可能にする中核型
- * 【テスト対応】: folder-plugin→stylemap拡張等のユースケース
+ * 【テスト対応】: folder-plugin→styler拡張等のユースケース
  * 🟢 信頼性レベル: 設計文書の中核仕様
  */
 export interface ExtendingNodeTypeDefinition<

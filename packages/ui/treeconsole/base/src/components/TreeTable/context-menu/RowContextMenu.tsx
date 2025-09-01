@@ -310,10 +310,10 @@ export const RowContextMenu = memo(
               const shouldAddDividerBefore =
                 // Divider after BaseMap (before Shapes)
                 (type === '_shapes_buggy' && prevType === 'basemap') ||
-                // Divider after Routes (before StyleMap)
-                (type === 'stylemap' && prevType === 'routes') ||
-                // Divider after StyleMap (before PropertyResolver)
-                (type === 'propertyresolver' && prevType === 'stylemap');
+                // Divider after Routes (before Styler)
+                (type === 'styler' && prevType === 'routes') ||
+                // Divider after Styler (before PropertyResolver)
+                (type === 'propertyresolver' && prevType === 'styler');
 
               const items: React.ReactNode[] = [];
 

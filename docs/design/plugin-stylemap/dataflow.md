@@ -1,4 +1,4 @@
-# plugin-stylemap データフロー図
+# plugin-styler データフロー図
 
 ## システム全体データフロー
 
@@ -7,21 +7,21 @@
 ```mermaid
 flowchart TD
     %% UI Layer
-    U[ユーザー] --> SUI[StyleMap UI Components]
-    SUI --> SD[StyleMapDialog]
-    SD --> SC[StyleMapConfiguration]
-    SC --> SP[StyleMapPreview]
+    U[ユーザー] --> SUI[Styler UI Components]
+    SUI --> SD[StylerDialog]
+    SD --> SC[StylerConfiguration]
+    SC --> SP[StylerPreview]
     
     %% Comlink RPC Layer
-    SD -.->|Comlink RPC| WA[StyleMapWorkerAPI]
+    SD -.->|Comlink RPC| WA[StylerWorkerAPI]
     SC -.->|Comlink RPC| WA
     SP -.->|Comlink RPC| WA
     
     %% Worker Layer
-    WA --> SMS[StyleMapService]
-    SMS --> SMDB[StyleMapDB]
-    SMS --> SMFC[StyleMapFileCacheService]
-    SMS --> SME[StyleMapEntityHandler]
+    WA --> SMS[StylerService]
+    SMS --> SMDB[StylerDB]
+    SMS --> SMFC[StylerFileCacheService]
+    SMS --> SME[StylerEntityHandler]
     
     %% Database Layer
     SMDB --> CDB[(CoreDB)]
@@ -33,7 +33,7 @@ flowchart TD
     SMFC --> FS[File System]
     
     %% Data EntityTypes
-    CDB --> SMEntity[StyleMapEntity]
+    CDB --> SMEntity[StylerEntity]
     CDB --> TMEntity[TableMetadataEntity] 
     CDB --> REntity[RowEntity]
     EDB --> WC[Working Copy]
@@ -52,15 +52,15 @@ flowchart TD
 
 ## 機能別データフロー
 
-### 🟢 1. StyleMap作成フロー
+### 🟢 1. Styler作成フロー
 
 ```mermaid
 sequenceDiagram
     participant U as ユーザー
-    participant UI as StyleMapDialog
-    participant W as StyleMapWorkerAPI
-    participant S as StyleMapService
-    participant DB as StyleMapDB
+    participant UI as StylerDialog
+    participant W as StylerWorkerAPI
+    participant S as StylerService
+    participant DB as StylerDB
     participant Cache as FileCacheService
     participant CoreDB as CoreDB
     participant EDB as EphemeralDB
@@ -84,7 +84,7 @@ sequenceDiagram
     
     %% 作業コピー作成
     UI->>W: createWorkingCopy(parentId)
-    W->>S: initializeStyleMapEntity()
+    W->>S: initializeStylerEntity()
     S->>EDB: saveWorkingCopy(entity)
     EDB-->>S: workingCopyId
     S-->>W: workingCopyId
@@ -100,11 +100,11 @@ sequenceDiagram
 
     %% 保存処理
     U->>UI: 保存ボタンクリック
-    UI->>W: commitStyleMap(workingCopyId)
+    UI->>W: commitStyler(workingCopyId)
     W->>S: commitWorkingCopy(workingCopyId)
     
     S->>DB: beginTransaction()
-    S->>CoreDB: saveStyleMapEntity(entity)
+    S->>CoreDB: saveStylerEntity(entity)
     S->>CoreDB: saveTableMetadata(tableMetadata)
     S->>CoreDB: bulkSaveRows(rows)
     S->>EDB: deleteWorkingCopy(workingCopyId)
@@ -115,23 +115,23 @@ sequenceDiagram
     UI-->>U: 保存完了通知
 ```
 
-### 🟢 2. StyleMap編集フロー
+### 🟢 2. Styler編集フロー
 
 ```mermaid
 sequenceDiagram
     participant U as ユーザー
-    participant UI as StyleMapDialog
-    participant W as StyleMapWorkerAPI
-    participant S as StyleMapService
+    participant UI as StylerDialog
+    participant W as StylerWorkerAPI
+    participant S as StylerService
     participant CoreDB as CoreDB
     participant EDB as EphemeralDB
 
     %% 既存データ読み込み
     U->>UI: 編集モード開始
-    UI->>W: loadStyleMap(nodeId)
-    W->>S: getStyleMapEntity(nodeId)
+    UI->>W: loadStyler(nodeId)
+    W->>S: getStylerEntity(nodeId)
     S->>CoreDB: getEntity(nodeId)
-    CoreDB-->>S: StyleMapEntity
+    CoreDB-->>S: StylerEntity
     S->>CoreDB: getTableMetadata(tableId)
     CoreDB-->>S: TableMetadataEntity
     S->>CoreDB: getRows(tableId)
@@ -229,8 +229,8 @@ flowchart TD
     TME --> CDB[(CoreDB)]
     RE --> CDB
     
-    %% StyleMap Entity
-    SMC[StyleMap Config] --> SME[StyleMapEntity]
+    %% Styler Entity
+    SMC[Styler Config] --> SME[StylerEntity]
     SME --> CDB
     SME -.->|Reference| TME
     
@@ -350,7 +350,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant SM as StyleMapService
+    participant SM as StylerService
     participant MG as MapLibre Generator
     participant ML as MapLibre GL JS
     participant Map as Map Display
@@ -490,4 +490,4 @@ flowchart TD
     class DR,CR,MR,IB,PR,IR,FR output
 ```
 
-この詳細なデータフロー図により、plugin-stylemap の全体的なデータの流れ、各コンポーネント間の相互作用、エラーハンドリング、パフォーマンス最適化戦略が明確に理解できます。eria-cartograph の実装パターンを基にした信頼性の高い設計となっています。
+この詳細なデータフロー図により、plugin-styler の全体的なデータの流れ、各コンポーネント間の相互作用、エラーハンドリング、パフォーマンス最適化戦略が明確に理解できます。eria-cartograph の実装パターンを基にした信頼性の高い設計となっています。

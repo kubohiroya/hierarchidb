@@ -8,7 +8,7 @@ PersistentRelationalEntity (永続的・共有可能)
   
 PeerEntity (ノードに紐づく)
   └─ SpreadsheetRefEntity
-      └─ StyleMapEntity (拡張)
+      └─ StylerEntity (拡張)
 ```
 
 ## 1. SpreadsheetMetadata（共有データ）
@@ -98,10 +98,10 @@ interface SpreadsheetRefEntity extends PeerEntity {
 spreadsheet_refs: '&nodeId, refId, updatedAt'
 ```
 
-## 4. StyleMapEntity（拡張エンティティ）
+## 4. StylerEntity（拡張エンティティ）
 
 ```typescript
-interface StyleMapEntity extends SpreadsheetRefEntity {
+interface StylerEntity extends SpreadsheetRefEntity {
   // SpreadsheetRefEntityから継承
   // nodeId: NodeId
   // refId: SpreadsheetMetadataId
@@ -135,7 +135,7 @@ interface StyleMapEntity extends SpreadsheetRefEntity {
 ### データベーステーブル定義
 ```typescript
 // Dexie schema
-stylemap_entities: '&nodeId, refId, updatedAt'
+styler_entities: '&nodeId, refId, updatedAt'
 ```
 
 ## 5. フィルタキャッシュ（一時データ）
@@ -201,7 +201,7 @@ graph TD
     end
     
     subgraph "拡張層"
-        ST1[StyleMapEntity<br/>extends SpreadsheetRefEntity<br/>+filterRules<br/>+colorMapping]
+        ST1[StylerEntity<br/>extends SpreadsheetRefEntity<br/>+filterRules<br/>+colorMapping]
     end
     
     SM -->|1対多| SC
@@ -308,17 +308,17 @@ const refEntity: SpreadsheetRefEntity = {
 };
 ```
 
-### 2. StyleMap作成時
+### 2. Styler作成時
 ```typescript
 // 既存のSpreadsheetを参照
-const styleMapEntity: StyleMapEntity = {
+const stylerEntity: StylerEntity = {
   // SpreadsheetRefEntityの基本プロパティ
-  nodeId: styleMapNodeId,
+  nodeId: stylerNodeId,
   refId: spreadsheetMetadataId,
   name: 'Regional Sales Map',
   description: 'Color-coded by sales volume',
   
-  // StyleMap固有のプロパティ（永続化）
+  // Styler固有のプロパティ（永続化）
   filterRules: [
     { column: 'year', operator: 'equals', value: 2024 }
   ],
@@ -342,5 +342,5 @@ const styleMapEntity: StyleMapEntity = {
 1. **データの共有**: 同じCSVデータを複数のノードで共有
 2. **自動削除**: リファレンスカウントがゼロで自動削除
 3. **設定の永続化**: フィルタやカラム選択を保存
-4. **拡張性**: StyleMapEntity以外の拡張も容易
+4. **拡張性**: StylerEntity以外の拡張も容易
 5. **型安全性**: ブランド型による厳密な型チェック

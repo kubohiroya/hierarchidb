@@ -1,10 +1,10 @@
-# StyleMap Plugin Implementation Guide
+# Styler Plugin Implementation Guide
 
-This document provides a comprehensive guide for implementing and extending the StyleMap Plugin, including development roadmap, current status, and implementation priorities.
+This document provides a comprehensive guide for implementing and extending the Styler Plugin, including development roadmap, current status, and implementation priorities.
 
 ## Implementation Overview
 
-The StyleMap Plugin is currently in active development with approximately **60% completion**. The plugin follows HierarchiDB's plugin architecture and implements a comprehensive CSV/TSV data visualization system.
+The Styler Plugin is currently in active development with approximately **60% completion**. The plugin follows HierarchiDB's plugin architecture and implements a comprehensive CSV/TSV data visualization system.
 
 ### Current Implementation Status
 
@@ -44,7 +44,7 @@ Legend: ✅ Complete | 🔄 In Progress | ⏳ Planned | 📋 Not Started
 **Duration**: Completed in previous development cycles
 
 **Completed Items:**
-- ✅ StyleMapEntity and TableMetadataEntity definitions
+- ✅ StylerEntity and TableMetadataEntity definitions
 - ✅ RelationalEntity pattern implementation
 - ✅ Working Copy support
 - ✅ Plugin registration and lifecycle hooks
@@ -144,10 +144,10 @@ class FilterEngine {
 
 **Priority 2 - View Components:**
 ```typescript
-// 📋 StyleMapView - Basic structure exists, needs implementation
-// 📋 StyleMapPanel - Basic structure exists, needs implementation  
-// 📋 StyleMapEditor - Not implemented
-// 📋 StyleMapPreview - Not implemented
+// 📋 StylerView - Basic structure exists, needs implementation
+// 📋 StylerPanel - Basic structure exists, needs implementation  
+// 📋 StylerEditor - Not implemented
+// 📋 StylerPreview - Not implemented
 ```
 
 ### Phase 4: Style Generation Engine
@@ -161,7 +161,7 @@ interface StyleGenerationEngine {
   // Generate MapLibre-compatible styles
   generateMapLibreStyle(
     tableData: TableData,
-    config: StyleMapConfig,
+    config: StylerConfig,
     keyColumn: string,
     valueColumns: string[]
   ): Promise<MapLibreStyle>;
@@ -176,7 +176,7 @@ interface StyleGenerationEngine {
   // Legend generation
   generateLegend(
     colorMapping: ColorMapping,
-    config: StyleMapConfig
+    config: StylerConfig
   ): LegendData;
   
   // Performance optimization
@@ -260,9 +260,9 @@ interface TableMetadataEntity extends RelationalEntity {
 **Test Implementation Plan:**
 ```typescript
 // Phase 1: Unit Tests
-describe('StyleMap Core', () => {
+describe('Styler Core', () => {
   // Entity operations
-  test('StyleMapEntity creation and validation');
+  test('StylerEntity creation and validation');
   test('TableMetadataEntity reference counting');
   test('Working copy lifecycle');
   
@@ -273,7 +273,7 @@ describe('StyleMap Core', () => {
 });
 
 // Phase 2: Integration Tests  
-describe('StyleMap Integration', () => {
+describe('Styler Integration', () => {
   // UI workflow
   test('Complete base-dialog workflow');
   test('Step navigation and validation');
@@ -286,7 +286,7 @@ describe('StyleMap Integration', () => {
 });
 
 // Phase 3: Performance Tests
-describe('StyleMap Performance', () => {
+describe('Styler Performance', () => {
   test('Large CSV file processing');
   test('Style generation performance');
   test('Memory usage optimization');
@@ -310,16 +310,16 @@ npm install papaparse xlsx
 ### Build and Test Commands
 ```bash
 # Development
-pnpm dev --filter @hierarchidb/stylemap-plugin
+pnpm dev --filter @hierarchidb/styler-plugin
 
 # Type checking
-pnpm typecheck --filter @hierarchidb/stylemap-plugin
+pnpm typecheck --filter @hierarchidb/styler-plugin
 
 # Testing
-pnpm test --filter @hierarchidb/stylemap-plugin
+pnpm test --filter @hierarchidb/styler-plugin
 
 # Build
-pnpm build --filter @hierarchidb/stylemap-plugin
+pnpm build --filter @hierarchidb/styler-plugin
 ```
 
 ### Development Workflow
@@ -361,8 +361,8 @@ async function* processLargeCSV(file: File): AsyncGenerator<ProcessedChunk> {
 }
 
 // 2. Web Worker integration
-class StyleMapWorker {
-  async generateStyles(data: TableData, config: StyleMapConfig): Promise<MapLibreStyle> {
+class StylerWorker {
+  async generateStyles(data: TableData, config: StylerConfig): Promise<MapLibreStyle> {
     // Offload CPU-intensive operations to Web Worker
     return this.worker.postMessage({ type: 'GENERATE_STYLES', data, config });
   }
@@ -395,8 +395,8 @@ interface DataSourcePlugin {
 }
 
 // Register custom data source
-styleMapPlugin.registerDataSource(new ExcelDataSource());
-styleMapPlugin.registerDataSource(new JSONDataSource());
+stylerPlugin.registerDataSource(new ExcelDataSource());
+stylerPlugin.registerDataSource(new JSONDataSource());
 ```
 
 ### Custom Style Algorithms
@@ -408,8 +408,8 @@ interface StyleAlgorithm {
 }
 
 // Register custom algorithm
-styleMapPlugin.registerStyleAlgorithm(new HeatmapAlgorithm());
-styleMapPlugin.registerStyleAlgorithm(new ClusteringAlgorithm());
+stylerPlugin.registerStyleAlgorithm(new HeatmapAlgorithm());
+stylerPlugin.registerStyleAlgorithm(new ClusteringAlgorithm());
 ```
 
 ---

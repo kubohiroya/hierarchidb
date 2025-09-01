@@ -8,7 +8,7 @@
 
 **前提知識**: TypeScript型システム、Dexie.jsの基本的な使用方法、ブランデッド型（Branded Types）の概念、Observer パターン、データベースのインデックス設計
 
-**読むタイミング**: 新規プラグイン開発前の必読事項として、または既存データ構造を理解・拡張する際に参照してください。特にBaseMap、StyleMap、Shape、Spreadsheet、Projectプラグインの実装を理解したい場合や、新たなエンティティ関係の設計時には必須の資料です。
+**読むタイミング**: 新規プラグイン開発前の必読事項として、または既存データ構造を理解・拡張する際に参照してください。特にBaseMap、Styler、Shape、Spreadsheet、Projectプラグインの実装を理解したい場合や、新たなエンティティ関係の設計時には必須の資料です。
 
 本章で解説する6分類システム（Persistent/Ephemeral × Peer/Group/Relational）は、すべてのプラグインのデータ設計の基盤となっており、適切な分類選択により自動ライフサイクル管理とデータベース最適化の恩恵を受けることができます。
 
@@ -587,13 +587,13 @@ export class IntegratedLifecycleManager {
 ### 6.7.1 プラグイン定義例
 
 ```typescript
-// StyleMapプラグインの定義例
-export const StyleMapPluginDefinition: PluginDefinition = {
-  nodeType: 'stylemap-plugin',
+// Stylerプラグインの定義例
+export const StylerPluginDefinition: PluginDefinition = {
+  nodeType: 'styler-plugin',
   entities: [
     {
       classification: 'persistent-peer',
-      storeName: 'styleMapEntities',
+      storeName: 'stylerEntities',
       schema: '&nodeId, name, isActive, tableMetadataId',
       relationship: {
         type: 'peer',

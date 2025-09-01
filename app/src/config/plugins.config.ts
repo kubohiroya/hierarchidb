@@ -48,7 +48,7 @@ export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
     'folder',      // Basic folder-plugin functionality
     'basemap',     // Map layers
     'shape',       // Geographic shapes
-    'stylemap',    // Styling
+    'styler',    // Styling
     'spreadsheet', // Tabular data
   ],
   
@@ -127,7 +127,7 @@ export const PLUGIN_FEATURES = {
   enableDataProcessing: true,  // Enables spreadsheet-plugin plugin
   
   // Styling features
-  enableStyling: true,  // Enables stylemap-plugin plugin
+  enableStyling: true,  // Enables styler-plugin plugin
   
   // Experimental features
   enableExperimental: false,  // Enables experimental plugins
@@ -150,7 +150,7 @@ export function getRequestedPlugins(): NodeType[] {
   }
   
   if (!PLUGIN_FEATURES.enableStyling) {
-    requested = requested.filter(p => p !== 'stylemap');
+    requested = requested.filter(p => p !== 'styler');
   }
   
   // Remove excluded plugins

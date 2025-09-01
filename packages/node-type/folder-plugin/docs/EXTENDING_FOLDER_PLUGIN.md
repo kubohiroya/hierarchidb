@@ -15,7 +15,7 @@
 
 ### 適用例
 
-- **StyleMapプラグイン**: CSVファイルのアップロード、カラム選択、カラーマッピング機能を追加
+- **Stylerプラグイン**: CSVファイルのアップロード、カラム選択、カラーマッピング機能を追加
 - **Projectプラグイン**: プロジェクト設定、メンバー管理機能を追加
 - **Documentプラグイン**: リッチテキスト編集、バージョン管理機能を追加
 
@@ -24,7 +24,7 @@
 ```typescript
 // 継承関係の例
 FolderPlugin (基底)
-  ├── StyleMapPlugin (拡張: ファイルアップロード + データ可視化)
+  ├── StylerPlugin (拡張: ファイルアップロード + データ可視化)
   ├── ProjectPlugin (拡張: プロジェクト管理機能)
   └── DocumentPlugin (拡張: ドキュメント編集機能)
 ```
@@ -34,7 +34,7 @@ FolderPlugin (基底)
 ### Step 1: プラグイン拡張定義の作成
 
 ```typescript
-// packages/node-type-plugin/stylemap-plugin/src/extension/definition.ts
+// packages/node-type-plugin/styler-plugin/src/extension/definition.ts
 
 import type { 
   ExtendableNodeTypeDefinition,
@@ -44,17 +44,17 @@ import { FileUploadStep } from '../steps/FileUploadStep';
 import { ColumnSelectionStep } from '../steps/ColumnSelectionStep';
 import { ColorMappingStep } from '../steps/ColorMappingStep';
 
-export const StyleMapExtension: ExtendableNodeTypeDefinition<
+export const StylerExtension: ExtendableNodeTypeDefinition<
   FolderEntity,
-  StyleMapEntity,
-  StyleMapWorkingCopy
+  StylerEntity,
+  StylerWorkingCopy
 > = {
   // 1. 基底プラグインを指定
   extends: 'folder-plugin',
   
   // 2. 独自のメタデータ
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   displayName: 'Style Map',
   icon: 'map',
   color: '#4CAF50',
@@ -143,33 +143,33 @@ export const StyleMapExtension: ExtendableNodeTypeDefinition<
 ### Step 2: 拡張エンティティの定義
 
 ```typescript
-// packages/node-type-plugin/stylemap-plugin/src/entities/StyleMapEntity.ts
+// packages/node-type-plugin/styler-plugin/src/entities/StylerEntity.ts
 
 import type { FolderEntity } from '@hierarchidb/plugin-folder-plugin';
 
 // FolderEntityを拡張
-export interface StyleMapEntity extends FolderEntity {
+export interface StylerEntity extends FolderEntity {
   // Folderから継承されるフィールド:
   // - id, nodeId, name, description, settings, metadata
   // - createdAt, updatedAt, version
   
-  // StyleMap固有のフィールド:
+  // Styler固有のフィールド:
   keyColumn: string;
   valueColumn: string;
-  colorRules: StyleMapColorRule[];
-  defaultStyle: StyleMapStyle;
+  colorRules: StylerColorRule[];
+  defaultStyle: StylerStyle;
   fileHash?: string;
   cacheKey?: string;
 }
 
-export interface StyleMapColorRule {
+export interface StylerColorRule {
   column: string;
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan';
   value: any;
-  style: StyleMapStyle;
+  style: StylerStyle;
 }
 
-export interface StyleMapStyle {
+export interface StylerStyle {
   backgroundColor?: string;
   textColor?: string;
   borderColor?: string;
@@ -180,25 +180,25 @@ export interface StyleMapStyle {
 ### Step 3: 拡張ハンドラーの実装
 
 ```typescript
-// packages/node-type-plugin/stylemap-plugin/src/handlers/StyleMapEntityHandler.ts
+// packages/node-type-plugin/styler-plugin/src/handlers/StylerEntityHandler.ts
 
 import { FolderEntityHandler } from '@hierarchidb/plugin-folder-plugin';
 import type { BaseEntityExtension } from '@hierarchidb/common-core/types/plugin-extension';
 
-export class StyleMapEntityHandler 
+export class StylerEntityHandler 
   extends FolderEntityHandler 
-  implements BaseEntityExtension<FolderEntity, StyleMapEntity> {
+  implements BaseEntityExtension<FolderEntity, StylerEntity> {
   
   // FolderEntityHandlerから継承される基本CRUD操作:
   // - createEntity, getEntity, updateEntity, deleteEntity
   // - createWorkingCopy, commitWorkingCopy, discardWorkingCopy
   
-  // StyleMap固有の拡張データ取得
-  async getExtendedData(nodeId: NodeId): Promise<Partial<StyleMapEntity>> {
+  // Styler固有の拡張データ取得
+  async getExtendedData(nodeId: NodeId): Promise<Partial<StylerEntity>> {
     const entity = await this.getEntity(nodeId);
     if (!entity) return {};
     
-    // StyleMap固有のデータを取得
+    // Styler固有のデータを取得
     return {
       keyColumn: entity.keyColumn,
       valueColumn: entity.valueColumn,
@@ -208,10 +208,10 @@ export class StyleMapEntityHandler
     };
   }
   
-  // StyleMap固有の拡張データ保存
+  // Styler固有の拡張データ保存
   async saveExtendedData(
     nodeId: NodeId, 
-    data: Partial<StyleMapEntity>
+    data: Partial<StylerEntity>
   ): Promise<void> {
     // 基底のupdateEntityを使用して拡張データも保存
     await this.updateEntity(nodeId, {
@@ -225,7 +225,7 @@ export class StyleMapEntityHandler
     }
   }
   
-  // StyleMap固有のメソッド
+  // Styler固有のメソッド
   private async updateCache(nodeId: NodeId, fileHash: string): Promise<void> {
     // キャッシュ更新ロジック
   }
@@ -249,7 +249,7 @@ export class StyleMapEntityHandler
 ### Step 4: ステップコンポーネントの実装
 
 ```typescript
-// packages/node-type-plugin/stylemap-plugin/src/steps/FileUploadStep.tsx
+// packages/node-type-plugin/styler-plugin/src/steps/FileUploadStep.tsx
 
 import React, { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
@@ -350,17 +350,17 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 ### Step 5: プラグインの登録
 
 ```typescript
-// packages/node-type-plugin/stylemap-plugin/src/index.ts
+// packages/node-type-plugin/styler-plugin/src/index.ts
 
 import { PluginExtensionRegistry } from '@hierarchidb/runtime-plugin-base';
-import { StyleMapExtension } from './extension/definition';
-import { StyleMapEntityHandler } from './handlers/StyleMapEntityHandler';
+import { StylerExtension } from './extension/definition';
+import { StylerEntityHandler } from './handlers/StylerEntityHandler';
 
 // プラグイン拡張を登録
-export function registerStyleMapPlugin(): void {
+export function registerStylerPlugin(): void {
   PluginExtensionRegistry.register({
-    extension: StyleMapExtension,
-    handler: new StyleMapEntityHandler(),
+    extension: StylerExtension,
+    handler: new StylerEntityHandler(),
     database: {
       // FolderのDBスキーマを拡張
       extends: 'folders',
@@ -497,7 +497,7 @@ database: {
 
 完全な実装例は以下を参照：
 
-- [StyleMapプラグイン](../../../stylemap) - CSV/TSVファイルの可視化
+- [Stylerプラグイン](../../../styler) - CSV/TSVファイルの可視化
 - [Projectプラグイン](../../../project) - プロジェクト管理機能
 - [Shapeプラグイン](../../../shape) - 図形データ管理
 

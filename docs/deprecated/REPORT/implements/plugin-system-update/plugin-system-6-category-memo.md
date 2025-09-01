@@ -41,7 +41,7 @@
 
 5. **統合テスト**
    - BaseMapプラグインの完全ライフサイクル
-   - StyleMap複合エンティティ管理
+   - Styler複合エンティティ管理
 
 ### テストコード
 
@@ -135,7 +135,7 @@ Test Files  1 passed (1)
 - ✅ WorkingCopy削除時のEphemeralデータ自動削除
 - ✅ 期限切れEphemeralEntityの自動削除
 - ✅ BaseMapプラグインの完全ライフサイクル
-- ✅ StyleMap複合エンティティ管理
+- ✅ Styler複合エンティティ管理
 
 ### 課題・改善点
 
@@ -220,5 +220,5 @@ Refactored版は以下を実現：
 
 **次のステップ**: 
 - basemapプラグインの6分類対応実装
-- stylemapプラグインの6分類対応実装
+- stylerプラグインの6分類対応実装
 - Dexieとの統合実装

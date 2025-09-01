@@ -615,9 +615,9 @@ export class WorkerAPIImpl implements WorkerAPI {
 
         // EphemeralDBにWorking Copyを作成
         await this.ephemeralDB.workingCopies.add({
-          id: workingCopyId,
+          id: workingCopyId as any,
           nodeType: nodeType as NodeType,
-          parentNodeId: (parentNodeId || null) as any,
+          parentId: (parentNodeId || null) as any,
           data: {},
           metadata: {
             createdAt: new Date(),
@@ -625,7 +625,7 @@ export class WorkerAPIImpl implements WorkerAPI {
             currentStep: 0,
             validationState: {},
           },
-        });
+        } as any);
 
         return workingCopyId;
       },

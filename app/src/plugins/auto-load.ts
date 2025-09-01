@@ -28,8 +28,8 @@ const PLUGIN_MANIFESTS = {
     dependencies: ['folder'],
     version: '1.0.0'
   },
-  'stylemap': {
-    nodeType: 'stylemap' as NodeType,
+  'styler': {
+    nodeType: 'styler' as NodeType,
     dependencies: ['folder'],
     version: '1.0.0'
   },
@@ -71,8 +71,8 @@ export async function autoLoadPlugins(): Promise<PluginLoadResult> {
         case 'shape':
           await import('@hierarchidb/node-type-shape-plugin');
           break;
-        case 'stylemap':
-          await import('@hierarchidb/node-type-stylemap-plugin');
+        case 'styler':
+          await import('@hierarchidb/node-type-styler-plugin');
           break;
         case 'spreadsheet':
           // Note: spreadsheet-plugin plugin is not in package.json dependencies yet

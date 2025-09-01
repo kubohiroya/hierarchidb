@@ -4,7 +4,7 @@
 
 このビルドシステム統一戦略では、HierarchiDBプロジェクトにおけるビルドツールの統一とビルドプロセスの最適化について説明します。本ドキュメントは以下のような方を対象としています：
 
-**読むべき人**: ビルドエンジニア、DevOps担当者、開発チームリーダー、インフラ担当者、CI/CD最適化を行う方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインのビルド設定を担当する開発者
+**読むべき人**: ビルドエンジニア、DevOps担当者、開発チームリーダー、インフラ担当者、CI/CD最適化を行う方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインのビルド設定を担当する開発者
 
 **前提知識**: TypeScript、Webpack、Vite、tsup、pnpm、モノレポ管理、CI/CD、Node.js ビルドツール、パッケージ管理
 
@@ -103,7 +103,7 @@ export default defineConfig({
 - packages/plugins/folder
 - packages/plugins/basemap
 - packages/plugins/shapes
-- packages/plugins/stylemap
+- packages/plugins/styler
 
 ### 既にtsup使用中 (設定の統一のみ)
 - packages/ui-treeconsole-*

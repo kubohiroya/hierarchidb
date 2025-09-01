@@ -97,20 +97,20 @@ interface SpreadsheetRefEntity extends PersistentPeerEntity {
 }
 ```
 
-### 4. StyleMapEntity extends SpreadsheetRefEntity
+### 4. StylerEntity extends SpreadsheetRefEntity
 
 ```typescript
 /**
- * StyleMap用の拡張エンティティ
- * SpreadsheetRefEntityを継承して、StyleMap固有の設定を追加
+ * Styler用の拡張エンティティ
+ * SpreadsheetRefEntityを継承して、Styler固有の設定を追加
  * 名前や説明はTreeNodeが持つ
  */
-interface StyleMapEntity extends SpreadsheetRefEntity {
+interface StylerEntity extends SpreadsheetRefEntity {
   // SpreadsheetRefEntityから継承
   // - nodeId: NodeId
   // - metadataId: SpreadsheetMetadataId
   
-  // === StyleMap固有の永続化設定 ===
+  // === Styler固有の永続化設定 ===
   
   // フィルタ設定
   filterRules: FilterRule[];             // 行フィルタルール
@@ -193,7 +193,7 @@ const schema = {
   
   // PersistentPeerEntity（ノード紐付け）
   spreadsheet_refs: '&nodeId, metadataId, updatedAt',
-  stylemap_entities: '&nodeId, metadataId, keyColumn, updatedAt',
+  styler_entities: '&nodeId, metadataId, keyColumn, updatedAt',
   
   // EphemeralRelationalEntity（一時キャッシュ）
   filter_cache: 'id, metadataId, [metadataId+filterHash], expiresAt',
@@ -260,28 +260,28 @@ class SpreadsheetImporter {
 }
 ```
 
-### StyleMap作成
+### Styler作成
 
 ```typescript
-class StyleMapCreator {
+class StylerCreator {
   async create(
     nodeId: NodeId,
     spreadsheetNodeId: NodeId,
-    config: StyleMapConfig
+    config: StylerConfig
   ): Promise<void> {
     // 1. SpreadsheetRefEntityを取得
     const spreadsheetRef = await this.getSpreadsheetRef(spreadsheetNodeId);
     if (!spreadsheetRef) throw new Error('Spreadsheet not found');
     
-    // 2. StyleMapEntityを作成（SpreadsheetRefEntityを拡張）
-    const styleMapEntity: StyleMapEntity = {
+    // 2. StylerEntityを作成（SpreadsheetRefEntityを拡張）
+    const stylerEntity: StylerEntity = {
       // 基本プロパティ
       nodeId,
       metadataId: spreadsheetRef.metadataId,  // 同じSpreadsheetを参照
       name: config.name,
       description: config.description,
       
-      // StyleMap固有プロパティ
+      // Styler固有プロパティ
       filterRules: config.filterRules || [],
       filterEnabled: true,
       keyColumn: config.keyColumn,
@@ -304,7 +304,7 @@ class StyleMapCreator {
       version: 1
     };
     
-    await this.saveStyleMapEntity(styleMapEntity);
+    await this.saveStylerEntity(stylerEntity);
     
     // 3. リファレンスカウントを更新（同じSpreadsheetを参照）
     await this.incrementReferenceCount(spreadsheetRef.metadataId, nodeId);
@@ -334,7 +334,7 @@ class StyleMapCreator {
 
 3. **拡張はPeerEntityで**
    ```typescript
-   interface StyleMapEntity extends SpreadsheetRefEntity {
+   interface StylerEntity extends SpreadsheetRefEntity {
      // SpreadsheetRefEntityを継承
      filterRules: FilterRule[];   // ✅ 拡張プロパティ
    }
@@ -353,7 +353,7 @@ class StyleMapCreator {
 2. **不適切な継承**
    ```typescript
    // ❌ これも間違い
-   interface StyleMapEntity extends SpreadsheetMetadata {
+   interface StylerEntity extends SpreadsheetMetadata {
      // RelationalEntityを直接継承はNG
    }
    ```
@@ -362,6 +362,6 @@ class StyleMapCreator {
 
 - **SpreadsheetMetadata** = データ本体（nodeIdなし）
 - **SpreadsheetRefEntity** = ノード紐付け（nodeIdあり）
-- **StyleMapEntity** = 拡張設定（SpreadsheetRefEntityを継承）
+- **StylerEntity** = 拡張設定（SpreadsheetRefEntityを継承）
 
 この設計により、データの共有と独立性を保ちながら、適切なライフサイクル管理を実現します。

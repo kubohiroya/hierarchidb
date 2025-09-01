@@ -73,19 +73,19 @@ interface SpreadsheetRefEntity {
 }
 ```
 
-#### B. plugin-stylemap（拡張プラグイン）
+#### B. plugin-styler（拡張プラグイン）
 
 ```typescript
-export const StyleMapMetadata: PluginMetadata = {
-  id: 'com.hierarchidb.stylemap-plugin',
+export const StylerMetadata: PluginMetadata = {
+  id: 'com.hierarchidb.styler-plugin',
   name: 'Style Map',
-  nodeType: 'stylemap-plugin',
+  nodeType: 'styler-plugin',
   version: '1.0.0',
   description: 'Map visualization with data-driven styling',
   dependencies: ['com.hierarchidb.spreadsheet-plugin'],
   
   entityHints: {
-    // StyleMapEntity.spreadsheetMetadataId でRelationalEntityを参照
+    // StylerEntity.spreadsheetMetadataId でRelationalEntityを参照
     relRefField: 'spreadsheetMetadataId'
     // nodeRefField: 'nodeId' (デフォルト)
     // refCountFieldは不要 - 自然な参照カウント
@@ -93,13 +93,13 @@ export const StyleMapMetadata: PluginMetadata = {
 };
 
 // PeerEntityの構造例
-interface StyleMapEntity {
+interface StylerEntity {
   nodeId: NodeId;                    // nodeRefField (デフォルト)
   spreadsheetMetadataId: string;     // relRefField (カスタマイズ)
   // refCountフィールドは不要 - PeerEntityの数が自然に参照カウント
   keyColumn: string;
-  colorRules: StyleMapColorRule[];
-  defaultStyle: StyleMapStyle;
+  colorRules: StylerColorRule[];
+  defaultStyle: StylerStyle;
   createdAt: number;
   updatedAt: number;
   version: number;

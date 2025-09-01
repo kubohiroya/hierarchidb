@@ -1,8 +1,8 @@
-# plugin-stylemap 受け入れ基準
+# plugin-styler 受け入れ基準
 
 ## 概要
 
-このドキュメントは plugin-stylemap 機能の受け入れ基準とテスト項目を記載します。eria-cartograph の既存実装を詳細に分析し、hierarchidb フレームワークでの要件に基づいて作成されています。
+このドキュメントは plugin-styler 機能の受け入れ基準とテスト項目を記載します。eria-cartograph の既存実装を詳細に分析し、hierarchidb フレームワークでの要件に基づいて作成されています。
 
 ## 機能テスト基準
 
@@ -10,11 +10,11 @@
 
 **Given（前提条件）**:
 - hierarchidb プロジェクトが作成済み
-- stylemap プラグインが有効化済み
+- styler プラグインが有効化済み
 - 有効なCSV/TSVファイルが準備済み
 
 **When（実行条件）**:
-- ユーザーがstylemap作成ダイアログを開く
+- ユーザーがstyler作成ダイアログを開く
 - ファイル選択エリアにCSV/TSVファイルをドラッグ&ドロップまたは選択
 - ファイルアップロード処理を実行
 
@@ -45,7 +45,7 @@
 - マッピング設定を保存
 
 **Then（期待結果）**:
-- StyleMapEntity の keyColumn/valueColumn が更新される
+- StylerEntity の keyColumn/valueColumn が更新される
 - 選択されたカラムペアでのデータマッピング処理が実行される
 - プレビューでマッピング結果が確認可能
 
@@ -61,7 +61,7 @@
 
 **Given（前提条件）**:
 - キー・値カラムが選択済み
-- StyleMapConfiguration コンポーネントが表示済み
+- StylerConfiguration コンポーネントが表示済み
 - 数値データの最小・最大値が算出済み
 
 **When（実行条件）**:
@@ -71,7 +71,7 @@
 - 対象MapLibreスタイルプロパティを選択
 
 **Then（期待結果）**:
-- StyleMapConfig オブジェクトが正常に生成される
+- StylerConfig オブジェクトが正常に生成される
 - リアルタイムプレビューが更新される
 - 設定内容が作業コピーに保存される
 
@@ -85,7 +85,7 @@
 - [ ] 🟢 境界値: 最小値＝最大値の場合の処理
 - [ ] 🟡 境界値: 極端な数値範囲での色計算精度
 
-### REQ-004: StyleMapEntity としての永続化 の受け入れ基準
+### REQ-004: StylerEntity としての永続化 の受け入れ基準
 
 **Given（前提条件）**:
 - 全ての設定項目が有効な値で入力済み
@@ -93,12 +93,12 @@
 - ユーザーが保存操作を実行
 
 **When（実行条件）**:
-- StyleMapDialog でSubmitボタンをクリック
+- StylerDialog でSubmitボタンをクリック
 - 保存確認ダイアログで承認
 - Worker層での永続化処理実行
 
 **Then（期待結果）**:
-- StyleMapEntity がCoreDBに保存される
+- StylerEntity がCoreDBに保存される
 - TableMetadataEntity とRowEntity が関連付けて保存される
 - TreeNode として階層構造に追加される
 - 作業コピーがEphemeralDBから削除される
@@ -114,7 +114,7 @@
 ### REQ-005: MapLibre GL JS 対応スタイルプロパティ生成 の受け入れ基準
 
 **Given（前提条件）**:
-- StyleMapConfig が設定済み
+- StylerConfig が設定済み
 - 有効なキー・値データが存在
 - MapLibre GL JS v3.x 互換環境
 
@@ -139,7 +139,7 @@
 ### REQ-006: ファイルコンテンツのSHA3ハッシュベースキャッシュ管理 の受け入れ基準
 
 **Given（前提条件）**:
-- StyleMapFileCacheService が初期化済み
+- StylerFileCacheService が初期化済み
 - Cache API が利用可能な環境
 - 複数のファイルアップロード可能状態
 
@@ -340,7 +340,7 @@
 ### データベース整合性テスト
 
 - [ ] 🟢 データ正規化: 重複ファイルでの単一TableMetadataEntity 共有
-- [ ] 🟢 外部キー制約: StyleMapEntity と TableMetadataEntity の適切な関連
+- [ ] 🟢 外部キー制約: StylerEntity と TableMetadataEntity の適切な関連
 - [ ] 🟢 参照カウント: TableMetadataEntity 削除時の関連データ整理
 - [ ] 🟡 トランザクション整合性: 複数操作での ACID 特性保持
 
@@ -428,17 +428,17 @@
 ### ユニットテスト（Jest）
 
 ```typescript
-// 🟢 StyleMapEntity の保存・取得テスト
-describe('StyleMapDB', () => {
-  test('should save and retrieve StyleMapEntity correctly', async () => {
-    // Given: Valid StyleMapEntity
+// 🟢 StylerEntity の保存・取得テスト
+describe('StylerDB', () => {
+  test('should save and retrieve StylerEntity correctly', async () => {
+    // Given: Valid StylerEntity
     // When: Save to database
     // Then: Retrieve same entity with all properties intact
   });
 });
 
 // 🟢 カラーマッピング計算テスト
-describe('StyleMapConfiguration', () => {
+describe('StylerConfiguration', () => {
   test('should calculate correct color values for linear algorithm', async () => {
     // Given: Linear algorithm with HSV color space
     // When: Calculate color for specific value
@@ -451,9 +451,9 @@ describe('StyleMapConfiguration', () => {
 
 ```typescript
 // 🟢 完全なスタイルマップ作成フロー
-test('Complete stylemap-plugin creation flow', async ({ page }) => {
+test('Complete styler-plugin creation flow', async ({ page }) => {
   // Given: Project page is open
-  // When: Create stylemap-plugin through all steps
+  // When: Create styler-plugin through all steps
   // Then: Stylemap is saved and displayed correctly
 });
 
@@ -478,4 +478,4 @@ test('Large file processing performance', async ({ page }) => {
 **🟡 信頼性レベル中**: 一般的なベストプラクティスに基づく妥当な推測
 **🔴 信頼性レベル低**: 仕様が不明確で推測に依存する項目
 
-本受け入れ基準は、eria-cartograph プロジェクトの詳細な実装分析に基づいて作成されており、hierarchidb フレームワークでの plugin-stylemap 実装において、機能的品質・非機能的品質の両面で高い信頼性を確保することを目的としています。
+本受け入れ基準は、eria-cartograph プロジェクトの詳細な実装分析に基づいて作成されており、hierarchidb フレームワークでの plugin-styler 実装において、機能的品質・非機能的品質の両面で高い信頼性を確保することを目的としています。

@@ -30,7 +30,7 @@
     "@hierarchidb/basemap-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
-    "@hierarchidb/stylemap-plugin": "workspace:*",
+    "@hierarchidb/styler-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-landingpage": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-ui-tour": "workspace:*",

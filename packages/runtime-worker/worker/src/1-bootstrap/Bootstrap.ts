@@ -68,16 +68,19 @@ export class Bootstrap {
     
     // 2. プラグインレジストリをシングルトンとして初期化
     console.log('[Bootstrap] Initializing plugin registry...');
-    const pluginRegistry = await SingletonMixin.getSingleton(
+    const pluginRepository = await SingletonMixin.getSingleton(
       'PluginRepository',
       () => new PluginRepository()
     );
+    
+    // PluginRegistryFacadeでラップ
+    const pluginRegistry = new PluginRegistryFacade(pluginRepository);
     
     // 3. プラグイン管理サービスをシングルトンとして初期化
     console.log('[Bootstrap] Initializing plugin management...');
     const pluginManagement = await SingletonMixin.getSingleton(
       PluginManagementService.name,
-      () => new PluginManagementService(pluginRegistry)
+      () => new PluginManagementService(pluginRepository)
     );
     
     // 3. ライフサイクルマネージャをシングルトンとして初期化

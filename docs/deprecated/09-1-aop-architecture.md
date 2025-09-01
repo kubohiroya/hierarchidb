@@ -40,10 +40,10 @@ workerでのAPIサービスを、アスペクト志向でのクロスカット�
 #### 9.1.2.1 ツリー分類とプラグイン配置
 
 **Resourcesツリー専用プラグイン**:
-- basemap, stylemap, shape, location, route, propertyresolver
+- basemap, styler, shape, location, route, propertyresolver
 - 地図表示に必要な各種リソースデータを管理
 - 各プラグインは独立してリソースを提供
-- 命名規則: プラグイン名称（NodeType 識別子を含む）はすべて単数形で統一する（例: basemap, stylemap, shape, location, route, propertyresolver, project）。
+- 命名規則: プラグイン名称（NodeType 識別子を含む）はすべて単数形で統一する（例: basemap, styler, shape, location, route, propertyresolver, project）。
 
 **Projectsツリー専用プラグイン**:
 - project

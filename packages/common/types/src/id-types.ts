@@ -15,6 +15,6 @@ export type TreeId = string & { readonly __brand: 'TreeId' };
 export type WorkingCopyId = NodeId;
 
 /**
- * Type identifier for tree nodes (e.g., 'folder-plugin', 'document', 'stylemap-plugin', etc.)
+ * Type identifier for tree nodes (e.g., 'folder-plugin', 'document', 'styler-plugin', etc.)
  */
 export type NodeType = string & { readonly __brand: 'NodeType' };

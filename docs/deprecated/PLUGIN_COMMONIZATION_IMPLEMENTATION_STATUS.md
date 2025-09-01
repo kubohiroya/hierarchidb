@@ -130,7 +130,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 ### 移行計画
 1. **Week 1**: Folder/BaseMapプラグインの移行
 2. **Week 2**: Shape/Location/Routeプラグインの移行
-3. **Week 3**: Spreadsheet/StyleMapプラグインの移行
+3. **Week 3**: Spreadsheet/Stylerプラグインの移行
 4. **Week 4**: PropertyResolver/Projectプラグインの移行
 
 ## 🎯 達成された目標
@@ -143,7 +143,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 - [x] 型安全なID生成ユーティリティ
 
 ### ⏳ 残作業
-- [ ] CSVProcessor実装（Spreadsheet/StyleMap用）
+- [ ] CSVProcessor実装（Spreadsheet/Styler用）
 - [ ] BasePluginDatabase実装（Dexie共通操作）
 - [ ] 各プラグインの移行実装
 - [ ] 統合テストの作成

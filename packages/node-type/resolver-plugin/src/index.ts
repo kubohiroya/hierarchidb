@@ -13,7 +13,7 @@ export type {
   PropertyInfo,
   MappingValidationResult,
   MappingPreviewResult,
-  StyleMapIntegration,
+  StylerIntegration,
 } from './types';
 
 // Export handlers

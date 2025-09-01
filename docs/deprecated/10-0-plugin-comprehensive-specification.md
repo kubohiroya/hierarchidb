@@ -2,7 +2,7 @@
 
 ## 概要
 
-HierarchiDBのプラグインシステムは、2×3のエンティティ分類システム（Persistent/Ephemeral × Peer/Group/Relation）を基盤として、Worker層での技術的最適化とUI層でのUX統一を両立する分離アーキテクチャを実現する。既存のbasemap、stylemap実装を活用しながら、shapesプラグインの高度な要件に対応する包括的なプラグインフレームワークを提供する。
+HierarchiDBのプラグインシステムは、2×3のエンティティ分類システム（Persistent/Ephemeral × Peer/Group/Relation）を基盤として、Worker層での技術的最適化とUI層でのUX統一を両立する分離アーキテクチャを実現する。既存のbasemap、styler実装を活用しながら、shapesプラグインの高度な要件に対応する包括的なプラグインフレームワークを提供する。
 
 ## 1. アーキテクチャ全体図
 
@@ -12,7 +12,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
 ├─────────────────────────────────────────────────────────────────┤
 │                      UI Layer (統一プラグイン)                    │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐  │
-│  │   Folder     │ │   BaseMap    │ │  StyleMap    │ │  Shapes  │  │
+│  │   Folder     │ │   BaseMap    │ │  Styler    │ │  Shapes  │  │
 │  │  UI Plugin   │ │  UI Plugin   │ │  UI Plugin   │ │UI Plugin │  │
 │  │              │ │              │ │              │ │          │  │
 │  │• 基本CRUD    │ │• 地図エディター │ │• 6ステップ     │ │• 4段階    │  │
@@ -30,7 +30,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
 │  │                │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │• treeNodeId    │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• parentId      │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• treeNodeType  │    │ │StyleMap     │WorkingCopyTypes  │ Peer  │ │  │
+│  │• treeNodeType  │    │ │Styler     │WorkingCopyTypes  │ Peer  │ │  │
 │  │• name, etc     │    │ │BaseMap      │ViewState    │       │ │  │
 │  │                │    │ ├─────────────┼─────────────┤       │ │  │
 │  │• 既存システム   │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -43,7 +43,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
 │  ┌─────────────────────────────────────────────────────────────┐  │
 │  │              Plugin Definition System                        │  │
 │  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │  │
-│  │ │   BaseMap    │ │  StyleMap    │ │   Shapes     │        │  │
+│  │ │   BaseMap    │ │  Styler    │ │   Shapes     │        │  │
 │  │ │    Plugin    │ │    Plugin    │ │    Plugin    │        │  │
 │  │ │              │ │              │ │              │        │  │
 │  │ │• PeerEntity  │ │• PeerEntity  │ │• GroupEntity │        │  │
@@ -65,7 +65,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
                     │ Peer        │ Group       │ Relation
 ────────────────────┼─────────────┼─────────────┼─────────────
 Persistent          │ 設定データ   │ 成果物      │ 共有リソース
-(CoreDB)            │ • StyleMap  │ • VectorTiles│ • TableMetadata
+(CoreDB)            │ • Styler  │ • VectorTiles│ • TableMetadata
                     │ • BaseMap   │ • ShapeResult│ • SharedResource
                     │ • Settings  │ • BatchOutput│ • CacheIndex
 ────────────────────┼─────────────┼─────────────┼─────────────
@@ -110,10 +110,10 @@ const BaseMapEntityClassification = {
 } as const;
 ```
 
-#### StyleMapプラグイン（複合パターン）
+#### Stylerプラグイン（複合パターン）
 
 ```typescript
-export interface StyleMapEntity extends PeerEntity {
+export interface StylerEntity extends PeerEntity {
   // 主エンティティ（1:1関係）
   nodeId: TreeNodeId;
   name: string;
@@ -121,7 +121,7 @@ export interface StyleMapEntity extends PeerEntity {
   filename?: string;
   keyColumn?: string;
   valueColumns?: string[];
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   filterRules?: FilterRule[];
   
   // RelationalEntityへの参照
@@ -134,7 +134,7 @@ export interface StyleMapEntity extends PeerEntity {
 }
 
 export interface TableMetadataEntity extends RelationalEntity {
-  // N:N関係（複数のStyleMapから参照可能）
+  // N:N関係（複数のStylerから参照可能）
   id: string;
   filename: string;
   columns: string[];
@@ -152,10 +152,10 @@ export interface TableMetadataEntity extends RelationalEntity {
 }
 
 // エンティティ分類での位置づけ
-const StyleMapEntityClassification = {
+const StylerEntityClassification = {
   primary: {
     category: 'PersistentPeerEntity',
-    entityType: 'StyleMapEntity',
+    entityType: 'StylerEntity',
     relationship: '1:1',
     lifecycle: 'TreeNodeと同期'
   },
@@ -706,17 +706,17 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 };
 ```
 
-#### StyleMapUIPlugin（複合エンティティパターン）
+#### StylerUIPlugin（複合エンティティパターン）
 
 ```typescript
-export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap-plugin',
+export const StylerUIPlugin: UIPluginDefinition = {
+  nodeType: 'styler-plugin',
   displayName: 'Style Map',
   
   entitySupport: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       uiFeatures: {
         supportsWorkingCopy: true,
         supportsVersioning: true,
@@ -750,13 +750,13 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
   
   components: {
     icon: StyleIcon,
-    multiStepDialog: StyleMapImporter, // 6ステップウィザード
-    editDialog: StyleMapEditDialog,
-    preview: StyleMapPreviewComponent
+    multiStepDialog: StylerImporter, // 6ステップウィザード
+    editDialog: StylerEditDialog,
+    preview: StylerPreviewComponent
   },
   
-  hooks: styleMapUIHooks,
-  menu: styleMapMenuConfig
+  hooks: stylerUIHooks,
+  menu: stylerMenuConfig
 };
 ```
 
@@ -832,15 +832,15 @@ export const ShapesUIPlugin: UIPluginDefinition = {
 
 ## 6. マルチステップ処理システム
 
-### 6.1 StyleMapの6ステップウィザード
+### 6.1 Stylerの6ステップウィザード
 
 ```typescript
-export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
+export const StylerMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   onComplete,
   onCancel
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<StyleMapFormData>({
+  const [formData, setFormData] = useState<StylerFormData>({
     // Step 1: 基本情報
     name: '',
     description: '',
@@ -859,7 +859,7 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
     keyValueMappings: [],
     
     // Step 5: カラー設定
-    styleMapConfig: getDefaultStyleMapConfig(),
+    stylerConfig: getDefaultStylerConfig(),
     
     // Step 6: プレビュー・確認
     // （他ステップのデータを統合）
@@ -878,8 +878,8 @@ export const StyleMapMultiStepDialog: React.FC<MultiStepDialogProps> = ({
   const handleBack = () => setActiveStep(prev => prev - 1);
   
   const handleComplete = async () => {
-    // StyleMapエンティティ作成
-    const entity = await workerAPI.createNode('stylemap-plugin', formData);
+    // Stylerエンティティ作成
+    const entity = await workerAPI.createNode('styler-plugin', formData);
     onComplete(entity);
   };
   
@@ -1255,8 +1255,8 @@ export class UnifiedDataAdapter {
   - WorkingCopy機能の強化
   - UI統一プラグイン化
 
-#### Week 7: StyleMapプラグイン複合エンティティ対応
-- [x] **StyleMapEntity + TableMetadataEntity設計**
+#### Week 7: Stylerプラグイン複合エンティティ対応
+- [x] **StylerEntity + TableMetadataEntity設計**
   - PeerEntity + RelationalEntity複合パターン
   - 6ステップウィザードの統一プラグイン化
   - 参照カウント管理の自動化
@@ -1302,7 +1302,7 @@ export class UnifiedDataAdapter {
 
 #### パフォーマンス
 - ✅ BaseMap: 地図表示 < 1秒
-- ✅ StyleMap: 6ステップ処理 < 30秒
+- ✅ Styler: 6ステップ処理 < 30秒
 - [ ] Shapes: バッチ処理の並列実行効率
 - [ ] メモリ使用量の最適化
 

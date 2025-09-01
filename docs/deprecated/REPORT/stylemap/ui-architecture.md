@@ -1,27 +1,27 @@
-# StyleMap Plugin UI Architecture
+# Styler Plugin UI Architecture
 
-This document describes the user interface architecture of the StyleMap Plugin, including React components, user workflows, and integration with HierarchiDB's UI system.
+This document describes the user interface architecture of the Styler Plugin, including React components, user workflows, and integration with HierarchiDB's UI system.
 
 ## UI Architecture Overview
 
-The StyleMap Plugin follows HierarchiDB's component-based architecture with separation between dialog components and view components:
+The Styler Plugin follows HierarchiDB's component-based architecture with separation between dialog components and view components:
 
 ```
-StyleMap UI Architecture
+Styler UI Architecture
 ├── Dialog Components (Creation/Editing)
-│   ├── StyleMapDialog (Main wizard)
+│   ├── StylerDialog (Main wizard)
 │   ├── Step Components (6-step workflow)
-│   └── StyleMapCreateDialog (Alternative)
+│   └── StylerCreateDialog (Alternative)
 ├── View Components (Display)
-│   ├── StyleMapView (Read-only display)
-│   ├── StyleMapPanel (Properties panel)
-│   └── StyleMapPreview (Preview generation)
+│   ├── StylerView (Read-only display)
+│   ├── StylerPanel (Properties panel)
+│   └── StylerPreview (Preview generation)
 ├── Editor Components (Inline editing)
-│   ├── StyleMapEditor (Main editor)
-│   ├── StyleMapForm (Form fields)
-│   └── StyleMapImport (Import functionality)
+│   ├── StylerEditor (Main editor)
+│   ├── StylerForm (Form fields)
+│   └── StylerImport (Import functionality)
 └── Utility Components
-    ├── StyleMapIcon (Node icon)
+    ├── StylerIcon (Node icon)
     └── Examples (Usage examples)
 ```
 
@@ -29,14 +29,14 @@ StyleMap UI Architecture
 
 ### 1. Dialog Components
 
-#### StyleMapDialog - Main Creation Wizard
-6-step wizard for comprehensive StyleMap creation:
+#### StylerDialog - Main Creation Wizard
+6-step wizard for comprehensive Styler creation:
 
 ```typescript
-interface StyleMapDialogProps {
+interface StylerDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (config: Partial<StyleMapEntity>) => void | Promise<void>;
+  onSubmit: (config: Partial<StylerEntity>) => void | Promise<void>;
   nodeId: NodeId;
   initialName?: string;
   initialDescription?: string;
@@ -144,8 +144,8 @@ interface Step4ColumnSelectionProps {
 
 ```typescript
 interface Step5ColorSettingsProps {
-  styleMapConfig: StyleMapConfig;
-  onStyleMapConfigChange: (config: StyleMapConfig) => void;
+  stylerConfig: StylerConfig;
+  onStylerConfigChange: (config: StylerConfig) => void;
   previewData?: TableData;
 }
 ```
@@ -158,7 +158,7 @@ interface Step5ColorSettingsProps {
 
 ```typescript
 interface Step6PreviewProps {
-  styleMapConfig: StyleMapConfig;
+  stylerConfig: StylerConfig;
   tableData: TableData;
   filterRules: FilterRule[];
   onGeneratePreview: () => Promise<PreviewResult>;
@@ -167,12 +167,12 @@ interface Step6PreviewProps {
 
 ### 2. View Components
 
-#### StyleMapView - Read-Only Display
-Main view component for displaying StyleMap information:
+#### StylerView - Read-Only Display
+Main view component for displaying Styler information:
 
 ```typescript
-interface StyleMapViewProps {
-  entity: StyleMapEntity;
+interface StylerViewProps {
+  entity: StylerEntity;
   tableMetadata?: TableMetadataEntity;
   showDetails?: boolean;
   compact?: boolean;
@@ -186,12 +186,12 @@ interface StyleMapViewProps {
 // - Export functionality
 ```
 
-#### StyleMapPanel - Properties Panel
-Side panel for displaying StyleMap properties:
+#### StylerPanel - Properties Panel
+Side panel for displaying Styler properties:
 
 ```typescript
-interface StyleMapPanelProps {
-  entity: StyleMapEntity;
+interface StylerPanelProps {
+  entity: StylerEntity;
   onEdit?: () => void;
   onDelete?: () => void;
   onExport?: (format: ExportFormat) => void;
@@ -204,12 +204,12 @@ interface StyleMapPanelProps {
 // - Statistics display
 ```
 
-#### StyleMapPreview - Preview Generation
+#### StylerPreview - Preview Generation
 Component for generating and displaying previews:
 
 ```typescript
-interface StyleMapPreviewProps {
-  styleMapConfig: StyleMapConfig;
+interface StylerPreviewProps {
+  stylerConfig: StylerConfig;
   tableData: TableData;
   width?: number;
   height?: number;
@@ -225,13 +225,13 @@ interface StyleMapPreviewProps {
 
 ### 3. Editor Components
 
-#### StyleMapEditor - Inline Editor
-In-place editing component for StyleMap properties:
+#### StylerEditor - Inline Editor
+In-place editing component for Styler properties:
 
 ```typescript
-interface StyleMapEditorProps {
-  entity: StyleMapEntity;
-  onSave: (updated: Partial<StyleMapEntity>) => Promise<void>;
+interface StylerEditorProps {
+  entity: StylerEntity;
+  onSave: (updated: Partial<StylerEntity>) => Promise<void>;
   onCancel: () => void;
   mode: 'edit' | 'create';
 }
@@ -243,13 +243,13 @@ interface StyleMapEditorProps {
 // - Validation feedback
 ```
 
-#### StyleMapForm - Form Fields
-Reusable form component for StyleMap data:
+#### StylerForm - Form Fields
+Reusable form component for Styler data:
 
 ```typescript
-interface StyleMapFormProps {
-  initialData?: Partial<StyleMapEntity>;
-  onSubmit: (data: StyleMapEntity) => void;
+interface StylerFormProps {
+  initialData?: Partial<StylerEntity>;
+  onSubmit: (data: StylerEntity) => void;
   onCancel: () => void;
   validation?: ValidationRules;
 }
@@ -261,11 +261,11 @@ interface StyleMapFormProps {
 // - Accessibility support
 ```
 
-#### StyleMapImport - Import Interface
+#### StylerImport - Import Interface
 Specialized component for data import:
 
 ```typescript
-interface StyleMapImportProps {
+interface StylerImportProps {
   onImportComplete: (result: ImportResult) => void;
   supportedFormats: FileFormat[];
   maxFileSize: number;
@@ -280,7 +280,7 @@ interface StyleMapImportProps {
 
 ## User Workflow Design
 
-### Primary Workflow - StyleMap Creation
+### Primary Workflow - Styler Creation
 
 ```
 1. [Basic Information]
@@ -316,12 +316,12 @@ interface StyleMapImportProps {
    ├── Generate final preview
    ├── Validate configuration
    ├── Display summary
-   └── Create StyleMap
+   └── Create Styler
 ```
 
 ### Secondary Workflows
 
-**Edit Existing StyleMap:**
+**Edit Existing Styler:**
 ```
 1. Load existing entity
 2. Open relevant step (or full wizard)
@@ -343,14 +343,14 @@ interface StyleMapImportProps {
 ### Component State Architecture
 
 ```typescript
-interface StyleMapUIState {
+interface StylerUIState {
   // Dialog state
   dialogOpen: boolean;
   currentStep: number;
   isLoading: boolean;
   
   // Form state
-  formData: Partial<StyleMapEntity>;
+  formData: Partial<StylerEntity>;
   validationErrors: ValidationErrors;
   isDirty: boolean;
   
@@ -395,8 +395,8 @@ useEffect(() => {
 **3. Error Boundary:**
 ```typescript
 // Wrap components in error boundaries
-<ErrorBoundary fallback={<StyleMapErrorDisplay />}>
-  <StyleMapDialog {...props} />
+<ErrorBoundary fallback={<StylerErrorDisplay />}>
+  <StylerDialog {...props} />
 </ErrorBoundary>
 ```
 
@@ -405,18 +405,18 @@ useEffect(() => {
 ### Plugin Registration
 
 ```typescript
-const styleMapUIPlugin: UIPlugin = {
-  nodeType: 'stylemap-plugin',
+const stylerUIPlugin: UIPlugin = {
+  nodeType: 'styler-plugin',
   components: {
-    dialog: () => import('./components/StyleMapDialog'),
-    view: () => import('./components/StyleMapView'),
-    panel: () => import('./components/StyleMapPanel'),
-    icon: () => import('./components/StyleMapIcon'),
+    dialog: () => import('./components/StylerDialog'),
+    view: () => import('./components/StylerView'),
+    panel: () => import('./components/StylerPanel'),
+    icon: () => import('./components/StylerIcon'),
   },
   routes: [
     {
-      path: '/stylemap-plugin/:nodeId',
-      component: () => import('./routes/StyleMapRoute'),
+      path: '/styler-plugin/:nodeId',
+      component: () => import('./routes/StylerRoute'),
     },
   ],
 };
@@ -426,7 +426,7 @@ const styleMapUIPlugin: UIPlugin = {
 
 ```typescript
 // Use HierarchiDB theme tokens
-const useStyleMapTheme = () => {
+const useStylerTheme = () => {
   const theme = useTheme();
   
   return {
@@ -489,11 +489,11 @@ const virtualizedTable = useVirtualization({
 
 ```typescript
 // Code splitting for large components
-const StyleMapDialog = lazy(() => import('./StyleMapDialog'));
-const StyleMapPreview = lazy(() => import('./StyleMapPreview'));
+const StylerDialog = lazy(() => import('./StylerDialog'));
+const StylerPreview = lazy(() => import('./StylerPreview'));
 
 // Preload critical components
-const preloadStyleMapDialog = () => import('./StyleMapDialog');
+const preloadStylerDialog = () => import('./StylerDialog');
 ```
 
 ### Data Loading

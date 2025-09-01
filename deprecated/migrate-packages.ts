@@ -146,10 +146,10 @@ const PACKAGE_MAPPINGS: PackageMapping[] = [
     newName: '@hierarchidb/20-plugin-basemap',
   },
   {
-    oldPath: 'packages/plugins/stylemap-plugin',
-    newPath: 'packages/20-plugin-stylemap-plugin',
-    oldName: '@hierarchidb/plugin-stylemap-plugin',
-    newName: '@hierarchidb/20-plugin-stylemap-plugin',
+    oldPath: 'packages/plugins/styler-plugin',
+    newPath: 'packages/20-plugin-styler-plugin',
+    oldName: '@hierarchidb/plugin-styler-plugin',
+    newName: '@hierarchidb/20-plugin-styler-plugin',
   },
   {
     oldPath: 'packages/plugins/import-export-plugin',

@@ -143,7 +143,7 @@ export interface ResourceReference extends GroupEntity {
 export type ResourceReferenceType = 
   | 'basemap'           // Reference to basemap node
   | 'shape'             // Reference to shape-plugin node
-  | 'stylemap'          // Reference to stylemap-plugin node
+  | 'styler'          // Reference to styler-plugin node
   | 'location'          // Reference to location node
   | 'route'             // Reference to route node
   | 'folder';           // Reference to folder-plugin (for batch operations)
@@ -371,7 +371,7 @@ interface AggregationStrategy {
   aggregateShapes(references: ResourceReference[]): Promise<VectorLayer[]>;
   
   // Style application
-  applyStyles(layers: Layer[], stylemaps: ResourceReference[]): Promise<StyledLayer[]>;
+  applyStyles(layers: Layer[], stylers: ResourceReference[]): Promise<StyledLayer[]>;
   
   // Point data aggregation
   aggregateLocations(references: ResourceReference[]): Promise<SymbolLayer[]>;

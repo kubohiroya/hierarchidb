@@ -20,7 +20,7 @@ import * as Comlink from 'comlink';
 
 export interface AuthContext {
   sessionId?: string;
-  pluginType: 'shape' | 'spreadsheet' | 'stylemap';
+  pluginType: 'shape' | 'spreadsheet' | 'styler';
   maxRetries?: number;
 }
 

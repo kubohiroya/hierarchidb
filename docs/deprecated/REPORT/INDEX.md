@@ -31,7 +31,7 @@ HierarchiDBプロジェクトの開発成果、技術仕様、実装詳細をま
 
 - **[01-plugin-system.md](./04-PLUGIN-DEVELOPMENT/01-plugin-system.md)** - プラグインアーキテクチャ
 - **[02-basemap-plugin.md](./04-PLUGIN-DEVELOPMENT/02-basemap-plugin.md)** - BaseMapプラグイン実装
-- **[03-stylemap-plugin.md](./04-PLUGIN-DEVELOPMENT/03-stylemap-plugin.md)** - StyleMapプラグイン実装
+- **[03-styler-plugin.md](./04-PLUGIN-DEVELOPMENT/03-styler-plugin.md)** - Stylerプラグイン実装
 - **[04-shape-plugin.md](./04-PLUGIN-DEVELOPMENT/04-shape-plugin.md)** - Shapeプラグイン（バッチ処理）
 - **[05-spreadsheet-plugin.md](./04-PLUGIN-DEVELOPMENT/05-spreadsheet-plugin.md)** - Spreadsheetプラグイン実装
 

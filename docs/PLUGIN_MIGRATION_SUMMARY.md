@@ -31,7 +31,7 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 - **実装状態**: 完全実装済み、テストケース完備
 
 ### ⭐ 高い完成度
-#### **stylemap-plugin** （141件のエラー → 3時間で修正可能）
+#### **styler-plugin** （141件のエラー → 3時間で修正可能）
 - **spreadsheet-pluginを拡張した高度なデータ可視化プラグイン**
 - MapLibre統合、自動スタイル仕様生成
 - 統計分析（最大・最小・四分位数）、カラーグラデーション
@@ -113,7 +113,7 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 #### 第3優先（folder-plugin依存）
 5. **basemap-plugin** - 1-1.5時間
 6. **spreadsheet-plugin** - 2-3時間
-7. **stylemap-plugin** - 3時間（spreadsheet依存）
+7. **styler-plugin** - 3時間（spreadsheet依存）
 8. **location-plugin** - 2.5時間
 
 ### 総作業時間
@@ -151,7 +151,7 @@ HierarchiDBのプラグインシステムは**非常に高い完成度**を誇�
 - [folder-plugin移行計画](./FOLDER_PLUGIN_MIGRATION_PLAN.md)
 - [basemap-plugin移行計画](./BASEMAP_PLUGIN_MIGRATION_PLAN.md)
 - [spreadsheet-plugin移行計画](./SPREADSHEET_PLUGIN_MIGRATION_PLAN.md)
-- [stylemap-plugin移行計画](./STYLEMAP_PLUGIN_DETAILED_MIGRATION.md)
+- [styler-plugin移行計画](./STYLEMAP_PLUGIN_DETAILED_MIGRATION.md)
 - [shape-plugin移行計画](./SHAPE_PLUGIN_DETAILED_MIGRATION.md)
 - [location-plugin移行計画](./LOCATION_PLUGIN_DETAILED_MIGRATION.md)
 - [route-plugin移行計画](./ROUTE_PLUGIN_DETAILED_MIGRATION.md)

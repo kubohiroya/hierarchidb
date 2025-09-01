@@ -498,7 +498,7 @@ export default function PluginsPage() {
       basemap: ['folder'],
       shape: ['folder'],
       spreadsheet: ['folder'],
-      stylemap: ['spreadsheet'], // stylemap-plugin depends on spreadsheet-plugin for CSV/TSV handling
+      styler: ['spreadsheet'], // styler-plugin depends on spreadsheet-plugin for CSV/TSV handling
     };
     setPluginDependencies(dependencies);
   };

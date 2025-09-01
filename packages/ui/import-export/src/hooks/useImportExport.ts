@@ -260,7 +260,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
     }
 
     // Validate each node
-    const validNodeTypes = ['folder', 'file', 'project', 'shape', 'basemap', 'stylemap'];
+    const validNodeTypes = ['folder', 'file', 'project', 'shape', 'basemap', 'styler'];
 
     data.nodes.forEach((node: any, index: number) => {
       if (!node.name) {

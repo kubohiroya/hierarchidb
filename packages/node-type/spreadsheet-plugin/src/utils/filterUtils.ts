@@ -1,7 +1,7 @@
 /**
  * @file filterUtils.ts
  * @description CSV data filtering utilities
- * Refactored from StyleMap plugin for Spreadsheet plugin use
+ * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
 import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';

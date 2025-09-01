@@ -187,7 +187,7 @@ packages/common/core/src/types/
    - 破壊的変更の一覧
 
 3. **実装例の作成**
-   - StyleMapプラグインでの実装
+   - Stylerプラグインでの実装
    - Folderプラグインの拡張対応
 
 4. **パフォーマンステスト**

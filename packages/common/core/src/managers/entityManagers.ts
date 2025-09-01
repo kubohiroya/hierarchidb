@@ -447,7 +447,7 @@ export class AutoEntityLifecycleManager {
   /**
    * 【機能概要】: RelationalEntityを取得
    * 【実装方針】: メモリから取得
-   * 【テスト対応】: "StyleMap複合エンティティ管理"テスト
+   * 【テスト対応】: "Styler複合エンティティ管理"テスト
    * 🟢 信頼性レベル: 基本的なCRUD操作
    */
   async getRelationalEntity(entityId: string): Promise<any> {

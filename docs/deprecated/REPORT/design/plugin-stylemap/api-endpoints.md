@@ -1,65 +1,65 @@
-# plugin-stylemap API エンドポイント仕様
+# plugin-styler API エンドポイント仕様
 
 ## API 概要
 
-🟢 plugin-stylemap は hierarchidb の Worker層で動作し、Comlink RPC を介してUI層と通信します。eria-cartograph の実装パターンに基づいて、型安全な非同期APIを提供します。
+🟢 plugin-styler は hierarchidb の Worker層で動作し、Comlink RPC を介してUI層と通信します。eria-cartograph の実装パターンに基づいて、型安全な非同期APIを提供します。
 
 ### 🟢 通信アーキテクチャ
 
 ```
 UI Layer (React Components)
     ↕ Comlink RPC (Type-safe)
-Worker Layer (StyleMapWorkerAPI)
+Worker Layer (StylerWorkerAPI)
     ↕ Dexie Transactions
-IndexedDB (StyleMapDB)
+IndexedDB (StylerDB)
 ```
 
-## 🟢 Core StyleMap Management API
+## 🟢 Core Styler Management API
 
-### POST /stylemap/create
+### POST /styler/create
 
-**説明**: 新しいStyleMapエンティティを作成します
+**説明**: 新しいStylerエンティティを作成します
 
 **TypeScript シグネチャ**:
 ```typescript
-createStyleMap(
+createStyler(
   parentId: TreeNodeId, 
-  formData: StyleMapFormData
-): Promise<WorkingCopyResult<StyleMapEntity>>
+  formData: StylerFormData
+): Promise<WorkingCopyResult<StylerEntity>>
 ```
 
 **パラメータ**:
 ```typescript
-interface CreateStyleMapRequest {
+interface CreateStylerRequest {
   parentId: TreeNodeId;          // 親ノードID
-  formData: StyleMapFormData;    // フォームデータ
+  formData: StylerFormData;    // フォームデータ
 }
 
-interface StyleMapFormData {
-  name: string;                  // StyleMap名（必須）
+interface StylerFormData {
+  name: string;                  // Styler名（必須）
   description: string;           // 説明
   file?: File;                  // アップロードファイル
   keyColumn?: string;           // キーカラム名
   valueColumn?: string;         // 値カラム名
   filterRules?: FilterRule[];   // フィルタルール
-  styleMapConfig?: StyleMapConfig; // カラーマッピング設定
+  stylerConfig?: StylerConfig; // カラーマッピング設定
   downloadUrl?: string;         // ダウンロードURL
 }
 ```
 
 **レスポンス**:
 ```typescript
-interface WorkingCopyResult<StyleMapEntity> {
+interface WorkingCopyResult<StylerEntity> {
   success: boolean;
   workingCopyId?: UUID;         // 作業コピーID
-  data?: StyleMapEntity;        // 作成されたエンティティ
+  data?: StylerEntity;        // 作成されたエンティティ
   error?: string;               // エラーメッセージ
 }
 ```
 
 **使用例**:
 ```typescript
-const result = await styleMapAPI.createStyleMap('parent-123', {
+const result = await stylerAPI.createStyler('parent-123', {
   name: 'Population Density Map',
   description: 'World population density visualization',
   file: csvFile,
@@ -68,23 +68,23 @@ const result = await styleMapAPI.createStyleMap('parent-123', {
 });
 
 if (result.success) {
-  console.log('Created StyleMap:', result.data);
+  console.log('Created Styler:', result.data);
   console.log('Working Copy ID:', result.workingCopyId);
 }
 ```
 
-### GET /stylemap/:nodeId
+### GET /styler/:nodeId
 
-**説明**: 指定されたStyleMapエンティティを取得します
+**説明**: 指定されたStylerエンティティを取得します
 
 **TypeScript シグネチャ**:
 ```typescript
-getStyleMap(nodeId: TreeNodeId): Promise<StyleMapEntity | undefined>
+getStyler(nodeId: TreeNodeId): Promise<StylerEntity | undefined>
 ```
 
 **レスポンス**:
 ```typescript
-interface StyleMapEntity extends PrimaryResourceEntity {
+interface StylerEntity extends PrimaryResourceEntity {
   cacheKey?: string;
   downloadUrl?: string;
   filename?: string;
@@ -92,45 +92,45 @@ interface StyleMapEntity extends PrimaryResourceEntity {
   keyColumn?: string;
   valueColumn?: string;
   filterRules?: FilterRule[];
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   contentHash?: string;
 }
 ```
 
 **使用例**:
 ```typescript
-const styleMap = await styleMapAPI.getStyleMap('stylemap-plugin-456');
-if (styleMap) {
-  console.log('StyleMap config:', styleMap.styleMapConfig);
-  console.log('Filter rules:', styleMap.filterRules);
+const styler = await stylerAPI.getStyler('styler-plugin-456');
+if (styler) {
+  console.log('Styler config:', styler.stylerConfig);
+  console.log('Filter rules:', styler.filterRules);
 }
 ```
 
-### PUT /stylemap/:nodeId
+### PUT /styler/:nodeId
 
-**説明**: 既存のStyleMapエンティティを更新します
+**説明**: 既存のStylerエンティティを更新します
 
 **TypeScript シグネチャ**:
 ```typescript
-updateStyleMap(
+updateStyler(
   nodeId: TreeNodeId, 
-  updates: Partial<StyleMapEntity>
+  updates: Partial<StylerEntity>
 ): Promise<void>
 ```
 
 **パラメータ**:
 ```typescript
-interface UpdateStyleMapRequest {
+interface UpdateStylerRequest {
   nodeId: TreeNodeId;
-  updates: Partial<StyleMapEntity>;
+  updates: Partial<StylerEntity>;
 }
 ```
 
 **使用例**:
 ```typescript
-await styleMapAPI.updateStyleMap('stylemap-plugin-456', {
+await stylerAPI.updateStyler('styler-plugin-456', {
   name: 'Updated Population Map',
-  styleMapConfig: {
+  stylerConfig: {
     algorithm: 'logarithmic',
     colorSpace: 'hsv',
     mapping: { min: 0, max: 1000000, hueStart: 0, hueEnd: 0.8, saturation: 0.7, brightness: 0.9 },
@@ -139,24 +139,24 @@ await styleMapAPI.updateStyleMap('stylemap-plugin-456', {
 });
 ```
 
-### DELETE /stylemap/:nodeId
+### DELETE /styler/:nodeId
 
-**説明**: 指定されたStyleMapエンティティを削除します
+**説明**: 指定されたStylerエンティティを削除します
 
 **TypeScript シグネチャ**:
 ```typescript
-deleteStyleMap(nodeId: TreeNodeId): Promise<void>
+deleteStyler(nodeId: TreeNodeId): Promise<void>
 ```
 
 **使用例**:
 ```typescript
-await styleMapAPI.deleteStyleMap('stylemap-plugin-456');
-console.log('StyleMap deleted successfully');
+await stylerAPI.deleteStyler('styler-plugin-456');
+console.log('Styler deleted successfully');
 ```
 
 ## 🟢 File Processing API
 
-### POST /stylemap/parse-file
+### POST /styler/parse-file
 
 **説明**: CSV/TSVファイルを解析してテーブル構造を抽出します
 
@@ -209,7 +209,7 @@ interface RowEntity {
 
 **使用例**:
 ```typescript
-const parseResult = await styleMapAPI.parseFile(csvFile);
+const parseResult = await stylerAPI.parseFile(csvFile);
 if (parseResult.success) {
   console.log('Parsed columns:', parseResult.tableMetadata?.columns);
   console.log('Row count:', parseResult.stats?.rowCount);
@@ -217,7 +217,7 @@ if (parseResult.success) {
 }
 ```
 
-### POST /stylemap/calculate-hash
+### POST /styler/calculate-hash
 
 **説明**: ファイルのSHA3ハッシュを計算します
 
@@ -230,11 +230,11 @@ calculateFileHash(file: File): Promise<string>
 
 **使用例**:
 ```typescript
-const hash = await styleMapAPI.calculateFileHash(csvFile);
+const hash = await stylerAPI.calculateFileHash(csvFile);
 console.log('File hash:', hash);
 
 // キャッシュ確認
-const cachedData = await styleMapAPI.getCachedData(hash);
+const cachedData = await stylerAPI.getCachedData(hash);
 if (cachedData) {
   console.log('File already processed, using cache');
 }
@@ -242,35 +242,35 @@ if (cachedData) {
 
 ## 🟢 Working Copy Management API
 
-### POST /stylemap/working-copy/create
+### POST /styler/working-copy/create
 
 **説明**: 編集用の作業コピーを作成します
 
 **TypeScript シグネチャ**:
 ```typescript
-createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StyleMapWorkingCopy>>
+createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StylerWorkingCopy>>
 ```
 
 **レスポンス**:
 ```typescript
-interface StyleMapWorkingCopy extends StyleMapEntity {
+interface StylerWorkingCopy extends StylerEntity {
   originalId?: TreeNodeId;
   workingCopyId: UUID;
   isWorkingCopy: true;
-  pendingChanges?: Partial<StyleMapEntity>;
+  pendingChanges?: Partial<StylerEntity>;
 }
 ```
 
 **使用例**:
 ```typescript
-const workingCopyResult = await styleMapAPI.createWorkingCopy('stylemap-plugin-456');
+const workingCopyResult = await stylerAPI.createWorkingCopy('styler-plugin-456');
 if (workingCopyResult.success) {
   const workingCopyId = workingCopyResult.workingCopyId;
   // 作業コピーで編集開始
 }
 ```
 
-### PUT /stylemap/working-copy/:workingCopyId
+### PUT /styler/working-copy/:workingCopyId
 
 **説明**: 作業コピーの内容を更新します
 
@@ -278,13 +278,13 @@ if (workingCopyResult.success) {
 ```typescript
 updateWorkingCopy(
   workingCopyId: UUID, 
-  updates: Partial<StyleMapEntity>
+  updates: Partial<StylerEntity>
 ): Promise<WorkingCopyResult>
 ```
 
 **使用例**:
 ```typescript
-await styleMapAPI.updateWorkingCopy(workingCopyId, {
+await stylerAPI.updateWorkingCopy(workingCopyId, {
   keyColumn: 'country_iso',
   valueColumn: 'gdp_per_capita',
   filterRules: [
@@ -298,7 +298,7 @@ await styleMapAPI.updateWorkingCopy(workingCopyId, {
 });
 ```
 
-### POST /stylemap/working-copy/:workingCopyId/commit
+### POST /styler/working-copy/:workingCopyId/commit
 
 **説明**: 作業コピーの変更をコミットします
 
@@ -309,13 +309,13 @@ commitWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>
 
 **使用例**:
 ```typescript
-const commitResult = await styleMapAPI.commitWorkingCopy(workingCopyId);
+const commitResult = await stylerAPI.commitWorkingCopy(workingCopyId);
 if (commitResult.success) {
   console.log('Changes committed successfully');
 }
 ```
 
-### DELETE /stylemap/working-copy/:workingCopyId
+### DELETE /styler/working-copy/:workingCopyId
 
 **説明**: 作業コピーを破棄します（変更を保存せずに削除）
 
@@ -326,20 +326,20 @@ discardWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>
 
 **使用例**:
 ```typescript
-await styleMapAPI.discardWorkingCopy(workingCopyId);
+await stylerAPI.discardWorkingCopy(workingCopyId);
 console.log('Working copy discarded');
 ```
 
 ## 🟢 Style Calculation API
 
-### POST /stylemap/calculate-style
+### POST /styler/calculate-style
 
 **説明**: カラーマッピング設定に基づいてスタイル情報を計算します
 
 **TypeScript シグネチャ**:
 ```typescript
-calculateStyleMapping(
-  config: StyleMapConfig, 
+calculateStylerping(
+  config: StylerConfig, 
   data: RowEntity[]
 ): Promise<StyleCalculationResult>
 ```
@@ -347,11 +347,11 @@ calculateStyleMapping(
 **パラメータ**:
 ```typescript
 interface StyleCalculationRequest {
-  config: StyleMapConfig;
+  config: StylerConfig;
   data: RowEntity[];
 }
 
-interface StyleMapConfig {
+interface StylerConfig {
   algorithm: 'linear' | 'logarithmic' | 'quantile' | 'categorical';
   colorSpace: 'rgb' | 'hsv';
   mapping: {
@@ -383,7 +383,7 @@ interface StyleCalculationResult {
 
 **使用例**:
 ```typescript
-const styleResult = await styleMapAPI.calculateStyleMapping(
+const styleResult = await stylerAPI.calculateStylerping(
   {
     algorithm: 'linear',
     colorSpace: 'hsv',
@@ -399,20 +399,20 @@ if (styleResult.success) {
 }
 ```
 
-### POST /stylemap/generate-maplibre-style
+### POST /styler/generate-maplibre-style
 
 **説明**: MapLibre GL JS用のスタイル仕様を生成します
 
 **TypeScript シグネチャ**:
 ```typescript
-generateMapLibreStyle(styleMapId: TreeNodeId): Promise<Record<string, any>>
+generateMapLibreStyle(stylerId: TreeNodeId): Promise<Record<string, any>>
 ```
 
 **レスポンス**: MapLibre GL JS スタイル仕様オブジェクト
 
 **使用例**:
 ```typescript
-const mapLibreStyle = await styleMapAPI.generateMapLibreStyle('stylemap-plugin-456');
+const mapLibreStyle = await stylerAPI.generateMapLibreStyle('styler-plugin-456');
 console.log('MapLibre style spec:', mapLibreStyle);
 
 // MapLibre GL JS に適用
@@ -421,7 +421,7 @@ map.getMap().setStyle(mapLibreStyle);
 
 ## 🟢 Data Filtering API
 
-### POST /stylemap/apply-filters
+### POST /styler/apply-filters
 
 **説明**: フィルタルールを適用してデータを絞り込みます
 
@@ -452,7 +452,7 @@ interface FilterRule {
 
 **使用例**:
 ```typescript
-const filteredData = await styleMapAPI.applyFilters(
+const filteredData = await stylerAPI.applyFilters(
   rowData,
   [
     {
@@ -476,7 +476,7 @@ console.log('Filtered row count:', filteredData.length);
 
 ## 🟡 Cache Management API
 
-### GET /stylemap/cache/:contentHash
+### GET /styler/cache/:contentHash
 
 **説明**: キャッシュされたデータを取得します
 
@@ -487,7 +487,7 @@ getCachedData(contentHash: string): Promise<ParseFileResult | undefined>
 
 **使用例**:
 ```typescript
-const cachedResult = await styleMapAPI.getCachedData(fileHash);
+const cachedResult = await stylerAPI.getCachedData(fileHash);
 if (cachedResult) {
   console.log('Using cached data:', cachedResult.tableMetadata);
 } else {
@@ -495,7 +495,7 @@ if (cachedResult) {
 }
 ```
 
-### DELETE /stylemap/cache
+### DELETE /styler/cache
 
 **説明**: キャッシュをクリアします
 
@@ -506,7 +506,7 @@ clearCache(): Promise<void>
 
 **使用例**:
 ```typescript
-await styleMapAPI.clearCache();
+await stylerAPI.clearCache();
 console.log('Cache cleared successfully');
 ```
 
@@ -517,15 +517,15 @@ console.log('Cache cleared successfully');
 すべてのAPIエラーは統一された形式で返されます：
 
 ```typescript
-interface StyleMapError extends Error {
-  type: StyleMapErrorType;
+interface StylerError extends Error {
+  type: StylerErrorType;
   code: string;
   context?: Record<string, any>;
   recoverable: boolean;
   recoveryActions?: string[];
 }
 
-type StyleMapErrorType =
+type StylerErrorType =
   | 'FILE_PARSE_ERROR'
   | 'VALIDATION_ERROR'
   | 'DATABASE_ERROR'
@@ -540,8 +540,8 @@ type StyleMapErrorType =
 **ファイル解析エラー**:
 ```typescript
 try {
-  const result = await styleMapAPI.parseFile(invalidFile);
-} catch (error: StyleMapError) {
+  const result = await stylerAPI.parseFile(invalidFile);
+} catch (error: StylerError) {
   if (error.type === 'FILE_PARSE_ERROR') {
     console.error('File parsing failed:', error.message);
     console.log('Recovery actions:', error.recoveryActions);
@@ -552,8 +552,8 @@ try {
 **検証エラー**:
 ```typescript
 try {
-  await styleMapAPI.createStyleMap(parentId, invalidFormData);
-} catch (error: StyleMapError) {
+  await stylerAPI.createStyler(parentId, invalidFormData);
+} catch (error: StylerError) {
   if (error.type === 'VALIDATION_ERROR') {
     console.error('Validation failed:', error.context);
   }
@@ -566,8 +566,8 @@ try {
 
 ```typescript
 // Debounced preview updates (300ms)
-const debouncedPreviewUpdate = debounce(async (config: StyleMapConfig) => {
-  const result = await styleMapAPI.calculateStyleMapping(config, data);
+const debouncedPreviewUpdate = debounce(async (config: StylerConfig) => {
+  const result = await stylerAPI.calculateStylerping(config, data);
   updatePreview(result);
 }, 300);
 ```
@@ -589,29 +589,29 @@ async function executeBatchOperations(operations: BatchRowOperations): Promise<v
 
 ## 🟢 API Integration Examples
 
-### 🟢 Complete StyleMap Creation Flow
+### 🟢 Complete Styler Creation Flow
 
 ```typescript
-async function createStyleMapComplete(
+async function createStylerComplete(
   parentId: TreeNodeId,
   file: File,
-  config: Partial<StyleMapFormData>
-): Promise<StyleMapEntity> {
+  config: Partial<StylerFormData>
+): Promise<StylerEntity> {
   
   // 1. Parse file
-  const parseResult = await styleMapAPI.parseFile(file);
+  const parseResult = await stylerAPI.parseFile(file);
   if (!parseResult.success) {
     throw new Error(`File parsing failed: ${parseResult.error}`);
   }
   
   // 2. Create working copy
-  const workingCopyResult = await styleMapAPI.createWorkingCopy(parentId);
+  const workingCopyResult = await stylerAPI.createWorkingCopy(parentId);
   if (!workingCopyResult.success) {
     throw new Error(`Working copy creation failed: ${workingCopyResult.error}`);
   }
   
   // 3. Update working copy with parsed data
-  await styleMapAPI.updateWorkingCopy(workingCopyResult.workingCopyId!, {
+  await stylerAPI.updateWorkingCopy(workingCopyResult.workingCopyId!, {
     filename: file.name,
     tableMetadataId: parseResult.tableMetadata!.id,
     contentHash: parseResult.contentHash,
@@ -619,9 +619,9 @@ async function createStyleMapComplete(
   });
   
   // 4. Apply initial style calculation
-  if (config.styleMapConfig && config.keyColumn && config.valueColumn) {
-    const styleResult = await styleMapAPI.calculateStyleMapping(
-      config.styleMapConfig,
+  if (config.stylerConfig && config.keyColumn && config.valueColumn) {
+    const styleResult = await stylerAPI.calculateStylerping(
+      config.stylerConfig,
       parseResult.rows!
     );
     
@@ -631,7 +631,7 @@ async function createStyleMapComplete(
   }
   
   // 5. Commit working copy
-  const commitResult = await styleMapAPI.commitWorkingCopy(workingCopyResult.workingCopyId!);
+  const commitResult = await stylerAPI.commitWorkingCopy(workingCopyResult.workingCopyId!);
   if (!commitResult.success) {
     throw new Error(`Commit failed: ${commitResult.error}`);
   }
@@ -646,18 +646,18 @@ async function createStyleMapComplete(
 ```typescript
 async function updatePreviewRealtime(
   workingCopyId: UUID,
-  configChanges: Partial<StyleMapConfig>,
+  configChanges: Partial<StylerConfig>,
   data: RowEntity[]
 ): Promise<StyleCalculationResult> {
   
   // 1. Update working copy with config changes
-  await styleMapAPI.updateWorkingCopy(workingCopyId, {
-    styleMapConfig: configChanges
+  await stylerAPI.updateWorkingCopy(workingCopyId, {
+    stylerConfig: configChanges
   });
   
   // 2. Calculate new style mapping
-  const styleResult = await styleMapAPI.calculateStyleMapping(
-    configChanges as StyleMapConfig,
+  const styleResult = await stylerAPI.calculateStylerping(
+    configChanges as StylerConfig,
     data
   );
   
@@ -674,7 +674,7 @@ async function updatePreviewRealtime(
 // All API inputs are validated using TypeScript interfaces
 // and runtime validation functions
 
-function validateStyleMapFormData(data: StyleMapFormData): ValidationResult {
+function validateStylerFormData(data: StylerFormData): ValidationResult {
   const errors: Record<string, string[]> = {};
   
   if (!data.name || data.name.trim().length === 0) {
@@ -720,4 +720,4 @@ class RateLimiter {
 }
 ```
 
-この API 設計により、plugin-stylemap は型安全で高性能な操作を提供し、eria-cartograph の実装パターンを継承しながら hierarchidb フレームワークに最適化されたインターフェースを実現します。
+この API 設計により、plugin-styler は型安全で高性能な操作を提供し、eria-cartograph の実装パターンを継承しながら hierarchidb フレームワークに最適化されたインターフェースを実現します。

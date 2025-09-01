@@ -1,13 +1,13 @@
-# StyleMap Plugin Lifecycle Management
+# Styler Plugin Lifecycle Management
 
-This document describes the lifecycle management of StyleMap entities, table metadata, and the data processing pipeline within the HierarchiDB plugin system.
+This document describes the lifecycle management of Styler entities, table metadata, and the data processing pipeline within the HierarchiDB plugin system.
 
 ## Entity Lifecycle Overview
 
-The StyleMap Plugin implements sophisticated lifecycle management across multiple entity types:
+The Styler Plugin implements sophisticated lifecycle management across multiple entity types:
 
 ```
-StyleMap Entity Lifecycle
+Styler Entity Lifecycle
 ├── Creation Lifecycle
 │   ├── Node Creation → Entity Creation → Table Association
 │   └── Working Copy → Validation → Commit
@@ -22,7 +22,7 @@ StyleMap Entity Lifecycle
     └── Cascade Deletion → Resource Cleanup
 ```
 
-## StyleMap Entity Lifecycle
+## Styler Entity Lifecycle
 
 ### Creation Phase
 
@@ -30,10 +30,10 @@ StyleMap Entity Lifecycle
 ```typescript
 // TreeNode creation triggers entity creation
 const nodeCreation: NodeLifecycleHooks = {
-  beforeCreate: async (parentId: NodeId, nodeData: Partial<StyleMapEntity>) => {
+  beforeCreate: async (parentId: NodeId, nodeData: Partial<StylerEntity>) => {
     // Validate required data
     if (!nodeData.name) {
-      throw new Error('StyleMap name is required');
+      throw new Error('Styler name is required');
     }
     
     // Check file format if provided
@@ -46,8 +46,8 @@ const nodeCreation: NodeLifecycleHooks = {
   },
   
   afterCreate: async (node: TreeNode, context: NodeContext) => {
-    // Create corresponding StyleMapEntity
-    const handler = context.getEntityHandler<StyleMapEntity>('stylemap-plugin');
+    // Create corresponding StylerEntity
+    const handler = context.getEntityHandler<StylerEntity>('styler-plugin');
     await handler.createEntity(node.id, {
       name: node.name,
       description: node.description,
@@ -58,22 +58,22 @@ const nodeCreation: NodeLifecycleHooks = {
 
 **2. Entity Creation Process**
 ```typescript
-class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
-  async createEntity(nodeId: NodeId, data?: Partial<StyleMapEntity>): Promise<StyleMapEntity> {
+class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
+  async createEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<StylerEntity> {
     // Generate unique entity ID
     const entityId = crypto.randomUUID() as EntityId;
     
     // Create entity with defaults
-    const entity: StyleMapEntity = {
+    const entity: StylerEntity = {
       id: entityId,
       nodeId,
-      name: data?.name || 'Untitled StyleMap',
+      name: data?.name || 'Untitled Styler',
       description: data?.description,
       filterRules: [],
       selectedKeyColumn: '',
       selectedValueColumns: [],
       keyValueMappings: [],
-      styleMapConfig: this.getDefaultStyleConfig(),
+      stylerConfig: this.getDefaultStyleConfig(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
@@ -96,27 +96,27 @@ class StyleMapEntityHandler extends PeerEntityHandler<StyleMapEntity> {
 ```typescript
 interface WorkingCopyLifecycle {
   // Create working copy for editing
-  createWorkingCopy(entityId: EntityId): Promise<StyleMapWorkingCopy>;
+  createWorkingCopy(entityId: EntityId): Promise<StylerWorkingCopy>;
   
   // Update working copy
-  updateWorkingCopy(workingCopyId: string, changes: Partial<StyleMapEntity>): Promise<void>;
+  updateWorkingCopy(workingCopyId: string, changes: Partial<StylerEntity>): Promise<void>;
   
   // Commit changes to main entity
-  commitWorkingCopy(workingCopyId: string): Promise<StyleMapEntity>;
+  commitWorkingCopy(workingCopyId: string): Promise<StylerEntity>;
   
   // Discard working copy
   discardWorkingCopy(workingCopyId: string): Promise<void>;
 }
 
-class StyleMapWorkingCopyManager implements WorkingCopyLifecycle {
-  async createWorkingCopy(entityId: EntityId): Promise<StyleMapWorkingCopy> {
+class StylerWorkingCopyManager implements WorkingCopyLifecycle {
+  async createWorkingCopy(entityId: EntityId): Promise<StylerWorkingCopy> {
     const originalEntity = await this.entityHandler.getEntity(entityId);
     if (!originalEntity) {
       throw new Error('Entity not found');
     }
     
     const workingCopyId = crypto.randomUUID();
-    const workingCopy: StyleMapWorkingCopy = {
+    const workingCopy: StylerWorkingCopy = {
       ...originalEntity,
       workingCopyId,
       workingCopyOf: entityId,
@@ -128,14 +128,14 @@ class StyleMapWorkingCopyManager implements WorkingCopyLifecycle {
     return workingCopy;
   }
   
-  async commitWorkingCopy(workingCopyId: string): Promise<StyleMapEntity> {
+  async commitWorkingCopy(workingCopyId: string): Promise<StylerEntity> {
     const workingCopy = await this.getWorkingCopy(workingCopyId);
     if (!workingCopy) {
       throw new Error('Working copy not found');
     }
     
     // Update main entity
-    const updatedEntity: StyleMapEntity = {
+    const updatedEntity: StylerEntity = {
       ...workingCopy,
       updatedAt: Date.now(),
       version: workingCopy.version + 1,
@@ -164,7 +164,7 @@ class StyleMapWorkingCopyManager implements WorkingCopyLifecycle {
 ```typescript
 const deletionLifecycle: NodeLifecycleHooks = {
   beforeDelete: async (node: TreeNode, context: NodeContext) => {
-    const handler = context.getEntityHandler<StyleMapEntity>('stylemap-plugin');
+    const handler = context.getEntityHandler<StylerEntity>('styler-plugin');
     const entity = await handler.getEntity(node.id);
     
     if (entity?.tableMetadataId) {
@@ -354,11 +354,11 @@ class TableProcessingLifecycle implements ProcessingPipeline {
 ```typescript
 class StyleGenerationLifecycle {
   async generateStyles(
-    entity: StyleMapEntity,
+    entity: StylerEntity,
     tableData: TableData
   ): Promise<MapLibreStyle> {
     // 1. Configuration validation
-    this.validateStyleConfig(entity.styleMapConfig);
+    this.validateStyleConfig(entity.stylerConfig);
     
     // 2. Data preparation
     const filteredData = await this.applyFilters(tableData, entity.filterRules);
@@ -367,13 +367,13 @@ class StyleGenerationLifecycle {
     // 3. Color mapping generation
     const colorMapping = await this.generateColorMapping(
       keyValues,
-      entity.styleMapConfig
+      entity.stylerConfig
     );
     
     // 4. MapLibre style generation
     const mapLibreStyle = await this.generateMapLibreStyle(
       colorMapping,
-      entity.styleMapConfig
+      entity.stylerConfig
     );
     
     // 5. Caching
@@ -383,13 +383,13 @@ class StyleGenerationLifecycle {
     return mapLibreStyle;
   }
   
-  private generateCacheKey(entity: StyleMapEntity): string {
+  private generateCacheKey(entity: StylerEntity): string {
     const configData = {
       tableMetadataId: entity.tableMetadataId,
       filterRules: entity.filterRules,
       selectedKeyColumn: entity.selectedKeyColumn,
       selectedValueColumns: entity.selectedValueColumns,
-      styleMapConfig: entity.styleMapConfig,
+      stylerConfig: entity.stylerConfig,
     };
     
     return this.hashObject(configData);
@@ -465,7 +465,7 @@ class LifecycleErrorHandler {
   async handleEntityCreationError(
     error: Error,
     nodeId: NodeId,
-    data: Partial<StyleMapEntity>
+    data: Partial<StylerEntity>
   ): Promise<void> {
     // Log error details
     await this.logError('ENTITY_CREATION_FAILED', error, { nodeId, data });
@@ -474,7 +474,7 @@ class LifecycleErrorHandler {
     await this.cleanupPartialEntity(nodeId);
     
     // Notify user
-    await this.notifyError('Failed to create StyleMap entity', error);
+    await this.notifyError('Failed to create Styler entity', error);
   }
   
   async handleTableImportError(
@@ -498,7 +498,7 @@ class LifecycleErrorHandler {
   
   async handleStyleGenerationError(
     error: Error,
-    entity: StyleMapEntity
+    entity: StylerEntity
   ): Promise<void> {
     // Log generation failure
     await this.logError('STYLE_GENERATION_FAILED', error, { entityId: entity.id });

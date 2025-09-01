@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the successful implementation of the `ui-csv-extract` package and its integration with `plugin-stylemap`. The implementation provides a reusable CSV processing UI framework that can be shared across multiple HierarchiDB plugins.
+This document summarizes the successful implementation of the `ui-csv-extract` package and its integration with `plugin-styler`. The implementation provides a reusable CSV processing UI framework that can be shared across multiple HierarchiDB plugins.
 
 ## Architecture
 
@@ -38,23 +38,23 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 - `CSVFilterStep` - Interactive filter creation with preview
 - `CSVColumnSelectionStep` - Column selection and mapping interface
 
-#### 2. plugin-stylemap Integration
+#### 2. plugin-styler Integration
 
-**CSV API Driver** (`packages/plugins/stylemap/src/services/StyleMapCSVApiDriver.ts`):
+**CSV API Driver** (`packages/plugins/styler/src/services/StylerCSVApiDriver.ts`):
 - Implements `ICSVDataApi` interface
 - Manages CSV data storage and retrieval
 - Handles reference counting for shared data
-- Converts between CSV and StyleMap data formats
+- Converts between CSV and Styler data formats
 
 **Simplified Data Layer**:
 - `SimpleTableMetadata` - Streamlined table metadata type
 - `SimpleTableMetadataManager` - In-memory table management
-- Compatible with existing StyleMap infrastructure
+- Compatible with existing Styler infrastructure
 
-**Refactored Dialog** (`packages/plugins/stylemap/src/components/StyleMapDialogRefactored.tsx`):
+**Refactored Dialog** (`packages/plugins/styler/src/components/StylerDialogRefactored.tsx`):
 - Uses ui-csv-extract components for steps 2-4
-- Maintains StyleMap-specific configuration for steps 5-6
-- Integrates with existing StyleMap entity system
+- Maintains Styler-specific configuration for steps 5-6
+- Integrates with existing Styler entity system
 
 ## Implementation Details
 
@@ -100,7 +100,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 
 ### Integration Tests  
 - **React Components**: User interactions, form validation, step navigation
-- **End-to-End Workflow**: Complete CSV-to-StyleMap conversion process
+- **End-to-End Workflow**: Complete CSV-to-Styler conversion process
 - **Multi-Plugin Scenarios**: Shared data usage and cleanup
 - **Error Conditions**: Edge cases and failure modes
 
@@ -119,10 +119,10 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 
 ```typescript
 import { CSVProvider, CSVFileUploadStep } from '@hierarchidb/ui-csv-extract';
-import { StyleMapCSVApiDriver } from '@hierarchidb/plugin-stylemap-plugin';
+import { StylerCSVApiDriver } from '@hierarchidb/plugin-styler-plugin';
 
 const MyComponent = () => {
-  const csvApi = new StyleMapCSVApiDriver(tableManager);
+  const csvApi = new StylerCSVApiDriver(tableManager);
   
   return (
     <CSVProvider csvApi={csvApi}>
@@ -139,21 +139,21 @@ const MyComponent = () => {
 ### Complete Workflow
 
 ```typescript
-import { StyleMapDialogRefactored } from '@hierarchidb/plugin-stylemap-plugin';
+import { StylerDialogRefactored } from '@hierarchidb/plugin-styler-plugin';
 
-const StyleMapCreation = () => {
+const StylerCreation = () => {
   const handleSubmit = async (config) => {
-    // Save StyleMap configuration
-    await saveStyleMapEntity(config);
+    // Save Styler configuration
+    await saveStylerEntity(config);
   };
 
   return (
-    <StyleMapDialogRefactored
+    <StylerDialogRefactored
       open={true}
       onClose={() => {}}
       onSubmit={handleSubmit}
       nodeId="my-node-id"
-      initialName="My StyleMap"
+      initialName="My Styler"
     />
   );
 };
@@ -181,11 +181,11 @@ const StyleMapCreation = () => {
 
 ## Migration Guide
 
-### From Original StyleMapImport
+### From Original StylerImport
 
 **Before** (Original Implementation):
 ```typescript
-<StyleMapImport
+<StylerImport
   nodeId="node-123"
   onSave={handleSave}
   onCancel={handleCancel}
@@ -194,7 +194,7 @@ const StyleMapCreation = () => {
 
 **After** (Refactored Implementation):
 ```typescript
-<StyleMapDialogRefactored
+<StylerDialogRefactored
   open={true}
   onClose={handleCancel}
   onSubmit={handleSave}
@@ -227,11 +227,11 @@ const StyleMapCreation = () => {
 
 ## Conclusion
 
-The ui-csv-extract implementation successfully achieves its design goals of creating a reusable, flexible CSV processing framework for HierarchiDB plugins. The integration with plugin-stylemap demonstrates the benefits of shared components while maintaining plugin-specific functionality.
+The ui-csv-extract implementation successfully achieves its design goals of creating a reusable, flexible CSV processing framework for HierarchiDB plugins. The integration with plugin-styler demonstrates the benefits of shared components while maintaining plugin-specific functionality.
 
 **Key Achievements**:
 - ✅ Complete ui-csv-extract package with full test coverage
-- ✅ Successful integration with plugin-stylemap  
+- ✅ Successful integration with plugin-styler  
 - ✅ Reference-counted shared data management
 - ✅ Backwards-compatible migration path
 - ✅ Comprehensive documentation and examples

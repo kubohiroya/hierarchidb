@@ -4,7 +4,7 @@
 
 このImport/Export機能移植計画書では、Eria Cartographから実証済みのImport/Export機能をHierarchiDBに移植するための詳細な実装戦略について説明します。本ドキュメントは以下のような方を対象としています：
 
-**読むべき人**: 機能移植担当者、データ処理開発者、UI/UX開発者、ファイル処理実装者、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインのデータインポート/エクスポート機能を実装する開発者
+**読むべき人**: 機能移植担当者、データ処理開発者、UI/UX開発者、ファイル処理実装者、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインのデータインポート/エクスポート機能を実装する開発者
 
 **前提知識**: ファイル処理（ZIP、JSON）、Web API（File API、Drag & Drop）、非同期データ処理、進捗管理、エラーハンドリング、データ形式変換
 
@@ -70,7 +70,7 @@ packages/
   "nodeCount": 4,
   "resourceTypes": {
     "_shapes_buggy": 1,
-    "stylemaps": 1,
+    "stylers": 1,
     "tables": 1
   }
 }

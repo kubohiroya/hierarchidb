@@ -22,7 +22,7 @@
     ┌──────────────────────────────┬──────────────────────────────┐
     │                              │                              │
 Peer│  SpreadsheetRefEntity        │  SpreadsheetWorkingCopy      │
-    │  StyleMapEntity              │  SpreadsheetViewState        │
+    │  StylerEntity              │  SpreadsheetViewState        │
     │                              │                              │
     ├──────────────────────────────┼──────────────────────────────┤
     │                              │                              │
@@ -73,14 +73,14 @@ interface SpreadsheetRefEntity extends PersistentPeerEntity {
 }
 
 // 3. 拡張PeerEntity
-interface StyleMapEntity extends PersistentPeerEntity {
+interface StylerEntity extends PersistentPeerEntity {
   nodeId: NodeId;                        // ノードへの紐付け
   spreadsheetMetadataId: SpreadsheetMetadataId; // RelationalEntityへの参照
   
-  // StyleMap固有の設定
+  // Styler固有の設定
   keyColumn: string;
-  colorRules: StyleMapColorRule[];
-  defaultStyle: StyleMapStyle;
+  colorRules: StylerColorRule[];
+  defaultStyle: StylerStyle;
   description?: string;
   
   // refCountフィールドは不要 - PeerEntityの数が参照カウント
@@ -226,7 +226,7 @@ reference_counts: '&metadataId, count, updatedAt'
 
 // PeerEntity用テーブル
 spreadsheet_refs: '&nodeId, metadataId, updatedAt'
-stylemap_entities: '&nodeId, metadataId, updatedAt'
+styler_entities: '&nodeId, metadataId, updatedAt'
 ```
 
 ### EphemeralDB（一時データ）
@@ -308,13 +308,13 @@ export class SpreadsheetDB extends Dexie {
   }
 }
 
-// StyleMapも独立データベース
-export class StyleMapDB extends Dexie {
-  styleMapEntities!: Table<StyleMapEntity, NodeId>;
+// Stylerも独立データベース
+export class StylerDB extends Dexie {
+  stylerEntities!: Table<StylerEntity, NodeId>;
   
-  constructor(name: string = 'hierarchidb-stylemap-plugin') {
+  constructor(name: string = 'hierarchidb-styler-plugin') {
     super(name);
-    // StyleMap固有のスキーマ定義
+    // Styler固有のスキーマ定義
   }
 }
 ```
@@ -347,7 +347,7 @@ export class StyleMapDB extends Dexie {
    - CoreDBからの完全分離
 
 5. **拡張はPeerEntityで行う**
-   - StyleMapEntity extends PersistentPeerEntity
+   - StylerEntity extends PersistentPeerEntity
    - SpreadsheetRefEntityとは独立した設計
 
 この設計により、データの共有と独立性を両立させ、効率的なライフサイクル管理とプラグインの独立性を実現します。

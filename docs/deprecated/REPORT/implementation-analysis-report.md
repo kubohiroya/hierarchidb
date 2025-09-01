@@ -4,7 +4,7 @@
 
 この実装分析レポートでは、HierarchiDBの現在の実装状況と仕様書との詳細な比較分析結果を報告します。本レポートは以下のような方を対象としています：
 
-**読むべき人**: 開発チームリーダー、品質保証担当者、アーキテクト、仕様書と実装の整合性確認を行う方、技術的負債の識別と解決を担当する方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインの実装詳細を検証する方
+**読むべき人**: 開発チームリーダー、品質保証担当者、アーキテクト、仕様書と実装の整合性確認を行う方、技術的負債の識別と解決を担当する方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインの実装詳細を検証する方
 
 **前提知識**: HierarchiDBの仕様書、TypeScript、コードレビュー、品質保証プロセス、リファクタリング、技術的負債管理
 
@@ -49,10 +49,10 @@ export interface RelationalEntity extends BaseEntity { /* N対N */ }
 export class RelationalEntityManagerImpl<T extends RelationalEntity>
 ```
 
-**StyleMapプラグインでは実際に使用済み:**
+**Stylerプラグインでは実際に使用済み:**
 ```typescript
-// StyleMapEntity (PeerEntity)
-export interface StyleMapEntity extends PeerEntity { /*...*/ }
+// StylerEntity (PeerEntity)
+export interface StylerEntity extends PeerEntity { /*...*/ }
 
 // TableMetadataEntity (RelationalEntity) 
 export interface TableMetadataEntity extends RelationalEntity { /*...*/ }
@@ -85,9 +85,9 @@ this.version(1).stores({
 
 **プラグインでの独自テーブル:**
 ```typescript
-// StyleMapDatabase.ts
+// StylerDatabase.ts
 this.version(1).stores({
-  styleMapEntities: '&nodeId, name, isActive, tableMetadataId',
+  stylerEntities: '&nodeId, name, isActive, tableMetadataId',
   tableMetadataEntities: '&entityId, contentHash, referenceCount',
 });
 ```

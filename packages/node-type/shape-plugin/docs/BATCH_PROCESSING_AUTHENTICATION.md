@@ -2,7 +2,7 @@
 
 ## 問題の概要
 
-Shape、Spreadsheet、StyleMapプラグインのバッチ処理において、外部APIアクセス時にCORS-ProxyやBFFでの認証が必要になった場合の処理フローが未実装です。
+Shape、Spreadsheet、Stylerプラグインのバッチ処理において、外部APIアクセス時にCORS-ProxyやBFFでの認証が必要になった場合の処理フローが未実装です。
 
 ### 現在の構成
 
@@ -21,7 +21,7 @@ graph TB
     subgraph "External APIs"
         GEO_API[地理データAPI]
         SHEET_API[Spreadsheet API]
-        STYLE_API[StyleMap API]
+        STYLE_API[Styler API]
     end
     
     UI <--> WORKER
@@ -126,7 +126,7 @@ export interface AuthRequiredNotification {
     errorCode: number;
     errorMessage: string;
     sessionId?: string;  // バッチ処理セッション
-    pluginType: 'shape' | 'spreadsheet' | 'stylemap';
+    pluginType: 'shape' | 'spreadsheet' | 'styler';
   };
   timestamp: number;
 }
@@ -543,7 +543,7 @@ export function AuthRequiredDialog({
 ### Phase 2: プラグイン統合
 1. Shape Plugin での認証対応実装
 2. Spreadsheet Plugin での認証対応実装  
-3. StyleMap Plugin での認証対応実装
+3. Styler Plugin での認証対応実装
 
 ### Phase 3: UI/UX 改善
 1. `AuthRequiredDialog` コンポーネント実装

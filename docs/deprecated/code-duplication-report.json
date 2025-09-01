@@ -54,7 +54,7 @@
           "lines": "12-49"
         },
         {
-          "file": "packages/plugins/stylemap/src/handlers/StyleMapEntityHandler.ts",
+          "file": "packages/plugins/styler/src/handlers/StylerEntityHandler.ts",
           "lines": "11-48"
         }
       ]
@@ -609,7 +609,7 @@
           "lines": "6-10"
         },
         {
-          "file": "packages/plugins/stylemap/src/handlers/StyleMapEntityHandler.ts",
+          "file": "packages/plugins/styler/src/handlers/StylerEntityHandler.ts",
           "lines": "5-9"
         }
       ]

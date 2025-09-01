@@ -4,7 +4,7 @@ import { NodeId } from '@hierarchidb/common-type';
  * Base pattern for entities that require reference counting
  *
  * This abstract class provides a template for managing entities with reference counting,
- * commonly used in plugins that share data between multiple nodes (e.g., spreadsheet-plugin, stylemap-plugin).
+ * commonly used in plugins that share data between multiple nodes (e.g., spreadsheet-plugin, styler-plugin).
  *
  * The pattern involves:
  * - PeerEntity: The entity directly associated with a node

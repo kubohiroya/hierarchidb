@@ -95,7 +95,7 @@
 
 ### 影響を受けるプラグイン
 - packages/plugins/basemap
-- packages/plugins/stylemap
+- packages/plugins/styler
 - packages/plugins/shape
 
 ## リスクと対策

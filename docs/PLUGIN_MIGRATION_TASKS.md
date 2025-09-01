@@ -152,9 +152,9 @@
 2. プロジェクト固有の機能
    - メンバー管理、タスク管理等の機能をシンプルなエンティティ構造に変更
 
-### タスク7: stylemap-plugin の修正
+### タスク7: styler-plugin の修正
 
-**対象**: `packages/node-type/stylemap-plugin`
+**対象**: `packages/node-type/styler-plugin`
 
 **具体的な修正手順**:
 

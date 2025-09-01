@@ -34,8 +34,8 @@ const mockResults: SearchResult[] = [
     matchedValue: 'Tokyo Station',
     confidence: 0.95,
     parentPath: ['Japan', 'Tokyo'],
-    styleMapNodeId: 'style-node-1' as NodeId,
-    styleMapNodeName: 'Central Tokyo',
+    stylerNodeId: 'style-node-1' as NodeId,
+    stylerNodeName: 'Central Tokyo',
     rowIndex: 0,
     rowData: {
       name: 'Tokyo Station',
@@ -53,8 +53,8 @@ const mockResults: SearchResult[] = [
     matchedValue: 'famous intersection',
     confidence: 0.87,
     parentPath: ['Japan', 'Tokyo', 'Shibuya'],
-    styleMapNodeId: 'style-node-2' as NodeId,
-    styleMapNodeName: 'Shibuya District',
+    stylerNodeId: 'style-node-2' as NodeId,
+    stylerNodeName: 'Shibuya District',
     rowIndex: 5,
     rowData: {
       name: 'Shibuya Crossing',
@@ -72,8 +72,8 @@ const mockResults: SearchResult[] = [
     matchedValue: '3776',
     confidence: 0.92,
     parentPath: ['Japan', 'Shizuoka'],
-    styleMapNodeId: 'style-node-3' as NodeId,
-    styleMapNodeName: 'Fuji Area',
+    stylerNodeId: 'style-node-3' as NodeId,
+    stylerNodeName: 'Fuji Area',
     rowIndex: 12,
     rowData: {
       name: 'Mount Fuji',
@@ -92,8 +92,8 @@ const mockResults: SearchResult[] = [
     matchedValue: '1583',
     confidence: 0.79,
     parentPath: ['Japan', 'Osaka'],
-    styleMapNodeId: 'style-node-4' as NodeId,
-    styleMapNodeName: 'Osaka Central',
+    stylerNodeId: 'style-node-4' as NodeId,
+    stylerNodeName: 'Osaka Central',
     rowIndex: 3,
     rowData: {
       name: 'Osaka Castle',
@@ -172,8 +172,8 @@ export const LargeDataset: Story = {
       matchedValue: `Location ${i + 1}`,
       confidence: Math.random() * 0.4 + 0.6, // 0.6-1.0の範囲
       parentPath: ['Japan', 'Prefecture', 'City'],
-      styleMapNodeId: `style-node-${i + 1}` as NodeId,
-      styleMapNodeName: `Style Map ${i + 1}`,
+      stylerNodeId: `style-node-${i + 1}` as NodeId,
+      stylerNodeName: `Style Map ${i + 1}`,
       rowIndex: i,
       rowData: {
         name: `Location ${i + 1}`,

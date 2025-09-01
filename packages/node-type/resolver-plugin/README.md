@@ -2,7 +2,7 @@
 
 ## 概要
 
-PropertyResolverプラグインは、異なるデータスキーマ間でプロパティをマッピングするための強力で使いやすいツールです。StyleMapプラグインと連携することで、地理データのスタイリングにおいて異なるプロパティ名を持つデータセットを統一的に扱えるようになります。
+PropertyResolverプラグインは、異なるデータスキーマ間でプロパティをマッピングするための強力で使いやすいツールです。Stylerプラグインと連携することで、地理データのスタイリングにおいて異なるプロパティ名を持つデータセットを統一的に扱えるようになります。
 
 ## 主な特徴
 
@@ -18,7 +18,7 @@ price -> display_price | format('¥{value:,}')
 ### パフォーマンス最適化
 - **適応的プレビュー**: データ量に応じたプレビュー戦略の自動切り替え
 - **チャンク処理**: 大量データをメモリ効率的に処理
-- **差分更新**: StyleMap連携時の部分的な更新による高速化
+- **差分更新**: Styler連携時の部分的な更新による高速化
 
 ### ユーザビリティの向上
 - **自動スキーマ検出**: JSON サンプルデータからのスキーマ自動推論
@@ -203,7 +203,7 @@ graph TD
   D --> F
   E --> F
   F --> G[結果マージ]
-  G --> H[StyleMap適用]
+  G --> H[Styler適用]
   H --> I[地図表示]
 ```
 
@@ -277,21 +277,21 @@ class ChainCompiler {
 }
 ```
 
-## StyleMap連携仕様
+## Styler連携仕様
 
 ### 統合シナリオ
 
-#### シナリオ1: 直接マッピング（stylemap + shape）
+#### シナリオ1: 直接マッピング（styler + shape）
 ```javascript
-// shapeデータのプロパティがStyleMapのキーと一致
+// shapeデータのプロパティがStylerのキーと一致
 {
   "都道府県": "東京都",
   "人口": 14000000
 }
-// → StyleMapが直接適用可能
+// → Stylerが直接適用可能
 ```
 
-#### シナリオ2: PropertyResolver経由マッピング（stylemap + propertyresolver + shape）
+#### シナリオ2: PropertyResolver経由マッピング（styler + propertyresolver + shape）
 ```javascript
 // shapeデータのプロパティ名が異なる
 {
@@ -305,7 +305,7 @@ class ChainCompiler {
 graph LR
   A[Shape Data] --> B[PropertyResolver]
   B --> C[Mapped Properties]
-  C --> D[StyleMap]
+  C --> D[Styler]
   D --> E[MapLibre GL Style]
   E --> F[Rendered Map]
 ```
@@ -472,7 +472,7 @@ interface MappingStatistics {
 - Material-UI 6+
 - TypeScript 5+
 - Dexie (IndexedDB)
-- MapLibre GL JS（StyleMap連携時）
+- MapLibre GL JS（Styler連携時）
 
 ### データベーススキーマ
 ```typescript
@@ -518,20 +518,20 @@ propertyresolver-plugin/
 ```typescript
 // PropertyResolver ノードの作成
 const resolver = await createPropertyResolverNode({
-  name: 'CSV to StyleMap Mapper',
+  name: 'CSV to Styler Mapper',
   sourceSchema: csvSchema,
-  targetSchema: styleMapSchema,
+  targetSchema: stylerSchema,
   mappingRules: [
     { source: 'prefecture_name', target: '都道府県' },
     { source: 'population', target: '人口' }
   ]
 });
 
-// StyleMap との連携
+// Styler との連携
 const styledData = await applyPropertyResolver(
   shapeData,
   resolver,
-  styleMap
+  styler
 );
 ```
 
@@ -544,7 +544,7 @@ const resolverChain = await propertyResolverAPI.createChain({
   resolvers: [
     { resolverId: csvNormalizer.id, order: 1 },
     { resolverId: geoEnhancer.id, order: 2 },
-    { resolverId: styleMapper.id, order: 3 }
+    { resolverId: stylerper.id, order: 3 }
   ],
   conflictResolution: 'last-wins'
 });

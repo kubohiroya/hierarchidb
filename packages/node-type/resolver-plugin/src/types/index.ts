@@ -153,11 +153,11 @@ export interface MappingPreviewResult {
 }
 
 /**
- * StyleMap integration configuration
+ * Styler integration configuration
  */
-export interface StyleMapIntegration {
+export interface StylerIntegration {
   enabled: boolean;
-  styleMapNodeId?: NodeId;
+  stylerNodeId?: NodeId;
   propertyMappings: Record<string, string>; // source property -> style property
 }
 

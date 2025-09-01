@@ -60,7 +60,7 @@ UI Layer (React) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Storage
 ### Resource Integration
 - **Basemap Integration**: Reference basemap nodes from Resources tree
 - **Shape Layer Aggregation**: Combine multiple shape nodes into unified layers
-- **Style Application**: Apply stylemap configurations to aggregated data
+- **Style Application**: Apply styler configurations to aggregated data
 - **Location Markers**: Include location nodes as map overlays
 
 ### Composition Capabilities

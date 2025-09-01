@@ -8,7 +8,7 @@
 
 **前提知識**: TypeScript、Promise/async-await、Comlink（Web Worker通信）、Observer パターン、Webアプリケーション開発の基本概念
 
-**読むタイミング**: 具体的な実装作業を開始する前に、使用したいAPI（QueryAPI、MutationAPI等）の該当セクションを参照してください。BaseMap、StyleMap、Shape、Spreadsheet、Projectプラグインのような具体的なプラグイン実装時にも、対応するAPIの使い方を確認できます。エラーハンドリングやパフォーマンス考慮事項は、品質の高いアプリケーション構築のために重要です。
+**読むタイミング**: 具体的な実装作業を開始する前に、使用したいAPI（QueryAPI、MutationAPI等）の該当セクションを参照してください。BaseMap、Styler、Shape、Spreadsheet、Projectプラグインのような具体的なプラグイン実装時にも、対応するAPIの使い方を確認できます。エラーハンドリングやパフォーマンス考慮事項は、品質の高いアプリケーション構築のために重要です。
 
 本APIリファレンスは実際のコード例と具体的なエラーハンドリング方法を含んでおり、迅速な開発開始と問題解決に役立ちます。
 

@@ -4,7 +4,7 @@
 
 この章では、HierarchiDBにおける型安全性強化とバリデーション戦略について詳細に説明します。本章は以下のような方を対象としています：
 
-**読むべき人**: TypeScript開発者、品質担保を重視する開発者、プラグイン開発者、システムアーキテクト、コードレビューを行う方、BaseMap・StyleMap・Shape・Spreadsheet・Projectプラグインなどの型安全性が重要なプラグインを実装する方
+**読むべき人**: TypeScript開発者、品質担保を重視する開発者、プラグイン開発者、システムアーキテクト、コードレビューを行う方、BaseMap・Styler・Shape・Spreadsheet・Projectプラグインなどの型安全性が重要なプラグインを実装する方
 
 **前提知識**: TypeScript の高度な型システム（ブランデッド型、Conditional Types、Mapped Types）、バリデーションライブラリ（Zod等）、Lint設定、テスト駆動開発（TDD）
 

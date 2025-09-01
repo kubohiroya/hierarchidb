@@ -31,7 +31,7 @@ graph TB
     
     subgraph "データ処理層"
         Spreadsheet[📊 Spreadsheet<br/>表データ]
-        StyleMap[🎨 StyleMap<br/>スタイル定義]
+        Styler[🎨 Styler<br/>スタイル定義]
         PropertyResolver[🔄 PropertyResolver<br/>データ変換]
     end
     
@@ -39,12 +39,12 @@ graph TB
     Project --> Location
     Project --> Route
     
-    Shape --> StyleMap
+    Shape --> Styler
     Location --> PropertyResolver
     Route --> PropertyResolver
     
-    Spreadsheet --> StyleMap
-    StyleMap --> PropertyResolver
+    Spreadsheet --> Styler
+    Styler --> PropertyResolver
     
     Folder --> Project
     BaseMap --> Project
@@ -168,7 +168,7 @@ graph LR
 - データのフィルタリング
 - 列の選択と変換
 
-### 🎨 StyleMap（スタイルマップ）
+### 🎨 Styler（スタイルマップ）
 **地図表示スタイルの定義**
 
 ```mermaid
@@ -279,7 +279,7 @@ graph TB
     
     subgraph "3. 統合"
         I1[駅と路線を関連付け]
-        I2[StyleMapで色分け]
+        I2[Stylerで色分け]
         I3[地図に表示]
     end
     
@@ -299,7 +299,7 @@ graph TB
    - タイプ: railway
    - 路線種別で分類
 
-3. **StyleMapプラグイン**でスタイル設定
+3. **Stylerプラグイン**でスタイル設定
    - 新幹線: 青色、太線
    - 在来線: 緑色、細線
    - 主要駅: 大きいアイコン
@@ -315,7 +315,7 @@ graph LR
     
     subgraph "データ処理"
         P1[PropertyResolver<br/>IATA→都市名]
-        P2[StyleMap<br/>路線頻度で太さ]
+        P2[Styler<br/>路線頻度で太さ]
     end
     
     subgraph "表示"

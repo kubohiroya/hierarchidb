@@ -1,9 +1,9 @@
-# StyleMap Plugin Phase 1: 基盤構築
+# Styler Plugin Phase 1: 基盤構築
 
 ## フェーズ概要
 
 - **期間**: 1ヶ月 (20営業日)
-- **目標**: StyleMapプラグイン基盤とデータ構造の完成
+- **目標**: Stylerプラグイン基盤とデータ構造の完成
 - **成果物**: プラグイン定義、エンティティ、データベース、基本ハンドラー
 - **担当**: 開発チーム
 - **前提条件**: TASK-0001〜0060 (Plugin Architecture) 完了済み
@@ -11,7 +11,7 @@
 ## 週次計画
 
 ### Week 1: データ構造・エンティティ設計
-- **目標**: StyleMap関連データ構造の完成
+- **目標**: Styler関連データ構造の完成
 - **成果物**: エンティティ定義、型システム
 
 ### Week 2: プラグイン定義・データベース設計  
@@ -30,7 +30,7 @@
 
 ### Week 1: データ構造・エンティティ設計
 
-#### Day 1 (TASK-0061): StyleMapEntity型定義
+#### Day 1 (TASK-0061): StylerEntity型定義
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -38,11 +38,11 @@
 - **要件リンク**: REQ-004 🟢
 - **依存タスク**: TASK-0002 (BaseEntity型定義)
 - **実装詳細**:
-  - StyleMapEntity インターフェース定義
+  - StylerEntity インターフェース定義
   - PrimaryResourceEntity継承
   - cacheKey, downloadUrl, filename フィールド
   - tableMetadataId, keyColumn, valueColumn
-  - filterRules, styleMapConfig
+  - filterRules, stylerConfig
 - **テスト要件**:
   - [ ] 型定義の整合性テスト
   - [ ] 必須フィールド検証
@@ -57,7 +57,7 @@
   - [ ] eria-cartograph実装との互換性確保
 - **注意事項**: 🟢 eria-cartographの実装を正確に移植すること
 
-#### Day 2 (TASK-0062): StyleMapConfig型定義
+#### Day 2 (TASK-0062): StylerConfig型定義
 
 - [ ] **タスク完了**
 - **推定工数**: 6時間
@@ -65,7 +65,7 @@
 - **要件リンク**: REQ-003, REQ-301, REQ-302 🟢
 - **依存タスク**: TASK-0061
 - **実装詳細**:
-  - StyleMapConfig インターフェース定義
+  - StylerConfig インターフェース定義
   - algorithm: "linear" | "logarithmic" | "quantile" | "categorical"
   - colorSpace: "rgb" | "hsv"
   - mapping設定 (min, max, hue, saturation, brightness)
@@ -111,7 +111,7 @@
   - [ ] テーブル構造の正規化設計
 - **注意事項**: 🟢 eria-cartographパターン踏襲
 
-#### Day 4 (TASK-0064): StyleMapWorkingCopy型定義
+#### Day 4 (TASK-0064): StylerWorkingCopy型定義
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -119,9 +119,9 @@
 - **要件リンク**: REQ-007 🟢
 - **依存タスク**: TASK-0063
 - **実装詳細**:
-  - StyleMapWorkingCopy インターフェース定義
+  - StylerWorkingCopy インターフェース定義
   - BaseWorkingCopy継承
-  - 全StyleMapEntityフィールド + Working Copy制御
+  - 全StylerEntityフィールド + Working Copy制御
   - workingCopyId, workingCopyOf, copiedAt, isDirty
 - **テスト要件**:
   - [ ] 型定義の整合性テスト
@@ -166,7 +166,7 @@
 
 ### Week 2: プラグイン定義・データベース設計
 
-#### Day 6 (TASK-0066): StyleMapDatabase実装
+#### Day 6 (TASK-0066): StylerDatabase実装
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -174,7 +174,7 @@
 - **要件リンク**: REQ-401, TECH-005 🟢
 - **依存タスク**: TASK-0065, TASK-0031 (Dexie設定)
 - **実装詳細**:
-  - StyleMapDatabase クラス (Dexie継承)
+  - StylerDatabase クラス (Dexie継承)
   - テーブル定義: entities, workingCopies, tableMetadata, rows
   - インデックス設計: nodeId, cacheKey, tableMetadataId
   - バージョン管理・マイグレーション
@@ -226,8 +226,8 @@
 - **要件リンク**: REQ-501, REQ-502, REQ-503, REQ-504 🟢
 - **依存タスク**: TASK-0067, TASK-0004 (UnifiedPluginDefinition型)
 - **実装詳細**:
-  - StyleMapUnifiedDefinition作成
-  - nodeType: 'stylemap', displayName: 'Style Map'
+  - StylerUnifiedDefinition作成
+  - nodeType: 'styler', displayName: 'Style Map'
   - database設定 (dbName, tableName, schema, version)
   - entityHandler設定 (後で実装)
   - ui設定 (dialogComponent, panelComponent等)
@@ -253,7 +253,7 @@
 - **要件リンク**: REQ-503 🟢
 - **依存タスク**: TASK-0068, TASK-0012 (ライフサイクルフック型)
 - **実装詳細**:
-  - StyleMapライフサイクルフック実装
+  - Stylerライフサイクルフック実装
   - beforeCreate: ファイルサイズ・形式検証
   - afterCreate: キャッシュキー生成
   - beforeUpdate: 変更内容検証
@@ -302,7 +302,7 @@
 
 ### Week 3: EntityHandler・Working Copy実装
 
-#### Day 11 (TASK-0071): StyleMapEntityHandler基本実装
+#### Day 11 (TASK-0071): StylerEntityHandler基本実装
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -310,9 +310,9 @@
 - **要件リンク**: REQ-502 🟢
 - **依存タスク**: TASK-0070, TASK-0005 (EntityHandler型)
 - **実装詳細**:
-  - StyleMapEntityHandler クラス実装
+  - StylerEntityHandler クラス実装
   - EntityHandler インターフェース準拠
-  - StyleMapDatabase インスタンス管理
+  - StylerDatabase インスタンス管理
   - 基本的なCRUD操作の骨格
 - **テスト要件**:
   - [ ] 型定義の整合性テスト
@@ -414,7 +414,7 @@
 - **要件リンク**: REQ-502 🟢
 - **依存タスク**: TASK-0074
 - **実装詳細**:
-  - duplicate メソッド実装 (StyleMap複製)
+  - duplicate メソッド実装 (Styler複製)
   - backup メソッド実装 (エンティティバックアップ)
   - restore メソッド実装 (バックアップ復元)
   - cleanup メソッド実装 (リソース解放)
@@ -553,7 +553,7 @@
 ## フェーズ完了基準
 
 - [ ] 全タスクが完了している (20/20)
-- [ ] StyleMapプラグイン基盤が動作する  
+- [ ] Stylerプラグイン基盤が動作する  
 - [ ] EntityHandlerのCRUD操作が完全に動作
 - [ ] Working Copy機能が正常に動作
 - [ ] プラグインがNodeTypeRegistryに正しく統合
@@ -564,9 +564,9 @@
 ## 次フェーズへの引き継ぎ事項
 
 ### 🟢 完成した基盤機能
-- StyleMapEntity・関連型の完全定義
-- StyleMapEntityHandler (CRUD・Working Copy)
-- StyleMapDatabaseスキーマ・インデックス
+- StylerEntity・関連型の完全定義
+- StylerEntityHandler (CRUD・Working Copy)
+- StylerDatabaseスキーマ・インデックス
 - UnifiedPluginDefinition統合
 - ライフサイクルフック・バリデーション
 

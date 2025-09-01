@@ -8,7 +8,7 @@
 
 **前提知識**: データベース設計の基本概念、リレーショナルデータベースの制約、ライフサイクル管理、参照整合性、カスケード削除の概念
 
-**読むタイミング**: プラグイン開発でエンティティ設計を行う前の必読事項として、または既存エンティティの関係性を理解・拡張する際に参照してください。BaseMap、StyleMap、Shape、Spreadsheet、Projectプラグインのような複雑なデータ関係を持つプラグインを実装する場合、適切なエンティティ分類の選択により自動ライフサイクル管理とパフォーマンス最適化の恩恵を受けることができます。
+**読むタイミング**: プラグイン開発でエンティティ設計を行う前の必読事項として、または既存エンティティの関係性を理解・拡張する際に参照してください。BaseMap、Styler、Shape、Spreadsheet、Projectプラグインのような複雑なデータ関係を持つプラグインを実装する場合、適切なエンティティ分類の選択により自動ライフサイクル管理とパフォーマンス最適化の恩恵を受けることができます。
 
 エンティティ分類システムは、データの永続性・関係性・ライフサイクルを明確に分類することで、適切な設計判断とデータベース最適化を支援します。
 
@@ -228,7 +228,7 @@ classDiagram
     BaseEntityHandler <|-- RelationalEntityHandler
     
     PeerEntityHandler <|-- BaseMapEntityHandler
-    PeerEntityHandler <|-- StyleMapEntityHandler
+    PeerEntityHandler <|-- StylerEntityHandler
     GroupEntityHandler <|-- VectorTileEntityHandler
     RelationalEntityHandler <|-- TableMetadataEntityHandler
 ```
@@ -253,7 +253,7 @@ TreeNodeと1対1で対応するエンティティを管理します。ノード�
 |---|---|---|---|
 | **Persistent** | 設定データ | 成果物データ | 共有リソース |
 | (CoreDB) | • BaseMapEntity | • VectorTileEntity | • TableMetadataEntity |
-| | • StyleMapEntity | • ProcessedFeature | • SharedStyleRule |
+| | • StylerEntity | • ProcessedFeature | • SharedStyleRule |
 | | • ShapesEntity | • BatchResult | • CacheIndex |
 | **Ephemeral** | UI状態 | 中間データ | セッション管理 |
 | (EphemeralDB) | • ViewState | • ProcessBuffer | • BatchSession |

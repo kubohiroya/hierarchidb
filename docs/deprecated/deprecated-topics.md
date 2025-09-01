@@ -105,7 +105,7 @@ TreeConsoleの実装詳細が過度に記載され、全体のUIアーキテク�
 - 10-0-plugin-development-guide.md
 - 10-0-plugin-comprehensive-specification.md
 - 10-1-plugin-basemap.md
-- 10-2-plugin-stylemap.md
+- 10-2-plugin-styler.md
 - 10-3-plugin-shape.md
 - 10-x-plugin-entity-lifecycle-guide.md
 - 10-x-migration.md

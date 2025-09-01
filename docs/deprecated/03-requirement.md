@@ -53,7 +53,7 @@
 1. **Peer（1対1）**
    - TreeNodeと1対1で対応するエンティティ
    - 各TreeNodeに対して必ず1つのPeerエンティティが存在
-   - 例：StyleMapEntity, BaseMapEntity
+   - 例：StylerEntity, BaseMapEntity
 
 2. **Group（1対N）**
    - TreeNodeと1対Nで対応するエンティティ
@@ -64,7 +64,7 @@
    - 複数のTreeNodeとN対Nで対応するエンティティ
    - リファレンスカウントによるライフサイクル管理
    - 最後の参照が削除されたときに自動削除される
-   - 例：TableMetadataEntity（複数のStyleMapで共有される表データ）
+   - 例：TableMetadataEntity（複数のStylerで共有される表データ）
 
 **ノードのライフサイクルに応じた分類：**
 

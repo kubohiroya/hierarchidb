@@ -1,8 +1,8 @@
-# plugin-stylemap アーキテクチャ設計
+# plugin-styler アーキテクチャ設計
 
 ## システム概要
 
-🟢 plugin-stylemap は、hierarchidb フレームワークの AOP ノードシステムに準拠したプラグインで、CSV/TSV ファイルからの地理統計データを MapLibre GL JS 互換のスタイルマッピングに変換する機能を提供します。eria-cartograph の実装パターンを継承し、4層アーキテクチャ内で動作します。
+🟢 plugin-styler は、hierarchidb フレームワークの AOP ノードシステムに準拠したプラグインで、CSV/TSV ファイルからの地理統計データを MapLibre GL JS 互換のスタイルマッピングに変換する機能を提供します。eria-cartograph の実装パターンを継承し、4層アーキテクチャ内で動作します。
 
 ## アーキテクチャパターン
 
@@ -17,11 +17,11 @@
 ### 🟢 4層データフロー構成
 
 ```
-UI Layer (React/MUI + StyleMap Components)
-    ↕ Comlink RPC (StyleMapAPI)
-Worker Layer (StyleMapService + StyleMapDB)
+UI Layer (React/MUI + Styler Components)
+    ↕ Comlink RPC (StylerAPI)
+Worker Layer (StylerService + StylerDB)
     ↕ Dexie Transactions
-CoreDB (StyleMapEntity + TableMetadataEntity + RowEntity)
+CoreDB (StylerEntity + TableMetadataEntity + RowEntity)
 EphemeralDB (WorkingCopyTypes + PreviewState)
 ```
 
@@ -30,22 +30,22 @@ EphemeralDB (WorkingCopyTypes + PreviewState)
 ### フロントエンド層
 
 🟢 **プラグイン統合**:
-- **PluginDefinition**: `StyleMapNodeDefinition` でプラグイン登録
-- **React コンポーネント**: ステップ式ダイアログ (`StyleMapDialog`)
+- **PluginDefinition**: `StylerNodeDefinition` でプラグイン登録
+- **React コンポーネント**: ステップ式ダイアログ (`StylerDialog`)
 - **State管理**: React hooks + Comlink RPC
 - **UI フレームワーク**: Material-UI (MUI) v5
 
 🟢 **主要コンポーネント**:
 ```typescript
 // Plugin Registration
-const StyleMapNodeDefinition: PluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  database: { entityStore: 'styleMapEntities', schema: StyleMapEntity },
-  entityHandler: new StyleMapEntityHandler(),
+const StylerNodeDefinition: PluginDefinition = {
+  nodeType: 'styler-plugin',
+  database: { entityStore: 'stylerEntities', schema: StylerEntity },
+  entityHandler: new StylerEntityHandler(),
   lifecycle: { afterCreate, beforeDelete },
   ui: { 
-    dialogComponent: StyleMapDialog,
-    panelComponent: StyleMapPreviewPanel 
+    dialogComponent: StylerDialog,
+    panelComponent: StylerPreviewPanel 
   }
 };
 ```
@@ -53,30 +53,30 @@ const StyleMapNodeDefinition: PluginDefinition = {
 ### Worker層
 
 🟢 **データ処理サービス**:
-- **StyleMapService**: ファイル処理・カラーマッピング計算
-- **StyleMapDB**: IndexedDB 永続化層 (Dexie ベース)
-- **StyleMapFileCacheService**: SHA3 ハッシュベースキャッシュ管理
+- **StylerService**: ファイル処理・カラーマッピング計算
+- **StylerDB**: IndexedDB 永続化層 (Dexie ベース)
+- **StylerFileCacheService**: SHA3 ハッシュベースキャッシュ管理
 - **Working Copy管理**: EphemeralDB での編集状態管理
 
 🟢 **Comlink RPC インターフェース**:
 ```typescript
-interface StyleMapWorkerAPI {
+interface StylerWorkerAPI {
   parseFile(file: File): Promise<ParseResult>;
-  calculateStyleMapping(config: StyleMapConfig, data: RowEntity[]): Promise<StyleProperty[]>;
-  saveStyleMap(entity: StyleMapEntity): Promise<void>;
-  getStyleMap(nodeId: string): Promise<StyleMapEntity | undefined>;
+  calculateStylerping(config: StylerConfig, data: RowEntity[]): Promise<StyleProperty[]>;
+  saveStyler(entity: StylerEntity): Promise<void>;
+  getStyler(nodeId: string): Promise<StylerEntity | undefined>;
 }
 ```
 
 ### データベース層
 
 🟢 **CoreDB スキーマ** (Dexie/IndexedDB):
-- **styleMapEntities**: StyleMapEntity の永続化
+- **stylerEntities**: StylerEntity の永続化
 - **tableMetadataEntities**: CSV/TSV メタデータ
 - **rowEntities**: 表データの行情報
 
 🟢 **EphemeralDB スキーマ**:
-- **workingCopies**: 編集中のStyleMapEntity
+- **workingCopies**: 編集中のStylerEntity
 - **previewStates**: リアルタイムプレビュー状態
 - **undoRedoBuffer**: 操作履歴の管理
 
@@ -107,8 +107,8 @@ interface StyleMapWorkerAPI {
 **実装**:
 ```typescript
 // 🟢 Working Copy Lifecycle
-class StyleMapEntityHandler {
-  async createWorkingCopy(nodeId: string): Promise<StyleMapWorkingCopy> {
+class StylerEntityHandler {
+  async createWorkingCopy(nodeId: string): Promise<StylerWorkingCopy> {
     const original = await this.coreDB.getEntity(nodeId);
     const workingCopy = { ...original, isWorkingCopy: true };
     await this.ephemeralDB.saveWorkingCopy(workingCopy);
@@ -129,7 +129,7 @@ class StyleMapEntityHandler {
 
 **設計**:
 - **TableMetadataEntity**: ファイルハッシュによる一意識別
-- **参照カウント**: 複数StyleMapからの共有データ管理
+- **参照カウント**: 複数Stylerからの共有データ管理
 - **RowEntity**: 正規化された行データ格納
 
 ### 🟡 キャッシュ戦略
@@ -199,11 +199,11 @@ class FileValidator {
 
 ```typescript
 // 🟡 Performance Optimization
-const StyleMapPreview = memo(({ config, data }: Props) => {
+const StylerPreview = memo(({ config, data }: Props) => {
   const debouncedConfig = useDebounce(config, 300);
   
   const calculatedStyles = useMemo(() => 
-    calculateStyleMapping(debouncedConfig, data),
+    calculateStylerping(debouncedConfig, data),
     [debouncedConfig, data]
   );
 
@@ -305,7 +305,7 @@ const StyleMapPreview = memo(({ config, data }: Props) => {
 
 **データマイグレーション**:
 - **スキーマ変更**: 後方互換性を保持した段階的更新
-- **データ変換**: 既存StyleMapEntityの自動移行
+- **データ変換**: 既存StylerEntityの自動移行
 - **ロールバック**: 問題発生時の安全な巻き戻し
 
 **設定管理**:
@@ -345,4 +345,4 @@ const StyleMapPreview = memo(({ config, data }: Props) => {
 - Playwright (E2E テスト)
 - Chrome DevTools (パフォーマンス測定)
 
-この設計により、eria-cartograph の実証済みパターンを継承しつつ、hierarchidb フレームワークの特性を活かした堅牢で拡張性の高い plugin-stylemap を実現します。
+この設計により、eria-cartograph の実証済みパターンを継承しつつ、hierarchidb フレームワークの特性を活かした堅牢で拡張性の高い plugin-styler を実現します。

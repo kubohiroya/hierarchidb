@@ -4,7 +4,7 @@
 
 この章では、HierarchiDBの3層プラグインアーキテクチャの設計思想と実装方法について詳細に説明します。本章は以下のような方を対象としています：
 
-**読むべき人**: プラグイン開発者、システムアーキテクト、UI/Worker間通信を設計する開発者、BaseMap・StyleMap・Shape・Spreadsheet・Projectなどの高度なプラグインを実装する方
+**読むべき人**: プラグイン開発者、システムアーキテクト、UI/Worker間通信を設計する開発者、BaseMap・Styler・Shape・Spreadsheet・Projectなどの高度なプラグインを実装する方
 
 **前提知識**: TypeScript、React、Web Worker、Comlink（Worker通信）、データベース設計、非同期プログラミング、CopyOnWriteパターンの基本理解
 

@@ -2,7 +2,7 @@
 
 ## 概要
 
-Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理プラグインです。大容量のCSVやExcelファイルを効率的に処理し、他のプラグイン（StyleMap、Shapes等）の基盤として機能します。
+Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理プラグインです。大容量のCSVやExcelファイルを効率的に処理し、他のプラグイン（Styler、Shapes等）の基盤として機能します。
 
 ## 主要機能
 
@@ -34,7 +34,7 @@ Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理プ
 ┌─────────────────────────────────────┐
 │         Application Layer           │
 ├─────────────────────────────────────┤
-│    StyleMap Plugin                  │
+│    Styler Plugin                  │
 │    (Spreadsheetを利用)              │
 ├─────────────────────────────────────┤
 │    Spreadsheet Plugin               │

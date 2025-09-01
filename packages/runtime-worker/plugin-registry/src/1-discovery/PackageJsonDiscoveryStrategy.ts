@@ -33,7 +33,7 @@ export class PackageJsonDiscoveryStrategy extends BasePluginDiscoveryStrategy {
         'route',
         'spreadsheet',
         'basemap',
-        'stylemap',
+        'styler',
         'project',
         'propertyresolver',
       ];
@@ -147,7 +147,7 @@ export class PackageJsonDiscoveryStrategy extends BasePluginDiscoveryStrategy {
         },
         dependencies: ['folder'],
       },
-      stylemap: {
+      styler: {
         metadata: {
           displayName: 'Style Map',
           description: 'Visual style mapping',

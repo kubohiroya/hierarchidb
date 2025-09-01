@@ -2,7 +2,7 @@
 
 ## 概要
 
-既存のbasemapとstylemapプラグインを6分類エンティティシステム（Persistent/Ephemeral × Peer/Group/Relational）に移行し、統一されたプラグインアーキテクチャに対応させる。既存の実装を最大限活用しながら、段階的かつ安全な移行を実現する。
+既存のbasemapとstylerプラグインを6分類エンティティシステム（Persistent/Ephemeral × Peer/Group/Relational）に移行し、統一されたプラグインアーキテクチャに対応させる。既存の実装を最大限活用しながら、段階的かつ安全な移行を実現する。
 
 ## 1. 現状分析
 
@@ -36,39 +36,39 @@ packages/plugins/basemap/
 - ✅ **UIコンポーネント**: 作成・編集・プレビューの完全セット
 - ⚠️ **従来型定義**: 6分類システム非対応
 
-### 1.2 StyleMapプラグイン現状
+### 1.2 Stylerプラグイン現状
 
 #### 既存ファイル構造
 ```
-packages/plugins/stylemap/
+packages/plugins/styler/
 ├── plugin.config.ts                 # プラグイン設定
 ├── src/
 │   ├── openstreetmap-type.ts                     # メインエクスポート
 │   ├── types/
-│   │   ├── StyleMapEntity.ts        # PeerEntity実装済み
+│   │   ├── StylerEntity.ts        # PeerEntity実装済み
 │   │   ├── TableMetadataEntity.ts   # RelationalEntity実装済み
-│   │   ├── StyleMapConfig.ts        # 設定型
+│   │   ├── StylerConfig.ts        # 設定型
 │   │   └── openstreetmap-type.ts                 # 型のエクスポート
 │   ├── database/
-│   │   ├── StyleMapDatabase.ts      # メインデータベース
-│   │   └── StyleMapDatabaseOptimization.ts # 最適化
+│   │   ├── StylerDatabase.ts      # メインデータベース
+│   │   └── StylerDatabaseOptimization.ts # 最適化
 │   ├── handlers/
-│   │   ├── StyleMapHandler.ts       # 簡易ハンドラー
-│   │   └── StyleMapEntityHandler.ts # フルハンドラー
+│   │   ├── StylerHandler.ts       # 簡易ハンドラー
+│   │   └── StylerEntityHandler.ts # フルハンドラー
 │   ├── managers/
 │   │   └── TableMetadataManager.ts  # RelationalEntity管理
 │   ├── components/
-│   │   ├── StyleMapImport.tsx       # 6ステップウィザード
+│   │   ├── StylerImport.tsx       # 6ステップウィザード
 │   │   └── steps/                   # ウィザードステップ
 │   └── ui/
-│       └── StyleMapUIPlugin.tsx     # UI層プラグイン
+│       └── StylerUIPlugin.tsx     # UI層プラグイン
 ```
 
 #### 現在の実装特徴
 - ✅ **複合エンティティ**: PeerEntity + RelationalEntity
 - ✅ **6ステップウィザード**: 完全なインポートフロー
 - ✅ **RelationalEntity管理**: 参照カウント実装済み
-- ✅ **型合成パターン**: `StyleMapEntity = PeerEntity & StyleMapProperties`
+- ✅ **型合成パターン**: `StylerEntity = PeerEntity & StylerProperties`
 - ⚠️ **6分類システム非統合**: マネージャー分離が不完全
 
 ## 2. 移行戦略
@@ -87,7 +87,7 @@ packages/plugins/stylemap/
 - 統一プラグインAPI適用
 - 自動ライフサイクル管理統合
 
-#### Phase 2: StyleMap移行（2週間）
+#### Phase 2: Styler移行（2週間）
 - 複合エンティティの6分類統合
 - RelationalEntityマネージャー統合
 - 6ステップウィザードの統一API対応
@@ -358,23 +358,23 @@ export class BaseMapHandler implements EntityHandler<
 }
 ```
 
-## 4. StyleMapプラグイン改修詳細
+## 4. Stylerプラグイン改修詳細
 
 ### 4.1 型定義の改修
 
 #### After: 6分類対応型定義
 ```typescript
-// packages/plugins/stylemap-plugin/src/types/StyleMapEntity.ts (改修後)
+// packages/plugins/styler-plugin/src/types/StylerEntity.ts (改修後)
 import { PeerEntity, RelationalEntity, WorkingCopyProperties } from '@hierarchidb/core';
 
-// StyleMap固有プロパティ
-export interface StyleMapProperties {
+// Styler固有プロパティ
+export interface StylerProperties {
   name: string;
   description?: string;
   filename?: string;
   keyColumn?: string;
   valueColumns?: string[];
-  styleMapConfig?: StyleMapConfig;
+  stylerConfig?: StylerConfig;
   filterRules?: FilterRule[];
   tableMetadataId?: string; // RelationalEntityへの参照
   cacheKey?: string;
@@ -382,8 +382,8 @@ export interface StyleMapProperties {
 }
 
 // 型合成パターン適用
-export type StyleMapEntity = PeerEntity & StyleMapProperties;
-export type StyleMapWorkingCopy = StyleMapEntity & WorkingCopyProperties;
+export type StylerEntity = PeerEntity & StylerProperties;
+export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
 
 // RelationalEntity（既存実装をそのまま活用）
 export interface TableMetadataProperties {
@@ -401,17 +401,17 @@ export type TableMetadataEntity = RelationalEntity & TableMetadataProperties;
 
 #### After: 複合エンティティ対応
 ```typescript
-// packages/plugins/stylemap-plugin/src/definitions/StyleMapDefinition.ts (改修後)
-export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
-  nodeType: 'stylemap-plugin',
-  name: 'StyleMap',
+// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts (改修後)
+export const StylerWorkerPlugin: WorkerPluginDefinition = {
+  nodeType: 'styler-plugin',
+  name: 'Styler',
   version: '2.0.0',
   
   // 6分類での位置づけ（複数エンティティ利用）
   entityClassification: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       manager: 'PeerEntityManager',
       description: 'スタイル設定（TreeNodeと1:1対応）'
     },
@@ -419,7 +419,7 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
       category: 'PersistentRelationalEntity',
       entityType: 'TableMetadataEntity',
       manager: 'RelationalEntityManager',
-      description: 'テーブルメタデータ（複数StyleMapで共有、N:N関係）'
+      description: 'テーブルメタデータ（複数Stylerで共有、N:N関係）'
     }]
   },
   
@@ -427,7 +427,7 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
   database: {
     dbName: 'CoreDB',
     entityManagers: {
-      'StyleMapEntity': 'PeerEntityManager',
+      'StylerEntity': 'PeerEntityManager',
       'TableMetadataEntity': 'RelationalEntityManager'
     },
     autoLifecycle: true,
@@ -439,16 +439,16 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
   },
   
   // 既存ハンドラーをそのまま利用
-  entityHandler: new StyleMapHandler(),
+  entityHandler: new StylerHandler(),
   
   // ライフサイクルフック（既存実装をそのまま活用）
-  lifecycle: stylemapLifecycle, // 既存のライフサイクルフック
+  lifecycle: stylerLifecycle, // 既存のライフサイクルフック
   
   // バリデーション（既存実装をそのまま活用）
   validation: {
     namePattern: /^[a-zA-Z0-9\s\-_\.]+$/,
     maxChildren: 0,
-    customValidators: stylemapValidators // 既存のバリデーター
+    customValidators: stylerValidators // 既存のバリデーター
   }
 };
 ```
@@ -457,16 +457,16 @@ export const StyleMapWorkerPlugin: WorkerPluginDefinition = {
 
 #### After: マルチステップ対応UI定義
 ```typescript
-// packages/plugins/stylemap-plugin/src/ui/StyleMapUIPlugin.tsx (改修後)
-export const StyleMapUIPlugin: UIPluginDefinition = {
-  nodeType: 'stylemap-plugin',
+// packages/plugins/styler-plugin/src/ui/StylerUIPlugin.tsx (改修後)
+export const StylerUIPlugin: UIPluginDefinition = {
+  nodeType: 'styler-plugin',
   displayName: 'Style Map',
   
   // 6分類システム対応（複合エンティティ）
   entitySupport: {
     primary: {
       category: 'PersistentPeerEntity',
-      entityType: 'StyleMapEntity',
+      entityType: 'StylerEntity',
       uiFeatures: {
         supportsWorkingCopy: true,
         supportsVersioning: true,
@@ -500,10 +500,10 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
   
   // UIコンポーネント（既存をそのまま利用）
   components: {
-    icon: StyleMapIcon,
-    multiStepDialog: StyleMapImport, // 既存の6ステップウィザード
-    editDialog: StyleMapEditDialog,
-    preview: StyleMapPreview
+    icon: StylerIcon,
+    multiStepDialog: StylerImport, // 既存の6ステップウィザード
+    editDialog: StylerEditDialog,
+    preview: StylerPreview
   },
   
   // アクションフック（6ステップウィザード統合）
@@ -511,7 +511,7 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
     onShowCreateDialog: async ({ parentId, onSubmit }) => {
       // 既存の6ステップウィザードを統一API経由で表示
       await showMultiStepDialog({
-        component: StyleMapImport,
+        component: StylerImport,
         steps: 6,
         onComplete: onSubmit
       });
@@ -520,15 +520,15 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
     afterCreate: async ({ nodeId, entity }) => {
       return {
         navigateTo: nodeId,
-        showMessage: `StyleMap "${entity.name}" imported successfully`
+        showMessage: `Styler "${entity.name}" imported successfully`
       };
     },
     
     onExport: async ({ nodeId, format }) => {
-      const data = await nodeAdapter.getNodeData(nodeId, 'stylemap-plugin');
+      const data = await nodeAdapter.getNodeData(nodeId, 'styler-plugin');
       
       if (format === 'csv') {
-        const csvData = await exportStyleMapAsCSV(data);
+        const csvData = await exportStylerAsCSV(data);
         return new Blob([csvData], { type: 'text/csv' });
       }
       
@@ -551,13 +551,13 @@ export const StyleMapUIPlugin: UIPluginDefinition = {
 // packages/worker/src/plugins/PluginRegistration.ts (新規)
 import { AutoEntityLifecycleManager } from '@hierarchidb/core';
 import { BaseMapWorkerPlugin } from '@hierarchidb/plugin-basemap';
-import { StyleMapWorkerPlugin } from '@hierarchidb/plugin-stylemap-plugin';
+import { StylerWorkerPlugin } from '@hierarchidb/plugin-styler-plugin';
 
 const lifecycleManager = AutoEntityLifecycleManager.getInstance();
 
 // プラグイン登録時に自動ライフサイクル管理を設定
 lifecycleManager.registerPlugin(BaseMapWorkerPlugin);
-lifecycleManager.registerPlugin(StyleMapWorkerPlugin);
+lifecycleManager.registerPlugin(StylerWorkerPlugin);
 
 // TreeNode削除時の自動クリーンアップが有効化される
 // WorkingCopy削除時の自動クリーンアップが有効化される
@@ -595,7 +595,7 @@ export class BaseMapDatabase extends Dexie {
 ### 5.3 RelationalEntityの自動管理
 
 ```typescript
-// packages/plugins/stylemap-plugin/src/managers/TableMetadataManager.ts (改修後)
+// packages/plugins/styler-plugin/src/managers/TableMetadataManager.ts (改修後)
 export class TableMetadataManager extends RelationalEntityManager<TableMetadataEntity> {
   constructor() {
     super();
@@ -644,10 +644,10 @@ export class TableMetadataManager extends RelationalEntityManager<TableMetadataE
 2. 新しいライフサイクル管理の検証
 3. パフォーマンステスト
 
-### 6.2 Phase 2: StyleMap移行（2週間）
+### 6.2 Phase 2: Styler移行（2週間）
 
 #### Week 1: 複合エンティティ対応
-1. `StyleMapEntity.ts`と`TableMetadataEntity.ts`の改修
+1. `StylerEntity.ts`と`TableMetadataEntity.ts`の改修
 2. 複合エンティティ定義の追加
 3. RelationalEntityManager統合
 
@@ -719,7 +719,7 @@ export class TableMetadataManager extends RelationalEntityManager<TableMetadataE
 
 ## 9. まとめ
 
-この改修仕様により、既存のbasemapとstylemapプラグインを6分類エンティティシステムに安全かつ効率的に移行できる。
+この改修仕様により、既存のbasemapとstylerプラグインを6分類エンティティシステムに安全かつ効率的に移行できる。
 
 ### ✅ **移行の利点**
 1. **統一されたアーキテクチャ**: 全プラグインで一貫した設計

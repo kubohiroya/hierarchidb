@@ -1,8 +1,8 @@
-# StyleMap Plugin 実装タスク全体概要
+# Styler Plugin 実装タスク全体概要
 
 ## プロジェクト概要
 
-- **要件名**: StyleMap Plugin
+- **要件名**: Styler Plugin
 - **総期間**: 2025-01-15 〜 2025-04-15 (3ヶ月)
 - **総工数**: 480時間 (60営業日)
 - **総タスク数**: 60タスク
@@ -12,10 +12,10 @@
 
 | フェーズ | 期間 | 主要成果物 | タスク数 | 工数 | ファイル |
 |---------|------|-----------|---------|------|---------|
-| Phase 1: 基盤構築 | 1ヶ月 | プラグインアーキテクチャ・データ構造 | 20タスク | 160h | [stylemap-phase1.md](stylemap-phase1.md) |
-| Phase 2: コア機能 | 1ヶ月 | CSV処理・カラーマッピング機能 | 20タスク | 160h | [stylemap-phase2.md](stylemap-phase2.md) |
-| Phase 3: UI実装 | 3週間 | ダイアログ・フォーム・プレビュー | 15タスク | 120h | [stylemap-phase3.md](stylemap-phase3.md) |
-| Phase 4: 統合・最適化 | 1週間 | テスト・性能調整・ドキュメント | 5タスク | 40h | [stylemap-phase4.md](stylemap-phase4.md) |
+| Phase 1: 基盤構築 | 1ヶ月 | プラグインアーキテクチャ・データ構造 | 20タスク | 160h | [styler-phase1.md](styler-phase1.md) |
+| Phase 2: コア機能 | 1ヶ月 | CSV処理・カラーマッピング機能 | 20タスク | 160h | [styler-phase2.md](styler-phase2.md) |
+| Phase 3: UI実装 | 3週間 | ダイアログ・フォーム・プレビュー | 15タスク | 120h | [styler-phase3.md](styler-phase3.md) |
+| Phase 4: 統合・最適化 | 1週間 | テスト・性能調整・ドキュメント | 5タスク | 40h | [styler-phase4.md](styler-phase4.md) |
 
 ## 既存タスク番号の管理
 
@@ -28,7 +28,7 @@
 
 ```mermaid
 gantt
-    title StyleMap Plugin 実装スケジュール
+    title Styler Plugin 実装スケジュール
     dateFormat  YYYY-MM-DD
     section Phase 1
     基盤構築           :phase1, 2025-01-15, 20d
@@ -46,7 +46,7 @@ gantt
 - REQ-001: CSV/TSV ファイル読み込み
 - REQ-002: テーブルデータマッピング  
 - REQ-003: カラーマッピング設定管理
-- REQ-004: StyleMapEntity永続化
+- REQ-004: StylerEntity永続化
 - REQ-005: MapLibre GL スタイル生成
 - REQ-006: SHA3ハッシュキャッシュ
 - REQ-007: Working Copy機能
@@ -82,7 +82,7 @@ gantt
 - **UI-Worker通信**: Comlink RPC
 - **型システム**: TypeScript strict mode
 
-### StyleMap専用技術
+### Styler専用技術
 - **ファイル処理**: CSV/TSV パーサー (RFC 4180準拠)
 - **ハッシュ**: SHA3-256 キャッシュキー
 - **カラーマッピング**: HSV/RGB色空間、複数アルゴリズム
@@ -117,7 +117,7 @@ gantt
 ## eria-cartograph 実装参考度
 
 ### 🟢 直接参考可能 (70%)
-- **データ構造**: StyleMapEntity, StyleMapConfig, FilterRule
+- **データ構造**: StylerEntity, StylerConfig, FilterRule
 - **ビジネスロジック**: CSV解析、カラーマッピング、フィルタリング
 - **UI設計**: ステップ式ダイアログ、リアルタイムプレビュー
 
@@ -159,7 +159,7 @@ gantt
 
 ```mermaid
 gantt
-    title StyleMap Plugin 詳細実装スケジュール
+    title Styler Plugin 詳細実装スケジュール
     dateFormat  YYYY-MM-DD
     section Phase 1: 基盤構築
     データ構造・エンティティ   :p1w1, 2025-01-15, 5d
