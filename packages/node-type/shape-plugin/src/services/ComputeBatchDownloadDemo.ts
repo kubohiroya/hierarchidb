@@ -3,10 +3,19 @@ import { ComputeService } from '@hierarchidb/compute';
 import { DownloadService, type NetworkPort, type StoragePort, type IntegrityPort } from '@hierarchidb/download';
 
 class FetchNetworkPort implements NetworkPort {
-  async head(url: string, init?: RequestInit) { const r = await fetch(url, { method: 'HEAD', ...init }); return wrap(r); }
-  async get(url: string, init?: RequestInit) { const r = await fetch(url, { method: 'GET', ...init }); return wrap(r); }
+  async head(url: string, init?: RequestInit) {
+    const { authFetch } = await import('./utils/authFetch');
+    const r = await authFetch(url, { method: 'HEAD', ...init });
+    return wrap(r);
+  }
+  async get(url: string, init?: RequestInit) {
+    const { authFetch } = await import('./utils/authFetch');
+    const r = await authFetch(url, { method: 'GET', ...init });
+    return wrap(r);
+  }
   async getRange(url: string, start: number, end: number, init?: RequestInit) {
-    const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=${start}-${end}` }, ...init });
+    const { authFetch } = await import('./utils/authFetch');
+    const r = await authFetch(url, { method: 'GET', headers: { Range: `bytes=${start}-${end}` }, ...init });
     return wrap(r);
   }
 }
@@ -57,4 +66,3 @@ export async function runDownloadComputeBatch(urls: string[], opts: { concurrenc
 
   return results;
 }
-

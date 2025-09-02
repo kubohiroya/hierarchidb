@@ -129,7 +129,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
 
     // Prefer DownloadService (auth-aware, resumable) when available
     try {
-      const { service, readAll } = createShapeDownloadService({ perHostConcurrency: 4 });
+      const { service, readAll } = await createShapeDownloadService({ perHostConcurrency: 4 });
       const fileId = `shape-${config.country}-${config.adminLevel}-${Date.now()}`;
       const result = await service.download(config.url, fileId, {});
       const buf = await readAll(result.fileId);

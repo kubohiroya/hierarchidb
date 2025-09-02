@@ -138,7 +138,8 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       // 【セキュリティ検証】: URL検証（SSRF攻撃対策）
 
       // 【ダウンロード実行】: fetch APIでのダウンロード
-      const response = await fetch(url, {
+      const { authFetch } = await import('./utils/authFetch');
+      const response = await authFetch(url, {
         method: 'GET',
         headers: {
           Accept: 'text/csv, application/csv, text/plain, application/octet-stream',

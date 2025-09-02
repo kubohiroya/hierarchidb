@@ -36,6 +36,7 @@ export type { PopupCapability } from './services/PopupDetectionService';
 export { AuthService } from './services/AuthService';
 export type { AuthMethod } from './services/AuthService';
 export { handleAuthError } from './services/handleAuthError';
+export { registerAuthUIHandlers } from './services/UIAuthRecoveryClient';
 
 // Hooks
 export { useAuth, getIdToken } from './hooks/useAuth';

@@ -242,7 +242,8 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         
         console.log(`[GeoBoundaries] Trying ${releaseType}: ${url}`);
         
-        const response = await fetch(url);
+        const { authFetch } = await import('../utils/authFetch');
+        const response = await authFetch(url);
         
         if (response.ok) {
           const data = await response.json();
@@ -319,7 +320,8 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         const controller = new AbortController();
         const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
-        const response = await fetch(url, {
+        const { authFetch } = await import('../utils/authFetch');
+        const response = await authFetch(url, {
           signal: controller.signal
         });
 
@@ -407,7 +409,8 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   // 利用可能な国と管理レベルを取得するヘルパーメソッド
   async getAvailableCountries(): Promise<string[]> {
     try {
-      const response = await fetch(`${this.config.access.baseUrl}available/`);
+      const { authFetch } = await import('../utils/authFetch');
+      const response = await authFetch(`${this.config.access.baseUrl}available/`);
       if (response.ok) {
         const data = await response.json();
         return Object.keys(data);
@@ -421,7 +424,8 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   async getAvailableAdminLevels(country: string): Promise<string[]> {
     try {
       const normalizedCountry = this.normalizeCountryCode(country);
-      const response = await fetch(`${this.config.access.baseUrl}available/`);
+      const { authFetch } = await import('../utils/authFetch');
+      const response = await authFetch(`${this.config.access.baseUrl}available/`);
       if (response.ok) {
         const data = await response.json();
         return data[normalizedCountry] || [];

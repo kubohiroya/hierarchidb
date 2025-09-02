@@ -313,7 +313,8 @@ out geom;
   private async executeOverpassQuery(query: string): Promise<any> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
     
-    const response = await fetch(url, {
+    const { authFetch } = await import('../utils/authFetch');
+    const response = await authFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',

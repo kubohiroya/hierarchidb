@@ -256,7 +256,8 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         const controller = new AbortController();
         const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
-        const response = await fetch(url, {
+        const { authFetch } = await import('../utils/authFetch');
+        const response = await authFetch(url, {
           signal: controller.signal
         });
 
