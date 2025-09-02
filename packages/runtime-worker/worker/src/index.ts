@@ -17,9 +17,10 @@ import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { TagService } from './services/TagService';
 import { ImportExportService } from './services/ImportExportService';
-import { proxy, ProxyMarked } from 'comlink';
+// No direct Comlink types should leak at this boundary
 
 export class WorkerService implements WorkerAPI {
+  private readonly startTime = Date.now();
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
@@ -53,13 +54,13 @@ export class WorkerService implements WorkerAPI {
         plugins,
         coreDB,
         ephemeralDB,
-        proxy(treeQueryService),
-        proxy(treeMutationService),
-        proxy(treeSubscriptionService),
-        proxy(importExportService),
-        proxy(tagService),
-        proxy(nodeLifecycleManager),
-        proxy(commandProcessor)
+        treeQueryService,
+        treeMutationService,
+        treeSubscriptionService,
+        importExportService,
+        tagService,
+        nodeLifecycleManager,
+        commandProcessor
       );
     });
   }
@@ -68,13 +69,13 @@ export class WorkerService implements WorkerAPI {
     private plugins: PluginDefinition[],
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB,
-    private queryService: TreeQueryAPI & ProxyMarked,
-    private mutationService: TreeMutationAPI & ProxyMarked,
-    private subscriptionService: TreeSubscriptionAPI & ProxyMarked,
-    private importExportService: ImportExportAPI & ProxyMarked,
-    private tagService: TagAPI & ProxyMarked,
-    private nodeLifecycleManager: NodeLifecycleManager & ProxyMarked,
-    private commandProcessor: CommandProcessor & ProxyMarked
+    private queryService: TreeQueryAPI,
+    private mutationService: TreeMutationAPI,
+    private subscriptionService: TreeSubscriptionAPI,
+    private importExportService: ImportExportAPI,
+    private tagService: TagAPI,
+    private nodeLifecycleManager: NodeLifecycleManager,
+    private commandProcessor: CommandProcessor
   ) {}
 
   ping(): { response: 'pong'; timestamp: number } {
@@ -94,35 +95,75 @@ export class WorkerService implements WorkerAPI {
     this.ephemeralDB.close();
   }
 
-  getQueryAPI(): TreeQueryAPI & ProxyMarked {
+  async initialize(): Promise<void> {
+    // Already initialized by bootstrap in this build
+  }
+
+  getQueryAPI(): TreeQueryAPI {
     return this.queryService;
   }
 
-  getMutationAPI(): TreeMutationAPI & ProxyMarked {
+  getMutationAPI(): TreeMutationAPI {
     return this.mutationService;
   }
 
-  getSubscriptionAPI(): TreeSubscriptionAPI & ProxyMarked {
+  getSubscriptionAPI(): TreeSubscriptionAPI {
     return this.subscriptionService;
   }
 
-  getWorkingCopyAPI(): any {
-    throw null; //this.
+  getWorkingCopyAPI(): import('@hierarchidb/common-api').WorkingCopyAPI {
+    throw new Error('WorkingCopyAPI is not implemented in this build');
   }
 
-  getImportExportAPI(): ImportExportAPI & ProxyMarked {
+  getImportExportAPI(): ImportExportAPI {
     return this.importExportService;
   }
 
-  getTagAPI(): TagAPI & ProxyMarked {
+  getTagAPI(): TagAPI {
     return this.tagService;
   }
 
-  getNodeLifecycleManager(): NodeLifecycleManager & ProxyMarked {
+  getPluginLifecycleAPI(): import('@hierarchidb/common-api').PluginLifecycleAPI {
+    throw new Error('PluginLifecycleAPI is not implemented in this build');
+  }
+
+  getNodeLifecycleManager(): NodeLifecycleManager {
     return this.nodeLifecycleManager;
   }
 
-  getCommandProcessor(): CommandProcessor & ProxyMarked {
+  getCommandProcessor(): CommandProcessor {
     return this.commandProcessor;
+  }
+
+  async getSystemHealth(): Promise<{
+    databases: { coreDB: boolean; ephemeralDB: boolean };
+    services: {
+      query: boolean;
+      mutation: boolean;
+      subscription: boolean;
+      plugin: boolean;
+      workingCopy: boolean;
+    };
+    memory: { used: number; limit: number };
+    uptime: number;
+  }> {
+    return {
+      databases: {
+        coreDB: true,
+        ephemeralDB: true,
+      },
+      services: {
+        query: !!this.queryService,
+        mutation: !!this.mutationService,
+        subscription: !!this.subscriptionService,
+        plugin: false,
+        workingCopy: false,
+      },
+      memory: {
+        used: 0,
+        limit: 0,
+      },
+      uptime: Date.now() - this.startTime,
+    };
   }
 }

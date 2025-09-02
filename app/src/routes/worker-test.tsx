@@ -9,12 +9,12 @@ import { Box, Container, Typography, Alert, Button } from '@mui/material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { getWorkerClient } from '../initWorkerClient';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export default function WorkerTest() {
   const [status, setStatus] = useState<string>('Not started');
   const [error, setError] = useState<string | null>(null);
-  const [client, setClient] = useState<Remote<typeof WorkerModule> | null>(null);
+  const [client, setClient] = useState<Remote<WorkerAPI> | null>(null);
 
   const testWorker = async () => {
     setStatus('Initializing...');

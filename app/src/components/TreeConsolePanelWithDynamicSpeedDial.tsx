@@ -11,11 +11,11 @@ import { DynamicSpeedDial } from './DynamicSpeedDial';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProps {
   treeId: TreeId | undefined;
-  workerClient: Remote<typeof WorkerModule> | null;
+  workerClient: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
 }
 

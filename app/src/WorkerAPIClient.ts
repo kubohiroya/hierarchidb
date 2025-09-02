@@ -4,10 +4,10 @@
 
 import { getWorkerClient } from './initWorkerClient';
 import type { Remote } from 'comlink';
-import type WorkerModule from './worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
-// Create a type that matches the expected interface
-type WorkerInterface = Remote<typeof WorkerModule>;
+// Create a type that matches the shared contract
+type WorkerInterface = Remote<WorkerAPI>;
 
 export class NotInitializedError extends Error {
   constructor() {
