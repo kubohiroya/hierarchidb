@@ -14,6 +14,7 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 1,
     minWorkers: 1,
+
     exclude: [
       'src/**/migration/**'
     ],

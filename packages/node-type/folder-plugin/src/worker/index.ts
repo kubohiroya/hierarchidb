@@ -65,19 +65,46 @@ try {
   // and keep this safe in non-worker contexts.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  import('@hierarchidb/runtime-worker/entity/store-registry').then(({ storeRegistry }) => {
-    // Peer store
-    import('./folderPeerStore').then(({ folderPeerStore }) => {
+  import('@hierarchidb/runtime-worker/entity/store-registry').then(async ({ storeRegistry }) => {
+    // Prefer Dexie-backed stores when indexedDB is available; otherwise fallback to in‑memory dev stores
+    const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+    if (hasIndexedDB) {
+      try {
+        const { FolderEntitiesDB } = await import('./folderEntitiesDB');
+        const db = new FolderEntitiesDB();
+        await db.open();
+        // Peer
+        if (!storeRegistry.getPeer('folder')) {
+          const { createFolderPeerStoreDexie } = await import('./folderPeerStore.dexie');
+          storeRegistry.registerPeer('folder', createFolderPeerStoreDexie(db));
+        }
+        // Group
+        if (!storeRegistry.getGroup('folder')) {
+          const { createFolderGroupStoreDexie } = await import('./folderGroupStore.dexie');
+          storeRegistry.registerGroup('folder', createFolderGroupStoreDexie(db));
+        }
+        // Relations
+        if (!storeRegistry.getRelations('folder')) {
+          const { createFolderRelationStoreDexie } = await import('./folderRelationStore.dexie');
+          storeRegistry.registerRelations('folder', createFolderRelationStoreDexie(db));
+        }
+      } catch {
+        // fallback to dev stores
+        const { folderPeerStore } = await import('./folderPeerStore');
+        if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
+        const { folderGroupStore } = await import('./folderGroupStore');
+        if (!storeRegistry.getGroup('folder')) storeRegistry.registerGroup('folder', folderGroupStore);
+        const { folderRelationStore } = await import('./folderRelationStore');
+        if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
+      }
+    } else {
+      const { folderPeerStore } = await import('./folderPeerStore');
       if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
-    }).catch(() => {});
-    // Group store
-    import('./folderGroupStore').then(({ folderGroupStore }) => {
+      const { folderGroupStore } = await import('./folderGroupStore');
       if (!storeRegistry.getGroup('folder')) storeRegistry.registerGroup('folder', folderGroupStore);
-    }).catch(() => {});
-    // Relations store
-    import('./folderRelationStore').then(({ folderRelationStore }) => {
+      const { folderRelationStore } = await import('./folderRelationStore');
       if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
-    }).catch(() => {});
+    }
   }).catch(() => {});
 } catch {
   // ignore
