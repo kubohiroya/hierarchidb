@@ -5,18 +5,12 @@ import type {
   FolderEntityExtension,
 } from '../api/FolderExtensionAPI';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
+import type { DialogStepDefinition, ValidationExtension, StepValidation, ValidationResult } from '@hierarchidb/common-type';
 
 // Temporary type definitions for missing types
-interface DialogStepDefinition {
-  id: string;
-  title: string;
-  //component: React.ComponentType<any>;
-  //validation?: any;
-}
+// Use DialogStepDefinition from common types
 
-interface ValidationExtension {
-  validate: (data: any) => boolean | string;
-}
+// Use ValidationExtension from common types
 
 /*
 interface PluginExtensionConfig {
@@ -131,17 +125,10 @@ export abstract class BaseFolderPlugin {
     const beforeSave = this.beforeSaveEntity?.bind(this);
     const afterLoad = this.afterLoadEntity?.bind(this);
     const validateEntity = this.validateEntity?.bind(this);
-    const getExtendedData = this.getExtendedData?.bind(this);
-    const saveExtendedData = this.saveExtendedData?.bind(this);
+    const getExtendedData = this.getExtendedData?.bind(this) ?? (async () => ({}));
+    const saveExtendedData = this.saveExtendedData?.bind(this) ?? (async () => {});
 
-    if (
-      !additionalFields?.length &&
-      !beforeSave &&
-      !afterLoad &&
-      !validateEntity &&
-      !getExtendedData &&
-      !saveExtendedData
-    ) {
+    if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity) {
       return undefined;
     }
 
@@ -150,7 +137,8 @@ export abstract class BaseFolderPlugin {
       beforeSave,
       afterLoad,
       validateEntity,
-      // Remove getExtendedData and saveExtendedData as they don't match expected signatures
+      getExtendedData,
+      saveExtendedData,
     };
   }
 
@@ -290,19 +278,19 @@ export abstract class BaseFolderPlugin {
     //dependsOn?: string[];
   }): DialogStepDefinition {
     return {
+      stepNumber: config.order ?? 0,
       title: config.label,
-      component: config.component,
-      validation: config.validation
-        ? {
-            validate: async (data: any) => {
-              const result = await config.validation!.validate(data);
-              return {
-                isValid: result.isValid,
-                errors: result.errors || [],
-              };
+      component: config.component as any,
+      validation: (config.validation
+        ? ({
+            validate: async (data: any): Promise<ValidationResult> => {
+              const result = await config.validation!.validate(data as T);
+              return result.isValid
+                ? { valid: true }
+                : { valid: false, message: (result.errors || []).join(', ') };
             },
-          }
-        : undefined,
+          } as StepValidation<unknown>)
+        : undefined),
       //dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
     };
   }

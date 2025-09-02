@@ -103,43 +103,12 @@ export const FOLDER_STATISTICS = {
 /**
  * Folder template constants
  */
-export const FOLDER_TEMPLATES = {
-  MAX_TEMPLATES_PER_USER: 50,
-  MAX_TEMPLATE_DEPTH: 10,
-  MAX_TEMPLATE_NODES: 100,
-  
-  BUILT_IN_TEMPLATES: [
-    {
-      id: 'project-basic',
-      name: 'Basic Project',
-      description: 'Standard project folder-plugin structure',
-      category: 'project'
-    },
-    {
-      id: 'documentation',
-      name: 'Documentation',
-      description: 'Documentation folder-plugin structure',
-      category: 'content'
-    },
-    {
-      id: 'research',
-      name: 'Research',
-      description: 'Research project organization',
-      category: 'academic'
-    }
-  ] as const
-} as const;
+// Template features removed
 
 /**
  * Folder bookmark constants
  */
-export const FOLDER_BOOKMARKS = {
-  MAX_BOOKMARKS_PER_USER: 100,
-  DEFAULT_COLOR: '#FFC107',
-  
-  QUICK_ACCESS_LIMIT: 10,
-  RECENT_LIMIT: 20
-} as const;
+// Bookmark features removed
 
 /**
  * UI constants
@@ -219,8 +188,7 @@ export const FOLDER_ERRORS = {
     EXCEEDS_MAX_CHILDREN: 'Maximum number of children exceeded',
     PARENT_NOT_FOUND: 'Parent folder-plugin not found',
     CANNOT_DELETE_NON_EMPTY: 'Cannot delete non-empty folder-plugin',
-    TEMPLATE_NOT_FOUND: 'Template not found',
-    BOOKMARK_NOT_FOUND: 'Bookmark not found'
+    // Template/Bookmark errors removed
   },
   
   SYSTEM: {
@@ -241,14 +209,7 @@ export const FOLDER_MESSAGES = {
   COPIED: 'Folder copied successfully',
   DUPLICATED: 'Folder duplicated successfully',
   
-  BOOKMARK_CREATED: 'Bookmark created successfully',
-  BOOKMARK_UPDATED: 'Bookmark updated successfully',
-  BOOKMARK_DELETED: 'Bookmark removed successfully',
-  
-  TEMPLATE_CREATED: 'Template created successfully',
-  TEMPLATE_APPLIED: 'Template applied successfully',
-  TEMPLATE_UPDATED: 'Template updated successfully',
-  TEMPLATE_DELETED: 'Template deleted successfully',
+  // Template/Bookmark messages removed
   
   PERMISSIONS_UPDATED: 'Permissions updated successfully',
   SETTINGS_UPDATED: 'Settings updated successfully',

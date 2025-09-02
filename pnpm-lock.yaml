@@ -1364,6 +1364,9 @@ importers:
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
+      zod:
+        specifier: ^3.22.3
+        version: 3.22.3
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.0
@@ -1929,7 +1932,7 @@ importers:
         version: 5.0.1(vite@7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@4.0.0-beta.9(@types/node@24.3.0)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jiti@1.21.7)(jsdom@26.1.0)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 3.2.4(vitest@4.0.0-beta.9)
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@4.0.0-beta.9)
@@ -15333,7 +15336,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@24.3.0)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
+      vitest: 1.6.1(@types/node@20.19.11)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
 
   '@vitest/ui@2.1.9(vitest@2.1.9)':
     dependencies:

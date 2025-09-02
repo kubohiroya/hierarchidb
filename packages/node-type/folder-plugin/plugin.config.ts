@@ -14,9 +14,7 @@ export default {
   },
   settings: {
     ui: {
-      showTemplates: true,
-      showBookmarks: true,
-      maxBookmarksPerFolder: 100,
+      // template/bookmark features removed
     },
     performance: {
       cacheSize: 1000,

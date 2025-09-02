@@ -7,12 +7,14 @@ import React from 'react';
 import { Box, TextField, Typography, Stack, Divider } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import type { WorkingCopy, TagId } from '@hierarchidb/common-type';
+import type { EntityId } from '@hierarchidb/common-type';
 import { TagInput } from './TagInput';
 
+type TagId = EntityId;
+
 export interface FolderBasicInfoStepProps {
-  workingCopy: WorkingCopy;
-  onUpdate: (updates: Partial<WorkingCopy>) => void;
+  workingCopy: { name?: string; description?: string; tags?: TagId[] };
+  onUpdate: (updates: Partial<FolderBasicInfoStepProps['workingCopy']>) => void;
   disabled?: boolean;
 }
 
@@ -25,7 +27,7 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
   onUpdate,
   disabled = false,
 }) => {
-  const { t } = useTranslation().namespace('folderPlugin');
+  const { t } = useTranslation('folderPlugin');
 
   // タグ変更ハンドラー
 

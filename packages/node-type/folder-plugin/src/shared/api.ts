@@ -65,13 +65,7 @@ export interface FolderPathInfo {
 /**
  * Template application result
  */
-export interface FolderApplyTemplateResult {
-  success: boolean;
-  createdFolders: FolderEntity[];
-  rootFolder: FolderEntity;
-  errors: string[];
-  warnings: string[];
-}
+// Template application result removed
 
 /**
  * Bulk operation result

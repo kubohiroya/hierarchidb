@@ -4,6 +4,7 @@ import {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
+  WorkingCopyAPI,
   WorkerAPI,
 } from '@hierarchidb/common-api';
 import { CoreDB } from './services/CoreDB';
@@ -17,7 +18,8 @@ import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { TagService } from './services/TagService';
 import { ImportExportService } from './services/ImportExportService';
-import { proxy, ProxyMarked } from 'comlink';
+import { proxy } from 'comlink';
+import { WorkingCopyService } from './services/WorkingCopyService';
 
 export class WorkerService implements WorkerAPI {
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
@@ -49,6 +51,9 @@ export class WorkerService implements WorkerAPI {
       // Import/Export services
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(coreDB);
 
+      // WorkingCopy service (ephemeral-backed)
+      const workingCopyService: WorkingCopyAPI = new WorkingCopyService(coreDB, ephemeralDB);
+
       return new WorkerService(
         plugins,
         coreDB,
@@ -57,6 +62,7 @@ export class WorkerService implements WorkerAPI {
         proxy(treeMutationService),
         proxy(treeSubscriptionService),
         proxy(importExportService),
+        proxy(workingCopyService),
         proxy(tagService),
         proxy(nodeLifecycleManager),
         proxy(commandProcessor)
@@ -68,13 +74,14 @@ export class WorkerService implements WorkerAPI {
     private plugins: PluginDefinition[],
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB,
-    private queryService: TreeQueryAPI & ProxyMarked,
-    private mutationService: TreeMutationAPI & ProxyMarked,
-    private subscriptionService: TreeSubscriptionAPI & ProxyMarked,
-    private importExportService: ImportExportAPI & ProxyMarked,
-    private tagService: TagAPI & ProxyMarked,
-    private nodeLifecycleManager: NodeLifecycleManager & ProxyMarked,
-    private commandProcessor: CommandProcessor & ProxyMarked
+    private queryService: TreeQueryAPI,
+    private mutationService: TreeMutationAPI,
+    private subscriptionService: TreeSubscriptionAPI,
+    private importExportService: ImportExportAPI,
+    private workingCopyService: WorkingCopyAPI,
+    private tagService: TagAPI,
+    private nodeLifecycleManager: NodeLifecycleManager,
+    private commandProcessor: CommandProcessor
   ) {}
 
   ping(): { response: 'pong'; timestamp: number } {
@@ -94,35 +101,111 @@ export class WorkerService implements WorkerAPI {
     this.ephemeralDB.close();
   }
 
-  getQueryAPI(): TreeQueryAPI & ProxyMarked {
+  getQueryAPI(): TreeQueryAPI {
     return this.queryService;
   }
 
-  getMutationAPI(): TreeMutationAPI & ProxyMarked {
+  getMutationAPI(): TreeMutationAPI {
     return this.mutationService;
   }
 
-  getSubscriptionAPI(): TreeSubscriptionAPI & ProxyMarked {
+  getSubscriptionAPI(): TreeSubscriptionAPI {
     return this.subscriptionService;
   }
 
-  getWorkingCopyAPI(): any {
-    throw null; //this.
+  getWorkingCopyAPI(): WorkingCopyAPI {
+    return this.workingCopyService;
   }
 
-  getImportExportAPI(): ImportExportAPI & ProxyMarked {
+  getImportExportAPI(): ImportExportAPI {
     return this.importExportService;
   }
 
-  getTagAPI(): TagAPI & ProxyMarked {
+  getTagAPI(): TagAPI {
     return this.tagService;
   }
 
-  getNodeLifecycleManager(): NodeLifecycleManager & ProxyMarked {
+  getNodeLifecycleManager(): NodeLifecycleManager {
     return this.nodeLifecycleManager;
   }
 
-  getCommandProcessor(): CommandProcessor & ProxyMarked {
+  getCommandProcessor(): CommandProcessor {
     return this.commandProcessor;
+  }
+
+  // Minimal stub to satisfy interface; not yet wired.
+  getPluginLifecycleAPI(): import('@hierarchidb/common-api').PluginLifecycleAPI {
+    return {
+      async register() {
+        return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };
+      },
+      async unregister() {
+        return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };
+      },
+      async validatePlugin() {
+        return { isValid: false, errors: [], warnings: [] };
+      },
+      async checkHealth() {
+        return {
+          status: 'degraded',
+          lastCheck: Date.now(),
+          issues: ['Not implemented'],
+          performance: { avgResponseTime: 0, errorRate: 1 },
+        };
+      },
+      async listRegistered() {
+        return [];
+      },
+      async getDependencies(nodeType) {
+        return { nodeType, dependencies: [], dependents: [], circularDependencies: false };
+      },
+      async bulkOperation() {
+        return { successful: [], failed: [], summary: { total: 0, success: 0, failed: 0 } };
+      },
+      async resetPlugin(options) {
+        return { success: false, nodeType: options.nodeType, deletedEntities: {} } as any;
+      },
+      async deletePlugin(nodeType) {
+        return { success: false, nodeType };
+      },
+      async resetSystem() {
+        return { success: false, nodeType: 'folder' as any, deletedEntities: {} } as any;
+      },
+    };
+  }
+
+  async initialize(): Promise<void> {
+    // Initialization is handled in getSingleton; nothing to do.
+  }
+
+  async getSystemHealth(): Promise<{
+    databases: { coreDB: boolean; ephemeralDB: boolean };
+    services: {
+      query: boolean;
+      mutation: boolean;
+      subscription: boolean;
+      plugin: boolean;
+      workingCopy: boolean;
+    };
+    memory: { used: number; limit: number };
+    uptime: number;
+  }> {
+    const used = (globalThis as any).performance?.memory?.usedJSHeapSize ?? 0;
+    const limit = (globalThis as any).performance?.memory?.jsHeapSizeLimit ?? 0;
+    return {
+      databases: {
+        coreDB: (this.coreDB as any).isOpen?.() ?? true,
+        ephemeralDB: (this.ephemeralDB as any).isOpen?.() ?? true,
+      },
+      services: {
+        query: !!this.queryService,
+        mutation: !!this.mutationService,
+        subscription: !!this.subscriptionService,
+        plugin: !!this.nodeLifecycleManager,
+        workingCopy: !!this.workingCopyService,
+      },
+      memory: { used, limit },
+      uptime: 0,
+    };
   }
 }

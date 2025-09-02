@@ -7,6 +7,7 @@ import type { CoreDB } from './CoreDB';
 import { SingletonMixin } from '@hierarchidb/util';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import { commandRegistry } from './command/registry';
+import { validateAndNormalizeEnvelope } from './validation/envelope';
 
 // Sanitized result shape used for logging only (no sensitive fields)
 type SanitizedLogResult = {
@@ -66,27 +67,12 @@ export class CommandProcessor {
     envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
     try {
-      // Envelope validation
-      if (!envelope) {
-        return this.createErrorResult(
-          'Command envelope is required',
-          WorkerErrorCode.INVALID_OPERATION
-        );
+      // Validate and normalize envelope (zod-based)
+      const checked = validateAndNormalizeEnvelope(envelope);
+      if (!checked.ok) {
+        return this.createErrorResult(checked.error, WorkerErrorCode.VALIDATION_ERROR);
       }
-
-      if (!envelope.kind || typeof envelope.kind !== 'string') {
-        return this.createErrorResult(
-          'Command kind is required and must be string',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
-
-      if (!envelope.commandId || typeof envelope.commandId !== 'string') {
-        return this.createErrorResult(
-          'Command ID is required and must be string',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
+      envelope = checked.envelope as CommandEnvelope<TType, TPayload>;
 
       // Guard against unusually long IDs
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {

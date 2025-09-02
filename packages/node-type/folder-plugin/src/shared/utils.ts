@@ -19,13 +19,7 @@ export function generateFolderId(): EntityId {
   return crypto.randomUUID() as EntityId;
 }
 
-export function generateBookmarkId(): string {
-  return crypto.randomUUID();
-}
-
-export function generateTemplateId(): string {
-  return crypto.randomUUID();
-}
+// Bookmark/Template ID helpers removed
 
 /**
  * Validation utilities - now using common validation from @hierarchidb/core

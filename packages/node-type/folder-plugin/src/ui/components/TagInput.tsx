@@ -26,7 +26,9 @@ import {
   LocalOffer as TagIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import type { TagId, TagSuggestion } from '@hierarchidb/common-type';
+import type { EntityId } from '@hierarchidb/common-type';
+type TagId = EntityId;
+import type { TagSuggestion } from '@hierarchidb/common-type';
 
 export interface TagInputProps {
   /** 選択済みタグのID配列 */

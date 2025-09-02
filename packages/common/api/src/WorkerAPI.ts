@@ -18,7 +18,6 @@ import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI';
 
 import { TagAPI } from './TagAPI';
-import { ProxyMarked } from 'comlink';
 
 /**
  * Main worker facade API
@@ -38,7 +37,7 @@ export interface WorkerAPI {
    * const tree = await queryAPI.getTree(treeId);
    * ```
    */
-  getQueryAPI(): TreeQueryAPI & ProxyMarked;
+  getQueryAPI(): TreeQueryAPI;
 
   /**
    * Get the mutation API for data modification operations
@@ -54,7 +53,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getMutationAPI(): TreeMutationAPI & ProxyMarked;
+  getMutationAPI(): TreeMutationAPI;
 
   /**
    * Get the subscription API for real-time monitoring
@@ -70,14 +69,9 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getSubscriptionAPI(): TreeSubscriptionAPI & ProxyMarked;
+  getSubscriptionAPI(): TreeSubscriptionAPI;
 
-  /**
-   * Get NodeTypeRegistryAPI for node type registration and management
-   *
-   getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & ProxyMarked;
-   * @returns Proxy to NodeTypeRegistryAPI implementation
-   */
+  // Reserved for future: NodeTypeRegistryAPI
 
   /**
    * Get the working copy API for draft and edit operations
@@ -93,7 +87,7 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getWorkingCopyAPI(): WorkingCopyAPI & ProxyMarked;
+  getWorkingCopyAPI(): WorkingCopyAPI;
 
   // ----------------------------------------------------------------//
   /**
@@ -101,7 +95,7 @@ export interface WorkerAPI {
    *
    * @returns Proxy to PluginLifecycleAPI implementation
    */
-  getPluginLifecycleAPI(): PluginLifecycleAPI & ProxyMarked;
+  getPluginLifecycleAPI(): PluginLifecycleAPI;
 
   /**
    * Get Plugin TreeTypes API facade
@@ -142,7 +136,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getImportExportAPI(): ImportExportAPI & ProxyMarked;
+  getImportExportAPI(): ImportExportAPI;
 
   // ----------------------------------------------------------------//
   /**
@@ -163,7 +157,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getTagAPI(): TagAPI & ProxyMarked;
+  getTagAPI(): TagAPI;
 
   // ----------------------------------------------------------------//
   /**
@@ -228,27 +222,3 @@ export interface WorkerAPI {
  * Default export for the WorkerAPI interface
  */
 export default WorkerAPI;
-/**
- * Get TreePluginAnalyzer for TreeTypes-specific plugin analysis and optimization
- *
- * @returns Proxy to TreePluginAnalyzer implementation
- getTreePluginAnalyzer(): TreePluginAnalyzer & ProxyMarked;
- */
-/**
- * Get Plugin Management API facade
- *
- * Provides comprehensive plugin lifecycle management including registration,
- * validation, and health monitoring.
- *
- * @returns Plugin Management API facade instance
- *
- * @example
- * ```typescript
- * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
- * const result = await pluginMgmtAPI.register(myPluginDefinition);
- * ```
- */
-/**
- * @deprecated Use getPluginLifecycleAPI() instead. Will be removed in v2.0.
- getPluginManagementAPI(): PluginManagementAPI & ProxyMarked;
- */

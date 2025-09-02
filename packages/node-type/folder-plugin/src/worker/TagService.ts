@@ -3,16 +3,14 @@
  */
 
 import type { 
-  TagEntity, 
-  TagId, 
-  NodeId, 
+  TagEntity,
+  NodeId,
   EntityId,
-  CreateTagRequest,
-  UpdateTagRequest,
   TagSuggestion,
   TagSearchOptions,
   NodeTagAssociation 
 } from '@hierarchidb/common-type';
+import type { CreateTagRequest, UpdateTagRequest } from '@hierarchidb/common-api';
 import { Dexie, Table } from 'dexie';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
  * TagDatabase - タグ管理専用のDexieデータベース
  */
 class TagDatabase extends Dexie {
-  tags!: Table<TagEntity, TagId>;
+  tags!: Table<TagEntity, EntityId>;
   nodeTagAssociations!: Table<NodeTagAssociation, EntityId>;
 
   constructor() {
@@ -38,6 +36,8 @@ const tagDB = new TagDatabase();
 /**
  * TagService - タグ管理のメインサービス
  */
+type TagId = EntityId;
+
 export class TagService {
   
   /**
