@@ -14,7 +14,17 @@ import type {
   TreeNodeEvent,
   SubscriptionOptions,
 } from '@hierarchidb/common-type';
-import { map, type Observable, filter as rxFilter, Subject, share, from, concat } from 'rxjs';
+import {
+  map,
+  type Observable,
+  filter as rxFilter,
+  Subject,
+  share,
+  from,
+  concat,
+  bufferTime,
+  mergeMap,
+} from 'rxjs';
 import type { CoreDB } from './CoreDB';
 import { TreeQueryService } from './TreeQueryService';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -159,7 +169,36 @@ export class TreeSubscriptionService {
     // Create observable that filters global changes for childNodes of this node
     const childNodesObservable = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForChildNodesObservation(event, parentId, filter)),
-      map((event) => this.transformEventForSubscription(event)),
+      // Progressive batching: coalesce bursts and emit current snapshot in chunks
+      bufferTime(30),
+      rxFilter((batch) => batch.length > 0),
+      mergeMap(async () => {
+        let children = await this.coreDB.listChildren(parentId);
+        if (filter?.nodeTypes?.length) {
+          children = children.filter((n) => filter.nodeTypes!.includes(n.nodeType));
+        }
+        const chunkSize = 200;
+        const events: TreeChangeEvent[] = [] as any;
+        for (let i = 0; i < children.length; i += chunkSize) {
+          const slice = children.slice(i, i + chunkSize);
+          events.push({
+            type: 'children-changed',
+            nodeId: parentId,
+            affectedChildren: slice.map((c) => c.id),
+            timestamp: Date.now() as Timestamp,
+          } as any);
+        }
+        if (children.length === 0) {
+          events.push({
+            type: 'children-changed',
+            nodeId: parentId,
+            affectedChildren: [],
+            timestamp: Date.now() as Timestamp,
+          } as any);
+        }
+        return events;
+      }),
+      mergeMap((events) => from(events)),
       share()
     );
 
