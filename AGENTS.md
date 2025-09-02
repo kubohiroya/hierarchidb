@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+- ユーザとの会話やドキュメント作成は日本語で行い、コードやテスト内のコメントは英語で行なうこと。
+
 ## Project Structure & Module Organization
 - app: React front-end (routes, components, public assets).
 - packages: Workspace modules by domain: common, node-type (plugins), runtime-*, ui/*, util, backend.

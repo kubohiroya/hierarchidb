@@ -42,7 +42,9 @@
     "count:lines": "tsx scripts/count-lines.ts",
     "analyze:ui": "node scripts/analyze-ui-duplication.js",
     "check:sabotage": "tsx scripts/check-sabotage.ts",
-    "vibe-kanban": "npx vibe-kanban"
+    "vibe-kanban": "npx vibe-kanban",
+    "vk:task": "node scripts/vk-task.mjs",
+    "vk:task:commit-grouping": "node scripts/vk-task.mjs --preset grouped-commits"
   },
   "dependencies": {
     "react": "^18.3.1",
