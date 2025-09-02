@@ -18,6 +18,8 @@ export class SpreadsheetEntitiesDB extends Dexie {
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
     });
+    this.version(2).upgrade(() => {
+      // Placeholder for future upgrades; add migration logic here.
+    });
   }
 }
-

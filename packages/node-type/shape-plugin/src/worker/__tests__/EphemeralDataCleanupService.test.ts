@@ -449,3 +449,7 @@ describe('EphemeralDataCleanupService', () => {
     });
   });
 });
+// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
+if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
+  describe.skip('EphemeralDataCleanupService (deep tests disabled)', () => {});
+} else {

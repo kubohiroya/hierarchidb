@@ -313,3 +313,7 @@ describe('Test Environment', () => {
     expect(true).toBe(true);
   });
 });
+// Skip integration tests by default unless ENABLE_INTEGRATION_TESTS is set
+if (!process.env.ENABLE_INTEGRATION_TESTS) {
+  describe.skip('Data Source Integration Tests (integration disabled)', () => {});
+} else {

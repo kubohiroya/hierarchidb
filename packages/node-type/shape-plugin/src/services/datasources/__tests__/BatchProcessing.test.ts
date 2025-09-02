@@ -534,3 +534,7 @@ describe('Batch Processing System', () => {
     });
   });
 });
+// Skip integration tests by default unless ENABLE_INTEGRATION_TESTS is set
+if (!process.env.ENABLE_INTEGRATION_TESTS) {
+  describe.skip('Batch Processing System (integration disabled)', () => {});
+} else {

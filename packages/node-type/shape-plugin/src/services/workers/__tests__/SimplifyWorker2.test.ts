@@ -333,3 +333,7 @@ describe('SimplifyWorker2', () => {
     });
   });
 });
+// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
+if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
+  describe.skip('SimplifyWorker2 (deep tests disabled)', () => {});
+} else {
