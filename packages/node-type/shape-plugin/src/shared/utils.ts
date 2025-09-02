@@ -174,20 +174,28 @@ function buildDataSourceUrl(
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download',
     geoboundaries: 'https://www.geoboundaries.org/api/gbOpen',
-    gadm: 'https://biogeo.ucdavis.edu/data/gadm3.6',
+    // Use GADM v4.1 GPKG endpoint to align with runtime workers/tests
+    gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg',
     openstreetmap: 'https://download.geofabrik.de',
-  };
+  } as const;
 
   const baseUrl = baseUrls[dataSource];
   if (!baseUrl) return null;
 
   switch (dataSource) {
-    case 'naturalearth':
-      return `${baseUrl}/10m/cultural/ne_10m_admin_${adminLevel}_countries.zip`;
+    case 'naturalearth': {
+      // Prefer 50m scale; adminLevel 0 -> countries, 1 -> states/provinces
+      const scale = '50m';
+      const file = adminLevel === 0
+        ? 'ne_50m_admin_0_countries.zip'
+        : 'ne_50m_admin_1_states_provinces.zip';
+      return `${baseUrl}/${scale}/cultural/${file}`;
+    }
     case 'geoboundaries':
       return `${baseUrl}/${countryCode}/ADM${adminLevel}`;
     case 'gadm':
-      return `${baseUrl}/shp/gadm36_${countryCode}_${adminLevel}.zip`;
+      // v4.1 GPKG bundles levels per country; adminLevel is not encoded in filename
+      return `${baseUrl}/${countryCode}_adm_gpkg.zip`;
     case 'openstreetmap':
       return `${baseUrl}/${countryCode.toLowerCase()}-latest.osm.pbf`;
     default:
