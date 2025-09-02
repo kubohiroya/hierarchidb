@@ -5,6 +5,7 @@
 
 import * as Comlink from 'comlink';
 import { WorkerService } from '@hierarchidb/runtime-worker-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-worker-bootstrap';
 import { Bootstrap } from '@hierarchidb/runtime-worker-worker';
 
@@ -29,14 +30,32 @@ async function initializeWorker() {
     console.log('[App Worker] Creating WorkerService facade...');
     initReporter.reportStepProgress('Creating WorkerService facade...', 80);
     
-    // Create WorkerService as the facade
+    // Create WorkerService as the facade (internal implementation)
     const workerService = new WorkerService(services);
     
     console.log('[App Worker] Exposing WorkerAPI via Comlink...');
     initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);
-    
+    // Build a plain function-based API facade to avoid exposing class instance
+    const api: WorkerAPI = {
+      // Health and lifecycle
+      ping: () => workerService.ping(),
+      initialize: () => workerService.initialize(),
+      shutdown: () => workerService.shutdown(),
+      getSystemHealth: () => workerService.getSystemHealth(),
+
+      // Facaded sub-APIs (Comlink will proxy returned objects)
+      getQueryAPI: () => workerService.getQueryAPI(),
+      getMutationAPI: () => workerService.getMutationAPI(),
+      getSubscriptionAPI: () => workerService.getSubscriptionAPI(),
+      getWorkingCopyAPI: () => workerService.getWorkingCopyAPI(),
+      getPluginLifecycleAPI: () => workerService.getPluginLifecycleAPI(),
+      getImportExportAPI: () => workerService.getImportExportAPI(),
+      getTagAPI: () => workerService.getTagAPI(),
+    };
+
     // Expose via Comlink with explicit contract
-    Comlink.expose<import('@hierarchidb/common-api').WorkerAPI>(workerService);
+    Comlink.expose<WorkerAPI>(api);
+    
     
     console.log('[App Worker] Worker ready');
     initReporter.reportComplete();

@@ -7,14 +7,14 @@ import {
   type TreeNode,
 } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { useRouteLoaderData } from 'react-router';
 import { loadAppConfig } from '~/loadAppConfig';
 import type { LoadAppConfigReturn } from '~/loadAppConfig';
 export type { LoadAppConfigReturn };
 
 export type LoadWorkerAPIClientReturn = {
-  client: Remote<typeof WorkerModule>; // Worker API instance via Comlink
+  client: Remote<WorkerAPI>; // Worker API instance via Comlink
 };
 
 export type LoadTreeArgs = {

@@ -20,12 +20,12 @@ import { usePluginsForTree } from '~/hooks/usePluginsForTree';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId, PluginDefinition } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  workerClient: Remote<typeof WorkerModule> | null;
+  workerClient: Remote<WorkerAPI> | null;
   onCreateAction: (action: string, node: TreeNodeData) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;

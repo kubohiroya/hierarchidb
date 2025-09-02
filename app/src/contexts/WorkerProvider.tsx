@@ -10,6 +10,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography, LinearProgress } from '@mui/material';
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-worker-bootstrap';
 import { WorkerAPIClient } from '../WorkerAPIClient';
+import type { Remote } from 'comlink';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { TitleLogo } from '../components/TitleLogo';
 
 // ===========================
@@ -17,7 +19,7 @@ import { TitleLogo } from '../components/TitleLogo';
 // ===========================
 
 interface WorkerContextValue {
-  client: WorkerAPIClient | null;
+  client: Remote<WorkerAPI> | null;
   isInitialized: boolean;
   initProgress: number;
   initMessage: string;
