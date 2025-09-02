@@ -66,8 +66,17 @@ try {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   import('@hierarchidb/runtime-worker/entity/store-registry').then(({ storeRegistry }) => {
+    // Peer store
     import('./folderPeerStore').then(({ folderPeerStore }) => {
       if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
+    }).catch(() => {});
+    // Group store
+    import('./folderGroupStore').then(({ folderGroupStore }) => {
+      if (!storeRegistry.getGroup('folder')) storeRegistry.registerGroup('folder', folderGroupStore);
+    }).catch(() => {});
+    // Relations store
+    import('./folderRelationStore').then(({ folderRelationStore }) => {
+      if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
     }).catch(() => {});
   }).catch(() => {});
 } catch {
