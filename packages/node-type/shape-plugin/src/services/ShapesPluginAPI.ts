@@ -233,8 +233,9 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
       errors: []
     };
   }
-}
+
   // === Auth ===
   setAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
-    this.batchSessionManager.setAuthToken(token, type, expiresAt);
+    void this.batchSessionManager.setAuthToken(token, type, expiresAt);
   }
+}

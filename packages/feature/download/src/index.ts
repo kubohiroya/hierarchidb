@@ -7,6 +7,7 @@ export * from './adapters/NobleSha3HashPort';
 export * from './adapters/DexieContentIndexPort';
 export * from './adapters/DexieChunkStoragePort';
 export * from './adapters/FetchNetworkPort';
+export * from './helpers/auth';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/download', provides: ['download', 'cas'] },
   init() {},

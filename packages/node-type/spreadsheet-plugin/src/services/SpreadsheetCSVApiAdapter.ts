@@ -17,7 +17,8 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   }
 
   async downloadCSVFromUrl(url: string, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
-    const res = await fetch(url);
+    const { authFetch } = await import('./utils/authFetch');
+    const res = await authFetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = await res.arrayBuffer();
     const filename = url.split('/').pop() || 'downloaded.csv';
@@ -40,4 +41,3 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
 export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVDataApi {
   return new SpreadsheetCSVApiAdapter(pluginId);
 }
-

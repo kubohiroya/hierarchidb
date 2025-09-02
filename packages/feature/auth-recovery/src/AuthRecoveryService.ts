@@ -1,18 +1,12 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { AuthHeadersProvider, AuthContext, AuthPluginType } from './ports';
-import {
-  AuthNotificationRegistry,
-  AuthNotificationFactory,
-  AuthNotificationGuards,
-  AUTH_CONSTANTS,
-  detectAuthSource,
-} from '@hierarchidb/common-auth';
+import { AuthNotificationRegistry, AuthNotificationFactory, AUTH_CONSTANTS } from '@hierarchidb/common-auth';
 
 type Pending = {
   resolve: (r: Response) => void;
   reject: (e: Error) => void;
   timeout: any;
-  context: { requestId: string; url: string; init: RequestInit; ctx: Required<AuthContext> };
+  context: { requestId: string; url: string; init: RequestInit; ctx: AuthContext };
 };
 
 export class AuthRecoveryService implements AuthHeadersProvider {
@@ -27,9 +21,9 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   constructor() {
     // Listen for success/cancel notifications from UI
     this.registry.register('feature-auth-recovery', {
-      onAuthRequired: async () => {},
-      onAuthSuccess: async (n) => this.onAuthSuccess(n.context.requestId, n.context.newToken, n.context.tokenType || 'Bearer', n.context.expiresAt),
-      onAuthCancelled: async (n) => this.onAuthCancelled(n.context.requestId, n.context.reason),
+      onAuthRequired: async (_n: any) => {},
+      onAuthSuccess: async (n: any) => this.onAuthSuccess(n.context.requestId, n.context.newToken, n.context.tokenType || 'Bearer', n.context.expiresAt),
+      onAuthCancelled: async (n: any) => this.onAuthCancelled(n.context.requestId, n.context.reason),
     });
   }
 
@@ -65,7 +59,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
     throw lastErr ?? new Error('Authentication failed');
   }
 
-  private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: Required<AuthContext>): Promise<Response> {
+  private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: AuthContext): Promise<Response> {
     const notification = AuthNotificationFactory.createAuthRequired({
       source: 'worker',
       requestId,
@@ -112,4 +106,3 @@ export class AuthRecoveryService implements AuthHeadersProvider {
     p.reject(new Error(`Authentication cancelled: ${reason}`));
   }
 }
-

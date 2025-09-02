@@ -4,10 +4,11 @@ import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 /**
  * Creates a DownloadService wired with auth headers and IndexedDB-backed storage + CAS index.
  */
-export function createShapeDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }) {
+export async function createShapeDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }) {
   const auth = await AuthRecoveryService.getSingleton();
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
+    // Default moderate parallelism; caller can override explicitly
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);

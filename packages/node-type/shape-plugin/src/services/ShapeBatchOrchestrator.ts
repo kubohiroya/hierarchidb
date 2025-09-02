@@ -4,15 +4,7 @@ import type { NodeId } from '@hierarchidb/common-type';
 import type { EphemeralShapeDB } from './database/EphemeralShapeDB';
 import { DownloadService, type NetworkPort, type StoragePort, type IntegrityPort, DexieChunkStoragePort, FetchNetworkPort } from '@hierarchidb/download';
 
-class FetchNet implements NetworkPort {
-  async head(url: string, init?: RequestInit) { const r = await fetch(url, { method: 'HEAD', ...init }); return wrap(r); }
-  async get(url: string, init?: RequestInit) { const r = await fetch(url, { method: 'GET', ...init }); return wrap(r); }
-  async getRange(url: string, start: number, end: number, init?: RequestInit) {
-    const r = await fetch(url, { method: 'GET', headers: { Range: `bytes=${start}-${end}` }, ...init });
-    return wrap(r);
-  }
-}
-function wrap(r: Response) { return { ok: r.ok, status: r.status, headers: r.headers, arrayBuffer: () => r.arrayBuffer() }; }
+// FetchNetworkPort provides head/get/getRange; no local wrapper needed
 
 class MemoryStore implements StoragePort {
   last?: ArrayBuffer;
@@ -55,8 +47,9 @@ export class ShapeBatchOrchestrator {
           const buf = await store.readAll(fileId);
           text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
         } else {
-          // Fallback: refetch as text
-          text = await (await fetch(url)).text();
+          // Fallback: refetch as text (with auth)
+          const { authFetch } = await import('./utils/authFetch');
+          text = await (await authFetch(url)).text();
         }
         const geoJson = JSON.parse(text);
         if (!geoJson.type || !geoJson.features) throw new Error('Invalid GeoJSON');

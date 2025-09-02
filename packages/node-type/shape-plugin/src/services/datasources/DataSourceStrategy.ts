@@ -259,7 +259,8 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
     try {
       // 基本的なヘルスチェック
       if (this.config.access.baseUrl) {
-        const response = await fetch(this.config.access.baseUrl);
+        const { authFetch } = await import('../utils/authFetch');
+        const response = await authFetch(this.config.access.baseUrl);
         return response.ok;
       }
       return true;

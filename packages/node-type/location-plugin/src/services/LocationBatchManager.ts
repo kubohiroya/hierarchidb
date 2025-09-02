@@ -316,7 +316,8 @@ export class LocationBatchManager {
     }
 
     try {
-      const response = await fetch(`${endpoint}?${params}`);
+      const { authFetch } = await import('./utils/authFetch');
+      const response = await authFetch(`${endpoint}?${params}`);
       const data = await response.json();
 
       return this.convertOSMToLocations(data);
@@ -352,7 +353,8 @@ export class LocationBatchManager {
     const query = config.options?.overpassQuery || this.buildOverpassQuery(config);
 
     try {
-      const response = await fetch(endpoint, {
+      const { authFetch } = await import('./utils/authFetch');
+      const response = await authFetch(endpoint, {
         method: 'POST',
         body: query,
         headers: {
@@ -378,7 +380,8 @@ export class LocationBatchManager {
     }
 
     try {
-      const response = await fetch(config.options.customEndpoint, {
+      const { authFetch } = await import('./utils/authFetch');
+      const response = await authFetch(config.options.customEndpoint, {
         headers: config.options.customHeaders || {},
       });
 
