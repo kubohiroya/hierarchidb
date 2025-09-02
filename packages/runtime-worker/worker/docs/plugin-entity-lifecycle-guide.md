@@ -82,3 +82,74 @@ export function registerStores(db: MyPluginDB) {
 - Idempotency: Ensure repeated `put/bulkPut` calls are safe; include `updatedAt`.
 - Versioning/Migrations: Manage your plugin DB schema versions independently of CoreDB.
 
+## 6) Performance: bulk/chunk patterns
+
+- Prefer `bulkUpsert` for Peer/Group/Relations to minimize round‑trips.
+- The runtime will detect `store.bulkUpsert` and pass an array of entities; otherwise it falls back to sequential `put` calls.
+- For Group/Relations, implement `bulkUpsert` in your plugin stores to handle hundreds/thousands of entities per call. If needed, chunk inside your store by 1× `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE`.
+- Example (Dexie):
+
+```ts
+async function bulkUpsert(entities: PeerEntity[]) {
+  await db.peerEntities.bulkPut(entities as any);
+}
+```
+
+Tip: Keep entities small and avoid denormalized UI fields (name/description) — those live on TreeNode.
+
+## 7) Group/Relations store implementations
+
+Beyond Peer, plugins may persist Group (1:N items per node) and Relations (N:N between nodes). Implement the following minimal stores:
+
+### GroupStore<TItem>
+
+```ts
+import type { NodeId } from '@hierarchidb/common-type';
+import type { GroupStore, GroupItemBase } from '@hierarchidb/runtime-worker/entity/store';
+
+type MyItem = GroupItemBase<{ value?: unknown }>;
+
+export function createGroupStore(db: MyPluginDB): GroupStore<MyItem> {
+  return {
+    async list(nodeId: NodeId) {
+      return db.groupEntities.where('nodeId').equals(nodeId).toArray() as any;
+    },
+    async bulkUpsert(nodeId: NodeId, items: MyItem[]) {
+      const rows = items.map((it) => ({ ...it, nodeId }));
+      await db.groupEntities.bulkPut(rows as any);
+    },
+    async bulkDelete(nodeId: NodeId, itemIds: string[]) {
+      // composite key [nodeId+id] recommended; delete by range or map
+      for (const id of itemIds) await db.groupEntities.delete([nodeId, id] as any);
+    },
+  };
+}
+```
+
+### RelationStore<TRel>
+
+```ts
+import type { NodeId } from '@hierarchidb/common-type';
+import type { RelationStore, RelationBase } from '@hierarchidb/runtime-worker/entity/store';
+
+type MyRel = RelationBase<{ weight?: number }>;
+
+export function createRelationStore(db: MyPluginDB): RelationStore<MyRel> {
+  return {
+    async listByNode(nodeId: NodeId) {
+      return db.relations.where('srcNodeId').equals(nodeId).toArray() as any;
+    },
+    async bulkUpsert(rels: MyRel[]) {
+      await db.relations.bulkPut(rels as any);
+    },
+    async bulkDelete(rels: MyRel[]) {
+      // composite key &[srcNodeId+type+dstNodeId]
+      for (const r of rels) await db.relations.delete([r.srcNodeId, r.type, r.dstNodeId] as any);
+    },
+  };
+}
+```
+
+Runtime behavior (when `WORKER_ENTITY_UNIFIED=1`): during duplicate/paste/import, the worker will:
+- Group: list(src) → bulkUpsert(dst, items)
+- Relations: listByNode(src) → rebind both ends via idMap → bulkUpsert(filtered)
