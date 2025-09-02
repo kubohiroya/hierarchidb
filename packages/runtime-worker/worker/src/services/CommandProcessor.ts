@@ -13,6 +13,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 import { commitWorkingCopyV2 } from './WorkingCopyTreeNodeOperations';
 import { encodeTrashHolderName, decodeTrashHolderName } from './utils/holder-encoding';
 import { hasWorkingCopyInSubtree } from './utils/policy-c';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
 import { recordCommandLatency } from '../utils/metrics';
 
 // Sanitized result shape used for logging only (no sensitive fields)
@@ -118,6 +119,15 @@ export class CommandProcessor {
 
       const endedAt = Date.now();
       recordCommandLatency(envelope.kind, endedAt - startedAt);
+      // Notify entity lifecycle (behind-the-flag). Best-effort, non-blocking in base skeleton.
+      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED && result.success) {
+        try {
+          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
+          await lifecycle.handleCommand(envelope as any);
+        } catch {
+          // ignore lifecycle errors in base skeleton
+        }
+      }
       return result;
     } catch (error) {
       // Do not leak internal details in error message

@@ -14,7 +14,17 @@ import type {
   TreeNodeEvent,
   SubscriptionOptions,
 } from '@hierarchidb/common-type';
-import { map, type Observable, filter as rxFilter, Subject, share, startWith } from 'rxjs';
+import {
+  map,
+  type Observable,
+  filter as rxFilter,
+  Subject,
+  share,
+  from,
+  concat,
+  bufferTime,
+  mergeMap,
+} from 'rxjs';
 import type { CoreDB } from './CoreDB';
 import { TreeQueryService } from './TreeQueryService';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -107,7 +117,8 @@ export class TreeSubscriptionService {
     let resultObservable: Observable<TreeChangeEvent> = subject.asObservable();
 
     if (includeInitialValue) {
-      resultObservable = resultObservable.pipe(startWith(this.createInitialNodeEvent(nodeId)));
+      const initial$ = from(this.createInitialNodeEventAsync(nodeId));
+      resultObservable = concat(initial$, resultObservable);
     }
 
     // Clean up subscription when unsubscribed
@@ -158,7 +169,36 @@ export class TreeSubscriptionService {
     // Create observable that filters global changes for childNodes of this node
     const childNodesObservable = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForChildNodesObservation(event, parentId, filter)),
-      map((event) => this.transformEventForSubscription(event)),
+      // Progressive batching: coalesce bursts and emit current snapshot in chunks
+      bufferTime(30),
+      rxFilter((batch) => batch.length > 0),
+      mergeMap(async () => {
+        let children = await this.coreDB.listChildren(parentId);
+        if (filter?.nodeTypes?.length) {
+          children = children.filter((n) => filter.nodeTypes!.includes(n.nodeType));
+        }
+        const chunkSize = 200;
+        const events: TreeChangeEvent[] = [] as any;
+        for (let i = 0; i < children.length; i += chunkSize) {
+          const slice = children.slice(i, i + chunkSize);
+          events.push({
+            type: 'children-changed',
+            nodeId: parentId,
+            affectedChildren: slice.map((c) => c.id),
+            timestamp: Date.now() as Timestamp,
+          } as any);
+        }
+        if (children.length === 0) {
+          events.push({
+            type: 'children-changed',
+            nodeId: parentId,
+            affectedChildren: [],
+            timestamp: Date.now() as Timestamp,
+          } as any);
+        }
+        return events;
+      }),
+      mergeMap((events) => from(events)),
       share()
     );
 
@@ -174,9 +214,8 @@ export class TreeSubscriptionService {
     let resultObservable: Observable<TreeChangeEvent> = subject.asObservable();
 
     if (includeInitialSnapshot) {
-      resultObservable = resultObservable.pipe(
-        startWith(this.createInitialChildNodesEvent(parentId, filter))
-      );
+      const initial$ = from(this.createInitialChildNodesEvents(parentId, filter));
+      resultObservable = concat(initial$, resultObservable);
     }
 
     // Set up unsubscribe handler
@@ -235,10 +274,9 @@ export class TreeSubscriptionService {
     // Handle initial snapshot if requested
     let resultObservable: Observable<TreeChangeEvent> = subject.asObservable();
 
-    if (includeInitialSnapshot && maxDepth) {
-      resultObservable = resultObservable.pipe(
-        startWith(this.createInitialSubtreeEvent(rootId, { maxDepth }))
-      );
+    if (includeInitialSnapshot) {
+      const initial$ = from(this.createInitialSubtreeEvents(rootId, filter, maxDepth));
+      resultObservable = concat(initial$, resultObservable);
     }
 
     // Set up unsubscribe handler
@@ -491,10 +529,8 @@ export class TreeSubscriptionService {
     return event;
   }
 
-  private createInitialNodeEvent(nodeId: NodeId): TreeChangeEvent {
-    // Get the current state of the node
-    const node = this.getNodeFromDB(nodeId);
-
+  private async createInitialNodeEventAsync(nodeId: NodeId): Promise<TreeChangeEvent> {
+    const node = await this.coreDB.getNode(nodeId);
     return {
       type: 'node-updated',
       nodeId,
@@ -503,25 +539,44 @@ export class TreeSubscriptionService {
     };
   }
 
-  private createInitialChildNodesEvent(
+  private async *createInitialChildNodesEvents(
     parentId: NodeId,
-    filter?: SubscriptionFilter
-  ): TreeChangeEvent {
-    // Get current childNodes
-    const childNodes = this.getChildNodesFromDB(parentId, filter);
-
-    return {
-      type: 'children-changed',
-      nodeId: parentId,
-      affectedChildren: childNodes.map((childNode) => childNode.id),
-      timestamp: Date.now() as Timestamp,
-    };
+    filter?: SubscriptionFilter,
+    chunkSize: number = 200
+  ): AsyncGenerator<TreeChangeEvent> {
+    let childNodes = await this.coreDB.listChildren(parentId);
+    if (filter?.nodeTypes?.length) {
+      childNodes = childNodes.filter((n) => filter.nodeTypes!.includes(n.nodeType));
+    }
+    for (let i = 0; i < childNodes.length; i += chunkSize) {
+      const slice = childNodes.slice(i, i + chunkSize);
+      yield {
+        type: 'children-changed',
+        nodeId: parentId,
+        affectedChildren: slice.map((c) => c.id),
+        timestamp: Date.now() as Timestamp,
+      };
+    }
+    if (childNodes.length === 0) {
+      // Send an empty snapshot to indicate completion for empty lists
+      yield {
+        type: 'children-changed',
+        nodeId: parentId,
+        affectedChildren: [],
+        timestamp: Date.now() as Timestamp,
+      };
+    }
   }
 
-  private createInitialSubtreeEvent(rootId: NodeId, filter?: SubscriptionFilter): TreeChangeEvent {
-    // For initial subtree event, we could return a snapshot
-    // For now, return a simple childNodes-changed event for the root
-    return this.createInitialChildNodesEvent(rootId, filter);
+  private async *createInitialSubtreeEvents(
+    rootId: NodeId,
+    filter?: SubscriptionFilter,
+    maxDepth?: number,
+    chunkSize: number = 200
+  ): AsyncGenerator<TreeChangeEvent> {
+    // Minimal progressive snapshot: emit root's direct children in chunks
+    // Future: walk BFS up to maxDepth and emit per-level chunks
+    yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize);
   }
 
   private getNodeFromDB(nodeId: NodeId): TreeNode | undefined {

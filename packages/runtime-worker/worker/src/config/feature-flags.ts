@@ -16,4 +16,6 @@ export const FEATURE_FLAGS = {
     (typeof process !== 'undefined' && process?.env?.WORKER_POLICY_C) === '1',
   WORKER_TX_ENABLED:
     (typeof process !== 'undefined' && process?.env?.WORKER_TX_ENABLED) === '1',
+  WORKER_ENTITY_UNIFIED:
+    (typeof process !== 'undefined' && process?.env?.WORKER_ENTITY_UNIFIED) === '1',
 } as const;
