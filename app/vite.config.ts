@@ -6,7 +6,10 @@ import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import { faviconPlugin } from './vite-plugin-favicon';
 import { comlink } from 'vite-plugin-comlink';
-import { vitePluginPackageReader } from '../scripts/vite-plugin-package-reader';
+import {
+  vitePluginPackageReader as toolsVitePluginPackageReader,
+} from '@hierarchidb/tools-vite-plugin-package-reader';
+import { hierarchiDBMultiModulePreset } from '@hierarchidb/tools-vite-plugin-package-reader/presets';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild }) => {
@@ -19,11 +22,15 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   // プラグインのリストを作成
   const plugins = [
-    // tildeResolver(),
-    vitePluginPackageReader({
-      rootDir: path.resolve(__dirname, '..'),
-      pluginPattern: /@hierarchidb\/node-type-.*-plugin$/
-    }),
+    // HierarchiDB plugin package discovery -> virtual modules
+    toolsVitePluginPackageReader(
+      hierarchiDBMultiModulePreset({
+        // 現在の命名規則（@hierarchidb/*-plugin）に合わせる
+        pattern: /@hierarchidb\/.*-plugin$/,
+        priorityPlugin: 'folder',
+        extractPluginConfig: true,
+      })
+    ),
     dts(),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     comlink(), // Add Comlink plugin for Worker support
