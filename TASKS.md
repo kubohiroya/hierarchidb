@@ -118,6 +118,17 @@
   - [x] 影響範囲の型通し
   - [x] ドキュメント更新（エラー一覧）
 
+6) 観測・計測（軽量）（P2）
+- ブランチ: `feat/worker/metrics-command-latency`
+- 依存: cp-routing-*
+- 受け入れ基準:
+  - フラグON時のみコマンド別の回数/失敗/合計レイテンシを記録
+  - 開発/テスト用途で `snapshot()` 取得可能（外部出力は後続）
+- チェックリスト:
+  - [x] 軽量メトリクス実装（services/utils/metrics.ts）
+  - [x] ヘッドレステスト（metrics.headless.test.ts）
+  - [x] Docs 追加（docs/metrics.md）
+
 P1:
 - Envelope v1 完整備（全コマンドの kind/payload/result 型）
   - ブランチ: `feat/worker/envelope-v1`
@@ -198,7 +209,7 @@ P2:
   - start-env.sh からフラグ注入シナリオを整備（本番影響なし）
   - CI で `pnpm e2e` グリーン（レポート保存）
 - チェックリスト:
-  - [ ] e2e シナリオ（OFF→ON）とリグレッションケース
+  - [ ] e2e シナリオ（OFF→ON）とリグレッションケース（ヘッドレス統合テストは追加済み）
   - [ ] 既存 e2e に干渉しない isolate データセット
   - [ ] CI レポートの保存・参照手順追記
 
@@ -278,6 +289,66 @@ P2:
   - [ ] 主要コンポーネントの stories 追加
   - [ ] CI との差分検討（スナップショット運用方針）
   - [ ] Docs: 開発フローへの組込
+
+9) Entity Lifecycle V2（基盤）（P1）
+- ブランチ: `feat/worker/entity-lifecycle-v2-base`
+- 依存: TX/bulk 導入済み
+- 受け入れ基準:
+  - ドキュメント作成（`packages/runtime-worker/worker/docs/entity-lifecycle-v2.md`）[done]
+  - フラグ `WORKER_ENTITY_UNIFIED` 追加（既定OFF）
+  - EntityRegistry/EntityHandler/EntityLifecycleManager の雛形実装
+  - CommandProcessor からライフサイクル通知（create/duplicate/paste/import/commitWC/discardWC）
+  - すべて Tx 内で実行、ユニット緑
+- チェックリスト:
+  - [ ] feature-flags.ts に `WORKER_ENTITY_UNIFIED`
+  - [ ] entity/EntityHandler.ts, EntityRegistry.ts, EntityLifecycleManager.ts 追加
+  - [ ] CP→Lifecycle 通知の最小配線（PeerEntity 対象）
+  - [ ] ユニット: Peer の WC create/commit/discard/duplicate/import
+
+10) Entity（Peer）実装（P1）
+- ブランチ: `feat/worker/entity-peer`
+- 依存: 9)
+- 受け入れ基準:
+  - 1ノード=1エンティティ原則（WC/Trash/通常で1つ）
+  - WC create: original→wc を複製（永続）
+  - commit: wc→target へアップサート後、wc 側を削除
+  - discard: wc 側を削除
+  - duplicate/import: NodeId マップに従いバルク作成
+  - Tx/バルク/パリティ緑
+- チェックリスト:
+  - [ ] CoreDB に peerEntities テーブル追加
+  - [ ] PeerEntity Handler 実装
+  - [ ] ユニット（WC/duplicate/import/commit/discard）
+  - [ ] 既存資産のID保持を確認（Import/Duplicateで維持）
+
+11) Entity（Group）実装（P2）
+- ブランチ: `feat/worker/entity-group`
+- 依存: 10)
+- 受け入れ基準: Group の差分適用・Import/Export・E2E 最小
+- チェックリスト:
+  - [ ] CoreDB に groupEntities テーブル追加
+  - [ ] GroupEntity Handler 実装（bulk 差分）
+  - [ ] ユニット/E2E
+  - [ ] 既存資産のID保持（item ID）
+
+12) Entity（Relational）実装（P2）
+- ブランチ: `feat/worker/entity-relations`
+- 依存: 11)
+- 受け入れ基準: サブツリー内参照のみ複製、外部参照は維持（方針明記）、Import/Export 対応
+- チェックリスト:
+  - [ ] CoreDB に relations テーブル追加
+  - [ ] Relational Handler 実装（IDマップ、rebind）
+  - [ ] ユニット/E2E
+  - [ ] 外部参照はID参照を残し、解決不可はスキップ集計
+  - [ ] Importのエラーポリシー（スキップ集計）をテストに反映
+
+13) Entity V2 ロールアウト（P2）
+- ブランチ: `chore/docs/entity-rollout`
+- 依存: 9)〜12)
+- 受け入れ基準: ステージング限定ON→段階ON手順・バックアウト手順をドキュメント化
+- チェックリスト:
+  - [ ] Runbook（flags, 監視, 戻し）
+  - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了）
 

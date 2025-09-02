@@ -5,6 +5,8 @@ import { encodeTrashHolderName } from '../services/utils/holder-encoding';
 export interface TrashMigrateOptions {
   dryRun?: boolean;
   limit?: number;
+  verbose?: boolean;
+  retries?: number;
 }
 
 export interface TrashMigrateReport {
@@ -24,7 +26,9 @@ export interface TrashMigrateReport {
 export async function migrateTrashToHolder(coreDB: CoreDB, opts: TrashMigrateOptions = {}): Promise<TrashMigrateReport> {
   const started = Date.now();
   const dryRun = !!opts.dryRun;
+  const verbose = !!opts.verbose;
   const limit = typeof opts.limit === 'number' ? opts.limit : Infinity;
+  const retries = typeof opts.retries === 'number' ? opts.retries : 1;
   const report: TrashMigrateReport = { scanned: 0, migrated: 0, errors: 0, details: [] };
 
   // Build root->trashRoot map
@@ -60,26 +64,41 @@ export async function migrateTrashToHolder(coreDB: CoreDB, opts: TrashMigrateOpt
       const holderId = (globalThis.crypto?.randomUUID?.() || `wc-${Date.now()}-${Math.random()}`) as NodeId;
       const holderName = encodeTrashHolderName(n.originalParentId as NodeId, n.id);
       if (!dryRun) {
-        await coreDB.createNode({
-          id: holderId,
-          parentId: trashRootId,
-          nodeType: ('trash' as unknown) as any,
-          name: holderName,
-          depth: 0,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          version: 1,
-        } as unknown as TreeNode);
-        await coreDB.updateNode({
-          ...n,
-          id: n.id,
-          parentId: holderId,
-          removedAt: undefined,
-          originalParentId: undefined,
-          originalName: undefined,
-          updatedAt: Date.now(),
-          version: (n.version || 1) + 1,
-        });
+        let attempt = 0;
+        let lastErr: any;
+        while (attempt <= retries) {
+          try {
+            await coreDB.createNode({
+              id: holderId,
+              parentId: trashRootId,
+              nodeType: ('trash' as unknown) as any,
+              name: holderName,
+              depth: 0,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              version: 1,
+            } as unknown as TreeNode);
+            await coreDB.updateNode({
+              ...n,
+              id: n.id,
+              parentId: holderId,
+              removedAt: undefined,
+              originalParentId: undefined,
+              originalName: undefined,
+              updatedAt: Date.now(),
+              version: (n.version || 1) + 1,
+            });
+            lastErr = undefined;
+            break;
+          } catch (e) {
+            lastErr = e;
+            if (verbose) console.warn(`migrate retry ${attempt + 1} for ${n.id}:`, e);
+            if (attempt === retries) throw e;
+            await new Promise((r) => setTimeout(r, 25 * (attempt + 1)));
+          }
+          attempt++;
+        }
+        if (lastErr) throw lastErr;
       }
       report.migrated++;
       report.details.push({ nodeId: n.id });
@@ -108,6 +127,8 @@ export async function migrateTrashToHolder(coreDB: CoreDB, opts: TrashMigrateOpt
 export async function rollbackHolderToLegacy(coreDB: CoreDB, opts: TrashMigrateOptions = {}): Promise<TrashMigrateReport> {
   const started = Date.now();
   const dryRun = !!opts.dryRun;
+  const verbose = !!opts.verbose;
+  const retries = typeof opts.retries === 'number' ? opts.retries : 1;
   const limit = typeof opts.limit === 'number' ? opts.limit : Infinity;
   const report: TrashMigrateReport = { scanned: 0, migrated: 0, errors: 0, details: [] };
 
@@ -131,17 +152,32 @@ export async function rollbackHolderToLegacy(coreDB: CoreDB, opts: TrashMigrateO
       const originalParentId = parts[0] as NodeId;
       const originalName = child.name;
       if (!dryRun) {
-        await coreDB.updateNode({
-          ...child,
-          id: child.id,
-          parentId: originalParentId,
-          removedAt: Date.now(),
-          originalParentId,
-          originalName,
-          updatedAt: Date.now(),
-          version: (child.version || 1) + 1,
-        } as any);
-        await coreDB.deleteNode(h.id);
+        let attempt = 0;
+        let lastErr: any;
+        while (attempt <= retries) {
+          try {
+            await coreDB.updateNode({
+              ...child,
+              id: child.id,
+              parentId: originalParentId,
+              removedAt: Date.now(),
+              originalParentId,
+              originalName,
+              updatedAt: Date.now(),
+              version: (child.version || 1) + 1,
+            } as any);
+            await coreDB.deleteNode(h.id);
+            lastErr = undefined;
+            break;
+          } catch (e) {
+            lastErr = e;
+            if (verbose) console.warn(`rollback retry ${attempt + 1} for ${child.id}:`, e);
+            if (attempt === retries) throw e;
+            await new Promise((r) => setTimeout(r, 25 * (attempt + 1)));
+          }
+          attempt++;
+        }
+        if (lastErr) throw lastErr;
       }
       report.migrated++;
       report.details.push({ nodeId: child.id });
@@ -170,10 +206,13 @@ if (require.main === module) {
     const limitArg = process.argv.find((a) => a.startsWith('--limit='));
     const limit = limitArg ? Number(limitArg.split('=')[1]) : undefined;
     const rollback = process.argv.includes('--rollback');
+    const verbose = process.argv.includes('--verbose');
+    const retriesArg = process.argv.find((a) => a.startsWith('--retries='));
+    const retries = retriesArg ? Number(retriesArg.split('=')[1]) : undefined;
     const core = await CoreDB.getSingleton(`migrate-${Date.now()}`);
     const rep = rollback
-      ? await rollbackHolderToLegacy(core, { dryRun, limit })
-      : await migrateTrashToHolder(core, { dryRun, limit });
+      ? await rollbackHolderToLegacy(core, { dryRun, limit, verbose, retries })
+      : await migrateTrashToHolder(core, { dryRun, limit, verbose, retries });
     console.log(JSON.stringify(rep, null, 2));
   })().catch((e) => {
     console.error(e);

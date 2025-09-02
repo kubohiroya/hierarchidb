@@ -2,6 +2,8 @@ import type { WorkingCopyAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNode, NodeType, ValidationResult, CommitResult } from '@hierarchidb/common-type';
 import { CoreDB } from './CoreDB';
 import { EphemeralDB } from './EphemeralDB';
+import { CommandProcessor } from './CommandProcessor';
+import { FEATURE_FLAGS } from '../config/feature-flags';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -9,7 +11,7 @@ import { EphemeralDB } from './EphemeralDB';
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
-  constructor(private coreDB: CoreDB, private ephemeralDB: EphemeralDB) {}
+  constructor(private coreDB: CoreDB, private ephemeralDB: EphemeralDB, private commandProcessor?: CommandProcessor) {}
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
@@ -69,7 +71,12 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async commitWorkingCopy(nodeId: NodeId): Promise<CommitResult> {
     const workingCopy = await this.ephemeralDB.getWorkingCopy(nodeId);
     if (!workingCopy) return { success: false, error: 'Working copy not found' };
-    // For now, simply discard the working copy to simulate commit success.
+    // Prefer CP V2 when available/allowed, else fallback to legacy (ephemeral discard)
+    if (this.commandProcessor && FEATURE_FLAGS.WORKER_WC_COMMIT_V2) {
+      const env = this.commandProcessor.createEnvelope('commitWorkingCopy', { workingCopyId: nodeId } as any);
+      const res = await this.commandProcessor.processCommand(env as any);
+      return res.success ? { success: true } : { success: false, error: (res as any).error ?? 'Commit failed' };
+    }
     await this.ephemeralDB.discardWorkingCopy(nodeId);
     return { success: true };
   }

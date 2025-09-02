@@ -1,0 +1,40 @@
+import 'fake-indexeddb/auto';
+import { describe, it, expect, beforeEach } from 'vitest';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import { CoreDB } from '~/services/CoreDB';
+import { CommandProcessor } from '~/services/CommandProcessor';
+import { commandMetrics } from '~/services/utils/metrics';
+
+describe('Headless metrics (command latency)', () => {
+  beforeEach(() => {
+    (process as any).env.WORKER_METRICS_ENABLED = '1';
+    commandMetrics.reset();
+  });
+
+  async function newCore(name: string): Promise<CoreDB> {
+    return await CoreDB.getSingleton(`metrics-${name}-${Date.now()}-${Math.random()}`);
+  }
+
+  it('records latency and counts for simple commands', async () => {
+    const core = await newCore('basic');
+    const cp = new CommandProcessor(core);
+
+    // Create
+    await cp.processCommand(
+      cp.createEnvelope('createNode', {
+        nodeType: 'folder' as NodeType,
+        treeId: 'r' as TreeId,
+        parentId: 'r:root' as NodeId,
+        name: 'X',
+      })
+    );
+    // Ping (registered success)
+    await cp.processCommand(cp.createEnvelope('ping', {} as any));
+
+    const snap = commandMetrics.snapshot();
+    expect(snap['createNode']?.count ?? 0).toBeGreaterThan(0);
+    expect(snap['ping']?.count ?? 0).toBeGreaterThan(0);
+    expect((snap['ping']?.totalMs ?? 0) >= 0).toBe(true);
+  });
+});
+

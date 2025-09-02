@@ -255,14 +255,13 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      // TODO: Implement getHandler method in registry
-      // For now, log that this functionality is not implemented
+      const handler = (this as any).refCountRegistry?.[nodeType];
+      if (handler && typeof handler.incrementReferenceCount === 'function') {
+        await handler.incrementReferenceCount(nodeId);
+        return;
+      }
+      // Fallback: log only
       console.log(`Reference counting not implemented for ${nodeType} node ${nodeId}`);
-      // const handler = this.registry.getHandler(nodeType);
-      // if (!isReferenceCountingHandler(handler)) {
-      //   return; // Handler doesn't support reference counting
-      // }
-      // await handler.incrementReferenceCount(nodeId);
     } catch (e) {
       workerError(
         `Failed to increment reference count for ${nodeType} node ${nodeId}:`,
@@ -276,16 +275,12 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      const config = this.plugins[nodeType];
-
-      // TODO: Implement getHandler method in registry
-      // For now, log that this functionality is not implemented
+      const handler = (this as any).refCountRegistry?.[nodeType];
+      if (handler && typeof handler.decrementReferenceCount === 'function') {
+        await handler.decrementReferenceCount(nodeId);
+        return;
+      }
       console.log(`Reference counting decrement not implemented for ${nodeType} node ${nodeId}`);
-      // const handler = this.registry.getHandler(nodeType);
-      // if (!isReferenceCountingHandler(handler)) {
-      //   return; // Handler doesn't support reference counting
-      // }
-      // await handler.decrementReferenceCount(nodeId);
     } catch (e) {
       workerError(
         `Failed to decrement reference count for ${nodeType} node ${nodeId}:`,
@@ -303,6 +298,13 @@ export class NodeLifecycleManager {
       timestamp: Date.now(),
       metadata,
     };
+  }
+
+  /**
+   * Inject reference counting handler registry (optional)
+   */
+  setReferenceCountingRegistry(registry: Record<string, { incrementReferenceCount(nodeId: NodeId): Promise<void>; decrementReferenceCount(nodeId: NodeId): Promise<void> }>) {
+    (this as any).refCountRegistry = registry;
   }
 
   /**

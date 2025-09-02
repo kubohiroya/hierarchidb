@@ -35,3 +35,5 @@ node -r esbuild-register packages/runtime-worker/worker/src/tools/trash-migrate.
 注意
 - 競合: 同時に復元/削除が走ると、対象が見つからない場合がある（detailsに記録）。
 - パフォーマンス: 大規模データでは limit を活用して段階移行。
+- メトリクス: durationMs と errorsByReason を活用し、異常の多い要因を特定する。
+- ログ: `--dry-run` で想定対象を把握し、`--limit` を安全値から徐々に引き上げる。
