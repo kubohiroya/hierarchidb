@@ -14,9 +14,15 @@ export default defineConfig({
     pool: 'forks',
     maxWorkers: 1,
     minWorkers: 1,
+    include: [
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx'
+    ],
 
     exclude: [
-      'src/**/migration/**'
+      'src/**/migration/**',
+      '**/node_modules/**',
+      '**/dist/**'
     ],
     testTimeout: 3000, // 3 seconds for faster feedback
   },
