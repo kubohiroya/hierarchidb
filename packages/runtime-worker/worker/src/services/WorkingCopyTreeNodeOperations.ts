@@ -25,10 +25,7 @@ export function createWorkingCopyNodeHolderName(parentId: NodeId, nodeId: NodeId
   return [parentId, nodeId].join('\t') as NodeId;
 }
 
-export function splitWorkingCopyNodeHolderParentIdAndNodeId(source: string): NodeId[] {
-  const [parentId, nodeId] = source.split('\t');
-  return [parentId, nodeId] as NodeId[];
-}
+// splitWorkingCopyNodeHolderParentIdAndNodeId removed
 
 /**
  * Create a new draft working copy for creating a new node
@@ -153,28 +150,23 @@ export async function createWorkingCopyFromNode(
   }
 
   // get-or-create: reuse existing WC if present for this original node
-  const existingHolders = await (coreDB.nodes as any)
-    .where?.('parentId')
-    .equals(workingCopyNodeHolderParentId)
-    .toArray?.();
-  if (Array.isArray(existingHolders)) {
-    for (const h of existingHolders) {
-      try {
-        const { targetNodeId } = decodeWorkingCopyHolderName(h.name);
-        if (targetNodeId === sourceNode.id) {
-          return nodeId; // WC already exists; return original id (behavior preserved)
-        }
-      } catch {
-        // ignore malformed holder names
-      }
-    }
+  const existingHolder = await (coreDB.nodes as any)
+    .where?.('[holderType+holderTargetId]')
+    .equals(['workingCopy', sourceNode.id])
+    .first?.();
+  if (existingHolder) {
+    return nodeId; // WC already exists; return original id (behavior preserved)
   }
 
   const workingCopyNodeHolderId = generateNodeId();
   const workingCopyNodeId = generateNodeId();
   const now = Date.now() as Timestamp;
 
-  const workingCopyNodeHolder: NodeBase = {
+  const workingCopyNodeHolder: NodeBase & {
+    holderType?: 'workingCopy' | 'trash';
+    holderTargetId?: NodeId;
+    holderMetaParentId?: NodeId;
+  } = {
     parentId: workingCopyNodeHolderParentId, // New node gets a new ID
     id: workingCopyNodeHolderId,
     // For editing WC, targetNodeId is the original nodeId
@@ -184,6 +176,9 @@ export async function createWorkingCopyFromNode(
     createdAt: now,
     updatedAt: now,
     version: 1,
+    holderType: 'workingCopy',
+    holderTargetId: sourceNode.id,
+    holderMetaParentId: sourceNode.parentId,
   };
 
   const workingCopyNode: NodeBase = {
@@ -220,7 +215,9 @@ export async function commitWorkingCopyV2(
   const holder = await coreDB.nodes.get(wcNode.parentId);
   if (!holder) throw new Error('Working copy holder not found');
 
-  const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(holder.name);
+  const targetParentNodeId = (holder as any).holderMetaParentId as NodeId;
+  const targetNodeId = (holder as any).holderTargetId as NodeId;
+  if (!targetParentNodeId || !targetNodeId) throw new Error('Holder metadata missing');
   const parentNode = await coreDB.nodes.get(targetParentNodeId);
   if (!parentNode) throw new Error('Parent node not found');
 
@@ -316,9 +313,15 @@ export async function commitWorkingCopy(
       };
     }
 
-    const [parentId, nodeId] = splitWorkingCopyNodeHolderParentIdAndNodeId(
-      workingCopyNodeHolder.name
-    );
+    const parentId = (workingCopyNodeHolder as any).holderMetaParentId as NodeId;
+    const nodeId = (workingCopyNodeHolder as any).holderTargetId as NodeId;
+    if (!parentId || !nodeId) {
+      return {
+        success: false,
+        error: 'Holder metadata missing',
+        code: WorkerErrorCode.WORKING_COPY_NOT_FOUND,
+      };
+    }
 
     const parentNode = await coreDB.nodes.get(parentId);
     if (!parentNode) {
@@ -410,26 +413,13 @@ export async function getWorkingCopy(
   coreDB: CoreDB,
   originalNodeId: NodeId
 ): Promise<NodeBase | undefined> {
-  // Search holders under any `${treeId}\tworkingCopy` root, decode name and match targetNodeId
-  // NOTE: This is a minimal, generic scan without relying on schema columns like `workingCopyOf`.
-  const all = await (coreDB.nodes as any).toArray?.();
-  if (!Array.isArray(all)) return undefined;
-  // Find holders whose parentId ends with '\tworkingCopy'
-  const holders = all.filter((n: any) => typeof n?.parentId === 'string' && n.parentId.endsWith('\tworkingCopy'));
-  for (const h of holders) {
-    try {
-      const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(h.name);
-      if (targetNodeId === originalNodeId) {
-        // Find child (the WC node)
-        const child = all.find((n: any) => n?.parentId === h.id);
-        if (child) return child as NodeBase;
-      }
-      void targetParentNodeId; // not used here
-    } catch {
-      // ignore malformed names
-    }
-  }
-  return undefined;
+  const holder = await (coreDB.nodes as any)
+    .where?.('[holderType+holderTargetId]')
+    .equals(['workingCopy', originalNodeId])
+    .first?.();
+  if (!holder) return undefined;
+  const child = await (coreDB.nodes as any).where?.('parentId').equals(holder.id).first?.();
+  return (child || undefined) as NodeBase | undefined;
 }
 
 /**
