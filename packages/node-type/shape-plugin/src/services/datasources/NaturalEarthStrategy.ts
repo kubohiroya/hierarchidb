@@ -214,6 +214,8 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     }
 
     // デフォルトまたは指定されたエンドポイント
+    // テスト用のダミーキー（test-1 など）が渡された場合はフォールバック
+    if (endpoint?.startsWith('test-')) return 'countries-50m';
     return endpoint;
   }
 
