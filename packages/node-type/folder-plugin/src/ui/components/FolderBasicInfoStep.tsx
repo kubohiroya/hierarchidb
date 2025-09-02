@@ -27,7 +27,7 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
   onUpdate,
   disabled = false,
 }) => {
-  const { t } = useTranslation().namespace('folderPlugin');
+  const { t } = useTranslation('folderPlugin');
 
   // タグ変更ハンドラー
 

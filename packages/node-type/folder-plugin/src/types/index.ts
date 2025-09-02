@@ -1,8 +1,6 @@
 // Re-export the comprehensive folder-plugin entity definitions from entities
 export type {
   FolderEntity,
-  FolderBookmark,
-  FolderTemplate,
   FolderWorkingCopy,
   FolderOperationResult,
   FolderSearchQuery,

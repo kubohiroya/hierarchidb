@@ -49,8 +49,6 @@ export const FolderUIConfig = {
     'move',
     'copy',
     'duplicate',
-    'add_bookmark',
-    'create_template',
     'properties',
     'permissions',
     'delete',

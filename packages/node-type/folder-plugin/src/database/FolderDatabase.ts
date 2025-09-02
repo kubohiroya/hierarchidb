@@ -1,11 +1,9 @@
 import Dexie from 'dexie';
-import type { FolderEntity, FolderWorkingCopy, FolderBookmark, FolderTemplate } from '../types/index';
+import type { FolderEntity, FolderWorkingCopy } from '../types/index';
 
 export class FolderDatabase extends Dexie {
   folders!: Dexie.Table<FolderEntity, string>;
   workingCopies!: Dexie.Table<FolderWorkingCopy, string>;
-  bookmarks!: Dexie.Table<FolderBookmark, string>;
-  templates!: Dexie.Table<FolderTemplate, string>;
 
   constructor() {
     super('FolderDatabase');
@@ -13,8 +11,6 @@ export class FolderDatabase extends Dexie {
     this.version(1).stores({
       folders: '&id, nodeId, name, createdAt, updatedAt',
       workingCopies: '&id, nodeId, createdAt',
-      bookmarks: '&id, folderId, createdAt, [folderId+createdAt]',
-      templates: '&id, folderId, name, createdAt',
     });
   }
 

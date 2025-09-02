@@ -24,8 +24,6 @@ export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity {
  */
 export interface FolderSearchCriteria extends HierarchicalSearchCriteria {
   category?: string;
-  hasBookmarks?: boolean;
-  hasTemplates?: boolean;
 }
 
 /**
@@ -115,7 +113,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     // フォルダーは3段階のステップを持つ
     // Step 0: 基本情報 (名前、説明)
     // Step 1: 権限設定
-    // Step 2: テンプレートとブックマーク設定
+    // Step 2: 追加設定
 
     switch (step) {
       case 0: // 基本情報ステップ
@@ -137,7 +135,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
           canBackToPrevious: true,
         };
 
-      case 2: // テンプレートとブックマーク設定ステップ
+      case 2: // 最終設定ステップ
         const canNavigateToFinal = !!(data.name && data.name.trim().length > 0);
         return {
           canNavigateTo: canNavigateToFinal,
@@ -209,15 +207,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
       }
     }
 
-    // テンプレートのチェック
-    if (data.templates && !Array.isArray(data.templates)) {
-      errors.push('テンプレート設定は配列である必要があります');
-    }
-
-    // ブックマークのチェック
-    if (data.bookmarks && !Array.isArray(data.bookmarks)) {
-      errors.push('ブックマーク設定は配列である必要があります');
-    }
+    // bookmarks/templates 機能は削除済み
 
     return {
       valid: errors.length === 0,

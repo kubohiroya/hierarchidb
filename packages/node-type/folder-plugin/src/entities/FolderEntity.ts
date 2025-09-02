@@ -57,31 +57,10 @@ export interface FolderSearchQuery {
 }
 
 // Additional types re-exported by types/index.ts
-export interface FolderBookmark {
-  id: EntityId;
-  folderId: NodeId;
-  label?: string;
-  name?: string;
-  url?: string;
-  createdAt: Timestamp;
-}
-
-export interface FolderTemplate {
-  id: EntityId;
-  folderId: NodeId;
-  name: string;
-  description?: string;
-  createdAt: Timestamp;
-  content?: Record<string, unknown>;
-  type?: string;
-}
-
 export type FolderWorkingCopy = FolderEntity & { workingCopyId: EntityId };
 
 export interface FolderStatsSummary {
   totalFolders: number;
-  totalBookmarks: number;
-  totalTemplates: number;
 }
 
 export interface FolderStructureNode {
