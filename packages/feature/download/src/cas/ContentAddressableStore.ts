@@ -53,7 +53,7 @@ export class ContentAddressableStore {
     }
 
     await this.index.mapUrl(opts.url, hashHex, algo);
-    const newCount = await this.index.incRef(hashHex, algo, 1);
+    await this.index.incRef(hashHex, algo, 1);
 
     return { hash: hashHex, algo, size: buf.byteLength, contentType: ct };
   }
@@ -78,4 +78,3 @@ function header(h: any, key: string): string | undefined {
   const k = Object.keys(h).find((x) => x.toLowerCase() === key);
   return k ? (h as any)[k] : undefined;
 }
-

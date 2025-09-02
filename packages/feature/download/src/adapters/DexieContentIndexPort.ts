@@ -1,9 +1,9 @@
-import Dexie, { Table } from 'dexie';
+import Dexie from 'dexie';
 import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '../ports';
 
 class CasDB extends Dexie {
-  contents!: Table<ContentMeta, [string, string]>; // [hash, algo]
-  urls!: Table<{ url: string; hash: string; algo: HashAlgorithm }, string>;
+  contents!: any; // Table<ContentMeta, [hash, algo]>
+  urls!: any;     // Table<{ url, hash, algo }, url>
   constructor(name: string = 'hidb-cas') {
     super(name);
     this.version(1).stores({
@@ -52,4 +52,3 @@ export class DexieContentIndexPort implements ContentIndexPort {
     return rec ? { hash: rec.hash, algo: rec.algo } : undefined;
   }
 }
-

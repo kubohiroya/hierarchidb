@@ -112,6 +112,8 @@ export class EntityLifecycleManager {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     await this.copyPeersByMapping(mapping);
+    await this.copyGroupsByMapping(mapping);
+    await this.copyRelationsByMapping(mapping);
   }
 
   async onPasteNodes(env: CommandEnvelope<'pasteNodes', { nodes: Record<string, any>; nodeIds: string[] }>): Promise<void> {
@@ -119,12 +121,16 @@ export class EntityLifecycleManager {
     if (!mapping) return;
     // Prefer nodeType from payload nodes map where available.
     await this.copyPeersByMapping(mapping, env.payload.nodes);
+    await this.copyGroupsByMapping(mapping, env.payload.nodes);
+    await this.copyRelationsByMapping(mapping, env.payload.nodes);
   }
 
   async onImportNodes(env: CommandEnvelope<'importNodes', { nodes: Record<string, any>; nodeIds: string[] }>): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     await this.copyPeersByMapping(mapping, env.payload.nodes);
+    await this.copyGroupsByMapping(mapping, env.payload.nodes);
+    await this.copyRelationsByMapping(mapping, env.payload.nodes);
   }
 
   private async copyPeersByMapping(
@@ -157,6 +163,58 @@ export class EntityLifecycleManager {
       } catch {
         // ignore and continue other types
       }
+    }
+  }
+
+  private async copyGroupsByMapping(
+    mapping: Map<string, string>,
+    sourceNodes?: Record<string, { nodeType?: string }>
+  ): Promise<void> {
+    try {
+      for (const [src, dst] of mapping.entries()) {
+        const srcNode = sourceNodes?.[src] || (await (this.coreDB as any).getNode?.(src));
+        const nodeType = (srcNode as any)?.nodeType as string | undefined;
+        if (!nodeType) continue;
+        const store = (await import('./store-registry')).storeRegistry.getGroup(nodeType);
+        if (!store) continue;
+        const items = await store.list(src as any);
+        if (!items?.length) continue;
+        await store.bulkUpsert(dst as any, items as any);
+      }
+    } catch {
+      // ignore per best-effort policy
+    }
+  }
+
+  private async copyRelationsByMapping(
+    mapping: Map<string, string>,
+    sourceNodes?: Record<string, { nodeType?: string }>
+  ): Promise<void> {
+    try {
+      // Build quick lookup for subtree membership
+      const inSubtree = new Set<string>(Array.from(mapping.keys()));
+      const storeReg = (await import('./store-registry')).storeRegistry;
+      for (const [src, dst] of mapping.entries()) {
+        const srcNode = sourceNodes?.[src] || (await (this.coreDB as any).getNode?.(src));
+        const nodeType = (srcNode as any)?.nodeType as string | undefined;
+        if (!nodeType) continue;
+        const relStore = storeReg.getRelations(nodeType);
+        if (!relStore) continue;
+        const rels = await relStore.listByNode(src as any);
+        if (!rels?.length) continue;
+        const transformed = rels
+          .map((r: any) => {
+            const newSrc = mapping.get(r.srcNodeId as string);
+            const newDst = mapping.get(r.dstNodeId as string);
+            // copy only relations whose both ends are inside the mapping
+            if (!newSrc || !newDst) return null;
+            return { ...r, srcNodeId: newSrc as any, dstNodeId: newDst as any, updatedAt: Date.now() };
+          })
+          .filter(Boolean) as any[];
+        if (transformed.length) await relStore.bulkUpsert(transformed as any);
+      }
+    } catch {
+      // ignore per best-effort policy
     }
   }
 }

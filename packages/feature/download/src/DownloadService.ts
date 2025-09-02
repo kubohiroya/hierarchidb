@@ -18,7 +18,7 @@ export class DownloadService {
   async download(url: string, fileId: string, opts: DownloadOptions = {}): Promise<DownloadResult> {
     // Use chunked download if partSize is provided
     const partSize = opts.partSize ?? 0;
-    if (partSize > 0) return await this.downloadChunked(url, fileId, { ...opts, partSize });
+    if (partSize > 0) return await this.downloadChunked(url, fileId, { ...opts, partSize, concurrency: opts.concurrency ?? 4 });
 
     // Serial download
     const res = await this.net.get(url);
@@ -40,6 +40,7 @@ export class DownloadService {
     const contentLength = Number((head.headers as any)?.get?.('content-length') || 0);
     const totalSize = isFinite(contentLength) && contentLength > 0 ? contentLength : 0;
     const partSize = Math.max(64 * 1024, opts.partSize!);
+    // Default moderate parallelism; callers can override explicitly
     const concurrency = Math.max(1, opts.concurrency ?? 4);
 
     const resume = await this.store.getResumeInfo(fileId);

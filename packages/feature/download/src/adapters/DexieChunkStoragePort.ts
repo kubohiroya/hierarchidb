@@ -1,12 +1,13 @@
-import Dexie, { Table } from 'dexie';
+import Dexie from 'dexie';
 import type { StoragePort } from '../ports';
 
-type FileMeta = { id: string; sizeBytes?: number; committed?: boolean; createdAt: number; updatedAt: number; extra?: Record<string, any> };
-type FileChunk = { fileId: string; index: number; data: ArrayBuffer };
+// runtime-only; keep types in comments to avoid TS noUnusedLocals
+// type FileMeta = { id: string; sizeBytes?: number; committed?: boolean; createdAt: number; updatedAt: number; extra?: Record<string, any> };
+// type FileChunk = { fileId: string; index: number; data: ArrayBuffer };
 
 class ChunkDB extends Dexie {
-  files!: Table<FileMeta, string>;
-  chunks!: Table<FileChunk, [string, number]>;
+  files!: any;
+  chunks!: any;
   constructor(name: string = 'hidb-chunks') {
     super(name);
     this.version(1).stores({
@@ -43,7 +44,7 @@ export class DexieChunkStoragePort implements StoragePort {
   async readAll(fileId: string): Promise<ArrayBuffer> {
     const chunks = await this.db.chunks.where('fileId').equals(fileId).sortBy('index');
     // Concatenate in order
-    const total = chunks.reduce((s, c) => s + c.data.byteLength, 0);
+    const total = chunks.reduce((s: number, c: any) => s + c.data.byteLength, 0);
     const out = new Uint8Array(total);
     let offset = 0;
     for (const c of chunks) { out.set(new Uint8Array(c.data), offset); offset += c.data.byteLength; }
