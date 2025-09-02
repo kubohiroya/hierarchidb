@@ -44,3 +44,5 @@ export type {
 // Re-export EditDialogProps from plugins (which is the main one used)
 export type { EditDialogProps } from './plugins';
 
+// Notifications
+export { NotificationSystem, notify } from './components/NotificationSystem/NotificationSystem';

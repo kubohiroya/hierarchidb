@@ -422,19 +422,7 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
-  async remove(cmd: CommandEnvelope<'remove', RemovePayload>): Promise<CoreCommandResult> {
-    const { nodeIds } = cmd.payload;
-
-    for (const nodeId of nodeIds) {
-      // Delete node and all descendants recursively
-      await this.deleteNodeRecursively(nodeId);
-    }
-
-    return {
-      success: true,
-      seq: this.getNextSeq(),
-    } as CoreCommandResult;
-  }
+  // remove legacy path removed: handled by CommandProcessor 'remove'
 
   /**
    * 【機能概要】: ゴミ箱からノードを復元し、元の場所または指定された場所に戻す

@@ -391,7 +391,10 @@ export function TreeTableCore({
         id: 'deletedAt',
         header: 'Deleted At',
         size: 150,
-        cell: () => '-',
+        cell: ({ row }) => {
+          const value = (row.original as any).createdAt as number | undefined;
+          return value ? new Date(value).toLocaleDateString() : '-';
+        },
       });
     }
 

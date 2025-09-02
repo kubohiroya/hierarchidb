@@ -16,8 +16,12 @@ import { TreeQueryService } from 'services/TreeQueryService';
 import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
-import { TagService } from './services/TagService';
-import { ImportExportService } from './services/ImportExportService';
+import { TagService } from '@hierarchidb/tag';
+import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter';
+import { enableAllImporters, enableAllExporters } from '@hierarchidb/import-export';
+import { bootstrapFeatures } from './services/FeatureBootstrap';
+import { ImportExportService } from '@hierarchidb/import-export';
+import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService';
 
@@ -28,8 +32,30 @@ export class WorkerService implements WorkerAPI {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
+
+      // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
+      await bootstrapFeatures();
+
+      // Enable import/export capability for all node types by default
+      enableAllImporters();
+      enableAllExporters();
+
+      // Optionally install XLSX parser for tabular if available
+      try {
+        // dynamic path literal to avoid hard dependency
+        const pkg = '@hierarchidb/tabular-xlsx';
+        // @ts-ignore - optional dependency at runtime
+        const mod = await import(pkg);
+        if (mod && typeof mod.installTabularXlsx === 'function') {
+          mod.installTabularXlsx();
+          if (typeof mod.markTabularXlsxInstalled === 'function') mod.markTabularXlsxInstalled();
+        }
+      } catch {
+        // XLSX support not installed; proceed without it
+      }
       // Tag service
-      const tagService: TagAPI = await TagService.getSingleton(coreDB);
+      const tagDBPort = new TagDBPortCoreDBAdapter(coreDB);
+      const tagService: TagAPI = await TagService.getSingleton(tagDBPort as any);
 
       // Query/Mutation services
       const commandProcessor: CommandProcessor = await CommandProcessor.getSingleton(coreDB);
@@ -51,7 +77,8 @@ export class WorkerService implements WorkerAPI {
       );
 
       // Import/Export services
-      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(coreDB);
+      const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
+      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort as any);
 
       // WorkingCopy service (ephemeral-backed)
       const workingCopyService: WorkingCopyAPI = new WorkingCopyService(

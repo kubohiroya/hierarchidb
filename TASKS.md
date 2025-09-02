@@ -232,7 +232,7 @@ P2:
   - Unified CommandResult に応じて UI 通知・自動リネーム指示が機能
   - 既存通知との二重表示や取りこぼし無し（ユニット＋レンダリングテスト）
 - チェックリスト:
-  - [ ] UI エラーマッピングテーブル作成
+  - [x] UI エラーマッピングテーブル作成（`app/src/shared/command-errors.ts`）
   - [ ] `@testing-library/react` レンダリングテスト追加
   - [ ] ドキュメント（ユーザガイド）更新
 
@@ -279,7 +279,7 @@ P2:
   - [x] `TreeMutationService` のレガシー直呼び経路を削除（常に CP 経由）
   - [x] デッドコード検出と削除（move/recover の旧内部実装・補助関数）
   - [x] 移行後の型通し（`pnpm typecheck`）
-  - [ ] 変更履歴（CHANGELOG/リリースノート）
+  - [x] 変更履歴（CHANGELOG/リリースノート）
 
 8) Storybook 整備（UIの回帰防止）（P3）
 - ブランチ: `chore/storybook/wc-components`
@@ -371,6 +371,10 @@ P2:
   - ブランチ: `refactor/worker/error-model-unify`
   - 要点: WorkerのCommandResultをCoreに統一、ドキュメント化
 
+- レガシー経路の除去（TreeMutationService直呼び撤廃）
+  - ブランチ: `refactor/worker/remove-legacy-treemutation`
+  - 要点: TreeMutationService の create/update/move/remove/recover を常時 CommandProcessor 経由に統一し、旧内部実装を削除。runtime-worker スコープで typecheck 緑。ロールバックは直前タグのリバートで可。
+
 ## フラグ運用（共通）
 
 - 起動時固定・既定OFF。`scripts/start-env.sh` から注入し、`config/feature-flags.ts` で一元読取。
@@ -456,3 +460,15 @@ P2:
 - done: 旧内部実装（`moveNodesCommand`/`recoverFromTrash`/補助関数）を削除
 - done: command/registry から create/update のダミーハンドラを削除（実処理は CP 側のフォールバックで実行）
 - note: `WORKER_USE_CMDPROC_*` フラグは互換のため定義のみ一時維持（コード上は未使用）。scripts/docs からの露出整理は後続PR
+
+- start: リリースノート確定
+- done: `docs/RELEASE_NOTES.md` を作成し、2025-09-02 の変更点を確定版として記載
+- done: `CHANGELOG.md` に日付セクションを追加し、deprecated フラグと常時CP経由化を明記
+
+- start: E2E シナリオ整備（CP常時経由）
+- done: `e2e/cp-routing-wc-flow.spec.ts` の記述をCP常時ON前提に更新（デフォルトskipのまま）
+
+- start: UI エラーモデル反映（通知/トースト）
+- done: エラーマッピングテーブル追加 `app/src/shared/command-errors.ts`
+- done: NotificationSystem をアプリ全体に組込み（`app/src/root.tsx`）、`ui-core` から `notify` を公開
+- done: `useTreeConsoleIntegration` のCreate失敗時に通知（`showCommandError`→notify 経由）

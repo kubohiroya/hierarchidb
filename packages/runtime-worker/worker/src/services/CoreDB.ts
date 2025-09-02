@@ -54,41 +54,22 @@ export class CoreDB extends Dexie {
   private constructor(name: string) {
     super(`${name}-CoreDB`);
 
-    // Increment version to force schema update
-    this.version(5)
-      .stores({
-        trees: '&id, rootId, trashRootId, superRootId',
-        nodes: [
-          '&id',
-          'parentId',
-          '&[parentId+name]',
-          '[parentId+updatedAt]',
-          'removedAt',
-          'isRemoved',
-          'originalParentId',
-          'workingCopyOf',
-          '*references',
-        ].join(', '),
-        // Fix: rootStates should use a composite key since rootNodeId might not be unique across trees
-        rootStates: '&rootNodeId',
-        // Tag management tables
-        tags: '&id, name, category, usageCount, createdAt',
-        tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
-      })
-      .upgrade(async (tx) => {
-        // Clear all data to start fresh
-        await tx.table('trees').clear();
-        await tx.table('nodes').clear();
-        await tx.table('rootStates').clear();
-
-        // Initialize tag tables if they don't exist
-        if (tx.storeNames.includes('tags')) {
-          await tx.table('tags').clear();
-        }
-        if (tx.storeNames.includes('tagAssociations')) {
-          await tx.table('tagAssociations').clear();
-        }
-      });
+    // Development: schema v1 (no backward-compat fields)
+    this.version(1).stores({
+      trees: '&id, rootId, trashRootId, superRootId',
+      nodes: [
+        '&id',
+        'parentId',
+        '&[parentId+name]',
+        '[parentId+updatedAt]',
+        '[holderType+holderTargetId]',
+        'depth',
+        '*references',
+      ].join(', '),
+      rootStates: '&rootNodeId',
+      tags: '&id, name, category, usageCount, createdAt',
+      tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
+    });
   }
 
   private treeIdToTreeName(treeId: string): string {
@@ -252,8 +233,6 @@ export class CoreDB extends Dexie {
         createdAt: node.createdAt,
         updatedAt: node.updatedAt,
         version: node.version,
-        ...(node.removedAt && { removedAt: node.removedAt }),
-        ...(node.originalParentId && { originalParentId: node.originalParentId }),
         ...(node.references && { references: node.references }),
       };
       return plainNode;
@@ -346,7 +325,7 @@ export class CoreDB extends Dexie {
     const children = await this.nodes
       .where('parentId')
       .equals(parentId)
-      .filter((node) => !node.removedAt)
+      .filter((node) => true)
       .sortBy('createdAt');
 
     // Ensure we return plain objects that can be serialized by Comlink
@@ -360,8 +339,6 @@ export class CoreDB extends Dexie {
         createdAt: node.createdAt,
         updatedAt: node.updatedAt,
         version: node.version,
-        ...(node.removedAt && { removedAt: node.removedAt }),
-        ...(node.originalParentId && { originalParentId: node.originalParentId }),
         ...(node.references && { references: node.references }),
       })
     );
@@ -506,8 +483,6 @@ export class CoreDB extends Dexie {
         createdAt: node.createdAt,
         updatedAt: node.updatedAt,
         version: node.version,
-        ...(node.removedAt && { removedAt: node.removedAt }),
-        ...(node.originalParentId && { originalParentId: node.originalParentId }),
         ...(node.references && { references: node.references }),
       })
     );
@@ -704,32 +679,7 @@ export class CoreDB extends Dexie {
     return newRootId;
   }
 
-  /**
-   * Restore node from trash with correct depth
-   */
-  async restoreFromTrash(nodeId: NodeId, newParentId: NodeId): Promise<void> {
-    const node = await this.nodes.get(nodeId);
-
-    const newParent = await this.nodes.get(newParentId);
-    if (!newParent) {
-      throw new Error(`Target parent ${newParentId} not found`);
-    }
-
-    // Update node with new location and correct depth
-    const restoredNode: TreeNode = {
-      ...node,
-      parentId: newParentId,
-      depth: newParent.depth + 1,
-      removedAt: undefined,
-      updatedAt: Date.now(),
-      version: node.version + 1,
-    };
-
-    await this.updateNode(restoredNode);
-
-    // Update depths for all descendants
-    await this.updateSubtreeDepthFromParent(nodeId);
-  }
+  // Legacy restoreFromTrash removed. Use CommandProcessor.recoverFromTrash with holder-based model.
 
   /**
    * Paste nodes with correct depth calculation

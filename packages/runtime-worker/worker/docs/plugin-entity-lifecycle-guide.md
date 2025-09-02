@@ -19,14 +19,36 @@ vk:doc kind=guide audience=plugin-dev scope=entity-lifecycle
   - 1コマンド=1 Tx（`WORKER_TX_ENABLED`）で TreeNode と Entity を同一Txに束ねる。
   - 大量操作はバルク+チャンク（既定 50、`PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE`）。
 
-## テーブル設計（論理名）
+## データベース配置とテーブル設計（最終決定: A案）
 
-- プラグインごとに独自の Dexie DB（またはネームスペース）を使い、その内部テーブル名は共通化します。
+- 各プラグインごとに独立した Dexie データベースを用意します（例: `<pluginName>-entities`）。
+- その内部テーブル名は共通の論理名を採用します。
   - peerEntities: `&nodeId, updatedAt`
   - groupEntities: `&[nodeId+id], nodeId, id, updatedAt`
   - relations: `&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt`
 
-これにより、共通 Handler/Repository/移行/テストユーティリティが横断的に利用でき、コードと運用が簡素化されます。
+これにより、共通 Handler/Repository/移行/テストユーティリティが横断的に利用でき、上位コードは DB 名に依存せず、テーブル名の共通化でシンプルに実装できます。
+
+### Dexie スキーマ例（プラグイン側）
+
+```ts
+import Dexie, { Table } from 'dexie';
+import type { PeerEntity } from '@hierarchidb/runtime-worker-worker/entity/store';
+
+export class PluginEntitiesDB extends Dexie {
+  peerEntities!: Table<PeerEntity, string>; // key=nodeId
+  // groupEntities / relations はプラグインの型に合わせて定義
+
+  constructor(name = 'my-plugin-entities') {
+    super(name);
+    this.version(1).stores({
+      peerEntities: '&nodeId, updatedAt',
+      // groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
+      // relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+    });
+  }
+}
+```
 
 ## コマンド連動（概要）
 
@@ -42,15 +64,15 @@ vk:doc kind=guide audience=plugin-dev scope=entity-lifecycle
   - commitWorkingCopy: wc→target にアップサート（Peer/Group）、Relational の ID 付け替え。完了後 wc 側 Entity を削除。
   - discardWorkingCopy: wc 側 Entity を削除。
 
-## 旧実装からの移行
+## 旧実装からの移行（A案に基づく整理）
 
 - PeerEntity の EntityId → NodeId へ統合（Peer専用の EntityId は廃止）。
 - workingCopyOf/originalParentId/removedAt に依存した判定 → holder 名の decode または QueryAPI による位置ベース判定へ置換。
 - Dexie 直接書込み → CommandProcessor 経由（Tx/履歴/監査の一貫性を確保）。
+- DB配置: プラグインごとに独立 DB を作成し、内部テーブル名は共通論理名に統一（既存DBがある場合は移行スクリプトで再編）。
 
 ## アンチパターン（禁止）
 
 - Entity に name/description 等の表示系属性を持たせる（TreeNode と責務が混線）。
 - 旧メタ（workingCopyOf 等）を Entity 側に持ち込む（位置で判定する）。
 - 逐次書込み（バルク/チャンク未使用）→大規模で性能劣化・一貫性低下。
-

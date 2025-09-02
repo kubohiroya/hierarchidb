@@ -9,7 +9,6 @@ export interface TrashItem {
   type?: string;
   deletedAt?: string | Date;
   deletedBy?: string;
-  originalParentId?: string;
   originalPath?: string;
   hasChildren?: boolean;
 }

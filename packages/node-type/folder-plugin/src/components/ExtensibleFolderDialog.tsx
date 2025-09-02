@@ -1,14 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
 import { TextField, Grid } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import {
-  MultiStepDialog,
-  type IconGroupSettings,
-  type DialogStepDefinition,
-  type ValidationResult,
-  useDialogUrlParams,
-} from '@hierarchidb/runtime-base-dialog';
+import { MultiStepDialog } from '@hierarchidb/runtime-ui-plugin-dialog/src_deprecated/components';
+import { useDialogUrlParams } from '@hierarchidb/runtime-ui-plugin-dialog/src_deprecated';
+import type { DialogStepDefinition, ValidationResult } from '@hierarchidb/common-type';
 import type { StepValidation } from '@hierarchidb/common-type';
+
+// IconGroupSettings is exported by deprecated components; import type via that module if needed
+export type IconGroupSettings = {
+  normalMode: 'hidden' | 'always' | 'hover';
+  fullscreenMode: 'hidden' | 'always' | 'hover';
+};
 
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types';
 import { NodeId } from '@hierarchidb/common-type';
@@ -102,10 +104,7 @@ class FolderStepValidation implements StepValidation<FolderStepData> {
       errors.push('Description is too long (max 1000 characters)');
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
+    return errors.length === 0 ? { valid: true } : { valid: false, message: errors.join(', ') };
   }
 
   canProceed(data: FolderStepData): boolean {
@@ -191,7 +190,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   iconGroupSettings,
 }) => {
   // URLパラメータを取得
-  const { initialStep, initialFullscreen, mapParams, updateStep, updateDialogMode, clearParams } =
+  const { initialStep, initialFullscreen, mapParams, updateStep, updateDialogMode, clearParams, updateMapParams } =
     useDialogUrlParams({
       syncToUrl: true,
       defaultDialogMode: 'normal',
@@ -285,7 +284,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
   // 拡張データに地図パラメータを含める
   const enhancedInitialData = useMemo(() => {
-    const data = { ...initialData };
+    const data: any = { ...initialData };
 
     // 地図パラメータがあれば初期データに含める
     if (mapParams) {
@@ -310,7 +309,8 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   return (
     <MultiStepDialog
       open={open}
-      title={displayTitle}
+      title={dialogTitle}
+      icon={icon}
       steps={allSteps}
       initialData={enhancedInitialData}
       onComplete={handleSubmit}

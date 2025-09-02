@@ -46,6 +46,7 @@ export class WorkerAuthHandler {
   
   private notificationRegistry = AuthNotificationRegistry.getInstance();
   private uiNotificationCallback?: (notification: AuthNotification) => void;
+  private currentToken?: { token: string; type: 'Bearer' | 'Basic'; expiresAt?: number };
   
   constructor() {
     // Register this handler with the notification registry
@@ -287,6 +288,8 @@ export class WorkerAuthHandler {
     }
     
     try {
+      // Remember latest token for subsequent requests
+      this.currentToken = { token: newToken, type: tokenType, expiresAt: notification.context.expiresAt };
       // Update request headers with new token
       const newInit: RequestInit = {
         ...requestInfo.init,
@@ -310,6 +313,23 @@ export class WorkerAuthHandler {
     } catch (error) {
       reject(error instanceof Error ? error : new Error('Request failed after auth'));
     }
+  }
+
+  /**
+   * Explicitly seed or update the auth token from UI or other system
+   */
+  setToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
+    this.currentToken = { token, type, expiresAt };
+  }
+
+  /**
+   * Return headers to be attached to outbound requests
+   */
+  getAuthHeaders(): Record<string, string> {
+    if (this.currentToken?.token) {
+      return { Authorization: `${this.currentToken.type} ${this.currentToken.token}` };
+    }
+    return {};
   }
   
   /**

@@ -1,0 +1,106 @@
+import type {
+  TabularStorePort,
+  TabularIngestSession,
+  TabularIngestSummary,
+  TabularIngestResult,
+  TabularSchema,
+  TabularChunk,
+} from '@hierarchidb/tabular';
+import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
+import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
+import type { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
+import { calculateFileHash, calculateTextHash } from '../utils/hashUtils';
+
+type SessionData = {
+  rawFileMetadataId: string;
+  filename: string;
+  contentHash: string;
+  fileSizeBytes: number;
+  startRowIndex: number;
+};
+
+export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> {
+  private tableManager: SimpleTableMetadataManager;
+  private db: SpreadsheetDatabase;
+  private sessions = new Map<string, SessionData>();
+
+  constructor(private pluginId: string = 'spreadsheet') {
+    const dbName = `${pluginId}DB`;
+    this.tableManager = new SimpleTableMetadataManager(dbName);
+    this.db = new SpreadsheetDatabase(dbName);
+  }
+
+  async beginIngest(schema: TabularSchema, ctx: { filename?: string; sizeBytes?: number; source?: any }): Promise<TabularIngestSession> {
+    const filename = ctx.filename || 'unknown.csv';
+    const size = ctx.sizeBytes || 0;
+    let hash = 'na';
+    try {
+      if (typeof File !== 'undefined' && ctx.source instanceof File) {
+        hash = await calculateFileHash(ctx.source);
+      } else if (typeof ctx.source === 'string') {
+        hash = await calculateTextHash(ctx.source);
+      }
+    } catch {}
+
+    // Create RawFileMetadata
+    const rawMeta = await (this.db as any).createRawFileMetadata?.({
+      filename,
+      contentHash: hash,
+      fileSizeBytes: size,
+      columns: schema.columns.map((c, i) => ({ name: c.name, index: i, type: 'string', uniqueValues: 0, hasNullValues: false, sampleValues: [] } as CSVColumnInfo)),
+      totalRows: 0,
+    });
+
+    const id = rawMeta?.id || crypto.randomUUID();
+    this.sessions.set(id, { rawFileMetadataId: id, filename, contentHash: hash, fileSizeBytes: size, startRowIndex: 0 });
+    return { id };
+  }
+
+  async writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void> {
+    const s = this.sessions.get(session.id);
+    if (!s) return;
+    // Serialize rows to ArrayBuffer
+    const json = JSON.stringify(chunk.rows);
+    const enc = new TextEncoder();
+    const buf = enc.encode(json);
+    await (this.db as any).createRowChunk?.({
+      rawFileMetadataId: s.rawFileMetadataId,
+      chunkIndex: chunk.index,
+      binaryData: buf.buffer,
+      rowCount: chunk.rows.length,
+      startRowIndex: s.startRowIndex,
+      endRowIndex: s.startRowIndex + chunk.rows.length - 1,
+      originalSize: buf.byteLength,
+      compressedSize: buf.byteLength,
+    });
+    s.startRowIndex += chunk.rows.length;
+  }
+
+  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadata>> {
+    const s = this.sessions.get(session.id)!;
+    // Build CSVTableMetadata
+    const metadata: CSVTableMetadata = {
+      id: session.id,
+      filename: s.filename,
+      contentHash: s.contentHash,
+      fileSizeBytes: s.fileSizeBytes || 0,
+      totalRows: summary.totalRows,
+      columns: [],
+      createdAt: Date.now(),
+      referenceCount: 0,
+      referencingPlugins: [],
+      isChunked: true,
+      chunkCount: summary.chunkCount,
+    } as any;
+    // Persist metadata in table manager
+    const created = await this.tableManager.create(metadata, this.pluginId);
+    this.sessions.delete(session.id);
+    return { session, metadata: created };
+  }
+
+  async abort(session: TabularIngestSession, reason?: string): Promise<void> {
+    // Best-effort cleanup: remove session map; row chunks/metadata GC can be handled separately
+    this.sessions.delete(session.id);
+  }
+}
+

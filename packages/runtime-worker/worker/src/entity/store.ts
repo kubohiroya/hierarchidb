@@ -2,10 +2,14 @@ import type { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Abstractions for plugin entity stores (Peer/Group/Relational).
- * Implementations should wrap Dexie tables with the same logical names:
- * - peerEntities
- * - groupEntities
- * - relations
+ * Implementations should wrap per-plugin Dexie databases that expose
+ * the same logical table names:
+ *   - peerEntities
+ *   - groupEntities
+ *   - relations
+ *
+ * Each plugin provides its own DB instance (e.g. `<pluginName>-entities`),
+ * keeping table names consistent so that shared handlers/utilities can be reused.
  */
 
 // Peer: 1:1 with TreeNode; primary key is nodeId
@@ -45,4 +49,3 @@ export interface RelationStore<TRel extends RelationBase> {
   bulkUpsert(rels: TRel[]): Promise<void>;
   bulkDelete(rels: TRel[]): Promise<void>;
 }
-

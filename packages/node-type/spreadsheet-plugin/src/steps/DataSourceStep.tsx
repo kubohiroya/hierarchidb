@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { CSVUploadPanel } from './CSVUploadPanel';
 import { useTranslation } from 'provider-i18next';
 
 /**
@@ -25,23 +26,21 @@ export interface DataSourceStepProps {
  * 【将来拡張】: Refactorフェーズで実際のUIを実装予定
  * 🟢 信頼性レベル: テスト要件を満たす最小実装
  */
-export const DataSourceStep: React.FC<DataSourceStepProps> = ({
-  data,
-  onNext,
-  onPrevious,
-  errors
-}) => {
+export const DataSourceStep: React.FC<DataSourceStepProps> = ({ data, onNext, onPrevious, errors }) => {
   const { t } = useTranslation('spreadsheet-plugin');
-  
-  // 【最小実装】: テストを通すためのスタブコンポーネント
-  // 【TODO】: Refactorフェーズで実際のファイルアップロードUI等を実装
+
   return (
     <div>
-      {/* 【プレースホルダー】: 実装予定のUI要素 */}
       <h3>{t('dataSource.title', 'Data Source Selection')}</h3>
       <p>{t('dataSource.description', 'Step 2: Select your data source')}</p>
-      
-      {/* 【エラー表示】: バリデーションエラーの表示領域 */}
+
+      {/* CSV Upload/URL Download UI using new adapter */}
+      <CSVUploadPanel
+        pluginId="spreadsheet"
+        onUploaded={(meta) => onNext(meta)}
+        onError={(msg) => console.error(msg)}
+      />
+
       {errors && errors.length > 0 && (
         <div>
           {errors.map((error, index) => (
@@ -49,10 +48,8 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
           ))}
         </div>
       )}
-      
-      {/* 【ナビゲーションボタン】: ステップ間の移動 */}
+
       <button onClick={onPrevious}>{t('navigation.previous', 'Previous')}</button>
-      <button onClick={() => onNext(data)}>{t('navigation.next', 'Next')}</button>
     </div>
   );
 };

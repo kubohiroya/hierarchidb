@@ -62,6 +62,8 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
 
     // Define API methods
     this.methods = {
+      // Auth
+      setAuthToken: this.setAuthToken.bind(this),
       // Batch processing methods
       startBatchProcess: this.startBatchProcess.bind(this),
       pauseBatchProcess: this.pauseBatchProcess.bind(this),
@@ -232,3 +234,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
     };
   }
 }
+  // === Auth ===
+  setAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
+    this.batchSessionManager.setAuthToken(token, type, expiresAt);
+  }

@@ -13,25 +13,15 @@ vk:doc kind=guide audience=dev scope=worker
 
 ---
 
-## WORKER_USE_CMDPROC_CREATE_UPDATE
-- 概要: `createNode` / `updateNode` の実行経路を CommandProcessor 経由へ切替。
-- 既定値: `"0"`（OFF）
-- 作用範囲: `TreeMutationService.createNode` / `updateNode` のみ（その他は非対象）
-- 目的: 監査・Undo/Redo の導入を安全に段階適用するためのフラグ。
-- ロールバック: `"0"` に戻すだけで直 CoreDB 経路へ復帰。
-
-設定例（開発/CI）
-```
-# scripts/start-env.sh から注入する想定（実装は別PR）
-export WORKER_USE_CMDPROC_CREATE_UPDATE="1"
-```
-
-実装メモ（後続PR）
-- 読み取り箇所: `packages/runtime-worker/worker/src/config/feature-flags.ts`（新規）
-- 公開API化はしない（内部ユース）。
-- 未指定/不正値は `"0"` と同義に扱う。
+## WORKER_USE_CMDPROC_CREATE_UPDATE（deprecated）
+- 概要: `createNode` / `updateNode` を CommandProcessor 経由に切替するための段階導入フラグ。
+- 状態: 2025-09-02 以降は常時 CommandProcessor 経由となり、本フラグは無視されます。
+- ロールバック: 旧経路は削除済みのため、直前タグへリバートしてください。
 
 関連ドキュメント
 - `docs/task-create-update-routing-draft.md`
 - `docs/task-phased-routing-to-commandprocessor.md`
-
+## WORKER_USE_CMDPROC_MOVE_REMOVE（deprecated）
+- 概要: `move/remove` を CommandProcessor 経由に切替するための段階導入フラグ。
+- 状態: 2025-09-02 以降は常時 CommandProcessor 経由となり、本フラグは無視されます。
+- ロールバック: 旧経路は削除済みのため、直前タグへリバートしてください。
