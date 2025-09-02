@@ -606,6 +606,17 @@ export class CoreDB extends Dexie {
    * Duplicate a subtree with correct depth calculation
    */
   async duplicateSubtree(sourceRootId: NodeId, targetParentId: NodeId): Promise<NodeId> {
+    const { newRootId } = await this.duplicateSubtreeWithMap(sourceRootId, targetParentId);
+    return newRootId;
+  }
+
+  /**
+   * Duplicate a subtree and return the full old→new id mapping as well as the new root id.
+   */
+  async duplicateSubtreeWithMap(
+    sourceRootId: NodeId,
+    targetParentId: NodeId
+  ): Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }> {
     const sourceRoot = await this.nodes.get(sourceRootId);
     if (!sourceRoot) {
       throw new Error(`Source root ${sourceRootId} not found`);
@@ -674,9 +685,8 @@ export class CoreDB extends Dexie {
       duplicatedNodes.push(duplicatedNode);
     }
 
-    // Create all nodes
     await this.bulkCreateNodes(duplicatedNodes);
-    return newRootId;
+    return { newRootId, idMap: idMapping };
   }
 
   // Legacy restoreFromTrash removed. Use CommandProcessor.recoverFromTrash with holder-based model.
