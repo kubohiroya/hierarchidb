@@ -76,13 +76,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
   /**
    * Clean up folder-specific data
    */
-  protected async cleanupEntityData(entity: FolderEntityExtended): Promise<void> {
-    // Remove bookmarks
-    await this.folderDB.bookmarks.where('folderId').equals(entity.nodeId).delete();
-
-    // Remove templates
-    await this.folderDB.templates.where('folderId').equals(entity.nodeId).delete();
-  }
+  protected async cleanupEntityData(_entity: FolderEntityExtended): Promise<void> {}
 
   // ========== Folder-specific methods ==========
   /**
@@ -90,6 +84,15 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
    */
   async cleanup(): Promise<void> {
     await this.folderDB.cleanupExpiredWorkingCopies();
+  }
+
+  // Simple search by name
+  async searchFolders(query: string) {
+    const q = query.toLowerCase();
+    return this.folderDB.folders
+      .toCollection()
+      .filter((f: any) => (f.name || '').toLowerCase().includes(q))
+      .toArray();
   }
 
   // ==================

@@ -16,6 +16,19 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vitest/globals", "@testing-library/jest-dom", "node"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src/entities/**/*",
+    "src/handlers/**/*",
+    "src/database/**/*",
+    "src/types/**/*",
+    "src/worker/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/__tests__/**",
+    "src/components/**",
+    "src/definitions/**",
+    "src/handlers/ExtensibleFolderHandler.ts"
+  ]
 }

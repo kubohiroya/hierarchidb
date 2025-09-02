@@ -12,10 +12,11 @@ export type {
 } from '../entities/FolderEntity';
 
 // Import tag-related types
-export type { TagId, TagSuggestion } from '@hierarchidb/common-type';
+import type { EntityId } from '@hierarchidb/common-type';
+export type TagId = EntityId;
+export type { TagSuggestion } from '@hierarchidb/common-type';
 
 // Keep existing simple types for backward compatibility if needed
-import type { EntityId } from '@hierarchidb/common-type';
 import type { FolderSettings as ImportedFolderSettings } from '../entities/FolderEntity';
 
 // Additional display types for UI
