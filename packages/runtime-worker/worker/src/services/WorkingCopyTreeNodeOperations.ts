@@ -10,12 +10,18 @@ import {
 import type { CommandResult } from './command-types';
 import { WorkerErrorCode } from './command-types';
 import type { CoreDB } from './CoreDB';
+import {
+  encodeWorkingCopyHolderName,
+  decodeWorkingCopyHolderName,
+} from './utils/holder-encoding';
 
 export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
-  return [treeId, 'workingCopy'].join('\t') as NodeId;
+  // Align with CoreDB root id convention: `${treeId}:workingCopy`
+  return `${treeId}:workingCopy` as NodeId;
 }
 
 export function createWorkingCopyNodeHolderName(parentId: NodeId, nodeId: NodeId) {
+  // Deprecated: use encodeWorkingCopyHolderName(parentId, targetNodeId)
   return [parentId, nodeId].join('\t') as NodeId;
 }
 
@@ -41,39 +47,91 @@ export async function createNewDraftWorkingCopy(
   const siblingNames = await getChildNames(coreDB, parentId);
   const uniqueName = createNewName(siblingNames, baseName);
 
-  // Generate new ID for the draft
+  // Generate pre-allocated IDs
   const workingCopyNodeHolderId = generateNodeId();
   const workingCopyNodeId = generateNodeId();
+  const targetNodeId = generateNodeId(); // canonical id on commit
+  const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
   const now = Date.now() as Timestamp;
 
-  const workingCopyNodeHolder: NodeBase = {
-    parentId: workingCopyNodeHolderParentId, // New node gets a new ID
-    id: workingCopyNodeHolderId,
-    name: createWorkingCopyNodeHolderName(parentId, workingCopyNodeHolderId), // ☺️ this is a tricky hack
-    nodeType,
-    depth: 0, // Will be calculated by database operations
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-  };
+  // get-or-create using composite index [parentId+name]
+  try {
+    const existing = await (coreDB.nodes as any)
+      .where?.('[parentId+name]')
+      .equals([workingCopyNodeHolderParentId, holderName])
+      .first?.();
+    if (existing) {
+      // Reuse existing holder; return its id
+      return (existing.id as NodeId) || workingCopyNodeHolderId;
+    }
 
-  const workingCopyNode: NodeBase = {
-    // TreeNode properties
-    parentId: workingCopyNodeHolderId,
-    id: workingCopyNodeId, // New node gets a new ID
-    nodeType,
-    name: uniqueName,
-    depth: 1, // Will be calculated by database operations
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-    // Draft property
-    //isDraft: true,
-  };
+    await (coreDB as any).transaction?.('rw', (coreDB as any).nodes, async () => {
+      const workingCopyNodeHolder: NodeBase = {
+        parentId: workingCopyNodeHolderParentId,
+        id: workingCopyNodeHolderId,
+        name: holderName,
+        nodeType,
+        depth: 0,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+      };
+      const workingCopyNode: NodeBase = {
+        parentId: workingCopyNodeHolderId,
+        id: workingCopyNodeId,
+        nodeType,
+        name: uniqueName,
+        depth: 1,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+      };
+      await coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
+    });
+    return workingCopyNodeHolderId;
+  } catch (err: any) {
+    // ConstraintError: created concurrently; re-read existing
+    if (err && (err.name === 'ConstraintError' || /Constraint/i.test(String(err?.message)))) {
+      const holder = await (coreDB.nodes as any)
+        .where?.('[parentId+name]')
+        .equals([workingCopyNodeHolderParentId, holderName])
+        .first?.();
+      if (holder) return holder.id as NodeId;
+    }
+    throw err;
+  }
+}
 
-  coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
+// New API: get-or-create with returnedExisting flag (non-breaking)
+export async function createDraftWorkingCopyGetOrCreate(
+  coreDB: CoreDB,
+  treeId: TreeId,
+  parentId: NodeId,
+  nodeType: NodeType,
+  baseName: string
+): Promise<{ wcHolderId: NodeId; wcNodeId: NodeId; returnedExisting: boolean }> {
+  const workingCopyRootId = createWorkingCopyNodeHolderParentId(treeId);
+  const siblingNames = await getChildNames(coreDB, parentId);
+  const uniqueName = createNewName(siblingNames, baseName);
+  const targetNodeId = generateNodeId();
+  const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
 
-  return workingCopyNodeHolderId;
+  const existing = await (coreDB.nodes as any)
+    .where?.('[parentId+name]')
+    .equals([workingCopyRootId, holderName])
+    .first?.();
+
+  if (existing) {
+    const children = await (coreDB.nodes as any).where?.('parentId').equals(existing.id).toArray?.();
+    const child = Array.isArray(children) ? children[0] : undefined;
+    return { wcHolderId: existing.id as NodeId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: true };
+  }
+
+  // Create new
+  const wcHolderId = await createNewDraftWorkingCopy(coreDB, treeId, parentId, nodeType, uniqueName);
+  const children = await (coreDB.nodes as any).where?.('parentId').equals(wcHolderId).toArray?.();
+  const child = Array.isArray(children) ? children[0] : undefined;
+  return { wcHolderId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: false };
 }
 
 /**
@@ -94,6 +152,24 @@ export async function createWorkingCopyFromNode(
     throw new Error('Node not found');
   }
 
+  // get-or-create: reuse existing WC if present for this original node
+  const existingHolders = await (coreDB.nodes as any)
+    .where?.('parentId')
+    .equals(workingCopyNodeHolderParentId)
+    .toArray?.();
+  if (Array.isArray(existingHolders)) {
+    for (const h of existingHolders) {
+      try {
+        const { targetNodeId } = decodeWorkingCopyHolderName(h.name);
+        if (targetNodeId === sourceNode.id) {
+          return nodeId; // WC already exists; return original id (behavior preserved)
+        }
+      } catch {
+        // ignore malformed holder names
+      }
+    }
+  }
+
   const workingCopyNodeHolderId = generateNodeId();
   const workingCopyNodeId = generateNodeId();
   const now = Date.now() as Timestamp;
@@ -101,7 +177,8 @@ export async function createWorkingCopyFromNode(
   const workingCopyNodeHolder: NodeBase = {
     parentId: workingCopyNodeHolderParentId, // New node gets a new ID
     id: workingCopyNodeHolderId,
-    name: createWorkingCopyNodeHolderName(sourceNode.parentId, workingCopyNodeHolderId), // ☺️ this is a tricky hack
+    // For editing WC, targetNodeId is the original nodeId
+    name: encodeWorkingCopyHolderName(sourceNode.parentId, sourceNode.id),
     nodeType: sourceNode.nodeType,
     depth: 0, // Will be calculated by database operations
     createdAt: now,
@@ -118,6 +195,93 @@ export async function createWorkingCopyFromNode(
   coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
 
   return nodeId;
+}
+
+// V2 commit result types (non-breaking: new API)
+export type CommitOk = { status: 'ok'; autoRenameTo?: string };
+export type CommitConflict = { status: 'COMMIT_CONFLICT'; originalVersion: number; wcVersion: number };
+export type NameConflict = { status: 'NAME_CONFLICT'; suggestedName: string };
+export type CommitResultV2 = CommitOk | CommitConflict | NameConflict;
+
+/**
+ * Commit working copy (V2)
+ * - Editing WC: merge to original (optimistic lock). On name conflict → NAME_CONFLICT (or auto-rename).
+ * - Draft WC: create new node under targetParentId with targetNodeId. Handle name conflicts similarly.
+ */
+export async function commitWorkingCopyV2(
+  coreDB: CoreDB,
+  workingCopyNodeId: NodeId,
+  onNameConflict: 'error' | 'auto-rename' = 'error'
+): Promise<CommitResultV2> {
+  const now = Date.now() as Timestamp;
+  const wcNode = await coreDB.nodes.get(workingCopyNodeId);
+  if (!wcNode) throw new Error('Working copy not found');
+
+  const holder = await coreDB.nodes.get(wcNode.parentId);
+  if (!holder) throw new Error('Working copy holder not found');
+
+  const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(holder.name);
+  const parentNode = await coreDB.nodes.get(targetParentNodeId);
+  if (!parentNode) throw new Error('Parent node not found');
+
+  const originalNode = await coreDB.nodes.get(targetNodeId);
+  const siblingNames = await getChildNames(coreDB, targetParentNodeId);
+
+  // Determine name and conflict policy for the eventual node name
+  let finalName = wcNode.name;
+  const nameConflicts = siblingNames.includes(finalName);
+
+  if (!originalNode) {
+    // Draft path: create new node with id=targetNodeId
+    if (nameConflicts) {
+      if (onNameConflict === 'error') {
+        return { status: 'NAME_CONFLICT', suggestedName: createNewName(siblingNames, finalName) };
+      }
+      finalName = createNewName(siblingNames, finalName);
+    }
+
+    await coreDB.createNode?.({
+      ...(wcNode as any),
+      id: targetNodeId,
+      parentId: targetParentNodeId,
+      name: finalName,
+      updatedAt: now,
+      version: (wcNode.version || 1) + 1,
+    });
+
+    // Cleanup WC (holder + child)
+    await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
+    const ok: CommitOk = { status: 'ok' };
+    if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;
+    return ok;
+  }
+
+  // Editing path: optimistic lock
+  const originalVersion = wcNode.version || 1;
+  if (originalNode.version > originalVersion) {
+    return { status: 'COMMIT_CONFLICT', originalVersion: originalNode.version, wcVersion: originalVersion };
+  }
+
+  if (nameConflicts) {
+    if (onNameConflict === 'error') {
+      return { status: 'NAME_CONFLICT', suggestedName: createNewName(siblingNames, finalName) };
+    }
+    finalName = createNewName(siblingNames, finalName);
+  }
+
+  await coreDB.updateNode({
+    ...(wcNode as any),
+    id: targetNodeId,
+    parentId: targetParentNodeId,
+    name: finalName,
+    updatedAt: now,
+    version: (wcNode.version || 1) + 1,
+  });
+
+  await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
+  const ok: CommitOk = { status: 'ok' };
+  if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;
+  return ok;
 }
 
 /**
@@ -246,11 +410,26 @@ export async function getWorkingCopy(
   coreDB: CoreDB,
   originalNodeId: NodeId
 ): Promise<NodeBase | undefined> {
-  const nodes = await coreDB.nodes.where('workingCopyOf').equals(originalNodeId).toArray();
-  if (nodes.length > 1) {
-    throw new Error('Multiple working copies found for the same nodeId');
+  // Search holders under any `${treeId}\tworkingCopy` root, decode name and match targetNodeId
+  // NOTE: This is a minimal, generic scan without relying on schema columns like `workingCopyOf`.
+  const all = await (coreDB.nodes as any).toArray?.();
+  if (!Array.isArray(all)) return undefined;
+  // Find holders whose parentId ends with '\tworkingCopy'
+  const holders = all.filter((n: any) => typeof n?.parentId === 'string' && n.parentId.endsWith('\tworkingCopy'));
+  for (const h of holders) {
+    try {
+      const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(h.name);
+      if (targetNodeId === originalNodeId) {
+        // Find child (the WC node)
+        const child = all.find((n: any) => n?.parentId === h.id);
+        if (child) return child as NodeBase;
+      }
+      void targetParentNodeId; // not used here
+    } catch {
+      // ignore malformed names
+    }
   }
-  return nodes[0] as NodeBase | undefined;
+  return undefined;
 }
 
 /**

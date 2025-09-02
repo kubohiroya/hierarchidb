@@ -44,7 +44,9 @@
     "check:sabotage": "tsx scripts/check-sabotage.ts",
     "vibe-kanban": "npx vibe-kanban",
     "vk:task": "node scripts/vk-task.mjs",
-    "vk:task:commit-grouping": "node scripts/vk-task.mjs --preset grouped-commits"
+    "vk:task:commit-grouping": "node scripts/vk-task.mjs --preset grouped-commits",
+    "vk:sync": "node scripts/vk-sync.mjs",
+    "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime-worker/worker/docs"
   },
   "dependencies": {
     "react": "^18.3.1",

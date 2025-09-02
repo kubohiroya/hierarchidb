@@ -1,4 +1,4 @@
-vk:task id=wc-spec-sync status=todo priority=P1 labels=worker,working-copy,docs
+vk:task id=wc-spec-sync status=in_progress priority=P1 labels=worker,working-copy,docs
 
 # タスク: WorkingCopy 仕様の実装反映と整合性確保
 

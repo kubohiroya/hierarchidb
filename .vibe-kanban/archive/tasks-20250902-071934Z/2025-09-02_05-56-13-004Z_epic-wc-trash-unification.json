@@ -1,0 +1,16 @@
+{
+  "title": "[Epic] WC/Trash Unification",
+  "description": "WorkingCopy and Trash unification via holder+child pattern. Establish single-WC, Policy C, encoding v1, and TX consistency.",
+  "labels": [
+    "epic",
+    "working-copy",
+    "trash",
+    "docs",
+    "ui"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T05:56:13.003Z",
+  "source": "hierarchidb/vk-task",
+  "id": "epic-wc-trash-unification",
+  "status": "todo"
+}

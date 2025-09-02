@@ -100,6 +100,9 @@ async function commitWorkingCopy(treeId: string, wcHolderId: string): Promise<Co
 }
 ```
 
+実装メモ（反映状況）
+- `commitWorkingCopyV2` として実装済み（編集/ドラフト双方、NAME_CONFLICT/COMMIT_CONFLICT/auto-renameを返却）。
+
 ## 移動/削除のブロック判定（ポリシーC）
 
 ```ts
