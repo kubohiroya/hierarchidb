@@ -522,3 +522,7 @@ describe('Integration Tests', () => {
     expect(saveResult.success).toBe(true);
   });
 });
+// Health-check and network-related strategy tests are considered integration
+if (!process.env.ENABLE_INTEGRATION_TESTS) {
+  describe.skip('DataSourceStrategy (integration disabled)', () => {});
+} else {

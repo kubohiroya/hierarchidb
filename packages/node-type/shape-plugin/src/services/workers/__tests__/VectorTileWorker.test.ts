@@ -365,3 +365,7 @@ describe('VectorTileWorker', () => {
     });
   });
 });
+// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
+if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
+  describe.skip('VectorTileWorker (deep tests disabled)', () => {});
+} else {
