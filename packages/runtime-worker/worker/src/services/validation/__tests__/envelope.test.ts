@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEnvelopeSchema, validateAndNormalizeEnvelope } from '../envelope';
+import { createEnvelopeSchema, validateAndNormalizeEnvelope } from '~/services/validation/envelope';
 
 describe('Envelope validation (ZE-2)', () => {
   it('accepts envelope with kind', () => {
@@ -83,4 +83,3 @@ describe('Envelope validation (ZE-2)', () => {
     expect(parsed.success).toBe(true);
   });
 });
-
