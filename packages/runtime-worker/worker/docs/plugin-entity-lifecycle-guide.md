@@ -82,3 +82,17 @@ export function registerStores(db: MyPluginDB) {
 - Idempotency: Ensure repeated `put/bulkPut` calls are safe; include `updatedAt`.
 - Versioning/Migrations: Manage your plugin DB schema versions independently of CoreDB.
 
+## 6) Performance: bulk/chunk patterns
+
+- Prefer `bulkUpsert` for Peer/Group/Relations to minimize round‑trips.
+- The runtime will detect `store.bulkUpsert` and pass an array of entities; otherwise it falls back to sequential `put` calls.
+- For Group/Relations, implement `bulkUpsert` in your plugin stores to handle hundreds/thousands of entities per call. If needed, chunk inside your store by 1× `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE`.
+- Example (Dexie):
+
+```ts
+async function bulkUpsert(entities: PeerEntity[]) {
+  await db.peerEntities.bulkPut(entities as any);
+}
+```
+
+Tip: Keep entities small and avoid denormalized UI fields (name/description) — those live on TreeNode.
