@@ -35,8 +35,8 @@ async function initializeWorker() {
     console.log('[App Worker] Exposing WorkerAPI via Comlink...');
     initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);
     
-    // Expose via Comlink
-    Comlink.expose(workerService);
+    // Expose via Comlink with explicit contract
+    Comlink.expose<import('@hierarchidb/common-api').WorkerAPI>(workerService);
     
     console.log('[App Worker] Worker ready');
     initReporter.reportComplete();

@@ -1,8 +1,8 @@
 import { SingletonMixin } from '@hierarchidb/util';
-import type { NodeId, TreeViewState, WorkingCopy } from '@hierarchidb/common-type';
+import type { NodeId, TreeViewState, TreeNode } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 
-export type WorkingCopyRow = WorkingCopy;
+export type WorkingCopyRow = TreeNode;
 export type TreeViewStateRow = TreeViewState;
 
 export class EphemeralDB extends Dexie {
@@ -21,7 +21,7 @@ export class EphemeralDB extends Dexie {
     super(`${name}-EphemeralDB`);
 
     this.version(1).stores({
-      workingCopies: '&workingCopyId, workingCopyOf, parentId, updatedAt',
+      workingCopies: '&id, workingCopyOf, parentId, updatedAt',
       views: '&treeViewId, updatedAt, [treeId+treeRootNodeType], [treeId+pageNodeId]',
     });
   }
@@ -35,11 +35,11 @@ export class EphemeralDB extends Dexie {
   }
 
   // WorkingCopyTypes CRUD operations
-  async getWorkingCopy(workingCopyId: NodeId): Promise<WorkingCopy | undefined> {
-    return await this.workingCopies.get(workingCopyId);
+  async getWorkingCopy(workingCopyId: NodeId): Promise<TreeNode | undefined> {
+    return (await this.workingCopies.get(workingCopyId)) as unknown as TreeNode | undefined;
   }
 
-  async updateWorkingCopy(workingCopy: WorkingCopy): Promise<void> {
+  async updateWorkingCopy(workingCopy: TreeNode): Promise<void> {
     await this.workingCopies.put(workingCopy);
   }
 
@@ -47,7 +47,7 @@ export class EphemeralDB extends Dexie {
     await this.workingCopies.delete(workingCopyId);
   }
 
-  async createWorkingCopy(workingCopy: WorkingCopy): Promise<void> {
+  async createWorkingCopy(workingCopy: TreeNode): Promise<void> {
     await this.workingCopies.add(workingCopy);
   }
 
@@ -55,7 +55,7 @@ export class EphemeralDB extends Dexie {
     await this.workingCopies.delete(workingCopyId);
   }
 
-  async listWorkingCopies(): Promise<WorkingCopy[]> {
-    return await this.workingCopies.toArray();
+  async listWorkingCopies(): Promise<TreeNode[]> {
+    return (await this.workingCopies.toArray()) as unknown as TreeNode[];
   }
 }
