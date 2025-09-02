@@ -15,7 +15,7 @@ import {
   Slider,
   Paper,
   Button,
-  Stack
+  Stack,
 } from '@mui/material';
 import {
   CropFree as BboxIcon,
@@ -24,7 +24,7 @@ import {
   MyLocation as CustomIcon,
   Map as MapIcon,
   Terrain as TerrainIcon,
-  Satellite as SatelliteIcon
+  Satellite as SatelliteIcon,
 } from '@mui/icons-material';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -35,10 +35,13 @@ interface RegionConfigStepProps {
   onComplete: (data: Partial<ProjectEntity>) => void;
 }
 
-export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComplete }) => {
+export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
+  data,
+  onComplete: _onComplete,
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  
+
   const [formData, setFormData] = useState<ProjectRegion>({
     coverage: data.coverage || {
       type: 'bbox',
@@ -46,32 +49,32 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
         minLon: 139.0,
         minLat: 35.0,
         maxLon: 140.0,
-        maxLat: 36.0
-      }
+        maxLat: 36.0,
+      },
     },
     mapConfig: data.mapConfig || {
       defaultView: {
         center: [139.6917, 35.6895],
         zoom: 10,
         bearing: 0,
-        pitch: 0
+        pitch: 0,
       },
       baseMap: 'streets',
       enable3D: false,
-      terrainExaggeration: 1.5
+      terrainExaggeration: 1.5,
     },
     coordinateSystem: {
       epsg: 4326,
-      displayFormat: 'decimal'
-    }
+      displayFormat: 'decimal',
+    },
   });
 
-  const [drawMode, setDrawMode] = useState<'bbox' | 'polygon' | null>(null);
+  //const [drawMode, setDrawMode] = useState<'bbox' | 'polygon' | null>(null);
   const [adminLevels, setAdminLevels] = useState({
     country: 'JPN',
     level1: '',
     level2: '',
-    level3: ''
+    level3: '',
   });
 
   useEffect(() => {
@@ -83,7 +86,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       center: formData.mapConfig.defaultView.center,
       zoom: formData.mapConfig.defaultView.zoom,
       bearing: formData.mapConfig.defaultView.bearing || 0,
-      pitch: formData.mapConfig.defaultView.pitch || 0
+      pitch: formData.mapConfig.defaultView.pitch || 0,
     });
 
     // Add navigation controls
@@ -107,9 +110,13 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       satellite: 'https://demotiles.maplibre.org/style.json', // Replace with actual satellite style
       terrain: 'https://demotiles.maplibre.org/style.json', // Replace with actual terrain style
       light: 'https://demotiles.maplibre.org/style.json', // Replace with actual light style
-      dark: 'https://demotiles.maplibre.org/style.json' // Replace with actual dark style
+      dark: 'https://demotiles.maplibre.org/style.json', // Replace with actual dark style
     };
-    return styles[baseMap] || styles.streets;
+    const url = styles[baseMap] || styles.streets;
+    if (!url) {
+      throw new Error(`Invalid base map: ${baseMap}`);
+    }
+    return url;
   };
 
   const drawBoundingBox = (bbox: BoundingBox) => {
@@ -126,7 +133,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       [bbox.maxLon, bbox.minLat],
       [bbox.maxLon, bbox.maxLat],
       [bbox.minLon, bbox.maxLat],
-      [bbox.minLon, bbox.minLat]
+      [bbox.minLon, bbox.minLat],
     ];
 
     map.current.addSource('bbox-source', {
@@ -135,10 +142,10 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
         type: 'Feature',
         geometry: {
           type: 'Polygon',
-          coordinates: [coordinates]
+          coordinates: [coordinates],
         },
-        properties: {}
-      }
+        properties: {},
+      },
     });
 
     map.current.addLayer({
@@ -147,8 +154,8 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       source: 'bbox-source',
       paint: {
         'fill-color': '#088',
-        'fill-opacity': 0.3
-      }
+        'fill-opacity': 0.3,
+      },
     });
 
     map.current.addLayer({
@@ -157,51 +164,54 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       source: 'bbox-source',
       paint: {
         'line-color': '#088',
-        'line-width': 2
-      }
+        'line-width': 2,
+      },
     });
 
     // Fit map to bbox
-    map.current.fitBounds([
-      [bbox.minLon, bbox.minLat],
-      [bbox.maxLon, bbox.maxLat]
-    ], { padding: 50 });
+    map.current.fitBounds(
+      [
+        [bbox.minLon, bbox.minLat],
+        [bbox.maxLon, bbox.maxLat],
+      ],
+      { padding: 50 }
+    );
   };
 
   const handleCoverageTypeChange = (type: 'bbox' | 'polygon' | 'administrative' | 'custom') => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       coverage: {
         ...prev.coverage,
-        type
-      }
+        type,
+      },
     }));
   };
 
   const handleBboxChange = (field: keyof BoundingBox, value: number) => {
     const newBbox = {
       ...formData.coverage.bbox,
-      [field]: value
+      [field]: value,
     } as BoundingBox;
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       coverage: {
         ...prev.coverage,
-        bbox: newBbox
-      }
+        bbox: newBbox,
+      },
     }));
 
     drawBoundingBox(newBbox);
   };
 
   const handleMapConfigChange = (field: string, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       mapConfig: {
         ...prev.mapConfig,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
 
     if (field === 'baseMap' && map.current) {
@@ -218,11 +228,12 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
   };
 
   const handleDrawBbox = () => {
-    setDrawMode('bbox');
+    // setDrawMode('bbox');
     // Implement interactive bbox drawing
     // This would use MapLibre GL Draw or custom implementation
   };
 
+  /*
   const handleDrawPolygon = () => {
     setDrawMode('polygon');
     // Implement interactive polygon drawing
@@ -234,6 +245,8 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
       mapConfig: formData.mapConfig
     });
   };
+
+   */
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -330,12 +343,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                     />
                   </Grid>
                 </Grid>
-                <Button
-                  variant="outlined"
-                  onClick={handleDrawBbox}
-                  sx={{ mt: 2 }}
-                  fullWidth
-                >
+                <Button variant="outlined" onClick={handleDrawBbox} sx={{ mt: 2 }} fullWidth>
                   Draw on Map
                 </Button>
               </Paper>
@@ -355,7 +363,9 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                     fullWidth
                     label="Country (ISO 3166-1)"
                     value={adminLevels.country}
-                    onChange={(e) => setAdminLevels(prev => ({ ...prev, country: e.target.value }))}
+                    onChange={(e) =>
+                      setAdminLevels((prev) => ({ ...prev, country: e.target.value }))
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -363,7 +373,9 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                     fullWidth
                     label="Prefecture/State"
                     value={adminLevels.level1}
-                    onChange={(e) => setAdminLevels(prev => ({ ...prev, level1: e.target.value }))}
+                    onChange={(e) =>
+                      setAdminLevels((prev) => ({ ...prev, level1: e.target.value }))
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -371,7 +383,9 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                     fullWidth
                     label="City/District"
                     value={adminLevels.level2}
-                    onChange={(e) => setAdminLevels(prev => ({ ...prev, level2: e.target.value }))}
+                    onChange={(e) =>
+                      setAdminLevels((prev) => ({ ...prev, level2: e.target.value }))
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -379,7 +393,9 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                     fullWidth
                     label="Town/Ward"
                     value={adminLevels.level3}
-                    onChange={(e) => setAdminLevels(prev => ({ ...prev, level3: e.target.value }))}
+                    onChange={(e) =>
+                      setAdminLevels((prev) => ({ ...prev, level3: e.target.value }))
+                    }
                   />
                 </Grid>
               </Grid>
@@ -464,7 +480,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
@@ -476,7 +492,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                   label="Enable 3D View"
                 />
               </Grid>
-              
+
               {formData.mapConfig.enable3D && (
                 <Grid item xs={12}>
                   <Typography gutterBottom>
@@ -492,7 +508,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                   />
                 </Grid>
               )}
-              
+
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
                   Default View
@@ -536,7 +552,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
                 width: '100%',
                 height: 'calc(100% - 30px)',
                 borderRadius: 1,
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             />
           </Paper>
@@ -562,10 +578,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({ data, onComp
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Display Format</InputLabel>
-                  <Select
-                    value={formData.coordinateSystem.displayFormat}
-                    label="Display Format"
-                  >
+                  <Select value={formData.coordinateSystem.displayFormat} label="Display Format">
                     <MenuItem value="decimal">Decimal Degrees</MenuItem>
                     <MenuItem value="dms">Degrees Minutes Seconds</MenuItem>
                     <MenuItem value="mgrs">MGRS</MenuItem>

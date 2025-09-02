@@ -323,10 +323,10 @@ import { styled } from '@hierarchidb/ui-theme';
 packages/ui-treeconsole/src/contexts/
 ├── DragDropConfigContext/
 │   ├── index.tsx
-│   └── types.ts
+│   └── lifecycle-types.ts
 └── TreeTableConsolePanelContext/
     ├── index.tsx
-    └── types.ts
+    └── lifecycle-types.ts
 ```
 
 **Migration Template:**
@@ -663,7 +663,7 @@ export interface TreeViewControllerConfig {
 
 #### 4.1.2 Context API Contracts
 
-Update `packages/ui-treeconsole/src/contexts/TreeTableConsolePanelContext/types.ts`:
+Update `packages/ui-treeconsole/src/contexts/TreeTableConsolePanelContext/lifecycle-types.ts`:
 
 ```typescript
 import type { TreeNode } from '@hierarchidb/core';
@@ -704,7 +704,7 @@ export interface TreeTableConsolePanelContextValue {
 
 #### 4.2.1 useTreeViewController Contract
 
-Create `packages/ui-treeconsole/src/hooks/useTreeViewController/types.ts`:
+Create `packages/ui-treeconsole/src/hooks/useTreeViewController/lifecycle-types.ts`:
 
 ```typescript
 export interface UseTreeViewControllerOptions {
@@ -1504,7 +1504,7 @@ export interface TreeConsoleExtension {
 **Prevention:**
 ```typescript
 // ❌ WRONG: Direct Worker dependency
-import { DataManagementWorkerService } from '@/db/DataManagementWorkerService';
+import { DataManagementWorkerService } from '@/services/DataManagementWorkerService';
 const service = DataManagementWorkerService.getInstance();
 
 // ✅ CORRECT: Abstract through registry

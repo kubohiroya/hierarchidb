@@ -1,16 +1,9 @@
-import type {
+import {
   CommandEnvelope,
-  CommitWorkingCopyForCreatePayload,
-  CommitWorkingCopyPayload,
   CommandResult as CoreCommandResult,
-  CreateWorkingCopyForCreatePayload,
-  CreateWorkingCopyPayload,
-  DiscardWorkingCopyPayload,
   DuplicateNodesPayload,
-  ErrorCode,
   ImportNodesPayload,
   MoveNodesPayload,
-  MoveToTrashPayload,
   PasteNodesPayload,
   RemovePayload,
   RecoverFromTrashPayload,
@@ -21,28 +14,28 @@ import type {
   TreeId,
   NodeId,
   UndoPayload,
+  generateNodeId,
 } from '@hierarchidb/common-type';
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
+import type { CommandProcessor } from './CommandProcessor';
+import type { CoreDB } from './CoreDB';
+
+import { createNewName } from './WorkingCopyTreeNodeOperations';
 import { SingletonMixin } from '@hierarchidb/util';
-import type { CommandProcessor } from '../command/CommandProcessor';
-import crypto from 'crypto';
-import type { CommandResult } from '../command/types';
-import type { CoreDB } from '../db/CoreDB';
-import type { EphemeralDB } from '../db/EphemeralDB';
-import type { NodeLifecycleManager } from '../lifecycle/NodeLifecycleManager';
-import {
-  commitWorkingCopy,
-  createNewDraftWorkingCopy,
-  createNewName,
-  createWorkingCopyFromNode,
-} from '../operations/WorkingCopyOperations';
 
 export class TreeMutationService implements TreeMutationAPI {
+  static async getSingleton(
+    coreDB: CoreDB,
+    commandProcessor: CommandProcessor
+  ): Promise<TreeMutationService> {
+    return SingletonMixin.getSingleton(TreeMutationService.name, async () => {
+      return new TreeMutationService(coreDB, commandProcessor);
+    });
+  }
+
   constructor(
     private coreDB: CoreDB,
-    private ephemeralDB: EphemeralDB,
-    private commandProcessor: CommandProcessor,
-    private lifecycleManager: NodeLifecycleManager
+    private commandProcessor: CommandProcessor
   ) {}
 
   // ==================
@@ -57,7 +50,7 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      const nodeId = crypto.randomUUID() as NodeId;
+      const nodeId = generateNodeId();
       const now = Date.now();
 
       const node: TreeNode = {
@@ -185,27 +178,6 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
-  /*
-  async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
-    const cmd: CommandEnvelope<'moveToTrash', MoveToTrashPayload> = {
-      commandId: crypto.randomUUID(),
-      groupId: crypto.randomUUID(),
-      kind: 'moveToTrash',
-      payload: { nodeIds },
-      issuedAt: Date.now() as Timestamp,
-    };
-    
-    const result = await this.moveToTrash(cmd);
-    if (!result.success) {
-      return {
-        success: false,
-        error: (result as any).error || 'Unknown error',
-      };
-    }
-    return { success: true };
-  }
-   */
-
   async recoverNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
@@ -235,141 +207,6 @@ export class TreeMutationService implements TreeMutationAPI {
     const node = await this.coreDB.getNode?.(nodeId);
     return node?.parentId || ('' as NodeId);
   }
-
-  // Working Copy Operations
-
-  async createWorkingCopyForCreate(
-    cmd: CommandEnvelope<'createWorkingCopyForCreate', CreateWorkingCopyForCreatePayload>
-  ): Promise<void> {
-    const { workingCopyId, parentId, name, description } = cmd.payload;
-
-    // 簡易実装: EphemeralDBに直接Working Copyを保存
-    const now = Date.now();
-    const workingCopy = {
-      workingCopyId,
-      id: crypto.randomUUID() as NodeId,
-      parentId,
-      name: 'New Folder',
-      nodeType: 'folder' as NodeType,
-      status: 'draft',
-      depth: 0, // Will be calculated by database operations
-      createdAt: now,
-      updatedAt: now,
-      changes: {
-        name: name,
-        description: description,
-      },
-      copiedAt: now,
-      version: 1,
-    };
-
-    // EphemeralDBの適切なメソッドを使用
-    await this.ephemeralDB.createWorkingCopy(workingCopy);
-  }
-
-  async createWorkingCopy(
-    cmd: CommandEnvelope<'createWorkingCopy', CreateWorkingCopyPayload>
-  ): Promise<void> {
-    const { sourceNodeId } = cmd.payload;
-
-    // Check if source node exists
-    const sourceNode = await this.coreDB.getNode?.(sourceNodeId);
-    if (!sourceNode) {
-      throw new Error('Node not found');
-    }
-
-    await createWorkingCopyFromNode(this.ephemeralDB, this.coreDB, sourceNodeId);
-  }
-
-  async discardWorkingCopyForCreate(
-    cmd: CommandEnvelope<'discardWorkingCopyForCreate', DiscardWorkingCopyPayload>
-  ): Promise<void> {
-    const { workingCopyId } = cmd.payload;
-    await this.ephemeralDB.discardWorkingCopy?.(workingCopyId);
-  }
-
-  async discardWorkingCopy(
-    cmd: CommandEnvelope<'discardWorkingCopy', DiscardWorkingCopyPayload>
-  ): Promise<void> {
-    const { workingCopyId } = cmd.payload;
-    await this.ephemeralDB.discardWorkingCopy?.(workingCopyId);
-  }
-
-  async commitWorkingCopyForCreate(
-    cmd: CommandEnvelope<'commitWorkingCopyForCreate', CommitWorkingCopyForCreatePayload>
-  ): Promise<CoreCommandResult> {
-    const { workingCopyId, onNameConflict = 'error' } = cmd.payload;
-
-    try {
-      // Working Copyを取得
-      const workingCopy = await this.ephemeralDB.workingCopies?.get(workingCopyId);
-      if (!workingCopy) {
-        return {
-          success: false,
-          error: `Working copy not found: ${workingCopyId}`,
-          code: 'NODE_NOT_FOUND',
-        } as CoreCommandResult;
-      }
-
-      // 新しいノードIDを生成
-      const newNodeId = crypto.randomUUID() as NodeId;
-      const now = Date.now();
-
-      // TreeNodeを作成
-      const newNode: TreeNode = {
-        id: newNodeId,
-        parentId: workingCopy.parentId,
-        nodeType: (workingCopy.nodeType || 'folder') as NodeType,
-        name: workingCopy.originalName || 'New Folder',
-        depth: 0, // Will be calculated by database operations
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-      };
-
-      // descriptionがある場合は追加
-      if (workingCopy.description) {
-        newNode.description = workingCopy.description;
-      }
-
-      // CoreDBに保存
-      await this.coreDB.createNode(newNode);
-
-      // Working Copyを削除
-      await this.ephemeralDB.workingCopies?.delete(workingCopyId);
-
-      return {
-        success: true,
-        seq: this.getNextSeq(),
-        nodeId: newNodeId,
-      } as CoreCommandResult;
-    } catch (error) {
-      return {
-        success: false,
-        error: String(error),
-        code: 'INVALID_OPERATION',
-      } as CoreCommandResult;
-    }
-  }
-
-  async commitWorkingCopy(
-    cmd: CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload>
-  ): Promise<CoreCommandResult> {
-    const { workingCopyId, onNameConflict = 'error' } = cmd.payload;
-
-    const result = await commitWorkingCopy(
-      this.ephemeralDB,
-      this.coreDB,
-      workingCopyId as NodeId,
-      false, // not a draft
-      onNameConflict
-    );
-
-    // Convert worker CommandResult to CoreCommandResult
-    return result as CoreCommandResult;
-  }
-
-  // Physical Operations
 
   // Internal method for command processing
   async moveNodesCommand(
@@ -495,7 +332,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
       // 【パフォーマンス改善】: 兄弟ノード名を一度だけ取得 🟡
       const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
-      const existingNames = new Set(siblings.map((sibling: TreeNode) => sibling.name));
+      const existingNames = new Set<string>(siblings.map((sibling: TreeNode) => sibling.name));
 
       // 【バッチ処理最適化】: ノード作成を効率的に実行 🟡
       const timestamp = Date.now() as Timestamp;
@@ -514,7 +351,7 @@ export class TreeMutationService implements TreeMutationAPI {
           continue;
         }
 
-        const newNodeId = crypto.randomUUID() as NodeId;
+        const newNodeId = generateNodeId();
 
         // 【効率的な名前衝突解決】: Set使用で高速チェック 🟡
         let newName = sourceNode.name;
@@ -759,7 +596,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
     // First pass: create ID mappings
     for (const nodeId of nodeIds) {
-      const newNodeId = crypto.randomUUID() as NodeId;
+      const newNodeId = generateNodeId();
       idMapping.set(nodeId, newNodeId);
       newNodeIds.push(newNodeId);
     }
@@ -844,7 +681,7 @@ export class TreeMutationService implements TreeMutationAPI {
     const sourceNode = await this.coreDB.getNode?.(sourceId);
     if (!sourceNode) return;
 
-    const newNodeId = crypto.randomUUID() as NodeId;
+    const newNodeId = generateNodeId();
     idMapping.set(sourceId, newNodeId);
 
     // Create duplicated node

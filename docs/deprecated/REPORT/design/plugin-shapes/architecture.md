@@ -178,11 +178,11 @@ export const shapesPlugin: PluginConfig = {
   // WebWorker設定
   webWorkers: {
     batchProcessor: {
-      script: '/db/shapesBatchProcessor.js',
+      script: '/services/shapesBatchProcessor.js',
       maxInstances: 4
     },
     vectorTileGenerator: {
-      script: '/db/vectorTileGenerator.js', 
+      script: '/services/vectorTileGenerator.js', 
       maxInstances: 2
     }
   },

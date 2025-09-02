@@ -6,7 +6,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { validateFolderData, validateFolderName } from '../../shared/utils';
 import type { CreateFolderData, UpdateFolderData } from '../../shared/types';
 
-export interface ValidationResult {
+export interface FormValidationResult {
   isValid: boolean;
   errors: string[];
   fieldErrors: Record<string, string>;
@@ -26,21 +26,21 @@ export function useFormValidation(
   options: UseFormValidationOptions = {}
 ) {
   const { validateOnChange = true, validateOnBlur = true } = options;
-  
+
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [validationState, setValidationState] = useState<ValidationResult>({
+  const [validationState, setValidationState] = useState<FormValidationResult>({
     isValid: true,
     errors: [],
-    fieldErrors: {}
+    fieldErrors: {},
   });
 
   // Validate entire form
   const validateForm = useCallback((formData: Partial<CreateFolderData | UpdateFolderData>) => {
     const validation = validateFolderData(formData as CreateFolderData);
     const fieldErrors: Record<string, string> = {};
-    
+
     // Map validation errors to specific fields
-    validation.errors.forEach(error => {
+    validation.errors.forEach((error) => {
       if (error.includes('name')) {
         fieldErrors.name = error;
       } else if (error.includes('description')) {
@@ -61,7 +61,7 @@ export function useFormValidation(
         validation.errors.push('Invalid icon color format');
       }
     }
-    
+
     if (settings?.rules?.maxChildren !== undefined) {
       const maxChildren = settings.rules.maxChildren;
       if (typeof maxChildren !== 'number' || maxChildren < 0 || maxChildren > 10000) {
@@ -70,10 +70,10 @@ export function useFormValidation(
       }
     }
 
-    const result: ValidationResult = {
+    const result: FormValidationResult = {
       isValid: validation.isValid && Object.keys(fieldErrors).length === 0,
       errors: validation.errors,
-      fieldErrors
+      fieldErrors,
     };
 
     setValidationState(result);
@@ -83,7 +83,7 @@ export function useFormValidation(
   // Validate single field
   const validateField = useCallback((fieldName: string, value: any) => {
     let error = '';
-    
+
     switch (fieldName) {
       case 'name':
         if (value) {
@@ -95,27 +95,27 @@ export function useFormValidation(
           error = 'Folder name is required';
         }
         break;
-        
+
       case 'description':
         if (value && value.length > 1000) {
           error = 'Description must be less than 1000 characters';
         }
         break;
-        
+
       case 'settings.displayOptions.iconColor':
       case 'iconColor':
         if (value && !/^#[0-9A-Fa-f]{6}$/.test(value)) {
           error = 'Invalid icon color format';
         }
         break;
-        
+
       case 'settings.rules.maxChildren':
       case 'maxChildren':
         if (value !== undefined && (typeof value !== 'number' || value < 0 || value > 10000)) {
           error = 'Max children must be between 0 and 10000';
         }
         break;
-        
+
       case 'tags':
         if (Array.isArray(value)) {
           if (value.length > 10) {
@@ -131,43 +131,55 @@ export function useFormValidation(
         }
         break;
     }
-    
-    setValidationState(prev => ({
+
+    setValidationState((prev) => ({
       ...prev,
       fieldErrors: {
         ...prev.fieldErrors,
-        [fieldName]: error
-      }
+        [fieldName]: error,
+      },
     }));
-    
+
     return error;
   }, []);
 
   // Handle field change
-  const handleFieldChange = useCallback((fieldName: string, value: any) => {
-    if (validateOnChange && touched[fieldName]) {
-      validateField(fieldName, value);
-    }
-  }, [validateOnChange, validateField, touched]);
+  const handleFieldChange = useCallback(
+    (fieldName: string, value: any) => {
+      if (validateOnChange && touched[fieldName]) {
+        validateField(fieldName, value);
+      }
+    },
+    [validateOnChange, validateField, touched]
+  );
 
   // Handle field blur
-  const handleFieldBlur = useCallback((fieldName: string, value: any) => {
-    setTouched(prev => ({ ...prev, [fieldName]: true }));
-    
-    if (validateOnBlur) {
-      validateField(fieldName, value);
-    }
-  }, [validateOnBlur, validateField]);
+  const handleFieldBlur = useCallback(
+    (fieldName: string, value: any) => {
+      setTouched((prev) => ({ ...prev, [fieldName]: true }));
+
+      if (validateOnBlur) {
+        validateField(fieldName, value);
+      }
+    },
+    [validateOnBlur, validateField]
+  );
 
   // Get error for specific field
-  const getFieldError = useCallback((fieldName: string) => {
-    return touched[fieldName] ? validationState.fieldErrors[fieldName] : '';
-  }, [touched, validationState.fieldErrors]);
+  const getFieldError = useCallback(
+    (fieldName: string) => {
+      return touched[fieldName] ? validationState.fieldErrors[fieldName] : '';
+    },
+    [touched, validationState.fieldErrors]
+  );
 
   // Check if field has error
-  const hasFieldError = useCallback((fieldName: string) => {
-    return touched[fieldName] && Boolean(validationState.fieldErrors[fieldName]);
-  }, [touched, validationState.fieldErrors]);
+  const hasFieldError = useCallback(
+    (fieldName: string) => {
+      return touched[fieldName] && Boolean(validationState.fieldErrors[fieldName]);
+    },
+    [touched, validationState.fieldErrors]
+  );
 
   // Current validation result
   const validation = useMemo(() => validateForm(data), [data, validateForm]);
@@ -181,7 +193,7 @@ export function useFormValidation(
     getFieldError,
     hasFieldError,
     touched,
-    setTouched
+    setTouched,
   };
 }
 
@@ -192,9 +204,9 @@ export function useValidation(data: Partial<CreateFolderData | UpdateFolderData>
   return useMemo(() => {
     const validation = validateFolderData(data as CreateFolderData);
     const fieldErrors: Record<string, string> = {};
-    
+
     // Map errors to fields
-    validation.errors.forEach(error => {
+    validation.errors.forEach((error) => {
       if (error.includes('name')) {
         fieldErrors.name = error;
       } else if (error.includes('description')) {
@@ -207,7 +219,7 @@ export function useValidation(data: Partial<CreateFolderData | UpdateFolderData>
     return {
       isValid: validation.isValid,
       errors: validation.errors,
-      fieldErrors
+      fieldErrors,
     };
   }, [data]);
 }

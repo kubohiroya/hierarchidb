@@ -12,14 +12,16 @@ import type {
 } from '@hierarchidb/common-type';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
-import type { CoreDB } from '../db/CoreDB';
-import type { EphemeralDB } from '../db/EphemeralDB';
+import type { CoreDB } from './CoreDB';
 
 export class TreeQueryService implements TreeQueryAPI {
-  constructor(
-    private coreDB: CoreDB,
-    private ephemeralDB: EphemeralDB
-  ) {}
+  static async getSingleton(coreDB: CoreDB): Promise<TreeQueryService> {
+    return SingletonMixin.getSingleton(TreeQueryService.name, () => {
+      return new TreeQueryService(coreDB);
+    });
+  }
+
+  constructor(private coreDB: CoreDB) {}
 
   // Basic Query Operations
 

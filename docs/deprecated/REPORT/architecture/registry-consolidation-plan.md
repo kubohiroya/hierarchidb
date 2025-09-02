@@ -63,7 +63,7 @@ export interface INodeTypeRegistry {
   getAll(): TreeNodeType[];
 }
 
-export interface IPluginRegistry extends INodeTypeRegistry {
+export interface PluginRegistry extends INodeTypeRegistry {
   registerPlugin(definition: UnifiedPluginDefinition): void;
   getPlugin(nodeType: TreeNodeType): UnifiedPluginDefinition | undefined;
   validateDependencies(nodeType: TreeNodeType): boolean;
@@ -116,7 +116,7 @@ export class SimpleNodeTypeRegistry extends BaseNodeTypeRegistry {
 ##### UnifiedPluginRegistry（統合版）
 ```typescript
 // packages/worker/src/registry/UnifiedPluginRegistry.ts
-export class UnifiedPluginRegistry extends BaseNodeTypeRegistry implements IPluginRegistry {
+export class UnifiedPluginRegistry extends BaseNodeTypeRegistry implements PluginRegistry {
   private static instance: UnifiedPluginRegistry;
   
   static getInstance(): UnifiedPluginRegistry {

@@ -2,9 +2,9 @@
  * Folder plugin metadata - UI・Worker共通メタデータ
  */
 
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-type';
 
-export const FolderMetadata: PluginMetadata = {
+export const FolderMetadata = {
   id: '@hierarchidb/folder-plugin',
   nodeType: 'folder' as NodeType,
   name: 'Folder',
@@ -12,22 +12,19 @@ export const FolderMetadata: PluginMetadata = {
   version: '1.0.0',
   author: 'HierarchiDB Team',
   status: 'active',
-  
+
   capabilities: {
     // Core operations
     supportsCreate: true,
     supportsUpdate: true,
     supportsDelete: true,
     supportsChildren: true,
-    supportedOperations: ['create', 'read', 'update', 'delete', 'move', 'copy']
+    supportedOperations: ['create', 'read', 'update', 'delete', 'move', 'copy'],
   },
-  
-  dependencies: [
-    '@hierarchidb/common-type',
-    '@hierarchidb/common-api'
-  ],
-  
-  tags: ['organization', 'hierarchy', 'core']
+
+  dependencies: ['@hierarchidb/common-type', '@hierarchidb/common-api'],
+
+  tags: ['organization', 'hierarchy', 'core'],
 };
 
 // Additional metadata not part of PluginMetadata type
@@ -36,7 +33,7 @@ export const FolderValidation = {
   maxChildren: 1000,
   maxDepth: 20,
   nameMinLength: 1,
-  nameMaxLength: 255
+  nameMaxLength: 255,
 };
 
 export const FolderUIConfig = {
@@ -44,7 +41,7 @@ export const FolderUIConfig = {
   panelComponentPath: '@hierarchidb/plugin-folder-plugin/components/FolderPanel',
   iconComponentPath: '@hierarchidb/plugin-folder-plugin/components/FolderIcon',
   treeComponentPath: '@hierarchidb/plugin-folder-plugin/components/FolderTree',
-  
+
   // Context menu items
   contextMenuItems: [
     'create_folder',
@@ -56,22 +53,16 @@ export const FolderUIConfig = {
     'create_template',
     'properties',
     'permissions',
-    'delete'
+    'delete',
   ],
-  
+
   // Toolbar items
-  toolbarItems: [
-    'create_folder',
-    'search',
-    'view_mode',
-    'sort_order',
-    'refresh'
-  ]
+  toolbarItems: ['create_folder', 'search', 'view_mode', 'sort_order', 'refresh'],
 };
 
 export const FolderPerformanceProfile = {
   memoryUsage: 'low',
   cpuUsage: 'low',
   diskUsage: 'low',
-  networkUsage: 'none'
+  networkUsage: 'none',
 };

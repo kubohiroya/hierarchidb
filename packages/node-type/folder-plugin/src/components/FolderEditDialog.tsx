@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TextField, Grid } from '@mui/material';
+import { TextField } from '@mui/material';
 import {
+  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -170,7 +171,7 @@ export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
 
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               autoFocus
               fullWidth
@@ -185,7 +186,7 @@ export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               fullWidth
               multiline

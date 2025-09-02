@@ -23,7 +23,7 @@
 ### 7.2.1 ノードタイプ定義インターフェース
 
 ```typescript
-// packages/core/src/types/entity-types.ts
+// packages/core/src/types/entity-lifecycle-types.ts
 
 // 基本的なエンティティインターフェース
 export interface BaseEntity {

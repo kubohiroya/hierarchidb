@@ -11,7 +11,7 @@
 packages/ui-routing/src/plugins/
 ├── HierarchicalPluginRouter.test.ts  # メインテストファイル
 ├── HierarchicalPluginRouter.ts       # 実装ファイル (未作成)
-└── types.ts                          # TypeScript型定義
+└── lifecycle-types.ts                          # TypeScript型定義
 ```
 
 ### テストケース設計
@@ -64,7 +64,7 @@ Cannot resolve module './HierarchicalPluginRouter'
 
 // 2. 未定義関数呼び出しエラー
 parseHierarchicalUrl is not defined
-PluginRegistry is not defined
+PluginRegistryImpl is not defined
 loadPluginComponent is not defined
 
 // 3. クラス未定義エラー
@@ -80,7 +80,7 @@ HierarchicalPluginRouter is not defined
    - オプショナルパラメータの処理
    - エラーハンドリング
 
-2. **PluginRegistry (Static Class)**
+2. **PluginRegistryImpl (Static Class)**
    - `register(plugin: PluginDefinition): void`
    - `get(nodeType: string): PluginDefinition | undefined`
    - `clear(): void`
@@ -97,7 +97,7 @@ HierarchicalPluginRouter is not defined
 
 ### TypeScript型定義
 
-以下の型定義がすでに`types.ts`に実装済み：
+以下の型定義がすでに`lifecycle-types.ts`に実装済み：
 - `PluginRouteParams`
 - `PluginAction`
 - `PluginDefinition`
@@ -127,7 +127,7 @@ HierarchicalPluginRouter is not defined
 
 #### 実装優先順位
 1. **基本URL解析** - `parseHierarchicalUrl`
-2. **プラグインレジストリ** - `PluginRegistry`  
+2. **プラグインレジストリ** - `PluginRegistryImpl`  
 3. **エラーハンドリング基盤**
 4. **動的コンポーネントローダー**
 5. **データ統合機能**

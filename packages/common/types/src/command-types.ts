@@ -1,4 +1,4 @@
-import { NodeId, TreeId } from './id-types';
+import { NodeId, NodeType, TreeId } from './id-types';
 import { Timestamp } from './primitive-types';
 import { TreeNode } from './tree-node-types';
 
@@ -53,28 +53,28 @@ export type CommandResult =
     };
 
 export interface CreateWorkingCopyForCreatePayload {
-  workingCopyId: string;
+  workingCopyOf: NodeId;
   parentId: NodeId;
   name: string;
   description?: string;
+  nodeType: NodeType;
 }
 
 export interface CreateWorkingCopyPayload {
-  workingCopyId: string;
-  sourceNodeId: NodeId;
+  workingCopyId: NodeId;
 }
 
 export interface DiscardWorkingCopyPayload {
-  workingCopyId: string;
+  workingCopyId: NodeId;
 }
 
 export interface CommitWorkingCopyForCreatePayload {
-  workingCopyId: string;
+  workingCopyId: NodeId;
   onNameConflict?: OnNameConflict;
 }
 
 export interface CommitWorkingCopyPayload {
-  workingCopyId: string;
+  workingCopyId: NodeId;
   expectedUpdatedAt: Timestamp;
   onNameConflict?: OnNameConflict;
 }

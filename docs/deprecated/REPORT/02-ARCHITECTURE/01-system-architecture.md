@@ -95,7 +95,7 @@ interface CoreServices {
   queryService: TreeQueryService;
   mutationService: TreeMutationService;
   observableService: TreeObservableService;
-  workingCopyService: WorkingCopyService;
+  workingCopyService: WorkingCopyEntityService;
   pluginRegistry: PluginRegistryService;
 }
 ```

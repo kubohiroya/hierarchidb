@@ -34,7 +34,7 @@ interface PluginMetadata {
 
 ### レジストリ実装
 ```typescript
-class PluginRegistry {
+class PluginRegistryImpl {
   private plugins = new Map<TreeNodeType, PluginDefinition>();
   
   register(plugin: PluginDefinition): void {

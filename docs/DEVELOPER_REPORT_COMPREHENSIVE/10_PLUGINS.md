@@ -35,7 +35,7 @@ graph TB
     end
     
     subgraph "Runtime Environment"
-        PluginRegistry["Plugin Registry"]
+        PluginRegistryImpl["Plugin Registry"]
         ComponentFactory["Component Factory"]
         EventBus["Plugin Event Bus"]
         ConfigManager["Config Manager"]
@@ -57,7 +57,7 @@ graph TB
     DependencyResolver --> VersionManager
     VersionManager --> UpdateManager
     
-    PluginRegistry --> ComponentFactory
+    PluginRegistryImpl --> ComponentFactory
     ComponentFactory --> EventBus
     EventBus --> ConfigManager
     
@@ -71,7 +71,7 @@ graph TB
     class PluginDefinition,EntityHandler,DatabaseSchema nodetype
     class DialogComponent,PanelComponent,IconComponent,ToolbarExtension ui
     class PluginInstaller,DependencyResolver,VersionManager,UpdateManager lifecycle
-    class PluginRegistry,ComponentFactory,EventBus,ConfigManager runtime
+    class PluginRegistryImpl,ComponentFactory,EventBus,ConfigManager runtime
 ```
 
 ### 27.2 プラグイン開発パターン (Plugin Development Patterns)

@@ -15,7 +15,7 @@ describe('Multi-Step Dialog Integration', () => {
   beforeEach(async () => {
     // テスト用のWorkerAPI初期化
     // TODO: WorkerAPIImplのインポートパスを修正する必要がある
-    // workerAPI = new WorkerAPIImpl('test-db');
+    // workerAPI = new WorkerAPIImpl('test-services');
     // await workerAPI.initialize();
     // dialogAPI = workerAPI.getMultiStepDialogAPI();
   });
@@ -29,7 +29,7 @@ describe('Multi-Step Dialog Integration', () => {
   describe('Working Copy Management', () => {
     it('should create a working copy for folder plugin', async () => {
       const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
-      
+
       expect(workingCopyId).toBeDefined();
       expect(typeof workingCopyId).toBe('string');
 
@@ -42,7 +42,7 @@ describe('Multi-Step Dialog Integration', () => {
     it('should create a working copy for location plugin with parent', async () => {
       const parentId = 'parent-123' as NodeId;
       const workingCopyId = await dialogAPI.createWorkingCopy('location-plugin', parentId);
-      
+
       const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
       expect(workingCopy).toBeDefined();
       expect(workingCopy?.nodeType).toBe('location-plugin');
@@ -51,19 +51,19 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should update a working copy', async () => {
       const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
-      
+
       const updates = {
         data: {
           name: 'Test Folder',
-          description: 'A test folder'
+          description: 'A test folder',
         },
         metadata: {
-          currentStep: 1
-        }
+          currentStep: 1,
+        },
       };
 
       const updatedWorkingCopy = await dialogAPI.updateWorkingCopy(workingCopyId, updates);
-      
+
       expect(updatedWorkingCopy.data.name).toBe('Test Folder');
       expect(updatedWorkingCopy.data.description).toBe('A test folder');
       expect(updatedWorkingCopy.metadata.currentStep).toBe(1);
@@ -71,9 +71,9 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should delete a working copy', async () => {
       const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
-      
+
       await dialogAPI.deleteWorkingCopy(workingCopyId);
-      
+
       const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
       expect(workingCopy).toBeUndefined();
     });
@@ -89,7 +89,7 @@ describe('Multi-Step Dialog Integration', () => {
     it('should evaluate capabilities for step 0 (basic info)', async () => {
       // 初期状態 - 名前なし
       let capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
-      
+
       expect(capabilities.canNavigateTo).toBe(true);
       expect(capabilities.canStartBatch).toBe(false);
       expect(capabilities.canSave).toBe(false);
@@ -98,7 +98,7 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 名前を追加
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { name: 'Test Folder' }
+        data: { name: 'Test Folder' },
       });
 
       capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
@@ -112,7 +112,7 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 基本情報を追加
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { name: 'Test Folder' }
+        data: { name: 'Test Folder' },
       });
 
       capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
@@ -125,7 +125,7 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should evaluate capabilities for step 2 (templates and bookmarks)', async () => {
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { name: 'Test Folder' }
+        data: { name: 'Test Folder' },
       });
 
       const capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 2);
@@ -151,10 +151,10 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 名前とタイプを追加
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { 
+        data: {
           name: 'Test Location',
-          locationType: 'restaurant' 
-        }
+          locationType: 'restaurant',
+        },
       });
 
       capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
@@ -163,10 +163,10 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should evaluate capabilities for step 1 (location info)', async () => {
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { 
+        data: {
           name: 'Test Location',
-          locationType: 'restaurant' 
-        }
+          locationType: 'restaurant',
+        },
       });
 
       // 位置情報なし
@@ -176,12 +176,12 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 座標を追加
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { 
+        data: {
           name: 'Test Location',
           locationType: 'restaurant',
           latitude: 35.6762,
-          longitude: 139.6503
-        }
+          longitude: 139.6503,
+        },
       });
 
       capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
@@ -196,19 +196,16 @@ describe('Multi-Step Dialog Integration', () => {
       // フォルダーのWorking Copy作成
       const folderWorkingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
       await dialogAPI.updateWorkingCopy(folderWorkingCopyId, {
-        data: { name: 'Valid Folder' }
+        data: { name: 'Valid Folder' },
       });
 
       // ロケーションのWorking Copy作成（無効なデータ）
       const locationWorkingCopyId = await dialogAPI.createWorkingCopy('location-plugin');
       await dialogAPI.updateWorkingCopy(locationWorkingCopyId, {
-        data: { name: '', locationType: 'restaurant' } // 空の名前
+        data: { name: '', locationType: 'restaurant' }, // 空の名前
       });
 
-      const results = await dialogAPI.batchValidate([
-        folderWorkingCopyId,
-        locationWorkingCopyId
-      ]);
+      const results = await dialogAPI.batchValidate([folderWorkingCopyId, locationWorkingCopyId]);
 
       expect(results[folderWorkingCopyId].valid).toBe(true);
       expect(results[locationWorkingCopyId].valid).toBe(false);
@@ -221,20 +218,20 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 有効なデータを設定
       await dialogAPI.updateWorkingCopy(workingCopyId1, {
-        data: { name: 'Test Folder' }
+        data: { name: 'Test Folder' },
       });
       await dialogAPI.updateWorkingCopy(workingCopyId2, {
-        data: { 
+        data: {
           name: 'Test Location',
           locationType: 'restaurant',
           latitude: 35.6762,
-          longitude: 139.6503
-        }
+          longitude: 139.6503,
+        },
       });
 
       const results = await dialogAPI.batchEvaluateCapabilities([
         { workingCopyId: workingCopyId1, step: 1 },
-        { workingCopyId: workingCopyId2, step: 2 }
+        { workingCopyId: workingCopyId2, step: 2 },
       ]);
 
       expect(results[workingCopyId1].canNavigateTo).toBe(true);
@@ -250,15 +247,15 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 無効なデータ
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { 
+        data: {
           name: '',
-          permissions: 'invalid' // オブジェクトではない
-        }
+          permissions: 'invalid', // オブジェクトではない
+        },
       });
 
       const results = await dialogAPI.batchValidate([workingCopyId]);
       const validation = results[workingCopyId];
-      
+
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContain('フォルダー名は必須です');
       expect(validation.errors).toContain('権限設定の形式が正しくありません');
@@ -269,20 +266,20 @@ describe('Multi-Step Dialog Integration', () => {
 
       // 無効なデータ
       await dialogAPI.updateWorkingCopy(workingCopyId, {
-        data: { 
+        data: {
           name: 'Test Location',
           locationType: 'restaurant',
           latitude: 91, // 無効な緯度
           longitude: 181, // 無効な経度
           contact: {
-            email: 'invalid-email' // 無効なメール形式
-          }
-        }
+            email: 'invalid-email', // 無効なメール形式
+          },
+        },
       });
 
       const results = await dialogAPI.batchValidate([workingCopyId]);
       const validation = results[workingCopyId];
-      
+
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContain('緯度は-90から90の数値である必要があります');
       expect(validation.errors).toContain('経度は-180から180の数値である必要があります');
@@ -293,16 +290,16 @@ describe('Multi-Step Dialog Integration', () => {
   describe('Error Handling', () => {
     it('should handle non-existent working copy', async () => {
       const nonExistentId = 'non-existent-id' as EntityId;
-      
-      await expect(
-        dialogAPI.evaluateCapabilities(nonExistentId, 0)
-      ).rejects.toThrow('Working copy not found');
+
+      await expect(dialogAPI.evaluateCapabilities(nonExistentId, 0)).rejects.toThrow(
+        'Working copy not found'
+      );
     });
 
     it('should handle unsupported node type', async () => {
-      await expect(
-        dialogAPI.createWorkingCopy('unsupported-type')
-      ).rejects.toThrow('No handler found for node type: unsupported-type');
+      await expect(dialogAPI.createWorkingCopy('unsupported-type')).rejects.toThrow(
+        'No handler found for node type: unsupported-type'
+      );
     });
   });
 });

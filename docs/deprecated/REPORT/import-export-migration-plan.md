@@ -291,7 +291,7 @@ test.describe('Template Import', () => {
 // packages/worker/src/__tests__/integration/import-export-plugin.test.ts
 describe('Import/Export Integration', () => {
   it('should import template data', async () => {
-    const api = new WorkerAPIImpl('test-db');
+    const api = new WorkerAPIImpl('test-services');
     
     const result = await api.importFromTemplate({
       templateId: 'population-2023',

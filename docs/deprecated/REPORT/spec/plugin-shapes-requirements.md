@@ -371,7 +371,7 @@ export const shapesPlugin: PluginConfig = {
   webWorkers: {
     // WebWorker設定
     batchProcessor: {
-      script: '/db/shapesBatchProcessor.js',
+      script: '/services/shapesBatchProcessor.js',
       options: {
         type: 'module',
         credentials: 'same-origin'

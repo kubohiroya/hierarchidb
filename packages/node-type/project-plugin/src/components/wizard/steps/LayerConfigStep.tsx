@@ -25,10 +25,6 @@ import {
   FormControlLabel,
   Chip,
   Stack,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,18 +33,15 @@ import {
   DragIndicator as DragIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  ExpandMore as ExpandMoreIcon,
   Layers as LayersIcon,
   Place as LocationIcon,
   Timeline as RouteIcon,
   GridOn as ShapeIcon,
   Description as PropertyIcon,
-  Palette as PaletteIcon,
-  FilterList as FilterIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ProjectEntity, ProjectLayer, LayerConfig, LayerStyle } from '~/types/project-types';
+import type { ProjectEntity, ProjectLayer } from '~/types/project-types';
 
 interface LayerConfigStepProps {
   data: Partial<ProjectEntity>;
@@ -67,7 +60,7 @@ const nodeTypeIcons: Record<string, React.ReactNode> = {
   shape: <ShapeIcon />,
   location: <LocationIcon />,
   route: <RouteIcon />,
-  propertyresolver: <PropertyIcon />
+  propertyresolver: <PropertyIcon />,
 };
 
 const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose, onSave }) => {
@@ -80,7 +73,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
         nodeType: 'shape',
         nodeName: '',
         lastUpdated: new Date(),
-        recordCount: 0
+        recordCount: 0,
       },
       config: {
         enabled: true,
@@ -89,8 +82,8 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
         filters: [],
         temporal: {
           enabled: false,
-          field: ''
-        }
+          field: '',
+        },
       },
       style: {
         type: 'simple',
@@ -99,18 +92,18 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
           size: 8,
           color: '#3388ff',
           strokeColor: '#ffffff',
-          strokeWidth: 1
+          strokeWidth: 1,
         },
         line: {
           color: '#3388ff',
-          width: 3
+          width: 3,
         },
         polygon: {
           fillColor: '#3388ff',
           fillOpacity: 0.5,
           strokeColor: '#3388ff',
-          strokeWidth: 2
-        }
+          strokeWidth: 2,
+        },
       },
       interaction: {
         hoverable: true,
@@ -120,9 +113,9 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
         popup: {
           enabled: true,
           template: '',
-          fields: []
-        }
-      }
+          fields: [],
+        },
+      },
     }
   );
 
@@ -133,9 +126,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {layer ? 'Edit Layer' : 'Add Layer'}
-      </DialogTitle>
+      <DialogTitle>{layer ? 'Edit Layer' : 'Add Layer'}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid item xs={12}>
@@ -143,7 +134,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
               fullWidth
               label="Layer Name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               required
             />
           </Grid>
@@ -159,10 +150,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     <InputLabel>Node Type</InputLabel>
                     <Select
                       value={formData.source.nodeType}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        source: { ...prev.source, nodeType: e.target.value as any }
-                      }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          source: { ...prev.source, nodeType: e.target.value as any },
+                        }))
+                      }
                       label="Node Type"
                     >
                       <MenuItem value="shape">Shape</MenuItem>
@@ -178,10 +171,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     size="small"
                     label="Node Name"
                     value={formData.source.nodeName}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      source: { ...prev.source, nodeName: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        source: { ...prev.source, nodeName: e.target.value },
+                      }))
+                    }
                   />
                 </Grid>
               </Grid>
@@ -200,10 +195,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                   </Typography>
                   <Slider
                     value={formData.config.opacity}
-                    onChange={(_, value) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, opacity: value as number }
-                    }))}
+                    onChange={(_, value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        config: { ...prev.config, opacity: value as number },
+                      }))
+                    }
                     min={0}
                     max={1}
                     step={0.1}
@@ -216,10 +213,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     label="Min Zoom"
                     type="number"
                     value={formData.config.minZoom || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, minZoom: parseInt(e.target.value) || undefined }
-                    }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        config: { ...prev.config, minZoom: parseInt(e.target.value) || undefined },
+                      }))
+                    }
                     inputProps={{ min: 0, max: 22 }}
                   />
                 </Grid>
@@ -230,10 +229,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     label="Max Zoom"
                     type="number"
                     value={formData.config.maxZoom || ''}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      config: { ...prev.config, maxZoom: parseInt(e.target.value) || undefined }
-                    }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        config: { ...prev.config, maxZoom: parseInt(e.target.value) || undefined },
+                      }))
+                    }
                     inputProps={{ min: 0, max: 22 }}
                   />
                 </Grid>
@@ -242,10 +243,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     control={
                       <Switch
                         checked={formData.config.enabled}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          config: { ...prev.config, enabled: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            config: { ...prev.config, enabled: e.target.checked },
+                          }))
+                        }
                       />
                     }
                     label="Enabled by default"
@@ -264,10 +267,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                 <InputLabel>Style Type</InputLabel>
                 <Select
                   value={formData.style.type}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    style: { ...prev.style, type: e.target.value as any }
-                  }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      style: { ...prev.style, type: e.target.value as any },
+                    }))
+                  }
                   label="Style Type"
                 >
                   <MenuItem value="simple">Simple</MenuItem>
@@ -287,10 +292,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     <Grid item xs={4}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Symbol</InputLabel>
-                        <Select
-                          value={formData.style.point?.symbol || 'circle'}
-                          label="Symbol"
-                        >
+                        <Select value={formData.style.point?.symbol || 'circle'} label="Symbol">
                           <MenuItem value="circle">Circle</MenuItem>
                           <MenuItem value="square">Square</MenuItem>
                           <MenuItem value="triangle">Triangle</MenuItem>
@@ -401,10 +403,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     control={
                       <Switch
                         checked={formData.interaction.hoverable}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          interaction: { ...prev.interaction, hoverable: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            interaction: { ...prev.interaction, hoverable: e.target.checked },
+                          }))
+                        }
                       />
                     }
                     label="Hoverable"
@@ -415,10 +419,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     control={
                       <Switch
                         checked={formData.interaction.clickable}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          interaction: { ...prev.interaction, clickable: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            interaction: { ...prev.interaction, clickable: e.target.checked },
+                          }))
+                        }
                       />
                     }
                     label="Clickable"
@@ -429,10 +435,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     control={
                       <Switch
                         checked={formData.interaction.selectable}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          interaction: { ...prev.interaction, selectable: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            interaction: { ...prev.interaction, selectable: e.target.checked },
+                          }))
+                        }
                       />
                     }
                     label="Selectable"
@@ -443,10 +451,12 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                     control={
                       <Switch
                         checked={formData.interaction.editable}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          interaction: { ...prev.interaction, editable: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            interaction: { ...prev.interaction, editable: e.target.checked },
+                          }))
+                        }
                       />
                     }
                     label="Editable"
@@ -467,10 +477,10 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
   );
 };
 
-export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, onComplete }) => {
+export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, onComplete }) => {
   const [layers, setLayers] = useState<ProjectLayer[]>(data.layers || []);
   const [editDialog, setEditDialog] = useState<{ open: boolean; layer?: ProjectLayer }>({
-    open: false
+    open: false,
   });
 
   const handleDragEnd = (result: any) => {
@@ -478,12 +488,13 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
 
     const items = Array.from(layers);
     const [reorderedItem] = items.splice(result.source.index, 1);
+    if (!reorderedItem) return;
     items.splice(result.destination.index, 0, reorderedItem);
 
     // Update order values
     const updatedItems = items.map((item, index) => ({
       ...item,
-      config: { ...item.config, order: index }
+      config: { ...item.config, order: index },
     }));
 
     setLayers(updatedItems);
@@ -498,7 +509,7 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
   };
 
   const handleSaveLayer = (layer: ProjectLayer) => {
-    const existingIndex = layers.findIndex(l => l.id === layer.id);
+    const existingIndex = layers.findIndex((l) => l.id === layer.id);
     if (existingIndex >= 0) {
       const updated = [...layers];
       updated[existingIndex] = layer;
@@ -509,15 +520,15 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
   };
 
   const handleDeleteLayer = (layerId: string) => {
-    setLayers(layers.filter(l => l.id !== layerId));
+    setLayers(layers.filter((l) => l.id !== layerId));
   };
 
   const handleToggleVisibility = (layerId: string) => {
-    setLayers(layers.map(l =>
-      l.id === layerId
-        ? { ...l, config: { ...l.config, enabled: !l.config.enabled } }
-        : l
-    ));
+    setLayers(
+      layers.map((l) =>
+        l.id === layerId ? { ...l, config: { ...l.config, enabled: !l.config.enabled } } : l
+      )
+    );
   };
 
   const handleSubmit = () => {
@@ -543,12 +554,7 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
       </Box>
 
       <Box sx={{ mb: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddLayer}
-          fullWidth
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddLayer} fullWidth>
           Add Layer
         </Button>
       </Box>
@@ -579,24 +585,18 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
                           bgcolor: snapshot.isDragging ? 'action.hover' : 'background.paper',
                           borderRadius: 1,
                           border: 1,
-                          borderColor: 'divider'
+                          borderColor: 'divider',
                         }}
                       >
                         <ListItemIcon {...provided.dragHandleProps}>
                           <DragIcon />
                         </ListItemIcon>
-                        <ListItemIcon>
-                          {nodeTypeIcons[layer.source.nodeType]}
-                        </ListItemIcon>
+                        <ListItemIcon>{nodeTypeIcons[layer.source.nodeType]}</ListItemIcon>
                         <ListItemText
                           primary={layer.name}
                           secondary={
                             <Stack direction="row" spacing={1} alignItems="center">
-                              <Chip
-                                label={layer.source.nodeType}
-                                size="small"
-                                variant="outlined"
-                              />
+                              <Chip label={layer.source.nodeType} size="small" variant="outlined" />
                               <Typography variant="caption">
                                 {layer.source.recordCount} features
                               </Typography>
@@ -607,22 +607,13 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
                           }
                         />
                         <ListItemSecondaryAction>
-                          <IconButton
-                            onClick={() => handleToggleVisibility(layer.id)}
-                            size="small"
-                          >
+                          <IconButton onClick={() => handleToggleVisibility(layer.id)} size="small">
                             {layer.config.enabled ? <VisibilityIcon /> : <VisibilityOffIcon />}
                           </IconButton>
-                          <IconButton
-                            onClick={() => handleEditLayer(layer)}
-                            size="small"
-                          >
+                          <IconButton onClick={() => handleEditLayer(layer)} size="small">
                             <EditIcon />
                           </IconButton>
-                          <IconButton
-                            onClick={() => handleDeleteLayer(layer.id)}
-                            size="small"
-                          >
+                          <IconButton onClick={() => handleDeleteLayer(layer.id)} size="small">
                             <DeleteIcon />
                           </IconButton>
                         </ListItemSecondaryAction>
@@ -645,12 +636,7 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, nodeId, 
           <Typography variant="body2" color="text.secondary">
             You can organize layers into groups for better management.
           </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<AddIcon />}
-            sx={{ mt: 1 }}
-          >
+          <Button variant="outlined" size="small" startIcon={<AddIcon />} sx={{ mt: 1 }}>
             Create Group
           </Button>
         </Paper>

@@ -67,7 +67,7 @@ basename: "/hierarchidb/"
 // 実際のURL
 https://username.github.io/hierarchidb/  // ✓ OK
 https://username.github.io/HierarchiDB/  // ✗ 大文字小文字の違い
-https://username.github.io/hierarchi-db/ // ✗ 名前の違い
+https://username.github.io/hierarchi-services/ // ✗ 名前の違い
 ```
 
 #### 原因3: リダイレクトループ

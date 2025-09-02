@@ -9,16 +9,16 @@
 
 import type { TreeQueryAPI } from './TreeQueryAPI';
 import type { TreeMutationAPI } from './TreeMutationAPI';
-import type { ImportExportAPI } from './ImportExportAPI';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
-import type { PluginExtensionAPI } from './PluginExtensionAPI';
+import type { ImportExportAPI } from './ImportExportAPI';
+
 import type { WorkingCopyAPI } from './WorkingCopyAPI';
-import type { PluginTreeAPI } from './PluginTreeAPI';
-import type { NodeTypeAPI } from './NodeTypeAPI';
+
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
-import type { ProxyMarked } from 'comlink';
+//import type { PluginExtensionAPI } from './PluginExtensionAPI';
+
 import { TagAPI } from './TagAPI';
-import type { MultiStepDialogAPI } from './MultiStepDialogAPI';
+import { ProxyMarked } from 'comlink';
 
 /**
  * Main worker facade API
@@ -120,24 +120,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getPluginExtensionAPI(): PluginExtensionAPI & ProxyMarked;
-
-  /**
-   * Get Node Type API facade
-   *
-   * Provides focused interface for node type operations and capabilities,
-   * separated from plugin management concerns.
-   *
-   * @returns Node Type API facade instance
-   *
-   * @example
-   * ```typescript
-   * const nodeTypeAPI = workerAPI.getNodeTypeAPI();
-   * const isSupported = await nodeTypeAPI.isSupported('folder-plugin');
-   * ```
-   */
-  getNodeTypeAPI(): NodeTypeAPI & ProxyMarked;
-  getPluginTreeAPI(): PluginTreeAPI & ProxyMarked;
+  //getPluginExtensionAPI(): PluginExtensionAPI& ProxyMarked;
 
   // ----------------------------------------------------------------//
   /**
@@ -191,22 +174,6 @@ export interface WorkerAPI {
    *
    * @returns Promise that resolves to "pong" with timestamp
    */
-  /**
-   * Get Multi-Step Dialog API for managing multi-step dialog workflows
-   *
-   * Provides functionality for creating and managing working copies
-   * for multi-step dialog workflows with validation and capabilities.
-   *
-   * @returns Multi-Step Dialog API facade instance
-   *
-   * @example
-   * ```typescript
-   * const dialogAPI = workerAPI.getMultiStepDialogAPI();
-   * const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
-   * const capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
-   * ```
-   */
-  getMultiStepDialogAPI(): MultiStepDialogAPI & ProxyMarked;
 
   ping(): { response: 'pong'; timestamp: number };
 

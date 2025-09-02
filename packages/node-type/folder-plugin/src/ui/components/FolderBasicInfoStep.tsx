@@ -6,14 +6,13 @@
 import React from 'react';
 import { Box, TextField, Typography, Stack, Divider } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import { useTranslation } from 'provider-i18next';
-import type { TagId } from '@hierarchidb/common-type';
-import type { FolderEntityWorkingCopy } from '../../types/index';
+import { useTranslation } from 'react-i18next';
+import type { WorkingCopy, TagId } from '@hierarchidb/common-type';
 import { TagInput } from './TagInput';
 
 export interface FolderBasicInfoStepProps {
-  workingCopy: FolderEntityWorkingCopy;
-  onUpdate: (updates: Partial<FolderEntityWorkingCopy>) => void;
+  workingCopy: WorkingCopy;
+  onUpdate: (updates: Partial<WorkingCopy>) => void;
   disabled?: boolean;
 }
 
@@ -24,10 +23,12 @@ export interface FolderBasicInfoStepProps {
 export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
   workingCopy,
   onUpdate,
-  disabled = false
+  disabled = false,
 }) => {
-  const { t } = useTranslation('folder-plugin');
-  
+  const { t } = useTranslation().namespace('folderPlugin');
+
+  // タグ変更ハンドラー
+
   const handleTagChange = (tags: TagId[]) => {
     onUpdate({ tags });
   };
@@ -39,9 +40,12 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
         <FolderIcon color="primary" />
         <Typography variant="h6">{t('basicInfo.title', 'Basic Information')}</Typography>
       </Box>
-      
+
       <Typography variant="body2" color="text.secondary" paragraph>
-        {t('basicInfo.description', 'Enter basic folder information. Use tags to categorize and make folders easy to search.')}
+        {t(
+          'basicInfo.description',
+          'Enter basic folder information. Use tags to categorize and make folders easy to search.'
+        )}
       </Typography>
 
       <Stack spacing={3}>
@@ -55,8 +59,8 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
           disabled={disabled}
           error={!workingCopy.name}
           helperText={
-            !workingCopy.name 
-              ? t('basicInfo.name.required', 'Folder name is required') 
+            !workingCopy.name
+              ? t('basicInfo.name.required', 'Folder name is required')
               : t('basicInfo.name.helper', 'Enter a descriptive folder name')
           }
           inputProps={{ maxLength: 100 }}
@@ -72,7 +76,10 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
           rows={3}
           fullWidth
           disabled={disabled}
-          helperText={t('basicInfo.description.helper', 'Describe the purpose or contents of this folder (optional)')}
+          helperText={t(
+            'basicInfo.description.helper',
+            'Describe the purpose or contents of this folder (optional)'
+          )}
           inputProps={{ maxLength: 500 }}
           variant="outlined"
         />
@@ -98,7 +105,10 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           💡 <strong>{t('basicInfo.hint.title', 'Tip:')}</strong>{' '}
-          {t('basicInfo.hint.content', 'Using tags makes it easy to search and organize folders. Examples: "Project", "Important", "Archive", etc.')}
+          {t(
+            'basicInfo.hint.content',
+            'Using tags makes it easy to search and organize folders. Examples: "Project", "Important", "Archive", etc.'
+          )}
         </Typography>
       </Box>
     </Box>

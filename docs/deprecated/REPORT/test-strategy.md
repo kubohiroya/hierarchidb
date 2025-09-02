@@ -85,7 +85,7 @@ describe('フォルダ操作の統合テスト', () => {
   
   beforeEach(async () => {
     // Worker APIを直接インスタンス化（UIなし）
-    api = new WorkerAPIImpl('test-db');
+    api = new WorkerAPIImpl('test-services');
     await api.initialize();
   });
   

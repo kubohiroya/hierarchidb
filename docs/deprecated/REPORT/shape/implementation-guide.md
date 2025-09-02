@@ -47,7 +47,7 @@ Create the following service layer structure:
 ```
 packages/plugins/shape/src/services/
 ├── ShapesPluginAPI.ts           # Main PluginAPI implementation
-├── types.ts                     # Service type definitions
+├── lifecycle-types.ts                     # Service type definitions
 ├── workers/                     # Worker implementations
 │   ├── WorkerPoolManager.ts     # Manages all worker pools
 │   ├── WorkerPool.ts            # Generic worker pool

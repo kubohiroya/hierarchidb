@@ -10,7 +10,7 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 
 ```
 @hierarchidb/core
-├── types/entity-types.ts  ⚠️ Reactに依存
+├── types/entity-lifecycle-types.ts  ⚠️ Reactに依存
 └── registry/NodeTypeRegistry.ts ⚠️ UI関連型を含む
 ```
 
@@ -18,11 +18,11 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 
 ```
 @hierarchidb/core
-├── types/entity-types.ts     ✅ PluginDefinition（UI非依存）
+├── types/entity-lifecycle-types.ts     ✅ PluginDefinition（UI非依存）
 └── registry/NodeTypeRegistry.ts ✅ Core専用レジストリ
 
 @hierarchidb/ui-core
-└── types/entity-types.ts     ✅ UINodeTypeDefinition（React依存）
+└── types/entity-lifecycle-types.ts     ✅ UINodeTypeDefinition（React依存）
 ```
 
 ## 📝 API変更

@@ -127,7 +127,7 @@ export interface WorkerAPI {
 Folderプラグインの実装に基づいて標準化されたインターフェース：
 
 ```typescript
-// packages/ui-core/src/plugins/types.ts
+// packages/ui-core/src/plugins/lifecycle-types.ts
 export interface UIPluginDefinition {
   // 基本情報
   readonly nodeType: string;
@@ -1602,7 +1602,7 @@ export const DynamicCreateMenu: React.FC<{
 ## 実装状況
 
 ### ✅ 完了した実装
-1. **UIPluginDefinition インターフェース** - `packages/ui-core/src/plugins/types.ts`
+1. **UIPluginDefinition インターフェース** - `packages/ui-core/src/plugins/lifecycle-types.ts`
 2. **UIPluginRegistry** - `packages/ui-core/src/plugins/registry/UIPluginRegistry.ts`
 3. **NodeDataAdapter** - `packages/ui-core/src/plugins/adapters/NodeDataAdapter.ts`
 4. **UnifiedNodeOperations** - `packages/ui-core/src/plugins/operations/UnifiedNodeOperations.ts`
@@ -1624,7 +1624,7 @@ export const DynamicCreateMenu: React.FC<{
 packages/
 ├── ui-core/
 │   └── src/plugins/          # 🆕 統一プラグインシステム
-│       ├── types.ts          # ✅ 標準化インターフェース
+│       ├── lifecycle-types.ts          # ✅ 標準化インターフェース
 │       ├── registry/         # ✅ プラグイン登録管理
 │       ├── adapters/         # ✅ Worker-UI橋渡し
 │       ├── operations/       # ✅ 統一CRUD操作

@@ -19,8 +19,8 @@ describe('FolderEntityHandler', () => {
 
   describe('createEntity', () => {
     it('should create a folder-plugin entity with default values', async () => {
-      const entity = await handler.createEntity(testNodeId, {}) as FolderEntityExtended;
-      
+      const entity = (await handler.createEntity(testNodeId, {})) as FolderEntityExtended;
+
       expect(entity.nodeId).toBe(testNodeId);
       expect(entity.name).toBe('New Folder');
       expect(entity.description).toBe('');
@@ -37,12 +37,12 @@ describe('FolderEntityHandler', () => {
         settings: {
           allowNestedFolders: false,
           maxDepth: 5,
-          sortOrder: 'date'
-        }
+          sortOrder: 'date',
+        },
       };
 
-      const entity = await handler.createEntity(testNodeId, customData) as FolderEntityExtended;
-      
+      const entity = (await handler.createEntity(testNodeId, customData)) as FolderEntityExtended;
+
       expect(entity.name).toBe('Custom Folder');
       expect(entity.description).toBe('A custom description');
       expect(entity.settings?.allowNestedFolders).toBe(false);
@@ -51,124 +51,25 @@ describe('FolderEntityHandler', () => {
     });
   });
 
-  // TODO: Implement working copy operations in FolderEntityHandler
-  // describe('working copy operations', () => {
-  //   it('should create and commit working copy for new entity', async () => {
-  //     const workingCopy = await handler.createWorkingCopy(testNodeId);
-  //
-  //     expect(workingCopy.nodeId).toBe(testNodeId);
-  //     expect(workingCopy.name).toBe('New Folder');
-  //
-  //     // Update the working copy before committing
-  //     const updatedWorkingCopy = await handler.updateWorkingCopy(workingCopy.id, {
-  //       name: 'Test Working Copy',
-  //       description: 'Working copy description'
-  //     });
-  //
-  //     await handler.commitWorkingCopy(testNodeId, updatedWorkingCopy);
-  //     
-  //     const committedEntity = await handler.getEntity(testNodeId);
-  //     expect(committedEntity?.nodeId).toBe(testNodeId);
-  //     expect(committedEntity?.name).toBe('Test Working Copy');
-  //     expect(committedEntity?.description).toBe('Working copy description');
-  //   });
-  //
-  //   it('should create and discard working copy', async () => {
-  //     await handler.createWorkingCopy(testNodeId);
-  //
-  //     await handler.discardWorkingCopy(testNodeId);
-  //     
-  //     // Verify working copy is deleted (this would need access to the database)
-  //     // For now, just verify no error is thrown
-  //   });
-  // });
-
-  describe('bookmark operations', () => {
-    it('should add and retrieve bookmarks', async () => {
-      const entity = await handler.createEntity(testNodeId, { name: 'Test Folder' });
-      
-      const bookmark = await handler.addBookmark(testNodeId, {
-        name: 'Test Bookmark',
-        url: 'https://example.com',
-        description: 'A test bookmark',
-        type: 'group',
-        version: 1,
-        nodeId: testNodeId,
-        groupId: 'test-group',
-        updatedAt: Date.now()
-      });
-
-      expect(bookmark.folderId).toBe(entity.id);
-      expect(bookmark.name).toBe('Test Bookmark');
-      expect(bookmark.url).toBe('https://example.com');
-
-      const bookmarks = await handler.getBookmarks(testNodeId);
-      expect(bookmarks).toHaveLength(1);
-      expect(bookmarks[0]?.id).toBe(bookmark.id);
-    });
-
-    it('should remove bookmarks', async () => {
-      await handler.createEntity(testNodeId, { name: 'Test Folder' });
-      const bookmark = await handler.addBookmark(testNodeId, {
-        name: 'Test Bookmark',
-        url: 'https://example.com',
-        type: 'group',
-        version: 1,
-        nodeId: testNodeId,
-        groupId: 'test-group',
-        updatedAt: Date.now()
-      });
-
-      await handler.removeBookmark(bookmark.id);
-      
-      const bookmarks = await handler.getBookmarks(testNodeId);
-      expect(bookmarks).toHaveLength(0);
-    });
-  });
-
-  describe('template operations', () => {
-    it('should add and retrieve templates', async () => {
-      const entity = await handler.createEntity(testNodeId, { name: 'Test Folder' });
-      
-      const template = await handler.addTemplate(testNodeId, {
-        name: 'Test Template',
-        content: { type: 'folder', children: [] },
-        description: 'A test template',
-        type: 'group',
-        version: 1,
-        nodeId: testNodeId,
-        groupId: 'test-group',
-        updatedAt: Date.now()
-      });
-
-      expect(template.folderId).toBe(entity.id);
-      expect(template.name).toBe('Test Template');
-
-      const templates = await handler.getTemplates(testNodeId);
-      expect(templates).toHaveLength(1);
-      expect(templates[0]?.id).toBe(template.id);
-    });
-  });
-
   describe('search operations', () => {
     it('should search folders by name and description', async () => {
-      await handler.createEntity('node1' as NodeId, { 
+      await handler.createEntity('node1' as NodeId, {
         name: 'Important Documents',
-        description: 'Contains important files'
+        description: 'Contains important files',
       });
-      await handler.createEntity('node2' as NodeId, { 
+      await handler.createEntity('node2' as NodeId, {
         name: 'Photos',
-        description: 'Family photos collection'
+        description: 'Family photos collection',
       });
-      await handler.createEntity('node3' as NodeId, { 
+      await handler.createEntity('node3' as NodeId, {
         name: 'Work Files',
-        description: 'Important work documents'
+        description: 'Important work documents',
       });
 
       const results = await handler.searchFolders('important');
       expect(results).toHaveLength(2);
-      
-      const names = results.map(r => r.name);
+
+      const names = results.map((r) => r.name);
       expect(names).toContain('Important Documents');
       expect(names).toContain('Work Files');
     });

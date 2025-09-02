@@ -3,7 +3,7 @@
  * @description Base handler for entities with hierarchical parent-child relationships
  */
 
-import type { NodeId, BaseEntity, WorkingCopy } from '@hierarchidb/common-type';
+import type { NodeId, BaseEntity } from '@hierarchidb/common-type';
 import type { Collection } from 'dexie';
 import { BaseEntityHandler } from './BaseEntityHandler';
 import type { BaseSearchCriteria } from '../types';
@@ -12,7 +12,7 @@ import type { BaseSearchCriteria } from '../types';
  * Entity interface for hierarchical structures
  */
 export interface HierarchicalEntity extends BaseEntity {
-  nodeId: NodeId;  // Required for hierarchical entities
+  nodeId: NodeId; // Required for hierarchical entities
   parentId?: NodeId;
   depth?: number;
   path?: string;
@@ -44,10 +44,9 @@ export interface TreeNode<TEntity extends HierarchicalEntity> {
  */
 export abstract class HierarchicalEntityHandler<
   TEntity extends HierarchicalEntity,
-  TWorkingCopy extends WorkingCopy,
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
   TSearchCriteria extends HierarchicalSearchCriteria = HierarchicalSearchCriteria,
-> extends BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria> {
+> extends BaseEntityHandler<TEntity, TCreateData, TSearchCriteria> {
   /**
    * Get direct children of a node
    */

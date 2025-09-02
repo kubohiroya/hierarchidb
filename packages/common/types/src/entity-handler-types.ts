@@ -1,13 +1,11 @@
 import { EntityBackup } from './entity-backup-types';
 import { GroupEntity, PeerEntity } from './entity-types';
 import { NodeId } from './id-types';
-import { WorkingCopyProperties } from './working-copy-types';
 
 // エンティティハンドラー
 export interface EntityHandler<
   TEntity extends PeerEntity = PeerEntity,
   TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
 > {
   // エンティティ操作
   createEntity(nodeId: NodeId, data?: Partial<TEntity>): Promise<TEntity>;
@@ -21,8 +19,8 @@ export interface EntityHandler<
   deleteGroupEntities?(nodeId: NodeId, groupEntityType: string): Promise<void>;
 
   // ワーキングコピー操作
-  createWorkingCopy(nodeId: NodeId): Promise<TWorkingCopy>;
-  commitWorkingCopy(nodeId: NodeId, workingCopy: TWorkingCopy): Promise<void>;
+  createWorkingCopy(nodeId: NodeId): Promise<TEntity>;
+  commitWorkingCopy(nodeId: NodeId, workingCopy: TEntity): Promise<void>;
   discardWorkingCopy(nodeId: NodeId): Promise<void>;
 
   // 特殊操作

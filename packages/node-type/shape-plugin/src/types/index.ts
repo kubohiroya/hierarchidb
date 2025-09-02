@@ -2,10 +2,16 @@ import type { NodeId, PeerEntity, EntityId, TagId } from '@hierarchidb/common-ty
 
 // Category types
 export type { ShapeCategory } from './category-types';
-export { SHAPE_CATEGORIES, DEFAULT_SHAPE_CATEGORY, getCategoryOption, getCategoryLabel, getCategoryColor } from './category-types';
+export {
+  SHAPE_CATEGORIES,
+  DEFAULT_SHAPE_CATEGORY,
+  getCategoryOption,
+  getCategoryLabel,
+  getCategoryColor,
+} from './category-types';
 import type { Geometry, BBox } from 'geojson';
 
-// Types are imported from shared/types.ts via shared/openstreetmap-type.ts
+// Types are imported from shared/lifecycle-types.ts via shared/openstreetmap-type.ts
 
 // ================================
 // Core Entity Types

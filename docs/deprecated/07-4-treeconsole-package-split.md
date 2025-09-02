@@ -122,7 +122,7 @@ packages/
 ├── ui-treeconsole-breadcrumb/
 │   ├── src/
 │   │   ├── TreeConsoleBreadcrumb.tsx
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -131,7 +131,7 @@ packages/
 │   ├── src/
 │   │   ├── TreeConsoleToolbar.tsx
 │   │   ├── TreeConsoleActions.tsx
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -139,7 +139,7 @@ packages/
 ├── ui-treeconsole-footer/
 │   ├── src/
 │   │   ├── TreeConsoleFooter.tsx
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -152,7 +152,7 @@ packages/
 │   │   │   └── TreeTableBody.tsx
 │   │   ├── TreeTableCore.tsx
 │   │   ├── columns/
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -161,7 +161,7 @@ packages/
 │   ├── src/
 │   │   ├── TrashBinColumns.tsx
 │   │   ├── TrashBinActions.tsx
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -169,7 +169,7 @@ packages/
 ├── ui-treeconsole-speeddial/
 │   ├── src/
 │   │   ├── TreeConsoleSpeedDialDeprecated.tsx
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -227,7 +227,7 @@ packages/
 各プレゼンテーション層パッケージは、propsを通じてのみ外部と通信：
 
 ```typescript
-// ui-treeconsole-toolbar/types.ts
+// ui-treeconsole-toolbar/lifecycle-types.ts
 export interface TreeConsoleToolbarProps {
   selectedCount: number;
   totalCount: number;
@@ -242,7 +242,7 @@ export interface TreeConsoleToolbarProps {
 UIイベントはコールバック関数として親コンポーネントに通知：
 
 ```typescript
-// ui-treeconsole-treetable/types.ts
+// ui-treeconsole-treetable/lifecycle-types.ts
 export interface TreeTableViewProps {
   onRowClick?: (nodeId: string) => void;
   onExpandedChange?: (nodeId: string) => void;

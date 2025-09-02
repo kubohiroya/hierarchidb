@@ -346,7 +346,7 @@ graph TB
     end
     
     subgraph "Plugin Management"
-        PluginRegistry["Plugin Registry"]
+        PluginRegistryImpl["Plugin Registry"]
         DependencyResolution["Dependency Resolution"]
         VersionManagement["Version Management"]
         ConflictResolution["Conflict Resolution"]
@@ -362,7 +362,7 @@ graph TB
     HandlerRegistration --> ComponentMount
     UIRegistration --> EventBinding
     
-    DynamicImport --> PluginRegistry
+    DynamicImport --> PluginRegistryImpl
     TypeRegistration --> DependencyResolution
     ComponentMount --> VersionManagement
     EventBinding --> ConflictResolution
@@ -375,7 +375,7 @@ graph TB
     class PluginMetadata,PluginDefinition,EntitySchema,UIComponents definition
     class ValidationStep,SchemaRegistration,HandlerRegistration,UIRegistration registration
     class DynamicImport,TypeRegistration,ComponentMount,EventBinding integration
-    class PluginRegistry,DependencyResolution,VersionManagement,ConflictResolution management
+    class PluginRegistryImpl,DependencyResolution,VersionManagement,ConflictResolution management
 ```
 
 ### 20.2 プラグインAPI契約 (Plugin API Contract) ⭐️⭐️⭐️⭐️⭐️

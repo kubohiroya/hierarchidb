@@ -81,7 +81,7 @@ pnpm --filter @hierarchidb/node-type-route-plugin build
 
 ### shape-plugin依存
 route-pluginのエラーは**shape-pluginの修正待ち**のみ：
-- ✅ shape-pluginのcategory-types.ts JSX構文修正が必要
+- ✅ shape-pluginのcategory-lifecycle-types.ts JSX構文修正が必要
 - ✅ 修正完了後、route-pluginは自動的に正常動作
 
 ### 既存機能の完全保持

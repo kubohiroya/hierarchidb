@@ -1,5 +1,5 @@
 /**
- * @file stepper-base-dialog-types.ts
+ * @file stepper-base-dialog-lifecycle-types.ts
  * @description プラグイン拡張システムの基本型定義
  */
 

@@ -1,88 +1,128 @@
-// Database exports
+import {
+  ImportExportAPI,
+  TagAPI,
+  TreeMutationAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  WorkerAPI,
+} from '@hierarchidb/common-api';
+import { CoreDB } from './services/CoreDB';
+import { EphemeralDB } from './services/EphemeralDB';
+import { NodeLifecycleManager } from './services/NodeLifecycleManager';
+import { CommandProcessor } from './services/CommandProcessor';
+import { PluginDefinition } from '@hierarchidb/common-type';
+import { TreeQueryService } from 'services/TreeQueryService';
+import { SingletonMixin } from '@hierarchidb/util';
+import { TreeMutationService } from './services/TreeMutationService';
+import { TreeSubscriptionService } from './services/TreeSubscriptionService';
+import { TagService } from './services/TagService';
+import { ImportExportService } from './services/ImportExportService';
+import { proxy, ProxyMarked } from 'comlink';
 
-// Client exports
-export { createWorkerClient, createWorkerClientFromInstance } from '~/client';
+export class WorkerService implements WorkerAPI {
+  static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
+    return SingletonMixin.getSingleton(WorkerService.name, async () => {
+      const coreDB: CoreDB = await CoreDB.getSingleton();
+      const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
+      // Tag service
+      const tagService: TagAPI = await TagService.getSingleton(coreDB);
 
-// Command exports
-export { CommandProcessor } from '~/command';
-export type { CommandEnvelope, CommandMeta, CommandResult, CommandEvent } from '~/command/types';
-export { WorkerErrorCode } from '~/command/types';
+      // Query/Mutation services
+      const commandProcessor: CommandProcessor = await CommandProcessor.getSingleton(coreDB);
+      const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
+      const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
+        coreDB,
+        commandProcessor
+      );
+      const treeSubscriptionService: TreeSubscriptionAPI =
+        await TreeSubscriptionService.getSingleton(coreDB);
 
-// Database exports
-export { CoreDB } from '~/db/CoreDB';
-export { EphemeralDB } from '~/db/EphemeralDB';
-export { StylerDB } from '~/db/StylerDB';
-export { SpreadsheetDB } from '~/db/SpreadsheetDB';
-export {
-  EntityDatabase,
-  DexieAdapter,
-  ExpirationCleaner,
-  TransactionManager,
-  DexieEntityManagerFactory,
-} from '~/db/dexieIntegration';
-export type { WorkingCopyRow, TreeViewStateRow } from '~/db/EphemeralDB';
-export type { ColorRule, StylerEntity } from '~/db/StylerDB';
-export type {
-  SpreadsheetMetadata,
-  SpreadsheetChunk,
-  SpreadsheetRefEntity,
-  SpreadsheetMetadataId,
-} from '~/db/SpreadsheetDB';
-// Handler exports
-export {
-  BaseEntityHandler,
-  // PeerEntityHandler, // Temporarily disabled - needs update to new API
-  // GroupEntityHandler, // Temporarily disabled - needs update to new API
-  // WorkingCopyHandler, // Temporarily disabled - needs update to new API
-} from '~/handlers';
+      const pluginMap: { [key: string]: PluginDefinition } = Object.fromEntries(
+        plugins.map((plugin) => [plugin.name, plugin])
+      );
 
-// Auto Lifecycle Management exports
-export { EntityRegistrationService } from '~/services/EntityRegistrationService';
-export { WorkingCopyManager, WorkingCopySession } from '~/services/WorkingCopyManager';
-export { AutoLifecycleManager } from '~/services/AutoLifecycleManager';
-export { AutoEntityHandler } from '~/handlers/AutoEntityHandler';
+      const nodeLifecycleManager: NodeLifecycleManager = await NodeLifecycleManager.getSingleton(
+        coreDB,
+        pluginMap
+      );
 
-// Lifecycle exports
-export { NodeLifecycleManager } from '~/lifecycle/NodeLifecycleManager';
-export type {
-  NodeLifecycleHooks as LifecycleHooks,
-  LifecycleContext,
-  LifecycleEvent,
-} from '~/lifecycle/types';
+      // Import/Export services
+      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(coreDB);
 
-// Operations exports
-export {
-  checkWorkingCopyConflict,
-  commitWorkingCopy,
-  createNewDraftWorkingCopy,
-  createNewName,
-  createWorkingCopyFromNode,
-  discardWorkingCopy,
-  getChildNames,
-  getWorkingCopy,
-  updateWorkingCopy,
-} from '~/operations/WorkingCopyOperations';
+      return new WorkerService(
+        plugins,
+        coreDB,
+        ephemeralDB,
+        proxy(treeQueryService),
+        proxy(treeMutationService),
+        proxy(treeSubscriptionService),
+        proxy(importExportService),
+        proxy(tagService),
+        proxy(nodeLifecycleManager),
+        proxy(commandProcessor)
+      );
+    });
+  }
 
+  constructor(
+    private plugins: PluginDefinition[],
+    private coreDB: CoreDB,
+    private ephemeralDB: EphemeralDB,
+    private queryService: TreeQueryAPI & ProxyMarked,
+    private mutationService: TreeMutationAPI & ProxyMarked,
+    private subscriptionService: TreeSubscriptionAPI & ProxyMarked,
+    private importExportService: ImportExportAPI & ProxyMarked,
+    private tagService: TagAPI & ProxyMarked,
+    private nodeLifecycleManager: NodeLifecycleManager & ProxyMarked,
+    private commandProcessor: CommandProcessor & ProxyMarked
+  ) {}
 
+  ping(): { response: 'pong'; timestamp: number } {
+    console.log('[WorkerAPIImpl] ping() called');
+    return {
+      response: 'pong',
+      timestamp: Date.now(),
+    };
+  }
 
-// Service exports (needed for WorkerAPIImpl return types)
-export { TreeQueryService } from '~/services/TreeQueryService';
-export { TreeMutationService } from '~/services/TreeMutationService';
-export { TreeSubscriptionService } from '~/services/TreeSubscriptionService';
-export { PluginManagementService } from '~/services/PluginManagementService';
+  async shutdown(): Promise<void> {
+    // Cleanup all subscriptions
+    await this.subscriptionService.unsubscribeAll();
 
-// API exports (新旧両対応)
-export { WorkerAPIImpl } from '~/WorkerAPIImpl'; // 後方互換性のため一時的に維持
-export { WorkerService } from '~/4-api-implementation/WorkerService'; // 新しい窓口API
-export { Bootstrap } from '~/1-bootstrap/Bootstrap'; // 新しいブートストラップ
+    // Close databases
+    this.coreDB.close();
+    this.ephemeralDB.close();
+  }
 
-// Plugin exports
-export type {
-  PluginConfig,
-  NodeTypeConfig,
-  DatabaseConfig,
-  TableConfig,
-  DependencyConfig,
-  LifecycleConfig,
-  PluginContext,
-} from '~/plugin/PluginLoader';
+  getQueryAPI(): TreeQueryAPI & ProxyMarked {
+    return this.queryService;
+  }
+
+  getMutationAPI(): TreeMutationAPI & ProxyMarked {
+    return this.mutationService;
+  }
+
+  getSubscriptionAPI(): TreeSubscriptionAPI & ProxyMarked {
+    return this.subscriptionService;
+  }
+
+  getWorkingCopyAPI(): any {
+    throw null; //this.
+  }
+
+  getImportExportAPI(): ImportExportAPI & ProxyMarked {
+    return this.importExportService;
+  }
+
+  getTagAPI(): TagAPI & ProxyMarked {
+    return this.tagService;
+  }
+
+  getNodeLifecycleManager(): NodeLifecycleManager & ProxyMarked {
+    return this.nodeLifecycleManager;
+  }
+
+  getCommandProcessor(): CommandProcessor & ProxyMarked {
+    return this.commandProcessor;
+  }
+}

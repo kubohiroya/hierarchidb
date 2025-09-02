@@ -147,7 +147,7 @@ async copyNodes(payload: CopyNodesPayload): Promise<CoreCommandResult> {
 
 #### 1.2 CoreCommandResult型の拡張
 ```typescript
-// packages/core/src/types/command-types.ts
+// packages/core/src/types/command-types
 export type CommandResult =
   | {
       success: true;

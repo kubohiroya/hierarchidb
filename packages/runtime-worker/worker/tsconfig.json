@@ -17,7 +17,7 @@
     "strictNullChecks": false,
     "strict": true,
     "noImplicitAny": false,
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
       "~/*": ["src/*"]
     }

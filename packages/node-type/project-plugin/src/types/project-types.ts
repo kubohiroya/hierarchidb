@@ -1,5 +1,6 @@
 import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import type * as GeoJSON from 'geojson';
+import type { NodeType } from '@hierarchidb/common-type';
 
 // ==================== 基本設定 ====================
 
@@ -623,11 +624,11 @@ export interface ProjectTile {
 
 // ProjectWorkingCopy extends the entity with working copy properties
 // To satisfy the WorkingCopy constraint, we need TreeNode properties
-export interface ProjectWorkingCopy extends ProjectEntity {
+export interface ProjectWorkingCopy extends Omit<ProjectEntity, 'id'> {
   // TreeNode required properties (from NodeBase)
-  id: EntityId;
+  id: NodeId;  // Changed from EntityId to NodeId to match TreeNode
   parentId: NodeId;
-  nodeType: string;
+  nodeType: NodeType;
   nodeId: NodeId;
   name: string;
   depth: number;

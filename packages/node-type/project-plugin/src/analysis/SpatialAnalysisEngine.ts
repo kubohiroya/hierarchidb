@@ -9,7 +9,7 @@ import type {
   ClusterAnalysis,
   DensityAnalysis,
   NetworkAnalysis,
-  AnalysisResult
+  AnalysisResult,
 } from '~/types/project-types';
 import type { EntityId } from '@hierarchidb/common-type';
 
@@ -38,9 +38,9 @@ export class SpatialAnalysisEngine {
         case 'union':
           result = await this.executeUnion(inputData);
           break;
-        case 'difference':
-          result = await this.executeDifference(inputData);
-          break;
+        //case 'difference':
+        //result = await this.executeDifference(inputData);
+        //break;
         case 'nearest':
           result = await this.executeNearest(analysis.nearest!, inputData);
           break;
@@ -68,7 +68,7 @@ export class SpatialAnalysisEngine {
         result: {
           type: 'features',
           data: result,
-          summary: this.generateSummary(result)
+          summary: this.generateSummary(result),
         },
         executedAt: Date.now(),
         executionTime: Date.now() - startTime,
@@ -76,7 +76,7 @@ export class SpatialAnalysisEngine {
         errors: errors.length > 0 ? errors : undefined,
         warnings: warnings.length > 0 ? warnings : undefined,
         outputLayerId: analysis.output.saveAsLayer ? `${analysis.id}-output` : undefined,
-        cached: false
+        cached: false,
       };
     } catch (error) {
       return {
@@ -90,13 +90,13 @@ export class SpatialAnalysisEngine {
         result: {
           type: 'features',
           data: null,
-          summary: {}
+          summary: {},
         },
         executedAt: Date.now(),
         executionTime: Date.now() - startTime,
         status: 'failed',
         errors: [error instanceof Error ? error.message : 'Unknown error'],
-        cached: false
+        cached: false,
       };
     }
   }
@@ -113,42 +113,43 @@ export class SpatialAnalysisEngine {
       throw new Error(`Source layer ${config.sourceLayer} not found`);
     }
 
-    const buffered = sourceData.features.map((feature, index) => {
-      const buffer = turf.buffer(
-        feature,
-        config.distance,
-        {
+    const buffered = sourceData.features
+      .map((feature, index) => {
+        const buffer = turf.buffer(feature, config.distance, {
           units: config.unit as any,
-          steps: config.endCap === 'round' ? 64 : 8
+          steps: config.endCap === 'round' ? 64 : 8,
+        });
+
+        if (buffer && buffer.geometry) {
+          buffer.properties = {
+            ...feature.properties,
+            _buffer_distance: config.distance,
+            _buffer_unit: config.unit,
+            _original_id: index,
+          };
         }
-      );
-      
-      if (buffer && buffer.geometry) {
-        buffer.properties = {
-          ...feature.properties,
-          _buffer_distance: config.distance,
-          _buffer_unit: config.unit,
-          _original_id: index
-        };
-      }
-      
-      return buffer;
-    }).filter(Boolean) as Feature[];
+
+        return buffer;
+      })
+      .filter(Boolean) as Feature[];
 
     // Dissolve if requested
     if (config.dissolve && buffered.length > 0) {
-      const dissolved = buffered.reduce((acc: Feature | undefined, curr) => {
-        return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
-      }, buffered[0] as Feature | undefined);
+      const dissolved = buffered.reduce(
+        (acc: Feature | undefined, curr) => {
+          return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
+        },
+        buffered[0] as Feature | undefined
+      );
       return {
         type: 'FeatureCollection',
-        features: dissolved ? [dissolved as Feature] : []
+        features: dissolved ? [dissolved as Feature] : [],
       };
     }
 
     return {
       type: 'FeatureCollection',
-      features: buffered
+      features: buffered,
     };
   }
 
@@ -172,7 +173,7 @@ export class SpatialAnalysisEngine {
       for (const feature2 of layer2.features) {
         try {
           let intersects = false;
-          
+
           switch (config.spatialRelation) {
             case 'intersects':
               intersects = turf.booleanIntersects(feature1, feature2);
@@ -193,12 +194,12 @@ export class SpatialAnalysisEngine {
             if (intersection) {
               // Merge properties based on config
               let properties: any = {};
-              
+
               switch (config.outputFields) {
                 case 'all':
                   properties = {
                     ...feature1.properties,
-                    ...feature2.properties
+                    ...feature2.properties,
                   };
                   break;
                 case 'layer1':
@@ -208,7 +209,7 @@ export class SpatialAnalysisEngine {
                   properties = { ...feature2.properties };
                   break;
               }
-              
+
               intersection.properties = properties;
               intersections.push(intersection);
             }
@@ -222,7 +223,7 @@ export class SpatialAnalysisEngine {
 
     return {
       type: 'FeatureCollection',
-      features: intersections
+      features: intersections,
     };
   }
 
@@ -233,8 +234,8 @@ export class SpatialAnalysisEngine {
     inputData: Map<string, FeatureCollection>
   ): Promise<FeatureCollection> {
     const allFeatures: Feature[] = [];
-    
-    inputData.forEach(collection => {
+
+    inputData.forEach((collection) => {
       allFeatures.push(...collection.features);
     });
 
@@ -243,18 +244,21 @@ export class SpatialAnalysisEngine {
     }
 
     try {
-      const unioned = allFeatures.reduce((acc: Feature | undefined, curr) => {
-        return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
-      }, allFeatures[0] as Feature | undefined);
+      const unioned = allFeatures.reduce(
+        (acc: Feature | undefined, curr) => {
+          return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
+        },
+        allFeatures[0] as Feature | undefined
+      );
       return {
         type: 'FeatureCollection',
-        features: unioned ? [unioned as Feature] : []
+        features: unioned ? [unioned as Feature] : [],
       };
     } catch (err) {
       // If union fails, return original features
       return {
         type: 'FeatureCollection',
-        features: allFeatures
+        features: allFeatures,
       };
     }
   }
@@ -262,40 +266,42 @@ export class SpatialAnalysisEngine {
   /**
    * Difference Analysis - Subtract one layer from another
    */
-  private async executeDifference(
-    inputData: Map<string, FeatureCollection>
-  ): Promise<FeatureCollection> {
-    const layers = Array.from(inputData.values());
-    if (layers.length < 2) {
-      throw new Error('At least 2 layers required for difference analysis');
-    }
-
-    let result = layers[0]?.features?.[0];
-    if (!result) {
-      return { type: 'FeatureCollection', features: [] };
-    }
-    
-    for (let i = 1; i < layers.length; i++) {
-      for (const feature of layers[i]?.features || []) {
-        if (!feature) continue;
-        try {
-          if (!result) continue;
-          const featureCollection = turf.featureCollection([result as any, feature as any]);
-          const diff = turf.difference(featureCollection);
-          if (diff) {
-            result = diff;
-          }
-        } catch (err) {
-          console.warn('Difference operation failed:', err);
-        }
-      }
-    }
-
-    return {
-      type: 'FeatureCollection',
-      features: result ? [result] : []
-    };
+  /*
+private async executeDifference(
+  inputData: Map<string, FeatureCollection>
+): Promise<FeatureCollection> {
+  const layers = Array.from(inputData.values());
+  if (layers.length < 2) {
+    throw new Error('At least 2 layers required for difference analysis');
   }
+
+  let result = layers[0]?.features?.[0];
+  if (!result) {
+    return { type: 'FeatureCollection', features: [] };
+  }
+
+  for (let i = 1; i < layers.length; i++) {
+    //for (const feature of layers[i]?.features || []) {
+    //for (const feature of layers[i]) {
+      if (!layers[i]?.features) continue;
+      try {
+        if (!result) continue;
+        const diff = turf.difference(result, feature);
+        if (diff) {
+          result = diff;
+        }
+      } catch (err) {
+        console.warn('Difference operation failed:', err);
+      }
+    //}
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features: result ? [result] : []
+  };
+}
+   */
 
   /**
    * Nearest Neighbor Analysis
@@ -336,15 +342,15 @@ export class SpatialAnalysisEngine {
           // Create line from source to target
           const line = turf.lineString([
             fromPoint.geometry.coordinates,
-            turf.centroid(item.feature).geometry.coordinates
+            turf.centroid(item.feature).geometry.coordinates,
           ]);
-          
+
           line.properties = {
             from_id: fromFeature.properties?.id,
             to_id: item.feature.properties?.id,
-            distance: item.distance
+            distance: item.distance,
           };
-          
+
           results.push(line);
         } else {
           // Just mark the nearest features
@@ -353,7 +359,7 @@ export class SpatialAnalysisEngine {
             ...nearestFeature.properties,
             _nearest_from: fromFeature.properties?.id,
             _nearest_distance: item.distance,
-            _nearest_rank: kNearest.indexOf(item) + 1
+            _nearest_rank: kNearest.indexOf(item) + 1,
           };
           results.push(nearestFeature);
         }
@@ -362,7 +368,7 @@ export class SpatialAnalysisEngine {
 
     return {
       type: 'FeatureCollection',
-      features: results
+      features: results,
     };
   }
 
@@ -409,18 +415,18 @@ export class SpatialAnalysisEngine {
 
     // Assign cluster IDs to features
     const clusteredFeatures = features.map((feature, index) => {
-      const clusteredFeature = { ...feature };
+      const clusteredFeature = { ...feature } as Feature;
       clusteredFeature.properties = {
         ...clusteredFeature.properties,
         _cluster_id: clusters[index],
-        _cluster_algorithm: config.algorithm
+        _cluster_algorithm: config.algorithm,
       };
       return clusteredFeature;
     });
 
     return {
       type: 'FeatureCollection',
-      features: clusteredFeatures
+      features: clusteredFeatures,
     };
   }
 
@@ -434,11 +440,11 @@ export class SpatialAnalysisEngine {
     // Initialize centroids randomly
     const centroids: number[][] = [];
     const used = new Set<number>();
-    
+
     while (centroids.length < k) {
       const idx = Math.floor(Math.random() * points.length);
       if (!used.has(idx) && points[idx]) {
-        centroids.push([...points[idx]]);
+        centroids.push([...(points[idx] as number[])]);
         used.add(idx);
       }
     }
@@ -454,7 +460,7 @@ export class SpatialAnalysisEngine {
       for (let i = 0; i < points.length; i++) {
         const point = points[i];
         if (!point) continue;
-        
+
         let minDist = Infinity;
         let bestCluster = 0;
 
@@ -480,7 +486,7 @@ export class SpatialAnalysisEngine {
         if (clusterPoints.length > 0) {
           centroids[j] = [
             clusterPoints.reduce((sum, p) => sum + (p?.[0] ?? 0), 0) / clusterPoints.length,
-            clusterPoints.reduce((sum, p) => sum + (p?.[1] ?? 0), 0) / clusterPoints.length
+            clusterPoints.reduce((sum, p) => sum + (p?.[1] ?? 0), 0) / clusterPoints.length,
           ];
         }
       }
@@ -506,7 +512,7 @@ export class SpatialAnalysisEngine {
       if (labels[i] !== -1) continue; // Already processed
 
       const neighbors = this.getNeighbors(points, i, eps);
-      
+
       if (neighbors.length < minPoints) {
         labels[i] = -2; // Mark as noise
       } else {
@@ -516,14 +522,14 @@ export class SpatialAnalysisEngine {
     }
 
     // Convert noise points to cluster -1
-    return labels.map(label => label === -2 ? -1 : label);
+    return labels.map((label) => (label === -2 ? -1 : label));
   }
 
   private getNeighbors(points: number[][], pointIdx: number, eps: number): number[] {
     const neighbors: number[] = [];
     const point = points[pointIdx];
     if (!point) return neighbors;
-    
+
     for (let i = 0; i < points.length; i++) {
       const otherPoint = points[i];
       if (i !== pointIdx && otherPoint && this.euclideanDistance(point, otherPoint) <= eps) {
@@ -543,7 +549,7 @@ export class SpatialAnalysisEngine {
     minPoints: number
   ): void {
     labels[pointIdx] = clusterId;
-    
+
     let i = 0;
     while (i < neighbors.length) {
       const neighborIdx = neighbors[i];
@@ -551,12 +557,12 @@ export class SpatialAnalysisEngine {
         i++;
         continue;
       }
-      
+
       if ((labels[neighborIdx] ?? -1) === -1) {
         // Unvisited
         labels[neighborIdx] = clusterId;
         const newNeighbors = this.getNeighbors(points, neighborIdx, eps);
-        
+
         if (newNeighbors.length >= minPoints) {
           // Add new neighbors to the list
           for (const idx of newNeighbors) {
@@ -569,7 +575,7 @@ export class SpatialAnalysisEngine {
         // Was noise, now part of cluster
         labels[neighborIdx] = clusterId;
       }
-      
+
       i++;
     }
   }
@@ -580,7 +586,7 @@ export class SpatialAnalysisEngine {
   private async hierarchicalClustering(points: number[][], k: number): Promise<number[]> {
     // Start with each point as its own cluster
     let clusters: number[][] = points.map((_, i) => [i]);
-    
+
     while (clusters.length > k) {
       let minDist = Infinity;
       let merge = [-1, -1];
@@ -615,7 +621,7 @@ export class SpatialAnalysisEngine {
     // Create assignment array
     const assignments = new Array(points.length);
     clusters.forEach((cluster, clusterIdx) => {
-      cluster.forEach(pointIdx => {
+      cluster.forEach((pointIdx) => {
         assignments[pointIdx] = clusterIdx;
       });
     });
@@ -658,23 +664,20 @@ export class SpatialAnalysisEngine {
     const grid = turf.squareGrid(bbox, config.cellSize / 1000, { units: 'kilometers' });
 
     // Calculate density for each cell
-    grid.features.forEach(cell => {
+    grid.features.forEach((cell) => {
       let value = 0;
-      
+
       for (const feature of layer.features) {
         const centroid = turf.centroid(feature);
-        const distance = turf.distance(
-          turf.centroid(cell),
-          centroid,
-          { units: 'meters' }
-        );
+        const distance = turf.distance(turf.centroid(cell), centroid, { units: 'meters' });
 
         if (distance <= config.radius) {
           // Kernel density function (Gaussian)
-          const weight = config.weightField && feature.properties
-            ? feature.properties[config.weightField] || 1
-            : 1;
-          
+          const weight =
+            config.weightField && feature.properties
+              ? feature.properties[config.weightField] || 1
+              : 1;
+
           if (config.type === 'kernel') {
             const kernel = Math.exp(-0.5 * Math.pow(distance / config.radius, 2));
             value += weight * kernel;
@@ -687,7 +690,7 @@ export class SpatialAnalysisEngine {
       cell.properties = {
         density: value,
         radius: config.radius,
-        cellSize: config.cellSize
+        cellSize: config.cellSize,
       };
     });
 
@@ -717,16 +720,12 @@ export class SpatialAnalysisEngine {
         // Create service areas around facilities
         for (const facility of facilities.features) {
           if (!facility) continue;
-          const serviceArea = turf.buffer(
-            facility,
-            config.cutoff || 1000,
-            { units: 'meters' }
-          );
-          
+          const serviceArea = turf.buffer(facility, config.cutoff || 1000, { units: 'meters' });
+
           if (serviceArea) {
             serviceArea.properties = {
               ...(facility.properties || {}),
-              _service_area_radius: config.cutoff
+              _service_area_radius: config.cutoff,
             };
             results.push(serviceArea);
           }
@@ -739,22 +738,19 @@ export class SpatialAnalysisEngine {
           const feature1 = facilities.features[i];
           const feature2 = facilities.features[i + 1];
           if (!feature1 || !feature2) continue;
-          
+
           const from = turf.centroid(feature1);
           const to = turf.centroid(feature2);
           if (!from || !to) continue;
-          
-          const path = turf.lineString([
-            from.geometry.coordinates,
-            to.geometry.coordinates
-          ]);
-          
+
+          const path = turf.lineString([from.geometry.coordinates, to.geometry.coordinates]);
+
           path.properties = {
             from_id: feature1.properties?.id,
             to_id: feature2.properties?.id,
-            distance: turf.distance(from, to)
+            distance: turf.distance(from, to),
           };
-          
+
           results.push(path);
         }
         break;
@@ -777,18 +773,18 @@ export class SpatialAnalysisEngine {
           if (closestFacility && nodePoint?.geometry?.coordinates) {
             const facilityCenter = turf.centroid(closestFacility);
             if (!facilityCenter?.geometry?.coordinates) continue;
-            
+
             const connection = turf.lineString([
               nodePoint.geometry.coordinates,
-              facilityCenter.geometry.coordinates
+              facilityCenter.geometry.coordinates,
             ]);
-            
+
             connection.properties = {
               node_id: node.properties?.id,
               facility_id: closestFacility.properties?.id,
-              distance: minDist
+              distance: minDist,
             };
-            
+
             results.push(connection);
           }
         }
@@ -797,7 +793,7 @@ export class SpatialAnalysisEngine {
 
     return {
       type: 'FeatureCollection',
-      features: results
+      features: results,
     };
   }
 
@@ -809,15 +805,14 @@ export class SpatialAnalysisEngine {
       return 0;
     }
     return Math.sqrt(
-      Math.pow((p1[0] ?? 0) - (p2[0] ?? 0), 2) + 
-      Math.pow((p1[1] ?? 0) - (p2[1] ?? 0), 2)
+      Math.pow((p1[0] ?? 0) - (p2[0] ?? 0), 2) + Math.pow((p1[1] ?? 0) - (p2[1] ?? 0), 2)
     );
   }
 
   private extractParameters(analysis: SpatialAnalysis): Record<string, any> {
     const params: Record<string, any> = {
       type: analysis.type,
-      name: analysis.name
+      name: analysis.name,
     };
 
     switch (analysis.type) {
@@ -845,8 +840,8 @@ export class SpatialAnalysisEngine {
 
     const summary: Record<string, any> = {
       featureCount: result.features.length,
-      geometryTypes: new Set(result.features.map(f => f.geometry?.type)).size,
-      bbox: turf.bbox(result)
+      geometryTypes: new Set(result.features.map((f) => f.geometry?.type)).size,
+      bbox: turf.bbox(result),
     };
 
     // Calculate area/length statistics
@@ -884,7 +879,7 @@ export class SpatialAnalysisEngine {
   ): Promise<FeatureCollection> {
     const features: Feature[] = [];
     const [minLng, minLat, maxLng, maxLat] = bbox;
-    
+
     // Generate H3 hexagons covering the bbox
     const step = 0.01; // Approximate step size
     const hexagons = new Set<string>();
@@ -897,10 +892,10 @@ export class SpatialAnalysisEngine {
     }
 
     // Convert H3 indices to GeoJSON polygons
-    hexagons.forEach(h3Index => {
+    hexagons.forEach((h3Index) => {
       const boundary = cellToBoundary(h3Index, true);
       if (!boundary || !Array.isArray(boundary)) return;
-      
+
       const coordinates = boundary.map(([lat, lng]) => [lng, lat]);
       if (coordinates.length > 0 && coordinates[0]) {
         coordinates.push(coordinates[0]); // Close the polygon
@@ -910,18 +905,18 @@ export class SpatialAnalysisEngine {
         type: 'Feature',
         properties: {
           h3_index: h3Index,
-          resolution
+          resolution,
         },
         geometry: {
           type: 'Polygon',
-          coordinates: [coordinates]
-        }
+          coordinates: [coordinates],
+        },
       });
     });
 
     return {
       type: 'FeatureCollection',
-      features
+      features,
     };
   }
 }

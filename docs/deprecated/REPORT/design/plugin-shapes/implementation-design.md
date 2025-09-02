@@ -143,7 +143,7 @@ export const shapesPlugin: PluginConfig = {
       },
       onEnable: async (context) => {
         // WebWorkerの初期化
-        await context.workerRegistry?.registerWorker('_shapes_buggy', '/db/ShapesWorker.js');
+        await context.workerRegistry?.registerWorker('_shapes_buggy', '/services/ShapesWorker.js');
       },
       onDisable: async (context) => {
         await context.workerRegistry?.unregisterWorker('_shapes_buggy');
@@ -748,8 +748,8 @@ Comlink.expose(new ShapesWorkerImpl());
  */
 import type { ShapesEntity, BatchTaskLike } from "../types";
 import type { TreeNodeId } from "@hierarchidb/core";
-import { BaseResourceWorkerService } from "@/shared/db/services/BaseResourceWorkerService";
-import type { ShapesWorkerAPI } from "../db/ShapesWorkerAPI";
+import { BaseResourceWorkerService } from "@/shared/services/services/BaseResourceWorkerService";
+import type { ShapesWorkerAPI } from "../services/ShapesWorkerAPI";
 
 export interface IShapesService {
   // 基本CRUD

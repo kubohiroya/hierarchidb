@@ -11,8 +11,7 @@ import {
   type HierarchicalSearchCriteria,
 } from '@hierarchidb/base-plugin';
 
-import type { FolderEntity, FolderBookmark, FolderTemplate } from '../entities/FolderEntity';
-import type { FolderEntityWorkingCopy } from '../types/index';
+import type { FolderEntity } from '../entities/FolderEntity';
 import { FolderDatabase } from '../database/FolderDatabase';
 
 /**
@@ -32,12 +31,7 @@ export interface FolderSearchCriteria extends HierarchicalSearchCriteria {
 /**
  * Folder entity handler with hierarchical support
  */
-export class FolderEntityHandler extends HierarchicalEntityHandler<
-  FolderEntityExtended,
-  FolderEntityWorkingCopy,
-  Partial<FolderEntity>,
-  FolderSearchCriteria
-> {
+export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityExtended> {
   public folderDB: FolderDatabase;
   protected table: Table<FolderEntityExtended, EntityId>;
 
@@ -91,134 +85,6 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
   }
 
   // ========== Folder-specific methods ==========
-
-  /**
-   * Add bookmark to folder
-   */
-  async addBookmark(
-    nodeId: NodeId,
-    bookmark: Omit<FolderBookmark, 'id' | 'folderId'>
-  ): Promise<void> {
-    const entity = await this.getEntityByNodeId(nodeId);
-    if (!entity) {
-      throw new Error(`Folder not found: ${nodeId}`);
-    }
-
-    const bookmarkRecord: FolderBookmark = {
-      id: crypto.randomUUID(),
-      folderId: nodeId,
-      ...bookmark,
-      createdAt: Date.now(),
-    };
-
-    await this.folderDB.bookmarks.add(bookmarkRecord);
-  }
-
-  /**
-   * Remove bookmark from folder
-   */
-  async removeBookmark(nodeId: NodeId, bookmarkId: string): Promise<void> {
-    await this.folderDB.bookmarks
-      .where('id')
-      .equals(bookmarkId)
-      .and((item) => item.folderId === nodeId)
-      .delete();
-  }
-
-  /**
-   * Get bookmarks for folder
-   */
-  async getBookmarks(nodeId: NodeId): Promise<FolderBookmark[]> {
-    return await this.folderDB.bookmarks.where('folderId').equals(nodeId).toArray();
-  }
-
-  /**
-   * Add template to folder
-   */
-  async addTemplate(
-    nodeId: NodeId,
-    template: Omit<FolderTemplate, 'id' | 'folderId'>
-  ): Promise<void> {
-    const entity = await this.getEntityByNodeId(nodeId);
-    if (!entity) {
-      throw new Error(`Folder not found: ${nodeId}`);
-    }
-
-    const templateRecord: FolderTemplate = {
-      id: crypto.randomUUID(),
-      folderId: nodeId,
-      ...template,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-
-    await this.folderDB.templates.add(templateRecord);
-  }
-
-  /**
-   * Remove template from folder
-   */
-  async removeTemplate(nodeId: NodeId, templateId: string): Promise<void> {
-    await this.folderDB.templates
-      .where('id')
-      .equals(templateId)
-      .and((item) => item.folderId === nodeId)
-      .delete();
-  }
-
-  /**
-   * Get templates for folder
-   */
-  async getTemplates(nodeId: NodeId): Promise<FolderTemplate[]> {
-    return await this.folderDB.templates.where('folderId').equals(nodeId).toArray();
-  }
-
-  /**
-   * Search folders with extended criteria
-   */
-  async searchFolders(criteria: FolderSearchCriteria): Promise<FolderEntityExtended[]> {
-    let results = await this.searchEntities(criteria);
-
-    // Apply folder-specific filters
-    if (criteria.category) {
-      results = results.filter((f) => f.category === criteria.category);
-    }
-
-    if (criteria.hasBookmarks !== undefined) {
-      const folderIds = await this.getFoldersWithBookmarks();
-      results = results.filter((f) => {
-        const hasBookmarks = folderIds.includes(f.nodeId);
-        return hasBookmarks === criteria.hasBookmarks;
-      });
-    }
-
-    if (criteria.hasTemplates !== undefined) {
-      const folderIds = await this.getFoldersWithTemplates();
-      results = results.filter((f) => {
-        const hasTemplates = folderIds.includes(f.nodeId);
-        return hasTemplates === criteria.hasTemplates;
-      });
-    }
-
-    return results;
-  }
-
-  /**
-   * Get folders that have bookmarks
-   */
-  private async getFoldersWithBookmarks(): Promise<NodeId[]> {
-    const bookmarks = await this.folderDB.bookmarks.toArray();
-    return [...new Set(bookmarks.map((b) => b.folderId))];
-  }
-
-  /**
-   * Get folders that have templates
-   */
-  private async getFoldersWithTemplates(): Promise<NodeId[]> {
-    const templates = await this.folderDB.templates.toArray();
-    return [...new Set(templates.map((t) => t.folderId))];
-  }
-
   /**
    * Clean up expired working copies
    */
@@ -247,8 +113,6 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
     // Step 0: 基本情報 (名前、説明)
     // Step 1: 権限設定
     // Step 2: テンプレートとブックマーク設定
-
-    const totalSteps = 3;
 
     switch (step) {
       case 0: // 基本情報ステップ

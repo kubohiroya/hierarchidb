@@ -518,10 +518,10 @@ describe('BaseMapHandler', () => {
 
 ```typescript
 // プラグイン登録
-import { PluginRegistry } from '@hierarchidb/worker/registry';
+import { PluginRegistryImpl } from '@hierarchidb/worker/registry';
 import { BaseMapDefinition } from '@hierarchidb/plugin-basemap';
 
-const registry = PluginRegistry.getInstance();
+const registry = PluginRegistryImpl.getInstance();
 registry.register(BaseMapDefinition);
 
 // エンティティ作成

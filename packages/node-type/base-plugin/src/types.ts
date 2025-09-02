@@ -1,5 +1,5 @@
 /**
- * @file types.ts
+ * @file lifecycle-types.ts
  * @description Base types for base-plugin
  */
 

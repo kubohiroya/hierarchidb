@@ -4,7 +4,7 @@
  */
 
 import type { Table, Collection } from 'dexie';
-import type { NodeId, EntityId, BaseEntity, WorkingCopy } from '@hierarchidb/common-type';
+import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
 import type {
   BaseSearchCriteria,
   EntityLifecycleHooks,
@@ -18,7 +18,6 @@ import type {
  */
 export abstract class BaseEntityHandler<
   TEntity extends BaseEntity,
-  _TWorkingCopy extends WorkingCopy,
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
   TSearchCriteria extends BaseSearchCriteria = BaseSearchCriteria,
 > {

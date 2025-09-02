@@ -15,13 +15,11 @@ import {
   Button,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Stack,
   Chip,
   Card,
-  CardContent
+  CardContent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,9 +29,8 @@ import {
   Timeline as MovementIcon,
   Compare as ChangeIcon,
   PlayArrow as PlayIcon,
-  Pause as PauseIcon,
   SkipNext as SkipNextIcon,
-  SkipPrevious as SkipPreviousIcon
+  SkipPrevious as SkipPreviousIcon,
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -52,30 +49,32 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
     end: new Date(),
     step: {
       value: 1,
-      unit: 'day' as const
-    }
+      unit: 'day' as const,
+    },
   });
   const [animation, setAnimation] = useState({
     enabled: false,
     speed: 5,
     loop: true,
     showTrails: false,
-    trailLength: 10
+    trailLength: 10,
   });
   const [analyses, setAnalyses] = useState<TemporalAnalysis[]>([]);
-  const [timeFields, setTimeFields] = useState<Array<{
-    layerId: string;
-    field: string;
-    format?: string;
-  }>>([]);
+  const [timeFields, setTimeFields] = useState<
+    Array<{
+      layerId: string;
+      field: string;
+      format?: string;
+    }>
+  >([]);
 
-  const layers = data.layers?.map(l => ({ id: l.id, name: l.name })) || [];
+  const layers = data.layers?.map((l) => ({ id: l.id, name: l.name })) || [];
 
   const handleAddAnalysis = (type: 'trend' | 'hotspot' | 'movement' | 'change-detection') => {
     const newAnalysis: TemporalAnalysis = {
       id: crypto.randomUUID(),
       name: `${type} Analysis ${analyses.length + 1}`,
-      type
+      type,
     };
 
     switch (type) {
@@ -85,7 +84,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
           valueField: '',
           aggregation: 'mean',
           interval: 'day',
-          trendLine: 'linear'
+          trendLine: 'linear',
         };
         break;
       case 'hotspot':
@@ -93,7 +92,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
           layer: '',
           timeWindow: 7,
           spatialWindow: 1000,
-          threshold: 2
+          threshold: 2,
         };
         break;
       case 'movement':
@@ -103,9 +102,9 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
           showPaths: true,
           pathStyle: {
             color: '#ff6600',
-            width: 2
+            width: 2,
           },
-          statistics: true
+          statistics: true,
         };
         break;
       case 'change-detection':
@@ -113,7 +112,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
           layer: '',
           compareMethod: 'relative',
           threshold: 0.1,
-          highlightChanges: true
+          highlightChanges: true,
         };
         break;
     }
@@ -126,18 +125,21 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
   };
 
   const handleAddTimeField = () => {
-    if (layers.length > 0) {
-      setTimeFields([...timeFields, {
-        layerId: layers[0].id,
-        field: '',
-        format: 'ISO8601'
-      }]);
+    if (layers.length > 0 && layers[0]?.id) {
+      setTimeFields([
+        ...timeFields,
+        {
+          layerId: layers[0]?.id,
+          field: '',
+          format: 'ISO8601',
+        },
+      ]);
     }
   };
 
   const handleSubmit = () => {
     onComplete({
-      temporalAnalyses: analyses
+      temporalAnalyses: analyses,
     });
   };
 
@@ -161,11 +163,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                 onChange={(e) => setTemporalEnabled(e.target.checked)}
               />
             }
-            label={
-              <Typography variant="subtitle1">
-                Enable Temporal Analysis
-              </Typography>
-            }
+            label={<Typography variant="subtitle1">Enable Temporal Analysis</Typography>}
           />
         </Paper>
 
@@ -181,7 +179,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                   <DateTimePicker
                     label="Start Date"
                     value={timeRange.start}
-                    onChange={(date) => date && setTimeRange(prev => ({ ...prev, start: date }))}
+                    onChange={(date) => date && setTimeRange((prev) => ({ ...prev, start: date }))}
                     slotProps={{ textField: { fullWidth: true, size: 'small' } }}
                   />
                 </Grid>
@@ -189,7 +187,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                   <DateTimePicker
                     label="End Date"
                     value={timeRange.end}
-                    onChange={(date) => date && setTimeRange(prev => ({ ...prev, end: date }))}
+                    onChange={(date) => date && setTimeRange((prev) => ({ ...prev, end: date }))}
                     slotProps={{ textField: { fullWidth: true, size: 'small' } }}
                   />
                 </Grid>
@@ -200,10 +198,12 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                     label="Step Value"
                     type="number"
                     value={timeRange.step.value}
-                    onChange={(e) => setTimeRange(prev => ({
-                      ...prev,
-                      step: { ...prev.step, value: parseInt(e.target.value) }
-                    }))}
+                    onChange={(e) =>
+                      setTimeRange((prev) => ({
+                        ...prev,
+                        step: { ...prev.step, value: parseInt(e.target.value) },
+                      }))
+                    }
                   />
                 </Grid>
                 <Grid item xs={6}>
@@ -211,10 +211,12 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                     <InputLabel>Step Unit</InputLabel>
                     <Select
                       value={timeRange.step.unit}
-                      onChange={(e) => setTimeRange(prev => ({
-                        ...prev,
-                        step: { ...prev.step, unit: e.target.value as any }
-                      }))}
+                      onChange={(e) =>
+                        setTimeRange((prev) => ({
+                          ...prev,
+                          step: { ...prev.step, unit: e.target.value as any },
+                        }))
+                      }
                       label="Step Unit"
                     >
                       <MenuItem value="hour">Hour</MenuItem>
@@ -230,10 +232,13 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
 
             {/* Time Field Mapping */}
             <Paper sx={{ p: 2, mb: 2 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                <Typography variant="subtitle2">
-                  Time Field Mapping
-                </Typography>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 1 }}
+              >
+                <Typography variant="subtitle2">Time Field Mapping</Typography>
                 <Button
                   size="small"
                   startIcon={<AddIcon />}
@@ -255,12 +260,14 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                               value={field.layerId}
                               onChange={(e) => {
                                 const updated = [...timeFields];
-                                updated[index].layerId = e.target.value;
-                                setTimeFields(updated);
+                                if (updated[index]) {
+                                  updated[index].layerId = e.target.value;
+                                  setTimeFields(updated);
+                                }
                               }}
                               label="Layer"
                             >
-                              {layers.map(layer => (
+                              {layers.map((layer) => (
                                 <MenuItem key={layer.id} value={layer.id}>
                                   {layer.name}
                                 </MenuItem>
@@ -276,18 +283,17 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                             value={field.field}
                             onChange={(e) => {
                               const updated = [...timeFields];
-                              updated[index].field = e.target.value;
-                              setTimeFields(updated);
+                              if (updated[index]) {
+                                updated[index].field = e.target.value;
+                                setTimeFields(updated);
+                              }
                             }}
                           />
                         </Grid>
                         <Grid item xs={3}>
                           <FormControl fullWidth size="small">
                             <InputLabel>Format</InputLabel>
-                            <Select
-                              value={field.format || 'ISO8601'}
-                              label="Format"
-                            >
+                            <Select value={field.format || 'ISO8601'} label="Format">
                               <MenuItem value="ISO8601">ISO 8601</MenuItem>
                               <MenuItem value="Unix">Unix Timestamp</MenuItem>
                               <MenuItem value="Custom">Custom</MenuItem>
@@ -320,7 +326,9 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                     control={
                       <Switch
                         checked={animation.enabled}
-                        onChange={(e) => setAnimation(prev => ({ ...prev, enabled: e.target.checked }))}
+                        onChange={(e) =>
+                          setAnimation((prev) => ({ ...prev, enabled: e.target.checked }))
+                        }
                       />
                     }
                     label="Enable Animation"
@@ -329,12 +337,12 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                 {animation.enabled && (
                   <>
                     <Grid item xs={12}>
-                      <Typography gutterBottom>
-                        Speed: {animation.speed}
-                      </Typography>
+                      <Typography gutterBottom>Speed: {animation.speed}</Typography>
                       <Slider
                         value={animation.speed}
-                        onChange={(_, value) => setAnimation(prev => ({ ...prev, speed: value as number }))}
+                        onChange={(_, value) =>
+                          setAnimation((prev) => ({ ...prev, speed: value as number }))
+                        }
                         min={1}
                         max={10}
                         marks
@@ -345,7 +353,9 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                         control={
                           <Switch
                             checked={animation.loop}
-                            onChange={(e) => setAnimation(prev => ({ ...prev, loop: e.target.checked }))}
+                            onChange={(e) =>
+                              setAnimation((prev) => ({ ...prev, loop: e.target.checked }))
+                            }
                           />
                         }
                         label="Loop"
@@ -356,7 +366,9 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                         control={
                           <Switch
                             checked={animation.showTrails}
-                            onChange={(e) => setAnimation(prev => ({ ...prev, showTrails: e.target.checked }))}
+                            onChange={(e) =>
+                              setAnimation((prev) => ({ ...prev, showTrails: e.target.checked }))
+                            }
                           />
                         }
                         label="Show Trails"
@@ -369,7 +381,9 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                         </Typography>
                         <Slider
                           value={animation.trailLength}
-                          onChange={(_, value) => setAnimation(prev => ({ ...prev, trailLength: value as number }))}
+                          onChange={(_, value) =>
+                            setAnimation((prev) => ({ ...prev, trailLength: value as number }))
+                          }
                           min={1}
                           max={50}
                         />
@@ -453,24 +467,15 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                     <Card key={analysis.id} variant="outlined">
                       <CardContent>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="subtitle2">
-                            {analysis.name}
-                          </Typography>
+                          <Typography variant="subtitle2">{analysis.name}</Typography>
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip
-                              label={analysis.type}
-                              size="small"
-                              variant="outlined"
-                            />
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteAnalysis(index)}
-                            >
+                            <Chip label={analysis.type} size="small" variant="outlined" />
+                            <IconButton size="small" onClick={() => handleDeleteAnalysis(index)}>
                               <DeleteIcon />
                             </IconButton>
                           </Stack>
                         </Stack>
-                        
+
                         {/* Analysis-specific configuration would go here */}
                         {analysis.type === 'trend' && (
                           <Grid container spacing={1} sx={{ mt: 1 }}>
@@ -478,7 +483,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                               <FormControl fullWidth size="small">
                                 <InputLabel>Layer</InputLabel>
                                 <Select value="" label="Layer">
-                                  {layers.map(layer => (
+                                  {layers.map((layer) => (
                                     <MenuItem key={layer.id} value={layer.id}>
                                       {layer.name}
                                     </MenuItem>
@@ -523,16 +528,10 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                   </FormControl>
                 </Grid>
                 <Grid item xs={6}>
-                  <FormControlLabel
-                    control={<Switch defaultChecked />}
-                    label="Show Chart"
-                  />
+                  <FormControlLabel control={<Switch defaultChecked />} label="Show Chart" />
                 </Grid>
                 <Grid item xs={6}>
-                  <FormControlLabel
-                    control={<Switch defaultChecked />}
-                    label="Show Events"
-                  />
+                  <FormControlLabel control={<Switch defaultChecked />} label="Show Events" />
                 </Grid>
               </Grid>
             </Paper>

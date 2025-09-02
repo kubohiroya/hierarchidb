@@ -5,14 +5,16 @@ import type {
   NodeTagAssociation,
   TagEntity,
   TagSuggestion,
+  Timestamp,
 } from '@hierarchidb/common-type';
-import type { 
+import type {
   CreateTagRequest,
   UpdateTagRequest,
-  TagAssociationRequest 
+  TagAssociationRequest,
 } from '@hierarchidb/common-api';
-import type { CoreDB } from '../db/CoreDB';
+import type { CoreDB } from './CoreDB';
 import type { TagAPI } from '@hierarchidb/common-api';
+import { SingletonMixin } from '@hierarchidb/util';
 
 /**
  * TagService - Worker layer service for tag management
@@ -22,6 +24,12 @@ import type { TagAPI } from '@hierarchidb/common-api';
  * tag-node associations.
  */
 export class TagService implements TagAPI {
+  static getSingleton(coreDB: CoreDB): Promise<TagService> {
+    return SingletonMixin.getSingleton(TagService.name, async () => {
+      return new TagService(coreDB);
+    });
+  }
+
   constructor(private coreDB: CoreDB) {}
 
   /**
@@ -41,6 +49,9 @@ export class TagService implements TagAPI {
       createdAt: now,
       updatedAt: now,
       version: 1,
+      nodeIds: [],
+      referenceCount: 0,
+      lastAccessedAt: now,
     };
 
     // Store tag in a dedicated table (implementation depends on CoreDB schema)
@@ -52,17 +63,14 @@ export class TagService implements TagAPI {
   /**
    * Get a tag by ID
    */
-  async getTag(tagId: TagEntity['id']): Promise<TagEntity | undefined> {
+  async getTag(tagId: EntityId): Promise<TagEntity | undefined> {
     return await this.coreDB.getTag(tagId);
   }
 
   /**
    * Update an existing tag
    */
-  async updateTag(
-    tagId: TagEntity['id'],
-    updates: UpdateTagRequest
-  ): Promise<TagEntity | undefined> {
+  async updateTag(tagId: EntityId, updates: UpdateTagRequest): Promise<TagEntity | undefined> {
     const existing = await this.getTag(tagId);
     if (!existing) {
       throw new Error(`Tag ${tagId} not found`);
@@ -82,7 +90,7 @@ export class TagService implements TagAPI {
   /**
    * Delete a tag and all its associations
    */
-  async deleteTag(tagId: TagEntity['id']): Promise<boolean> {
+  async deleteTag(tagId: EntityId): Promise<boolean> {
     const tag = await this.getTag(tagId);
     if (!tag) {
       return false;
@@ -119,7 +127,6 @@ export class TagService implements TagAPI {
    */
   async getTagSuggestions(query: string, limit: number = 10): Promise<TagSuggestion[]> {
     const matchingTags = await this.searchTags(query);
-
     return matchingTags
       .sort((a, b) => b.usageCount - a.usageCount) // Sort by usage count
       .slice(0, limit)
@@ -148,9 +155,10 @@ export class TagService implements TagAPI {
     }
 
     const association: NodeTagAssociation = {
+      id: `${request.nodeId}_${request.tagId}` as EntityId,
       nodeId: request.nodeId,
-      tagId: request.tagId,
-      createdAt: Date.now(),
+      tagId: request.tagId as EntityId,
+      assignedAt: Date.now() as Timestamp,
     };
 
     await this.coreDB.createTagAssociation(association);
@@ -204,7 +212,7 @@ export class TagService implements TagAPI {
   /**
    * Get all nodes associated with a tag
    */
-  async getNodesByTag(tagId: TagEntity['id']): Promise<NodeTagAssociation[]> {
+  async getNodesByTag(tagId: EntityId): Promise<NodeTagAssociation[]> {
     return await this.coreDB.getTagAssociationsForTag(tagId);
   }
 
@@ -249,7 +257,7 @@ export class TagService implements TagAPI {
   /**
    * Generate a unique tag ID using UUID
    */
-  generateTagId(): TagEntity['id'] {
-    return `tag_${uuidv4()}` as TagEntity['id'];
+  generateTagId(): EntityId {
+    return `tag_${uuidv4()}` as EntityId;
   }
 }

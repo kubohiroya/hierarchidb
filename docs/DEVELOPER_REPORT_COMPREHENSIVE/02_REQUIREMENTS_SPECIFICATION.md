@@ -1629,8 +1629,8 @@ export function useTreeData(treeId: TreeId) {
     });
     
     // ❌ 禁止: UI LayerからのDB直接アクセス
-    // const db = new Dexie('hierarchidb');
-    // db.nodes.where('treeId').equals(treeId).toArray();
+    // const services = new Dexie('hierarchidb');
+    // services.nodes.where('treeId').equals(treeId).toArray();
   }, [treeId]);
 
   return nodes;
@@ -1838,7 +1838,7 @@ describe('NodeValidator', () => {
  * await workingCopyService.commitChanges(session.workingCopyId);
  * ```
  */
-export class WorkingCopyService {
+export class WorkingCopyEntityService {
   /**
    * ノードの編集セッションを開始する
    * 

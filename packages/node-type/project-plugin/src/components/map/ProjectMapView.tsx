@@ -1,33 +1,21 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Map } from 'maplibre-gl';
-import { MaplibreExportControl, PageOrientation, Format, Size } from '@watergis/maplibre-gl-export';
-import { Deck } from '@deck.gl/core';
+import { MaplibreExportControl, PageOrientation, Format } from '@watergis/maplibre-gl-export';
+//import { Deck } from '@deck.gl/core';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import {
   GeoJsonLayer,
   ScatterplotLayer,
   PathLayer,
   PolygonLayer,
-  HeatmapLayer,
-  HexagonLayer,
-  ArcLayer,
   IconLayer,
-  TextLayer,
-  TripsLayer,
-  H3HexagonLayer,
-  GridLayer,
-  ContourLayer
 } from '@deck.gl/layers';
 import { DataFilterExtension } from '@deck.gl/extensions';
-import * as turf from '@turf/turf';
-import { scaleLinear, scaleOrdinal, scaleQuantile } from 'd3-scale';
 import {
   Box,
   Paper,
   IconButton,
   Tooltip,
-  ToggleButtonGroup,
-  ToggleButton,
   Slider,
   Typography,
   Stack,
@@ -37,40 +25,37 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
-  Switch,
   Divider,
   Chip,
   Button,
-  Menu,
   MenuItem,
   FormControl,
-  InputLabel,
-  Select
+  Select,
 } from '@mui/material';
 import {
   Layers as LayersIcon,
-  Map as MapIcon,
+  //Map,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   MyLocation as MyLocationIcon,
   Fullscreen as FullscreenIcon,
   ThreeDRotation as ThreeDIcon,
-  Timeline as TimelineIcon,
-  Analytics as AnalyticsIcon,
-  Download as DownloadIcon,
-  Share as ShareIcon,
-  Settings as SettingsIcon,
+  //Timeline,
+  //Analytics,
+  //Download,
+  //Share,
+  //Settings,
   Print as PrintIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
   SkipNext as SkipNextIcon,
-  SkipPrevious as SkipPreviousIcon
+  SkipPrevious as SkipPreviousIcon,
 } from '@mui/icons-material';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
-import type { ProjectEntity, ProjectLayer, SpatialAnalysis } from '~/types/project-types';
+import type { ProjectEntity, ProjectLayer, ColorRamp /*, SpatialAnalysis*/ } from '~/types/project-types';
 
 interface ProjectMapViewProps {
   project: ProjectEntity;
@@ -90,26 +75,26 @@ interface DeckLayer {
 
 export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   project,
-  onLayerUpdate,
-  onAnalysisRun
+  //onLayerUpdate,
+  //onAnalysisRun,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
-  const deck = useRef<Deck | null>(null);
+  //const deck = useRef<Deck | null>(null);
   const overlay = useRef<MapboxOverlay | null>(null);
-  
+
   const [viewState, setViewState] = useState({
     longitude: project.mapConfig.defaultView.center[0],
     latitude: project.mapConfig.defaultView.center[1],
     zoom: project.mapConfig.defaultView.zoom,
     pitch: project.mapConfig.defaultView.pitch || 0,
-    bearing: project.mapConfig.defaultView.bearing || 0
+    bearing: project.mapConfig.defaultView.bearing || 0,
   });
-  
+
   const [layers, setLayers] = useState<DeckLayer[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [layerPanelOpen, setLayerPanelOpen] = useState(true);
-  const [timelineVisible, setTimelineVisible] = useState(false);
+  //const [timelineVisible, setTimelineVisible] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [basemapStyle, setBasemapStyle] = useState(project.mapConfig.baseMap);
@@ -126,62 +111,65 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       zoom: viewState.zoom,
       pitch: viewState.pitch,
       bearing: viewState.bearing,
-      antialias: true
+      antialias: true,
     });
 
     // Initialize Deck.gl overlay
     overlay.current = new MapboxOverlay({
       interleaved: true,
       layers: [],
-      getTooltip: ({ object }) => object && {
-        html: renderTooltip(object),
-        style: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '8px',
-          borderRadius: '4px'
-        }
-      },
+      getTooltip: ({ object }) =>
+        object && {
+          html: renderTooltip(object),
+          style: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '8px',
+            borderRadius: '4px',
+          },
+        },
       onClick: ({ object }) => {
         setSelectedFeature(object);
-      }
+      },
     });
 
     map.current.addControl(overlay.current as any);
-    
+
     // Add export control for printing
     const exportControl = new MaplibreExportControl({
       PageOrientation: PageOrientation.Landscape,
       Format: Format.PDF,
       DPI: 300,
-      Size: Size.A4,
+      // Size: 'A4',
       Crosshair: true,
       PrintableArea: true,
       Local: 'ja',
-      FileName: `project-map-${project.id}-${new Date().toISOString().slice(0, 10)}`,
-      AllowedSizes: [Size.A4, Size.A3, Size.A2],
+      Filename: `project-map-${project.id}-${new Date().toISOString().slice(0, 10)}`,
+      AllowedSizes: ['A4', 'A3', 'A2'],
+      /*
       Translate: {
-        'en': {
-          'PrintableArea': 'Printable Area',
-          'Format': 'Format',
-          'DPI': 'DPI',
-          'Generate': 'Generate PDF'
+        en: {
+          PrintableArea: 'Printable Area',
+          Format: 'Format',
+          DPI: 'DPI',
+          Generate: 'Generate PDF',
         },
-        'ja': {
-          'PrintableArea': '印刷可能エリア',
-          'Crosshair': '十字線',
-          'Format': 'フォーマット',
-          'DPI': '解像度',
-          'Generate': 'PDF生成',
-          'Size': 'サイズ',
-          'PageOrientation': 'ページ向き',
-          'Landscape': '横向き',
-          'Portrait': '縦向き'
-        }
-      }
+        ja: {
+          PrintableArea: '印刷可能エリア',
+          Crosshair: '十字線',
+          Format: 'フォーマット',
+          DPI: '解像度',
+          Generate: 'PDF生成',
+          Size: 'サイズ',
+          PageOrientation: 'ページ向き',
+          Landscape: '横向き',
+          Portrait: '縦向き',
+        },
+      },
+       */
     });
     map.current.addControl(exportControl, 'top-right');
-    
+
     // Sync map view with state
     map.current.on('move', () => {
       if (!map.current) return;
@@ -189,13 +177,13 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       const zoom = map.current.getZoom();
       const pitch = map.current.getPitch();
       const bearing = map.current.getBearing();
-      
+
       setViewState({
         longitude: center.lng,
         latitude: center.lat,
         zoom,
         pitch,
-        bearing
+        bearing,
       });
     });
 
@@ -207,12 +195,12 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
 
   // Create Deck.gl layers from project layers
   useEffect(() => {
-    const deckLayers = project.layers.map(layer => createDeckLayer(layer));
+    const deckLayers = project.layers.map((layer) => createDeckLayer(layer));
     setLayers(deckLayers);
-    
+
     if (overlay.current) {
       overlay.current.setProps({
-        layers: deckLayers.filter(l => l.visible).map(l => l.layer)
+        layers: deckLayers.filter((l) => l.visible).map((l) => l.layer),
       });
     }
   }, [project.layers]);
@@ -220,18 +208,18 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   // Create Deck.gl layer from project layer configuration
   const createDeckLayer = (projectLayer: ProjectLayer): DeckLayer => {
     const { source, config, style, interaction } = projectLayer;
-    
+
     // Mock data - in real implementation, this would come from the actual data sources
     const mockData = generateMockData(source.nodeType, source.recordCount || 100);
-    
+
     let layer: any;
-    
+
     switch (source.nodeType) {
       case 'shape':
         layer = new PolygonLayer({
           id: projectLayer.id,
           data: mockData,
-          getPolygon: d => d.geometry.coordinates,
+          getPolygon: (d) => d.geometry.coordinates,
           getFillColor: parseColor(style.polygon?.fillColor || '#3388ff'),
           getLineColor: parseColor(style.polygon?.strokeColor || '#3388ff'),
           getLineWidth: style.polygon?.strokeWidth || 2,
@@ -239,61 +227,61 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           opacity: config.opacity,
           pickable: interaction.clickable || interaction.hoverable,
           autoHighlight: interaction.hoverable,
-          highlightColor: [255, 200, 0, 128],
+          highlightColor: toDeckColor([255, 200, 0, 128]),
           extensions: [new DataFilterExtension({ filterSize: 1 })],
-          visible: config.enabled
+          visible: config.enabled,
         });
         break;
-        
+
       case 'location':
         if (style.type === 'simple' && style.point) {
           layer = new ScatterplotLayer({
             id: projectLayer.id,
             data: mockData,
-            getPosition: d => d.geometry.coordinates,
-            getRadius: style.point.size as number || 8,
+            getPosition: (d) => d.geometry.coordinates,
+            getRadius: (style.point.size as number) || 8,
             getFillColor: parseColor(style.point.color || '#3388ff'),
             getLineColor: parseColor(style.point.strokeColor || '#ffffff'),
             lineWidthMinPixels: style.point.strokeWidth || 1,
             opacity: config.opacity,
             pickable: interaction.clickable || interaction.hoverable,
             autoHighlight: interaction.hoverable,
-            visible: config.enabled
+            visible: config.enabled,
           });
         } else {
           // Use IconLayer for more complex point styles
           layer = new IconLayer({
             id: projectLayer.id,
             data: mockData,
-            getPosition: d => d.geometry.coordinates,
-            getIcon: d => ({
+            getPosition: (d) => d.geometry.coordinates,
+            getIcon: () => ({
               url: getIconUrl(style.point?.symbol || 'circle'),
               width: 128,
-              height: 128
+              height: 128,
             }),
-            getSize: style.point?.size as number || 32,
+            getSize: (style.point?.size as number) || 32,
             opacity: config.opacity,
             pickable: interaction.clickable || interaction.hoverable,
-            visible: config.enabled
+            visible: config.enabled,
           });
         }
         break;
-        
+
       case 'route':
         layer = new PathLayer({
           id: projectLayer.id,
           data: mockData,
-          getPath: d => d.geometry.coordinates,
+          getPath: (d) => d.geometry.coordinates,
           getColor: parseColor(style.line?.color || '#3388ff'),
-          getWidth: style.line?.width as number || 3,
+          getWidth: (style.line?.width as number) || 3,
           widthUnits: 'pixels',
           opacity: config.opacity,
           pickable: interaction.clickable || interaction.hoverable,
           autoHighlight: interaction.hoverable,
-          visible: config.enabled
+          visible: config.enabled,
         });
         break;
-        
+
       default:
         // Fallback to GeoJsonLayer
         layer = new GeoJsonLayer({
@@ -301,15 +289,15 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           data: mockData,
           getFillColor: parseColor(style.polygon?.fillColor || '#3388ff'),
           getLineColor: parseColor(style.line?.color || '#3388ff'),
-          getLineWidth: style.line?.width as number || 2,
+          getLineWidth: (style.line?.width as number) || 2,
           lineWidthUnits: 'pixels',
           opacity: config.opacity,
           pickable: interaction.clickable || interaction.hoverable,
           autoHighlight: interaction.hoverable,
-          visible: config.enabled
+          visible: config.enabled,
         });
     }
-    
+
     return {
       id: projectLayer.id,
       type: source.nodeType,
@@ -317,10 +305,11 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       visible: config.enabled,
       opacity: config.opacity,
       pickable: interaction.clickable || interaction.hoverable,
-      layer
+      layer,
     };
   };
 
+  /*
   // Create analysis result layers
   const createAnalysisLayer = (analysis: SpatialAnalysis, result: any): any => {
     switch (analysis.type) {
@@ -328,40 +317,41 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
         return new PolygonLayer({
           id: `${analysis.id}-result`,
           data: result.features,
-          getPolygon: d => d.geometry.coordinates,
+          getPolygon: (d) => d.geometry.coordinates,
           getFillColor: [255, 200, 0, 100],
           getLineColor: [255, 150, 0],
           getLineWidth: 2,
           lineWidthUnits: 'pixels',
-          pickable: true
+          pickable: true,
         });
-        
+
       case 'density':
         return new HeatmapLayer({
           id: `${analysis.id}-result`,
           data: result.points,
-          getPosition: d => d.coordinates,
-          getWeight: d => d.weight,
+          getPosition: (d) => d.coordinates,
+          getWeight: (d) => d.weight,
           radiusPixels: analysis.density?.radius || 30,
           intensity: 1,
-          threshold: 0.05
+          threshold: 0.05,
         });
-        
+
       case 'cluster':
         return new HexagonLayer({
           id: `${analysis.id}-result`,
           data: result.points,
-          getPosition: d => d.coordinates,
+          getPosition: (d) => d.coordinates,
           radius: 1000,
           elevationScale: 50,
           extruded: is3DMode,
-          coverage: 0.8
+          coverage: 0.8,
         });
-        
+
       default:
         return null;
     }
   };
+   */
 
   // Helper functions
   const getMapStyle = (style: string): string => {
@@ -370,23 +360,37 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       satellite: 'https://api.maptiler.com/maps/satellite/style.json?key=YOUR_KEY',
       terrain: 'https://api.maptiler.com/maps/outdoor/style.json?key=YOUR_KEY',
       light: 'https://api.maptiler.com/maps/bright/style.json?key=YOUR_KEY',
-      dark: 'https://api.maptiler.com/maps/dark/style.json?key=YOUR_KEY'
+      dark: 'https://api.maptiler.com/maps/dark/style.json?key=YOUR_KEY',
     };
-    return styles[style] || styles.streets;
+    const url = styles[style];
+    if (!url) {
+      throw new Error(`Invalid symbol type: ${url}`);
+    }
+    return url;
   };
 
-  const parseColor = (color: string | any): number[] => {
+  type DeckColor = Uint8ClampedArray & number[];
+
+  const toDeckColor = (rgba: readonly [number, number, number, number]): DeckColor => {
+    return new Uint8ClampedArray(rgba) as unknown as DeckColor;
+  };
+
+  const parseColor = (color: string | ColorRamp): DeckColor => {
+    // Accept hex string like '#RRGGBB' (alpha default 200) or ColorRamp
+    const toDeckFromHex = (hexColor: string): DeckColor => {
+      const hex = hexColor.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16) || 100;
+      const g = parseInt(hex.substring(2, 4), 16) || 100;
+      const b = parseInt(hex.substring(4, 6), 16) || 100;
+      return toDeckColor([r, g, b, 200]);
+    };
+
     if (typeof color === 'string') {
-      // Convert hex to RGB
-      const hex = color.replace('#', '');
-      return [
-        parseInt(hex.substr(0, 2), 16),
-        parseInt(hex.substr(2, 2), 16),
-        parseInt(hex.substr(4, 2), 16),
-        200
-      ];
+      return toDeckFromHex(color);
     }
-    return [100, 100, 100, 200];
+    // ColorRamp: choose first color as representative
+    const first = color.colors?.[0] ?? '#888888';
+    return toDeckFromHex(first);
   };
 
   const getIconUrl = (symbol: string): string => {
@@ -395,22 +399,30 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       circle: '/icons/circle.png',
       square: '/icons/square.png',
       triangle: '/icons/triangle.png',
-      star: '/icons/star.png'
+      star: '/icons/star.png',
     };
-    return icons[symbol] || icons.circle;
+    const url = icons[symbol] || icons.circle;
+    if (!url) {
+      throw new Error(`Invalid symbol type: ${symbol}`);
+    }
+    return url;
   };
 
   const renderTooltip = (object: any): string => {
     if (!object || !object.properties) return '';
-    
+
     const props = object.properties;
     const entries = Object.entries(props).slice(0, 5);
-    
+
     return `
       <div>
-        ${entries.map(([key, value]) => `
+        ${entries
+          .map(
+            ([key, value]) => `
           <div><strong>${key}:</strong> ${value}</div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     `;
   };
@@ -419,61 +431,63 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
     // Generate mock GeoJSON features for testing
     const features = [];
     const center = project.mapConfig.defaultView.center;
-    
+
     for (let i = 0; i < count; i++) {
       let geometry;
-      
+
       switch (type) {
         case 'location':
           geometry = {
             type: 'Point',
             coordinates: [
               center[0] + (Math.random() - 0.5) * 0.1,
-              center[1] + (Math.random() - 0.5) * 0.1
-            ]
+              center[1] + (Math.random() - 0.5) * 0.1,
+            ],
           };
           break;
-          
+
         case 'route':
           const points = [];
           const startPoint = [
             center[0] + (Math.random() - 0.5) * 0.1,
-            center[1] + (Math.random() - 0.5) * 0.1
+            center[1] + (Math.random() - 0.5) * 0.1,
           ];
           points.push(startPoint);
-          
+
           for (let j = 1; j < 5; j++) {
             points.push([
-              points[j - 1][0] + (Math.random() - 0.5) * 0.02,
-              points[j - 1][1] + (Math.random() - 0.5) * 0.02
+              (points[j - 1]?.[0] ?? 0) + (Math.random() - 0.5) * 0.02,
+              (points[j - 1]?.[1] ?? 0) + (Math.random() - 0.5) * 0.02,
             ]);
           }
-          
+
           geometry = {
             type: 'LineString',
-            coordinates: points
+            coordinates: points,
           };
           break;
-          
+
         case 'shape':
         default:
           const size = 0.01;
           const lng = center[0] + (Math.random() - 0.5) * 0.1;
           const lat = center[1] + (Math.random() - 0.5) * 0.1;
-          
+
           geometry = {
             type: 'Polygon',
-            coordinates: [[
-              [lng - size, lat - size],
-              [lng + size, lat - size],
-              [lng + size, lat + size],
-              [lng - size, lat + size],
-              [lng - size, lat - size]
-            ]]
+            coordinates: [
+              [
+                [lng - size, lat - size],
+                [lng + size, lat - size],
+                [lng + size, lat + size],
+                [lng - size, lat + size],
+                [lng - size, lat - size],
+              ],
+            ],
           };
           break;
       }
-      
+
       features.push({
         type: 'Feature',
         geometry,
@@ -481,11 +495,11 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           id: i,
           name: `Feature ${i}`,
           value: Math.random() * 100,
-          category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)]
-        }
+          category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
+        },
       });
     }
-    
+
     return features;
   };
 
@@ -508,7 +522,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
         center: project.mapConfig.defaultView.center,
         zoom: project.mapConfig.defaultView.zoom,
         pitch: project.mapConfig.defaultView.pitch || 0,
-        bearing: project.mapConfig.defaultView.bearing || 0
+        bearing: project.mapConfig.defaultView.bearing || 0,
       });
     }
   };
@@ -522,33 +536,33 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
 
   const handlePrint = () => {
     // Trigger the export control programmatically
-    const printButton = document.querySelector('.maplibregl-ctrl-export button') as HTMLButtonElement;
+    const printButton = document.querySelector(
+      '.maplibregl-ctrl-export button'
+    ) as HTMLButtonElement;
     if (printButton) {
       printButton.click();
     }
   };
 
   const handleLayerToggle = (layerId: string) => {
-    setLayers(prev => {
-      const updated = prev.map(layer => 
-        layer.id === layerId 
-          ? { ...layer, visible: !layer.visible }
-          : layer
+    setLayers((prev) => {
+      const updated = prev.map((layer) =>
+        layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
       );
-      
+
       if (overlay.current) {
         overlay.current.setProps({
-          layers: updated.filter(l => l.visible).map(l => l.layer)
+          layers: updated.filter((l) => l.visible).map((l) => l.layer),
         });
       }
-      
+
       return updated;
     });
   };
 
   const handleLayerOpacityChange = (layerId: string, opacity: number) => {
-    setLayers(prev => {
-      const updated = prev.map(layer => {
+    setLayers((prev) => {
+      const updated = prev.map((layer) => {
         if (layer.id === layerId) {
           const updatedLayer = { ...layer, opacity };
           updatedLayer.layer = updatedLayer.layer.clone({ opacity });
@@ -556,13 +570,13 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
         }
         return layer;
       });
-      
+
       if (overlay.current) {
         overlay.current.setProps({
-          layers: updated.filter(l => l.visible).map(l => l.layer)
+          layers: updated.filter((l) => l.visible).map((l) => l.layer),
         });
       }
-      
+
       return updated;
     });
   };
@@ -575,10 +589,10 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
         sx={{
           flex: 1,
           height: '100%',
-          position: 'relative'
+          position: 'relative',
         }}
       />
-      
+
       {/* Map Controls */}
       <Paper
         sx={{
@@ -589,7 +603,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
-          zIndex: 1000
+          zIndex: 1000,
         }}
       >
         <Tooltip title="Zoom In" placement="left">
@@ -609,7 +623,11 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           </IconButton>
         </Tooltip>
         <Tooltip title="3D Mode" placement="left">
-          <IconButton onClick={handle3DToggle} size="small" color={is3DMode ? 'primary' : 'default'}>
+          <IconButton
+            onClick={handle3DToggle}
+            size="small"
+            color={is3DMode ? 'primary' : 'default'}
+          >
             <ThreeDIcon />
           </IconButton>
         </Tooltip>
@@ -624,7 +642,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           </IconButton>
         </Tooltip>
       </Paper>
-      
+
       {/* Layer Panel Toggle */}
       <IconButton
         sx={{
@@ -633,13 +651,13 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           left: 16,
           bgcolor: 'background.paper',
           zIndex: 1000,
-          '&:hover': { bgcolor: 'action.hover' }
+          '&:hover': { bgcolor: 'action.hover' },
         }}
         onClick={() => setLayerPanelOpen(!layerPanelOpen)}
       >
         <LayersIcon />
       </IconButton>
-      
+
       {/* Layer Panel */}
       <Drawer
         anchor="left"
@@ -650,8 +668,8 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: 320,
-            position: 'relative'
-          }
+            position: 'relative',
+          },
         }}
       >
         <Box sx={{ p: 2 }}>
@@ -660,9 +678,9 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           </Typography>
           <List>
             {layers.map((layer) => {
-              const projectLayer = project.layers.find(l => l.id === layer.id);
+              const projectLayer = project.layers.find((l) => l.id === layer.id);
               if (!projectLayer) return null;
-              
+
               return (
                 <ListItem key={layer.id} sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
@@ -707,9 +725,9 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
               );
             })}
           </List>
-          
+
           <Divider sx={{ my: 2 }} />
-          
+
           <Typography variant="h6" gutterBottom>
             Base Map
           </Typography>
@@ -717,7 +735,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
             <Select
               value={basemapStyle}
               onChange={(e) => {
-                setBasemapStyle(e.target.value);
+                setBasemapStyle(e.target.value as any);
                 if (map.current) {
                   map.current.setStyle(getMapStyle(e.target.value));
                 }
@@ -732,47 +750,49 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           </FormControl>
         </Box>
       </Drawer>
-      
+
       {/* Timeline Control */}
-      {timelineVisible && (
-        <Paper
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            p: 2,
-            width: '80%',
-            maxWidth: 600,
-            zIndex: 1000
-          }}
-        >
-          <Stack spacing={2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton size="small">
-                <SkipPreviousIcon />
-              </IconButton>
-              <IconButton onClick={() => setIsPlaying(!isPlaying)}>
-                {isPlaying ? <PauseIcon /> : <PlayIcon />}
-              </IconButton>
-              <IconButton size="small">
-                <SkipNextIcon />
-              </IconButton>
-              <Slider
-                value={currentTime}
-                onChange={(_, value) => setCurrentTime(value as number)}
-                min={0}
-                max={100}
-                sx={{ flex: 1 }}
-              />
-              <Typography variant="caption">
-                {new Date(currentTime * 1000).toISOString().substr(11, 8)}
-              </Typography>
-            </Box>
-          </Stack>
-        </Paper>
-      )}
-      
+      {
+        /*timelineVisible*/ true && (
+          <Paper
+            sx={{
+              position: 'absolute',
+              bottom: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              p: 2,
+              width: '80%',
+              maxWidth: 600,
+              zIndex: 1000,
+            }}
+          >
+            <Stack spacing={2}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconButton size="small">
+                  <SkipPreviousIcon />
+                </IconButton>
+                <IconButton onClick={() => setIsPlaying(!isPlaying)}>
+                  {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                </IconButton>
+                <IconButton size="small">
+                  <SkipNextIcon />
+                </IconButton>
+                <Slider
+                  value={currentTime}
+                  onChange={(_, value) => setCurrentTime(value as number)}
+                  min={0}
+                  max={100}
+                  sx={{ flex: 1 }}
+                />
+                <Typography variant="caption">
+                  {new Date(currentTime * 1000).toISOString().substr(11, 8)}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        )
+      }
+
       {/* Selected Feature Info */}
       {selectedFeature && (
         <Paper
@@ -782,7 +802,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
             right: 16,
             p: 2,
             maxWidth: 300,
-            zIndex: 1000
+            zIndex: 1000,
           }}
         >
           <Typography variant="subtitle2" gutterBottom>
@@ -793,11 +813,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
               <strong>{key}:</strong> {String(value)}
             </Typography>
           ))}
-          <Button
-            size="small"
-            onClick={() => setSelectedFeature(null)}
-            sx={{ mt: 1 }}
-          >
+          <Button size="small" onClick={() => setSelectedFeature(null)} sx={{ mt: 1 }}>
             Close
           </Button>
         </Paper>

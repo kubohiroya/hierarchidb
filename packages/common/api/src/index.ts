@@ -8,8 +8,6 @@ export type {
   ImportResult,
   ExportResult,
   ValidateImportParams,
-  ValidationResult as ImportExportValidationResult,
-  ValidationError,
   ValidationWarning,
   ImportProgress,
   ExportProgress,
@@ -55,7 +53,6 @@ export type {
   MetricOptions,
 } from './PluginTreeAPI';
 
-
 // New exports
 export type { PluginExtensionAPI } from './PluginExtensionAPI';
 export { PluginExtensionRegistry } from './PluginExtensionAPI';
@@ -65,9 +62,4 @@ export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
 export * from './TagAPI';
 
 // Multi-Step Dialog API
-export type { 
-  MultiStepDialogAPI,
-  WorkingCopyData,
-  ValidationResult,
-  StepCapabilities 
-} from './MultiStepDialogAPI';
+export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI';

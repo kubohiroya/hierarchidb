@@ -829,7 +829,7 @@ ${actionConfig.action ? `import { ${action}Action } from '@hierarchidb/plugin-${
     
     return `
 // Register ${plugin.name} plugin
-PluginRegistry.register('${plugin.config.nodeType}', {
+PluginRegistryImpl.register('${plugin.config.nodeType}', {
   nodeType: '${plugin.config.nodeType}',
   displayName: '${plugin.config.displayName}',
   version: '${plugin.config.version}',
@@ -848,7 +848,7 @@ PluginRegistry.register('${plugin.config.nodeType}', {
  */
 
 import { lazy } from 'react';
-import { PluginRegistry } from './registry';
+import { PluginRegistryImpl } from './registry';
 ${imports}
 
 // Initialize plugins
@@ -856,7 +856,7 @@ export function initializePlugins() {
   console.log('🔧 Initializing plugins...');
   ${registrations}
   
-  console.log(\`✅ Initialized \${PluginRegistry.list().length} plugins\`);
+  console.log(\`✅ Initialized \${PluginRegistryImpl.list().length} plugins\`);
 }
 
 // Auto-initialize on module load
@@ -930,7 +930,7 @@ packages/plugins/basemap/
 ├── vite.config.ts                 # ビルド設定
 ├── src/
 │   ├── openstreetmap-type.ts                   # エントリーポイント
-│   ├── types.ts                   # プラグイン固有の型定義
+│   ├── lifecycle-types.ts                   # プラグイン固有の型定義
 │   ├── components/                # Reactコンポーネント
 │   │   ├── BasemapView.tsx
 │   │   ├── BasemapEdit.tsx

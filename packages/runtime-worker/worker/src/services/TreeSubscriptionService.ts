@@ -14,19 +14,10 @@ import type {
   TreeNodeEvent,
   SubscriptionOptions,
 } from '@hierarchidb/common-type';
-import type { TreeSubscriptionAPI } from '@hierarchidb/common-api';
-import type { EphemeralDB } from '../db/EphemeralDB';
-import {
-  map,
-  type Observable,
-  filter as rxFilter,
-  Subject,
-  share,
-  startWith,
-  BehaviorSubject,
-} from 'rxjs';
-import type { CoreDB } from '../db/CoreDB';
+import { map, type Observable, filter as rxFilter, Subject, share, startWith } from 'rxjs';
+import type { CoreDB } from './CoreDB';
 import { TreeQueryService } from './TreeQueryService';
+import { SingletonMixin } from '@hierarchidb/util';
 
 interface SubscriptionInfo {
   id: SubscriptionId;
@@ -50,6 +41,12 @@ interface SubscriptionInfo {
  * Provides real-time subscription functionality for tree structure changes
  */
 export class TreeSubscriptionService {
+  static async getSingleton(coreDB: CoreDB): Promise<TreeSubscriptionService> {
+    return SingletonMixin.getSingleton(TreeSubscriptionService.name, () => {
+      return new TreeSubscriptionService(coreDB);
+    });
+  }
+
   private subscriptions = new Map<SubscriptionId, SubscriptionInfo>();
   private globalChangeSubject = new Subject<TreeChangeEvent>();
   private subscriptionCounter = 0;
@@ -59,10 +56,7 @@ export class TreeSubscriptionService {
   private totalLatency = 0;
   private eventCount = 0;
 
-  constructor(
-    private coreDB: CoreDB,
-    private ephemeralDB: EphemeralDB
-  ) {
+  constructor(private coreDB: CoreDB) {
     // CoreDBのchangeSubjectを購読してグローバルな変更イベントを中継
     this.coreDB.changeSubject.subscribe({
       next: (event) => {
@@ -670,7 +664,7 @@ export class TreeSubscriptionService {
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB, this.ephemeralDB);
+      const queryService = new TreeQueryService(this.coreDB);
 
       const searchResults = await queryService.searchNodes({
         query,
@@ -710,7 +704,7 @@ export class TreeSubscriptionService {
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB, this.ephemeralDB);
+      const queryService = new TreeQueryService(this.coreDB);
 
       let searchPattern: string;
 

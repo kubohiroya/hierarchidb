@@ -44,7 +44,7 @@ graph TB
     end
     
     subgraph "Plugin System"
-        D[PluginRegistry]
+        D[PluginRegistryImpl]
         E[PluginProvider]
         F[ExtensionPoints]
     end
@@ -78,7 +78,7 @@ graph TB
 
 #### TreeTableCore Extension Points
 ```typescript
-// packages/ui/treeconsole/treetable/src/types.ts
+// packages/ui/treeconsole/treetable/src/lifecycle-types.ts
 export interface TreeTableCoreProps {
   // 既存のprops...
   controller: TreeTableController | null;
@@ -478,8 +478,8 @@ export const validationPlugin: TreeTablePlugin = {
 
 ### Plugin Registry Implementation
 ```typescript
-// packages/ui/treeconsole/base/src/plugin/PluginRegistry.ts
-export class PluginRegistry {
+// packages/ui/treeconsole/base/src/plugin/PluginRegistryImpl.ts
+export class PluginRegistryImpl {
   private plugins: Map<string, TreeTablePlugin> = new Map();
   
   register(plugin: TreeTablePlugin): void {
@@ -529,14 +529,14 @@ export class PluginRegistry {
 ### Plugin Provider
 ```typescript
 // packages/ui/treeconsole/base/src/plugin/PluginProvider.tsx
-const PluginContext = createContext<PluginRegistry | null>(null);
+const PluginContext = createContext<PluginRegistryImpl | null>(null);
 
 export function PluginProvider({ 
   children, 
   plugins = [] 
 }: PluginProviderProps) {
   const registry = useMemo(() => {
-    const reg = new PluginRegistry();
+    const reg = new PluginRegistryImpl();
     plugins.forEach(plugin => reg.register(plugin));
     return reg;
   }, [plugins]);
@@ -548,7 +548,7 @@ export function PluginProvider({
   );
 }
 
-export function usePluginRegistry(): PluginRegistry {
+export function usePluginRegistry(): PluginRegistryImpl {
   const registry = useContext(PluginContext);
   if (!registry) {
     throw new Error('usePluginRegistry must be used within PluginProvider');

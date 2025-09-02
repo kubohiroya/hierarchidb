@@ -13,7 +13,7 @@ packages/common/plugin-base/
 └── src/
     ├── index.ts
     ├── types/
-    │   ├── base-types.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
+    │   ├── base-lifecycle-types.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
     │   └── index.ts
     ├── handlers/
     │   ├── BaseEntityHandler.ts        # 基底EntityHandler（500行）

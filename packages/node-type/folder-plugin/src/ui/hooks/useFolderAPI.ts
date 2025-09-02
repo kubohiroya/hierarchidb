@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import type { FolderAPI } from '../../shared';
+import { FolderAPI } from '~/shared/api';
 
 /**
  * Folder APIにアクセスするためのhook
@@ -15,7 +15,9 @@ export function useFolderAPI(): Promise<FolderAPI | null> {
   return useMemo(async () => {
     // Folder plugin doesn't have Worker services
     // Return null to indicate no API available
-    console.warn('Folder plugin does not have Worker-side services. Folders are managed as TreeNodes.');
+    console.warn(
+      'Folder plugin does not have Worker-side services. Folders are managed as TreeNodes.'
+    );
     return null;
   }, []);
 }
@@ -27,7 +29,9 @@ export function useFolderAPI(): Promise<FolderAPI | null> {
 export function useFolderAPIGetter(): () => Promise<FolderAPI | null> {
   return useMemo(() => {
     return async (): Promise<FolderAPI | null> => {
-      console.warn('Folder plugin does not have Worker-side services. Folders are managed as TreeNodes.');
+      console.warn(
+        'Folder plugin does not have Worker-side services. Folders are managed as TreeNodes.'
+      );
       return null;
     };
   }, []);

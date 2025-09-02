@@ -6,7 +6,7 @@
 ### 命名規則
 - **HogeHogeAPI**: `packages/common/api`に定義されるComlink通信用インターフェース
 - **HogeHogeService**: `packages/runtime/worker/src/services`にある実装クラス
-- **インターフェース**: `I`プレフィックスを使用（例：`IPluginRegistry`）
+- **インターフェース**: `I`プレフィックスを使用（例：`PluginRegistry`）
 
 ## 実施した変更
 
@@ -37,10 +37,10 @@
 
 ### 3. IPluginRegistryの型定義の修正
 **対象ファイル:**
-- `packages/runtime/plugin-registry/src/registry/IPluginRegistry.ts`
+- `packages/runtime/plugin-registry/src/registry/PluginRegistry.ts`
 
 **変更内容:**
-- `type IPluginRegistry = {` から `interface IPluginRegistry {` に変更
+- `type PluginRegistry = {` から `interface PluginRegistry {` に変更
 - 型エイリアスからインターフェースへの変更により、より適切な型定義に
 
 ## 影響範囲

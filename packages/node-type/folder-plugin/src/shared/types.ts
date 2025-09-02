@@ -8,13 +8,8 @@ import type { FolderEntity } from '../entities/FolderEntity';
 // Re-export existing types from the entities directory
 export type {
   FolderEntity,
-  FolderBookmark,
-  FolderTemplate,
-  FolderStructureNode,
-  FolderWorkingCopy,
   FolderOperationResult,
   FolderSearchQuery,
-  FolderStatsSummary,
 } from '../entities/FolderEntity';
 
 /**

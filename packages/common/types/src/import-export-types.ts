@@ -152,7 +152,7 @@ export interface ClipboardData {
   nodeCount?: number;
 }
 
-// OnNameConflict is already exported from command-types.ts, no need to re-export
+// OnNameConflict is already exported from command-types, no need to re-export
 
 /**
  * IDマッピング（インポート時の旧ID→新IDマッピング）

@@ -19,7 +19,7 @@ import {
 } from './types';
 
 /**
- * Main Shape API interface for UI-Worker communication via PluginRegistry
+ * Main Shape API interface for UI-Worker communication via PluginRegistryImpl
  */
 export interface ShapeAPI {
   // Core shape-plugin entity operations

@@ -50,9 +50,12 @@ export async function registerProjectPlugin(registry: any): Promise<void> {
   console.log('Project plugin registered successfully');
 }
 
-// Default export for convenience
-export default {
+// Create named export for the plugin module
+export const ProjectPluginModule = {
   plugin: ProjectPluginDefinition,
   register: registerProjectPlugin,
   api: projectPluginAPI
 };
+
+// Default export
+export default ProjectPluginModule;

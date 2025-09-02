@@ -14,7 +14,7 @@ const workerProxy = Comlink.wrap<WorkerAPI>(worker);
 await workerProxy.createNode(nodeData);
 
 // ✅ 直接インスタンス化（軽量）
-const coreDB = new CoreDB('test-db');
+const coreDB = new CoreDB('test-services');
 const mutationService = new TreeMutationServiceImpl(coreDB, ...);
 await mutationService.createNode(nodeData);
 ```
@@ -42,8 +42,8 @@ const mutationService = new TreeMutationServiceImpl(
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { WorkerAPIImpl } from '../WorkerAPIImpl';
-import { CoreDB } from '../db/CoreDB';
-import { EphemeralDB } from '../db/EphemeralDB';
+import { CoreDB } from '../services/CoreDB';
+import { EphemeralDB } from '../services/EphemeralDB';
 import { TreeMutationServiceImpl } from '../services/TreeMutationServiceImpl';
 import { TreeObservableServiceImpl } from '../services/TreeObservableServiceImpl';
 import { CommandProcessor } from '../command/CommandProcessor';
@@ -58,8 +58,8 @@ describe('Worker層直接呼び出しテスト', () => {
 
   beforeEach(async () => {
     // 各テストで独立したデータベースインスタンス
-    coreDB = new CoreDB('test-core-db');
-    ephemeralDB = new EphemeralDB('test-ephemeral-db');
+    coreDB = new CoreDB('test-core-services');
+    ephemeralDB = new EphemeralDB('test-ephemeral-services');
     
     await coreDB.open();
     await ephemeralDB.open();

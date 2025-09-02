@@ -37,7 +37,6 @@ export interface TrashItemProperties {
   originalName: string;
   originalParentId: NodeId;
   removedAt: Timestamp;
-  isRemoved: boolean; // 【追加】: ゴミ箱状態を表すブール値フラグ
 }
 
 /**
@@ -53,11 +52,11 @@ export interface DraftProperties {
 
 export type TreeNode = NodeBase &
   Partial<DraftProperties> &
-  Partial<WorkingCopyProperties> &
   Partial<DescendantProperties> &
   Partial<ReferenceProperties> &
   Partial<TrashItemProperties> &
-  Partial<DraftProperties>;
+  Partial<DraftProperties> &
+  Partial<WorkingCopyProperties>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
   children?: NodeId[]; // フラット構造維持

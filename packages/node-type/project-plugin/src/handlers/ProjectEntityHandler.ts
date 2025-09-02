@@ -6,7 +6,7 @@
 import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import { generateEntityId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
-import type { ProjectEntity, ProjectWorkingCopy } from '~/types/project-types';
+import type { ProjectEntity, ProjectWorkingCopy, ProjectCategory } from '~/types/project-types';
 import { projectPluginAPI } from '~/api/ProjectPluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 
@@ -16,7 +16,7 @@ import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/
 export interface CreateProjectData {
   name: string;
   description?: string;
-  category?: string;
+  category?: ProjectCategory;
   tags?: string[];
   startDate?: Date;
   endDate?: Date;
@@ -121,7 +121,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<
       // 基本情報
       name: data.name,
       description: data.description || '',
-      category: data.category || 'research',
+      category: (data.category || 'research') as ProjectCategory,
       tags: data.tags || [],
       
       // 期間
@@ -531,7 +531,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<
   /**
    * Deserialize Project entity with binary data restoration
    */
-  async deserialize(jsonData: any, binaryData: Map<string, Uint8Array>): Promise<ProjectEntity> {
+  async deserialize(jsonData: any, _binaryData: Map<string, Uint8Array>): Promise<ProjectEntity> {
     // TODO: Implement deserialization when PluginEntitySerializer is available
     return jsonData as ProjectEntity;
   }
@@ -553,7 +553,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<
    */
   async deserializeEntityArray(
     jsonArray: any[],
-    binaryData: Map<string, Uint8Array>
+    _binaryData: Map<string, Uint8Array>
   ): Promise<ProjectEntity[]> {
     // TODO: Implement array deserialization when PluginEntitySerializer is available
     return jsonArray as ProjectEntity[];

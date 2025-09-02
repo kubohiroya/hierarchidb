@@ -1,13 +1,9 @@
 import { PeerEntity } from './entity-types';
 import { NodeId } from './id-types';
 import { TreeNode } from './tree-node-types';
-import { WorkingCopyProperties } from './working-copy-types';
 
 // ライフサイクルフック
-export interface NodeLifecycleHooks<
-  TEntity extends PeerEntity = PeerEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> {
+export interface NodeLifecycleHooks<TEntity extends PeerEntity = PeerEntity> {
   // ノードライフサイクル
   beforeCreate?: (parentId: NodeId, nodeData: Partial<TreeNode>) => Promise<void>;
   afterCreate?: (nodeId: NodeId, entity: TEntity) => Promise<void>;
@@ -26,7 +22,7 @@ export interface NodeLifecycleHooks<
   afterDuplicate?: (sourceId: NodeId, newNodeId: NodeId) => Promise<void>;
 
   // ワーキングコピー
-  onWorkingCopyCreated?: (nodeId: NodeId, workingCopy: TWorkingCopy) => Promise<void>;
-  onWorkingCopyCommitted?: (nodeId: NodeId, workingCopy: TWorkingCopy) => Promise<void>;
+  onWorkingCopyCreated?: (nodeId: NodeId, workingCopy: TEntity) => Promise<void>;
+  onWorkingCopyCommitted?: (nodeId: NodeId, workingCopy: TEntity) => Promise<void>;
   onWorkingCopyDiscarded?: (nodeId: NodeId) => Promise<void>;
 }

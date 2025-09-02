@@ -17,7 +17,7 @@ HierarchiDBのプラグインは、**自身専用のデータベースを独立�
 ### 1. 独立Dexieデータベースクラス
 
 ```typescript
-// packages/worker/src/db/MyPluginDB.ts
+// packages/worker/src/services/MyPluginDB.ts
 import Dexie, { type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/core';
 import type { MyEntity, MyRelationalEntity } from '@hierarchidb/plugin-myplugin';
@@ -52,7 +52,7 @@ export class MyPluginDB extends Dexie {
 
 ```typescript
 // packages/worker/src/plugins/MyPlugin.ts
-import { MyPluginDB } from '../db/MyPluginDB';
+import { MyPluginDB } from '../services/MyPluginDB';
 import { MyPluginWorkerHandler } from '../handlers/MyPluginWorkerHandler';
 
 export function createMyPlugin(): PluginDefinition {
@@ -95,7 +95,7 @@ export function createMyPlugin(): PluginDefinition {
 ```typescript
 // packages/worker/src/handlers/MyPluginWorkerHandler.ts
 import { BaseReferenceCountingHandler } from './ReferenceCountingHandler';
-import { MyPluginDB } from '../db/MyPluginDB';
+import { MyPluginDB } from '../services/MyPluginDB';
 
 export class MyPluginWorkerHandler extends BaseReferenceCountingHandler {
   constructor(private pluginDB: MyPluginDB) {

@@ -3,6 +3,7 @@
  */
 
 import type { ProjectEntity, ProjectWorkingCopy } from '../types/project-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
 
 /**
  * Create a working copy from an entity
@@ -10,6 +11,10 @@ import type { ProjectEntity, ProjectWorkingCopy } from '../types/project-types';
 export function createWorkingCopyFromEntity(entity: ProjectEntity): ProjectWorkingCopy {
   return {
     ...entity,
+    id: entity.nodeId as NodeId,  // Convert to NodeId for TreeNode compatibility
+    parentId: 'root' as NodeId,  // Default parent, should be set by caller
+    nodeType: 'project' as NodeType,
+    depth: 0,  // Default depth, should be set by caller
     isWorkingCopy: true,
     originalId: entity.id,
     isDirty: false,
@@ -21,14 +26,28 @@ export function createWorkingCopyFromEntity(entity: ProjectEntity): ProjectWorki
  * Map working copy changes to entity updates
  */
 export function mapWorkingCopyToUpdates(workingCopy: ProjectWorkingCopy): Partial<ProjectEntity> {
-  // Remove working copy specific fields
-  const { isWorkingCopy, originalId, isDirty, copiedAt, ...updates } = workingCopy;
+  // Remove working copy specific fields and TreeNode fields
+  const { 
+    isWorkingCopy, 
+    originalId, 
+    isDirty, 
+    copiedAt,
+    id,  // TreeNode id (NodeId)
+    parentId,  // TreeNode field
+    nodeType,  // TreeNode field  
+    depth,  // TreeNode field
+    originalNodeId,  // WorkingCopyProperties
+    ...updates 
+  } = workingCopy;
 
-  return {
+  // Convert id back to EntityId if needed
+  const entityUpdates: Partial<ProjectEntity> = {
     ...updates,
     updatedAt: Date.now(),
     updatedBy: 'system',
   };
+
+  return entityUpdates;
 }
 
 /**

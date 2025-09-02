@@ -4,11 +4,6 @@ import {
   Grid,
   Typography,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
   IconButton,
   Button,
   Card,
@@ -23,8 +18,6 @@ import {
   InputLabel,
   FormControlLabel,
   Switch,
-  Slider,
-  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,7 +30,7 @@ import {
   BubbleChart as ClusterIcon,
   Gradient as DensityIcon,
   Route as NetworkIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
 } from '@mui/icons-material';
 import type { ProjectEntity, SpatialAnalysis, SpatialAnalysisType } from '~/types/project-types';
 
@@ -56,38 +49,38 @@ const analysisTypes: Array<{
     type: 'buffer',
     name: 'Buffer Analysis',
     description: 'Create buffer zones around features',
-    icon: <BufferIcon />
+    icon: <BufferIcon />,
   },
   {
     type: 'intersection',
     name: 'Intersection',
     description: 'Find overlapping areas between layers',
-    icon: <IntersectionIcon />
+    icon: <IntersectionIcon />,
   },
   {
     type: 'nearest',
     name: 'Nearest Neighbor',
     description: 'Find closest features between layers',
-    icon: <NearestIcon />
+    icon: <NearestIcon />,
   },
   {
     type: 'cluster',
     name: 'Cluster Analysis',
     description: 'Group features based on spatial proximity',
-    icon: <ClusterIcon />
+    icon: <ClusterIcon />,
   },
   {
     type: 'density',
     name: 'Density Analysis',
     description: 'Calculate feature density across the area',
-    icon: <DensityIcon />
+    icon: <DensityIcon />,
   },
   {
     type: 'network',
     name: 'Network Analysis',
     description: 'Analyze connectivity and paths',
-    icon: <NetworkIcon />
-  }
+    icon: <NetworkIcon />,
+  },
 ];
 
 interface AnalysisConfigPanelProps {
@@ -101,7 +94,7 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
   analysis,
   layers,
   onChange,
-  onDelete
+  onDelete,
 }) => {
   const renderConfig = () => {
     switch (analysis.type) {
@@ -113,14 +106,18 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 <InputLabel>Source Layer</InputLabel>
                 <Select
                   value={analysis.buffer?.sourceLayer || ''}
-                  onChange={(e) => onChange({
-                    ...analysis,
-                    buffer: { ...analysis.buffer!, sourceLayer: e.target.value }
-                  })}
+                  onChange={(e) =>
+                    onChange({
+                      ...analysis,
+                      buffer: { ...analysis.buffer!, sourceLayer: e.target.value },
+                    })
+                  }
                   label="Source Layer"
                 >
-                  {layers.map(layer => (
-                    <MenuItem key={layer} value={layer}>{layer}</MenuItem>
+                  {layers.map((layer) => (
+                    <MenuItem key={layer} value={layer}>
+                      {layer}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -132,10 +129,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 label="Distance"
                 type="number"
                 value={analysis.buffer?.distance || 100}
-                onChange={(e) => onChange({
-                  ...analysis,
-                  buffer: { ...analysis.buffer!, distance: parseFloat(e.target.value) }
-                })}
+                onChange={(e) =>
+                  onChange({
+                    ...analysis,
+                    buffer: { ...analysis.buffer!, distance: parseFloat(e.target.value) },
+                  })
+                }
               />
             </Grid>
             <Grid item xs={6}>
@@ -143,10 +142,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 <InputLabel>Unit</InputLabel>
                 <Select
                   value={analysis.buffer?.unit || 'meters'}
-                  onChange={(e) => onChange({
-                    ...analysis,
-                    buffer: { ...analysis.buffer!, unit: e.target.value as any }
-                  })}
+                  onChange={(e) =>
+                    onChange({
+                      ...analysis,
+                      buffer: { ...analysis.buffer!, unit: e.target.value as any },
+                    })
+                  }
                   label="Unit"
                 >
                   <MenuItem value="meters">Meters</MenuItem>
@@ -160,10 +161,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 control={
                   <Switch
                     checked={analysis.buffer?.dissolve || false}
-                    onChange={(e) => onChange({
-                      ...analysis,
-                      buffer: { ...analysis.buffer!, dissolve: e.target.checked }
-                    })}
+                    onChange={(e) =>
+                      onChange({
+                        ...analysis,
+                        buffer: { ...analysis.buffer!, dissolve: e.target.checked },
+                      })
+                    }
                   />
                 }
                 label="Dissolve boundaries"
@@ -172,10 +175,7 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>End Cap</InputLabel>
-                <Select
-                  value={analysis.buffer?.endCap || 'round'}
-                  label="End Cap"
-                >
+                <Select value={analysis.buffer?.endCap || 'round'} label="End Cap">
                   <MenuItem value="round">Round</MenuItem>
                   <MenuItem value="flat">Flat</MenuItem>
                   <MenuItem value="square">Square</MenuItem>
@@ -191,12 +191,11 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>Layer 1</InputLabel>
-                <Select
-                  value={analysis.intersection?.layer1 || ''}
-                  label="Layer 1"
-                >
-                  {layers.map(layer => (
-                    <MenuItem key={layer} value={layer}>{layer}</MenuItem>
+                <Select value={analysis.intersection?.layer1 || ''} label="Layer 1">
+                  {layers.map((layer) => (
+                    <MenuItem key={layer} value={layer}>
+                      {layer}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -204,12 +203,11 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={6}>
               <FormControl fullWidth size="small">
                 <InputLabel>Layer 2</InputLabel>
-                <Select
-                  value={analysis.intersection?.layer2 || ''}
-                  label="Layer 2"
-                >
-                  {layers.map(layer => (
-                    <MenuItem key={layer} value={layer}>{layer}</MenuItem>
+                <Select value={analysis.intersection?.layer2 || ''} label="Layer 2">
+                  {layers.map((layer) => (
+                    <MenuItem key={layer} value={layer}>
+                      {layer}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -237,12 +235,11 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={12}>
               <FormControl fullWidth size="small">
                 <InputLabel>Layer</InputLabel>
-                <Select
-                  value={analysis.cluster?.layer || ''}
-                  label="Layer"
-                >
-                  {layers.map(layer => (
-                    <MenuItem key={layer} value={layer}>{layer}</MenuItem>
+                <Select value={analysis.cluster?.layer || ''} label="Layer">
+                  {layers.map((layer) => (
+                    <MenuItem key={layer} value={layer}>
+                      {layer}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -250,10 +247,7 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={12}>
               <FormControl fullWidth size="small">
                 <InputLabel>Algorithm</InputLabel>
-                <Select
-                  value={analysis.cluster?.algorithm || 'k-means'}
-                  label="Algorithm"
-                >
+                <Select value={analysis.cluster?.algorithm || 'k-means'} label="Algorithm">
                   <MenuItem value="k-means">K-Means</MenuItem>
                   <MenuItem value="dbscan">DBSCAN</MenuItem>
                   <MenuItem value="hierarchical">Hierarchical</MenuItem>
@@ -302,12 +296,11 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={12}>
               <FormControl fullWidth size="small">
                 <InputLabel>Layer</InputLabel>
-                <Select
-                  value={analysis.density?.layer || ''}
-                  label="Layer"
-                >
-                  {layers.map(layer => (
-                    <MenuItem key={layer} value={layer}>{layer}</MenuItem>
+                <Select value={analysis.density?.layer || ''} label="Layer">
+                  {layers.map((layer) => (
+                    <MenuItem key={layer} value={layer}>
+                      {layer}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -315,10 +308,7 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
             <Grid item xs={12}>
               <FormControl fullWidth size="small">
                 <InputLabel>Type</InputLabel>
-                <Select
-                  value={analysis.density?.type || 'kernel'}
-                  label="Type"
-                >
+                <Select value={analysis.density?.type || 'kernel'} label="Type">
                   <MenuItem value="kernel">Kernel Density</MenuItem>
                   <MenuItem value="point">Point Density</MenuItem>
                   <MenuItem value="line">Line Density</MenuItem>
@@ -355,24 +345,15 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
     <Card variant="outlined">
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6">
-            {analysis.name}
-          </Typography>
+          <Typography variant="h6">{analysis.name}</Typography>
           <Stack direction="row" spacing={1}>
-            <Chip
-              label={analysis.type}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-            {analysis.execution.auto && (
-              <Chip label="Auto" size="small" color="success" />
-            )}
+            <Chip label={analysis.type} size="small" color="primary" variant="outlined" />
+            {analysis.execution.auto && <Chip label="Auto" size="small" color="success" />}
           </Stack>
         </Stack>
-        
+
         {renderConfig()}
-        
+
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle2" gutterBottom>
             Output Settings
@@ -384,10 +365,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 size="small"
                 label="Output Name"
                 value={analysis.output.name}
-                onChange={(e) => onChange({
-                  ...analysis,
-                  output: { ...analysis.output, name: e.target.value }
-                })}
+                onChange={(e) =>
+                  onChange({
+                    ...analysis,
+                    output: { ...analysis.output, name: e.target.value },
+                  })
+                }
               />
             </Grid>
             <Grid item xs={12}>
@@ -395,10 +378,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 control={
                   <Switch
                     checked={analysis.output.saveAsLayer}
-                    onChange={(e) => onChange({
-                      ...analysis,
-                      output: { ...analysis.output, saveAsLayer: e.target.checked }
-                    })}
+                    onChange={(e) =>
+                      onChange({
+                        ...analysis,
+                        output: { ...analysis.output, saveAsLayer: e.target.checked },
+                      })
+                    }
                   />
                 }
                 label="Save as new layer"
@@ -409,10 +394,12 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
                 control={
                   <Switch
                     checked={analysis.execution.auto}
-                    onChange={(e) => onChange({
-                      ...analysis,
-                      execution: { ...analysis.execution, auto: e.target.checked }
-                    })}
+                    onChange={(e) =>
+                      onChange({
+                        ...analysis,
+                        execution: { ...analysis.execution, auto: e.target.checked },
+                      })
+                    }
                   />
                 }
                 label="Auto-execute on data change"
@@ -438,12 +425,10 @@ const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
 };
 
 export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, onComplete }) => {
-  const [analyses, setAnalyses] = useState<SpatialAnalysis[]>(
-    data.spatialAnalyses || []
-  );
+  const [analyses, setAnalyses] = useState<SpatialAnalysis[]>(data.spatialAnalyses || []);
   const [showAddPanel, setShowAddPanel] = useState(false);
 
-  const layers = data.layers?.map(l => l.name) || [];
+  const layers = data.layers?.map((l) => l.name) || [];
 
   const handleAddAnalysis = (type: SpatialAnalysisType) => {
     const newAnalysis: SpatialAnalysis = {
@@ -452,11 +437,11 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
       type,
       output: {
         name: `${type}_result`,
-        saveAsLayer: true
+        saveAsLayer: true,
       },
       execution: {
-        auto: false
-      }
+        auto: false,
+      },
     };
 
     // Initialize type-specific config
@@ -467,7 +452,7 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
           distance: 100,
           unit: 'meters',
           dissolve: false,
-          endCap: 'round'
+          endCap: 'round',
         };
         break;
       case 'intersection':
@@ -475,14 +460,14 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
           layer1: '',
           layer2: '',
           outputFields: 'all',
-          spatialRelation: 'intersects'
+          spatialRelation: 'intersects',
         };
         break;
       case 'cluster':
         newAnalysis.cluster = {
           layer: '',
           algorithm: 'k-means',
-          parameters: { k: 5 }
+          parameters: { k: 5 },
         };
         break;
       case 'density':
@@ -490,7 +475,7 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
           layer: '',
           type: 'kernel',
           radius: 1000,
-          cellSize: 100
+          cellSize: 100,
         };
         break;
     }
@@ -553,13 +538,13 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
                 Select Analysis Type
               </Typography>
               <Grid container spacing={1}>
-                {analysisTypes.map(type => (
+                {analysisTypes.map((type) => (
                   <Grid item xs={12} sm={6} md={4} key={type.type}>
                     <Card
                       variant="outlined"
                       sx={{
                         cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' }
+                        '&:hover': { bgcolor: 'action.hover' },
                       }}
                       onClick={() => handleAddAnalysis(type.type)}
                     >
@@ -567,9 +552,7 @@ export const SpatialAnalysisStep: React.FC<SpatialAnalysisStepProps> = ({ data, 
                         <Stack direction="row" spacing={1} alignItems="center">
                           {type.icon}
                           <Box>
-                            <Typography variant="subtitle2">
-                              {type.name}
-                            </Typography>
+                            <Typography variant="subtitle2">{type.name}</Typography>
                             <Typography variant="caption" color="text.secondary">
                               {type.description}
                             </Typography>

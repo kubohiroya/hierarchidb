@@ -494,6 +494,6 @@ const validateMapLibreStyle = (style: MapLibreStyleConfig): boolean => {
 - **NodeLifecycleManager**: Plugin hooks for create/update/delete operations
 
 ### Plugin System Integration
-- **PluginRegistry**: Register entity handler and database schema
+- **PluginRegistryImpl**: Register entity handler and database schema
 - **Database Manager**: Automatic table creation and migration
 - **Worker Router**: RPC endpoint registration for UI communication

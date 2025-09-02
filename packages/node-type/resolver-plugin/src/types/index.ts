@@ -81,7 +81,7 @@ export interface ResolverWorkingCopyEntity extends ResolverEntity {
   workingCopyId?: EntityId;
   originalId: EntityId;
   isDirty: boolean;
-  
+
   /** Fields that have been modified */
   modifiedFields: string[];
 }
@@ -108,18 +108,20 @@ export interface PropertyInfo {
 
 /**
  * Mapping validation result
+ * @deprecated Use MappingValidationResult instead
  */
-export interface MappingValidationResult {
+export interface _MappingValidationResult {
   isValid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationWarning[];
+  errors: _ValidationError[];
+  warnings: _ValidationWarning[];
   coverage: number; // Percentage of properties mapped
 }
 
 /**
  * Validation error details
+ * @deprecated Use ValidationWarning instead
  */
-export interface ValidationError {
+export interface _ValidationError {
   ruleId: string;
   property: string;
   message: string;
@@ -128,8 +130,9 @@ export interface ValidationError {
 
 /**
  * Validation warning details
+ * @deprecated Use ValidationError instead
  */
-export interface ValidationWarning {
+export interface _ValidationWarning {
   property: string;
   message: string;
   suggestion?: string;

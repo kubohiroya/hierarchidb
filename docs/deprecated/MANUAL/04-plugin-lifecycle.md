@@ -450,7 +450,7 @@ export class WorkingCopyManager {
 #### 3.3.4 依存関係解決サービス
 
 ```typescript
-// packages/worker/src/services/DependencyResolver.ts
+// packages/worker/src/services/__DependencyResolver.ts
 
 /**
  * エンティティ依存関係解決サービス
@@ -685,7 +685,7 @@ export class AutoEntityHandler<TEntity extends PeerEntity>
    - 基本的な登録・検証機能
 
 3. **DependencyResolverの実装**
-   - packages/worker/src/services/DependencyResolver.ts
+   - packages/worker/src/services/__DependencyResolver.ts
    - 依存関係グラフとトポロジカルソート
 
 ### 4.2 フェーズ2: ライフサイクル管理

@@ -1,5 +1,5 @@
 /**
- * @file shared/types.ts
+ * @file shared/lifecycle-types.ts
  * @description BaseMap shared types
  */
 

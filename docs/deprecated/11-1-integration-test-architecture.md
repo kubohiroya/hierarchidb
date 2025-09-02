@@ -131,7 +131,7 @@ describe('Worker層直接呼び出しテスト', () => {
   
   beforeEach(async () => {
     // Workerサービスを直接インスタンス化
-    coreDB = new CoreDB('test-db');
+    coreDB = new CoreDB('test-services');
     ephemeralDB = new EphemeralDB('test-ephemeral');
     mutationService = new TreeMutationServiceImpl(coreDB, ephemeralDB, ...);
   });

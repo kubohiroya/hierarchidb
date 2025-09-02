@@ -16,7 +16,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
   ListItemSecondaryAction,
   IconButton,
   Stack,
@@ -26,15 +25,13 @@ import {
   AccordionDetails,
   ToggleButtonGroup,
   ToggleButton,
-  Slider
+  Slider,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   PictureAsPdf as PdfIcon,
   Html as HtmlIcon,
   Description as DocxIcon,
-  GridOn as ExcelIcon,
-  Map as MapIcon,
   Cloud as CloudIcon,
   Storage as LocalIcon,
   Share as ShareIcon,
@@ -43,7 +40,7 @@ import {
   Print as PrintIcon,
   Edit as EditIcon,
   Add as AddIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import type { ProjectEntity, ExportFormat } from '~/types/project-types';
 
@@ -51,46 +48,54 @@ interface OutputConfigStepProps {
   data: Partial<ProjectEntity>;
   onComplete: (data: Partial<ProjectEntity>) => void;
 }
-
+type ReportType = 'title' | 'summary' | 'map' | 'chart' | 'table' | 'text';
 export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComplete }) => {
   const [reportEnabled, setReportEnabled] = useState(false);
   const [reportFormat, setReportFormat] = useState<'pdf' | 'html' | 'docx'>('pdf');
-  const [reportSections, setReportSections] = useState<Array<{
-    type: string;
-    content: any;
-  }>>([]);
-  
+  const [reportSections, setReportSections] = useState<
+    Array<{
+      type: ReportType;
+      content: any;
+    }>
+  >([]);
+
   const [tilesEnabled, setTilesEnabled] = useState(false);
   const [tileFormat, setTileFormat] = useState<'pmtiles' | 'mbtiles' | 'xyz'>('pmtiles');
   const [tileZoomRange, setTileZoomRange] = useState<[number, number]>([0, 14]);
   const [tileCompression, setTileCompression] = useState<'none' | 'gzip' | 'brotli'>('gzip');
-  
+
   const [exportFormats, setExportFormats] = useState<ExportFormat[]>([]);
   const [exportPackaging, setExportPackaging] = useState<'separate' | 'zip' | 'geopackage'>('zip');
-  
+
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingPermissions, setSharingPermissions] = useState({
     download: true,
     print: true,
-    edit: false
+    edit: false,
   });
 
-  const layers = data.layers?.map(l => ({ id: l.id, name: l.name })) || [];
+  const layers = data.layers?.map((l) => ({ id: l.id, name: l.name })) || [];
 
-  const handleAddReportSection = (type: string) => {
-    setReportSections([...reportSections, {
-      type,
-      content: type === 'text' ? '' : {}
-    }]);
+  const handleAddReportSection = (type: ReportType) => {
+    setReportSections([
+      ...reportSections,
+      {
+        type,
+        content: type === 'text' ? '' : {},
+      },
+    ]);
   };
 
   const handleAddExportFormat = () => {
-    setExportFormats([...exportFormats, {
-      type: 'geojson',
-      layers: [],
-      includeStyle: true,
-      includeMetadata: true
-    }]);
+    setExportFormats([
+      ...exportFormats,
+      {
+        type: 'geojson',
+        layers: [],
+        includeStyle: true,
+        includeMetadata: true,
+      },
+    ]);
   };
 
   const handleSubmit = () => {
@@ -102,8 +107,8 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
         template: {
           id: 'default',
           headerFooter: true,
-          tableOfContents: true
-        }
+          tableOfContents: true,
+        },
       },
       tiles: {
         enabled: tilesEnabled,
@@ -111,24 +116,24 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
         config: {
           minZoom: tileZoomRange[0],
           maxZoom: tileZoomRange[1],
-          layers: layers.map(l => l.id),
+          layers: layers.map((l) => l.id),
           optimization: {
             simplification: true,
             compression: tileCompression,
-            tileSize: 512 as const
-          }
-        }
+            tileSize: 512 as const,
+          },
+        },
       },
       export: {
         formats: exportFormats,
-        packaging: exportPackaging
+        packaging: exportPackaging,
       },
       sharing: {
         publicUrl: sharingEnabled,
         embedCode: sharingEnabled,
         qrCode: sharingEnabled,
-        permissions: sharingPermissions
-      }
+        permissions: sharingPermissions,
+      },
     };
 
     onComplete({ outputConfig });
@@ -164,7 +169,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                   label="Enable Report Generation"
                 />
               </Grid>
-              
+
               {reportEnabled && (
                 <>
                   <Grid item xs={12}>
@@ -194,7 +199,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       </ToggleButton>
                     </ToggleButtonGroup>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Report Sections
@@ -206,7 +211,9 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                           <ListItemSecondaryAction>
                             <IconButton
                               size="small"
-                              onClick={() => setReportSections(reportSections.filter((_, i) => i !== index))}
+                              onClick={() =>
+                                setReportSections(reportSections.filter((_, i) => i !== index))
+                              }
                             >
                               <DeleteIcon />
                             </IconButton>
@@ -232,7 +239,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       </Button>
                     </Stack>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <FormControlLabel
                       control={<Checkbox defaultChecked />}
@@ -267,7 +274,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                   label="Enable Tile Generation"
                 />
               </Grid>
-              
+
               {tilesEnabled && (
                 <>
                   <Grid item xs={12}>
@@ -282,7 +289,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       <ToggleButton value="xyz">XYZ</ToggleButton>
                     </ToggleButtonGroup>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography gutterBottom>
                       Zoom Levels: {tileZoomRange[0]} - {tileZoomRange[1]}
@@ -296,12 +303,12 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       valueLabelDisplay="auto"
                     />
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Layers to Include
                     </Typography>
-                    {layers.map(layer => (
+                    {layers.map((layer) => (
                       <FormControlLabel
                         key={layer.id}
                         control={<Checkbox defaultChecked />}
@@ -309,7 +316,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       />
                     ))}
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Compression</InputLabel>
@@ -324,23 +331,19 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       </Select>
                     </FormControl>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <FormControlLabel
                       control={<Switch defaultChecked />}
                       label="Enable simplification"
                     />
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Hosting
                     </Typography>
-                    <ToggleButtonGroup
-                      value="local"
-                      exclusive
-                      fullWidth
-                    >
+                    <ToggleButtonGroup value="local" exclusive fullWidth>
                       <ToggleButton value="local">
                         <Stack alignItems="center" spacing={0.5}>
                           <LocalIcon />
@@ -384,10 +387,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       <Grid item xs={4}>
                         <FormControl fullWidth size="small">
                           <InputLabel>Format</InputLabel>
-                          <Select
-                            value={format.type}
-                            label="Format"
-                          >
+                          <Select value={format.type} label="Format">
                             <MenuItem value="geojson">GeoJSON</MenuItem>
                             <MenuItem value="shapefile">Shapefile</MenuItem>
                             <MenuItem value="kml">KML</MenuItem>
@@ -411,7 +411,9 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       <Grid item xs={1}>
                         <IconButton
                           size="small"
-                          onClick={() => setExportFormats(exportFormats.filter((_, i) => i !== index))}
+                          onClick={() =>
+                            setExportFormats(exportFormats.filter((_, i) => i !== index))
+                          }
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -429,7 +431,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                   Add Export Format
                 </Button>
               </Grid>
-              
+
               <Grid item xs={12}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Packaging</InputLabel>
@@ -466,28 +468,17 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                   label="Enable Public Sharing"
                 />
               </Grid>
-              
+
               {sharingEnabled && (
                 <>
                   <Grid item xs={12}>
                     <Stack direction="row" spacing={2}>
-                      <Chip
-                        icon={<ShareIcon />}
-                        label="Public URL"
-                        color="primary"
-                      />
-                      <Chip
-                        icon={<QrCodeIcon />}
-                        label="QR Code"
-                        color="primary"
-                      />
-                      <Chip
-                        label="Embed Code"
-                        color="primary"
-                      />
+                      <Chip icon={<ShareIcon />} label="Public URL" color="primary" />
+                      <Chip icon={<QrCodeIcon />} label="QR Code" color="primary" />
+                      <Chip label="Embed Code" color="primary" />
                     </Stack>
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Permissions
@@ -496,10 +487,12 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       control={
                         <Checkbox
                           checked={sharingPermissions.download}
-                          onChange={(e) => setSharingPermissions(prev => ({
-                            ...prev,
-                            download: e.target.checked
-                          }))}
+                          onChange={(e) =>
+                            setSharingPermissions((prev) => ({
+                              ...prev,
+                              download: e.target.checked,
+                            }))
+                          }
                         />
                       }
                       label={
@@ -513,10 +506,12 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       control={
                         <Checkbox
                           checked={sharingPermissions.print}
-                          onChange={(e) => setSharingPermissions(prev => ({
-                            ...prev,
-                            print: e.target.checked
-                          }))}
+                          onChange={(e) =>
+                            setSharingPermissions((prev) => ({
+                              ...prev,
+                              print: e.target.checked,
+                            }))
+                          }
                         />
                       }
                       label={
@@ -530,10 +525,12 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       control={
                         <Checkbox
                           checked={sharingPermissions.edit}
-                          onChange={(e) => setSharingPermissions(prev => ({
-                            ...prev,
-                            edit: e.target.checked
-                          }))}
+                          onChange={(e) =>
+                            setSharingPermissions((prev) => ({
+                              ...prev,
+                              edit: e.target.checked,
+                            }))
+                          }
                         />
                       }
                       label={
@@ -544,7 +541,7 @@ export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComp
                       }
                     />
                   </Grid>
-                  
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" gutterBottom>
                       Branding

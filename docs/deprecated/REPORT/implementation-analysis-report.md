@@ -40,7 +40,7 @@
 
 **実際には3分類システムが実装済み:**
 ```typescript
-// packages/core/src/types/entity-types.ts
+// packages/core/src/types/entity-lifecycle-types.ts
 export interface PeerEntity extends BaseEntity { /* 1対1 */ }
 export interface GroupEntity extends BaseEntity { /* 1対N */ }  
 export interface RelationalEntity extends BaseEntity { /* N対N */ }

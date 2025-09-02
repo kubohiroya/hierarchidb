@@ -207,7 +207,7 @@ class CoreDB {
 }
 
 // プラグインは別扱い
-class PluginRegistry {
+class PluginRegistryImpl {
   registerPlugin(plugin: PluginDefinition) {
     // TreeNodeとは異なる登録処理
   }

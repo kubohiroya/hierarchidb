@@ -75,8 +75,8 @@ visibility?: {
 ### Phase -1: BaseEntity重複定義の統合
 
 #### 作業内容
-1. `packages/common/plugin-base/src/types/base-types.ts`のBaseEntity削除
-2. `packages/common/types/src/entity-types.ts`の定義に統一
+1. `packages/common/plugin-base/src/types/base-lifecycle-types.ts`のBaseEntity削除
+2. `packages/common/types/src/entity-lifecycle-types.ts`の定義に統一
 3. 全参照を更新
 
 ### Phase -1: 未使用パッケージの削除（新規追加）
@@ -126,7 +126,7 @@ visibility?: {
 ### Phase 2: Service層の命名規則統一
 
 #### 対象ファイル
-- 改名: `WorkingCopyManager.ts` → `WorkingCopyService.ts`
+- 改名: `WorkingCopyManager.ts` → `WorkingCopyEntityService.ts`
 - 改名: `EntityWorkingCopyManager.ts` → `EntityWorkingCopyService.ts`
 
 #### 作業内容
@@ -199,7 +199,7 @@ packages/runtime/worker/
 │   └── services/
 │       ├── TreeQueryService.ts          # ツリー操作コア
 │       ├── TreeMutationService.ts       # ツリー変更コア
-│       ├── WorkingCopyService.ts        # WorkingCopyコア（改名後）
+│       ├── WorkingCopyEntityService.ts        # WorkingCopyコア（改名後）
 │       └── TreeSubscriptionService.ts   # 購読管理コア
 ```
 
@@ -209,7 +209,7 @@ packages/runtime/plugin-registry/
 ├── src/
 │   ├── registry/
 │   │   ├── BaseNodeTypeRegistry.ts      # 基底クラス（唯一の実装）
-│   │   └── PluginRegistry.ts            # プラグイン管理
+│   │   └── PluginRegistryImpl.ts            # プラグイン管理
 │   └── services/
 │       ├── NodeTypeService.ts           # 移動・統合
 │       └── PluginManagementService.ts   # 移動・統合

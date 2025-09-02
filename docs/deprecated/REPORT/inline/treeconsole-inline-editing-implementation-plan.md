@@ -206,7 +206,7 @@ const finishEdit = async (nodeId: string, newValue: string) => {
 - `packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts`
 
 ### 関連インターフェース
-- `packages/ui/treeconsole/treetable/src/types.ts`
+- `packages/ui/treeconsole/treetable/src/lifecycle-types.ts`
 - `packages/ui/treeconsole/base/src/hooks/useTreeViewController.tsx`
 
 ## 参考資料

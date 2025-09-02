@@ -11,7 +11,7 @@ The existing TreeConsole implementation in `references/eria-cartograph/app0` use
 **Old Pattern (FORBIDDEN):**
 ```typescript
 // Direct database access from UI
-import { TreeNodesDB } from '@/shared/db/TreeNodesDB';
+import { TreeNodesDB } from '@/shared/services/TreeNodesDB';
 const db = TreeNodesDB.getInstance();
 const nodes = await db.getNodes(nodeId);
 ```
@@ -40,7 +40,7 @@ const result = await api.getChildren({
 **Old Pattern:**
 ```typescript
 // Custom DataManagementWorkerService
-import { DataManagementWorkerService } from '@/shared/db/DataManagementWorkerService';
+import { DataManagementWorkerService } from '@/shared/services/DataManagementWorkerService';
 const service = DataManagementWorkerService.getInstance();
 await service.moveNodes(nodeIds, targetId);
 ```

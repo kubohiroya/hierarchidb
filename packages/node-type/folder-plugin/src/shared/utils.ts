@@ -108,38 +108,12 @@ export function sanitizeFolderName(name: string): string {
     .substring(0, FOLDER_VALIDATION.NAME_MAX_LENGTH);
 }
 
-export function createEmptyFolderEntity(nodeId: NodeId, name: string): FolderEntity {
+export function createEmptyFolderEntity(nodeId: NodeId): FolderEntity {
   const now = Date.now();
 
   return {
     id: generateFolderId(),
     nodeId,
-    name: sanitizeFolderName(name),
-    settings: {
-      displayOptions: {
-        iconColor: getDefaultIconColor(),
-        iconType: 'default',
-        sortDirection: 'asc',
-        viewMode: 'list',
-      },
-      permissions: {
-        isPublic: false,
-        isReadOnly: false,
-        allowedUsers: [],
-        deniedUsers: [],
-      },
-      rules: {
-        maxChildren: FOLDER_VALIDATION.MAX_CHILDREN_DEFAULT,
-        allowedChildTypes: [],
-        autoArchiveAfterDays: undefined,
-        requireApprovalForChanges: false,
-      },
-    },
-    statistics: {
-      childCount: 0,
-      descendantCount: 0,
-      accessCount: 0,
-    },
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -364,63 +338,6 @@ export function sortFolders(
   });
 
   return sorted;
-}
-
-/**
- * Permission utilities
- */
-export function hasPermission(
-  folder: FolderEntity,
-  userId: string,
-  operation: 'read' | 'write' | 'delete' | 'move' | 'create_child'
-): boolean {
-  const permissions = folder.settings?.permissions;
-  if (!permissions) return true; // Default allow all if no permissions set
-
-  // Check explicit deny
-  if (permissions.deniedUsers?.includes(userId)) {
-    return false;
-  }
-
-  // Check read-only for write operations
-  if (permissions.isReadOnly && ['write', 'delete', 'move', 'create_child'].includes(operation)) {
-    return false;
-  }
-
-  // Check public access for read operations
-  if (operation === 'read' && permissions.isPublic) {
-    return true;
-  }
-
-  // Check explicit allow
-  if (permissions.allowedUsers && permissions.allowedUsers.length > 0) {
-    return permissions.allowedUsers.includes(userId);
-  }
-
-  // Default behavior based on public setting
-  return permissions.isPublic || false;
-}
-
-/**
- * Statistics utilities
- */
-export function calculateFolderStatistics(
-  folder: FolderEntity,
-  childFolders: FolderEntity[]
-): FolderEntity['statistics'] {
-  const childCount = childFolders.length;
-  const descendantCount = childFolders.reduce(
-    (total, child) => total + (child.statistics?.descendantCount || 0) + 1,
-    0
-  );
-
-  return {
-    childCount,
-    descendantCount,
-    totalSize: childFolders.reduce((total, child) => total + (child.statistics?.totalSize || 0), 0),
-    lastAccessedAt: folder.statistics?.lastAccessedAt || folder.updatedAt,
-    accessCount: folder.statistics?.accessCount || 0,
-  };
 }
 
 /**

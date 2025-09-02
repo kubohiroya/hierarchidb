@@ -8,27 +8,22 @@ import type { RelationalEntity } from './entity-types';
 import { Timestamp } from './primitive-types';
 
 /**
- * TagId - タグの識別子のためのブランド型
- */
-export type TagId = string & { readonly __brand: 'TagId' };
-
-/**
  * TagEntity - システム全体で使用されるタグ
  * RelationalEntityとして実装し、複数のノードから参照される
  */
 export interface TagEntity extends RelationalEntity {
   /** タグの名前（表示名） */
   name: string;
-  
+
   /** タグの色（16進数カラーコード） */
   color: string;
-  
+
   /** タグの説明 */
   description?: string;
-  
+
   /** タグのカテゴリ（システム定義またはユーザー定義） */
   category: 'system' | 'user' | 'auto';
-  
+
   /** 使用頻度（検索時の順序決定に使用） */
   usageCount: number;
 }
@@ -37,7 +32,7 @@ export interface TagEntity extends RelationalEntity {
  * TagSuggestion - タグ入力時の候補表示用
  */
 export interface TagSuggestion {
-  id: TagId;
+  id: EntityId;
   name: string;
   color: string;
   usageCount: number;
@@ -51,7 +46,7 @@ export interface TagSuggestion {
 export interface NodeTagAssociation {
   id: EntityId;
   nodeId: NodeId;
-  tagId: TagId;
+  tagId: EntityId;
   assignedAt: Timestamp;
   assignedBy?: string; // ユーザーID（オプション）
 }
@@ -60,30 +55,11 @@ export interface NodeTagAssociation {
  * TagUsageStatistics - タグの使用統計
  */
 export interface TagUsageStatistics {
-  tagId: TagId;
+  tagId: EntityId;
   totalUsage: number;
   recentUsage: number; // 過去30日間の使用回数
   nodeTypes: Record<string, number>; // ノードタイプ別使用回数
   lastUsedAt: Timestamp;
-}
-
-/**
- * CreateTagRequest - タグ作成リクエスト
- */
-export interface CreateTagRequest {
-  name: string;
-  color?: string;
-  description?: string;
-  category?: 'system' | 'user';
-}
-
-/**
- * UpdateTagRequest - タグ更新リクエスト
- */
-export interface UpdateTagRequest {
-  name?: string;
-  color?: string;
-  description?: string;
 }
 
 /**

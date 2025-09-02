@@ -10,14 +10,15 @@ import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExt
 interface DialogStepDefinition {
   id: string;
   title: string;
-  component: React.ComponentType<any>;
-  validation?: any;
+  //component: React.ComponentType<any>;
+  //validation?: any;
 }
 
 interface ValidationExtension {
   validate: (data: any) => boolean | string;
 }
 
+/*
 interface PluginExtensionConfig {
   id: string;
   name: string;
@@ -28,6 +29,7 @@ interface ExtendableNodeTypeDefinition {
   nodeType: string;
   extensions: any[];
 }
+ */
 
 /**
  * Base class for plugins that extend the folder-plugin plugin
@@ -285,10 +287,9 @@ export abstract class BaseFolderPlugin {
     };
     required?: boolean;
     order?: number;
-    dependsOn?: string[];
+    //dependsOn?: string[];
   }): DialogStepDefinition {
     return {
-      stepNumber: config.order || 1,
       title: config.label,
       component: config.component,
       validation: config.validation
@@ -302,8 +303,7 @@ export abstract class BaseFolderPlugin {
             },
           }
         : undefined,
-
-      dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
+      //dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
     };
   }
 
@@ -328,41 +328,6 @@ export abstract class BaseFolderPlugin {
       defaultValue: config.defaultValue,
       validation: config.validation,
       pluginId: this.pluginId,
-    };
-  }
-
-  /**
-   * Get the complete plugin extension configuration
-   */
-  getExtensionConfig(): PluginExtensionConfig {
-    const extension = this.createExtension();
-
-    const config: PluginExtensionConfig = {
-      dialog: {
-        createSteps: extension.dialog?.createSteps,
-        editSteps: extension.dialog?.editSteps,
-      },
-      validation: extension.dialog?.validation,
-      entity: extension.entity,
-      metadata: extension.metadata,
-    };
-
-    return config;
-  }
-
-  /**
-   * Create an extendable node type definition for this plugin
-   */
-  createNodeTypeDefinition(): ExtendableNodeTypeDefinition {
-    const config = this.getExtensionConfig();
-
-    return {
-      nodeType: this.pluginId,
-      baseDefinition: {
-        nodeType: 'folder',
-        name: this.pluginName,
-      },
-      extensions: [config],
     };
   }
 }

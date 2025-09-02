@@ -2,7 +2,6 @@ export * from './action-types';
 export * from './api-types';
 export * from './command-types';
 export * from './datasource';
-export * from './entiry-working-copy-types';
 export * from './entity-backup-types';
 export * from './entity-handler-types';
 export * from './entity-manager-types';

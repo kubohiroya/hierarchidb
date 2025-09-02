@@ -60,7 +60,7 @@ HierarchiDBのプラグインシステムは、アスペクト指向プログラ
 sequenceDiagram
     participant UI as UI Layer
     participant WA as WorkerAPI
-    participant PR as PluginRegistry
+    participant PR as PluginRegistryImpl
     participant LM as LifecycleManager
     participant EH as EntityHandler
     participant DB as Database
@@ -500,12 +500,12 @@ describe('MyPluginHandler', () => {
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { PluginRegistry } from '@hierarchidb/worker/registry';
+import { PluginRegistryImpl } from '@hierarchidb/worker/registry';
 import { MyPluginDefinition } from '../definitions/MyPluginDefinition';
 
 describe('MyPlugin Integration', () => {
-  it('should register with PluginRegistry', () => {
-    const registry = PluginRegistry.getInstance();
+  it('should register with PluginRegistryImpl', () => {
+    const registry = PluginRegistryImpl.getInstance();
     registry.register(MyPluginDefinition);
     
     const definition = registry.get('myplugin');
@@ -628,7 +628,7 @@ export type Timestamp = number;
 export interface PluginDefinition { /* ... */ }
 export interface EntityHandler { /* ... */ }
 export interface NodeLifecycleHooks { /* ... */ }
-export class PluginRegistry { /* ... */ }
+export class PluginRegistryImpl { /* ... */ }
 ```
 
 ## 付録B: プラグイン作成チェックリスト

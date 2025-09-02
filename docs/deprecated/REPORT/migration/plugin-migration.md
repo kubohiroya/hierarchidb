@@ -25,7 +25,7 @@ packages/plugins/project/
 ├── src/
 │   ├── shared/                    # ✅ 共通定義
 │   │   ├── metadata.ts
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   └── constants.ts
 │   ├── ui/                        # ✅ UI専用
 │   │   ├── plugin.ts
@@ -159,7 +159,7 @@ export interface ProjectEntity {
 
 **After:**
 ```typescript
-// src/shared/types.ts - Centralized shared types
+// src/shared/lifecycle-types.ts - Centralized shared types
 export interface ProjectEntity {
   id: EntityId;
   nodeId: NodeId;
@@ -520,7 +520,7 @@ export function isValidLayerConfiguration(config: unknown): config is LayerConfi
 ### 6.2 Add proper MapLibre types
 
 ```typescript
-// src/shared/types.ts
+// src/shared/lifecycle-types.ts
 export type MapLibrePaintProperty = string | number | boolean | (string | number)[];
 export type MapLibreLayoutProperty = string | number | boolean | (string | number)[];
 export type MapLibreFilterExpression = (string | number | boolean | MapLibreFilterExpression)[];

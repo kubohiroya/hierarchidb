@@ -3,18 +3,10 @@
  */
 
 import { NodeId } from '@hierarchidb/common-type';
-import { 
-  FolderEntity, 
-  CreateFolderData, 
-  UpdateFolderData,
-  FolderBookmark,
-  FolderTemplate,
-  FolderStatsSummary,
-  FolderSearchQuery
-} from './types';
+import { FolderEntity, CreateFolderData, UpdateFolderData, FolderSearchQuery } from './types';
 
 /**
- * Main Folder API interface for UI-Worker communication via PluginRegistry
+ * Main Folder API interface for UI-Worker communication via PluginRegistryImpl
  */
 export interface FolderAPI extends Record<string, (...args: any[]) => Promise<any>> {
   // Core folder-plugin operations
@@ -25,46 +17,30 @@ export interface FolderAPI extends Record<string, (...args: any[]) => Promise<an
 
   // Folder hierarchy operations
   moveFolder(folderNodeId: NodeId, newParentNodeId: NodeId): Promise<void>;
-  copyFolder(sourceNodeId: NodeId, targetParentNodeId: NodeId, newName?: string): Promise<FolderEntity>;
+  copyFolder(
+    sourceNodeId: NodeId,
+    targetParentNodeId: NodeId,
+    newName?: string
+  ): Promise<FolderEntity>;
   duplicateFolder(folderNodeId: NodeId): Promise<FolderEntity>;
 
   // Folder settings operations
-  updateSettings(nodeId: NodeId, settings: FolderEntity['settings']): Promise<void>;
-  getSettings(nodeId: NodeId): Promise<FolderEntity['settings'] | undefined>;
+  updateSettings(nodeId: NodeId, settings: NodeId): Promise<void>;
+  getSettings(nodeId: NodeId): Promise<NodeId | undefined>;
   resetSettings(nodeId: NodeId): Promise<void>;
-
-  // Folder statistics operations
-  getStatistics(nodeId: NodeId): Promise<FolderEntity['statistics'] | undefined>;
-  refreshStatistics(nodeId: NodeId): Promise<FolderEntity['statistics']>;
-  getStatsSummary(nodeId: NodeId): Promise<FolderStatsSummary>;
 
   // Folder search operations
   searchFolders(query: FolderSearchQuery): Promise<FolderSearchResult>;
   findSimilarFolders(nodeId: NodeId): Promise<FolderEntity[]>;
   getFolderPath(nodeId: NodeId): Promise<FolderPathInfo[]>;
 
-  // Bookmark operations
-  createBookmark(userNodeId: NodeId, targetFolderId: NodeId, label: string): Promise<FolderBookmark>;
-  updateBookmark(bookmarkId: string, data: Partial<FolderBookmark>): Promise<void>;
-  deleteBookmark(bookmarkId: string): Promise<void>;
-  getBookmarks(userNodeId: NodeId): Promise<FolderBookmark[]>;
-
-  // Template operations
-  createTemplate(nodeId: NodeId, name: string, description?: string): Promise<FolderTemplate>;
-  applyTemplate(templateId: string, targetParentNodeId: NodeId): Promise<FolderApplyTemplateResult>;
-  updateTemplate(templateId: string, data: Partial<FolderTemplate>): Promise<void>;
-  deleteTemplate(templateId: string): Promise<void>;
-  getTemplates(nodeId: NodeId): Promise<FolderTemplate[]>;
-
   // Batch operations
   bulkMove(folderNodeIds: NodeId[], newParentNodeId: NodeId): Promise<BulkOperationResult>;
   bulkDelete(folderNodeIds: NodeId[]): Promise<BulkOperationResult>;
-  bulkUpdateSettings(folderNodeIds: NodeId[], settings: Partial<FolderEntity['settings']>): Promise<BulkOperationResult>;
-
-  // Access control operations
-  checkPermission(nodeId: NodeId, userId: string, operation: FolderOperation): Promise<boolean>;
-  updatePermissions(nodeId: NodeId, permissions: NonNullable<FolderEntity['settings']>['permissions']): Promise<void>;
-  getEffectivePermissions(nodeId: NodeId, userId: string): Promise<EffectivePermissions>;
+  bulkUpdateSettings(
+    folderNodeIds: NodeId[],
+    settings: Partial<FolderEntity>
+  ): Promise<BulkOperationResult>;
 }
 
 /**
@@ -115,13 +91,13 @@ export interface BulkOperationResult {
 /**
  * Permission types
  */
-export type FolderOperation = 
-  | 'read' 
-  | 'write' 
-  | 'delete' 
-  | 'move' 
-  | 'create_child' 
-  | 'modify_permissions' 
+export type FolderOperation =
+  | 'read'
+  | 'write'
+  | 'delete'
+  | 'move'
+  | 'create_child'
+  | 'modify_permissions'
   | 'access_statistics';
 
 export interface EffectivePermissions {

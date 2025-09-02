@@ -1,4 +1,5 @@
 import type {
+  EntityId,
   NodeId,
   NodeTagAssociation,
   TagEntity,
@@ -17,11 +18,12 @@ export interface UpdateTagRequest {
   color?: string;
   description?: string;
   category?: 'system' | 'user' | 'auto';
+  usageCount: number;
 }
 
 export interface TagAssociationRequest {
   nodeId: NodeId;
-  tagId: TagEntity['id'];
+  tagId: EntityId;
 }
 
 export interface TagAPI {
@@ -33,17 +35,17 @@ export interface TagAPI {
   /**
    * Get a tag by ID
    */
-  getTag(tagId: TagEntity['id']): Promise<TagEntity | undefined>;
+  getTag(tagId: EntityId): Promise<TagEntity | undefined>;
 
   /**
    * Update an existing tag
    */
-  updateTag(tagId: TagEntity['id'], updates: UpdateTagRequest): Promise<TagEntity | undefined>;
+  updateTag(tagId: EntityId, updates: UpdateTagRequest): Promise<TagEntity | undefined>;
 
   /**
    * Delete a tag and all its associations
    */
-  deleteTag(tagId: TagEntity['id']): Promise<boolean>;
+  deleteTag(tagId: EntityId): Promise<boolean>;
 
   /**
    * Get all tags
@@ -78,7 +80,7 @@ export interface TagAPI {
   /**
    * Get all nodes associated with a tag
    */
-  getNodesByTag(tagId: TagEntity['id']): Promise<NodeTagAssociation[]>;
+  getNodesByTag(tagId: EntityId): Promise<NodeTagAssociation[]>;
 
   /**
    * Get all tag associations for multiple nodes

@@ -1,5 +1,5 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { FolderEntity, FolderEntityWorkingCopy, FolderBookmark, FolderTemplate } from '../types/index';
+import type { NodeId, EntityId, WorkingCopy } from '@hierarchidb/common-type';
+import type { FolderEntity, FolderBookmark, FolderTemplate } from '../types/index';
 import { FolderEntityHandler } from './FolderEntityHandler';
 
 export class FolderEntityManager {
@@ -37,15 +37,18 @@ export class FolderEntityManager {
     return this.handler.getEntity(nodeId);
   }
 
-  async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
+  async createWorkingCopy(nodeId: NodeId): Promise<WorkingCopy> {
     return this.handler.createWorkingCopy(nodeId);
   }
 
-  async updateWorkingCopy(workingCopyId: EntityId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy> {
+  async updateWorkingCopy(
+    workingCopyId: EntityId,
+    updates: Partial<WorkingCopy>
+  ): Promise<WorkingCopy> {
     return this.handler.updateWorkingCopy(workingCopyId, updates);
   }
 
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityWorkingCopy): Promise<void> {
+  async commitWorkingCopy(nodeId: NodeId, workingCopy: WorkingCopy): Promise<void> {
     return this.handler.commitWorkingCopy(nodeId, workingCopy);
   }
 
@@ -53,7 +56,10 @@ export class FolderEntityManager {
     return this.handler.discardWorkingCopy(nodeId);
   }
 
-  async addBookmark(nodeId: NodeId, bookmark: Omit<FolderBookmark, 'id' | 'folderId' | 'createdAt'>): Promise<FolderBookmark> {
+  async addBookmark(
+    nodeId: NodeId,
+    bookmark: Omit<FolderBookmark, 'id' | 'folderId' | 'createdAt'>
+  ): Promise<FolderBookmark> {
     return this.handler.addBookmark(nodeId, bookmark);
   }
 
@@ -65,7 +71,10 @@ export class FolderEntityManager {
     return this.handler.getBookmarks(nodeId);
   }
 
-  async addTemplate(nodeId: NodeId, template: Omit<FolderTemplate, 'id' | 'folderId' | 'createdAt'>): Promise<FolderTemplate> {
+  async addTemplate(
+    nodeId: NodeId,
+    template: Omit<FolderTemplate, 'id' | 'folderId' | 'createdAt'>
+  ): Promise<FolderTemplate> {
     return this.handler.addTemplate(nodeId, template);
   }
 

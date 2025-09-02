@@ -37,15 +37,17 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
+    "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@mui/x-date-pickers": "^7.29.4",
     "dexie": "^4.2.0",
+    "i18next": "^25.4.2",
     "react-hook-form": "^7.62.0",
+    "react-i18next": "^15.7.3",
     "react-tag-input": "^6.10.6",
     "uuid": "^9.0.1",
     "yup": "^1.7.0"

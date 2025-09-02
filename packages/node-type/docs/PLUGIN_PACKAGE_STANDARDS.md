@@ -22,7 +22,7 @@ my-plugin/
 │   │   └── MyPluginDefinition.ts
 │   ├── shared/                   # 共通コード
 │   │   ├── index.ts
-│   │   ├── types.ts
+│   │   ├── lifecycle-types.ts
 │   │   ├── constants.ts
 │   │   ├── utils.ts
 │   │   ├── api.ts
@@ -189,7 +189,7 @@ export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyWorkingCopy
 
 ### ✅ 共通コード
 - [ ] src/shared/index.ts
-- [ ] src/shared/types.ts
+- [ ] src/shared/lifecycle-types.ts
 - [ ] src/shared/constants.ts
 
 ### ✅ 品質保証

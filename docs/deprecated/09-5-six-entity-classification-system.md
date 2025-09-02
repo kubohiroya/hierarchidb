@@ -378,7 +378,7 @@ export interface BatchSessionEntity extends EphemeralRelationalEntity {
 ### 5.1 データベース分離
 
 ```typescript
-// packages/worker/src/db/DatabaseManager.ts
+// packages/worker/src/services/DatabaseManager.ts
 export class DatabaseManager {
   private coreDB: Dexie;      // Persistent EntityTypes
   private ephemeralDB: Dexie; // Ephemeral EntityTypes

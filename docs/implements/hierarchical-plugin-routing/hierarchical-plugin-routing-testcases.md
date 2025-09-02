@@ -189,12 +189,12 @@
 
 ```typescript
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { HierarchicalPluginRouter, PluginRegistry, parseHierarchicalUrl } from '@hierarchidb/ui-routing';
+import { HierarchicalPluginRouter, PluginRegistryImpl, parseHierarchicalUrl } from '@hierarchidb/ui-routing';
 
 beforeEach(() => {
   // 【テスト前準備】: 各テスト実行前にプラグインレジストリをクリーンな状態に初期化
   // 【環境初期化】: 前のテストの影響を排除し、一貫したテスト環境を提供
-  PluginRegistry.clear();
+  PluginRegistryImpl.clear();
 });
 
 afterEach(() => {

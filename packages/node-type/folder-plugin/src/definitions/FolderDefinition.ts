@@ -1,23 +1,25 @@
-import type { NodeTypeDefinition, NodeId, NodeType } from '@hierarchidb/common-type';
-import type { FolderEntity, FolderEntityWorkingCopy } from '../types/index';
+import type { NodeId, NodeType, PluginIntegrated } from '@hierarchidb/common-type';
+import type { FolderEntity } from '../types/index';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import { FolderValidation } from '../shared/metadata';
 
-export const FolderDefinition: NodeTypeDefinition<FolderEntity, never, FolderEntityWorkingCopy> = {
+export const FolderDefinition: PluginIntegrated = {
   nodeType: 'folder' as NodeType,
   name: 'folder',
   displayName: 'Folder',
-  icon: 'folder',
-  color: '#FFA726',
+  icon: {
+    muiIconName: 'folder',
+    color: '#FFA726',
+  },
   database: {
-    entityStore: 'folders',
+    dbName: 'folders',
     schema: {
       '&id': 'EntityId',
-      'nodeId': 'NodeId',
+      nodeId: 'NodeId',
       'name, description': '',
       'createdAt, updatedAt, version': '',
     },
-    version: 1
+    version: 1,
   },
   entityHandler: new FolderEntityHandler(),
   lifecycle: {
@@ -27,12 +29,12 @@ export const FolderDefinition: NodeTypeDefinition<FolderEntity, never, FolderEnt
     beforeDelete: async (nodeId: NodeId) => {
       console.log(`Cleaning up folder node: ${nodeId}`);
       const handler = new FolderEntityHandler();
-      await handler.cleanup(nodeId);
-    }
+      await handler.cleanup();
+    },
   },
   validation: {
     namePattern: new RegExp(FolderValidation.namePattern),
     maxChildren: FolderValidation.maxChildren,
-    customValidators: []
-  }
-};;
+    customValidators: [],
+  },
+};

@@ -53,7 +53,7 @@ sequenceDiagram
     participant WA as WorkerAPI
     participant CM as CommandManager
     participant LM as LifecycleManager
-    participant PR as PluginRegistry
+    participant PR as PluginRegistryImpl
     participant PD as PluginDefinition
     participant EH as EntityHandler
     participant EDB as EphemeralDB
@@ -272,7 +272,7 @@ LifecycleManagerは以下の責務を持ちます：
 ```typescript
 // packages/worker/src/lifecycle/LifecycleManager.ts（概念）
 export class LifecycleManager {
-  private registry: PluginRegistry;
+  private registry: PluginRegistryImpl;
 
   async triggerBeforeCreate(
     parentId: TreeNodeId,
@@ -315,7 +315,7 @@ export class LifecycleManager {
 
 ### 2.4 主要コンポーネント
 
-#### PluginRegistry
+#### PluginRegistryImpl
 すべてのプラグイン定義を管理する中央レジストリ。プラグインの登録・検索・管理を担当。
 
 #### PluginDefinition
@@ -690,7 +690,7 @@ export class MyPluginService {
 ```typescript
 // packages/worker/src/WorkerAPIImpl.ts（拡張部分）
 import * as Comlink from 'comlink';
-import { PluginRegistry } from '~/registry';
+import { PluginRegistryImpl } from '~/registry';
 
 export class WorkerAPIImpl {
   private pluginServices = new Map<string, unknown>();
@@ -706,7 +706,7 @@ export class WorkerAPIImpl {
     }
 
     // プラグイン定義を取得
-    const registry = PluginRegistry.getInstance();
+    const registry = PluginRegistryImpl.getInstance();
     const definition = registry.get(pluginName);
     
     if (!definition) {
@@ -979,12 +979,12 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
 
 ```typescript
 // packages/_app/src/plugins/register.ts
-import { PluginRegistry } from '~/registry'; // Workerパッケージ内のregistry
+import { PluginRegistryImpl } from '~/registry'; // Workerパッケージ内のregistry
 import { MyPluginDefinition } from '@hierarchidb/plugin-myplugin';
 
 // アプリケーション起動時に実行
 export function registerPlugins() {
-  const registry = PluginRegistry.getInstance();
+  const registry = PluginRegistryImpl.getInstance();
   
   // プラグインを登録
   registry.register(MyPluginDefinition);
@@ -1041,12 +1041,12 @@ describe('MyPluginHandler', () => {
 ```typescript
 // packages/plugins/[plugin-name]/src/__tests__/integration.test.ts
 import { describe, it, expect } from 'vitest';
-import { PluginRegistry } from '~/registry'; // 実際のレジストリの場所に応じて調整
+import { PluginRegistryImpl } from '~/registry'; // 実際のレジストリの場所に応じて調整
 import { MyPluginDefinition } from '../definitions/MyPluginDefinition';
 
 describe('MyPlugin Integration', () => {
-  it('should register with PluginRegistry', () => {
-    const registry = PluginRegistry.getInstance();
+  it('should register with PluginRegistryImpl', () => {
+    const registry = PluginRegistryImpl.getInstance();
     registry.register(MyPluginDefinition);
     
     const definition = registry.get('myplugin');
@@ -1217,7 +1217,7 @@ export type Timestamp = number;
 export interface PluginDefinition { /*...*/ }
 export interface EntityHandler { /*...*/ }
 export interface NodeLifecycleHooks { /*...*/ }
-export class PluginRegistry { /*...*/ }
+export class PluginRegistryImpl { /*...*/ }
 ```
 
 ## 付録B: 既存プラグインの例

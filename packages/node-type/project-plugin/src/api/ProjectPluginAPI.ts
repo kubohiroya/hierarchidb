@@ -29,8 +29,8 @@ export interface ProjectHealthStatus {
  * In production, this would be connected via Comlink to the worker
  */
 class ProjectPluginAPIClass {
-  private initialized = false;
-  private activeSessions = new Map<string, AnalysisSession>();
+  public initialized = false;
+  public activeSessions = new Map<string, AnalysisSession>();
 
   /**
    * Initialize the plugin API
@@ -215,7 +215,7 @@ class ProjectPluginAPIClass {
   async createSnapshot(
     nodeId: NodeId,
     name: string,
-    description: string
+    _description: string
   ): Promise<string> {
     if (!this.initialized) {
       await this.initialize();
@@ -246,9 +246,9 @@ class ProjectPluginAPIClass {
   }
 
   /**
-   * Private helper to simulate analysis execution
+   * Helper to simulate analysis execution
    */
-  private simulateAnalysis(sessionId: string, config: any): void {
+  public simulateAnalysis(sessionId: string, _config: any): void {
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
 

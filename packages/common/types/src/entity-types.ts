@@ -47,17 +47,6 @@ export interface AutoLifecycleConfig {
 }
 
 /**
- * Working copy configuration
- */
-export interface WorkingCopyConfig {
-  /** Whether working copy is enabled for this entity */
-  enabled: boolean;
-
-  /** Store name for working copies */
-  tableName: string;
-}
-
-/**
  * Complete entity metadata for lifecycle management
  */
 export interface EntityMetadata {
@@ -72,9 +61,6 @@ export interface EntityMetadata {
 
   /** Reference management for relational entities */
   referenceManagement?: ReferenceManagement;
-
-  /** Working copy configuration */
-  workingCopyConfig?: WorkingCopyConfig;
 }
 
 /**
@@ -104,6 +90,7 @@ export interface PeerEntity extends BaseEntity {
   // ダイアログの再開ステップ番号（オプション）
   resumeStep?: number;
   // 地図表示パラメータ（zoom, lng, lat）（オプション）
+
   mapParams?: {
     zoom: number;
     lng: number;

@@ -163,7 +163,7 @@ packages/common/core/src/types/
 ├── plugin-extension-refactored.ts   # リファクタリング版（完全版）
 └── plugin-extension/                # モジュール分割版（検討中）
     ├── index.ts
-    ├── stepper-dialog-types.ts
+    ├── stepper-dialog-lifecycle-types.ts
     ├── step-definitions.ts
     ├── field-definitions.ts
     ├── validation.ts

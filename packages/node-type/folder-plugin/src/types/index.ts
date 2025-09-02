@@ -14,30 +14,9 @@ export type {
 // Import tag-related types
 export type { TagId, TagSuggestion } from '@hierarchidb/common-type';
 
-
-
 // Keep existing simple types for backward compatibility if needed
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { EntityId } from '@hierarchidb/common-type';
 import type { FolderSettings as ImportedFolderSettings } from '../entities/FolderEntity';
-
-// Export FolderEntityWorkingCopy for UI components
-export interface FolderEntityWorkingCopy {
-  id: EntityId;
-  nodeId: NodeId;
-  name: string;
-  description?: string;
-  category?: string;
-  settings: ImportedFolderSettings;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-  copiedAt: number;
-  originalNodeId?: NodeId;
-  hasEntityCopy?: boolean;
-  entityWorkingCopyId?: EntityId;
-  originalVersion?: number;
-  hasGroupEntityCopy?: Record<string, boolean>;
-}
 
 // Additional display types for UI
 export interface FolderDisplayData {

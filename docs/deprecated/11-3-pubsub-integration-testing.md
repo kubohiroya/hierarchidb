@@ -30,7 +30,7 @@ Pub/Sub統合テストは、HierarchiDBのイベント駆動アーキテクチ�
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { TreeObservableServiceImpl } from '../../services/TreeObservableServiceImpl';
-import { CoreDB } from '../../db/CoreDB';
+import { CoreDB } from '../../services/CoreDB';
 import type { TreeNodeId, TreeNode, TreeChangeEvent } from '@hierarchidb/core';
 
 describe('Pub/Sub Service Node環境テスト', () => {
@@ -39,7 +39,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
 
   beforeEach(async () => {
     // 独立したデータベースインスタンス
-    coreDB = new CoreDB('test-pubsub-db');
+    coreDB = new CoreDB('test-pubsub-services');
     await coreDB.open();
     
     // Observable Serviceの初期化
@@ -623,7 +623,7 @@ describe('エラーハンドリング', () => {
   });
 
   it('データベースエラー時の適切な処理', async () => {
-    const nodeId = 'db-error-test' as TreeNodeId;
+    const nodeId = 'services-error-test' as TreeNodeId;
     const receivedEvents: TreeChangeEvent[] = [];
     const receivedErrors: any[] = [];
 
@@ -644,7 +644,7 @@ describe('エラーハンドリング', () => {
     const observable = await observableService.observeNode({
       type: 'observeNode',
       payload: { nodeId },
-      commandId: 'cmd-db-error',
+      commandId: 'cmd-services-error',
       timestamp: Date.now(),
     });
 
