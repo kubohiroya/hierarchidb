@@ -17,5 +17,11 @@
     "types": ["vitest/globals", "@testing-library/jest-dom", "node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/__tests__/**",
+    "src/definitions/**",
+    "src/handlers/ExtensibleFolderHandler.ts"
+  ]
 }

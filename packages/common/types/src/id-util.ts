@@ -1,4 +1,4 @@
-import { EntityId, NodeId, TreeId } from './id-types';
+import { EntityId, NodeId, TreeId, NodeType } from './id-types';
 
 // Helper functions to create branded types
 export function toNodeId(id: string): NodeId {
@@ -9,6 +9,10 @@ export function toEntityId(id: string): EntityId {
 }
 export function toTreeId(id: string): TreeId {
   return id as TreeId;
+}
+
+export function toNodeType(value: string): NodeType {
+  return value as NodeType;
 }
 
 // Type guards

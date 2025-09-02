@@ -18,7 +18,6 @@ export const lifecycle: NodeLifecycleHooks<FolderEntity> = {
 
   beforeDelete: async (nodeId: NodeId) => {
     console.log(`Folder will be deleted: ${nodeId}`);
-    // Clean up bookmarks and templates via entity handler
   },
 
   afterDelete: async (nodeId: NodeId) => {

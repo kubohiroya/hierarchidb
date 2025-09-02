@@ -14,6 +14,7 @@ import type {
   CommitWorkingCopyForCreatePayload,
   DiscardWorkingCopyPayload,
 } from '@hierarchidb/common-type';
+import { toNodeType } from '@hierarchidb/common-type';
 import { createCommand, createAdapterCommandId } from '../utils';
 import type { CommandAdapterOptions } from '../../types/index';
 import { TreeConsoleAdapterError } from '../../types/index';
@@ -85,7 +86,7 @@ export class WorkingCopyCommandsAdapter {
       // Command creation is no longer needed with the new API
 
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(nodeType, parentId, {
+      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(toNodeType(nodeType), parentId, {
         name,
       });
 

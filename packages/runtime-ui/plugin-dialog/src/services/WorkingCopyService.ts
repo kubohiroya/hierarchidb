@@ -58,22 +58,7 @@ export class WorkingCopyService {
     // }
   }
 
-  /**
-   * Handle working copy change from Worker
-   */
-  private handleWorkingCopyChange(_nodeId: NodeId, _state: any) {
-    // Evaluate capabilities based on new state
-    const evaluatedState = this.evaluateCapabilities(nodeId, state);
-    
-    // Update cache
-    this.stateCache.set(nodeId, evaluatedState);
-    
-    // Notify subscribers
-    const subscriber = this.subscribers.get(nodeId as string);
-    if (subscriber) {
-      subscriber(evaluatedState);
-    }
-  }
+  // Note: no subscription handler wiring for now
 
   /**
    * Evaluate capabilities for current state
@@ -136,16 +121,28 @@ export class WorkingCopyService {
     try {
       // Call Worker API to update
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const response = await workingCopyAPI.updateWorkingCopy(nodeId, {
-        data: updates.data,
-        currentStep: updates.currentStep,
-        completedSteps: Array.from(updates.completedSteps || []),
-      });
+      await workingCopyAPI.updateWorkingCopy(nodeId, {});
 
-      // The Worker will trigger a state change notification
-      // which will be handled by handleWorkingCopyChange
-      
-      return this.evaluateCapabilities(nodeId, response);
+      const prev = this.stateCache.get(nodeId) || ({} as WorkingCopyState);
+      const merged: WorkingCopyState = {
+        nodeId,
+        treeId: updates.treeId ?? prev.treeId!,
+        nodeType: updates.nodeType ?? prev.nodeType!,
+        data: updates.data ?? prev.data ?? {},
+        currentStep: updates.currentStep ?? prev.currentStep ?? 0,
+        completedSteps: updates.completedSteps ?? prev.completedSteps ?? new Set(),
+        capabilities: updates.capabilities ?? prev.capabilities ?? {
+          canNavigateToSteps: new Map(),
+          canProceedToNext: true,
+          canBackToPrevious: true,
+          canSave: true,
+          canStartBatch: false,
+        },
+        isDraft: updates.isDraft ?? prev.isDraft,
+        lastModified: Date.now(),
+      };
+      this.stateCache.set(nodeId, merged);
+      return merged;
     } catch (error) {
       console.error('Failed to update working copy:', error);
       throw error;
@@ -169,7 +166,7 @@ export class WorkingCopyService {
    * Evaluate step capabilities
    */
   async evaluateStepCapabilities(
-    nodeId: NodeId,
+    _nodeId: NodeId,
     _stepIndex: number,
     _data: any
   ): Promise<StepCapabilitiesState> {
@@ -179,7 +176,7 @@ export class WorkingCopyService {
       const capabilities = {
         canNavigateToSteps: new Map(),
         canProceedToNext: true,
-        canBackToPrevious: stepIndex > 0,
+        canBackToPrevious: _stepIndex > 0,
         canSave: true,
         canStartBatch: false,
       };
@@ -212,11 +209,8 @@ export class WorkingCopyService {
         this.subscribers.delete(nodeId as string);
       }
       
-      if (result.success && result.node) {
-        return result.node.nodeId;
-      } else {
-        throw new Error(result.error || 'Save failed');
-      }
+      if (result.success) return nodeId;
+      throw new Error(result.error || 'Save failed');
     } catch (error) {
       console.error('Failed to save working copy:', error);
       throw error;

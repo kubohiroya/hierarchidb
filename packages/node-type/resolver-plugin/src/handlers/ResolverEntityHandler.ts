@@ -44,7 +44,6 @@ export interface CreateResolverData {
  */
 export class ResolverEntityHandler extends BaseEntityHandler<
   ResolverEntity,
-  any, // ResolverWorkingCopy doesn't extend WorkingCopy base type
   CreateResolverData,
   ResolverSearchCriteria
 > {

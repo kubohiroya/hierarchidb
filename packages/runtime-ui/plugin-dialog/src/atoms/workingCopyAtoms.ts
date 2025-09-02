@@ -69,8 +69,8 @@ export const workingCopyAtom = atom<WorkingCopyData | null>(null);
  */
 export const dialogStateAtom = atom<DialogState>({
   currentStep: 0,
-  completedSteps: new Set(),
-  visitedSteps: new Set([0]),
+  completedSteps: new Set<number>(),
+  visitedSteps: new Set<number>([0]),
   isSubmitting: false,
   hasUnsavedChanges: false,
 });
@@ -312,8 +312,8 @@ export const resetDialogAtom = atom(
     set(workingCopyAtom, null);
     set(dialogStateAtom, {
       currentStep: 0,
-      completedSteps: new Set(),
-      visitedSteps: new Set([0]),
+      completedSteps: new Set<number>(),
+      visitedSteps: new Set<number>([0]),
       isSubmitting: false,
       hasUnsavedChanges: false,
     });

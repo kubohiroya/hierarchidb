@@ -1,9 +1,9 @@
 import Dexie from 'dexie';
-import type { FolderEntity, FolderBookmark, FolderTemplate } from '../types/index';
+import type { FolderEntity, FolderWorkingCopy } from '../types/index';
 
 export class FolderDatabase extends Dexie {
   folders!: Dexie.Table<FolderEntity, string>;
-  workingCopies!: Dexie.Table<FolderEntityWorkingCopy, string>;
+  workingCopies!: Dexie.Table<FolderWorkingCopy, string>;
 
   constructor() {
     super('FolderDatabase');
