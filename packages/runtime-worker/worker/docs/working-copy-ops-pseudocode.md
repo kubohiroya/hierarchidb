@@ -4,6 +4,10 @@ vk:doc kind=spec audience=dev scope=worker
 
 この文書は実装を変えずに、Tx境界と典型エラー処理、戻りスキーマを共有する目的の草案です。
 
+## Tx一貫性（原則）
+- holder/child/関連エンティティの作成・反映・削除は同一DBトランザクションで原子的に行う。
+- 途中失敗時は全体ロールバック（別スレッド通知やUI更新はTx外で非同期に行う）。
+
 ## createWorkingCopy（get-or-create）
 
 ```ts
@@ -113,4 +117,3 @@ async function hasWcInSubtree(rootId: string, targetId: string): Promise<boolean
 
 ## 注意
 - 擬似コードは Tx 境界と戻り値の形を共有するための雛形。実装詳細（型/フィールド名/マージロジック）は各 node-type の仕様に従う。
-

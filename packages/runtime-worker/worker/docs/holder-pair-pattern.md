@@ -45,4 +45,4 @@ Trash への適用（統合案）
 - `docs/working-copy-ops-pseudocode.md`
 - `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
 - `docs/adr/adr-single-working-copy-per-target.md`
-
+- `docs/adr/adr-workingcopy-trash-unification.md`
