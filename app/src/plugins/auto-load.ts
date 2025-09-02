@@ -1,113 +1,114 @@
 /**
- * Auto-load plugins based on package.json dependencies
- * This file automatically discovers and loads all @hierarchidb/node-type-*-plugin packages
+ * Auto-load HierarchiDB plugins using virtual modules generated at build time.
+ * - virtual:plugin-definitions … metadata for plugins (includes hierarchidb.plugin)
+ * - virtual:plugin-map … dynamic import map per nodeType
  */
 
-import { manifestFileDiscovery, type PluginLoadResult } from '@hierarchidb/runtime-plugin-registry';
 import type { NodeType } from '@hierarchidb/common-type';
 
-// Import package.json to discover plugins
-import packageJson from '../../package.json';
+// Provided by @hierarchidb/tools-vite-plugin-package-reader (vite virtual modules)
+// These module declarations are injected during dev by the Vite plugin.
+// In build, they are real modules generated at compile time.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import pluginDefinitions from 'virtual:plugin-definitions';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { pluginMap } from 'virtual:plugin-map';
 
-// Plugin manifests - these would normally be loaded from each plugin's manifest file
-// For now, we define them here until we implement manifest loading
-const PLUGIN_MANIFESTS = {
-  'folder': {
-    nodeType: 'folder' as NodeType,
-    dependencies: [],
-    version: '1.0.0'
-  },
-  'basemap': {
-    nodeType: 'basemap' as NodeType,
-    dependencies: ['folder'],
-    extends: 'folder' as NodeType,
-    version: '1.0.0'
-  },
-  'shape': {
-    nodeType: 'shape' as NodeType,
-    dependencies: ['folder'],
-    version: '1.0.0'
-  },
-  'styler': {
-    nodeType: 'styler' as NodeType,
-    dependencies: ['folder'],
-    version: '1.0.0'
-  },
-  'spreadsheet': {
-    nodeType: 'spreadsheet' as NodeType,
-    dependencies: ['folder'],
-    extends: 'folder' as NodeType,
-    version: '1.0.0'
-  }
+type PluginDefinitionVM = {
+  name: string;
+  version: string;
+  packageName: string;
+  nodeType: string;
+  priority: number;
+  config?: {
+    dependencies?: string[];
+  };
 };
 
+export type PluginLoadResult = {
+  plugins: string[]; // nodeType list
+  loadOrder: string[]; // nodeType in dependency order
+};
+
+function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
+  const nodes = new Set<string>();
+  const graph = new Map<string, Set<string>>(); // nodeType -> deps
+
+  for (const d of defs) {
+    const id = d.nodeType;
+    nodes.add(id);
+    const deps = new Set<string>(d.config?.dependencies ?? []);
+    graph.set(id, deps);
+  }
+
+  const visited = new Set<string>();
+  const temp = new Set<string>();
+  const out: string[] = [];
+
+  const visit = (n: string) => {
+    if (visited.has(n)) return;
+    if (temp.has(n)) {
+      throw new Error(`Circular plugin dependency detected at ${n}`);
+    }
+    temp.add(n);
+    for (const dep of graph.get(n) ?? []) {
+      if (nodes.has(dep)) visit(dep);
+    }
+    temp.delete(n);
+    visited.add(n);
+    out.push(n);
+  };
+
+  for (const n of nodes) visit(n);
+  return out;
+}
+
 /**
- * Automatically discover and load plugins from package.json
+ * Automatically discover and load plugins based on virtual modules
  */
 export async function autoLoadPlugins(): Promise<PluginLoadResult> {
-  console.log('🔍 Auto-discovering plugins from package.json...');
-  
-  // Set up plugin manifests
-  manifestFileDiscovery.setPluginManifests(PLUGIN_MANIFESTS as any);
-  
-  // Discover and resolve dependencies
-  const result = await manifestFileDiscovery.loadPluginsWithDependencies(packageJson as any);
-  
-  console.log(`📦 Discovered ${result.plugins.length} plugins:`, result.plugins);
-  console.log(`📊 Load order:`, result.loadOrder);
-  
-  // Dynamically import plugins in the correct order
-  for (const pluginName of result.loadOrder) {
-    console.log(`⏳ Loading plugin: ${pluginName}`);
-    
-    try {
-      switch (pluginName) {
-        case 'folder':
-          await import('@hierarchidb/node-type-folder-plugin');
-          break;
-        case 'basemap':
-          await import('@hierarchidb/node-type-basemap-plugin');
-          break;
-        case 'shape':
-          await import('@hierarchidb/node-type-shape-plugin');
-          break;
-        case 'styler':
-          await import('@hierarchidb/node-type-styler-plugin');
-          break;
-        case 'spreadsheet':
-          // Note: spreadsheet-plugin plugin is not in package.json dependencies yet
-          // await import('@hierarchidb/node-type-spreadsheet-plugin-plugin');
-          console.warn(`⚠️ Plugin ${pluginName} detected but not in dependencies`);
-          break;
-        default:
-          console.warn(`⚠️ Unknown plugin: ${pluginName}`);
-      }
-      
-      console.log(`✅ Loaded plugin: ${pluginName}`);
-    } catch (error) {
-      console.error(`❌ Failed to load plugin ${pluginName}:`, error);
-      throw error;
+  console.log('🔍 Auto-discovering plugins via virtual modules...');
+
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const loadOrder = topoSortByDependencies(defs);
+
+  // Dynamically import in dependency order to ensure side effects register correctly
+  for (const nodeType of loadOrder) {
+    const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
+    if (typeof loader === 'function') {
+      console.log(`⏳ Loading plugin: ${nodeType}`);
+      await loader();
+      console.log(`✅ Loaded plugin: ${nodeType}`);
+    } else {
+      console.warn(`⚠️ No loader found for plugin: ${nodeType}`);
     }
   }
-  
+
   console.log('✨ All plugins loaded successfully!');
-  return result;
+  return {
+    plugins: defs.map((d) => d.nodeType),
+    loadOrder,
+  };
 }
 
 /**
- * Get the list of plugins that will be loaded
- * Useful for UI components that need to know available plugins
+ * Get the list of plugins discovered (nodeType list)
  */
 export function getDiscoveredPlugins(): NodeType[] {
-  manifestFileDiscovery.setPluginManifests(PLUGIN_MANIFESTS as any);
-  return manifestFileDiscovery.discoverPluginsFromPackageJson(packageJson as any);
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  return defs.map((d) => d.nodeType as NodeType);
 }
 
 /**
- * Get the complete load result including dependencies
- * This includes transitive dependencies that may not be directly in package.json
+ * Get the plan including dependency order
  */
 export async function getPluginLoadPlan(): Promise<PluginLoadResult> {
-  manifestFileDiscovery.setPluginManifests(PLUGIN_MANIFESTS as any);
-  return manifestFileDiscovery.loadPluginsWithDependencies(packageJson as any);
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const loadOrder = topoSortByDependencies(defs);
+  return {
+    plugins: defs.map((d) => d.nodeType),
+    loadOrder,
+  };
 }

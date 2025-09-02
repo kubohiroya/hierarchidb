@@ -64,6 +64,7 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@hierarchidb/tools-vite-plugin-package-reader": "workspace:*",
     "@react-router/dev": "^7.8.2",
     "@react-router/node": "^7.8.1",
     "@vitejs/plugin-react": "^5.0.1",
