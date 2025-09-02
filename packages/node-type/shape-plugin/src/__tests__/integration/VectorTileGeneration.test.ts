@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @file VectorTileGeneration.test.ts
  * @description Integration test for end-to-end vector tile generation

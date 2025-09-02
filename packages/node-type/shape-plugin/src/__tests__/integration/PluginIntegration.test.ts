@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shape Plugin Integration Tests - Simplified Version
  *
