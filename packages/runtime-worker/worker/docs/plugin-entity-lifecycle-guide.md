@@ -69,27 +69,6 @@ export function registerStores(db: MyPluginDB) {
 }
 ```
 
-### Folder plugin (dev) example
-
-For the builtin folder plugin, a dev in‑memory store can be registered:
-
-```ts
-// packages/node-type/folder-plugin/src/worker/folderPeerStore.ts
-import type { NodeId } from '@hierarchidb/common-type';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker-worker/entity/store';
-const mem = new Map<string, PeerEntity<any>>();
-export const folderPeerStore: PeerStore<any> = {
-  async get(id: NodeId) { return mem.get(id as any); },
-  async put(e) { mem.set(e.nodeId as any, { ...e, updatedAt: Date.now() }); },
-  async delete(id: NodeId) { mem.delete(id as any); },
-};
-
-// packages/node-type/folder-plugin/src/worker/index.ts
-import { storeRegistry } from '@hierarchidb/runtime-worker-worker/entity/store-registry';
-import { folderPeerStore } from './folderPeerStore';
-if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
-```
-
 ## 4) Runtime behavior
 
 - When `WORKER_ENTITY_UNIFIED=1`, the worker will:
@@ -102,3 +81,4 @@ if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folde
 - Transactions: Command boundary transactions apply to CoreDB only. Plugin DB writes are best‑effort and should be idempotent.
 - Idempotency: Ensure repeated `put/bulkPut` calls are safe; include `updatedAt`.
 - Versioning/Migrations: Manage your plugin DB schema versions independently of CoreDB.
+

@@ -4,8 +4,6 @@
  */
 
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
-import { storeRegistry } from '@hierarchidb/runtime-worker';
-import { getFolderPeerStore } from './folderPeerStore';
 import type { NodeLifecycleHooks, PluginRoutingConfig, NodeId } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../entities/FolderEntity';
 
@@ -60,23 +58,3 @@ export const routing: PluginRoutingConfig = {
 
 // Also export as default for compatibility
 export default entityHandler;
-
-// Register Peer store for folder nodeType (A-plan)
-try {
-  const { store } = getFolderPeerStore();
-  storeRegistry.registerPeer('folder', store);
-} catch {
-  // Ignore registration errors in non-worker environments (e.g., UI-only tests)
-}
-// Dev registration of PeerStore (A-plan: per-plugin DB; here in-memory stub)
-import { storeRegistry } from '@hierarchidb/runtime-worker-worker/entity/store-registry';
-import { folderPeerStore } from './folderPeerStore';
-
-try {
-  // Register only once; safe to call multiple times
-  if (!storeRegistry.getPeer('folder')) {
-    storeRegistry.registerPeer('folder', folderPeerStore);
-  }
-} catch {
-  // ignore registration failures in non-worker contexts
-}
