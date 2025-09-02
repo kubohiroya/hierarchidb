@@ -259,7 +259,17 @@ export class TreeSubscriptionService {
       rxFilter((event) =>
         this.isEventRelevantForSubtreeObservation(event, rootId, maxDepth, filter)
       ),
-      map((event) => this.transformEventForSubscription(event)),
+      // Progressive batching: on bursts, recompute current BFS snapshot and emit per-parent chunks
+      bufferTime(30),
+      rxFilter((batch) => batch.length > 0),
+      mergeMap(async () => {
+        const events: TreeChangeEvent[] = [] as any;
+        for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth)) {
+          events.push(ev);
+        }
+        return events;
+      }),
+      mergeMap((events) => from(events)),
       share()
     );
 
