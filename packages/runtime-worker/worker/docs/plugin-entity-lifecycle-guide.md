@@ -153,3 +153,25 @@ export function createRelationStore(db: MyPluginDB): RelationStore<MyRel> {
 Runtime behavior (when `WORKER_ENTITY_UNIFIED=1`): during duplicate/paste/import, the worker will:
 - Group: list(src) → bulkUpsert(dst, items)
 - Relations: listByNode(src) → rebind both ends via idMap → bulkUpsert(filtered)
+
+## 8) Schema versioning & migrations (Dexie)
+
+- Data types should embed `schemaVersion` in Peer payloads (e.g., `{ schemaVersion: 1, ... }`).
+- Dexie schema versioning: bump `.version(N).stores(...)` and define `.upgrade(tx => { ... })` for forward migrations.
+- Guidelines:
+  - Backfill defaults in `upgrade` (e.g., `updatedAt`, new fields in `data/meta`).
+  - Avoid destructive transforms; prefer additive changes and keep readers tolerant of missing fields.
+  - Keep upgrades idempotent; re‑running should not produce duplicates.
+  - Large migrations: chunk reads/writes inside `upgrade` and avoid long transactions when not needed.
+- Example (no‑op template):
+
+```ts
+this.version(2).upgrade(() => {
+  // Example: fill default values or rename properties
+});
+```
+
+Testing & rollout:
+- Unit: validate that older rows (schemaVersion=1) are readable under v2 and upgraded rows satisfy new invariants.
+- Staging: open Dexie DB on a copy and measure migration time; add metrics if needed.
+- Rollback: keep readers compatible; if upgrade fails, close DB and retry later.

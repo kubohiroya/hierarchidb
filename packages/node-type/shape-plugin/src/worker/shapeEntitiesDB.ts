@@ -17,6 +17,10 @@ export class ShapeEntitiesDB extends Dexie {
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
     });
+    // Future migrations example (no-op upgrade to document the pattern)
+    this.version(2).upgrade(() => {
+      // Example: backfill updatedAt if missing or set defaults for new fields
+      // Kept empty as a template; implement real transforms when schema changes.
+    });
   }
 }
-
