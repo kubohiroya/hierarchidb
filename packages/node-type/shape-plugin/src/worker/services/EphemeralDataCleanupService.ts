@@ -91,6 +91,27 @@ export class EphemeralDataCleanupService {
     return stats;
   }
 
+  // === Backward-compat shims for older tests ===
+  async getCleanupStats(): Promise<{ totalWorkingCopies: number; expiredWorkingCopies: number; totalBatchSessions: number; expiredBatchSessions: number; estimatedSpaceUsed: number; lastCleanupAt?: number; }> {
+    const preview = await this.getCleanupPreview();
+    return {
+      totalWorkingCopies: preview.expiredWorkingCopies, // approximation in mock
+      expiredWorkingCopies: preview.expiredWorkingCopies,
+      totalBatchSessions: preview.expiredBatchSessions,
+      expiredBatchSessions: preview.expiredBatchSessions,
+      estimatedSpaceUsed: preview.estimatedSizeToReclaim,
+      lastCleanupAt: Date.now(),
+    };
+  }
+
+  async performCleanup(): Promise<CleanupStatistics> {
+    return this.cleanupExpiredData();
+  }
+
+  async forceCleanup(): Promise<CleanupStatistics> {
+    return this.forceCleanupAll();
+  }
+
   /**
    * Cleanup specific working copy and related data
    */

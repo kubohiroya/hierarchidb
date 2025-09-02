@@ -490,33 +490,7 @@ export const shapePluginAPI = {
     };
   },
 
-  getProcessingStatus: async (nodeId: NodeId): Promise<ProcessingStatus> => {
-    const handler = new ShapeEntityHandler();
-    const entity = await handler.getEntityByNodeId(nodeId);
-    
-    if (!entity || !entity.batchSessionId) {
-      return {
-        status: 'idle',
-        lastUpdated: Date.now(),
-      };
-    }
-
-    const session = await shapePluginAPI.getBatchSession(entity.batchSessionId);
-    if (!session) {
-      return {
-        status: 'idle',
-        lastUpdated: Date.now(),
-      };
-    }
-
-    return {
-      status: session.status,
-      stage: session.stage,
-      progress: session.progress,
-      lastUpdated: Date.now(),
-      error: session.error,
-    };
-  },
+  // removed duplicate older getProcessingStatus (migrated to unified shape below)
 
   forceCleanup: async (): Promise<{
     workingCopiesRemoved: number;
@@ -559,21 +533,31 @@ export const shapePluginAPI = {
   getProcessingStatus: async (nodeId: NodeId): Promise<ProcessingStatus> => {
     const handler = new ShapeEntityHandler();
     const entity = await handler.getEntityByNodeId(nodeId);
+    if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
 
-    if (!entity) {
-      return {
-        status: 'idle',
-        hasErrors: false,
-        errorMessages: [],
-      };
+    // Try to reflect batch session status if available
+    if (entity.batchSessionId) {
+      const session = await shapePluginAPI.getBatchSession(entity.batchSessionId);
+      if (session) {
+        return {
+          status: session.status === 'running' ? 'processing' : (session.status === 'completed' ? 'completed' : (session.status === 'failed' ? 'failed' : 'idle')),
+          lastProcessed: session.updatedAt,
+          hasErrors: !!session.error,
+          errorMessages: session.error ? [String(session.error)] : [],
+          // Optionally map aggregates if available
+          totalFeatures: undefined,
+          totalVectorTiles: undefined,
+          storageUsed: undefined,
+        };
+      }
     }
 
     return {
       status: entity.processingStatus || 'idle',
       lastProcessed: entity.updatedAt,
-      totalFeatures: 0,
-      totalVectorTiles: 0,
-      storageUsed: 0,
+      totalFeatures: undefined,
+      totalVectorTiles: undefined,
+      storageUsed: undefined,
       hasErrors: false,
       errorMessages: [],
     };

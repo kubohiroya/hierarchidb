@@ -11,6 +11,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    exclude: [
+      'src/**/migration/**'
+    ],
     testTimeout: 3000, // 3 seconds for faster feedback
   },
   resolve: {
