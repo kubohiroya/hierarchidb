@@ -19,8 +19,10 @@ import {
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
 import type { CommandProcessor } from './CommandProcessor';
 import type { CoreDB } from './CoreDB';
+import { FEATURE_FLAGS } from '../config/feature-flags';
 
 import { createNewName } from './WorkingCopyTreeNodeOperations';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import { SingletonMixin } from '@hierarchidb/util';
 
 export class TreeMutationService implements TreeMutationAPI {
@@ -51,6 +53,34 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
+      // Optional routing via CommandProcessor (feature-flagged)
+      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_CREATE_UPDATE) {
+        const envelope: CommandEnvelope<'createNode', {
+          nodeType: NodeType;
+          treeId: TreeId;
+          parentId: NodeId;
+          name: string;
+          description?: string;
+        }> = {
+          commandId: crypto.randomUUID(),
+          groupId: crypto.randomUUID(),
+          kind: 'createNode',
+          payload: {
+            nodeType: params.nodeType,
+            treeId: params.treeId,
+            parentId: params.parentId,
+            name: params.name,
+            description: params.description,
+          },
+          issuedAt: Date.now() as Timestamp,
+        } as any;
+        const result = await this.commandProcessor.processCommand(envelope);
+        if (result.success) {
+          return { success: true, nodeId: (result.nodeId as NodeId) ?? ('' as NodeId) };
+        }
+        return { success: false, error: (result as any).error };
+      }
+
       const nodeId = generateNodeId();
       const now = Date.now();
 
@@ -83,6 +113,27 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: boolean; error?: string }> {
     try {
+      // Optional routing via CommandProcessor (feature-flagged)
+      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_CREATE_UPDATE) {
+        const envelope: CommandEnvelope<'updateNode', {
+          nodeId: NodeId;
+          name?: string;
+          description?: string;
+        }> = {
+          commandId: crypto.randomUUID(),
+          groupId: crypto.randomUUID(),
+          kind: 'updateNode',
+          payload: {
+            nodeId: params.nodeId,
+            name: params.name,
+            description: params.description,
+          },
+          issuedAt: Date.now() as Timestamp,
+        } as any;
+        const result = await this.commandProcessor.processCommand(envelope);
+        return result.success ? { success: true } : { success: false, error: (result as any).error };
+      }
+
       const node = await this.coreDB.getNode?.(params.nodeId);
       if (!node) {
         return { success: false, error: 'Node not found' };
@@ -109,6 +160,26 @@ export class TreeMutationService implements TreeMutationAPI {
     toParentId: NodeId;
     onNameConflict?: 'error' | 'auto-rename';
   }): Promise<{ success: boolean; error?: string }> {
+    // Optional routing via CommandProcessor (feature-flagged)
+    if (FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
+      const cmd: CommandEnvelope<'moveNodes', MoveNodesPayload> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'moveNodes',
+        payload: {
+          nodeIds: params.nodeIds,
+          toParentId: params.toParentId,
+          onNameConflict: params.onNameConflict,
+        },
+        issuedAt: Date.now() as Timestamp,
+      };
+      const result = await this.commandProcessor.processCommand(cmd);
+      if (!result.success) {
+        return { success: false, error: (result as any).error ?? 'Unknown error' };
+      }
+      return { success: true };
+    }
+
     const cmd: CommandEnvelope<'moveNodes', MoveNodesPayload> = {
       commandId: crypto.randomUUID(),
       groupId: crypto.randomUUID(),
@@ -125,7 +196,7 @@ export class TreeMutationService implements TreeMutationAPI {
     if (!result.success) {
       return {
         success: false,
-        error: 'error' in result ? result.error : 'Unknown error',
+        error: 'error' in result ? (result as any).error : 'Unknown error',
       };
     }
     return { success: true };
@@ -170,6 +241,18 @@ export class TreeMutationService implements TreeMutationAPI {
 
   async removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
+      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
+        const cmd: CommandEnvelope<'remove', { nodeIds: NodeId[] }> = {
+          commandId: crypto.randomUUID(),
+          groupId: crypto.randomUUID(),
+          kind: 'remove',
+          payload: { nodeIds },
+          issuedAt: Date.now() as Timestamp,
+        };
+        const result = await this.commandProcessor.processCommand(cmd);
+        return result.success ? { success: true } : { success: false, error: (result as any).error };
+      }
+
       for (const nodeId of nodeIds) {
         await this.coreDB.deleteNode?.(nodeId);
       }
@@ -194,7 +277,9 @@ export class TreeMutationService implements TreeMutationAPI {
       issuedAt: Date.now() as Timestamp,
     };
 
-    const result = await this.recoverFromTrash(cmd);
+    const result = FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE
+      ? await this.commandProcessor.processCommand(cmd)
+      : await this.recoverFromTrash(cmd);
     if (!result.success) {
       return {
         success: false,
@@ -257,25 +342,14 @@ export class TreeMutationService implements TreeMutationAPI {
   async duplicateNodesCommand(
     cmd: CommandEnvelope<'duplicateNodes', DuplicateNodesPayload>
   ): Promise<CoreCommandResult> {
-    const { nodeIds, toParentId, onNameConflict = 'error' } = cmd.payload;
+    const { nodeIds, toParentId } = cmd.payload;
     const newNodeIds: NodeId[] = [];
-
+    // Use CoreDB bulk-based subtree duplication (internally bulkCreateNodes)
     for (const sourceId of nodeIds) {
-      const sourceNode = await this.coreDB.getNode?.(sourceId);
-      if (!sourceNode) continue;
-
-      // Duplicate node and descendants
-      const idMapping = new Map<NodeId, NodeId>();
-      await this.duplicateBranch(sourceId, toParentId, idMapping, true);
-
-      newNodeIds.push(...Array.from(idMapping.values()));
+      const newRootId = await (this.coreDB as any).duplicateSubtree?.(sourceId, toParentId);
+      if (newRootId) newNodeIds.push(newRootId as NodeId);
     }
-
-    return {
-      success: true,
-      seq: this.getNextSeq(),
-      newNodeIds,
-    };
+    return { success: true, seq: this.getNextSeq(), newNodeIds };
   }
 
   /**
@@ -335,26 +409,22 @@ export class TreeMutationService implements TreeMutationAPI {
       const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
       const existingNames = new Set<string>(siblings.map((sibling: TreeNode) => sibling.name));
 
-      // 【バッチ処理最適化】: ノード作成を効率的に実行 🟡
+      // 【バッチ処理最適化】: ノード作成を効率的に実行（チャンク分割） 🟡
       const timestamp = Date.now() as Timestamp;
+      const toCreate: TreeNode[] = [];
 
       for (const nodeId of nodeIds) {
         const sourceNode = nodes[nodeId];
         if (!sourceNode) {
-          // 【データ整合性】: 存在しないノードはスキップして処理継続 🟢
           console.warn(`Source node not found in clipboard data: ${nodeId}`);
           continue;
         }
-
-        // 【入力値サニタイズ】: ノードデータの検証 🟡
         if (!sourceNode.name || typeof sourceNode.name !== 'string') {
           console.warn(`Invalid node name for ${nodeId}, skipping`);
           continue;
         }
 
         const newNodeId = generateNodeId();
-
-        // 【効率的な名前衝突解決】: Set使用で高速チェック 🟡
         let newName = sourceNode.name;
         if (onNameConflict === 'auto-rename' && existingNames.has(newName)) {
           newName = this.resolveNameConflictEfficiently(newName, existingNames);
@@ -366,7 +436,6 @@ export class TreeMutationService implements TreeMutationAPI {
           } as CoreCommandResult;
         }
 
-        // 【新しいノード作成】: 適切なデータクリーニングを実施 🟢
         const newNode = {
           ...sourceNode,
           id: newNodeId,
@@ -375,26 +444,27 @@ export class TreeMutationService implements TreeMutationAPI {
           createdAt: timestamp,
           updatedAt: timestamp,
           version: 1,
-          // 【データクリーニング】: 不要なプロパティを削除 🟢
           originalParentNodeId: undefined,
           originalName: undefined,
           removedAt: undefined,
           isRemoved: false,
-        };
+        } as unknown as TreeNode;
 
-        await this.coreDB.createNode?.(newNode);
+        toCreate.push(newNode);
         newNodeIds.push(newNodeId);
-
-        // 【名前管理更新】: 新しい名前を既存名セットに追加 🟡
         existingNames.add(newName);
       }
 
-      // 【成功レスポンス】: 詳細な結果情報を含む 🟢
-      return {
-        success: true,
-        seq: this.getNextSeq(),
-        newNodeIds,
-      } as CoreCommandResult;
+      if (toCreate.length === 1) {
+        await this.coreDB.createNode?.(toCreate[0]);
+      } else if (toCreate.length > 1) {
+        const size =  PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+        for (let i = 0; i < toCreate.length; i += size) {
+          await (this.coreDB as any).bulkCreateNodes?.(toCreate.slice(i, i + size));
+        }
+      }
+
+      return { success: true, seq: this.getNextSeq(), newNodeIds } as CoreCommandResult;
     } catch (error) {
       // 【エラーハンドリング】: セキュリティを考慮したエラー情報の制限 🟢
       console.error('Paste operation failed:', error);
@@ -669,35 +739,7 @@ export class TreeMutationService implements TreeMutationAPI {
     return false;
   }
 
-  private async duplicateBranch(
-    sourceId: NodeId,
-    targetParentId: NodeId,
-    idMapping: Map<NodeId, NodeId>,
-    isRoot: boolean
-  ): Promise<void> {
-    const sourceNode = await this.coreDB.getNode?.(sourceId);
-    if (!sourceNode) return;
-
-    const newNodeId = generateNodeId();
-    idMapping.set(sourceId, newNodeId);
-
-    // Create duplicated node
-    await this.coreDB.createNode?.({
-      ...sourceNode,
-      id: newNodeId,
-      parentId: targetParentId,
-      name: isRoot ? `${sourceNode.name} (Copy)` : sourceNode.name,
-      createdAt: Date.now() as Timestamp,
-      updatedAt: Date.now() as Timestamp,
-      version: 1,
-    });
-
-    // Duplicate children
-    const children = (await this.coreDB.listChildren?.(sourceId)) || [];
-    for (const child of children) {
-      await this.duplicateBranch(child.id, newNodeId, idMapping, false);
-    }
-  }
+  // duplicateBranch: removed in favor of CoreDB.duplicateSubtree (bulk-based)
 
   private async deleteNodeRecursively(nodeId: NodeId): Promise<void> {
     // Delete children first

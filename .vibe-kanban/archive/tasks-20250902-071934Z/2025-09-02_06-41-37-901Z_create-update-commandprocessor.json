@@ -1,0 +1,14 @@
+{
+  "title": "タスク: 段階ルーティング（create/update のみ CommandProcessor 経由）",
+  "description": "# タスク: 段階ルーティング（create/update のみ CommandProcessor 経由）\n\n## 背景 / 目的\n- 実行経路を `CommandProcessor` に集約する第一歩として、影響の小さい `create/update` から切替えて Undo/Redo/監査の基盤を評価する。\n\n## スコープ（範囲）\n- 含む: `TreeMutationService.createNode / updateNode` の経路にフラグ分岐（`useCommandPath`）を追加し、ON 時は `processCommand` を呼び出す。\n- 含まない: move/remove/duplicate/paste/import/restore の切替（次フェーズ）。\n\n## 成果物\n- `src/services/TreeMutationService.ts` の分岐実装",
+  "labels": [
+    "worker",
+    "mutation",
+    "undo"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T06:41:37.901Z",
+  "source": "vk-sync",
+  "id": "phased-routing-cmdproc",
+  "status": "todo"
+}

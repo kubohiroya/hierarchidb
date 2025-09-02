@@ -23,6 +23,25 @@ export class CoreDB extends Dexie {
   // イベント通知用のSubject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
 
+  /**
+   * Run a function within a Dexie transaction.
+   * Accepts table names (e.g., 'nodes', 'trees') and resolves them to Table instances.
+   * Note: Prefer wrapping write operations per command boundary via this helper.
+   */
+  async runInTx<T>(
+    mode: 'r' | 'rw',
+    tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const tables = tableNames
+      .map((n) => (this as any)[n])
+      .filter((t) => !!t);
+    // If no tables provided, just run function without a transaction
+    if (tables.length === 0) return await fn();
+    // Use Dexie's variadic or array form; cast to any to avoid TS tuple spread issues
+    return await (this as any).transaction(mode, tables, fn);
+  }
+
   static async getSingleton(name: string = 'hierarchidb'): Promise<CoreDB> {
     return SingletonMixin.getSingleton(CoreDB.name, async () => {
       const instance = new CoreDB(name);
@@ -275,12 +294,16 @@ export class CoreDB extends Dexie {
   }
 
   async updateNode(node: Pick<TreeNode, 'id'> & Partial<TreeNode>): Promise<void> {
-    // 更新前の状態を取得
+    // 更新は永続化し、更新前後のイベントを通知
     const oldNode = await this.nodes.get(node.id);
+    const next: TreeNode | undefined = oldNode
+      ? ({ ...oldNode, ...node } as TreeNode)
+      : (node as unknown as TreeNode);
 
-    // await this.nodes.put(node);
+    if (next) {
+      await this.nodes.put(next);
+    }
 
-    // 更新イベントを通知
     if (oldNode) {
       const changes: {
         name: { old: string; new: string } | undefined;
@@ -299,7 +322,7 @@ export class CoreDB extends Dexie {
       const changeEvent: TreeChangeEvent = {
         type: 'node-updated' as const,
         nodeId: node.id,
-        node: { ...oldNode, ...node },
+        node: next ?? ({ ...oldNode, ...node } as TreeNode),
         previousNode: oldNode, // Include the previous node
         timestamp: Date.now(),
       };

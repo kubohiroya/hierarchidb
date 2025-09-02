@@ -72,6 +72,12 @@ echo "  Mode: $VITE_ENV_MODE"
 echo "  Title: $VITE_APP_TITLE"
 echo "  BFF URL: $VITE_BFF_BASE_URL"
 echo "  Hash Routing: $VITE_USE_HASH_ROUTING"
+echo "  Worker Flags:"
+echo "    WORKER_USE_CMDPROC_CREATE_UPDATE=${WORKER_USE_CMDPROC_CREATE_UPDATE:-0}"
+echo "    WORKER_USE_CMDPROC_MOVE_REMOVE=${WORKER_USE_CMDPROC_MOVE_REMOVE:-0}"
+echo "    WORKER_TRASH_USE_HOLDER=${WORKER_TRASH_USE_HOLDER:-0}"
+echo "    WORKER_METRICS_ENABLED=${WORKER_METRICS_ENABLED:-0}"
+echo "    WORKER_TX_ENABLED=${WORKER_TX_ENABLED:-0}"
 echo ""
 
 # ================================================================

@@ -1,0 +1,15 @@
+{
+  "title": "Entity Spec (WC in same table)",
+  "description": "Define workingCopyId/workingCopyOf, optimistic commit, and queries for Peer/Group entities.",
+  "labels": [
+    "worker",
+    "entity",
+    "working-copy",
+    "docs"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T05:56:13.062Z",
+  "source": "hierarchidb/vk-task",
+  "id": "entity-spec-wc-in-same-table",
+  "status": "todo"
+}

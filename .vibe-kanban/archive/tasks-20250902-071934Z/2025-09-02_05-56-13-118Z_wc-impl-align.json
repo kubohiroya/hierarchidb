@@ -1,0 +1,14 @@
+{
+  "title": "WC Impl Align",
+  "description": "Fix holder.name (targetNodeId), switch getWorkingCopy to holder scan, make create get-or-create, standardize commit results.",
+  "labels": [
+    "worker",
+    "working-copy",
+    "impl"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T05:56:13.117Z",
+  "source": "hierarchidb/vk-task",
+  "id": "wc-impl-align",
+  "status": "todo"
+}

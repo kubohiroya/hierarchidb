@@ -1,0 +1,15 @@
+{
+  "title": "タスク: Trash を holder ペア方式へ統合",
+  "description": "# タスク: Trash を holder ペア方式へ統合\n\n## 背景\n- 現行の Trash はノード本体に `originalParentId`/`originalName` を保持し、`trashRoot` 直下へ物理移動している。\n- WorkingCopy は holder+child ペア方式。両者でパターン統一し、命名衝突回避と復元処理の共通化を図る。\n\n## 変更方針\n- `trashRoot` 直下に Trash holder を作成し、child に実体ノードをぶら下げる。\n- holder.name = `${originalParentNodeId}\\t${trashedNodeId}`（v1）。\n- 復元: holder.name から `originalParentId` を取得、child.name をベースに `createNewName`（必要なら自動リ",
+  "labels": [
+    "worker",
+    "tree",
+    "trash",
+    "refactor"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T06:41:37.901Z",
+  "source": "vk-sync",
+  "id": "trash-holder-refactor",
+  "status": "todo"
+}

@@ -96,6 +96,9 @@ async function commitWorkingCopy(treeId: string, wcHolderId: string): Promise<Co
 }
 ```
 
+実装メモ（反映状況）
+- `commitWorkingCopyV2` として実装済み（編集/ドラフト双方、NAME_CONFLICT/COMMIT_CONFLICT/auto-renameを返却）。
+
 ## 移動/削除のブロック判定（ポリシーC）
 
 ```ts
@@ -113,4 +116,3 @@ async function hasWcInSubtree(rootId: string, targetId: string): Promise<boolean
 
 ## 注意
 - 擬似コードは Tx 境界と戻り値の形を共有するための雛形。実装詳細（型/フィールド名/マージロジック）は各 node-type の仕様に従う。
-

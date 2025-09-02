@@ -30,3 +30,10 @@ export VITE_DEBUG_MODE="false"
 
 export VITE_GOOGLE_CLIENT_ID="http://116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleusercontent.com"
 export VITE_GITHUB_CLIENT_ID="Ov23liRWoNQEyVrTghMj"
+
+# --- Worker feature flags (default OFF in production; stage with caution) ---
+# export WORKER_USE_CMDPROC_CREATE_UPDATE="1"
+# export WORKER_USE_CMDPROC_MOVE_REMOVE="1"
+# export WORKER_TRASH_USE_HOLDER="1"
+# export WORKER_METRICS_ENABLED="0"  # Keep OFF in production unless explicitly required
+# export WORKER_TX_ENABLED="0"       # Keep OFF until fully validated end-to-end

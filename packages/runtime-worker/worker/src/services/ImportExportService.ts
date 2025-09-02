@@ -10,6 +10,7 @@ import type {
 } from '@hierarchidb/common-api';
 import type { NodeType, ValidationErrors } from '@hierarchidb/common-type';
 import { CoreDB } from './CoreDB';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import crypto from 'crypto';
 import { SingletonMixin } from '@hierarchidb/util';
 
@@ -71,16 +72,12 @@ export class ImportExportService implements ImportExportAPI {
       const nodes = params.data.nodes || [];
       const total = nodes.length;
 
-      // Process each node
+      // Prepare current-level batch and bulk insert in chunks, then recurse children
+      const toCreate: { node: TreeNode; children?: any[] }[] = [];
       for (let i = 0; i < nodes.length; i++) {
-        if (abortController.signal.aborted) {
-          throw new Error('Import operation cancelled');
-        }
-
+        if (abortController.signal.aborted) throw new Error('Import operation cancelled');
         const nodeData = nodes[i];
-
         try {
-          // Check for conflicts
           if (params.conflictResolution === 'skip') {
             const existingNode = await this.findNodeByName(params.targetParentId, nodeData.name);
             if (existingNode) {
@@ -88,50 +85,50 @@ export class ImportExportService implements ImportExportAPI {
               continue;
             }
           }
-
-          // Generate node ID
           const nodeId = crypto.randomUUID() as NodeId;
-
-          // Create the node
           const node: TreeNode = {
             id: nodeId,
             parentId: params.targetParentId,
             nodeType: (nodeData.nodeType || 'folder') as NodeType,
             name: nodeData.name,
             description: nodeData.description,
-            depth: 0, // Will be calculated by database operations
-            // metadata: nodeData.metadata || {}, // TreeNode doesn't have metadata property
+            depth: 0,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
           };
-
-          await this.coreDB.createNode(node);
-          importedNodeIds.push(nodeId);
-
-          // Process children recursively if present
-          if (nodeData.children && nodeData.children.length > 0) {
-            const childResult = await this.importNodes({
-              ...params,
-              targetParentId: nodeId,
-              data: { nodes: nodeData.children },
-            });
-            importedNodeIds.push(...childResult.importedNodeIds);
-            skippedCount += childResult.skippedCount;
-          }
-
-          // Report progress
-          params.onProgress?.({
-            phase: 'importing',
-            current: i + 1,
-            total,
-            percentage: ((i + 1) / total) * 100,
-            message: `Imported ${nodeData.name}`,
-          });
+          toCreate.push({ node, children: nodeData.children });
         } catch (error) {
-          const errorMessage = `Failed to import node "${nodeData.name}": ${error}`;
+          const errorMessage = `Failed to prepare node "${nodeData.name}": ${error}`;
           errors.push(errorMessage);
           console.error(errorMessage, error);
+        }
+      }
+
+      const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+      for (let i = 0; i < toCreate.length; i += size) {
+        const batch = toCreate.slice(i, i + size);
+        await this.coreDB.bulkCreateNodes(batch.map((b) => b.node));
+        importedNodeIds.push(...batch.map((b) => b.node.id));
+        const processed = Math.min(i + size, total);
+        params.onProgress?.({
+          phase: 'importing',
+          current: processed,
+          total,
+          percentage: (processed / total) * 100,
+          message: `Imported ${processed} of ${total}`,
+        });
+      }
+
+      for (const entry of toCreate) {
+        if (entry.children && entry.children.length > 0) {
+          const childResult = await this.importNodes({
+            ...params,
+            targetParentId: entry.node.id,
+            data: { nodes: entry.children },
+          });
+          importedNodeIds.push(...childResult.importedNodeIds);
+          skippedCount += childResult.skippedCount;
         }
       }
 

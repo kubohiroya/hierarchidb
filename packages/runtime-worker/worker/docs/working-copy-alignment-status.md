@@ -106,6 +106,11 @@ vk:doc kind=analysis audience=dev scope=worker
 
 ---
 
+## 更新ログ（実装反映）
+- 2025-09-02: holder.name を `${targetParentId}\t${targetNodeId}` に修正（ドラフトは targetNodeId を先行採番）。`getWorkingCopy` を holder 走査＋decode 方式へ切替（`workingCopyOf` 参照を撤廃）。
+
+---
+
 ## 単一WC共有の方針（確定）
 
 - 前提: 原本（ノード/エンティティ）1つにつき、常にワーキングコピー（WC）は高々1つ。

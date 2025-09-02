@@ -1,0 +1,77 @@
+import { describe, it, expect } from 'vitest';
+import {
+  HOLDER_NAME_TAB,
+  encodeWorkingCopyHolderName,
+  decodeWorkingCopyHolderName,
+  encodeTrashHolderName,
+  decodeTrashHolderName,
+  isValidWorkingCopyHolderName,
+  isValidTrashHolderName,
+} from './holder-encoding';
+
+describe('holder-encoding v1 (TAB separator)', () => {
+  it('encodes and decodes WorkingCopy holder name roundtrip', () => {
+    const parentId = 'r:workingCopy';
+    const targetNodeId = 'node-abc-123';
+    const name = encodeWorkingCopyHolderName(parentId, targetNodeId);
+    const decoded = decodeWorkingCopyHolderName(name);
+    expect(decoded).toEqual({ targetParentNodeId: parentId, targetNodeId });
+    expect(isValidWorkingCopyHolderName(name)).toBe(true);
+  });
+
+  it('encodes and decodes Trash holder name roundtrip', () => {
+    const originalParentId = 'r:trash';
+    const trashedNodeId = 'node-dead-beef';
+    const name = encodeTrashHolderName(originalParentId, trashedNodeId);
+    const decoded = decodeTrashHolderName(name);
+    expect(decoded).toEqual({ originalParentNodeId: originalParentId, trashedNodeId });
+    expect(isValidTrashHolderName(name)).toBe(true);
+  });
+
+  it('rejects TAB in IDs for WorkingCopy encoding', () => {
+    expect(() => encodeWorkingCopyHolderName('bad\tid', 'ok')).toThrow();
+    expect(() => encodeWorkingCopyHolderName('ok', 'bad\tid')).toThrow();
+  });
+
+  it('rejects TAB in IDs for Trash encoding', () => {
+    expect(() => encodeTrashHolderName('bad\tid', 'ok')).toThrow();
+    expect(() => encodeTrashHolderName('ok', 'bad\tid')).toThrow();
+  });
+
+  it('throws on invalid holder name format (WorkingCopy)', () => {
+    expect(() => decodeWorkingCopyHolderName('no-sep')).toThrow();
+    expect(() => decodeWorkingCopyHolderName(`${HOLDER_NAME_TAB}leading`)).toThrow();
+    expect(() => decodeWorkingCopyHolderName(`trailing${HOLDER_NAME_TAB}`)).toThrow();
+  });
+
+  it('throws on invalid holder name format (Trash)', () => {
+    expect(() => decodeTrashHolderName('no-sep')).toThrow();
+    expect(() => decodeTrashHolderName(`${HOLDER_NAME_TAB}leading`)).toThrow();
+    expect(() => decodeTrashHolderName(`trailing${HOLDER_NAME_TAB}`)).toThrow();
+  });
+
+  it('exposes TAB separator constant', () => {
+    expect(HOLDER_NAME_TAB).toBe('\t');
+  });
+
+  it('rejects empty or extreme length in decode (WorkingCopy)', () => {
+    expect(() => decodeWorkingCopyHolderName('')).toThrow();
+    const veryLong = 'x'.repeat(10_000) + HOLDER_NAME_TAB + 'y';
+    // decode itself allows long strings but should not throw on valid format
+    expect(() => decodeWorkingCopyHolderName(veryLong)).not.toThrow();
+  });
+
+  it('micro-bench: encode/decode 1000 times stays under 50ms', () => {
+    const parentId = 'r:workingCopy';
+    const targetNodeId = 'node-abc-123';
+    const start = performance.now();
+    for (let i = 0; i < 1000; i++) {
+      const n = encodeWorkingCopyHolderName(parentId, targetNodeId);
+      const d = decodeWorkingCopyHolderName(n);
+      expect(d.targetParentNodeId).toBe(parentId);
+      expect(d.targetNodeId).toBe(targetNodeId);
+    }
+    const dur = performance.now() - start;
+    expect(dur).toBeLessThan(50);
+  });
+});

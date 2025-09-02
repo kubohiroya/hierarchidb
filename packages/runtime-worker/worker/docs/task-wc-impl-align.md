@@ -13,8 +13,17 @@ vk:task id=wc-impl-align status=todo priority=P1 labels=worker,working-copy,impl
 
 ## 依存
 - `wc-util-baseline`
+- `spec-freeze-wc-impl-align`
 - 仕様: `docs/working-copy-ops-pseudocode.md`, `docs/working-copy-holder-encoding.md`
 - エピック: `epic-wc-trash-unification`
 
 ## 受け入れ基準
 - 既存テスト非回帰。新ロジックのユニット追加で戻り/冪等/競合/rename を確認。
+
+## 進捗
+- 実装済み（最小差分）:
+  - holder.name を `${targetParentId}\t${targetNodeId}` に修正（ドラフトは新規IDを先行採番）
+  - `getWorkingCopy(originalNodeId)` を holder 走査＋decode に置換（`workingCopyOf` 参照を撤廃）
+- 未対応（別PRで実施）:
+  - create の get-or-create 化（ユニーク制約＋再試行、`returnedExisting`）
+  - commit 戻りスキーマの標準化（`ok | COMMIT_CONFLICT | NAME_CONFLICT`）

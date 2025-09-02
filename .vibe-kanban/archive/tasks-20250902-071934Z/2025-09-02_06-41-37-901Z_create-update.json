@@ -1,0 +1,14 @@
+{
+  "title": "タスク: create/update の段階ルーティング（設計ドラフト）",
+  "description": "# タスク: create/update の段階ルーティング（設計ドラフト）\n\n## 背景 / 目的\n- 実装前に、最小経路切替と監査・Undo/Redo への影響を合意する。\n\n## 非目的（このタスクではやらない）\n- コード実装・フラグ追加・既存経路の変更。\n- move/remove/duplicate/paste/import/restore の経路切替。\n\n## 成果物\n- 小さなPRに分解可能なチェックリスト。\n- 受け入れ基準（ON/OFF 両系統の期待挙動）。\n\n## チェックリスト（スモールステップ）\n- [ ] フラグ設計の決定（命名・配置・既定値）。\n- [ ] Envelope 仕様の確認（kind/type/meta の最小必須項目）。\n- [ ] createNode の最小ハンドラ仕様（DB 書込/戻り値）。\n- [ ] updateNode の最小ハンドラ",
+  "labels": [
+    "worker",
+    "mutation",
+    "undo"
+  ],
+  "priority": "high",
+  "createdAt": "2025-09-02T06:41:37.901Z",
+  "source": "vk-sync",
+  "id": "phased-routing-create-update-draft",
+  "status": "todo"
+}

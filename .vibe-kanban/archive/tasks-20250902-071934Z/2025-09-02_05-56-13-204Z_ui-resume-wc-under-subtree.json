@@ -1,0 +1,14 @@
+{
+  "title": "UI: Resume WC under Subtree",
+  "description": "Context menu to list and resume/commit/discard WCs under a node to unblock guarded moves.",
+  "labels": [
+    "ui",
+    "working-copy",
+    "tree"
+  ],
+  "priority": "normal",
+  "createdAt": "2025-09-02T05:56:13.204Z",
+  "source": "hierarchidb/vk-task",
+  "id": "ui-resume-wc-under-subtree",
+  "status": "todo"
+}

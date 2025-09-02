@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "vibe-kanban": {
+      "transport": "http",
+      "url": "http://localhost:8000",
+      "metadata": {
+        "source": "hierarchidb/.codex/mcp.json"
+      }
+    }
+  }
+}
+
