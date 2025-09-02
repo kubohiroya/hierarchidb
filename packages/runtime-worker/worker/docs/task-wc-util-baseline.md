@@ -1,4 +1,4 @@
-vk:task id=wc-util-baseline status=planning priority=P1 labels=worker,tree,utils,encoding
+vk:task id=wc-util-baseline status=todo priority=P1 labels=worker,tree,utils,encoding
 
 # タスク: Holderエンコード基盤の導入（v1）
 
@@ -19,4 +19,3 @@ vk:task id=wc-util-baseline status=planning priority=P1 labels=worker,tree,utils
 
 ## 受け入れ基準
 - encode/decode の往復同値が確認でき、防衛チェック（TAB禁止）が機能する。
-

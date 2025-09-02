@@ -1,4 +1,4 @@
-vk:task id=cleanup-metrics status=planning priority=P2 labels=worker,gc,metrics,observability
+vk:task id=cleanup-metrics status=todo priority=P2 labels=worker,gc,metrics,observability
 
 # タスク: GC/整合修復とメトリクス整備
 
@@ -16,4 +16,3 @@ vk:task id=cleanup-metrics status=planning priority=P2 labels=worker,gc,metrics,
 
 ## 受け入れ基準
 - GCで整合が回復され、メトリクスが収集される（基本カウンタが可視化可能）。
-

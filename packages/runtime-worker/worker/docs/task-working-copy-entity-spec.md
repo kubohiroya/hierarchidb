@@ -1,4 +1,4 @@
-vk:task id=wc-entity-spec status=planning priority=P1 labels=worker,entity,working-copy,docs
+vk:task id=wc-entity-spec status=todo priority=P1 labels=worker,entity,working-copy,docs
 
 # タスク: Entity WorkingCopy 仕様の確定（Peer/Group）
 

@@ -1,4 +1,4 @@
-vk:task id=ui-resume-wc-under-subtree status=planning priority=P2 labels=ui,working-copy,tree
+vk:task id=ui-resume-wc-under-subtree status=todo priority=P2 labels=ui,working-copy,tree
 
 # タスク: 「配下のワーキングコピー編集を順次再開」メニュー
 

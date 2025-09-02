@@ -1,4 +1,4 @@
-vk:task id=wc-impl-align status=planning priority=P1 labels=worker,working-copy,impl
+vk:task id=wc-impl-align status=todo priority=P1 labels=worker,working-copy,impl
 
 # タスク: WorkingCopy 実装の仕様アライン
 
@@ -18,4 +18,3 @@ vk:task id=wc-impl-align status=planning priority=P1 labels=worker,working-copy,
 
 ## 受け入れ基準
 - 既存テスト非回帰。新ロジックのユニット追加で戻り/冪等/競合/rename を確認。
-

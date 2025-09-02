@@ -1,4 +1,4 @@
-vk:task id=tree-guard-policy-c status=planning priority=P1 labels=worker,tree,policy,guard
+vk:task id=tree-guard-policy-c status=todo priority=P1 labels=worker,tree,policy,guard
 
 # タスク: ポリシーCの適用（移動/削除ブロック）
 
@@ -17,4 +17,3 @@ vk:task id=tree-guard-policy-c status=planning priority=P1 labels=worker,tree,po
 
 ## 受け入れ基準
 - サブツリー内にWCがある状況で move/remove が失敗し、UIに解消導線が表示される。
-

@@ -1,4 +1,4 @@
-vk:task id=trash-holder-refactor status=planning priority=P1 labels=worker,tree,trash,refactor
+vk:task id=trash-holder-refactor status=todo priority=P1 labels=worker,tree,trash,refactor
 
 # タスク: Trash を holder ペア方式へ統合
 
