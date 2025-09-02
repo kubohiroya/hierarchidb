@@ -15,6 +15,7 @@ import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { WorkerProvider } from './contexts/WorkerProvider';
 import { TitleLogo } from './components/TitleLogo';
+import { NotificationSystem } from '@hierarchidb/ui-core';
 
 // Initialize worker URL configuration
 
@@ -247,6 +248,8 @@ export default function App() {
             <ThemeProvider theme={theme}>
               <CustomThemeProvider>
                 <CssBaseline />
+                {/* Global notifications */}
+                <NotificationSystem />
                 <WorkerProvider>
                   <AppContent />
                 </WorkerProvider>

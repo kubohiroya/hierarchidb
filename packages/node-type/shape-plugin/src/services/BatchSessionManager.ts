@@ -8,8 +8,10 @@ import type { BatchConfig } from '../types/BatchConfig';
 import type { BatchTaskLike, BatchStage } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';
 import { getEphemeralShapeDB, type EphemeralShapeDB } from './database/EphemeralShapeDB';
-import { getShapeAuthHandler, type WorkerAuthHandler } from './auth';
+import { ShapeBatchOrchestrator } from './ShapeBatchOrchestrator';
 import type { AuthNotification, AuthRequiredNotification, AuthSuccessNotification } from '@hierarchidb/common-auth';
+import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 export interface BatchSessionStatus {
   sessionId: string;
@@ -44,16 +46,27 @@ export class BatchSessionManager {
   private tasks: Map<string, BatchTaskLike[]> = new Map();
   private ephemeralDB: EphemeralShapeDB;
   private progressCallbacks: Map<string, (event: BatchProgressEvent) => void> = new Map();
-  private authHandler: WorkerAuthHandler;
+  private auth: AuthRecoveryService | null = null;
+  private orchestrator: ShapeBatchOrchestrator;
 
   constructor() {
     this.ephemeralDB = getEphemeralShapeDB();
-    this.authHandler = getShapeAuthHandler();
-    
-    // Set up UI notification callback for auth handler
-    this.authHandler.setUINotificationCallback((notification) => {
-      this.handleAuthNotification(notification);
+    this.orchestrator = new ShapeBatchOrchestrator(this.ephemeralDB);
+    // Listen for auth notifications via registry
+    const registry = AuthNotificationRegistry.getInstance();
+    registry.register('shape-batch-session-manager', {
+      onAuthRequired: async (n) => this.handleAuthRequired(n),
+      onAuthSuccess: async (n) => this.handleAuthSuccess(n),
+      onAuthCancelled: async (n: any) => this.cancelForAuth(n),
     });
+  }
+
+  /**
+   * Seed or update auth token from UI so downloads include Authorization from the start.
+   */
+  async setAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): Promise<void> {
+    if (!this.auth) this.auth = await AuthRecoveryService.getSingleton();
+    this.auth.setToken(token, type, expiresAt);
   }
 
   /**
@@ -156,105 +169,20 @@ export class BatchSessionManager {
     const startTime = Date.now();
     
     try {
-      // Get session tasks
       const tasks = this.tasks.get(sessionId) || [];
-      const downloadTasks = tasks.filter(t => t.stage === 'download');
-      
-      let processedTasks = 0;
-      let failedTasks = 0;
-      let totalDownloadSize = 0;
-      let totalFeatures = 0;
+      const downloadTasks = tasks.filter((t) => t.stage === 'download');
 
-      // Process each download task
-      for (const task of downloadTasks) {
-        try {
-          // Create download configuration
-          const downloadConfig = {
-            dataSource: task.config?.dataSource || 'gadm',
-            country: task.config?.country || 'JP',
-            adminLevel: task.config?.adminLevel || 0,
-            format: 'geojson' as const,
-            expectedFormat: 'geojson' as const,
-            url: this.buildDataSourceUrl(
-              task.config?.dataSource || 'gadm',
-              task.config?.country || 'JP', 
-              task.config?.adminLevel || 0
-            )
-          };
-
-          // Perform actual download
-          const response = await fetch(downloadConfig.url);
-          
-          if (!response.ok) {
-            throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-          }
-
-          // Get response size
-          const contentLength = response.headers.get('content-length');
-          const downloadSize = contentLength ? parseInt(contentLength, 10) : 0;
-          totalDownloadSize += downloadSize;
-
-          // Parse GeoJSON data
-          const geoJsonData = await response.json();
-          
-          // Validate GeoJSON structure
-          if (!geoJsonData.type || !geoJsonData.features) {
-            throw new Error('Invalid GeoJSON format');
-          }
-
-          const featureCount = geoJsonData.features.length;
-          totalFeatures += featureCount;
-
-          // Store downloaded data in EphemeralDB
-          const bufferId = `raw-${sessionId}-${task.config?.country}-L${task.config?.adminLevel}`;
-          
-          // Calculate bbox
-          const bbox = this.calculateBbox(geoJsonData.features);
-          
-          // Save to EphemeralDB
-          await this.ephemeralDB.rawBuffers.put({
-            id: bufferId,
-            sessionId,
-            nodeId: status.nodeId,
-            data: JSON.stringify(geoJsonData),
-            featureCount,
-            bbox,
-            downloadTime: Date.now() - startTime,
-            size: downloadSize,
-            timestamp: Date.now()
-          });
-          
-          console.log(`Downloaded and stored ${featureCount} features for ${task.config?.country}_L${task.config?.adminLevel}`);
-          
-          processedTasks++;
-          
-          // Update progress
-          const currentProgress = Math.round((processedTasks / downloadTasks.length) * 25);
-          status.progress = currentProgress;
-          status.completedTasks = processedTasks;
-          
-          // Emit progress event
-          this.emitProgressEvent(sessionId, {
-            sessionId,
-            treeNodeId: status.nodeId,
-            stage: 'download',
-            progress: currentProgress,
-            completedTasks: processedTasks,
-            totalTasks: downloadTasks.length,
-            currentTask: `Downloaded ${task.config?.country}_L${task.config?.adminLevel}`,
-            timestamp: Date.now(),
-          });
-          
-        } catch (error) {
-          console.error(`Download task failed:`, error);
-          failedTasks++;
-        }
-      }
+      const exec = await this.orchestrator.executeDownload(
+        sessionId,
+        status.nodeId,
+        downloadTasks,
+        (e) => this.emitProgressEvent(sessionId, e)
+      );
 
       // Update session status
-      if (failedTasks === 0) {
+      if (exec.failed === 0) {
         status.stage = 'simplify1';
-        status.completedTasks = processedTasks;
+        status.completedTasks = exec.processed;
         status.progress = 25;
       }
 
@@ -264,16 +192,16 @@ export class BatchSessionManager {
         treeNodeId: status.nodeId,
         stage: 'download',
         progress: 25,
-        completedTasks: processedTasks,
+        completedTasks: exec.processed,
         totalTasks: downloadTasks.length,
-        currentTask: `Download completed: ${totalFeatures} features, ${this.formatBytes(totalDownloadSize)}`,
+        currentTask: `Download completed: ${exec.totalFeatures} features, ${this.formatBytes(exec.totalDownloadSize)}`,
         timestamp: Date.now(),
       });
 
       return {
-        success: failedTasks === 0,
-        processedTasks,
-        failedTasks,
+        success: exec.failed === 0,
+        processedTasks: exec.processed,
+        failedTasks: exec.failed,
       };
       
     } catch (error) {
@@ -493,98 +421,23 @@ export class BatchSessionManager {
 
     try {
       const tasks = this.tasks.get(sessionId) || [];
-      // Process all tasks regardless of stage
-      const simplify2Tasks = tasks;
-      
-      let processedTiles = 0;
-      let totalSimplificationRatio = 0;
-      let processedTasks = 0;
-
-      // Process second-pass simplification and tile preparation
-      for (const task of simplify2Tasks) {
-        try {
-          // Calculate zoom levels for this admin level
-          const { minZoom, maxZoom } = this.getZoomLevels(task.config?.adminLevel || 0);
-          
-          // Calculate number of tiles to generate
-          const tilesPerTask = this.calculateTileCount(
-            task.config?.bbox || [-180, -90, 180, 90],
-            minZoom,
-            maxZoom
-          );
-          
-          // Apply zoom-level specific simplification
-          const zoomSimplification = this.getZoomSimplification(minZoom, maxZoom);
-          
-          // In a real implementation, we would:
-          // 1. Load simplified features from Simplify1
-          // 2. Apply zoom-level specific simplification
-          // 3. Clip features to tile boundaries
-          // 4. Prepare tile-ready geometry
-          
-          processedTiles += tilesPerTask;
-          totalSimplificationRatio += zoomSimplification;
-          processedTasks++;
-          
-          // Update progress (50% to 75% range)
-          const progressOffset = 50;
-          const progressRange = 25;
-          const currentProgress = progressOffset + Math.round((processedTasks / simplify2Tasks.length) * progressRange);
-          status.progress = currentProgress;
-          
-          // Emit progress event
-          this.emitProgressEvent(sessionId, {
-            sessionId,
-            treeNodeId: status.nodeId,
-            stage: 'simplify2',
-            progress: currentProgress,
-            completedTasks: processedTasks,
-            totalTasks: simplify2Tasks.length,
-            currentTask: `Prepared ${tilesPerTask} tiles for ${task.config?.country}_L${task.config?.adminLevel} (zoom ${minZoom}-${maxZoom})`,
-            timestamp: Date.now(),
-          });
-          
-          console.log(`Simplify2: Prepared ${tilesPerTask} tiles, simplification ratio: ${zoomSimplification}`);
-          
-        } catch (error) {
-          console.error(`Simplify2 task failed:`, error);
-        }
-      }
-
-      // Calculate average simplification ratio
-      const avgSimplificationRatio = processedTasks > 0 
-        ? totalSimplificationRatio / processedTasks 
-        : 0.8;
-
-      // Update session status
+      const r = await this.orchestrator.executeSimplify2(sessionId, status.nodeId, tasks, (e) => this.emitProgressEvent(sessionId, e));
       status.stage = 'vectorTiles';
       status.progress = 75;
-
-      // Final progress event
       this.emitProgressEvent(sessionId, {
         sessionId,
         treeNodeId: status.nodeId,
         stage: 'simplify2',
         progress: 75,
-        completedTasks: processedTasks,
-        totalTasks: simplify2Tasks.length,
-        currentTask: `Tile processing completed: ${processedTiles} tiles prepared`,
+        completedTasks: r.processedTasks,
+        totalTasks: tasks.length,
+        currentTask: `Tile processing completed: ${r.processedTiles} tiles prepared`,
         timestamp: Date.now(),
       });
-
-      return {
-        success: true,
-        processedTiles,
-        simplificationRatio: avgSimplificationRatio,
-      };
-      
+      return { success: true, processedTiles: r.processedTiles, simplificationRatio: r.avgSimplificationRatio } as any;
     } catch (error) {
       console.error('Simplify2 stage failed:', error);
-      return {
-        success: false,
-        processedTiles: 0,
-        simplificationRatio: 0,
-      };
+      return { success: false, processedTiles: 0, simplificationRatio: 0 };
     }
   }
 
@@ -644,96 +497,23 @@ export class BatchSessionManager {
 
     try {
       const tasks = this.tasks.get(sessionId) || [];
-      // Process all tasks regardless of stage
-      const vectorTileTasks = tasks;
-      
-      let generatedTiles = 0;
-      let maxZoomLevel = 0;
-      let processedTasks = 0;
-
-      // Generate vector tiles
-      for (const task of vectorTileTasks) {
-        try {
-          const { minZoom, maxZoom } = this.getZoomLevels(task.config?.adminLevel || 0);
-          maxZoomLevel = Math.max(maxZoomLevel, maxZoom);
-          
-          // Calculate tiles to generate for this task
-          const bbox = task.config?.bbox || [-180, -90, 180, 90];
-          let taskTileCount = 0;
-          
-          // Generate tiles for each zoom level
-          for (let z = minZoom; z <= maxZoom; z++) {
-            const tilesAtZoom = this.generateTilesForZoom(bbox, z);
-            taskTileCount += tilesAtZoom;
-            
-            // In a real implementation, we would:
-            // 1. Load tile-ready geometry from Simplify2
-            // 2. Encode as Mapbox Vector Tiles (MVT)
-            // 3. Apply compression (gzip/brotli)
-            // 4. Store in tile cache
-            
-            console.log(`Generated ${tilesAtZoom} tiles at zoom ${z}`);
-          }
-          
-          generatedTiles += taskTileCount;
-          processedTasks++;
-          
-          // Update progress (75% to 100% range)
-          const progressOffset = 75;
-          const progressRange = 25;
-          const currentProgress = progressOffset + Math.round((processedTasks / vectorTileTasks.length) * progressRange);
-          status.progress = currentProgress;
-          
-          // Emit progress event
-          this.emitProgressEvent(sessionId, {
-            sessionId,
-            treeNodeId: status.nodeId,
-            stage: 'vectorTiles',
-            progress: currentProgress,
-            completedTasks: processedTasks,
-            totalTasks: vectorTileTasks.length,
-            currentTask: `Generated ${taskTileCount} vector tiles for ${task.config?.country}_L${task.config?.adminLevel}`,
-            timestamp: Date.now(),
-          });
-          
-        } catch (error) {
-          console.error(`VectorTile task failed:`, error);
-        }
-      }
-
-      // Mark session as completed
+      const r = await this.orchestrator.executeVectorTiles(sessionId, status.nodeId, tasks, (e) => this.emitProgressEvent(sessionId, e));
       status.isCompleted = true;
       status.progress = 100;
-
-      // Final progress event
       this.emitProgressEvent(sessionId, {
         sessionId,
         treeNodeId: status.nodeId,
         stage: 'vectorTiles',
         progress: 100,
-        completedTasks: processedTasks,
-        totalTasks: vectorTileTasks.length,
-        currentTask: `Vector tile generation completed: ${generatedTiles} tiles, max zoom ${maxZoomLevel}`,
+        completedTasks: r.processedTasks,
+        totalTasks: tasks.length,
+        currentTask: `Vector tile generation completed: ${r.generatedTiles} tiles, max zoom ${r.maxZoomLevel}`,
         timestamp: Date.now(),
       });
-
-      console.log(`Batch session ${sessionId} completed successfully`);
-      console.log(`Total tiles generated: ${generatedTiles}`);
-      console.log(`Maximum zoom level: ${maxZoomLevel}`);
-
-      return {
-        success: true,
-        generatedTiles,
-        maxZoomLevel,
-      };
-      
+      return { success: true, generatedTiles: r.generatedTiles, maxZoomLevel: r.maxZoomLevel } as any;
     } catch (error) {
       console.error('VectorTiles stage failed:', error);
-      return {
-        success: false,
-        generatedTiles: 0,
-        maxZoomLevel: 0,
-      };
+      return { success: false, generatedTiles: 0, maxZoomLevel: 0 };
     }
   }
 
@@ -928,10 +708,8 @@ export class BatchSessionManager {
    * Execute HTTP request with authentication handling
    */
   async fetchWithAuth(url: string, init: RequestInit = {}, sessionId?: string): Promise<Response> {
-    return this.authHandler.fetchWithAuth(url, init, {
-      sessionId,
-      pluginType: 'shape',
-    });
+    if (!this.auth) this.auth = await AuthRecoveryService.getSingleton();
+    return this.auth.fetchWithAuth(url, init, { sessionId, pluginType: 'shape' });
   }
 
   /**
@@ -1230,9 +1008,8 @@ export class BatchSessionManager {
   /**
    * Get authentication handler for external use
    */
-  getAuthHandler(): WorkerAuthHandler {
-    return this.authHandler;
-  }
+  // get auth service (for testing/introspection)
+  async getAuthService(): Promise<AuthRecoveryService> { if (!this.auth) this.auth = await AuthRecoveryService.getSingleton(); return this.auth; }
 
   /**
    * Clean up inactive subscriptions
@@ -1246,7 +1023,7 @@ export class BatchSessionManager {
    * Dispose resources including auth handler
    */
   dispose(): void {
-    this.authHandler.dispose();
+    this.auth = null;
     this.progressCallbacks.clear();
     this.sessions.clear();
     this.tasks.clear();

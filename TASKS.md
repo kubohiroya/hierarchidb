@@ -221,6 +221,7 @@ P2:
   - 競合時の戻り（`ok | COMMIT_CONFLICT | NAME_CONFLICT`）に伴うUndo/Redoの整合
 - チェックリスト:
   - [x] 単体テスト（境界/大量/親子連鎖の最小ケース）
+  - [x] create の Undo/Redo を確実化（作成ノードIDの追跡と再現）
   - [ ] e2e: 連続操作の取り消し/やり直し
   - [x] ドキュメント更新（運用と制約）
 
@@ -231,7 +232,7 @@ P2:
   - Unified CommandResult に応じて UI 通知・自動リネーム指示が機能
   - 既存通知との二重表示や取りこぼし無し（ユニット＋レンダリングテスト）
 - チェックリスト:
-  - [ ] UI エラーマッピングテーブル作成
+  - [x] UI エラーマッピングテーブル作成（`app/src/shared/command-errors.ts`）
   - [ ] `@testing-library/react` レンダリングテスト追加
   - [ ] ドキュメント（ユーザガイド）更新
 
@@ -275,9 +276,10 @@ P2:
   - フラグとフォールバック経路の削除、ドキュメント・変更履歴更新
   - ロールバック手順は直前タグへのリバート＋データ非破壊を確認
 - チェックリスト:
-  - [ ] デッドコード検出と削除
-  - [ ] 移行後の型通し（`pnpm typecheck`）
-  - [ ] 変更履歴（CHANGELOG/リリースノート）
+  - [x] `TreeMutationService` のレガシー直呼び経路を削除（常に CP 経由）
+  - [x] デッドコード検出と削除（move/recover の旧内部実装・補助関数）
+  - [x] 移行後の型通し（`pnpm typecheck`）
+  - [x] 変更履歴（CHANGELOG/リリースノート）
 
 8) Storybook 整備（UIの回帰防止）（P3）
 - ブランチ: `chore/storybook/wc-components`
@@ -369,6 +371,10 @@ P2:
   - ブランチ: `refactor/worker/error-model-unify`
   - 要点: WorkerのCommandResultをCoreに統一、ドキュメント化
 
+- レガシー経路の除去（TreeMutationService直呼び撤廃）
+  - ブランチ: `refactor/worker/remove-legacy-treemutation`
+  - 要点: TreeMutationService の create/update/move/remove/recover を常時 CommandProcessor 経由に統一し、旧内部実装を削除。runtime-worker スコープで typecheck 緑。ロールバックは直前タグのリバートで可。
+
 ## フラグ運用（共通）
 
 - 起動時固定・既定OFF。`scripts/start-env.sh` から注入し、`config/feature-flags.ts` で一元読取。
@@ -444,3 +450,25 @@ P2:
 - runtime-worker の型検証で `decodeWorkingCopyHolderName` がブランド型 `NodeId` と不一致だったため、`@hierarchidb/common-type` の `NodeId` を利用するよう util を修正し、返却値を `as NodeId` で正規化（実行時挙動は非変更）。
 
 > 以降の進捗は、このセクションに「start/done/blocked」を時系列で追記します。
+
+2025-09-02
+- start: Undo/Redo 仕上げ（create の Undo/Redo 強化）
+- done: CommandProcessor に作成ノードIDの追跡を追加（`createdNodeIdByCommand`）— create の Undo/Redo が同一IDで確実に動作
+- done: 単体テスト追加 `packages/runtime-worker/worker/src/services/__tests__/undo-redo-finalize.test.ts`
+- start: レガシー経路の除去（TreeMutationService 直呼び撤廃）
+- done: TreeMutationService の create/update/move/remove/recover を常時 CP 経由に統一
+- done: 旧内部実装（`moveNodesCommand`/`recoverFromTrash`/補助関数）を削除
+- done: command/registry から create/update のダミーハンドラを削除（実処理は CP 側のフォールバックで実行）
+- note: `WORKER_USE_CMDPROC_*` フラグは互換のため定義のみ一時維持（コード上は未使用）。scripts/docs からの露出整理は後続PR
+
+- start: リリースノート確定
+- done: `docs/RELEASE_NOTES.md` を作成し、2025-09-02 の変更点を確定版として記載
+- done: `CHANGELOG.md` に日付セクションを追加し、deprecated フラグと常時CP経由化を明記
+
+- start: E2E シナリオ整備（CP常時経由）
+- done: `e2e/cp-routing-wc-flow.spec.ts` の記述をCP常時ON前提に更新（デフォルトskipのまま）
+
+- start: UI エラーモデル反映（通知/トースト）
+- done: エラーマッピングテーブル追加 `app/src/shared/command-errors.ts`
+- done: NotificationSystem をアプリ全体に組込み（`app/src/root.tsx`）、`ui-core` から `notify` を公開
+- done: `useTreeConsoleIntegration` のCreate失敗時に通知（`showCommandError`→notify 経由）

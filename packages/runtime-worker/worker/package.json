@@ -25,6 +25,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
+    "@hierarchidb/import-export": "workspace:*",
+    "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/util": "workspace:*",

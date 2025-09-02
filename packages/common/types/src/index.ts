@@ -25,7 +25,7 @@ export * from './tree-root-state-types';
 export * from './tree-types';
 export * from './tree-view-types';
 export * from './validation-types';
-export * from './working-copy-types';
+export * from './commit-types';
 export * from './package-json';
 export * from './tag-entity-types';
 export * from './id-util';

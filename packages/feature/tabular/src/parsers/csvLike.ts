@@ -1,0 +1,104 @@
+import type { TabularParserPort } from '../ports';
+import type {
+  DetectionResult,
+  FileLike,
+  ParseOptions,
+  TabularChunk,
+  TabularParseResult,
+  TabularPreview,
+} from '../types';
+
+function isText(input: FileLike): input is string {
+  return typeof input === 'string';
+}
+
+async function toText(input: FileLike, encoding = 'utf-8'): Promise<string> {
+  if (typeof input === 'string') return input;
+  if (typeof Blob !== 'undefined' && input instanceof Blob) {
+    return await input.text();
+  }
+  if (input instanceof ArrayBuffer || input instanceof Uint8Array) {
+    const dec = new TextDecoder(encoding);
+    const buf = input instanceof Uint8Array ? input : new Uint8Array(input);
+    return dec.decode(buf);
+  }
+  // Fallback
+  return String(input as any);
+}
+
+function splitLines(text: string): string[] {
+  return text.replace(/\r\n?/g, '\n').split('\n');
+}
+
+function simpleCsvSplit(line: string, delimiter: string): string[] {
+  // NOTE: intentionally simple; does not handle quotes/escapes fully.
+  // Good enough as a placeholder until a robust CSV impl is added.
+  return line.split(delimiter);
+}
+
+export function createCsvLikeParser(id: 'csv' | 'tsv', delimiter: string): TabularParserPort {
+  return {
+    id,
+    detect(input: FileLike): DetectionResult {
+      const name = (input as any).name?.toLowerCase?.() || '';
+      const type = (input as any).type?.toLowerCase?.() || '';
+      const ext = id === 'csv' ? '.csv' : '.tsv';
+      const mime = id === 'csv' ? 'text/csv' : 'text/tab-separated-values';
+      let confidence = 0;
+      if (name.endsWith(ext)) confidence = 0.9;
+      else if (type.includes(mime)) confidence = 0.7;
+      return { format: id, confidence };
+    },
+    async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
+      const text = await toText(input, options?.encoding);
+      const lines = splitLines(text).filter((l) => l.length > 0);
+      const headerOn = options?.header !== false;
+      const chunkSize = options?.chunkSize ?? 1000;
+
+      let headers: string[];
+      let startIdx = 0;
+      if (headerOn) {
+        headers = simpleCsvSplit(lines[0], delimiter);
+        startIdx = 1;
+      } else {
+        const first = simpleCsvSplit(lines[0], delimiter);
+        headers = first.map((_, i) => `col${i + 1}`);
+      }
+
+      const previewRows: Record<string, any>[] = [];
+
+      async function* iterator(): AsyncGenerator<TabularChunk> {
+        let buf: Record<string, any>[] = [];
+        let chunkIndex = 0;
+        for (let i = startIdx; i < lines.length; i++) {
+          const parts = simpleCsvSplit(lines[i], delimiter);
+          const row: Record<string, any> = {};
+          headers.forEach((h, idx) => (row[h] = parts[idx] ?? ''));
+          if (previewRows.length < 50) previewRows.push(row);
+          buf.push(row);
+          if (buf.length >= chunkSize) {
+            const hasMore = i < lines.length - 1;
+            yield { rows: buf, index: chunkIndex++, hasMore };
+            buf = [];
+          }
+        }
+        if (buf.length > 0) {
+          yield { rows: buf, index: Math.ceil((lines.length - startIdx) / chunkSize) - 1, hasMore: false };
+        }
+      }
+
+      const preview: TabularPreview = {
+        schema: { columns: headers.map((h) => ({ name: h })) },
+        sample: previewRows,
+        totalRows: Math.max(0, lines.length - startIdx),
+      };
+
+      const asyncIterable: TabularParseResult = {
+        preview,
+        [Symbol.asyncIterator]: () => iterator(),
+      };
+      return asyncIterable;
+    },
+  };
+}
+

@@ -10,3 +10,6 @@ export * from './hooks';
 
 // Plugin definition
 export * from './plugin';
+
+// Auth helpers
+export * from './auth/setShapeAuthToken';

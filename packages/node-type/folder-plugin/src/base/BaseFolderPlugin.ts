@@ -5,7 +5,16 @@ import type {
   FolderEntityExtension,
 } from '../api/FolderExtensionAPI';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
-import type { DialogStepDefinition, ValidationExtension, StepValidation, ValidationResult } from '@hierarchidb/common-type';
+import type {
+  DialogStepDefinition,
+  ValidationExtension,
+  StepValidation,
+  ValidationResult,
+  NodeId,
+  NodeType,
+} from '@hierarchidb/common-type';
+import type React from 'react';
+import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
 
 // Temporary type definitions for missing types
 // Use DialogStepDefinition from common types
@@ -63,6 +72,9 @@ export abstract class BaseFolderPlugin {
 
     // Allow subclasses to perform additional initialization
     await this.onInitialize();
+
+    // Register folder as taggable by default
+    registerTaggable('folder' as NodeType);
   }
 
   /**
@@ -73,6 +85,9 @@ export abstract class BaseFolderPlugin {
     await this.onCleanup();
 
     folderExtensionRegistry.unregister(this.pluginId);
+
+    // Unregister capability
+    unregisterTaggable('folder' as NodeType);
   }
 
   /**
@@ -125,8 +140,9 @@ export abstract class BaseFolderPlugin {
     const beforeSave = this.beforeSaveEntity?.bind(this);
     const afterLoad = this.afterLoadEntity?.bind(this);
     const validateEntity = this.validateEntity?.bind(this);
-    const getExtendedData = this.getExtendedData?.bind(this) ?? (async () => ({}));
-    const saveExtendedData = this.saveExtendedData?.bind(this) ?? (async () => {});
+    const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({}));
+    const saveExtendedData =
+      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, any>) => {});
 
     if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity) {
       return undefined;
@@ -201,17 +217,14 @@ export abstract class BaseFolderPlugin {
   /**
    * Override to get extended data from entity
    */
-  protected async getExtendedData?(_entity: FolderEntity): Promise<Record<string, any>> {
+  protected async getExtendedData?(_nodeId: NodeId): Promise<Record<string, any>> {
     return {};
   }
 
   /**
    * Override to save extended data to entity
    */
-  protected async saveExtendedData?(
-    _entity: FolderEntity,
-    _data: Record<string, any>
-  ): Promise<void> {
+  protected async saveExtendedData?(_nodeId: NodeId, _data: Record<string, any>): Promise<void> {
     // Default implementation does nothing
   }
 

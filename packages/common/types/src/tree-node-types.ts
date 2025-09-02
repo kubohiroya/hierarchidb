@@ -1,6 +1,5 @@
 import { NodeId, NodeType } from './id-types';
 import { Timestamp } from './primitive-types';
-import { WorkingCopyProperties } from './working-copy-types';
 
 /**
  * Regular node type constants for common node types
@@ -33,12 +32,6 @@ export interface ReferenceProperties {
   references?: NodeId[];
 }
 
-export interface TrashItemProperties {
-  originalName: string;
-  originalParentId: NodeId;
-  removedAt: Timestamp;
-}
-
 /**
  * Draft properties for nodes that are being created but not yet complete
  */
@@ -54,9 +47,12 @@ export type TreeNode = NodeBase &
   Partial<DraftProperties> &
   Partial<DescendantProperties> &
   Partial<ReferenceProperties> &
-  Partial<TrashItemProperties> &
-  Partial<DraftProperties> &
-  Partial<WorkingCopyProperties>;
+  // Holder-based WorkingCopy/Trash meta (indexed lookup)
+  Partial<{
+    holderType: 'workingCopy' | 'trash';
+    holderTargetId: NodeId; // WC: original nodeId, Trash: trashed nodeId
+    holderMetaParentId: NodeId; // WC: target parentId, Trash: original parentId
+  }>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
   children?: NodeId[]; // フラット構造維持

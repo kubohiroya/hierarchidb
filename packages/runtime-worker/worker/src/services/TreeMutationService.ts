@@ -27,7 +27,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
 
 export class TreeMutationService implements TreeMutationAPI {
-  // Note: Keep implementation lean. Routing via CommandProcessor will be introduced later.
+  // Note: Implementation now routes all mutating operations via CommandProcessor.
   static async getSingleton(
     coreDB: CoreDB,
     commandProcessor: CommandProcessor
@@ -54,55 +54,30 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      // Optional routing via CommandProcessor (feature-flagged)
-      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_CREATE_UPDATE) {
-        const envelope: CommandEnvelope<'createNode', {
-          nodeType: NodeType;
-          treeId: TreeId;
-          parentId: NodeId;
-          name: string;
-          description?: string;
-        }> = {
-          commandId: crypto.randomUUID(),
-          groupId: crypto.randomUUID(),
-          kind: 'createNode',
-          payload: {
-            nodeType: params.nodeType,
-            treeId: params.treeId,
-            parentId: params.parentId,
-            name: params.name,
-            description: params.description,
-          },
-          issuedAt: Date.now() as Timestamp,
-        } as any;
-        const result = await this.commandProcessor.processCommand(envelope);
-        if (result.success) {
-          return { success: true, nodeId: (result.nodeId as NodeId) ?? ('' as NodeId) };
-        }
-        return { success: false, error: (result as any).error };
+      const envelope: CommandEnvelope<'createNode', {
+        nodeType: NodeType;
+        treeId: TreeId;
+        parentId: NodeId;
+        name: string;
+        description?: string;
+      }> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'createNode',
+        payload: {
+          nodeType: params.nodeType,
+          treeId: params.treeId,
+          parentId: params.parentId,
+          name: params.name,
+          description: params.description,
+        },
+        issuedAt: Date.now() as Timestamp,
+      } as any;
+      const result = await this.commandProcessor.processCommand(envelope);
+      if (result.success) {
+        return { success: true, nodeId: (result.nodeId as NodeId) ?? ('' as NodeId) };
       }
-
-      const nodeId = generateNodeId();
-      const now = Date.now();
-
-      const node: TreeNode = {
-        id: nodeId,
-        parentId: params.parentId,
-        nodeType: params.nodeType,
-        name: params.name,
-        depth: 0, // Will be calculated by database operations
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-      };
-
-      if (params.description) {
-        node.description = params.description;
-      }
-
-      await this.coreDB.createNode(node);
-
-      return { success: true, nodeId };
+      return { success: false, error: (result as any).error };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -114,43 +89,23 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: boolean; error?: string }> {
     try {
-      // Optional routing via CommandProcessor (feature-flagged)
-      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_CREATE_UPDATE) {
-        const envelope: CommandEnvelope<'updateNode', {
-          nodeId: NodeId;
-          name?: string;
-          description?: string;
-        }> = {
-          commandId: crypto.randomUUID(),
-          groupId: crypto.randomUUID(),
-          kind: 'updateNode',
-          payload: {
-            nodeId: params.nodeId,
-            name: params.name,
-            description: params.description,
-          },
-          issuedAt: Date.now() as Timestamp,
-        } as any;
-        const result = await this.commandProcessor.processCommand(envelope);
-        return result.success ? { success: true } : { success: false, error: (result as any).error };
-      }
-
-      const node = await this.coreDB.getNode?.(params.nodeId);
-      if (!node) {
-        return { success: false, error: 'Node not found' };
-      }
-
-      const updatedNode = {
-        ...node,
-        ...(params.name && { name: params.name }),
-        ...(params.description !== undefined && { description: params.description }),
-        updatedAt: Date.now(),
-        version: node.version + 1,
-      };
-
-      await this.coreDB.updateNode?.(updatedNode);
-
-      return { success: true };
+      const envelope: CommandEnvelope<'updateNode', {
+        nodeId: NodeId;
+        name?: string;
+        description?: string;
+      }> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'updateNode',
+        payload: {
+          nodeId: params.nodeId,
+          name: params.name,
+          description: params.description,
+        },
+        issuedAt: Date.now() as Timestamp,
+      } as any;
+      const result = await this.commandProcessor.processCommand(envelope);
+      return result.success ? { success: true } : { success: false, error: (result as any).error };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -161,26 +116,6 @@ export class TreeMutationService implements TreeMutationAPI {
     toParentId: NodeId;
     onNameConflict?: 'error' | 'auto-rename';
   }): Promise<{ success: boolean; error?: string }> {
-    // Optional routing via CommandProcessor (feature-flagged)
-    if (FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
-      const cmd: CommandEnvelope<'moveNodes', MoveNodesPayload> = {
-        commandId: crypto.randomUUID(),
-        groupId: crypto.randomUUID(),
-        kind: 'moveNodes',
-        payload: {
-          nodeIds: params.nodeIds,
-          toParentId: params.toParentId,
-          onNameConflict: params.onNameConflict,
-        },
-        issuedAt: Date.now() as Timestamp,
-      };
-      const result = await this.commandProcessor.processCommand(cmd);
-      if (!result.success) {
-        return { success: false, error: (result as any).error ?? 'Unknown error' };
-      }
-      return { success: true };
-    }
-
     const cmd: CommandEnvelope<'moveNodes', MoveNodesPayload> = {
       commandId: crypto.randomUUID(),
       groupId: crypto.randomUUID(),
@@ -192,14 +127,8 @@ export class TreeMutationService implements TreeMutationAPI {
       },
       issuedAt: Date.now() as Timestamp,
     };
-
-    const result = await this.moveNodesCommand(cmd);
-    if (!result.success) {
-      return {
-        success: false,
-        error: 'error' in result ? (result as any).error : 'Unknown error',
-      };
-    }
+    const result = await this.commandProcessor.processCommand(cmd);
+    if (!result.success) return { success: false, error: (result as any).error ?? 'Unknown error' };
     return { success: true };
   }
 
@@ -248,22 +177,15 @@ export class TreeMutationService implements TreeMutationAPI {
 
   async removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
-      if (FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
-        const cmd: CommandEnvelope<'remove', { nodeIds: NodeId[] }> = {
-          commandId: crypto.randomUUID(),
-          groupId: crypto.randomUUID(),
-          kind: 'remove',
-          payload: { nodeIds },
-          issuedAt: Date.now() as Timestamp,
-        };
-        const result = await this.commandProcessor.processCommand(cmd);
-        return result.success ? { success: true } : { success: false, error: (result as any).error };
-      }
-
-      for (const nodeId of nodeIds) {
-        await this.coreDB.deleteNode?.(nodeId);
-      }
-      return { success: true };
+      const cmd: CommandEnvelope<'remove', { nodeIds: NodeId[] }> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'remove',
+        payload: { nodeIds },
+        issuedAt: Date.now() as Timestamp,
+      };
+      const result = await this.commandProcessor.processCommand(cmd);
+      return result.success ? { success: true } : { success: false, error: (result as any).error };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -284,15 +206,8 @@ export class TreeMutationService implements TreeMutationAPI {
       issuedAt: Date.now() as Timestamp,
     };
 
-    const result = FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE
-      ? await this.commandProcessor.processCommand(cmd)
-      : await this.recoverFromTrash(cmd);
-    if (!result.success) {
-      return {
-        success: false,
-        error: 'error' in result ? result.error : 'Unknown error',
-      };
-    }
+    const result = await this.commandProcessor.processCommand(cmd);
+    if (!result.success) return { success: false, error: ('error' in result ? (result as any).error : 'Unknown error') };
     return { success: true };
   }
 
@@ -301,49 +216,7 @@ export class TreeMutationService implements TreeMutationAPI {
     return node?.parentId || ('' as NodeId);
   }
 
-  // Internal method for command processing
-  async moveNodesCommand(
-    cmd: CommandEnvelope<'moveNodes', MoveNodesPayload>
-  ): Promise<CoreCommandResult> {
-    const { nodeIds, toParentId, onNameConflict = 'error' } = cmd.payload;
-
-    // Check for circular reference
-    for (const nodeId of nodeIds) {
-      if (await this.isDescendantOf(toParentId, nodeId)) {
-        return {
-          success: false,
-          error: 'Circular reference detected',
-          code: 'ILLEGAL_RELATION',
-        } as CoreCommandResult;
-      }
-    }
-
-    // Move each node
-    for (const nodeId of nodeIds) {
-      const node = await this.coreDB.getNode?.(nodeId);
-      if (!node) continue;
-
-      // Handle name conflicts
-      let newName = node.name;
-      if (onNameConflict === 'auto-rename') {
-        const siblings = (await this.coreDB.listChildren?.(toParentId)) || [];
-        const siblingNames = siblings.map((sibling: TreeNode) => sibling.name);
-        newName = createNewName(siblingNames, node.name);
-      }
-
-      await this.coreDB.updateNode?.({
-        ...node,
-        parentId: toParentId,
-        name: newName,
-        updatedAt: Date.now() as Timestamp,
-      });
-    }
-
-    return {
-      success: true,
-      seq: this.getNextSeq(),
-    } as CoreCommandResult;
-  }
+  // Legacy internal move/recover implementations removed: always route via CommandProcessor
 
   // Internal method for command processing
   async duplicateNodesCommand(
@@ -549,19 +422,7 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
-  async remove(cmd: CommandEnvelope<'remove', RemovePayload>): Promise<CoreCommandResult> {
-    const { nodeIds } = cmd.payload;
-
-    for (const nodeId of nodeIds) {
-      // Delete node and all descendants recursively
-      await this.deleteNodeRecursively(nodeId);
-    }
-
-    return {
-      success: true,
-      seq: this.getNextSeq(),
-    } as CoreCommandResult;
-  }
+  // remove legacy path removed: handled by CommandProcessor 'remove'
 
   /**
    * 【機能概要】: ゴミ箱からノードを復元し、元の場所または指定された場所に戻す
@@ -569,82 +430,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * 【テスト対応】: folder-plugin-operations.test.tsの復元テストでisRemovedがfalseになることを確認
    * 🟢 信頼性レベル: docs/13-trash-operations-analysis.mdの復元実装方針に準拠
    */
-  async recoverFromTrash(
-    cmd: CommandEnvelope<'recoverFromTrash', RecoverFromTrashPayload>
-  ): Promise<CoreCommandResult> {
-    const { nodeIds, toParentId, onNameConflict = 'error' } = cmd.payload;
-
-    try {
-      // 【複数ノード復元処理】: 全ノードの復元を順次実行
-      for (const nodeId of nodeIds) {
-        const node = await this.coreDB.getNode?.(nodeId);
-        if (!node) {
-          // 【存在しないノードのスキップ】: エラーではなく警告レベルで処理継続
-          console.warn(`Node not found for recoverFromTrash: ${nodeId}`);
-          continue;
-        }
-
-        // 【ゴミ箱状態チェック】: isRemovedがtrueのノードのみ復元対象
-        if (!node.removedAt) {
-          console.warn(`Node ${nodeId} is not in trash, skipping recovery`);
-          continue;
-        }
-
-        // 【復元先親ID決定】: 指定された親IDまたは元の親IDを使用
-        const targetParentId = toParentId || node.originalParentId;
-        if (!targetParentId) {
-          console.warn(`No target parent for node ${nodeId}, skipping recovery`);
-          continue;
-        }
-
-        // 【名前衝突処理】: 復元時の名前重複を適切に処理 🟡
-        let restoredName = node.originalName || node.name;
-        if (onNameConflict === 'auto-rename') {
-          const siblings = (await this.coreDB.listChildren?.(targetParentId)) || [];
-          const siblingNames = siblings.map((sibling: TreeNode) => sibling.name);
-          restoredName = createNewName(siblingNames, restoredName);
-        }
-
-        // 【復元データ作成】: ゴミ箱状態を完全にクリアする設定 🟢
-        const restoreData: Partial<TreeNode> = {
-          // 【親ID復元】: 元の場所または指定された場所に移動
-          parentId: targetParentId,
-          // 【名前復元】: 元の名前または衝突回避後の名前に設定
-          name: restoredName,
-          // 【復元用データクリア】: 全ての復元用プロパティを未定義に設定
-          originalParentId: undefined,
-          originalName: undefined,
-          removedAt: undefined,
-          // 【更新時刻記録】: 復元時刻の記録
-          updatedAt: Date.now() as Timestamp,
-          // 【バージョン管理】: 楽観的排他制御のためのバージョン更新
-          version: node.version + 1,
-        };
-
-        // 【データベース更新実行】: CoreDBのupdateNodeメソッドで確実に更新 🟢
-        const restoredNode: TreeNode = {
-          ...node,
-          ...restoreData,
-        };
-
-        await this.coreDB.updateNode(restoredNode);
-      }
-
-      // 【成功応答】: テストで期待される成功ステータスを返却 🟢
-      return {
-        success: true,
-        seq: this.getNextSeq(),
-      };
-    } catch (error) {
-      // 【エラーハンドリング】: 例外発生時の適切なエラーレスポンス
-      console.error('Error in recoverFromTrash:', error);
-      return {
-        success: false,
-        error: String(error),
-        code: 'INVALID_OPERATION',
-      };
-    }
-  }
+  // recoverFromTrash legacy removed: handled by CommandProcessor
 
   async importNodes(
     cmd: CommandEnvelope<'importNodes', ImportNodesPayload>
@@ -706,43 +492,7 @@ export class TreeMutationService implements TreeMutationAPI {
     return result as CoreCommandResult;
   }
 
-  // Helper methods
-
-  private async isDescendantOf(nodeId: NodeId, ancestorId: NodeId): Promise<boolean> {
-    let currentId = nodeId;
-    const visited = new Set<NodeId>();
-
-    while (currentId && currentId !== ('root' as NodeId)) {
-      if (visited.has(currentId)) {
-        return false; // Circular reference protection
-      }
-      visited.add(currentId);
-
-      if (currentId === ancestorId) {
-        return true;
-      }
-
-      const node = await this.coreDB.getNode?.(currentId);
-      if (!node) break;
-
-      currentId = node.parentId;
-    }
-
-    return false;
-  }
-
-  // duplicateBranch: removed in favor of CoreDB.duplicateSubtree (bulk-based)
-
-  private async deleteNodeRecursively(nodeId: NodeId): Promise<void> {
-    // Delete children first
-    const children = (await this.coreDB.listChildren?.(nodeId)) || [];
-    for (const child of children) {
-      await this.deleteNodeRecursively(child.id);
-    }
-
-    // Delete the node itself
-    await this.coreDB.deleteNode?.(nodeId);
-  }
+  // duplicateBranch: removed previously in favor of CoreDB.duplicateSubtree (bulk-based)
 
   private getNextSeq(): number {
     // In a real implementation, this should be managed by CommandProcessor

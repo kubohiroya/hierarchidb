@@ -16,6 +16,8 @@ import type {
 // === API Method Signatures ===
 
 export interface ShapesAPIMethods extends Record<string, any> {
+  // Auth
+  setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void> | void;
   // Batch processing
   startBatchProcess(nodeId: NodeId, config: BatchProcessConfig): Promise<BatchSession>;
   pauseBatchProcess(sessionId: string): Promise<void>;

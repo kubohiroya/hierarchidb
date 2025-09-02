@@ -21,6 +21,8 @@ import type {
   FeatureIndex,
   //DataSourceName
 } from '../types';
+import { createShapeDownloadService } from '../download/factory';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 /**
  * DownloadWorker implementation
@@ -125,6 +127,17 @@ export class DownloadWorker implements DownloadWorkerAPI {
   private async downloadFromSource(config: DownloadTaskConfig): Promise<ArrayBuffer> {
     let lastError: Error | undefined;
 
+    // Prefer DownloadService (auth-aware, resumable) when available
+    try {
+      const { service, readAll } = createShapeDownloadService({ perHostConcurrency: 4 });
+      const fileId = `shape-${config.country}-${config.adminLevel}-${Date.now()}`;
+      const result = await service.download(config.url, fileId, {});
+      const buf = await readAll(result.fileId);
+      if (buf && buf.byteLength > 0) return buf;
+    } catch (e) {
+      console.warn('DownloadService path failed; falling back to fetch:', e);
+    }
+
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         console.log(`DownloadWorker: Downloading from ${config.url} (attempt ${attempt + 1})`);
@@ -132,13 +145,15 @@ export class DownloadWorker implements DownloadWorkerAPI {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
-        const response = await fetch(config.url, {
+        // try via auth-recovery to benefit from token + UI flow
+        const auth = await AuthRecoveryService.getSingleton();
+        const response = await auth.fetchWithAuth(config.url, {
           signal: controller.signal,
           headers: {
             Accept: 'application/json, application/geo+json, */*',
             'User-Agent': 'HierarchiDB-Shape-Plugin/1.0',
           },
-        });
+        }, { pluginType: 'shape' });
 
         clearTimeout(timeoutId);
 

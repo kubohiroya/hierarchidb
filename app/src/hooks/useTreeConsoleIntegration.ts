@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { showCommandError } from '~/shared/command-errors';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
@@ -304,12 +305,13 @@ export function useTreeConsoleIntegration({
                 }
               } else {
                 console.error('Failed to create node:', result.error);
-                // TODO: Show error notification to user
+                // Temporary user feedback until NotificationSystem is mounted
+                showCommandError('INVALID_OPERATION', result.error);
               }
             }
           } catch (error) {
             console.error('Error creating node:', error);
-            // TODO: Show error notification to user
+            showCommandError('UNKNOWN_ERROR');
           }
           return;
         }

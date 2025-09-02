@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-- runtime-worker: CommandProcessor routing extended (create/update/move/remove/recover) behind feature flags (default OFF)
+- runtime-worker: Deprecate `WORKER_USE_CMDPROC_CREATE_UPDATE` / `WORKER_USE_CMDPROC_MOVE_REMOVE` (now ignored)
 - runtime-worker: Trash holder flow (flag `WORKER_TRASH_USE_HOLDER`) with legacy fallback and headless tests
 - runtime-worker: Undo/Redo expanded to update/move/remove/recover
 - runtime-worker: Error model unified to Core `CommandResult`/`ErrorCode`
@@ -16,3 +16,8 @@ All notable changes to this project will be documented in this file.
 - runtime-worker: WorkingCopyService commit now delegates to CP (V2) when enabled
 - runtime-worker: NodeLifecycleManager reference counting port (registry injection) and headless unit test
 
+## 2025-09-02
+
+- runtime-worker: TreeMutationService now always routes create/update/move/remove/recover via CommandProcessor
+- runtime-worker: Reliable create Undo/Redo (preserve created node id across undo/redo)
+- docs/scripts: Mark `WORKER_USE_CMDPROC_CREATE_UPDATE` / `WORKER_USE_CMDPROC_MOVE_REMOVE` as deprecated and adjust examples

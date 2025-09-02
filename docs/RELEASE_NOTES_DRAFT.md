@@ -3,7 +3,7 @@
 This draft summarizes changes for the upcoming runtime-worker release and related tooling.
 
 Highlights
-- CommandProcessor routing: create/update/move/remove/recover supported behind feature flags (default OFF)
+- CommandProcessor routing: create/update/move/remove/recover are now always routed via CP (flags deprecated)
 - Trash holder flow: safer trash behavior (recover by holder decode), legacy-compatible fallback
 - Undo/Redo expanded: update/move/remove/recover
 - Error model unified: Core `CommandResult` / `ErrorCode` across worker
@@ -14,8 +14,8 @@ Highlights
 - Lightweight command metrics: per-command counts/errors/latency with flag
 
 Feature Flags (default OFF)
-- `WORKER_USE_CMDPROC_CREATE_UPDATE` – Route create/update via CommandProcessor
-- `WORKER_USE_CMDPROC_MOVE_REMOVE` – Route move/remove via CommandProcessor
+- `WORKER_USE_CMDPROC_CREATE_UPDATE` – Deprecated (ignored >= 2025-09-02)
+- `WORKER_USE_CMDPROC_MOVE_REMOVE` – Deprecated (ignored >= 2025-09-02)
 - `WORKER_TRASH_USE_HOLDER` – Enable trash holder flow
 - `WORKER_WC_COMMIT_V2` – Enable WC commit V2 via CP
 - `WORKER_POLICY_C` – Enable Policy C (block move/remove when WC exists)
@@ -42,4 +42,3 @@ Known Items / Next Steps
 - Reference counting: port provided (registry injection), per-plugin implementation can follow
 - Browser E2E: can be re-enabled later; headless coverage exists for critical flows
 - Metrics export/visualization: future PR to expose snapshot externally or log periodically
-
