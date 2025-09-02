@@ -35,11 +35,11 @@ export const createEnvelopeSchema = () =>
         })
         .optional(),
     })
+    .passthrough()
     .refine((v) => Boolean(v.kind ?? v.type), {
       message: 'Either kind or type is required',
       path: ['kind'],
-    })
-    .passthrough();
+    });
 
 export type EnvelopeInput = unknown;
 
