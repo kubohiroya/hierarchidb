@@ -58,3 +58,18 @@ export const routing: PluginRoutingConfig = {
 
 // Also export as default for compatibility
 export default entityHandler;
+
+// Dev registration of Folder PeerStore (A-plan: per-plugin DB; here in-memory)
+try {
+  // Dynamic import to avoid hard dependency at build time
+  // and keep this safe in non-worker contexts.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  import('@hierarchidb/runtime-worker/entity/store-registry').then(({ storeRegistry }) => {
+    import('./folderPeerStore').then(({ folderPeerStore }) => {
+      if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
+    }).catch(() => {});
+  }).catch(() => {});
+} catch {
+  // ignore
+}
