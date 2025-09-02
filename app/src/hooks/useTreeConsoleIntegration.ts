@@ -205,7 +205,15 @@ export function useTreeConsoleIntegration({
         try {
           const queryAPI = await client.getQueryAPI();
           const children = await queryAPI.listChildren(pageNodeId as NodeId);
-          const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
+          const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash';
+          let displayNodes: TreeNode[] = children;
+          if (shouldFlattenTrash) {
+            const grandChildrenBatches = await Promise.all(
+              children.map((holder) => queryAPI.listChildren(holder.id as NodeId))
+            );
+            displayNodes = grandChildrenBatches.flat();
+          }
+          const treeNodeData = displayNodes.map(convertTreeNodeToTreeNodeData);
           setTreeData(treeNodeData);
         } catch (err) {
           console.error('Failed to refresh tree data:', err);
@@ -435,10 +443,20 @@ export function useTreeConsoleIntegration({
         const queryAPI = await client.getQueryAPI();
         const children = await queryAPI.listChildren(pageNodeId as NodeId);
 
+        // If current page is trash root, flatten one level to hide holder nodes
+        const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash';
+        let displayNodes: TreeNode[] = children;
+        if (shouldFlattenTrash) {
+          const grandChildrenBatches = await Promise.all(
+            children.map((holder) => queryAPI.listChildren(holder.id as NodeId))
+          );
+          displayNodes = grandChildrenBatches.flat();
+        }
+
         console.log('[useTreeConsoleIntegration] Loaded children:', children);
 
         // Convert TreeNode[] to TreeNodeData[]
-        const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
+        const treeNodeData = displayNodes.map(convertTreeNodeToTreeNodeData);
         setTreeData(treeNodeData);
 
         setState((prev) => ({ ...prev, loading: false }));
