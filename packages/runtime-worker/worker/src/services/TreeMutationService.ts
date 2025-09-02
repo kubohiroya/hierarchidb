@@ -455,8 +455,6 @@ export class TreeMutationService implements TreeMutationAPI {
           // 【復元用情報保存】: 元の親IDと名前を保存
           originalParentId: node.parentId,
           originalName: node.name,
-          // 【ゴミ箱フラグ設定】: テストで期待されるisRemovedプロパティ 🟢
-          isRemoved: true,
           // 【タイムスタンプ記録】: ゴミ箱移動時刻の記録
           removedAt: Date.now() as Timestamp,
           // 【更新時刻】: ノード更新時刻の記録
@@ -524,7 +522,7 @@ export class TreeMutationService implements TreeMutationAPI {
         }
 
         // 【ゴミ箱状態チェック】: isRemovedがtrueのノードのみ復元対象
-        if (!node.isRemoved) {
+        if (!node.removedAt) {
           console.warn(`Node ${nodeId} is not in trash, skipping recovery`);
           continue;
         }
@@ -550,8 +548,6 @@ export class TreeMutationService implements TreeMutationAPI {
           parentId: targetParentId,
           // 【名前復元】: 元の名前または衝突回避後の名前に設定
           name: restoredName,
-          // 【ゴミ箱フラグクリア】: テストで期待されるisRemoved=falseの設定 🟢
-          isRemoved: false,
           // 【復元用データクリア】: 全ての復元用プロパティを未定義に設定
           originalParentId: undefined,
           originalName: undefined,

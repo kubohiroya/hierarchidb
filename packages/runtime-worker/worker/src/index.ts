@@ -4,6 +4,7 @@ import {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
+  WorkingCopyAPI,
   WorkerAPI,
 } from '@hierarchidb/common-api';
 import { CoreDB } from './services/CoreDB';
@@ -18,9 +19,11 @@ import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { TagService } from './services/TagService';
 import { ImportExportService } from './services/ImportExportService';
 // No direct Comlink types should leak at this boundary
+import { WorkingCopyService } from './services/WorkingCopyService';
 
 export class WorkerService implements WorkerAPI {
   private readonly startTime = Date.now();
+
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
@@ -50,6 +53,9 @@ export class WorkerService implements WorkerAPI {
       // Import/Export services
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(coreDB);
 
+      // WorkingCopy service (ephemeral-backed)
+      const workingCopyService: WorkingCopyAPI = new WorkingCopyService(coreDB, ephemeralDB);
+
       return new WorkerService(
         plugins,
         coreDB,
@@ -58,6 +64,7 @@ export class WorkerService implements WorkerAPI {
         treeMutationService,
         treeSubscriptionService,
         importExportService,
+        workingCopyService,
         tagService,
         nodeLifecycleManager,
         commandProcessor
@@ -73,6 +80,7 @@ export class WorkerService implements WorkerAPI {
     private mutationService: TreeMutationAPI,
     private subscriptionService: TreeSubscriptionAPI,
     private importExportService: ImportExportAPI,
+    private workingCopyService: WorkingCopyAPI,
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor
@@ -96,7 +104,7 @@ export class WorkerService implements WorkerAPI {
   }
 
   async initialize(): Promise<void> {
-    // Already initialized by bootstrap in this build
+    // Initialization is handled in getSingleton; nothing to do.
   }
 
   getQueryAPI(): TreeQueryAPI {
@@ -111,8 +119,8 @@ export class WorkerService implements WorkerAPI {
     return this.subscriptionService;
   }
 
-  getWorkingCopyAPI(): import('@hierarchidb/common-api').WorkingCopyAPI {
-    throw new Error('WorkingCopyAPI is not implemented in this build');
+  getWorkingCopyAPI(): WorkingCopyAPI {
+    return this.workingCopyService;
   }
 
   getImportExportAPI(): ImportExportAPI {
@@ -123,8 +131,45 @@ export class WorkerService implements WorkerAPI {
     return this.tagService;
   }
 
+  // Minimal stub to satisfy interface; not yet wired.
   getPluginLifecycleAPI(): import('@hierarchidb/common-api').PluginLifecycleAPI {
-    throw new Error('PluginLifecycleAPI is not implemented in this build');
+    return {
+      async register() {
+        return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };
+      },
+      async unregister() {
+        return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };
+      },
+      async validatePlugin() {
+        return { isValid: false, errors: [], warnings: [] };
+      },
+      async checkHealth() {
+        return {
+          status: 'degraded',
+          lastCheck: Date.now(),
+          issues: ['Not implemented'],
+          performance: { avgResponseTime: 0, errorRate: 1 },
+        };
+      },
+      async listRegistered() {
+        return [];
+      },
+      async getDependencies(nodeType) {
+        return { nodeType, dependencies: [], dependents: [], circularDependencies: false };
+      },
+      async bulkOperation() {
+        return { successful: [], failed: [], summary: { total: 0, success: 0, failed: 0 } };
+      },
+      async resetPlugin(options) {
+        return { success: false, nodeType: options.nodeType, deletedEntities: {} } as any;
+      },
+      async deletePlugin(nodeType) {
+        return { success: false, nodeType };
+      },
+      async resetSystem() {
+        return { success: false, nodeType: 'folder' as any, deletedEntities: {} } as any;
+      },
+    };
   }
 
   getNodeLifecycleManager(): NodeLifecycleManager {
@@ -147,23 +192,23 @@ export class WorkerService implements WorkerAPI {
     memory: { used: number; limit: number };
     uptime: number;
   }> {
+    const used = (globalThis as any).performance?.memory?.usedJSHeapSize ?? 0;
+    const limit = (globalThis as any).performance?.memory?.jsHeapSizeLimit ?? 0;
     return {
       databases: {
-        coreDB: true,
-        ephemeralDB: true,
+        coreDB: (this.coreDB as any).isOpen?.() ?? true,
+        ephemeralDB: (this.ephemeralDB as any).isOpen?.() ?? true,
       },
       services: {
         query: !!this.queryService,
         mutation: !!this.mutationService,
         subscription: !!this.subscriptionService,
-        plugin: false,
-        workingCopy: false,
+        plugin: !!this.nodeLifecycleManager,
+        workingCopy: !!this.workingCopyService,
       },
-      memory: {
-        used: 0,
-        limit: 0,
-      },
+      memory: { used, limit },
       uptime: Date.now() - this.startTime,
     };
   }
 }
+

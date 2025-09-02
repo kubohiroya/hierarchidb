@@ -35,7 +35,6 @@ async function initializeWorker() {
     
     console.log('[App Worker] Exposing WorkerAPI via Comlink...');
     initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);
-    
     // Build a plain function-based API facade to avoid exposing class instance
     const api: WorkerAPI = {
       // Health and lifecycle
@@ -56,6 +55,7 @@ async function initializeWorker() {
 
     // Expose via Comlink with explicit contract
     Comlink.expose<WorkerAPI>(api);
+    
     
     console.log('[App Worker] Worker ready');
     initReporter.reportComplete();

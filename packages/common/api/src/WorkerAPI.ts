@@ -71,12 +71,7 @@ export interface WorkerAPI {
    */
   getSubscriptionAPI(): TreeSubscriptionAPI;
 
-  /**
-   * Get NodeTypeRegistryAPI for node type registration and management
-   *
-   getNodeTypeRegistryAPI(): NodeTypeRegistryAPI & ProxyMarked;
-   * @returns Proxy to NodeTypeRegistryAPI implementation
-   */
+  // Reserved for future: NodeTypeRegistryAPI
 
   /**
    * Get the working copy API for draft and edit operations
@@ -227,27 +222,3 @@ export interface WorkerAPI {
  * Default export for the WorkerAPI interface
  */
 export default WorkerAPI;
-/**
- * Get TreePluginAnalyzer for TreeTypes-specific plugin analysis and optimization
- *
- * @returns Proxy to TreePluginAnalyzer implementation
- getTreePluginAnalyzer(): TreePluginAnalyzer & ProxyMarked;
- */
-/**
- * Get Plugin Management API facade
- *
- * Provides comprehensive plugin lifecycle management including registration,
- * validation, and health monitoring.
- *
- * @returns Plugin Management API facade instance
- *
- * @example
- * ```typescript
- * const pluginMgmtAPI = workerAPI.getPluginManagementAPI();
- * const result = await pluginMgmtAPI.register(myPluginDefinition);
- * ```
- */
-/**
- * @deprecated Use getPluginLifecycleAPI() instead. Will be removed in v2.0.
- getPluginManagementAPI(): PluginManagementAPI & ProxyMarked;
- */

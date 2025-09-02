@@ -118,6 +118,35 @@ export interface _MappingValidationResult {
 }
 
 /**
+ * Validation error details (current)
+ */
+export interface ValidationError {
+  ruleId: string;
+  property: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+/**
+ * Validation warning details (current)
+ */
+export interface ValidationWarning {
+  property: string;
+  message: string;
+  suggestion?: string;
+}
+
+/**
+ * Mapping validation result (current)
+ */
+export interface MappingValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  coverage: number; // Percentage of properties mapped
+}
+
+/**
  * Validation error details
  * @deprecated Use ValidationWarning instead
  */

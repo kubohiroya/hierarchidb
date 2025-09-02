@@ -12,9 +12,20 @@ import type { NodeId, EntityId, PeerEntity, Timestamp } from '@hierarchidb/commo
  * FolderEntity - フォルダのメタデータ（PeerEntity）
  * TreeNodeと1:1対応で、フォルダ固有の設定を保持
  */
+export interface FolderSettings {
+  allowNestedFolders: boolean;
+  maxDepth: number;
+  sortOrder: 'name' | 'date' | 'size';
+}
+
 export interface FolderEntity extends PeerEntity {
-  id: EntityId; // Add explicit id field for compatibility
+  id: EntityId;
   nodeId: NodeId;
+  name?: string;
+  description?: string;
+  category?: string;
+  settings?: FolderSettings;
+  tags?: EntityId[];
 }
 
 /**
@@ -43,4 +54,17 @@ export interface FolderSearchQuery {
   sortDirection?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+}
+
+// Additional types re-exported by types/index.ts
+export type FolderWorkingCopy = FolderEntity & { workingCopyId: EntityId };
+
+export interface FolderStatsSummary {
+  totalFolders: number;
+}
+
+export interface FolderStructureNode {
+  nodeId: NodeId;
+  name: string;
+  children?: FolderStructureNode[];
 }
