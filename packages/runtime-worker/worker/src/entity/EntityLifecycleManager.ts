@@ -29,6 +29,10 @@ export class EntityLifecycleManager {
   // Dispatch by command kind (base skeleton)
   async handleCommand(envelope: CommandEnvelope<string, unknown>): Promise<void> {
     switch (envelope.kind) {
+      case 'createWorkingCopy':
+        return this.onCreateWorkingCopy(envelope as any);
+      case 'discardWorkingCopy':
+        return this.onDiscardWorkingCopy(envelope as any);
       case 'commitWorkingCopy':
         return this.onCommitWorkingCopy(envelope as any);
       case 'duplicateNodes':
@@ -45,6 +49,34 @@ export class EntityLifecycleManager {
 
   // Below are no-op placeholders to be implemented in later phases.
   // They intentionally do not mutate state yet.
+  async onCreateWorkingCopy(env: CommandEnvelope<'createWorkingCopy', { originalId: any; workingCopyId: any }>): Promise<void> {
+    try {
+      const originalId = env.payload?.originalId as any;
+      const wcId = env.payload?.workingCopyId as any;
+      if (!originalId || !wcId) return;
+      const node = await (this.coreDB as any).getNode?.(originalId);
+      const nodeType = (node as any)?.nodeType as string | undefined;
+      if (!nodeType) return;
+      const store = storeRegistry.getPeer(nodeType);
+      if (!store) return;
+      const peer = new PeerEntityHandler(store);
+      await peer.copyPeer(originalId, wcId);
+    } catch {}
+  }
+
+  async onDiscardWorkingCopy(env: CommandEnvelope<'discardWorkingCopy', { workingCopyId: any }>): Promise<void> {
+    try {
+      const wcId = env.payload?.workingCopyId as any;
+      if (!wcId) return;
+      const wcNode = await (this.coreDB as any).getNode?.(wcId);
+      const nodeType = (wcNode as any)?.nodeType as string | undefined;
+      if (!nodeType) return;
+      const store = storeRegistry.getPeer(nodeType);
+      if (!store) return;
+      const peer = new PeerEntityHandler(store);
+      await peer.deletePeer(wcId);
+    } catch {}
+  }
   async onCommitWorkingCopy(env: CommandEnvelope<'commitWorkingCopy', { workingCopyId: any }>): Promise<void> {
     try {
       // Resolve WC node and its holder to discover targetId
