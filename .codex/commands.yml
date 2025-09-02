@@ -1,0 +1,9 @@
+commands:
+  - name: vk:task
+    description: Create a vibe-kanban task (forwards args to pnpm)
+    run: pnpm vk:task {{args}}
+
+  - name: vk:task:preset
+    description: Create grouped-commits preset task
+    run: pnpm vk:task:commit-grouping
+

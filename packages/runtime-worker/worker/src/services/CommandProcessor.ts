@@ -151,9 +151,7 @@ export class CommandProcessor {
   private async executeCommand<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
-    // Simulate command execution
     // In real implementation, this would delegate to specific command handlers
-
     switch (envelope.kind) {
       case 'createNode':
       case 'updateNode':

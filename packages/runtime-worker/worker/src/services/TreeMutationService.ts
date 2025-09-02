@@ -24,6 +24,7 @@ import { createNewName } from './WorkingCopyTreeNodeOperations';
 import { SingletonMixin } from '@hierarchidb/util';
 
 export class TreeMutationService implements TreeMutationAPI {
+  // Note: Keep implementation lean. Routing via CommandProcessor will be introduced later.
   static async getSingleton(
     coreDB: CoreDB,
     commandProcessor: CommandProcessor
