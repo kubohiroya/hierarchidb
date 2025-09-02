@@ -5,6 +5,7 @@ import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from '
 import { WorkerErrorCode } from './command-types';
 import type { CoreDB } from './CoreDB';
 import { SingletonMixin } from '@hierarchidb/util';
+import { validateAndNormalizeEnvelope } from './validation/envelope';
 
 /**
  * 【型定義】: ログ出力用のサニタイズされた結果型
@@ -100,27 +101,12 @@ export class CommandProcessor {
     envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
     try {
-      // 【入力検証】: コマンドエンベロープの妥当性を検証 🟢
-      if (!envelope) {
-        return this.createErrorResult(
-          'Command envelope is required',
-          WorkerErrorCode.INVALID_OPERATION
-        );
+      // 【入力検証(ZE-3)】: Zod による Envelope 検証と正規化を適用
+      const checked = validateAndNormalizeEnvelope(envelope);
+      if (!checked.ok) {
+        return this.createErrorResult(checked.error, WorkerErrorCode.VALIDATION_ERROR);
       }
-
-      if (!envelope.kind || typeof envelope.kind !== 'string') {
-        return this.createErrorResult(
-          'Command kind is required and must be string',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
-
-      if (!envelope.commandId || typeof envelope.commandId !== 'string') {
-        return this.createErrorResult(
-          'Command ID is required and must be string',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
+      envelope = checked.envelope as CommandEnvelope<TType, TPayload>;
 
       // 【セキュリティ強化】: 長大なコマンドIDによるメモリ攻撃の防御 🟢
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
