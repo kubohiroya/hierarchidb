@@ -11,30 +11,29 @@ import type { PeerStore, GroupStore, RelationStore, GroupItemBase, RelationBase 
  */
 
 class StoreRegistry {
-  private peer = new Map<string, PeerStore>();
-  private group = new Map<string, GroupStore<GroupItemBase>>();
-  private rel = new Map<string, RelationStore<RelationBase>>();
+  private peer = new Map<string, PeerStore<any>>();
+  private group = new Map<string, GroupStore<GroupItemBase<any>>>();
+  private rel = new Map<string, RelationStore<RelationBase<any>>>();
 
-  registerPeer(nodeType: string, store: PeerStore) {
-    this.peer.set(nodeType, store);
+  registerPeer<TData = unknown>(nodeType: string, store: PeerStore<TData>) {
+    this.peer.set(nodeType, store as PeerStore<any>);
   }
-  registerGroup<T extends GroupItemBase>(nodeType: string, store: GroupStore<T>) {
-    this.group.set(nodeType, store as unknown as GroupStore<GroupItemBase>);
+  registerGroup<TItem extends GroupItemBase<any>>(nodeType: string, store: GroupStore<TItem>) {
+    this.group.set(nodeType, store as unknown as GroupStore<GroupItemBase<any>>);
   }
-  registerRelations<T extends RelationBase>(nodeType: string, store: RelationStore<T>) {
-    this.rel.set(nodeType, store as unknown as RelationStore<RelationBase>);
+  registerRelations<TRel extends RelationBase<any>>(nodeType: string, store: RelationStore<TRel>) {
+    this.rel.set(nodeType, store as unknown as RelationStore<RelationBase<any>>);
   }
 
-  getPeer(nodeType: string): PeerStore | undefined {
-    return this.peer.get(nodeType);
+  getPeer<TData = unknown>(nodeType: string): PeerStore<TData> | undefined {
+    return this.peer.get(nodeType) as PeerStore<TData> | undefined;
   }
-  getGroup(nodeType: string): GroupStore<GroupItemBase> | undefined {
-    return this.group.get(nodeType);
+  getGroup<TItem extends GroupItemBase<any> = GroupItemBase<any>>(nodeType: string): GroupStore<TItem> | undefined {
+    return this.group.get(nodeType) as unknown as GroupStore<TItem> | undefined;
   }
-  getRelations(nodeType: string): RelationStore<RelationBase> | undefined {
-    return this.rel.get(nodeType);
+  getRelations<TRel extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<TRel> | undefined {
+    return this.rel.get(nodeType) as unknown as RelationStore<TRel> | undefined;
   }
 }
 
 export const storeRegistry = new StoreRegistry();
-

@@ -9,8 +9,9 @@ import type { BatchTaskLike, BatchStage } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';
 import { getEphemeralShapeDB, type EphemeralShapeDB } from './database/EphemeralShapeDB';
 import { ShapeBatchOrchestrator } from './ShapeBatchOrchestrator';
-import { getShapeAuthHandler, type WorkerAuthHandler } from './auth';
 import type { AuthNotification, AuthRequiredNotification, AuthSuccessNotification } from '@hierarchidb/common-auth';
+import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 export interface BatchSessionStatus {
   sessionId: string;
@@ -45,25 +46,27 @@ export class BatchSessionManager {
   private tasks: Map<string, BatchTaskLike[]> = new Map();
   private ephemeralDB: EphemeralShapeDB;
   private progressCallbacks: Map<string, (event: BatchProgressEvent) => void> = new Map();
-  private authHandler: WorkerAuthHandler;
+  private auth: AuthRecoveryService | null = null;
   private orchestrator: ShapeBatchOrchestrator;
 
   constructor() {
     this.ephemeralDB = getEphemeralShapeDB();
-    this.authHandler = getShapeAuthHandler();
     this.orchestrator = new ShapeBatchOrchestrator(this.ephemeralDB);
-    
-    // Set up UI notification callback for auth handler
-    this.authHandler.setUINotificationCallback((notification) => {
-      this.handleAuthNotification(notification);
+    // Listen for auth notifications via registry
+    const registry = AuthNotificationRegistry.getInstance();
+    registry.register('shape-batch-session-manager', {
+      onAuthRequired: async (n) => this.handleAuthRequired(n),
+      onAuthSuccess: async (n) => this.handleAuthSuccess(n),
+      onAuthCancelled: async (n: any) => this.cancelForAuth(n),
     });
   }
 
   /**
    * Seed or update auth token from UI so downloads include Authorization from the start.
    */
-  setAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
-    this.authHandler.setToken(token, type, expiresAt);
+  async setAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): Promise<void> {
+    if (!this.auth) this.auth = await AuthRecoveryService.getSingleton();
+    this.auth.setToken(token, type, expiresAt);
   }
 
   /**
@@ -705,10 +708,8 @@ export class BatchSessionManager {
    * Execute HTTP request with authentication handling
    */
   async fetchWithAuth(url: string, init: RequestInit = {}, sessionId?: string): Promise<Response> {
-    return this.authHandler.fetchWithAuth(url, init, {
-      sessionId,
-      pluginType: 'shape',
-    });
+    if (!this.auth) this.auth = await AuthRecoveryService.getSingleton();
+    return this.auth.fetchWithAuth(url, init, { sessionId, pluginType: 'shape' });
   }
 
   /**
@@ -1007,9 +1008,8 @@ export class BatchSessionManager {
   /**
    * Get authentication handler for external use
    */
-  getAuthHandler(): WorkerAuthHandler {
-    return this.authHandler;
-  }
+  // get auth service (for testing/introspection)
+  async getAuthService(): Promise<AuthRecoveryService> { if (!this.auth) this.auth = await AuthRecoveryService.getSingleton(); return this.auth; }
 
   /**
    * Clean up inactive subscriptions
@@ -1023,7 +1023,7 @@ export class BatchSessionManager {
    * Dispose resources including auth handler
    */
   dispose(): void {
-    this.authHandler.dispose();
+    this.auth = null;
     this.progressCallbacks.clear();
     this.sessions.clear();
     this.tasks.clear();

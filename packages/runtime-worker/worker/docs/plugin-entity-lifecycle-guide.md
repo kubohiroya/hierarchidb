@@ -36,7 +36,7 @@ import Dexie, { Table } from 'dexie';
 import type { PeerEntity } from '@hierarchidb/runtime-worker-worker/entity/store';
 
 export class PluginEntitiesDB extends Dexie {
-  peerEntities!: Table<PeerEntity, string>; // key=nodeId
+  peerEntities!: Table<PeerEntity<MyPeerData>, string>; // key=nodeId
   // groupEntities / relations はプラグインの型に合わせて定義
 
   constructor(name = 'my-plugin-entities') {
@@ -48,6 +48,32 @@ export class PluginEntitiesDB extends Dexie {
     });
   }
 }
+
+// プラグイン固有のデータ型例
+type MyPeerData = {
+  schemaVersion: 1;
+  domain: {
+    title?: string;
+    properties?: Record<string, unknown>;
+  };
+};
+
+// Store 実装例（抜粋）
+export const myPeerStore = {
+  async get(nodeId) {
+    return db.peerEntities.get(nodeId);
+  },
+  async put(entity: PeerEntity<MyPeerData>) {
+    await db.peerEntities.put({ ...entity, updatedAt: Date.now() });
+  },
+  async delete(nodeId) {
+    await db.peerEntities.delete(nodeId);
+  },
+};
+
+// 登録例（nodeType ごとに登録）
+import { storeRegistry } from '@hierarchidb/runtime-worker-worker/entity/store-registry';
+storeRegistry.registerPeer<MyPeerData>('my-node-type', myPeerStore);
 ```
 
 ## コマンド連動（概要）

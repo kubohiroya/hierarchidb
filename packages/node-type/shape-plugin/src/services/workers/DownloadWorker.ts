@@ -22,6 +22,7 @@ import type {
   //DataSourceName
 } from '../types';
 import { createShapeDownloadService } from '../download/factory';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 /**
  * DownloadWorker implementation
@@ -144,13 +145,15 @@ export class DownloadWorker implements DownloadWorkerAPI {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
-        const response = await fetch(config.url, {
+        // try via auth-recovery to benefit from token + UI flow
+        const auth = await AuthRecoveryService.getSingleton();
+        const response = await auth.fetchWithAuth(config.url, {
           signal: controller.signal,
           headers: {
             Accept: 'application/json, application/geo+json, */*',
             'User-Agent': 'HierarchiDB-Shape-Plugin/1.0',
           },
-        });
+        }, { pluginType: 'shape' });
 
         clearTimeout(timeoutId);
 

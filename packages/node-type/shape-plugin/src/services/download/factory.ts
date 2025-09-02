@@ -1,11 +1,11 @@
 import { DownloadService, FetchNetworkPort, DexieChunkStoragePort } from '@hierarchidb/download';
-import { getShapeAuthHandler } from '../auth';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 /**
  * Creates a DownloadService wired with auth headers and IndexedDB-backed storage + CAS index.
  */
 export function createShapeDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }) {
-  const auth = getShapeAuthHandler();
+  const auth = await AuthRecoveryService.getSingleton();
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,

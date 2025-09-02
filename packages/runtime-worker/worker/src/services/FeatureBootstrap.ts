@@ -10,11 +10,11 @@ import { featureDefinition as batch } from '@hierarchidb/batch';
 import { featureDefinition as download } from '@hierarchidb/download';
 import { featureDefinition as mapSource } from '@hierarchidb/map-source';
 import { featureDefinition as mapView } from '@hierarchidb/map-view';
+import { featureDefinition as authRecovery } from '@hierarchidb/auth-recovery';
 
 export async function bootstrapFeatures(): Promise<FeatureRegistry> {
   const registry = new FeatureRegistry();
-  [tag, ie, tabular, tabularXlsx, compute, batch, download, mapSource, mapView].forEach((f) => registry.register(f));
+  [tag, ie, tabular, tabularXlsx, compute, batch, download, mapSource, mapView, authRecovery].forEach((f) => registry.register(f));
   await registry.startAll();
   return registry;
 }
-

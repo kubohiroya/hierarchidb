@@ -24,3 +24,4 @@ declare module '@hierarchidb/batch' { export const featureDefinition: any; }
 declare module '@hierarchidb/download' { export const featureDefinition: any; }
 declare module '@hierarchidb/map-source' { export const featureDefinition: any; }
 declare module '@hierarchidb/map-view' { export const featureDefinition: any; }
+declare module '@hierarchidb/auth-recovery' { export const featureDefinition: any; export class AuthRecoveryService { static getSingleton(): Promise<any>; setToken(token: string, type?: 'Bearer'|'Basic', expiresAt?: number): void; getAuthHeaders(): Record<string,string>; fetchWithAuth(url: string, init?: RequestInit, ctx?: any): Promise<Response>; } }
