@@ -27,4 +27,5 @@ vk:task id=trash-holder-refactor status=planning priority=P1 labels=worker,tree,
 ## 依存
 - `docs/holder-pair-pattern.md`
 - `docs/working-copy-holder-encoding.md`
-
+ - エピック: `epic-wc-trash-unification`
+ - `wc-impl-align`, `tree-guard-policy-c`

@@ -27,4 +27,5 @@ vk:task id=ui-resume-wc-under-subtree status=planning priority=P2 labels=ui,work
 ## 依存
 - ADR: `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
 - エンコードAPI: `encodeHolderName` / `decodeHolderName`（仕様化/実装）
-
+ - エピック: `epic-wc-trash-unification`
+ - 実装: `tree-guard-policy-c`, `wc-impl-align`

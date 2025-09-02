@@ -35,10 +35,10 @@ vk:task id=wc-spec-sync status=planning priority=P1 labels=worker,working-copy,d
 ## 依存関係
 - `docs/command-processor-refactor-plan.md`
 - `docs/task-comlink-typing-hardening.md`
+ - エピック: `epic-wc-trash-unification`
 
 ## リスクと緩和策
 - リスク: 二系統の併存で混乱
   - 緩和: サービス層へ集約する計画を先に合意し、段階適用
 - リスク: 既存テストへの影響
   - 緩和: フラグ/段階ロールアウトにより非回帰を担保
-

@@ -25,8 +25,8 @@ vk:task id=wc-entity-spec status=planning priority=P1 labels=worker,entity,worki
 - Tree WC 仕様（3根/holder+child）
 - CommandProcessor リファクタ計画
 - Comlink 型強化（構造化クローン制約）
+ - エピック: `epic-wc-trash-unification`
 
 ## 受け入れ基準
 - 仕様のレビュー合意（このタスクは実装なし）
 - 後続タスク（実装）へ 3–5 PR 単位で分割可能な形で明文化
-
