@@ -10,7 +10,7 @@ import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId, PluginDefinition } from '@hierarchidb/common-type';
 import type { TreePluginInfo } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
@@ -22,7 +22,7 @@ export interface UsePluginsForTreeResult {
 
 export function usePluginsForTree(
   treeId: TreeId | undefined,
-  workerClient: Remote<typeof WorkerModule> | null
+  workerClient: Remote<WorkerAPI> | null
 ): UsePluginsForTreeResult {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
   const [pluginInfo, setPluginInfo] = useState<TreePluginInfo[]>([]);

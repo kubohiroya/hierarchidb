@@ -20,7 +20,7 @@ import {
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type WorkerModule from '~/worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
@@ -30,7 +30,7 @@ export interface TreeConsoleIntegrationProps {
 
 // Inner component that uses the hook (client is guaranteed to be non-null)
 const TreeConsoleIntegrationInner: React.FC<
-  TreeConsoleIntegrationProps & { client: Remote<typeof WorkerModule> }
+  TreeConsoleIntegrationProps & { client: Remote<WorkerAPI> }
 > = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
   const location = useLocation();
   const navigate = useNavigate();

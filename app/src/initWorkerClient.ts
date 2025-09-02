@@ -3,18 +3,16 @@
  */
 
 import type { Remote } from 'comlink';
-
-// Import the actual worker module type
-import type WorkerModule from './worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 // Global instance - properly typed
-let workerInstance: Remote<typeof WorkerModule> | null = null;
+let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;
 
 /**
  * Initialize the Worker
  */
-export async function initializeWorker(): Promise<Remote<typeof WorkerModule>> {
+export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   // Auto-load plugins before initializing worker
   try {
     const { autoLoadPlugins } = await import('./plugins/auto-load');
@@ -60,8 +58,8 @@ export async function initializeWorker(): Promise<Remote<typeof WorkerModule>> {
       // Import Comlink to wrap the Worker
       const Comlink = await import('comlink');
       
-      // Wrap the raw Worker with Comlink
-      const worker = Comlink.wrap<typeof WorkerModule>(rawWorkerInstance);
+      // Wrap the raw Worker with Comlink using the shared WorkerAPI contract
+      const worker = Comlink.wrap<WorkerAPI>(rawWorkerInstance);
       
       console.log('[initWorker] Worker wrapped with Comlink:', typeof worker);
       console.log('[initWorker] Raw Worker instance available:', !!rawWorkerInstance);
@@ -112,7 +110,7 @@ export async function initializeWorker(): Promise<Remote<typeof WorkerModule>> {
 /**
  * Get the Worker instance (must be initialized first)
  */
-export async function getWorkerClient(): Promise<Remote<typeof WorkerModule>> {
+export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
   if (!workerInstance) {
     return await initializeWorker();
   }

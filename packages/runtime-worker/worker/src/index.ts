@@ -18,10 +18,12 @@ import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { TagService } from './services/TagService';
 import { ImportExportService } from './services/ImportExportService';
-import { proxy } from 'comlink';
+// No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService';
 
 export class WorkerService implements WorkerAPI {
+  private readonly startTime = Date.now();
+
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
@@ -58,14 +60,14 @@ export class WorkerService implements WorkerAPI {
         plugins,
         coreDB,
         ephemeralDB,
-        proxy(treeQueryService),
-        proxy(treeMutationService),
-        proxy(treeSubscriptionService),
-        proxy(importExportService),
-        proxy(workingCopyService),
-        proxy(tagService),
-        proxy(nodeLifecycleManager),
-        proxy(commandProcessor)
+        treeQueryService,
+        treeMutationService,
+        treeSubscriptionService,
+        importExportService,
+        workingCopyService,
+        tagService,
+        nodeLifecycleManager,
+        commandProcessor
       );
     });
   }
@@ -101,6 +103,10 @@ export class WorkerService implements WorkerAPI {
     this.ephemeralDB.close();
   }
 
+  async initialize(): Promise<void> {
+    // Initialization is handled in getSingleton; nothing to do.
+  }
+
   getQueryAPI(): TreeQueryAPI {
     return this.queryService;
   }
@@ -123,14 +129,6 @@ export class WorkerService implements WorkerAPI {
 
   getTagAPI(): TagAPI {
     return this.tagService;
-  }
-
-  getNodeLifecycleManager(): NodeLifecycleManager {
-    return this.nodeLifecycleManager;
-  }
-
-  getCommandProcessor(): CommandProcessor {
-    return this.commandProcessor;
   }
 
   // Minimal stub to satisfy interface; not yet wired.
@@ -174,8 +172,12 @@ export class WorkerService implements WorkerAPI {
     };
   }
 
-  async initialize(): Promise<void> {
-    // Initialization is handled in getSingleton; nothing to do.
+  getNodeLifecycleManager(): NodeLifecycleManager {
+    return this.nodeLifecycleManager;
+  }
+
+  getCommandProcessor(): CommandProcessor {
+    return this.commandProcessor;
   }
 
   async getSystemHealth(): Promise<{
@@ -205,7 +207,8 @@ export class WorkerService implements WorkerAPI {
         workingCopy: !!this.workingCopyService,
       },
       memory: { used, limit },
-      uptime: 0,
+      uptime: Date.now() - this.startTime,
     };
   }
 }
+
