@@ -223,6 +223,13 @@ const TreeConsoleIntegrationInner: React.FC<
         treeId={treeId as TreeId}
         workerClient={workerClient}
         onStartTour={handleStartTour}
+        menuContext={(() => {
+          const path = location.pathname.toLowerCase();
+          if (path.includes('/projects') || pageTreeNode?.name?.toLowerCase().includes('project')) {
+            return 'projects' as const;
+          }
+          return 'resources' as const;
+        })()}
         title={`Tree: ${pageTreeNode?.name || 'Root'}`}
         rootNodeId={pageNodeId}
         data={treeData}
