@@ -15,6 +15,5 @@ vk:task id=epic-wc-trash-unification status=in_progress priority=P0 labels=epic,
 7. 仕上げ（GC/メトリクス/文書更新） → `cleanup-metrics`
 
 ## トラッキング
-- 依存: `docs/adr/adr-single-working-copy-per-target.md`, `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
+- 依存: `docs/adr/adr-single-working-copy-per-target.md`, `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`, `docs/adr/adr-workingcopy-trash-unification.md`
 - 参照: `docs/working-copy-holder-encoding.md`, `docs/working-copy-ops-pseudocode.md`, `docs/holder-pair-pattern.md`
-
