@@ -8,6 +8,7 @@ import { WorkerService } from '@hierarchidb/runtime-worker-worker';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-worker-bootstrap';
 import { Bootstrap } from '@hierarchidb/runtime-worker-worker';
+import { autoLoadPlugins } from './plugins/auto-load';
 
 // Get app name from environment
 const appName = import.meta.env.VITE_APP_NAME || 'hierarchidb';
@@ -20,6 +21,10 @@ const initReporter = new WorkerInitializationReporter();
 // Initialize Worker with Bootstrap
 async function initializeWorker() {
   try {
+    console.log('[App Worker] Loading plugins via virtual modules...');
+    initReporter.reportStepProgress('Loading plugins...', 5);
+    await autoLoadPlugins();
+
     console.log('[App Worker] Bootstrapping worker services...');
     initReporter.reportStepProgress('Bootstrapping worker services...', 10);
     
