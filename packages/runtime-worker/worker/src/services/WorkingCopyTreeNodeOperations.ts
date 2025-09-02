@@ -189,6 +189,23 @@ export async function createWorkingCopyFromNode(
 
   coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
 
+  // Notify lifecycle to copy Peer original->wc (behind-the-flag)
+  try {
+    const { FEATURE_FLAGS } = await import('~/config/feature-flags');
+    if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
+      const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+      const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
+      await lifecycle.handleCommand({
+        commandId: crypto.randomUUID() as any,
+        groupId: crypto.randomUUID() as any,
+        kind: 'createWorkingCopy' as any,
+        payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
+        issuedAt: Date.now() as any,
+        type: 'createWorkingCopy' as any,
+      } as any);
+    }
+  } catch {}
+
   return nodeId;
 }
 
@@ -404,6 +421,25 @@ export async function discardWorkingCopy(
   workingCopyNodeIdPair: NodeId[]
 ): Promise<void> {
   await coreDB.nodes.bulkDelete(workingCopyNodeIdPair);
+  // workingCopyNodeIdPair = [holderId, wcId]; inform lifecycle to drop wc peer
+  try {
+    const { FEATURE_FLAGS } = await import('~/config/feature-flags');
+    if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
+      const wcId = workingCopyNodeIdPair?.[1];
+      if (wcId) {
+        const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+        const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
+        await lifecycle.handleCommand({
+          commandId: crypto.randomUUID() as any,
+          groupId: crypto.randomUUID() as any,
+          kind: 'discardWorkingCopy' as any,
+          payload: { workingCopyId: wcId },
+          issuedAt: Date.now() as any,
+          type: 'discardWorkingCopy' as any,
+        } as any);
+      }
+    }
+  } catch {}
 }
 
 /**

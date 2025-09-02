@@ -224,11 +224,29 @@ export class TreeMutationService implements TreeMutationAPI {
   ): Promise<CoreCommandResult> {
     const { nodeIds, toParentId } = cmd.payload;
     const newNodeIds: NodeId[] = [];
+    const idMap = new Map<string, string>();
     // Use CoreDB bulk-based subtree duplication (internally bulkCreateNodes)
     for (const sourceId of nodeIds) {
-      const newRootId = await (this.coreDB as any).duplicateSubtree?.(sourceId, toParentId);
-      if (newRootId) newNodeIds.push(newRootId as NodeId);
+      // Prefer API with idMap if available
+      const fnWithMap = (this.coreDB as any).duplicateSubtreeWithMap as
+        | ((s: NodeId, p: NodeId) => Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }>)
+        | undefined;
+      if (typeof fnWithMap === 'function') {
+        const { newRootId, idMap: subMap } = await fnWithMap(sourceId, toParentId);
+        newNodeIds.push(newRootId);
+        // Merge mappings
+        for (const [k, v] of subMap.entries()) idMap.set(k as unknown as string, v as unknown as string);
+      } else {
+        const newRootId = await (this.coreDB as any).duplicateSubtree?.(sourceId, toParentId);
+        if (newRootId) newNodeIds.push(newRootId as NodeId);
+        if (newRootId) idMap.set(sourceId as unknown as string, newRootId as unknown as string);
+      }
     }
+    // Register source→target mapping for lifecycle
+    try {
+      const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+      (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
+    } catch {}
     return { success: true, seq: this.getNextSeq(), newNodeIds };
   }
 
@@ -346,6 +364,14 @@ export class TreeMutationService implements TreeMutationAPI {
 
       if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
         try {
+          // Register mapping: source nodeIds → newNodeIds
+          const idMap = new Map<string, string>();
+          for (let i = 0; i < (nodeIds?.length || 0); i++) {
+            const src = nodeIds[i];
+            const dst = newNodeIds[i];
+            if (src && dst) idMap.set(src as unknown as string, dst as unknown as string);
+          }
+          (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
           const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
           await lifecycle.handleCommand(cmd as any);
         } catch {}
@@ -473,11 +499,23 @@ export class TreeMutationService implements TreeMutationAPI {
       });
     }
 
-    return {
+    const result: CoreCommandResult = {
       success: true,
       seq: this.getNextSeq(),
       newNodeIds,
     };
+
+    if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
+      try {
+        const idMap = new Map<string, string>();
+        for (const [src, dst] of idMapping) idMap.set(src as unknown as string, dst as unknown as string);
+        (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
+        const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+        await lifecycle.handleCommand(cmd as any);
+      } catch {}
+    }
+
+    return result;
   }
 
   // Undo/Redo Operations
