@@ -144,7 +144,7 @@ export class SamplePluginProvider implements PluginStepProvider {
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
             // Can navigate if configuration is complete
-            return !!(data?.setting1 && data?.setting1.trim());
+            return !!(_data?.setting1 && _data?.setting1.trim());
           },
           canProceedToNext: (data) => {
             // Can proceed if batch settings are valid
@@ -180,7 +180,7 @@ export class SamplePluginProvider implements PluginStepProvider {
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
             // Can navigate to review if configuration is complete
-            return !!(data?.setting1 && data?.setting1.trim());
+            return !!(_data?.setting1 && _data?.setting1.trim());
           },
           canProceedToNext: () => false, // This is the last step
           canBackToPrevious: (data) => {
