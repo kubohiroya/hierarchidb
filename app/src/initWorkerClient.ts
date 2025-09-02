@@ -13,17 +13,8 @@ let rawWorkerInstance: Worker | null = null;
  * Initialize the Worker
  */
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
-  // Auto-load plugins before initializing worker
-  try {
-    const { autoLoadPlugins } = await import('./plugins/auto-load');
-    console.log('[initWorker] Auto-loading plugins from package.json...');
-    await autoLoadPlugins();
-    console.log('[initWorker] Plugins loaded successfully');
-  } catch (error) {
-    console.error('[initWorker] Failed to auto-load plugins:', error);
-    // Continue with initialization even if plugin loading fails
-    // Plugins might be loaded manually later
-  }
+  // Plugin auto-loading is performed inside the Worker context now.
+  // Keep UI-side initialization minimal and focused on standing up the worker.
 
   const RETRY_DELAYS = [2000, 3000, 7000]; // 2, 3, 7 seconds
   
