@@ -505,55 +505,33 @@ export class TreeMutationService implements TreeMutationAPI {
    * 【実装方針】: isRemovedフラグとremovedAtタイムスタンプを設定して完全なゴミ箱状態を実現
    * 【テスト対応】: folder-plugin-operations.test.tsの isRemoved 期待値を満たすための実装
    * 🟢 信頼性レベル: docs/13-trash-operations-analysis.mdの実装方針に完全準拠
-   */
+  */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
-    const trashRootId = 'trash' as NodeId; // 【設定値】: ゴミ箱ルートIDの設定
-
+    // Route via CommandProcessor holder path when flag ON, else legacy inline path
+    if ((process as any)?.env?.WORKER_TRASH_USE_HOLDER === '1') {
+      const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
+      const res = await this.commandProcessor.processCommand(env as any);
+      return res.success ? { success: true } : { success: false, error: (res as any).error };
+    }
+    const trashRootId = 'trash' as NodeId;
     try {
-      // 【複数ノード処理】: 全ノードのゴミ箱移動を順次実行
       for (const nodeId of nodeIds) {
         const node = await this.coreDB.getNode?.(nodeId);
-        if (!node) {
-          // 【存在しないノードのスキップ】: エラーではなく警告レベルで処理継続
-          console.warn(`Node not found for moveToTrash: ${nodeId}`);
-          continue;
-        }
-
-        // 【ゴミ箱状態更新】: isRemovedフラグとremovedAtタイムスタンプを同時設定 🟢
-        const updateData: Partial<TreeNode> = {
-          // 【物理移動】: ゴミ箱ルートへの親ID変更
-          parentId: trashRootId,
-          // 【復元用情報保存】: 元の親IDと名前を保存
-          originalParentId: node.parentId,
-          originalName: node.name,
-          // 【タイムスタンプ記録】: ゴミ箱移動時刻の記録
-          removedAt: Date.now() as Timestamp,
-          // 【更新時刻】: ノード更新時刻の記録
-          updatedAt: Date.now() as Timestamp,
-          // 【バージョン管理】: 楽観的排他制御のためのバージョン更新
-          version: node.version + 1,
-        };
-
-        // 【データベース更新実行】: CoreDBのupdateNodeメソッドで確実に更新 🟢
-        const updatedNode: TreeNode = {
+        if (!node) continue;
+        const now = Date.now() as Timestamp;
+        await this.coreDB.updateNode({
           ...node,
-          ...updateData,
-        };
-
-        await this.coreDB.updateNode(updatedNode);
+          parentId: trashRootId,
+          originalParentId: node.parentId as any,
+          originalName: node.name as any,
+          removedAt: now as any,
+          updatedAt: now,
+          version: node.version + 1,
+        } as any);
       }
-
-      // 【成功応答】: テストで期待される成功ステータスを返却 🟢
-      return {
-        success: true,
-      };
-    } catch (error) {
-      // 【エラーハンドリング】: 例外発生時の適切なエラーレスポンス
-      console.error('Error in moveToTrash:', error);
-      return {
-        success: false,
-        error: String(error),
-      };
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
   }
 

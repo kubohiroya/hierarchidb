@@ -54,7 +54,11 @@ export class WorkerService implements WorkerAPI {
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(coreDB);
 
       // WorkingCopy service (ephemeral-backed)
-      const workingCopyService: WorkingCopyAPI = new WorkingCopyService(coreDB, ephemeralDB);
+      const workingCopyService: WorkingCopyAPI = new WorkingCopyService(
+        coreDB,
+        ephemeralDB,
+        commandProcessor
+      );
 
       return new WorkerService(
         plugins,
@@ -211,4 +215,3 @@ export class WorkerService implements WorkerAPI {
     };
   }
 }
-
