@@ -24,6 +24,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 import { createNewName } from './WorkingCopyTreeNodeOperations';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import { SingletonMixin } from '@hierarchidb/util';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
 
 export class TreeMutationService implements TreeMutationAPI {
   // Note: Keep implementation lean. Routing via CommandProcessor will be introduced later.
@@ -227,6 +228,12 @@ export class TreeMutationService implements TreeMutationAPI {
       const result = await this.duplicateNodesCommand(cmd);
 
       if (result.success) {
+        if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
+          try {
+            const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+            await lifecycle.handleCommand(cmd as any);
+          } catch {}
+        }
         return {
           success: true,
           nodeIds: result.newNodeIds || [],
@@ -462,6 +469,13 @@ export class TreeMutationService implements TreeMutationAPI {
         for (let i = 0; i < toCreate.length; i += size) {
           await (this.coreDB as any).bulkCreateNodes?.(toCreate.slice(i, i + size));
         }
+      }
+
+      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
+        try {
+          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+          await lifecycle.handleCommand(cmd as any);
+        } catch {}
       }
 
       return { success: true, seq: this.getNextSeq(), newNodeIds } as CoreCommandResult;

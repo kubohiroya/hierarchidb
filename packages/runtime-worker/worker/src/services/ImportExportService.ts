@@ -11,6 +11,8 @@ import type {
 import type { NodeType, ValidationErrors } from '@hierarchidb/common-type';
 import { CoreDB } from './CoreDB';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config';
+import { FEATURE_FLAGS } from '../config/feature-flags';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
 import crypto from 'crypto';
 import { SingletonMixin } from '@hierarchidb/util';
 
@@ -130,6 +132,21 @@ export class ImportExportService implements ImportExportAPI {
           importedNodeIds.push(...childResult.importedNodeIds);
           skippedCount += childResult.skippedCount;
         }
+      }
+
+      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
+        try {
+          // Create a minimal envelope-like object for lifecycle notification
+          const envelope = {
+            commandId: operationId,
+            groupId: operationId,
+            kind: 'importNodes',
+            payload: { treeId: params.treeId, targetParentId: params.targetParentId },
+            issuedAt: Date.now(),
+          } as any;
+          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+          await lifecycle.handleCommand(envelope);
+        } catch {}
       }
 
       // Finalize operation
