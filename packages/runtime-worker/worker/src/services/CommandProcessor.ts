@@ -299,44 +299,7 @@ export class CommandProcessor {
       case 'moveToTrash':
         try {
           const p = envelope.payload as unknown as { nodeIds: NodeId[] };
-          // Legacy path: mark removed and move under trash root with original* fields
-          if (!FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
-            // Resolve trees once
-            const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
-              | Array<{ rootId: NodeId; trashRootId: NodeId }>
-              | undefined;
-            for (const id of p.nodeIds) {
-              const node = await this.coreDB.getNode?.(id);
-              if (!node) continue;
-              // Find matching tree by walking up to root and matching
-              let cursor: NodeId | undefined = node.parentId;
-              let trashRootId: NodeId | undefined = undefined;
-              if (Array.isArray(trees)) {
-                const byId = new Map<NodeId, NodeId>(trees.map((t) => [t.rootId, t.trashRootId]));
-                // ascend to root
-                while (cursor) {
-                  if (byId.has(cursor)) {
-                    trashRootId = byId.get(cursor)!;
-                    break;
-                  }
-                  const parent = await this.coreDB.getNode?.(cursor);
-                  if (!parent || parent.parentId === cursor) break;
-                  cursor = parent.parentId;
-                }
-              }
-              const now = (Date.now() as unknown) as Timestamp;
-              await this.coreDB.updateNode?.({
-                ...node,
-                parentId: (trashRootId ?? ('trash' as unknown)) as NodeId,
-                originalParentId: node.parentId as any,
-                originalName: node.name as any,
-                removedAt: now as any,
-                updatedAt: now,
-                version: (node.version || 1) + 1,
-              } as any);
-            }
-            return { success: true, seq: this.getNextSeq() };
-          }
+          // Legacy path removed — always use holder-based Trash
 
           // Holder path: create holder under trash root and move node beneath
           const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
@@ -367,7 +330,7 @@ export class CommandProcessor {
             const holderId = (crypto.randomUUID() as unknown) as NodeId;
             const holderName = encodeTrashHolderName(node.parentId, node.id);
             const now = (Date.now() as unknown) as Timestamp;
-            // create holder
+            // create holder with metadata
             await this.coreDB.createNode?.({
               id: holderId,
               parentId: trashRootId,
@@ -377,6 +340,9 @@ export class CommandProcessor {
               createdAt: now,
               updatedAt: now,
               version: 1,
+              holderType: 'trash' as const,
+              holderTargetId: node.id,
+              holderMetaParentId: node.parentId,
             } as any);
             // move node under holder
             await this.coreDB.updateNode?.({
@@ -384,10 +350,6 @@ export class CommandProcessor {
               parentId: holderId,
               updatedAt: now,
               version: (node.version || 1) + 1,
-              // clear legacy fields if any
-              removedAt: undefined as any,
-              originalParentId: undefined as any,
-              originalName: undefined as any,
             } as any);
           }
           return { success: true, seq: this.getNextSeq() };
@@ -444,19 +406,9 @@ export class CommandProcessor {
             beforeList.push({ ...node });
 
             let targetParentId: NodeId | undefined = p.toParentId;
-            if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER && !targetParentId) {
+            if (!targetParentId) {
               const holder = await this.coreDB.getNode?.(node.parentId);
-              if (holder) {
-                try {
-                  const { originalParentNodeId } = ((): { originalParentNodeId: NodeId } => {
-                    const r = decodeTrashHolderName(holder.name);
-                    return { originalParentNodeId: (r.originalParentNodeId as unknown) as NodeId };
-                  })();
-                  targetParentId = originalParentNodeId;
-                } catch {
-                  // ignore malformed holder
-                }
-              }
+              targetParentId = (holder as any)?.holderMetaParentId as NodeId;
             }
             targetParentId = targetParentId ?? node.parentId;
             if (!targetParentId) continue;
@@ -470,16 +422,10 @@ export class CommandProcessor {
               ...node,
               parentId: targetParentId,
               name,
-              removedAt: undefined as any,
-              originalParentId: undefined as any,
-              originalName: undefined as any,
               updatedAt: (Date.now() as unknown) as Timestamp,
               version: (node.version || 1) + 1,
             } as TreeNode);
-
-            if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
-              holdersToDelete.push(node.parentId);
-            }
+            holdersToDelete.push(node.parentId);
           }
           if (toUpdate.length === 1) {
             await this.coreDB.updateNode?.(toUpdate[0]);
@@ -987,9 +933,6 @@ export class CommandProcessor {
             ...node,
             parentId: targetParentId,
             name,
-            removedAt: undefined,
-            originalParentId: undefined,
-            originalName: undefined,
             updatedAt: (Date.now() as unknown) as Timestamp,
             version: (node.version || 1) + 1,
           });
