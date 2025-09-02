@@ -297,15 +297,15 @@ P2:
 - 依存: TX/bulk 導入済み
 - 受け入れ基準:
   - ドキュメント作成（`packages/runtime-worker/worker/docs/entity-lifecycle-v2.md`）[done]
-  - フラグ `WORKER_ENTITY_UNIFIED` 追加（既定OFF）
+ - フラグ `WORKER_ENTITY_UNIFIED` 追加（既定OFF）
   - EntityRegistry/EntityHandler/EntityLifecycleManager の雛形実装
   - CommandProcessor からライフサイクル通知（create/duplicate/paste/import/commitWC/discardWC）
   - すべて Tx 内で実行、ユニット緑
 - チェックリスト:
-  - [ ] feature-flags.ts に `WORKER_ENTITY_UNIFIED`
-  - [ ] entity/EntityHandler.ts, EntityRegistry.ts, EntityLifecycleManager.ts 追加
-  - [ ] CP→Lifecycle 通知の最小配線（PeerEntity 対象）
-  - [ ] ユニット: Peer の WC create/commit/discard/duplicate/import
+  - [x] feature-flags.ts に `WORKER_ENTITY_UNIFIED`
+  - [x] entity/EntityHandler.ts, EntityRegistry.ts, EntityLifecycleManager.ts 追加
+  - [x] CP→Lifecycle 通知の最小配線（commitWorkingCopy/duplicate/paste/import）
+  - [x] ユニット: ライフサイクルのディスパッチ/通知（最小）
 
 10) Entity（Peer）実装（P1）
 - ブランチ: `feat/worker/entity-peer`
@@ -318,9 +318,13 @@ P2:
   - duplicate/import: NodeId マップに従いバルク作成
   - Tx/バルク/パリティ緑
 - チェックリスト:
-  - [ ] CoreDB に peerEntities テーブル追加
-  - [ ] PeerEntity Handler 実装
-  - [ ] ユニット（WC/duplicate/import/commit/discard）
+  - [ ] CoreDB に peerEntities テーブル追加（A案: 各プラグインDBの共通テーブル名運用を優先）
+  - [x] PeerEntity Handler 実装（汎用: get/put/delete）
+  - [x] ユニット（commit: wc→target upsert ＋ wc 削除）
+  - [x] ライフサイクル: duplicate/paste/import の Peer 複製（idMap 受け取り時）
+  - [x] ユニット（duplicate/paste/import の idMap 経路 — lifecycle-duplicate-peer.test.ts / lifecycle-paste-peer.test.ts / lifecycle-import-peer.test.ts）
+  - [x] サービス側からの idMap 配線（TreeMutationService / ImportExportService）
+  - [ ] ユニット（WC create/import/discard の残り）
   - [ ] 既存資産のID保持を確認（Import/Duplicateで維持）
 
 11) Entity（Group）実装（P2）
@@ -464,6 +468,10 @@ P2:
 - start: リリースノート確定
 - done: `docs/RELEASE_NOTES.md` を作成し、2025-09-02 の変更点を確定版として記載
 - done: `CHANGELOG.md` に日付セクションを追加し、deprecated フラグと常時CP経由化を明記
+ 
+2025-09-03
+- done: route-resolver の型検証/ビルド失敗を修正（`packages/feature/route-resolver/tsconfig.json` の `include` を `src/**/*` へ、`src/index.ts` を追加）。`pnpm --filter @hierarchidb/route-resolver typecheck && build` がグリーン。
+ - done: map-source のビルドエラー修正（未使用型 `BBox`/`TileCoord` を除去、`dexie` 型不足のため最小 `src/shims/dexie.d.ts` を追加）。`pnpm --filter @hierarchidb/map-source typecheck && build` がグリーン。
 
 - start: E2E シナリオ整備（CP常時経由）
 - done: `e2e/cp-routing-wc-flow.spec.ts` の記述をCP常時ON前提に更新（デフォルトskipのまま）
@@ -472,3 +480,18 @@ P2:
 - done: エラーマッピングテーブル追加 `app/src/shared/command-errors.ts`
 - done: NotificationSystem をアプリ全体に組込み（`app/src/root.tsx`）、`ui-core` から `notify` を公開
 - done: `useTreeConsoleIntegration` のCreate失敗時に通知（`showCommandError`→notify 経由）
+
+2025-09-03
+- start: Entity Lifecycle V2（基盤）
+- done: FEATURE_FLAGS に `WORKER_ENTITY_UNIFIED` 追加（既定OFF）
+- done: EntityRegistry/EntityHandler/EntityLifecycleManager を追加（雛形）
+- done: CommandProcessor/TreeMutationService/ImportExportService からライフサイクル通知の配線（behind-the-flag）
+- start: Entity（Peer）実装
+- done: PeerEntityHandler（汎用 get/put/delete）を追加
+- done: commitWorkingCopy で Peer を wc→target へ upsert 後、wc 側を削除（best-effort）
+- done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-commit-peer.test.ts`
+- done: duplicate/paste/import の Peer 複製（idMap 経由）をライフサイクルに実装
+- done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-duplicate-peer.test.ts`
+- done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-paste-peer.test.ts`
+- done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-import-peer.test.ts`
+- blocked: idMap をサービス層で生成・登録する配線（後続PRで対応）

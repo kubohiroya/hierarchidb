@@ -24,6 +24,8 @@ export interface PeerStore<TData = unknown> {
   get(nodeId: NodeId): Promise<PeerEntity<TData> | undefined>;
   put(entity: PeerEntity<TData>): Promise<void>;
   delete(nodeId: NodeId): Promise<void>;
+  // Optional fast-path for bulk upsert
+  bulkUpsert?(entities: PeerEntity<TData>[]): Promise<void>;
 }
 
 // Group: 1:N under a node; primary key is [nodeId + id]
