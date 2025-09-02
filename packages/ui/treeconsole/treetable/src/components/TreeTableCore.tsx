@@ -391,7 +391,7 @@ export function TreeTableCore({
         id: 'deletedAt',
         header: 'Deleted At',
         size: 150,
-        cell: ({ row }) => row.original.removedAt || '-',
+        cell: () => '-',
       });
     }
 

@@ -39,6 +39,8 @@ export class CommandProcessor {
   private redoStack: CommandEnvelope<string, unknown>[] = [];
   private eventHistory: CommandEvent[] = [];
   private sequenceNumber: number = 0;
+  // Track created node ids by command for reliable undo/redo of create
+  private createdNodeIdByCommand = new Map<CommandId, NodeId>();
   private preUpdateState = new Map<string, import('@hierarchidb/common-type').TreeNode>();
   private preMoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
   private preRemoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
@@ -198,6 +200,8 @@ export class CommandProcessor {
             version: 1,
             ...(p.description ? { description: p.description } : {}),
           })) as NodeId;
+          // Record mapping for undo/redo
+          this.createdNodeIdByCommand.set(envelope.commandId, nodeId);
           return { success: true, seq: this.getNextSeq(), nodeId };
         } catch (e) {
           return this.createErrorResult(
@@ -770,12 +774,10 @@ export class CommandProcessor {
     switch (command.kind) {
       case 'createNode':
       case 'create': {
-        // 【汎用ノード作成の逆操作】: 作成されたノードを削除 🟡
-        const payload = command.payload as { nodeId: NodeId };
-        const nodeId = payload.nodeId;
-
-        // 【アーキテクチャ改善】: インターフェースベースの型安全なデータベース操作 🟢
-        await this.coreDB.deleteNode(nodeId);
+        // Delete the node that was created by this command
+        const created = this.createdNodeIdByCommand.get(command.commandId);
+        if (!created) throw new Error('No created node id recorded for create command');
+        await this.coreDB.deleteNode(created);
         break;
       }
 
@@ -835,28 +837,26 @@ export class CommandProcessor {
     switch (command.kind) {
       case 'createNode':
       case 'create': {
-        // 【汎用ノード作成の再実行】: 削除されたノードを再作成 🟡
-        const payload = command.payload as {
-          nodeId: NodeId;
+        // Re-create the node that was created by this command
+        const created = this.createdNodeIdByCommand.get(command.commandId);
+        const p = (command.payload as unknown) as {
           parentId: NodeId;
           nodeType?: string;
           name: string;
           description?: string;
         };
-
-        // 【アーキテクチャ改善】: インターフェースベースの型安全なノード復元 🟢
+        if (!created) throw new Error('No created node id recorded for create command');
         const restoredNode = {
-          id: payload.nodeId,
-          parentId: payload.parentId,
-          nodeType: (payload.nodeType || 'folder') as NodeType,
-          name: payload.name,
-          description: payload.description,
-          depth: 0, // Will be calculated by database operations
-          createdAt: Date.now() as Timestamp, // 【作成日時更新】: 新しいタイムスタンプで復元
-          updatedAt: Date.now() as Timestamp,
+          id: created,
+          parentId: p.parentId,
+          nodeType: (p.nodeType || 'folder') as NodeType,
+          name: p.name,
+          description: p.description,
+          depth: 0,
+          createdAt: (Date.now() as unknown) as Timestamp,
+          updatedAt: (Date.now() as unknown) as Timestamp,
           version: 1,
-        };
-
+        } as TreeNode;
         await this.coreDB.createNode(restoredNode);
         break;
       }

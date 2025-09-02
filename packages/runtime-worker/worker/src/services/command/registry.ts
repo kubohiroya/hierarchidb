@@ -46,18 +46,7 @@ commandRegistry.register('ping', successOnlyHandler);
 commandRegistry.register('test', successOnlyHandler);
 commandRegistry.register('bulkCreate', successOnlyHandler);
 
-commandRegistry.register('createNode', {
-  execute: async ({ nextSeq }) => ({
-    success: true,
-    seq: nextSeq(),
-    // Legacy behavior used a mocked nodeId value.
-    nodeId: 'node-123' as any,
-  }),
-});
-
-commandRegistry.register('updateNode', {
-  execute: async ({ nextSeq }) => ({ success: true, seq: nextSeq(), nodeId: 'node-123' as any }),
-});
+// Intentionally do not register create/update here so CommandProcessor
+// uses its legacy fallback which performs real CoreDB operations.
 
 // Note: we intentionally do NOT register 'invalidCommand' to keep validation consistent.
-
