@@ -137,7 +137,8 @@ describe('generateUrlMetadata', () => {
       mockCountryMetadata
     );
 
-    expect(urlMetadata).toHaveLength(3); // US: 0,1; JP: 0,1 but JP doesn't have level 1
+    // US: levels 0,1; JP: levels 0,1 → total 4
+    expect(urlMetadata).toHaveLength(4);
     expect(urlMetadata.every(meta => meta.url.includes('naturalearth'))).toBe(true);
   });
 
