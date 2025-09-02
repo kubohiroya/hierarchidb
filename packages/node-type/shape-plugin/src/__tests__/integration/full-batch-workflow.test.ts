@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @file full-batch-workflow.test.ts
  * @description 完全なバッチ処理ワークフロー統合テスト

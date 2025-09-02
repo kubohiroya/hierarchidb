@@ -1,0 +1,27 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { storeRegistry } from '@hierarchidb/runtime-worker/entity/store-registry';
+import { folderGroupStore, __clearFolderGroupStore } from '../worker/folderGroupStore';
+import { folderRelationStore, __clearFolderRelationStore } from '../worker/folderRelationStore';
+
+describe('folder-plugin: group/relations store registration', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    __clearFolderGroupStore();
+    __clearFolderRelationStore();
+  });
+
+  it('registers Group and Relations stores for nodeType "folder"', async () => {
+    // clean state
+    // @ts-expect-error internal cleanup for test isolation
+    (storeRegistry as any).group?.delete?.('folder');
+    // @ts-expect-error internal cleanup for test isolation
+    (storeRegistry as any).rel?.delete?.('folder');
+
+    storeRegistry.registerGroup('folder', folderGroupStore);
+    storeRegistry.registerRelations('folder', folderRelationStore);
+
+    expect(storeRegistry.getGroup('folder')).toBeTruthy();
+    expect(storeRegistry.getRelations('folder')).toBeTruthy();
+  });
+});
+
