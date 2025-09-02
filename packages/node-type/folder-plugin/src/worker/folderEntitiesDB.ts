@@ -1,0 +1,32 @@
+import Dexie, { type Table } from 'dexie';
+import type { NodeId } from '@hierarchidb/common-type';
+
+export type FolderGroupRow = {
+  nodeId: NodeId;
+  id: string; // stable item id
+  data?: unknown;
+  updatedAt?: number;
+};
+
+export type FolderRelationRow = {
+  srcNodeId: NodeId;
+  dstNodeId: NodeId;
+  type: string;
+  meta?: unknown;
+  updatedAt?: number;
+};
+
+export class FolderEntitiesDB extends Dexie {
+  groupEntities!: Table<FolderGroupRow, [NodeId, string]>;
+  relations!: Table<FolderRelationRow, [NodeId, string, NodeId]>;
+
+  constructor(name = 'folder-plugin-entities') {
+    super(name);
+    this.version(1).stores({
+      // composite unique keys
+      groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+    });
+  }
+}
+
