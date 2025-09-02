@@ -73,6 +73,11 @@ try {
         const { FolderEntitiesDB } = await import('./folderEntitiesDB');
         const db = new FolderEntitiesDB();
         await db.open();
+        // Peer
+        if (!storeRegistry.getPeer('folder')) {
+          const { createFolderPeerStoreDexie } = await import('./folderPeerStore.dexie');
+          storeRegistry.registerPeer('folder', createFolderPeerStoreDexie(db));
+        }
         // Group
         if (!storeRegistry.getGroup('folder')) {
           const { createFolderGroupStoreDexie } = await import('./folderGroupStore.dexie');
@@ -85,22 +90,21 @@ try {
         }
       } catch {
         // fallback to dev stores
+        const { folderPeerStore } = await import('./folderPeerStore');
+        if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
         const { folderGroupStore } = await import('./folderGroupStore');
         if (!storeRegistry.getGroup('folder')) storeRegistry.registerGroup('folder', folderGroupStore);
         const { folderRelationStore } = await import('./folderRelationStore');
         if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
       }
     } else {
+      const { folderPeerStore } = await import('./folderPeerStore');
+      if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
       const { folderGroupStore } = await import('./folderGroupStore');
       if (!storeRegistry.getGroup('folder')) storeRegistry.registerGroup('folder', folderGroupStore);
       const { folderRelationStore } = await import('./folderRelationStore');
       if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
     }
-    // Peer (dev mem; Dexie版は別途導入予定)
-    try {
-      const { folderPeerStore } = await import('./folderPeerStore');
-      if (!storeRegistry.getPeer('folder')) storeRegistry.registerPeer('folder', folderPeerStore);
-    } catch {}
   }).catch(() => {});
 } catch {
   // ignore

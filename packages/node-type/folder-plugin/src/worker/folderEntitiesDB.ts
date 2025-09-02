@@ -16,17 +16,24 @@ export type FolderRelationRow = {
   updatedAt?: number;
 };
 
+export type FolderPeerRow = {
+  nodeId: NodeId;
+  data?: unknown;
+  updatedAt?: number;
+};
+
 export class FolderEntitiesDB extends Dexie {
+  peerEntities!: Table<FolderPeerRow, NodeId>;
   groupEntities!: Table<FolderGroupRow, [NodeId, string]>;
   relations!: Table<FolderRelationRow, [NodeId, string, NodeId]>;
 
   constructor(name = 'folder-plugin-entities') {
     super(name);
     this.version(1).stores({
+      peerEntities: '&nodeId, updatedAt',
       // composite unique keys
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
     });
   }
 }
-
