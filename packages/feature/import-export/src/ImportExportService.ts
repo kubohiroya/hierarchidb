@@ -57,6 +57,7 @@ export class ImportExportService implements ImportExportAPI {
       for (let i = 0; i < nodes.length; i++) {
         if (abortController.signal.aborted) throw new Error('Import operation cancelled');
         const nodeData = nodes[i];
+        if (!nodeData) continue;
         try {
           if (params.conflictResolution === 'skip') {
             const existingNode = await this.findNodeByName(params.targetParentId, nodeData.name);
@@ -79,7 +80,7 @@ export class ImportExportService implements ImportExportAPI {
           } as any;
           toCreate.push({ node, children: nodeData.children });
         } catch (error) {
-          errors.push(`Failed to prepare node "${nodeData.name}": ${error}`);
+          errors.push(`Failed to prepare node "${nodeData?.name}": ${error}`);
         }
       }
 
@@ -151,6 +152,7 @@ export class ImportExportService implements ImportExportAPI {
       for (let i = 0; i < params.nodeIds.length; i++) {
         if (abortController.signal.aborted) throw new Error('Export operation cancelled');
         const nodeId = params.nodeIds[i];
+        if (!nodeId) continue;
         const node = await this.db.getNode(nodeId);
         if (node) {
           collectedNodes.push(node);
@@ -239,7 +241,7 @@ export class ImportExportService implements ImportExportAPI {
     } else if (!Array.isArray(params.data.nodes)) {
       errors.push({ code: 'INVALID_NODES', message: 'Nodes must be an array' } as any);
     } else {
-      params.data.nodes.forEach((node, index) => validateNode(node, `nodes[${index}]`, 0));
+      params.data.nodes.forEach((node: any, index: number) => validateNode(node, `nodes[${index}]`, 0));
     }
 
     return {
@@ -279,7 +281,7 @@ export class ImportExportService implements ImportExportAPI {
     return all;
   }
 
-  private formatAsJSON(nodes: TreeNode[], includeMetadata?: boolean): string {
+  private formatAsJSON(nodes: TreeNode[], _includeMetadata?: boolean): string {
     const exportData = {
       version: '1.0',
       exportDate: new Date().toISOString(),
@@ -309,7 +311,7 @@ export class ImportExportService implements ImportExportAPI {
     return [headers, ...rows].join('\n');
   }
 
-  private formatAsXML(nodes: TreeNode[], includeMetadata?: boolean): string {
+  private formatAsXML(nodes: TreeNode[], _includeMetadata?: boolean): string {
     const xml = ['<?xml version="1.0" encoding="UTF-8"?>'];
     xml.push('<export>');
     xml.push('  <metadata>');

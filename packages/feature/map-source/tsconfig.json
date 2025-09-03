@@ -6,8 +6,11 @@
     "declaration": true,
     "composite": false,
     "skipLibCheck": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "dexie": ["src/types/dexie.d.ts"]
+    }
   },
   "include": ["src/**/*"]
 }
-

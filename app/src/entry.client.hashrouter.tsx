@@ -1,6 +1,7 @@
 import { StrictMode, startTransition } from "react";
 import { createRoot } from "react-dom/client";
 import { createHashRouter, RouterProvider } from "react-router-dom";
+import type { RouteObject } from "react-router-dom";
 import routes from "./routes";
 
 // HashRouter用のエントリーポイント
@@ -9,7 +10,7 @@ import routes from "./routes";
 async function createApp() {
   const resolvedRoutes = await routes;
   // flatRoutes() provides RouteConfig entries; cast to RouteObject[] for client router
-  return createHashRouter(resolvedRoutes as unknown as any);
+  return createHashRouter(resolvedRoutes as unknown as RouteObject[]);
 }
 
 createApp().then((router) => {

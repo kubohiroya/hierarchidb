@@ -42,7 +42,22 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { AuthProviderType } from '../types/AuthProviderType';
-import type { AuthRequiredNotification } from '@hierarchidb/common-auth';
+// Local minimal type to avoid workspace linking issues during typecheck.
+// Aligns with @hierarchidb/common-auth AuthRequiredNotification shape used here.
+type AuthRequiredNotification = {
+  type: 'AUTH_REQUIRED';
+  context: {
+    requestId: string;
+    url: string;
+    method?: string;
+    errorCode: number;
+    errorMessage: string;
+    sessionId?: string;
+    pluginType: string;
+    retryCount?: number;
+  };
+  timestamp: number;
+};
 
 export interface AuthRequiredDialogProps {
   /** Whether the base-dialog is open */

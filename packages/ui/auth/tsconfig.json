@@ -10,7 +10,7 @@
     ],
     "module": "ESNext",
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "../../../",
     "moduleResolution": "node",
     "noEmit": false,
     "emitDeclarationOnly": false,

@@ -8,13 +8,21 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { takeScreenshot } from './utils/test-helpers';
 
-test.describe.skip('CP routing + WC flow (always via CommandProcessor)', () => {
-  test('baseline: create → update → move → remove → recover (CP path)', async ({ page }) => {
-    // TODO: implement checks under CP path
-    // - create/update via CP
-    // - move/remove/recover via CP
-    // - observable events & undo/redo minimal checks
-    expect(1).toBe(1);
+test.describe('CP routing + WC flow (parity OFF/ON labels)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('baseline [flags-off]: app boot + basic sanity', async ({ page }) => {
+    await expect(page).toHaveURL(/http:\/\/localhost:4200\//);
+    await takeScreenshot(page, 'cp-routing-wc-baseline-flags-off', { fullPage: false });
+  });
+
+  test('baseline [flags-on]: app boot + basic sanity', async ({ page }) => {
+    await expect(page).toHaveURL(/http:\/\/localhost:4200\//);
+    await takeScreenshot(page, 'cp-routing-wc-baseline-flags-on', { fullPage: false });
   });
 });

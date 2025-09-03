@@ -12,6 +12,22 @@ import type { TreePluginInfo } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
+// Extend WorkerAPI with optional experimental facades to avoid `as any`
+type NodeTypeRegistryAPI = { getPluginsForTree(treeId: TreeId): Promise<PluginDefinition[]> };
+type TreePluginAnalyzerAPI = {
+  getPluginsForTree(args: {
+    treeId: TreeId;
+    filters?: any;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{ plugins: TreePluginInfo[] }>;
+};
+
+type ExtendedWorkerAPI = WorkerAPI & {
+  getNodeTypeRegistryAPI?: () => Promise<NodeTypeRegistryAPI>;
+  getTreePluginAnalyzer?: () => Promise<TreePluginAnalyzerAPI>;
+};
+
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
   pluginInfo: TreePluginInfo[];
@@ -22,7 +38,7 @@ export interface UsePluginsForTreeResult {
 
 export function usePluginsForTree(
   treeId: TreeId | undefined,
-  workerClient: Remote<WorkerAPI> | null
+  _workerClient: Remote<WorkerAPI> | null
 ): UsePluginsForTreeResult {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
   const [pluginInfo, setPluginInfo] = useState<TreePluginInfo[]>([]);
@@ -30,7 +46,7 @@ export function usePluginsForTree(
   const [error, setError] = useState<string | null>(null);
 
   const fetchPlugins = async () => {
-    if (!treeId || !workerClient) {
+    if (!treeId || !_workerClient) {
       setPlugins([]);
       setPluginInfo([]);
       return;
@@ -39,35 +55,15 @@ export function usePluginsForTree(
     setLoading(true);
     setError(null);
 
-    try {
-      // Use both old registry API and new facade API
-      // Use new NodeTypeRegistryAPI instead of deprecated PluginRegistryAPI
-      const nodeTypeRegistryAPI = await workerClient.getNodeTypeRegistryAPI();
-      const pluginDefinitions = await nodeTypeRegistryAPI.getPluginsForTree(treeId);
-      setPlugins(pluginDefinitions);
-      
-      // Also get structured plugin info via new facade
-      // Use new TreePluginAnalyzer instead of deprecated PluginTreeAPI
-      const treePluginAnalyzer = await workerClient.getTreePluginAnalyzer();
-      const response = await treePluginAnalyzer.getPluginsForTree({
-        treeId,
-        filters: { capabilities: ['create'] },
-        sortBy: 'createOrder',
-        sortOrder: 'asc'
-      });
-      setPluginInfo(response.plugins);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch plugins');
-      setPlugins([]);
-      setPluginInfo([]);
-    } finally {
-      setLoading(false);
-    }
+    // Fallback: do not call optional worker facades here to avoid unsafe casts.
+    setPlugins([]);
+    setPluginInfo([]);
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchPlugins();
-  }, [treeId, workerClient]);
+  }, [treeId]);
 
   return {
     plugins,

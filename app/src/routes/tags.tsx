@@ -19,7 +19,7 @@ import {
   Divider,
 } from '@mui/material';
 import { ArrowBack, Search, Edit, LocalOffer, Sort, FilterList } from '@mui/icons-material';
-import { useWorker } from '../contexts/WorkerProvider';
+import { useWorkerClient } from '../contexts/WorkerProvider';
 import type { TagEntity } from '@hierarchidb/common-type';
 
 // Meta function for React Router v7
@@ -32,7 +32,7 @@ export function meta() {
 
 export default function TagsPage() {
   const navigate = useNavigate();
-  const { worker } = useWorker();
+  const { client, isConnected } = useWorkerClient();
   const [tags, setTags] = useState<TagEntity[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,18 +41,23 @@ export default function TagsPage() {
 
   // Load tags on mount
   useEffect(() => {
-    if (!worker) return;
+    if (!isConnected || !client) return;
 
     const loadTags = async () => {
       try {
         setLoading(true);
         // Get all tags from the worker
-        const allTags = await worker.searchTags({
-          sortBy,
-          sortOrder,
-          limit: 1000,
+        const tagAPI = await client.getTagAPI();
+        const all = await tagAPI.getAllTags();
+        const sorted = [...all].sort((a, b) => {
+          const dir = sortOrder === 'asc' ? 1 : -1;
+          if (sortBy === 'name') {
+            return a.name.localeCompare(b.name) * dir;
+          }
+          // usageCount default
+          return ((a.usageCount || 0) - (b.usageCount || 0)) * dir;
         });
-        setTags(allTags);
+        setTags(sorted);
       } catch (error) {
         console.error('Failed to load tags:', error);
       } finally {
@@ -61,7 +66,7 @@ export default function TagsPage() {
     };
 
     loadTags();
-  }, [worker, sortBy, sortOrder]);
+  }, [client, isConnected, sortBy, sortOrder]);
 
   // Filter tags based on search query
   const filteredTags = tags.filter((tag) => {
@@ -192,7 +197,7 @@ export default function TagsPage() {
         ) : (
           <Grid container spacing={3}>
             {Object.entries(tagsByCategory).map(([category, categoryTags]) => (
-              <Grid item xs={12} key={category}>
+              <Box key={category} sx={{ width: '100%' }}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ textTransform: 'capitalize' }}>
@@ -226,7 +231,7 @@ export default function TagsPage() {
                     </Box>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
             ))}
           </Grid>
         )}

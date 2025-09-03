@@ -38,7 +38,6 @@ const TreeConsoleIntegrationInner: React.FC<
   const [hasTrashItems, setHasTrashItems] = useState(false);
 
   const {
-    client,
     loading: workerLoading,
     error: workerError,
     treeData,

@@ -197,7 +197,12 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     error: null,
   });
 
-  const [initChannel, setInitChannel] = useState<WorkerInitializationChannel | null>(null);
+  type InitChannel = {
+    on: (event: string, cb: (e: any) => void) => void;
+    waitForInitialization: () => Promise<{ success: boolean; error?: string }>;
+    destroy: () => void;
+  };
+  const [initChannel, setInitChannel] = useState<InitChannel | null>(null);
 
   /**
    * Worker初期化処理
@@ -223,7 +228,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       setInitChannel(channel);
 
       // 初期化の進捗を監視
-      channel.on('progress', (event) => {
+      channel.on('progress', (event: { progress: number; message?: string }) => {
         setState(prev => ({
           ...prev,
           initProgress: event.progress,

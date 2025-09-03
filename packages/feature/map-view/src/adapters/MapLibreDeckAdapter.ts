@@ -56,6 +56,6 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
 
 function toLayers(specs: DeckLayerSpec[]): any[] {
   // Caller should pass prebound layer constructors in specs.props if desired.
-  return specs.map((s) => ({ id: s.id, ...s }));
+  // Avoid duplicating properties like 'id' by spreading only once.
+  return specs.map((s) => ({ ...s }));
 }
-
