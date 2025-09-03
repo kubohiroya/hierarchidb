@@ -83,4 +83,12 @@ export const defaultPolicies: Policy[] = [
     because: 'ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。',
     rules: ['paths-direct-src'],
   },
+
+  // MapLibre カプセル化ポリシー: maplibre-gl/@vis.gl/react-maplibre は ui-map 以外で直接依存禁止
+  {
+    id: 'maplibre-encapsulation',
+    when: any(isPublishable()),
+    because: 'MapLibre の型/実装差分は @hierarchidb/ui-map で吸収し、下位パッケージへ漏らさないため。',
+    rules: ['maplibre-direct-dep'],
+  },
 ];
