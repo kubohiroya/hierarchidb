@@ -568,3 +568,7 @@ P2:
 - done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-paste-peer.test.ts`
 - done: ユニット追加 `packages/runtime-worker/worker/src/entity/__tests__/lifecycle-import-peer.test.ts`
 - blocked: idMap をサービス層で生成・登録する配線（後続PRで対応）
+
+2025-09-03
+- done: Revert PR #54 → Fix-forward 2本（CI warn-only / worker headless）を投入
+- refs: PR1(ci/policy-checks), PR3(headless undo/redo)
