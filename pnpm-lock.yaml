@@ -12,6 +12,7 @@ overrides:
   '@types/react-dom': ^18.3.7
   react-is: ^18.3.1
   '@types/node': 18.19.123
+  typescript: 4.9.5
 
 importers:
 
@@ -392,8 +393,8 @@ importers:
         specifier: 18.19.123
         version: 18.19.123
       typescript:
-        specifier: ^5.5.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/common/types:
     devDependencies:
@@ -415,10 +416,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.5.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/batch:
     dependencies:
@@ -428,10 +429,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/compute:
     dependencies:
@@ -441,10 +442,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/download:
     dependencies:
@@ -460,19 +461,19 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/feature-registry:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/import-export:
     dependencies:
@@ -488,10 +489,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/map-source:
     dependencies:
@@ -504,10 +505,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/map-view:
     dependencies:
@@ -523,10 +524,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/route-resolver:
     dependencies:
@@ -536,10 +537,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/route-searoute:
     dependencies:
@@ -552,10 +553,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/tabular:
     dependencies:
@@ -568,10 +569,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/tabular-xlsx:
     dependencies:
@@ -584,10 +585,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/feature/tag:
     dependencies:
@@ -606,10 +607,10 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/node-type/base-plugin:
     dependencies:
@@ -625,10 +626,10 @@ importers:
         version: 18.19.123
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@18.19.123)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -722,13 +723,13 @@ importers:
         version: 4.2.0
       i18next:
         specifier: ^25.4.2
-        version: 25.4.2(typescript@5.9.2)
+        version: 25.4.2(typescript@4.9.5)
       react-hook-form:
         specifier: ^7.62.0
         version: 7.62.0(react@18.3.1)
       react-i18next:
         specifier: ^15.7.3
-        version: 15.7.3(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        version: 15.7.3(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5)
       react-tag-input:
         specifier: ^6.10.6
         version: 6.10.6(react-dnd-html5-backend@16.0.1)(react-dnd@16.0.1(@types/hoist-non-react-statics@3.3.7(@types/react@18.3.24))(@types/node@18.19.123)(@types/react@18.3.24)(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -820,10 +821,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^1.0.4
         version: 1.6.1(@types/node@18.19.123)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -932,10 +933,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.0.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.3.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@18.19.123)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -993,10 +994,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@18.19.123)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1042,10 +1043,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^1.1.0
         version: 1.6.1(@types/node@18.19.123)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1224,10 +1225,10 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.5.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^4.0.0-beta.9
         version: 4.0.0-beta.9(@types/node@18.19.123)(@vitest/ui@2.1.9(vitest@2.1.9))(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1303,7 +1304,7 @@ importers:
         specifier: ^8.5.0
         version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^4.9.5
+        specifier: 4.9.5
         version: 4.9.5
       vitest:
         specifier: ^4.0.0-beta.9
@@ -1326,10 +1327,10 @@ importers:
         version: 18.19.123
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.0.2
-        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2))(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5))(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
       '@typescript-eslint/parser':
         specifier: ^7.0.2
-        version: 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
+        version: 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
       eslint:
         specifier: ^9.34.0
         version: 9.34.0(jiti@1.21.7)
@@ -1338,10 +1339,10 @@ importers:
         version: 3.6.2
       tsup:
         specifier: ^8.0.2
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       undici-types:
         specifier: ^7.15.0
         version: 7.15.0
@@ -1378,10 +1379,10 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.1.2
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.5.3
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@18.19.123)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1468,10 +1469,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ~5.9.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/runtime-ui/search-result-window:
     dependencies:
@@ -1505,10 +1506,10 @@ importers:
         version: 6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@storybook/react':
         specifier: ^8.4.7
-        version: 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@5.6.3)
+        version: 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@4.9.5)
       '@storybook/react-vite':
         specifier: ^8.4.7
-        version: 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@4.49.0)(storybook@8.6.14(prettier@3.6.2))(typescript@5.6.3)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
+        version: 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@4.49.0)(storybook@8.6.14(prettier@3.6.2))(typescript@4.9.5)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
       '@types/react':
         specifier: ^18.3.24
         version: 18.3.24
@@ -1526,10 +1527,10 @@ importers:
         version: 8.6.14(prettier@3.6.2)
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.3)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ~5.6.3
-        version: 5.6.3
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@18.19.123)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1637,7 +1638,7 @@ importers:
         version: 8.57.1
       eslint-plugin-deprecation:
         specifier: ^3.0.0
-        version: 3.0.0(eslint@8.57.1)(typescript@5.9.2)
+        version: 3.0.0(eslint@8.57.1)(typescript@4.9.5)
       fake-indexeddb:
         specifier: ^5.0.2
         version: 5.0.2
@@ -1652,10 +1653,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.3.3
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vite:
         specifier: 5.4.19
         version: 5.4.19(@types/node@18.19.123)(terser@5.43.1)
@@ -1692,10 +1693,10 @@ importers:
         version: 18.19.123
       tsup:
         specifier: ^8.0.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.6.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vite:
         specifier: 5.4.19
         version: 5.4.19(@types/node@18.19.123)(terser@5.43.1)
@@ -1740,7 +1741,7 @@ importers:
         version: 2.6.3(react@18.3.1)
       react-i18next:
         specifier: ^15.7.1
-        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        version: 15.7.2(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5)
       react-oidc-context:
         specifier: ^3.3.0
         version: 3.3.0(oidc-client-ts@3.3.0)(react@18.3.1)
@@ -1892,10 +1893,10 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.7.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/ui/dialog:
     dependencies:
@@ -1970,10 +1971,10 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.3)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ~5.6.3
-        version: 5.6.3
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@18.19.123)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -1988,7 +1989,7 @@ importers:
         version: 4.1.0
       i18next:
         specifier: ^25.4.2
-        version: 25.4.2(typescript@5.9.2)
+        version: 25.4.2(typescript@4.9.5)
       i18next-browser-languagedetector:
         specifier: ^8.2.0
         version: 8.2.0
@@ -1997,7 +1998,7 @@ importers:
         version: 3.0.2
       react-i18next:
         specifier: ^15.7.2
-        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        version: 15.7.2(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5)
     devDependencies:
       '@emotion/react':
         specifier: ^11.14.0
@@ -2018,8 +2019,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vite:
         specifier: 5.4.19
         version: 5.4.19(@types/node@18.19.123)(terser@5.43.1)
@@ -2044,10 +2045,10 @@ importers:
         version: 18.3.1
       tsup:
         specifier: ^8.0.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.0.0
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
 
   packages/ui/layout:
     dependencies:
@@ -2541,7 +2542,7 @@ importers:
         version: link:../theme
       react-i18next:
         specifier: ^15.7.1
-        version: 15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)
+        version: 15.7.2(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.1
@@ -2569,10 +2570,10 @@ importers:
         version: 18.19.123
       tsup:
         specifier: ^8.5.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
+        specifier: 4.9.5
+        version: 4.9.5
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@18.19.123)(@vitest/ui@1.6.1)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
@@ -4222,7 +4223,7 @@ packages:
   '@joshwooding/vite-plugin-react-docgen-typescript@0.5.0':
     resolution: {integrity: sha512-qYDdL7fPwLRI+bJNurVcis+tNgJmvWjH4YTBGXTA8xMuxFrnAz6E5o35iyzyKbq5J5Lr8mJGfrR5GXl+WGwhgQ==}
     peerDependencies:
-      typescript: '>= 4.3.x'
+      typescript: 4.9.5
       vite: 5.4.19
     peerDependenciesMeta:
       typescript:
@@ -4231,7 +4232,7 @@ packages:
   '@joshwooding/vite-plugin-react-docgen-typescript@0.6.1':
     resolution: {integrity: sha512-J4BaTocTOYFkMHIra1JDWrMWpNmBl4EkplIwHEsV8aeUOtdWjwSnln9U7twjMFTAEB7mptNtSKyVi1Y2W9sDJw==}
     peerDependencies:
-      typescript: '>= 4.3.x'
+      typescript: 4.9.5
       vite: 5.4.19
     peerDependenciesMeta:
       typescript:
@@ -4974,7 +4975,7 @@ packages:
     peerDependencies:
       '@react-router/serve': ^7.8.2
       react-router: ^7.8.2
-      typescript: ^5.1.0
+      typescript: 4.9.5
       vite: 5.4.19
       wrangler: ^3.28.2 || ^4.0.0
     peerDependenciesMeta:
@@ -4990,7 +4991,7 @@ packages:
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@react-router/dev': ^7.8.2
-      typescript: ^5.1.0
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5000,7 +5001,7 @@ packages:
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react-router: 7.8.2
-      typescript: ^5.1.0
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5417,7 +5418,7 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
       storybook: ^8.6.14
-      typescript: '>= 4.2.x'
+      typescript: 4.9.5
     peerDependenciesMeta:
       '@storybook/test':
         optional: true
@@ -5431,7 +5432,7 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
       storybook: ^9.1.3
-      typescript: '>= 4.9.x'
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -6415,7 +6416,7 @@ packages:
   '@vue/language-core@2.2.0':
     resolution: {integrity: sha512-O1ZZFaaBGkKbsRfnVH1ifOK1/1BUkyK+3SQsfnh6PmMmD4qJcTU8godCeA96jjDRTL6zgnK7YzCHfaUlH2r0Mw==}
     peerDependencies:
-      typescript: '*'
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -7379,7 +7380,7 @@ packages:
     resolution: {integrity: sha512-JuVLdNg/uf0Adjg2tpTyYoYaMbwQNn/c78P1HcccokvhtRphgnRjZDKmhlxbxYptppex03zO76f97DD/yQHv7A==}
     peerDependencies:
       eslint: ^8.0.0
-      typescript: ^4.2.4 || ^5.0.0
+      typescript: 4.9.5
 
   eslint-plugin-react-hooks@5.2.0:
     resolution: {integrity: sha512-+f15FfK64YQwZdJNELETdn5ibXEUQmW1DZL6KXhNnc2heoy/sg9VJJeT7n8TlMWouzWqSWavFkIhHyIbIAEapg==}
@@ -7939,7 +7940,7 @@ packages:
   i18next@25.4.2:
     resolution: {integrity: sha512-gD4T25a6ovNXsfXY1TwHXXXLnD/K2t99jyYMCSimSCBnBRJVQr5j+VAaU83RJCPzrTGhVQ6dqIga66xO2rtd5g==}
     peerDependencies:
-      typescript: ^5
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -9196,7 +9197,7 @@ packages:
   react-docgen-typescript@2.4.0:
     resolution: {integrity: sha512-ZtAp5XTO5HRzQctjPU0ybY0RRCQO19X/8fxn3w7y2VVTUbGHDKULPTL4ky3vB05euSgG5NpALhEhDPvQ56wvXg==}
     peerDependencies:
-      typescript: '>= 4.3.x'
+      typescript: 4.9.5
 
   react-docgen@7.1.1:
     resolution: {integrity: sha512-hlSJDQ2synMPKFZOsKo9Hi8WWZTC7POR8EmWvTSjow+VDgKzkmjQvFm2fk0tmRw+f0vTOIYKlarR0iL4996pdg==}
@@ -9240,7 +9241,7 @@ packages:
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
-      typescript: ^5
+      typescript: 4.9.5
     peerDependenciesMeta:
       react-dom:
         optional: true
@@ -9256,7 +9257,7 @@ packages:
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
-      typescript: ^5
+      typescript: 4.9.5
     peerDependenciesMeta:
       react-dom:
         optional: true
@@ -10085,7 +10086,7 @@ packages:
     resolution: {integrity: sha512-i3eMG77UTMD0hZhgRS562pv83RC6ukSAC2GMNWc+9dieh/+jDM5u5YG+NHX6VNDRHQcHwmsTHctP9LhbC3WxVw==}
     engines: {node: '>=16'}
     peerDependencies:
-      typescript: '>=4.2.0'
+      typescript: 4.9.5
 
   ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
@@ -10107,7 +10108,7 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:
-      typescript: ^5.0.0
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -10130,7 +10131,7 @@ packages:
       '@microsoft/api-extractor': ^7.36.0
       '@swc/core': ^1
       postcss: ^8.4.12
-      typescript: '>=4.5.0'
+      typescript: 4.9.5
     peerDependenciesMeta:
       '@microsoft/api-extractor':
         optional: true
@@ -10145,7 +10146,7 @@ packages:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
     engines: {node: '>= 6'}
     peerDependencies:
-      typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
+      typescript: 4.9.5
 
   tsx@4.20.5:
     resolution: {integrity: sha512-+wKjMNU9w/EaQayHXb7WA7ZaHY6hN8WgfvHNQ3t1PnU91/7O8TcTnIhCDYTZwnt8JsO9IBqZ30Ln1r7pPF52Aw==}
@@ -10232,16 +10233,6 @@ packages:
   typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
-    hasBin: true
-
-  typescript@5.6.3:
-    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
-    engines: {node: '>=14.17'}
     hasBin: true
 
   typescript@5.9.2:
@@ -10381,7 +10372,7 @@ packages:
   valibot@0.41.0:
     resolution: {integrity: sha512-igDBb8CTYr8YTQlOKgaN9nSS0Be7z+WRuaeYqGf3Cjz3aKmSnqEmYnkfVjzIuumGqfHpa3fLIvMEAfhrpqN8ng==}
     peerDependencies:
-      typescript: '>=5'
+      typescript: 4.9.5
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -10420,7 +10411,7 @@ packages:
       meow: ^9.0.0
       optionator: ^0.9.1
       stylelint: '>=13'
-      typescript: '*'
+      typescript: 4.9.5
       vite: 5.4.19
       vls: '*'
       vti: '*'
@@ -10454,7 +10445,7 @@ packages:
   vite-plugin-dts@4.5.4:
     resolution: {integrity: sha512-d4sOM8M/8z7vRXHHq/ebbblfaxENjogAAekcfcDCCwAyvGqnPrc7f4NZbvItS+g4WTgerW0xDwSz5qz11JT3vg==}
     peerDependencies:
-      typescript: '*'
+      typescript: 4.9.5
       vite: 5.4.19
     peerDependenciesMeta:
       vite:
@@ -12656,14 +12647,14 @@ snapshots:
     dependencies:
       '@sinclair/typebox': 0.27.8
 
-  '@joshwooding/vite-plugin-react-docgen-typescript@0.5.0(typescript@5.6.3)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@joshwooding/vite-plugin-react-docgen-typescript@0.5.0(typescript@4.9.5)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       glob: 10.4.5
       magic-string: 0.27.0
-      react-docgen-typescript: 2.4.0(typescript@5.6.3)
+      react-docgen-typescript: 2.4.0(typescript@4.9.5)
       vite: 7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1)
     optionalDependencies:
-      typescript: 5.6.3
+      typescript: 4.9.5
 
   '@joshwooding/vite-plugin-react-docgen-typescript@0.6.1(typescript@4.9.5)(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1))':
     dependencies:
@@ -13060,7 +13051,7 @@ snapshots:
       resolve: 1.22.10
       semver: 7.5.4
       source-map: 0.6.1
-      typescript: 5.8.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - '@types/node'
 
@@ -13916,12 +13907,12 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       storybook: 9.1.3(@testing-library/dom@9.3.4)(prettier@3.6.2)(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1))
 
-  '@storybook/react-vite@8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@4.49.0)(storybook@8.6.14(prettier@3.6.2))(typescript@5.6.3)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))':
+  '@storybook/react-vite@8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@4.49.0)(storybook@8.6.14(prettier@3.6.2))(typescript@4.9.5)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
-      '@joshwooding/vite-plugin-react-docgen-typescript': 0.5.0(typescript@5.6.3)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
+      '@joshwooding/vite-plugin-react-docgen-typescript': 0.5.0(typescript@4.9.5)(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
       '@rollup/pluginutils': 5.2.0(rollup@4.49.0)
       '@storybook/builder-vite': 8.6.14(storybook@8.6.14(prettier@3.6.2))(vite@7.1.3(@types/node@18.19.123)(jiti@1.21.7)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
-      '@storybook/react': 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@5.6.3)
+      '@storybook/react': 8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@4.9.5)
       find-up: 5.0.0
       magic-string: 0.30.18
       react: 18.3.1
@@ -13956,7 +13947,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@storybook/react@8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@5.6.3)':
+  '@storybook/react@8.6.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@8.6.14(prettier@3.6.2))(typescript@4.9.5)':
     dependencies:
       '@storybook/components': 8.6.14(storybook@8.6.14(prettier@3.6.2))
       '@storybook/global': 5.0.0
@@ -13968,7 +13959,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       storybook: 8.6.14(prettier@3.6.2)
     optionalDependencies:
-      typescript: 5.6.3
+      typescript: 4.9.5
 
   '@storybook/react@9.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@9.1.3(@testing-library/dom@9.3.4)(prettier@3.6.2)(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1)))(typescript@4.9.5)':
     dependencies:
@@ -15423,21 +15414,21 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2))(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)':
+  '@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5))(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
+      '@typescript-eslint/parser': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
       '@typescript-eslint/scope-manager': 7.18.0
-      '@typescript-eslint/type-utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
-      '@typescript-eslint/utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
+      '@typescript-eslint/type-utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
+      '@typescript-eslint/utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
       '@typescript-eslint/visitor-keys': 7.18.0
       eslint: 9.34.0(jiti@1.21.7)
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare: 1.4.0
-      ts-api-utils: 1.4.3(typescript@5.9.2)
+      ts-api-utils: 1.4.3(typescript@4.9.5)
     optionalDependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
 
@@ -15453,16 +15444,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)':
+  '@typescript-eslint/parser@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)':
     dependencies:
       '@typescript-eslint/scope-manager': 7.18.0
       '@typescript-eslint/types': 7.18.0
-      '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 7.18.0(typescript@4.9.5)
       '@typescript-eslint/visitor-keys': 7.18.0
       debug: 4.4.1
       eslint: 9.34.0(jiti@1.21.7)
     optionalDependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
 
@@ -15488,15 +15479,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/type-utils@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)':
+  '@typescript-eslint/type-utils@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)':
     dependencies:
-      '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.9.2)
-      '@typescript-eslint/utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 7.18.0(typescript@4.9.5)
+      '@typescript-eslint/utils': 7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)
       debug: 4.4.1
       eslint: 9.34.0(jiti@1.21.7)
-      ts-api-utils: 1.4.3(typescript@5.9.2)
+      ts-api-utils: 1.4.3(typescript@4.9.5)
     optionalDependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
 
@@ -15518,7 +15509,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/typescript-estree@7.18.0(typescript@5.9.2)':
+  '@typescript-eslint/typescript-estree@7.18.0(typescript@4.9.5)':
     dependencies:
       '@typescript-eslint/types': 7.18.0
       '@typescript-eslint/visitor-keys': 7.18.0
@@ -15527,9 +15518,9 @@ snapshots:
       is-glob: 4.0.3
       minimatch: 9.0.5
       semver: 7.7.2
-      ts-api-utils: 1.4.3(typescript@5.9.2)
+      ts-api-utils: 1.4.3(typescript@4.9.5)
     optionalDependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
 
@@ -15548,23 +15539,23 @@ snapshots:
       - supports-color
       - typescript
 
-  '@typescript-eslint/utils@7.18.0(eslint@8.57.1)(typescript@5.9.2)':
+  '@typescript-eslint/utils@7.18.0(eslint@8.57.1)(typescript@4.9.5)':
     dependencies:
       '@eslint-community/eslint-utils': 4.7.0(eslint@8.57.1)
       '@typescript-eslint/scope-manager': 7.18.0
       '@typescript-eslint/types': 7.18.0
-      '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 7.18.0(typescript@4.9.5)
       eslint: 8.57.1
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  '@typescript-eslint/utils@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@5.9.2)':
+  '@typescript-eslint/utils@7.18.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)':
     dependencies:
       '@eslint-community/eslint-utils': 4.7.0(eslint@9.34.0(jiti@1.21.7))
       '@typescript-eslint/scope-manager': 7.18.0
       '@typescript-eslint/types': 7.18.0
-      '@typescript-eslint/typescript-estree': 7.18.0(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 7.18.0(typescript@4.9.5)
       eslint: 9.34.0(jiti@1.21.7)
     transitivePeerDependencies:
       - supports-color
@@ -17087,13 +17078,13 @@ snapshots:
     dependencies:
       eslint: 9.34.0(jiti@1.21.7)
 
-  eslint-plugin-deprecation@3.0.0(eslint@8.57.1)(typescript@5.9.2):
+  eslint-plugin-deprecation@3.0.0(eslint@8.57.1)(typescript@4.9.5):
     dependencies:
-      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1)(typescript@5.9.2)
+      '@typescript-eslint/utils': 7.18.0(eslint@8.57.1)(typescript@4.9.5)
       eslint: 8.57.1
-      ts-api-utils: 1.4.3(typescript@5.9.2)
+      ts-api-utils: 1.4.3(typescript@4.9.5)
       tslib: 2.8.1
-      typescript: 5.9.2
+      typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
 
@@ -17777,11 +17768,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  i18next@25.4.2(typescript@5.9.2):
+  i18next@25.4.2(typescript@4.9.5):
     dependencies:
       '@babel/runtime': 7.28.3
     optionalDependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
 
   iconv-lite@0.6.3:
     dependencies:
@@ -19100,10 +19091,6 @@ snapshots:
     dependencies:
       typescript: 4.9.5
 
-  react-docgen-typescript@2.4.0(typescript@5.6.3):
-    dependencies:
-      typescript: 5.6.3
-
   react-docgen@7.1.1:
     dependencies:
       '@babel/core': 7.28.3
@@ -19170,25 +19157,25 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.7.2(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2):
+  react-i18next@15.7.2(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5):
     dependencies:
       '@babel/runtime': 7.28.3
       html-parse-stringify: 3.0.1
-      i18next: 25.4.2(typescript@5.9.2)
+      i18next: 25.4.2(typescript@4.9.5)
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
-      typescript: 5.9.2
+      typescript: 4.9.5
 
-  react-i18next@15.7.3(i18next@25.4.2(typescript@5.9.2))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2):
+  react-i18next@15.7.3(i18next@25.4.2(typescript@4.9.5))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@4.9.5):
     dependencies:
       '@babel/runtime': 7.28.3
       html-parse-stringify: 3.0.1
-      i18next: 25.4.2(typescript@5.9.2)
+      i18next: 25.4.2(typescript@4.9.5)
       react: 18.3.1
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
-      typescript: 5.9.2
+      typescript: 4.9.5
 
   react-innertext@1.1.5(@types/react@18.3.24)(react@18.3.1):
     dependencies:
@@ -20129,9 +20116,9 @@ snapshots:
     dependencies:
       escape-string-regexp: 1.0.5
 
-  ts-api-utils@1.4.3(typescript@5.9.2):
+  ts-api-utils@1.4.3(typescript@4.9.5):
     dependencies:
-      typescript: 5.9.2
+      typescript: 4.9.5
 
   ts-dedent@2.2.0: {}
 
@@ -20193,64 +20180,6 @@ snapshots:
       '@microsoft/api-extractor': 7.52.11(@types/node@18.19.123)
       postcss: 8.5.6
       typescript: 4.9.5
-    transitivePeerDependencies:
-      - jiti
-      - supports-color
-      - tsx
-      - yaml
-
-  tsup@8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.3)(yaml@2.8.1):
-    dependencies:
-      bundle-require: 5.1.0(esbuild@0.25.9)
-      cac: 6.7.14
-      chokidar: 4.0.3
-      consola: 3.4.2
-      debug: 4.4.1
-      esbuild: 0.25.9
-      fix-dts-default-cjs-exports: 1.0.1
-      joycon: 3.1.1
-      picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(yaml@2.8.1)
-      resolve-from: 5.0.0
-      rollup: 4.48.0
-      source-map: 0.8.0-beta.0
-      sucrase: 3.35.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.14
-      tree-kill: 1.2.2
-    optionalDependencies:
-      '@microsoft/api-extractor': 7.52.11(@types/node@18.19.123)
-      postcss: 8.5.6
-      typescript: 5.6.3
-    transitivePeerDependencies:
-      - jiti
-      - supports-color
-      - tsx
-      - yaml
-
-  tsup@8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1):
-    dependencies:
-      bundle-require: 5.1.0(esbuild@0.25.9)
-      cac: 6.7.14
-      chokidar: 4.0.3
-      consola: 3.4.2
-      debug: 4.4.1
-      esbuild: 0.25.9
-      fix-dts-default-cjs-exports: 1.0.1
-      joycon: 3.1.1
-      picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(yaml@2.8.1)
-      resolve-from: 5.0.0
-      rollup: 4.48.0
-      source-map: 0.8.0-beta.0
-      sucrase: 3.35.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.14
-      tree-kill: 1.2.2
-    optionalDependencies:
-      '@microsoft/api-extractor': 7.52.11(@types/node@18.19.123)
-      postcss: 8.5.6
-      typescript: 5.9.2
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -20346,10 +20275,6 @@ snapshots:
       reflect.getprototypeof: 1.0.10
 
   typescript@4.9.5: {}
-
-  typescript@5.6.3: {}
-
-  typescript@5.8.2: {}
 
   typescript@5.9.2: {}
 
