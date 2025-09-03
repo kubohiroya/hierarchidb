@@ -9,12 +9,26 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/common-type": ["../../common/types/src"],
-      "@hierarchidb/common-api": ["../../common/api/src"],
-      "@hierarchidb/util": ["../../util/src"],
-      "~/*": ["src/*"]
+      "@hierarchidb/common-type": [
+        "../../common/types/src"
+      ],
+      "@hierarchidb/common-api": [
+        "../../common/api/src"
+      ],
+      "@hierarchidb/util": [
+        "../../util/src"
+      ],
+      "~/*": [
+        "src/*"
+      ]
     },
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "temporary: unresolved third-party types (please replace or fix)"
+  }
 }

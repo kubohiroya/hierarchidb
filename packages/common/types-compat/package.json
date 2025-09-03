@@ -1,0 +1,11 @@
+{
+  "name": "@hierarchidb/types-compat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ambient type shims for third-party libs (temporary)",
+  "types": "index.d.ts",
+  "files": ["index.d.ts"],
+  "license": "MIT"
+}
+

@@ -37,6 +37,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",

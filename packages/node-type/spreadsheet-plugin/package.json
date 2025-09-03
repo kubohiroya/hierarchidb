@@ -26,6 +26,7 @@
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "fake-indexeddb": "^6.1.0",

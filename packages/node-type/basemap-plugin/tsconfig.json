@@ -1,7 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "esModuleInterop": true,
     "noEmit": true,
     "composite": true,
@@ -9,7 +12,9 @@
     "rootDir": "./",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": [
+        "src/*"
+      ]
     },
     "incremental": true,
     "jsx": "react-jsx",
@@ -23,5 +28,9 @@
     "dist",
     "**/*.test.ts",
     "**/*.test.tsx"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "temporary: unresolved third-party types (please replace or fix)"
+  }
 }

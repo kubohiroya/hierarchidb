@@ -1,12 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "lib": ["ES2020", "DOM", "WebWorker"],
     "outDir": "./dist",
     "rootDir": "./src",
     "jsx": "react-jsx",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@hierarchidb/runtime-worker/entity/*": ["../../runtime-worker/worker/dist/entity/*"]
     }
   },
   "include": ["src/**/*"],

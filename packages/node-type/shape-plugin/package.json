@@ -59,6 +59,14 @@
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
+    "@hierarchidb/compute": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/types-compat": "workspace:*",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",

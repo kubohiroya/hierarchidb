@@ -8,6 +8,18 @@
     "skipLibCheck": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*"],
-  "exclude": ["../../../node_modules", "../../../dist", "../../../build", "../../../coverage", "../../../.turbo"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "../../../node_modules",
+    "../../../dist",
+    "../../../build",
+    "../../../coverage",
+    "../../../.turbo"
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "temporary: unresolved third-party types (please replace or fix)"
+  }
 }

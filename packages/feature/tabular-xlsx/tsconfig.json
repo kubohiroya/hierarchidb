@@ -9,9 +9,19 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/tabular": ["../tabular/src"],
-      "~/*": ["src/*"]
+      "@hierarchidb/tabular": [
+        "../tabular/src"
+      ],
+      "~/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "temporary: unresolved third-party types (please replace or fix)"
+  }
 }

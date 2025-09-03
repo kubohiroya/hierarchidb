@@ -9,6 +9,11 @@
     "moduleResolution": "node",
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "temporary: unresolved third-party types (please replace or fix)"
+  }
 }
-

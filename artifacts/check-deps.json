@@ -1,0 +1,804 @@
+{
+  "findings": [
+    {
+      "packageName": "@hierarchidb/bff",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/backend/bff",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/cors-proxy",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/backend/cors-proxy",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/common-api",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/common/api",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/common-type",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/common/types",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/route-resolver",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @webgpu/types",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/tabular-xlsx",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/tabular-xlsx",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- xlsx",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/basemap-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/basemap-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- runtime-worker-store.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/location-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/location-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material\n- @mui/icons-material\n- @emotion/styled",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- maplibre-gl\n- @deck.gl/core\n- @deck.gl/layers\n- @deck.gl/aggregation-layers\n- @deck.gl/geo-layers\n- @deck.gl/mesh-layers\n- @deck.gl/extensions\n- @deck.gl/mapbox\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/shape-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/shape-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/shape-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/shape-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- geohash.d.ts\n- shims-auth-recovery.d.ts\n- shims-download.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-appbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/appbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-router-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-appbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/appbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-router-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-datasource",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/datasource",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-datasource",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/datasource",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-landingpage",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/landingpage",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-router",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-landingpage",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/landingpage",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-router",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker-bootstrap",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker-bootstrap",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- comlink",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker-bootstrap",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker-bootstrap",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- comlink",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker-bootstrap",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker-bootstrap",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-accordion-config",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/accordion-config",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-accordion-config",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/accordion-config",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/auth",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/auth",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material\n- @mui/icons-material\n- @emotion/styled",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-router-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react\n- react-router-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-country-select",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/country-select",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-country-select",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/country-select",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-data-grid",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/data-grid",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/dialog",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-i18n",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/i18n",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-import-export",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/import-export",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- comlink",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-import-export",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/import-export",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- comlink",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-lru-splitview",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/lru-splitview",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-lru-splitview",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/lru-splitview",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-routing",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/routing",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-theme",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/theme",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @dnd-kit/core\n- @dnd-kit/sortable\n- @dnd-kit/utilities\n- @tanstack/react-table\n- @tanstack/react-virtual\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @dnd-kit/core\n- @dnd-kit/sortable\n- @dnd-kit/utilities\n- @tanstack/react-table\n- @tanstack/react-virtual\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-footer",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/footer",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-footer",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/footer",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "jsx-mismatch",
+      "severity": "WARN",
+      "message": "tsx files detected but compilerOptions.jsx is '(unset)' (recommend 'react-jsx').",
+      "because": "TSXソースの型推論とJSX emit整合のため、jsx: react-jsx を推奨/要求するため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @emotion/react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-usermenu",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/usermenu",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-usermenu",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/usermenu",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @mui/material\n- @mui/icons-material\n- @emotion/styled",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    }
+  ]
+}

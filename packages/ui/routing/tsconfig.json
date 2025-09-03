@@ -1,40 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "module": "ESNext",
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "moduleResolution": "node",
-    "noEmit": false,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "src/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "../ui-core/dist/index.d.ts"
-      ]
-    },
-    "skipLibCheck": true  // Required for provider-router-dom, vitest, and workspace dependency compatibility
-  },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "**/*.stories.ts",
-    "**/*.stories.tsx"
-  ],
-  "references": [
-    {
-      "path": "../core"
-    }
-  ]
+    "jsx": "react-jsx"
+  }
 }

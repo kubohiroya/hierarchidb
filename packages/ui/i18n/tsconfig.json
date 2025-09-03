@@ -1,22 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": false,
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
-    "lib": ["ES2022", "DOM"],
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "baseUrl": ".",
-    "paths": {
-      "~/*": ["./src/*"]
-    },
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "skipLibCheck": true // Required for ast-types and Vite version conflicts
-  },
-  "include": ["./src/**/*"],
-  "exclude": ["./node_modules", "./dist"]
+    "jsx": "react-jsx"
+  }
 }

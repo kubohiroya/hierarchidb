@@ -1,6 +1,7 @@
 import { createTsupConfig } from '../../../tsup.base.config';
 
 export default createTsupConfig({
+  entry: ['src/index.ts', 'src/entity/store.ts', 'src/entity/store-registry.ts'],
   dts: true,
   external: [
     'provider',
