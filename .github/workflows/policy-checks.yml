@@ -34,15 +34,6 @@ jobs:
       - name: Policy checker (check-deps)
         run: pnpm -w check:deps:pkg || true
 
-      - name: Summarize policy findings (artifact)
-        run: node scripts/report-policy-summary.mjs || true
-
-      - name: Upload policy artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: policy-artifacts
-          path: artifacts/
-
       - name: dependency-cruiser (architecture warnings)
         run: pnpm -w arch:dc || true
 
@@ -52,5 +43,5 @@ jobs:
       - name: publint (package publish sanity)
         run: pnpm -w pkg:publint || true
 
-      - name: @arethetypeswrong/cli (types sanity)
+ - name: @arethetypeswrong/cli (types sanity)
         run: pnpm -w pkg:attw || true
