@@ -17,11 +17,7 @@
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/common-type": [
-        "../../common/types/src/index.ts"
-      ]
-    }
+    "paths": {}
   },
   "include": [
     "src/**/*.ts",

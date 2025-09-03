@@ -7,11 +7,7 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/common-type": [
-        "../../common/types/src/index.ts"
-      ]
-    }
+    "paths": {}
   },
   "include": [
     "src/**/*",
