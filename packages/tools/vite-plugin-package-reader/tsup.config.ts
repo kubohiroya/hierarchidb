@@ -8,6 +8,10 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: {
     resolve: true,
+    entry: {
+      index: './src/index.ts',
+      'presets/index': './src/presets/index.ts',
+    },
   },
   clean: true,
   splitting: false,
