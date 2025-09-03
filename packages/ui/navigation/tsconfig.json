@@ -5,7 +5,7 @@
     "incremental": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "jsx": "react-jsx",
     "lib": [
       "ES2020",
@@ -17,11 +17,15 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@hierarchidb/common-type": [
+        "../../common/types/src/index.ts"
       ]
     }
   },
   "include": [
-    "src"
+    "src",
+    "../../common/types/src/**/*.ts"
   ],
   "references": [
     {
