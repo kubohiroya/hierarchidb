@@ -52,5 +52,13 @@
     "@mui/icons-material": "^7.3.1"
   },
   "license": "MIT",
-  "module": "dist/index.js"
+  "module": "dist/index.js",
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
 }

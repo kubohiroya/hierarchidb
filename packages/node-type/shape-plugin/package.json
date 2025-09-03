@@ -149,5 +149,13 @@
         ]
       }
     }
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
   }
 }

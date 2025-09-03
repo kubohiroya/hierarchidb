@@ -44,5 +44,13 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module"
+  "type": "module",
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
 }

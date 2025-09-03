@@ -65,5 +65,12 @@
     "comlink": {
       "optional": true
     }
+  },
+  "tsup": {
+    "external": [
+      "comlink",
+      "react",
+      "react-dom"
+    ]
   }
 }

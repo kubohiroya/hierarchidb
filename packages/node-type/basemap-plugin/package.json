@@ -116,5 +116,14 @@
         ]
       }
     }
+  },
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
   }
 }

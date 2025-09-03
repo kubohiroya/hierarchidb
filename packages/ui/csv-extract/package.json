@@ -53,5 +53,13 @@
     "components"
   ],
   "author": "HierarchiDB Team",
-  "license": "MIT"
+  "license": "MIT",
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
 }

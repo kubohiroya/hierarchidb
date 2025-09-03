@@ -69,5 +69,13 @@
     "@mui/icons-material": "^6.1.8"
   },
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
 }

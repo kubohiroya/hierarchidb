@@ -29,5 +29,14 @@
   "dependencies": {},
   "license": "MIT",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-router"
+    ]
+  }
 }

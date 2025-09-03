@@ -80,5 +80,18 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module"
+  "type": "module",
+  "tsup": {
+    "external": [
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@dnd-kit/utilities",
+      "@mui/icons-material",
+      "@mui/material",
+      "@tanstack/react-table",
+      "@tanstack/react-virtual",
+      "react",
+      "react-dom"
+    ]
+  }
 }

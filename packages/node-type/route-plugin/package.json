@@ -45,5 +45,15 @@
     "react-dom": "^18.2.0",
     "@mui/material": "^6.0.0",
     "@mui/icons-material": "^6.0.0"
+  },
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
   }
 }

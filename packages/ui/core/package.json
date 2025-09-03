@@ -50,5 +50,15 @@
   "author": "HierarchiDB Team",
   "license": "MIT",
   "module": "dist/index.js",
-  "type": "module"
+  "type": "module",
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-router-dom"
+    ]
+  }
 }
