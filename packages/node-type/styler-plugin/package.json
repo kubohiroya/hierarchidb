@@ -42,11 +42,8 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:^",
     "@hierarchidb/ui-csv-extract": "workspace:*",
-    "@mui/icons-material": "^6.1.6",
-    "@mui/material": "^6.1.6",
     "dexie": "^4.2.0",
     "jszip": "^3.4.1",
-    "react": "^18.3.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
     "@hierarchidb/common-type": "workspace:*"
@@ -56,12 +53,16 @@
     "@types/jszip": "^3.4.1",
     "@types/react-window": "^1.8.8",
     "@vitest/ui": "^1.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "react": "^18.3.1",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^6.1.6",
+    "@mui/icons-material": "^6.1.6"
   },
   "peerDependencies": {
-    "@mui/icons-material": ">=5.0.0",
-    "@mui/material": ">=5.0.0",
-    "react": ">=18.0.0",
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
+    "react": "^18.3.1",
     "react-dom": ">=18.0.0"
   },
   "keywords": [

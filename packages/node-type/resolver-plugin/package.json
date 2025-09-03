@@ -32,12 +32,8 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@mui/icons-material": "^6.1.8",
-    "@mui/material": "^6.1.8",
     "comlink": "^4.4.1",
-    "dexie": "^4.0.9",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dexie": "^4.0.9"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
@@ -46,10 +42,16 @@
     "fake-indexeddb": "^6.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^6.1.8",
+    "@mui/icons-material": "^6.1.8"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^6.1.8",
+    "@mui/icons-material": "^6.1.8"
   }
 }

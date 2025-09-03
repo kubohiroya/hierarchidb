@@ -23,6 +23,7 @@
     }
   },
   "scripts": {
+    "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
@@ -59,6 +60,8 @@
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
+    "uuid": "^11.1.0",
+    "@types/uuid": "^10.0.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -70,7 +73,11 @@
     "@types/topojson-client": "^3.1.4",
     "@types/topojson-server": "^3.0.4",
     "fake-indexeddb": "^6.1.0",
-    "jsdom": "^25.0.1"
+    "jsdom": "^25.0.1",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^5.16.7 || ^6.0.0",
+    "@mui/icons-material": "^5.16.7 || ^6.0.0"
   },
   "peerDependencies": {
     "@mui/icons-material": "^5.16.7 || ^6.0.0",

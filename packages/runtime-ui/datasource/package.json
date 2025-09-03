@@ -33,14 +33,16 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
+    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*"
+  },
+  "peerDependencies": {
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "react": "^18.3.1"
   },
-  "peerDependencies": {
-    "@mui/icons-material": "^6.1.6",
-    "@mui/material": "^6.1.6",
-    "react": ">=18.0.0"
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
   }
 }

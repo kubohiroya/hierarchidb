@@ -40,5 +40,12 @@
     "url": "https://github.com/kubohiroya/hierarchidb.git",
     "directory": "packages/ui-accordion-config"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^5.0.0"
+  }
 }

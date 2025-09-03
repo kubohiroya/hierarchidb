@@ -31,7 +31,10 @@
     "@mui/material": "^7.3.1",
     "react": ">=18.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": "^7.3.1"
+  },
   "license": "MIT",
   "module": "dist/index.js",
   "type": "module"
