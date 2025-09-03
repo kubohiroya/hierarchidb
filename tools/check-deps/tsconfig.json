@@ -8,11 +8,14 @@
     "rootDir": "src",
     "declaration": false,
     "composite": false,
-    "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"],
-    "resolveJsonModule": true
+    "types": [
+      "node"
+    ],
+    "resolveJsonModule": true,
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }
-

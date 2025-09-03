@@ -22,7 +22,6 @@
     "@types/pako": "^2.0.3",
     "dexie": "^4.0.2",
     "pako": "^2.1.0",
-    "react": "^18.3.1",
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
@@ -31,7 +30,8 @@
     "fake-indexeddb": "^6.1.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
-    "vitest": "^4.0.0-beta.9"
+    "vitest": "^4.0.0-beta.9",
+    "react": "^18.3.1"
   },
   "hierarchidb": {
     "plugin": {
@@ -75,5 +75,13 @@
         ]
       }
     }
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  },
+  "tsup": {
+    "external": [
+      "react"
+    ]
   }
 }

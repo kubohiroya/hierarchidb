@@ -14,8 +14,8 @@
       "~/*": ["./src/*"],
       "@hierarchidb/tag": ["../../feature/tag/dist/index.d.ts"],
       "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
-      "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/src_deprecated"],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": ["../../runtime-ui/plugin-dialog/src_deprecated/*"]
+      "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/dist"],
+      "@hierarchidb/runtime-ui-plugin-dialog/*": ["../../runtime-ui/plugin-dialog/dist/*"]
     },
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vitest/globals", "@testing-library/jest-dom", "node"]

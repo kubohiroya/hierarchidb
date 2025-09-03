@@ -21,10 +21,22 @@
   "devDependencies": {
     "@types/react": "^18.0.0",
     "prettier": "^3.6.2",
-    "tsc-alias": "^1.8.16"
+    "tsc-alias": "^1.8.16",
+    "react": ">=18.0.0",
+    "@mui/material": "^7.0.0",
+    "@mui/icons-material": "^7.0.0"
   },
   "dependencies": {},
   "license": "MIT",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-router"
+    ]
+  }
 }

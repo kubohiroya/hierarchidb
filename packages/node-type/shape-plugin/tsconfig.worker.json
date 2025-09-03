@@ -1,0 +1,21 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "./src/worker",
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/worker/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/components",
+    "src/ui",
+    "src/services",
+    "src/definitions",
+    "src/extension",
+    "src/api"
+  ]
+}

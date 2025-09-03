@@ -1,15 +1,29 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "composite": true,
-    "skipLibCheck": true, // Required for @types/node compatibility with TypeScript 4.9
     "incremental": true,
     "noEmit": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node", "vite/client", "vitest"]
+    "types": [
+      "node",
+      "vite/client",
+      "vitest"
+    ],
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "vite.config.ts"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "vite.config.ts"
+  ]
 }

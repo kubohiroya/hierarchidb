@@ -21,11 +21,25 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-theme": "workspace:*",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
-    "react": "^18.3.1"
+    "@hierarchidb/ui-theme": "workspace:*"
   },
   "license": "MIT",
-  "module": "dist/index.js"
+  "module": "dist/index.js",
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
+  }
 }

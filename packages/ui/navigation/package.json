@@ -20,16 +20,28 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "react": "^18.3.1",
     "react-router-dom": "^7.8.1",
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0"
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
   },
   "license": "MIT",
-  "module": "dist/index.js"
+  "module": "dist/index.js",
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
+  }
 }

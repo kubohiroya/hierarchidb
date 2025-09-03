@@ -5,12 +5,16 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "skipLibCheck": true,
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "dexie": ["src/types/dexie.d.ts"]
-    }
+      "dexie": [
+        "src/types/dexie.d.ts"
+      ]
+    },
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

@@ -25,13 +25,12 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "allotment": "^1.20.4",
-    "react": "^18.3.1"
+    "allotment": "^1.20.4"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
   },
   "keywords": [
     "hierarchidb",
@@ -43,5 +42,17 @@
     "allotment"
   ],
   "author": "HierarchiDB Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
+  }
 }

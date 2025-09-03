@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "ESNext",
-    "lib": ["ES2022", "dom"],
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
     "moduleResolution": "node",
     "strict": true,
     "noImplicitAny": true,
@@ -13,7 +16,6 @@
     "noUnusedParameters": true,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
-    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
@@ -27,5 +29,11 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "exclude": ["node_modules", "dist", "build", "coverage", ".turbo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".turbo"
+  ]
 }

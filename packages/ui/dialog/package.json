@@ -7,9 +7,9 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "default": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -25,16 +25,27 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
     "notistack": "^3.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "@hierarchidb/common-type": "workspace:*"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
   }
 }

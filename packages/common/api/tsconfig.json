@@ -1,16 +1,28 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "composite": true,
     "incremental": true,
     "noEmit": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node", "vite/client", "vitest/globals"],
+    "types": [
+      "node",
+      "vite/client",
+      "vitest/globals"
+    ],
     "esModuleInterop": true,
-    "skipLibCheck": true // Required for @types/node compatibility with TypeScript 4.9
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

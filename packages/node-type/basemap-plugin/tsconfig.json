@@ -1,7 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "esModuleInterop": true,
     "noEmit": true,
     "composite": true,
@@ -9,11 +12,12 @@
     "rootDir": "./",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": [
+        "src/*"
+      ]
     },
     "incremental": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": true
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*"

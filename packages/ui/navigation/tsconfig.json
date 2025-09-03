@@ -18,8 +18,7 @@
       "~/*": [
         "src/*"
       ]
-    },
-    "skipLibCheck": true  // Required for provider-router-dom and MUI compatibility
+    }
   },
   "include": [
     "src"

@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "tsconfig.base.json",
   "references": [
     {
       "path": "./packages/common/api"
@@ -14,8 +14,11 @@
   "compilerOptions": {
     "downlevelIteration": false,
     "target": "es2022",
-    "module": "es2022"
+    "module": "es2022",
+    "jsx": "react-jsx"
   },
-  "include": ["scripts/*.ts"],
+  "include": [
+    "scripts/*.ts"
+  ],
   "files": []
 }

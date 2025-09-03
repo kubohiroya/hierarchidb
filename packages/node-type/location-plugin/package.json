@@ -28,18 +28,32 @@
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@mui/material": "^6.0.0",
-    "@mui/icons-material": "^6.0.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "dexie": "^3.2.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dexie": "^3.2.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "vitest": "^1.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^6.0.0",
+    "@mui/icons-material": "^6.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^6.0.0",
+    "@mui/icons-material": "^6.0.0"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
   }
 }

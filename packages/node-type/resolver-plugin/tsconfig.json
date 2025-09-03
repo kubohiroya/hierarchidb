@@ -5,8 +5,11 @@
     "rootDir": "src",
     "baseUrl": "src",
     "paths": {
-      "~/*": ["*"]
-    }
+      "~/*": [
+        "*"
+      ]
+    },
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*"

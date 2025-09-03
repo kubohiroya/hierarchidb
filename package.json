@@ -56,10 +56,7 @@
     "vk:sync": "node scripts/vk-sync.mjs",
     "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime-worker/worker/docs"
   },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@eslint/js": "^9.34.0",
@@ -109,7 +106,9 @@
     "vite": "^6.3.5",
     "vite-plugin-checker": "^0.8.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -133,5 +132,17 @@
     "react"
   ],
   "author": "HierarchiDB Contributors",
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
 }
