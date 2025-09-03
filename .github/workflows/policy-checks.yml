@@ -43,5 +43,5 @@ jobs:
       - name: publint (package publish sanity)
         run: pnpm -w pkg:publint || true
 
- - name: @arethetypeswrong/cli (types sanity)
+      - name: @arethetypeswrong/cli (types sanity)
         run: pnpm -w pkg:attw || true
