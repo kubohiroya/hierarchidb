@@ -1,4 +1,5 @@
-import type { NodeType } from '@hierarchidb/common-type';
+// Keep this module self-contained to simplify build; use string for NodeType here
+type NodeType = string;
 
 const tabularSet = new Set<NodeType>();
 
@@ -14,4 +15,3 @@ export function isTabularSource(nodeType: NodeType): boolean {
 export function listTabularSources(): NodeType[] {
   return Array.from(tabularSet.values());
 }
-

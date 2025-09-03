@@ -1,0 +1,56 @@
+name: Policy Checks (warn-only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  policy-checks:
+    name: Run policy/dependency checks (warn-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Policy checker (check-deps)
+        run: pnpm -w check:deps:pkg || true
+
+      - name: Summarize policy findings (artifact)
+        run: node scripts/report-policy-summary.mjs || true
+
+      - name: Upload policy artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-artifacts
+          path: artifacts/
+
+      - name: dependency-cruiser (architecture warnings)
+        run: pnpm -w arch:dc || true
+
+      - name: syncpack (list mismatches)
+        run: pnpm -w deps:list || true
+
+      - name: publint (package publish sanity)
+        run: pnpm -w pkg:publint || true
+
+      - name: @arethetypeswrong/cli (types sanity)
+        run: pnpm -w pkg:attw || true

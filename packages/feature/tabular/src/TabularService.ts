@@ -1,9 +1,8 @@
-import type { FileLike, ParseOptions, TabularParseResult, DetectionResult } from './types';
-import { registerParser, parseWithBest, listParsers, detectFormat } from './registry';
+import type { FileLike, ParseOptions, TabularParseResult, DetectionResult, TabularSchema } from './types';
+import { registerParser, parseWithBest, detectFormat } from './registry';
 import { createCsvLikeParser } from './parsers/csvLike';
 import { jsonlParser } from './parsers/jsonl';
 import type { TabularStorePort, TabularIngestResult } from './store';
-import type { FileLike, ParseOptions } from './types';
 import type { TabularProcessor, TabularContext } from './processor';
 
 // Register built-in parsers by default
@@ -27,9 +26,12 @@ export class TabularService {
   ): Promise<TabularIngestResult<TMeta>> {
     const parsed = await this.parse(input, options);
     // Processor: mapSchema
-    const baseSchema = parsed.preview.schema;
+    const baseSchema = parsed.preview.schema as TabularSchema;
     const ctx: TabularContext = { filename: options?.filename, userOptions: options };
-    const schema = (options?.processors || []).reduce((acc, p) => (p.mapSchema ? { columns: p.mapSchema(acc, ctx).columns } : acc), baseSchema);
+    let schema: TabularSchema = baseSchema;
+    for (const p of options?.processors ?? []) {
+      if (p.mapSchema) schema = p.mapSchema(schema, ctx);
+    }
     const session = await store.beginIngest(schema, {
       filename: options?.filename,
       sizeBytes: options?.sizeBytes,

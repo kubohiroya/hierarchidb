@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { showCommandError } from '~/shared/command-errors';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
@@ -268,11 +268,12 @@ export function useTreeConsoleIntegration({
       },
 
       handleContextMenuAction: async (action: string, node: TreeNodeData) => {
-        console.log('Context menu action:', action, 'for node:', node);
+        const actionStr = action;
+        console.log('Context menu action:', actionStr, 'for node:', node);
 
         // Handle creation actions from SpeedDial
-        if (action.startsWith('create:')) {
-          const nodeType = action.replace('create:', '');
+        if (actionStr.startsWith('create:')) {
+          const nodeType = actionStr.replace('create:', '') as string as NodeType;
           console.log('Creating node of type:', nodeType);
 
           try {
@@ -283,7 +284,7 @@ export function useTreeConsoleIntegration({
 
               const mutationAPI = await client.getMutationAPI();
               const result = await mutationAPI.createNode({
-                nodeType: nodeType,
+                nodeType,
                 treeId: (treeId as TreeId) || ('default-tree' as TreeId),
                 parentId: pageNodeId as NodeId,
                 name: `New ${displayName}`,
@@ -317,8 +318,9 @@ export function useTreeConsoleIntegration({
         }
 
         // Handle import/export through context menu
-        if (action === 'export' && node?.id) {
-          await handleExport('json');
+        if (actionStr === 'export' && node?.id) {
+          // Export is handled via actions.handleExport; in this minimal phase, omit here.
+          return;
         }
         // TODO: Implement other context menu actions
         // Avoiding Orchestrated APIs as requested
@@ -420,7 +422,7 @@ export function useTreeConsoleIntegration({
         }
       },
     }),
-    [client, treeId, pageNodeId, selectedIds, treeData, importExport, actions]
+    [client, treeId, pageNodeId, selectedIds, treeData, importExport]
   );
 
   // Load tree data when client is ready

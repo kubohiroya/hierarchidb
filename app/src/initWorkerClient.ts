@@ -26,14 +26,13 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       if (workerInstance) {
         console.log('[initWorker] Disposing previous worker instance');
         try {
-          // Try to terminate the worker if possible
-          if ('terminate' in workerInstance) {
-            (workerInstance as any).terminate();
-          }
+          // Terminate raw worker if available
+          if (rawWorkerInstance) rawWorkerInstance.terminate();
         } catch (terminationError) {
           console.warn('[initWorker] Failed to terminate previous worker:', terminationError);
         }
         workerInstance = null;
+        rawWorkerInstance = null;
       }
 
       console.log('[initWorker] Creating new Worker...');

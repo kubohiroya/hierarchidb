@@ -6,6 +6,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-type';
+const NT = (s: string) => s as NodeType;
 
 /**
  * Plugin selection configuration
@@ -45,11 +46,11 @@ export interface PluginConfig {
 export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
   // Application explicitly requests these plugins
   requested: [
-    'folder',      // Basic folder-plugin functionality
-    'basemap',     // Map layers
-    'shape',       // Geographic shapes
-    'styler',    // Styling
-    'spreadsheet', // Tabular data
+    NT('folder'),      // Basic folder-plugin functionality
+    NT('basemap'),     // Map layers
+    NT('shape'),       // Geographic shapes
+    NT('styler'),      // Styling
+    NT('spreadsheet'), // Tabular data
   ],
   
   // No exclusions by default
@@ -98,7 +99,7 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
   
   // Testing: Minimal set for tests
   test: {
-    requested: ['folder'],  // Only the base plugin
+    requested: [NT('folder')],  // Only the base plugin
     autoDiscovery: false,
     options: {
       verbose: false,
@@ -142,15 +143,15 @@ export function getRequestedPlugins(): NodeType[] {
   
   // Filter based on feature flags
   if (!PLUGIN_FEATURES.enableGeographic) {
-    requested = requested.filter(p => !['basemap', 'shape'].includes(p));
+    requested = requested.filter(p => ![NT('basemap'), NT('shape')].includes(p));
   }
   
   if (!PLUGIN_FEATURES.enableDataProcessing) {
-    requested = requested.filter(p => p !== 'spreadsheet');
+    requested = requested.filter(p => p !== NT('spreadsheet'));
   }
   
   if (!PLUGIN_FEATURES.enableStyling) {
-    requested = requested.filter(p => p !== 'styler');
+    requested = requested.filter(p => p !== NT('styler'));
   }
   
   // Remove excluded plugins

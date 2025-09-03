@@ -65,6 +65,14 @@ module.exports = {
       },
     ],
 
+    // Extra dependency health checks (initially WARN)
+    'import/no-extraneous-dependencies': [
+      'warn',
+      {
+        packageDir: ['.', 'app', 'packages/*', 'packages/*/*'],
+      },
+    ],
+
     // Prevent wildcard exports for better traceability
     'no-restricted-syntax': [
       'error',

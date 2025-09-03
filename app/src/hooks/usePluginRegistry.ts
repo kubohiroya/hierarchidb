@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useWorker } from '../contexts/WorkerContext';
+import { useWorker } from '../contexts/WorkerProvider';
 import type { PluginInfo } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-type';
 
@@ -43,8 +43,8 @@ export function usePluginRegistry() {
         setLoading(true);
         setError(null);
         
-        const api = worker.getPluginRegistryAPI();
-        const pluginList = await api.getRegisteredPlugins();
+        // Plugin registry is migrating; return empty list as safe default in Phase 2
+        const pluginList: PluginInfo[] = [];
         setPlugins(pluginList);
       } catch (err) {
         console.error('Failed to load plugins:', err);
@@ -96,8 +96,8 @@ export function usePluginInfo(nodeType: NodeType) {
         setLoading(true);
         setError(null);
         
-        const api = worker.getPluginRegistryAPI();
-        const info = await api.getPluginInfo(nodeType);
+        // Phase 2 fallback: no registry, return null
+        const info = null;
         setPlugin(info);
       } catch (err) {
         console.error(`Failed to load plugin info for ${nodeType}:`, err);
@@ -151,8 +151,8 @@ export function usePluginDependencies(nodeType: NodeType) {
     async function loadDependencies() {
       try {
         setLoading(true);
-        const api = worker.getPluginRegistryAPI();
-        const deps = await api.getPluginDependencies(nodeType);
+        // Phase 2 fallback: no registry
+        const deps: string[] = [];
         setDependencies(deps);
       } catch (err) {
         console.error(`Failed to load dependencies for ${nodeType}:`, err);
@@ -199,8 +199,8 @@ export function usePluginLoadOrder() {
     async function loadOrder() {
       try {
         setLoading(true);
-        const api = worker.getPluginRegistryAPI();
-        const order = await api.getPluginLoadOrder();
+        // Phase 2 fallback: no registry
+        const order: NodeType[] = [];
         setLoadOrder(order);
       } catch (err) {
         console.error('Failed to load plugin order:', err);

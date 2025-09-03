@@ -17,9 +17,8 @@ import {
 } from '@mui/material';
 import { LocalOffer as TagIcon, FolderOpen as NodeIcon } from '@mui/icons-material';
 import { useQuery } from '@tanstack/provider-query';
-import { useWorkerClient } from '~/contexts/WorkerSingletonProvider';
-import type { TagEntity, NodeTagAssociation } from '~/common/types/src/tag-entity-types';
-import type { TreeNode, NodeId, TreeId } from '@hierarchidb/core';
+import { useWorkerClient } from '~/contexts/WorkerProvider';
+import type { TagEntity, NodeTagAssociation, TreeNode, NodeId, TreeId } from '@hierarchidb/common-type';
 
 interface TaggedNode {
   node: TreeNode;
@@ -35,8 +34,8 @@ export default function TagsPage() {
   const { data: allTags, isLoading: isLoadingTags } = useQuery({
     queryKey: ['tags', 'all'],
     queryFn: async () => {
-      const tagService = await workerClient.getTagService();
-      return await tagService.getAllTags();
+      const tagAPI = await workerClient.getTagAPI();
+      return await tagAPI.getAllTags();
     },
     enabled: !uuid && isConnected,
   });
@@ -46,8 +45,8 @@ export default function TagsPage() {
     queryKey: ['tag', uuid],
     queryFn: async () => {
       if (!uuid) return null;
-      const tagService = await workerClient.getTagService();
-      return await tagService.getTag(uuid as TagEntity['id']);
+      const tagAPI = await workerClient.getTagAPI();
+      return await tagAPI.getTag(uuid as TagEntity['id']);
     },
     enabled: !!uuid && isConnected,
   });
@@ -58,8 +57,8 @@ export default function TagsPage() {
     queryFn: async (): Promise<TaggedNode[]> => {
       if (!uuid) return [];
 
-      const tagService = await workerClient.getTagService();
-      const associations = await tagService.getNodesByTag(uuid as TagEntity['id']);
+      const tagAPI = await workerClient.getTagAPI();
+      const associations = await tagAPI.getNodesByTag(uuid as TagEntity['id']);
 
       const taggedNodesData: TaggedNode[] = [];
 
@@ -109,7 +108,7 @@ export default function TagsPage() {
 
     return (
       <Grid container spacing={2}>
-        {allTags.map((tag) => (
+        {allTags.map((tag: TagEntity) => (
           <Grid key={tag.id}>
             {/*  xs={12} md={4} sm={6} */}
             <Card>
@@ -175,7 +174,7 @@ export default function TagsPage() {
         </Typography>
 
         <List>
-          {taggedNodes.map(({ node, treeId, tagAssociation }) => (
+          {taggedNodes.map(({ node, treeId, tagAssociation }: TaggedNode) => (
             <ListItem
               key={`${treeId}-${node.id}`}
               sx={{
@@ -203,9 +202,9 @@ export default function TagsPage() {
                     <Typography variant="body2" color="text.secondary">
                       ノードタイプ: {node.nodeType}
                     </Typography>
-                    {tagAssociation.createdAt && (
+                    {tagAssociation.assignedAt && (
                       <Typography variant="caption" color="text.secondary">
-                        タグ付け日時: {new Date(tagAssociation.createdAt).toLocaleString()}
+                        タグ付け日時: {new Date(tagAssociation.assignedAt).toLocaleString()}
                       </Typography>
                     )}
                   </Box>

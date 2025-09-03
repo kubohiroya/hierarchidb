@@ -1,4 +1,4 @@
-import type { BBox } from '@hierarchidb/map-source';
+// Note: Keep this file decoupled from map-source to avoid workspace build order issues.
 
 export interface ViewState {
   longitude: number;
@@ -24,4 +24,3 @@ export interface MapViewConfig {
   initialViewState: ViewState;
   mapStyle?: MapStyleSpec;
 }
-

@@ -5,7 +5,7 @@
  * for use with TreeConsolePanel.
  */
 
-import type { TreeNode } from "@hierarchidb/common-core";
+import type { TreeNode } from "@hierarchidb/common-type";
 import type { TreeNodeData } from "@hierarchidb/ui-treeconsole-base";
 import type { TreeTableColumn } from "@hierarchidb/ui-treeconsole-base";
 
@@ -43,21 +43,21 @@ export function createDefaultColumns(): TreeTableColumn[] {
       label: "Name",
       sortable: true,
       width: 300,
-      render: (_: unknown, node: TreeNodeData) => node.name,
+      render: (_value: string | undefined, node: TreeNodeData) => node.name,
     },
     {
       id: "description",
       label: "Description",
       sortable: true,
       width: 300,
-      render: (_: unknown, node: TreeNodeData) => node.description || "-",
+      render: (_value: string | undefined, node: TreeNodeData) => node.description || "-",
     },
     {
       id: "createdAt",
       label: "Created",
       sortable: true,
       width: 160,
-      render: (_: unknown, node: TreeNodeData) => {
+      render: (_value: number | undefined, node: TreeNodeData) => {
         return node.createdAt
           ? new Date(node.createdAt).toLocaleDateString()
           : "";
@@ -68,7 +68,7 @@ export function createDefaultColumns(): TreeTableColumn[] {
       label: "Modified",
       sortable: true,
       width: 160,
-      render: (_: unknown, node: TreeNodeData) => {
+      render: (_value: number | undefined, node: TreeNodeData) => {
         return node.updatedAt
           ? new Date(node.updatedAt).toLocaleDateString()
           : "";
