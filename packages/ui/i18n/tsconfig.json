@@ -11,7 +11,7 @@
       "ES2022",
       "DOM"
     ],
-    "module": "ESNext",
+    "module": "NodeNext",
     "moduleResolution": "nodenext",
     "baseUrl": ".",
     "paths": {
