@@ -14,8 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit",
+    "build": "pnpm run typecheck && tsup && pnpm --package=typescript@5.6.2 dlx tsc -p tsconfig.json --emitDeclarationOnly --declaration --declarationMap true --outDir dist",
+    "typecheck": "pnpm --package=typescript@5.6.2 dlx tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "tsc && tsc-alias",
