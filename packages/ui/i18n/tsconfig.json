@@ -12,14 +12,18 @@
       "DOM"
     ],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "baseUrl": ".",
     "paths": {
       "~/*": [
         "./src/*"
       ]
     },
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": [
+      "node"
+    ],
+    "skipLibCheck": true
   },
   "include": [
     "./src/**/*"
