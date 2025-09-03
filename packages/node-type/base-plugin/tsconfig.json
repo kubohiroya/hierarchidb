@@ -6,7 +6,13 @@
     "declaration": true,
     "declarationMap": true,
     "jsx": "react-jsx",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/common-type": [
+        "../../common/types/src/index.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*"
