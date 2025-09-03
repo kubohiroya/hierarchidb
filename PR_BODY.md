@@ -1,41 +1,36 @@
-目的
-- CIにwarn-onlyのポリシーチェック（check-deps / dependency-cruiser / syncpack / publint / attw）を追加し、依存・公開物・アーキの問題を一覧化。
-- appの型を引き締め（as any/unknown削減、render型の厳密化、shims.d.ts削減）し、型安全性を底上げ。
-- runtime-workerにNode先行の統合テスト（fake-indexeddb）を追加して、Undo/Redo等の代表フローを回帰担保。
+PR: ui-map を MapLibre ラッパ化し、basemap-plugin の shim/any/skipLibCheck を撤廃
 
-変更概要
-- CI: `.github/workflows/policy-checks.yml` 新規（警告のみ・失敗しない）
-  - 実行順: `pnpm -w check:deps:pkg` → `pnpm -w arch:dc` → `pnpm -w deps:list` → `pnpm -w pkg:publint` → `pnpm -w pkg:attw`
-- 型引き締め:
-  - TreeConsole系: `onContextMenuAction(action: string, node: TreeNodeData)` に統一、ハンドラ/呼出しを型安全化
-  - Loader/初期化/Router: any/unknown撤去、RouteObject安全キャスト、Worker terminateの整備
-  - TrashDialog/Converter: render引数の具体型化（unknown撤廃）、`common-type`に統一
-  - shims.d.ts: `@hierarchidb/common-core`等を削除し縮小（UI/Bootstrap系は最小宣言のみ維持）
-- テスト: `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts` を追加（create→rename→move→undo×2→redo×2）
-- TASKS.md: CIタスク/テスト戦略の更新
+要点
+- `@hierarchidb/ui-map` を MapLibre 用の薄いラッパとして再設計。
+- MapLibre の型変動は `ui-map` に閉じ込め、`skipLibCheck: true` も `ui-map` のみで適用。
+- basemap-plugin の `maplibre-gl` shim と `any` 依存を削除。以降は `ui-map` の安定化型を参照。
+- app の map 画面は `ui-map` の型を使用し、`maplibre-gl` の暫定 shim を削除。
 
-背景 / 理由
-- 依存ポリシー・公開物・型の品質を可視化し、段階的にゼロ警告へ向けて運用可能にするため。
-- as any/unknownやshimsの恒常化を避け、将来的にパッケージ側で型公開するための地ならし。
-- UIのE2Eはコストが大きいため、まずNode（fake-indexeddb）で機能回帰を担保し、その後UIはスモークで確認する方針。
+ブランチ: `refactor/ui-map/maplibre-wrapper-clean`
+対応タスク: TASKS.md > Doing > refactor/ui-map/maplibre-wrapper
 
-受け入れ基準（DoD）
-- `pnpm --filter @hierarchidb/app typecheck` がグリーン（routesの一時excludeなし）。
-- runtime-workerのheadlessテストが実行できる（sandboxではEPERM終了あり。CIではパッケージフィルタで合格確認）。
-- `.github/workflows/policy-checks.yml` が各チェックをWARNのみで実行（ログに一覧化）。
-- 新規差分にas any/unknownの恒常化がないこと（diff検索で0）。
+変更詳細
+- ui-map
+  - 追加: `src/types/maplibre-public.ts`（安定化型 `MapLibreMapInstance/Style/Layer/Filter`）。
+  - 変更: `unified-map-props.ts`（`mapStyle: string | MapLibreStyle` を許容、Filter を内製型へ差し替え）。
+  - 変更: `MapLibreMap.tsx`/`MapWithVectorTiles.tsx`/`VectorTileLayer.tsx` を安定化型で統一。
+- basemap-plugin
+  - 削除: `src/types/maplibre-gl-shim.d.ts` と tsconfig の paths 上書き。
+  - 置換: レイヤ/スタイル周辺の `any` を安定化型参照に変更。
+- app
+  - 変更: `routes/map.tsx` を `ui-map` の型へ統一、`shims.d.ts` の maplibre 宣言を削除。
+- docs
+  - 変更: `TASKS.md` に方針/DoD/ロールバック/運用ログを追記。
 
-ロールバック手順
-- CI: 当該workflowを無効化/削除。
-- 型引き締め: 変更前へ戻す（ただしshims再拡大は推奨せず、必要箇所のみ最小化）。
-- テスト: 追加E2E/ヘッドレスファイルを削除。
+受け入れ基準（ローカル確認）
+- `pnpm --filter @hierarchidb/ui-map typecheck` OK。
+- `pnpm --filter @hierarchidb/basemap-plugin typecheck` OK。
+- `skipLibCheck: true` は `packages/ui/map/tsconfig.json` のみ。
+- basemap-plugin に shim を残さず、`any` の恒常化を撤廃（対象箇所）。
 
-実行ログ（ローカル参考）
-- typecheck: appグリーン。モノレポは一部パッケージ未インストールに起因するWARN/ERRORあり（CIで順次是正）。
-- headless: undo/redo シナリオ追加（EPERMは終了時の既知現象）。
-- policy checks: check-depsはskipLibCheckやpeer整合などの違反を検出（WARN運用で落とさず早期可視化）。
+ロールバック
+- `ui-map` に閉じ込めているため、当該ブランチ差分のリバートのみで切戻し可能。repo 全体の `skipLibCheck` を有効化する必要はない。
 
 フォローアップ
-- UIパッケージで型公開を進め、`app/src/types/shims.d.ts` を段階撤去。
-- `@tanstack/provider-query` の正式型導入（または置換）で shim 撤去。
-- runtime-worker bootstrap の型公開（`WorkerInitializationChannel` 等）。
+- app 側の maplibre 以外の型エラー（ui-usermenu 等）は別タスクで整理。
+- basemap 以外のプラグインで maplibre を直接参照していないかの再確認（`rg` ベースで未検出、shape は `ui-map` 参照済み）。

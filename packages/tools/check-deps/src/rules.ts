@@ -87,6 +87,21 @@ export function runRules(ctx: RuleContext): Finding[] {
   const jsxOpt = tsconfig.compilerOptions && tsconfig.compilerOptions.jsx;
   if (hasTsx && jsxOpt !== 'react-jsx') push(f, ctx, 'jsx-mismatch', 'WARN', `tsx files detected but compilerOptions.jsx is '${jsxOpt || '(unset)'}' (recommend 'react-jsx').`);
 
+  // Enforce MapLibre encapsulation: only @hierarchidb/ui-map may depend on maplibre-gl/@vis.gl/react-maplibre
+  const MAPLIBRE_PKGS = new Set(['maplibre-gl', '@vis.gl/react-maplibre']);
+  const allowList = new Set(['@hierarchidb/ui-map']);
+  const hasMapLibreDirect = [...MAPLIBRE_PKGS].some((p) => deps.has(p) || peers.has(p) || devs.has(p));
+  if (hasMapLibreDirect && !allowList.has(ctx.pkgName)) {
+    const offenders = [...MAPLIBRE_PKGS].filter((p) => deps.has(p) || peers.has(p) || devs.has(p));
+    push(
+      f,
+      ctx,
+      'maplibre-direct-dep',
+      'ERROR',
+      `Direct dependency on MapLibre stack is not allowed. Use @hierarchidb/ui-map wrapper instead. Found:\n- ${offenders.join('\n- ')}`,
+    );
+  }
+
   return f;
 }
 
@@ -107,5 +122,5 @@ export const ruleRegistry: Record<string, RuleRunner> = {
   'skipLibCheck-not-allowed': only(new Set(['skipLibCheck-not-allowed']), runRules),
   'tsconfig-no-base': only(new Set(['tsconfig-no-base']), runRules),
   'jsx-mismatch': only(new Set(['jsx-mismatch']), runRules),
+  'maplibre-direct-dep': only(new Set(['maplibre-direct-dep']), runRules),
 };
-

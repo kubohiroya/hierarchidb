@@ -6,11 +6,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type {
   GetResourceResponse,
-  Map as MapLibreMapInstance,
   RequestParameters,
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
+import type { MapLibreMapInstance } from '../types/maplibre-public';
 import { addProtocol } from 'maplibre-gl';
 import type { VectorTileProps } from '../types/unified-map-props';
 

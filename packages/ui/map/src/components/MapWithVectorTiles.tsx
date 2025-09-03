@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import type { Map as MapLibreMapInstance } from 'maplibre-gl';
+import type { MapLibreMapInstance } from '../types/maplibre-public';
 import MapLibreMap from './MapLibreMap';
 import VectorTileLayer from './VectorTileLayer';
 import { BaseMapProps, VectorTileDataSource, VectorTileLayerConfig, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';

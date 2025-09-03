@@ -23,7 +23,7 @@
  *    - Clear separation between data source and display configuration
  */
 
-import type { Map as MapLibreMapInstance, FilterSpecification } from 'maplibre-gl';
+import type { MapLibreMapInstance, MapLibreStyle, MapLibreFilter } from './maplibre-public';
 
 /**
  * Base map view state - shared across all map components
@@ -107,7 +107,7 @@ export interface BaseMapProps extends MapDimensionsProps, MapEventHandlers {
   initialViewState: MapViewState;
   
   /** Map style URL or style object */
-  mapStyle?: string;
+  mapStyle?: string | MapLibreStyle;
   
   /** Map interaction options */
   mapOptions?: MapInteractionOptions;
@@ -139,7 +139,7 @@ export interface VectorTileLayerConfig {
   layout?: Record<string, unknown>;
   
   /** Layer filter specification */
-  filter?: FilterSpecification;
+  filter?: MapLibreFilter;
   
   /** Minimum zoom level */
   minzoom?: number;
