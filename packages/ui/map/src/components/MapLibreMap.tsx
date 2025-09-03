@@ -5,7 +5,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import type { Map as MapLibreMapInstance } from 'maplibre-gl';
+import type { MapLibreMapInstance } from '../types/maplibre-public';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
@@ -72,7 +72,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}
-          mapStyle={mapStyle}
+          mapStyle={mapStyle as any}
           initialViewState={initialViewState}
           onLoad={handleMapLoad}
           onMove={handleViewStateChange}

@@ -7,7 +7,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Paper, Chip, Stack } from '@mui/material';
 import { Map as MapIcon, Terrain, Satellite, DarkMode, LightMode, Tune } from '@mui/icons-material';
-import { MapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
+import { MapLibreMap, type MapViewState, type MapLibreLayer, type MapLibreStyle } from '@hierarchidb/ui-map';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles';
 
 export interface BaseMapPreviewProps {
@@ -111,7 +111,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
         return mapStyle.customStyleUrl;
       }
       if (mapStyle.customStyleConfig) {
-        return mapStyle.customStyleConfig as any;
+        return mapStyle.customStyleConfig as MapLibreStyle;
       }
     }
     return getBuiltInStyleUrl(mapStyle.style);
@@ -179,7 +179,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
             if (!displayOptions.showLabels) {
               // Hide all label layers
               const layers = map.getStyle().layers;
-              layers.forEach((layer) => {
+              layers.forEach((layer: MapLibreLayer) => {
                 if (layer.type === 'symbol' && layer.id.includes('label')) {
                   map.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
@@ -192,9 +192,11 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
               if (!map.getLayer('building-3d')) {
                 // Add a simple 3D building layer if not present
                 const layers = map.getStyle().layers;
-                const labelLayerId = layers.find(
-                  (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
-                )?.id;
+                const labelLayerId = layers.find((layer: MapLibreLayer) => {
+                  if (layer.type !== 'symbol') return false;
+                  const layout = layer.layout as Record<string, unknown> | undefined;
+                  return typeof layout?.['text-field'] !== 'undefined';
+                })?.id;
 
                 if (map.getSource('openmaptiles') || map.getSource('composite')) {
                   map.addLayer(

@@ -18,7 +18,7 @@ import { useSearchParams } from 'react-router';
 import { useGeolocation } from 'react-hook-geolocation';
 import { MapLibreMap } from '@hierarchidb/ui-map';
 import type { MapViewState } from '@hierarchidb/ui-map';
-import type { Map as MapLibreMapInstance } from 'maplibre-gl';
+import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { Box } from '@mui/material';
 
 // Default initial position (world view)

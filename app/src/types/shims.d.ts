@@ -22,59 +22,9 @@ declare module 'virtual:plugin-map' {
   export default pluginMap;
 }
 
-// Workspace UI packages without published types (temporary shims)
-declare module '@hierarchidb/ui-treeconsole-base' {
-  export type TreeConsolePanelProps = any;
-  export type TreeNodeData = any;
-  export type TreeTableColumn = any;
-  export const TreeConsolePanel: any;
-}
-declare module '@hierarchidb/ui-usermenu' {
-  const Default: any;
-  export default Default;
-  export const UserLoginButton: any;
-}
-declare module '@hierarchidb/ui-theme' {
-  const Default: any;
-  export default Default;
-  export const ThemeProvider: any;
-  export const createAppTheme: any;
-}
-declare module '@hierarchidb/ui-base-dialog' {
-  const Default: any;
-  export default Default;
-  export const FullScreenDialog: any;
-}
-
-// Runtime worker bootstrap virtuals (temporary until package exports are aligned)
-declare module '@hierarchidb/runtime-worker-worker' {
-  const Default: any;
-  export default Default;
-  export const WorkerService: any;
-  export const Bootstrap: any;
-}
-declare module '@hierarchidb/runtime-worker-worker-bootstrap' {
-  const Default: any;
-  export default Default;
-  export const WorkerInitializationChannel: any;
-  export const WorkerInitializationReporter: any;
-}
-declare module '@hierarchidb/runtime-worker-worker-init-notifier' {
-  const Default: any;
-  export default Default;
-  export const WorkerInitializationReporter: any;
-}
-declare module '@hierarchidb/runtime-worker-worker/1-bootstrap/WorkerBootstrap' {
-  export const WorkerBootstrap: any;
-  export default WorkerBootstrap;
-}
+// Removed: UI and worker package shims — replaced by real package types
 
 // Other external packages lacking types in this workspace
-declare module 'maplibre-gl' {
-  const Default: any;
-  export default Default;
-  export class Map {}
-}
 declare module '@tanstack/provider-query' {
   const Default: any;
   export default Default;

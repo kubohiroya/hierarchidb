@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
-import { MapLibreMap, type MapViewState, type MapLibreMapInstance } from '@hierarchidb/ui-map';
+import { MapLibreMap, type MapViewState, type MapLibreMapInstance, type MapLibreLayer, type MapLibreStyle } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
@@ -58,7 +58,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     if (!providedEntity && nodeId) {
       const handler = new BaseMapEntityHandler();
       setLoading(true);
-      handler.getEntity(nodeId)
+      handler.getEntityByNodeId(nodeId as any)
         .then(data => {
           if (data) {
             setEntity(data);
@@ -78,21 +78,8 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   }, [nodeId, providedEntity]);
 
   // Convert entity viewport to MapLibre view state
-  // Priority: zxy prop > viewport configuration
   const initialViewState = useMemo<MapViewState | undefined>(() => {
-    // If zxy is provided, use it for initial position
-    if (entity?.zxy && entity.zxy.length === 3) {
-      const [zoom, longitude, latitude] = entity.zxy;
-      return {
-        longitude,
-        latitude,
-        zoom,
-        bearing: entity.viewport?.bearing || 0,
-        pitch: entity.viewport?.pitch || 0
-      };
-    }
-    
-    // Otherwise, use viewport configuration
+    // Use viewport configuration
     if (!entity?.viewport) return undefined;
     
     return {
@@ -105,7 +92,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   }, [entity]);
 
   // Get map style URL based on configuration
-  const mapStyleUrl = useMemo(() => {
+  const mapStyleUrl = useMemo<string | MapLibreStyle>(() => {
     if (!entity?.mapStyle) {
       return BUILT_IN_STYLES.streets.url; // Default style
     }
@@ -119,7 +106,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
 
     // Custom config (return as object, not URL)
     if (style === 'custom' && customStyleConfig) {
-      return customStyleConfig as any; // MapLibre accepts both URL and style object
+      return customStyleConfig as MapLibreStyle;
     }
 
     // Built-in style
@@ -158,10 +145,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
         }
 
         // Toggle labels
-        const labelLayers = map.getStyle().layers.filter(layer => 
+        const labelLayers = map.getStyle().layers.filter((layer: MapLibreLayer) => 
           layer.type === 'symbol' && layer.id.includes('label')
         );
-        labelLayers.forEach(layer => {
+        labelLayers.forEach((layer: MapLibreLayer) => {
           map.setLayoutProperty(
             layer.id, 
             'visibility', 
