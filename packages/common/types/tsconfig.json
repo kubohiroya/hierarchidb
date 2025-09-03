@@ -16,7 +16,8 @@
       "vite/client",
       "vitest"
     ],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "moduleResolution": "nodenext"
   },
   "include": [
     "src/**/*.ts"
