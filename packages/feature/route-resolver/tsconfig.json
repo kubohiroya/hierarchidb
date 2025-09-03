@@ -5,9 +5,17 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "skipLibCheck": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"],
-  "exclude": ["../../../node_modules", "../../../dist", "../../../build", "../../../coverage", "../../../.turbo"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "../../../node_modules",
+    "../../../dist",
+    "../../../build",
+    "../../../coverage",
+    "../../../.turbo"
+  ]
 }

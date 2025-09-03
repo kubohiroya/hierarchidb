@@ -14,8 +14,7 @@
     ],
     "composite": true,
     "incremental": true,
-    "noEmit": false,
-    "skipLibCheck": true  // Required for @testing-library/jest-dom compatibility
+    "noEmit": false
   },
   "include": [
     "src/**/*"

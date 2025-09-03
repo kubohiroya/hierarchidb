@@ -5,7 +5,8 @@
     "rootDir": "src",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "src/shared/**/*",
@@ -21,7 +22,11 @@
     "**/__tests__/**"
   ],
   "references": [
-    {"path": "../../common/core"},
-    {"path": "../../common/api"}
+    {
+      "path": "../../common/core"
+    },
+    {
+      "path": "../../common/api"
+    }
   ]
 }

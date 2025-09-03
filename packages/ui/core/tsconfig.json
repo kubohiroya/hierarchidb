@@ -4,7 +4,6 @@
     "composite": true,
     "incremental": true,
     "noEmit": false,
-    "skipLibCheck": true,  // Required for jest/vitest/vite version conflicts
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "paths": {

@@ -1,22 +1,17 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "tsconfig.base.json",
   "compilerOptions": {
-    // 未使用パラメータをエラーに
     "noUnusedParameters": true,
-    // 未使用ローカル変数をエラーに  
     "noUnusedLocals": true,
-    // 暗黙的any禁止
     "noImplicitAny": true,
-    // 厳密なnullチェック
     "strictNullChecks": true,
-    // deprecated使用時の警告を有効化（TypeScript 4.9+）
     "exactOptionalPropertyTypes": true,
-    // 厳密な型チェック（deprecatedとは直接関係なし）
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "allowUnusedLabels": false,
-    "allowUnreachableCode": false
+    "allowUnreachableCode": false,
+    "jsx": "react-jsx"
   },
   "include": [
     "packages/*/src/**/*.ts",
