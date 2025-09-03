@@ -15,7 +15,13 @@
       "vitest/globals"
     ],
     "esModuleInterop": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/common-type": [
+        "../../common/types/src/index.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",
