@@ -9,20 +9,18 @@
         "src/*"
       ]
     },
+    "skipLibCheck": true,
     "types": [
       "@cloudflare/workers-types"
     ],
     "lib": [
-      "es2022",
-      "dom",
-      "webworker",
-      "dom.iterable",
-      "esnext.asynciterable"
+      "ES2022"
     ],
     "target": "es2022",
     "module": "esnext",
     "moduleResolution": "node",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "rootDir": "src"
   },
   "include": [
     "src/**/*.ts"

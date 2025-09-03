@@ -14,7 +14,7 @@ import {
   Statement,
   ImportDeclaration,
 } from 'ts-morph';
-import globby from 'globby';
+import { globby } from 'globby';
 import minimist from 'minimist';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -271,7 +271,7 @@ async function main() {
 
   const patterns = [...includeGlobs, ...excludeGlobs];
 
-  const files = await globby.globby(patterns, { absolute: true });
+  const files = await globby(patterns, { absolute: true });
 
   for (const absPath of files) {
     const sf = project.addSourceFileAtPath(absPath);
