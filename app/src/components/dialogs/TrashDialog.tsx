@@ -7,8 +7,7 @@ import {
   RestoreFromTrash as RestoreIcon,
   DeleteForever as EmptyTrashIcon,
 } from '@mui/icons-material';
-import { loadTree, type LoadTreeArgs } from '~/loader';
-import type { LoadTreeReturn } from '~/loader';
+import { loadTree, LoadTreeArgs } from '~/loader';
 import { WorkerAPIClient } from '../../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
@@ -35,13 +34,8 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   return treeData;
 }
 
-type TrashDialogData = LoadTreeReturn & {
-  trashRootNode?: TreeNode;
-  trashItems?: TreeNode[];
-};
-
 export default function TrashDialog() {
-  const data = useLoaderData() as TrashDialogData;
+  const data = useLoaderData() as any;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { treeId, pageNodeId, targetNodeId, nodeType, action } = useParams();
@@ -98,7 +92,7 @@ export default function TrashDialog() {
       const mutationAPI = await client.getMutationAPI();
 
       // Permanently delete all trash items
-      const allTrashIds = (data.trashItems || []).map((item) => item.id);
+      const allTrashIds = data.trashItems?.map((item: TreeNode) => item.id) || [];
 
       if (allTrashIds.length > 0) {
         const result = await mutationAPI.removeNodes(allTrashIds);
@@ -133,21 +127,21 @@ export default function TrashDialog() {
       label: 'Name',
       sortable: true,
       width: 300,
-      render: (_value: string | undefined, node: TreeNode) => node.name,
+      render: (_: unknown, node: any) => node.name,
     },
     {
       id: 'nodeType',
       label: 'Type',
       sortable: true,
       width: 120,
-      render: (_value: string | undefined, node: TreeNode) => node.nodeType,
+      render: (_: unknown, node: any) => node.nodeType,
     },
     {
       id: 'deletedAt',
       label: 'Deleted',
       sortable: true,
       width: 160,
-      render: (_value: number | undefined, node: TreeNode) => {
+      render: (_: unknown, node: any) => {
         return node.updatedAt ? new Date(node.updatedAt).toLocaleDateString() : '';
       },
     },
@@ -184,14 +178,14 @@ export default function TrashDialog() {
         ) : (
           <TreeConsolePanel
             title={`Trash - ${data.tree?.name}`}
-            rootNodeId={data.tree?.trashRootId}
+            rootNodeId={data.tree?.trashRootNodeId}
             data={treeData}
             columns={columns}
             breadcrumbItems={[
               {
-                id: (data.tree?.trashRootId as NodeId) || ('' as NodeId),
+                id: data.tree?.trashRootNodeId || '',
                 name: 'Trash',
-                nodeType: 'trash' as any,
+                nodeType: 'Trash',
               },
             ]}
             loading={false}

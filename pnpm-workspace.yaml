@@ -1,7 +1,6 @@
 packages:
   - app
   - packages/util
-  - packages/tools/*
   - packages/common/*
   - packages/runtime-ui/*
   - packages/runtime-worker/*

@@ -7,7 +7,7 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   const data = await loadNodeAction(args.params as LoadNodeActionArgs);
 
   // If the action is 'trash', also load data for the TrashDialog
-  if (String(data.action) === 'trash') {
+  if (data.action === 'trash') {
     const trashData = await trashDialogClientLoader(args);
     return { ...data, ...trashData };
   }
@@ -56,3 +56,4 @@ export default function TLayout() {
     </div>
   );
 }
+

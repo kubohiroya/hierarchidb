@@ -17,21 +17,15 @@ import { WorkerProvider } from './contexts/WorkerProvider';
 import { TitleLogo } from './components/TitleLogo';
 import { NotificationSystem } from '@hierarchidb/ui-core';
 
-declare global {
-  interface Window {
-    __uiPluginsRegistered?: boolean;
-  }
-}
-
 // Initialize worker URL configuration
 
 // Initialize UI plugins
 import { registerAllUIPlugins } from '@hierarchidb/ui-core';
 
 // Register all UI plugins at startup (only once)
-if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
+if (typeof window !== 'undefined' && !(window as any).__uiPluginsRegistered) {
   registerAllUIPlugins();
-  window.__uiPluginsRegistered = true;
+  (window as any).__uiPluginsRegistered = true;
 }
 
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it

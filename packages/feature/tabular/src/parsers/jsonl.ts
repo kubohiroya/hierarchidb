@@ -27,17 +27,11 @@ export const jsonlParser: TabularParserPort = {
     const sample: Record<string, any>[] = [];
     let headers: string[] | undefined;
 
-    if (lines.length === 0) {
-      const preview: TabularPreview = { schema: { columns: [] }, sample: [], totalRows: 0 };
-      async function* empty(): AsyncGenerator<TabularChunk> { /* no rows */ }
-      return { preview, [Symbol.asyncIterator]: () => empty() } as TabularParseResult;
-    }
-
     async function* iterator(): AsyncGenerator<TabularChunk> {
       let buf: Record<string, any>[] = [];
       let idx = 0;
-      for (const [i, line] of lines.entries()) {
-        const obj = JSON.parse(line);
+      for (let i = 0; i < lines.length; i++) {
+        const obj = JSON.parse(lines[i]);
         if (!headers) headers = Object.keys(obj);
         if (sample.length < 50) sample.push(obj);
         buf.push(obj);
@@ -64,3 +58,4 @@ export const jsonlParser: TabularParserPort = {
     };
   },
 };
+

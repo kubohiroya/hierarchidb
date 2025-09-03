@@ -8,13 +8,17 @@ import type {
   TabularPreview,
 } from '../types';
 
-async function toText(input: FileLike, encoding?: string): Promise<string> {
+function isText(input: FileLike): input is string {
+  return typeof input === 'string';
+}
+
+async function toText(input: FileLike, encoding = 'utf-8'): Promise<string> {
   if (typeof input === 'string') return input;
   if (typeof Blob !== 'undefined' && input instanceof Blob) {
     return await input.text();
   }
   if (input instanceof ArrayBuffer || input instanceof Uint8Array) {
-    const dec = new TextDecoder(encoding ?? 'utf-8');
+    const dec = new TextDecoder(encoding);
     const buf = input instanceof Uint8Array ? input : new Uint8Array(input);
     return dec.decode(buf);
   }
@@ -51,19 +55,13 @@ export function createCsvLikeParser(id: 'csv' | 'tsv', delimiter: string): Tabul
       const headerOn = options?.header !== false;
       const chunkSize = options?.chunkSize ?? 1000;
 
-      if (lines.length === 0) {
-        const preview: TabularPreview = { schema: { columns: [] }, sample: [], totalRows: 0 };
-        async function* empty(): AsyncGenerator<TabularChunk> { /* no rows */ }
-        return { preview, [Symbol.asyncIterator]: () => empty() } as TabularParseResult;
-      }
-
       let headers: string[];
       let startIdx = 0;
       if (headerOn) {
-        headers = simpleCsvSplit(lines[0]!, delimiter);
+        headers = simpleCsvSplit(lines[0], delimiter);
         startIdx = 1;
       } else {
-        const first = simpleCsvSplit(lines[0]!, delimiter);
+        const first = simpleCsvSplit(lines[0], delimiter);
         headers = first.map((_, i) => `col${i + 1}`);
       }
 
@@ -73,7 +71,7 @@ export function createCsvLikeParser(id: 'csv' | 'tsv', delimiter: string): Tabul
         let buf: Record<string, any>[] = [];
         let chunkIndex = 0;
         for (let i = startIdx; i < lines.length; i++) {
-          const parts = simpleCsvSplit(lines[i]!, delimiter);
+          const parts = simpleCsvSplit(lines[i], delimiter);
           const row: Record<string, any> = {};
           headers.forEach((h, idx) => (row[h] = parts[idx] ?? ''));
           if (previewRows.length < 50) previewRows.push(row);
@@ -103,3 +101,4 @@ export function createCsvLikeParser(id: 'csv' | 'tsv', delimiter: string): Tabul
     },
   };
 }
+

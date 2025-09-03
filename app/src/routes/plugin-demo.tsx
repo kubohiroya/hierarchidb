@@ -18,7 +18,7 @@ import {
   DialogActions,
   TextField,
 } from "@mui/material";
-import { type NodeId } from "@hierarchidb/common-type";
+import { type NodeId } from "@hierarchidb/common-core";
 
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead

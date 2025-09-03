@@ -1,4 +1,4 @@
-// Note: Keep this file free of workspace type imports to simplify build
+import type { EntityId } from '@hierarchidb/common-type';
 
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date' | 'json' | 'null' | 'unknown';
 
@@ -52,3 +52,4 @@ export interface TabularDataProfile {
 export interface TabularParseResult<T = Record<string, any>> extends AsyncIterable<TabularChunk<T>> {
   preview: TabularPreview<T>;
 }
+

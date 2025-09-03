@@ -48,10 +48,11 @@ import {
   Storage as StorageIcon,
 } from '@mui/icons-material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeType, TreeId } from '@hierarchidb/common-type';
-import { type PluginDefinition, type PluginDatabaseConfig } from '@hierarchidb/common-type';
+import {
+  type PluginDefinition,
+  type PluginDatabaseConfig,
+  type TreeId,
+} from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { FullScreenDialog } from '@hierarchidb/ui-base-dialog';
 import { useNavigate } from 'react-router';
@@ -93,15 +94,6 @@ interface ResetPluginDialogProps {
 }
 
 // Enhanced Plugin Row with Dependencies and Operations
-type DisplayPlugin = {
-  nodeType: NodeType;
-  displayName: string;
-  category?: { treeId?: TreeId; menuGroup?: string; createOrder?: number };
-  database?: { entityStore?: string };
-  ui?: { dialogComponentPath?: string };
-  lifecycle?: unknown;
-};
-
 function EnhancedPluginRow({
   plugin,
   index,
@@ -109,7 +101,7 @@ function EnhancedPluginRow({
   onDelete,
   onReload,
   disabled = false,
-}: Omit<EnhancedPluginRowProps, 'plugin'> & { plugin: DisplayPlugin }) {
+}: EnhancedPluginRowProps) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
@@ -184,7 +176,7 @@ function EnhancedPluginRow({
             {plugin.database && (
               <Chip label="DB" size="small" color="secondary" variant="outlined" />
             )}
-            {!!plugin.lifecycle && (
+            {plugin.lifecycle && (
               <Chip label="Lifecycle" size="small" color="success" variant="outlined" />
             )}
           </Stack>
@@ -279,7 +271,7 @@ function EnhancedPluginRow({
                       Database Configuration
                     </Typography>
                     <Typography variant="body2">
-                      Entity Store: {plugin.database?.entityStore || `${plugin.nodeType}s`}
+                      Entity Store: {plugin.database.entityStore || `${plugin.nodeType}s`}
                     </Typography>
                   </Box>
                 )}
@@ -485,7 +477,7 @@ function DeletePluginDialog({
 
 export default function PluginsPage() {
   const navigate = useNavigate();
-  const [workerPlugins, setWorkerPlugins] = useState<DisplayPlugin[]>([]);
+  const [workerPlugins, setWorkerPlugins] = useState<PluginDefinition[]>([]);
   const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -545,7 +537,7 @@ export default function PluginsPage() {
 
     setOperationInProgress(true);
     try {
-      const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
+      const client = await WorkerAPIClient.getSingleton();
 
       // Delete plugin and its descendants
       for (const plugin of affectedPlugins) {
@@ -581,7 +573,7 @@ export default function PluginsPage() {
 
     setOperationInProgress(true);
     try {
-      const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
+      const client = await WorkerAPIClient.getSingleton();
       const affected = affectedPlugins;
 
       // Reset plugin and its descendants
@@ -637,14 +629,38 @@ export default function PluginsPage() {
   async function loadPlugins() {
     try {
       setLoading(true);
-      // Phase 2: Use UI registry only; worker analyzer is optional and未型公開
-      const plugins: DisplayPlugin[] = uiPlugins.map((p, idx) => ({
-        nodeType: p.nodeType as NodeType,
-        displayName: (p as any).displayName || p.nodeType,
-        category: { createOrder: idx + 1 },
-      }));
-      setWorkerPlugins(plugins);
+      const client = await WorkerAPIClient.getSingleton();
 
+      // Use new TreePluginAnalyzer for better type safety and structure
+      const treePluginAnalyzer = await client.getTreePluginAnalyzer();
+      const response = await treePluginAnalyzer.getPluginsForTree({
+        treeId: '*' as TreeId,
+        filters: { includeDisabled: true },
+        sorting: { primary: 'menuGroup', secondary: 'createOrder', direction: 'asc' },
+      });
+
+      // Convert TreePluginInfo back to PluginDefinition format for compatibility
+      const plugins = response.plugins.map((info) => ({
+        nodeType: info.nodeType,
+        name: info.nodeType, // Use nodeType as name for compatibility
+        displayName: info.displayName,
+        category: {
+          treeId: info.treeConstraints.allowedTreeId,
+          menuGroup: info.menuGroup,
+          createOrder: info.createOrder,
+        },
+        database: {
+          entityStore: `${info.nodeType}s`,
+          schema: {},
+          version: 1,
+        },
+        ui: {
+          dialogComponentPath: info.creatable ? 'mock-base-dialog-path' : undefined,
+        },
+      }));
+      setWorkerPlugins((plugins as unknown as PluginDefinition[]) || []);
+
+      // Load dependencies
       loadPluginDependencies();
     } catch (err) {
       console.error('Failed to load plugins:', err);

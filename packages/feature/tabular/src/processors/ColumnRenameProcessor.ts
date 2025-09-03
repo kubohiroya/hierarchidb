@@ -1,4 +1,4 @@
-import type { TabularProcessor } from '../processor';
+import type { TabularProcessor, TabularContext } from '../processor';
 
 export interface ColumnRenameRule { from: string; to: string }
 
@@ -20,3 +20,4 @@ export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[
     }
   };
 }
+

@@ -81,7 +81,7 @@ export default function MapPage() {
   }, [geolocation.latitude, geolocation.longitude, geolocation.error, searchParams]);
 
   // Use refs to avoid recreating debounce on every render
-  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const updateTimeoutRef = useRef<number>();
   const lastUpdateRef = useRef<string>('');
 
   // Handle map load

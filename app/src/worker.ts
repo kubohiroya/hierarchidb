@@ -58,8 +58,8 @@ async function initializeWorker() {
       getTagAPI: () => workerService.getTagAPI(),
     };
 
-    // Expose via Comlink; Comlink typings are permissive, avoid `any`.
-    Comlink.expose(api as unknown);
+    // Expose via Comlink with explicit contract
+    Comlink.expose<WorkerAPI>(api);
     
     
     console.log('[App Worker] Worker ready');

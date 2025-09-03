@@ -12,7 +12,7 @@ import { EphemeralDB } from './services/EphemeralDB';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager';
 import { CommandProcessor } from './services/CommandProcessor';
 import { PluginDefinition } from '@hierarchidb/common-type';
-import { TreeQueryService } from './services/TreeQueryService';
+import { TreeQueryService } from 'services/TreeQueryService';
 import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';

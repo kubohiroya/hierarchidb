@@ -278,8 +278,8 @@ export function useAppConfig(): LoadAppConfigReturn {
   return loadAppConfig();
 }
 
-export function useWorkerAPIClient(): LoadWorkerAPIClientReturn {
-  return useRouteLoaderData('t') as LoadWorkerAPIClientReturn;
+export function useWorkerAPIClient() {
+  return useRouteLoaderData('t') as any; // Returns the worker proxy instance
 }
 
 export function useTree(): Tree | undefined {
