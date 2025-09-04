@@ -1,214 +1,79 @@
-# @hierarchidb/ui-i18n
+# ui/i18n ガイド（言語追加と切替の運用）
 
-Internationalization (i18n) package for HierarchiDB, providing comprehensive translation support for both UI components and console logging.
+本ドキュメントは、アプリの国際化（i18n）に関する運用手順を、実装の近く（ui/i18n ドメイン）に集約したものです。
 
-## Features
+- 言語の追加は「ファイル追加のみ」で完了します。
+- `supportedLngs` はビルド時/実行時に `public/locales/manifest.json` から動的に決定されます。
+- UI での言語切替は `LanguageSelector` コンポーネントから行えます。
 
-- **Complete i18n setup** with i18next and react-i18next
-- **LanguageProvider** with theme integration
-- **Internationalized console logging** for development
-- **Pre-configured translations** for English and Japanese
-- **Worker-compatible logging** for service workers
-- **TypeScript support** with full type safety
+## ディレクトリ構成（アプリ側）
 
-## Quick Start
-
-### 1. Setup LanguageProvider
-
-Wrap your app with the LanguageProvider:
-
-```tsx
-import { LanguageProvider } from '@hierarchidb/ui-i18n';
-
-function App() {
-  return (
-    <LanguageProvider>
-      <YourAppComponent />
-    </LanguageProvider>
-  );
-}
+```
+app/public/locales/
+  ├─ en/
+  │   └─ common.json      # 英語の辞書
+  ├─ ja/
+  │   └─ common.json      # 日本語の辞書
+  └─ manifest.json        # 生成物（使用可能な言語一覧）
 ```
 
-### 2. Using Translations in Components
+`manifest.json` は `scripts/generate-locales-manifest.mjs` により自動生成されます（prebuild フックで実行）。
 
-```tsx
-import { useTranslation } from '@hierarchidb/ui-i18n';
+## 言語を追加する（最短経路）
 
-function MyComponent() {
-  const { t } = useTranslation('common');
-  
-  return (
-    <button aria-label={t('auth.login')}>
-      {t('navigation.theme')}
-    </button>
-  );
-}
-```
+1) `app/public/locales/<lang>/common.json` を作成
+- 例: `app/public/locales/fr/common.json`
 
-### 3. Using i18n Console Logging
+2) マニフェストを生成
+- `pnpm i18n:manifest`（または `pnpm build` 時に自動実行）
 
-Replace regular console logging with i18n versions:
+3) アプリを起動/ビルド
+- dev: `pnpm dev`
+- build: `pnpm build`
 
-```tsx
-import { i18nLog, i18nError, i18nWarn } from '@hierarchidb/ui-i18n';
+4) UI の言語セレクタから `<lang>` を選択
 
-// Instead of: console.log('Feature enabled')
-i18nLog('common.enabled');
+※ manifest は無くても英語で起動します。manifest がある場合は、その `languages[].code` が有効な候補になります。
 
-// Instead of: console.error('API request failed')
-i18nError('api.error');
+## ランタイムの挙動
 
-// Feature flag logging
-i18nFeature('darkMode', true);
+- CSR（ブラウザ）
+  - i18n 初期化時に `/locales/manifest.json` を先に取得し、`supportedLngs` に反映します（取得に失敗した場合は未指定のまま）。
+  - `LanguageProvider` は manifest があれば対応言語を差し替え、無ければ英語のみで動作します。
 
-// API logging
-i18nAPI.request('/api/users', { method: 'GET' });
-```
+- SSR
+  - `supportedLngs` は未指定とし、`fallbackLng: 'en'` で動作します（クライアントで上書き）。
 
-### 4. Worker Environment Logging
+## UI の言語切替（LanguageSelector）
 
-For service workers or web workers:
+- 位置: `app/src/components/LanguageSelector.tsx`
+- 仕様:
+  - `/locales/manifest.json` を読み取り、`languages[].code` をセレクトに表示
+  - 選択は `localStorage`（`preferred-language`/`i18nextLng`）に保存
+  - `window.i18next.changeLanguage` が存在する場合は即時切替、無い場合はソフトリロードで反映
 
-```tsx
-import { workerLog, workerError } from '@hierarchidb/ui-i18n/worker';
+## スクリプト / ビルド連携
 
-workerLog('worker.initialized');
-workerError('worker.initializationFailed');
-```
+- 生成スクリプト: `hierarchidb/scripts/generate-locales-manifest.mjs`
+  - `/app/public/locales` を走査し `manifest.json` を生成
+- ルート `package.json`:
+  - `prebuild`: `npm run analyze:licenses && node scripts/generate-locales-manifest.mjs`
+  - `i18n:manifest`: `node scripts/generate-locales-manifest.mjs`
 
-## Available Translation Keys
+## トラブルシュート
 
-### Authentication
-- `auth.login` - Login button
-- `auth.logout` - Logout button  
-- `auth.userMenu` - User menu aria-label
-- `auth.authMethod` - Authentication method label
-- `auth.popup` - Popup method
-- `auth.redirect` - Redirect method
+- 言語がセレクタに出ない
+  - `app/public/locales/<lang>/common.json` が存在するか
+  - `pnpm i18n:manifest` 実行済みか
+  - ブラウザのキャッシュをクリア/再読み込み
 
-### Navigation
-- `navigation.language` - Language selector
-- `navigation.theme` - Theme selector
+- 切替が即時に反映されない
+  - グローバル `window.i18next` が無い環境では、セレクタがソフトリロードで反映します
+  - 将来的にアプリの i18n インスタンスをエクスポートし、直接連携に置換する予定
 
-### Common
-- `common.enabled` - Feature enabled status
-- `common.disabled` - Feature disabled status
-- `common.loading` - Loading state
-- `common.error` - Error state
+## 将来タスク（参考）
 
-### API
-- `api.request` - API request logging
-- `api.response` - API response logging
-- `api.error` - API error logging
+- `nativeName`/`name`/`direction` を manifest に追加し、セレクタの表示をリッチ化
+- manifest の CI 検証（キー欠落チェックなど）
+- i18n インスタンスへの正式な参照（`changeLanguage` 直呼び）
 
-### Errors
-- `errors.assertionFailed` - Assertion failure
-- `errors.failedToClearData` - Cache clear failure
-- `errors.languageNotSupported` - Language not supported
-
-## Logging Functions
-
-### Basic Logging
-- `i18nLog(key, options?, ...args)` - Translated console.log
-- `i18nWarn(key, options?, ...args)` - Translated console.warn  
-- `i18nError(key, options?, ...args)` - Translated console.error
-- `i18nInfo(key, options?, ...args)` - Translated console.info
-- `i18nDebug(key, options?, ...args)` - Translated console.debug
-
-### Specialized Logging
-- `i18nFeature(name, enabled, ...args)` - Feature flag logging
-- `i18nAPI.request(url, options)` - API request logging
-- `i18nAPI.response(url, status, data)` - API response logging
-- `i18nAPI.error(url, error)` - API error logging
-- `i18nAssert(condition, messageKey, options, ...args)` - Assertion logging
-
-### Conditional Logging
-- `i18nLogIf(condition, key, options?, ...args)` - Conditional log
-- `i18nWarnIf(condition, key, options?, ...args)` - Conditional warn
-- `i18nErrorIf(condition, key, options?, ...args)` - Conditional error
-
-### Performance Logging
-- `i18nPerf(labelKey, fn, options?)` - Sync performance timing
-- `i18nPerfAsync(labelKey, fn, options?)` - Async performance timing
-
-## Language Support
-
-Currently supported languages:
-- **English** (en) - Default
-- **Japanese** (ja)
-
-### Adding New Languages
-
-1. Create translation files in `public/locales/{lang}/common.json`
-2. Update supported languages in `LanguageProvider.tsx`
-3. Add date-fns locale import
-
-```tsx
-// In LanguageProvider.tsx
-import { fr } from 'date-fns/locale';
-
-const SUPPORTED_LANGUAGES = [
-  // ... existing languages
-  {
-    code: "fr",
-    name: "French", 
-    nativeName: "Français",
-    flag: "🇫🇷",
-    direction: "ltr",
-    dateLocale: fr,
-  }
-];
-```
-
-## Migration Guide
-
-### From Regular Console Logging
-
-```tsx
-// Before
-console.log('User authenticated');
-console.error('Authentication failed:', error);
-
-// After  
-i18nLog('auth.userAuthenticated');
-i18nError('auth.authenticationFailed', {}, error);
-```
-
-### From Hardcoded UI Text
-
-```tsx
-// Before
-<button aria-label="Login">Login</button>
-
-// After
-<button aria-label={t('auth.login')}>
-  {t('auth.login')}
-</button>
-```
-
-## Development
-
-### Running Tests
-```bash
-pnpm test
-```
-
-### Type Checking
-```bash
-pnpm run typecheck
-```
-
-### Building
-```bash
-pnpm run build
-```
-
-## Architecture
-
-The i18n system is built on:
-- **i18next** - Core translation engine
-- **react-i18next** - React integration
-- **i18next-browser-languagedetector** - Automatic language detection
-- **i18next-http-backend** - Translation file loading
-
-Console logging preserves source location using `console.log.bind(console)` pattern while adding translation support.
