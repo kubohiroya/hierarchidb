@@ -14,6 +14,7 @@ PR: ui-map を MapLibre ラッパ化し、basemap-plugin の shim/any/skipLibChe
   - 追加: `src/types/maplibre-public.ts`（安定化型 `MapLibreMapInstance/Style/Layer/Filter`）。
   - 変更: `unified-map-props.ts`（`mapStyle: string | MapLibreStyle` を許容、Filter を内製型へ差し替え）。
   - 変更: `MapLibreMap.tsx`/`MapWithVectorTiles.tsx`/`VectorTileLayer.tsx` を安定化型で統一。
+  - 追加: `MapWithDeckGL` — Deck.gl の `MapboxOverlay` を安全に統合する薄いラッパ（peer: `@deck.gl/mapbox`）。
 - basemap-plugin
   - 削除: `src/types/maplibre-gl-shim.d.ts` と tsconfig の paths 上書き。
   - 置換: レイヤ/スタイル周辺の `any` を安定化型参照に変更。
@@ -34,3 +35,4 @@ PR: ui-map を MapLibre ラッパ化し、basemap-plugin の shim/any/skipLibChe
 フォローアップ
 - app 側の maplibre 以外の型エラー（ui-usermenu 等）は別タスクで整理。
 - basemap 以外のプラグインで maplibre を直接参照していないかの再確認（`rg` ベースで未検出、shape は `ui-map` 参照済み）。
+- Deck.gl 連携は ui-map の `MapWithDeckGL` を標準経由に（他プラグイン移行時も同方針）。
