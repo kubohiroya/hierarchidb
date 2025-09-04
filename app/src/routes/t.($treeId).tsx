@@ -15,6 +15,7 @@ import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@
 import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
+import { LanguageSelector } from '~/components/LanguageSelector';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Tree } from '@hierarchidb/common-type';
 
@@ -127,7 +128,7 @@ export default function TLayout() {
           <Box sx={{ flexGrow: 1 }} />
 
           {/* TreeTypes Switcher Button Group - Right side, before login button */}
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <ToggleButtonGroup
               value={selectedTreeId || undefined}
               exclusive
@@ -179,6 +180,7 @@ export default function TLayout() {
                 ))}
             </ToggleButtonGroup>
             
+            <LanguageSelector />
             {/* User Login Button - Right Aligned with 8px gap */}
             <Box sx={{ ml: '8px' }}>
               <UserLoginButton />
