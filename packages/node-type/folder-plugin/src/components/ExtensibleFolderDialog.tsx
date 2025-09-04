@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { TextField, Grid } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import { MultiStepDialog } from '@hierarchidb/runtime-ui-plugin-dialog/src_deprecated/components';
-import { useDialogUrlParams } from '@hierarchidb/runtime-ui-plugin-dialog/src_deprecated';
+import { MultiStepDialog, type DialogStep } from '@hierarchidb/ui-dialog';
+import { useDialogUrlSync } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type { DialogStepDefinition, ValidationResult } from '@hierarchidb/common-type';
 import type { StepValidation } from '@hierarchidb/common-type';
 
@@ -189,12 +189,12 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   title,
   iconGroupSettings,
 }) => {
-  // URLパラメータを取得
-  const { initialStep, initialFullscreen, mapParams, updateStep, updateDialogMode, clearParams, updateMapParams } =
-    useDialogUrlParams({
-      syncToUrl: true,
-      defaultDialogMode: 'normal',
-    });
+  // URL-synced dialog state
+  const { step: activeStep, setStep: setActiveStep, mode: urlMode, setMode, map, setMap } = useDialogUrlSync({
+    defaults: { step: 0, mode: 'normal' },
+    debounce: { map: 400 },
+    history: { step: 'push' },
+  });
   // Build the base step definition
   const baseStep = useMemo<DialogStepDefinition>(
     () => ({
@@ -227,9 +227,8 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
   // ダイアログを閉じる際にURLパラメータもクリア
   const handleClose = useCallback(() => {
-    clearParams();
     onCancel();
-  }, [clearParams, onCancel]);
+  }, [onCancel]);
 
   // Handle base-dialog submission
   const handleSubmit = useCallback(
@@ -265,10 +264,9 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         await onSubmit({ ...finalData, ...folderData });
       }
 
-      // 送信成功時にURLパラメータをクリア
-      clearParams();
+      // no-op: URL params removed
     },
-    [mode, currentData, onSubmit, clearParams]
+    [mode, currentData, onSubmit]
   );
 
   // Determine base-dialog title
@@ -283,51 +281,48 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   );
 
   // 拡張データに地図パラメータを含める
-  const enhancedInitialData = useMemo(() => {
+  const [formData, setFormData] = useState<any>(() => {
     const data: any = { ...initialData };
-
-    // 地図パラメータがあれば初期データに含める
-    if (mapParams) {
-      data.mapInitialParams = mapParams;
-    }
-
     return data;
-  }, [initialData, mapParams]);
+  });
 
   // 地図パラメータ変更のハンドラー
   const handleMapParamsChange = useCallback(
     (params: { zoom: number; lng: number; lat: number } | undefined) => {
-      // updateMapParamsはuseDialogUrlParamsから取得した関数
-      // この関数でURLパラメータを更新
-      if (params) {
-        updateMapParams(params);
-      }
+      if (params) setMap({ lng: params.lng, lat: params.lat, zoom: params.zoom });
     },
-    [updateMapParams]
+    [setMap]
   );
+
+  // Convert DialogStepDefinition[] -> DialogStep[] for ui-dialog
+  const stepsForUi = useMemo<DialogStep[]>(() => {
+    return allSteps.map((s) => ({
+      id: String(s.stepNumber),
+      label: s.title,
+      component: React.createElement(s.component as any, {
+        data: formData,
+        onChange: (next: any) => setFormData((prev: any) => ({ ...prev, ...next })),
+        errors: undefined,
+        isSubmitting: false,
+      }),
+      validate: s.validation ? () => s.validation!.validate(formData).then((r: any) => r.valid).catch(() => false) : undefined,
+    }));
+  }, [allSteps, formData]);
 
   return (
     <MultiStepDialog
       open={open}
+      mode={mode}
       title={dialogTitle}
       icon={icon}
-      steps={allSteps}
-      initialData={enhancedInitialData}
-      onComplete={handleSubmit}
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      nodeId={nodeId}
-      nodeType="folder-plugin"
-      iconGroupSettings={iconGroupSettings}
-      initialStepFromUrl={initialStep}
-      initialFullscreenFromUrl={initialFullscreen}
-      initialMapParamsFromUrl={mapParams}
-      onStepChange={updateStep}
-      onFullscreenChange={(isFullscreen: string) =>
-        updateDialogMode(isFullscreen ? 'full' : 'normal')
-      }
-      onMapParamsChange={handleMapParamsChange}
+      steps={stepsForUi}
+      activeStep={activeStep}
+      onStepChange={setActiveStep}
+      fullScreen={urlMode === 'full'}
+      onFullscreenChange={(is) => setMode(is ? 'full' : 'normal')}
+      onSubmit={() => handleSubmit(formData)}
+      onCancel={handleClose}
+      showFullscreenToggle={true}
     />
   );
 };

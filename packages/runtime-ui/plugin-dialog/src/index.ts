@@ -36,3 +36,7 @@ export type {
   UseWorkingCopyResult,
   WorkingCopyData,
 } from './hooks/useWorkingCopy';
+
+// URL synchronization hook (lightweight)
+export { useDialogUrlSync } from './hooks/useDialogUrlSync';
+export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync';
