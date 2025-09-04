@@ -158,51 +158,91 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ```mermaid
 graph TB
+    %% 分類
     subgraph "プラグイン分類"
         SIMPLE[シンプルプラグイン<br/>独立実装]
         EXTENDING[拡張プラグイン<br/>継承ベース]
         COMPLEX[複合プラグイン<br/>多重継承]
     end
-    
+
+    %% 基盤
     subgraph "基盤プラグイン"
         FOLDER[📁 folder-plugin<br/>基盤インフラ]
+        BASE[🧱 base-plugin<br/>継承用基底]
     end
-    
+
+    %% データ管理チェーン
     subgraph "データ管理チェーン"
         SPREADSHEET[📊 spreadsheet-plugin<br/>データソース管理]
         STYLEMAP[🎨 styler-plugin<br/>スタイル設定]
+        RESOLVER[🧭 resolver-plugin<br/>プロパティマッピング]
     end
-    
+
+    %% 地理情報
     subgraph "地理情報プラグイン"
         BASEMAP[🗺️ basemap-plugin<br/>地理ベース]
         SHAPE[📍 shape-plugin<br/>地理形状処理]
+        LOCATION[📍 location-plugin<br/>位置エンティティ]
+        ROUTE[🛣️ route-plugin<br/>経路生成]
     end
-    
+
+    %% 管理/メタ
+    subgraph "管理/メタ"
+        PROJECT[📦 project-plugin<br/>プロジェクト領域]
+    end
+
+    %% レジストリ
     subgraph "プラグインレジストリ"
         REGISTRY[NodeTypeRegistry<br/>統合管理システム]
     end
-    
-    FOLDER --> EXTENDING
+
+    %% 依存/継承/チェーン（実線: 依存/継承、点線: 連携）
     FOLDER --> SPREADSHEET
-    FOLDER --> BASEMAP
     SPREADSHEET --> STYLEMAP
-    
+    FOLDER --> BASEMAP
+    FOLDER --> LOCATION
+    LOCATION --> ROUTE
+    FOLDER --> RESOLVER
+    FOLDER --> PROJECT
+
+    %% 参考連携（点線）
+    LOCATION -. 連携 .-> SHAPE
+    ROUTE -. 可視化 .-> BASEMAP
+    STYLEMAP -. 適用 .-> BASEMAP
+
+    %% 分類へのマッピング（概念）
     SHAPE --> SIMPLE
     FOLDER --> SIMPLE
-    
+    SPREADSHEET --> EXTENDING
+    STYLEMAP --> EXTENDING
+    BASEMAP --> EXTENDING
+    LOCATION --> EXTENDING
+    ROUTE --> EXTENDING
+    RESOLVER --> EXTENDING
+    EXTENDING --> COMPLEX
+
+    %% レジストリ登録
     FOLDER --> REGISTRY
     SPREADSHEET --> REGISTRY
     STYLEMAP --> REGISTRY
     BASEMAP --> REGISTRY
     SHAPE --> REGISTRY
-    
-    EXTENDING --> COMPLEX
-    
+    LOCATION --> REGISTRY
+    ROUTE --> REGISTRY
+    RESOLVER --> REGISTRY
+    PROJECT --> REGISTRY
+
+    %% スタイル
     style FOLDER fill:#fff3e0,stroke:#ff9800,stroke-width:3px
+    style BASE fill:#eeeeee,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 5 3
     style SPREADSHEET fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
     style STYLEMAP fill:#fce4ec,stroke:#e91e63,stroke-width:2px
+    style RESOLVER fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
     style BASEMAP fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
     style SHAPE fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style LOCATION fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+    style ROUTE fill:#ffe0b2,stroke:#ff9800,stroke-width:2px
+    style PROJECT fill:#f1f8e9,stroke:#8bc34a,stroke-width:2px
     style REGISTRY fill:#ffebee,stroke:#f44336,stroke-width:3px
 ```
 
