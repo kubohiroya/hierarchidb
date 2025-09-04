@@ -9,6 +9,7 @@ import type {
   BaseEntity,
   Timestamp 
 } from '@hierarchidb/common-type';
+import type { BaseSearchCriteria } from '@hierarchidb/base-plugin';
 
 /**
  * Location type categories
@@ -231,7 +232,7 @@ export interface MetadataSearchCriteria {
 /**
  * Location filter criteria
  */
-export interface LocationFilterCriteria extends MetadataSearchCriteria {
+export interface LocationFilterCriteria extends MetadataSearchCriteria, BaseSearchCriteria {
   categories?: LocationCategory[];
   types?: LocationType[];
   dataSources?: LocationDataSource[];
