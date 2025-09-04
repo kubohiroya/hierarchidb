@@ -24,6 +24,12 @@
 - Exports: Prefer explicit named exports (avoid `export *`).
 - Files: Components `PascalCase.tsx`; utilities `kebab-case.ts`; tests `*.test.ts[x]`.
 
+### Type Resolution Policy (Monorepo)
+- Do not map other packages' built d.ts via tsconfig `paths` (e.g. `@pkg -> ../../other/dist/index.d.ts`).
+- Always import other packages by package name and declare them in `package.json` (`workspace:*`).
+- For deep type coordination, prefer TypeScript Project References over cross-package `paths`.
+- Keep `~/*` only for the current package's local alias.
+
 ## Testing Guidelines
 - Unit: Vitest with jsdom; setup files at `vitest.setup.ts`. Place tests alongside source or in `__tests__` using `*.test.ts[x]`.
 - E2E: Playwright specs in `e2e/*.spec.ts`. Base URL `http://localhost:4200`, desktop and mobile projects configured. Run with `pnpm e2e`.

@@ -1,6 +1,6 @@
 {
-  "name": "@hierarchidb/ui-i18n",
-  "version": "1.0.0",
+  "name": "@hierarchidb/ui-date",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -16,32 +16,23 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc && tsc-alias",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/ui-date": "workspace:*",
-    "date-fns": "^4.1.0",
-    "i18next": "22.5.0",
-    "i18next-browser-languagedetector": "^8.2.0",
-    "i18next-http-backend": "^3.0.2",
-    "react-i18next": "12.3.1"
-  },
-  "devDependencies": {
-    "typescript": "4.9.5",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "@vitejs/plugin-react": "4.3.4",
-    "vite": "5.4.19",
-    "react": "^18.3.1"
+    "@mui/x-date-pickers": "^8.10.2"
   },
   "peerDependencies": {
     "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "typescript": "4.9.5",
+    "react": "^18.3.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1"
   },
@@ -50,8 +41,8 @@
     "external": [
       "@mui/icons-material",
       "@mui/material",
-      "react",
-      "@hierarchidb/ui-date"
+      "react"
     ]
   }
 }
+

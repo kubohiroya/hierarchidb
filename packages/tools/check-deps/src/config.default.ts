@@ -91,4 +91,12 @@ export const defaultPolicies: Policy[] = [
     because: 'MapLibre の型/実装差分は @hierarchidb/ui-map で吸収し、下位パッケージへ漏らさないため。',
     rules: ['maplibre-direct-dep'],
   },
+
+  // DatePicker カプセル化ポリシー: @mui/x-date-pickers は ui-date 以外で直接依存禁止
+  {
+    id: 'date-picker-encapsulation',
+    when: any(isPublishable()),
+    because: '@mui/x-date-pickers の型/Adapter/ロケール差分は @hierarchidb/ui-date で吸収し、下位パッケージへ漏らさないため。',
+    rules: ['mui-x-date-pickers-direct-dep'],
+  },
 ];

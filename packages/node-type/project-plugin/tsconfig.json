@@ -7,10 +7,7 @@
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
-      "@hierarchidb/base-plugin": ["../../node-type/base-plugin/dist/index.d.ts"],
-      "@hierarchidb/ui-map": ["../../ui/map/dist/index.d.ts"]
+      "~/*": ["src/*"]
     },
     "types": ["vite/client"],
     "esModuleInterop": true,

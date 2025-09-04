@@ -57,6 +57,15 @@ export function runRules(ctx: RuleContext): Finding[] {
     `tsconfig paths direct src reference:\n- ${badPaths.map((e) => `${e.key} -> ${e.val}`).join('\n- ')}`
   );
 
+  // 4b) tsconfig.paths が他パッケージの dist/*.d.ts を直接参照
+  const pathsToDistDts = Object.entries(paths)
+    .flatMap(([k, arr]) => (arr as string[] || []).map((p) => ({ key: k, val: p })))
+    .filter((e) => /\/dist\/.+\.d\.ts$/.test(e.val));
+  if (pathsToDistDts.length) push(
+    f, ctx, 'paths-to-dist-dts', 'ERROR',
+    `tsconfig paths pointing to built d.ts is forbidden (use workspace deps + package types or TS project refs):\n- ${pathsToDistDts.map((e) => `${e.key} -> ${e.val}`).join('\n- ')}`
+  );
+
   // 5) ローカル shim 検出
   const shimDir = path.join(ctx.pkgDir, 'src', 'types');
   if (fs.existsSync(shimDir)) {
@@ -113,6 +122,7 @@ export const ruleRegistry: Record<string, RuleRunner> = {
   'ui-in-deps': only(new Set(['ui-in-deps']), runRules),
   'ui-missing-peer': only(new Set(['ui-missing-peer']), runRules),
   'paths-direct-src': only(new Set(['paths-direct-src']), runRules),
+  'paths-to-dist-dts': only(new Set(['paths-to-dist-dts']), runRules),
   'local-shims': only(new Set(['local-shims']), runRules),
   'skipLibCheck-no-reason': only(new Set(['skipLibCheck-no-reason']), runRules),
   'skipLibCheck-not-allowed': only(new Set(['skipLibCheck-not-allowed']), runRules),

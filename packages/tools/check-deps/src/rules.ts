@@ -102,6 +102,21 @@ export function runRules(ctx: RuleContext): Finding[] {
     );
   }
 
+  // Enforce Date Picker encapsulation: only @hierarchidb/ui-date may depend on @mui/x-date-pickers
+  const DATE_PKGS = new Set(['@mui/x-date-pickers']);
+  const dateAllow = new Set(['@hierarchidb/ui-date']);
+  const hasDateDirect = [...DATE_PKGS].some((p) => deps.has(p) || peers.has(p) || devs.has(p));
+  if (hasDateDirect && !dateAllow.has(ctx.pkgName)) {
+    const offenders = [...DATE_PKGS].filter((p) => deps.has(p) || peers.has(p) || devs.has(p));
+    push(
+      f,
+      ctx,
+      'mui-x-date-pickers-direct-dep',
+      'ERROR',
+      `Direct dependency on @mui/x-date-pickers is not allowed. Use @hierarchidb/ui-date instead. Found:\n- ${offenders.join('\n- ')}`,
+    );
+  }
+
   return f;
 }
 
@@ -123,4 +138,5 @@ export const ruleRegistry: Record<string, RuleRunner> = {
   'tsconfig-no-base': only(new Set(['tsconfig-no-base']), runRules),
   'jsx-mismatch': only(new Set(['jsx-mismatch']), runRules),
   'maplibre-direct-dep': only(new Set(['maplibre-direct-dep']), runRules),
+  'mui-x-date-pickers-direct-dep': only(new Set(['mui-x-date-pickers-direct-dep']), runRules),
 };

@@ -37,6 +37,9 @@ jobs:
       - name: Enforce MapLibre encapsulation (fail on direct deps)
         run: node scripts/check-maplibre-policy.mjs
 
+      - name: Enforce DatePicker encapsulation (fail on direct deps)
+        run: node scripts/check-mui-date-policy.mjs
+
       - name: dependency-cruiser (architecture warnings)
         run: pnpm -w arch:dc || true
 

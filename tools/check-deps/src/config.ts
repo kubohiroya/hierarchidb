@@ -12,8 +12,8 @@ export const policies: Policy[] = [
   {
     id: 'publishable-tsconfig-hygiene',
     when: isPublishable(),
-    because: 'Publishable packages should extend the repo TS baseline and avoid direct ../src references.',
-    rules: ['tsconfig-no-base', 'paths-direct-src'],
+    because: 'Publishable packages should extend the repo TS baseline and avoid direct ../src or built dist/*.d.ts references.',
+    rules: ['tsconfig-no-base', 'paths-direct-src', 'paths-to-dist-dts'],
   },
   {
     id: 'tsup-peer-hygiene',
@@ -35,4 +35,3 @@ export const policies: Policy[] = [
     rules: ['jsx-mismatch'],
   },
 ];
-

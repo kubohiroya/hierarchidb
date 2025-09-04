@@ -11,14 +11,15 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/tag": ["../../feature/tag/dist/index.d.ts"],
-      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
-      "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/dist"],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": ["../../runtime-ui/plugin-dialog/dist/*"]
+      "~/*": ["./src/*"]
     },
+    "skipLibCheck": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"]
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "MUI v7 + React typings + Dexie form a large type graph; skipLibCheck avoids node_modules deep checking and prevents OOM while keeping local types checked."
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
