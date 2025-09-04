@@ -875,6 +875,9 @@ P2:
   - 要点: TreeConsolePanel props正式化、WorkerProviderを新初期化チャネルAPIへ移行、appのdev型解決整理。
 
 - start: 2025-09-04 fix/app/types-small-cleanups を作成（LicenseInfo/TrashDialog の型整備、Converterのany除去）。PR #88（draft）。
+
+- merged: 2025-09-04 PR #88 を main にマージ（types small cleanups）。
+  - 要点: LicenseInfo/TrashDialog の any/unknown 削減、Converterの型安全化。
 \n+- pr: 2025-09-04 `fix/app/typecheck-phase2-tighten` を作成（2コミット: `chore(types): workspace type hygiene sweep`, `fix(app): tighten typecheck Phase 2`）。
   - 対応タスク: 「小さな型負債スイープ（2025-09-04）」の一括反映、および「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
   - ロールバック: どちらも差分単位のリバートで切戻し可能（アプリ側は Phase 1 状態へ復帰、型スイープは各パッケージ単位で戻し）。
