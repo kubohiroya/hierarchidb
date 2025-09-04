@@ -141,7 +141,7 @@ interface LocationProcessingConfig {
   // ジオコーディング設定
   geocodingConfig: {
     enableReverseGeocoding: boolean;
-    geocodingLanguage: 'en' | 'ja' | 'local';
+    geocodingLanguage: string; // e.g., 'en', 'ja', or locale code
     includeAdminBoundaries: boolean;
   };
 }

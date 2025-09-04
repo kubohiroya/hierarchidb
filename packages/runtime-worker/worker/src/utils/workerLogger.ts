@@ -7,7 +7,7 @@
  */
 
 // Simple translation map for worker logging
-const translations = {
+const translations: Record<string, Record<string, string>> = {
   en: {
     'worker.initialized': 'Worker API initialized',
     'worker.initializationFailed': 'Failed to initialize Worker API',
@@ -25,13 +25,14 @@ const translations = {
 };
 
 // Get current language from storage (if available) or default to English
-const getCurrentLanguage = (): 'en' | 'ja' => {
+const getCurrentLanguage = (): string => {
   try {
     const storage: any = (typeof globalThis !== 'undefined' && (globalThis as any).localStorage)
       ? (globalThis as any).localStorage
       : null;
     const stored = storage ? storage.getItem('i18nextLng') : null;
-    return stored === 'ja' ? 'ja' : 'en';
+    if (typeof stored === 'string' && stored.length > 0) return stored;
+    return 'en';
   } catch {
     return 'en';
   }
@@ -40,7 +41,8 @@ const getCurrentLanguage = (): 'en' | 'ja' => {
 // Simple translation function
 const t = (key: string, interpolations?: Record<string, any>): string => {
   const currentLang = getCurrentLanguage();
-  let text = translations[currentLang][key as keyof (typeof translations)['en']] || key;
+  const langMap = translations[currentLang] || translations.en;
+  let text = langMap[key] || key;
 
   if (interpolations) {
     Object.entries(interpolations).forEach(([k, v]) => {
