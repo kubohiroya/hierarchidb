@@ -48,12 +48,7 @@ export interface ProjectFilterCriteria {
 /**
  * Project Entity Handler extending BaseEntityHandler
  */
-export class ProjectEntityHandler extends BaseEntityHandler<
-  ProjectEntity,
-  ProjectWorkingCopy,
-  CreateProjectData,
-  ProjectFilterCriteria
-> {
+export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, CreateProjectData, ProjectFilterCriteria> {
   protected table: any; // Mock table interface
 
   constructor() {
