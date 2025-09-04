@@ -2,6 +2,7 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "skipLibCheck": true,
+    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": "src",
@@ -16,6 +17,10 @@
       "DOM.Iterable"
     ],
     "jsx": "react-jsx"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "MapLibre upstream d.ts uses ambient const enums; isolate skipLibCheck here only"
   },
   "include": [
     "src/**/*",

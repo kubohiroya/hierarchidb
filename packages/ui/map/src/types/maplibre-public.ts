@@ -37,6 +37,15 @@ export interface MapLibreMapInstance {
   addSource(id: string, source: Record<string, unknown>): void;
   removeSource(id: string): void;
   removeLayer(id: string): void;
+  addControl(control: unknown, position?: string): void;
+  zoomIn(): void;
+  zoomOut(): void;
+  setPitch(pitch: number, options?: Record<string, unknown>): void;
+  setBearing(bearing: number, options?: Record<string, unknown>): void;
+  getZoom(): number;
+  getCenter(): { lng: number; lat: number };
+  getPitch(): number;
+  getBearing(): number;
 }
 
 // Minimal filter type to avoid leaking upstream types
