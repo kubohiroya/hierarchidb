@@ -65,22 +65,24 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ### 比較表（概要）
 
-| プラグイン | nodeType（実装値） | 継承元 | 主要機能 | UI（Dialog/Panel） | DB（Entity/WC） | Import/Export | バッチ | 備考 |
-|---|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | 基底ハンドラ/型 | - | - | - | - | 継承専用（UI 非表示） |
-| folder-plugin | folder | - | コンテナ/拡張基盤 | Yes/Yes | - | - | - | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | データソース管理 | Yes/Yes | Yes/Yes | Import | - | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | スタイル定義 | Yes/Yes | Yes/Yes | - | - | カラーマップ/スタイル適用 |
-| basemap-plugin | basemap | folder | ベースマップ/スタイル | Yes/Yes | Yes/Yes | - | - | MapLibre 統合 |
-| shape-plugin | shape | - | 形状/分析/タイル | Yes/Yes | Yes/Yes | Import/Export | Yes | 独立/高性能処理 |
-| location-plugin | location-plugin | folder | 位置/近接検索 | Yes/Yes | Yes/Yes | Import/Export | Yes | Shape 連携可 |
-| route-plugin | route | location | 経路生成/評価 | Yes/Yes | Yes/Yes | Import/Export | Optional | Location 解決/統計 |
-| resolver-plugin | resolver-plugin | folder | 変換/重複解決 | Yes/Yes | Yes/Yes | - | - | Schema 検出/前処理 |
-| project-plugin | project-plugin | folder | プロジェクト/メタ | Yes/Yes | Yes/Yes | - | - | 領域/設定 |
+| プラグイン | nodeType（実装値） | 継承元 | CoreDB | Plugin DB 名 | 主要機能 | UI（Dialog/Panel） | Import/Export | バッチ | 備考 |
+|---|---|---|---|---|---|---|---|---|---|
+| base-plugin | base | - | CoreDB | - | 基底ハンドラ/型 | - | - | - | 継承専用（UI 非表示） |
+| folder-plugin | folder | - | CoreDB | folders | コンテナ/拡張基盤 | Yes/Yes | - | - | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | CoreDB | spreadsheetDB（既定） | データソース管理 | Yes/Yes | Import | - | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | CoreDB | StylerCSVMetadata | スタイル定義 | Yes/Yes | - | - | CSVメタDBを別途使用 |
+| basemap-plugin | basemap | folder | CoreDB | basemapDB | ベースマップ/スタイル | Yes/Yes | - | - | MapLibre 統合 |
+| shape-plugin | shape | - | CoreDB | （未固定・サービス管理） | 形状/分析/タイル | Yes/Yes | Import/Export | Yes | 高負荷処理/バッチ |
+| location-plugin | location-plugin | folder | CoreDB | （dbName未宣言：locations ほか stores） | 位置/近接検索 | Yes/Yes | Import/Export | Yes | Shape 連携可 |
+| route-plugin | route | location | CoreDB | RouteDB | 経路生成/評価 | Yes/Yes | Import/Export | Optional | Location 解決/統計 |
+| resolver-plugin | resolver-plugin | folder | CoreDB | resolvers | 変換/重複解決 | Yes/Yes | - | - | Schema 検出/前処理 |
+| project-plugin | project-plugin | folder | CoreDB | projectDB | プロジェクト/メタ | Yes/Yes | - | - | 領域/設定 |
 
 注記:
+- CoreDB はランタイム共通メタ/ツリー構造の永続 DB 名です（サービス層から一元利用）。
+- Plugin DB 名は各プラグイン実装の Dexie 名称（確認元: 各 `database.dbName` ないし初期化コード）です。
 - nodeType は実装上の定義値を記載（例: route は 'route'）。
-- Import/Export/バッチは supports* フラグおよびコード実装を確認のうえ反映（例: location/route/shape は Export/Import/Batch の実装/サポートがある）。
+- Import/Export/バッチは supports* フラグおよび実装の有無で反映しています（例: location/route/shape は Export/Import/Batch を実装/サポート）。
 
 
 
