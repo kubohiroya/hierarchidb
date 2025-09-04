@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-// Dexie types are not referenced directly here to avoid cross-version type conflicts
+import type { Table } from 'dexie';
 import { 
   BaseEntityHandler,
   type BaseSearchCriteria
@@ -45,7 +45,7 @@ export interface RouteSearchCriteria extends BaseSearchCriteria, MetadataSearchC
  * Route entity handler with metadata support
  */
 export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<RouteEntity>, RouteSearchCriteria> {
-  protected table: any;
+  protected table: Table<RouteEntity, EntityId>;
   private routeDB: RouteDatabase;
   private routeGenerator: RouteGenerator;
   private locationResolver: LocationResolver;
@@ -55,7 +55,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
   constructor() {
     super();
     this.routeDB = new RouteDatabase();
-    this.table = this.routeDB.routes as any;
+    this.table = this.routeDB.routes as unknown as Table<RouteEntity, EntityId>;
     this.routeGenerator = new RouteGenerator();
     this.locationResolver = new LocationResolver();
     
@@ -319,7 +319,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
     incoming: RouteEntity[];
     passing: RouteEntity[];
   }> {
-    const allRoutes = (await (this.table as any).toArray()) as RouteEntity[];
+    const allRoutes = await this.table.toArray();
     
     const outgoing = allRoutes.filter(r => r.startLocationId === locationId);
     const incoming = allRoutes.filter(r => r.endLocationId === locationId);
@@ -334,7 +334,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    * Get route statistics
    */
   async getStatistics(): Promise<RouteStatistics> {
-    const routes = (await (this.table as any).toArray()) as RouteEntity[];
+    const routes = await this.table.toArray();
     
     const stats: RouteStatistics = {
       totalRoutes: routes.length,
