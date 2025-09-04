@@ -123,8 +123,8 @@ export function sortTreeNodeData(
   sortDirection: "asc" | "desc",
 ): TreeNodeData[] {
   return [...nodes].sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
+    let aValue: string | number;
+    let bValue: string | number;
 
     switch (sortBy) {
       case "name":
@@ -160,8 +160,8 @@ export function sortTreeNodeData(
     }
 
     // Fallback to string comparison
-    const aStr = String(aValue);
-    const bStr = String(bValue);
+    const aStr = String(aValue ?? '');
+    const bStr = String(bValue ?? '');
     const comparison = aStr.localeCompare(bStr);
     return sortDirection === "asc" ? comparison : -comparison;
   });

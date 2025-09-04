@@ -191,7 +191,7 @@ export default function TrashDialog() {
               {
                 id: (data.tree?.trashRootId as NodeId) || ('' as NodeId),
                 name: 'Trash',
-                nodeType: 'trash' as any,
+                nodeType: 'trash',
               },
             ]}
             loading={false}
@@ -202,8 +202,8 @@ export default function TrashDialog() {
             canCreate={false}
             canEdit={false}
             canDelete={mode === 'empty'}
-            onNodeClick={(node: any) => console.log('Node clicked:', node)}
-            onNodeSelect={(nodeId: any, selected: any) => {
+            onNodeClick={(node: TreeNodeData) => console.log('Node clicked:', node)}
+            onNodeSelect={(nodeId: string, selected: boolean) => {
               setSelectedIds((prev) => {
                 if (selected) {
                   return [...prev, nodeId];
@@ -230,7 +230,7 @@ export default function TrashDialog() {
             onFilterChange={() => {}}
             onViewModeChange={() => {}}
             onBreadcrumbNavigate={() => {}}
-            onContextMenuAction={(action: any, node: any) => {
+            onContextMenuAction={(action: string, node: TreeNodeData) => {
               console.log('Context menu action:', action, 'for node:', node);
               if (action === 'restore' && mode === 'restore') {
                 setSelectedIds([node.id]);
