@@ -14,7 +14,7 @@ const readCurrent = (): string => {
 };
 
 export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size = 'small' }) => {
-  const [langs, setLangs] = useState<string[]>([]);
+  const [langs, setLangs] = useState<Manifest['languages']>([]);
   const [value, setValue] = useState<string>(readCurrent());
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
         const res = await fetch(`${String(base).replace(/\/+$/, '/') }locales/manifest.json`).catch(() => null);
         if (active && res && res.ok) {
           const data = (await res.json()) as Manifest;
-          const detected = (data.languages || []).map(l => l.code);
+          const detected = (data.languages || []);
           if (detected.length > 0) setLangs(detected);
         }
       } catch {
@@ -36,7 +36,16 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
     return () => { active = false; };
   }, []);
 
-  const options = useMemo(() => (langs.length > 0 ? langs : ['en']), [langs]);
+  const options = useMemo(() => (
+    langs.length > 0
+      ? langs
+      : [{ code: 'en', name: 'English', nativeName: 'English', direction: 'ltr' as const }]
+  ), [langs]);
+
+  const labelFor = (entry: { code: string; name?: string; nativeName?: string }) => {
+    const display = entry.nativeName || entry.name || entry.code.toUpperCase();
+    return `${display} (${entry.code.toUpperCase()})`;
+  };
 
   const onChange = (e: SelectChangeEvent<string>) => {
     const next = (e.target?.value ?? '') as string;
@@ -71,8 +80,8 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
     <FormControl size={size} sx={{ minWidth: 120 }}>
       <InputLabel id="lang-select-label">Lang</InputLabel>
       <Select labelId="lang-select-label" label="Lang" value={value} onChange={onChange}>
-        {options.map((code) => (
-          <MenuItem key={code} value={code}>{code.toUpperCase()}</MenuItem>
+        {options.map((entry) => (
+          <MenuItem key={entry.code} value={entry.code}>{labelFor(entry)}</MenuItem>
         ))}
       </Select>
     </FormControl>

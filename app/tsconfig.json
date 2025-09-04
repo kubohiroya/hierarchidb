@@ -10,7 +10,9 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
-      "@hierarchidb/ui-dialog": ["../packages/ui/dialog/dist/index.d.ts"]
+      "@hierarchidb/ui-dialog": ["../packages/ui/dialog/dist/index.d.ts"],
+      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist/index.d.ts"],
+      "@hierarchidb/ui-theme": ["../packages/ui/theme/dist/index.d.ts"]
     },
     "composite": false,
     "incremental": false,

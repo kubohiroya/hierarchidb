@@ -1,77 +1,65 @@
 /**
- * Worker entry point for the application
- * This file is responsible for exposing the WorkerAPI via Comlink
+ * Worker entry point (dynamic-import, error-safe)
+ * Avoid static imports so we can report precise failures to UI.
  */
 
-import * as Comlink from 'comlink';
-import { WorkerService } from '@hierarchidb/runtime-worker';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-bootstrap';
-import { autoLoadPlugins } from './plugins/auto-load';
-
-// Get app name from environment
-const appName = import.meta.env.VITE_APP_NAME || 'hierarchidb';
-
-console.log('[App Worker] Starting initialization...');
-
-// Create initialization reporter to notify UI when Worker is ready
-const initReporter = new WorkerInitializationReporter();
-
-// Initialize Worker with Bootstrap
-async function initializeWorker() {
+// Minimal init message helpers (compatible with WorkerInitializationChannel)
+const send = (type: string, payload: Record<string, unknown> = {}) => {
   try {
-    console.log('[App Worker] Loading plugins via virtual modules...');
-    initReporter.reportStepProgress('Loading plugins...', 5);
+    (self as unknown as WorkerGlobalScope).postMessage({
+      type,
+      payload: { ...payload, timestamp: Date.now() },
+    });
+  } catch {}
+};
+
+send('INIT_PROGRESS', { progress: 0, message: 'Starting worker…' });
+
+(async () => {
+  try {
+    // Dynamic import to localize failures
+    send('INIT_PROGRESS', { progress: 3, message: 'Loading Comlink…' });
+    const Comlink: typeof import('comlink') = await import('comlink');
+
+    send('INIT_PROGRESS', { progress: 5, message: 'Loading plugin loaders…' });
+    const { autoLoadPlugins } = await import('./plugins/auto-load');
     await autoLoadPlugins();
 
-    // Load virtual module after package-reader plugin has generated it
+    // After package-reader runs, resolve plugin defs
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const { default: pluginDefinitions } = await import('virtual:plugin-definitions');
 
-    console.log('[App Worker] Bootstrapping worker services...');
-    initReporter.reportStepProgress('Bootstrapping worker services...', 10);
-    // Initialize WorkerService singleton with discovered plugins
+    send('INIT_PROGRESS', { progress: 15, message: 'Bootstrapping worker services…' });
+    const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
-    
-    console.log('[App Worker] Creating WorkerService facade...');
-    initReporter.reportStepProgress('Creating WorkerService facade...', 80);
-    
-    const workerService = services;
-    
-    console.log('[App Worker] Exposing WorkerAPI via Comlink...');
-    initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);
-    // Build a plain function-based API facade to avoid exposing class instance
-    const api: WorkerAPI = {
-      // Health and lifecycle
-      ping: () => workerService.ping(),
-      initialize: () => workerService.initialize(),
-      shutdown: () => workerService.shutdown(),
-      getSystemHealth: () => workerService.getSystemHealth(),
 
-      // Facaded sub-APIs (Comlink will proxy returned objects)
-      getQueryAPI: () => workerService.getQueryAPI(),
-      getMutationAPI: () => workerService.getMutationAPI(),
-      getSubscriptionAPI: () => workerService.getSubscriptionAPI(),
-      getWorkingCopyAPI: () => workerService.getWorkingCopyAPI(),
-      getPluginLifecycleAPI: () => workerService.getPluginLifecycleAPI(),
-      getImportExportAPI: () => workerService.getImportExportAPI(),
-      getTagAPI: () => workerService.getTagAPI(),
+    send('INIT_PROGRESS', { progress: 80, message: 'Creating API facade…' });
+    const api: any = {
+      ping: () => services.ping(),
+      initialize: () => services.initialize(),
+      shutdown: () => services.shutdown(),
+      getSystemHealth: () => services.getSystemHealth(),
+      getQueryAPI: () => services.getQueryAPI(),
+      getMutationAPI: () => services.getMutationAPI(),
+      getSubscriptionAPI: () => services.getSubscriptionAPI(),
+      getWorkingCopyAPI: () => services.getWorkingCopyAPI(),
+      getPluginLifecycleAPI: () => services.getPluginLifecycleAPI(),
+      getImportExportAPI: () => services.getImportExportAPI(),
+      getTagAPI: () => services.getTagAPI(),
     };
 
-    // Expose via Comlink; Comlink typings are permissive, avoid `any`.
-    Comlink.expose(api as unknown);
-    
-    
-    console.log('[App Worker] Worker ready');
-    initReporter.reportComplete();
-    
+    send('INIT_PROGRESS', { progress: 95, message: 'Exposing API via Comlink…' });
+    Comlink.expose(api);
+
+    send('INIT_COMPLETE', { progress: 100, message: 'Worker initialized successfully' });
   } catch (error) {
-    console.error('[App Worker] Initialization failed:', error);
-    initReporter.reportError(error instanceof Error ? error.message : 'Worker initialization failed');
+    // Report full error to UI
+    const err = error as any;
+    const message = err?.message || String(err);
+    const stack = err?.stack || null;
+    send('INIT_ERROR', { error: message, stack });
+    // Also throw to surface error event
     throw error;
   }
-}
-
-// Start initialization
-initializeWorker();
+})();
