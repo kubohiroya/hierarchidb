@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 2025-09-04
+
+- tools: vite-plugin-package-reader v0.1.0 — BREAKING: remove default export; use named exports only (e.g., `import { vitePluginPackageReader } from '@hierarchidb/tools-vite-plugin-package-reader'`). No internal usages relied on default export.
+
 - runtime-worker: Deprecate `WORKER_USE_CMDPROC_CREATE_UPDATE` / `WORKER_USE_CMDPROC_MOVE_REMOVE` (now ignored)
 - runtime-worker: Trash holder flow (flag `WORKER_TRASH_USE_HOLDER`) with legacy fallback and headless tests
 - runtime-worker: Undo/Redo expanded to update/move/remove/recover

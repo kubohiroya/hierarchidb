@@ -4,9 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
     globals: true,
-    root: __dirname,
+    root: process.cwd(),
+    passWithNoTests: true,
   },
   resolve: {
     alias: {

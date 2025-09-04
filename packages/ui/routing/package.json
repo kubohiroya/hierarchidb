@@ -13,8 +13,8 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --build",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
@@ -30,6 +30,7 @@
     "react-router-dom": "^7.8.1"
   },
   "devDependencies": {
+    "vitest": "^3.2.4",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",

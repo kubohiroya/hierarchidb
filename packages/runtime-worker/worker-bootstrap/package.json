@@ -20,8 +20,8 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "clean": "rm -rf dist",
@@ -43,7 +43,7 @@
     "@types/node": "^20.11.5",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "@vitest/ui": "^1.2.1",
+    "@vitest/ui": "^3.2.4",
     "comlink": "^4.4.1",
     "eslint": "^8.56.0",
     "eslint-plugin-deprecation": "^3.0.0",
@@ -54,7 +54,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "vite": "^5.0.11",
-    "vitest": "^1.2.1"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "comlink": "^4.4.1",

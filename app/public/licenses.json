@@ -158,7 +158,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
-  "@vitejs/plugin-react@4.7.0": {
+  "@vitejs/plugin-react@4.3.4": {
     "licenses": "MIT",
     "repository": "https://github.com/vitejs/vite-plugin-react",
     "publisher": "Evan You"
@@ -326,12 +326,12 @@
     "repository": "https://github.com/aleclarson/vite-tsconfig-paths",
     "publisher": "aleclarson"
   },
-  "vite@6.3.5": {
+  "vite@5.4.19": {
     "licenses": "MIT",
     "repository": "https://github.com/vitejs/vite",
     "publisher": "Evan You"
   },
-  "vitest@2.1.9": {
+  "vitest@3.2.4": {
     "licenses": "MIT",
     "repository": "https://github.com/vitest-dev/vitest",
     "publisher": "Anthony Fu",

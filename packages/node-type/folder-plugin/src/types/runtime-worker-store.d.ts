@@ -42,6 +42,27 @@ declare module '@hierarchidb/runtime-worker/entity/store' {
 }
 
 declare module '@hierarchidb/runtime-worker/entity/store-registry' {
-  export const storeRegistry: Record<string, unknown>;
-}
+  import type {
+    PeerStore,
+    GroupStore,
+    RelationStore,
+    GroupItemBase,
+    RelationBase,
+  } from '@hierarchidb/runtime-worker/entity/store';
 
+  export interface StoreRegistry {
+    registerPeer<TData = unknown>(nodeType: string, store: PeerStore<TData>): void;
+    registerGroup<TItem extends GroupItemBase<any>>(nodeType: string, store: GroupStore<TItem>): void;
+    registerRelations<TRel extends RelationBase<any>>(nodeType: string, store: RelationStore<TRel>): void;
+
+    getPeer<TData = unknown>(nodeType: string): PeerStore<TData> | undefined;
+    getGroup<TItem extends GroupItemBase<any> = GroupItemBase<any>>(
+      nodeType: string,
+    ): GroupStore<TItem> | undefined;
+    getRelations<TRel extends RelationBase<any> = RelationBase<any>>(
+      nodeType: string,
+    ): RelationStore<TRel> | undefined;
+  }
+
+  export const storeRegistry: StoreRegistry;
+}

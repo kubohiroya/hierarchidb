@@ -35,9 +35,3 @@ export type {
   VitePluginPackageReaderAPI,
   VitePluginWithAPI,
 } from './types';
-
-// Import for default export
-import { vitePluginPackageReader as defaultExport } from './plugin/VitePlugin';
-
-// Default export
-export default defaultExport;

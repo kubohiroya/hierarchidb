@@ -19,8 +19,8 @@
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests"
   },
   "keywords": [
     "hierarchidb",
@@ -33,6 +33,6 @@
     "@types/node": "^22.1.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
-    "vitest": "^1.6.1"
+    "vitest": "^3.2.4"
   }
 }

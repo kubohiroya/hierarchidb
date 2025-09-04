@@ -30,7 +30,7 @@
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*"

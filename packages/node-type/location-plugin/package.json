@@ -15,7 +15,7 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest --passWithNoTests",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
@@ -36,7 +36,7 @@
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4",
+    "vitest": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.0.0",

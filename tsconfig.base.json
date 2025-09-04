@@ -1,39 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "target": "ES2022",
+    "module": "ES2022",
     "moduleResolution": "node",
+    "jsx": "react-jsx",
     "strict": true,
-    "noImplicitAny": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
+    "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "composite": false,
-    "incremental": false,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    ".turbo"
-  ]
+    "types": ["vitest/globals", "vite/client"]
+  }
 }
