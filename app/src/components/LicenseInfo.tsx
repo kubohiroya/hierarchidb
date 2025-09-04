@@ -19,6 +19,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
+import type { ChipProps } from '@mui/material/Chip';
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -38,7 +39,7 @@ interface LicenseInfoProps {
   licenseData?: LicenseData;
 }
 
-const LICENSE_CATEGORIES = {
+const LICENSE_CATEGORIES: Record<string, { color: ChipProps['color']; label: string }> = {
   MIT: { color: 'success', label: 'MIT' },
   'Apache-2.0': { color: 'success', label: 'Apache 2.0' },
   'BSD-3-Clause': { color: 'success', label: 'BSD-3' },
@@ -51,7 +52,7 @@ const LICENSE_CATEGORIES = {
   'GPL-3.0': { color: 'warning', label: 'GPL-3.0' },
   LGPL: { color: 'warning', label: 'LGPL' },
   UNKNOWN: { color: 'default', label: 'Unknown' },
-} as const;
+};
 
 function categorizeLicense(license: string): keyof typeof LICENSE_CATEGORIES {
   const upperLicense = license.toUpperCase();
@@ -184,14 +185,17 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
       {/* License summary */}
       <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap' }}>
         {sortedCategories.map((category) => {
-          const config = LICENSE_CATEGORIES[category as keyof typeof LICENSE_CATEGORIES];
+          const config = LICENSE_CATEGORIES[category as keyof typeof LICENSE_CATEGORIES] || {
+            color: 'default' as ChipProps['color'],
+            label: category,
+          };
           const count = groupedPackages[category]?.length || 0;
           
           return (
             <Chip
               key={category}
               label={`${config.label} (${count})`}
-              color={config.color as any}
+              color={config.color}
               size="small"
               sx={{ mb: 1 }}
             />
@@ -201,7 +205,10 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
 
       {/* Grouped license list */}
       {sortedCategories.map((category) => {
-        const config = LICENSE_CATEGORIES[category as keyof typeof LICENSE_CATEGORIES];
+        const config = LICENSE_CATEGORIES[category as keyof typeof LICENSE_CATEGORIES] || {
+          color: 'default' as ChipProps['color'],
+          label: category,
+        };
         const categoryPackages = groupedPackages[category];
         
         return (
@@ -213,11 +220,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
           >
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
-                <Chip
-                  label={config.label}
-                  color={config.color as any}
-                  size="small"
-                />
+                <Chip label={config.label} color={config.color} size="small" />
                 <Typography variant="subtitle1">
                   {categoryPackages?.length || 0} package{(categoryPackages?.length || 0) !== 1 ? 's' : ''}
                 </Typography>
