@@ -18,9 +18,7 @@
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest --passWithNoTests",
-    "test:run": "vitest run --passWithNoTests"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*"
@@ -28,8 +26,7 @@
   "devDependencies": {
     "@types/node": "^18.19.24",
     "tsup": "^8.5.0",
-    "typescript": "^4.9.5",
-    "vitest": "^3.2.4"
+    "typescript": "^4.9.5"
   },
   "keywords": [
     "hierarchidb",

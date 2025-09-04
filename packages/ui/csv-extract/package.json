@@ -20,8 +20,6 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest --passWithNoTests",
-    "test:run": "vitest run --passWithNoTests",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
@@ -38,8 +36,6 @@
     "@mui/icons-material": "^7.3.1"
   },
   "devDependencies": {
-    "vitest": "^3.2.4",
-    "@vitest/ui": "^3.2.4",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.1",

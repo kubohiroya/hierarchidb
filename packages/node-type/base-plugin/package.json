@@ -20,8 +20,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest --passWithNoTests"
+    "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
@@ -30,7 +29,6 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2",
-    "vitest": "^3.2.4"
+    "typescript": "^5.7.2"
   }
 }
