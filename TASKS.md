@@ -837,6 +837,14 @@ P2:
   - ブランチ: `feat/worker/command-registry-skeleton`
   - 要点: CommandMap/Handler/Context と `createEnvelope<K>()` を追加。未登録コマンドを `INVALID_OPERATION` に集約し、型テスト整備。実行時は非回帰。
 
+- tsconfig.paths の dist.d.ts 参照を全面禁止（policy適用）
+  - ブランチ: `chore/policy/ban-tsconfig-paths-dist-dts`（PR #86 / 2025-09-04）
+  - 要点: `tools/check-deps` に `paths-to-dist-dts` ルールを追加し、`publishable-tsconfig-hygiene` に適用。`basemap-plugin`/`project-plugin`/`folder-plugin` から `dist/*.d.ts` 参照を撤廃。以後はパッケージ名 import＋`workspace:*` に統一。ロールバックは対象パッケージ単位で可能。
+
+- 小さな型負債スイープ（2025-09-04）
+  - ブランチ: `fix/app/typecheck-phase2-tighten`（PR #86 / 2025-09-04 の一部）
+  - 要点: 葉パッケージに限定した `skipLibCheck` 封じ込め、tests/storybook 型対象の整理、`vite/client`/env shims 導入、`dist/*.d.ts` paths 撤廃、runtime-ui/ui/node-type 各パッケージの型ハイジーン整備。
+
 ## フラグ運用（共通）
 
 - 起動時固定・既定OFF。`scripts/start-env.sh` から注入し、`config/feature-flags.ts` で一元読取。
@@ -858,6 +866,9 @@ P2:
 - done: 未登録コマンドの `INVALID_OPERATION` 集約（`CommandProcessor.executeCommand`/`isValidCommand` 更新、挙動は登録済みコマンドに限定）
 - done: 型テスト追加（`packages/runtime-worker/worker/src/services/command/__tests__/registry.types.test.ts`）
 - start: Envelope v1 型の拡張（WorkingCopy/Trash/Copy/Export を CommandMap に追加、挙動非変更）
+
+- merged: 2025-09-04 PR #86 を main にマージ（Type hygiene sweep + app typecheck tighten）。
+  - 対応タスク: 「小さな型負債スイープ（2025-09-04）」一式／「chore/policy/ban-tsconfig-paths-dist-dts」／「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
 \n+- pr: 2025-09-04 `fix/app/typecheck-phase2-tighten` を作成（2コミット: `chore(types): workspace type hygiene sweep`, `fix(app): tighten typecheck Phase 2`）。
   - 対応タスク: 「小さな型負債スイープ（2025-09-04）」の一括反映、および「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
   - ロールバック: どちらも差分単位のリバートで切戻し可能（アプリ側は Phase 1 状態へ復帰、型スイープは各パッケージ単位で戻し）。
