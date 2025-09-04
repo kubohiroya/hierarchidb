@@ -65,18 +65,22 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ### 比較表（概要）
 
-| プラグイン | nodeType | 継承元 | 開発段階 | 主要機能 | UI（Dialog/Panel） | DB（Entity/WC） | Import/Export | バッチ | 備考 |
-|---|---|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | ✅ GA | 基底ハンドラ/型 | - | - | - | - | 継承専用（UI 非表示） |
-| folder-plugin | folder | - | ✅ GA | コンテナ/拡張基盤 | Yes/Yes | - | - | - | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | ✅ GA | データソース管理 | Yes/Yes | Yes/Yes | Import | Optional | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | ✅ GA | スタイル定義 | Yes/Yes | Yes/Yes | - | - | カラーマップ/スタイル適用 |
-| basemap-plugin | basemap | folder | ✅ GA | ベースマップ/スタイル | Yes/Yes | Yes/Yes | Export | - | MapLibre 統合 |
-| shape-plugin | shape | - | ✅ GA | 形状/分析/タイル | Yes/Yes | Yes/Yes | Import/Export | Yes | 独立/高性能処理 |
-| location-plugin | location-plugin | folder | 🅱️ Beta | 位置/近接検索 | Yes/Yes | Yes/Yes | Import/Export | Yes | Shape 連携可 |
-| route-plugin | route-plugin | location | 🅱️ Beta | 経路生成/評価 | Yes/Yes | Yes/Yes | Export | Optional | Location 解決/統計 |
-| resolver-plugin | resolver-plugin | folder | 🅱️ Beta | 変換/重複解決 | Yes/Yes | Yes/Yes | Import/Export | - | Schema 検出/前処理 |
-| project-plugin | project-plugin | folder | 🅱️ Beta | プロジェクト/メタ | Yes/Yes | Yes/Yes | - | - | 領域/設定 |
+| プラグイン | nodeType（実装値） | 継承元 | 主要機能 | UI（Dialog/Panel） | DB（Entity/WC） | Import/Export | バッチ | 備考 |
+|---|---|---|---|---|---|---|---|---|
+| base-plugin | base | - | 基底ハンドラ/型 | - | - | - | - | 継承専用（UI 非表示） |
+| folder-plugin | folder | - | コンテナ/拡張基盤 | Yes/Yes | - | - | - | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | データソース管理 | Yes/Yes | Yes/Yes | Import | - | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | スタイル定義 | Yes/Yes | Yes/Yes | - | - | カラーマップ/スタイル適用 |
+| basemap-plugin | basemap | folder | ベースマップ/スタイル | Yes/Yes | Yes/Yes | - | - | MapLibre 統合 |
+| shape-plugin | shape | - | 形状/分析/タイル | Yes/Yes | Yes/Yes | Import/Export | Yes | 独立/高性能処理 |
+| location-plugin | location-plugin | folder | 位置/近接検索 | Yes/Yes | Yes/Yes | Import/Export | Yes | Shape 連携可 |
+| route-plugin | route | location | 経路生成/評価 | Yes/Yes | Yes/Yes | Import/Export | Optional | Location 解決/統計 |
+| resolver-plugin | resolver-plugin | folder | 変換/重複解決 | Yes/Yes | Yes/Yes | - | - | Schema 検出/前処理 |
+| project-plugin | project-plugin | folder | プロジェクト/メタ | Yes/Yes | Yes/Yes | - | - | 領域/設定 |
+
+注記:
+- nodeType は実装上の定義値を記載（例: route は 'route'）。
+- Import/Export/バッチは supports* フラグおよびコード実装を確認のうえ反映（例: location/route/shape は Export/Import/Batch の実装/サポートがある）。
 
 
 
