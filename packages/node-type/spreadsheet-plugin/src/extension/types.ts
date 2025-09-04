@@ -5,7 +5,15 @@
  * 🟢 信頼性レベル: TypeScriptベストプラクティスに基づく
  */
 
-import type { FolderEntity } from '@hierarchidb/folder-plugin';
+type BaseFolderFields = {
+  id: string;
+  nodeId: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+};
 import type { DataSourceType } from './constants';
 
 // =========================================
@@ -136,7 +144,7 @@ export interface SpreadsheetExtendedFields {
  * 【型合成】: FolderEntityと拡張フィールドを合成
  * 🟢 信頼性レベル: プラグイン拡張仕様に基づく
  */
-export interface SpreadsheetEntity extends FolderEntity, SpreadsheetExtendedFields {
+export interface SpreadsheetEntity extends BaseFolderFields, SpreadsheetExtendedFields {
   // FolderEntityから継承:
   // - nodeId, name, description
   // - settings, statistics, tags, metadata

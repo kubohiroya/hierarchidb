@@ -26,7 +26,7 @@ export interface DataSourceStepProps {
  * 【将来拡張】: Refactorフェーズで実際のUIを実装予定
  * 🟢 信頼性レベル: テスト要件を満たす最小実装
  */
-export const DataSourceStep: React.FC<DataSourceStepProps> = ({ data, onNext, onPrevious, errors }) => {
+export const DataSourceStep: React.FC<DataSourceStepProps> = ({ data: _data, onNext, onPrevious, errors }) => {
   const { t } = useTranslation('spreadsheet-plugin');
 
   return (
