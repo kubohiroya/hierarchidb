@@ -914,26 +914,6 @@ export default defineConfig([
 - **[プラグイン構造](./docs/plugin-structure.md)** - プラグインの内部構造、ファイル組織、コード規約
 - **[API リファレンス](./docs/api-reference.md)** - API仕様、インターフェース、型定義
 
-## 🎯 開発ロードマップ
-
-### Phase 1: データ管理プラグイン完成 (2024 Q4)
-- **spreadsheet-plugin**: UI実装完了、テスト強化
-- **styler-plugin**: カラーマップUI実装、MapLibreGL統合
-
-### Phase 2: 高度な地理情報機能 (2025 Q1)
-- **route-plugin**: 経路データ管理（道路、鉄道、航路）
-- **poi-plugin**: 地点データ管理（空港、港湾、駅）
-
-### Phase 3: データ分析・可視化 (2025 Q2)
-- **chart-plugin**: データ可視化・グラフ生成
-- **dashboard-plugin**: ダッシュボード・レポート機能
-
-### Phase 4: コラボレーション機能 (2025 Q3)
-- **comment-plugin**: ノードコメント・注釈
-- **sharing-plugin**: データ共有・権限管理
-
----
-
 ## 🤝 コントリビューション
 
 プラグイン開発への貢献を歓迎します！
