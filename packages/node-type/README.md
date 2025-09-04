@@ -43,228 +43,42 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 現在のプラグインポートフォリオ（実装準拠）
+## 📦 プラグイン一覧と分類（最新版）
+
+本システムのノードタイプ・プラグインは単一継承を基本とし、ケイパビリティは feature のミックスインで段階的に付与します（多重継承は行いません）。UI/Worker は Comlink 経由で疎結合となっており、定義・依存・UI エントリは PluginDefinition で一元管理します。
+
+- 基盤（Foundation）
+  - base-plugin: 継承用の基底（UI 非表示）
+  - folder-plugin: ツリーのコンテナ（拡張/拡張レジストリの基盤）
+- データ取り込み/変換（Data Ingest & Transform）
+  - spreadsheet-plugin: CSV/TSV/Excel 等のソース管理
+  - resolver-plugin: プロパティマッピング/スキーマ変換/重複解決
+- 可視化/スタイリング（Visualization & Styling）
+  - styler-plugin: データからスタイルを定義（Map スタイル適用など）
+  - basemap-plugin: ベースマップ/スタイルの管理（MapLibre 統合）
+- 地理/分析（Geo & Analysis）
+  - shape-plugin: 形状処理/タイル/分析（独立プラグイン）
+  - location-plugin: 位置エンティティ/近接検索（Shape 連携オプション）
+  - route-plugin: 経路生成/評価（Location 参照）
+- メタ/領域（Meta & Project）
+  - project-plugin: プロジェクト領域/メタ設定
 
 ### 比較表（概要）
 
-| プラグイン | nodeType | UI（Dialog/Panel） | DB（Entity/WC） | バッチ | Import/Export | 依存 | ステータス |
-|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | - | - | - | - | GA |
-| folder-plugin | folder | Yes / Yes | Yes / Yes | - | - | なし | GA |
-| spreadsheet-plugin | spreadsheet | Yes / Yes | Yes / Yes | Optional | Import | folder | GA |
-| styler-plugin | styler | Yes / Yes | Yes / Yes | - | - | spreadsheet | GA |
-| basemap-plugin | basemap | Yes / Yes | Yes / Yes | - | Export | folder | GA |
-| shape-plugin | shape | Yes / Yes | Yes / Yes | Yes | Import/Export | なし | GA |
-| location-plugin | location-plugin | Yes / Yes | Yes / Yes | Yes | Import/Export | folder | Beta |
-| route-plugin | route-plugin | Yes / Yes | Yes / Yes | Optional | Export | location | Beta |
-| resolver-plugin | resolver-plugin | Yes / Yes | Yes / Yes | - | Import/Export | folder | Beta |
-| project-plugin | project-plugin | Yes / Yes | Yes / Yes | - | - | folder | Beta |
-
-注記:
-- WC = Working Copy（下書き）サポート。
-- 「Optional」は機能フラグやユースケースに応じて有効化される構成です。
+| プラグイン | nodeType | 継承元 | 開発段階 | 主要機能 | UI（Dialog/Panel） | DB（Entity/WC） | Import/Export | バッチ | 備考 |
+|---|---|---|---|---|---|---|---|---|---|
+| base-plugin | base | - | ✅ GA | 基底ハンドラ/型 | - | - | - | - | 継承専用（UI 非表示） |
+| folder-plugin | folder | - | ✅ GA | コンテナ/拡張基盤 | Yes/Yes | - | - | - | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | ✅ GA | データソース管理 | Yes/Yes | Yes/Yes | Import | Optional | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | ✅ GA | スタイル定義 | Yes/Yes | Yes/Yes | - | - | カラーマップ/スタイル適用 |
+| basemap-plugin | basemap | folder | ✅ GA | ベースマップ/スタイル | Yes/Yes | Yes/Yes | Export | - | MapLibre 統合 |
+| shape-plugin | shape | - | ✅ GA | 形状/分析/タイル | Yes/Yes | Yes/Yes | Import/Export | Yes | 独立/高性能処理 |
+| location-plugin | location-plugin | folder | 🅱️ Beta | 位置/近接検索 | Yes/Yes | Yes/Yes | Import/Export | Yes | Shape 連携可 |
+| route-plugin | route-plugin | location | 🅱️ Beta | 経路生成/評価 | Yes/Yes | Yes/Yes | Export | Optional | Location 解決/統計 |
+| resolver-plugin | resolver-plugin | folder | 🅱️ Beta | 変換/重複解決 | Yes/Yes | Yes/Yes | Import/Export | - | Schema 検出/前処理 |
+| project-plugin | project-plugin | folder | 🅱️ Beta | プロジェクト/メタ | Yes/Yes | Yes/Yes | - | - | 領域/設定 |
 
 
-### 基盤プラグイン
-
-#### 📁 [folder-plugin](./folder-plugin/) - **基盤プラグイン**
-**階層構造の基礎インフラ**
-
-- **機能**: 階層的フォルダ構造と拡張システム基盤
-- **アーキテクチャ**: シンプルプラグイン（UI/Worker分離）
-- **拡張システム**:
-  - `ExtensibleFolderHandler` - プラグイン拡張API
-  - `FolderExtensionRegistry` - 拡張プラグイン管理
-  - `BaseFolderPlugin` - 拡張プラグインの基底クラス
-- **特徴**:
-  - マルチステップダイアログ拡張
-  - エンティティフィールド動的追加
-  - カスタムバリデーション統合
-- **依存関係**: なし（基盤プラグイン）
-- **状態**: ✅ プロダクション完成
-
-### データ管理プラグイン
-
-#### 📊 [spreadsheet-plugin](./spreadsheet-plugin/) - **データソース拡張**
-**表形式データの統合管理**
-
-- **機能**: CSV/TSV/Excel対応のデータソース管理
-- **継承**: folder-plugin → spreadsheet-plugin
-- **実装パターン**: Folder拡張プラグイン
-- **特徴**:
-  - データソース選択（ファイル/URL/手動入力）
-  - 行・列フィルタリング機能
-  - フォルダ階層管理継承
-  - マルチステップフォーム（2ステップ追加）
-- **依存関係**: folder-plugin
-- **状態**: 🔄 開発中（拡張定義完成、UI実装中）
-
-#### 🎨 [styler-plugin](./styler-plugin/) - **スタイル設定拡張**
-**データ可視化スタイル管理**
-
-- **機能**: CSVデータに基づく地図スタイル定義
-- **継承**: folder-plugin → spreadsheet-plugin → styler-plugin
-- **実装パターン**: Spreadsheet拡張プラグイン
-- **特徴**:
-  - スタイルルール設定
-  - カラーマップ管理
-  - MapLibreGLスタイル統合
-  - スプレッドシートデータ参照
-- **依存関係**: folder-plugin, spreadsheet-plugin
-- **状態**: 🔄 開発中（拡張定義完成、UI実装予定）
-
-### 地理情報プラグイン
-
-#### 🗺️ [basemap-plugin](./basemap-plugin/) - **地理ベース拡張**
-**地理的ベースレイヤー設定**
-
-- **機能**: MapLibreGL JSベースの地図基盤設定・管理
-- **継承**: folder-plugin → basemap-plugin
-- **実装パターン**: Folder拡張プラグイン
-- **特徴**:
-  - 地図スタイルプリセット管理
-  - ビューポート状態保持（center, zoom, bearing, pitch）
-  - リアルタイムプレビュー
-  - MapLibreGL統合
-  - マルチステップフォーム（4ステップ追加）
-- **依存関係**: folder-plugin
-- **状態**: ✅ プロダクション完成（3層分離済み）
-
-#### 📊 [shape-plugin](./shape-plugin/) - **地理形状処理**
-**高性能地理データ処理エンジン**
-
-- **機能**: GeoJSON/TopoJSONベースの地理的形状データ管理
-- **アーキテクチャ**: 独立プラグイン（フォルダ継承なし）
-- **特徴**:
-  - ベクトルタイル生成・最適化
-  - Turf.jsによる地理的演算
-  - 大容量データの段階的読み込み
-  - 国・地域選択UI統合
-  - Worker Pool並列処理
-- **処理能力**:
-  - データ圧縮（pako）
-  - ジオハッシュインデックス
-  - LRU分割ビューによる効率的表示
-- **依存関係**: なし（独立プラグイン）
-- **状態**: ✅ プロダクション完成（高度最適化済み）
-
-### 主要プラグイン概要（追加）
-
-#### 🧱 Base（base-plugin）
-- 目的: 継承専用の基底プラグイン（UI 非表示）。共通ハンドラ/型ユーティリティを提供。
-- 主なエクスポート: `BaseEntityHandler`, `HierarchicalEntityHandler`, 共通 Search/Result 型など。
-- 備考: `BasePluginDefinition` はメニュー非表示（レジストリの基礎として利用）。
-
-#### 📍 Location（location-plugin）
-- 目的: 地点（Point）エンティティ管理。Shape 連携・バッチ取得・近接検索・ジオコーディング等に対応。
-- DB: `locations` ほか Working Copy/Batch 用テーブル（カテゴリ/座標/住所などにインデックス）。
-- UI: `LocationDialog` / `LocationPanel`。
-- 機能: 検索/高度フィルタ/近接検索/バッチ処理/Shape 連携（アンカー/参照/バッチ統合）。
-
-#### 🛣️ Route（route-plugin）
-- 目的: 位置参照または座標からの経路生成・更新・評価。
-- サービス: `RouteGenerator`（生成）, `LocationResolver`（地点解決）。
-- ハンドラ: `RouteEntityHandler`（生成/再生成/統計/関係・スタイル・メタ管理）。
-- 検索: 交通モード/距離/起終点/生成手法など。
-
-#### 🧭 Resolver（resolver-plugin）
-- 目的: プロパティマッピング/スキーマ変換/重複解決などのデータ整備。
-- 構成: Entity ハンドラ/データベース/ダイアログ（`ResolverDialog`）/パネル（`ResolverPanel`）。
-- 備考: MappingCompiler/SchemaDetector 等のサービスは順次拡充予定。
-
-## 🔧 プラグインアーキテクチャ詳細
-
-### プラグイン分類とパターン
-
-```mermaid
-graph TB
-    %% 分類
-    subgraph "プラグイン分類"
-        SIMPLE[シンプルプラグイン<br/>独立実装]
-        EXTENDING[拡張プラグイン<br/>継承ベース]
-        COMPLEX[複合プラグイン<br/>多重継承]
-    end
-
-    %% 基盤
-    subgraph "基盤プラグイン"
-        FOLDER[📁 folder-plugin<br/>基盤インフラ]
-        BASE[🧱 base-plugin<br/>継承用基底]
-    end
-
-    %% データ管理チェーン
-    subgraph "データ管理チェーン"
-        SPREADSHEET[📊 spreadsheet-plugin<br/>データソース管理]
-        STYLEMAP[🎨 styler-plugin<br/>スタイル設定]
-        RESOLVER[🧭 resolver-plugin<br/>プロパティマッピング]
-    end
-
-    %% 地理情報
-    subgraph "地理情報プラグイン"
-        BASEMAP[🗺️ basemap-plugin<br/>地理ベース]
-        SHAPE[📍 shape-plugin<br/>地理形状処理]
-        LOCATION[📍 location-plugin<br/>位置エンティティ]
-        ROUTE[🛣️ route-plugin<br/>経路生成]
-    end
-
-    %% 管理/メタ
-    subgraph "管理/メタ"
-        PROJECT[📦 project-plugin<br/>プロジェクト領域]
-    end
-
-    %% レジストリ
-    subgraph "プラグインレジストリ"
-        REGISTRY[NodeTypeRegistry<br/>統合管理システム]
-    end
-
-    %% 依存/継承/チェーン（実線: 依存/継承、点線: 連携）
-    FOLDER --> SPREADSHEET
-    SPREADSHEET --> STYLEMAP
-    FOLDER --> BASEMAP
-    FOLDER --> LOCATION
-    LOCATION --> ROUTE
-    FOLDER --> RESOLVER
-    FOLDER --> PROJECT
-
-    %% 参考連携（点線）
-    LOCATION -. 連携 .-> SHAPE
-    ROUTE -. 可視化 .-> BASEMAP
-    STYLEMAP -. 適用 .-> BASEMAP
-
-    %% 分類へのマッピング（概念）
-    SHAPE --> SIMPLE
-    FOLDER --> SIMPLE
-    SPREADSHEET --> EXTENDING
-    STYLEMAP --> EXTENDING
-    BASEMAP --> EXTENDING
-    LOCATION --> EXTENDING
-    ROUTE --> EXTENDING
-    RESOLVER --> EXTENDING
-    EXTENDING --> COMPLEX
-
-    %% レジストリ登録
-    FOLDER --> REGISTRY
-    SPREADSHEET --> REGISTRY
-    STYLEMAP --> REGISTRY
-    BASEMAP --> REGISTRY
-    SHAPE --> REGISTRY
-    LOCATION --> REGISTRY
-    ROUTE --> REGISTRY
-    RESOLVER --> REGISTRY
-    PROJECT --> REGISTRY
-
-    %% スタイル
-    style FOLDER fill:#fff3e0,stroke:#ff9800,stroke-width:3px
-    style BASE fill:#eeeeee,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 5 3
-    style SPREADSHEET fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
-    style STYLEMAP fill:#fce4ec,stroke:#e91e63,stroke-width:2px
-    style RESOLVER fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
-    style BASEMAP fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
-    style SHAPE fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-    style LOCATION fill:#ffecb3,stroke:#ffa000,stroke-width:2px
-    style ROUTE fill:#ffe0b2,stroke:#ff9800,stroke-width:2px
-    style PROJECT fill:#f1f8e9,stroke:#8bc34a,stroke-width:2px
-    style REGISTRY fill:#ffebee,stroke:#f44336,stroke-width:3px
-```
 
 ## 🧩 プラグイン定義（現行API）
 
@@ -877,38 +691,6 @@ export default defineConfig([
 ]);
 ```
 
-## 📋 プラグイン機能比較表（最新版）
-
-| プラグイン | 継承元 | 開発段階 | 主要機能 | UI拡張 | データベース | 特徴的機能 |
-|-----------|--------|----------|---------|-------|-----------|-----------|
-| **base-plugin** | - | ✅ 完成 | 基底ハンドラ/型ユーティリティ | - | - | 継承専用（UI非表示） |
-| **folder-plugin** | - | ✅ 完成 | 階層構造基盤 | シンプルフォーム | - | 拡張基盤/拡張レジストリ |
-| **spreadsheet-plugin** | folder | ✅ 完成 | データソース管理（CSV/TSV/Excel） | ステップ拡張（2+） | spreadsheets | パース/検証/整形 |
-| **styler-plugin** | spreadsheet | ✅ 完成 | スタイル定義/カラーマップ | ステップ拡張 | stylers | MapLibreスタイル適用 |
-| **basemap-plugin** | folder | ✅ 完成 | ベースマップ/スタイル | 4ステップフォーム | basemaps | MapLibre統合/プレビュー |
-| **shape-plugin** | - | ✅ 完成 | 形状処理/タイル/分析 | ダイアログ/パネル | shapes | バッチ/Turf/最適化 |
-| **location-plugin** | folder | 🅱️ Beta | 位置エンティティ/近接検索 | ダイアログ/パネル | locations(+WC) | Shape連携/ジオコーディング |
-| **route-plugin** | location | 🅱️ Beta | 経路生成/再生成/評価 | ダイアログ/パネル | routes | Location解決/統計 |
-| **resolver-plugin** | folder | 🅱️ Beta | プロパティマッピング/変換/重複解決 | ダイアログ/パネル | resolvers | Schema検出/前処理 |
-| **project-plugin** | folder | 🅱️ Beta | プロジェクト領域/メタ設定 | ダイアログ/パネル | projects | ツリー横断メタ管理 |
-
-### 機能成熟度レベル
-
-| レベル | 説明 | 該当プラグイン | 特徴 |
-|--------|------|--------------|------|
-| **✅ プロダクション完成** | 本格運用可能 | folder, basemap, shape | 全機能実装、テスト完了、最適化済み |
-| **🔄 開発中** | 実装進行中 | spreadsheet, styler | 基本機能実装、UI開発中 |
-| **📋 計画中** | 設計段階 | - | 仕様策定、アーキテクチャ設計 |
-| **💡 構想中** | アイデア段階 | - | コンセプト検討、要求分析 |
-
-### 技術的複雑度
-
-| 複雑度 | プラグイン | 理由 | 開発コスト |
-|--------|-----------|------|-----------|
-| **🟢 シンプル** | folder | 基本的なCRUD操作のみ | 低 |
-| **🟡 標準** | basemap, spreadsheet | 拡張フォーム、外部ライブラリ統合 | 中 |
-| **🟠 複合** | styler | 多重継承、データ連携 | 中高 |
-| **🔴 高度** | shape | 大容量データ処理、最適化、並列処理 | 高 |
 
 ## 📚 詳細ドキュメント
 
