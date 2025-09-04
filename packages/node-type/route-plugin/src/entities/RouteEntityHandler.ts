@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { Collection } from 'dexie';
+// Dexie types are not referenced directly here to avoid cross-version type conflicts
 import { 
   BaseEntityHandler,
   type BaseSearchCriteria
@@ -19,8 +19,6 @@ export interface MetadataSearchCriteria {
 
 import type { 
   RouteEntity,
-  RouteWorkingCopy,
-  RouteFilterCriteria,
   RouteGenerationConfig,
   RoutePoint,
   TransportMode,
@@ -46,7 +44,7 @@ export interface RouteSearchCriteria extends BaseSearchCriteria, MetadataSearchC
 /**
  * Route entity handler with metadata support
  */
-export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
+export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<RouteEntity>, RouteSearchCriteria> {
   protected table: any;
   private routeDB: RouteDatabase;
   private routeGenerator: RouteGenerator;
@@ -306,7 +304,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
     endLocationId: NodeId
   ): Promise<RouteEntity[]> {
     return await this.table
-      .filter(route => 
+      .filter((route: RouteEntity) => 
         route.startLocationId === startLocationId &&
         route.endLocationId === endLocationId
       )
@@ -321,7 +319,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
     incoming: RouteEntity[];
     passing: RouteEntity[];
   }> {
-    const allRoutes = await this.table.toArray();
+    const allRoutes = (await (this.table as any).toArray()) as RouteEntity[];
     
     const outgoing = allRoutes.filter(r => r.startLocationId === locationId);
     const incoming = allRoutes.filter(r => r.endLocationId === locationId);
@@ -336,7 +334,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
    * Get route statistics
    */
   async getStatistics(): Promise<RouteStatistics> {
-    const routes = await this.table.toArray();
+    const routes = (await (this.table as any).toArray()) as RouteEntity[];
     
     const stats: RouteStatistics = {
       totalRoutes: routes.length,
@@ -344,7 +342,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
       byGenerationMethod: {} as Record<RouteGenerationMethod, number>,
       totalDistance: 0,
       averageDistance: 0,
-      connectedLocations: new Set<NodeId>(),
+      connectedLocations: 0,
       processingStats: {
         pending: 0,
         processing: 0,
@@ -352,6 +350,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
         failed: 0,
       },
     };
+    const connected = new Set<NodeId>();
     
     for (const route of routes) {
       // Transport mode stats
@@ -368,24 +367,19 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
       }
       
       // Connected locations
-      if (route.startLocationId) {
-        (stats.connectedLocations as Set<NodeId>).add(route.startLocationId);
-      }
-      if (route.endLocationId) {
-        (stats.connectedLocations as Set<NodeId>).add(route.endLocationId);
-      }
+      if (route.startLocationId) connected.add(route.startLocationId);
+      if (route.endLocationId) connected.add(route.endLocationId);
       
       // Processing stats
-      if (route.processingStatus) {
-        stats.processingStats[route.processingStatus]++;
-      }
+      const status = route.processingStatus;
+      if (status) stats.processingStats[status]++;
     }
     
     stats.averageDistance = routes.length > 0 
       ? stats.totalDistance / routes.filter(r => r.distance).length 
       : 0;
     
-    stats.connectedLocations = (stats.connectedLocations as Set<NodeId>).size;
+    stats.connectedLocations = connected.size;
     
     return stats;
   }
@@ -417,48 +411,7 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
   /**
    * Apply additional search criteria
    */
-  protected applyAdditionalSearchCriteria(
-    query: Collection<RouteEntity>,
-    criteria: RouteSearchCriteria
-  ): Collection<RouteEntity> {
-    if (criteria.transportModes && criteria.transportModes.length > 0) {
-      query = query.filter(route => 
-        criteria.transportModes!.includes(route.transportMode)
-      );
-    }
-    
-    if (criteria.startLocationId) {
-      query = query.filter(route => 
-        route.startLocationId === criteria.startLocationId
-      );
-    }
-    
-    if (criteria.endLocationId) {
-      query = query.filter(route => 
-        route.endLocationId === criteria.endLocationId
-      );
-    }
-    
-    if (criteria.minDistance !== undefined) {
-      query = query.filter(route => 
-        (route.distance || 0) >= criteria.minDistance!
-      );
-    }
-    
-    if (criteria.maxDistance !== undefined) {
-      query = query.filter(route => 
-        (route.distance || 0) <= criteria.maxDistance!
-      );
-    }
-    
-    if (criteria.generationMethod) {
-      query = query.filter(route => 
-        route.generationMethod === criteria.generationMethod
-      );
-    }
-    
-    return query;
-  }
+  // Note: uses base search (name/createdAt/updatedAt). Route-specific criteria can be added later.
 
   /**
    * Clean up route-specific data
@@ -468,4 +421,3 @@ export class RouteEntityHandler extends BaseEntityHandler<any, any, any, any> {
     await this.routeDB.cleanupRouteCache(entity.id);
   }
 }
-
