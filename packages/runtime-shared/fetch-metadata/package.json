@@ -24,8 +24,6 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "test": "vitest",
-    "test:run": "vitest run",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "fetch:gadm": "node dist/cli.js fetch gadm output gadm.json",
@@ -51,8 +49,7 @@
     "prettier": "^3.2.5",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3",
-    "undici-types": "^7.15.0",
-    "vitest": "^1.3.0"
+    "undici-types": "^7.15.0"
   },
   "files": [
     "output",

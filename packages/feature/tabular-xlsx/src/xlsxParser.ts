@@ -19,7 +19,7 @@ export const xlsxParser: TabularParserPort = {
     async function toArrayBuffer(i: FileLike): Promise<ArrayBuffer> {
       if (typeof Blob !== 'undefined' && i instanceof Blob) return await i.arrayBuffer();
       if (i instanceof ArrayBuffer) return i;
-      if (i instanceof Uint8Array) return i.buffer;
+      if (i instanceof Uint8Array) return i.buffer as ArrayBuffer; // normalize ArrayBufferLike for TS 4.9
       if (typeof i === 'string') {
         if (/^data:/.test(i) || /;base64,/.test(i)) {
           const b64 = i.split(',').pop() as string;
@@ -63,4 +63,3 @@ export const xlsxParser: TabularParserPort = {
     };
   },
 };
-

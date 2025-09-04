@@ -1,6 +1,6 @@
 {
   "name": "@hierarchidb/tools-vite-plugin-package-reader",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Universal Vite plugin for automatic package detection and virtual module generation",
   "type": "module",
   "sideEffects": false,
@@ -42,7 +42,7 @@
     "tsup": "^8.0.0",
     "typescript": "^5.6.2",
     "vite": "^5.4.11",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "vite": "^5.0.0"

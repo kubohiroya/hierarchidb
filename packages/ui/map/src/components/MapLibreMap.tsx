@@ -15,6 +15,16 @@ export type { MapViewState, MapInteractionOptions } from '../types/unified-map-p
 export interface MapLibreMapProps extends BaseMapProps {
   /** Children components (layers, markers, etc.) */
   children?: React.ReactNode;
+  /** Optional built-in control toggles */
+  controls?: {
+    navigation?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
+    scale?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
+    fullscreen?: boolean | { position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
+    geolocate?: boolean | {
+      position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+      options?: Record<string, unknown>;
+    };
+  };
 }
 
 // Default values from unified config
@@ -31,6 +41,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   onClick,
   children,
   mapOptions = defaultMapOptions,
+  controls,
 }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -38,9 +49,34 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const handleMapLoad = useCallback((e: any) => {
     const map = e.target;
     mapRef.current = map;
+    // Optional built-in controls
+    if (controls) {
+      try {
+        const mlib = require('maplibre-gl');
+        if (controls.navigation) {
+          const pos = typeof controls.navigation === 'object' && controls.navigation.position ? controls.navigation.position : 'top-right';
+          map.addControl(new mlib.NavigationControl(), pos);
+        }
+        if (controls.scale) {
+          const pos = typeof controls.scale === 'object' && controls.scale.position ? controls.scale.position : 'bottom-left';
+          map.addControl(new mlib.ScaleControl(), pos);
+        }
+        if (controls.fullscreen) {
+          const pos = typeof controls.fullscreen === 'object' && controls.fullscreen.position ? controls.fullscreen.position : 'top-right';
+          if (mlib.FullscreenControl) map.addControl(new mlib.FullscreenControl(), pos);
+        }
+        if (controls.geolocate) {
+          const pos = typeof controls.geolocate === 'object' && controls.geolocate.position ? controls.geolocate.position : 'top-right';
+          const opts = typeof controls.geolocate === 'object' && controls.geolocate.options ? controls.geolocate.options : { trackUserLocation: true };
+          if (mlib.GeolocateControl) map.addControl(new mlib.GeolocateControl(opts), pos);
+        }
+      } catch {
+        // ignore if maplibre-gl is not resolvable in this environment
+      }
+    }
     setMapLoaded(true);
     onLoad?.(map);
-  }, [onLoad]);
+  }, [onLoad, controls]);
 
   const handleViewStateChange = useCallback((event: any) => {
     if (onViewStateChange) {

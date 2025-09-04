@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { MapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
+import { MapLibreMap, MapWithDeckGL, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import { MaplibreExportControl, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 //import { Deck } from '@deck.gl/core';
 import { MapboxOverlay } from '@deck.gl/mapbox';
@@ -100,17 +100,6 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
 
   const handleMapLoad = useCallback((m: MapLibreMapInstance) => {
     map.current = m;
-    overlay.current = new MapboxOverlay({
-      interleaved: true,
-      layers: [],
-      getTooltip: ({ object }) =>
-        object && {
-          html: renderTooltip(object),
-          style: { backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white', padding: '8px', borderRadius: '4px' },
-        },
-      onClick: ({ object }) => setSelectedFeature(object),
-    });
-    m.addControl(overlay.current as any);
     const exportControl = new MaplibreExportControl({
       PageOrientation: PageOrientation.Landscape,
       Format: Format.PDF,
@@ -517,13 +506,23 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   return (
     <Box sx={{ height: '100%', position: 'relative', display: 'flex' }}>
       <Box sx={{ flex: 1, height: '100%', position: 'relative' }}>
-        <MapLibreMap
+        <MapWithDeckGL
           initialViewState={viewState}
           mapStyle={mapStyleUrl}
           width="100%"
           height="100%"
           onLoad={handleMapLoad}
           onViewStateChange={(vs) => setViewState(vs)}
+          deck={{
+            interleaved: true,
+            layers: layers.filter((l) => l.visible).map((l) => l.layer),
+            getTooltip: ({ object }) =>
+              object && {
+                html: renderTooltip(object),
+                style: { backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white', padding: '8px', borderRadius: '4px' },
+              },
+            onClick: ({ object }) => setSelectedFeature(object),
+          }}
         />
       </Box>
 

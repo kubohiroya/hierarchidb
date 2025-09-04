@@ -38,7 +38,6 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
   data,
   onComplete: _onComplete,
 }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMapInstance | null>(null);
 
   const [formData, setFormData] = useState<ProjectRegion>({
@@ -535,6 +534,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
                 mapStyle={getMapStyle(formData.mapConfig.baseMap)}
                 width="100%"
                 height="100%"
+                controls={{ navigation: true, scale: true }}
                 onLoad={(m) => { map.current = m; }}
                 onViewStateChange={(vs) => {
                   setFormData((prev) => ({

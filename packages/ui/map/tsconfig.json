@@ -1,7 +1,13 @@
 {
-  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "strict": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": "src",
@@ -16,6 +22,10 @@
       "DOM.Iterable"
     ],
     "jsx": "react-jsx"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "MapLibre upstream d.ts uses ambient const enums; isolate skipLibCheck here only"
   },
   "include": [
     "src/**/*",

@@ -7,9 +7,9 @@
     "declarationDir": "./dist",
     "declaration": true,
     "declarationMap": true,
-    "composite": true,
-    "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "composite": false,
+    "incremental": false,
+    
     "module": "ESNext",
     "target": "ES2020",
     "lib": [
