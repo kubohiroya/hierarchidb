@@ -877,15 +877,20 @@ export default defineConfig([
 ]);
 ```
 
-## 📋 プラグイン機能比較表
+## 📋 プラグイン機能比較表（最新版）
 
 | プラグイン | 継承元 | 開発段階 | 主要機能 | UI拡張 | データベース | 特徴的機能 |
 |-----------|--------|----------|---------|-------|-----------|-----------|
-| **folder-plugin** | - | ✅ 完成 | 階層構造基盤 | シンプルフォーム | - | 拡張システム基盤 |
-| **basemap-plugin** | folder | ✅ 完成 | 地図ベース設定 | 4ステップフォーム | basemaps | MapLibreGL統合 |
-| **shape-plugin** | - | ✅ 完成 | 地理データ処理 | 複合ダイアログ | shapes | ベクトルタイル生成 |
-| **spreadsheet-plugin** | folder | 🔄 開発中 | データソース管理 | 2ステップ拡張 | spreadsheets | CSV/Excel処理 |
-| **styler-plugin** | spreadsheet | 🔄 開発中 | スタイル定義 | 1ステップ拡張 | stylers | カラーマップ |
+| **base-plugin** | - | ✅ 完成 | 基底ハンドラ/型ユーティリティ | - | - | 継承専用（UI非表示） |
+| **folder-plugin** | - | ✅ 完成 | 階層構造基盤 | シンプルフォーム | - | 拡張基盤/拡張レジストリ |
+| **spreadsheet-plugin** | folder | ✅ 完成 | データソース管理（CSV/TSV/Excel） | ステップ拡張（2+） | spreadsheets | パース/検証/整形 |
+| **styler-plugin** | spreadsheet | ✅ 完成 | スタイル定義/カラーマップ | ステップ拡張 | stylers | MapLibreスタイル適用 |
+| **basemap-plugin** | folder | ✅ 完成 | ベースマップ/スタイル | 4ステップフォーム | basemaps | MapLibre統合/プレビュー |
+| **shape-plugin** | - | ✅ 完成 | 形状処理/タイル/分析 | ダイアログ/パネル | shapes | バッチ/Turf/最適化 |
+| **location-plugin** | folder | 🅱️ Beta | 位置エンティティ/近接検索 | ダイアログ/パネル | locations(+WC) | Shape連携/ジオコーディング |
+| **route-plugin** | location | 🅱️ Beta | 経路生成/再生成/評価 | ダイアログ/パネル | routes | Location解決/統計 |
+| **resolver-plugin** | folder | 🅱️ Beta | プロパティマッピング/変換/重複解決 | ダイアログ/パネル | resolvers | Schema検出/前処理 |
+| **project-plugin** | folder | 🅱️ Beta | プロジェクト領域/メタ設定 | ダイアログ/パネル | projects | ツリー横断メタ管理 |
 
 ### 機能成熟度レベル
 
