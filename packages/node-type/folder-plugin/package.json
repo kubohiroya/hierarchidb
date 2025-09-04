@@ -38,14 +38,14 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
+    "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
-    "@mui/x-date-pickers": "^7.29.4",
-    "dexie": "^4.2.0",
+    
     "i18next": "22.5.0",
     "react-hook-form": "^7.62.0",
     "react-i18next": "12.3.1",
@@ -58,8 +58,10 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "dexie": "^4.2.0"
   },
+  
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -71,6 +73,7 @@
     "react": ">=18.0.0",
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
+    "dexie": "^4.2.0",
     "vitest": "^3.2.4"
   },
   "keywords": [

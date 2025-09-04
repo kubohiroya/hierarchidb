@@ -238,6 +238,53 @@ Manages temporary working copy state with auto-save support.
 - `parentNodeId`: TreeNodeId (for create mode)
 - `initialData`: Initial form data
 - `autoSave`: boolean (default: true)
+
+### useDialogUrlSync（URL 同期フック）
+
+ダイアログの状態を URL と双方向に同期する軽量フックです。リロード復元・ディープリンク・履歴ナビゲーションを実現します。`map` のように更新頻度が高い値は debounce で反映します。
+
+```ts
+import { useDialogUrlSync } from '@hierarchidb/runtime-ui-plugin-dialog';
+
+const { step, setStep, mode, setMode, map, setMap, clearParams } = useDialogUrlSync({
+  namespace: 'd',                 // URL パラメータの接頭辞（既定: 'd'）
+  defaults: { step: 0, mode: 'normal' },
+  debounce: { map: 400 },         // 高頻度項目の遅延反映（ms）
+  history: { step: 'push' },      // step は履歴に積む（戻る/進む対応）
+  readFrom: 'search',             // 'search' | 'hash'（既定: 'search'）
+});
+```
+
+MultiStepDialog との統合例:
+
+```tsx
+<MultiStepDialog
+  activeStep={step}
+  onStepChange={setStep}
+  fullScreen={mode === 'full'}
+  onFullscreenChange={(is) => setMode(is ? 'full' : 'normal')}
+  /* ... */
+/>
+
+// 地図カメラ更新時（任意）
+setMap({ lng, lat, zoom });
+```
+
+URL パラメータ仕様（既定の `namespace: 'd'` の場合）
+- `d_step`: number（0-based）。履歴: push（戻る/進むで遷移）
+- `d_mode`: `'full' | 'normal'`。履歴: replace（履歴を汚さない）
+- `d_map`: `'lng,lat,zoom'`。履歴: replace、反映: debounce（既定 400ms）
+
+注意事項
+- 値は型ガード済み（不正値は無視）。
+- SSR 環境では何もしません（ブラウザ検出ガードあり）。
+- 既存の URL に該当パラメータが無ければローカル既定値を使用します。
+
+移行ガイド（src_deprecated から）
+- 旧 `useDialogUrlParams` を本フックへ置き換えてください。
+  - `step`/`mode` はそのまま 1:1 対応。
+  - `map` は `{ lng, lat, zoom }`（小数は固定小数点で書式化）。
+- URL 同期が不要なダイアログはフックを使わず、ローカル state のみで運用可能です。
 - `autoSaveDelay`: number (milliseconds, default: 1000)
 - `onSave`: Save working copy to temporary storage
 - `onCommit`: Commit to permanent storage

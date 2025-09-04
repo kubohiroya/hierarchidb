@@ -23,8 +23,13 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*",
-    "dexie": "^4.0.10"
+    "@hierarchidb/common-type": "workspace:*"
+  },
+  "peerDependencies": {
+    "dexie": "^4.2.0"
+  },
+  "devDependencies": {
+    "dexie": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -37,16 +37,22 @@
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-date": "workspace:*",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/x-date-pickers": "^6.0.0",
     "@turf/turf": "^7.0.0",
     "@watergis/maplibre-gl-export": "^4.0.1",
     "d3-scale": "^4.0.0",
     "date-fns": "^3.0.0",
-    "dexie": "^4.0.10",
+    
     "h3-js": "^4.1.0",
     "jspdf": "^2.5.0"
+  },
+  "peerDependencies": {
+    "dexie": "^4.2.0"
+  },
+  "devDependencies": {
+    "dexie": "^4.2.0"
   },
   "devDependencies": {
     "@types/d3-scale": "^4.0.0",
