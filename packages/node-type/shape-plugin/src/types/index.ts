@@ -22,7 +22,7 @@ export interface ShapeEntity extends PeerEntity {
   name: string;
   description?: string;
   // Tags are managed via NodeTagAssociation, not stored directly
-  category: ShapeCategory;
+  category: string;
 
   // Data Source (Step 2)
   dataSourceName: DataSourceName;
@@ -164,8 +164,15 @@ export interface BatchTask {
 
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 
-export interface DownloadTask extends BatchTask {
+export interface DownloadTask {
+  taskId: string;
   taskType: 'download';
+  stage: string;
+  progress?: number;
+  error?: string;
+  startedAt?: number;
+  completedAt?: number;
+  metadata?: Record<string, any>;
   url: string;
   countryCode: string;
   adminLevel: number;
@@ -173,16 +180,30 @@ export interface DownloadTask extends BatchTask {
   downloadedBytes?: number;
 }
 
-export interface SimplifyTask extends BatchTask {
+export interface SimplifyTask {
+  taskId: string;
   taskType: 'simplify1' | 'simplify2';
+  stage: string;
+  progress?: number;
+  error?: string;
+  startedAt?: number;
+  completedAt?: number;
+  metadata?: Record<string, any>;
   countryCode: string;
   adminLevel: number;
   featureCount?: number;
   processedFeatures?: number;
 }
 
-export interface VectorTileTask extends BatchTask {
+export interface VectorTileTask {
+  taskId: string;
   taskType: 'vectortile';
+  stage: string;
+  progress?: number;
+  error?: string;
+  startedAt?: number;
+  completedAt?: number;
+  metadata?: Record<string, any>;
   countryCode: string;
   adminLevel: number;
   zoomLevel: number;
@@ -387,7 +408,7 @@ export interface CacheStatistics {
 
 export interface ProgressInfo {
   sessionId?: string;
-  stage?: BatchStage;
+  stage?: string;
   total: number;
   completed: number;
   failed: number;

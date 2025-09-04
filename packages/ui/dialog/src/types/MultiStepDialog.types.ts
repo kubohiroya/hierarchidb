@@ -161,6 +161,12 @@ export interface MultiStepDialogProps {
   
   /** Next button text */
   nextText?: string;
+
+  /**
+   * Callback when fullscreen toggles.
+   * Useful for syncing URL or external state.
+   */
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
 /**

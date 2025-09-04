@@ -75,52 +75,62 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
    */
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
     try {
-      // 【セキュリティ検証】: ファイルタイプとサイズの検証
+      // Validate and hash
       await this.validateFile(file);
-
-      // 【ハッシュ生成】: ファイル内容のハッシュ化（重複排除用）
       const contentHash = await calculateFileHash(file);
 
-      // 【重複チェック】: 既存RawFileMetadataの確認（SpreadsheetDB内）
-      const existingMetadata = this.spreadsheetDB
-        ? await this.spreadsheetDB.findRawFileMetadataByHash(contentHash)
-        : null;
-      if (existingMetadata) {
-        // 【既存データ再利用】: 生データ作成をスキップして新しいSpreadsheetEntityを作成
-        // 【EntityID生成】: 適切なキャストでDexieキーエラーを回避 🟢
-        const tableId = crypto.randomUUID();
-        const metadata: CSVTableMetadata = {
+      // Parse content
+      const text = await file.text();
+      const { rows, columns } = await parseCSVContent(text, config);
+
+      // Detect types (best-effort)
+      const detected = detectColumnTypes(columns.map((c) => c.name), rows);
+      const normalizedColumns = columns.map((c, i) => ({
+        name: c.name,
+        index: i,
+        type: (detected[i]?.type || 'string') as any,
+        uniqueValues: 0,
+        hasNullValues: false,
+        sampleValues: rows.slice(0, 5).map((r) => r[c.name] ?? null),
+      }));
+
+      // Chunk rows
+      const chunkSize = this.chunkConfig.maxRowsPerChunk;
+      const chunks: Array<Array<Record<string, string | number | null>>> = [];
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        chunks.push(rows.slice(i, i + chunkSize));
+      }
+      const chunkedData: ChunkedData = {
+        chunks,
+        totalRows: rows.length,
+        chunkSize,
+      };
+
+      const tableId = crypto.randomUUID();
+      const metadata: CSVTableMetadata = {
         id: tableId,
         filename: file.name,
-        columns,
-        totalRows: chunkedData.totalRows,
+        columns: normalizedColumns as any,
+        totalRows: rows.length,
         contentHash,
         createdAt: Date.now(),
         fileSizeBytes: file.size,
-        // Styler compatibility: Initialize reference fields
         referencingPlugins: [],
         referenceCount: 0,
-        // Chunking support: Determine if data is chunked based on size
-        isChunked: chunkedData.totalRows > 10000, // Threshold for chunking
-        chunkCount: Math.ceil(chunkedData.totalRows / 10000) || 1,
-      };
+        isChunked: rows.length > chunkSize,
+        chunkCount: Math.max(1, Math.ceil(rows.length / chunkSize)),
+      } as any;
 
-      // 【データ保存】: チャンク化されたデータの保存
       this.storeChunkedData(tableId, chunkedData);
 
-      // 【SpreadsheetDB永続化】: RawFileMetadataとRowChunksの保存 🟢
       if (this.spreadsheetDB) {
-        await this.saveToSpreadsheetDB(file, contentHash, chunkedData, config, detectedConfig);
+        await this.saveToSpreadsheetDB(file, contentHash, chunkedData, config, config);
       }
 
-      // 【メタデータ永続化】: IndexedDBへの保存
       await this.tableManager.create(metadata, this.pluginId);
-
       return metadata;
     } catch (error) {
-      throw new Error(
-        `CSV upload failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new Error(`CSV upload failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

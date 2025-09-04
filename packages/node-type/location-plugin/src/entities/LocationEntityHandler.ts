@@ -3,11 +3,9 @@
  * @description Location entity handler extending metadata base handler
  */
 
-import type { Table } from 'dexie';
+import type { Table, Collection } from 'dexie';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { 
-  BaseEntityHandler
-} from '@hierarchidb/base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import type {
   LocationEntity,
   LocationWorkingCopy,
@@ -31,8 +29,8 @@ export interface CreateLocationData extends Partial<LocationEntity> {
 /**
  * Location entity handler with full CRUD operations
  */
-export class LocationEntityHandler extends BaseEntityHandler<any, any, any, any> {
-  protected table: any;
+export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, CreateLocationData, LocationFilterCriteria> {
+  protected table: Table<LocationEntity, EntityId>;
 
   constructor(table: Table<LocationEntity, EntityId>) {
     super();
@@ -240,9 +238,9 @@ export class LocationEntityHandler extends BaseEntityHandler<any, any, any, any>
    * Apply additional search criteria for locations
    */
   protected applyAdditionalSearchCriteria(
-    query: any,
+    query: Collection<LocationEntity>,
     criteria: LocationFilterCriteria
-  ): any {
+  ): Collection<LocationEntity, any> {
     // Apply parent class criteria first
     query = super.applyAdditionalSearchCriteria(query, criteria);
 
@@ -330,7 +328,7 @@ export class LocationEntityHandler extends BaseEntityHandler<any, any, any, any>
       );
     }
 
-    return query;
+    return query as Collection<LocationEntity, any>;
   }
 
   /**

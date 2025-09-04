@@ -351,8 +351,8 @@ export function buildShapeEntityFromCreate(
 export function createWorkingCopyFromEntity(
   entity: import('./types').ShapeEntity
 ): import('./types').ShapeWorkingCopy {
-  return {
-    id: entity.id as import('@hierarchidb/common-type').EntityId,
+  const obj = {
+    id: entity.id,
     nodeId: entity.nodeId,
     name: entity.name,
     description: entity.description,
@@ -367,7 +367,8 @@ export function createWorkingCopyFromEntity(
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
     version: entity.version,
-  };
+  } as const;
+  return obj as unknown as import('./types').ShapeWorkingCopy;
 }
 
 /**

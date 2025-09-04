@@ -53,6 +53,29 @@
     - [x] basemap-plugin の `shim` 削除と `any` 削減（`BaseMapDisplay`/`BaseMapPreview`）。
     - [x] `ui-map` をビルドし、`.d.ts` から maplibre 型のリークが無いことを確認。
 
+---
+
+- chore/policy/ban-tsconfig-paths-dist-dts（tsconfig.paths の dist.d.ts 参照を全面禁止）
+  - ブランチ名: `chore/policy/ban-tsconfig-paths-dist-dts`
+  - 依存: なし（小粒）。影響は型解決のみ。
+  - 背景: 隣パッケージの `dist/*.d.ts` を `paths` で参照しており、未ビルド/出力場所変更に脆弱、規約逸脱も発生。
+  - 方針: チェックツールに検知ルールを追加し、該当パッケージの `tsconfig.json` を是正。以後はパッケージ名 import＋`workspace:*` に統一。
+  - 受け入れ基準（DoD）:
+    - [x] `tools/check-deps`: ルール `paths-to-dist-dts` 追加（ERROR）。
+    - [x] `policies.publishable-tsconfig-hygiene` に同ルールを適用。
+    - [x] `@hierarchidb/basemap-plugin` の `tsconfig.json` から他パッケージ `dist/*.d.ts` の `paths` を削除。
+    - [x] `@hierarchidb/project-plugin` の `tsconfig.json` から同様の `paths` を削除。
+    - [x] `@hierarchidb/folder-plugin` の `tsconfig.json` から同様の `paths` を削除し、必要な依存（`@hierarchidb/tag`）を `package.json` に追加。
+    - [ ] 変更後に `pnpm --filter "@hierarchidb/{basemap-plugin,project-plugin,folder-plugin}" typecheck` がグリーン。
+    - [x] ガイド `AGENTS.md` に方針を明文化（Monorepo Type Resolution Policy）。
+  - ロールバック手順:
+    - 影響が出た場合は、当該パッケージのみ一時的に `paths` を復旧し、ルールは WARN に緩和して再実行。根因修正後に ERROR に戻す。
+  - チェックリスト:
+    - [x] ルール実装とテキスト整備
+    - [x] basemap/project/folder の tsconfig 是正
+    - [x] folder-plugin の依存追記（@hierarchidb/tag）
+    - [ ] 局所 typecheck 実行
+
 ### ToDo（優先度順）
 
 EPIC) i18nコア統一とロケール伝播（React非依存・言語追加をデータ駆動化）
@@ -118,6 +141,21 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
     - [ ] `i18n.on('languageChanged', ...)` で変更時通知。
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
+## 運用ログ（today）
+- start: 2025-09-04 chore/policy/ban-tsconfig-paths-dist-dts 着手（ルール追加と対象3パッケージ是正）
+- done: 2025-09-04 `tools/check-deps` に `paths-to-dist-dts` を追加、`publishable-tsconfig-hygiene` に適用
+- done: 2025-09-04 basemap-plugin / project-plugin / folder-plugin の tsconfig から `dist/*.d.ts` の `paths` を削除
+- done: 2025-09-04 folder-plugin に `@hierarchidb/tag` を依存追加
+- done: 2025-09-04 AGENTS.md に型解決ポリシーを明文化
+- done: 2025-09-04 basemap-plugin の型乖離是正（`PluginDefinition`/`hooks`/`DisplayOptions.tags`/`WorkingCopy`）→ typecheck グリーン
+- done: 2025-09-04 project-plugin の ui-map 型不足を局所 augment で補完（`src/types/ui-map-augment.d.ts`）→ typecheck グリーン
+- fix: 2025-09-04 folder-plugin の `tsc --noEmit` が OOM（V8 heap）→ `skipLibCheck: true` を有効化し、`checkDeps.allowSkipLibCheck` と理由を明記（MUI+React 型の巨大グラフ回避）。ビルド実行はユーザ側で確認予定。
+- fix: 2025-09-04 runtime-ui/plugin-dialog `src_deprecated` 依存の排除
+  - `ExtensibleFolderDialog.tsx` を `@hierarchidb/ui-dialog` の `MultiStepDialog` へ移行
+  - URL同期は専用Hookで再導入（`useDialogUrlSync`）: step=push, mode=replace, map=debounce(400ms)
+  - 追加ステップ `DialogStepDefinition[]` を `DialogStep[]` に変換する薄いアダプタを実装
+  - `ui-dialog` に `onFullscreenChange` を追加（外部同期用）
+
   4) 言語の固定列挙を撤廃
   - ブランチ: `refactor/i18n/remove-language-union`
   - 依存: 1)～3)
@@ -131,7 +169,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - ブランチ: `feat/i18n/supported-langs-manifest`
   - 依存: 4)
   - 内容: `/public/locales` を走査して `locales/manifest.json` を生成するスクリプトを追加し、起動時に読み込んで `supportedLngs` を設定（なければ未指定で運用）。
-  - 受け入れ基準: 新しい言語ディレクトリを追加→ビルド or dev起動のみで言語選択が可能。コード改変不要。
+ - 受け入れ基準: 新しい言語ディレクトリを追加→ビルド or dev起動のみで言語選択が可能。コード改変不要。
 
   6) 依存ポリシーの静的検査（dependency-cruiser）
   - ブランチ: `chore/i18n/depcruise-rules`
@@ -142,7 +180,120 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   7) ドキュメント整備
   - ブランチ: `docs/i18n/core-architecture`
   - 内容: 追加言語手順（ファイル配置/マニフェスト生成）、UI→Workerロケール伝播、フラグ運用、ロールバック手順を `README.md`/`docs/` に追記。
-  - 受け入れ基準: 新規参加者がコード改変なしで言語追加できることが文書化されている。
+ - 受け入れ基準: 新規参加者がコード改変なしで言語追加できることが文書化されている。
+
+EPIC) プロジェクト地図タイムライン（時系列メタデータ＋アニメーション再生）
+- ブランチ（エピック）: `epic/timeline/project-map`
+- 依存: なし（既定OFFフラグで段階導入）
+- 背景と問題抽出:
+  - UIの不安定要因として `@mui/x-date-pickers` の依存・制御/非制御混在・ロケール/タイムゾーン不一致が疑われる。
+  - 将来構想として、プロジェクト型ツリーノードの「地図が表現する内容の日時」をメタデータとして保持し、指定階層配下から日時範囲で抽出→時系列で並べ替え→連続アニメーション表示したい。
+- 目的:
+  - ノードに「内容日時（contentDate）」を単一 ISO 8601 文字列で付与（UTC基準、表示時にローカライズ）。
+  - 階層配下のノードから `[start, end]` 範囲を抽出し、`contentDate` 昇順で返すワーカーAPIを用意。
+  - UIに日時レンジ指定（安定化ラッパ経由）とタイムライン再生UI（Play/Pause/速度/スクラブ）を提供。
+  - すべて既定OFFのフラグで非破壊導入、ON時も既存UIへ副作用を与えない。
+- フラグ:
+  - `UI_TIMELINE_MODE`（既定OFF）: タイムラインUI全体の有効化。
+  - `UI_USE_X_DATE_PICKERS`（既定OFF）: x-date-pickers を利用する実装を選択。OFF時はネイティブ/軽量代替へフォールバック。
+- ロールバック指針:
+  - フラグOFFで即切戻し。`contentDate` は読み取り専用メタデータのため、未設定でも既存機能に影響なし。
+  - 不安定時は `UI_USE_X_DATE_PICKERS` をOFFにして代替入力へ切替。
+- タスク分解:
+
+  1) 仕様確定（ドキュメント）
+  - ブランチ: `docs/timeline/spec`
+  - 依存: なし
+  - 内容: `docs/timeline/README.md` に用語定義（contentDateの意味/UTC運用/表示ロケール差）、データモデル、UIフロー、フラグ運用、ロールバック手順を記述。
+  - 受け入れ基準（DoD）:
+    - [ ] contentDate は ISO 8601（例: `2025-01-15T09:00:00Z`）で定義。日付のみ入力時は `T00:00:00Z` として格納。
+    - [ ] 単一時点のみ（レンジ型は将来検討）。
+    - [ ] タイムゾーンは格納UTC、表示はロケール/タイムゾーン設定に従う方針を明記。
+  - ロールバック: ドキュメントのみのため不要。
+
+  2) 型・スキーマ拡張（メタデータ）
+  - ブランチ: `feat/schema/project-content-date`
+  - 依存: 1)
+  - 内容: プロジェクト型ツリーノードへ `metadata.contentDate?: string` を追加（ISO 8601）。シリアライズ/ストレージ層に透過的に追加。既存読み込みは未設定を許容。
+  - 受け入れ基準:
+    - [ ] 型定義の追加（`@hierarchidb/common` or 該当ドメインの型）
+    - [ ] 既存データのマイグレーション不要（後方互換）。
+    - [ ] `pnpm typecheck` がグリーン。
+  - ロールバック: フィールド参照コード差分をリバートで回避可能。
+
+  3) フラグ定義と読み取りの統一
+  - ブランチ: `feat/flags/ui-timeline`
+  - 依存: 2)
+  - 内容: `config/feature-flags.ts` に `UI_TIMELINE_MODE`/`UI_USE_X_DATE_PICKERS` を追加。UIとWorkerの両方から同一モジュールを参照。
+  - 受け入れ基準:
+    - [ ] 既定OFF。`.env`/起動引数でON可能。
+    - [ ] 参照箇所が1ファイルに集約されている。
+  - ロールバック: フラグ追加のみのため不要。
+
+  4) 日時入力ラッパ（不安定化の隔離）
+  - ブランチ: `feat/ui/date-input-wrapper`
+  - 依存: 3)
+  - 内容: `@hierarchidb/ui-date` を新設し、`DateInput`/`DateRangeInput` を提供。x-date-pickers はオプション採用（`UI_USE_X_DATE_PICKERS`）。OFF時はネイティブ `input[type=date/time]`＋最小ロジックで代替。制御/非制御のブリッジ、ロケール/タイムゾーンの一元化、minバンドルでの遅延ロードを実施。
+  - 受け入れ基準:
+    - [ ] x-date-pickers 依存は同パッケージ内に閉じ込め、外部へ型/実装をリークしない。
+    - [ ] `pnpm --filter @hierarchidb/ui-date typecheck && pnpm test` グリーン。
+    - [ ] 単体テストで制御/非制御の切替とロケールが安定。
+  - ロールバック: `UI_USE_X_DATE_PICKERS` をOFFにし、ネイティブ実装のみを使用。
+
+  5) プロジェクト編集UIに contentDate を追加
+  - ブランチ: `feat/app/project-content-date-editor`
+  - 依存: 4)
+  - 内容: プロジェクト詳細/編集パネルに `DateInput` を追加。保存時は ISO 8601（UTC）で書き込み。未入力は `undefined`。
+  - 受け入れ基準:
+    - [ ] `UI_TIMELINE_MODE` ON 時のみ項目が表示される（OFF で非表示）。
+    - [ ] 入力→保存→再表示で値が保持される。
+    - [ ] e2e 最小（入力/保存の健全性）
+  - ロールバック: UI 差分のみリバートで回避可能。
+
+  6) 抽出・並べ替えAPI（Worker）
+  - ブランチ: `feat/worker/timeline-query`
+  - 依存: 2)
+  - 内容: `getProjectsByDateRange(rootId, { start, end }): ProjectRef[]` を追加。指定階層配下を走査し、`contentDate` が範囲内のノードを抽出、`contentDate` 昇順で返す。大規模時のため軽量インデックスをオプションで保持（後段最適化）。
+  - 受け入れ基準:
+    - [ ] 時間境界の包含/除外ポリシーをテストで担保（例: start/end を含む）。
+    - [ ] 1000ノード規模での基準性能テスト（ユニット）
+    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` グリーン。
+  - ロールバック: API を未使用に戻せば影響なし。
+
+  7) タイムラインUI（再生コントロール＋スクラバー）
+  - ブランチ: `feat/ui/timeline-player`
+  - 依存: 5), 6)
+  - 内容: `TimelinePlayer` コンポーネントを追加（Play/Pause、速度×0.5/1/2、前後移動、スクラバー）。抽出結果を順次表示（マップのプリフェッチ/キャンセルを考慮）。
+  - 受け入れ基準:
+    - [ ] `UI_TIMELINE_MODE` ON 時にのみ表示。
+    - [ ] 再生/一時停止/速度変更がフレーム落ちなく動作。
+    - [ ] 連続表示中に他UI操作をしても崩れない（最低限の結合テスト）。
+  - ロールバック: フラグOFFで無効化可能。
+
+  8) E2E シナリオ（基本動作）
+  - ブランチ: `feat/e2e/timeline-basic`
+  - 依存: 7)
+  - 内容: Playwright にて、ダミー階層（5件程度の contentDate）で抽出→昇順→再生→停止→スクラブを検証。
+  - 受け入れ基準:
+    - [ ] `pnpm e2e` がグリーン（タイムラインON時）
+  - ロールバック: テストのみの差分のため不要。
+
+  9) 代替入力の完成度向上（任意）
+  - ブランチ: `feat/ui/date-input-native-polish`
+  - 依存: 4)
+  - 内容: ネイティブ/軽量実装でのレンジ入力、キーボード操作性、アクセシビリティ改善。
+  - 受け入れ基準:
+    - [ ] キーボードのみで全操作が可能。
+    - [ ] スクリーンリーダーでラベル/ヘルプが正しく読まれる。
+  - ロールバック: 代替のため不要。
+
+  10) ドキュメント/運用ログ更新
+  - ブランチ: `docs/timeline/operations`
+  - 依存: 1)〜9)
+  - 内容: 運用フロー、既定OFF→ON切替手順、問題時の切戻し手順、既知の制約を `docs/` と `TASKS.md` ログへ追記。
+  - 受け入れ基準:
+    - [ ] 新規参加者がフラグONで試せるまでをドキュメントだけで再現可能。
+  - ロールバック: ドキュメントのみのため不要。
 
 0) app 型厳格化（Phase 2 巻き戻し）
 - ブランチ: `fix/app/typecheck-phase2-tighten`
@@ -819,3 +970,14 @@ P2:
   - changed: packages/tools/vite-plugin-package-reader/tsup.config.ts, packages/tools/vite-plugin-package-reader/tsconfig.json
   - result: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build が成功（TS6307 消失）
   - rollback: 上記 2 ファイルの差分をリバート
+9) 日付系UIのラッパ化（安定化）
+- ブランチ: `refactor/ui-date/wrap-and-migrate`
+- 目的: `@mui/x-date-pickers` 依存の型/Adapter/ロケール差分を `@hierarchidb/ui-date` に封じ込め、各プラグインからの直接利用を禁止。
+- スコープ:
+  - 新規パッケージ: `@hierarchidb/ui-date`（`LocalizationProvider`/`AdapterDateFns`/`DateTimePicker` の安定APIを提供）
+  - 置換対象: `@hierarchidb/project-plugin`, `@hierarchidb/ui-i18n`, `@hierarchidb/folder-plugin`（依存削除）
+  - ポリシー: check-deps に `mui-x-date-pickers-direct-dep` を追加し、ワークフローでハードフェイル（許可は `@hierarchidb/ui-date` のみ）
+- 受け入れ基準:
+  - 対象パッケージの `src` TypeScript がグリーン
+  - 直接依存はモノレポ内から消滅（ルールで検出不可）
+  - 既存UI挙動（プロジェクトウィザードのDateTimePicker、言語ロケールのLocalizationProvider）が維持

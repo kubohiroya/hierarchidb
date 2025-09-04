@@ -226,8 +226,10 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(!isFullscreen);
-  }, [isFullscreen]);
+    const next = !isFullscreen;
+    setIsFullscreen(next);
+    onFullscreenChange?.(next);
+  }, [isFullscreen, onFullscreenChange]);
 
   // Validate on mount and step change
   useEffect(() => {

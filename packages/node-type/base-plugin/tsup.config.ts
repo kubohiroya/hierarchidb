@@ -1,11 +1,7 @@
-import { defineConfig } from 'tsup';
+import { createTsupConfig } from '../../../tsup.base.config';
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm'],
-  dts: false,
-  splitting: false,
-  sourcemap: true,
-  clean: true,
-  external: ['react', 'react-dom'],
+// Align with monorepo defaults and emit .d.ts files
+export default createTsupConfig({
+  // Base plugin is framework-only; no React runtime needed
+  external: ['dexie'],
 });

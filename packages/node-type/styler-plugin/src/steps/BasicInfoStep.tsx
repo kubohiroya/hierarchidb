@@ -13,7 +13,8 @@ import {
 import { useTranslation } from 'provider-i18next';
 import { TagInput } from '@hierarchidb/ui-core/components/TagInput';
 import { CategorySelector } from '@hierarchidb/ui-core/components/CategorySelector';
-import type { TagId, TagEntity } from '@hierarchidb/common-type';
+type TagId = string;
+type TagEntity = { id: TagId; name?: string };
 import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types';
 
 /**

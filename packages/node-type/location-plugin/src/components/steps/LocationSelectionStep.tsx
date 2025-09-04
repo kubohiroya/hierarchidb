@@ -163,13 +163,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     );
     
     // Fill matrix based on checkboxState
-    Object.entries(workingCopy.checkboxState).forEach(([countryCode, typeState]) => {
+    Object.entries(workingCopy.checkboxState ?? {}).forEach(([countryCode, typeState]) => {
       const countryIndex = SAMPLE_COUNTRIES.findIndex(c => c.code === countryCode);
       if (countryIndex >= 0) {
-        Object.entries(typeState).forEach(([typeId, selected]) => {
+        Object.entries(typeState as Record<string, boolean>).forEach(([typeId, selected]) => {
           const typeIndex = LOCATION_TYPES.findIndex(t => t.id === typeId);
-          if (typeIndex >= 0 && matrix[countryIndex]) {
-            matrix[countryIndex][typeIndex] = selected;
+          if (typeIndex >= 0 && countryIndex < matrix.length) {
+            matrix[countryIndex]![typeIndex] = !!selected;
           }
         });
       }

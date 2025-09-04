@@ -1,4 +1,5 @@
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { Table } from 'dexie';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import { resolverDB } from '../database/ResolverDatabase';
 import type { 
@@ -47,7 +48,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   CreateResolverData,
   ResolverSearchCriteria
 > {
-  protected table = resolverDB.resolvers;
+  protected table: Table<ResolverEntity, EntityId> = resolverDB.resolvers;
 
   /**
    * Build a Resolver entity from creation data

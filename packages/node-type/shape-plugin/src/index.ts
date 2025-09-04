@@ -6,26 +6,16 @@
 // Shared layer - 共通で使用される型・定数・メタデータ
 export * from './shared';
 
-// UI layer - UI環境専用
-export * as UI from './ui';
+// UI layer is internal to app; not exported in package API
 
-// Worker layer - Worker環境専用
-export * as Worker from './worker';
+// Worker layer exports are internal; public API deferred until types are stabilized
 
 // Extension exports (for plugin extension system)
-export {
-  ShapeExtension,
-  ShapeExtensionHandler,
-  DataSourceStep,
-  LicenseStep,
-  ProcessingStep,
-  CountrySelectionStep
-} from './extension';
+// Extension (UI) exports omitted from public API for now
 
 // Backward compatibility - 既存コードとの互換性
 export { ShapeMetadata } from './shared/metadata';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types';
 export type { ShapeAPI } from './shared/api';
 
-// Batch processing exports (for Location and Route plugins)
-export { BatchSessionManager } from './services/BatchSessionManager';
+// Batch processing exports are temporarily internal-only until type contracts are stabilized

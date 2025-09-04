@@ -5,7 +5,16 @@
  * 🟢 信頼性レベル: EXTENDING_FOLDER_PLUGIN.mdの仕様に基づく
  */
 
-import type { FolderEntity } from '@hierarchidb/folder-plugin';
+// Avoid cross-package type dependency to keep d.ts bundling simple
+type BaseFolderFields = {
+  id: string;
+  nodeId: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+};
 
 // Step コンポーネントのインポート（将来の拡張用）
 // import { DataSourceStep } from '../steps/DataSourceStep';
@@ -33,7 +42,7 @@ interface SpreadsheetExtendedFields {
  * 【型定義】: SpreadsheetEntityの完全な型定義
  * 🟢 信頼性レベル: FolderEntityを継承
  */
-export interface SpreadsheetEntity extends FolderEntity, SpreadsheetExtendedFields {
+export interface SpreadsheetEntity extends BaseFolderFields, SpreadsheetExtendedFields {
   // FolderEntityから継承: id, nodeId, name, description, createdAt, updatedAt, version
   // SpreadsheetExtendedFieldsから追加: spreadsheetMetadataId, dataSource, filters
 }

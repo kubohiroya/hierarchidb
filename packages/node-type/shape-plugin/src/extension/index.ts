@@ -4,7 +4,7 @@
  */
 
 export { ShapeExtension } from './definition';
-export { ShapeExtensionHandler } from './handler';
+// ShapeExtensionHandler is internal for now (types under stabilization)
 export { DataSourceStep } from './components/DataSourceStep';
 export { LicenseStep } from './components/LicenseStep';
 export { ProcessingStep } from './components/ProcessingStep';
