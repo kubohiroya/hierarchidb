@@ -39,7 +39,7 @@
     "build:storybook": "storybook build",
     "storybook:ui-core": "pnpm --filter @hierarchidb/ui-core storybook",
     "check:licenses": "npx license-checker --production --summary",
-    "analyze:licenses": "tsx scripts/analyze-licenses.ts",
+    "analyze:licenses": "pnpm --filter @hierarchidb/analyze-licenses exec node dist/cli.js",
     "analyze:docs": "node scripts/analyze-docs.js",
     "generate:pdf": "node scripts/generate-pdf-with-translation.js",
     "generate:pdf:ja": "node scripts/generate-pdf-with-translation.js --japanese",
@@ -117,6 +117,7 @@
   "packageManager": "pnpm@9.14.4",
   "pnpm": {
     "overrides": {
+      "dexie": "4.2.0",
       "vite": "5.4.19",
       "@vitejs/plugin-react": "4.3.4",
       "vite@*": "5.4.19",
