@@ -881,6 +881,9 @@ P2:
 
 - merged: 2025-09-04 PR #89 を main にマージ（useTreeConsoleIntegration 型強化）。
   - 要点: 内部型導入（ViewMode/ContextAction）、ハンドラの互換維持しつつ内部ナロー、import型ガードで cast 排除。
+
+- merged: 2025-09-04 PR #90 を main にマージ（UI public types + shim 縮退）。
+  - 要点: useLoaderData の明示型化、plugins の any 除去、plugin-demo の undefined 安全化、bootstrap d.ts 採用、virtual:plugin-definitions を公開型へ。
 \n+- pr: 2025-09-04 `fix/app/typecheck-phase2-tighten` を作成（2コミット: `chore(types): workspace type hygiene sweep`, `fix(app): tighten typecheck Phase 2`）。
   - 対応タスク: 「小さな型負債スイープ（2025-09-04）」の一括反映、および「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
   - ロールバック: どちらも差分単位のリバートで切戻し可能（アプリ側は Phase 1 状態へ復帰、型スイープは各パッケージ単位で戻し）。
