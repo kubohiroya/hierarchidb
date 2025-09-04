@@ -36,6 +36,7 @@
     "@hierarchidb/runtime-ui-tour": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:^",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",

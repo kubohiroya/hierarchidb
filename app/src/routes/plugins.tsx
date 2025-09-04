@@ -53,7 +53,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType, TreeId } from '@hierarchidb/common-type';
 import { type PluginDefinition, type PluginDatabaseConfig } from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
-import { FullScreenDialog } from '@hierarchidb/ui-base-dialog';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 import { useNavigate } from 'react-router';
 
 // Meta function for React Router v7

@@ -11,7 +11,7 @@ import { loadTree, type LoadTreeArgs } from '~/loader';
 import type { LoadTreeReturn } from '~/loader';
 import { WorkerAPIClient } from '../../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
+import { TreeConsolePanel, type TreeNodeData, type TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeNode, NodeId } from '@hierarchidb/common-type';
 
 // This loader will be used by the route that renders the dialog
@@ -119,7 +119,7 @@ export default function TrashDialog() {
   };
 
   // Convert trash items to TreeNodeData format
-  const treeData = (data.trashItems || []).map((node: TreeNode) => ({
+  const treeData: TreeNodeData[] = (data.trashItems || []).map((node: TreeNode) => ({
     ...node,
     id: node.id,
     nodeType: node.nodeType,
@@ -127,27 +127,27 @@ export default function TrashDialog() {
   }));
 
   // Define columns for trash view
-  const columns = [
+  const columns: TreeTableColumn[] = [
     {
       id: 'name',
       label: 'Name',
       sortable: true,
       width: 300,
-      render: (_value: string | undefined, node: TreeNode) => node.name,
+      render: (_value, node) => node.name,
     },
     {
       id: 'nodeType',
       label: 'Type',
       sortable: true,
       width: 120,
-      render: (_value: string | undefined, node: TreeNode) => node.nodeType,
+      render: (_value, node) => node.nodeType,
     },
     {
       id: 'deletedAt',
       label: 'Deleted',
       sortable: true,
       width: 160,
-      render: (_value: number | undefined, node: TreeNode) => {
+      render: (_value, node) => {
         return node.updatedAt ? new Date(node.updatedAt).toLocaleDateString() : '';
       },
     },

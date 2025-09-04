@@ -16,7 +16,7 @@ import {
   Breadcrumbs,
 } from '@mui/material';
 import { LocalOffer as TagIcon, FolderOpen as NodeIcon } from '@mui/icons-material';
-import { useQuery } from '@tanstack/provider-query';
+import { useQuery } from '~/hooks/useQuery';
 import { useWorkerClient } from '~/contexts/WorkerProvider';
 import type { TagEntity, NodeTagAssociation, TreeNode, NodeId, TreeId } from '@hierarchidb/common-type';
 

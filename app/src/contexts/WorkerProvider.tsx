@@ -8,7 +8,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography, LinearProgress } from '@mui/material';
-import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-worker-bootstrap';
+import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
@@ -198,7 +198,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   });
 
   type InitChannel = {
-    on: (event: string, cb: (e: any) => void) => void;
+    on: (event: 'progress' | 'complete' | 'error', cb: (e: any) => void) => void;
     waitForInitialization: () => Promise<{ success: boolean; error?: string }>;
     destroy: () => void;
   };
