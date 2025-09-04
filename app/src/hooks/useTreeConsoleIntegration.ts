@@ -36,6 +36,17 @@ export interface TreeConsoleState {
   canPaste: boolean;
 }
 
+type ViewMode = 'list' | 'grid';
+type ContextAction =
+  | 'open'
+  | 'openFolder'
+  | 'preview'
+  | 'edit'
+  | 'duplicate'
+  | 'remove'
+  | 'checkReference'
+  | `create:${string}`;
+
 export interface TreeConsoleActions {
   handleNodeClick: (node: TreeNodeData) => void;
   handleNodeSelect: (nodeId: string, selected: boolean) => void;
@@ -50,10 +61,11 @@ export interface TreeConsoleActions {
   handleCollapseAll: () => void;
   handleSort: (columnId: string) => void;
   handleFilterChange: (filter: string) => void;
-  handleViewModeChange: (mode: 'list' | 'grid') => void;
+  handleViewModeChange: (mode: ViewMode) => void;
   handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => void;
   handleNavigateBack: () => void;
   handleNavigateForward: () => void;
+  // Keep parameter as string to remain compatible with UI prop type
   handleContextMenuAction: (action: string, node: TreeNodeData) => void;
   handleUndo: () => void;
   handleRedo: () => void;
@@ -75,7 +87,7 @@ export function useTreeConsoleIntegration({
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [expandedIds, setExpandedIds] = useState<NodeId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   // TreeConsole internal state
   const [state, setState] = useState<TreeConsoleState>({
@@ -248,7 +260,7 @@ export function useTreeConsoleIntegration({
         setState((prev) => ({ ...prev, filterBy: filter }));
       },
 
-      handleViewModeChange: (mode: 'list' | 'grid') => {
+      handleViewModeChange: (mode: ViewMode) => {
         setViewMode(mode);
       },
 
@@ -268,7 +280,7 @@ export function useTreeConsoleIntegration({
       },
 
       handleContextMenuAction: async (action: string, node: TreeNodeData) => {
-        const actionStr = action;
+        const actionStr = action as ContextAction;
         console.log('Context menu action:', actionStr, 'for node:', node);
 
         // Handle creation actions from SpeedDial
@@ -318,7 +330,7 @@ export function useTreeConsoleIntegration({
         }
 
         // Handle import/export through context menu
-        if (actionStr === 'export' && node?.id) {
+        if ((action as string) === 'export' && node?.id) {
           // Export is handled via actions.handleExport; in this minimal phase, omit here.
           return;
         }
@@ -360,12 +372,14 @@ export function useTreeConsoleIntegration({
         input.onchange = async (e) => {
           const file = (e.target as HTMLInputElement).files?.[0];
           if (file && pageNodeId) {
-            const format = importExport.detectFileFormat(file) || 'json';
+            const detected = importExport.detectFileFormat(file) ?? null;
+            const isSupported = (v: string | null): v is 'json' | 'csv' => v === 'json' || v === 'csv';
+            const format: 'json' | 'csv' = isSupported(detected) ? detected : 'json';
             try {
               const result = await importExport.importFile({
                 file,
                 targetNodeId: pageNodeId,
-                format: format as 'json' | 'csv',
+                format,
                 onProgress: (progress) => {
                   console.log('Import progress:', progress);
                 },
