@@ -197,12 +197,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     error: null,
   });
 
-  type InitChannel = {
-    on: (event: 'progress' | 'complete' | 'error', cb: (e: any) => void) => void;
-    waitForInitialization: () => Promise<{ success: boolean; error?: string }>;
-    destroy: () => void;
-  };
-  const [initChannel, setInitChannel] = useState<InitChannel | null>(null);
+  const [initChannel, setInitChannel] = useState<WorkerInitializationChannel | null>(null);
 
   /**
    * Worker初期化処理
@@ -220,25 +215,16 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         throw new Error('Worker instance is not available');
       }
 
-      // 初期化チャンネルを作成
-      const channel = new WorkerInitializationChannel(rawWorker, { 
-        timeout, 
-        debug 
-      });
+      // 初期化チャンネルを作成し、初期化完了を待機
+      const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
 
-      // 初期化の進捗を監視
-      channel.on('progress', (event: { progress: number; message?: string }) => {
-        setState(prev => ({
-          ...prev,
-          initProgress: event.progress,
-          initMessage: event.message || 'Worker初期化中...',
-        }));
+      const result = await channel.waitForInitialization({
+        worker: rawWorker,
+        timeout,
+        debug,
       });
 
-      // 初期化完了を待つ
-      const result = await channel.waitForInitialization();
-      
       if (result.success) {
         const client = await WorkerAPIClient.getSingleton();
         setState({
@@ -249,7 +235,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
           error: null,
         });
       } else {
-        throw new Error(result.error || 'Worker initialization failed');
+        throw new Error(result.error?.message || 'Worker initialization failed');
       }
     } catch (error) {
       console.error('[WorkerProvider] Initialization failed:', error);
@@ -267,9 +253,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
     // クリーンアップ
     return () => {
-      if (initChannel) {
-        initChannel.destroy();
-      }
+      initChannel?.dispose();
     };
   }, []);
 

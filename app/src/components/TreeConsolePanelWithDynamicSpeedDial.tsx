@@ -14,16 +14,11 @@ import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeContext } from '~/plugins/menu-builders';
 
-interface TreeConsolePanelWithDynamicSpeedDialProps
-  extends Omit<TreeConsolePanelProps, 'canCreate' | 'onContextMenuAction'> {
+interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProps {
   treeId: TreeId | undefined;
   workerClient: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
   menuContext?: TreeContext;
-  // Compatibility extensions (UI base props under evolution)
-  title?: string;
-  onContextMenuAction?: (action: string, node: TreeNodeData) => void;
-  canCreate: boolean;
 }
 
 export function TreeConsolePanelWithDynamicSpeedDial({
