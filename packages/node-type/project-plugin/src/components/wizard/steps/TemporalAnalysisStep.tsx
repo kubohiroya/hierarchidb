@@ -32,9 +32,7 @@ import {
   SkipNext as SkipNextIcon,
   SkipPrevious as SkipPreviousIcon,
 } from '@mui/icons-material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DateTimePicker, LocalizationProvider, AdapterDateFns } from '@hierarchidb/ui-date';
 import type { ProjectEntity, TemporalAnalysis } from '~/types/project-types';
 
 interface TemporalAnalysisStepProps {

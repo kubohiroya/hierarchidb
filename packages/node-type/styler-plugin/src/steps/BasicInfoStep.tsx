@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Typography, 
   TextField, 
-  Grid, 
   Box,
   FormControl,
   InputLabel,
@@ -10,6 +9,7 @@ import {
   MenuItem,
   FormHelperText
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import { useTranslation } from 'provider-i18next';
 import { TagInput } from '@hierarchidb/ui-core/components/TagInput';
 import { CategorySelector } from '@hierarchidb/ui-core/components/CategorySelector';

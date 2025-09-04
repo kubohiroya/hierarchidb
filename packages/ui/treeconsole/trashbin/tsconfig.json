@@ -8,10 +8,7 @@
       "ES2022",
       "DOM"
     ],
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ],
+    "types": [],
     "composite": true,
     "incremental": true,
     "noEmit": false
@@ -21,6 +18,9 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*"
   ]
 }

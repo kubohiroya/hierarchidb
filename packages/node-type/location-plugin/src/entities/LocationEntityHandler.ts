@@ -3,7 +3,7 @@
  * @description Location entity handler extending metadata base handler
  */
 
-import type { Table, Collection } from 'dexie';
+// (no direct Dexie typings to avoid cross-version conflicts)
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import type {
@@ -30,9 +30,10 @@ export interface CreateLocationData extends Partial<LocationEntity> {
  * Location entity handler with full CRUD operations
  */
 export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, CreateLocationData, LocationFilterCriteria> {
-  protected table: Table<LocationEntity, EntityId>;
+  // Dexie typing differs across versions; keep broad here to avoid cross-version mismatch
+  protected table: any;
 
-  constructor(table: Table<LocationEntity, EntityId>) {
+  constructor(table: any) {
     super();
     this.table = table as any;
   }
@@ -238,9 +239,9 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    * Apply additional search criteria for locations
    */
   protected applyAdditionalSearchCriteria(
-    query: Collection<LocationEntity>,
+    query: any,
     criteria: LocationFilterCriteria
-  ): Collection<LocationEntity, any> {
+  ): any {
     // Apply parent class criteria first
     query = super.applyAdditionalSearchCriteria(query, criteria);
 
@@ -264,17 +265,17 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
     }
 
     if (criteria.countries && criteria.countries.length > 0) {
-      query = query.filter((entity: LocationEntity) =>
-        entity.address?.countryCode &&
-        criteria.countries!.includes(entity.address.countryCode)
-      );
+      query = query.filter((entity: LocationEntity) => {
+        const code = entity.address?.countryCode;
+        return code ? criteria.countries!.includes(code) : false;
+      });
     }
 
     if (criteria.cities && criteria.cities.length > 0) {
-      query = query.filter((entity: LocationEntity) =>
-        entity.address?.city &&
-        criteria.cities!.includes(entity.address.city)
-      );
+      query = query.filter((entity: LocationEntity) => {
+        const city = entity.address?.city;
+        return city ? criteria.cities!.includes(city) : false;
+      });
     }
 
     if (criteria.boundingBox) {
@@ -328,7 +329,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       );
     }
 
-    return query as Collection<LocationEntity, any>;
+    return query;
   }
 
   /**

@@ -88,7 +88,6 @@ export class WorkerService implements WorkerAPI {
       );
 
       return new WorkerService(
-        plugins,
         coreDB,
         ephemeralDB,
         treeQueryService,
@@ -104,7 +103,6 @@ export class WorkerService implements WorkerAPI {
   }
 
   constructor(
-    private plugins: PluginDefinition[],
     private coreDB: CoreDB,
     private ephemeralDB: EphemeralDB,
     private queryService: TreeQueryAPI,

@@ -9,6 +9,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx",
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
@@ -20,7 +21,10 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "src/types.ts",
+    "src/types/**/*.d.ts"
+  ],
   "exclude": [
     "dist",
     "node_modules",

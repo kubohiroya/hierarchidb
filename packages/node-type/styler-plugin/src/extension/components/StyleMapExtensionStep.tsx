@@ -5,7 +5,6 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'provider-i18next';
 import {
-  Grid,
   TextField,
   FormControl,
   InputLabel,
@@ -15,6 +14,7 @@ import {
   Typography,
   Box,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 
 export interface StylerStepData {
   styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
@@ -120,7 +120,7 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
         </FormControl>
       </Grid>
 
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <Box>
           <Typography gutterBottom>
             {t('extension.opacity.label', 'Opacity')}: {data.opacity || 0.7}

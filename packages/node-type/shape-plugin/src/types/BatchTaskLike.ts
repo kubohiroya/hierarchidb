@@ -28,3 +28,5 @@ export interface BatchTaskLike {
   createdAt: number;
   updatedAt: number;
 }
+
+export type BatchTask = BatchTaskLike;

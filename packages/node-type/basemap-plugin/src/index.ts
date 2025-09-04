@@ -5,8 +5,7 @@
 
 // === Core Exports (Standard Structure) ===
 
-// Entity exports
-export * from './entities';
+// Entity/handler/definition exports
 export * from './handlers';
 export * from './definitions';
 
@@ -14,23 +13,14 @@ export * from './definitions';
 export * from './components';
 export * from './hooks';
 
-// Shared code
-export * from './shared';
+// Type exports (root)
 export * from './types';
 
 // Database
 export * from './database';
 
-// === Extension Exports (Legacy Compatibility) ===
-
-// Main extension export (legacy compatibility)
-export { BaseMapExtension } from './extension/definition';
-
-// Extension components
-export { MapStyleStep } from './extension/components/MapStyleStep';
-export { MapViewportStep } from './extension/components/MapViewportStep';
-export { DisplayOptionsStep } from './extension/components/DisplayOptionsStep';
-export { PreviewStep } from './extension/components/PreviewStep';
+// === Extension Exports (Legacy Compatibility)
+// Removed: legacy extension layer is not present in this package.
 
 // === Constants and Metadata ===
 

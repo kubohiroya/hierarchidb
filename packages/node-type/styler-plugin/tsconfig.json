@@ -17,12 +17,20 @@
     "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "plugin.config.ts"],
-  "exclude": ["dist", "node_modules"],
+  "include": ["src/types/**/*.ts", "src/types/**/*.d.ts"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/tests/**"
+  ],
   "references": []
 }

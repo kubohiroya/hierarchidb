@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  Grid,
   TextField,
   FormControl,
   InputLabel,
@@ -11,6 +10,7 @@ import {
   Typography,
   FormHelperText,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
 import type {
   FolderEntity,

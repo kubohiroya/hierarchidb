@@ -19,16 +19,11 @@
     "paths": {
       "~/*": [
         "src/*"
-      ],
-      "@hierarchidb/common-auth": [
-        "../../common/auth/dist/index.d.ts"
       ]
     },
     "tsBuildInfoFile": "dist/.tsbuildinfo",
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ]
+    "types": ["vite/client"],
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*",
@@ -37,6 +32,10 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.stories.ts"
+    "**/*.stories.ts",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/__tests__/**",
+    "src/vite-env.d.ts"
   ]
 }

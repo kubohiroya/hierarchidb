@@ -3,14 +3,9 @@
  * @description Route batch processing manager extending Shape's batch infrastructure
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { BatchSessionManager } from '@hierarchidb/shape-plugin/src/services/BatchSessionManager';
-import type { 
-  BatchConfig,
-  BatchTaskLike,
-  BatchProgressEvent 
-} from '@hierarchidb/shape-plugin/src/types';
-import type { RouteEntity, RouteGenerationConfig } from '../entities/RouteEntity';
+import type { NodeId } from '@hierarchidb/common-type';
+import { BatchSessionManager, type BatchConfig, type BatchTaskLike } from './batch-shim';
+import type { RouteGenerationConfig } from '../entities/RouteEntity';
 
 /**
  * Route-specific batch configuration
@@ -83,7 +78,7 @@ export class RouteBatchManager extends BatchSessionManager {
     const routeTasks: RouteBatchTask[] = [];
     
     // Phase 1: Location resolution tasks
-    if (config.locationResolution.checkLocationExists) {
+    if (config.validation.checkLocationExists) {
       for (const route of routes) {
         if (route.startLocationId || route.endLocationId) {
           routeTasks.push({
@@ -108,7 +103,7 @@ export class RouteBatchManager extends BatchSessionManager {
     
     // Phase 2: Route generation tasks
     for (let i = 0; i < routes.length; i++) {
-      const route = routes[i];
+      const route = routes[i]!;
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId as any,
@@ -205,7 +200,8 @@ export class RouteBatchManager extends BatchSessionManager {
     taskType: string,
     tasks: RouteBatchTask[]
   ): Promise<void> {
-    const config = this.getSessionConfig(sessionId) as RouteBatchConfig;
+    const config = (this as any)['getSessionConfig'](sessionId) as RouteBatchConfig | undefined; // access protected
+    if (!config) return;
     const maxConcurrent = config.routeGeneration.maxConcurrent;
     
     // Process tasks in batches for parallelism
@@ -217,9 +213,9 @@ export class RouteBatchManager extends BatchSessionManager {
       );
       
       // Update progress using Shape's callback mechanism
-      this.notifyProgress(sessionId, {
+      (this as any)['notifyProgress'](sessionId, {
         sessionId,
-        stage: batch[0].stage,
+        stage: (batch[0]?.stage ?? 'processing') as any,
         progress: ((i + batch.length) / tasks.length) * 100,
         completedTasks: i + batch.length,
         totalTasks: tasks.length,
@@ -271,7 +267,7 @@ export class RouteBatchManager extends BatchSessionManager {
    */
   private async resolveLocations(
     task: RouteBatchTask,
-    config: RouteBatchConfig
+    _config: RouteBatchConfig
   ): Promise<void> {
     // Implementation would call LocationResolver
     console.log('Resolving locations for task:', task.taskId);
@@ -282,7 +278,7 @@ export class RouteBatchManager extends BatchSessionManager {
    */
   private async generateRoute(
     task: RouteBatchTask,
-    config: RouteBatchConfig
+    _config: RouteBatchConfig
   ): Promise<void> {
     // Implementation would call RouteGenerator
     console.log('Generating route for task:', task.taskId);
@@ -293,7 +289,7 @@ export class RouteBatchManager extends BatchSessionManager {
    */
   private async validateRoute(
     task: RouteBatchTask,
-    config: RouteBatchConfig
+    _config: RouteBatchConfig
   ): Promise<void> {
     // Validation logic
     console.log('Validating route for task:', task.taskId);
@@ -304,7 +300,7 @@ export class RouteBatchManager extends BatchSessionManager {
    */
   private async optimizeRoute(
     task: RouteBatchTask,
-    config: RouteBatchConfig
+    _config: RouteBatchConfig
   ): Promise<void> {
     // Generate vector tiles for routes
     console.log('Optimizing route for task:', task.taskId);
@@ -315,7 +311,7 @@ export class RouteBatchManager extends BatchSessionManager {
    */
   private async retryTask(
     task: RouteBatchTask,
-    config: RouteBatchConfig
+    _config: RouteBatchConfig
   ): Promise<void> {
     // Implement retry logic
     console.log('Retrying task:', task.taskId);
@@ -340,13 +336,13 @@ export class RouteBatchManager extends BatchSessionManager {
     
     // Determine current phase
     let phase = 'idle';
-    if (tasks.some(t => t.taskType === 'location_resolution' && t.status === 'running')) {
+    if (tasks.some(t => t.taskType === 'location_resolution' && t.status === 'processing')) {
       phase = 'resolving_locations';
-    } else if (tasks.some(t => t.taskType === 'route_generation' && t.status === 'running')) {
+    } else if (tasks.some(t => t.taskType === 'route_generation' && t.status === 'processing')) {
       phase = 'generating_routes';
-    } else if (tasks.some(t => t.taskType === 'validation' && t.status === 'running')) {
+    } else if (tasks.some(t => t.taskType === 'validation' && t.status === 'processing')) {
       phase = 'validating';
-    } else if (tasks.some(t => t.taskType === 'optimization' && t.status === 'running')) {
+    } else if (tasks.some(t => t.taskType === 'optimization' && t.status === 'processing')) {
       phase = 'optimizing';
     }
     

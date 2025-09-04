@@ -43,6 +43,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   maxWidth = 'lg',
   fullScreen: initialFullScreen = false,
   showFullscreenToggle = true,
+  onFullscreenChange,
   hasUnsavedChanges = false,
   supportsDraft = false,
   onSubmit,

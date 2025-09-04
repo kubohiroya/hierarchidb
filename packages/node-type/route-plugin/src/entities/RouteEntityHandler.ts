@@ -45,7 +45,8 @@ export interface RouteSearchCriteria extends BaseSearchCriteria, MetadataSearchC
  * Route entity handler with metadata support
  */
 export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<RouteEntity>, RouteSearchCriteria> {
-  protected table: Table<RouteEntity, EntityId>;
+  // Dexie Table typing differs across versions; use a broad compatible shape here
+  protected table: any;
   private routeDB: RouteDatabase;
   private routeGenerator: RouteGenerator;
   private locationResolver: LocationResolver;
@@ -321,9 +322,9 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
   }> {
     const allRoutes = await this.table.toArray();
     
-    const outgoing = allRoutes.filter(r => r.startLocationId === locationId);
-    const incoming = allRoutes.filter(r => r.endLocationId === locationId);
-    const passing = allRoutes.filter(r => 
+    const outgoing = allRoutes.filter((r: RouteEntity) => r.startLocationId === locationId);
+    const incoming = allRoutes.filter((r: RouteEntity) => r.endLocationId === locationId);
+    const passing = allRoutes.filter((r: RouteEntity) => 
       r.waypointLocationIds?.includes(locationId) || false
     );
     
@@ -334,7 +335,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    * Get route statistics
    */
   async getStatistics(): Promise<RouteStatistics> {
-    const routes = await this.table.toArray();
+    const routes = (await this.table.toArray()) as RouteEntity[];
     
     const stats: RouteStatistics = {
       totalRoutes: routes.length,
@@ -371,12 +372,12 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       if (route.endLocationId) connected.add(route.endLocationId);
       
       // Processing stats
-      const status = route.processingStatus;
-      if (status) stats.processingStats[status]++;
+      const status = route.processingStatus as keyof typeof stats.processingStats | undefined;
+      if (status) stats.processingStats[status]!++;
     }
     
     stats.averageDistance = routes.length > 0 
-      ? stats.totalDistance / routes.filter(r => r.distance).length 
+      ? stats.totalDistance / routes.filter((r: RouteEntity) => r.distance).length 
       : 0;
     
     stats.connectedLocations = connected.size;

@@ -437,33 +437,7 @@ export class TreeQueryService implements TreeQueryAPI {
     return result;
   }
 
-  private async getAllNodes(): Promise<TreeNode[]> {
-    // In a real implementation, this would be a more efficient database query
-    // For testing purposes, we'll iterate through all stored nodes
-    if (this.coreDB && 'treeNodes' in this.coreDB && this.coreDB.treeNodes instanceof Map) {
-      return Array.from((this.coreDB as any).treeNodes.values());
-    }
-
-    // Fallback - get all nodes via traversal from all root nodes
-    // This is less efficient but works with the mock database
-    const allNodes: TreeNode[] = [];
-    const visited = new Set<NodeId>();
-
-    // Find root nodes (nodes without parent or with empty parent)
-    const potentialRoots = ['root' as NodeId]; // Start with common root
-
-    for (const rootId of potentialRoots) {
-      const descendants = await this.getAllDescendantsWithSelf(rootId);
-      descendants.forEach((node) => {
-        if (!visited.has(node.id)) {
-          visited.add(node.id);
-          allNodes.push(node);
-        }
-      });
-    }
-
-    return allNodes;
-  }
+  // getAllNodes helper omitted in this baseline
 
   private getNextSeq(): number {
     // In a real implementation, this should be managed by CommandProcessor

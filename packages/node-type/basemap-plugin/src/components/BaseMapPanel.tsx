@@ -247,15 +247,15 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                 </ListItem>
               )}
 
-              {/* Tags */}
-              {entity?.displayOptions?.tags && entity.displayOptions.tags.length > 0 && (
+              {/* Tags (from entity) */}
+              {Array.isArray(entity?.tags) && entity!.tags!.length > 0 && (
                 <ListItem>
                   <ListItemIcon>
                     <Info fontSize="small" />
                   </ListItemIcon>
                   <ListItemText
                     primary="Tags"
-                    secondary={entity.displayOptions.tags.join(', ')}
+                    secondary={`${entity!.tags!.length} tags`}
                   />
                 </ListItem>
               )}

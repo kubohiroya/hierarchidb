@@ -1,4 +1,4 @@
-import type { NodeId, PeerEntity, EntityId, TagId } from '@hierarchidb/common-type';
+import type { NodeId, PeerEntity, EntityId } from '@hierarchidb/common-type';
 
 // Category types
 export type { ShapeCategory } from './category-types';
@@ -474,7 +474,7 @@ export const SHAPE_LEVELS = [
 // Batch Processing Types
 // ================================
 
-export type { BatchTask, BatchStage } from './BatchTaskLike';
+export type { BatchStage } from './BatchTaskLike';
 export type { BatchTaskLike } from './BatchTaskLike';
 export type { BatchConfig } from './BatchConfig';
 export type { BatchProgressEvent } from './BatchProgressEvent';

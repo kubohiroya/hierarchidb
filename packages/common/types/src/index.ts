@@ -7,6 +7,9 @@ export * from './entity-handler-types';
 export * from './entity-manager-types';
 export * from './entity-types';
 export * from './id-types';
+// Ensure key branded IDs and core entity interfaces are explicitly exported for DTS bundling
+export type { NodeId, EntityId } from './id-types';
+export type { PeerEntity } from './entity-types';
 export * from './import-export-types';
 export * from './menu-types';
 export * from './plugin-definition';

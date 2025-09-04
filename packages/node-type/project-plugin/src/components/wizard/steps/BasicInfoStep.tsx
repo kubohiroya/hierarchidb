@@ -10,8 +10,7 @@ import {
   Grid,
 } from '@mui/material';
 import { Business as BusinessIcon, Public as PublicIcon } from '@mui/icons-material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, AdapterDateFns } from '@hierarchidb/ui-date';
 import type { ProjectEntity, ProjectCategory } from '~/types/project-types';
 
 interface BasicInfoStepProps {

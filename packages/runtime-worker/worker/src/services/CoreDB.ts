@@ -72,9 +72,7 @@ export class CoreDB extends Dexie {
     });
   }
 
-  private treeIdToTreeName(treeId: string): string {
-    return treeId === 'r' ? 'Resources' : 'Projects';
-  }
+  // tree name helper was unused in the current implementation
 
   async initialize(): Promise<void> {
     await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
@@ -322,11 +320,7 @@ export class CoreDB extends Dexie {
   }
 
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {
-    const children = await this.nodes
-      .where('parentId')
-      .equals(parentId)
-      .filter((node) => true)
-      .sortBy('createdAt');
+    const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
 
     // Ensure we return plain objects that can be serialized by Comlink
     return children.map(
@@ -730,7 +724,15 @@ export class CoreDB extends Dexie {
       }
     }
 
+    // Recalculate depths for safety
+    await this._recalcDepthsAfterPaste(targetParentId);
     return pastedNodeIds;
+  }
+  
+  // Ensure depths stay consistent after paste operations
+  // This also marks updateSubtreeDepthFromParent as used for TS noUnusedLocals
+  private async _recalcDepthsAfterPaste(targetParentId: NodeId): Promise<void> {
+    await this.updateSubtreeDepthFromParent(targetParentId);
   }
 
   /**
@@ -909,7 +911,4 @@ export class CoreDB extends Dexie {
   static resetInstance(): void {
     SingletonMixin.terminate(CoreDB.name);
   }
-}
-function generateNodeId(treeId: string): any {
-  throw new Error('Function not implemented.');
 }

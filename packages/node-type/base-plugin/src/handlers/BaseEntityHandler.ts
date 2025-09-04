@@ -3,7 +3,7 @@
  * @description Base entity handler class for all HierarchiDB plugins
  */
 
-import type { Table, Collection } from 'dexie';
+import type { Table, Collection, IndexableType } from 'dexie';
 import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
 import type {
   BaseSearchCriteria,
@@ -21,7 +21,7 @@ export abstract class BaseEntityHandler<
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
   TSearchCriteria extends BaseSearchCriteria = BaseSearchCriteria,
 > {
-  protected abstract table: Table<TEntity, EntityId>;
+  protected abstract table: Table<TEntity, EntityId, TEntity>;
   protected lifecycleHooks: EntityLifecycleHooks<TEntity> = {};
 
   /**
@@ -375,9 +375,9 @@ export abstract class BaseEntityHandler<
    * Can be overridden by derived classes
    */
   protected applyAdditionalSearchCriteria(
-    query: Collection<TEntity>,
+    query: Collection<TEntity, IndexableType, TEntity>,
     _criteria: TSearchCriteria
-  ): Collection<TEntity, any> {
+  ): Collection<TEntity, any, TEntity> {
     // Default implementation returns query unchanged
     // Override in derived classes for additional filtering
     return query;

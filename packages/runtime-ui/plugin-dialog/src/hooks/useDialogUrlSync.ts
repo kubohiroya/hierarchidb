@@ -80,9 +80,15 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     if (m === 'full' || m === 'normal') setMode(m);
     const mp = q.get(ns('map'));
     if (mp) {
-      const [lng, lat, zoom] = mp.split(',').map(Number);
-      if ([lng, lat, zoom].every((v) => Number.isFinite(v))) {
-        setMap({ lng, lat, zoom });
+      const parts = mp.split(',');
+      if (parts.length === 3) {
+        const [lngStr, latStr, zoomStr] = parts as [string, string, string];
+        const lng = Number(lngStr);
+        const lat = Number(latStr);
+        const zoom = Number(zoomStr);
+        if ([lng, lat, zoom].every((v) => Number.isFinite(v))) {
+          setMap({ lng, lat, zoom });
+        }
       }
     }
   }, [isBrowser, makeParams, namespace]);
@@ -165,7 +171,8 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     const url = new URL(window.location.href);
     const ns = `${namespace}_`;
     if (readFrom === 'hash') {
-      const base = url.hash.includes('?') ? url.hash.split('?')[0] : (url.hash || '#');
+      const hash = url.hash ?? '';
+      const base: string = hash.includes('?') ? hash.split('?')[0]! : (hash || '#');
       url.hash = base;
     } else {
       const q = new URLSearchParams(url.search);
@@ -177,4 +184,3 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
 
   return { step, setStep, mode, setMode, map, setMap, clearParams };
 }
-

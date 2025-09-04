@@ -19,13 +19,7 @@ export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
     <MenuList sx={{ marginBottom: '30px', backgroundColor: 'red' }}>
       {items.map((item, index) => (
         <MenuItem key={index} sx={{ padding: 0, margin: 0 }} aria-label={item.name}>
-          <NavLink
-            to={item.url}
-            style={({ isActive }: { isActive: boolean }) => ({
-              color: isActive ? '#c34' : '#545e6f',
-              width: '100%',
-            })}
-          >
+          <NavLink to={item.url}>
             <InlineIcon icon={item.icon} />
             <Typography sx={{ marginLeft: 1 }} component="span">
               {item.name}

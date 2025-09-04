@@ -16,7 +16,6 @@ import {
   Slider,
   Typography,
   Paper,
-  Grid,
   Stack,
   TextField,
   FormHelperText,
@@ -29,6 +28,7 @@ import {
   CircularProgress,
   Collapse,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import {
   Palette as PaletteIcon,
   Gradient as GradientIcon,

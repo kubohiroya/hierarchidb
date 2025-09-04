@@ -4,6 +4,7 @@
  */
 
 import Dexie from 'dexie';
+import type { EntityId } from '@hierarchidb/common-type';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
 
 /**
@@ -11,8 +12,8 @@ import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
  * Manages BaseMap entities and working copies with IndexedDB
  */
 export class BaseMapDatabase extends Dexie {
-  baseMaps!: Dexie.Table<BaseMapEntity, string>;
-  workingCopies!: Dexie.Table<BaseMapWorkingCopy, string>;
+  baseMaps!: Dexie.Table<BaseMapEntity, EntityId>;
+  workingCopies!: Dexie.Table<BaseMapWorkingCopy, EntityId>;
 
   constructor() {
     super('BaseMapDatabase');

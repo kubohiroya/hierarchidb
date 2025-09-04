@@ -38,9 +38,8 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:^",
+    "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     
     "jszip": "^3.4.1",
@@ -49,8 +48,8 @@
     "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
-    "@mui/icons-material": "^6.1.6",
-    "@mui/material": "^6.1.6",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
     "dexie": "^4.2.0"
@@ -63,8 +62,8 @@
     "vitest": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^6.1.6",
-    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
     "dexie": "^4.2.0"
   },
   "keywords": [

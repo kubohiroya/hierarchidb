@@ -5,8 +5,17 @@
     "rootDir": "src",
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["react", "react/jsx-runtime"]
+    "types": ["react", "react/jsx-runtime"],
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/examples/**/*"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/examples/**/*",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/tests/**",
+    "src/__tests__/**"
+  ]
 }

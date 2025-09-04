@@ -2,7 +2,21 @@
  * Shape plugin shared types
  */
 
-import type { NodeId, EntityId, NodeType, PeerEntity } from '@hierarchidb/common-type';
+// Local minimal type aliases to decouple from common-type DTS export quirks
+export type NodeId = string;
+export type EntityId = string;
+export type NodeType = string;
+export interface PeerEntity {
+  id: EntityId;
+  nodeId: NodeId;
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+  dialogMode?: 'normal' | 'full';
+  resumeStep?: number;
+  mapParams?: { zoom: number; lng: number; lat: number };
+  disabled?: boolean;
+}
 import type { Geometry, BBox } from 'geojson';
 
 // ================================

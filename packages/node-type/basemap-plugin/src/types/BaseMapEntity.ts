@@ -3,8 +3,8 @@
  * @description BaseMap entity types extending Folder entity
  */
 
-import type { NodeId, EntityId, WorkingCopy } from '@hierarchidb/common-type';
-import type { FolderEntity, FolderEntityWorkingCopy } from '@hierarchidb/folder-plugin';
+import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { FolderEntity, FolderWorkingCopy } from '@hierarchidb/folder-plugin';
 
 /**
  * Map style configuration
@@ -51,7 +51,7 @@ export interface BaseMapEntity extends FolderEntity {
 /**
  * BaseMap working copy for edit operations
  */
-export interface BaseMapWorkingCopy extends BaseMapEntity, FolderEntityWorkingCopy {
+export interface BaseMapWorkingCopy extends BaseMapEntity, FolderWorkingCopy {
   isDraft: true;
   originalId?: EntityId;
   copiedAt: number;
