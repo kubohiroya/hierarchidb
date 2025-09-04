@@ -49,23 +49,19 @@
     "jspdf": "^2.5.0"
   },
   "peerDependencies": {
-    "dexie": "^4.2.0"
-  },
-  "devDependencies": {
-    "dexie": "^4.2.0"
-  },
-  "devDependencies": {
-    "@types/d3-scale": "^4.0.0",
-    "@types/geojson": "^7946.0.10",
-    "@types/react": "^18.3.1",
-    "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
+    "dexie": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.8",
     "@mui/icons-material": "^6.1.8"
   },
-  "peerDependencies": {
+  "devDependencies": {
+    "dexie": "^4.2.0",
+    "@types/d3-scale": "^4.0.0",
+    "@types/geojson": "^7946.0.10",
+    "@types/react": "^18.3.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.8",

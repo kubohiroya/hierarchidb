@@ -19,6 +19,7 @@ declare module '@hierarchidb/ui-map' {
   export interface MapLibreMapInstance {
     getStyle(): MapLibreStyle;
     addControl(control: unknown, position?: string): void;
+    fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;
     setLayoutProperty(layerId: string, name: string, value: unknown): void;
     getContainer(): HTMLElement;
     getLayer(id: string): MapLibreLayer | undefined;
@@ -39,6 +40,8 @@ declare module '@hierarchidb/ui-map' {
     initialViewState: MapViewState;
     mapStyle?: string | MapLibreStyle;
     onLoad?: (m: MapLibreMapInstance) => void;
+    onViewStateChange?: (vs: MapViewState) => void;
+    controls?: { navigation?: boolean; scale?: boolean };
     width?: string | number;
     height?: string | number;
     style?: React.CSSProperties;
@@ -48,8 +51,10 @@ declare module '@hierarchidb/ui-map' {
     initialViewState: MapViewState;
     mapStyle?: string | MapLibreStyle;
     onLoad?: (m: MapLibreMapInstance) => void;
+    onViewStateChange?: (vs: any) => void;
     width?: string | number;
     height?: string | number;
     style?: React.CSSProperties;
+    deck?: any;
   }>;
 }
