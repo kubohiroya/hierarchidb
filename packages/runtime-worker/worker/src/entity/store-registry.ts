@@ -1,4 +1,3 @@
-import type { EntityHandler } from './EntityHandler';
 import type { PeerStore, GroupStore, RelationStore, GroupItemBase, RelationBase } from './store';
 
 /**

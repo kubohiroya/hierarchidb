@@ -1,6 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "skipLibCheck": true,
     "noEmit": true,
     "composite": true,
     "incremental": true,
@@ -11,6 +12,10 @@
       ]
     },
     "jsx": "react-jsx"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "react-joyride/@gilbarbara/types/type-fest generics require TS>=5; isolate here only"
   },
   "include": [
     "src/**/*.ts",

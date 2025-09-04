@@ -3,7 +3,7 @@
  * @description Route generation service for different algorithms
  */
 
-import type { RouteGenerationConfig, RouteGenerationMethod } from '../entities/RouteEntity';
+import type { RouteGenerationConfig } from '../entities/RouteEntity';
 
 /**
  * Route generation result
@@ -74,8 +74,8 @@ export class RouteGenerator {
     const lineGeometry: [number, number][] = [];
     
     for (let i = 0; i < points.length - 1; i++) {
-      const start = points[i];
-      const end = points[i + 1];
+      const start = points[i]!;
+      const end = points[i + 1]!;
       const interpolated = this.interpolateGreatCircle(
         start,
         end,
@@ -103,7 +103,7 @@ export class RouteGenerator {
    */
   private async generateOSMRoute(
     points: [number, number][],
-    options?: any
+    _options?: any
   ): Promise<RouteGenerationResult> {
     // This would call an external OSM routing service
     // For now, return a simple implementation
@@ -129,7 +129,7 @@ export class RouteGenerator {
    */
   private generateCustomRoute(
     points: [number, number][],
-    options?: any
+    _options?: any
   ): RouteGenerationResult {
     // Custom algorithm implementation
     // For now, return direct route
@@ -184,7 +184,7 @@ export class RouteGenerator {
     let totalDistance = 0;
     
     for (let i = 0; i < points.length - 1; i++) {
-      totalDistance += this.calculateDistance(points[i], points[i + 1]);
+      totalDistance += this.calculateDistance(points[i]!, points[i + 1]!);
     }
     
     return totalDistance;
@@ -197,7 +197,7 @@ export class RouteGenerator {
     let totalDistance = 0;
     
     for (let i = 0; i < points.length - 1; i++) {
-      totalDistance += this.calculateDistance(points[i], points[i + 1]);
+      totalDistance += this.calculateDistance(points[i]!, points[i + 1]!);
     }
     
     return totalDistance;
@@ -214,8 +214,8 @@ export class RouteGenerator {
     
     const lat1 = this.toRadians(point1[1]);
     const lat2 = this.toRadians(point2[1]);
-    const deltaLat = this.toRadians(point2[1] - point1[1]);
-    const deltaLon = this.toRadians(point2[0] - point1[0]);
+    const deltaLat = this.toRadians(point2[1]! - point1[1]!);
+    const deltaLon = this.toRadians(point2[0]! - point1[0]!);
     
     const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
               Math.cos(lat1) * Math.cos(lat2) *

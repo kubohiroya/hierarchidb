@@ -24,10 +24,13 @@ const translations = {
   },
 };
 
-// Get current language from localStorage or default to English
+// Get current language from storage (if available) or default to English
 const getCurrentLanguage = (): 'en' | 'ja' => {
   try {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
+    const storage: any = (typeof globalThis !== 'undefined' && (globalThis as any).localStorage)
+      ? (globalThis as any).localStorage
+      : null;
+    const stored = storage ? storage.getItem('i18nextLng') : null;
     return stored === 'ja' ? 'ja' : 'en';
   } catch {
     return 'en';

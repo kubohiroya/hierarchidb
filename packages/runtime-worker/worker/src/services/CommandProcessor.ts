@@ -11,7 +11,7 @@ import { commandRegistry } from './command/registry';
 import { validateAndNormalizeEnvelope } from './validation/envelope';
 import { FEATURE_FLAGS } from '../config/feature-flags';
 import { commitWorkingCopyV2 } from './WorkingCopyTreeNodeOperations';
-import { encodeTrashHolderName, decodeTrashHolderName } from './utils/holder-encoding';
+import { encodeTrashHolderName } from './utils/holder-encoding';
 import { hasWorkingCopyInSubtree } from './utils/policy-c';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
 import { recordCommandLatency } from '../utils/metrics';

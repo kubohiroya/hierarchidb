@@ -46,12 +46,13 @@ export function useStepCapabilities({
    * Evaluate capabilities for current state
    */
   const evaluateCapabilities = useCallback(async () => {
-    if (!api || !steps[currentStep]) return;
+    if (!api) return;
+    const currentStepConfig = steps[currentStep];
+    if (!currentStepConfig) return;
 
     setIsEvaluating(true);
     
     try {
-      const currentStepConfig = steps[currentStep];
       
       // Evaluate current step capabilities
       const promises: Promise<any>[] = [];

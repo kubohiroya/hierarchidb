@@ -6,7 +6,8 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "types": [],
+    "skipLibCheck": true,
     "composite": true,
     "incremental": true,
     "outDir": "./dist",
@@ -26,6 +27,9 @@
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/__tests__/**"
   ]
 }

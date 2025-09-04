@@ -1,4 +1,14 @@
-import { randomUUID } from 'crypto';
+const randomUUIDCompat = (): string => {
+  const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+  if (g.crypto && typeof g.crypto.randomUUID === 'function') {
+    return g.crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 import type { ClockPort } from './ports';
 import type { TaskHandle, TaskSpec, TaskStatus } from './types';
 
@@ -20,7 +30,7 @@ export class WorkerPool {
   }
 
   submit<I = any, O = any>(spec: TaskSpec<I, O>): TaskHandle<O> {
-    const id = spec.id || randomUUID();
+    const id = spec.id || randomUUIDCompat();
     const handle = new InternalHandle<O>(id);
     const p = new Promise<O>((resolve, reject) => {
       this.queue.push({ spec: { ...spec, id }, resolve, reject, handle });
@@ -90,4 +100,3 @@ const defaultClock: ClockPort = {
   setTimeout: (cb, ms) => setTimeout(cb, ms),
   clearTimeout: (id) => clearTimeout(id as any),
 };
-

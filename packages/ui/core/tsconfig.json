@@ -12,13 +12,7 @@
       ]
     },
     "jsx": "react-jsx",
-<<<<<<< HEAD
-    "types": [
-      "node"
-    ],
-=======
     "types": ["node"],
->>>>>>> b8d92ab (chore(repo): small config/typing tweaks and TASKS log)
     "lib": [
       "ES2022",
       "DOM",

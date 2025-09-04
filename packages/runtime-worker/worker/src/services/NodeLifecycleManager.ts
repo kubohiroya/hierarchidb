@@ -1,10 +1,4 @@
-import type {
-  TreeNode,
-  NodeId,
-  NodeType,
-  PluginDefinition,
-  PluginIntegrated,
-} from '@hierarchidb/common-type';
+import type { TreeNode, NodeId, NodeType, PluginDefinition } from '@hierarchidb/common-type';
 import type { CoreDB } from './CoreDB';
 import { workerError } from '../utils/workerLogger';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types';

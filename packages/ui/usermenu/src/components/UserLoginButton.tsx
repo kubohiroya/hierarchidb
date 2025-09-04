@@ -28,13 +28,11 @@ import { AuthProviderType, UserAvatar, AuthProviderDialog, useAuth } from '@hier
 import { useThemeMode, ThemeMode } from '@hierarchidb/ui-theme';
 import { getThemeIcon, getThemeDisplayName } from '@hierarchidb/ui-core';
 import { useLanguage, type LanguageConfig } from '@hierarchidb/ui-i18n';
-import { useTranslation } from 'react-i18next';
 
 export const UserLoginButton: React.FC = () => {
   const { user, signIn, signOut, auth } = useAuth();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
   const { currentLanguage, supportedLanguages, changeLanguage } = useLanguage();
-  const { t } = useTranslation();
   const isLoading = auth.isLoading;
   const isAuthenticated = auth.isAuthenticated;
 
@@ -264,7 +262,7 @@ export const UserLoginButton: React.FC = () => {
                 }}
               >
                 <span>
-                  {currentLanguage.flag} {t('navigation.language')}
+                  {currentLanguage.flag} Language
                 </span>
                 <ChevronRightIcon fontSize="small" />
               </Box>

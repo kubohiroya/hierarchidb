@@ -6,6 +6,7 @@
     "noEmit": true,
     "rootDir": "./src",
     "jsx": "react-jsx",
+    "skipLibCheck": true,
     "paths": {
       "~/*": ["./src/*"]
     },

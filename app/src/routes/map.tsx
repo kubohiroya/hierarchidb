@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useGeolocation } from 'react-hook-geolocation';
+import useGeolocation from 'react-hook-geolocation';
 import { MapLibreMap } from '@hierarchidb/ui-map';
 import type { MapViewState } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
@@ -175,7 +175,7 @@ export default function MapPage() {
         </Box>
         
         {/* Geolocation status */}
-        {geolocation.loading && (
+        {geolocation.latitude === undefined && geolocation.longitude === undefined && !geolocation.error && (
           <Box
             component="p"
             sx={{ margin: 0, marginTop: 1, fontSize: '0.75rem', color: 'primary.main' }}

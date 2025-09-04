@@ -191,10 +191,8 @@ export class EntityLifecycleManager {
     sourceNodes?: Record<string, { nodeType?: string }>
   ): Promise<void> {
     try {
-      // Build quick lookup for subtree membership
-      const inSubtree = new Set<string>(Array.from(mapping.keys()));
       const storeReg = (await import('./store-registry')).storeRegistry;
-      for (const [src, dst] of mapping.entries()) {
+      for (const [src] of mapping.entries()) {
         const srcNode = sourceNodes?.[src] || (await (this.coreDB as any).getNode?.(src));
         const nodeType = (srcNode as any)?.nodeType as string | undefined;
         if (!nodeType) continue;

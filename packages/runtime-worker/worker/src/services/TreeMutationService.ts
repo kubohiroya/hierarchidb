@@ -5,7 +5,6 @@ import {
   ImportNodesPayload,
   MoveNodesPayload,
   PasteNodesPayload,
-  RemovePayload,
   RecoverFromTrashPayload,
   RedoPayload,
   Timestamp,

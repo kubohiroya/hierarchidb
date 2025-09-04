@@ -13,14 +13,13 @@
     "rootDir": "./src",
     "moduleResolution": "node",
     "noEmit": false,
+    "types": ["vite/client"],
+    "skipLibCheck": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "~/*": [
         "src/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "../ui-core/dist/index.d.ts"
       ]
     }
   },
@@ -28,8 +27,11 @@
     "src"
   ],
   "exclude": [
-    "**/*.stories.ts",
-    "**/*.stories.tsx"
+    "**/*.stories.*",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/__tests__/**",
+    "src/test-setup.ts"
   ],
   "references": [
     {

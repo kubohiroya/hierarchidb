@@ -24,10 +24,17 @@ declare module 'virtual:plugin-map' {
 
 // Removed: UI and worker package shims — replaced by real package types
 
-// Other external packages lacking types in this workspace
-declare module '@tanstack/provider-query' {
-  const Default: any;
-  export default Default;
-  export function useQuery(...args: any[]): any;
+// Provide minimal types for runtime-worker-bootstrap if TS cannot resolve declarations
+declare module '@hierarchidb/runtime-worker-bootstrap' {
+  export class WorkerInitializationReporter {
+    reportStepProgress(message: string, progress: number): void;
+    reportComplete(): void;
+    reportError(message: string): void;
+  }
+  export class WorkerInitializationChannel {
+    constructor(worker: Worker, opts?: { timeout?: number; debug?: boolean });
+    on(event: 'progress' | 'complete' | 'error', cb: (e: any) => void): void;
+    waitForInitialization(): Promise<{ success: boolean; error?: string }>;
+    destroy(): void;
+  }
 }
-declare module 'react-hook-geolocation' { const useGeolocation: any; export default useGeolocation; export { useGeolocation }; }

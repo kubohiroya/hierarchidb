@@ -67,7 +67,7 @@ export class LocationResolver {
   /**
    * Search locations by criteria
    */
-  async searchLocations(criteria: {
+  async searchLocations(_criteria: {
     name?: string;
     type?: string;
     bounds?: [[number, number], [number, number]];

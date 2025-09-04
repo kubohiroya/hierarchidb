@@ -65,6 +65,8 @@ export interface BaseShapeError extends Error {
   sessionId?: string;
   treeNodeId?: TreeNodeId;
   stage?: BatchProcessingStage;
+  // 任意の付帯情報
+  metadata?: Record<string, any>;
   
   // エラーチェーン
   cause?: Error | BaseShapeError;

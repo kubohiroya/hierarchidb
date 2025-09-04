@@ -81,7 +81,7 @@ export class TreeSubscriptionService {
   subscribeNodeCommand(
     cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload>
   ): Observable<TreeChangeEvent> {
-    const { nodeId: nodeId, filter, includeInitialValue = false } = cmd.payload;
+    const { nodeId: nodeId, includeInitialValue = false } = cmd.payload;
 
     const subscriptionId = this.generateSubscriptionId();
     const subject = new Subject<TreeChangeEvent>();
@@ -581,7 +581,7 @@ export class TreeSubscriptionService {
   private async *createInitialSubtreeEvents(
     rootId: NodeId,
     filter?: SubscriptionFilter,
-    maxDepth?: number,
+    _maxDepth?: number,
     chunkSize: number = 200
   ): AsyncGenerator<TreeChangeEvent> {
     // Minimal progressive snapshot: emit root's direct children in chunks
@@ -616,24 +616,7 @@ export class TreeSubscriptionService {
     return undefined;
   }
 
-  private getChildNodesFromDB(parentId: NodeId, filter?: SubscriptionFilter): TreeNode[] {
-    // Access the mock database directly for testing
-    if (this.coreDB && 'treeNodes' in this.coreDB && this.coreDB.treeNodes instanceof Map) {
-      const allNodes = Array.from(this.coreDB.treeNodes.values()) as TreeNode[];
-      let childNodes = allNodes.filter((node: TreeNode) => node.parentId === parentId);
-
-      // Apply filter
-      if (filter?.nodeTypes) {
-        childNodes = childNodes.filter((node: TreeNode) =>
-          filter.nodeTypes!.includes(node.nodeType)
-        );
-      }
-
-      return childNodes;
-    }
-
-    return [];
-  }
+  // getChildNodesFromDB omitted in this baseline (kept for legacy mock testing only)
 
   private setupPeriodicSubscriptionCleanup(): void {
     // Run cleanup every 5 minutes
@@ -686,16 +669,7 @@ export class TreeSubscriptionService {
     return true;
   }
 
-  private getInitialSubtreeV1(pageNodeId: NodeId): Promise<any> {
-    console.log('getInitialSubtreeV1', pageNodeId);
-    return Promise.resolve({
-      treeId: '' as TreeId,
-      rootNodeId: '' as NodeId,
-      pageNodeId: pageNodeId,
-      changes: {},
-      version: 0,
-    });
-  }
+  // getInitialSubtreeV1 omitted (legacy compat stub)
 
   toggleNodeExpanded(pageNodeId: NodeId): Promise<void> {
     console.log('toggleNodeExpanded (V1 compat)', pageNodeId);
@@ -1215,7 +1189,7 @@ export class TreeSubscriptionService {
   /**
    * Check if event is relevant for tree observation
    */
-  private isEventRelevantForTreeObservation(event: TreeChangeEvent, treeId: TreeId): boolean {
+  private isEventRelevantForTreeObservation(_event: TreeChangeEvent, _treeId: TreeId): boolean {
     // TreeChangeEventにはtreeIdがないため、nodeIdからTreeIdを取得する必要がある
     // 現在の実装では、全てのイベントを関連性があるとみなす
     // TODO: nodeIdからTreeIdを取得してtreeIdと比較する実装を追加

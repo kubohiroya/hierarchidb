@@ -23,14 +23,16 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   // プラグインのリストを作成
   const plugins = [
     // HierarchiDB plugin package discovery -> virtual modules
-    toolsVitePluginPackageReader(
-      hierarchiDBMultiModulePreset({
+    toolsVitePluginPackageReader({
+      ...hierarchiDBMultiModulePreset({
         // 現在の命名規則（@hierarchidb/*-plugin）に合わせる
         pattern: /@hierarchidb\/.*-plugin$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
-      })
-    ),
+      }),
+      // モノレポのルートを明示して検出を安定化
+      rootDir: path.resolve(__dirname, '..'),
+    }),
     dts(),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     comlink(), // Add Comlink plugin for Worker support
@@ -49,6 +51,29 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       alias: [
         // ローカルソースのエイリアスのみ
         { find: '~', replacement: path.resolve(__dirname, './src') },
+        // Fallback for virtual module when plugin isn't active in some build modes
+        { find: 'virtual:plugin-definitions', replacement: path.resolve(__dirname, './src/virtual/plugin-definitions.ts') },
+        { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
+        { find: 'virtual:plugin-map', replacement: path.resolve(__dirname, './src/virtual/plugin-map.ts') },
+        // ワークスペース解決が不安定な場合の保険（Rollup の解決を安定化）
+        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core') },
+        { find: '@hierarchidb/ui-dialog', replacement: path.resolve(__dirname, '../packages/ui/dialog/src/index.ts') },
+        { find: '@hierarchidb/common-auth', replacement: path.resolve(__dirname, '../packages/common/auth') },
+        { find: '@hierarchidb/runtime-worker', replacement: path.resolve(__dirname, '../packages/runtime-worker/worker/dist/index.js') },
+        { find: '@hierarchidb/tabular', replacement: path.resolve(__dirname, '../packages/feature/tabular') },
+        { find: '@hierarchidb/tag', replacement: path.resolve(__dirname, '../packages/feature/tag') },
+        { find: '@hierarchidb/import-export', replacement: path.resolve(__dirname, '../packages/feature/import-export') },
+        { find: '@hierarchidb/compute', replacement: path.resolve(__dirname, '../packages/feature/compute') },
+        { find: '@hierarchidb/batch', replacement: path.resolve(__dirname, '../packages/feature/batch') },
+        { find: '@hierarchidb/download', replacement: path.resolve(__dirname, '../packages/feature/download') },
+        { find: '@hierarchidb/map-source', replacement: path.resolve(__dirname, '../packages/feature/map-source') },
+        { find: '@hierarchidb/map-view', replacement: path.resolve(__dirname, '../packages/feature/map-view') },
+        { find: '@hierarchidb/auth-recovery', replacement: path.resolve(__dirname, '../packages/feature/auth-recovery') },
+        { find: '@hierarchidb/runtime-worker', replacement: path.resolve(__dirname, '../packages/runtime-worker/worker/src/index.ts') },
+        { find: '@hierarchidb/runtime-worker-bootstrap', replacement: path.resolve(__dirname, '../packages/runtime-worker/worker-bootstrap') },
+        { find: '@hierarchidb/feature/feature-registry', replacement: path.resolve(__dirname, '../packages/feature/feature-registry') },
+        { find: '@hierarchidb/tabular-xlsx', replacement: path.resolve(__dirname, '../packages/feature/tabular-xlsx') },
+        { find: '@hierarchidb/feature-registry', replacement: path.resolve(__dirname, '../packages/feature/feature-registry') },
         // パッケージのエイリアスは削除（pnpm workspaceとturbo devで解決）
       ],
     },

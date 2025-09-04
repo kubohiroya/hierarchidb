@@ -11,7 +11,12 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "storybook@9 type defs are not TS4.9 clean; leaf-only allowance"
   },
   "include": [
     "src/**/*"

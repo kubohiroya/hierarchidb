@@ -3,7 +3,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import { useNavigate } from 'react-router';
 import { LoadAppConfigReturn } from '~/loader';
 import { LicenseInfo } from '~/components/LicenseInfo';
-import { FullScreenDialog } from '@hierarchidb/ui-base-dialog';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 
 // LicenseInfo temporarily commented out until component is available
 // const LazyLicenseInfo = lazy(() =>

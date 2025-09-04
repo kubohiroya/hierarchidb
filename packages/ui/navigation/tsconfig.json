@@ -7,6 +7,7 @@
     "outDir": "./dist",
     "rootDir": ".",
     "jsx": "react-jsx",
+    "skipLibCheck": true,
     "lib": [
       "ES2020",
       "DOM"
@@ -22,6 +23,10 @@
         "../../common/types/dist/index.d.ts"
       ]
     }
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "react-router-dom@7 type d.ts requires TS>=5; leaf-only here"
   },
   "include": [
     "src"

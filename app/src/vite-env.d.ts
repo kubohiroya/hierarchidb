@@ -14,19 +14,6 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-// vite-plugin-comlink global types
-declare global {
-  const ComlinkWorker: new <T = any>(
-    scriptURL: string | URL,
-    options?: WorkerOptions
-  ) => Promise<T>;
-  
-  namespace globalThis {
-    const ComlinkWorker: new <T = any>(
-      scriptURL: string | URL,
-      options?: WorkerOptions
-    ) => Promise<T>;
-  }
-}
-
+// vite-plugin-comlink provides its own global types.
+// Avoid redeclaration here to prevent conflicts.
 export {};

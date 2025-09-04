@@ -10,10 +10,7 @@ import {
 import type { CommandResult } from './command-types';
 import { WorkerErrorCode } from './command-types';
 import type { CoreDB } from './CoreDB';
-import {
-  encodeWorkingCopyHolderName,
-  decodeWorkingCopyHolderName,
-} from './utils/holder-encoding';
+import { encodeWorkingCopyHolderName } from './utils/holder-encoding';
 
 export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
   // Align with CoreDB root id convention: `${treeId}:workingCopy`

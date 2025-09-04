@@ -4,10 +4,9 @@
  */
 
 import * as Comlink from 'comlink';
-import { WorkerService } from '@hierarchidb/runtime-worker-worker';
+import { WorkerService } from '@hierarchidb/runtime-worker';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-worker-bootstrap';
-import { Bootstrap } from '@hierarchidb/runtime-worker-worker';
+import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-bootstrap';
 import { autoLoadPlugins } from './plugins/auto-load';
 
 // Get app name from environment
@@ -25,18 +24,20 @@ async function initializeWorker() {
     initReporter.reportStepProgress('Loading plugins...', 5);
     await autoLoadPlugins();
 
+    // Load virtual module after package-reader plugin has generated it
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const { default: pluginDefinitions } = await import('virtual:plugin-definitions');
+
     console.log('[App Worker] Bootstrapping worker services...');
     initReporter.reportStepProgress('Bootstrapping worker services...', 10);
-    
-    // Bootstrap all services
-    const bootstrap = new Bootstrap(appName);
-    const services = await bootstrap.initialize();
+    // Initialize WorkerService singleton with discovered plugins
+    const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
     
     console.log('[App Worker] Creating WorkerService facade...');
     initReporter.reportStepProgress('Creating WorkerService facade...', 80);
     
-    // Create WorkerService as the facade (internal implementation)
-    const workerService = new WorkerService(services);
+    const workerService = services;
     
     console.log('[App Worker] Exposing WorkerAPI via Comlink...');
     initReporter.reportStepProgress('Exposing WorkerAPI via Comlink...', 95);

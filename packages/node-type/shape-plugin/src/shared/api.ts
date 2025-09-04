@@ -2,7 +2,7 @@
  * Shape API interface - UI-Worker通信契約
  */
 
-import { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId, EntityId } from './types';
 import {
   ShapeEntity,
   CreateShapeData,

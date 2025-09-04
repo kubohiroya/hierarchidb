@@ -14,18 +14,21 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "baseUrl": "./",
+    "types": ["vite/client"],
     "paths": {
       "~/*": [
         "src/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "../ui-core/dist/index.d.ts"
       ]
     }
   },
   "include": [
-    "src",
-    "src/vite-env.d.ts"
+    "src"
+  ],
+  "exclude": [
+    "src/vite-env.d.ts",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/__tests__/**"
   ],
   "references": []
 }

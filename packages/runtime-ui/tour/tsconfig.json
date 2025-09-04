@@ -19,6 +19,7 @@
     "strictNullChecks": false,
     "strict": true,
     "noImplicitAny": false,
+    "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
       "~/*": [
