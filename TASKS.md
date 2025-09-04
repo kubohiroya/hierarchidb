@@ -887,6 +887,9 @@ P2:
 
 - merged: 2025-09-04 PR #91 を main にマージ（i18n 固定列挙撤廃）。
   - 要点: worker logger の言語型を string 化し、未知言語は 'en' フォールバック。README のサンプル型を string に修正。
+
+- merged: 2025-09-04 PR #92 を main にマージ（i18n: supported-langs manifest）。
+  - 要点: /app/public/locales を走査して manifest.json を生成し、LanguageProvider と i18n 初期化で読み込み。言語追加がファイル追加のみで完了。
 \n+- pr: 2025-09-04 `fix/app/typecheck-phase2-tighten` を作成（2コミット: `chore(types): workspace type hygiene sweep`, `fix(app): tighten typecheck Phase 2`）。
   - 対応タスク: 「小さな型負債スイープ（2025-09-04）」の一括反映、および「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
   - ロールバック: どちらも差分単位のリバートで切戻し可能（アプリ側は Phase 1 状態へ復帰、型スイープは各パッケージ単位で戻し）。
