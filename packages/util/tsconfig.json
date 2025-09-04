@@ -7,7 +7,7 @@
     "noEmit": true,
     "target": "es2020",
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "isolatedModules": true,
     "rootDir": "src",
     "outDir": "dist",

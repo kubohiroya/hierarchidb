@@ -10,6 +10,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
+    "isolatedModules": false,
+    "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

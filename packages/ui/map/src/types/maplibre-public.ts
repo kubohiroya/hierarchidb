@@ -38,17 +38,6 @@ export interface MapLibreMapInstance {
   removeSource(id: string): void;
   removeLayer(id: string): void;
   addControl(control: unknown, position?: string): void;
-  zoomIn(): void;
-  zoomOut(): void;
-  setPitch(pitch: number, options?: Record<string, unknown>): void;
-  setBearing(bearing: number, options?: Record<string, unknown>): void;
-  getZoom(): number;
-  getCenter(): { lng: number; lat: number };
-  getPitch(): number;
-  getBearing(): number;
-  flyTo(options: Record<string, unknown>): void;
-  setStyle(style: string | MapLibreStyle): void;
-  fitBounds(bounds: [[number, number], [number, number]], options?: Record<string, unknown>): void;
 }
 
 // Minimal filter type to avoid leaking upstream types

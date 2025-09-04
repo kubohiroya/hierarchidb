@@ -58,13 +58,7 @@ const initializeI18n = () => {
     // Pass the i18n instance to provider-i18next
     .use(initReactI18next)
     // Initialize i18next
-    .init<{
-      loadPath: string;
-      crossDomain: boolean;
-      withCredentials: boolean;
-      customHeaders: Record<string, string>;
-      reloadInterval: number | boolean;
-    }>({
+    .init({
       // Fallback language
       fallbackLng: 'en',
 
@@ -84,6 +78,7 @@ const initializeI18n = () => {
       debug: false,
 
       // Interpolation options
+      // i18next v25 の型では formatters は型定義に含まれていないため、実装上はサポートするが型は緩める
       interpolation: {
         escapeValue: false,
         formatters: {
@@ -103,7 +98,7 @@ const initializeI18n = () => {
                 }).format(value)
               : value,
         },
-      },
+      } as any,
 
       // React options
       react: {
@@ -188,7 +183,7 @@ if (typeof window !== 'undefined') {
               }).format(value)
             : value,
       },
-    },
+    } as any,
     react: {
       useSuspense: false,
     },

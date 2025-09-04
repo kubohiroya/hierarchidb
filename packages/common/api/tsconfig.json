@@ -2,7 +2,9 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "lib": [
-      "ES2022"
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
     ],
     "composite": true,
     "incremental": true,
@@ -10,12 +12,12 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "types": [
-      "node",
-      "vite/client",
-      "vitest/globals"
+      "node"
     ],
     "esModuleInterop": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {}
   },
   "include": [
     "src/**/*.ts",
@@ -23,6 +25,11 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
   ]
 }

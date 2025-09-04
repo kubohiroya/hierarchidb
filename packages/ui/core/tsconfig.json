@@ -14,8 +14,7 @@
     "jsx": "react-jsx",
 <<<<<<< HEAD
     "types": [
-      "@testing-library/jest-dom",
-      "vitest/globals"
+      "node"
     ],
 =======
     "types": ["node"],
@@ -24,7 +23,8 @@
       "ES2022",
       "DOM",
       "DOM.Iterable"
-    ]
+    ],
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

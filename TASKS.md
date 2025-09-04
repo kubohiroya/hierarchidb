@@ -33,18 +33,6 @@
 
 ### Doing（進行中）
 
-- fix/build/module-resolution-ts49（TS6046 '--moduleResolution' 解消）
-  - ブランチ名: `fix/build/module-resolution-ts49`
-  - 依存: なし（小粒）
-  - 受け入れ基準（DoD）:
-    - [x] `pnpm --filter @hierarchidb/ui-accordion-config typecheck` がグリーン
-    - [x] `pnpm --filter @hierarchidb/ui-accordion-config build` が成功
-    - [x] リポジトリ内に `moduleResolution: bundler/Bundler` の記述が残っていない
-  - ロールバック手順: `tsconfig.base.json` と `app/tsconfig.node.json` の差分をリバート
-  - チェックリスト:
-    - [x] `tsconfig.base.json` の `moduleResolution` を `node` に変更
-    - [x] `app/tsconfig.node.json` の `moduleResolution` を `node` に変更
-
 - refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
   - ブランチ名: `refactor/ui-map/maplibre-wrapper`
   - 依存: なし（小粒）
@@ -230,31 +218,6 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
  - [x] ドキュメント更新（エラー一覧）
 
 ## 今日の着手（運用ログ）
-
-- 2025-09-04 start: Vitest バージョン統一（workspace 全体を `vitest@^3.2.4` に揃える）。対象: ルートおよび packages の devDependencies（`vitest` / `@vitest/ui`）。
-- 2025-09-04 done: lockfile 更新（`pnpm install` 実施）。@vitest/ui の peer 解決を統一するため、vitest 未宣言だった UI パッケージ（csv-extract / routing / treeconsole-base）に `vitest@^3.2.4` を明示追加。
-- 2025-09-04 note: `pnpm -r test` 実行時に一部パッケージ（例: `@hierarchidb/common-type`）が「No test files found」で `vitest` が exit 1。機能自体は無関係のためスコープ外。必要なら当該パッケージの `test` スクリプトを `vitest run` へ統一 or サンプルテスト追加で解消可能。
- - 2025-09-04 done: `--passWithNoTests` を全パッケージの `test`/`test:run` スクリプトへ付与し、空テストによる失敗を抑止。
- - 2025-09-04 done: ルート `vitest.config.ts` を `root: process.cwd()` へ変更し、setupFiles を絶対パス化。monorepo 下の各パッケージ実行時にルート設定が干渉しないよう調整。
- - 2025-09-04 done: ルートに `tsconfig.base.json` を新規追加し、`tsconfig.json` の `extends` 参照エラーを解消。
- - 2025-09-04 done: `@hierarchidb/ui-core` の `vitest.setup.ts` のベース参照相対パスを修正（`../../vitest.setup.base` → `../../../vitest.setup.base`）。
- - 2025-09-04 blocked: `@hierarchidb/ui-core` に実テスト失敗あり（`ThemedLoadingScreen.test.tsx` など）。Vitest 統一とは非関連。別タスクで要対応（タイムアウト/環境依存の調整）。
-- 2025-09-04 done: 以下のパッケージで `vitest`/`@vitest/ui` を `^3.2.4` に更新。
-  - ルート `package.json`（vitest）
-  - `packages/runtime-worker/worker-bootstrap`（vitest, @vitest/ui）
-  - `packages/runtime-worker/worker`（既に ^3.2.4 のため維持）
-  - `packages/runtime-shared/{batch-processor,fetch-metadata}`（vitest）
-  - `packages/node-type/{resolver-plugin,base-plugin,spreadsheet-plugin,styler-plugin,location-plugin,route-plugin,project-plugin}`（vitest／必要箇所は @vitest/ui）
-  - `packages/runtime-ui/{appbar,search-result-window}`（vitest）
-  - `packages/ui/floating-window`（vitest）
-  - `packages/tools/vite-plugin-package-reader`（vitest）
-  - `packages/common/api`（既に ^3.2.4 のため維持）
-  - `packages/util`（vitest）
-  - `packages/ui/{csv-extract,routing,treeconsole/base}`（@vitest/ui は既に ^3.2.4 のため維持）
-  - 受け入れ基準（DoD）: `pnpm install` 後、`pnpm test -r` がグリーン。ロールバック: 直前コミットへリバート（パッケージ個別に戻し可）。
-
- - 2025-09-04 done: `@hierarchidb/tools-vite-plugin-package-reader` の DTS ビルドで発生していた TS6307 を解消。対処: パッケージの `tsconfig.json` から `composite`/`incremental` を無効化し、`tsBuildInfoFile` を削除。`pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build` が成功し、`dist/*.d.ts` の生成を確認。
- - 2025-09-04 done: 同パッケージの default export を廃止し named export に統一。CJS ビルド時の "named + default 併用" 警告を解消。コード利用側はもともと named import のため非破壊。
 
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
@@ -735,12 +698,6 @@ P2:
 - done: TreeMutationService の create/update/move/remove/recover を常時 CP 経由に統一
 - done: 旧内部実装（`moveNodesCommand`/`recoverFromTrash`/補助関数）を削除
 - done: command/registry から create/update のダミーハンドラを削除（実処理は CP 側のフォールバックで実行）
-
-2025-09-04
-- start: folder-plugin の build エラー TS18046 調査（`storeRegistry.getPeer` などが unknown 扱い）
-- done: `packages/node-type/folder-plugin/src/types/runtime-worker-store.d.ts` の `@hierarchidb/runtime-worker/entity/store-registry` 宣言を正式 API へ更新（`registerPeer|getPeer|registerGroup|getGroup|registerRelations|getRelations` を正しく型定義）。
-  - result: `pnpm --filter @hierarchidb/folder-plugin build` が成功（当該エラー解消）。
-  - rollback: 当該 `.d.ts` 差分をリバートすれば即時復旧（実行時挙動は非変更）。
 - note: `WORKER_USE_CMDPROC_*` フラグは互換のため定義のみ一時維持（コード上は未使用）。scripts/docs からの露出整理は後続PR
 
 - start: リリースノート確定
@@ -850,6 +807,15 @@ P2:
   - B-1 (vitest/happy-dom): `vitest` ファミリを `1.2.1` に固定、`happy-dom` を `16.8.1` に固定（TS5 前提の型流入を遮断）。
   - 実行手順: `pnpm i` → 主要パッケージで `skipLibCheck` を撤去し `pnpm -w typecheck` を再実行。
 
+
 2025-09-04
-- start: TS6046（`--moduleResolution`）エラー解消対応。`tsconfig.base.json` を `nodenext` に変更し、`app/tsconfig.node.json` も `nodenext` へ統一。
-- done: `nodenext` では拡張子必須（TS2835）が多発したため `node` へ切替。`@hierarchidb/ui-accordion-config` の `typecheck/build` がグリーン、`bundler/Bundler` の残存ゼロを確認。
+- start: folder-plugin の build エラー TS18046 調査（storeRegistry.* が unknown 扱い）
+- done: packages/node-type/folder-plugin/src/types/runtime-worker-store.d.ts の store-registry 宣言を正式 API へ更新（registerPeer|getPeer|registerGroup|getGroup|registerRelations|getRelations を正しく型定義）。
+  - result: pnpm --filter @hierarchidb/folder-plugin build が成功（当該エラー解消）。
+  - rollback: 当該 .d.ts 差分をリバートすれば即時復旧（実行時挙動は非変更）。
+- start: tools-vite-plugin-package-reader の DTS ビルド TS6307 対応
+  - cause: tsup の DTS バンドル時に API Extractor が "project ''" としてエントリのみをプログラム化し、./plugin/VitePlugin などが「ファイルリストに未登録」と判定
+  - fix: tsup 設定を共通ベースに統一（tsup.base.config.ts）、tsconfig の files 依存を撤廃（include: src/**/* を単一の真実源に）
+  - changed: packages/tools/vite-plugin-package-reader/tsup.config.ts, packages/tools/vite-plugin-package-reader/tsconfig.json
+  - result: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build が成功（TS6307 消失）
+  - rollback: 上記 2 ファイルの差分をリバート
