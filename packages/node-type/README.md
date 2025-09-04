@@ -63,6 +63,75 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 - メタ/領域（Meta & Project）
   - project-plugin: プロジェクト領域/メタ設定
 
+### プラグイン分類とパターン
+
+```mermaid
+graph TB
+    %% 分類
+    subgraph "分類"
+        SIMPLE[シンプル<br/>独立]
+        EXTENDING[拡張<br/>単一継承]
+        MIXIN[feature<br/>ミックスイン]
+    end
+
+    %% 基盤
+    FOLDER[📁 folder]
+    BASE[🧱 base]
+
+    %% データ取り込み/変換
+    SPREADSHEET[📊 spreadsheet]
+    RESOLVER[🧭 resolver]
+
+    %% 可視化/スタイリング
+    STYLER[🎨 styler]
+    BASEMAP[🗺️ basemap]
+
+    %% 地理/分析
+    SHAPE[📍 shape]
+    LOCATION[📍 location]
+    ROUTE[🛣️ route]
+
+    %% メタ
+    PROJECT[📦 project]
+
+    %% 単一継承の依存
+    FOLDER --> SPREADSHEET
+    SPREADSHEET --> STYLER
+    FOLDER --> BASEMAP
+    FOLDER --> LOCATION
+    LOCATION --> ROUTE
+    FOLDER --> RESOLVER
+    FOLDER --> PROJECT
+
+    %% 独立（入力なし）
+    SHAPE -. 独立 .- SIMPLE
+
+    %% 分類マッピング（概念）
+    FOLDER --> EXTENDING
+    SPREADSHEET --> EXTENDING
+    STYLER --> EXTENDING
+    BASEMAP --> EXTENDING
+    LOCATION --> EXTENDING
+    ROUTE --> EXTENDING
+    RESOLVER --> EXTENDING
+    PROJECT --> EXTENDING
+
+    %% ミックスイン（feature付与の概念）
+    EXTENDING -. feature .- MIXIN
+
+    %% スタイル
+    style BASE fill:#eeeeee,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 5 3
+    style FOLDER fill:#fff3e0,stroke:#ff9800,stroke-width:3px
+    style SPREADSHEET fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    style STYLER fill:#fce4ec,stroke:#e91e63,stroke-width:2px
+    style BASEMAP fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+    style SHAPE fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    style LOCATION fill:#ffecb3,stroke:#ffa000,stroke-width:2px
+    style ROUTE fill:#ffe0b2,stroke:#ff9800,stroke-width:2px
+    style RESOLVER fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+    style PROJECT fill:#f1f8e9,stroke:#8bc34a,stroke-width:2px
+```
+
 ### 比較表（概要）
 
 | プラグイン | nodeType（実装値） | 継承元 | CoreDB | Plugin DB 名 | 主要機能 | UI（Dialog/Panel） | Import/Export | バッチ | 備考 |
