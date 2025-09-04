@@ -29,20 +29,5 @@
     "dist",
     "tests"
   ],
-  "files": [
-    "src/core/Logger.ts",
-    "src/core/PackageCache.ts",
-    "src/core/PackageDetector.ts",
-    "src/index.ts",
-    "src/pipeline/DependencyResolver.ts",
-    "src/pipeline/TransformPipeline.ts",
-    "src/plugin/VitePlugin.ts",
-    "src/presets/hierarchidb.ts",
-    "src/presets/index.ts",
-    "src/strategies/BaseStrategy.ts",
-    "src/strategies/index.ts",
-    "src/types.ts",
-    "src/virtual/TypeGenerator.ts",
-    "src/virtual/VirtualModuleManager.ts"
-  ]
+  "files": []
 }

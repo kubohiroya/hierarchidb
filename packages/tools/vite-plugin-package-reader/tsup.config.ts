@@ -1,22 +1,14 @@
-import { defineConfig } from 'tsup';
+import { createTsupConfig } from '../../../tsup.base.config';
 
-export default defineConfig({
+export default createTsupConfig({
   entry: {
     index: './src/index.ts',
     'presets/index': './src/presets/index.ts',
   },
   format: ['esm', 'cjs'],
-  dts: {
-    resolve: true,
-    entry: {
-      index: './src/index.ts',
-      'presets/index': './src/presets/index.ts',
-    },
-  },
-  clean: true,
+  external: ['vite'],
   splitting: false,
   sourcemap: true,
-  external: ['vite'],
-  treeshake: true,
+  clean: true,
   minify: false,
 });
