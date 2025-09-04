@@ -640,7 +640,9 @@ export default function PluginsPage() {
       // Phase 2: Use UI registry only; worker analyzer is optional and未型公開
       const plugins: DisplayPlugin[] = uiPlugins.map((p, idx) => ({
         nodeType: p.nodeType as NodeType,
-        displayName: (p as any).displayName || p.nodeType,
+        displayName: (typeof (p as unknown as { displayName?: string }).displayName === 'string'
+          ? (p as unknown as { displayName: string }).displayName
+          : p.nodeType),
         category: { createOrder: idx + 1 },
       }));
       setWorkerPlugins(plugins);

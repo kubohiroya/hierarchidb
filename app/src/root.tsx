@@ -118,7 +118,7 @@ export function HydrateFallback() {
 }
 
 export function ErrorBoundary() {
-  let error: any;
+  let error: unknown;
   try {
     error = useRouteError();
   } catch (e) {
