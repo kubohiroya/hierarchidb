@@ -45,6 +45,26 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ## 📦 現在のプラグインポートフォリオ（実装準拠）
 
+### 比較表（概要）
+
+| プラグイン | nodeType | UI（Dialog/Panel） | DB（Entity/WC） | バッチ | Import/Export | 依存 | ステータス |
+|---|---|---|---|---|---|---|---|
+| base-plugin | base | - | - | - | - | - | GA |
+| folder-plugin | folder | Yes / Yes | Yes / Yes | - | - | なし | GA |
+| spreadsheet-plugin | spreadsheet | Yes / Yes | Yes / Yes | Optional | Import | folder | GA |
+| styler-plugin | styler | Yes / Yes | Yes / Yes | - | - | spreadsheet | GA |
+| basemap-plugin | basemap | Yes / Yes | Yes / Yes | - | Export | folder | GA |
+| shape-plugin | shape | Yes / Yes | Yes / Yes | Yes | Import/Export | なし | GA |
+| location-plugin | location-plugin | Yes / Yes | Yes / Yes | Yes | Import/Export | folder | Beta |
+| route-plugin | route-plugin | Yes / Yes | Yes / Yes | Optional | Export | location | Beta |
+| resolver-plugin | resolver-plugin | Yes / Yes | Yes / Yes | - | Import/Export | folder | Beta |
+| project-plugin | project-plugin | Yes / Yes | Yes / Yes | - | - | folder | Beta |
+
+注記:
+- WC = Working Copy（下書き）サポート。
+- 「Optional」は機能フラグやユースケースに応じて有効化される構成です。
+
+
 ### 基盤プラグイン
 
 #### 📁 [folder-plugin](./folder-plugin/) - **基盤プラグイン**
