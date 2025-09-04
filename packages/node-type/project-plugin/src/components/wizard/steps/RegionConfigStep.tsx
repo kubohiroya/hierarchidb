@@ -26,8 +26,7 @@ import {
   Terrain as TerrainIcon,
   Satellite as SatelliteIcon,
 } from '@mui/icons-material';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { MapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import type { ProjectEntity, ProjectRegion, BoundingBox } from '~/types/project-types';
 
 interface RegionConfigStepProps {
@@ -40,7 +39,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
   onComplete: _onComplete,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
+  const map = useRef<MapLibreMapInstance | null>(null);
 
   const [formData, setFormData] = useState<ProjectRegion>({
     coverage: data.coverage || {
@@ -78,31 +77,11 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
   });
 
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
-
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: getMapStyle(formData.mapConfig.baseMap),
-      center: formData.mapConfig.defaultView.center,
-      zoom: formData.mapConfig.defaultView.zoom,
-      bearing: formData.mapConfig.defaultView.bearing || 0,
-      pitch: formData.mapConfig.defaultView.pitch || 0,
-    });
-
-    // Add navigation controls
-    map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.current.addControl(new maplibregl.ScaleControl(), 'bottom-left');
-
-    // Draw existing coverage
-    if (formData.coverage.type === 'bbox' && formData.coverage.bbox) {
+    // Draw existing coverage after map ready
+    if (map.current && formData.coverage.type === 'bbox' && formData.coverage.bbox) {
       drawBoundingBox(formData.coverage.bbox);
     }
-
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
-  }, []);
+  }, [map.current]);
 
   const getMapStyle = (baseMap: string) => {
     const styles: Record<string, string> = {
@@ -214,9 +193,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
       },
     }));
 
-    if (field === 'baseMap' && map.current) {
-      map.current.setStyle(getMapStyle(value));
-    }
+    // ui-map receives mapStyle via props; handled by component rerender
 
     if (field === 'enable3D' && map.current) {
       if (value) {
@@ -546,15 +523,27 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
             <Typography variant="subtitle2" gutterBottom>
               Map Preview
             </Typography>
-            <Box
-              ref={mapContainer}
-              sx={{
-                width: '100%',
-                height: 'calc(100% - 30px)',
-                borderRadius: 1,
-                overflow: 'hidden',
-              }}
-            />
+            <Box sx={{ width: '100%', height: 'calc(100% - 30px)', borderRadius: 1, overflow: 'hidden' }}>
+              <MapLibreMap
+                initialViewState={{
+                  longitude: formData.mapConfig.defaultView.center[0],
+                  latitude: formData.mapConfig.defaultView.center[1],
+                  zoom: formData.mapConfig.defaultView.zoom,
+                  bearing: formData.mapConfig.defaultView.bearing || 0,
+                  pitch: formData.mapConfig.defaultView.pitch || 0,
+                } as MapViewState}
+                mapStyle={getMapStyle(formData.mapConfig.baseMap)}
+                width="100%"
+                height="100%"
+                onLoad={(m) => { map.current = m; }}
+                onViewStateChange={(vs) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    mapConfig: { ...prev.mapConfig, defaultView: { center: [vs.longitude, vs.latitude], zoom: vs.zoom, bearing: vs.bearing || 0, pitch: vs.pitch || 0 } },
+                  }));
+                }}
+              />
+            </Box>
           </Paper>
         </Grid>
 

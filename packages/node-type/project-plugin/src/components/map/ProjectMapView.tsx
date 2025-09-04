@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Map } from 'maplibre-gl';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { MapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import { MaplibreExportControl, PageOrientation, Format } from '@watergis/maplibre-gl-export';
 //import { Deck } from '@deck.gl/core';
 import { MapboxOverlay } from '@deck.gl/mapbox';
@@ -53,7 +53,6 @@ import {
   SkipNext as SkipNextIcon,
   SkipPrevious as SkipPreviousIcon,
 } from '@mui/icons-material';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 import type { ProjectEntity, ProjectLayer, ColorRamp /*, SpatialAnalysis*/ } from '~/types/project-types';
 
@@ -78,12 +77,11 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   //onLayerUpdate,
   //onAnalysisRun,
 }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<Map | null>(null);
+  const map = useRef<MapLibreMapInstance | null>(null);
   //const deck = useRef<Deck | null>(null);
   const overlay = useRef<MapboxOverlay | null>(null);
 
-  const [viewState, setViewState] = useState({
+  const [viewState, setViewState] = useState<MapViewState>({
     longitude: project.mapConfig.defaultView.center[0],
     latitude: project.mapConfig.defaultView.center[1],
     zoom: project.mapConfig.defaultView.zoom,
@@ -100,98 +98,31 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   const [basemapStyle, setBasemapStyle] = useState(project.mapConfig.baseMap);
   const [is3DMode, setIs3DMode] = useState(project.mapConfig.enable3D || false);
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainer.current || map.current) return;
-
-    map.current = new Map({
-      container: mapContainer.current,
-      style: getMapStyle(basemapStyle),
-      center: [viewState.longitude, viewState.latitude],
-      zoom: viewState.zoom,
-      pitch: viewState.pitch,
-      bearing: viewState.bearing,
-      antialias: true,
-    });
-
-    // Initialize Deck.gl overlay
+  const handleMapLoad = useCallback((m: MapLibreMapInstance) => {
+    map.current = m;
     overlay.current = new MapboxOverlay({
       interleaved: true,
       layers: [],
       getTooltip: ({ object }) =>
         object && {
           html: renderTooltip(object),
-          style: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '4px',
-          },
+          style: { backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white', padding: '8px', borderRadius: '4px' },
         },
-      onClick: ({ object }) => {
-        setSelectedFeature(object);
-      },
+      onClick: ({ object }) => setSelectedFeature(object),
     });
-
-    map.current.addControl(overlay.current as any);
-
-    // Add export control for printing
+    m.addControl(overlay.current as any);
     const exportControl = new MaplibreExportControl({
       PageOrientation: PageOrientation.Landscape,
       Format: Format.PDF,
       DPI: 300,
-      // Size: 'A4',
       Crosshair: true,
       PrintableArea: true,
       Local: 'ja',
       Filename: `project-map-${project.id}-${new Date().toISOString().slice(0, 10)}`,
       AllowedSizes: ['A4', 'A3', 'A2'],
-      /*
-      Translate: {
-        en: {
-          PrintableArea: 'Printable Area',
-          Format: 'Format',
-          DPI: 'DPI',
-          Generate: 'Generate PDF',
-        },
-        ja: {
-          PrintableArea: '印刷可能エリア',
-          Crosshair: '十字線',
-          Format: 'フォーマット',
-          DPI: '解像度',
-          Generate: 'PDF生成',
-          Size: 'サイズ',
-          PageOrientation: 'ページ向き',
-          Landscape: '横向き',
-          Portrait: '縦向き',
-        },
-      },
-       */
     });
-    map.current.addControl(exportControl, 'top-right');
-
-    // Sync map view with state
-    map.current.on('move', () => {
-      if (!map.current) return;
-      const center = map.current.getCenter();
-      const zoom = map.current.getZoom();
-      const pitch = map.current.getPitch();
-      const bearing = map.current.getBearing();
-
-      setViewState({
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom,
-        pitch,
-        bearing,
-      });
-    });
-
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
-  }, []);
+    m.addControl(exportControl as any, 'top-right');
+  }, [project.id]);
 
   // Create Deck.gl layers from project layers
   useEffect(() => {
@@ -581,17 +512,20 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
     });
   };
 
+  const mapStyleUrl = useMemo(() => getMapStyle(basemapStyle), [basemapStyle]);
+
   return (
     <Box sx={{ height: '100%', position: 'relative', display: 'flex' }}>
-      {/* Map Container */}
-      <Box
-        ref={mapContainer}
-        sx={{
-          flex: 1,
-          height: '100%',
-          position: 'relative',
-        }}
-      />
+      <Box sx={{ flex: 1, height: '100%', position: 'relative' }}>
+        <MapLibreMap
+          initialViewState={viewState}
+          mapStyle={mapStyleUrl}
+          width="100%"
+          height="100%"
+          onLoad={handleMapLoad}
+          onViewStateChange={(vs) => setViewState(vs)}
+        />
+      </Box>
 
       {/* Map Controls */}
       <Paper
