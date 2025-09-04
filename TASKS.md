@@ -9,9 +9,26 @@
 - 進行の更新方法
   - 着手時: ブランチ作成 → 本ファイルの対象タスクを「Doing」へ移動
   - PR作成時: ブランチ名/PRリンクを追記
-  - マージ時: 「Done」に移動し、要点・影響範囲を1行で追記
+- マージ時: 「Done」に移動し、要点・影響範囲を1行で追記
 
-## Git ブランチ戦略
+## 目次
+
+- [Git ブランチ戦略](#git-branches)
+- [Kanban（このファイルで運用）](#kanban)
+  - [Doing（進行中）](#kanban-doing)
+  - [ToDo（優先度順）](#kanban-todo)
+  - [次期ToDo（前提: 現在のDoing/P1完了後）](#kanban-next-todo)
+  - [Next Up（Doing完了後に着手）](#kanban-next-up)
+  - [Done（完了）](#kanban-done)
+- [運用ログ（today）](#log-today)
+- 今日の着手（運用ログ）
+  - [#1](#worklog-1) / [#2](#worklog-2) / [#3](#worklog-3) / [#4](#worklog-4)
+- [次のチェックポイント（本日）](#checkpoint-today)
+- [進捗メモ](#progress-notes)
+- [フラグ運用（共通）](#flags)
+- [ロールバック指針](#rollback)
+
+## Git ブランチ戦略 <a id="git-branches"></a>
 
 - 基本: GitHub Flow（短命ブランチ→PR→`main`）。通常は Squash & Merge。
 - エピック規模（任意）: `epic/wc-trash-unification` を切り、段階PRをそこへ積み上げ、最後に `main` へ統合。
@@ -29,9 +46,9 @@
   - `feat/ui/wc-resume-menu`
   - `chore/docs/cleanup-metrics`
 
-## Kanban（このファイルで運用）
+## Kanban（このファイルで運用） <a id="kanban"></a>
 
-### Doing（進行中）
+### Doing（進行中） <a id="kanban-doing"></a>
 
 - refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
   - ブランチ名: `refactor/ui-map/maplibre-wrapper`
@@ -76,7 +93,7 @@
     - [x] folder-plugin の依存追記（@hierarchidb/tag）
     - [ ] 局所 typecheck 実行
 
-### ToDo（優先度順）
+### ToDo（優先度順） <a id="kanban-todo"></a>
 
 EPIC) i18nコア統一とロケール伝播（React非依存・言語追加をデータ駆動化）
 - ブランチ（エピック）: `epic/i18n-core-unify`
@@ -141,7 +158,9 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
     - [ ] `i18n.on('languageChanged', ...)` で変更時通知。
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
-## 運用ログ（today）
+## 運用ログ（today） <a id="log-today"></a>
+- done: 2025-09-04 docs: TASKS.md に目次を追加（H2/H3主要項目）。
+- done: 2025-09-04 docs: 目次をリンク化（重複見出しへ明示ID付与: `#git-branches`, `#kanban-*`, `#worklog-*` など）。
 - done: 2025-09-04 chore/build: prebuild のライセンス集計をパッケージ化CLI経由に統一
   - 変更: ルート `analyze:licenses` を `pnpm --filter @hierarchidb/analyze-licenses exec node dist/cli.js` に変更（tsx排除）
   - 変更: `packages/tools/analyze-licenses/package.json` を追加し bin を公開（`private: true`）
@@ -358,7 +377,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] LicenseInfo/TrashDialog/Converterの `any/unknown` の一部削減（PR #88）
    - [ ] `WorkerContext` の暫定実装（`app/src/contexts/WorkerContext.ts`）を削除（`WorkerProvider` へ一本化）
 
-### Next Up（Doing完了後に着手）
+### Next Up（Doing完了後に着手） <a id="kanban-next-up"></a>
 
 1) CP 段階ルーティング（move/remove）（P1）
 - ブランチ: `feat/worker/cp-routing-move-remove`
@@ -411,7 +430,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] 影響範囲の型通し
  - [x] ドキュメント更新（エラー一覧）
 
-## 今日の着手（運用ログ）
+## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
@@ -507,7 +526,7 @@ P2:
   - ブランチ: `chore/docs/cleanup-metrics`
   - 依存: EPIC完了フェーズ
 
-## 今日の着手（運用ログ）
+## 今日の着手（運用ログ） <a id="worklog-2"></a>
 
 - 2025-09-03 start: EPIC「i18nコア統一とロケール伝播」の計画を策定。問題抽出（固定言語/WorkerのlocalStorage依存/React前提初期化/ロケール未伝達）と段階導入方針を追記。
 
@@ -547,7 +566,7 @@ P2:
    - 変更: `FolderDefinition` の厳格型を撤去し最小公開に整理（basemapと同方針）。
    - 変更: `@hierarchidb/tag` のビルド未同期環境向けに局所shimを追加（本番ではpackage出力が優先されるため影響なし）。
 
-### 次期ToDo（前提: 現在のDoing/P1完了後）
+### 次期ToDo（前提: 現在のDoing/P1完了後） <a id="kanban-next-todo"></a>
 
  1) E2E: CPルーティングとWCフローの包括テスト（P1）
 - ブランチ: `feat/e2e/cp-routing-wc`
@@ -799,7 +818,7 @@ P2:
   - [ ] Runbook（flags, 監視, 戻し）
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
-### Done（完了）
+### Done（完了） <a id="kanban-done"></a>
 
 - WC仕様同期（ADR/用語整備）
   - ブランチ: `chore/docs/wc-spec-sync`（既存ドキュメント整合）
@@ -846,7 +865,7 @@ P2:
   - ブランチ: `fix/app/typecheck-phase2-tighten`（PR #86 / 2025-09-04 の一部）
   - 要点: 葉パッケージに限定した `skipLibCheck` 封じ込め、tests/storybook 型対象の整理、`vite/client`/env shims 導入、`dist/*.d.ts` paths 撤廃、runtime-ui/ui/node-type 各パッケージの型ハイジーン整備。
 
-## フラグ運用（共通）
+## フラグ運用（共通） <a id="flags"></a>
 
 - 起動時固定・既定OFF。`scripts/start-env.sh` から注入し、`config/feature-flags.ts` で一元読取。
 - 代表例:
@@ -855,12 +874,12 @@ P2:
   - `WORKER_USE_CMDPROC_MOVE_REMOVE="0|1"`
   - `WORKER_METRICS_ENABLED="0|1"`
 
-## ロールバック指針
+## ロールバック指針 <a id="rollback"></a>
 
 - いずれの段階PRも、フラグOFFで即時切戻し可能な構造を維持
 - 既存経路の削除は、ONが十分安定してから最終段で実施
 
-## 今日の着手（運用ログ）
+## 今日の着手（運用ログ） <a id="worklog-3"></a>
 
 - start: CommandRegistry 雛形導入（skeletonの型/ユーティリティを先行）
 - start: WCユーティリティ基盤（holderエンコードの防衛と往復テスト）
@@ -930,7 +949,7 @@ P2:
   - done: utils/metrics.ts を追加し、コマンド別レイテンシを収集（count/avg/max）
   - done: CommandProcessor で計測フック（FEATURE_FLAGS.WORKER_METRICS_ENABLED 配下）
 
-### 次のチェックポイント（本日）
+### 次のチェックポイント（本日） <a id="checkpoint-today"></a>
 
 - CommandRegistry 雛形導入
   - [x] `services/command/registry.types.ts` の型土台を追加
@@ -942,7 +961,7 @@ P2:
   - [x] ラウンドトリップの最小ユニットテストを確認（既存 test 通過）
   - [x] TAB混入の失敗ケーステストを確認（既存 test 通過）
 
-### 進捗メモ
+### 進捗メモ <a id="progress-notes"></a>
 
 - runtime-worker の型検証で `decodeWorkingCopyHolderName` がブランド型 `NodeId` と不一致だったため、`@hierarchidb/common-type` の `NodeId` を利用するよう util を修正し、返却値を `as NodeId` で正規化（実行時挙動は非変更）。
 
@@ -1030,7 +1049,7 @@ P2:
  
 ---
 
-### ToDo（追加）: Feature Plugins（二系統管理）と重い依存の任意化（P1）
+### ToDo（追加）: Feature Plugins（二系統管理）と重い依存の任意化（P1） <a id="todo-feature-plugins"></a>
 - ブランチ: `feat/worker/feature-bootstrap-dynamic`
 - 依存: なし（worker単体）
 - 目的:
@@ -1052,7 +1071,7 @@ P2:
   - [ ] NodeType 側からの `FeatureRegistry.require(...)` サンプル実装（後続）
   - [ ] tools（Vite）側の feature 自動検出（仮想モジュール）検討（後続）
 
-## 今日の着手（運用ログ）
+## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
 - 2025-09-03 start: Feature Plugins（二系統管理）の土台を作成（worker側）。
 - 2025-09-03 done: `FeatureBootstrap` を静的importから動的importへ置換。存在しないfeatureパッケージは無視、重い依存はフラグでON時のみロード。
@@ -1094,7 +1113,7 @@ P2:
   - ui/tour: TS4.9と `react-joyride/@gilbarbara/types` の齟齬は leaf パッケージに限定 `skipLibCheck` + 最小 shim（削除条件: TS>=5 or 依存整合）。
   - ui/dialog: Storybook 9 と TS4.9 の型不整合は leaf 限定で `skipLibCheck` 許可（削除条件: TS>=5 へ移行）。
 
-### as any/型緩和の管理ポリシー（追加）
+### as any/型緩和の管理ポリシー（追加） <a id="any-policy"></a>
 - MUST NOT: パッケージ公開API境界での `as any`／グローバル `skipLibCheck`。
 - SHOULD NOT: ランタイム差の吸収を `any` で恒常化（アダプタ/型ガードを採用）。
 - MAY (leaf限定): サードパーティ d.ts 非互換の一時回避として `skipLibCheck`/shim を導入。
@@ -1115,3 +1134,7 @@ P2:
 ToDo（Phase 2/3: any の完全撤去）
 - [ ] ui/* の Storybook 系 d.ts 非互換を TS>=5 で解消し、leaf `skipLibCheck` を撤去
 - [ ] Dexie/ブランドID のアダプタを共通化して他プラグインへ展開（現状は basemap のみ適用）
+  8) 言語セレクタを追加（UI）
+  - ブランチ: `feat/i18n/language-selector`
+  - 内容: ツールバーに `LanguageSelector` を追加し、manifest に基づく言語選択を提供（現状はソフトリロード、後続で i18n.changeLanguage に連携）。
+  - 受け入れ基準: dev 起動でセレクタ表示・選択が反映される（localStorage に記録）。
