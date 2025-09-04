@@ -806,3 +806,16 @@ P2:
   - A-1 (ast-types): 既に `"ast-types": "0.14.2"` を追加済み（isolatedModules 衝突の緩和）。
   - B-1 (vitest/happy-dom): `vitest` ファミリを `1.2.1` に固定、`happy-dom` を `16.8.1` に固定（TS5 前提の型流入を遮断）。
   - 実行手順: `pnpm i` → 主要パッケージで `skipLibCheck` を撤去し `pnpm -w typecheck` を再実行。
+
+
+2025-09-04
+- start: folder-plugin の build エラー TS18046 調査（storeRegistry.* が unknown 扱い）
+- done: packages/node-type/folder-plugin/src/types/runtime-worker-store.d.ts の store-registry 宣言を正式 API へ更新（registerPeer|getPeer|registerGroup|getGroup|registerRelations|getRelations を正しく型定義）。
+  - result: pnpm --filter @hierarchidb/folder-plugin build が成功（当該エラー解消）。
+  - rollback: 当該 .d.ts 差分をリバートすれば即時復旧（実行時挙動は非変更）。
+- start: tools-vite-plugin-package-reader の DTS ビルド TS6307 対応
+  - cause: tsup の DTS バンドル時に API Extractor が "project ''" としてエントリのみをプログラム化し、./plugin/VitePlugin などが「ファイルリストに未登録」と判定
+  - fix: tsup 設定を共通ベースに統一（tsup.base.config.ts）、tsconfig の files 依存を撤廃（include: src/**/* を単一の真実源に）
+  - changed: packages/tools/vite-plugin-package-reader/tsup.config.ts, packages/tools/vite-plugin-package-reader/tsconfig.json
+  - result: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build が成功（TS6307 消失）
+  - rollback: 上記 2 ファイルの差分をリバート
