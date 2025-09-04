@@ -128,6 +128,30 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 - **依存関係**: なし（独立プラグイン）
 - **状態**: ✅ プロダクション完成（高度最適化済み）
 
+### 主要プラグイン概要（追加）
+
+#### 🧱 Base（base-plugin）
+- 目的: 継承専用の基底プラグイン（UI 非表示）。共通ハンドラ/型ユーティリティを提供。
+- 主なエクスポート: `BaseEntityHandler`, `HierarchicalEntityHandler`, 共通 Search/Result 型など。
+- 備考: `BasePluginDefinition` はメニュー非表示（レジストリの基礎として利用）。
+
+#### 📍 Location（location-plugin）
+- 目的: 地点（Point）エンティティ管理。Shape 連携・バッチ取得・近接検索・ジオコーディング等に対応。
+- DB: `locations` ほか Working Copy/Batch 用テーブル（カテゴリ/座標/住所などにインデックス）。
+- UI: `LocationDialog` / `LocationPanel`。
+- 機能: 検索/高度フィルタ/近接検索/バッチ処理/Shape 連携（アンカー/参照/バッチ統合）。
+
+#### 🛣️ Route（route-plugin）
+- 目的: 位置参照または座標からの経路生成・更新・評価。
+- サービス: `RouteGenerator`（生成）, `LocationResolver`（地点解決）。
+- ハンドラ: `RouteEntityHandler`（生成/再生成/統計/関係・スタイル・メタ管理）。
+- 検索: 交通モード/距離/起終点/生成手法など。
+
+#### 🧭 Resolver（resolver-plugin）
+- 目的: プロパティマッピング/スキーマ変換/重複解決などのデータ整備。
+- 構成: Entity ハンドラ/データベース/ダイアログ（`ResolverDialog`）/パネル（`ResolverPanel`）。
+- 備考: MappingCompiler/SchemaDetector 等のサービスは順次拡充予定。
+
 ## 🔧 プラグインアーキテクチャ詳細
 
 ### プラグイン分類とパターン
