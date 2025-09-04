@@ -1,4 +1,5 @@
 import { ResolverDefinition } from './definitions/ResolverDefinition';
+import type { PluginDefinition } from '@hierarchidb/common-type';
 
 // Export types
 export type {
@@ -38,13 +39,13 @@ export {
 // export { SchemaDetector } from './services/SchemaDetector';
 
 // Plugin registration
-export const ResolverPlugin = {
+export const ResolverPlugin: PluginDefinition = {
   ...ResolverDefinition,
   ui: {
     dialogComponentPath: '@hierarchidb/resolver-plugin/components/ResolverDialog',
     panelComponentPath: '@hierarchidb/resolver-plugin/components/ResolverPanel',
   }
-} as const;
+} as PluginDefinition;
 
 // Default export for convenient plugin registration
 export default ResolverPlugin;
