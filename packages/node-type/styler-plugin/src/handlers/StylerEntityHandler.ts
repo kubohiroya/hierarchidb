@@ -22,7 +22,7 @@ interface BaseEntityHandler {
  * Extends SpreadsheetEntityHandler to add style map functionality
  */
 export class StylerEntityHandler
-  implements EntityHandler<StylerEntity, GroupEntity, StylerWorkingCopy>
+  implements EntityHandler<StylerEntity, GroupEntity>
 {
   private spreadsheetHandler: BaseEntityHandler;
   private dataService: StylerDataService;
