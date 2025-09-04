@@ -8,7 +8,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 | 特徴 | 説明 | 実装レベル |
 |------|------|-----------|
-| **UI/Worker分離** | ComlinK RPCによる完全な層分離 | ✅ 完成 |
+| **UI/Worker分離** | Comlink RPCによる完全な層分離 | ✅ 完成 |
 | **型安全性** | TypeScript Branded Typesによる厳密な型管理 | ✅ 完成 |
 | **動的登録** | 実行時プラグイン登録・管理 | ✅ 完成 |
 | **拡張システム** | 基盤プラグインを継承した拡張パターン | ✅ 完成 |
@@ -41,7 +41,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 現在のプラグインポートフォリオ
+## 📦 現在のプラグインポートフォリオ（実装準拠）
 
 ### 基盤プラグイン
 
@@ -180,61 +180,60 @@ graph TB
     style REGISTRY fill:#ffebee,stroke:#f44336,stroke-width:3px
 ```
 
-### プラグイン定義パターン
+## 🧩 プラグイン定義（現行API）
 
-#### 1. シンプルプラグイン（独立実装）
-```typescript
-// 例: folder-plugin, shape-plugin
-export const SimplePlugin: PluginDefinition<MyEntity, never, MyWorkingCopy> = {
+プラグインの定義は `@hierarchidb/common-type` の `PluginDefinition` を用います。従来バージョンの
+`config.category` などは廃止し、トップレベルのフィールドに整理されています。
+
+主なフィールド（抜粋）:
+
+- `nodeType: NodeType`（必須）: プラグインの識別子。
+- `name: string`/`displayName: string`: 内部名/表示名。
+- `description?: string`: 説明。
+- `category: { treeId: TreeId | '*'; menuGroup?: 'basic'|'container'|'document'|'advanced'; createOrder?: number }`:
+  - どのツリーで利用可能か、メニューの配置/順序を定義。
+- `icon?: { muiIconName?: string; emoji?: string; color?: string }`: メニュー/UI用アイコン情報。
+- `database: { dbName: string; schema: DatabaseSchema; version: number }`: DexieベースのDB設定。
+- `ui?: { dialogComponentPath?: string; panelComponentPath?: string }`: UI側エントリ（動的 import 用の相対パス文字列）。
+- `dependencies: string[]`: 依存プラグインの nodeType リスト（ロード順の解決に使用）。
+- `priority: number`: 並び順のヒント（小さいほど先）。
+
+この定義は Worker 層での実体（ハンドラ等）と UI 層の登録に共通して参照され、ビルド時に
+`virtual:plugin-definitions`（vite プラグイン経由）として集約されます。UI のメニュー構築や
+ランタイムのロード順解決は、この定義配列から導出されます。
+
+### メニューとロード順の導出
+
+- ロード順: `dependencies` をもとにトポロジカルソート（folder → spreadsheet → styler 等）。
+- メニュー: `category.menuGroup` と `createOrder`、`displayName` から並び順/表示を決定。
+
+UI 側ユーティリティでは、`virtual:plugin-definitions` を読み取り、`label = nativeName || name || nodeType`
+のようなルールでメニューに整形します（実装は `app/src/plugins/menu-builders.ts` を参照）。
+
+### プラグイン登録（ランタイム）
+
+ビルド後、UI は `virtual:plugin-map` からプラグイン UI を動的 import し、Worker は `PluginDefinition` を
+もとに必要なサービス/ハンドラを登録します（`WorkerService.getSingleton(defs)`）。
+
+#### サンプル（最小）
+```ts
+import type { PluginDefinition } from '@hierarchidb/common-type';
+
+export const MyPlugin: PluginDefinition = {
   nodeType: 'my-plugin',
-  name: 'My Plugin',
-  entityHandler: new MyEntityHandler(),
-  database: { /* スキーマ定義 */ },
-  ui: { /* UI設定 */ },
-  lifecycle: { /* ライフサイクル */ }
+  name: 'MyPlugin',
+  displayName: 'My Plugin',
+  description: 'Example plugin',
+  category: { treeId: '*', menuGroup: 'basic', createOrder: 50 },
+  icon: { muiIconName: 'Extension', color: '#607d8b' },
+  database: { dbName: 'mydb', schema: {/* Dexie schema */} as any, version: 1 },
+  ui: { dialogComponentPath: './ui/MyPluginDialog.tsx' },
+  dependencies: ['folder'],
+  priority: 100,
 };
 ```
 
-#### 2. 拡張プラグイン（継承ベース）
-```typescript
-// 例: basemap-plugin, spreadsheet-plugin
-export const ExtendingPlugin: ExtendableNodeTypeDefinition<
-  FolderEntity,
-  MyExtendedEntity,
-  MyWorkingCopy
-> = {
-  extends: 'folder-plugin',
-  nodeType: 'my-extended-plugin',
-  
-  extendedSteps: [
-    { stepNumber: 2, title: '拡張ステップ', component: MyStep }
-  ],
-  
-  extendedFields: [
-    { name: 'customField', type: 'string', required: true }
-  ],
-  
-  extendedValidation: {
-    extendedRules: { /* カスタムバリデーション */ }
-  }
-};
-```
-
-#### 3. 複合プラグイン（多重継承）
-```typescript
-// 例: styler-plugin（folder → spreadsheet → styler）
-export const ComplexPlugin: ExtendableNodeTypeDefinition<
-  SpreadsheetEntity,
-  StylerEntity,
-  StylerWorkingCopy
-> = {
-  extends: 'spreadsheet-plugin',
-  nodeType: 'styler-plugin',
-  // さらなる拡張定義...
-};
-```
-
-### データベース統合パターン
+## 🗄️ データベース統合パターン（Dexie）
 
 #### 自動スキーマ管理
 ```typescript
@@ -277,6 +276,21 @@ export class StylerEntityHandler extends BaseEntityHandler<StylerEntity> {
   }
 }
 ```
+
+データベースは CoreDB（共通）とプラグイン専用 DB を分離し、Worker 内でトランザクション一貫性を担保します。
+
+## ✅ 開発チェックリスト（最新版）
+
+- [ ] `PluginDefinition` を用いてトップレベルに `category/icon/dependencies/priority` を定義したか
+- [ ] UI/Worker ともに `virtual:plugin-definitions`（集約された定義）を前提にしているか
+- [ ] 依存解決（ロード順）に `dependencies` を設定したか
+- [ ] UI のメニュー表示に `displayName` と `category` を適切に設定したか
+- [ ] Dexie スキーマ（`database.schema`）と `version` を更新時に整合させたか
+
+## 🚫 ポリシー（抜粋）
+
+- tsconfig の `paths` で他パッケージの `dist/*.d.ts` を直接参照しない（モノレポの型崩れ防止）。
+- UI/Worker の境界は Comlink 経由。UI から Worker の実装を直接 import しない。
 
 ## 🔧 技術スタック
 
