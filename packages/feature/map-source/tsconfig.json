@@ -6,6 +6,8 @@
     "declaration": true,
     "composite": false,
     "moduleResolution": "node",
+    "isolatedModules": false,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "dexie": [
