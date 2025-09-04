@@ -48,8 +48,19 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
         if (typeof document !== 'undefined') {
           document.documentElement.lang = next;
         }
-        // soft reload to ensure i18n runtime applies; in future, wire to i18n.changeLanguage
-        window.location.reload();
+        // Try update without reload if i18next is available
+        // Attempt lazy i18n change without hard dependency
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const anyWindow = window as any;
+          if (anyWindow?.i18next?.changeLanguage) {
+            anyWindow.i18next.changeLanguage(next);
+          } else {
+            window.location.reload();
+          }
+        } catch {
+          window.location.reload();
+        }
       }
     } catch {
       // ignore
