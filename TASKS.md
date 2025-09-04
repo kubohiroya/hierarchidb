@@ -351,10 +351,11 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] `routes/plugins.tsx` を `exclude` から解除（型整合済み）
   - [x] `routes/tags*.tsx` の型整合と `exclude` 解除
   - [x] `routes/t.*.tsx` の型整合と `exclude` 解除
-   - [ ] `ui-*` パッケージの型公開に置換（暫定宣言の削減）
-   - [x] `TreeConsolePanelWithDynamicSpeedDial` の `onContextMenuAction` を正式シグネチャへ（Omit再定義を廃止し `TreeConsolePanelProps` を継承）
-   - [ ] `useTreeConsoleIntegration` の `unknown/any` を段階的に削減
-   - [x] `WorkerProvider` の初期化APIを正式版に移行（`WorkerInitializationChannel.waitForInitialization({ worker, timeout, debug })`）
+  - [ ] `ui-*` パッケージの型公開に置換（暫定宣言の削減）
+  - [x] `TreeConsolePanelWithDynamicSpeedDial` の `onContextMenuAction` を正式シグネチャへ（Omit再定義を廃止し `TreeConsolePanelProps` を継承）
+  - [ ] `useTreeConsoleIntegration` の `unknown/any` を段階的に削減
+  - [x] `WorkerProvider` の初期化APIを正式版に移行（`WorkerInitializationChannel.waitForInitialization({ worker, timeout, debug })`）
+  - [x] LicenseInfo/TrashDialog/Converterの `any/unknown` の一部削減（PR #88）
    - [ ] `WorkerContext` の暫定実装（`app/src/contexts/WorkerContext.ts`）を削除（`WorkerProvider` へ一本化）
 
 ### Next Up（Doing完了後に着手）
@@ -872,6 +873,8 @@ P2:
 
 - merged: 2025-09-04 PR #87 を main にマージ（app: typecheck Phase 2 follow-ups）。
   - 要点: TreeConsolePanel props正式化、WorkerProviderを新初期化チャネルAPIへ移行、appのdev型解決整理。
+
+- start: 2025-09-04 fix/app/types-small-cleanups を作成（LicenseInfo/TrashDialog の型整備、Converterのany除去）。PR #88（draft）。
 \n+- pr: 2025-09-04 `fix/app/typecheck-phase2-tighten` を作成（2コミット: `chore(types): workspace type hygiene sweep`, `fix(app): tighten typecheck Phase 2`）。
   - 対応タスク: 「小さな型負債スイープ（2025-09-04）」の一括反映、および「0) app 型厳格化（Phase 2 巻き戻し）」の進捗分。
   - ロールバック: どちらも差分単位のリバートで切戻し可能（アプリ側は Phase 1 状態へ復帰、型スイープは各パッケージ単位で戻し）。
