@@ -23,6 +23,7 @@ import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { LoadTargetNodeReturn } from '~/loader';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
 
@@ -72,10 +73,16 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   };
 }
 
+type LoaderData = LoadTargetNodeReturn & {
+  trashRootId?: NodeId;
+  trashItems?: TreeNode[];
+  nodeType?: string;
+};
+
 export default function TrashDialog() {
   const { treeId, pageNodeId, targetNodeId, nodeType } = useParams();
   const navigate = useNavigate();
-  const data = useLoaderData() as any;
+  const data = useLoaderData() as LoaderData;
 
   // If targetNodeId or nodeType is missing/undefined, don't render the base-dialog
   if (!targetNodeId || targetNodeId === 'undefined' || !nodeType || nodeType === 'undefined') {
@@ -247,27 +254,29 @@ export default function TrashDialog() {
 
   // Create breadcrumb items with proper navigation
   const breadcrumbItems = useMemo(() => {
-    const items = [{ id: 'trash', name: 'Trash', nodeType: 'folder' as const }];
+    const items: { id: string; name: string; nodeType: string }[] = [
+      { id: 'trash', name: 'Trash', nodeType: 'folder' },
+    ];
 
     // If we're not at trash root, add current folder-plugin to breadcrumbs
-    if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetTreeNode) {
+    if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetNode) {
       items.push({
-        id: data.targetTreeNode.id,
-        name: data.targetTreeNode.name,
-        nodeType: data.targetTreeNode.nodeType,
+        id: data.targetNode.id,
+        name: data.targetNode.name,
+        nodeType: data.targetNode.nodeType,
       });
     }
 
     return items;
-  }, [targetNodeId, data.trashRootId, data.targetTreeNode]);
+  }, [targetNodeId, data.trashRootId, data.targetNode]);
 
   // Get base-dialog title with context
   const getDialogTitle = () => {
     const baseTitle = isRecoverMode ? 'Restore from Trash' : isDeleteMode ? 'Empty Trash' : 'Trash';
 
     // Add current folder-plugin context if not at root
-    if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetTreeNode) {
-      return `${baseTitle} - ${data.targetTreeNode.name}`;
+    if (targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetNode) {
+      return `${baseTitle} - ${data.targetNode.name}`;
     }
 
     return baseTitle;
@@ -343,9 +352,9 @@ export default function TrashDialog() {
             )}
           </Box>
           {/* Show current location in subtitle */}
-          {targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetTreeNode && (
+          {targetNodeId !== 'trash' && targetNodeId !== data.trashRootId && data.targetNode && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              📁 {data.targetTreeNode.name}
+              📁 {data.targetNode.name}
             </Typography>
           )}
           {(targetNodeId === 'trash' || targetNodeId === data.trashRootId) &&

@@ -26,11 +26,19 @@ import { type NodeId } from "@hierarchidb/common-type";
 // import { StylerDialog } from "@hierarchidb/styler-plugin";
 
 // Mock Dialog Component for demonstration
-const MockDialog = ({ title, open, onClose, data, onSave }: any) => {
-  const [formData, setFormData] = useState(data);
+type MockDialogProps = {
+  title: string;
+  open: boolean;
+  onClose: () => void;
+  data?: Record<string, unknown>;
+  onSave?: (data: Record<string, unknown>) => void;
+};
+
+const MockDialog = ({ title, open, onClose, data, onSave }: MockDialogProps) => {
+  const [formData, setFormData] = useState<Record<string, unknown>>(data ?? {});
 
   const handleSave = () => {
-    onSave(formData);
+    onSave?.(formData);
   };
 
   return (
@@ -40,13 +48,13 @@ const MockDialog = ({ title, open, onClose, data, onSave }: any) => {
         <Stack spacing={2} sx={{ mt: 2 }}>
           <TextField
             label="Name"
-            value={formData.name}
+            value={String((formData as any).name ?? '')}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             fullWidth
           />
           <TextField
             label="Description"
-            value={formData.description}
+            value={String((formData as any).description ?? '')}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             multiline
             rows={3}
@@ -116,13 +124,13 @@ export default function PluginDemo() {
     updatedAt: Date.now(),
   };
 
-  const handleBaseMapSave = async (data: any) => {
+  const handleBaseMapSave = async (data: Record<string, unknown>) => {
     console.log("BaseMap saved:", data);
     setLastAction(`BaseMap saved: ${JSON.stringify(data, null, 2)}`);
     setOpenBaseMap(false);
   };
 
-  const handleStylerSave = async (data: any) => {
+  const handleStylerSave = async (data: Record<string, unknown>) => {
     console.log("Styler saved:", data);
     setLastAction(`Styler saved: ${JSON.stringify(data, null, 2)}`);
     setOpenStyler(false);

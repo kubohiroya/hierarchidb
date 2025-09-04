@@ -12,7 +12,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
-import { loadTree, LoadTreeArgs } from '~/loader';
+import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { WorkerAPIClient } from '../WorkerAPIClient';
@@ -49,9 +49,11 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   }
 }
 
+type TLayoutLoaderData = LoadTreeReturn & { rootNode?: import('@hierarchidb/common-type').TreeNode };
+
 export default function TLayout() {
   console.log('[TLayout] Component rendering');
-  const data = useLoaderData() as any; // Type workaround for rootNode property
+  const data = useLoaderData() as TLayoutLoaderData;
   console.log('[TLayout] Loader data:', data);
   
   const navigate = useNavigate();

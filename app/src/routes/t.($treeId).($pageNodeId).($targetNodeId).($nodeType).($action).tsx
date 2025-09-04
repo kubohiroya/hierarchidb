@@ -1,4 +1,5 @@
 import { Outlet, useLoaderData, useSearchParams } from 'react-router';
+import type { Tree, TreeNode } from '@hierarchidb/common-type';
 import type { LoaderFunctionArgs } from 'react-router';
 import { loadNodeAction, LoadNodeActionArgs } from '~/loader';
 import TrashDialog, { clientLoader as trashDialogClientLoader } from '~/components/dialogs/TrashDialog';
@@ -15,8 +16,16 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   return data;
 }
 
+type ActionLoaderData = {
+  action?: string;
+  nodeType?: string;
+  tree?: Tree;
+  pageTreeNode?: TreeNode;
+  targetTreeNode?: TreeNode;
+};
+
 export default function TLayout() {
-  const data = useLoaderData() as any;
+  const data = useLoaderData() as ActionLoaderData;
   const [searchParams] = useSearchParams();
 
   if (!data.action) {
