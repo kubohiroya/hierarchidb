@@ -735,6 +735,12 @@ P2:
 - done: TreeMutationService の create/update/move/remove/recover を常時 CP 経由に統一
 - done: 旧内部実装（`moveNodesCommand`/`recoverFromTrash`/補助関数）を削除
 - done: command/registry から create/update のダミーハンドラを削除（実処理は CP 側のフォールバックで実行）
+
+2025-09-04
+- start: folder-plugin の build エラー TS18046 調査（`storeRegistry.getPeer` などが unknown 扱い）
+- done: `packages/node-type/folder-plugin/src/types/runtime-worker-store.d.ts` の `@hierarchidb/runtime-worker/entity/store-registry` 宣言を正式 API へ更新（`registerPeer|getPeer|registerGroup|getGroup|registerRelations|getRelations` を正しく型定義）。
+  - result: `pnpm --filter @hierarchidb/folder-plugin build` が成功（当該エラー解消）。
+  - rollback: 当該 `.d.ts` 差分をリバートすれば即時復旧（実行時挙動は非変更）。
 - note: `WORKER_USE_CMDPROC_*` フラグは互換のため定義のみ一時維持（コード上は未使用）。scripts/docs からの露出整理は後続PR
 
 - start: リリースノート確定

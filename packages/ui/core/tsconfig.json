@@ -12,10 +12,14 @@
       ]
     },
     "jsx": "react-jsx",
+<<<<<<< HEAD
     "types": [
       "@testing-library/jest-dom",
       "vitest/globals"
     ],
+=======
+    "types": ["node"],
+>>>>>>> b8d92ab (chore(repo): small config/typing tweaks and TASKS log)
     "lib": [
       "ES2022",
       "DOM",
@@ -28,6 +32,11 @@
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "src/**/*.stories.ts",
+    "src/**/*.stories.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/vite-env.d.ts"
   ]
 }
