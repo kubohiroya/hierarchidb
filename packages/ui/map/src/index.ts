@@ -7,6 +7,7 @@
 export { MapLibreMap } from './components/MapLibreMap';
 export { VectorTileLayer } from './components/VectorTileLayer';
 export { MapWithVectorTiles } from './components/MapWithVectorTiles';
+export { MapWithDeckGL } from './components/MapWithDeckGL';
 
 // Type exports - unified props
 export type {
@@ -27,6 +28,7 @@ export { DEFAULT_MAP_CONFIG } from './types/unified-map-props';
 export type { MapLibreMapProps } from './components/MapLibreMap';
 export type { VectorTileLayerProps } from './components/VectorTileLayer';
 export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles';
+export type { DeckOverlayProps } from './components/MapWithDeckGL';
 
 // NOTE: These type re-exports are intentional to provide a stable API surface
 // Users of this package should not need to install maplibre-gl separately
