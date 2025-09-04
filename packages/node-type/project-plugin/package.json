@@ -47,8 +47,7 @@
     "date-fns": "^3.0.0",
     "dexie": "^4.0.10",
     "h3-js": "^4.1.0",
-    "jspdf": "^2.5.0",
-    "maplibre-gl": "^4.0.0"
+    "jspdf": "^2.5.0"
   },
   "devDependencies": {
     "@types/d3-scale": "^4.0.0",

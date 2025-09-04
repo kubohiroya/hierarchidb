@@ -13,7 +13,6 @@ export default defineConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
-    'maplibre-gl',
     '@deck.gl/core',
     '@deck.gl/layers',
     '@deck.gl/aggregation-layers',
