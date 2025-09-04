@@ -37,6 +37,7 @@ export interface MapLibreMapInstance {
   addSource(id: string, source: Record<string, unknown>): void;
   removeSource(id: string): void;
   removeLayer(id: string): void;
+  addControl(control: unknown, position?: string): void;
 }
 
 // Minimal filter type to avoid leaking upstream types
