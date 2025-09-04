@@ -353,7 +353,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] `routes/t.*.tsx` の型整合と `exclude` 解除
   - [ ] `ui-*` パッケージの型公開に置換（暫定宣言の削減）
   - [x] `TreeConsolePanelWithDynamicSpeedDial` の `onContextMenuAction` を正式シグネチャへ（Omit再定義を廃止し `TreeConsolePanelProps` を継承）
-  - [ ] `useTreeConsoleIntegration` の `unknown/any` を段階的に削減
+   - [x] `useTreeConsoleIntegration` の `unknown/any` を段階的に削減（内部型導入＋キャスト排除）— PR #89
   - [x] `WorkerProvider` の初期化APIを正式版に移行（`WorkerInitializationChannel.waitForInitialization({ worker, timeout, debug })`）
   - [x] LicenseInfo/TrashDialog/Converterの `any/unknown` の一部削減（PR #88）
    - [ ] `WorkerContext` の暫定実装（`app/src/contexts/WorkerContext.ts`）を削除（`WorkerProvider` へ一本化）
