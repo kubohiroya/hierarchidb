@@ -17,12 +17,14 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@hierarchidb/common-type": [
+        "../../common/types/dist/index.d.ts"
       ]
     }
   },
   "include": [
-    "src",
-    "../../common/types/src/**/*.ts"
+    "src"
   ],
   "references": [
     {
