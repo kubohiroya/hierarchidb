@@ -7,6 +7,29 @@
 - 一貫性: モノレポ内参照は公開APIのみ。深いパスへの import は禁止。型は `import type` を優先。
 - 外部化: peer 管理ライブラリはバンドルから除外（`tsup.base.config.ts` の external 参照）。
 
+## TypeScript 設定（必読）
+- rootDir を固定しない: ワークスペース内の他パッケージの型を「公開エントリ（`@hierarchidb/*`）」から解決する設計のため、`exports.types` が `src` を指すことがあります。プラグイン側で `rootDir: "src"` を固定すると、公開エントリ経由でも他パッケージの `src` を読む際に TS6059（rootDir の外参照）が発生します。したがって原則 `rootDir` は固定せず、TypeScript に共通ルートを自動計算させてください。
+- モジュール解決: 基本は `module: "ESNext"`, `moduleResolution: "node"` を使用。`node16`/`nodenext` は `.js` 拡張子必須の警告（TS2835）を誘発しやすいため使用しません。
+- 生成物: パッケージ側のビルドは `tsup` に任せ、`tsconfig` では `noEmit: true` を既定とし、必要に応じて `outDir: "dist"` のみ指定します。
+- include/exclude: `include: ["src/**/*.ts", "src/**/*.tsx"]` を推奨。`dist`, `node_modules`, `**/*.test.*` は `exclude` すること。
+
+## クロスパッケージ import の取り扱い
+- 公開 API のみを使用: `@hierarchidb/{package}` のエクスポートから参照し、`src/*` などのディープパスは使用禁止。
+- 型参照の前提: 共通パッケージは `package.json` の `exports.types` を `src/index.ts` に向けています。これにより「ビルド前でも型解決が可能」です。プラグイン側は `import type` を優先して JS 出力を抑制してください。
+- Node 環境型: Node グローバル（例: `process`）を型として使う必要がある場合、パッケージの `tsconfig.json` に `types: ["node"]` を追加します（例: `node-type/project-plugin`）。
+
+## 互換性とビルド安定化のための禁止事項
+- `module: "Node16"` や `moduleResolution: "nodenext"` の使用を避ける（モノレポ内の型参照で拡張子付与エラーを招くため）。
+- ディープインポート（`@hierarchidb/*/src/...` など）。
+- 依存のシャドーイングや二重バンドル（peer にすべきものを dependencies に置くなど）。
+
+## 変更前チェックリスト（更新）
+- [ ] peer へ入れるべきものを `peerDependencies` に置いたか
+- [ ] `tsup` の external で peer が二重バンドルされないか
+- [ ] 型のみの依存は `import type` + `devDependencies` に出来ないか
+- [ ] 内部パッケージは公開 API からのみ参照しているか（ディープインポート禁止）
+- [ ] `tsconfig.json` が `module: ESNext` / `moduleResolution: node` で、`rootDir` を不要に固定していないか
+
 ## ライブラリ別の分類
 
 ### MUST（必ず入れる）
@@ -52,4 +75,3 @@ react-i18next, i18next
 - [ ] tsup external で peer が二重バンドルされないか
 - [ ] 型のみの依存は `import type` + devDependencies に出来ないか
 - [ ] 内部パッケージは公開APIからのみ参照しているか
-

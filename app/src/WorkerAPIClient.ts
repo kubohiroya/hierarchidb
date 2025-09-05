@@ -22,6 +22,7 @@ export class WorkerAPIClient {
     'uninitialized';
   private static initializationPromise: Promise<void> | null = null;
   private static lastError: Error | null = null;
+  private static verified: boolean = false;
 
   /**
    * Initialize the Worker (must be called once at app startup)
@@ -61,8 +62,8 @@ export class WorkerAPIClient {
 
     this.initializationPromise = this.doInitialize()
       .then(() => {
-
-        this.state = 'initialized';
+        // Only mark initialized when we've verified readiness (ping or INIT_COMPLETE observed)
+        this.state = this.verified ? 'initialized' : 'initializing';
         this.lastError = null;
         this.initializationPromise = null;
       })
@@ -84,8 +85,11 @@ export class WorkerAPIClient {
 
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
 
+      // Set the instance early so Provider fast-paths can see it
+      this.workerInstance = remoteWorker;
 
-      // Test the connection immediately (or skip if INIT_COMPLETE already observed)
+
+      // Test the connection (best-effort). Skip if we already saw INIT_COMPLETE.
       try {
         let initComplete = false;
         try {
@@ -99,21 +103,19 @@ export class WorkerAPIClient {
           const pingResult = await remoteWorker.ping();
           // eslint-disable-next-line no-console
           console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
+          this.verified = true;
         } else {
           // eslint-disable-next-line no-console
           console.log('[WorkerAPIClient.doInitialize] INIT_COMPLETE observed; skipping ping');
+          this.verified = true;
         }
-        
         if (this.lastError) {
           console.log('👍 [WorkerAPIClient.doInitialize] Reconnection successful after previous failure!');
         }
       } catch (pingError) {
-        console.error('[WorkerAPIClient.doInitialize] Worker connection test failed:', pingError);
-        throw new Error(`Worker connection test failed: ${pingError}`);
+        console.warn('[WorkerAPIClient.doInitialize] Ping failed (continuing, channel will gate readiness):', pingError);
+        // Leave this.verified as false; Provider will wait on channel/event.
       }
-
-      // Store the worker instance only after successful connection test
-      this.workerInstance = remoteWorker;
 
       if (!this.workerInstance) {
         throw new Error('getWorkerClient returned null');

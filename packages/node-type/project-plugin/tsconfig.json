@@ -12,7 +12,7 @@
       "@hierarchidb/base-plugin": ["../../node-type/base-plugin/dist/index.d.ts"],
       "@hierarchidb/ui-map": ["../../ui/map/dist/index.d.ts"]
     },
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
