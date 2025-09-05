@@ -197,6 +197,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   timeout = 30000,
   debug = false 
 }) => {
+  const startedRef = React.useRef(false);
   const [state, setState] = useState<WorkerContextValue>({
     client: null,
     isInitialized: false,
@@ -309,14 +310,26 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   // 初期化実行
   useEffect(() => {
     // eslint-disable-next-line no-console
-    console.log('[WorkerProvider] useEffect mount -> initializeWorker');
-    initializeWorker();
+    console.log('[WorkerProvider] useEffect mount');
+    if (!startedRef.current) {
+      startedRef.current = true;
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] starting initializeWorker (guarded)');
+      void initializeWorker();
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] initializeWorker already started; skipping');
+    }
 
-    // クリーンアップ
+    // クリーンアップ（本番のみチャネルを破棄。開発のStrictMode二重マウントでは破棄しない）
     return () => {
       // eslint-disable-next-line no-console
-      console.log('[WorkerProvider] useEffect unmount -> dispose initChannel');
-      initChannel?.dispose();
+      console.log('[WorkerProvider] useEffect unmount');
+      if (!import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log('[WorkerProvider] disposing initChannel (production)');
+        initChannel?.dispose();
+      }
     };
   }, []);
 
