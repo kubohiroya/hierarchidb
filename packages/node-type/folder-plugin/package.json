@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Basic folder plugin for HierarchiDB UI layer",
   "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
