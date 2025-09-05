@@ -30,7 +30,7 @@ import {
   Map as MapIcon,
 } from '@mui/icons-material';
 import { NodeId } from '@hierarchidb/common-type';
-import type { ShapeEntity } from '~/types';
+import type { ShapeEntity } from '~/shared';
 import type { BatchStatus } from '~/services/types';
 
 interface ShapeViewPanelProps {

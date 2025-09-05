@@ -4,8 +4,7 @@
  */
 
 import type { Table } from 'dexie';
-import type { NodeId, EntityId, NodeType } from '@hierarchidb/common-type';
-import { generateEntityId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '../../shared';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import {
   ShapeEntity,
@@ -171,7 +170,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    * Create new draft working copy
    */
   async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
-    const workingCopyId = (generateEntityId() as string) as NodeId;
+    const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as unknown as NodeId;
 
     const workingCopy: ShapeWorkingCopy = {
       // TreeNode required properties
@@ -212,7 +211,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   /**
    * Get working copy from EphemeralDB
    */
-  async getWorkingCopy(workingCopyId: EntityId): Promise<ShapeWorkingCopy | undefined> {
+  async getWorkingCopy(workingCopyId: NodeId): Promise<ShapeWorkingCopy | undefined> {
     try {
       if (!this.ephemeralDB?.workingCopies) {
         return undefined;
@@ -229,7 +228,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    * Update working copy in EphemeralDB
    */
   async updateWorkingCopy(
-    workingCopyId: EntityId,
+    workingCopyId: NodeId,
     data: Partial<ShapeEntity>
   ): Promise<ShapeWorkingCopy> {
     try {
@@ -259,7 +258,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   /**
    * Commit working copy to CoreDB
    */
-  async commitWorkingCopy(workingCopyId: EntityId): Promise<NodeId> {
+  async commitWorkingCopy(workingCopyId: NodeId): Promise<NodeId> {
     try {
       // Get working copy from EphemeralDB
       const workingCopy = await this.getWorkingCopy(workingCopyId);
@@ -300,7 +299,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   /**
    * Discard working copy from EphemeralDB
    */
-  async discardWorkingCopy(workingCopyId: EntityId): Promise<void> {
+  async discardWorkingCopy(workingCopyId: NodeId): Promise<void> {
     try {
       if (this.ephemeralDB?.workingCopies) {
         await this.ephemeralDB.workingCopies.delete(workingCopyId);

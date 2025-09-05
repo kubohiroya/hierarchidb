@@ -70,6 +70,31 @@
     - [x] basemap-plugin の `shim` 削除と `any` 削減（`BaseMapDisplay`/`BaseMapPreview`）。
     - [x] `ui-map` をビルドし、`.d.ts` から maplibre 型のリークが無いことを確認。
 
+- refactor/shape/remove-entityid（shape の EntityId 排除と API/型の統一）
+  - ブランチ名: `refactor/shape/remove-entityid`
+  - 依存: 型参照を `~/shared` に統一済み（UI 専用 `~/types` は撤去済み）
+  - 背景: WorkingCopy/バッチ系 API が `EntityId` に依存しており、NodeId 中心の設計に反する。型不整合や mint 漏れが発生しやすい。
+  - 方針:
+    - 共有契約の統一: `shared/types.ts` と `shared/api.ts` を NodeId ベースへ更新。
+    - 実装の追随: `worker/api.ts` と `worker/handlers/*`、UI の呼び出し/初期値を NodeId に統一。
+    - 呼称の整理: `startBatchProcessing`/`startBatchProcess` の二重呼称を解消（shape 内は `startBatchProcess` に寄せる方針、互換は段階）。
+    - 検出ルール: パッケージ内での `EntityId` import/use をゼロに。
+  - 受け入れ基準（DoD）:
+    - [x] `rg -n "\\bEntityId\\b" packages/node-type/shape-plugin/src` が 0 件（テスト/レガシー mock は除外可）。
+    - [x] `ShapeWorkingCopy`/`BatchSession`/`ShapeAPI` の WorkingCopy 識別子が `NodeId` で一貫。
+    - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck && build` グリーン。
+    - [ ] `pnpm --filter @hierarchidb/shape-plugin test` グリーン（必要に応じてテスト修正）。
+  - ロールバック手順:
+    - 変更は shape-plugin 内に限定。`shared/types.ts` と `worker/api.ts` の差分をリバートすれば復旧可能（呼称統一は別コミットで分離）。
+  - チェックリスト:
+    - [x] `shared/types.ts`: `BatchSession.workingCopyId: NodeId`。
+    - [x] `shared/api.ts`: WorkingCopy 関連引数を NodeId 化。
+    - [x] `worker/api.ts`: 関数シグネチャ/内部参照の NodeId 化。
+    - [x] `worker/handlers/ShapeEntityHandler.ts`: WorkingCopy API の NodeId 化、`generateEntityId` 依存排除。
+    - [x] UI: `ShapeStepperDialog` 初期値など NodeId 準拠に調整。
+    - [ ] 旧関数名の呼称統一（`startBatchProcessing`→`startBatchProcess`）。
+    - [ ] 残余の `EntityId` 参照（テスト/DB 型）を棚卸し・方針決定。
+
 ---
 
 - chore/policy/ban-tsconfig-paths-dist-dts（tsconfig.paths の dist.d.ts 参照を全面禁止）
@@ -94,6 +119,8 @@
     - [ ] 局所 typecheck 実行
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
+
+// 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
 
 // 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
 - chore/common-types/unused-sweep-v1（共通型の未使用エクスポートを整理）

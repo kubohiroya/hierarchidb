@@ -5,8 +5,8 @@ import type {
   SimplifyTask, 
   VectorTileTask,
   UrlMetadata 
-} from '~/types';
-import { BatchTaskStage } from '~/types';
+} from '~/shared';
+import { BatchTaskStage } from '~/shared';
 
 // ================================
 // Data Source Configurations
