@@ -8,6 +8,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 // Global instance - properly typed
 let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;
+let initCompletedFlag = false;
 
 /**
  * Initialize the Worker
@@ -65,6 +66,12 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
           const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
           console.log('[initWorker] Worker message:', t, e.data);
+          if (t === 'INIT_COMPLETE') {
+            initCompletedFlag = true;
+            try {
+              window.dispatchEvent(new CustomEvent('hierarchidb-worker-init-complete'));
+            } catch {}
+          }
         });
       } catch {}
       
@@ -132,4 +139,11 @@ export function getRawWorkerInstance(): Worker | null {
   // eslint-disable-next-line no-console
   console.log('[initWorker.getRawWorkerInstance] returning', !!rawWorkerInstance);
   return rawWorkerInstance;
+}
+
+/**
+ * Check if INIT_COMPLETE was observed at the worker postMessage layer.
+ */
+export function isWorkerInitCompleted(): boolean {
+  return initCompletedFlag;
 }

@@ -98,11 +98,17 @@ export class WorkerAPIClient {
       console.log('[WorkerAPIClient.doInitialize] getWorkerClient resolved');
 
 
-      // Test the connection immediately
+      // Test the connection immediately (or skip if INIT_COMPLETE already observed)
       try {
-        const pingResult = await remoteWorker.ping();
-        // eslint-disable-next-line no-console
-        console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
+        // @ts-ignore dynamic require to avoid circular deps
+        const { isWorkerInitCompleted } = require('./initWorkerClient');
+        if (typeof isWorkerInitCompleted === 'function' && isWorkerInitCompleted()) {
+          console.log('[WorkerAPIClient.doInitialize] INIT_COMPLETE observed; skipping ping');
+        } else {
+          const pingResult = await remoteWorker.ping();
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
+        }
         
         // Check if this was a retry (error state indicates previous failure)
         if (this.lastError) {
