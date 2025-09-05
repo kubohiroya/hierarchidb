@@ -223,6 +223,27 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       await WorkerAPIClient.initialize();
       // eslint-disable-next-line no-console
       console.log('[WorkerProvider.initializeWorker] WorkerAPIClient.initialize resolved');
+
+      // Fast-path: if client is already ready, set state and return
+      try {
+        if (WorkerAPIClient.isReady()) {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerProvider.initializeWorker] Fast-path: WorkerAPIClient is ready');
+          const client = await WorkerAPIClient.getSingleton();
+          setState({
+            client,
+            isInitialized: true,
+            initProgress: 100,
+            initMessage: 'Worker初期化完了',
+            error: null,
+          });
+          return;
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.log('[WorkerProvider.initializeWorker] Fast-path check threw, falling back to channel', e);
+      }
+
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
       
       if (!rawWorker) {
