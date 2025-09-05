@@ -53,6 +53,16 @@ if (typeof window !== 'undefined') {
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
+
+  // Opportunistically warm-load menu builders; cache to global for sync access in hooks
+  import('./plugins/menu-builders')
+    .then((mod) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__HDB_MENU_BUILDERS__ = mod;
+    })
+    .catch((err) => {
+      console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
+    });
 }
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
