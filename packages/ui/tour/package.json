@@ -2,7 +2,7 @@
   "name": "@hierarchidb/ui-tour",
   "version": "1.0.0",
   "type": "module",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
