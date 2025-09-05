@@ -38,6 +38,10 @@ interface WorkerProviderProps {
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
+// Module-level guard flags to survive React StrictMode remounts in dev
+let __WORKER_INIT_STARTED__ = false;
+let __WORKER_INIT_COMPLETED__ = false;
+
 // ===========================
 // コンポーネント
 // ===========================
@@ -230,14 +234,15 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         if (WorkerAPIClient.isReady()) {
           // eslint-disable-next-line no-console
           console.log('[WorkerProvider.initializeWorker] Fast-path: WorkerAPIClient is ready');
-          const client = await WorkerAPIClient.getSingleton();
-          setState({
-            client,
-            isInitialized: true,
-            initProgress: 100,
-            initMessage: 'Worker初期化完了',
-            error: null,
-          });
+      const client = await WorkerAPIClient.getSingleton();
+      __WORKER_INIT_COMPLETED__ = true;
+      setState({
+        client,
+        isInitialized: true,
+        initProgress: 100,
+        initMessage: 'Worker初期化完了',
+        error: null,
+      });
           return;
         }
       } catch (e) {
@@ -311,14 +316,29 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log('[WorkerProvider] useEffect mount');
-    if (!startedRef.current) {
+    if (!startedRef.current && !__WORKER_INIT_STARTED__) {
       startedRef.current = true;
+      __WORKER_INIT_STARTED__ = true;
       // eslint-disable-next-line no-console
       console.log('[WorkerProvider] starting initializeWorker (guarded)');
       void initializeWorker();
     } else {
       // eslint-disable-next-line no-console
       console.log('[WorkerProvider] initializeWorker already started; skipping');
+      try {
+        if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerProvider] fast-set initialized state on remount');
+          const client = WorkerAPIClient.getSingleton();
+          setState({
+            client,
+            isInitialized: true,
+            initProgress: 100,
+            initMessage: 'Worker初期化完了',
+            error: null,
+          });
+        }
+      } catch {}
     }
 
     // クリーンアップ（本番のみチャネルを破棄。開発のStrictMode二重マウントでは破棄しない）
