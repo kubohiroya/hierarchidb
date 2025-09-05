@@ -17,6 +17,7 @@
     "dist"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
