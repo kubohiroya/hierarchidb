@@ -50,66 +50,37 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-// 追加: 初期ローダーの表示フリッカー解消（0%表示の撤去）
-- fix/app/remove-worker-init-0percent-flicker（「Worker初期化を開始しています...0%」の非表示）
-  - ブランチ名: `fix/app/remove-worker-init-0percent-flicker`（ローカル作業、未作成）
-  - 依存: なし（UI 初期化表示のみ、機能フラグ不要）
-  - 背景: 初期化直後に一瞬だけ 0% に戻る表示（`InitializingView` が初期値 0% を描画）で違和感がある。
-  - 方針: 進捗0%時は `LinearProgress` を indeterminate に切替え、メッセージ/パーセンテージは非表示。>0% で従来どおり表示。
-  - 対象ファイル: `app/src/contexts/WorkerProvider.tsx`（`InitializingView`）
+- fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
+  - ブランチ名: `fix/app/init-loading-ux-polish`
+  - PR: https://github.com/kubohiroya/hierarchidb/pull/104
+  - 依存: なし
+  - 背景: 起動直後と Worker 初期化中で「タイトルロゴ+LinearProgress」が二重に見える。さらに0%へ一瞬戻る違和感がある。
+  - 方針: HydrateFallback を中央小スピナーのみへ簡素化。Worker 初期化中ビューは 0%時 `indeterminate` にし、メッセージ/%は非表示（>0%で表示）。
   - 受け入れ基準（DoD）:
-    - [x] 初期表示で「Worker初期化を開始しています...0%」が一切表示されない。
-    - [x] 実際の進捗イベント（>0%）が届くと段階的な%表示に切り替わる。
-    - [ ] `pnpm --filter @hierarchidb/app typecheck` が成功。
-  - ロールバック手順: `InitializingView` の条件分岐を削除し、`variant='determinate'` と 0% 表示を元に戻す。
-  - チェックリスト:
-    - [x] 0%時は `indeterminate` に変更
-    - [x] 0%時はメッセージ/パーセンテージ非表示
-    - [ ] typecheck 実行結果の確認
+    - [x] 起動直後は小スピナーのみ表示（ロゴ/バーなし）。
+    - [x] 初期化 0% の文言表示が出ない（フリッカー解消）。
+    - [ ] `pnpm --filter @hierarchidb/app typecheck` 通過（CI状況に合わせ後続対応）。
+  - ロールバック: `app/src/root.tsx` と `app/src/contexts/WorkerProvider.tsx` の差分をリバート。
 
-// 追加: 初回スプラッシュの簡素化（CircularProgress のみ）
-- fix/app/splash-circularprogress-first-pass（初回の「タイトルロゴ+LinearProgress」を小スピナーに差し替え）
-  - ブランチ名: `fix/app/splash-circularprogress-first-pass`（ローカル作業、未作成）
-  - 依存: なし（HydrateFallback のみ変更）
-  - 背景: アプリ起動直後（ハイドレーション前）と Worker 初期化中の2段階で「ロゴ+バー」が連続して見え、体感的に重複表示。
-  - 方針: HydrateFallback を極力シンプルにし、中央に小サイズの CSS スピナーのみ表示する。2回目（Worker 初期化中）は現状維持。
-  - 対象ファイル: `app/src/root.tsx`（`HydrateFallback`）
+- refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
+  - ブランチ名: `refactor/ui-map/maplibre-wrapper`
+  - 依存: なし（小粒）
+  - 背景: basemap-plugin で maplibre-gl の型崩れを回避するため `skipLibCheck: true` や `shim`/`any` を導入していた。
+  - 方針: `@hierarchidb/ui-map` を MapLibre 用の薄いラッパとして定義し、maplibre の型/実装依存は同パッケージ内に閉じ込める。`skipLibCheck: true` は `@hierarchidb/ui-map` のみで有効化し、basemap-plugin 側では無効を維持。
   - 受け入れ基準（DoD）:
-    - [x] 起動直後は中央に小さな円形スピナーのみが表示される。
-    - [x] Worker 初期化中は従来の「タイトルロゴ + プログレスバー（%表示あり）」が表示される。
-    - [ ] `pnpm --filter @hierarchidb/app typecheck` が成功。
-  - ロールバック手順: `HydrateFallback` の差分を戻し、`TitleLogo(showProgress=true)` と付随情報を再表示。
-  - チェックリスト:
-    - [x] TitleLogo を HydrateFallback から撤去
-    - [x] CSS のみの最小スピナーに置換
-    - [ ] typecheck 実行結果の確認
-
-
-- refactor/shape/remove-entityid（shape の EntityId 排除と API/型の統一）
-  - ブランチ名: `refactor/shape/remove-entityid`
-  - PR: https://github.com/kubohiroya/hierarchidb/pull/102
-  - 依存: 型参照を `~/shared` に統一済み（UI 専用 `~/types` は撤去済み）
-  - 背景: WorkingCopy/バッチ系 API が `EntityId` に依存しており、NodeId 中心の設計に反する。型不整合や mint 漏れが発生しやすい。
-  - 方針:
-    - 共有契約の統一: `shared/types.ts` と `shared/api.ts` を NodeId ベースへ更新。
-    - 実装の追随: `worker/api.ts` と `worker/handlers/*`、UI の呼び出し/初期値を NodeId に統一。
-    - 呼称の整理: `startBatchProcessing`/`startBatchProcess` の二重呼称を解消（shape 内は `startBatchProcess` に寄せる方針、互換は段階）。
-    - 検出ルール: パッケージ内での `EntityId` import/use をゼロに。
-  - 受け入れ基準（DoD）:
-    - [x] `rg -n "\\bEntityId\\b" packages/node-type/shape-plugin/src` が 0 件（テスト/レガシー mock は除外可）。
-    - [x] `ShapeWorkingCopy`/`BatchSession`/`ShapeAPI` の WorkingCopy 識別子が `NodeId` で一貫。
-    - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck && build` グリーン。
-    - [ ] `pnpm --filter @hierarchidb/shape-plugin test` グリーン（必要に応じてテスト修正）。
+    - [x] `packages/ui/map/tsconfig.json` のみ `skipLibCheck: true`。basemap-plugin では無効。
+    - [x] basemap-plugin 内の `maplibre-gl` 用 shim (`src/types/maplibre-gl-shim.d.ts`) を削除し、`tsconfig.json` の `paths` からも除去。
+    - [x] `@hierarchidb/ui-map` が公開する型で `maplibre-gl` の型がリークしない（`MapLibreMapInstance`/`MapLibreStyle`/`MapLibreLayer` 等の安定化された独自型を公開）。
+    - [x] basemap-plugin の Map 関連実装から `any` キャストを削減（少なくともスタイル/レイヤー参照箇所）。
+    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` がグリーン。
   - ロールバック手順:
-    - 変更は shape-plugin 内に限定。`shared/types.ts` と `worker/api.ts` の差分をリバートすれば復旧可能（呼称統一は別コミットで分離）。
+    - `ui-map` のみで `skipLibCheck: true` を維持するため、問題時は basemap-plugin のみ差分をリバート（型 shim 復活は最後の手段として避ける）。
   - チェックリスト:
-    - [x] `shared/types.ts`: `BatchSession.workingCopyId: NodeId`。
-    - [x] `shared/api.ts`: WorkingCopy 関連引数を NodeId 化。
-    - [x] `worker/api.ts`: 関数シグネチャ/内部参照の NodeId 化。
-    - [x] `worker/handlers/ShapeEntityHandler.ts`: WorkingCopy API の NodeId 化、`generateEntityId` 依存排除。
-    - [x] UI: `ShapeStepperDialog` 初期値など NodeId 準拠に調整。
-    - [ ] 旧関数名の呼称統一（`startBatchProcessing`→`startBatchProcess`）。
-    - [ ] 残余の `EntityId` 参照（テスト/DB 型）を棚卸し・方針決定。
+    - [x] `ui-map` に `maplibre-public.ts` を整備し、最小安定型を定義。
+    - [x] `unified-map-props.ts` で `MapLibreStyle`/`MapLibreMapInstance` を採用、`FilterSpecification` 依存を除去。
+    - [x] `MapLibreMap.tsx`/`MapWithVectorTiles.tsx`/`VectorTileLayer.tsx` を最小型へ置換。
+    - [x] basemap-plugin の `shim` 削除と `any` 削減（`BaseMapDisplay`/`BaseMapPreview`）。
+    - [x] `ui-map` をビルドし、`.d.ts` から maplibre 型のリークが無いことを確認。
 
 ---
 
@@ -137,8 +108,6 @@
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 // 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
-
-// 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
 - chore/common-types/unused-sweep-v1（共通型の未使用エクスポートを整理）
   - ブランチ: `chore/common-types/unused-sweep-v1`
   - 依存: なし（小粒、既定OFFの変更なし）
@@ -158,43 +127,22 @@
   - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
   - 方針: 互換マッピング（旧→新）をルーター/レジストリ/URLヘルパに追加し、段階的に既存参照を置換。旧識別子は一定期間受理。
   - 受け入れ基準（DoD）:
-    - [x] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
+    - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
     - [ ] UI/Worker/テストのハードコード参照を新識別子へ統一。
     - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（URL/保存データ/テスト含む）。
     - [ ] `pnpm typecheck && pnpm test` がグリーン。主要E2Eが新旧いずれでも動作。
   - ロールバック手順: 互換マッピングを維持したまま `nodeType` 差分をリバートすれば即時復旧可能。
 
-// 追加: resolver 表記の文書整合（UI/README）
-- docs/node-type/resolver-label-sweep（`propertyresolver` → `resolver` の文言整合）
-  - ブランチ: `docs/node-type/resolver-label-sweep`
-  - 依存: nodeType 統一の実装完了
-  - 内容: README/ユーザーガイド/サンプルコードに残る `'propertyresolver'` の文字列を概念名「Resolver」に統一（実装識別子は `'resolver'`）。歴史的背景は `docs/deprecated/` に残置。
-  - 受け入れ基準（DoD）:
-    - [ ] `rg -n "propertyresolver"` が docs/ のみ（deprecated系を除くと 0 件）
-    - [ ] `packages/node-type/project-plugin/README.md` の型例を `'resolver'` に修正
-    - [ ] UI の説明テキスト（LayerConfigStep 等）で「Property Resolver」を「Resolver」に統一
-  - ロールバック手順: 文書差分のみのため不要。
-
-// 追加: DB 命名ポリシー文書の整合
-- docs/worker/update-db-naming-policy（worker/TASKS.md の命名規約を kebab-case へ整合）
-  - ブランチ: `docs/worker/update-db-naming-policy`
-  - 依存: 実装方針の決定（本タスクで確定済）
-  - 内容: `packages/runtime-worker/worker/TASKS.md` の PascalNameDB 提案を撤回し、実装に合わせて `getDBName('<kebab>-db')` 方針へ書き換え。改名対象リストは現状名→新名（必要なら）を最新化。
-  - 受け入れ基準（DoD）:
-    - [ ] 章「命名規約（採用）」の更新
-    - [ ] マッピング表を現状コードに一致させる
-  - ロールバック手順: 文書差分のみのため不要。
-
 // 追加: Dexie データベース名の表記・命名規約を統一
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ: `chore/node-type/unify-dexie-db-names`
   - 依存: README 比較表の更新完了
-  - 命名規約（採用）:
-    - 固有DB: `getDBName('<kebab>-db')`（例: `basemap-db`, `project-db`, `resolver-db`）。
-    - 複合DB: `getDBName('<nodeType>-entities')`（例: `folder-entities`, `location-entities`, `spreadsheet-entities`）。
+  - 命名規約（案）:
+    - プラグイン固有DB: `Dexie('<PascalName>DB')`（例: `Dexie('RouteDB')`, `Dexie('ShapeDB')`）。
+    - エンティティ複合ストア: `Dexie('<kebab-nodeType>-entities')`（例: `Dexie('location-plugin-entities')`→将来 `Dexie('location-entities')`）。
   - 実施内容: 既存コードの DB 生成名呼称を規約表記に合わせてドキュメント整備（必要なら別PRで実装移行）。
   - 受け入れ基準（DoD）:
-    - [x] README/開発ガイドに命名規約（kebab-case＋`getDBName()`）を明記（`packages/node-type/README.md` / `packages/node-type/CONTRIBUTING.md`）。
+    - [ ] README/開発ガイドに命名規約と現行→統一名のマッピングを明記。
     - [ ] 変更が必要なパッケージ一覧と移行計画（データ移行/互換オープン/マイグレーション戦略）を提示。
     - [ ] `pnpm typecheck` グリーン（コード差分を含む場合）。
   - ロールバック手順: ドキュメントのみの変更なら不要。実装移行を行った場合は DB オープン名を元に戻すことで復旧可能。
@@ -262,30 +210,6 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - Workerで`localStorage`に依存した言語取得（Web Workerに存在しない前提）とガード付き参照が散在。
     - 該当: `packages/runtime-worker/worker/src/utils/workerLogger.ts` の言語取得・独自訳マップ。
   - 言語型・設定の固定化（'en' | 'ja' や `supportedLngs: ['en','ja']`）。追加言語がコード改変前提。
-
----
-
-## 運用ログ（today） <a id="log-today"></a>
-
-- 2025-09-05 10:55 JST start: 選択パッケージのビルド/テストをローカル実行（sandbox対策）
-- 2025-09-05 16:40 JST start: fix/app/remove-worker-init-0percent-flicker — 初期化 0% 表示の撤去（UI フリッカー解消）
-- 2025-09-05 16:45 JST done: fix/app/remove-worker-init-0percent-flicker — `InitializingView` を 0%時 indeterminate＋文言非表示に変更
-- 2025-09-05 16:55 JST start: fix/app/splash-circularprogress-first-pass — 初回スプラッシュを小スピナーに差し替え
-- 2025-09-05 17:00 JST done: fix/app/splash-circularprogress-first-pass — `HydrateFallback` を中央スピナーのみ表示に変更
-  - 実行: `pnpm --filter @hierarchidb/runtime-worker run build` 他、各パッケージ `build`。
-  - 実行: `pnpm --filter @hierarchidb/folder-plugin run test:run` / `@hierarchidb/shape-plugin` / `@hierarchidb/ui-core`。
-  - メモ: sandbox 下では Vitest の worker 終了で EPERM が発生するため、テストは昇格権限で実行。
-  - 結果: 3パッケージでテストグリーン（folder: 21/21, shape: 22/22, ui-core: 19/19）。
-  - 注意: `packages/node-type/spreadsheet-plugin` は `pnpm-workspace.yaml` で明示的に除外（`'!packages/node-type/spreadsheet-plugin'`）。フィルタで一致しないのは仕様。
-  - DoD: 選択パッケージのビルド成功、テスト成功を確認。
-  - ロールバック: なし（コード変更なし）。
-
-- 2025-09-05 15:30 JST done: メタデータ管理の共通化とポリシー整備
-  - 実施: `@hierarchidb/table-metadata` 追加、styler/spreadsheet をラッパ化。`node-type/CONTRIBUTING.md` と各プラグイン README に依存/インポート規約を追記。`tsup.base.config.ts` 外部化既定を更新。
-  - 実施: Dexie DB 名を kebab-case＋`getDBName()` に統一（basemap/folder/project/resolver）。nodeType は `location`/`project`/`resolver` へ統一。ドキュ残差（READMEの用語・worker/TASKS.md の旧提案）は後続整合。
-  - DoD: 主要パッケージの typecheck がグリーン（全体CIの導入は後続）。
-  - ロールバック: 各変更は個別の差分単位で戻せる（shared導入は既存ラッパー差替えで回避可能）。
-
     - 該当: `workerLogger.ts` の戻り型、`packages/ui/i18n/src/i18n/index.ts` の `supportedLngs`（SSR/CSR両方）。
   - feature/worker 層が React 依存なしで共通リソースを使えない構成（`react-i18next` 前提での初期化）。
   - UI→Worker のロケール伝達がなく、各層でバラバラに判定している。
@@ -343,6 +267,8 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-05 17:10 JST start: fix/app/init-loading-ux-polish — 初回スプラッシュをスピナー化、0%時の文言非表示化
+- 2025-09-05 17:18 JST done: fix/app/init-loading-ux-polish — 実装と TASKS.md 反映
 - done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
 - done: 2025-09-04 test/styler: `@hierarchidb/spreadsheet-plugin` をテスト時のみモック化（styler-plugin の `vitest.config.ts` にエイリアス追加、`src/__tests__/mocks/spreadsheet-plugin.ts` 実装）。
 - done: 2025-09-04 fix/basemap: 互換 extension 定義を追加し（`src/extension/definition.ts`）、`BaseMapEntityHandler` に既定値・WC操作・nodeId互換・検索(tags)・文言整合を実装。basemap-plugin テスト 34/34 パス。
@@ -1011,25 +937,6 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
-
-- 2025-09-05 done: CSVメタデータ管理の重複を解消（Spreadsheet/Styler 共通化）
-  - 変更: `packages/feature/table-metadata` を新設し、`SimpleTableMetadataManager` を集約。
-  - 影響: `@hierarchidb/styler-plugin` / `@hierarchidb/spreadsheet-plugin` は薄いラッパーに差し替え。DB名は `getDBName('styler-metadata-db'|'spreadsheet-metadata-db')`。
-  - 結果: 型通しと参照簡素化。テストは既存のモック方針を維持。
-
-- 2025-09-05 done: 依存/インポート規約の明文化と周知（node-type 全体）
-  - 変更: `packages/node-type/CONTRIBUTING.md` を追加（MUST/SHOULD/MAY、tsup external、tsconfig 方針）。
-  - 変更: 各プラグイン README に「依存管理とインポート規約（重要）」セクションを重複掲載。
-  - 変更: 共有 `tsup.base.config.ts` に external 既定（react/MUI/emotion/dexie/i18n/maplibre）を設定。
-
-- 2025-09-05 done: Dexie DB 名の統一（実装方針を kebab-case＋`getDBName()` に決定）
-  - 決定: 固有DBは `getDBName('<kebab>-db')`（例: `folder-db`, `basemap-db`, `project-db`, `resolver-db`）。複合DBは `getDBName('<nodeType>-entities')`。
-  - 実装: basemap/folder/project/resolver の `PluginDefinition.database.dbName` を更新。
-  - ドキュメント: `packages/node-type/README.md` の比較表を kebab-case に更新。`runtime-worker/worker/TASKS.md` の旧提案（PascalNameDB）は後続で整合予定。
-
-- 2025-09-05 done: nodeType 識別子の統一（`*-plugin` 廃止）
-  - 実装: `location`/`project`/`resolver` の `PluginDefinition.nodeType` を短名へ統一。`project` の型/UI で `'propertyresolver'` 参照を `'resolver'` へ更新（READMEの一部サンプル文言は後続で修正）。
-
 
 - WC仕様同期（ADR/用語整備）
   - ブランチ: `chore/docs/wc-spec-sync`（既存ドキュメント整合）
