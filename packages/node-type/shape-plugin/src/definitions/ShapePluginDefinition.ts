@@ -3,7 +3,7 @@
  * Integrates Shape plugin with the core plugin system
  */
 
-import { ShapeEntityHandler } from '~/handlers/ShapeEntityHandler';
+import { ShapeEntityHandler } from '../handlers/ShapeEntityHandler';
 
 /**
  * Shape node type definition for HierarchiDB plugin system

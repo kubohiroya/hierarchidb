@@ -4,7 +4,7 @@
  * Avoids direct coupling to worker/services APIs to keep types consistent.
  */
 
-import type { NodeId, EntityId, ShapeEntity, ShapeWorkingCopy, ProcessingConfig, NodeType } from '~/shared';
+import type { NodeId, EntityId, ShapeEntity, ShapeWorkingCopy, ProcessingConfig, NodeType } from '../shared';
 
 /**
  * Create shape data interface (UI layer)
