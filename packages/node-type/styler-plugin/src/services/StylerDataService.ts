@@ -232,7 +232,7 @@ export class StylerDataService {
       throw new Error('No numeric columns found in the table');
     }
     // Return only known fields from StylerConfig
-    return {
+    const cfg: Partial<StylerConfig> = {
       algorithm: 'linear',
       colorSpace: 'hsv',
       targetProperty: 'fill-color', // デフォルト
@@ -250,5 +250,9 @@ export class StylerDataService {
         tableMetadata.columns.find((c) => c.name === 'id')?.name ??
         tableMetadata.columns[0]?.name,
     };
+    // Legacy aliases expected by existing tests/UI: mirror value/key columns
+    (cfg as any).selectedValueColumn = cfg.valueColumn;
+    (cfg as any).selectedKeyColumn = cfg.keyColumn;
+    return cfg;
   }
 }

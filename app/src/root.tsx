@@ -15,6 +15,7 @@ import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { WorkerProvider } from './contexts/WorkerProvider';
 import { TitleLogo } from './components/TitleLogo';
+import { InitInspector } from './dev/InitInspector';
 import { NotificationSystem } from '@hierarchidb/ui-core';
 
 declare global {
@@ -237,6 +238,10 @@ function AppContent() {
   return (
     <StrictMode>
       <Outlet />
+      {/* Debug overlay to quickly classify issues: cache vs comms vs UI update. */}
+      {typeof window !== 'undefined' && (import.meta.env.DEV || new URLSearchParams(window.location.search).get('debug') === 'init') ? (
+        <InitInspector />
+      ) : null}
     </StrictMode>
   );
 }

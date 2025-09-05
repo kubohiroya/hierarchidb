@@ -130,6 +130,27 @@
     - [ ] `pnpm typecheck && pnpm test` がグリーン。主要E2Eが新旧いずれでも動作。
   - ロールバック手順: 互換マッピングを維持したまま `nodeType` 差分をリバートすれば即時復旧可能。
 
+// 追加: resolver 表記の文書整合（UI/README）
+- docs/node-type/resolver-label-sweep（`propertyresolver` → `resolver` の文言整合）
+  - ブランチ: `docs/node-type/resolver-label-sweep`
+  - 依存: nodeType 統一の実装完了
+  - 内容: README/ユーザーガイド/サンプルコードに残る `'propertyresolver'` の文字列を概念名「Resolver」に統一（実装識別子は `'resolver'`）。歴史的背景は `docs/deprecated/` に残置。
+  - 受け入れ基準（DoD）:
+    - [ ] `rg -n "propertyresolver"` が docs/ のみ（deprecated系を除くと 0 件）
+    - [ ] `packages/node-type/project-plugin/README.md` の型例を `'resolver'` に修正
+    - [ ] UI の説明テキスト（LayerConfigStep 等）で「Property Resolver」を「Resolver」に統一
+  - ロールバック手順: 文書差分のみのため不要。
+
+// 追加: DB 命名ポリシー文書の整合
+- docs/worker/update-db-naming-policy（worker/TASKS.md の命名規約を kebab-case へ整合）
+  - ブランチ: `docs/worker/update-db-naming-policy`
+  - 依存: 実装方針の決定（本タスクで確定済）
+  - 内容: `packages/runtime-worker/worker/TASKS.md` の PascalNameDB 提案を撤回し、実装に合わせて `getDBName('<kebab>-db')` 方針へ書き換え。改名対象リストは現状名→新名（必要なら）を最新化。
+  - 受け入れ基準（DoD）:
+    - [ ] 章「命名規約（採用）」の更新
+    - [ ] マッピング表を現状コードに一致させる
+  - ロールバック手順: 文書差分のみのため不要。
+
 // 追加: Dexie データベース名の表記・命名規約を統一
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ: `chore/node-type/unify-dexie-db-names`
