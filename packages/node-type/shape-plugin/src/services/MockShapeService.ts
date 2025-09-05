@@ -8,8 +8,8 @@ import type {
   SimplifyTask,
   ValidationResult,
   SelectionStats
-} from '~/types';
-import { DEFAULT_PROCESSING_CONFIG } from '~/types';
+} from '~/shared';
+import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
 import { 
   generateMockDownloadTasks,
   generateMockSimplifyTasks,

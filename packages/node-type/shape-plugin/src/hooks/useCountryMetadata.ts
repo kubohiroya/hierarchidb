@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { CountryMetadata } from '~/types';
+import type { CountryMetadata } from '~/shared';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 
 export interface UseCountryMetadataOptions {

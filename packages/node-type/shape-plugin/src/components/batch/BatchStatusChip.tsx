@@ -1,6 +1,6 @@
 import React from 'react';
 import { Chip } from '@mui/material';
-import type { BatchStatus } from '~/types';
+import type { BatchStatus } from '~/shared';
 
 interface BatchStatusChipProps {
   status: BatchStatus;

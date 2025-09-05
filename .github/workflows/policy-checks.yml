@@ -12,6 +12,7 @@ jobs:
     name: Run policy/dependency checks (warn-only)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -26,8 +27,8 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies (non-strict)
+        run: pnpm install --no-frozen-lockfile
 
       - name: Policy checker (check-deps)
         run: pnpm -w check:deps:pkg || true

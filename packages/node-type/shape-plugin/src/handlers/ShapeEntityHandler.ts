@@ -5,7 +5,7 @@
  */
 
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { ShapeEntity, ShapeWorkingCopy, ProcessingConfig } from '~/types';
+import type { ShapeEntity, ShapeWorkingCopy, ProcessingConfig } from '~/shared';
 
 /**
  * Create shape data interface (UI layer)
@@ -13,7 +13,6 @@ import type { ShapeEntity, ShapeWorkingCopy, ProcessingConfig } from '~/types';
 export interface CreateShapeData {
   name: string;
   description?: string;
-  category?: string;
   dataSourceName: string;
   processingConfig?: Partial<ProcessingConfig>;
   selectedCountries?: string[];
@@ -58,7 +57,6 @@ export class ShapeEntityHandler {
       nodeId,
       name: data.name,
       description: data.description,
-      category: data.category ?? 'general',
       dataSourceName: data.dataSourceName as any,
       licenseAgreement: !!data.licenseAgreement,
       processingConfig: this.buildDefaultProcessingConfig(data.processingConfig),
@@ -153,7 +151,6 @@ export class ShapeEntityHandler {
       nodeId: '' as NodeId,
       name: '',
       description: '',
-      category: 'general',
       dataSourceName: 'naturalearth',
       licenseAgreement: false,
       processingConfig: this.buildDefaultProcessingConfig(),
@@ -173,7 +170,6 @@ export class ShapeEntityHandler {
     const updates: Partial<ShapeEntity> = {
       name: workingCopy.name,
       description: workingCopy.description,
-      category: (workingCopy as any).category,
       dataSourceName: workingCopy.dataSourceName,
       licenseAgreement: workingCopy.licenseAgreement,
       processingConfig: workingCopy.processingConfig,

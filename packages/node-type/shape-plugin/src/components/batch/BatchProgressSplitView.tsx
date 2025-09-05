@@ -19,7 +19,7 @@ import {
   VectorTileTask,
   ProcessingConfig,
   BatchTaskStage,
-} from "~/types";
+} from "~/shared";
 import { TaskMonitor } from "./TaskMonitor";
 
 interface BatchProgressSplitViewProps {
