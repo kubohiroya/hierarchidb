@@ -18,6 +18,17 @@
 - 型参照の前提: 共通パッケージは `package.json` の `exports.types` を `src/index.ts` に向けています。これにより「ビルド前でも型解決が可能」です。プラグイン側は `import type` を優先して JS 出力を抑制してください。
 - Node 環境型: Node グローバル（例: `process`）を型として使う必要がある場合、パッケージの `tsconfig.json` に `types: ["node"]` を追加します（例: `node-type/project-plugin`）。
 
+## package.json の `exports` / `types` ポリシー（重要）
+- 目的: モノレポ横断の「ビルド前型チェック（prebuild typecheck）」を安定させるため、型エントリはビルド生成物ではなく `src` を指す。
+- ルール（ライブラリ側、=他パッケージに公開する側）
+  - `exports.types`: `"./src/index.ts"` を指すこと。
+  - `types`: `"src/index.ts"` を指すこと。
+  - `exports.import`/`module`/`main`: バンドル生成物（`dist/index.js` など）を指すこと。
+- ルール（プラグイン／利用側）
+  - 公開エントリ（`@hierarchidb/*`）のみを import する。`rootDir` は固定しない。
+  - `module: "ESNext"` + `moduleResolution: "node"` に統一し、NodeNext/Node16 は使わない。
+- 備考: 生成される `.d.ts` は配布のために引き続き `dist` に出力されるが、型解決は上記 `src` を参照する設計です。
+
 ## 互換性とビルド安定化のための禁止事項
 - `module: "Node16"` や `moduleResolution: "nodenext"` の使用を避ける（モノレポ内の型参照で拡張子付与エラーを招くため）。
 - ディープインポート（`@hierarchidb/*/src/...` など）。
