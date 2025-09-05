@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 import type { ShapeEntitiesDB, ShapeRelationRow } from './shapeEntitiesDB';
 
 type Rel = RelationBase<{ weight?: number }>;
@@ -15,4 +15,3 @@ export function createShapeRelationStoreDexie(db: ShapeEntitiesDB): RelationStor
     },
   };
 }
-

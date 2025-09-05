@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 
 // Development-only in-memory RelationStore for the folder plugin.
 // Replace with Dexie-backed implementation in production.
@@ -29,4 +29,3 @@ export const folderRelationStore: RelationStore<Rel> = {
 export function __clearFolderRelationStore() {
   mem.clear();
 }
-

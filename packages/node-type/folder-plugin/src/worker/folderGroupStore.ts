@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
 
 // Development-only in-memory GroupStore for the folder plugin.
 // Replace with Dexie-backed implementation in production.
@@ -27,4 +27,3 @@ export const folderGroupStore: GroupStore<Item> = {
 export function __clearFolderGroupStore() {
   mem.clear();
 }
-

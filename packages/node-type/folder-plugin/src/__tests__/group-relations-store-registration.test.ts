@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { storeRegistry } from '@hierarchidb/runtime-worker/entity/store-registry';
+import { storeRegistry } from '@hierarchidb/runtime-worker';
 import { folderGroupStore, __clearFolderGroupStore } from '../worker/folderGroupStore';
 import { folderRelationStore, __clearFolderRelationStore } from '../worker/folderRelationStore';
 
@@ -24,4 +24,3 @@ describe('folder-plugin: group/relations store registration', () => {
     expect(storeRegistry.getRelations('folder')).toBeTruthy();
   });
 });
-

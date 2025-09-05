@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { ShapeEntitiesDB, ShapePeerRow } from './shapeEntitiesDB';
 import type { ShapePeerData } from '../types/entities';
 

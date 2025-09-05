@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
 import type { LocationEntitiesDB, LocationGroupRow } from './locationEntitiesDB';
 import type { LocationGroupItemData } from '../types/entities';
 
@@ -12,4 +12,3 @@ export function createLocationGroupStoreDexie(db: LocationEntitiesDB): GroupStor
     async bulkDelete(nodeId: NodeId, itemIds: string[]) { await db.transaction('rw', db.groupEntities, async () => { for (const id of itemIds) await db.groupEntities.delete([nodeId, id] as any); }); },
   };
 }
-

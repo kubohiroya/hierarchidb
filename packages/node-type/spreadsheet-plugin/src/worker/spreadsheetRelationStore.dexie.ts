@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 import type { SpreadsheetEntitiesDB, SheetRelationRow } from './spreadsheetEntitiesDB';
 import type { SpreadsheetRelationMeta } from '../types/entities';
 
@@ -12,4 +12,3 @@ export function createSpreadsheetRelationStoreDexie(db: SpreadsheetEntitiesDB): 
     async bulkDelete(rels: Rel[]) { await db.transaction('rw', db.relations, async () => { for (const r of rels) await db.relations.delete([r.srcNodeId, r.type, r.dstNodeId] as any); }); },
   };
 }
-

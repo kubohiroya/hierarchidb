@@ -1,5 +1,7 @@
 # HierarchiDB
 
+[![Unit CI — Tests](https://github.com/OWNER/REPO/actions/workflows/unit-ci.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/unit-ci.yml)
+
 High-performance tree-structured data management framework for browser environments
 
 ## 概要

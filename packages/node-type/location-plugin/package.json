@@ -20,6 +20,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",

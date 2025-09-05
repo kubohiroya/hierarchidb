@@ -15,7 +15,7 @@ export * from './plugin';
 try {
   const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
   // dynamic import to avoid SSR/Node issues
-  import('@hierarchidb/runtime-worker/entity/store-registry').then(async ({ storeRegistry }) => {
+  import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
     if (hasIndexedDB) {
       try {
         const { ShapeEntitiesDB } = await import('./shapeEntitiesDB');

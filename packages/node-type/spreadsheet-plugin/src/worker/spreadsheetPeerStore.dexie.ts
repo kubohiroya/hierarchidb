@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { SpreadsheetEntitiesDB, SheetPeerRow } from './spreadsheetEntitiesDB';
 import type { SpreadsheetPeerData } from '../types/entities';
 

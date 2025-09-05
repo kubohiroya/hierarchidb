@@ -9,7 +9,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    '@hierarchidb/runtime-worker/entity/store-registry',
+    '@hierarchidb/runtime-worker',
     'dexie',
   ],
 });

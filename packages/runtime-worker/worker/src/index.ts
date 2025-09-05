@@ -240,3 +240,14 @@ export class WorkerService implements WorkerAPI {
     };
   }
 }
+
+// Public re-exports for plugin-side stores and registry
+export type {
+  PeerEntity,
+  PeerStore,
+  GroupItemBase,
+  GroupStore,
+  RelationBase,
+  RelationStore,
+} from './entity/store';
+export { storeRegistry } from './entity/store-registry';

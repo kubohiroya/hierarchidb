@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
 import type { ShapeEntitiesDB, ShapeGroupRow } from './shapeEntitiesDB';
 
 type Item = GroupItemBase<{ value?: unknown }>;
@@ -15,4 +15,3 @@ export function createShapeGroupStoreDexie(db: ShapeEntitiesDB): GroupStore<Item
     },
   };
 }
-

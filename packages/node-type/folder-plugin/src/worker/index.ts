@@ -65,7 +65,7 @@ try {
   // and keep this safe in non-worker contexts.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  import('@hierarchidb/runtime-worker/entity/store-registry').then(async ({ storeRegistry }) => {
+  import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
     // Prefer Dexie-backed stores when indexedDB is available; otherwise fallback to in‑memory dev stores
     const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
     if (hasIndexedDB) {
