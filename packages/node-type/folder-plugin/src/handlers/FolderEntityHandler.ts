@@ -126,18 +126,8 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     return;
   }
 
-  // ==================
-  // Interface compatibility shims (undefined instead of null)
-  // ==================
-  async getEntity(entityId: EntityId): Promise<FolderEntityExtended | undefined> {
-    const entity = await (this as any).table.get(entityId);
-    return entity || undefined;
-  }
-
-  async getEntityByNodeId(nodeId: NodeId): Promise<FolderEntityExtended | undefined> {
-    const entity = await (this as any).table.where('nodeId').equals(nodeId).first();
-    return entity || undefined;
-  }
+  // Note: Base class getEntity/getEntityByNodeId return null-able.
+  // The FolderDefinition adapter converts null to undefined for public API compatibility.
 
   // Simple search by name
   async searchFolders(query: string) {

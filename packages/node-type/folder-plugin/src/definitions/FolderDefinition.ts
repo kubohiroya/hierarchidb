@@ -28,6 +28,11 @@ export const FolderDefinition: PluginIntegrated = {
     muiIconName: 'folder',
     color: '#FFA726',
   },
+  // Required PluginDefinition fields
+  category: { treeId: '*', menuGroup: 'container' },
+  dependencies: [],
+  priority: 0,
+  version: '1.0.0',
   database: {
     dbName: 'folder-db',
     // Dexie schema: storeName -> schema string
