@@ -252,7 +252,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
 
     return {
-      tables: result,
+      tables: result.map((m) => this.ensureFullMetadata(m)),
       total: tables.length,
     };
   }
@@ -352,7 +352,25 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
    */
   async getTableMetadata(tableId: string): Promise<CSVTableMetadata | null> {
     const metadata = await this.tableManager.get(tableId);
-    return metadata ?? null;
+    return metadata ? this.ensureFullMetadata(metadata) : null;
+  }
+
+  private ensureFullMetadata(m: any): CSVTableMetadata {
+    return {
+      id: m.id,
+      filename: m.filename ?? '',
+      fileUrl: m.fileUrl,
+      contentHash: m.contentHash ?? '',
+      fileSizeBytes: m.fileSizeBytes ?? 0,
+      totalRows: m.totalRows ?? 0,
+      columns: (m.columns ?? []) as any,
+      createdAt: m.createdAt ?? Date.now(),
+      updatedAt: m.updatedAt,
+      referenceCount: m.referenceCount ?? (Array.isArray(m.referencingPlugins) ? m.referencingPlugins.length : 0),
+      referencingPlugins: m.referencingPlugins ?? [],
+      isChunked: m.isChunked,
+      chunkCount: m.chunkCount,
+    } as CSVTableMetadata;
   }
 
   /**
