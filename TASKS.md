@@ -50,6 +50,40 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+// 追加: 初期ローダーの表示フリッカー解消（0%表示の撤去）
+- fix/app/remove-worker-init-0percent-flicker（「Worker初期化を開始しています...0%」の非表示）
+  - ブランチ名: `fix/app/remove-worker-init-0percent-flicker`（ローカル作業、未作成）
+  - 依存: なし（UI 初期化表示のみ、機能フラグ不要）
+  - 背景: 初期化直後に一瞬だけ 0% に戻る表示（`InitializingView` が初期値 0% を描画）で違和感がある。
+  - 方針: 進捗0%時は `LinearProgress` を indeterminate に切替え、メッセージ/パーセンテージは非表示。>0% で従来どおり表示。
+  - 対象ファイル: `app/src/contexts/WorkerProvider.tsx`（`InitializingView`）
+  - 受け入れ基準（DoD）:
+    - [x] 初期表示で「Worker初期化を開始しています...0%」が一切表示されない。
+    - [x] 実際の進捗イベント（>0%）が届くと段階的な%表示に切り替わる。
+    - [ ] `pnpm --filter @hierarchidb/app typecheck` が成功。
+  - ロールバック手順: `InitializingView` の条件分岐を削除し、`variant='determinate'` と 0% 表示を元に戻す。
+  - チェックリスト:
+    - [x] 0%時は `indeterminate` に変更
+    - [x] 0%時はメッセージ/パーセンテージ非表示
+    - [ ] typecheck 実行結果の確認
+
+// 追加: 初回スプラッシュの簡素化（CircularProgress のみ）
+- fix/app/splash-circularprogress-first-pass（初回の「タイトルロゴ+LinearProgress」を小スピナーに差し替え）
+  - ブランチ名: `fix/app/splash-circularprogress-first-pass`（ローカル作業、未作成）
+  - 依存: なし（HydrateFallback のみ変更）
+  - 背景: アプリ起動直後（ハイドレーション前）と Worker 初期化中の2段階で「ロゴ+バー」が連続して見え、体感的に重複表示。
+  - 方針: HydrateFallback を極力シンプルにし、中央に小サイズの CSS スピナーのみ表示する。2回目（Worker 初期化中）は現状維持。
+  - 対象ファイル: `app/src/root.tsx`（`HydrateFallback`）
+  - 受け入れ基準（DoD）:
+    - [x] 起動直後は中央に小さな円形スピナーのみが表示される。
+    - [x] Worker 初期化中は従来の「タイトルロゴ + プログレスバー（%表示あり）」が表示される。
+    - [ ] `pnpm --filter @hierarchidb/app typecheck` が成功。
+  - ロールバック手順: `HydrateFallback` の差分を戻し、`TitleLogo(showProgress=true)` と付随情報を再表示。
+  - チェックリスト:
+    - [x] TitleLogo を HydrateFallback から撤去
+    - [x] CSS のみの最小スピナーに置換
+    - [ ] typecheck 実行結果の確認
+
 
 - refactor/shape/remove-entityid（shape の EntityId 排除と API/型の統一）
   - ブランチ名: `refactor/shape/remove-entityid`
@@ -234,6 +268,10 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 ## 運用ログ（today） <a id="log-today"></a>
 
 - 2025-09-05 10:55 JST start: 選択パッケージのビルド/テストをローカル実行（sandbox対策）
+- 2025-09-05 16:40 JST start: fix/app/remove-worker-init-0percent-flicker — 初期化 0% 表示の撤去（UI フリッカー解消）
+- 2025-09-05 16:45 JST done: fix/app/remove-worker-init-0percent-flicker — `InitializingView` を 0%時 indeterminate＋文言非表示に変更
+- 2025-09-05 16:55 JST start: fix/app/splash-circularprogress-first-pass — 初回スプラッシュを小スピナーに差し替え
+- 2025-09-05 17:00 JST done: fix/app/splash-circularprogress-first-pass — `HydrateFallback` を中央スピナーのみ表示に変更
   - 実行: `pnpm --filter @hierarchidb/runtime-worker run build` 他、各パッケージ `build`。
   - 実行: `pnpm --filter @hierarchidb/folder-plugin run test:run` / `@hierarchidb/shape-plugin` / `@hierarchidb/ui-core`。
   - メモ: sandbox 下では Vitest の worker 終了で EPERM が発生するため、テストは昇格権限で実行。

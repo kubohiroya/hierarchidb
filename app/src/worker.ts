@@ -14,16 +14,27 @@ try {
   console.log(`[Worker] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 } catch {}
 
-const reporter = new WorkerInitializationReporter();
-reporter.reportStepProgress('Starting worker…', 0);
+const reporter = new WorkerInitializationReporter([
+  { name: 'Load Comlink', weight: 5 },
+  { name: 'Load plugin loaders', weight: 10 },
+  { name: 'Load plugins', weight: 35 },
+  { name: 'Bootstrap services', weight: 30 },
+  { name: 'Create API facade', weight: 10 },
+  { name: 'Expose API', weight: 10 },
+], false);
+// Kick off a visible starting point
+reporter.reportStepProgress('Load Comlink', 0);
 
 (async () => {
   try {
     // Dynamic import to localize failures
-    reporter.reportStepProgress('Loading Comlink…', 3);
+    // Step 1: Load Comlink
+    reporter.reportStepProgress('Load Comlink', 10);
     const Comlink: typeof import('comlink') = await import('comlink');
+    reporter.reportStepProgress('Load Comlink', 100);
 
-    reporter.reportStepProgress('Loading plugin loaders…', 5);
+    // Step 2: Load plugin loader virtual modules
+    reporter.reportStepProgress('Load plugin loaders', 10);
     try {
       // Resolve plugin definitions and loader map from virtual modules
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -36,14 +47,18 @@ reporter.reportStepProgress('Starting worker…', 0);
       const defs = (defsMod?.default as any[]) || [];
       const loadOrder = defs.map((d) => d.nodeType);
 
-      for (const nodeType of loadOrder) {
+      for (const [idx, nodeType] of loadOrder.entries()) {
         const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
         if (typeof loader === 'function') {
           console.log(`⏳ Loading plugin: ${nodeType}`);
           await loader();
           console.log(`✅ Loaded plugin: ${nodeType}`);
+          // Update progress within the Load plugins step
+          const stepProgress = Math.round(((idx + 1) / loadOrder.length) * 100);
+          reporter.reportStepProgress('Load plugins', stepProgress);
         }
       }
+      reporter.reportStepProgress('Load plugin loaders', 100);
     } catch (e) {
       console.warn('[Worker] Plugin virtual modules unavailable; attempting manual fallback');
 
@@ -114,11 +129,17 @@ reporter.reportStepProgress('Starting worker…', 0);
       pluginDefinitions = (self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ || [];
     }
 
-    reporter.reportStepProgress('Bootstrapping worker services…', 15);
+    // Step 3: Load plugins (100% reached in loops above)
+    reporter.reportStepProgress('Load plugins', 100);
+
+    // Step 4: Bootstrap services
+    reporter.reportStepProgress('Bootstrap services', 10);
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
+    reporter.reportStepProgress('Bootstrap services', 100);
 
-    reporter.reportStepProgress('Creating API facade…', 80);
+    // Step 5: Create API facade
+    reporter.reportStepProgress('Create API facade', 10);
     const api: any = {
       ping: () => services.ping(),
       initialize: () => services.initialize(),
@@ -133,8 +154,12 @@ reporter.reportStepProgress('Starting worker…', 0);
       getTagAPI: () => services.getTagAPI(),
     };
 
-    reporter.reportStepProgress('Exposing API via Comlink…', 95);
+    reporter.reportStepProgress('Create API facade', 100);
+
+    // Step 6: Expose API
+    reporter.reportStepProgress('Expose API', 10);
     Comlink.expose(api);
+    reporter.reportStepProgress('Expose API', 100);
 
     reporter.reportComplete();
   } catch (error) {

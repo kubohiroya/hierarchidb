@@ -49,9 +49,9 @@ let __WORKER_INIT_COMPLETED__ = false;
 /**
  * 初期化中の表示コンポーネント
  */
-const InitializingView: React.FC<{ progress: number; message: string }> = ({ 
-  progress, 
-  message 
+const InitializingView: React.FC<{ progress: number; message: string }> = ({
+  progress,
+  message,
 }) => (
   <Box
     sx={{
@@ -71,28 +71,37 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
     <TitleLogo showProgress={false} />
     
     <Box sx={{ width: '100%', maxWidth: 400, mt: 4 }}>
-      <LinearProgress 
-        variant="determinate" 
-        value={progress} 
+      {/**
+       * UX: Avoid flicker from "0%" regression
+       * - When progress is 0 (initial), show indeterminate bar and hide texts
+       * - Once progress > 0, switch to determinate with percentage and step message
+       */}
+      <LinearProgress
+        variant={progress > 0 ? 'determinate' : 'indeterminate'}
+        value={progress}
         sx={{ height: 8, borderRadius: 4 }}
       />
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
-        align="center" 
-        sx={{ mt: 2 }}
-      >
-        {message}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        color="text.secondary" 
-        align="center" 
-        display="block"
-        sx={{ mt: 1 }}
-      >
-        {progress}% Complete
-      </Typography>
+      {progress > 0 && (
+        <>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 2 }}
+          >
+            {message}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            align="center"
+            display="block"
+            sx={{ mt: 1 }}
+          >
+            {progress}% Complete
+          </Typography>
+        </>
+      )}
     </Box>
   </Box>
 );
@@ -250,6 +259,19 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         throw new Error('Worker instance is not available');
       }
 
+      // 進捗反映用のメッセージリスナ（INIT_PROGRESSをUIに反映）
+      const onProgressMessage = (event: MessageEvent) => {
+        const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
+        if (data?.type === 'INIT_PROGRESS') {
+          setState(prev => ({
+            ...prev,
+            initProgress: typeof data.payload?.progress === 'number' ? data.payload!.progress! : prev.initProgress,
+            initMessage: data.payload?.message || prev.initMessage,
+          }));
+        }
+      };
+      try { rawWorker.addEventListener('message', onProgressMessage); } catch {}
+
       // 初期化チャンネルを作成し、初期化完了を待機
       const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
@@ -259,6 +281,9 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         timeout,
         debug,
       });
+
+      // 進捗リスナを解除
+      try { rawWorker.removeEventListener('message', onProgressMessage); } catch {}
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
