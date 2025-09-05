@@ -50,25 +50,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
-  - ブランチ名: `refactor/ui-map/maplibre-wrapper`
-  - 依存: なし（小粒）
-  - 背景: basemap-plugin で maplibre-gl の型崩れを回避するため `skipLibCheck: true` や `shim`/`any` を導入していた。
-  - 方針: `@hierarchidb/ui-map` を MapLibre 用の薄いラッパとして定義し、maplibre の型/実装依存は同パッケージ内に閉じ込める。`skipLibCheck: true` は `@hierarchidb/ui-map` のみで有効化し、basemap-plugin 側では無効を維持。
-  - 受け入れ基準（DoD）:
-    - [x] `packages/ui/map/tsconfig.json` のみ `skipLibCheck: true`。basemap-plugin では無効。
-    - [x] basemap-plugin 内の `maplibre-gl` 用 shim (`src/types/maplibre-gl-shim.d.ts`) を削除し、`tsconfig.json` の `paths` からも除去。
-    - [x] `@hierarchidb/ui-map` が公開する型で `maplibre-gl` の型がリークしない（`MapLibreMapInstance`/`MapLibreStyle`/`MapLibreLayer` 等の安定化された独自型を公開）。
-    - [x] basemap-plugin の Map 関連実装から `any` キャストを削減（少なくともスタイル/レイヤー参照箇所）。
-    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` がグリーン。
-  - ロールバック手順:
-    - `ui-map` のみで `skipLibCheck: true` を維持するため、問題時は basemap-plugin のみ差分をリバート（型 shim 復活は最後の手段として避ける）。
-  - チェックリスト:
-    - [x] `ui-map` に `maplibre-public.ts` を整備し、最小安定型を定義。
-    - [x] `unified-map-props.ts` で `MapLibreStyle`/`MapLibreMapInstance` を採用、`FilterSpecification` 依存を除去。
-    - [x] `MapLibreMap.tsx`/`MapWithVectorTiles.tsx`/`VectorTileLayer.tsx` を最小型へ置換。
-    - [x] basemap-plugin の `shim` 削除と `any` 削減（`BaseMapDisplay`/`BaseMapPreview`）。
-    - [x] `ui-map` をビルドし、`.d.ts` から maplibre 型のリークが無いことを確認。
 
 - refactor/shape/remove-entityid（shape の EntityId 排除と API/型の統一）
   - ブランチ名: `refactor/shape/remove-entityid`
@@ -143,7 +124,7 @@
   - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
   - 方針: 互換マッピング（旧→新）をルーター/レジストリ/URLヘルパに追加し、段階的に既存参照を置換。旧識別子は一定期間受理。
   - 受け入れ基準（DoD）:
-    - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
+    - [x] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
     - [ ] UI/Worker/テストのハードコード参照を新識別子へ統一。
     - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（URL/保存データ/テスト含む）。
     - [ ] `pnpm typecheck && pnpm test` がグリーン。主要E2Eが新旧いずれでも動作。
@@ -153,12 +134,12 @@
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ: `chore/node-type/unify-dexie-db-names`
   - 依存: README 比較表の更新完了
-  - 命名規約（案）:
-    - プラグイン固有DB: `Dexie('<PascalName>DB')`（例: `Dexie('RouteDB')`, `Dexie('ShapeDB')`）。
-    - エンティティ複合ストア: `Dexie('<kebab-nodeType>-entities')`（例: `Dexie('location-plugin-entities')`→将来 `Dexie('location-entities')`）。
+  - 命名規約（採用）:
+    - 固有DB: `getDBName('<kebab>-db')`（例: `basemap-db`, `project-db`, `resolver-db`）。
+    - 複合DB: `getDBName('<nodeType>-entities')`（例: `folder-entities`, `location-entities`, `spreadsheet-entities`）。
   - 実施内容: 既存コードの DB 生成名呼称を規約表記に合わせてドキュメント整備（必要なら別PRで実装移行）。
   - 受け入れ基準（DoD）:
-    - [ ] README/開発ガイドに命名規約と現行→統一名のマッピングを明記。
+    - [x] README/開発ガイドに命名規約（kebab-case＋`getDBName()`）を明記（`packages/node-type/README.md` / `packages/node-type/CONTRIBUTING.md`）。
     - [ ] 変更が必要なパッケージ一覧と移行計画（データ移行/互換オープン/マイグレーション戦略）を提示。
     - [ ] `pnpm typecheck` グリーン（コード差分を含む場合）。
   - ロールバック手順: ドキュメントのみの変更なら不要。実装移行を行った場合は DB オープン名を元に戻すことで復旧可能。
@@ -239,6 +220,12 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 注意: `packages/node-type/spreadsheet-plugin` は `pnpm-workspace.yaml` で明示的に除外（`'!packages/node-type/spreadsheet-plugin'`）。フィルタで一致しないのは仕様。
   - DoD: 選択パッケージのビルド成功、テスト成功を確認。
   - ロールバック: なし（コード変更なし）。
+
+- 2025-09-05 15:30 JST done: メタデータ管理の共通化とポリシー整備
+  - 実施: `@hierarchidb/table-metadata` 追加、styler/spreadsheet をラッパ化。`node-type/CONTRIBUTING.md` と各プラグイン README に依存/インポート規約を追記。`tsup.base.config.ts` 外部化既定を更新。
+  - 実施: Dexie DB 名を kebab-case＋`getDBName()` に統一（basemap/folder/project/resolver）。nodeType は `location`/`project`/`resolver` へ統一。ドキュ残差（READMEの用語・worker/TASKS.md の旧提案）は後続整合。
+  - DoD: 主要パッケージの typecheck がグリーン（全体CIの導入は後続）。
+  - ロールバック: 各変更は個別の差分単位で戻せる（shared導入は既存ラッパー差替えで回避可能）。
 
     - 該当: `workerLogger.ts` の戻り型、`packages/ui/i18n/src/i18n/index.ts` の `supportedLngs`（SSR/CSR両方）。
   - feature/worker 層が React 依存なしで共通リソースを使えない構成（`react-i18next` 前提での初期化）。
@@ -965,6 +952,25 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- 2025-09-05 done: CSVメタデータ管理の重複を解消（Spreadsheet/Styler 共通化）
+  - 変更: `packages/feature/table-metadata` を新設し、`SimpleTableMetadataManager` を集約。
+  - 影響: `@hierarchidb/styler-plugin` / `@hierarchidb/spreadsheet-plugin` は薄いラッパーに差し替え。DB名は `getDBName('styler-metadata-db'|'spreadsheet-metadata-db')`。
+  - 結果: 型通しと参照簡素化。テストは既存のモック方針を維持。
+
+- 2025-09-05 done: 依存/インポート規約の明文化と周知（node-type 全体）
+  - 変更: `packages/node-type/CONTRIBUTING.md` を追加（MUST/SHOULD/MAY、tsup external、tsconfig 方針）。
+  - 変更: 各プラグイン README に「依存管理とインポート規約（重要）」セクションを重複掲載。
+  - 変更: 共有 `tsup.base.config.ts` に external 既定（react/MUI/emotion/dexie/i18n/maplibre）を設定。
+
+- 2025-09-05 done: Dexie DB 名の統一（実装方針を kebab-case＋`getDBName()` に決定）
+  - 決定: 固有DBは `getDBName('<kebab>-db')`（例: `folder-db`, `basemap-db`, `project-db`, `resolver-db`）。複合DBは `getDBName('<nodeType>-entities')`。
+  - 実装: basemap/folder/project/resolver の `PluginDefinition.database.dbName` を更新。
+  - ドキュメント: `packages/node-type/README.md` の比較表を kebab-case に更新。`runtime-worker/worker/TASKS.md` の旧提案（PascalNameDB）は後続で整合予定。
+
+- 2025-09-05 done: nodeType 識別子の統一（`*-plugin` 廃止）
+  - 実装: `location`/`project`/`resolver` の `PluginDefinition.nodeType` を短名へ統一。`project` の型/UI で `'propertyresolver'` 参照を `'resolver'` へ更新（READMEの一部サンプル文言は後続で修正）。
+
 
 - WC仕様同期（ADR/用語整備）
   - ブランチ: `chore/docs/wc-spec-sync`（既存ドキュメント整合）
