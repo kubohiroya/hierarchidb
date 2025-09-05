@@ -4,6 +4,15 @@
  */
 
 import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-bootstrap';
+import { APP_VERSION, BUILD_TIME } from './version';
+
+try {
+  const localBuildTime = (() => {
+    try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+  })();
+  // eslint-disable-next-line no-console
+  console.log(`[Worker] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
+} catch {}
 
 const reporter = new WorkerInitializationReporter();
 reporter.reportStepProgress('Starting worker…', 0);

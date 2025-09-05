@@ -70,9 +70,8 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
           try {
             if ((e as any)?.data?.type === 'INIT_COMPLETE') {
               workerInitCompleted = true;
-              try {
-                window.dispatchEvent(new Event('hierarchidb-worker-init-complete'));
-              } catch {}
+              try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
+              try { window.dispatchEvent(new Event('hierarchidb-worker-init-complete')); } catch {}
             }
           } catch {}
         });

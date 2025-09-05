@@ -163,6 +163,16 @@ export class WorkerAPIClient {
    * Check if initialized
    */
   static isReady(): boolean {
+    // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
+    try {
+      const globalInit = (typeof window !== 'undefined') && (window as any).__HDB_INIT_COMPLETE__;
+      if (!this.verified && globalInit) this.verified = true;
+      if (this.state !== 'initialized' && this.workerInstance && globalInit) {
+        this.state = 'initialized';
+        // eslint-disable-next-line no-console
+        console.log('[WorkerAPIClient] Promoted to initialized via global INIT_COMPLETE');
+      }
+    } catch {}
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     console.log(
       `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`

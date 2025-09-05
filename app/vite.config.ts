@@ -4,6 +4,7 @@ import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
+import * as fs from 'fs';
 import { faviconPlugin } from './vite-plugin-favicon';
 import { comlink } from 'vite-plugin-comlink';
 import {
@@ -51,6 +52,20 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   return {
     base,
+    define: (() => {
+      // Inject version and build time for logging
+      let appVersion = '0.0.0-dev';
+      try {
+        const pkgPath = path.resolve(__dirname, 'package.json');
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
+        if (pkg?.version) appVersion = pkg.version;
+      } catch {}
+      const buildTime = new Date().toISOString();
+      return {
+        __APP_VERSION__: JSON.stringify(appVersion),
+        __BUILD_TIME__: JSON.stringify(buildTime),
+      } as Record<string, string>;
+    })(),
     plugins,
     resolve: {
       // @emotion/reactとreactの重複を解決

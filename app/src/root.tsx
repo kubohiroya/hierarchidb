@@ -17,6 +17,16 @@ import { WorkerProvider } from './contexts/WorkerProvider';
 import { TitleLogo } from './components/TitleLogo';
 import { InitInspector } from './dev/InitInspector';
 import { NotificationSystem } from '@hierarchidb/ui-core';
+import { APP_VERSION, BUILD_TIME } from './version';
+
+// Log version and build time at startup (local time)
+try {
+  const localBuildTime = (() => {
+    try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+  })();
+  // eslint-disable-next-line no-console
+  console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
+} catch {}
 
 declare global {
   interface Window {
