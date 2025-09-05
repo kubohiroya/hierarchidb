@@ -85,11 +85,25 @@ export class WorkerAPIClient {
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
 
 
-      // Test the connection immediately
+      // Test the connection immediately (or skip if INIT_COMPLETE already observed)
       try {
-        const pingResult = await remoteWorker.ping();
+        let initComplete = false;
+        try {
+          const mod = await import('./initWorkerClient');
+          if (typeof (mod as any)?.isWorkerInitCompleted === 'function') {
+            initComplete = Boolean((mod as any).isWorkerInitCompleted());
+          }
+        } catch {}
+
+        if (!initComplete) {
+          const pingResult = await remoteWorker.ping();
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.doInitialize] INIT_COMPLETE observed; skipping ping');
+        }
         
-        // Check if this was a retry (error state indicates previous failure)
         if (this.lastError) {
           console.log('👍 [WorkerAPIClient.doInitialize] Reconnection successful after previous failure!');
         }
