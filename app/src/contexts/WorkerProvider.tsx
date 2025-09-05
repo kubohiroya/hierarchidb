@@ -38,6 +38,10 @@ interface WorkerProviderProps {
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
+// Module-level guards to survive React StrictMode dev remounts
+let __WORKER_INIT_STARTED__ = false;
+let __WORKER_INIT_COMPLETED__ = false;
+
 // ===========================
 // コンポーネント
 // ===========================
@@ -203,12 +207,28 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
    * Worker初期化処理
    */
   const initializeWorker = async () => {
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider] initializeWorker invoked');
     try {
       // 既存のエラーをクリア
       setState(prev => ({ ...prev, error: null }));
 
       // WorkerAPIClientを初期化（これによりWorkerが起動）
       await WorkerAPIClient.initialize();
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] WorkerAPIClient.initialize resolved');
+      // Fast-path if already ready
+      try {
+        if (WorkerAPIClient.isReady()) {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerProvider] fast-path isReady=true, finalizing');
+          const client = await WorkerAPIClient.getSingleton();
+          __WORKER_INIT_COMPLETED__ = true;
+          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+          return;
+        }
+      } catch {}
+
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
       
       if (!rawWorker) {
@@ -227,13 +247,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
       if (result.success) {
         const client = await WorkerAPIClient.getSingleton();
-        setState({
-          client,
-          isInitialized: true,
-          initProgress: 100,
-          initMessage: 'Worker初期化完了',
-          error: null,
-        });
+        __WORKER_INIT_COMPLETED__ = true;
+        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
       } else {
         throw new Error(result.error?.message || 'Worker initialization failed');
       }
@@ -247,13 +262,42 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     }
   };
 
-  // 初期化実行
+  // 初期化実行 + event listener for INIT_COMPLETE
   useEffect(() => {
-    initializeWorker();
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider] mount');
+    const onInitComplete = async () => {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] window event: hierarchidb-worker-init-complete');
+      __WORKER_INIT_COMPLETED__ = true;
+      try {
+        await WorkerAPIClient.initialize();
+        const client = await WorkerAPIClient.getSingleton();
+        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+      } catch (e) {
+        console.warn('[WorkerProvider] finalize on event failed', e);
+      }
+    };
+    try { window.addEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
 
-    // クリーンアップ
+    if (!__WORKER_INIT_STARTED__) {
+      __WORKER_INIT_STARTED__ = true;
+      void initializeWorker();
+    } else {
+      // Fast finalize on remount if completed
+      try {
+        if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
+          const client = WorkerAPIClient.getSingleton();
+          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+        }
+      } catch {}
+    }
+
     return () => {
-      initChannel?.dispose();
+      if (!import.meta.env.DEV) {
+        initChannel?.dispose();
+        try { window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
+      }
     };
   }, []);
 
