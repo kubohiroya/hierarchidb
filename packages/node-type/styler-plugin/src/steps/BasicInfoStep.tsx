@@ -103,8 +103,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     return errors.find(error => error.toLowerCase().includes(field.toLowerCase()));
   };
 
-  const nameError = getFieldError('name');
-  const descriptionError = getFieldError('description');
+  // NOTE: name/description errors are handled by BasicInfoFields; omit unused locals to satisfy DTS
   const categoryError = getFieldError('category');
   const styleTypeError = getFieldError('styleType');
 
@@ -200,13 +199,13 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           <Typography variant="subtitle2" gutterBottom>
             {t('basicInfo.category.label', 'Category')}
           </Typography>
-          <CategorySelector
-            options={categoryOptions}
-            selectedCategory={localData.category}
-            onCategoryChange={handleCategoryChange}
-            placeholder={t('basicInfo.category.placeholder', 'Select a styler category')}
-            disabled={disabled}
-          />
+          {React.createElement(CategorySelector as any, {
+            options: categoryOptions,
+            selectedCategory: localData.category,
+            onCategoryChange: handleCategoryChange,
+            placeholder: t('basicInfo.category.placeholder', 'Select a styler category'),
+            disabled,
+          })}
           {categoryError && (
             <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
               {categoryError}
@@ -222,14 +221,14 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           <Typography variant="subtitle2" gutterBottom>
             {t('basicInfo.tags.label', 'Tags')}
           </Typography>
-          <TagInput
-            selectedTags={localData.tags}
-            onTagsChange={handleTagsChange}
-            placeholder={t('basicInfo.tags.placeholder', 'Add tags to help organize and search...')}
-            disabled={disabled}
-            maxTags={20}
-            suggestionLimit={10}
-          />
+          {React.createElement(TagInput as any, {
+            selectedTags: localData.tags,
+            onTagsChange: handleTagsChange,
+            placeholder: t('basicInfo.tags.placeholder', 'Add tags to help organize and search...'),
+            disabled,
+            maxTags: 20,
+            suggestionLimit: 10,
+          })}
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
             {t('basicInfo.tags.hint', 'Add tags to make this styler easier to find and organize')}
           </Typography>

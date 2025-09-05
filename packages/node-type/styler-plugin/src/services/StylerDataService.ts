@@ -231,10 +231,6 @@ export class StylerDataService {
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
     }
-    // 文字列列からキー候補を推奨（なければ最初の列）
-    const stringColumns = tableMetadata.columns.filter((col) => col.type !== 'number');
-    const selectedKeyColumn = (stringColumns[0] ?? tableMetadata.columns[0]).name;
-
     return {
       algorithm: 'linear',
       colorSpace: 'hsv',
@@ -248,10 +244,7 @@ export class StylerDataService {
         brightness: 0.9,
       },
       enabled: true,
-      // Styler UI での初期選択
-      selectedValueColumn,
       valueColumn: selectedValueColumn,
-      selectedKeyColumn,
     };
   }
 }

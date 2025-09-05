@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker/entity/store';
+import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { FolderEntitiesDB, FolderPeerRow } from './folderEntitiesDB';
 
 export function createFolderPeerStoreDexie(db: FolderEntitiesDB): PeerStore<any> {
@@ -20,4 +20,3 @@ export function createFolderPeerStoreDexie(db: FolderEntitiesDB): PeerStore<any>
     },
   };
 }
-

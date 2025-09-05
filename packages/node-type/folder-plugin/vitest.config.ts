@@ -11,12 +11,8 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, './src'),
       '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-worker/entity/store-registry': path.resolve(
-        __dirname,
-        './src/__tests__/__mocks__/store-registry.ts'
-      ),
+      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
     },
   },
 });
-
