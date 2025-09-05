@@ -4,7 +4,7 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "moduleResolution": "nodenext",
+    "moduleResolution": "node",
     "jsx": "react-jsx",
     "skipLibCheck": true
   },
