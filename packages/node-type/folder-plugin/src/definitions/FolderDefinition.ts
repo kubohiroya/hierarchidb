@@ -35,6 +35,7 @@ export const FolderDefinition: PluginIntegrated = {
   version: '1.0.0',
   database: {
     dbName: 'folder-db',
+    entityStore: 'folders',
     // Dexie schema: storeName -> schema string
     schema: {
       folders: '&id, nodeId, name, description, createdAt, updatedAt, version',
