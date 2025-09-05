@@ -113,8 +113,15 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
  */
 export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
   if (!workerInstance) {
-    return await initializeWorker();
+    // eslint-disable-next-line no-console
+    console.log('[initWorker.getWorkerClient] no cached workerInstance -> initializeWorker');
+    const w = await initializeWorker();
+    // eslint-disable-next-line no-console
+    console.log('[initWorker.getWorkerClient] initializeWorker resolved');
+    return w;
   }
+  // eslint-disable-next-line no-console
+  console.log('[initWorker.getWorkerClient] returning cached workerInstance');
   return workerInstance;
 }
 
@@ -122,5 +129,7 @@ export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
  * Get the raw Worker instance for initialization detection
  */
 export function getRawWorkerInstance(): Worker | null {
+  // eslint-disable-next-line no-console
+  console.log('[initWorker.getRawWorkerInstance] returning', !!rawWorkerInstance);
   return rawWorkerInstance;
 }

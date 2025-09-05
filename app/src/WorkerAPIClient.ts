@@ -27,6 +27,8 @@ export class WorkerAPIClient {
    * Initialize the Worker (must be called once at app startup)
    */
   static async initialize(): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.log('[WorkerAPIClient.initialize] called; state=', this.state);
     // Handle based on current state
     switch (this.state) {
       case 'initialized':
@@ -38,6 +40,8 @@ export class WorkerAPIClient {
           '[WorkerAPIClient.initialize] Already initializing, returning existing promise'
         );
         if (this.initializationPromise) {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.initialize] returning cached promise');
           return this.initializationPromise;
         }
         // If promise is somehow null, fall through to reinitialize
@@ -58,17 +62,23 @@ export class WorkerAPIClient {
     // Start new initialization
 
     this.state = 'initializing';
+    // eslint-disable-next-line no-console
+    console.log('[WorkerAPIClient.initialize] state -> initializing');
 
     this.initializationPromise = this.doInitialize()
       .then(() => {
 
         this.state = 'initialized';
+        // eslint-disable-next-line no-console
+        console.log('[WorkerAPIClient.initialize] state -> initialized');
         this.lastError = null;
         this.initializationPromise = null;
       })
       .catch((error) => {
         console.error('[WorkerAPIClient.initialize] Initialization failed:', error);
         this.state = 'error';
+        // eslint-disable-next-line no-console
+        console.log('[WorkerAPIClient.initialize] state -> error');
         this.lastError = error instanceof Error ? error : new Error(String(error));
         this.initializationPromise = null;
         throw error;
@@ -78,16 +88,21 @@ export class WorkerAPIClient {
   }
 
   private static async doInitialize(): Promise<void> {
-
+    // eslint-disable-next-line no-console
+    console.log('[WorkerAPIClient.doInitialize] begin getWorkerClient');
 
     try {
 
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
+      // eslint-disable-next-line no-console
+      console.log('[WorkerAPIClient.doInitialize] getWorkerClient resolved');
 
 
       // Test the connection immediately
       try {
         const pingResult = await remoteWorker.ping();
+        // eslint-disable-next-line no-console
+        console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
         
         // Check if this was a retry (error state indicates previous failure)
         if (this.lastError) {
@@ -100,6 +115,8 @@ export class WorkerAPIClient {
 
       // Store the worker instance only after successful connection test
       this.workerInstance = remoteWorker;
+      // eslint-disable-next-line no-console
+      console.log('[WorkerAPIClient.doInitialize] workerInstance stored');
 
       if (!this.workerInstance) {
         throw new Error('getWorkerClient returned null');
@@ -120,7 +137,8 @@ export class WorkerAPIClient {
    * Get singleton Worker instance directly
    */
   static getSingleton(): WorkerInterface {
-
+    // eslint-disable-next-line no-console
+    console.log('[WorkerAPIClient.getSingleton] called', { state: this.state, hasInstance: !!this.workerInstance });
     if (this.state !== 'initialized' || !this.workerInstance) {
       console.error('[WorkerAPIClient.getSingleton] Not initialized', {
         state: this.state,
@@ -139,7 +157,12 @@ export class WorkerAPIClient {
    * Useful when connection fails and needs to be retried
    */
   static reset(): void {
-
+    // eslint-disable-next-line no-console
+    console.log('[WorkerAPIClient.reset] called; clearing state');
+    this.workerInstance = null;
+    this.state = 'uninitialized';
+    this.initializationPromise = null;
+    this.lastError = null;
   }
 
 

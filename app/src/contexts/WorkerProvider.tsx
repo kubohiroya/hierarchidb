@@ -48,7 +48,14 @@ const WorkerContext = createContext<WorkerContextValue | null>(null);
 const InitializingView: React.FC<{ progress: number; message: string }> = ({ 
   progress, 
   message 
-}) => (
+}) => {
+  // Log every render of the initializing view for debugging
+  try {
+    // eslint-disable-next-line no-console
+    console.log('[InitializingView] render', { progress, message });
+  } catch {}
+
+  return (
   <Box
     sx={{
       position: 'fixed',
@@ -92,6 +99,7 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
     </Box>
   </Box>
 );
+};
 
 /**
  * エラー表示コンポーネント
@@ -203,12 +211,18 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
    * Worker初期化処理
    */
   const initializeWorker = async () => {
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider.initializeWorker] called');
     try {
       // 既存のエラーをクリア
       setState(prev => ({ ...prev, error: null }));
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] state cleared, starting WorkerAPIClient.initialize');
 
       // WorkerAPIClientを初期化（これによりWorkerが起動）
       await WorkerAPIClient.initialize();
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] WorkerAPIClient.initialize resolved');
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
       
       if (!rawWorker) {
@@ -218,9 +232,13 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       // 初期化チャンネルを作成し、初期化完了を待機
       const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] WorkerInitializationChannel created');
 
       // Prefer channel, but fall back to WorkerAPIClient readiness (handles race where INIT_COMPLETE already fired)
       const channelPromise = channel.waitForInitialization({ worker: rawWorker, timeout, debug });
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] waitForInitialization started', { timeout, debug });
 
       // Small grace period to allow channel to capture INIT_COMPLETE; if already ready, proceed
       const fallbackPromise = new Promise<{ success: boolean; error?: Error }>((resolve) => {
@@ -240,12 +258,16 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       });
 
       const result = await Promise.race([channelPromise, fallbackPromise]);
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] init gate resolved', result);
 
       if (!result || !(result as any).success) {
         throw new Error((result as any)?.error?.message || 'Worker initialization failed');
       }
 
       const client = await WorkerAPIClient.getSingleton();
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider.initializeWorker] WorkerAPIClient.getSingleton resolved');
       setState({
         client,
         isInitialized: true,
@@ -265,10 +287,14 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
   // 初期化実行
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider] useEffect mount -> initializeWorker');
     initializeWorker();
 
     // クリーンアップ
     return () => {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] useEffect unmount -> dispose initChannel');
       initChannel?.dispose();
     };
   }, []);
