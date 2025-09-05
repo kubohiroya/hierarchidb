@@ -73,6 +73,7 @@ export interface StylerWorkingCopy extends StylerEntity {
  */
 // Export as a simple object, not as ExtendedPluginDefinition
 export const StylerExtension = {
+  extends: 'spreadsheet',
   // 【メタデータ定義】: プラグインの基本情報
   nodeType: 'styler',
   name: 'Styler',

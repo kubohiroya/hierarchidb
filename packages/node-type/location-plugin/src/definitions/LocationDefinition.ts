@@ -12,7 +12,7 @@ import { LocationPanel } from '../components/LocationPanel';
  */
 export const LocationPluginDefinition = {
   // Plugin identification
-  nodeType: 'location-plugin' as NodeType,
+  nodeType: 'location' as NodeType,
   nodeTypeDisplayName: 'Location',
   nodeTypeDescription: 'Geographic location data management with Shape plugin integration',
   nodeTypeIcon: 'LocationOn',
@@ -129,7 +129,7 @@ export const LocationPluginDefinition = {
         // Placeholder implementation
         return {
           id: nodeId,
-          nodeType: 'location-plugin' as NodeType,
+          nodeType: 'location' as NodeType,
           name: data.properties.name || 'Imported Location',
           parentId: null as any,
           depth: 0,
@@ -257,7 +257,7 @@ export const LocationPluginDefinition = {
     compatibleWith: [
       'shape-plugin',
       'route-plugin',
-      'project-plugin',
+      'project',
       'basemap-plugin',
     ],
     

@@ -1,4 +1,5 @@
 import { SingletonMixin } from '@hierarchidb/util';
+import { getDBName } from '@hierarchidb/util';
 import type { TreeViewState } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 
@@ -7,16 +8,16 @@ export type TreeViewStateRow = TreeViewState;
 export class EphemeralDB extends Dexie {
   views!: Table<TreeViewStateRow, string>;
 
-  static async getSingleton(name: string = 'hierarchidb'): Promise<EphemeralDB> {
+  static async getSingleton(_name?: string): Promise<EphemeralDB> {
     return SingletonMixin.getSingleton(EphemeralDB.name, async () => {
-      const instance = new EphemeralDB(name);
+      const instance = new EphemeralDB(getDBName('ephemeral-db'));
       await instance.initialize();
       return instance;
     });
   }
 
-  private constructor(name: string = 'hierarchidb') {
-    super(`${name}-EphemeralDB`);
+  private constructor(name: string) {
+    super(name);
 
     this.version(1).stores({
       views: '&treeViewId, updatedAt, [treeId+treeRootNodeType], [treeId+pageNodeId]',

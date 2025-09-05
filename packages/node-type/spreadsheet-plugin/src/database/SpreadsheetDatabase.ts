@@ -4,6 +4,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { EntityId, NodeId } from '@hierarchidb/common-type';
 import type {
   RawFileMetadata,
@@ -29,7 +30,7 @@ export class SpreadsheetDatabase extends Dexie {
   spreadsheetEntities!: Table<SpreadsheetEntity>;
   workingCopies!: Table<SpreadsheetEntityWorkingCopy>;
 
-  constructor(dbName: string = 'SpreadsheetDB') {
+  constructor(dbName: string = getDBName('spreadsheet-db')) {
     super(dbName);
 
     this.version(1).stores({

@@ -318,7 +318,7 @@ export const shapePluginAPI = {
 
     return {
       sessionId: session.id,
-      workingCopyId: session.nodeId as unknown as EntityId, // Convert NodeId to EntityId
+      workingCopyId: session.nodeId as EntityId, // Convert NodeId to EntityId (branded)
       status: session.status,
       progress: session.progress,
       stage: session.stage,

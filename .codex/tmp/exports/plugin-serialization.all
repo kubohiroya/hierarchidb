@@ -1,0 +1,4 @@
+interface|BinaryPropertyConfig
+interface|PluginSerializationConfig
+interface|SerializationResult
+interface|DeserializationInput

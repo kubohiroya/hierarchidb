@@ -4,11 +4,12 @@
  */
 
 import React from 'react';
-import { Box, TextField, Typography, Stack, Divider } from '@mui/material';
+import { Box, Typography, Stack, Divider } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { EntityId } from '@hierarchidb/common-type';
 import { TagInput } from './TagInput';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 type TagId = EntityId;
 
@@ -51,39 +52,20 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
       </Typography>
 
       <Stack spacing={3}>
-        {/* 名前入力 */}
-        <TextField
-          label={t('basicInfo.name.label', 'Folder Name')}
-          value={workingCopy.name || ''}
-          onChange={(e) => onUpdate({ name: e.target.value })}
-          required
-          fullWidth
+        <BasicInfoFields
+          value={{ name: workingCopy.name, description: workingCopy.description }}
+          onChange={onUpdate}
           disabled={disabled}
-          error={!workingCopy.name}
-          helperText={
-            !workingCopy.name
-              ? t('basicInfo.name.required', 'Folder name is required')
-              : t('basicInfo.name.helper', 'Enter a descriptive folder name')
-          }
-          inputProps={{ maxLength: 100 }}
-          variant="outlined"
-        />
-
-        {/* 説明入力 */}
-        <TextField
-          label={t('basicInfo.description.label', 'Description')}
-          value={workingCopy.description || ''}
-          onChange={(e) => onUpdate({ description: e.target.value })}
-          multiline
-          rows={3}
-          fullWidth
-          disabled={disabled}
-          helperText={t(
+          nameLabel={t('basicInfo.name.label', 'Folder Name')}
+          nameHelperText={t('basicInfo.name.helper', 'Enter a descriptive folder name')}
+          nameRequiredText={t('basicInfo.name.required', 'Folder name is required')}
+          namePlaceholder={t('basicInfo.name.placeholder', 'Enter folder name')}
+          descriptionLabel={t('basicInfo.description.label', 'Description')}
+          descriptionHelperText={t(
             'basicInfo.description.helper',
             'Describe the purpose or contents of this folder (optional)'
           )}
-          inputProps={{ maxLength: 500 }}
-          variant="outlined"
+          descriptionPlaceholder={t('basicInfo.description.placeholder', 'Enter description (optional)')}
         />
 
         <Divider />

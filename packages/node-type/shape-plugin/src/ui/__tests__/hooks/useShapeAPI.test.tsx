@@ -123,4 +123,4 @@ describe('useShapeAPIGetter', () => {
 // Skip UI hook tests by default (require app environment)
 if (!process.env.ENABLE_SHAPE_UI_TESTS) {
   describe.skip('useShapeAPI (UI tests disabled)', () => {});
-} else {
+}

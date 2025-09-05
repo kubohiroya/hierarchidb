@@ -95,6 +95,102 @@
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
+// 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
+- chore/common-types/unused-sweep-v1（共通型の未使用エクスポートを整理）
+  - ブランチ: `chore/common-types/unused-sweep-v1`
+  - 依存: なし（小粒、既定OFFの変更なし）
+  - 内容: `packages/common/types/src` の `export` されている型/インターフェイスのうち、外部未参照のものを削除候補として洗い出し、まずは `export` からの除外 or ドキュメント化で表面積を縮小する。
+  - 参考: docs/tech-debt/unused-common-types-2025-09-04.md（検出条件・候補一覧）
+  - 受け入れ基準（DoD）:
+    - [ ] 候補リストが `TASKS.md`/docs に記録されている。
+    - [ ] `.bak` ファイル（`entiry-working-copy-types.ts.bak`）の扱い方針が決定（削除 or `deprecated/` へ移動）。
+    - [ ] バレル（`index.ts`）の再エクスポートから未使用候補を除外（破壊的変更がないことを確認）。
+    - [ ] `pnpm typecheck && pnpm test` がグリーン。
+  - ロールバック手順: `index.ts` の再エクスポート差分をリバートで即復旧可能。削除に進む場合は削除コミット単位で個別リバート。
+
+// 追加: nodeType命名の統一（-plugin サフィックス廃止）
+- refactor/node-type/remove-plugin-suffix（nodeType から `-plugin` を撤廃し短い識別子へ統一）
+  - ブランチ: `refactor/node-type/remove-plugin-suffix`
+  - 依存: README 比較表の更新完了
+  - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
+  - 方針: 互換マッピング（旧→新）をルーター/レジストリ/URLヘルパに追加し、段階的に既存参照を置換。旧識別子は一定期間受理。
+  - 受け入れ基準（DoD）:
+    - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
+    - [ ] UI/Worker/テストのハードコード参照を新識別子へ統一。
+    - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（URL/保存データ/テスト含む）。
+    - [ ] `pnpm typecheck && pnpm test` がグリーン。主要E2Eが新旧いずれでも動作。
+  - ロールバック手順: 互換マッピングを維持したまま `nodeType` 差分をリバートすれば即時復旧可能。
+
+// 追加: Dexie データベース名の表記・命名規約を統一
+- chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
+  - ブランチ: `chore/node-type/unify-dexie-db-names`
+  - 依存: README 比較表の更新完了
+  - 命名規約（案）:
+    - プラグイン固有DB: `Dexie('<PascalName>DB')`（例: `Dexie('RouteDB')`, `Dexie('ShapeDB')`）。
+    - エンティティ複合ストア: `Dexie('<kebab-nodeType>-entities')`（例: `Dexie('location-plugin-entities')`→将来 `Dexie('location-entities')`）。
+  - 実施内容: 既存コードの DB 生成名呼称を規約表記に合わせてドキュメント整備（必要なら別PRで実装移行）。
+  - 受け入れ基準（DoD）:
+    - [ ] README/開発ガイドに命名規約と現行→統一名のマッピングを明記。
+    - [ ] 変更が必要なパッケージ一覧と移行計画（データ移行/互換オープン/マイグレーション戦略）を提示。
+    - [ ] `pnpm typecheck` グリーン（コード差分を含む場合）。
+  - ロールバック手順: ドキュメントのみの変更なら不要。実装移行を行った場合は DB オープン名を元に戻すことで復旧可能。
+
+// 追加: route のバッチ処理 実装着手（仕様確認→実装）
+- feat/route/batch-processing-implementation（Route プラグインにバッチ処理基盤を実装）
+  - ブランチ: `feat/route/batch-processing-implementation`
+  - 依存: 仕様確認（要求事項の再確認）、README 比較表の更新完了
+  - 背景: 仕様としてバッチ処理（セッション/タスク/進捗・再試行・キャッシュ）を指示済み。現状コードに基盤未確認のため実装を進める。
+  - 方針:
+    - [ ] 仕様確認: 入力（開始/終了地点、経路種別、制約）、出力（経路、統計、コスト）、タスク分割（候補生成→評価→選択）、失敗時リトライ、TTL付きキャッシュの扱い。
+    - [ ] DB 設計: `RouteDB` に `batchSessions`/`batchTasks` テーブルを追加（Shape準拠の簡易版）または専用 Ephemeral DB を導入し、統計/進捗/ログを保持。
+    - [ ] API: Worker に `startRouteBatch`, `getBatchStatus`, `cancelBatch`, `resumeBatch` を追加。UI には最小の監視UIを後続で。
+    - [ ] 実装: 並列度・キャンセル・チェックポイント・キャッシュ利用方針（`routeCache` 再利用）を反映。
+    - [ ] テスト: ユニット（分割・リトライ・キャッシュ・キャンセル）＋統合（小規模データでの完走）
+  - 受け入れ基準（DoD）:
+    - [ ] Worker API 経由でバッチ開始→進捗取得→完了/キャンセルが可能。
+    - [ ] 失敗タスクの自動/手動リトライ・再開が機能。
+    - [ ] `pnpm --filter @hierarchidb/route-plugin test` がグリーン。RouteDB のキャッシュ/バッチ表の整合性が取れている。
+  - ロールバック手順: 追加 API/テーブル定義差分をリバート（既存 `RouteDB` と `routeCache` は維持）。
+
+// 追加: DB/テーブル名の統一（worker/TASKS.md に準拠して改名）
+- chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
+  - ブランチ: `chore/db/unify-dexie-names-and-tables`
+  - 依存: `packages/runtime-worker/worker/TASKS.md` の命名規約・改名対象リスト
+  - 対象: node-type/* パッケージ（basemap, folder, spreadsheet, styler, shape, location, route, resolver, project）
+  - 方針: 互換オープンを導入しつつ、段階的に改名（まずは参照の抽象化→互換→切替）。
+  - 受け入れ基準（DoD）:
+    - [ ] 各パッケージの DB 名/テーブル名が `worker/TASKS.md` の規約に合致。
+    - [ ] 旧名からの移行パス（互換オープン or マイグレーション）を実装し、回帰なし。
+    - [ ] 主要ユニット/統合テストがグリーン。
+  - ロールバック手順: 互換オープンを残した状態で新名への切替コミットをリバート。
+
+// 追加: プラグインモデルの用語・図の統一（シンプル/拡張の統合）
+- docs/plugin-model-unify（「シンプル/拡張」を廃し、extends 有無で統一）
+  - ブランチ: `docs/plugin-model-unify`
+  - 背景: 実装的には単一の `PluginDefinition`（`extends?: NodeType` と `dependencies: NodeType[]`）で表現可能。用語/図の二重表現が学習コストを増大。
+  - 参考: docs/architecture/plugin-model-unify-memo.md（統一の根拠と移行方針メモ）
+  - スコープ/小タスク:
+    - [ ] README（packages/node-type/README.md）の図・文言から「シンプル/拡張」を撤廃し、「プラグイン（extends あり/なし）」に統一。
+    - [ ] Mermaid 図の SIMPLE/EXTENDING/MIXIN を簡素化（MIXIN は概念注記へ）。
+    - [ ] 生成テンプレート/スキャフォールドが複線化していれば単一路線へ統合（extends は可変パラメータ）。
+    - [ ] テスト名称/コメントの旧用語を整理（検索置換候補の一覧を残す）。
+  - 受け入れ基準（DoD）:
+    - [ ] ドキュメント上の用語が統一され、図が簡素化されている。
+    - [ ] 実装/API/登録フローに「シンプル/拡張」固有分岐が存在しないことを確認。
+    - [ ] `pnpm typecheck` グリーン。必要に応じて lint/docs チェック通過。
+  - ロールバック手順: ドキュメント差分のリバートで即復旧可能（コード変更がある場合は個別に戻す）。
+
+// 追加: shape の継承元を folder に統一
+- refactor/node-type/shape-inherit-from-folder（shape の継承元を `folder` に変更）
+  - ブランチ: `refactor/node-type/shape-inherit-from-folder`
+  - 依存: README 比較表更新完了、nodeType 命名統一の方針合意
+  - 内容: shape-plugin のプラグイン定義で継承元を `folder` に設定し、メニュー/依存/ロード順の整合を取る。必要に応じてフォルダ系の拡張ポイント（拡張レジストリ）を接続。
+  - 受け入れ基準（DoD）:
+    - [ ] `shape` の `dependencies`/`category` を `folder` 前提に調整し、ロード順が `folder → shape` になる。
+    - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck && test` がグリーン。
+    - [ ] UI メニュー（create）が現行通り表示（機能退行なし）。
+  - ロールバック手順: プラグイン定義の継承/依存差分をリバートすれば元に戻る（DB 互換性影響なし）。
+
 EPIC) i18nコア統一とロケール伝播（React非依存・言語追加をデータ駆動化）
 - ブランチ（エピック）: `epic/i18n-core-unify`
 - 依存: なし（段階導入。既存UIは維持）
@@ -159,6 +255,9 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
+- done: 2025-09-04 test/styler: `@hierarchidb/spreadsheet-plugin` をテスト時のみモック化（styler-plugin の `vitest.config.ts` にエイリアス追加、`src/__tests__/mocks/spreadsheet-plugin.ts` 実装）。
+- done: 2025-09-04 fix/basemap: 互換 extension 定義を追加し（`src/extension/definition.ts`）、`BaseMapEntityHandler` に既定値・WC操作・nodeId互換・検索(tags)・文言整合を実装。basemap-plugin テスト 34/34 パス。
 - done: 2025-09-04 docs: TASKS.md に目次を追加（H2/H3主要項目）。
 - done: 2025-09-04 docs: 目次をリンク化（重複見出しへ明示ID付与: `#git-branches`, `#kanban-*`, `#worklog-*` など）。
 - done: 2025-09-04 chore/build: prebuild のライセンス集計をパッケージ化CLI経由に統一
@@ -171,6 +270,11 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - done: 2025-09-04 basemap-plugin / project-plugin / folder-plugin の tsconfig から `dist/*.d.ts` の `paths` を削除
 - done: 2025-09-04 folder-plugin に `@hierarchidb/tag` を依存追加
 - done: 2025-09-04 AGENTS.md に型解決ポリシーを明文化
+- done: 2025-09-04 chore/common-types: `packages/common/types/src` の未使用 `export`（型/インターフェイス）候補を抽出し、ドキュメント化（docs/tech-debt/unused-common-types-2025-09-04.md）。
+- done: 2025-09-04 chore/common-types: 未使用候補に `@deprecated` を付与し、バレル `packages/common/types/src/index.ts` から再エクスポート除外（必要シンボルのみ明示再エクスポートに変更）。
+  - 検証: `pnpm --filter @hierarchidb/common-type build` 成功（DTS 生成OK）。
+  - フルビルド: ルート `pnpm build` 実行。`@hierarchidb/ui-core` の DTS 生成で未使用引数警告による失敗、`@hierarchidb/runtime-ui-plugin-dialog` の内部エラー（tsup）で停止。common-type の変更起因ではないため別途対処。
+- done: 2025-09-04 chore/common-types: `.bak` ファイル削除（packages/common/types/src/entiry-working-copy-types.ts.bak）。
 - done: 2025-09-04 basemap-plugin の型乖離是正（`PluginDefinition`/`hooks`/`DisplayOptions.tags`/`WorkingCopy`）→ typecheck グリーン
 - done: 2025-09-04 project-plugin の ui-map 型不足を局所 augment で補完（`src/types/ui-map-augment.d.ts`）→ typecheck グリーン
 - fix: 2025-09-04 folder-plugin の `tsc --noEmit` が OOM（V8 heap）→ `skipLibCheck: true` を有効化し、`checkDeps.allowSkipLibCheck` と理由を明記（MUI+React 型の巨大グラフ回避）。ビルド実行はユーザ側で確認予定。

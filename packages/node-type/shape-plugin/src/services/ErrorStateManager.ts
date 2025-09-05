@@ -10,6 +10,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { TreeNodeId } from '@hierarchidb/core';
 import { BaseShapeError, ErrorCategory, ErrorSeverity } from '../types/ShapeErrorHierarchy';
 import type { RecoveryAttempt } from './RecoveryStrategy';
@@ -70,7 +71,7 @@ class ErrorStateDB extends Dexie {
   sessionStats!: Table<SessionStatsEntity>;
 
   constructor() {
-    super('ShapeErrorStateDB_Simple');
+    super(getDBName('shape-error-state-db'));
 
     this.version(1).stores({
       // セッション統計のみ永続化（最小限）

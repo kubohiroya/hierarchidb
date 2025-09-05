@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
 export type FolderGroupRow = {
@@ -27,7 +28,7 @@ export class FolderEntitiesDB extends Dexie {
   groupEntities!: Table<FolderGroupRow, [NodeId, string]>;
   relations!: Table<FolderRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = 'folder-plugin-entities') {
+  constructor(name = getDBName('folder-entities')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

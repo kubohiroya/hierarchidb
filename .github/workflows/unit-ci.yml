@@ -1,0 +1,87 @@
+name: Unit CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: unit-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Test ${{ matrix.pkg.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg:
+          - { name: basemap-plugin, filter: "@hierarchidb/basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/shape-plugin" }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run unit/integration tests
+        env:
+          # Ensure deep/integration tests stay gated unless explicitly enabled
+          ENABLE_SHAPE_DEEP_TESTS: ""
+          ENABLE_INTEGRATION_TESTS: ""
+        run: pnpm --filter "${{ matrix.pkg.filter }}" test
+
+  build:
+    name: Typecheck/Build ${{ matrix.pkg.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg:
+          - { name: basemap-plugin, filter: "@hierarchidb/basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/shape-plugin" }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck (with deps)
+        run: pnpm -r --filter "${{ matrix.pkg.filter }}^..." typecheck
+
+      - name: Build (with deps)
+        run: pnpm -r --filter "${{ matrix.pkg.filter }}^..." build

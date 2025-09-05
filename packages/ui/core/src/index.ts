@@ -9,6 +9,11 @@ export { BaseIcon, createSvgIcon, createMuiIconWrapper } from './components/Base
 export type { BaseIconProps, SvgIconDefinition } from './components/BaseIcon';
 export { DropdownMenu } from './components/DropdownMenu/DropdownMenu';
 export type { DropdownMenuItemType } from './components/DropdownMenu/DropdownMenuItemType';
+export { TagInput } from './components/TagInput';
+export { CategorySelector } from './components/CategorySelector';
+export { BasicInfoFields } from './components/BasicInfoFields';
+export { TagChipsInput } from './components/TagChipsInput';
+export type { TagChipsInputProps } from './components/TagChipsInput';
 
 // Hook Exports
 export { useAsyncOperation } from './hooks/useAsyncOperation';

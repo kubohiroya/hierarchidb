@@ -1,0 +1,9 @@
+interface|StepComponent
+interface|DialogStepDefinition
+interface|ExtendedFieldDefinition
+interface|BaseNodeDefinition
+interface|ValidationExtension
+interface|ExtensionMetadata
+interface|BaseEntityExtension
+interface|PluginExtensionConfig
+interface|ExtendingNodeTypeDefinition

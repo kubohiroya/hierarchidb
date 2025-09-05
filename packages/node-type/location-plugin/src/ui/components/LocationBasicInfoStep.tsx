@@ -8,6 +8,7 @@ import { Box, TextField, Typography, Stack, Divider } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import type { LocationWorkingCopy, LocationCategory, TagId } from '../../types';
 import { useTranslation } from '../../i18n';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 export interface LocationBasicInfoStepProps {
   workingCopy: LocationWorkingCopy;
@@ -70,36 +71,18 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
       </Typography>
 
       <Stack spacing={3}>
-        {/* 名前入力 */}
-        <TextField
-          label={translations.basicInfo.nameLabel}
-          value={workingCopy.name || ''}
-          onChange={(e) => handleNameChange(e.target.value)}
-          required
-          fullWidth
+        <BasicInfoFields
+          value={{ name: workingCopy.name, description: workingCopy.description }}
+          onChange={(updates) => {
+            if (updates.name !== undefined) handleNameChange(updates.name);
+            if (updates.description !== undefined) handleDescriptionChange(updates.description);
+          }}
           disabled={disabled}
-          error={!workingCopy.name}
-          helperText={
-            !workingCopy.name 
-              ? translations.basicInfo.nameRequired 
-              : translations.basicInfo.nameHelperText
-          }
-          inputProps={{ maxLength: 100 }}
-          variant="outlined"
-        />
-
-        {/* 説明入力 */}
-        <TextField
-          label={translations.basicInfo.descriptionLabel}
-          value={workingCopy.description || ''}
-          onChange={(e) => handleDescriptionChange(e.target.value)}
-          multiline
-          rows={3}
-          fullWidth
-          disabled={disabled}
-          helperText={translations.basicInfo.descriptionHelperText}
-          inputProps={{ maxLength: 500 }}
-          variant="outlined"
+          nameLabel={translations.basicInfo.nameLabel}
+          nameHelperText={translations.basicInfo.nameHelperText}
+          nameRequiredText={translations.errors?.nameRequired ?? translations.basicInfo.nameRequired}
+          descriptionLabel={translations.basicInfo.descriptionLabel}
+          descriptionHelperText={translations.basicInfo.descriptionHelperText}
         />
 
         <Divider />

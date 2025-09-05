@@ -14,3 +14,4 @@ export * from './format';
 export * from './validation';
 export { SingletonMixin } from './SingletonMixin';
 export { generateId } from './generateId';
+export * from './db-name';

@@ -38,6 +38,7 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",

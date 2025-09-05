@@ -24,6 +24,8 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "dexie": "^4.2.0"
   },

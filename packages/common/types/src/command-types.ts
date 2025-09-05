@@ -2,6 +2,9 @@ import { NodeId, NodeType, TreeId } from './id-types';
 import { Timestamp } from './primitive-types';
 import { TreeNode } from './tree-node-types';
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export type CommandGroupId = string;
 export type CommandId = string;
 export type Seq = number;
@@ -136,10 +139,16 @@ export interface RedoPayload {
 }
 
 // TreeQueryService payloads
+/**
+ * @deprecated Unused externally; prefer higher-level query helpers.
+ */
 export interface GetTreePayload {
   treeId: TreeId;
 }
 
+/**
+ * @deprecated Unused externally; prefer higher-level query helpers.
+ */
 export interface GetNodePayload {
   id: NodeId;
 }
@@ -163,6 +172,9 @@ export interface GetAncestorsPayload {
   nodeId: NodeId;
 }
 
+/**
+ * @deprecated Unused externally; prefer domain-specific search utilities.
+ */
 export interface SearchNodesPayload {
   query: string;
   searchInDescription?: boolean;

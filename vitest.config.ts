@@ -16,6 +16,7 @@ export default defineConfig({
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src'),
       '@hierarchidb/common-core': path.resolve(__dirname, './packages/common/core/src'),
       '@hierarchidb/worker': path.resolve(__dirname, './packages/runtime/worker/src'),
+      '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
     },
   },
 });

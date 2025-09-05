@@ -1,0 +1,14 @@
+interface|PluginDefinition
+interface|NodeTypeIconDefinition
+interface|CategoryDefinition
+type|NodeCapability
+interface|WorkerPluginRouterAction
+interface|PluginDatabaseConfig
+interface|PluginUIConfig
+interface|PluginAPIConfig
+interface|PluginValidationConfig
+interface|PluginI18nConfig
+interface|DatabaseSchema
+interface|PluginRoutingConfig
+interface|ExtendedPluginDefinition
+interface|PluginIntegrated

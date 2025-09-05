@@ -21,6 +21,10 @@ export default defineConfig({
 
     exclude: [
       'src/**/migration/**',
+      'src/**/__tests__/integration/**',
+      'src/services/workers/__tests__/**',
+      'src/services/**/__tests__/**',
+      'src/worker/**/__tests__/**',
       '**/node_modules/**',
       '**/dist/**'
     ],
@@ -29,12 +33,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/core': path.resolve(__dirname, '../../common/core/src'),
-      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/core/src'),
+      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/src'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
-      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime/worker/src'),
-      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime/datasource/src'),
+      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/src'),
+      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/src'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/src'),
       '~': path.resolve(__dirname, './src'),
+      '@hierarchidb/app/src/hooks/useWorkerAPIClient': path.resolve(__dirname, './src/ui/__tests__/mocks/useWorkerAPIClient.ts'),
     },
   },
 });

@@ -32,4 +32,3 @@ export const ShapePluginDefinition = {
 };
 
 export default ShapePluginDefinition;
-export { ShapePluginDefinition };

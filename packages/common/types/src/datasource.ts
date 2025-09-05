@@ -7,6 +7,9 @@
  * Base data source configuration
  * Common properties for all geographic data sources
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface BaseDataSourceConfig {
   // Identity
   name: string;
@@ -30,6 +33,9 @@ export interface BaseDataSourceConfig {
  * Shape-specific data source configuration
  * For administrative boundaries and regions
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ShapeDataSourceConfig extends BaseDataSourceConfig {
   type: 'shape';
   maxAdminLevel: number;
@@ -40,6 +46,9 @@ export interface ShapeDataSourceConfig extends BaseDataSourceConfig {
  * Location-specific data source configuration
  * For points of interest and facilities
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface LocationDataSourceConfig extends BaseDataSourceConfig {
   type: 'location';
   locationTypes: LocationType[];
@@ -49,6 +58,9 @@ export interface LocationDataSourceConfig extends BaseDataSourceConfig {
 /**
  * Route-specific data source configuration
  * For transportation networks and paths
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface RouteDataSourceConfig extends BaseDataSourceConfig {
   type: 'route';
@@ -99,12 +111,18 @@ export interface CountryMetadata {
 /**
  * Shape-specific country metadata
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ShapeCountryMetadata extends CountryMetadata {
   availableAdminLevels: number[];
 }
 
 /**
  * Location-specific country metadata
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface LocationCountryMetadata extends CountryMetadata {
   availableLocationTypes: LocationType[];
@@ -114,6 +132,9 @@ export interface LocationCountryMetadata extends CountryMetadata {
 /**
  * Route-specific country metadata
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface RouteCountryMetadata extends CountryMetadata {
   availableRouteTypes: RouteType[];
   totalRouteLength?: number;
@@ -121,6 +142,9 @@ export interface RouteCountryMetadata extends CountryMetadata {
 
 /**
  * Base URL metadata for data download
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface BaseUrlMetadata {
   url: string;
@@ -133,6 +157,9 @@ export interface BaseUrlMetadata {
 /**
  * Shape-specific URL metadata
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ShapeUrlMetadata extends BaseUrlMetadata {
   adminLevel: number;
   dataSource: string;
@@ -140,6 +167,9 @@ export interface ShapeUrlMetadata extends BaseUrlMetadata {
 
 /**
  * Location-specific URL metadata
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface LocationUrlMetadata extends BaseUrlMetadata {
   locationType: LocationType;
@@ -150,6 +180,9 @@ export interface LocationUrlMetadata extends BaseUrlMetadata {
 /**
  * Route-specific URL metadata  
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface RouteUrlMetadata extends BaseUrlMetadata {
   routeType: RouteType;
   estimatedLength?: number;
@@ -158,6 +191,9 @@ export interface RouteUrlMetadata extends BaseUrlMetadata {
 
 /**
  * License agreement tracking
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface LicenseAgreement {
   dataSourceName: string;
@@ -176,12 +212,18 @@ export interface SelectionMatrix<T> {
   state: boolean[][];
 }
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface SelectionRow<T> {
   id: string;
   label: string;
   data: T;
 }
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface SelectionColumn {
   id: string;
   label: string;
@@ -190,6 +232,9 @@ export interface SelectionColumn {
 
 /**
  * Shape selection matrix row data
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface ShapeSelectionRowData {
   countryCode: string;
@@ -200,6 +245,9 @@ export interface ShapeSelectionRowData {
 /**
  * Location selection matrix row data
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface LocationSelectionRowData {
   countryCode: string;
   countryName: string;
@@ -208,6 +256,9 @@ export interface LocationSelectionRowData {
 
 /**
  * Route selection matrix row data
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface RouteSelectionRowData {
   countryCode: string;

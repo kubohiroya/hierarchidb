@@ -46,7 +46,8 @@
     "date-fns": "^3.0.0",
     
     "h3-js": "^4.1.0",
-    "jspdf": "^2.5.0"
+    "jspdf": "^2.5.0",
+    "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",

@@ -4,6 +4,7 @@
  */
 
 import Dexie from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { EntityId } from '@hierarchidb/common-type';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
 
@@ -16,7 +17,7 @@ export class BaseMapDatabase extends Dexie {
   workingCopies!: Dexie.Table<BaseMapWorkingCopy, EntityId>;
 
   constructor() {
-    super('BaseMapDatabase');
+    super(getDBName('basemap-db'));
 
     this.version(1).stores({
       baseMaps: '&id, nodeId, name, createdAt, updatedAt, baseMapMetadataId',

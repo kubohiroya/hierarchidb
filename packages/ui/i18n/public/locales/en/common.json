@@ -28,7 +28,22 @@
     "error": "Error",
     "success": "Success",
     "warning": "Warning",
-    "themeChangeRequested": "Theme change requested: {{theme}}"
+    "themeChangeRequested": "Theme change requested: {{theme}}",
+    "basicInfo": {
+      "title": "Basic Information",
+      "subtitle": "Enter a name and optional description.",
+      "name": {
+        "label": "Name",
+        "helper": "Enter a descriptive name",
+        "required": "Name is required",
+        "placeholder": "Enter name"
+      },
+      "description": {
+        "label": "Description",
+        "helper": "Describe the purpose or contents (optional)",
+        "placeholder": "Enter description (optional)"
+      }
+    }
   },
   "api": {
     "request": "API Request",

@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { VectorTileWorker } from '../VectorTileWorker';
 import type { VectorTileTask, TopoJSONTopology, TileCoordinate, TileMetadata } from '../../types';
 
-describe('VectorTileWorker', () => {
+(process.env.ENABLE_SHAPE_DEEP_TESTS ? describe : describe.skip)('VectorTileWorker', () => {
   let worker: VectorTileWorker;
 
   beforeEach(() => {
@@ -363,9 +363,4 @@ describe('VectorTileWorker', () => {
       expect(feature.properties).not.toHaveProperty('area');
       expect(feature.properties).not.toHaveProperty('unnecessary_field');
     });
-  });
 });
-// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
-if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
-  describe.skip('VectorTileWorker (deep tests disabled)', () => {});
-} else {

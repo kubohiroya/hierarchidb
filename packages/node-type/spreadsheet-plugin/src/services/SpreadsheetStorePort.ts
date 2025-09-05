@@ -47,7 +47,7 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> 
       filename,
       contentHash: hash,
       fileSizeBytes: size,
-      columns: schema.columns.map((c, i) => ({ name: c.name, index: i, type: 'string', uniqueValues: 0, hasNullValues: false, sampleValues: [] } as CSVColumnInfo)),
+      columns: (schema.columns as Array<{ name: string }>).map((c: { name: string }, i: number) => ({ name: c.name, index: i, type: 'string', uniqueValues: 0, hasNullValues: false, sampleValues: [] } as CSVColumnInfo)),
       totalRows: 0,
     });
 
@@ -98,9 +98,8 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> 
     return { session, metadata: created };
   }
 
-  async abort(session: TabularIngestSession, reason?: string): Promise<void> {
+  async abort(session: TabularIngestSession, _reason?: string): Promise<void> {
     // Best-effort cleanup: remove session map; row chunks/metadata GC can be handled separately
     this.sessions.delete(session.id);
   }
 }
-

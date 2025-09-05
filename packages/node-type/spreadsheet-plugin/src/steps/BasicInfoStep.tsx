@@ -5,25 +5,17 @@
  */
 
 import React from 'react';
-import { 
-  Box, 
-  TextField, 
-  Typography, 
-  Stack, 
-  Divider 
-} from '@mui/material';
-import { TableChart as TableIcon } from '@mui/icons-material';
-import { useTranslation } from 'provider-i18next';
-import type { TagId } from '@hierarchidb/common-type';
-import { TagInput } from '@hierarchidb/folder-plugin';
-import { CategorySelector } from '@hierarchidb/folder-plugin';
+import { Box, Typography, Stack, Divider } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';
 import type { SpreadsheetCategory } from '../types/category-types';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 export interface BasicInfoStepProps {
   data: {
     name?: string;
     description?: string;
-    tags?: TagId[];
+    tags?: string[];
     category?: SpreadsheetCategory;
   };
   onNext: (data: any) => void;
@@ -38,7 +30,6 @@ export interface BasicInfoStepProps {
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   data,
   onNext,
-  errors = [],
   disabled = false
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
@@ -59,10 +50,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     });
   };
 
-  const handleTagChange = (tags: TagId[]) => {
-    handleUpdate({ tags });
-  };
-
   const handleCategoryChange = (category: SpreadsheetCategory | undefined) => {
     handleUpdate({ category });
   };
@@ -71,8 +58,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     <Box sx={{ p: 3, maxWidth: 600, margin: '0 auto' }}>
       {/* セクションヘッダー */}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
-        <TableIcon color="primary" />
-        <Typography variant="h6">{t('basicInfo.title', 'Basic Information')}</Typography>
+        <Typography variant="h6">📄 {t('basicInfo.title', 'Basic Information')}</Typography>
       </Box>
       
       <Typography variant="body2" color="text.secondary" paragraph>
@@ -80,63 +66,44 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       </Typography>
 
       <Stack spacing={3}>
-        {/* 名前入力 */}
-        <TextField
-          label={t('basicInfo.name.label', 'Spreadsheet Name')}
-          value={data.name || ''}
-          onChange={(e) => handleUpdate({ name: e.target.value })}
-          required
-          fullWidth
+        <BasicInfoFields
+          value={{ name: data.name, description: data.description }}
+          onChange={(updates) => handleUpdate(updates)}
           disabled={disabled}
-          error={!data.name}
-          helperText={
-            !data.name 
-              ? t('basicInfo.name.required', 'Spreadsheet name is required') 
-              : t('basicInfo.name.helper', 'Enter a descriptive name for this spreadsheet')
-          }
-          inputProps={{ maxLength: 100 }}
-          variant="outlined"
-        />
-
-        {/* 説明入力 */}
-        <TextField
-          label={t('basicInfo.description.label', 'Description')}
-          value={data.description || ''}
-          onChange={(e) => handleUpdate({ description: e.target.value })}
-          multiline
-          rows={3}
-          fullWidth
-          disabled={disabled}
-          helperText={t('basicInfo.description.helper', 'Describe the purpose or contents of this spreadsheet (optional)')}
-          inputProps={{ maxLength: 500 }}
-          variant="outlined"
+          nameLabel={t('basicInfo.name.label', 'Spreadsheet Name')}
+          nameHelperText={t('basicInfo.name.helper', 'Enter a descriptive name for this spreadsheet')}
+          nameRequiredText={t('basicInfo.name.required', 'Spreadsheet name is required')}
+          descriptionLabel={t('basicInfo.description.label', 'Description')}
+          descriptionHelperText={t('basicInfo.description.helper', 'Describe the purpose or contents of this spreadsheet (optional)')}
         />
 
         <Divider />
 
         {/* カテゴリ選択 */}
-        <CategorySelector<SpreadsheetCategory>
-          label={t('basicInfo.category.label', 'Category')}
-          value={data.category}
-          onChange={handleCategoryChange}
-          options={categoryOptions}
-          helperText={t('basicInfo.category.helper', 'Select a category that best describes this spreadsheet')}
-          disabled={disabled}
-        />
-
-        {/* タグ入力セクション */}
         <Box>
-          <TagInput
-            value={data.tags || []}
-            onChange={handleTagChange}
-            placeholder={t('basicInfo.tags.placeholder', 'Enter or select tags...')}
+          <Typography variant="subtitle2" gutterBottom>
+            {t('basicInfo.category.label', 'Category')}
+          </Typography>
+          <CategorySelector
+            value={data.category as unknown as string}
+            onChange={(value) => handleCategoryChange(value as unknown as SpreadsheetCategory)}
+            options={categoryOptions.map(o => ({ value: o.value as unknown as string, label: o.label }))}
+            placeholder={t('basicInfo.category.helper', 'Select a category that best describes this spreadsheet')}
+          />
+        </Box>
+
+        <Box>
+          <TagChipsInput
+            value={data.tags ?? []}
+            onChange={(tags: string[]) => handleUpdate({ tags })}
+            placeholder={t('basicInfo.tags.placeholder', 'Type a tag and press Enter')}
             label={t('basicInfo.tags.label', 'Tags')}
             helperText={t('basicInfo.tags.helper', 'Add tags to categorize and organize this spreadsheet')}
-            maxTags={10}
-            allowCreate={true}
             disabled={disabled}
           />
         </Box>
+
+        {/* タグ入力は後続PRで統合（共通TagInput導入時）*/}
       </Stack>
 
       {/* フォーム下部の情報表示 */}

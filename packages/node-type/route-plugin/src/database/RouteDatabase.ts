@@ -4,6 +4,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { EntityId } from '@hierarchidb/common-type';
 import type { RouteEntity, RouteWorkingCopy } from '../entities/RouteEntity';
 
@@ -27,7 +28,7 @@ export class RouteDatabase extends Dexie {
   workingCopies!: Table<RouteWorkingCopy, EntityId>;
   routeCache!: Table<RouteCacheEntry, string>;
 
-  constructor(dbName: string = 'RouteDB') {
+  constructor(dbName: string = getDBName('route-db')) {
     super(dbName);
     
     this.version(1).stores({

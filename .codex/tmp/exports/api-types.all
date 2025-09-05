@@ -1,0 +1,8 @@
+type|APIMethodArgs
+type|APIMethodReturn
+type|WorkerAPIMethod
+interface|WorkerAPIExtensions
+interface|TypedWorkerAPIExtensions
+type|ClientAPIMethod
+interface|ClientAPIExtensions
+interface|TypedClientAPIExtensions

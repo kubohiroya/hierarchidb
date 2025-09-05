@@ -3,38 +3,58 @@
  * Avoid static imports so we can report precise failures to UI.
  */
 
-// Minimal init message helpers (compatible with WorkerInitializationChannel)
-const send = (type: string, payload: Record<string, unknown> = {}) => {
-  try {
-    (self as unknown as WorkerGlobalScope).postMessage({
-      type,
-      payload: { ...payload, timestamp: Date.now() },
-    });
-  } catch {}
-};
+import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-bootstrap';
 
-send('INIT_PROGRESS', { progress: 0, message: 'Starting worker…' });
+const reporter = new WorkerInitializationReporter();
+reporter.reportStepProgress('Starting worker…', 0);
 
 (async () => {
   try {
     // Dynamic import to localize failures
-    send('INIT_PROGRESS', { progress: 3, message: 'Loading Comlink…' });
+    reporter.reportStepProgress('Loading Comlink…', 3);
     const Comlink: typeof import('comlink') = await import('comlink');
 
-    send('INIT_PROGRESS', { progress: 5, message: 'Loading plugin loaders…' });
-    const { autoLoadPlugins } = await import('./plugins/auto-load');
-    await autoLoadPlugins();
+    reporter.reportStepProgress('Loading plugin loaders…', 5);
+    try {
+      // Resolve plugin definitions and loader map from virtual modules
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const defsMod = await import('virtual:plugin-definitions');
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const { pluginMap } = await import('virtual:plugin-map');
+
+      const defs = (defsMod?.default as any[]) || [];
+      const loadOrder = defs.map((d) => d.nodeType);
+
+      for (const nodeType of loadOrder) {
+        const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
+        if (typeof loader === 'function') {
+          console.log(`⏳ Loading plugin: ${nodeType}`);
+          await loader();
+          console.log(`✅ Loaded plugin: ${nodeType}`);
+        }
+      }
+    } catch (e) {
+      console.warn('[Worker] Plugin virtual modules unavailable; skipping auto-load');
+    }
 
     // After package-reader runs, resolve plugin defs
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const { default: pluginDefinitions } = await import('virtual:plugin-definitions');
+    let pluginDefinitions: any[] = [];
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const mod = await import('virtual:plugin-definitions');
+      pluginDefinitions = (mod?.default as any[]) || [];
+    } catch {
+      pluginDefinitions = [];
+    }
 
-    send('INIT_PROGRESS', { progress: 15, message: 'Bootstrapping worker services…' });
+    reporter.reportStepProgress('Bootstrapping worker services…', 15);
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
 
-    send('INIT_PROGRESS', { progress: 80, message: 'Creating API facade…' });
+    reporter.reportStepProgress('Creating API facade…', 80);
     const api: any = {
       ping: () => services.ping(),
       initialize: () => services.initialize(),
@@ -49,16 +69,16 @@ send('INIT_PROGRESS', { progress: 0, message: 'Starting worker…' });
       getTagAPI: () => services.getTagAPI(),
     };
 
-    send('INIT_PROGRESS', { progress: 95, message: 'Exposing API via Comlink…' });
+    reporter.reportStepProgress('Exposing API via Comlink…', 95);
     Comlink.expose(api);
 
-    send('INIT_COMPLETE', { progress: 100, message: 'Worker initialized successfully' });
+    reporter.reportComplete();
   } catch (error) {
     // Report full error to UI
     const err = error as any;
     const message = err?.message || String(err);
     const stack = err?.stack || null;
-    send('INIT_ERROR', { error: message, stack });
+    reporter.reportError(`${message}`);
     // Also throw to surface error event
     throw error;
   }

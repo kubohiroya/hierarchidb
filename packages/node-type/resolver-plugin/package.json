@@ -31,6 +31,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "comlink": "^4.4.1"
   },

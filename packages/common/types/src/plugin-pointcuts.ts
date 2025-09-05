@@ -52,6 +52,9 @@ export interface DialogStepDefinition {
  * 【テスト対応】: keyColumn, valueColumn等の拡張フィールド定義
  * 🟢 信頼性レベル: テストケースから直接導出
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ExtendedFieldDefinition {
   // 【フィールド名】: データモデル内でのフィールド識別子
   name: string;
@@ -78,6 +81,9 @@ export interface ExtendedFieldDefinition {
  * 【実装方針】: 全プラグインが継承する共通要素を定義
  * 【テスト対応】: name, description等の共通フィールド定義
  * 🟢 信頼性レベル: 設計文書とテストケースから導出
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface BaseNodeDefinition<_TEntity = any> {
   // 【基底フィールド】: 全プラグインが持つ共通フィールド名
@@ -123,6 +129,9 @@ export interface ValidationExtension {
  * 【実装方針】: プラグイン間の継承関係とバージョン情報を管理
  * 【テスト対応】: 継承チェーン、マージ情報の管理
  * 🟡 信頼性レベル: テストケースとアーキテクチャから推測
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface ExtensionMetadata {
   // 【継承元】: 基底となるプラグイン名

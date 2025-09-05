@@ -13,6 +13,9 @@ export type EntityType = 'peer' | 'group' | 'relational';
 /**
  * Entity relationship with TreeNode
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface EntityRelationship {
   /** Relationship type between entity and TreeNode */
   type: 'one-to-one' | 'one-to-many' | 'many-to-many';
@@ -28,6 +31,9 @@ export interface EntityRelationship {
  * Reference count management for relational entities
  * Used for shared resources like CSV files
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ReferenceManagement {
   /** Field name for reference count */
   countField: string;
@@ -40,6 +46,9 @@ export interface ReferenceManagement {
 }
 /**
  * Auto lifecycle configuration for a node type
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface AutoLifecycleConfig {
   /** List of entity metadata for this node type */

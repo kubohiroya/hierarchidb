@@ -1,11 +1,12 @@
 import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports';
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 
 type RawBuffer = { id: string; sessionId: string; nodeId: string; data: string; featureCount: number; bbox?: [number, number, number, number]; timestamp: number };
 
 class ShapeEphemeralDB extends Dexie {
   rawBuffers!: Table<RawBuffer, string>;
-  constructor(name: string = 'hierarchidb-shape-ephemeral') {
+  constructor(name: string = getDBName('shape-ephemeral-db')) {
     super(name);
     this.version(1).stores({ rawBuffers: '&id, sessionId, nodeId, timestamp' });
   }
@@ -75,4 +76,3 @@ function tileToBBox({ z, x, y }: TileCoord): BBox {
   return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
 }
 function toDeg(r: number) { return r * 180 / Math.PI }
-

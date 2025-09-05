@@ -9,6 +9,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import { BaseShapeError, ErrorCategory, ErrorSeverity } from '../types/ShapeErrorHierarchy';
 
@@ -290,7 +291,7 @@ class ShapeEphemeralDB extends Dexie {
   checkpoints!: Table<CheckpointData>;
 
   constructor() {
-    super('ShapeEphemeralDB');
+    super(getDBName('shape-ephemeral-db'));
 
     this.version(1).stores({
       errorDetails: 'sessionId, treeNodeId, expiresAt',

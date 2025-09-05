@@ -25,6 +25,7 @@
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@emotion/react": "^11.11.0",

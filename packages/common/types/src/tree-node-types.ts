@@ -22,18 +22,27 @@ export interface NodeBase {
   version: number;
 }
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface DescendantProperties {
   hasChildren?: boolean; // 子ノードの有無
   descendantCount?: number; // 直接の子ノード数
   isEstimated?: boolean; // 推定値フラグ（大量データ時の最適化）
 }
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ReferenceProperties {
   references?: NodeId[];
 }
 
 /**
  * Draft properties for nodes that are being created but not yet complete
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface DraftProperties {
   /**

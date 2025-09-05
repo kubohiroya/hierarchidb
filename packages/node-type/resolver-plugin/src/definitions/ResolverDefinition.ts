@@ -1,7 +1,7 @@
 import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
 export const ResolverDefinition: Partial<PluginDefinition> = {
-  nodeType: 'resolver-plugin' as NodeType,
+  nodeType: 'resolver' as NodeType,
   name: 'Resolver',
   displayName: 'Property Resolver',
 

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { EntityId } from '@hierarchidb/common-type';
 import type {
   ProjectEntity,
@@ -14,7 +15,7 @@ export class ProjectDatabase extends Dexie {
   tiles!: Table<ProjectTile, string>;
 
   constructor() {
-    super('ProjectPluginDB');
+    super(getDBName('project-db'));
     
     this.version(1).stores({
       // プロジェクトエンティティ

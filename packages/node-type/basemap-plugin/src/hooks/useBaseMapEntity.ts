@@ -74,7 +74,7 @@ export function useBaseMapEntity(
     try {
       const current = await handler.getEntityByNodeId(nodeId);
       if (!current) throw new Error('BaseMap entity not found');
-      await handler.updateEntity(current.id as any, updates as any);
+      await handler.updateEntity(current.id, updates);
       // Refetch to get updated data
       await fetchEntity();
     } catch (err) {

@@ -1,0 +1,9 @@
+type|EntityType
+interface|EntityRelationship
+interface|ReferenceManagement
+interface|AutoLifecycleConfig
+interface|EntityMetadata
+interface|BaseEntity
+interface|PeerEntity
+interface|GroupEntity
+interface|RelationalEntity

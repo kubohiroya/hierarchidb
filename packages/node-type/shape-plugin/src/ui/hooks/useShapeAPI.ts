@@ -8,16 +8,9 @@ import { useMemo } from 'react';
 import type { ShapeAPI } from '../../shared';
 
 // WorkerAPIClientへの条件付きインポート（アプリケーション実行時のみ利用可能）
-let useWorkerAPIClientHook: (() => any) | null = null;
-
-try {
-  // アプリケーション実行時にのみ利用可能
-  const { useWorkerAPIClient } = require('@hierarchidb/app/src/hooks/useWorkerAPIClient');
-  useWorkerAPIClientHook = useWorkerAPIClient;
-} catch (error) {
-  // テストやスタンドアロン環境では利用できない
-  console.debug('WorkerAPIClient hook not available, falling back to error mode');
-}
+// Resolve from app context (aliased to a test stub in vitest)
+import { useWorkerAPIClient as appUseWorkerAPIClient } from '@hierarchidb/app/src/hooks/useWorkerAPIClient';
+const useWorkerAPIClientHook: (() => any) | null = appUseWorkerAPIClient ?? null;
 
 /**
  * Shape APIにアクセスするためのhook

@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Typography,
-  FormControl,
-  InputLabel,
-  OutlinedInput,
-  FormHelperText,
-} from '@mui/material';
+import { Box, Typography, FormHelperText } from '@mui/material';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 import type { ResolverWorkingCopyEntity } from '~/types';
 
 interface ResolverBasicInfoStepProps {
@@ -57,16 +50,15 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
     onValidationChange(isValid);
   }, [data.name, data.description, onValidationChange]);
 
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const name = event.target.value;
-    onUpdate({ name });
-    validateName(name);
-  };
-
-  const handleDescriptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const description = event.target.value;
-    onUpdate({ description });
-    validateDescription(description);
+  const handleBasicChange = (updates: Partial<ResolverWorkingCopyEntity>) => {
+    if (updates.name !== undefined) {
+      onUpdate({ name: updates.name });
+      validateName(updates.name || '');
+    }
+    if (updates.description !== undefined) {
+      onUpdate({ description: updates.description });
+      validateDescription(updates.description || '');
+    }
   };
 
   return (
@@ -79,29 +71,18 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <FormControl fullWidth error={!!nameError}>
-          <InputLabel htmlFor="name-input">Name *</InputLabel>
-          <OutlinedInput
-            id="name-input"
-            value={data.name || ''}
-            onChange={handleNameChange}
-            label="Name *"
-            placeholder="Enter a descriptive name for this property resolver"
-          />
-          {nameError && <FormHelperText>{nameError}</FormHelperText>}
-        </FormControl>
-
-        <TextField
-          fullWidth
-          multiline
-          rows={3}
-          label="Description"
-          value={data.description || ''}
-          onChange={handleDescriptionChange}
-          placeholder="Optional description of what this property resolver does and how it's used"
-          error={!!descriptionError}
-          helperText={descriptionError || 'Optional detailed description'}
+        <BasicInfoFields
+          value={{ name: data.name, description: data.description }}
+          onChange={handleBasicChange}
+          nameLabel={"Name"}
+          nameRequiredText={"Name is required"}
+          nameHelperText={"Enter a descriptive name for this property resolver"}
+          descriptionLabel={"Description"}
+          descriptionHelperText={"Optional detailed description"}
         />
+        {(nameError || descriptionError) && (
+          <FormHelperText error>{nameError || descriptionError}</FormHelperText>
+        )}
 
         <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', color: 'info.contrastText', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>

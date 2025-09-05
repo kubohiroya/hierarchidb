@@ -6,6 +6,9 @@ export interface TreeRootState {
   expanded: true | Record<NodeId, boolean>;
 }
 
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ExpandedStateChanges {
   treeId: TreeId;
   rootNodeId: NodeId;

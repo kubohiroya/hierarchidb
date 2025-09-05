@@ -11,8 +11,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import { useTranslation } from 'provider-i18next';
-import { TagInput } from '@hierarchidb/ui-core/components/TagInput';
-import { CategorySelector } from '@hierarchidb/ui-core/components/CategorySelector';
+import { TagInput, CategorySelector } from '@hierarchidb/ui-core';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 type TagId = string;
 type TagEntity = { id: TagId; name?: string };
 import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types';
@@ -119,34 +119,19 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       </Typography>
 
       <Grid container spacing={3}>
-        {/* スタイルマップ名 */}
         <Grid item xs={12}>
-          <TextField
-            fullWidth
-            required
-            label={t('basicInfo.name.label', 'Stylemap Name')}
-            value={localData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            error={!!nameError}
-            helperText={nameError || t('basicInfo.name.hint', 'Enter a descriptive name for this styler')}
+          <BasicInfoFields
+            value={{ name: localData.name, description: localData.description }}
+            onChange={(updates) => {
+              if (updates.name !== undefined) handleInputChange('name', updates.name);
+              if (updates.description !== undefined) handleInputChange('description', updates.description);
+            }}
             disabled={disabled}
-            placeholder={t('basicInfo.name.placeholder', 'e.g., Population Density Map')}
-          />
-        </Grid>
-
-        {/* 説明 */}
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label={t('basicInfo.description.label', 'Description')}
-            value={localData.description || ''}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            error={!!descriptionError}
-            helperText={descriptionError || t('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
-            disabled={disabled}
-            placeholder={t('basicInfo.description.placeholder', 'Describe the purpose and data visualization approach...')}
+            nameLabel={t('basicInfo.name.label', 'Stylemap Name')}
+            nameHelperText={t('basicInfo.name.hint', 'Enter a descriptive name for this styler')}
+            nameRequiredText={t('basicInfo.name.required', 'Stylemap name is required')}
+            descriptionLabel={t('basicInfo.description.label', 'Description')}
+            descriptionHelperText={t('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
           />
         </Grid>
 

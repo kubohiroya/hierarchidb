@@ -6,6 +6,9 @@
 /**
  * Binary property configuration for custom serialization
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface BinaryPropertyConfig {
   /** Database table name */
   tableName: string;
@@ -19,6 +22,9 @@ export interface BinaryPropertyConfig {
 
 /**
  * Custom serialization configuration for plugin
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface PluginSerializationConfig {
   /** Database name for the plugin */

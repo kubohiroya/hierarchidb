@@ -4,7 +4,7 @@
   "description": "Core UI components and plugin system for HierarchiDB",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc --emitDeclarationOnly --declaration --outDir dist/types --tsBuildInfoFile dist/types/.tsbuildinfo",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",

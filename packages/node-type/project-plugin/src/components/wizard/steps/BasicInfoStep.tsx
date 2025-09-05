@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Typography,
-  Grid,
-} from '@mui/material';
+import { Box, Select, MenuItem, FormControl, InputLabel, Typography, Grid } from '@mui/material';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Business as BusinessIcon, Public as PublicIcon } from '@mui/icons-material';
 import { LocalizationProvider, AdapterDateFns } from '@hierarchidb/ui-date';
 import type { ProjectEntity, ProjectCategory } from '~/types/project-types';
@@ -55,23 +47,16 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data }) => {
           </Grid>
 
           <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Project Name"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              required
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
+            <BasicInfoFields
+              value={{ name: formData.name, description: formData.description }}
+              onChange={(updates) =>
+                Object.entries(updates).forEach(([k, v]) => handleChange(k, v))
+              }
+              nameLabel={"Project Name"}
+              nameHelperText={"Enter a descriptive project name"}
+              nameRequiredText={"Project name is required"}
+              descriptionLabel={"Description"}
+              descriptionHelperText={"Optional description for the project"}
             />
           </Grid>
 
