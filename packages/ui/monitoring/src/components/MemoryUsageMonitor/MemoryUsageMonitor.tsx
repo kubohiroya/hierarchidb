@@ -194,7 +194,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
   }, []);
 
   // Only show in development environment and after client-side mount and when visible
-  if (process.env.NODE_ENV === 'production' || !mounted || !visible) {
+  if ((globalThis as any)?.import?.meta?.env?.PROD || !mounted || !visible) {
     return null;
   }
 

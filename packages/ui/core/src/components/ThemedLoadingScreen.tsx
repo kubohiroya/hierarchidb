@@ -19,7 +19,7 @@ export function ThemedLoadingScreen({
   message,
   size = 40,
   children,
-}: ThemedLoadingScreenProps) {
+}: ThemedLoadingScreenProps): JSX.Element {
   const [isHydrated, setIsHydrated] = useState(false);
   const [themeError, setThemeError] = useState<string | null>(null);
   const theme = useTheme();
@@ -57,7 +57,7 @@ export function ThemedLoadingScreen({
       }
     } catch (error) {
       // Log error in development, but fail gracefully in production
-      if (process.env.NODE_ENV === 'development') {
+      if ((globalThis as any)?.import?.meta?.env?.DEV) {
         console.warn('[ThemedLoadingScreen] Theme utility error:', error);
         setThemeError(`Theme error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -133,7 +133,7 @@ export function ThemedLoadingScreen({
       {children}
 
       {/* Development-only error display */}
-      {process.env.NODE_ENV === 'development' && themeError && (
+      {(globalThis as any)?.import?.meta?.env?.DEV && themeError && (
         <Box
           sx={{
             position: 'absolute',
@@ -155,10 +155,10 @@ export function ThemedLoadingScreen({
   );
 }
 
-export function ThemedLinearProgress() {
+export function ThemedLinearProgress(): JSX.Element {
   return <ThemedLoadingScreen variant="linear" />;
 }
 
-export function ThemedCircularProgress({ message, size }: { message?: string; size?: number }) {
+export function ThemedCircularProgress({ message, size }: { message?: string; size?: number }): JSX.Element {
   return <ThemedLoadingScreen variant="circular" message={message} size={size} />;
 }

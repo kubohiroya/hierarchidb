@@ -163,7 +163,7 @@ export function useUrlDownload({
       }
       const validatedUrl = validationResult.url || trimmedUrl;
       const needsCorsProxy = !validatedUrl.startsWith(window.location.origin || '');
-      const corsProxyBaseURL = process.env.VITE_CORS_PROXY_BASE_URL;
+      const corsProxyBaseURL = (globalThis as any)?.import?.meta?.env?.VITE_CORS_PROXY_BASE_URL as string | undefined;
 
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);

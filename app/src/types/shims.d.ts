@@ -46,7 +46,10 @@ declare module '@hierarchidb/runtime-worker-bootstrap' {
     error?: Error;
   }
 
+  export interface InitializationStep { name: string; weight: number }
+
   export class WorkerInitializationReporter {
+    constructor(steps?: InitializationStep[], debug?: boolean);
     reportStepProgress(message: string, progress: number): void;
     reportComplete(): void;
     reportError(message: string): void;

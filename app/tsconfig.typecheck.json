@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "noEmit": true,
+    "incremental": true,
+    "composite": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
+}

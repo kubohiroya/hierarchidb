@@ -15,6 +15,8 @@ jobs:
     name: Typecheck All (workspace)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      NODE_OPTIONS: "--max-old-space-size=6144"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [typecheck-all]
     timeout-minutes: 30
+    env:
+      NODE_OPTIONS: "--max-old-space-size=6144"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,6 +115,8 @@ jobs:
           - { name: resolver-plugin, filter: "@hierarchidb/resolver-plugin" }
           - { name: styler-plugin,   filter: "@hierarchidb/styler-plugin" }
           - { name: shape-plugin (unit only), filter: "@hierarchidb/shape-plugin" }
+    env:
+      NODE_OPTIONS: "--max-old-space-size=6144"
 
     steps:
       - name: Checkout

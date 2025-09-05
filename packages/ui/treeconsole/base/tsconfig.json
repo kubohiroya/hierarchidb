@@ -3,10 +3,12 @@
   "compilerOptions": {
     "lib": [
       "ES2022",
-      "DOM",
-      "DOM.Iterable"
+    "DOM",
+    "DOM.Iterable"
+  ],
+    "types": [
+      "node"
     ],
-    "types": [],
     "skipLibCheck": true,
     "composite": true,
     "incremental": true,

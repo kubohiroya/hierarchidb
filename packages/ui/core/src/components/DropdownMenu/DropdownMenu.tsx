@@ -21,19 +21,21 @@ import { Box, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
 import type { DropdownMenuItemType } from './DropdownMenuItemType';
 
+export interface DropdownMenuProps {
+  id: string;
+  items: Array<DropdownMenuItemType | null>;
+  disabled?: boolean;
+  color?: string;
+  children?: ReactNode;
+}
+
 export const DropdownMenu = ({
   id,
   items,
   disabled,
   color,
   children,
-}: {
-  id: string;
-  items: Array<DropdownMenuItemType | null>;
-  disabled?: boolean;
-  color?: string;
-  children?: ReactNode;
-}) => {
+}: DropdownMenuProps): JSX.Element => {
   const [anchorElem, setAnchorElem] = useState<null | HTMLElement>(null);
   const handleMenuOpenButtonClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

@@ -5,7 +5,7 @@ interface CloseActionButtonProps {
   to: string;
 }
 
-export function CloseActionButton({ to }: CloseActionButtonProps) {
+export function CloseActionButton({ to }: CloseActionButtonProps): JSX.Element {
   return (
     <Button
       onClick={() => (window.location.href = to)}

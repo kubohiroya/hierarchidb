@@ -29,6 +29,24 @@
   - `module: "ESNext"` + `moduleResolution: "node"` に統一し、NodeNext/Node16 は使わない。
 - 備考: 生成される `.d.ts` は配布のために引き続き `dist` に出力されるが、型解決は上記 `src` を参照する設計です。
 
+## 公開 TSX コンポーネントの戻り値型（MUST）
+
+- 目的: 依存パッケージの d.ts バンドル時に `jsx-runtime` など外部型への暗黙依存により TS2742 が発生するのを防止するため、公開 API の TSX コンポーネントは戻り値型を必ず明示します。
+- ルール（MUST）:
+  - `export function Foo(...)` は `: JSX.Element` または `: JSX.Element | null` を付ける。
+  - `export const Foo = (...) => (...)` は `React.FC<Props>` を使うか `: JSX.Element` を付ける。
+  - 返り値が `null` を取り得る場合は `| null` を含める。
+- 背景: 本モノレポは `exports.types` を `src` に向けるため、依存側の d.ts 生成時に公開関数の戻り値推論が「名前付け不能な外部型」へ波及しうる。明示注釈でポータブルな型に固定します。
+
+## tsconfig パスエイリアスの取り扱い（MUST/SHOULD）
+
+- 公開ソースでのエイリアス禁止（MUST）: ライブラリの公開ソース内では、パッケージ内専用の `tsconfig.paths`（例: `~/*`）に依存しないこと。外部の tsconfig が同じ設定を持たないと解決できず、利用側がビルド前 typecheck に失敗します。
+- `types` は `src` 指向（MUST）: すべての内部パッケージは `package.json` の `types` と `exports.types` を `src` に向けます。これにより、ビルド前でも型解決可能になります。
+- エイリアスが必要な場合（SHOULD）:
+  - ビルド時に相対へ書き換える（`ts-transform-paths` / `tsc-alias` など）構成にする。
+  - または、公開エクスポート面では相対参照に統一する。
+どちらの方針でも、依存パッケージ側で追加設定なしに解決できることが要件です。
+
 ## 互換性とビルド安定化のための禁止事項
 - `module: "Node16"` や `moduleResolution: "nodenext"` の使用を避ける（モノレポ内の型参照で拡張子付与エラーを招くため）。
 - ディープインポート（`@hierarchidb/*/src/...` など）。

@@ -72,7 +72,9 @@ export const InitInspector: React.FC = () => {
     try { sessionStorage.clear(); } catch {}
     try { if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } } catch {}
     try {
-      if (indexedDB && indexedDB.databases) {
+      // Some browsers expose indexedDB.databases() as a function; feature-detect safely
+      const hasDatabasesFn = typeof (indexedDB as any)?.databases === 'function';
+      if (indexedDB && hasDatabasesFn) {
         const dbs = await (indexedDB as any).databases();
         for (const db of dbs) { try { if (db.name) indexedDB.deleteDatabase(db.name); } catch {} }
       }
@@ -105,4 +107,3 @@ export const InitInspector: React.FC = () => {
     </div>
   );
 };
-

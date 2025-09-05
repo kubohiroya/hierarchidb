@@ -15,20 +15,18 @@ export interface I18nInterpolationOptions {
   [key: string]: string | number | boolean | Date | undefined;
 }
 
-// Safe environment check that works in both browser and Node.js contexts
-let isDev: boolean;
-try {
-  const env = typeof process !== 'undefined' ? process.env.NODE_ENV : undefined;
-  isDev =
-    env === 'development' ||
-    env === 'test' ||
-    (typeof globalThis !== 'undefined' &&
-      (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } })?.import?.meta?.env
-        ?.DEV) ||
-    false;
-} catch {
-  isDev = false;
-}
+// Safe dev flag using Vite-style env (no Node globals in browser code)
+const isDev: boolean = (() => {
+  try {
+    return Boolean(
+      (typeof globalThis !== 'undefined' &&
+        (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } }).import?.meta?.env?.DEV) ||
+        false,
+    );
+  } catch {
+    return false;
+  }
+})();
 
 // No-op function for production builds
 const noop = (..._args: unknown[]): void => void 0;
