@@ -20,6 +20,8 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/tabular": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
     "@types/pako": "^2.0.3",
     "pako": "^2.1.0",
     "@hierarchidb/common-type": "workspace:*",
