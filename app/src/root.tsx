@@ -72,47 +72,29 @@ export function HydrateFallback() {
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        inset: 0,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#ffffff',
-        fontFamily: 'Roboto, sans-serif',
       }}
     >
-      <TitleLogo showProgress={true} />
-
-      {/* Version (top left) */}
+      {/* Minimal spinner to avoid duplicate splash visuals */}
       <div
+        aria-label="Loading"
+        role="status"
         style={{
-          position: 'absolute',
-          top: '16px',
-          left: '16px',
-          fontSize: '12px',
-          color: '#999999',
+          width: '32px',
+          height: '32px',
+          border: '3px solid #e0e0e0',
+          borderTopColor: '#1976d2',
+          borderRadius: '50%',
+          animation: 'hdb-spin 0.8s linear infinite',
         }}
-      >
-        v1.0.0
-      </div>
-
-      {/* Copyright (top right) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '16px',
-          right: '16px',
-          fontSize: '12px',
-          color: '#999999',
-        }}
-      >
-        © 2024 HierarchiDB Project
-      </div>
-
-
+      />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes hdb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      ` }} />
     </div>
   );
 }

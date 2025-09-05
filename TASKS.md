@@ -50,6 +50,17 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+- fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
+  - ブランチ名: `fix/app/init-loading-ux-polish`
+  - 依存: なし
+  - 背景: 起動直後と Worker 初期化中で「タイトルロゴ+LinearProgress」が二重に見える。さらに0%へ一瞬戻る違和感がある。
+  - 方針: HydrateFallback を中央小スピナーのみへ簡素化。Worker 初期化中ビューは 0%時 `indeterminate` にし、メッセージ/%は非表示（>0%で表示）。
+  - 受け入れ基準（DoD）:
+    - [x] 起動直後は小スピナーのみ表示（ロゴ/バーなし）。
+    - [x] 初期化 0% の文言表示が出ない（フリッカー解消）。
+    - [ ] `pnpm --filter @hierarchidb/app typecheck` 通過（CI状況に合わせ後続対応）。
+  - ロールバック: `app/src/root.tsx` と `app/src/contexts/WorkerProvider.tsx` の差分をリバート。
+
 - refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
   - ブランチ名: `refactor/ui-map/maplibre-wrapper`
   - 依存: なし（小粒）
@@ -255,6 +266,8 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-05 17:10 JST start: fix/app/init-loading-ux-polish — 初回スプラッシュをスピナー化、0%時の文言非表示化
+- 2025-09-05 17:18 JST done: fix/app/init-loading-ux-polish — 実装と TASKS.md 反映
 - done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
 - done: 2025-09-04 test/styler: `@hierarchidb/spreadsheet-plugin` をテスト時のみモック化（styler-plugin の `vitest.config.ts` にエイリアス追加、`src/__tests__/mocks/spreadsheet-plugin.ts` 実装）。
 - done: 2025-09-04 fix/basemap: 互換 extension 定義を追加し（`src/extension/definition.ts`）、`BaseMapEntityHandler` に既定値・WC操作・nodeId互換・検索(tags)・文言整合を実装。basemap-plugin テスト 34/34 パス。

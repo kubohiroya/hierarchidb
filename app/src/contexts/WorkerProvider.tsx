@@ -45,9 +45,9 @@ const WorkerContext = createContext<WorkerContextValue | null>(null);
 /**
  * 初期化中の表示コンポーネント
  */
-const InitializingView: React.FC<{ progress: number; message: string }> = ({ 
-  progress, 
-  message 
+const InitializingView: React.FC<{ progress: number; message: string }> = ({
+  progress,
+  message,
 }) => (
   <Box
     sx={{
@@ -65,30 +65,35 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
     }}
   >
     <TitleLogo showProgress={false} />
-    
+
     <Box sx={{ width: '100%', maxWidth: 400, mt: 4 }}>
-      <LinearProgress 
-        variant="determinate" 
-        value={progress} 
+      {/* UX: hide 0% regression; use indeterminate until progress > 0 */}
+      <LinearProgress
+        variant={progress > 0 ? 'determinate' : 'indeterminate'}
+        value={progress}
         sx={{ height: 8, borderRadius: 4 }}
       />
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
-        align="center" 
-        sx={{ mt: 2 }}
-      >
-        {message}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        color="text.secondary" 
-        align="center" 
-        display="block"
-        sx={{ mt: 1 }}
-      >
-        {progress}% Complete
-      </Typography>
+      {progress > 0 && (
+        <>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 2 }}
+          >
+            {message}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            align="center"
+            display="block"
+            sx={{ mt: 1 }}
+          >
+            {progress}% Complete
+          </Typography>
+        </>
+      )}
     </Box>
   </Box>
 );
