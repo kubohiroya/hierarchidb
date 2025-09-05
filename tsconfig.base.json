@@ -30,19 +30,19 @@
     "jsx": "react-jsx",
     "paths": {
       "@hierarchidb/util": [
-        "packages/util/src/index.ts"
+        "./packages/util/src/index.ts"
       ],
       "@hierarchidb/base-plugin": [
-        "packages/node-type/base-plugin/src/index.ts"
+        "./packages/node-type/base-plugin/src/index.ts"
       ],
       "@hierarchidb/folder-plugin": [
-        "packages/node-type/folder-plugin/src/index.ts"
+        "./packages/node-type/folder-plugin/src/index.ts"
       ],
       "@hierarchidb/runtime-ui-plugin-dialog": [
-        "packages/runtime-ui/plugin-dialog/src/index.ts"
+        "./packages/runtime-ui/plugin-dialog/src/index.ts"
       ],
       "@hierarchidb/table-metadata": [
-        "packages/feature/table-metadata/src/index.ts"
+        "./packages/feature/table-metadata/src/index.ts"
       ]
     }
   },
