@@ -2,9 +2,7 @@ export { FolderEntityHandler } from './handlers/FolderEntityHandler';
 export { FolderDatabase } from './database/FolderDatabase';
 
 // Basic components
-export { FolderIcon } from './components/FolderIcon';
-export { FolderCreateDialog } from './components/FolderCreateDialog';
-export { FolderEditDialog } from './components/FolderEditDialog';
+// UI components exported via subpath './ui' to keep root worker-safe
 
 // Export types
 export * from './types';

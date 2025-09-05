@@ -10,8 +10,7 @@ export * from './handlers';
 export * from './definitions';
 
 // UI components
-export * from './components';
-export * from './hooks';
+// UI components exported via subpath './ui' to keep root worker-safe
 
 // Type exports (root)
 export * from './types';
