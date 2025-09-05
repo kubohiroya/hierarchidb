@@ -7,3 +7,6 @@ export { FolderDatabase } from './database/FolderDatabase';
 // Export types
 export * from './types';
 export * from './entities/FolderEntity';
+
+// Export plugin definition for worker consumption
+export { FolderDefinition } from './definitions/FolderDefinition';

@@ -36,10 +36,64 @@ reporter.reportStepProgress('Starting worker…', 0);
         }
       }
     } catch (e) {
-      console.warn('[Worker] Plugin virtual modules unavailable; skipping auto-load');
+      console.warn('[Worker] Plugin virtual modules unavailable; attempting manual fallback');
+
+      // Manual fallback for environments without Vite virtual modules (e.g., Angular dev server)
+      try {
+        const manualDefs: any[] = [];
+
+        // Import plugin definitions directly from packages (source paths resolve in monorepo)
+        try {
+          const { FolderDefinition } = await import(
+            '@hierarchidb/folder-plugin'
+          );
+          manualDefs.push(FolderDefinition);
+          console.log('✅ Fallback loaded: folder plugin');
+        } catch (err) {
+          console.warn('⚠️ Fallback failed: folder plugin not available', err);
+        }
+
+        try {
+          const { BaseMapPluginDefinition } = await import(
+            '@hierarchidb/basemap-plugin'
+          );
+          manualDefs.push(BaseMapPluginDefinition);
+          console.log('✅ Fallback loaded: basemap plugin');
+        } catch (err) {
+          console.warn('⚠️ Fallback failed: basemap plugin not available', err);
+        }
+
+        try {
+          const { ShapePluginDefinition } = await import(
+            '@hierarchidb/shape-plugin'
+          );
+          manualDefs.push(ShapePluginDefinition);
+          console.log('✅ Fallback loaded: shape plugin');
+        } catch (err) {
+          console.warn('⚠️ Fallback failed: shape plugin not available', err);
+        }
+
+        try {
+          const { StylerExtension } = await import(
+            '@hierarchidb/styler-plugin'
+          );
+          manualDefs.push(StylerExtension);
+          console.log('✅ Fallback loaded: styler plugin');
+        } catch (err) {
+          console.warn('⚠️ Fallback failed: styler plugin not available', err);
+        }
+
+        // Note: store registration side-effects are optional and environment-specific.
+        // Skipping direct import of subpath exports here to avoid bundler resolution issues.
+
+        // Hold the manual definitions for later bootstrap
+        ;(self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ = manualDefs;
+      } catch (fallbackErr) {
+        console.warn('[Worker] Manual plugin fallback failed:', fallbackErr);
+      }
     }
 
-    // After package-reader runs, resolve plugin defs
+    // After package-reader runs, resolve plugin defs (or fallback)
     let pluginDefinitions: any[] = [];
     try {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -47,7 +101,8 @@ reporter.reportStepProgress('Starting worker…', 0);
       const mod = await import('virtual:plugin-definitions');
       pluginDefinitions = (mod?.default as any[]) || [];
     } catch {
-      pluginDefinitions = [];
+      // Try manual fallback collected above
+      pluginDefinitions = (self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ || [];
     }
 
     reporter.reportStepProgress('Bootstrapping worker services…', 15);

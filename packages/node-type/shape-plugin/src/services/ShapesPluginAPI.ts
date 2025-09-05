@@ -28,7 +28,7 @@ import { WorkerPoolManager } from './workers/WorkerPoolManager';
 import { BatchSessionManager } from './batch/BatchSessionManager';
 import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
 import { VectorTileService } from './tiles/VectorTileService';
-import { UrlMetadata } from '~/types/index';
+import { UrlMetadata } from '~/shared';
 
 /**
  * Shape plugin API implementation

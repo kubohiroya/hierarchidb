@@ -528,6 +528,14 @@ interface PerformanceConfiguration {
 
 ## Examples
 
+## 依存管理とインポート規約（重要）
+本プラグインは Node Type 共通の依存方針に従います（packages/node-type/CONTRIBUTING.md 参照）。要点:
+- peerDependencies（ホスト提供）: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （採用時）maplibre-gl, react-i18next, i18next
+- dependencies（プラグイン実行用）: @hierarchidb/util ほか必要に応じて @hierarchidb/feature/*（例: @hierarchidb/table-metadata など）
+- devDependencies（ビルド/テスト/型）: typescript, tsup, vitest, @testing-library/*, @types/*
+- import は公開APIのみ、型は `import type` を優先。重い処理は dynamic import で遅延読込。
+- tsup external はモノレポ共通設定で外部化済み（react/mui/dexie/i18n/maplibre）。
+
 ### Simple Raster BaseMap
 
 ```typescript

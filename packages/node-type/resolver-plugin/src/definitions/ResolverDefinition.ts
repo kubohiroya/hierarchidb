@@ -12,7 +12,7 @@ export const ResolverDefinition: Partial<PluginDefinition> = {
   },
 
   database: {
-    dbName: 'resolvers',
+    dbName: 'resolver-db',
     schema: {
       '&id': 'EntityId',
       nodeId: 'NodeId',

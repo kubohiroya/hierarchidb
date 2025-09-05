@@ -28,7 +28,7 @@
     "repository": "https://github.com/eslint/rewrite",
     "publisher": "Nicholas C. Zakas"
   },
-  "@eslint/eslintrc@3.3.1": {
+  "@eslint/eslintrc@2.1.4": {
     "licenses": "MIT",
     "repository": "https://github.com/eslint/eslintrc",
     "publisher": "Nicholas C. Zakas"
@@ -154,7 +154,7 @@
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
-  "@typescript-eslint/visitor-keys@5.62.0": {
+  "@typescript-eslint/visitor-keys@7.18.0": {
     "licenses": "MIT",
     "repository": "https://github.com/typescript-eslint/typescript-eslint"
   },
@@ -197,13 +197,13 @@
     "publisher": "Yannick Croissant",
     "email": "yannick.croissant+npm@gmail.com"
   },
-  "eslint-scope@8.4.0": {
+  "eslint-scope@7.2.2": {
     "licenses": "BSD-2-Clause",
-    "repository": "https://github.com/eslint/js"
+    "repository": "https://github.com/eslint/eslint-scope"
   },
-  "eslint-visitor-keys@4.2.1": {
+  "eslint-visitor-keys@3.4.3": {
     "licenses": "Apache-2.0",
-    "repository": "https://github.com/eslint/js",
+    "repository": "https://github.com/eslint/eslint-visitor-keys",
     "publisher": "Toru Nagashima",
     "url": "https://github.com/mysticatea"
   },
@@ -250,13 +250,6 @@
     "licenses": "MIT",
     "repository": "https://github.com/http-party/http-server"
   },
-  "i18next@22.5.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/i18next/i18next",
-    "publisher": "Jan Mühlemann",
-    "email": "jan.muehlemann@gmail.com",
-    "url": "https://github.com/jamuhl"
-  },
   "jscodeshift@17.3.0": {
     "licenses": "MIT",
     "repository": "https://github.com/facebook/jscodeshift",
@@ -283,13 +276,6 @@
   "react-dom@18.3.1": {
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react"
-  },
-  "react-i18next@12.3.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/i18next/react-i18next",
-    "publisher": "Jan Mühlemann",
-    "email": "jan.muehlemann@gmail.com",
-    "url": "https://github.com/jamuhl"
   },
   "react@18.3.1": {
     "licenses": "MIT",
