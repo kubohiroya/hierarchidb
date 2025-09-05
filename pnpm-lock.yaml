@@ -1325,9 +1325,15 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      i18next:
+        specifier: 22.5.0
+        version: 22.5.0
       jszip:
         specifier: ^3.4.1
         version: 3.10.1
+      react-i18next:
+        specifier: 12.3.1
+        version: 12.3.1(i18next@22.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-window:
         specifier: ^1.8.10
         version: 1.8.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
