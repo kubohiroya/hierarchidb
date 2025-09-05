@@ -2,12 +2,11 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
     "composite": false,
     "declaration": true,
     "declarationMap": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"]
 }
-

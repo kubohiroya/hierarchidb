@@ -96,7 +96,7 @@ export function HydrateFallback() {
           color: '#999999',
         }}
       >
-        v1.0.0
+        v1.0.0-05Sep1442PM
       </div>
 
       {/* Copyright (top right) */}
