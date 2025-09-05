@@ -52,6 +52,7 @@
 
 - fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
   - ブランチ名: `fix/app/init-loading-ux-polish`
+  - PR: https://github.com/kubohiroya/hierarchidb/pull/104
   - 依存: なし
   - 背景: 起動直後と Worker 初期化中で「タイトルロゴ+LinearProgress」が二重に見える。さらに0%へ一瞬戻る違和感がある。
   - 方針: HydrateFallback を中央小スピナーのみへ簡素化。Worker 初期化中ビューは 0%時 `indeterminate` にし、メッセージ/%は非表示（>0%で表示）。

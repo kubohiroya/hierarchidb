@@ -14,6 +14,7 @@ jobs:
   typecheck-all:
     name: Typecheck All (workspace)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +39,7 @@ jobs:
     name: Build All (workspace)
     runs-on: ubuntu-latest
     needs: [typecheck-all]
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,6 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         pkg:
           - { name: basemap-plugin, filter: "@hierarchidb/basemap-plugin" }
@@ -95,6 +98,10 @@ jobs:
           # Ensure deep/integration tests stay gated unless explicitly enabled
           ENABLE_SHAPE_DEEP_TESTS: ""
           ENABLE_INTEGRATION_TESTS: ""
+          CI: "true"
+          VITEST_POOL: "threads"
+          VITEST_MAX_THREADS: "2"
+          VITEST_MIN_THREADS: "1"
         run: pnpm --filter "${{ matrix.pkg.filter }}" test
 
   build:
@@ -102,6 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         pkg:
           - { name: basemap-plugin, filter: "@hierarchidb/basemap-plugin" }
