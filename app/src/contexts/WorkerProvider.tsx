@@ -203,6 +203,22 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
   const [initChannel, setInitChannel] = useState<WorkerInitializationChannel | null>(null);
 
+  // Helper to finalize initialization and hide the banner
+  const finalizeInitialized = async () => {
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      setState({
+        client,
+        isInitialized: true,
+        initProgress: 100,
+        initMessage: 'Worker初期化完了',
+        error: null,
+      });
+    } catch (e) {
+      console.warn('[WorkerProvider] finalizeInitialized failed, will rely on channel', e);
+    }
+  };
+
   /**
    * Worker初期化処理
    */
@@ -222,9 +238,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         if (WorkerAPIClient.isReady()) {
           // eslint-disable-next-line no-console
           console.log('[WorkerProvider] fast-path isReady=true, finalizing');
-          const client = await WorkerAPIClient.getSingleton();
           __WORKER_INIT_COMPLETED__ = true;
-          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+          await finalizeInitialized();
           return;
         }
       } catch {}
@@ -246,9 +261,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       });
 
       if (result.success) {
-        const client = await WorkerAPIClient.getSingleton();
         __WORKER_INIT_COMPLETED__ = true;
-        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+        await finalizeInitialized();
       } else {
         throw new Error(result.error?.message || 'Worker initialization failed');
       }
