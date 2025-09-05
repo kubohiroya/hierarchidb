@@ -231,8 +231,7 @@ export class StylerDataService {
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
     }
-    // Back-compat: expose both modern `valueColumn` and legacy
-    // `selectedValueColumn`/`selectedKeyColumn` expected by tests.
+    // Return only known fields from StylerConfig
     return {
       algorithm: 'linear',
       colorSpace: 'hsv',
@@ -247,9 +246,9 @@ export class StylerDataService {
       },
       enabled: true,
       valueColumn: selectedValueColumn,
-      // Legacy aliases retained for consumers/tests
-      selectedValueColumn,
-      selectedKeyColumn: tableMetadata.columns.find(c => c.name === 'id')?.name ?? tableMetadata.columns[0]?.name,
+      keyColumn:
+        tableMetadata.columns.find((c) => c.name === 'id')?.name ??
+        tableMetadata.columns[0]?.name,
     };
   }
 }

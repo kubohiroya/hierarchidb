@@ -6,7 +6,11 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import type { MapLibreMapInstance } from '../types/maplibre-public';
-import 'maplibre-gl/dist/maplibre-gl.css';
+// Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
+if (typeof document !== 'undefined') {
+  // dynamic import prevents Vite HMR client from injecting styles in workers
+  void import('maplibre-gl/dist/maplibre-gl.css');
+}
 import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
 // Re-export types for backward compatibility

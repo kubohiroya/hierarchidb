@@ -190,7 +190,7 @@ export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile
 
 export interface BatchSession {
   sessionId: string;
-  workingCopyId: EntityId; // ✅ WorkingCopyTypes-based processing
+  workingCopyId: NodeId; // WorkingCopyTypes-based processing now keyed by NodeId
   nodeId: NodeId;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;

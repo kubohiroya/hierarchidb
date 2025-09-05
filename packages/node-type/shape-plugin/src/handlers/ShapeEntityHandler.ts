@@ -4,8 +4,7 @@
  * Avoids direct coupling to worker/services APIs to keep types consistent.
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { ShapeEntity, ShapeWorkingCopy, ProcessingConfig } from '~/shared';
+import type { NodeId, EntityId, ShapeEntity, ShapeWorkingCopy, ProcessingConfig, NodeType } from '~/shared';
 
 /**
  * Create shape data interface (UI layer)
@@ -136,18 +135,44 @@ export class ShapeEntityHandler {
 
   createWorkingCopy(entity: ShapeEntity): ShapeWorkingCopy {
     const workingCopy: ShapeWorkingCopy = {
-      ...entity,
+      // TreeNode props
+      id: entity.nodeId as NodeId,
+      parentId: entity.nodeId as NodeId,
+      nodeType: 'shape' as NodeType,
+      nodeId: entity.nodeId,
+      name: entity.name,
+      depth: 0,
+      // Working copy props
+      originalNodeId: entity.nodeId,
+      copiedAt: Date.now(),
+      hasEntityCopy: true,
+      entityWorkingCopyId: entity.id,
+      originalVersion: entity.version,
+      // Shape fields
+      description: entity.description,
+      dataSourceName: entity.dataSourceName,
       licenseAgreement: false,
+      processingConfig: entity.processingConfig,
+      checkboxState: entity.checkboxState,
+      selectedCountries: [...entity.selectedCountries],
+      adminLevels: [...entity.adminLevels],
+      urlMetadata: [...entity.urlMetadata],
       isDraft: false,
-    } as ShapeWorkingCopy;
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      version: entity.version,
+    };
     return workingCopy;
   }
 
-  createNewDraftWorkingCopy(_parentId: NodeId): ShapeWorkingCopy {
-    const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as EntityId;
+  createNewDraftWorkingCopy(parentId: NodeId): ShapeWorkingCopy {
+    const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as unknown as NodeId;
     const now = Date.now();
     const workingCopy: ShapeWorkingCopy = {
+      // TreeNode props
       id: workingCopyId,
+      parentId,
+      nodeType: 'shape' as NodeType,
       nodeId: '' as NodeId,
       name: '',
       description: '',
@@ -158,6 +183,9 @@ export class ShapeEntityHandler {
       selectedCountries: [],
       adminLevels: [],
       urlMetadata: [],
+      depth: 0,
+      // Working copy props
+      copiedAt: now,
       isDraft: true,
       createdAt: now,
       updatedAt: now,

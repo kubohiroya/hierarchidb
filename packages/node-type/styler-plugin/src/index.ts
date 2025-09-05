@@ -71,15 +71,8 @@ export {
   getContrastRatio,
 } from './utils/colorUtils';
 
-// Step components
-export { BasicInfoStep } from './steps/BasicInfoStep';
-
-// Legacy components (for backward compatibility)
-export { StylerSimpleDialog } from './components/StylerSimpleDialog';
-export type {
-  StylerSimpleDialogProps,
-  StylerCreateConfig,
-} from './components/StylerSimpleDialog';
+// UI components are exported from subpath to avoid worker-time deps
+// import from '@hierarchidb/styler-plugin/ui' when needed
 
 /**
  * 【プラグイン情報】: HierarchiDBプラグインシステム用の情報
