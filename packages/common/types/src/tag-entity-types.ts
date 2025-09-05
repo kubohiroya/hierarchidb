@@ -54,6 +54,9 @@ export interface NodeTagAssociation {
 /**
  * TagUsageStatistics - タグの使用統計
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface TagUsageStatistics {
   tagId: EntityId;
   totalUsage: number;
@@ -64,6 +67,9 @@ export interface TagUsageStatistics {
 
 /**
  * TagSearchOptions - タグ検索オプション
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface TagSearchOptions {
   query?: string;

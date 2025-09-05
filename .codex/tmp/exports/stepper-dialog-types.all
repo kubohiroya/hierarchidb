@@ -1,0 +1,3 @@
+interface|StepComponentProps
+type|BaseFieldName
+interface|BaseDialogProps

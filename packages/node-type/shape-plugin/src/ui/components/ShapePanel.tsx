@@ -114,7 +114,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
       // Note: startBatchProcessing expects a workingCopyId (EntityId), not nodeId
       // For now, we cast the nodeId, but this should be refactored to use proper WorkingCopyTypes
       await api.startBatchProcessing(
-        nodeId as unknown as EntityId,
+        nodeId as EntityId,
         entity.processingConfig,
         entity.urlMetadata
       );

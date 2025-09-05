@@ -8,4 +8,7 @@ export default createTsupConfig({
     'shared/index': 'src/shared/index.ts',
   },
   splitting: false,
+  external: [
+    '@hierarchidb/util',
+  ],
 });

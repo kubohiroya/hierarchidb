@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
     },
   },
 });

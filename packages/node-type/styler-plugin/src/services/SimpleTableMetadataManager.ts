@@ -8,6 +8,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
 
 /**
@@ -38,7 +39,7 @@ export class SimpleTableMetadataManager {
    */
   constructor() {
     // 【DB初期化】: Styler専用のCSVメタデータDB作成
-    this.db = new Dexie('StylerCSVMetadata') as CSVMetadataDB;
+    this.db = new Dexie(getDBName('styler-metadata-db')) as CSVMetadataDB;
 
     // 【スキーマ定義】: テーブル構造とインデックス設定
     this.db.version(1).stores({

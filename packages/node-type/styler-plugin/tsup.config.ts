@@ -9,8 +9,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    '@hierarchidb/ui-core/components/TagInput',
-    '@hierarchidb/ui-core/components/CategorySelector',
+    '@hierarchidb/ui-core',
     'dexie',
   ],
 });

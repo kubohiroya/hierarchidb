@@ -9,7 +9,7 @@ import type { GeoJSON } from 'geojson';
 import { SimplifyWorker1 } from '../SimplifyWorker1';
 import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types';
 
-describe('SimplifyWorker1', () => {
+(process.env.ENABLE_SHAPE_DEEP_TESTS ? describe : describe.skip)('SimplifyWorker1', () => {
   let worker: SimplifyWorker1;
 
   beforeEach(() => {
@@ -284,9 +284,4 @@ describe('SimplifyWorker1', () => {
       expect(optimized).toHaveLength(1);
       expect(optimized[0].id).toBe('valid-feature');
     });
-  });
 });
-// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
-if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
-  describe.skip('SimplifyWorker1 (deep tests disabled)', () => {});
-} else {

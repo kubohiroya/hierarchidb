@@ -1,0 +1,12 @@
+PluginDefinition
+NodeTypeIconDefinition
+CategoryDefinition
+NodeCapability
+PluginDatabaseConfig
+PluginUIConfig
+PluginAPIConfig
+PluginValidationConfig
+DatabaseSchema
+PluginRoutingConfig
+ExtendedPluginDefinition
+PluginIntegrated

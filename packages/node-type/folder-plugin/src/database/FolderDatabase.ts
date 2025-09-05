@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { FolderEntity, FolderWorkingCopy } from '../types/index';
 
 export class FolderDatabase extends Dexie {
@@ -6,7 +7,7 @@ export class FolderDatabase extends Dexie {
   workingCopies!: Dexie.Table<FolderWorkingCopy, string>;
 
   constructor() {
-    super('FolderDatabase');
+    super(getDBName('folder-db'));
 
     this.version(1).stores({
       folders: '&id, nodeId, name, createdAt, updatedAt',

@@ -13,6 +13,7 @@ export const FolderDefinition: PluginIntegrated = {
   },
   database: {
     dbName: 'folders',
+    entityStore: 'folders',
     schema: {
       '&id': 'EntityId',
       nodeId: 'NodeId',

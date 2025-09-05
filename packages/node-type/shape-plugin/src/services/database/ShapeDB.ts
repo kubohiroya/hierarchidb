@@ -9,6 +9,7 @@
  */
 
 import Dexie, { Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId, EntityId } from '@hierarchidb/common-type';
 import type {
   // Core entity types
@@ -181,7 +182,7 @@ export class ShapeDB extends Dexie {
   cache!: Table<CacheEntryRecord, string>;
 
   constructor() {
-    super('ShapeDB');
+    super(getDBName('shape-db'));
 
     this.version(1).stores({
       // Core entities - indexed by nodeId for tree integration

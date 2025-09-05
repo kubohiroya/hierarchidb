@@ -10,6 +10,7 @@ import {
   NodeId,
 } from '@hierarchidb/common-type';
 import { SingletonMixin } from '@hierarchidb/util';
+import { getDBName } from '@hierarchidb/util';
 import Dexie, { type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
@@ -42,9 +43,9 @@ export class CoreDB extends Dexie {
     return await (this as any).transaction(mode, tables, fn);
   }
 
-  static async getSingleton(name: string = 'hierarchidb'): Promise<CoreDB> {
+  static async getSingleton(_name?: string): Promise<CoreDB> {
     return SingletonMixin.getSingleton(CoreDB.name, async () => {
-      const instance = new CoreDB(name);
+      const instance = new CoreDB(getDBName('core-db'));
       await instance.open();
       await instance.initialize();
       return instance;
@@ -52,7 +53,7 @@ export class CoreDB extends Dexie {
   }
 
   private constructor(name: string) {
-    super(`${name}-CoreDB`);
+    super(name);
 
     // Development: schema v1 (no backward-compat fields)
     this.version(1).stores({

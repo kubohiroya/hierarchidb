@@ -190,7 +190,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   iconGroupSettings,
 }) => {
   // URL-synced dialog state
-  const { step: activeStep, setStep: setActiveStep, mode: urlMode, setMode, map, setMap } = useDialogUrlSync({
+  const { step: activeStep, setStep: setActiveStep, mode: urlMode, setMode, map, setMap, clearParams } = useDialogUrlSync({
     defaults: { step: 0, mode: 'normal' },
     debounce: { map: 400 },
     history: { step: 'push' },
@@ -239,6 +239,11 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         description: finalData.description?.trim() || undefined,
       };
 
+      // Extract extension fields (exclude base keys)
+      const extensionData = Object.fromEntries(
+        Object.entries(finalData).filter(([k]) => k !== 'name' && k !== 'description')
+      );
+
       // In edit mode, only send changed fields
       if (mode === 'edit' && currentData) {
         const changes: FolderEditData = {};
@@ -260,8 +265,8 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
         await onSubmit(changes);
       } else {
-        // Include all data for create mode
-        await onSubmit({ ...finalData, ...folderData });
+        // Include only base fields + extension fields for create mode
+        await onSubmit({ ...folderData, ...extensionData });
       }
 
       // no-op: URL params removed
@@ -285,6 +290,15 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     const data: any = { ...initialData };
     return data;
   });
+  const [formErrors, setFormErrors] = useState<string[] | undefined>(undefined);
+
+  // Ensure we start at step 0 when the dialog opens (avoid leaking URL state across tests/routes)
+  React.useEffect(() => {
+    if (open) {
+      clearParams();
+      setActiveStep(0);
+    }
+  }, [open, clearParams, setActiveStep]);
 
   // 地図パラメータ変更のハンドラー
   const handleMapParamsChange = useCallback(
@@ -302,12 +316,26 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       component: React.createElement(s.component as any, {
         data: formData,
         onChange: (next: any) => setFormData((prev: any) => ({ ...prev, ...next })),
-        errors: undefined,
+        errors: formErrors,
         isSubmitting: false,
       }),
-      validate: s.validation ? () => s.validation!.validate(formData).then((r: any) => r.valid).catch(() => false) : undefined,
+      validate: s.validation
+        ? async () => {
+            try {
+              const res = await s.validation!.validate(formData as any);
+              if (res && typeof res === 'object' && 'valid' in res) {
+                setFormErrors(res.valid ? [] : (res as any).message ? [(res as any).message] : ['Validation failed']);
+                return (res as any).valid as boolean;
+              }
+              return !!res;
+            } catch {
+              setFormErrors(['Validation failed']);
+              return false;
+            }
+          }
+        : undefined,
     }));
-  }, [allSteps, formData]);
+  }, [allSteps, formData, formErrors]);
 
   return (
     <MultiStepDialog
@@ -322,6 +350,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       onFullscreenChange={(is) => setMode(is ? 'full' : 'normal')}
       onSubmit={() => handleSubmit(formData)}
       onCancel={handleClose}
+      submitText="Complete"
       showFullscreenToggle={true}
     />
   );

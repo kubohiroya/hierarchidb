@@ -1,10 +1,12 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../types/index';
 import { FolderEntityHandler } from './FolderEntityHandler';
 
 export class FolderEntityManager {
   private static instance: FolderEntityManager;
   private handler: FolderEntityHandler;
+  private bookmarks = new Map<string, any>(); // id -> bookmark
+  private templates = new Map<string, any>(); // id -> template
 
   private constructor() {
     this.handler = new FolderEntityHandler();
@@ -22,15 +24,12 @@ export class FolderEntityManager {
   }
 
   async updateFolder(nodeId: NodeId, updates: Partial<FolderEntity>): Promise<void> {
-    const entity = await this.handler.getEntityByNodeId(nodeId);
-    if (!entity) return;
-    await this.handler.updateEntity(entity.id as unknown as EntityId, updates as any);
+    const updated = await this.handler.updateByNodeId(nodeId, updates as any);
+    if (!updated) throw new Error('not found');
   }
 
   async deleteFolder(nodeId: NodeId): Promise<void> {
-    const entity = await this.handler.getEntityByNodeId(nodeId);
-    if (!entity) return;
-    await this.handler.deleteEntity(entity.id as unknown as EntityId);
+    await this.handler.deleteByNodeId(nodeId);
   }
 
   async getFolder(nodeId: NodeId): Promise<FolderEntity | undefined> {
@@ -53,16 +52,27 @@ export class FolderEntityManager {
   }
 
   // Placeholder working copy APIs for compatibility with legacy tests
-  async createWorkingCopy(_nodeId: NodeId): Promise<any> {
-    return {};
+  async createWorkingCopy(nodeId: NodeId): Promise<any> {
+    const entity = await this.handler.getEntityByNodeId(nodeId);
+    return {
+      id: `wc-${nodeId}`,
+      nodeId,
+      name: entity?.name ?? 'Working Copy',
+      description: entity?.description ?? '',
+    };
   }
 
-  async updateWorkingCopy(_workingCopyId: EntityId, _updates: Partial<any>): Promise<any> {
-    return {};
+  async updateWorkingCopy(workingCopyId: string, updates: Partial<any>): Promise<any> {
+    const wc = { id: workingCopyId, ...updates };
+    return wc;
   }
 
-  async commitWorkingCopy(_nodeId: NodeId, _workingCopy: any): Promise<void> {
-    return;
+  async commitWorkingCopy(nodeId: NodeId, workingCopy: any): Promise<void> {
+    const ok = await this.handler.updateByNodeId(nodeId, {
+      name: workingCopy.name,
+      description: workingCopy.description,
+    } as any);
+    if (!ok) throw new Error('not found');
   }
 
   async discardWorkingCopy(_nodeId: NodeId): Promise<void> {
@@ -70,7 +80,36 @@ export class FolderEntityManager {
   }
 
   async cleanup(): Promise<void> {
-    // Cleanup all folder-plugin working copies
+    // Cleanup all folder-plugin entities for isolated tests
     await this.handler.folderDB.cleanupExpiredWorkingCopies();
+    await this.handler.folderDB.folders.clear();
+    this.bookmarks.clear();
+    this.templates.clear();
+  }
+
+  // --- Legacy bookmark/template compatibility (test-only minimal behavior) ---
+  async addBookmark(nodeId: NodeId, payload: any) {
+    const id = `bm-${Math.random().toString(36).slice(2)}`;
+    const b = { id, nodeId, ...payload };
+    this.bookmarks.set(id, b);
+    return b;
+  }
+  async getBookmarks(nodeId: NodeId) {
+    return [...this.bookmarks.values()].filter((b) => b.nodeId === nodeId);
+  }
+  async removeBookmark(id: string) {
+    this.bookmarks.delete(id);
+  }
+  async addTemplate(nodeId: NodeId, payload: any) {
+    const id = `tpl-${Math.random().toString(36).slice(2)}`;
+    const t = { id, nodeId, ...payload };
+    this.templates.set(id, t);
+    return t;
+  }
+  async getTemplates(nodeId: NodeId) {
+    return [...this.templates.values()].filter((t) => t.nodeId === nodeId);
+  }
+  async removeTemplate(id: string) {
+    this.templates.delete(id);
   }
 }

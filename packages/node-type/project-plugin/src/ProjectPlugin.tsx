@@ -2,7 +2,7 @@ import type { PluginDefinition, NodeType, TreeId } from '@hierarchidb/common-typ
 
 // Main plugin definition
 export const ProjectPluginDefinition: PluginDefinition = {
-  nodeType: 'project-plugin' as NodeType,
+  nodeType: 'project' as NodeType,
   name: 'project-plugin',
   displayName: 'Project',
   version: '0.0.1',

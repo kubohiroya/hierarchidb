@@ -43,9 +43,9 @@ vi.mock('xlsx', () => {
   };
 });
 
-// Mock jszip for ZIP testing
+// Mock jszip for ZIP testing (ESM-compatible default export)
 vi.mock('jszip', () => {
-  const MockJSZip = vi.fn().mockImplementation(() => ({
+  const MockJSZip: any = vi.fn().mockImplementation(() => ({
     files: {
       'countries.csv': {
         dir: false,
@@ -57,9 +57,8 @@ Japan,125800000,Asia`),
       }
     }
   }));
-  
-  MockJSZip.loadAsync = vi.fn().mockImplementation(() => Promise.resolve(new MockJSZip()));
-  return MockJSZip;
+  MockJSZip.loadAsync = vi.fn().mockResolvedValue(new MockJSZip());
+  return { default: MockJSZip };
 });
 
 describe('Styler CSV Workflow Integration', () => {

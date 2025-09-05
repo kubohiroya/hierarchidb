@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { LocationPeerData, LocationGroupItemData, LocationRelationMeta } from '../types/entities';
 
@@ -11,7 +12,7 @@ export class LocationEntitiesDB extends Dexie {
   groupEntities!: Table<LocationGroupRow, [NodeId, string]>;
   relations!: Table<LocationRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = 'location-plugin-entities') {
+  constructor(name = getDBName('location-entities')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

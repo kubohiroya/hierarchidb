@@ -36,7 +36,9 @@ class MockWorker implements MockWorkerAPI {
   }
 }
 
-describe('WorkerPool', () => {
+if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
+  describe.skip('WorkerPool (deep tests disabled)', () => {});
+} else describe('WorkerPool', () => {
   let pool: WorkerPool<MockWorkerAPI>;
   let mockWorkers: Worker[];
 
@@ -262,7 +264,3 @@ describe('WorkerPool', () => {
     });
   });
 });
-// Skip heavy worker tests by default unless ENABLE_SHAPE_DEEP_TESTS is set
-if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
-  describe.skip('WorkerPool (deep tests disabled)', () => {});
-} else {

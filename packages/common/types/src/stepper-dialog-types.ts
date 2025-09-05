@@ -29,6 +29,9 @@ export interface StepComponentProps {
 /**
  * 基底フィールド名の型
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export type BaseFieldName = 'name' | 'description' | string;
 
 /**

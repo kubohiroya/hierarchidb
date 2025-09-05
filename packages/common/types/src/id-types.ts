@@ -6,7 +6,8 @@
 export type NodeId = string & { readonly __brand: 'NodeId' };
 
 // Entity IDs
-export type EntityId = string & { readonly __brand: 'EntityId' };
+// EntityId は NodeId と同一概念として扱う（主キーは NodeId に収束）
+export type EntityId = NodeId;
 
 // TreeTypes IDs
 export type TreeId = string & { readonly __brand: 'TreeId' };

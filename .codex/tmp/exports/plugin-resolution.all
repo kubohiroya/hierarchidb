@@ -1,0 +1,5 @@
+interface|ResolutionResult
+interface|ResolvedPlugin
+interface|DependencyGraph
+interface|DependencyError
+interface|PluginRegistrationConfig

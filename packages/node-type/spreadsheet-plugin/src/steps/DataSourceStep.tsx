@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { CSVUploadPanel } from './CSVUploadPanel';
-import { useTranslation } from 'provider-i18next';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 【型定義】: DataSourceStepのプロパティ型

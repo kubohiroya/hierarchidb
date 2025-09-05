@@ -1,0 +1,14 @@
+interface|ImportManifest
+interface|ExportManifest
+interface|ImportProgress
+interface|ExportProgress
+interface|ImportResult
+interface|ExportResult
+interface|ImportOptions
+interface|FileImportOptions
+interface|TemplateImportOptions
+interface|ExportOptions
+interface|TemplateDefinition
+interface|TreeNodeExportData
+interface|ClipboardData
+type|IdMapping

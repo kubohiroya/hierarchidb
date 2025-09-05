@@ -3,8 +3,8 @@
  * @description BaseMap entity types extending Folder entity
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { FolderEntity, FolderWorkingCopy } from '@hierarchidb/folder-plugin';
+import type { NodeId, EntityId, Timestamp } from '@hierarchidb/common-type';
+import type { HierarchicalEntity } from '@hierarchidb/base-plugin';
 
 /**
  * Map style configuration
@@ -35,26 +35,46 @@ export interface DisplayOptions {
   showTerrain: boolean;
   showLabels: boolean;
   attribution?: string;
+  // Optional tags used for search/grouping in tests and UI
+  tags?: string[];
 }
 
 /**
  * BaseMap entity extending Folder entity
  */
-export interface BaseMapEntity extends FolderEntity {
+export interface FolderSettings {
+  allowNestedFolders: boolean;
+  maxDepth: number;
+  sortOrder: 'name' | 'date' | 'size';
+}
+
+export interface BaseMapEntity extends HierarchicalEntity {
+  // Common folder-like fields used in UI/handlers
+  name?: string;
+  description?: string;
+  category?: string;
+  settings?: FolderSettings;
+  tags?: EntityId[];
   // BaseMap specific fields
   baseMapMetadataId?: string;
   mapStyle: MapStyle;
   viewport: MapViewport;
   displayOptions: DisplayOptions;
+  // HierarchicalEntity optional fields are inherited; listed for clarity
+  parentId?: NodeId;
+  depth?: number;
+  path?: string;
+  childCount?: number;
 }
 
 /**
  * BaseMap working copy for edit operations
  */
-export interface BaseMapWorkingCopy extends BaseMapEntity, FolderWorkingCopy {
+export interface BaseMapWorkingCopy extends BaseMapEntity {
+  workingCopyId: EntityId;
   isDraft: true;
   originalId?: EntityId;
-  copiedAt: number;
+  copiedAt: Timestamp;
 }
 
 /**

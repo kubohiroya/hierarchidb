@@ -40,7 +40,8 @@ export function applyCsvFilters(
  * 🟢 信頼性レベル: 網羅的なオペレータ対応
  */
 function applyFilterToRow(row: Record<string, any>, filter: CSVFilterRule): boolean {
-  const cellValue = row[filter.column];
+  const col = (filter.column || (filter as any).field) as string;
+  const cellValue = row[col];
   const filterValue = filter.value;
 
   // 【null値処理】: セル値がnull/undefinedの場合の特別処理
@@ -60,7 +61,8 @@ function applyFilterToRow(row: Record<string, any>, filter: CSVFilterRule): bool
   const filterString = String(filterValue).toLowerCase();
 
   // 【オペレータ別処理】: 各比較演算子の実装
-  switch (filter.operator) {
+  const operator = (filter.operator || (filter as any).op) as string;
+  switch (operator) {
     case 'equals':
       return cellString === filterString;
       
@@ -108,7 +110,7 @@ function applyFilterToRow(row: Record<string, any>, filter: CSVFilterRule): bool
       }
       
     default:
-      console.warn(`Unknown filter operator: ${filter.operator}`);
+      console.warn(`Unknown filter operator: ${operator}`);
       return true; // 不明なオペレータの場合は通す
   }
 }
@@ -161,7 +163,7 @@ export function validateFilterRules(filters: CSVFilterRule[]): {
       errors.push(`Filter ${filter.id || 'unknown'}: Column name is required`);
     }
     
-    if (!filter.operator) {
+    if (!(filter.operator || (filter as any).op)) {
       errors.push(`Filter ${filter.id || 'unknown'}: Operator is required`);
     }
     
@@ -172,13 +174,13 @@ export function validateFilterRules(filters: CSVFilterRule[]): {
       'greater_equal', 'less_equal', 'regex'
     ];
     
-    if (valueRequiredOperators.includes(filter.operator) && 
+    if (valueRequiredOperators.includes((filter.operator || (filter as any).op) as string) && 
         (!filter.value || (typeof filter.value === 'string' && filter.value.trim() === ''))) {
-      errors.push(`Filter ${filter.id || 'unknown'}: Value is required for operator "${filter.operator}"`);
+      errors.push(`Filter ${filter.id || 'unknown'}: Value is required for operator "${(filter.operator || (filter as any).op)}"`);
     }
     
     // 【正規表現検証】
-    if (filter.operator === 'regex' && filter.value) {
+    if (((filter.operator || (filter as any).op) as string) === 'regex' && filter.value) {
       try {
         new RegExp(String(filter.value));
       } catch (error) {

@@ -1,0 +1,5 @@
+type|ValidationErrors
+type|ValidationResult
+interface|ValidationRule
+type|ValidationFunction
+interface|StepValidation

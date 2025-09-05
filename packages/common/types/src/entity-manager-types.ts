@@ -12,6 +12,9 @@ import { NodeId } from './id-types';
 /**
  * RelationalEntityの参照管理インターフェース
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface RelationalEntityManager<TRelationalEntity extends RelationalEntity> {
   /**
    * 新しい参照を追加（参照カウントをインクリメント）

@@ -84,12 +84,27 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     await this.folderDB.cleanupExpiredWorkingCopies();
   }
 
+  // NodeId-based helpers to avoid leaking EntityId to callers
+  async updateByNodeId(nodeId: NodeId, updates: Partial<FolderEntity>): Promise<FolderEntityExtended | null> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) return null;
+    return await this.updateEntity(entity.id as any, updates as any);
+  }
+
+  async deleteByNodeId(nodeId: NodeId): Promise<void> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) return;
+    await this.deleteEntity(entity.id as any);
+  }
+
   // Simple search by name
   async searchFolders(query: string) {
     const q = query.toLowerCase();
     return this.folderDB.folders
       .toCollection()
-      .filter((f: any) => (f.name || '').toLowerCase().includes(q))
+      .filter((f: any) =>
+        (f.name || '').toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q)
+      )
       .toArray();
   }
 

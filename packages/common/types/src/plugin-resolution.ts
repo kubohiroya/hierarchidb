@@ -4,6 +4,9 @@ import { PluginDefinition } from './plugin-definition';
 /**
  * Dependency resolution result
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ResolutionResult {
   /** Whether resolution was successful */
   success: boolean;
@@ -19,6 +22,9 @@ export interface ResolutionResult {
 
 /**
  * Individual resolved plugin entry
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface ResolvedPlugin {
   /** Plugin identifier */
@@ -52,6 +58,9 @@ export interface DependencyGraph {
 /**
  * Dependency resolution error
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface DependencyError {
   /** Error type */
   type: 'missing' | 'circular' | 'version' | 'conflict';
@@ -65,6 +74,9 @@ export interface DependencyError {
 
 /**
  * Plugin registration configuration
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface PluginRegistrationConfig {
   /** Allow version conflicts */

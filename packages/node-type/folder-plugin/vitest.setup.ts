@@ -1,9 +1,4 @@
-/**
- * folder-plugin Test Setup
- * Uses base vitest setup configuration
- */
-
-// Import base setup (includes common mocks and utilities)
-import '../../../vitest.setup.base';
-
-// Package-specific setup can be added here if needed
+// folder-plugin Test Setup
+import '@testing-library/jest-dom/vitest';
+import 'fake-indexeddb/auto';
+// Package-specific setup hooks can be added here if needed

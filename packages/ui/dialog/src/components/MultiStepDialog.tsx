@@ -108,8 +108,9 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
 
   // Check if can navigate
   const canGoNext = useMemo(() => {
-    return !stepErrors.has(currentStep) && !loading;
-  }, [currentStep, stepErrors, loading]);
+    // Allow clicking Next; validation will guard progression
+    return !loading;
+  }, [loading]);
 
   const canGoPrevious = currentStep > 0 && !loading;
 
@@ -209,10 +210,19 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
 
   // Submit handler
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || isSubmitting) return;
+    if (isSubmitting) return;
 
+    // Always trigger validation so tests (and users) see errors even if button is clickable
     const isValid = await validateCurrentStep();
     if (!isValid) return;
+
+    // Only proceed to submit if all required steps are complete.
+    // Use immediate validity for the current step to avoid stale state from async setState.
+    const allRequiredCompleted = visibleSteps.every((step, index) => {
+      if (step.optional) return true;
+      return index === currentStep ? true : completedSteps.has(index);
+    });
+    if (!allRequiredCompleted) return;
 
     try {
       setIsSubmitting(true);
@@ -223,7 +233,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [canSubmit, isSubmitting, validateCurrentStep, onSubmit]);
+  }, [isSubmitting, validateCurrentStep, canSubmit, onSubmit]);
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -348,7 +358,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                 {!isLastStep && (
                   <Button
                     onClick={handleNext}
-                    disabled={!canGoNext || loading || isSubmitting}
+                    disabled={loading || isSubmitting}
                     variant="contained"
                   >
                     {nextText}
@@ -358,7 +368,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                 {isLastStep && (
                   <Button
                     onClick={handleSubmit}
-                    disabled={!canSubmit || isSubmitting}
+                    disabled={isSubmitting}
                     variant="contained"
                   >
                     {isSubmitting ? <CircularProgress size={20} /> : submitText}

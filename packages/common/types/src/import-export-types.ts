@@ -10,6 +10,9 @@ import { TreeNode } from './tree-node-types';
  * インポートマニフェスト
  * ZIPアーカイブまたはテンプレートのメタデータ
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ImportManifest {
   version: string;
   name: string;
@@ -30,6 +33,9 @@ export interface ImportManifest {
 
 /**
  * エクスポートマニフェスト
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface ExportManifest extends ImportManifest {
   exportDate: string;
@@ -81,6 +87,9 @@ export interface ExportResult {
 /**
  * インポートオプション
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface ImportOptions {
   targetParentId: NodeId;
   mergeStrategy?: 'skip' | 'replace' | 'rename';
@@ -90,6 +99,9 @@ export interface ImportOptions {
 /**
  * ファイルインポートオプション
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface FileImportOptions extends ImportOptions {
   file: File;
 }
@@ -97,12 +109,18 @@ export interface FileImportOptions extends ImportOptions {
 /**
  * テンプレートインポートオプション
  */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface TemplateImportOptions extends ImportOptions {
   templateId: string;
 }
 
 /**
  * エクスポートオプション
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface ExportOptions {
   nodeIds: NodeId[];
@@ -114,6 +132,9 @@ export interface ExportOptions {
 
 /**
  * テンプレート定義
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface TemplateDefinition {
   id: string;
@@ -129,6 +150,9 @@ export interface TemplateDefinition {
 
 /**
  * ツリーノードエクスポートデータ
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface TreeNodeExportData {
   nodes: Record<NodeId, TreeNode>;
@@ -156,5 +180,8 @@ export interface ClipboardData {
 
 /**
  * IDマッピング（インポート時の旧ID→新IDマッピング）
+ */
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
  */
 export type IdMapping = Map<NodeId, NodeId>;

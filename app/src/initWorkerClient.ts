@@ -39,7 +39,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
 
       // First create the raw Worker instance
       rawWorkerInstance = new Worker(
-        new URL('./worker', import.meta.url),
+        new URL('./worker.ts', import.meta.url),
         { type: 'module' }
       );
       
@@ -47,6 +47,26 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       
       // Import Comlink to wrap the Worker
       const Comlink = await import('comlink');
+
+      // Attach debug listeners to the raw worker to surface errors
+      try {
+        rawWorkerInstance.addEventListener('error', (e: ErrorEvent) => {
+          console.error('[initWorker] Worker error event:', {
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            error: e.error,
+          });
+        });
+        rawWorkerInstance.addEventListener('messageerror', (e: MessageEvent) => {
+          console.error('[initWorker] Worker messageerror event:', e?.data ?? e);
+        });
+        rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
+          const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
+          console.log('[initWorker] Worker message:', t, e.data);
+        });
+      } catch {}
       
       // Wrap the raw Worker with Comlink using the shared WorkerAPI contract
       const worker = Comlink.wrap<WorkerAPI>(rawWorkerInstance);
@@ -54,24 +74,15 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       console.log('[initWorker] Worker wrapped with Comlink:', typeof worker);
       console.log('[initWorker] Raw Worker instance available:', !!rawWorkerInstance);
       
-      // Test connection immediately with timeout
-      console.log('[initWorker] Testing connection with ping...');
-      const pingPromise = worker.ping();
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Ping timeout after 5 seconds')), 5000)
-      );
-      
-      const pingResult = await Promise.race([pingPromise, timeoutPromise]);
-      console.log('[initWorker] Connection test successful:', pingResult);
-      
-      // Store the instance only after successful connection test
+      // Do not Comlink-ping here. We rely on WorkerInitializationChannel to gate readiness.
+      // Expose the proxy so the provider can obtain it and wait for INIT_COMPLETE.
       workerInstance = worker;
       
       // Log success with emoji - especially important for retry success
       if (attempt > 0) {
         console.log(`👍 [initWorker] Reconnection successful after ${attempt} retries!`);
       } else {
-        console.log('[initWorker] Worker API initialized successfully');
+        console.log('[initWorker] Worker created and wrapped (awaiting INIT_COMPLETE)');
       }
       
       return workerInstance;

@@ -4,20 +4,8 @@
  */
 
 import React, { useEffect } from 'react';
-import {
-  Box,
-  TextField,
-  Typography,
-  Stack,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  OutlinedInput,
-  SelectChangeEvent,
-} from '@mui/material';
+import { Box, TextField, Typography, Stack, Divider, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, SelectChangeEvent } from '@mui/material';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Route as RouteIcon } from '@mui/icons-material';
 import { 
   RouteType, 
@@ -124,36 +112,18 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
       </Typography>
 
       <Stack spacing={3}>
-        {/* ルート名入力 */}
-        <TextField
-          label={translations.basicInfo.nameLabel}
-          value={workingCopy.name || ''}
-          onChange={(e) => handleNameChange(e.target.value)}
-          required
-          fullWidth
+        <BasicInfoFields
+          value={{ name: workingCopy.name, description: workingCopy.description }}
+          onChange={(updates: Partial<RouteWorkingCopy>) => {
+            if (updates.name !== undefined) handleNameChange(updates.name);
+            if (updates.description !== undefined) handleDescriptionChange(updates.description);
+          }}
           disabled={disabled}
-          error={!workingCopy.name}
-          helperText={
-            !workingCopy.name 
-              ? translations.errors.nameRequired
-              : translations.basicInfo.nameHelperText
-          }
-          inputProps={{ maxLength: 100 }}
-          variant="outlined"
-        />
-
-        {/* 説明入力 */}
-        <TextField
-          label={translations.basicInfo.descriptionLabel}
-          value={workingCopy.description || ''}
-          onChange={(e) => handleDescriptionChange(e.target.value)}
-          multiline
-          rows={3}
-          fullWidth
-          disabled={disabled}
-          helperText={translations.basicInfo.descriptionHelperText}
-          inputProps={{ maxLength: 500 }}
-          variant="outlined"
+          nameLabel={translations.basicInfo.nameLabel}
+          nameHelperText={translations.basicInfo.nameHelperText}
+          nameRequiredText={translations.errors.nameRequired}
+          descriptionLabel={translations.basicInfo.descriptionLabel}
+          descriptionHelperText={translations.basicInfo.descriptionHelperText}
         />
 
         <Divider />

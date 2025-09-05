@@ -1,0 +1,7 @@
+const|NODE_TYPES
+interface|NodeBase
+interface|DescendantProperties
+interface|ReferenceProperties
+interface|DraftProperties
+type|TreeNode
+interface|TreeNodeWithChildren

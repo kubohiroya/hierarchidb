@@ -29,11 +29,17 @@ export interface WorkerAPIExtensions {
 }
 
 // 型安全なWorker API拡張
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface TypedWorkerAPIExtensions<T extends Record<string, WorkerAPIMethod>> {
   methods: T;
 }
 
 // Client API拡張メソッド
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export type ClientAPIMethod<
   TArgs extends APIMethodArgs = APIMethodArgs,
   TReturn extends APIMethodReturn = APIMethodReturn,
@@ -44,6 +50,9 @@ export interface ClientAPIExtensions {
 }
 
 // 型安全なClient API拡張
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface TypedClientAPIExtensions<T extends Record<string, ClientAPIMethod>> {
   methods: T;
 }

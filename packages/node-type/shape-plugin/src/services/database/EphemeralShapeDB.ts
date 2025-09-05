@@ -4,6 +4,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
 /**
@@ -95,7 +96,7 @@ export class EphemeralShapeDB extends Dexie {
   cache!: Table<ProcessingCache>;
 
   constructor() {
-    super('EphemeralShapeDB');
+    super(getDBName('shape-ephemeral-db'));
 
     // Define schema
     this.version(1).stores({

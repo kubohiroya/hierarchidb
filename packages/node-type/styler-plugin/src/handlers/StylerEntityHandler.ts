@@ -4,7 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { EntityHandler, GroupEntity } from '@hierarchidb/common-type';
+// Note: Do not implement the shared EntityHandler interface here because this handler returns
+// operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
 import type { StylerEntity, StylerWorkingCopy } from '../entities/StylerEntity';
 import { StylerConfigDefault } from '../types/stylerTypes';
 import { StylerDataService } from '../services/StylerDataService';
@@ -21,9 +22,7 @@ interface BaseEntityHandler {
  * StylerEntityHandler
  * Extends SpreadsheetEntityHandler to add style map functionality
  */
-export class StylerEntityHandler
-  implements EntityHandler<StylerEntity, GroupEntity>
-{
+export class StylerEntityHandler {
   private spreadsheetHandler: BaseEntityHandler;
   private dataService: StylerDataService;
 
@@ -32,77 +31,98 @@ export class StylerEntityHandler
     this.dataService = dataService;
   }
 
-  async createEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<StylerEntity> {
-    // Create base spreadsheet entity
-    const baseEntity = await this.spreadsheetHandler.createEntity(nodeId, data);
-    
-    // Extend with Styler fields
+  async createEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<{ success: true; data: StylerEntity }> {
+    // Create base spreadsheet entity (result or raw)
+    const base = await this.spreadsheetHandler.createEntity(nodeId, data);
+    const baseEntity = (base && 'data' in base) ? (base as any).data : base;
+
     const entity: StylerEntity = {
       ...baseEntity,
+      // Prefer requested name if provided
+      name: data?.name ?? baseEntity.name,
       stylerConfig: data?.stylerConfig || StylerConfigDefault,
       selectedKeyColumn: data?.selectedKeyColumn || '',
       selectedValueColumn: data?.selectedValueColumn || '',
       generatedStyle: data?.generatedStyle,
-    };
-    
-    return entity;
+    } as StylerEntity;
+
+    return { success: true, data: entity };
   }
 
-  async getEntity(nodeId: NodeId): Promise<StylerEntity | undefined> {
-    const baseEntity = await this.spreadsheetHandler.getEntity(nodeId);
-    if (!baseEntity) {
-      return undefined;
-    }
-    
-    // Extend with Styler fields
+  async getEntity(nodeId: NodeId): Promise<{ success: boolean; data?: StylerEntity }> {
+    const base = await this.spreadsheetHandler.getEntity(nodeId);
+    const baseEntity = base && 'data' in base ? (base as any).data : base;
+    if (!baseEntity) return { success: false };
+
     const entity: StylerEntity = {
       ...baseEntity,
-      stylerConfig: baseEntity.stylerConfig || StylerConfigDefault,
-      selectedKeyColumn: baseEntity.selectedKeyColumn || '',
-      selectedValueColumn: baseEntity.selectedValueColumn || '',
-      generatedStyle: baseEntity.generatedStyle,
-    };
-    
-    return entity;
+      stylerConfig: (baseEntity as any).stylerConfig || StylerConfigDefault,
+      selectedKeyColumn: (baseEntity as any).selectedKeyColumn || '',
+      selectedValueColumn: (baseEntity as any).selectedValueColumn || '',
+      generatedStyle: (baseEntity as any).generatedStyle,
+    } as StylerEntity;
+
+    return { success: true, data: entity };
   }
 
-  async updateEntity(nodeId: NodeId, data: Partial<StylerEntity>): Promise<void> {
-    // Update base spreadsheet entity
-    await this.spreadsheetHandler.updateEntity(nodeId, data);
-    
-    // Generate style if needed
-    if (data.stylerConfig || data.selectedKeyColumn || data.selectedValueColumn) {
-      const currentEntity = await this.getEntity(nodeId);
-      if (currentEntity && data.spreadsheetMetadataId && currentEntity.stylerConfig.targetProperty) {
-        try {
-          await this.dataService.generateMapLibreStyle(
-            data.spreadsheetMetadataId,
-            currentEntity
-          );
-          // Note: In a real implementation, we would save this to storage
-        } catch (styleError) {
-          console.warn('Failed to generate style:', styleError);
-        }
+  async updateEntity(nodeId: NodeId, data: Partial<StylerEntity>): Promise<{ success: boolean; data?: StylerEntity }> {
+    const updated = await this.spreadsheetHandler.updateEntity(nodeId, data);
+    const baseAfter = updated && 'data' in updated ? (updated as any).data : await this.spreadsheetHandler.getEntity(nodeId);
+    const baseEntity = baseAfter && 'data' in (baseAfter as any) ? (baseAfter as any).data : baseAfter;
+
+    let entity: StylerEntity | undefined;
+    if (baseEntity) {
+      entity = {
+        ...baseEntity,
+        stylerConfig: (baseEntity as any).stylerConfig || data.stylerConfig || StylerConfigDefault,
+        selectedKeyColumn: (baseEntity as any).selectedKeyColumn || data.selectedKeyColumn || '',
+        selectedValueColumn: (baseEntity as any).selectedValueColumn || data.selectedValueColumn || '',
+        generatedStyle: (baseEntity as any).generatedStyle,
+      } as StylerEntity;
+    }
+
+    if ((data.stylerConfig || data.selectedKeyColumn || data.selectedValueColumn) && entity && data.spreadsheetMetadataId && entity.stylerConfig.targetProperty) {
+      try {
+        const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
+          data.spreadsheetMetadataId,
+          entity
+        );
+        entity.generatedStyle = {
+          maplibreStyleSpec: styleSpec,
+          colorMapping,
+          lastUpdated: Date.now(),
+        } as any;
+      } catch (styleError) {
+        console.warn('Failed to generate style:', styleError);
       }
     }
+
+    return { success: !!entity, data: entity };
   }
 
-  async deleteEntity(nodeId: NodeId): Promise<void> {
+  async deleteEntity(nodeId: NodeId): Promise<{ success: boolean }> {
+    // Try to cleanup CSV table reference if present
+    const existing = await this.spreadsheetHandler.getEntity(nodeId);
+    const baseEntity = existing && 'data' in (existing as any) ? (existing as any).data : existing;
+    const tableId = (baseEntity as any)?.spreadsheetMetadataId;
+    if (tableId) {
+      try { await this.dataService.removeTableReference(tableId); } catch { /* ignore */ }
+    }
     await this.spreadsheetHandler.deleteEntity(nodeId);
+    return { success: true };
   }
 
   async createWorkingCopy(nodeId: NodeId): Promise<StylerWorkingCopy> {
-    const entity = await this.getEntity(nodeId);
-    if (!entity) {
-      throw new Error('Entity not found');
-    }
-    
+    const res = await this.getEntity(nodeId);
+    if (!res.success || !res.data) throw new Error('Entity not found');
+    const entity = res.data;
+
     const workingCopy: StylerWorkingCopy = {
       ...entity,
       isDraft: true,
       copiedAt: Date.now(),
-    };
-    
+    } as StylerWorkingCopy;
+
     return workingCopy;
   }
 

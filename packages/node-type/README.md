@@ -57,7 +57,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
   - styler-plugin: データからスタイルを定義（Map スタイル適用など）
   - basemap-plugin: ベースマップ/スタイルの管理（MapLibre 統合）
 - 地理/分析（Geo & Analysis）
-  - shape-plugin: 形状処理/タイル/分析（独立プラグイン）
+  - shape-plugin: 形状処理/タイル/分析（folder 配下に統一予定）
   - location-plugin: 位置エンティティ/近接検索（Shape 連携オプション）
   - route-plugin: 経路生成/評価（Location 参照）
 - メタ/領域（Meta & Project）
@@ -103,8 +103,8 @@ graph TB
     FOLDER --> RESOLVER
     FOLDER --> PROJECT
 
-    %% 独立（入力なし）
-    SHAPE -. 独立 .- SIMPLE
+    %% 継承（入力あり）
+    FOLDER --> SHAPE
 
     %% 分類マッピング（概念）
     FOLDER --> EXTENDING
@@ -134,24 +134,60 @@ graph TB
 
 ### 比較表（概要）
 
-| プラグイン | nodeType（実装値） | 継承元 | CoreDB | Plugin DB 名 | 主要機能 | UI（Dialog/Panel） | Import/Export | バッチ | 備考 |
-|---|---|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | CoreDB | - | 基底ハンドラ/型 | - | - | - | 継承専用（UI 非表示） |
-| folder-plugin | folder | - | CoreDB | folders | コンテナ/拡張基盤 | Yes/Yes | - | - | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | CoreDB | spreadsheetDB（既定） | データソース管理 | Yes/Yes | Import | - | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | CoreDB | StylerCSVMetadata | スタイル定義 | Yes/Yes | - | - | CSVメタDBを別途使用 |
-| basemap-plugin | basemap | folder | CoreDB | basemapDB | ベースマップ/スタイル | Yes/Yes | - | - | MapLibre 統合 |
-| shape-plugin | shape | - | CoreDB | （未固定・サービス管理） | 形状/分析/タイル | Yes/Yes | Import/Export | Yes | 高負荷処理/バッチ |
-| location-plugin | location-plugin | folder | CoreDB | （dbName未宣言：locations ほか stores） | 位置/近接検索 | Yes/Yes | Import/Export | Yes | Shape 連携可 |
-| route-plugin | route | location | CoreDB | RouteDB | 経路生成/評価 | Yes/Yes | Import/Export | Optional | Location 解決/統計 |
-| resolver-plugin | resolver-plugin | folder | CoreDB | resolvers | 変換/重複解決 | Yes/Yes | - | - | Schema 検出/前処理 |
-| project-plugin | project-plugin | folder | CoreDB | projectDB | プロジェクト/メタ | Yes/Yes | - | - | 領域/設定 |
+| プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapのプレビュー | ネットワーク要件 | 備考 |
+|---|---|---|---|---|---|---|---|---|
+| base-plugin | base | - | - |  |  |  | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
+| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities') |  |  |  | なし | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities') |  |  |  | なし（ローカル取り込み想定） | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | Dexie('styler-metadata-db') |  |  |  | なし | CSVメタDB |
+| basemap-plugin | basemap | folder | Dexie('basemap-db') |  |  | supported | （タイルサーバ利用時）運用時にネット接続が必要 | MapLibre 統合 |
+| shape-plugin | shape | folder（に統一予定） | Dexie('shape-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
+| location-plugin | location | folder | Dexie('location-entities') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
+| route-plugin | route | location | Dexie('route-db') | Yes（予定） | create | supported | 作成・編集時はネット必須（運用中は不要） | Location 解決/統計 |
+| resolver-plugin | resolver | folder | Dexie('resolver-db') |  |  |  | なし | Schema 検出/前処理 |
+| project-plugin | project | folder | Dexie('project-db') |  |  | supported | （プレビューで basemap に依存する場合あり） | 領域/設定 |
 
 注記:
-- CoreDB はランタイム共通メタ/ツリー構造の永続 DB 名です（サービス層から一元利用）。
-- Plugin DB 名は各プラグイン実装の Dexie 名称（確認元: 各 `database.dbName` ないし初期化コード）です。
-- nodeType は実装上の定義値を記載（例: route は 'route'）。
-- Import/Export/バッチは supports* フラグおよび実装の有無で反映しています（例: location/route/shape は Export/Import/Batch を実装/サポート）。
+- データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
+- Import/Export は CoreDB と Persistent なエンティティDBのシリアライズ/デシリアライズにより原則サポートされます（本表のカラムからは削除）。フォルダやタグ等の共通メタも対象に含まれます。
+- ネットワーク要件: shape/location/route は作成・編集時にネット接続が必要（データ取得・外部API連携のため）。basemap はタイルサーバを利用する場合、運用中に外部タイルサーバへの接続が必要。その他は基本オフラインで運用可能。
+- バッチは非同期一括処理の仕組み（セッション/タスク管理等）が実装されている場合に「Yes」。route は現状コード上にバッチ基盤を確認できないため空欄としています。
+- ベクトルタイルは当該プラグインがベクトルタイルを生成（create）できるものを示します。
+- Mapのプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
+ - nodeType の命名方針: ユーザーに露出しうる識別子のため、`-plugin` サフィックスを廃止し、`folder`/`basemap`/`location`/`project`/`resolver` などに統一します（既存実装は順次移行）。
+
+### base-plugin の責務（役割）
+
+base-plugin は UI に表示されない「共通基盤」です。プラグイン実装から再利用される抽象と補助型を提供します。親子継承の「親」ではなく、ライブラリ層と捉えてください。
+
+- 提供クラス/抽象
+  - `BaseEntityHandler<TEntity, TCreate, TSearch>`: CRUD とライフサイクルフック（before/after create/update/delete）を備えた共通ハンドラ基底。
+  - `HierarchicalEntityHandler<...>`: 階層型（親子関係）エンティティ用の派生基底。
+- 提供型
+  - `BaseSearchCriteria`: 検索条件の基底（ページング/ソート拡張の前提）。
+  - `PaginatedResult<T>`, `OperationResult<T>`: 結果表現の共通フォーマット。
+  - `EntityLifecycleHooks<TEntity>`: ライフサイクルフックの型定義。
+- 定義
+  - `BasePluginDefinition`: 継承用のダミー定義（UI 非表示）。
+
+これらは `@hierarchidb/base-plugin` から提供され、各プラグイン（folder/shape/route 等）が自前のハンドラ実装で再利用します。
+
+#### 3x2エンティティ管理マトリクス（プラグイン別）
+
+凡例: 列は Persistent(P-)→Ephemeral(E-) の順に、P-Peer, P-Group, P-Relational, E-Peer, E-Group, E-Relational を表します。セルには該当する永続/エフェメラルDB上のテーブル名（またはエンティティ名）を記載しています。
+
+| プラグイン | P-Peer | P-Group | P-Relational | E-Peer | E-Group | E-Relational |
+|---|---|---|---|---|---|---|
+| base-plugin | - | - | - | - | - | - |
+| folder-plugin | folders, workingCopies | groupEntities | relations | - | - | - |
+| spreadsheet-plugin | spreadsheetEntities, workingCopies | groupEntities | relations | - | - | - |
+| styler-plugin | - | - | csvMetadata | - | - | - |
+| basemap-plugin | baseMaps, workingCopies | - | - | - | - | - |
+| shape-plugin | shapeEntities | - | - | - | rawBuffers, simplifiedBuffers, vectorTiles, sessions, cache | - |
+| location-plugin | peerEntities | groupEntities | relations | - | - | - |
+| route-plugin | routes, workingCopies | - | - | - | - | - |
+| resolver-plugin | resolvers, workingCopies | - | - | - | - | - |
+| project-plugin | projects | - | - | - | - | - |
 
 
 

@@ -150,6 +150,9 @@ export type NodeCapability =
   | 'offline'; // Can work offline
 
 // Worker-side plugin router action definition (without React containers)
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface WorkerPluginRouterAction {
   path?: string;
   loader?: () => Promise<unknown>;
@@ -187,6 +190,9 @@ export interface PluginValidationConfig<TEntity extends PeerEntity = PeerEntity>
 }
 
 // Plugin i18n configuration
+/**
+ * @deprecated Unused across the repository; scheduled for removal.
+ */
 export interface PluginI18nConfig {
   // Namespace for this plugin's translations
   namespace?: string;

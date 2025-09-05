@@ -1,10 +1,11 @@
 import Dexie from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '../ports';
 
 class CasDB extends Dexie {
   contents!: any; // Table<ContentMeta, [hash, algo]>
   urls!: any;     // Table<{ url, hash, algo }, url>
-  constructor(name: string = 'hidb-cas') {
+  constructor(name: string = getDBName('cas-db')) {
     super(name);
     this.version(1).stores({
       contents: '[hash+algo], hash, algo, refCount, createdAt',

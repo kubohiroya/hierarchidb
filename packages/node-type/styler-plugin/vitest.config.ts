@@ -12,8 +12,10 @@ export default defineConfig({
     alias: {
       // Cross-plugin import resolution
       '../../spreadsheet/src/services/SpreadsheetCSVApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver.ts'),
+      '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, './src/__tests__/mocks/spreadsheet-plugin.ts'),
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/ui-csv-extract': path.resolve(__dirname, '../../ui/csv-extract/src/index.ts'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
     },
   },
 })

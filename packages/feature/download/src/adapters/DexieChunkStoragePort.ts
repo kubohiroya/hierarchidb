@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { StoragePort } from '../ports';
 
 // runtime-only; keep types in comments to avoid TS noUnusedLocals
@@ -8,7 +9,7 @@ import type { StoragePort } from '../ports';
 class ChunkDB extends Dexie {
   files!: any;
   chunks!: any;
-  constructor(name: string = 'hidb-chunks') {
+  constructor(name: string = getDBName('chunks-db')) {
     super(name);
     this.version(1).stores({
       files: '&id, committed, updatedAt',

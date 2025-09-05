@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { SpreadsheetPeerData, SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities';
 
@@ -11,7 +12,7 @@ export class SpreadsheetEntitiesDB extends Dexie {
   groupEntities!: Table<SheetGroupRow, [NodeId, string]>;
   relations!: Table<SheetRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = 'spreadsheet-plugin-entities') {
+  constructor(name = getDBName('spreadsheet-entities')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

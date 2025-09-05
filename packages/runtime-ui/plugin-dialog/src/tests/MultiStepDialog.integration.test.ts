@@ -41,11 +41,11 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should create a working copy for location plugin with parent', async () => {
       const parentId = 'parent-123' as NodeId;
-      const workingCopyId = await dialogAPI.createWorkingCopy('location-plugin', parentId);
+      const workingCopyId = await dialogAPI.createWorkingCopy('location', parentId);
 
       const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
       expect(workingCopy).toBeDefined();
-      expect(workingCopy?.nodeType).toBe('location-plugin');
+      expect(workingCopy?.nodeType).toBe('location');
       expect(workingCopy?.parentNodeId).toBe(parentId);
     });
 
@@ -141,7 +141,7 @@ describe('Multi-Step Dialog Integration', () => {
     let workingCopyId: EntityId;
 
     beforeEach(async () => {
-      workingCopyId = await dialogAPI.createWorkingCopy('location-plugin');
+      workingCopyId = await dialogAPI.createWorkingCopy('location');
     });
 
     it('should evaluate capabilities for step 0 (basic info)', async () => {
@@ -200,7 +200,7 @@ describe('Multi-Step Dialog Integration', () => {
       });
 
       // ロケーションのWorking Copy作成（無効なデータ）
-      const locationWorkingCopyId = await dialogAPI.createWorkingCopy('location-plugin');
+      const locationWorkingCopyId = await dialogAPI.createWorkingCopy('location');
       await dialogAPI.updateWorkingCopy(locationWorkingCopyId, {
         data: { name: '', locationType: 'restaurant' }, // 空の名前
       });
@@ -214,7 +214,7 @@ describe('Multi-Step Dialog Integration', () => {
 
     it('should batch evaluate capabilities', async () => {
       const workingCopyId1 = await dialogAPI.createWorkingCopy('folder-plugin');
-      const workingCopyId2 = await dialogAPI.createWorkingCopy('location-plugin');
+      const workingCopyId2 = await dialogAPI.createWorkingCopy('location');
 
       // 有効なデータを設定
       await dialogAPI.updateWorkingCopy(workingCopyId1, {
