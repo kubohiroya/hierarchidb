@@ -280,6 +280,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log('[WorkerProvider] mount');
+    // In dev, add a short fallback to finalize if WorkerAPIClient becomes ready but the channel hasn't resolved (StrictMode races)
+    let devFallbackTimer: number | undefined;
     const onInitComplete = async () => {
       // eslint-disable-next-line no-console
       console.log('[WorkerProvider] window event: hierarchidb-worker-init-complete');
@@ -307,10 +309,28 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       } catch {}
     }
 
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] scheduling dev fallback finalization');
+      // @ts-ignore setTimeout returns number in browsers
+      devFallbackTimer = window.setTimeout(async () => {
+        try {
+          if (!state.isInitialized && WorkerAPIClient.isReady()) {
+            // eslint-disable-next-line no-console
+            console.log('[WorkerProvider] dev fallback finalizing');
+            await finalizeInitialized();
+          }
+        } catch {}
+      }, 1500);
+    }
+
     return () => {
       if (!import.meta.env.DEV) {
         initChannel?.dispose();
         try { window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
+      }
+      if (devFallbackTimer) {
+        window.clearTimeout(devFallbackTimer);
       }
     };
   }, []);
