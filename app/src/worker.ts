@@ -45,7 +45,7 @@ reporter.reportStepProgress('Starting worker…', 0);
         // Import plugin definitions directly from packages (source paths resolve in monorepo)
         try {
           const { FolderDefinition } = await import(
-            '@hierarchidb/folder-plugin/src/definitions/FolderDefinition'
+            '@hierarchidb/folder-plugin'
           );
           manualDefs.push(FolderDefinition);
           console.log('✅ Fallback loaded: folder plugin');
@@ -55,7 +55,7 @@ reporter.reportStepProgress('Starting worker…', 0);
 
         try {
           const { BaseMapPluginDefinition } = await import(
-            '@hierarchidb/basemap-plugin/src/definitions/BaseMapPluginDefinition'
+            '@hierarchidb/basemap-plugin'
           );
           manualDefs.push(BaseMapPluginDefinition);
           console.log('✅ Fallback loaded: basemap plugin');
@@ -65,7 +65,7 @@ reporter.reportStepProgress('Starting worker…', 0);
 
         try {
           const { ShapePluginDefinition } = await import(
-            '@hierarchidb/shape-plugin/src/definitions/ShapePluginDefinition'
+            '@hierarchidb/shape-plugin'
           );
           manualDefs.push(ShapePluginDefinition);
           console.log('✅ Fallback loaded: shape plugin');
@@ -75,7 +75,7 @@ reporter.reportStepProgress('Starting worker…', 0);
 
         try {
           const { StylerExtension } = await import(
-            '@hierarchidb/styler-plugin/src/extension/definition'
+            '@hierarchidb/styler-plugin'
           );
           manualDefs.push(StylerExtension);
           console.log('✅ Fallback loaded: styler plugin');
@@ -83,11 +83,8 @@ reporter.reportStepProgress('Starting worker…', 0);
           console.warn('⚠️ Fallback failed: styler plugin not available', err);
         }
 
-        // Additionally, load worker-side registration side-effects when available
-        // These register stores with the runtime worker storeRegistry.
-        try {
-          await import('@hierarchidb/folder-plugin/src/worker/index');
-        } catch {}
+        // Note: store registration side-effects are optional and environment-specific.
+        // Skipping direct import of subpath exports here to avoid bundler resolution issues.
 
         // Hold the manual definitions for later bootstrap
         ;(self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ = manualDefs;

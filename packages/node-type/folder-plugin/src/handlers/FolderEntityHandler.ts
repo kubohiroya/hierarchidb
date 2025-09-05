@@ -97,6 +97,48 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     await this.deleteEntity(entity.id as any);
   }
 
+  // ==================
+  // Working copy support (minimal implementation)
+  // ==================
+  async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityExtended> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      // If entity does not exist, create a new one with defaults
+      const created = await this.createEntity(nodeId, { name: 'New Folder' } as any);
+      return created as FolderEntityExtended;
+    }
+    // Return a shallow clone as working copy
+    return { ...(entity as any) } as FolderEntityExtended;
+  }
+
+  async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityExtended): Promise<void> {
+    const entity = await this.getEntityByNodeId(nodeId);
+    if (!entity) {
+      // No existing entity; create from working copy
+      await this.createEntity(nodeId, workingCopy as any);
+      return;
+    }
+    await this.updateEntity(entity.id as any, workingCopy as any);
+  }
+
+  async discardWorkingCopy(_nodeId: NodeId): Promise<void> {
+    // No persisted working copy state for folders; no-op
+    return;
+  }
+
+  // ==================
+  // Interface compatibility shims (undefined instead of null)
+  // ==================
+  async getEntity(entityId: EntityId): Promise<FolderEntityExtended | undefined> {
+    const entity = await (this as any).table.get(entityId);
+    return entity || undefined;
+  }
+
+  async getEntityByNodeId(nodeId: NodeId): Promise<FolderEntityExtended | undefined> {
+    const entity = await (this as any).table.where('nodeId').equals(nodeId).first();
+    return entity || undefined;
+  }
+
   // Simple search by name
   async searchFolders(query: string) {
     const q = query.toLowerCase();
