@@ -3,22 +3,22 @@
   "version": "0.1.0",
   "description": "Geographic shape data management plugin for HierarchiDB",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./shared": {
-      "types": "./dist/shared/index.d.ts",
+      "types": "./src/shared/index.ts",
       "import": "./dist/shared/index.js"
     },
     "./ui": {
-      "types": "./dist/ui/index.d.ts",
+      "types": "./src/ui/index.ts",
       "import": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./dist/worker/index.d.ts",
+      "types": "./src/worker/index.ts",
       "import": "./dist/worker/index.js"
     }
   },
