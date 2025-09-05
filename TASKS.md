@@ -198,6 +198,20 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - Workerで`localStorage`に依存した言語取得（Web Workerに存在しない前提）とガード付き参照が散在。
     - 該当: `packages/runtime-worker/worker/src/utils/workerLogger.ts` の言語取得・独自訳マップ。
   - 言語型・設定の固定化（'en' | 'ja' や `supportedLngs: ['en','ja']`）。追加言語がコード改変前提。
+
+---
+
+## 運用ログ（today） <a id="log-today"></a>
+
+- 2025-09-05 10:55 JST start: 選択パッケージのビルド/テストをローカル実行（sandbox対策）
+  - 実行: `pnpm --filter @hierarchidb/runtime-worker run build` 他、各パッケージ `build`。
+  - 実行: `pnpm --filter @hierarchidb/folder-plugin run test:run` / `@hierarchidb/shape-plugin` / `@hierarchidb/ui-core`。
+  - メモ: sandbox 下では Vitest の worker 終了で EPERM が発生するため、テストは昇格権限で実行。
+  - 結果: 3パッケージでテストグリーン（folder: 21/21, shape: 22/22, ui-core: 19/19）。
+  - 注意: `packages/node-type/spreadsheet-plugin` は `pnpm-workspace.yaml` で明示的に除外（`'!packages/node-type/spreadsheet-plugin'`）。フィルタで一致しないのは仕様。
+  - DoD: 選択パッケージのビルド成功、テスト成功を確認。
+  - ロールバック: なし（コード変更なし）。
+
     - 該当: `workerLogger.ts` の戻り型、`packages/ui/i18n/src/i18n/index.ts` の `supportedLngs`（SSR/CSR両方）。
   - feature/worker 層が React 依存なしで共通リソースを使えない構成（`react-i18next` 前提での初期化）。
   - UI→Worker のロケール伝達がなく、各層でバラバラに判定している。

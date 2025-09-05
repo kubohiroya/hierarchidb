@@ -26,6 +26,7 @@
   },
   "files": [
     "src/steps/BasicInfoStep.tsx",
-    "src/types/category-types.ts"
+    "src/types/category-types.ts",
+    
   ]
 }

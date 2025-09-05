@@ -108,7 +108,7 @@ export interface ProjectLayer {
 
 export interface LayerSource {
   nodeId: NodeId;
-  nodeType: 'shape' | 'location' | 'route' | 'propertyresolver';
+  nodeType: 'shape' | 'location' | 'route' | 'resolver';
   nodeName: string;
   lastUpdated: Date;
   recordCount: number;

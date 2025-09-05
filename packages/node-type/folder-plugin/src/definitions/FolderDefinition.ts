@@ -12,7 +12,7 @@ export const FolderDefinition: PluginIntegrated = {
     color: '#FFA726',
   },
   database: {
-    dbName: 'folders',
+    dbName: 'folder-db',
     entityStore: 'folders',
     schema: {
       '&id': 'EntityId',

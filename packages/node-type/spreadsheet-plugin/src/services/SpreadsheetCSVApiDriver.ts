@@ -57,8 +57,8 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     if (typeof pluginIdOrTableManager === 'string') {
       // Spreadsheet mode: 従来の実装（チャンク処理対応）
       this.pluginId = pluginIdOrTableManager;
-      this.tableManager = new SimpleTableMetadataManager(`${pluginIdOrTableManager}DB`);
-      this.spreadsheetDB = new SpreadsheetDatabase(`${pluginIdOrTableManager}DB`);
+      this.tableManager = new SimpleTableMetadataManager();
+      this.spreadsheetDB = new SpreadsheetDatabase();
     } else {
       // Styler mode: 互換性のためのモード
       this.pluginId = 'styler';
@@ -302,8 +302,18 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       return undefined;
     }
 
-    // SpreadsheetDatabaseから統計情報を取得
-    return await this.spreadsheetDB.getStatistics?.();
+    // SpreadsheetDatabaseから統計情報を取得（旧/新フィールド名の差異を吸収）
+    const raw = await this.spreadsheetDB.getStatistics?.();
+    if (!raw) return undefined;
+
+    // 正規化: テストが期待するフィールドへ変換
+    const totalFiles = (raw as any).totalFiles ?? (raw as any).totalRawFiles ?? 0;
+    const totalChunks = (raw as any).totalChunks ?? (raw as any).rawChunkCount ?? 0;
+    const totalEntities = (raw as any).totalEntities ?? 0;
+    const totalDataSize = (raw as any).totalDataSize ?? 0;
+    const averageRowsPerFile = (raw as any).averageRowsPerFile ?? 0;
+
+    return { totalFiles, totalChunks, totalEntities, totalDataSize, averageRowsPerFile };
   }
 
   /**

@@ -44,6 +44,14 @@
 | 宿泊 | Location (Hotel) | 収容能力評価 |
 | 季節性 | Time Series | 繁忙期分析 |
 
+## 依存管理とインポート規約（重要）
+共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
+- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （必要時）react-i18next, i18next
+- dependencies: @hierarchidb/util、必要に応じて @hierarchidb/feature/*
+- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
+- import は公開API、型は `import type`、重い処理は dynamic import。
+- tsup external は共通設定で外部化済み。
+
 ## ステップバイステップ設定UI
 
 ### Step 1: プロジェクト基本設定

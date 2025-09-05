@@ -569,6 +569,22 @@ importers:
         specifier: 4.9.5
         version: 4.9.5
 
+  packages/feature/table-metadata:
+    dependencies:
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+    devDependencies:
+      tsup:
+        specifier: ^8.0.1
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
+      typescript:
+        specifier: 4.9.5
+        version: 4.9.5
+
   packages/feature/tabular:
     dependencies:
       '@hierarchidb/common-type':
@@ -671,6 +687,9 @@ importers:
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../ui/map
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.1
@@ -723,6 +742,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.62.0(react@18.3.1))
@@ -790,6 +812,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@hierarchidb/auth-recovery':
+        specifier: workspace:*
+        version: link:../../feature/auth-recovery
       '@hierarchidb/base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
@@ -811,6 +836,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -893,6 +921,9 @@ importers:
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../ui/map
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       '@turf/turf':
         specifier: ^7.0.0
         version: 7.2.0
@@ -963,6 +994,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       comlink:
         specifier: ^4.4.1
         version: 4.4.2
@@ -1024,6 +1058,12 @@ importers:
       '@hierarchidb/shape-plugin':
         specifier: workspace:*
         version: link:../shape-plugin
+      '@hierarchidb/ui-core':
+        specifier: workspace:*
+        version: link:../../ui/core
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -1052,6 +1092,9 @@ importers:
 
   packages/node-type/shape-plugin:
     dependencies:
+      '@hierarchidb/auth-recovery':
+        specifier: workspace:*
+        version: link:../../feature/auth-recovery
       '@hierarchidb/base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
@@ -1088,6 +1131,9 @@ importers:
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../../ui/lru-splitview
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
@@ -1186,6 +1232,79 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@25.0.1)(terser@5.43.1)
 
+  packages/node-type/spreadsheet-plugin:
+    dependencies:
+      '@hierarchidb/auth-recovery':
+        specifier: workspace:*
+        version: link:../../feature/auth-recovery
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
+      '@hierarchidb/common-type':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/folder-plugin':
+        specifier: workspace:*
+        version: link:../folder-plugin
+      '@hierarchidb/table-metadata':
+        specifier: workspace:*
+        version: link:../../feature/table-metadata
+      '@hierarchidb/tabular':
+        specifier: workspace:*
+        version: link:../../feature/tabular
+      '@hierarchidb/ui-core':
+        specifier: workspace:*
+        version: link:../../ui/core
+      '@hierarchidb/ui-csv-extract':
+        specifier: workspace:*
+        version: link:../../ui/csv-extract
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
+      '@types/pako':
+        specifier: ^2.0.3
+        version: 2.0.4
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      pako:
+        specifier: ^2.1.0
+        version: 2.1.0
+    devDependencies:
+      '@mui/icons-material':
+        specifier: ^7.3.1
+        version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.1
+        version: 7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+      '@types/react':
+        specifier: ^18.3.24
+        version: 18.3.24
+      fake-indexeddb:
+        specifier: ^6.1.0
+        version: 6.2.2
+      i18next:
+        specifier: 22.5.0
+        version: 22.5.0
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-i18next:
+        specifier: 12.3.1
+        version: 12.3.1(i18next@22.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
+      typescript:
+        specifier: 4.9.5
+        version: 4.9.5
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
+
   packages/node-type/styler-plugin:
     dependencies:
       '@hierarchidb/common-type':
@@ -1194,12 +1313,18 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/table-metadata':
+        specifier: workspace:*
+        version: link:../../feature/table-metadata
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
       '@hierarchidb/ui-csv-extract':
         specifier: workspace:*
         version: link:../../ui/csv-extract
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
       jszip:
         specifier: ^3.4.1
         version: 3.10.1
@@ -1536,6 +1661,10 @@ importers:
       zod:
         specifier: ^3.22.3
         version: 3.22.3
+    optionalDependencies:
+      '@hierarchidb/tabular-xlsx':
+        specifier: workspace:*
+        version: link:../../feature/tabular-xlsx
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.0

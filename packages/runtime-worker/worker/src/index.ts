@@ -42,10 +42,9 @@ export class WorkerService implements WorkerAPI {
 
       // Optionally install XLSX parser for tabular if available
       try {
-        // dynamic path literal to avoid hard dependency
-        const pkg = '@hierarchidb/tabular-xlsx';
-        // @ts-ignore - optional dependency at runtime
-        const mod = await import(pkg);
+        // Optional dependency; suppress Vite analysis for dynamic import
+        // @ts-ignore
+        const mod = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');
         if (mod && typeof mod.installTabularXlsx === 'function') {
           mod.installTabularXlsx();
           if (typeof mod.markTabularXlsxInstalled === 'function') mod.markTabularXlsxInstalled();
