@@ -219,24 +219,40 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
 
-      const result = await channel.waitForInitialization({
-        worker: rawWorker,
-        timeout,
-        debug,
+      // Prefer channel, but fall back to WorkerAPIClient readiness (handles race where INIT_COMPLETE already fired)
+      const channelPromise = channel.waitForInitialization({ worker: rawWorker, timeout, debug });
+
+      // Small grace period to allow channel to capture INIT_COMPLETE; if already ready, proceed
+      const fallbackPromise = new Promise<{ success: boolean; error?: Error }>((resolve) => {
+        const checkReady = async () => {
+          try {
+            if (WorkerAPIClient.isReady()) {
+              resolve({ success: true });
+            } else {
+              // re-check shortly until timeout window; actual timeout still governed by channel
+              setTimeout(checkReady, 250);
+            }
+          } catch {
+            setTimeout(checkReady, 250);
+          }
+        };
+        checkReady();
       });
 
-      if (result.success) {
-        const client = await WorkerAPIClient.getSingleton();
-        setState({
-          client,
-          isInitialized: true,
-          initProgress: 100,
-          initMessage: 'Worker初期化完了',
-          error: null,
-        });
-      } else {
-        throw new Error(result.error?.message || 'Worker initialization failed');
+      const result = await Promise.race([channelPromise, fallbackPromise]);
+
+      if (!result || !(result as any).success) {
+        throw new Error((result as any)?.error?.message || 'Worker initialization failed');
       }
+
+      const client = await WorkerAPIClient.getSingleton();
+      setState({
+        client,
+        isInitialized: true,
+        initProgress: 100,
+        initMessage: 'Worker初期化完了',
+        error: null,
+      });
     } catch (error) {
       console.error('[WorkerProvider] Initialization failed:', error);
       setState(prev => ({
