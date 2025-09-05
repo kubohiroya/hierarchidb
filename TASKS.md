@@ -72,6 +72,7 @@
 
 - refactor/shape/remove-entityid（shape の EntityId 排除と API/型の統一）
   - ブランチ名: `refactor/shape/remove-entityid`
+  - PR: https://github.com/kubohiroya/hierarchidb/pull/102
   - 依存: 型参照を `~/shared` に統一済み（UI 専用 `~/types` は撤去済み）
   - 背景: WorkingCopy/バッチ系 API が `EntityId` に依存しており、NodeId 中心の設計に反する。型不整合や mint 漏れが発生しやすい。
   - 方針:
