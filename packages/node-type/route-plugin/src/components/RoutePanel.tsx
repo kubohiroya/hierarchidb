@@ -43,7 +43,7 @@ import type { RouteEntity, RouteType } from '../types';
 import { useTranslation } from '../i18n';
 import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
-import { ThrottledPort } from '../services/net/ThrottledPort';
+import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress';
 import { createRouteBatchManager } from '../services/createRouteBatchManager';
 
 export interface RoutePanelProps {
@@ -341,7 +341,10 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
             <Typography variant="subtitle1" gutterBottom>
               {t('panel.progress', 'Progress')}
             </Typography>
-            <RouteBatchSummary sessionId={lastJobId} />
+            <div style={{ display: 'grid', gap: 8 }}>
+              <RouteBatchLiveProgress jobId={lastJobId} />
+              <RouteBatchSummary sessionId={lastJobId} />
+            </div>
           </CardContent>
         </Card>
       )}
