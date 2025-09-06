@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": false,
     "incremental": true,
+    "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
       "~/*": [
@@ -11,7 +12,8 @@
     },
     "skipLibCheck": true,
     "types": [
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+      "node"
     ],
     "lib": [
       "ES2022"
