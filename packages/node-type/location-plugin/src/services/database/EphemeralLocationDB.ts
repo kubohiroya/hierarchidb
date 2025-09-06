@@ -22,7 +22,7 @@ export interface VectorTileRecord {
 
 export class EphemeralLocationDB extends Dexie {
   vectorTiles!: Table<VectorTileRecord>;
-  sessions!: Table<{ sessionId: string; nodeId: NodeId; bbox: [number,number,number,number]; zoomMin: number; zoomMax: number; totalPoints: number; createdAt: number; status: 'running'|'completed'|'failed' }>; 
+  sessions!: Table<{ sessionId: string; nodeId: NodeId; bbox: [number,number,number,number]; zoomMin: number; zoomMax: number; totalPoints: number; createdAt: number; status: 'running'|'completed'|'failed'; tableId?: string }>; 
 
   constructor() {
     super('ephemeral-location-db');
@@ -31,6 +31,11 @@ export class EphemeralLocationDB extends Dexie {
     });
     this.version(2).stores({
       sessions: '&sessionId, nodeId, createdAt, status'
+    });
+    // v3: add optional tableId for tabular (column-wise) search linkage
+    this.version(3).upgrade(async () => {
+      // No index changes needed; keep shape and allow nullable field
+      // Existing sessions will simply not have tableId
     });
 
     this.vectorTiles = this.table('vectorTiles');

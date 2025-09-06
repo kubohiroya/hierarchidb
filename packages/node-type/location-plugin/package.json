@@ -26,6 +26,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",

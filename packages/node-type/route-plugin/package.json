@@ -27,6 +27,9 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
+    "@hierarchidb/batch": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
     "dexie": "^4.2.0"
   },
   "peerDependencies": {
@@ -57,3 +60,4 @@
     ]
   }
 }
+    "@hierarchidb/tabular-store": "workspace:*",

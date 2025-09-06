@@ -52,6 +52,10 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '../../types';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
+
+import { TabularPreview } from '@hierarchidb/ui-core/src';
+import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB';
+
 import { useLocationProgress } from '../../hooks/useLocationProgress';
 
 // 進捗情報の型定義
@@ -125,6 +129,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   sessionId,
 }) => {
   const [tabValue, setTabValue] = useState(0);
+  const [tableId, setTableId] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressInfo>({
     percentage: 0,
     phase: 'download',
@@ -180,6 +185,19 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const db = getEphemeralLocationDB();
+        // @ts-ignore
+        const sess = await (db.table('sessions') as any).get(sessionId);
+        if (!cancelled) setTableId(sess?.tableId || null);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [sessionId]);
   
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -472,10 +490,8 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         
         {/* Tab 4: データテーブル */}
         <TabPanel value={tabValue} index={3}>
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Alert severity="info">
-              データテーブルは後続の実装で追加されます
-            </Alert>
+          <Box sx={{ flex: 1, minHeight: 360 }}>
+            <TabularPreview pluginId="location" tableId={tableId || undefined} />
           </Box>
         </TabPanel>
       </DialogContent>

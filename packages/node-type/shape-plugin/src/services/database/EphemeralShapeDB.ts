@@ -70,6 +70,7 @@ export interface BatchSessionMetadata {
   startTime: number;
   endTime?: number;
   config: Record<string, any>;
+  tableId?: string; // optional: tabular store linkage
 }
 
 /**

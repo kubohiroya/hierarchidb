@@ -27,6 +27,10 @@ export class RouteDatabase extends Dexie {
   routes!: Table<RouteEntity, EntityId>;
   workingCopies!: Table<RouteWorkingCopy, EntityId>;
   routeCache!: Table<RouteCacheEntry, string>;
+  // Batch session tracking (cursor/progress)
+  routeCursors!: Table<{ sessionId: string; completed: number; total: number; paused?: boolean; updatedAt: number }, string>;
+  // Optional results storage for batch-generated routes
+  routeResults!: Table<{ id: string; sessionId: string; taskId: string; method: string; lineGeometry: [number, number][]; distance?: number; duration?: number; createdAt: number }, string>;
 
   constructor(dbName: string = getDBName('route-db')) {
     super(dbName);
@@ -35,6 +39,11 @@ export class RouteDatabase extends Dexie {
       routes: '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
       workingCopies: '&id, nodeId, copiedAt',
       routeCache: '&id, routeId, cacheKey, expiresAt',
+    });
+    // v2: add cursor/results tables for batch processing (idempotency, pause/resume, observability)
+    this.version(2).stores({
+      routeCursors: '&sessionId, completed, total, updatedAt',
+      routeResults: '&id, sessionId, taskId, method, createdAt'
     });
   }
 

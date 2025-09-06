@@ -164,3 +164,4 @@
     ]
   }
 }
+    "@hierarchidb/tabular-store": "workspace:*",

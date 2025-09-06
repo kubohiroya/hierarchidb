@@ -5,6 +5,7 @@
 export * from './types';
 export type { CreateLocationData } from './entities/LocationEntityHandler';
 export * from './entities/LocationEntityHandler';
+export { TabularQueryService as LocationTableQueryService } from '@hierarchidb/tabular-store';
 export * from './components/LocationDialog';
 export * from './components/LocationPanel';
 export * from './components/ui/SelectionMatrix';
