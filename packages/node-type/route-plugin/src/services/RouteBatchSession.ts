@@ -44,13 +44,14 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   private tasks: RouteBatchTask[] = [];
   private laneSemaphores = new Map<string, Semaphore>();
   private laneConfig: Record<string, number> = { osm_route: 1, searoute: 3, direct: 64, great_circle: 64, custom: 8 };
-  private generator = new RouteGenerator();
+  private generator: RouteGenerator;
   private writer: TabularWriter | null = null;
   private writerReady = false;
-  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void) {
+  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void, deps?: { generator?: RouteGenerator }) {
     super(sessionId, nodeId, config);
     this.db = new RouteDatabase();
     this.tasks = tasks;
+    this.generator = deps?.generator ?? new RouteGenerator();
   }
 
   protected async onInitialize(): Promise<void> {
