@@ -56,6 +56,8 @@ export interface RouteBatchTask extends BatchTaskLike {
  */
 export class RouteBatchManager extends BatchSessionManager {
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
+  private generator = new RouteGenerator();
+  private db = new RouteDatabase();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
   private laneSemaphores = new Map<string, Semaphore>();
   private laneConfig: Record<string, number> = {
@@ -319,10 +321,10 @@ export class RouteBatchManager extends BatchSessionManager {
     const method = (task.routeData?.method || 'direct') as RouteGenerationConfig['method'];
     const start = (task.routeData as any)?.startCoordinates as [number, number] | undefined;
     const end = (task.routeData as any)?.endCoordinates as [number, number] | undefined;
-    const pts: [number, number][] = start && end ? [start, end] : [[0,0],[1,1]];
+    const pts: [number, number][] = start && end ? [start, end] : [[0, 0], [1, 1]];
     const res = await this.generator.generate(pts, { method, options: (task.routeData as any)?.methodOptions });
     try {
-      // @ts-ignore
+      // @ts-ignore best‑effort
       await (this.db.table('routeResults') as any)?.put({
         id: `${task.sessionId}:${task.taskId}`,
         sessionId: task.sessionId,

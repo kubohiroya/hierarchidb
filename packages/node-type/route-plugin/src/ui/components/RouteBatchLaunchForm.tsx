@@ -1,19 +1,18 @@
 import { useMemo, useState } from 'react';
 import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator';
 import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService';
-import type { NetworkPortLike, createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager';
+import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults';
+import { getNetPort } from '../../services/net/getNetPort';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 
 export function RouteBatchLaunchForm({
   nodeId,
-  net,
   createRouteBatchManager,
   onLaunched,
 }: {
   nodeId: string;
-  net: NetworkPortLike;
   createRouteBatchManager: typeof createMgrFn;
   onLaunched?: (res: { jobId: string; count: number }) => void;
 }) {
@@ -31,8 +30,9 @@ export function RouteBatchLaunchForm({
   async function launch() {
     setStatus('starting...');
     try {
-      const orch = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net } as any), net);
-      const mgr = createRouteBatchManager({ net, osrmThrottle: { rps, concurrency } });
+      const net = getNetPort();
+      const orch = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net } as any), net as any);
+      const mgr = createRouteBatchManager({ net: net as any, osrmThrottle: { rps, concurrency } });
       const opts = { osrmBaseUrl: baseUrl, osmProfile: profile as any };
       const config = { routeGeneration: { method: 'osm_route', parallel: true, maxConcurrent: 4, retryOnFailure: true, maxRetries: 2 }, locationResolution: { batchSize: 0, cacheResults: false, fallbackToCoordinates: true }, validation: { checkLocationExists: false, checkDuplicateRoutes: false, validateDistance: false } };
       if (kind === 'recompute') {

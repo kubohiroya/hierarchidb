@@ -3,7 +3,7 @@
  * ルートプラグイン用のサイドパネルコンポーネント
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -102,11 +102,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [lastJobId, setLastJobId] = useState<string | null>(null);
 
-  // net.port の取得（実際は FeatureRegistry などから注入）。ここでは簡易に fetch をラップ。
-  const net = useMemo(() => ({ get: async (url: string, init?: RequestInit) => {
-    const res = await fetch(url, init); return { ok: res.ok, status: res.status, arrayBuffer: () => res.arrayBuffer() };
-  } }), []);
-  const throttled = useMemo(() => new ThrottledPort(net as any, { rps: 1, concurrency: 1 }), [net]);
+  // LaunchForm 内で net.port を取得するため、ここでは何もしない
 
   if (!entity) {
     return (
@@ -320,7 +316,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
         </CardActions>
       </Card>
 
-      {/* Batch Launch (Feature flag想定; 当面は常に表示) */}
+      {/* Batch Launch */}
       <Card sx={{ mt: 2 }}>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>
@@ -328,7 +324,6 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
           </Typography>
           <RouteBatchLaunchForm
             nodeId={_nodeId as any}
-            net={throttled as any}
             createRouteBatchManager={createRouteBatchManager as any}
             onLaunched={(r) => setLastJobId(r.jobId)}
           />
