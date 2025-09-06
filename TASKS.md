@@ -50,37 +50,7 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
-  - ブランチ名: `fix/app/init-loading-ux-polish`
-  - PR: https://github.com/kubohiroya/hierarchidb/pull/104
-  - 依存: なし
-  - 背景: 起動直後と Worker 初期化中で「タイトルロゴ+LinearProgress」が二重に見える。さらに0%へ一瞬戻る違和感がある。
-  - 方針: HydrateFallback を中央小スピナーのみへ簡素化。Worker 初期化中ビューは 0%時 `indeterminate` にし、メッセージ/%は非表示（>0%で表示）。
-  - 受け入れ基準（DoD）:
-    - [x] 起動直後は小スピナーのみ表示（ロゴ/バーなし）。
-    - [x] 初期化 0% の文言表示が出ない（フリッカー解消）。
-    - [ ] `pnpm --filter @hierarchidb/app typecheck` 通過（CI状況に合わせ後続対応）。
-  - ロールバック: `app/src/root.tsx` と `app/src/contexts/WorkerProvider.tsx` の差分をリバート。
-
-- refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
-  - ブランチ名: `refactor/ui-map/maplibre-wrapper`
-  - 依存: なし（小粒）
-  - 背景: basemap-plugin で maplibre-gl の型崩れを回避するため `skipLibCheck: true` や `shim`/`any` を導入していた。
-  - 方針: `@hierarchidb/ui-map` を MapLibre 用の薄いラッパとして定義し、maplibre の型/実装依存は同パッケージ内に閉じ込める。`skipLibCheck: true` は `@hierarchidb/ui-map` のみで有効化し、basemap-plugin 側では無効を維持。
-  - 受け入れ基準（DoD）:
-    - [x] `packages/ui/map/tsconfig.json` のみ `skipLibCheck: true`。basemap-plugin では無効。
-    - [x] basemap-plugin 内の `maplibre-gl` 用 shim (`src/types/maplibre-gl-shim.d.ts`) を削除し、`tsconfig.json` の `paths` からも除去。
-    - [x] `@hierarchidb/ui-map` が公開する型で `maplibre-gl` の型がリークしない（`MapLibreMapInstance`/`MapLibreStyle`/`MapLibreLayer` 等の安定化された独自型を公開）。
-    - [x] basemap-plugin の Map 関連実装から `any` キャストを削減（少なくともスタイル/レイヤー参照箇所）。
-    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` がグリーン。
-  - ロールバック手順:
-    - `ui-map` のみで `skipLibCheck: true` を維持するため、問題時は basemap-plugin のみ差分をリバート（型 shim 復活は最後の手段として避ける）。
-  - チェックリスト:
-    - [x] `ui-map` に `maplibre-public.ts` を整備し、最小安定型を定義。
-    - [x] `unified-map-props.ts` で `MapLibreStyle`/`MapLibreMapInstance` を採用、`FilterSpecification` 依存を除去。
-    - [x] `MapLibreMap.tsx`/`MapWithVectorTiles.tsx`/`VectorTileLayer.tsx` を最小型へ置換。
-    - [x] basemap-plugin の `shim` 削除と `any` 削減（`BaseMapDisplay`/`BaseMapPreview`）。
-    - [x] `ui-map` をビルドし、`.d.ts` から maplibre 型のリークが無いことを確認。
+- 現在なし（2025-09-06）。方針: マージ後にブランチを削除する運用のため、origin にブランチ不在の作業は Done とみなす。
 
 ---
 
@@ -367,6 +337,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 ## 運用ログ（today） <a id="log-today"></a>
 
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
+- 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
 - 2025-09-05 17:10 JST start: fix/app/init-loading-ux-polish — 初回スプラッシュをスピナー化、0%時の文言非表示化
 - 2025-09-05 17:18 JST done: fix/app/init-loading-ux-polish — 実装と TASKS.md 反映
 - done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
@@ -1038,6 +1009,14 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
+  - ブランチ: `fix/app/init-loading-ux-polish`（PR #104、マージ後ブランチ削除）
+  - 要点: HydrateFallback の簡素化と初期化0%時の文言非表示でフリッカー解消。
+
+- refactor/ui-map/maplibre-wrapper（basemap-plugin/型汚染の解消）
+  - ブランチ: `refactor/ui-map/maplibre-wrapper`（マージ後ブランチ削除）
+  - 要点: `@hierarchidb/ui-map` ラッパ導入で maplibre 依存を封じ込め、shim/any 削減と型リーク防止。
+
 - WC仕様同期（ADR/用語整備）
   - ブランチ: `chore/docs/wc-spec-sync`（既存ドキュメント整合）
   - 要点: ポリシーC・単一WC共有・エンコード・Tx一貫性の根拠を確定
@@ -1079,6 +1058,13 @@ P2:
   - ブランチ: `chore/policy/ban-tsconfig-paths-dist-dts`（PR #86 / 2025-09-04）
   - 要点: `tools/check-deps` に `paths-to-dist-dts` ルールを追加し、`publishable-tsconfig-hygiene` に適用。`basemap-plugin`/`project-plugin`/`folder-plugin` から `dist/*.d.ts` 参照を撤廃。以後はパッケージ名 import＋`workspace:*` に統一。ロールバックは対象パッケージ単位で可能。
 
+### Main 同期サマリー（2025-09-06）
+- merged: PR #106 docs(tasks): sync with main as of 2025-09-06 and add node-type audit actions（TASKS.md 更新）
+- merged: PR #105 chore/dev-stability-vite-proxy-2025-09-06（dev 起動安定化・ワークスペース解決の改善ほか）
+- merged: PR #104 fix/app/init-loading-ux-polish（初回スプラッシュ簡素化と 0% フリッカー抑止）
+- revert: 2025-09-06 docs: add AGENTS.md ほかをリバート（db37203）
+
+// ここから従来の完了ログ
 - 小さな型負債スイープ（2025-09-04）
   - ブランチ: `fix/app/typecheck-phase2-tighten`（PR #86 / 2025-09-04 の一部）
   - 要点: 葉パッケージに限定した `skipLibCheck` 封じ込め、tests/storybook 型対象の整理、`vite/client`/env shims 導入、`dist/*.d.ts` paths 撤廃、runtime-ui/ui/node-type 各パッケージの型ハイジーン整備。
