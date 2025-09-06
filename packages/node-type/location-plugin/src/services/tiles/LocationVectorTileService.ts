@@ -1,7 +1,7 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
 import { LocationBatchSessionManager } from '../batch/BatchSessionManager';
-import type { LocationPointInput, LocationTileSettings, ProgressInfo, SessionSummary } from '../batch/SessionController';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/SessionController';
 
 export class LocationVectorTileService {
   private manager = new LocationBatchSessionManager();
@@ -10,7 +10,7 @@ export class LocationVectorTileService {
     return this.manager.createSession(nodeId, points, settings);
   }
 
-  onProgress(sessionId: string, cb: (p: ProgressInfo) => void): () => void { return this.manager.onProgress(sessionId, cb); }
+  onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void { return this.manager.onProgress(sessionId, cb as any); }
 
   async getVectorTile(sessionId: string, nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
     const db = getEphemeralLocationDB();
@@ -67,4 +67,4 @@ function tile2lat(y: number, z: number): number {
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 }
 
-export type { LocationPointInput, LocationTileSettings, ProgressInfo };
+export type { LocationPointInput, LocationTileSettings };

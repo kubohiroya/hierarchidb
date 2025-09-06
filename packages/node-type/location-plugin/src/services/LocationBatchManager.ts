@@ -262,6 +262,17 @@ export class LocationBatchManager {
    * Search locations based on configuration
    */
   private async searchLocations(config: LocationSearchConfig): Promise<LocationEntity[]> {
+    // Try Strategy registry first (feature-gated)
+    try {
+      const { getLocationStrategy } = await import('./download/registry');
+      const strategy = getLocationStrategy(config);
+      if (strategy) {
+        const list = await strategy.search(config);
+        if (config.limit && list.length > (config.limit || 0)) return list.slice(0, config.limit);
+        return list;
+      }
+    } catch {}
+
     const locations: LocationEntity[] = [];
 
     switch (config.dataSource) {

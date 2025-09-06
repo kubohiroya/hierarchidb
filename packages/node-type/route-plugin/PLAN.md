@@ -20,7 +20,6 @@ Last Updated: 2025-09-06
 
 ## 1.B De‑duplication Strategy (Important)
 
-- Scheduler/Batching: reuse `@hierarchidb/runtime-shared-batch-processor` for queues, checkpoints, and execution loop. Implement only Route‑specific adapters (job mappers, executors, lane configuration). No new scheduler core.
 - Throttling/Backoff: promote the lightweight RateLimiter currently embedded in `runtime-ui/datasource` into a shared module (e.g., `runtime-shared/batch-processor` or `@hierarchidb/util`) and reuse. Do not create a new limiter.
 - Storage/Schema: use `feature/batch` Dexie stores for jobs/tasks/results. For route outputs, extend existing route stores or add a small route‑specific table; avoid parallel bespoke stores.
 - Geometry/Encoding/Simplification: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON simplification, geobuf, pako). Wire through `feature/compute` steps instead of re‑writing.

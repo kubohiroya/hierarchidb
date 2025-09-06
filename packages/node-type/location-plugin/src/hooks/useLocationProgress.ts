@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { ProgressInfo } from '../services/tiles/LocationVectorTileService';
+import type { ProgressEvent } from '@hierarchidb/common-type';
 import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService';
 import { useBatchProgress, type UnifiedProgressInfo } from '@hierarchidb/ui-core/src/hooks/useBatchProgress';
+import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
 }
 
 export interface UseLocationProgressState {
-  progress: ProgressInfo | null;
+  progress: ProgressEvent | null;
   isSubscribed: boolean;
   error: Error | null;
 }
@@ -24,18 +25,26 @@ export function useLocationProgress(
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
 
-  const [progress, setProgress] = useState<ProgressInfo | null>(null);
+  const [progress, setProgress] = useState<ProgressEvent | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const unsubscribeRef = useRef<null | (() => void)>(null);
+  const unsubscribeAuthRef = useRef<null | (() => void)>(null);
 
-  const handle = useCallback((p: ProgressInfo) => setProgress(p), []);
+  const handle = useCallback((p: ProgressEvent) => setProgress(p), []);
 
   // Unified adapter for shared hook
   const adapter = sessionId
     ? {
         subscribe: (cb: (u: UnifiedProgressInfo) => void) =>
-          service.onProgress(sessionId, (p) => cb(p as unknown as UnifiedProgressInfo)),
+          service.onProgress(sessionId, (p) => cb({
+            stage: p.stage,
+            total: p.total,
+            completed: p.completed,
+            failed: p.failed,
+            percentage: p.percentage,
+            currentTask: p.currentTask,
+          })),
       }
     : null;
   const shared = useBatchProgress(adapter, { autoSubscribe });
@@ -59,11 +68,58 @@ export function useLocationProgress(
     setIsSubscribed(false);
   }, []);
 
+  // Subscribe to global auth notifications and reflect as progress events
+  useEffect(() => {
+    const reg = AuthNotificationRegistry.getInstance?.();
+    if (!reg) return;
+    const id = 'location-progress-hook';
+    reg.register?.(id, {
+      onAuthRequired: async (n: any) => {
+        setProgress({
+          sessionId: sessionId || n?.context?.sessionId || 'location',
+          stage: 'auth-required',
+          total: 1,
+          completed: 0,
+          failed: 0,
+          percentage: 0,
+          currentTask: n?.context?.errorMessage || 'Authentication required',
+          timestamp: Date.now(),
+        });
+      },
+      onAuthSuccess: async (_n: any) => {
+        setProgress({
+          sessionId: sessionId || 'location',
+          stage: 'resumed',
+          total: 1,
+          completed: 1,
+          failed: 0,
+          percentage: 100,
+          currentTask: 'Authentication successful - resuming',
+          timestamp: Date.now(),
+        });
+      },
+      onAuthCancelled: async (n: any) => {
+        setProgress({
+          sessionId: sessionId || 'location',
+          stage: 'cancelled',
+          total: 1,
+          completed: 0,
+          failed: 1,
+          percentage: 0,
+          currentTask: n?.context?.reason || 'Authentication cancelled',
+          timestamp: Date.now(),
+        });
+      },
+    });
+    unsubscribeAuthRef.current = () => reg.unregister?.(id);
+    return () => { unsubscribeAuthRef.current?.(); };
+  }, [sessionId]);
+
   useEffect(() => {
     if (!sessionId) return;
     if (autoSubscribe) subscribe();
     return () => { unsubscribe(); };
   }, [sessionId, autoSubscribe, subscribe, unsubscribe]);
 
-  return { progress: shared.progress as unknown as ProgressInfo | null ?? progress, isSubscribed, error, subscribe, unsubscribe };
+  return { progress: (shared.progress as unknown as ProgressEvent | null) ?? progress, isSubscribed, error, subscribe, unsubscribe };
 }
