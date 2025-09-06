@@ -3,7 +3,7 @@
  * バッチ処理進捗確認ダイアログ
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,9 +32,7 @@ import {
   CircularProgress,
   SpeedDial,
   SpeedDialAction,
-  SpeedDialIcon,
-  Slider,
-  TextField,
+  SpeedDialIcon
 } from '@mui/material';
 import {
   Close,
@@ -53,9 +51,6 @@ import {
 
 } from '@mui/icons-material';
 import type { NodeId } from '../../types';
-import { useLocationProgress } from '../../hooks/useLocationProgress';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
-import { MapWithVectorTiles } from '@hierarchidb/ui-map';
 
 // 進捗情報の型定義
 interface ProgressInfo {
@@ -102,7 +97,6 @@ export interface BatchProgressDialogProps {
   onClose: () => void;
   nodeId: NodeId;
   sessionId: string;
-  service?: LocationVectorTileService;
 }
 
 interface TabPanelProps {
@@ -125,90 +119,64 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 
 export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   open,
-  onClose,
-  nodeId,
-  sessionId,
-  service: providedService,
+  onClose
 }) => {
   const [tabValue, setTabValue] = useState(0);
-  const service = useMemo(() => providedService ?? new LocationVectorTileService(), [providedService]);
-  const { progress } = useLocationProgress(service, open ? sessionId : null);
-  const initial = useMemo(() => service.getInitialSummary(sessionId), [service, sessionId]);
-  const [computedBbox, setComputedBbox] = useState<[number, number, number, number] | null>(null);
-  const [zoomSummary, setZoomSummary] = useState<Array<{ z: number; tiles: number }>>([]);
-
-  // Map layer styling controls
-  const [styleMode, setStyleMode] = useState<'auto' | 'simple'>('auto');
-  const [radiusScale, setRadiusScale] = useState(1);
-  const [layerMinZoom, setLayerMinZoom] = useState<number | undefined>(undefined);
-  const [layerMaxZoom, setLayerMaxZoom] = useState<number | undefined>(undefined);
-  const [reloadToken, setReloadToken] = useState(0);
-  const [failedCount, setFailedCount] = useState(0);
-  const mapRef = useRef<any | null>(null);
-
-  // Derive UI progress from service progress
-  const uiProgress: ProgressInfo = {
-    percentage: Math.min(100, Math.max(0, progress?.percentage ?? 0)),
-    phase: ((): ProgressInfo['phase'] => {
-      switch (progress?.stage) {
-        case 'import': return 'download';
-        case 'normalize': return 'filter';
-        case 'tilegen': return 'index';
-        case 'completed': return 'complete';
-        default: return 'download';
-      }
-    })(),
-    currentTask: progress?.currentTask ?? '初期化中...',
-    timeElapsed: '—',
-    timeRemaining: '—',
-    estimatedCompletion: '—',
+  const [progress, setProgress] = useState<ProgressInfo>({
+    percentage: 0,
+    phase: 'download',
+    currentTask: '初期化中...',
+    timeElapsed: '00:00:00',
+    timeRemaining: '計算中...',
+    estimatedCompletion: '--:--',
     itemsPerSecond: 0,
-    bytesPerSecond: 0,
-  };
+    bytesPerSecond: 0
+  });
   
   const stages: StageInfo[] = [
-    { name: 'インポート', status: progress?.stage === 'import' ? 'running' : 'waiting', progress: progress?.stage === 'import' ? Math.round(uiProgress.percentage) : 0, itemsProcessed: progress?.completed ?? 0, totalItems: progress?.total ?? 0, errors: progress?.failed ?? 0 },
-    { name: '正規化', status: progress?.stage === 'normalize' ? 'running' : 'waiting', progress: progress?.stage === 'normalize' ? Math.round(uiProgress.percentage) : 0, itemsProcessed: progress?.completed ?? 0, totalItems: progress?.total ?? 0, errors: progress?.failed ?? 0 },
-    { name: 'タイル生成', status: progress?.stage === 'tilegen' ? 'running' : 'waiting', progress: progress?.stage === 'tilegen' ? Math.round(uiProgress.percentage) : 0, itemsProcessed: progress?.completed ?? 0, totalItems: progress?.total ?? 0, errors: progress?.failed ?? 0 },
-    { name: '完了', status: progress?.stage === 'completed' ? 'completed' : 'waiting', progress: progress?.stage === 'completed' ? 100 : 0, itemsProcessed: progress?.completed ?? 0, totalItems: progress?.total ?? 0, errors: progress?.failed ?? 0 }
+    { name: 'ダウンロード', status: 'running', progress: 25, itemsProcessed: 123, totalItems: 500, errors: 0 },
+    { name: 'フィルタリング', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 400, errors: 0 },
+    { name: 'クラスタリング', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 },
+    { name: 'インデックス作成', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 }
   ];
   
-  const activeTasks: ActiveTask[] = [];
+  const activeTasks: ActiveTask[] = [
+    { id: 'task1', worker: 1, type: 'download', target: 'JPN_airport', status: 'running', progress: 75, speed: '1.2 MB/s', eta: '30s' },
+    { id: 'task2', worker: 2, type: 'download', target: 'KOR_railway', status: 'running', progress: 45, speed: '0.8 MB/s', eta: '2m' },
+    { id: 'task3', worker: 3, type: 'download', target: 'CHN_port', status: 'retrying', progress: 10, speed: '--', eta: '1m' }
+  ];
   
-  const logs: LogEntry[] = [];
-
-  // Fetch computed summary (bbox + per-zoom tile counts)
-  const refreshSummaries = useCallback(async (): Promise<void> => {
-    const s = await service.getSessionSummary(sessionId);
-    if (s.exists && s.bbox) setComputedBbox(s.bbox);
-    const coords = await service.listTileCoords(sessionId);
-    const counts: Record<number, number> = {} as Record<number, number>;
-    for (const c of coords) counts[c.z] = (counts[c.z] ?? 0) + 1;
-    const rows: Array<{ z: number; tiles: number }> = Object.entries(counts)
-      .map(([z, n]) => ({ z: Number(z), tiles: n as number }))
-      .sort((a, b) => a.z - b.z);
-    setZoomSummary(rows);
-  }, [service, sessionId]);
-
-  useEffect(() => {
-    if (!open) return;
-    refreshSummaries().catch(()=>{});
-  }, [open, refreshSummaries, reloadToken, progress?.stage]);
-
-  // Auto-refresh tiles until completed
-  useEffect(() => {
-    if (!open) return;
-    if (progress?.stage === 'completed') return;
-    const id = setInterval(() => setReloadToken(t => t + 1), 2500);
-    return () => clearInterval(id);
-  }, [open, progress?.stage]);
+  const logs: LogEntry[] = [
+    { timestamp: new Date(), level: 'info', source: 'Downloader', message: '日本の空港データダウンロード開始' },
+    { timestamp: new Date(), level: 'info', source: 'Downloader', message: '韓国の鉄道駅データダウンロード開始' },
+    { timestamp: new Date(), level: 'warning', source: 'Downloader', message: '中国の港データでタイムアウト発生、リトライ中' }
+  ];
   
   const [isPaused, setIsPaused] = useState(false);
 
   
-  // real-time progress is provided via useLocationProgress
+  // 進捗データの定期更新（実際はWebSocketや polling）
+  useEffect(() => {
+    if (!open) return;
+    
+    const interval = setInterval(() => {
+      setProgress(prev => ({
+        ...prev,
+        percentage: Math.min(prev.percentage + Math.random() * 2, 100),
+        timeElapsed: formatElapsedTime(Date.now() - Date.now() + Math.random() * 60000)
+      }));
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [open]);
   
-  // No time estimation in this minimal wiring
+  const formatElapsedTime = (ms: number): string => {
+    const seconds = Math.floor(ms / 1000);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -216,16 +184,19 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   
   const handlePause = () => {
     setIsPaused(true);
-    try { (service as any).manager?.pause?.(sessionId); } catch {}
+
+    // TODO: 実際のAPI呼び出し
   };
   
   const handleResume = () => {
     setIsPaused(false);
-    try { (service as any).manager?.resume?.(sessionId); } catch {}
+
+    // TODO: 実際のAPI呼び出し
   };
   
   const handleCancel = () => {
-    try { (service as any).manager?.cancel?.(sessionId); } catch {}
+    // TODO: キャンセル確認ダイアログ
+    console.log('Cancelling batch process...');
   };
   
   const getStageIcon = (status: StageInfo['status']) => {
@@ -237,7 +208,13 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     }
   };
   
-  // No throughput display in minimal wiring
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
   
   return (
     <Dialog
@@ -254,7 +231,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
           <Typography variant="h6">バッチ処理進捗</Typography>
           <Box display="flex" alignItems="center" gap={1}>
             <Chip 
-              label={uiProgress.phase} 
+              label={progress.phase} 
               color="primary" 
               size="small"
             />
@@ -267,20 +244,20 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         {/* 全体進捗バー */}
         <Box mt={2}>
           <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography variant="body2">{uiProgress.currentTask}</Typography>
-            <Typography variant="body2">{Math.round(uiProgress.percentage)}%</Typography>
+            <Typography variant="body2">{progress.currentTask}</Typography>
+            <Typography variant="body2">{Math.round(progress.percentage)}%</Typography>
           </Box>
           <LinearProgress 
             variant="determinate" 
-            value={uiProgress.percentage}
+            value={progress.percentage}
             sx={{ height: 8, borderRadius: 1 }}
           />
           <Box display="flex" justifyContent="space-between" mt={1}>
             <Typography variant="caption" color="text.secondary">
-              経過時間: {uiProgress.timeElapsed}
+              経過時間: {progress.timeElapsed}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              残り時間: {uiProgress.timeRemaining}
+              残り時間: {progress.timeRemaining}
             </Typography>
           </Box>
         </Box>
@@ -323,8 +300,12 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     <Typography color="textSecondary" gutterBottom>
                       スループット
                     </Typography>
-                    <Typography variant="h4" color="success.main">—</Typography>
-                    <Typography color="textSecondary">地点/秒</Typography>
+                    <Typography variant="h4" color="success.main">
+                      {progress.itemsPerSecond.toFixed(1)}
+                    </Typography>
+                    <Typography color="textSecondary">
+                      地点/秒 ({formatBytes(progress.bytesPerSecond)}/s)
+                    </Typography>
                   </CardContent>
                 </Card>
               </Grid2>
@@ -469,96 +450,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         
         {/* Tab 3: マッププレビュー */}
         <TabPanel value={tabValue} index={2}>
-          <Box sx={{ flex: 1, minHeight: 360, p: 2, display: 'flex', gap: 2 }}>
-            <Box sx={{ width: 300, flexShrink: 0 }}>
-              <Typography variant="subtitle2" gutterBottom>表示設定</Typography>
-              <Box mb={2}>
-                <Typography variant="caption" color="text.secondary">スタイルモード</Typography>
-                <Box display="flex" gap={1} mt={1}>
-                  <Button size="small" variant={styleMode==='auto'?'contained':'outlined'} onClick={() => setStyleMode('auto')}>Auto</Button>
-                  <Button size="small" variant={styleMode==='simple'?'contained':'outlined'} onClick={() => setStyleMode('simple')}>Simple</Button>
-                </Box>
-              </Box>
-              <Box mb={2}>
-                <Typography variant="caption" color="text.secondary">半径スケール</Typography>
-                <Slider size="small" min={0.5} max={3} step={0.1} value={radiusScale} onChange={(_,v)=>setRadiusScale(v as number)} />
-              </Box>
-              <Box mb={2}>
-                <Typography variant="caption" color="text.secondary">ズーム範囲</Typography>
-                <Box display="flex" gap={1} alignItems="center">
-                  <TextField size="small" label="min" type="number" value={layerMinZoom ?? ''} onChange={e=>setLayerMinZoom(e.target.value===''?undefined:Number(e.target.value))} sx={{ width: 90 }} />
-                  <TextField size="small" label="max" type="number" value={layerMaxZoom ?? ''} onChange={e=>setLayerMaxZoom(e.target.value===''?undefined:Number(e.target.value))} sx={{ width: 90 }} />
-                </Box>
-                {initial?.zoomMin !== undefined && (
-                  <Typography variant="caption" color="text.secondary">生成範囲: z{initial.zoomMin}–{initial.zoomMax}</Typography>
-                )}
-              </Box>
-              <Box mb={2}>
-                <Typography variant="caption" color="text.secondary">タイル取得</Typography>
-                <Box display="flex" gap={1} mt={1}>
-                  <Button size="small" onClick={() => setReloadToken(t=>t+1)}>Refresh tiles</Button>
-                  <Chip size="small" label={`fail ${failedCount}`} color={failedCount>0?'warning':'default'} />
-                </Box>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">サマリ</Typography>
-                <Typography variant="body2">ポイント数: {initial?.totalPoints ?? '—'}</Typography>
-                <Typography variant="body2">bbox: {initial ? `${initial.bbox.map(v=>v.toFixed(3)).join(', ')}` : '—'}</Typography>
-                <Box mt={1}>
-                  <Typography variant="caption" color="text.secondary">ズーム別タイル数</Typography>
-                  <List dense sx={{ maxHeight: 120, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                    {zoomSummary.length === 0 && <ListItem><ListItemText primary="(生成中 or なし)" /></ListItem>}
-                    {zoomSummary.map(row => (
-                      <ListItem key={row.z}>
-                        <ListItemText primary={`z${row.z}`} secondary={`${row.tiles} tiles`} />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Box>
-              </Box>
-            </Box>
-            <MapWithVectorTiles
-              initialViewState={{ longitude: 0, latitude: 0, zoom: 2 }}
-              height={420}
-              dbName={'ephemeral-location-db'}
-              nodeId={String(nodeId)}
-              // layer settings for point layer
-              layerConfig={{
-                layerId: `loc-mvt-layer-${reloadToken}`,
-                sourceId: `loc-mvt-source-${reloadToken}`,
-                layerType: 'circle',
-                sourceLayer: 'location_points',
-                paint: {
-                  'circle-radius': (() => {
-                    if (styleMode==='simple') return 4 * radiusScale;
-                    const pts = initial?.totalPoints ?? 1;
-                    const [minLon,minLat,maxLon,maxLat] = initial?.bbox ?? [-180,-90,180,90];
-                    const area = Math.max(1e-6, (maxLon-minLon)*(maxLat-minLat));
-                    const density = Math.min(5, pts/area); // very rough density proxy
-                    return Math.max(2, Math.min(12, density * 0.8 * radiusScale));
-                  })(),
-                  'circle-opacity': styleMode==='simple' ? 0.9 : 0.6,
-                  'circle-color': '#1976d2',
-                  'circle-stroke-color': '#ffffff',
-                  'circle-stroke-width': 1,
-                },
-                minzoom: layerMinZoom,
-                maxzoom: layerMaxZoom,
-              }}
-              onLoad={(m) => {
-                mapRef.current = m;
-                const bbox = computedBbox ?? initial?.bbox ?? null;
-                if (bbox) try {
-                  m.fitBounds([[bbox[0], bbox[1]],[bbox[2], bbox[3]]], { padding: 24 });
-                } catch {}
-              }}
-              tileDataProvider={async (z: number, x: number, y: number) => {
-                const bytes = await service.getVectorTile(sessionId, nodeId as any, z, x, y);
-                const ok = !!bytes && (bytes as Uint8Array).byteLength > 0;
-                if (!ok) setFailedCount(c=>c+1);
-                return ok ? (bytes as Uint8Array).buffer : null;
-              }}
-            />
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Alert severity="info">
+              マッププレビューは後続の実装で追加されます
+            </Alert>
           </Box>
         </TabPanel>
         

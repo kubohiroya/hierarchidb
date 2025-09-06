@@ -29,9 +29,6 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/batch": "workspace:*",
-    "@maplibre/vt-pbf": "^4.0.3",
-    "geojson-vt": "^4.0.2",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "dexie": "^4.2.0"
