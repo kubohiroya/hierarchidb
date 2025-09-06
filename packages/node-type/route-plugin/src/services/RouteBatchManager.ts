@@ -4,60 +4,23 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { BatchSessionManager, type BatchConfig, type BatchTaskLike } from './batch-shim';
+// No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../entities/RouteEntity';
 import { RouteGenerator } from './RouteGenerator';
 import { RouteDatabase } from '../database/RouteDatabase';
+import type { ProgressEvent, NodeId } from '@hierarchidb/common-type';
+import { RouteBatchSession, type RouteBatchTask, type RouteBatchConfig } from './RouteBatchSession';
 
 /**
  * Route-specific batch configuration
  */
-export interface RouteBatchConfig extends BatchConfig {
-  routeGeneration: {
-    method: 'direct' | 'osm_route' | 'great_circle' | 'searoute';
-    parallel: boolean;
-    maxConcurrent: number;
-    retryOnFailure: boolean;
-    maxRetries: number;
-  };
-  
-  locationResolution: {
-    batchSize: number;
-    cacheResults: boolean;
-    fallbackToCoordinates: boolean;
-  };
-  
-  validation: {
-    checkLocationExists: boolean;
-    checkDuplicateRoutes: boolean;
-    validateDistance: boolean;
-    maxDistanceKm?: number;
-  };
-}
-
-/**
- * Route batch task extending Shape's task interface
- */
-export interface RouteBatchTask extends BatchTaskLike {
-  taskType: 'route_generation' | 'location_resolution' | 'validation' | 'optimization';
-  routeData?: {
-    startLocationId?: NodeId;
-    endLocationId?: NodeId;
-    method: string;
-    methodOptions?: any;
-    startCoordinates?: [number, number];
-    endCoordinates?: [number, number];
-    estimatedDistance?: number;
-  };
-}
-
-/**
- * Route batch manager leveraging Shape's batch infrastructure
- */
-export class RouteBatchManager extends BatchSessionManager {
+export class RouteBatchManager {
+  constructor(private deps?: { engines?: any; emitter?: any; store?: any }) {}
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
   private generator = new RouteGenerator();
   private db = new RouteDatabase();
+  // Idempotency (jobKey -> session)
+  private static jobKeyToSession = new Map<string, string>();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
   private laneSemaphores = new Map<string, Semaphore>();
   private laneConfig: Record<string, number> = {
@@ -82,13 +45,12 @@ export class RouteBatchManager extends BatchSessionManager {
       method?: RouteGenerationConfig['method'];
     }>
   ): Promise<string> {
-    // Create session using Shape's infrastructure
-    const sessionId = await this.startBatchSession(
-      nodeId,
-      config,
-      [], // Countries not needed for routes
-      []  // Admin levels not needed for routes
-    );
+    // Idempotency: reuse an existing session if the same payload arrives
+    const jobKey = this.computeJobKey(config, routes);
+    const existing = RouteBatchManager.jobKeyToSession.get(jobKey);
+    if (existing) return existing;
+    const sessionId = crypto.randomUUID();
+    RouteBatchManager.jobKeyToSession.set(jobKey, sessionId);
     
     // Create route-specific tasks
     const routeTasks: RouteBatchTask[] = [];
@@ -171,27 +133,20 @@ export class RouteBatchManager extends BatchSessionManager {
     // Store route-specific tasks
     this.routeSpecificTasks.set(sessionId, routeTasks);
     
+    // Initialize cursor
+    await this.db.routeCursors?.put({ sessionId, completed: 0, total: routeTasks.length, updatedAt: Date.now(), paused: false } as any);
     // Start processing using Shape's infrastructure
-    await this.processTasks(sessionId, routeTasks);
-    
+    const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks, (ev: ProgressEvent) => this.emitProgress(ev));
+    await session.initialize();
+    await session.start();
+
     return sessionId;
   }
   
   /**
    * Process route tasks using Shape's worker infrastructure
    */
-  private async processTasks(
-    sessionId: string,
-    tasks: RouteBatchTask[]
-  ): Promise<void> {
-    // Group tasks by type for parallel processing
-    const taskGroups = this.groupTasksByType(tasks);
-    
-    // Process each phase sequentially
-    for (const [taskType, groupTasks] of taskGroups) {
-      await this.processTaskGroup(sessionId, taskType, groupTasks);
-    }
-  }
+  private async processTasks(): Promise<void> { /* handled by RouteBatchSession */ }
   
   /**
    * Group tasks by type for phased processing
@@ -221,35 +176,33 @@ export class RouteBatchManager extends BatchSessionManager {
     const config = (this as any)['getSessionConfig'](sessionId) as RouteBatchConfig | undefined; // access protected
     if (!config) return;
     const maxConcurrent = config.routeGeneration.maxConcurrent;
-
-    // Process in windows, but gate each task by its lane semaphore
-    for (let i = 0; i < tasks.length; i += maxConcurrent) {
-      const batch = tasks.slice(i, i + maxConcurrent);
-      await Promise.all(batch.map(async (task) => {
-        if (task.taskType === 'route_generation') {
-          const method = (task.routeData?.method || config.routeGeneration.method) as string;
-          const sem = this.getLaneSemaphore(method);
-          await sem.acquire();
-          try {
-            await this.processIndividualTask(task, config);
-          } finally {
-            sem.release();
-          }
-        } else {
-          await this.processIndividualTask(task, config);
+    const { BatchService } = await import('@hierarchidb/batch');
+    const batch = new (BatchService as any)();
+    let completed = 0;
+    await batch.mapChunks(tasks, async (task: RouteBatchTask) => {
+      if (task.taskType === 'route_generation') {
+        const method = (task.routeData?.method || config.routeGeneration.method) as string;
+        const sem = this.getLaneSemaphore(method);
+        await sem.acquire();
+        try { await this.processIndividualTask(task, config); }
+        finally { sem.release(); }
+      } else {
+        await this.processIndividualTask(task, config);
+      }
+      // Pause support
+      const cursor = await (this.db.routeCursors as any)?.get(sessionId);
+      if (cursor?.paused) {
+        this.emitProgress({ sessionId, stage: (task.stage ?? 'processing') as any, total: tasks.length, completed, failed: 0, percentage: Math.round((completed / tasks.length) * 100), currentTask: `paused:${taskType}` });
+        for (;;) {
+          const c = await (this.db.routeCursors as any)?.get(sessionId);
+          if (!c?.paused) break;
+          await new Promise(r => setTimeout(r, 300));
         }
-      }));
-      
-      // Update progress using Shape's callback mechanism
-      (this as any)['notifyProgress'](sessionId, {
-        sessionId,
-        stage: (batch[0]?.stage ?? 'processing') as any,
-        progress: ((i + batch.length) / tasks.length) * 100,
-        completedTasks: i + batch.length,
-        totalTasks: tasks.length,
-        message: `Processing ${taskType} tasks...`,
-      });
-    }
+      }
+      completed++;
+      try { await (this.db.routeCursors as any)?.put({ sessionId, completed, total: tasks.length, updatedAt: Date.now(), paused: false }); } catch {}
+      this.emitProgress({ sessionId, stage: (task.stage ?? 'processing') as any, total: tasks.length, completed, failed: 0, percentage: Math.round((completed / tasks.length) * 100), currentTask: `Processing ${taskType}` });
+    }, { concurrency: maxConcurrent });
   }
 
   private getLaneSemaphore(method: string): Semaphore {
@@ -408,7 +361,80 @@ export class RouteBatchManager extends BatchSessionManager {
       errors: failedTasks.map(t => t.error || 'Unknown error'),
     };
   }
+
+  /** Pause a running session */
+  async pauseRouteBatchSession(sessionId: string): Promise<void> {
+    try {
+      const c = await (this.db.routeCursors as any)?.get(sessionId);
+      await (this.db.routeCursors as any)?.put({ ...(c ?? { sessionId, completed: 0, total: 0, updatedAt: Date.now() }), paused: true, updatedAt: Date.now() });
+    } catch {}
+  }
+
+  /** Resume a paused session */
+  async resumeRouteBatchSession(_sessionId: string): Promise<void> {
+    try {
+      const c = await (this.db.routeCursors as any)?.get(_sessionId);
+      await (this.db.routeCursors as any)?.put({ ...(c ?? { sessionId: _sessionId, completed: 0, total: 0 }), paused: false, updatedAt: Date.now() });
+    } catch {}
+  }
+
+  private emitProgress(ev: ProgressEvent): void {
+    // bridge to UI progress emitter/store if provided via deps in createRouteBatchManager
+    try { (this as any)['deps']?.emitter?.emit({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() }); } catch {}
+    try { (this as any)['deps']?.store?.upsert(ev.sessionId, { jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() }); } catch {}
+  }
+
+  private computeJobKey(config: RouteBatchConfig, routes: Array<{ startCoordinates?: [number,number]; endCoordinates?: [number,number]; method?: string }>): string {
+    const payload = {
+      method: config.routeGeneration.method,
+      mc: config.routeGeneration.maxConcurrent,
+      r: routes.map(r => ({ s: r.startCoordinates, e: r.endCoordinates, m: r.method })).slice(0, 200),
+    };
+    return hashCyrb53(stableStringify(payload));
+  }
 }
+
+function stableStringify(x: any): string {
+  const seen = new WeakSet();
+  return JSON.stringify(x, function (_key, value) {
+    if (value && typeof value === 'object') {
+      if (seen.has(value)) return;
+      seen.add(value);
+      if (!Array.isArray(value)) {
+        const sorted: any = {};
+        for (const k of Object.keys(value).sort()) sorted[k] = (value as any)[k];
+        return sorted;
+      }
+    }
+    return value;
+  });
+}
+
+function hashCyrb53(str: string, seed = 0): string {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h2 >>> 15), 2246822507) ^ Math.imul(h2 ^ (h1 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h2 >>> 13), 3266489909);
+  const h = 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  return h.toString(36);
+}
+
+// Bridge notifyProgress (shim) to UI progress emitter/store using common ProgressEvent shape
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(RouteBatchManager.prototype as any)['notifyProgress'] = function (this: any, sessionId: string, ev: any) {
+  try {
+    const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
+    this['deps']?.emitter?.emit({ jobId: sessionId, progress: pct, phase: ev?.stage ?? 'processing', ts: Date.now() });
+  } catch {}
+  try {
+    const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
+    this['deps']?.store?.upsert(sessionId, { jobId: sessionId, progress: pct, phase: ev?.stage ?? 'processing', ts: Date.now() });
+  } catch {}
+};
 
 class Semaphore {
   private queue: Array<() => void> = [];

@@ -14,6 +14,7 @@ export { CategorySelector } from './components/CategorySelector';
 export { BasicInfoFields } from './components/BasicInfoFields';
 export { TagChipsInput } from './components/TagChipsInput';
 export type { TagChipsInputProps } from './components/TagChipsInput';
+export { TabularPreview } from './components/TabularPreview/TabularPreview';
 
 // Hook Exports
 export { useAsyncOperation } from './hooks/useAsyncOperation';

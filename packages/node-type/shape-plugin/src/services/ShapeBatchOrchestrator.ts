@@ -3,6 +3,7 @@ import type { BatchProgressEvent } from '../types/BatchProgressEvent';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { EphemeralShapeDB } from './database/EphemeralShapeDB';
 import { DownloadService, type NetworkPort, type StoragePort, type IntegrityPort, DexieChunkStoragePort, FetchNetworkPort } from '@hierarchidb/download';
+import { TabularWriter } from '@hierarchidb/tabular-store';
 
 // FetchNetworkPort provides head/get/getRange; no local wrapper needed
 
@@ -133,6 +134,12 @@ export class ShapeBatchOrchestrator {
 
     // Raw buffers for session
     const raws = await this.ephemeralDB.rawBuffers.where('sessionId').equals(sessionId).toArray();
+    // Optional: start tabular writer to persist properties for column-wise search
+    let writer: TabularWriter | null = null;
+    let writerReady = false;
+    const tabularEnabled =
+      (typeof process !== 'undefined' && (process as any)?.env?.SHAPE_TABULAR === '1') ||
+      (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.SHAPE_TABULAR === true);
 
     for (const task of simplifyTasks) {
       try {
@@ -168,6 +175,17 @@ export class ShapeBatchOrchestrator {
           timestamp: Date.now(),
         } as any);
 
+        if (tabularEnabled && outFeats.length > 0) {
+          if (!writer) writer = new TabularWriter('shape');
+          if (!writerReady) {
+            const columns = deriveColumnsFromFeatures(outFeats);
+            await writer.begin({ filename: `shape-${sessionId}.json`, columns });
+            writerReady = true;
+          }
+          const rows = outFeats.slice(0, 100000).map((f, i) => ({ featureId: i, ...(f.properties || {}), country: task.config?.country, adminLevel: admin }));
+          await writer.writeRows(rows);
+        }
+
         processedTasks++;
         emit({
           sessionId,
@@ -182,6 +200,15 @@ export class ShapeBatchOrchestrator {
       } catch {
         // continue
       }
+    }
+
+    // Commit tabular table and link to session metadata (best-effort)
+    if (writer && writerReady) {
+      try {
+        const { tableId } = await writer.commit();
+        // update session metadata with tableId
+        await this.ephemeralDB.sessions.update(sessionId, { tableId } as any);
+      } catch {}
     }
 
     return { processedFeatures, filteredFeatures, processedTasks };
@@ -342,6 +369,16 @@ export class ShapeBatchOrchestrator {
     const maxY = Math.floor(((90 - bbox[1]) / 180) * tilesPerAxis);
     return Math.min((maxX - minX + 1) * (maxY - minY + 1), 100);
   }
+}
+
+function deriveColumnsFromFeatures(features: any[], cap = 64): string[] {
+  const set = new Set<string>(['featureId', 'country', 'adminLevel']);
+  for (const f of features) {
+    const props = f?.properties || {};
+    for (const k of Object.keys(props)) { set.add(k); if (set.size >= cap) break; }
+    if (set.size >= cap) break;
+  }
+  return Array.from(set);
 }
 
 // --- Geometry helpers (simple Douglas–Peucker for LineString/Polygon rings) ---

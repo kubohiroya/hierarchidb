@@ -41,3 +41,4 @@ export default BatchProcessor;
 
 // Progress utilities (shared across plugins)
 export * from './Progress';
+export * from './downloadAdapter';

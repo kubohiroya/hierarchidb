@@ -4,6 +4,7 @@
 import { BatchService } from '@hierarchidb/batch';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import vtpbf from '@maplibre/vt-pbf';
 import geojsonvt from 'geojson-vt';
@@ -61,6 +62,33 @@ export class SessionController {
     // Stage 2: normalize
     const norm = this.normalizePoints(this.points);
     this.emit('normalize', 1, 1, 0, `Normalized ${norm.features.length} points`);
+
+    // Optional: persist tabular rows for column-wise search
+    try {
+      const enabled =
+        (typeof process !== 'undefined' && (process as any)?.env?.LOCATION_TABULAR === '1') ||
+        (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.LOCATION_TABULAR === true);
+      if (enabled) {
+        const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
+        const writer = new TabularWriter('location');
+        const tableId = await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
+        const rows = featuresToRows(norm.features);
+        // Write in chunks
+        const CHUNK = 2000;
+        for (let i = 0; i < rows.length; i += CHUNK) {
+          await writer.writeRows(rows.slice(i, i + CHUNK));
+        }
+        const { tableId: committedId } = await writer.commit();
+        // Link tableId to session (best-effort)
+        try {
+          const db = getEphemeralLocationDB();
+          // @ts-ignore
+          await db.table('sessions').update(this.sessionId, { tableId: committedId });
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('[Location][Session] tabular persist skipped:', e);
+    }
 
     // Stage 3: tilegen
     await this.generateTiles(norm);
@@ -196,4 +224,35 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
   // Node fallback
   const { createHash } = await import('crypto');
   return createHash('sha256').update(Buffer.from(bytes)).digest('hex');
+}
+
+// Build columns and rows from normalized features
+function determineColumns(features: any[], allow?: string[]): string[] {
+  const cols = new Set<string>(['id', 'lon', 'lat']);
+  if (Array.isArray(allow) && allow.length > 0) {
+    for (const k of allow) cols.add(k);
+  } else {
+    // Derive from data (cap at 64 distinct keys to keep light)
+    for (const f of features) {
+      const props = f?.properties || {};
+      for (const k of Object.keys(props)) {
+        cols.add(k);
+        if (cols.size >= 64) break;
+      }
+      if (cols.size >= 64) break;
+    }
+  }
+  return Array.from(cols);
+}
+
+function featuresToRows(features: any[]): any[] {
+  return features.map((f) => {
+    const [lon, lat] = (f?.geometry?.coordinates ?? [0, 0]) as [number, number];
+    return {
+      id: f?.id,
+      lon,
+      lat,
+      ...(f?.properties || {}),
+    };
+  });
 }

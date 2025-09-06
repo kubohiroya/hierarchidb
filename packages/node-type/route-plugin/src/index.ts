@@ -25,6 +25,7 @@ export * from './orchestrator/RouteSourceOrchestrator';
 export * from './orchestrator/RouteBatchOrchestrationService';
 export * from './ui/hooks/useRouteBatchProgress';
 export * from './ui/components/RouteBatchProgressBar';
+export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabular-store';
 // UI Hooks/Components (minimal)
 export * from './ui/hooks/useRouteBatchProgress';
 export * from './ui/components/RouteBatchProgressBar';

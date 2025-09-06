@@ -1,4 +1,5 @@
 import type { DataSourceSpec, RouteBatchSpec, StrategyContext, TaskPlan, OdPair } from './types';
+import { createRouteDownloadService } from '../services/download/factory';
 import { CsvStrategy } from './strategies/CsvStrategy';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy';
 
@@ -26,10 +27,25 @@ export class RouteSourceOrchestrator {
   async preview(spec: RouteBatchSpec): Promise<{ odPairs: OdPair[]; plan: TaskPlan }> {
     const plan = await this.plan(spec);
     const blobs = new Map<string, Blob>();
+    const { service, readAll } = await createRouteDownloadService();
     for (const f of plan.fetch) {
-      const res = await this.deps.net.get(f.url, f.opts);
-      if (!res.ok) throw new Error(`Fetch failed ${f.url}: ${res.status}`);
-      blobs.set(f.url, new Blob([await res.arrayBuffer()]));
+      try {
+        const fileId = `route-src:${crypto.randomUUID()}`;
+        const res = await service.download(f.url, fileId);
+        const full = await readAll(fileId);
+        blobs.set(f.url, new Blob([full]));
+      } catch (e: any) {
+        // Translate auth errors to AuthRecovery notification if needed
+        const msg = String(e?.message || e);
+        if (/HTTP 401|HTTP 403|Auth required/i.test(msg)) {
+          try {
+            const g: any = globalThis as any;
+            const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+            reg?.onAuthRequired?.({ resource: f.url, provider: 'datasource', hint: 'Authentication required' });
+          } catch {}
+        }
+        throw e;
+      }
     }
     for (const src of spec.sources) {
       if (src.inline && !src.url) {
@@ -57,4 +73,3 @@ export class RouteSourceOrchestrator {
     return s as any;
   }
 }
-
