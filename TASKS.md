@@ -367,6 +367,16 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 ## 運用ログ（today） <a id="log-today"></a>
 
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
+
+### Main 同期サマリー（2025-09-06）
+- merged: PR #105 chore/dev-stability-vite-proxy-2025-09-06（dev 起動安定化・ワークスペース解決の改善・BFF dev proxy 有効化・route-plugin/mjs エイリアス整備・WorkerAPIClient ノイズ抑制・analyze-licenses CLI 追加・externals/alias 調整・TASKS/Docs ポインタ更新）
+- merged: PR #104 fix/app/init-loading-ux-polish（初回スプラッシュ簡素化と 0% フリッカー抑止、UXコメントの整理、CI/Types 安定化ガイドの追加 等）
+- merged: integrate/spreadsheet-styler-ci-stability（CI typecheck/ビルドの安定化、types を src 指向に統一、UI/env の import.meta.env 化、package-local alias の撤廃 ほか）
+- 影響範囲まとめ:
+  - Dev 体験: `scripts/start-env.sh` の自動ビルド/エイリアス調整により初回起動の失敗率を低減。
+  - 型安定性: `exports.types/types` を `src` 指向へ統一、CI での prebuild typecheck 安定化。
+  - Docs/TASKS: 本 `TASKS.md` の ToDo に node-type 監査タスクを反映済み（本日）。
+
 - 2025-09-05 17:10 JST start: fix/app/init-loading-ux-polish — 初回スプラッシュをスピナー化、0%時の文言非表示化
 - 2025-09-05 17:18 JST done: fix/app/init-loading-ux-polish — 実装と TASKS.md 反映
 - done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
