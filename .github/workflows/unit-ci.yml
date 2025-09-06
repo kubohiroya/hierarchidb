@@ -45,6 +45,11 @@ jobs:
           pnpm -v
           npx tsc -v || true
 
+      - name: Remove stale build artifacts
+        run: |
+          find . -name "dist" -type d -prune -exec rm -rf {} + || true
+          find . -name "*.tsbuildinfo" -type f -delete || true
+
       - name: Typecheck (entire workspace)
         run: pnpm -r --workspace-concurrency 1 typecheck
   build-all:
