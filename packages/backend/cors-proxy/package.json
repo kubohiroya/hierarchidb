@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev:manual": "wrangler dev",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "pnpm --package=typescript@5.6.2 dlx tsc -p tsconfig.json --noEmit",
     "build": "pnpm run typecheck",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
