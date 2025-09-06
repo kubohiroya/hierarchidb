@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NodeId, TreeNodeId } from '@hierarchidb/core';
 import { createNodeId } from '@hierarchidb/core';
-import { BatchSessionManager } from '../../services/batch/BatchSessionManager';
+import { BatchSessionManager } from '../../services/BatchSessionManager';
 import type { BatchConfig } from '../../types/BatchConfig';
 import type { BatchTaskLike } from '../../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../../types/BatchProgressEvent';
