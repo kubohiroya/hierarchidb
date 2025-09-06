@@ -85,6 +85,74 @@ echo ""
 # コマンド実行
 # ================================================================
 
+# 開発サーバ起動前に、必要なローカル Vite ツールのビルドを最低限チェック
+# app の vite.config.ts が参照する @hierarchidb/tools-vite-plugin-package-reader は
+# dist 出力が存在しないと Vite の externalize-deps 解決が失敗するため、未ビルドならビルドする
+if [ ! -f "packages/tools/vite-plugin-package-reader/dist/index.js" ]; then
+    echo "🔨 Building @hierarchidb/tools-vite-plugin-package-reader (first-time or clean checkout) ..."
+    pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build || {
+        echo "❌ Failed to build @hierarchidb/tools-vite-plugin-package-reader"
+        echo "   Try running: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build"
+        exit 1
+    }
+    echo "✅ tools-vite-plugin-package-reader built"
+    echo ""
+fi
+
+# Ensure UI and worker local packages are built once if missing
+ensure_built() {
+  local pkg="$1"; shift
+  local path_js="$1"; shift
+  if [ ! -f "$path_js" ]; then
+    echo "🔨 Building $pkg ..."
+    pnpm --filter "$pkg" build || {
+      echo "❌ Failed to build $pkg"
+      echo "   Try running: pnpm --filter $pkg build"
+      exit 1
+    }
+    echo "✅ $pkg built"
+  fi
+}
+
+ensure_built "@hierarchidb/ui-core" "packages/ui/core/dist/index.js"
+ensure_built "@hierarchidb/ui-theme" "packages/ui/theme/dist/index.js"
+ensure_built "@hierarchidb/ui-i18n" "packages/ui/i18n/dist/index.js"
+ensure_built "@hierarchidb/ui-auth" "packages/ui/auth/dist/index.js"
+ensure_built "@hierarchidb/common-auth" "packages/common/auth/dist/index.js"
+ensure_built "@hierarchidb/ui-date" "packages/ui/date/dist/index.js"
+ensure_built "@hierarchidb/ui-usermenu" "packages/ui/usermenu/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-base" "packages/ui/treeconsole/base/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-breadcrumb" "packages/ui/treeconsole/breadcrumb/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-toolbar" "packages/ui/treeconsole/toolbar/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-treetable" "packages/ui/treeconsole/treetable/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-trashbin" "packages/ui/treeconsole/trashbin/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-footer" "packages/ui/treeconsole/footer/dist/index.js"
+ensure_built "@hierarchidb/ui-treeconsole-speeddial" "packages/ui/treeconsole/speeddial/dist/index.js"
+ensure_built "@hierarchidb/runtime-worker" "packages/runtime-worker/worker/dist/index.js"
+ensure_built "@hierarchidb/runtime-worker-bootstrap" "packages/runtime-worker/worker-bootstrap/dist/index.js"
+# Core util library used across many packages
+ensure_built "@hierarchidb/util" "packages/util/dist/index.js"
+# Feature registry (referenced by worker dist)
+ensure_built "@hierarchidb/feature-registry" "packages/feature/feature-registry/dist/index.js"
+# Additional shared/runtime UI packages used by app
+ensure_built "@hierarchidb/common-type" "packages/common/types/dist/index.js"
+ensure_built "@hierarchidb/common-api" "packages/common/api/dist/index.js"
+ensure_built "@hierarchidb/ui-import-export" "packages/ui/import-export/dist/index.js"
+ensure_built "@hierarchidb/ui-layout" "packages/ui/layout/dist/index.js"
+ensure_built "@hierarchidb/ui-map" "packages/ui/map/dist/index.js"
+ensure_built "@hierarchidb/ui-navigation" "packages/ui/navigation/dist/index.js"
+ensure_built "@hierarchidb/ui-routing" "packages/ui/routing/dist/index.js"
+ensure_built "@hierarchidb/runtime-ui-landingpage" "packages/runtime-ui/landingpage/dist/index.js"
+ensure_built "@hierarchidb/runtime-ui-plugin-dialog" "packages/runtime-ui/plugin-dialog/dist/index.js"
+ensure_built "@hierarchidb/runtime-ui-tour" "packages/runtime-ui/tour/dist/index.js"
+ensure_built "@hierarchidb/basemap-plugin" "packages/node-type/basemap-plugin/dist/index.js"
+ensure_built "@hierarchidb/folder-plugin" "packages/node-type/folder-plugin/dist/index.js"
+ensure_built "@hierarchidb/shape-plugin" "packages/node-type/shape-plugin/dist/index.js"
+ensure_built "@hierarchidb/styler-plugin" "packages/node-type/styler-plugin/dist/index.js"
+ensure_built "@hierarchidb/route-plugin" "packages/node-type/route-plugin/dist/index.mjs"
+ensure_built "@hierarchidb/location-plugin" "packages/node-type/location-plugin/dist/index.js"
+ensure_built "@hierarchidb/project-plugin" "packages/node-type/project-plugin/dist/index.js"
+
 case "$COMMAND" in
     dev)
         echo "🚀 Starting development server..."

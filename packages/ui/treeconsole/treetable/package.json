@@ -2,6 +2,7 @@
   "name": "@hierarchidb/ui-treeconsole-treetable",
   "version": "0.1.0",
   "description": "TreeTable component for HierarchiDB TreeConsole",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "src/index.ts",
   "exports": {

@@ -106,6 +106,104 @@
     - [ ] 局所 typecheck 実行
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
+// node-type プラグイン整備（監査結果に基づく：P1）
+- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤の導入・しきい値設定）
+  - ブランチ: `chore/tests/add-vitest-coverage`
+  - 依存: なし（リスク低）
+  - 方針: ルート `vitest.config.ts` に coverage 設定（V8/c8）を追加し、`packages/node-type/*-plugin` は個別設定不要（必要なら最小上書き）。`pnpm test --coverage` をワークスペース全体で有効化。
+  - 受け入れ基準（DoD）:
+    - [ ] ルートで `coverage` 設定（レポート: text-summary, html; include: `packages/node-type/**/src/**/*.{ts,tsx}`）。
+    - [ ] しきい値: 行≥70%, 分岐≥60%（段階導入）。
+    - [ ] CI/ローカルで `pnpm test --coverage` が成功し、`coverage/` が出力される。
+  - ロールバック手順: ルート `vitest.config.ts` の coverage 差分をリバート。
+
+- feat/project/serialization-impl（Project のシリアライズ/デシリアライズ実装＋テスト）
+  - ブランチ: `feat/project/serialization-impl`
+  - 依存: なし（単独で可能）
+  - 対象: `packages/node-type/project-plugin/src/handlers/ProjectEntityHandler.ts:522,530,542,553`
+  - 方針: `PluginEntitySerializer` 不在でも暫定の型安全な直列化/配列直列化を実装。将来の正式 Serializer 導入に備え関数切り出し。
+  - 受け入れ基準（DoD）:
+    - [ ] 上記 4 箇所の TODO を実装し、例外ハンドリングと型を明示。
+    - [ ] Unit: 正常/異常（必須フィールド欠如・不正型）カバレッジ。
+    - [ ] Integration: ハンドラ経由で保存→復元が往復一致。
+    - [ ] `pnpm --filter @hierarchidb/project-plugin test` グリーン。
+  - ロールバック手順: 実装関数を Feature Flag で切替（既定OFF）→問題時は旧挙動に復帰。
+  - フラグ: `PROJECT_SERIALIZATION_V1`（読み取り: `config/feature-flags.ts`、既定OFF）。
+
+- feat/shape/worker-api-and-tiles（Shape: Worker API/VectorTile/WorkerPool の未実装解消）
+  - ブランチ: `feat/shape/worker-api-and-tiles`
+  - 依存: なし（個別対応）
+  - 対象: `WorkerPool.ts:203` 追加ワーカー、`VectorTileService.ts:396`、`plugin.ts:33,58` Worker API、`DataSourceStrategy.ts:329,332` の TODO。
+  - 方針: ワーカー生成を Factory で注入、VectorTile の未実装を最小動作で埋め、DataSourceStrategy の TODO を実装。新経路はフラグ既定OFFで段階導入。
+  - 受け入れ基準（DoD）:
+    - [ ] 4 箇所の未実装/TODO が解消。
+    - [ ] Unit/Integration 追加（ワーカー生成・タイル生成・データソース戦略のハッピーパス/失敗系）。
+    - [ ] 既存テスト（20+3）がグリーン。
+  - ロールバック手順: フラグを OFF に戻すだけで旧経路に戻る。
+  - フラグ: `SHAPE_WORKER_API_V1`, `SHAPE_VTILE_V1`（`config/feature-flags.ts`、既定OFF）。
+
+- feat/route/osm-sea-routing-toggle（Route: OSM/海上ルートを実装 or 既定OFFで明示）
+  - ブランチ: `feat/route/osm-sea-routing-toggle`
+  - 依存: なし
+  - 対象: `RouteGenerator.ts:110,123`（未実装ウォーニング箇所）。
+  - 方針: まずはフラグ既定OFFで OSM/海上ルート計算器を組み込み、フォールバックは現行の直線/大圏。簡易モック計算器でユニットテストを担保。
+  - 受け入れ基準（DoD）:
+    - [ ] フラグON時に OSM/Sea 計算器が有効化、OFF時は現行フォールバック。
+    - [ ] Unit: 入力検証/直線・大圏・OSM/Sea スイッチの分岐網羅。
+    - [ ] `pnpm --filter @hierarchidb/route-plugin test` グリーン。
+    - [ ] 将来の E2E 追加に向け helper を雛形化。
+  - ロールバック手順: フラグOFFに戻す。
+  - フラグ: `ROUTE_OSM_ENABLE`, `ROUTE_SEA_ENABLE`（`config/feature-flags.ts`、既定OFF）。
+
+- feat/location/complete-dialog-and-batch（Location: ダイアログ保存/バッチAPI/変換ロジックの実装＋テスト）
+  - ブランチ: `feat/location/complete-dialog-and-batch`
+  - 依存: なし（UI/サービス単独対応）
+  - 対象: `LocationDialog.tsx:55`, `BatchProgressDialog.tsx:188,194,198`, `LocationSelectionStep.tsx:185`。
+  - 受け入れ基準（DoD）:
+    - [ ] 保存・開始・キャンセル・確認の UI/サービス連携が実装。
+    - [ ] Unit: 主要ハンドラと変換の正常/異常。
+    - [ ] `pnpm --filter @hierarchidb/location-plugin test` グリーン。
+  - ロールバック手順: UI イベントを旧 NO-OP 実装へ切替（フラグOFF）。
+  - フラグ: `LOCATION_BATCH_V1`（既定OFF）。
+
+- test/base-plugin/minimal-unit（Base: 最小ユニットテストの追加）
+  - ブランチ: `test/base-plugin/minimal-unit`
+  - 依存: なし
+  - 受け入れ基準（DoD）:
+    - [ ] `BaseEntityHandler`/`HierarchicalEntityHandler` のハッピーパス1件・エラー系1件ずつ。
+    - [ ] `pnpm --filter @hierarchidb/base-plugin test` グリーン。
+  - ロールバック手順: 追加テスト削除で影響なし。
+
+// node-type プラグイン整備（監査結果に基づく：P2）
+- fix/resolver/error-notify（Resolver: エラー通知 UI の実装）
+  - ブランチ: `fix/resolver/error-notify`
+  - 対象: `ResolverDialog.tsx:152`
+  - DoD: 失敗時に Snackbar/Alert を表示。既存テストを維持し、必要なら UI テスト追加。
+  - ロールバック: 表示呼び出しをコメントアウトで戻せる（影響局所）。
+
+- feat/spreadsheet/filtering-ui（Spreadsheet: FilteringStep UI 実装＋テスト）
+  - ブランチ: `feat/spreadsheet/filtering-ui`
+  - DoD: Filtering UI の最小機能（列選択/条件/プレビュー）が動作。Unit 追加。
+  - ロールバック: ステップをフラグ OFF で非表示。
+  - フラグ: `SPREADSHEET_FILTERING_V1`（既定OFF）。
+
+- feat/styler/jenks-equal-interval（Styler: Jenks/等間隔の分類アルゴリズム実装）
+  - ブランチ: `feat/styler/jenks-equal-interval`
+  - 対象: `colorUtils.ts:309`
+  - DoD: Jenks & 等間隔の結果が既存テストデータで再現性あり、Unit 追加。
+  - ロールバック: 既存分類のみを使うフラグ OFF。
+  - フラグ: `STYLER_CLASSIFY_V2`（既定OFF）。
+
+- e2e/basemap/smoke（BaseMap: 簡易 E2E スモーク）
+  - ブランチ: `e2e/basemap/smoke`
+  - DoD: 画面遷移→ベースマップ作成→保存までのハッピーパス1本。
+  - ロールバック: 新規 E2E をスキップ設定（`test.skip`）に戻す。
+
+- docs/folder/wc-ops-policy（Folder: Working Copy 非対応方針の明文化）
+  - ブランチ: `docs/folder/wc-ops-policy`
+  - 対象: `FolderEntityManager.ts:45`
+  - DoD: 現行バージョンでは未対応である旨・代替手順・将来計画を docs/ に記載し、コードコメントと整合。
+  - ロールバック: ドキュメント差分をリバート。
 
 // 追加: 共通型の未使用エクスポート整理（削除候補の可視化）
 - chore/common-types/unused-sweep-v1（共通型の未使用エクスポートを整理）
@@ -267,6 +365,8 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+
+- 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-05 17:10 JST start: fix/app/init-loading-ux-polish — 初回スプラッシュをスピナー化、0%時の文言非表示化
 - 2025-09-05 17:18 JST done: fix/app/init-loading-ux-polish — 実装と TASKS.md 反映
 - done: 2025-09-04 chore/folder: NodeId 一貫化の第一歩として、FolderEntityHandler に NodeId ベースの `updateByNodeId`/`deleteByNodeId` を追加し、Manager 側からの EntityId キャストを撤廃。
