@@ -30,7 +30,7 @@ import {
 } from '../shared';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader';
-import { BatchSessionManager } from '../services/batch/BatchSessionManager';
+import { BatchSessionManager } from '../services/BatchSessionManager';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB';
 import * as Comlink from 'comlink';
 

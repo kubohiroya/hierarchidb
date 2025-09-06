@@ -42,6 +42,9 @@
       "@hierarchidb/runtime-ui-plugin-dialog": [
         "./packages/runtime-ui/plugin-dialog/src/index.ts"
       ],
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "./packages/runtime-shared/batch-processor/src/index.ts"
+      ],
       "@hierarchidb/table-metadata": [
         "./packages/feature/table-metadata/src/index.ts"
       ]

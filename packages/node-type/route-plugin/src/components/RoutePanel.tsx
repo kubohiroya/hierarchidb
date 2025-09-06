@@ -3,7 +3,7 @@
  * ルートプラグイン用のサイドパネルコンポーネント
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -41,6 +41,10 @@ import type { NodeId } from '@hierarchidb/common-type';
 import { TransportMode } from '../types';
 import type { RouteEntity, RouteType } from '../types';
 import { useTranslation } from '../i18n';
+import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
+import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
+import { ThrottledPort } from '../services/net/ThrottledPort';
+import { createRouteBatchManager } from '../services/createRouteBatchManager';
 
 export interface RoutePanelProps {
   nodeId: NodeId;
@@ -96,6 +100,13 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [lastJobId, setLastJobId] = useState<string | null>(null);
+
+  // net.port の取得（実際は FeatureRegistry などから注入）。ここでは簡易に fetch をラップ。
+  const net = useMemo(() => ({ get: async (url: string, init?: RequestInit) => {
+    const res = await fetch(url, init); return { ok: res.ok, status: res.status, arrayBuffer: () => res.arrayBuffer() };
+  } }), []);
+  const throttled = useMemo(() => new ThrottledPort(net as any, { rps: 1, concurrency: 1 }), [net]);
 
   if (!entity) {
     return (
@@ -308,6 +319,32 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
           </Button>
         </CardActions>
       </Card>
+
+      {/* Batch Launch (Feature flag想定; 当面は常に表示) */}
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography variant="subtitle1" gutterBottom>
+            {t('panel.batch', 'Batch')}
+          </Typography>
+          <RouteBatchLaunchForm
+            nodeId={_nodeId as any}
+            net={throttled as any}
+            createRouteBatchManager={createRouteBatchManager as any}
+            onLaunched={(r) => setLastJobId(r.jobId)}
+          />
+        </CardContent>
+      </Card>
+
+      {lastJobId && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Typography variant="subtitle1" gutterBottom>
+              {t('panel.progress', 'Progress')}
+            </Typography>
+            <RouteBatchSummary sessionId={lastJobId} />
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 };

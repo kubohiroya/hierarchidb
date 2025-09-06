@@ -166,7 +166,18 @@ export class WorkerAPIClient {
    * Useful when connection fails and needs to be retried
    */
   static reset(): void {
-
+    try {
+      if (this.workerInstance) {
+        // Attempt to terminate raw worker if possible
+        const raw = _getRawWorkerInstance();
+        try { raw?.terminate(); } catch {}
+      }
+    } catch {}
+    this.workerInstance = null;
+    this.state = 'uninitialized';
+    this.initializationPromise = null;
+    this.lastError = null;
+    this.verified = false;
   }
 
 

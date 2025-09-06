@@ -30,5 +30,8 @@ export type { VectorTileLayerProps } from './components/VectorTileLayer';
 export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles';
 export type { DeckOverlayProps } from './components/MapWithDeckGL';
 
+// Layer presets
+export * from './presets/vectorLayers';
+
 // Stable public typings – do not leak upstream maplibre-gl types
 export type { MapLibreMapInstance, MapLibreStyle, MapLibreLayer, MapLibreFilter } from './types/maplibre-public';
