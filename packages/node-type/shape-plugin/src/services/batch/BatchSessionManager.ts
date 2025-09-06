@@ -34,7 +34,6 @@ export interface BatchSessionOptions {
 }
 
 export class BatchSessionManager {
-  private activeSessions = new Map<string, SessionController>();
   private sharedSessions = new Map<string, ShapeBatchSession>();
   private progressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
 
@@ -104,8 +103,6 @@ export class BatchSessionManager {
       options
     );
 
-    this.activeSessions.set(session.sessionId, controller);
-
     // Start processing（共有セッションで実行）
     const shared = new ShapeBatchSession(session.sessionId, nodeId, { concurrency: options.maxConcurrentTasks }, controller, (ev) => {
       try { this.progressCallbacks.get(session.sessionId)?.({ total: ev.total, completed: ev.completed, failed: ev.failed, skipped: 0, percentage: ev.percentage, currentStage: ev.stage as any, currentTask: ev.currentTask }); } catch {}
@@ -119,13 +116,8 @@ export class BatchSessionManager {
 
   async pauseSession(sessionId: string): Promise<void> {
     const shared = this.sharedSessions.get(sessionId);
-    if (shared) {
-      await shared.pause();
-    } else {
-      const controller = this.activeSessions.get(sessionId);
-      if (!controller) throw new Error(`Session ${sessionId} not found`);
-      await controller.pause();
-    }
+    if (!shared) throw new Error(`Session ${sessionId} not found`);
+    await shared.pause();
     await shapeDB.updateBatchSession(sessionId, {
       status: 'paused',
     });
@@ -133,22 +125,8 @@ export class BatchSessionManager {
 
   async resumeSession(sessionId: string): Promise<void> {
     const shared = this.sharedSessions.get(sessionId);
-    if (shared) {
-      await shared.resume();
-    } else {
-      const controller = this.activeSessions.get(sessionId);
-      if (!controller) {
-        // Try to resume legacy from DB
-        const session = await shapeDB.getBatchSession(sessionId);
-        if (!session || session.status !== 'paused') throw new Error(`Cannot resume session ${sessionId}`);
-        const urlMetadata = await this.reconstructUrlMetadata(session);
-        const newController = new SessionController(session.sessionId, session.nodeId, urlMetadata, session.config, {});
-        this.activeSessions.set(sessionId, newController);
-        await newController.resume();
-      } else {
-        await controller.resume();
-      }
-    }
+    if (!shared) throw new Error(`Session ${sessionId} not found`);
+    await shared.resume();
 
     await shapeDB.updateBatchSession(sessionId, {
       status: 'running',
@@ -157,16 +135,9 @@ export class BatchSessionManager {
 
   async cancelSession(sessionId: string): Promise<void> {
     const shared = this.sharedSessions.get(sessionId);
-    if (shared) {
-      await shared.cancel();
-      this.sharedSessions.delete(sessionId);
-    } else {
-      const controller = this.activeSessions.get(sessionId);
-      if (controller) {
-        await controller.abort();
-        this.activeSessions.delete(sessionId);
-      }
-    }
+    if (!shared) return;
+    await shared.cancel();
+    this.sharedSessions.delete(sessionId);
 
     await shapeDB.updateBatchSession(sessionId, {
       status: 'cancelled',
