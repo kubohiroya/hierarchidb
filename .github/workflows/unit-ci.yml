@@ -224,3 +224,51 @@ jobs:
 
       - name: Build (with deps)
         run: pnpm -r --filter "${{ matrix.pkg.filter }}^..." build
+
+  coverage:
+    name: Coverage ${{ matrix.pkg.name }}
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        pkg:
+          - { name: basemap-plugin, filter: "@hierarchidb/basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/shape-plugin" }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --force
+
+      - name: Run coverage
+        env:
+          CI: "true"
+        run: pnpm --filter "${{ matrix.pkg.filter }}" coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.pkg.name }}
+          path: |
+            packages/**/${{ matrix.pkg.name }}/coverage/**
+            **/${{ matrix.pkg.name }}/coverage/**
+          if-no-files-found: warn

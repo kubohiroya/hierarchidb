@@ -28,6 +28,7 @@
     "build": "tsup",
     "test": "vitest",
     "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\""
