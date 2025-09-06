@@ -69,7 +69,7 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
     }}
   >
     <TitleLogo showProgress={false} />
-    
+
     <Box sx={{ width: '100%', maxWidth: 400, mt: 4 }}>
       {/**
        * UX: Avoid flicker from "0%" regression
