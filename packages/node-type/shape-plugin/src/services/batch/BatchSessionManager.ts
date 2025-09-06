@@ -104,8 +104,18 @@ export class BatchSessionManager {
 
     this.activeSessions.set(session.sessionId, controller);
 
-    // Start processing
-    this.startSessionProcessing(controller);
+    // Start processing (shared AbstractBatchSession wrapper)
+    try {
+      const { ShapeBatchSession } = await import('./ShapeBatchSession');
+      const shared = new ShapeBatchSession(session.sessionId, nodeId, { concurrency: options.maxConcurrentTasks }, controller, (ev) => {
+        try { this.progressCallbacks.get(session.sessionId)?.({ total: ev.total, completed: ev.completed, failed: ev.failed, skipped: 0, percentage: ev.percentage, currentStage: ev.stage as any, currentTask: ev.currentTask }); } catch {}
+      });
+      // Run without blocking DB bookkeeping
+      shared.initialize().then(() => shared.start()).catch((e) => console.error('Shape shared session failed', e));
+    } catch (e) {
+      // Fallback: legacy path
+      this.startSessionProcessing(controller);
+    }
 
     return session;
   }
@@ -322,4 +332,3 @@ export class BatchSessionManager {
     return { tasksPerSecond, bytesPerSecond };
   }
 }
-
