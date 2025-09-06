@@ -51,6 +51,15 @@ export interface RouteBatchTask extends BatchTaskLike {
  */
 export class RouteBatchManager extends BatchSessionManager {
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
+  // Lane semaphores: enforce per-engine concurrency regardless of batch size
+  private laneSemaphores = new Map<string, Semaphore>();
+  private laneConfig: Record<string, number> = {
+    osm_route: 1,        // strictly serialized
+    searoute: 3,         // modest parallelism
+    direct: 64,          // local
+    great_circle: 64,
+    custom: 8,
+  };
   
   /**
    * Start route batch generation session
@@ -203,14 +212,24 @@ export class RouteBatchManager extends BatchSessionManager {
     const config = (this as any)['getSessionConfig'](sessionId) as RouteBatchConfig | undefined; // access protected
     if (!config) return;
     const maxConcurrent = config.routeGeneration.maxConcurrent;
-    
-    // Process tasks in batches for parallelism
+
+    // Process in windows, but gate each task by its lane semaphore
     for (let i = 0; i < tasks.length; i += maxConcurrent) {
       const batch = tasks.slice(i, i + maxConcurrent);
-      
-      await Promise.all(
-        batch.map(task => this.processIndividualTask(task, config))
-      );
+      await Promise.all(batch.map(async (task) => {
+        if (task.taskType === 'route_generation') {
+          const method = (task.routeData?.method || config.routeGeneration.method) as string;
+          const sem = this.getLaneSemaphore(method);
+          await sem.acquire();
+          try {
+            await this.processIndividualTask(task, config);
+          } finally {
+            sem.release();
+          }
+        } else {
+          await this.processIndividualTask(task, config);
+        }
+      }));
       
       // Update progress using Shape's callback mechanism
       (this as any)['notifyProgress'](sessionId, {
@@ -222,6 +241,16 @@ export class RouteBatchManager extends BatchSessionManager {
         message: `Processing ${taskType} tasks...`,
       });
     }
+  }
+
+  private getLaneSemaphore(method: string): Semaphore {
+    let sem = this.laneSemaphores.get(method);
+    if (!sem) {
+      const cap = this.laneConfig[method] ?? 4;
+      sem = new Semaphore(cap);
+      this.laneSemaphores.set(method, sem);
+    }
+    return sem;
   }
   
   /**
@@ -353,5 +382,19 @@ export class RouteBatchManager extends BatchSessionManager {
       totalRoutes: routeGenerationTasks.length,
       errors: failedTasks.map(t => t.error || 'Unknown error'),
     };
+  }
+}
+
+class Semaphore {
+  private queue: Array<() => void> = [];
+  private count: number;
+  constructor(private capacity: number) { this.count = capacity; }
+  acquire(): Promise<void> {
+    if (this.count > 0) { this.count--; return Promise.resolve(); }
+    return new Promise((resolve) => this.queue.push(resolve));
+  }
+  release(): void {
+    if (this.queue.length > 0) { const resolve = this.queue.shift()!; resolve(); }
+    else this.count = Math.min(this.count + 1, this.capacity);
   }
 }

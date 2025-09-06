@@ -17,7 +17,13 @@ export interface RouteGenerationResult {
 /**
  * Route generator service
  */
+export interface RouteEnginesProvider {
+  osrm?: { route: (points: [number, number][], options?: any) => Promise<{ line: [number,number][], distance_m: number, duration_s?: number }> };
+  searoute?: { route: (points: [number, number][], options?: any) => Promise<{ line: [number,number][], distance_m: number, duration_s?: number }> };
+}
+
 export class RouteGenerator {
+  constructor(private engines?: RouteEnginesProvider) {}
   /**
    * Generate route based on configuration
    */
@@ -105,10 +111,12 @@ export class RouteGenerator {
     points: [number, number][],
     _options?: any
   ): Promise<RouteGenerationResult> {
-    // This would call an external OSM routing service
-    // For now, return a simple implementation
-    console.warn('OSM routing not implemented, using direct route');
-    return this.generateDirectRoute(points);
+    if (!this.engines?.osrm) {
+      console.warn('OSRM engine not provided, using direct route');
+      return this.generateDirectRoute(points);
+    }
+    const out = await this.engines.osrm.route(points, _options);
+    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
   }
 
   /**
@@ -118,10 +126,12 @@ export class RouteGenerator {
     points: [number, number][],
     options?: any
   ): Promise<RouteGenerationResult> {
-    // This would call a sea routing service
-    // For now, return great circle for sea routes
-    console.warn('Sea routing not implemented, using great circle');
-    return this.generateGreatCircleRoute(points, options);
+    if (!this.engines?.searoute) {
+      console.warn('SeaRoute engine not provided, using great circle');
+      return this.generateGreatCircleRoute(points, options);
+    }
+    const out = await this.engines.searoute.route(points, options);
+    return { lineGeometry: out.line, distance: out.distance_m, duration: out.duration_s };
   }
 
   /**
