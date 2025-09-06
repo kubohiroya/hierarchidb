@@ -9,7 +9,6 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { BatchService } from '@hierarchidb/batch';
 import { WorkerPoolManager } from '../workers/WorkerPoolManager';
 import type {
   BatchSession,
@@ -42,7 +41,6 @@ export class SessionController {
   private isPaused = false;
   private isAborted = false;
   private progressCallback?: (progress: ProgressInfo) => void;
-  private batch = new BatchService();
   
   constructor(
     sessionId: string,
@@ -185,52 +183,20 @@ export class SessionController {
     
     const tasks: DownloadTask[] = this.urlMetadata.map((metadata, index) => ({
       taskId: `${this.sessionId}-download-${index}`,
-      sessionId: this.sessionId,
-      type: 'download',
-      status: 'waiting',
-      index,
-      progress: 0,
-      nodeId: this.nodeId,
-      config: {
-        dataSource: metadata.dataSource,
-        country: metadata.country,
-        adminLevel: metadata.adminLevel,
-        url: metadata.url,
-        timeout: this.options.timeoutMs ?? 300000,
-        retryDelay: 1000,
-        expectedFormat: 'geojson',
-        validateSSL: true,
-      },
+      url: metadata.url,
+      dataSource: metadata.dataSource,
+      country: metadata.country,
+      adminLevel: metadata.adminLevel,
+      expectedFormat: 'geojson',
     }));
     
     // Process download tasks in parallel
-    let successful = 0;
-    let failed = 0;
-    const concurrency = Math.max(1, this.config.downloadWorkers || 2);
-    const downloadResults = await this.batch.mapChunks(tasks, async (task) => {
-      try {
-        const res = await this.workerPool!.processDownloadTask(task);
-        successful++;
-        return res;
-      } catch {
-        failed++;
-      }
-    }, {
-      concurrency,
-      progress: (completed) => {
-        if (this.progressCallback) {
-          this.progressCallback({
-            sessionId: this.sessionId,
-            stage: 'download',
-            total: tasks.length,
-            completed,
-            failed,
-            percentage: (completed / tasks.length) * 100,
-            currentTask: `Downloading (${completed}/${tasks.length})`,
-          });
-        }
-      }
-    });
+    const results = await Promise.allSettled(
+      tasks.map(task => this.workerPool!.processDownloadTask(task))
+    );
+    
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
     
     console.log(`[Session ${this.sessionId}] Download stage completed: ${successful} successful, ${failed} failed`);
     
@@ -245,7 +211,6 @@ export class SessionController {
         currentTask: 'Download completed',
       });
     }
-    this.downloadResults = (downloadResults || []).filter(Boolean) as any;
   }
   
   /**
@@ -259,51 +224,20 @@ export class SessionController {
     this.currentStage = 'simplify1';
     console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
     
-    const tasks: Simplify1Task[] = this.downloadResults.map((res, index) => ({
+    const tasks: Simplify1Task[] = this.urlMetadata.map((metadata, index) => ({
       taskId: `${this.sessionId}-simplify1-${index}`,
-      sessionId: this.sessionId,
-      type: 'simplify1',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: res.outputBufferId,
-      config: {
-        algorithm: 'douglas-peucker',
-        tolerance: this.config.simplifyTolerance || 0.001,
-        preserveTopology: true,
-        minimumArea: this.config.minArea || 100,
-      },
+      inputBufferId: `${this.sessionId}-download-${index}`,
+      tolerance: this.config.simplifyTolerance || 0.001,
+      minArea: this.config.minArea || 100,
     }));
-
-    let successful = 0;
-    let failed = 0;
-    const concurrency = Math.max(1, this.config.simplify1Workers || 2);
-    const simp1Results = await this.batch.mapChunks(tasks, async (task) => {
-      try {
-        const res = await this.workerPool!.processSimplify1Task(task);
-        successful++;
-        return res;
-      } catch {
-        failed++;
-      }
-    }, {
-      concurrency,
-      progress: (completed) => {
-        if (this.progressCallback) {
-          this.progressCallback({
-            sessionId: this.sessionId,
-            stage: 'simplify1',
-            total: tasks.length,
-            completed,
-            failed,
-            percentage: (completed / tasks.length) * 100,
-            currentTask: `Simplify1 (${completed}/${tasks.length})`,
-          });
-        }
-      }
-    });
+    
+    // Process simplify1 tasks
+    const results = await Promise.allSettled(
+      tasks.map(task => this.workerPool!.processSimplify1Task(task))
+    );
+    
+    const successful = results.filter(r => r.status === 'fulfilled').length;
     console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${successful}/${tasks.length} successful`);
-    this.simplify1Results = (simp1Results || []).filter(Boolean) as any;
   }
   
   /**
@@ -317,53 +251,20 @@ export class SessionController {
     this.currentStage = 'simplify2';
     console.log(`[Session ${this.sessionId}] Processing simplify2 stage`);
     
-    const tasks: Simplify2Task[] = this.simplify1Results.map((res, index) => ({
+    const tasks: Simplify2Task[] = this.urlMetadata.map((metadata, index) => ({
       taskId: `${this.sessionId}-simplify2-${index}`,
-      sessionId: this.sessionId,
-      type: 'simplify2',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: res.outputBufferId,
-      config: {
-        algorithm: 'douglas-peucker',
-        tolerance: this.config.simplifyTolerance || 0.001,
-        preserveTopology: true,
-        zoomLevel: (this.config.zoomLevels || [10])[0],
-        quantization: 1e5,
-        coordinatePrecision: 6,
-      },
+      inputBufferId: `${this.sessionId}-simplify1-${index}`,
+      zoomLevels: this.config.zoomLevels || [0, 5, 10],
+      tileSize: this.config.tileSize || 512,
     }));
     
-    let successful = 0;
-    let failed = 0;
-    const concurrency = Math.max(1, this.config.simplify2Workers || 1);
-    const simp2Results = await this.batch.mapChunks(tasks, async (task) => {
-      try {
-        const res = await this.workerPool!.processSimplify2Task(task);
-        successful++;
-        return res;
-      } catch {
-        failed++;
-      }
-    }, {
-      concurrency,
-      progress: (completed) => {
-        if (this.progressCallback) {
-          this.progressCallback({
-            sessionId: this.sessionId,
-            stage: 'simplify2',
-            total: tasks.length,
-            completed,
-            failed,
-            percentage: (completed / tasks.length) * 100,
-            currentTask: `Simplify2 (${completed}/${tasks.length})`,
-          });
-        }
-      }
-    });
+    // Process simplify2 tasks
+    const results = await Promise.allSettled(
+      tasks.map(task => this.workerPool!.processSimplify2Task(task))
+    );
+    
+    const successful = results.filter(r => r.status === 'fulfilled').length;
     console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${successful}/${tasks.length} successful`);
-    this.simplify2Results = (simp2Results || []).filter(Boolean) as any;
   }
   
   /**
@@ -377,57 +278,19 @@ export class SessionController {
     this.currentStage = 'vectorTiles';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
     
-    const tileIds = this.simplify2Results.flatMap((r) => r.tileBufferIds || []);
-    const tasks: VectorTileTask[] = tileIds.map((tileId, index) => {
-      const m = tileId.match(/-(\d+)-(\d+)-(\d+)$/);
-      const [z, x, y] = m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0];
-      return {
-        taskId: `${this.sessionId}-vectortile-${index}`,
-        sessionId: this.sessionId,
-        type: 'vectortile' as any,
-        status: 'waiting',
-        index,
-        progress: 0,
-        tileBufferId: tileId,
-        config: {
-          zoomLevel: z,
-          tileX: x,
-          tileY: y,
-          extent: 4096,
-          buffer: 256,
-          layers: [],
-          format: 'mvt',
-          compression: true,
-        },
-      } as any;
-    });
+    const tasks: VectorTileTask[] = this.urlMetadata.map((metadata, index) => ({
+      taskId: `${this.sessionId}-vectortile-${index}`,
+      inputBufferId: `${this.sessionId}-simplify2-${index}`,
+      outputFormat: 'mvt',
+      compression: 'gzip',
+    }));
     
-    let successful = 0;
-    let failed = 0;
-    const concurrency = Math.max(1, this.config.vectorTileWorkers || 1);
-    await this.batch.mapChunks(tasks, async (task) => {
-      try {
-        await this.workerPool!.processVectorTileTask(task);
-        successful++;
-      } catch {
-        failed++;
-      }
-    }, {
-      concurrency,
-      progress: (completed) => {
-        if (this.progressCallback) {
-          this.progressCallback({
-            sessionId: this.sessionId,
-            stage: 'vectortile',
-            total: tasks.length,
-            completed,
-            failed,
-            percentage: (completed / tasks.length) * 100,
-            currentTask: `VectorTiles (${completed}/${tasks.length})`,
-          });
-        }
-      }
-    });
+    // Process vector tile tasks
+    const results = await Promise.allSettled(
+      tasks.map(task => this.workerPool!.processVectorTileTask(task))
+    );
+    
+    const successful = results.filter(r => r.status === 'fulfilled').length;
     console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${successful}/${tasks.length} successful`);
   }
   

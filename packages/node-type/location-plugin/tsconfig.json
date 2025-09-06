@@ -3,10 +3,7 @@
   "compilerOptions": {
     
     "outDir": "dist",
-    "jsx": "react-jsx",
-    "paths": {
-      "@hierarchidb/ui-core/src/*": ["../../ui/core/src/*"]
-    }
+    "jsx": "react-jsx"
   },
   "include": [
     "src/types/**/*",

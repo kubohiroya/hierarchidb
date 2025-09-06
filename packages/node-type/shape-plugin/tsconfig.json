@@ -7,8 +7,7 @@
     "rootDir": "./src",
     "jsx": "react-jsx",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/ui-core/src/*": ["../../ui/core/src/*"]
+      "~/*": ["./src/*"]
     }
   },
   "include": ["src/**/*"],
