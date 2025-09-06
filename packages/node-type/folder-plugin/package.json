@@ -2,26 +2,27 @@
   "name": "@hierarchidb/folder-plugin",
   "version": "1.0.0",
   "description": "Basic folder plugin for HierarchiDB UI layer",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
+  "main": "dist/index.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./shared": {
-      "types": "./dist/shared/index.d.ts",
-      "import": "./dist/shared/index.js",
+      "types": "./src/shared/index.ts",
+      "import": "./src/shared/index.ts",
       "default": "./dist/shared/index.js"
     },
     "./ui": {
-      "types": "./dist/ui/index.d.ts",
-      "import": "./dist/ui/index.js",
+      "types": "./src/ui/index.ts",
+      "import": "./src/ui/index.ts",
       "default": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
       "default": "./dist/worker/index.js"
     }
   },

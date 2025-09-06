@@ -3,7 +3,7 @@
  * Implements ShapeAPI interface from shared layer
  */
 
-import { NodeId, EntityId } from '@hierarchidb/common-type';
+import { NodeId } from '../shared';
 import {
   ShapeEntity,
   CreateShapeData,
@@ -77,7 +77,7 @@ export const shapePluginAPI = {
   // WorkingCopyTypes Management (CopyOnWrite)
   // ===================================
 
-  createWorkingCopy: async (nodeId: NodeId): Promise<EntityId> => {
+  createWorkingCopy: async (nodeId: NodeId): Promise<NodeId> => {
     const handler = new ShapeEntityHandler();
     const entity = await handler.getEntityByNodeId(nodeId);
     if (!entity) {
@@ -87,28 +87,28 @@ export const shapePluginAPI = {
     return workingCopy.id;
   },
 
-  createNewDraftWorkingCopy: async (parentId: NodeId): Promise<EntityId> => {
+  createNewDraftWorkingCopy: async (parentId: NodeId): Promise<NodeId> => {
     const handler = new ShapeEntityHandler();
     const workingCopy = await handler.createNewDraftWorkingCopy(parentId);
     return workingCopy.id;
   },
 
-  getWorkingCopy: async (workingCopyId: EntityId): Promise<ShapeEntity | undefined> => {
+  getWorkingCopy: async (workingCopyId: NodeId): Promise<ShapeEntity | undefined> => {
     const handler = new ShapeEntityHandler();
     return await handler.getWorkingCopy(workingCopyId);
   },
 
-  updateWorkingCopy: async (workingCopyId: EntityId, data: Partial<ShapeEntity>): Promise<void> => {
+  updateWorkingCopy: async (workingCopyId: NodeId, data: Partial<ShapeEntity>): Promise<void> => {
     const handler = new ShapeEntityHandler();
     await handler.updateWorkingCopy(workingCopyId, data);
   },
 
-  commitWorkingCopy: async (workingCopyId: EntityId): Promise<NodeId> => {
+  commitWorkingCopy: async (workingCopyId: NodeId): Promise<NodeId> => {
     const handler = new ShapeEntityHandler();
     return await handler.commitWorkingCopy(workingCopyId);
   },
 
-  discardWorkingCopy: async (workingCopyId: EntityId): Promise<void> => {
+  discardWorkingCopy: async (workingCopyId: NodeId): Promise<void> => {
     const handler = new ShapeEntityHandler();
     await handler.discardWorkingCopy(workingCopyId);
   },
@@ -187,7 +187,7 @@ export const shapePluginAPI = {
   // ===================================
 
   startBatchProcessing: async (
-    workingCopyId: EntityId,
+    workingCopyId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: any) => void
@@ -272,7 +272,7 @@ export const shapePluginAPI = {
     return sessionId;
   },
 
-  pauseBatchProcessing: async (workingCopyId: EntityId): Promise<void> => {
+  pauseBatchProcessing: async (workingCopyId: NodeId): Promise<void> => {
     const handler = new ShapeEntityHandler();
     const workingCopy = await handler.getWorkingCopy(workingCopyId);
     if (!workingCopy || !workingCopy.batchSessionId) {
@@ -282,7 +282,7 @@ export const shapePluginAPI = {
     await batchSessionManager.pauseBatchSession(workingCopy.batchSessionId);
   },
 
-  resumeBatchProcessing: async (workingCopyId: EntityId): Promise<string> => {
+  resumeBatchProcessing: async (workingCopyId: NodeId): Promise<string> => {
     const handler = new ShapeEntityHandler();
     const workingCopy = await handler.getWorkingCopy(workingCopyId);
     if (!workingCopy || !workingCopy.batchSessionId) {
@@ -293,7 +293,7 @@ export const shapePluginAPI = {
     return workingCopy.batchSessionId;
   },
 
-  cancelBatchProcessing: async (workingCopyId: EntityId): Promise<void> => {
+  cancelBatchProcessing: async (workingCopyId: NodeId): Promise<void> => {
     const handler = new ShapeEntityHandler();
     const workingCopy = await handler.getWorkingCopy(workingCopyId);
     if (!workingCopy || !workingCopy.batchSessionId) {
@@ -318,7 +318,7 @@ export const shapePluginAPI = {
 
     return {
       sessionId: session.id,
-      workingCopyId: session.nodeId as EntityId, // Convert NodeId to EntityId (branded)
+      workingCopyId: session.nodeId,
       status: session.status,
       progress: session.progress,
       stage: session.stage,
@@ -354,7 +354,7 @@ export const shapePluginAPI = {
     }));
   },
 
-  getBatchProgress: async (workingCopyId: EntityId): Promise<ProgressInfo> => {
+  getBatchProgress: async (workingCopyId: NodeId): Promise<ProgressInfo> => {
     const handler = new ShapeEntityHandler();
     const workingCopy = await handler.getWorkingCopy(workingCopyId);
     if (!workingCopy || !workingCopy.batchSessionId) {

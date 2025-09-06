@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, IconButton, Slide, Snackbar, Stack } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { announceToScreenReader } from '~/components/AriaLiveRegion/AriaLiveRegion';
+import { announceToScreenReader } from '../AriaLiveRegion/AriaLiveRegion';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
 
@@ -114,7 +114,7 @@ export function replaceWindowAlert() {
  * });
  * ```
  */
-export function NotificationSystem() {
+export function NotificationSystem(): JSX.Element | null {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [, forceUpdate] = useState({});
 

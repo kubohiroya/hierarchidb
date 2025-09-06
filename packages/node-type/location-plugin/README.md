@@ -1,5 +1,12 @@
 # Location Plugin
 
+## 依存管理とインポート規約（重要）
+共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
+- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie
+- dependencies: @hierarchidb/util ほか必要に応じて @hierarchidb/feature/*
+- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
+- import は公開API、型は `import type`、重い処理は dynamic import。
+- tsup external は共通設定で外部化済み。
 地点情報（POI: Points of Interest）の収集、管理、可視化を行うHierarchiDBプラグインです。
 OpenStreetMapやGeoNames等のオープンデータソースから、空港、駅、港、行政センター等の地点データをバッチダウンロードし、地図上で可視化・分析できます。
 

@@ -81,7 +81,8 @@ export function DynamicSpeedDial({
 
   // If menuContext is provided, build items from virtual module definitions (VM-based path)
   const vmItems = menuContext ? usePluginMenuItems(menuContext) : [];
-  const useVM = menuContext && vmItems.length >= 0; // allow empty list
+  // Use VM path only when we actually have menu items
+  const useVM = Boolean(menuContext) && vmItems.length > 0;
 
   // Otherwise, fallback to worker-provided plugin definitions (compatibility path)
   const { plugins, loading, error } = usePluginsForTree(treeId, workerClient);

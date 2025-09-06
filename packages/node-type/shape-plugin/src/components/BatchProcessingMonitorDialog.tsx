@@ -23,7 +23,7 @@ import {
   BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { BatchMonitorDialogProps, BatchStatus } from '~/types';
+import type { BatchMonitorDialogProps, BatchStatus } from '~/shared';
 // import { mockShapeService } from '~/services/MockShapeService';
 import { BatchProgressSplitView } from './batch/BatchProgressSplitView';
 import { MapPreview } from './batch/MapPreview';

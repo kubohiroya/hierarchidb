@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Alert, AlertTitle, Stack } from '@mui/material';
 import { OpenInNew as OpenInNewIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
-import type { StepProps } from '~/types';
+import type { StepProps } from '~/shared';
 import { DATA_SOURCE_CONFIGS } from '~/mock/data';
 
 /**

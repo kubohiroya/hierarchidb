@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Check as CheckIcon } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
-import type { StepProps } from "~/types";
+import type { StepProps } from "~/shared";
 import { useCountryMetadata } from "~/hooks/useCountryMetadata";
 import {
   DATA_SOURCE_CONFIGS,

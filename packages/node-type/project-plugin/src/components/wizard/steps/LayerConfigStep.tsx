@@ -60,7 +60,7 @@ const nodeTypeIcons: Record<string, React.ReactNode> = {
   shape: <ShapeIcon />,
   location: <LocationIcon />,
   route: <RouteIcon />,
-  propertyresolver: <PropertyIcon />,
+  resolver: <PropertyIcon />,
 };
 
 const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose, onSave }) => {
@@ -161,7 +161,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
                       <MenuItem value="shape">Shape</MenuItem>
                       <MenuItem value="location">Location</MenuItem>
                       <MenuItem value="route">Route</MenuItem>
-                      <MenuItem value="propertyresolver">Property Resolver</MenuItem>
+                      <MenuItem value="resolver">Property Resolver</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

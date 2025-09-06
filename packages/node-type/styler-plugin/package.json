@@ -5,22 +5,22 @@
   "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./shared": {
-      "types": "./dist/shared/index.d.ts",
+      "types": "./src/shared/index.ts",
       "import": "./dist/shared/index.js"
     },
     "./ui": {
-      "types": "./dist/ui/index.d.ts",
+      "types": "./src/ui/index.ts",
       "import": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./dist/worker/index.d.ts",
+      "types": "./src/worker/index.ts",
       "import": "./dist/worker/index.js"
     }
   },
@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
@@ -53,7 +54,9 @@
     "@mui/material": "^7.3.1",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
-    "dexie": "^4.2.0"
+    "dexie": "^4.2.0",
+    "react-i18next": "12.3.1",
+    "i18next": "22.5.0"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",

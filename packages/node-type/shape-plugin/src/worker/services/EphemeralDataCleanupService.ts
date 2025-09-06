@@ -3,8 +3,7 @@
  * Manages automatic cleanup of expired WorkingCopies and batch processing data
  */
 
-import { EntityId, NodeId } from '@hierarchidb/common-type';
-import { BatchSession, ShapeWorkingCopy } from '../../shared';
+import { NodeId, BatchSession, ShapeWorkingCopy } from '../../shared';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;
@@ -115,7 +114,7 @@ export class EphemeralDataCleanupService {
   /**
    * Cleanup specific working copy and related data
    */
-  async cleanupWorkingCopy(workingCopyId: EntityId): Promise<void> {
+  async cleanupWorkingCopy(workingCopyId: NodeId): Promise<void> {
     console.log(`Cleaning up working copy: ${workingCopyId}`);
     
     try {
@@ -228,7 +227,7 @@ export class EphemeralDataCleanupService {
     console.log('Mock: Cleanup transaction completed');
   }
 
-  private async mockCleanupWorkingCopyTransaction(workingCopyId: EntityId): Promise<void> {
+  private async mockCleanupWorkingCopyTransaction(workingCopyId: NodeId): Promise<void> {
     console.log(`Mock: Cleaning up working copy ${workingCopyId} and related data`);
     
     // Simulate removal of:

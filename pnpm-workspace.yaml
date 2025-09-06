@@ -11,8 +11,7 @@ packages:
   - packages/backend/*
   - packages/node-type/*
   - packages/feature/*
-  # Exclude unstable plugin from workspace (see TASKS.md)
-  - '!packages/node-type/spreadsheet-plugin'
+  # Spreadsheet plugin now included for local build/test
 
 ignoredBuiltDependencies:
   - esbuild

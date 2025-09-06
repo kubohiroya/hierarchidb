@@ -1,16 +1,13 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
+    
     "lib": [
       "ES2020",
       "DOM",
       "DOM.Iterable"
     ],
     "module": "ESNext",
-    "outDir": "./dist",
-    "rootDir": "../../../",
     "moduleResolution": "node",
     "noEmit": false,
     "emitDeclarationOnly": false,
@@ -19,16 +16,16 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@hierarchidb/common-auth": [
+        "../../common/auth/dist/index.d.ts"
       ]
     },
-    "tsBuildInfoFile": "dist/.tsbuildinfo",
+    
     "types": ["vite/client"],
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*",
-    "vitest.setup.ts"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",

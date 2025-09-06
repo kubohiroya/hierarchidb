@@ -104,14 +104,15 @@ export function calculateSelectionStats(urlMetadata: UrlMetadata[]): SelectionSt
 
   urlMetadata.forEach((metadata) => {
     countries.add(metadata.countryCode);
-    if (metadata.adminLevel >= 0 && metadata.adminLevel < levelCounts.length) {
-      levelCounts[metadata.adminLevel]++;
+    const lvl = metadata.adminLevel;
+    if (typeof lvl === 'number' && lvl >= 0 && lvl < levelCounts.length) {
+      levelCounts[lvl] = (levelCounts[lvl] ?? 0) + 1;
     }
-    if (metadata.estimatedSize) {
+    if (typeof metadata.estimatedSize === 'number') {
       estimatedSize += metadata.estimatedSize;
+      // Rough estimate: 1MB ≈ 1000 features
+      estimatedFeatures += Math.floor(metadata.estimatedSize / 1000);
     }
-    // Rough estimate: 1MB ≈ 1000 features
-    estimatedFeatures += Math.floor((metadata.estimatedSize || 0) / 1000);
   });
 
   // Rough processing time estimate: 1 second per 1000 features + 10 seconds base

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 // @hierarchidb/_app-datasource パッケージのコンポーネントを活用（想定）
 // 実際のimportは、_app-datasourceパッケージの実装に依存
-import type { StepProps } from '~/types';
+import type { StepProps } from '~/shared';
 import { DATA_SOURCE_CONFIGS } from '~/mock/data';
 
 /**

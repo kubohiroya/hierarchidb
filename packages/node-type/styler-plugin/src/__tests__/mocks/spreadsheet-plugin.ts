@@ -191,7 +191,8 @@ export class SpreadsheetCSVApiDriver {
   }
 
   async getTableMetadata(id: string): Promise<CSVTableMetadata | null> {
-    return await this.manager.get(id);
+    const m = await this.manager.get(id);
+    return (m as any) ?? null;
   }
 
   async listTables(pluginId?: string, pagination?: { offset: number; limit: number }): Promise<CSVTableListResult> {

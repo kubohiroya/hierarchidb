@@ -112,8 +112,8 @@ export class AuthConfigValidator {
         throw new Error(`設定エラー: ${field}のURL形式が不正です: ${url}`);
       }
       
-      // 【HTTPS強制】: 本番環境ではHTTPSを必須とする
-      if (process.env.NODE_ENV === 'production' && !url.startsWith('https://')) {
+      // 【HTTPS強制】: 本番環境ではHTTPSを必須とする（Vite 環境変数）
+      if ((globalThis as any)?.import?.meta?.env?.PROD && !url.startsWith('https://')) {
         throw new Error(`セキュリティエラー: 本番環境では${field}はHTTPSである必要があります`);
       }
     }

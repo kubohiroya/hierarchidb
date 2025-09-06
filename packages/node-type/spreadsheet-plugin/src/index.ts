@@ -14,3 +14,4 @@ export type { SpreadsheetEntity, SpreadsheetWorkingCopy } from './extension/defi
 export * from './extension/constants';
 export * from './steps/DataSourceStep';
 export * from './steps/FilteringStep';
+export * from './services';

@@ -19,7 +19,7 @@ export function IndeterminateCheckbox({
   onChange,
   size,
   sx,
-}: IndeterminateCheckboxProps) {
+}: IndeterminateCheckboxProps): JSX.Element {
   return (
     <Checkbox
       id={id}

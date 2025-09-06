@@ -101,7 +101,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
           <Typography variant="body1" paragraph>
             An error occurred with the authentication system.
           </Typography>
-          {process.env.NODE_ENV === 'development' && (
+          {(globalThis as any)?.import?.meta?.env?.DEV && (
             <Typography
               variant="body2"
               color="text.secondary"

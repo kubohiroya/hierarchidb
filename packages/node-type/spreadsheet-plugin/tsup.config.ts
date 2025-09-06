@@ -5,6 +5,8 @@ export default createTsupConfig({
     'provider',
     'provider-dom',
     'provider-i18next',
+    'react-i18next',
+    'i18next',
     '@mui/material',
     '@mui/icons-material',
     '@emotion/provider',

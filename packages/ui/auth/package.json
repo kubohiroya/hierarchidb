@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -26,6 +26,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
     "@react-oauth/google": "^0.12.2",
     "oidc-client-ts": "^3.3.0",
     "react-gravatar": "^2.6.3",

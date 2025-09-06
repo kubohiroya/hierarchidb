@@ -1,5 +1,12 @@
 # PropertyResolver Plugin
 
+## 依存管理とインポート規約（重要）
+共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
+- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie
+- dependencies: @hierarchidb/util ほか必要に応じて @hierarchidb/feature/*
+- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
+- import は公開API、型は `import type`、重い処理は dynamic import。
+- tsup external は共通設定で外部化済み。
 ## 概要
 
 PropertyResolverプラグインは、異なるデータスキーマ間でプロパティをマッピングするための強力で使いやすいツールです。Stylerプラグインと連携することで、地理データのスタイリングにおいて異なるプロパティ名を持つデータセットを統一的に扱えるようになります。

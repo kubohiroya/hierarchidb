@@ -231,7 +231,8 @@ export class StylerDataService {
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
     }
-    return {
+    // Return only known fields from StylerConfig
+    const cfg: Partial<StylerConfig> = {
       algorithm: 'linear',
       colorSpace: 'hsv',
       targetProperty: 'fill-color', // デフォルト
@@ -245,6 +246,13 @@ export class StylerDataService {
       },
       enabled: true,
       valueColumn: selectedValueColumn,
+      keyColumn:
+        tableMetadata.columns.find((c) => c.name === 'id')?.name ??
+        tableMetadata.columns[0]?.name,
     };
+    // Legacy aliases expected by existing tests/UI: mirror value/key columns
+    (cfg as any).selectedValueColumn = cfg.valueColumn;
+    (cfg as any).selectedKeyColumn = cfg.keyColumn;
+    return cfg;
   }
 }

@@ -15,7 +15,18 @@ import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { WorkerProvider } from './contexts/WorkerProvider';
 import { TitleLogo } from './components/TitleLogo';
+import { InitInspector } from './dev/InitInspector';
 import { NotificationSystem } from '@hierarchidb/ui-core';
+import { APP_VERSION, BUILD_TIME } from './version';
+
+// Log version and build time at startup (local time)
+try {
+  const localBuildTime = (() => {
+    try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+  })();
+  // eslint-disable-next-line no-console
+  console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
+} catch {}
 
 declare global {
   interface Window {
@@ -42,6 +53,16 @@ if (typeof window !== 'undefined') {
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
+
+  // Opportunistically warm-load menu builders; cache to global for sync access in hooks
+  import('./plugins/menu-builders')
+    .then((mod) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__HDB_MENU_BUILDERS__ = mod;
+    })
+    .catch((err) => {
+      console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
+    });
 }
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
@@ -79,7 +100,7 @@ export function HydrateFallback() {
         backgroundColor: '#ffffff',
       }}
     >
-      {/* Minimal spinner to avoid duplicate splash visuals */}
+      {/* Minimal, framework-agnostic spinner to avoid hydration/style issues */}
       <div
         aria-label="Loading"
         role="status"
@@ -93,7 +114,10 @@ export function HydrateFallback() {
         }}
       />
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes hdb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes hdb-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
       ` }} />
     </div>
   );
@@ -219,6 +243,10 @@ function AppContent() {
   return (
     <StrictMode>
       <Outlet />
+      {/* Debug overlay to quickly classify issues: cache vs comms vs UI update. */}
+      {typeof window !== 'undefined' && (import.meta.env.DEV || new URLSearchParams(window.location.search).get('debug') === 'init') ? (
+        <InitInspector />
+      ) : null}
     </StrictMode>
   );
 }

@@ -8,8 +8,8 @@ import type {
   SimplifyTask,
   ValidationResult,
   SelectionStats
-} from '~/types';
-import { DEFAULT_PROCESSING_CONFIG } from '~/types';
+} from '~/shared';
+import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
 import { 
   generateMockDownloadTasks,
   generateMockSimplifyTasks,
@@ -88,7 +88,7 @@ export class MockShapeService {
 
   async createWorkingCopy(nodeId: NodeId, initialData?: Partial<ShapeWorkingCopy>): Promise<ShapeWorkingCopy> {
     const workingCopy: ShapeWorkingCopy = {
-      id: `wc-${Date.now()}` as EntityId,
+      id: nodeId as NodeId,
       nodeId,
       name: initialData?.name || '',
       description: initialData?.description,

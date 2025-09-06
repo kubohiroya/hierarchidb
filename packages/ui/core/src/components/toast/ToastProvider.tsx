@@ -172,7 +172,7 @@ export function ToastProvider({
   children,
   maxToasts = 3,
   defaultConfig = {},
-}: ToastProviderProps) {
+}: ToastProviderProps): JSX.Element {
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
 
   const mergedDefaultConfig = useMemo(
