@@ -1,6 +1,6 @@
 # HierarchiDB Node Type Plugin System
 
-最終更新: 2025-09-04 22:00 UTC
+最終更新: 2025-09-06 00:00 UTC
 
 HierarchiDBの拡張可能なノードタイププラグインシステムです。地理情報処理、データ管理、階層構造管理など、様々なドメインに特化したノードタイプを提供し、アプリケーションの機能を拡張します。
 
@@ -136,27 +136,27 @@ graph TB
 
 ### 比較表（概要）
 
-| プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapのプレビュー | ネットワーク要件 | 備考 |
+| プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapプレビュー | ネットワーク要件 | 備考 |
 |---|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | - |  |  |  | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
-| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities-db') |  |  |  | なし | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities-db') |  |  |  | なし（ローカル取り込み想定） | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | Dexie('styler-metadata-db') |  |  |  | なし | CSVメタDB |
-| basemap-plugin | basemap | folder | Dexie('basemap-db') |  |  | supported | （タイルサーバ利用時）運用時にネット接続が必要 | MapLibre 統合 |
+| base-plugin | base | - | - | - | - | - | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
+| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities-db') | - | - | - | なし | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities-db') | - | - | - | なし（ローカル取り込み想定） | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | Dexie('styler-metadata-db') | - | - | - | なし | CSVメタDB |
+| basemap-plugin | basemap | folder | Dexie('basemap-db') | - | - | supported | タイルサーバ利用時は運用時に必要 | MapLibre 統合 |
 | shape-plugin | shape | folder（に統一予定） | Dexie('shape-db'), Dexie('shape-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
 | location-plugin | location | folder | Dexie('location-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
-| route-plugin | route | location | Dexie('route-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | BatchService/AbstractBatchSession/Lane制御 |
-| resolver-plugin | resolver | folder | Dexie('resolver-db') |  |  |  | なし | Schema 検出/前処理 |
-| project-plugin | project | folder | Dexie('project-db') |  |  | supported | （プレビューで basemap に依存する場合あり） | 領域/設定 |
+| route-plugin | route | folder（に統一予定） | Dexie('route-db') | Yes | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
+| resolver-plugin | resolver | folder | Dexie('resolver-db') | - | - | - | なし | Schema 検出/前処理 |
+| project-plugin | project | folder | Dexie('project-db') | - | - | supported | プレビューが basemap に依存する場合あり | 領域/設定 |
 
 注記:
 - データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
 - Import/Export は CoreDB と Persistent なエンティティDBのシリアライズ/デシリアライズにより原則サポートされます（本表のカラムからは削除）。フォルダやタグ等の共通メタも対象に含まれます。
-- ネットワーク要件: shape/location/route は作成・編集時にネット接続が必要（データ取得・外部API連携のため）。basemap はタイルサーバを利用する場合、運用中に外部タイルサーバへの接続が必要。その他は基本オフラインで運用可能。
-- バッチは非同期一括処理の仕組み（セッション/タスク管理等）が実装されている場合に「Yes」。route は現状コード上にバッチ基盤を確認できないため空欄としています。
+- ネットワーク要件: shape/location/route は作成・編集時にネット接続が必要なケースがあります。basemap はタイルサーバを利用する場合、運用中に外部タイルサーバへの接続が必要。その他は基本オフラインで運用可能。
+- バッチは非同期一括処理の仕組み（セッション/レーン/タスク管理等）が実装されている場合に「Yes」。route は `RouteBatchManager/RouteBatchSession` に基づくバッチが実装済みです。
 - ベクトルタイルは当該プラグインがベクトルタイルを生成（create）できるものを示します。
-- Mapのプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
- - nodeType の命名方針: ユーザーに露出しうる識別子のため、`-plugin` サフィックスを廃止し、`folder`/`basemap`/`location`/`project`/`resolver` などに統一します（既存実装は順次移行）。
+- Mapプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
+- nodeType の命名方針: ユーザーに露出しうる識別子のため、`-plugin` サフィックスを廃止し、`folder`/`basemap`/`location`/`project`/`resolver` などに統一します（既存実装は順次移行）。
 
 ### base-plugin の責務（役割）
 
