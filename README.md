@@ -236,6 +236,7 @@ pnpm typecheck
 # テスト実行
 pnpm test        # 単体テスト (Vitest)
 pnpm e2e         # E2Eテスト (Playwright)
+pnpm coverage    # すべてのワークスペースでカバレッジ生成 (Vitest)
 
 # コード品質
 pnpm lint        # ESLint による静的解析

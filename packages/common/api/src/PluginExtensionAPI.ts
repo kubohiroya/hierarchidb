@@ -94,6 +94,17 @@ export class PluginExtensionRegistry {
   private extensions: Map<NodeType, PluginExtensionAPI<Record<string, WorkerAPIMethod>>> = new Map();
 
   /**
+   * Normalize a node type identifier to the canonical short form.
+   * - Strips a trailing "-plugin" suffix for backward compatibility.
+   */
+  private normalizeNodeType<T extends string>(nodeType: T): T {
+    // Accept values like "folder-plugin" and normalize to "folder"
+    return (typeof nodeType === 'string' && nodeType.endsWith('-plugin')
+      ? (nodeType.slice(0, -8) as T)
+      : nodeType) as T;
+  }
+
+  /**
    * Register a plugin API extension
    *
    * @template T - Plugin methods type
@@ -113,7 +124,8 @@ export class PluginExtensionRegistry {
    * Overwrites any existing plugin for the same nodeType
    */
   register<T extends Record<string, WorkerAPIMethod>>(extension: PluginExtensionAPI<T>): void {
-    this.extensions.set(extension.nodeType, extension);
+    const key = this.normalizeNodeType(extension.nodeType);
+    this.extensions.set(key, extension);
   }
 
   /**
@@ -127,7 +139,8 @@ export class PluginExtensionRegistry {
    * ```
    */
   unregister(nodeType: NodeType): void {
-    this.extensions.delete(nodeType);
+    const key = this.normalizeNodeType(nodeType);
+    this.extensions.delete(key);
   }
 
   /**
@@ -148,7 +161,8 @@ export class PluginExtensionRegistry {
   getExtension<T extends Record<string, WorkerAPIMethod> = Record<string, WorkerAPIMethod>>(
     nodeType: NodeType
   ): PluginExtensionAPI<T> | undefined {
-    return this.extensions.get(nodeType) as PluginExtensionAPI<T> | undefined;
+    const key = this.normalizeNodeType(nodeType);
+    return this.extensions.get(key) as PluginExtensionAPI<T> | undefined;
   }
 
   /**

@@ -8,6 +8,32 @@ export default defineConfig({
     globals: true,
     root: process.cwd(),
     passWithNoTests: true,
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: 'coverage',
+      reporter: ['text', 'html', 'lcov'],
+      all: true,
+      include: [
+        'app/**/*.{ts,tsx}',
+        'packages/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/__tests__/**',
+        '**/*.stories.{ts,tsx}',
+        '**/dist/**',
+        '**/build/**',
+        '**/storybook-static/**',
+        '**/e2e/**',
+        '**/references/**'
+      ],
+      thresholds: {
+        statements: 0,
+        branches: 0,
+        functions: 0,
+        lines: 0,
+      }
+    }
   },
   resolve: {
     alias: {
