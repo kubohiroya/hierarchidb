@@ -138,6 +138,21 @@ graph TB
 
 | プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapのプレビュー | ネットワーク要件 | 備考 |
 |---|---|---|---|---|---|---|---|---|
+
+## 🔎 Tabular Preview（Location/Shape/Route 共通）
+
+location / shape / route の各プラグインは、バッチ処理で正規化した“表データ”を保存してUIでプレビューできます（デフォルトOFF）。
+
+- 有効化フラグ（環境変数 or `globalThis.FEATURE_FLAGS`）
+  - `LOCATION_TABULAR=1`
+  - `SHAPE_TABULAR=1`
+  - `ROUTE_TABULAR=1`
+- UI 機能
+  - 複数条件フィルタ（AND: `eq`/`neq`/`contains`/`gt`/`gte`/`lt`/`lte`）
+  - 表示列の切替（列セレクタ）
+  - `eq` 条件は遅延作成される倒立インデックスで高速化
+- 注意: 表プレビューは検索・検証用途です。ノード群の統合シリアライズ/デシリアライズは従来どおり Import/Export 機能をお使いください。
+
 | base-plugin | base | - | - |  |  |  | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
 | folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities-db') |  |  |  | なし | 拡張レジストリ |
 | spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities-db') |  |  |  | なし（ローカル取り込み想定） | CSV/TSV/Excel |

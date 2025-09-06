@@ -48,3 +48,8 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 - devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
 - import は公開API、型は `import type`、重い処理は dynamic import。
 - tsup external は共通設定で外部化済み。
+
+## Tabular Preview（データテーブル）
+- フラグ `SHAPE_TABULAR=1` を有効にすると、BatchProcessingDialog に「Data Table」タブが追加され、簡略化後のプロパティ表を閲覧できます。
+- 機能: 複数条件フィルタ（AND）、列の可視切替、`eq` 条件の索引（初回遅延作成）。
+- 目的: プロパティ水準での確認・検索。正式なシリアライズ/デシリアライズは Import/Export を利用してください。
