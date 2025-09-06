@@ -1812,6 +1812,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@hierarchidb/common-auth':
+        specifier: workspace:*
+        version: link:../../common/auth
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../core
@@ -2647,6 +2650,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@hierarchidb/common-auth':
+        specifier: workspace:*
+        version: link:../../common/auth
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../auth

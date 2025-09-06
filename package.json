@@ -54,7 +54,13 @@
     "vk:task": "node scripts/vk-task.mjs",
     "vk:task:commit-grouping": "node scripts/vk-task.mjs --preset grouped-commits",
     "vk:sync": "node scripts/vk-sync.mjs",
-    "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime-worker/worker/docs"
+    "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime-worker/worker/docs",
+    "ci:versions": "git rev-parse HEAD && node -v && pnpm -v && npx tsc -v || true",
+    "ci:clean": "pnpm store prune || true && find . -name dist -type d -prune -exec rm -rf {} + || true && find . -name '*.tsbuildinfo' -type f -delete || true",
+    "ci:install": "pnpm install --no-frozen-lockfile --force",
+    "ci:typecheck:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm -r --workspace-concurrency 1 typecheck",
+    "ci:build:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm -r --workspace-concurrency 1 build",
+    "ci:all:local": "pnpm ci:clean && pnpm ci:install && pnpm ci:versions && pnpm ci:typecheck:local"
   },
   "dependencies": {},
   "devDependencies": {

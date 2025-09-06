@@ -1,8 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": false,
-    "incremental": false,
+    
     "lib": [
       "ES2020",
       "DOM",
@@ -22,7 +21,7 @@
         "../../common/auth/dist/index.d.ts"
       ]
     },
-    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/ui-auth.tsbuildinfo",
+    
     "types": ["vite/client"],
     "skipLibCheck": true
   },
