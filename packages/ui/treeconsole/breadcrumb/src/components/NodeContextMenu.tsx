@@ -57,7 +57,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
     anchorEl,
     open,
     onClose,
-    nodeType = 'folder-plugin',
+    nodeType = 'folder',
     canOpen: _canOpen = true,
     canEdit = true,
     canCreate = true,
