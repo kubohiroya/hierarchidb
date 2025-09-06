@@ -9,6 +9,7 @@ import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import type { ProjectEntity, ProjectWorkingCopy, ProjectCategory } from '~/types/project-types';
 import { projectPluginAPI } from '~/api/ProjectPluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
+import { ProjectEntitySerializer } from '../shared/serialization';
 
 /**
  * Create project data interface
@@ -519,16 +520,16 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    // TODO: Implement serialization when PluginEntitySerializer is available
-    return { jsonData: entity, binaryData: new Map(), binaryFilenames: new Map() };
+    const { jsonData, binaryData, binaryFilenames } = ProjectEntitySerializer.serialize(entity);
+    return { jsonData, binaryData, binaryFilenames };
   }
 
   /**
    * Deserialize Project entity with binary data restoration
    */
   async deserialize(jsonData: any, _binaryData: Map<string, Uint8Array>): Promise<ProjectEntity> {
-    // TODO: Implement deserialization when PluginEntitySerializer is available
-    return jsonData as ProjectEntity;
+    const restored = ProjectEntitySerializer.deserialize({ jsonData, binaryData: _binaryData });
+    return restored as ProjectEntity;
   }
 
   /**
@@ -539,8 +540,8 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
     binaryData: Map<string, Uint8Array>;
     binaryFilenames: Map<string, string>;
   }> {
-    // TODO: Implement array serialization when PluginEntitySerializer is available
-    return { jsonArray: entities, binaryData: new Map(), binaryFilenames: new Map() };
+    const { jsonArray, binaryData, binaryFilenames } = ProjectEntitySerializer.serializeEntityArray(entities);
+    return { jsonArray, binaryData, binaryFilenames };
   }
 
   /**
@@ -550,7 +551,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
     jsonArray: any[],
     _binaryData: Map<string, Uint8Array>
   ): Promise<ProjectEntity[]> {
-    // TODO: Implement array deserialization when PluginEntitySerializer is available
-    return jsonArray as ProjectEntity[];
+    const restored = ProjectEntitySerializer.deserializeEntityArray(jsonArray, _binaryData);
+    return restored as ProjectEntity[];
   }
 }
