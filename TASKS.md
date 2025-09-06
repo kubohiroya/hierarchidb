@@ -98,14 +98,14 @@
   - ブランチ: `refactor/node-type/remove-plugin-suffix`
   - 依存: README 比較表の更新完了
   - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
-  - 方針: 互換マッピング（旧→新）をレジストリ層に追加し、段階的に既存参照を置換。旧識別子は受理（当面）。
+  - 方針: 入口（UI ルーティング等）でのみ旧 `*-plugin` を一回正規化し内部は常に短い識別子。レジストリ層等での広域正規化は行わない。
   - 受け入れ基準（DoD）:
     - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン。現状は大半が短縮済みのため差分少）。
     - [ ] UI/Worker のハードコード参照を新識別子へ統一（例: `folder`）。
-    - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（Extension Registry の登録・取得・呼出し）。
-    - [ ] `pnpm typecheck && pnpm test` がグリーン（互換で旧名でも動作）。
+    - [ ] 入口のみで旧識別子（`*-plugin`）を受理（UI ルートのパラメータ正規化）。
+    - [ ] `pnpm typecheck && pnpm test` がグリーン（入口互換で旧名 URL でも動作）。
   - ロールバック手順:
-    - 互換マッピングを残したまま、識別子変更コミットをリバートすれば即復旧可能。
+    - 入口の正規化をリバートするだけで即時復旧可能（内部は短い識別子のみのため影響限定）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 // node-type プラグイン整備（監査結果に基づく：P1）
