@@ -22,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -37,6 +38,11 @@ jobs:
 
       - name: Install dependencies (force re-resolve)
         run: pnpm install --no-frozen-lockfile --force
+
+      - name: Ensure backend node_modules
+        run: |
+          pnpm --filter @hierarchidb/bff install --no-frozen-lockfile --force
+          pnpm --filter @hierarchidb/cors-proxy install --no-frozen-lockfile --force
 
       - name: Show HEAD and tool versions
         run: |
@@ -64,6 +70,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -100,6 +107,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
         with:
           fetch-depth: 0
 
@@ -147,6 +157,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
