@@ -36,6 +36,7 @@ import type {
   //FeatureData,
 } from '../types';
 import type { Feature } from '../../types';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB';
 import type { NodeId } from '@hierarchidb/common-type';
 
 interface TileLayer {
@@ -578,6 +579,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
     layerConfigs.forEach((config) => config.properties.forEach((prop) => allowedProps.add(prop)));
 
     // Filter properties
+    if (allowedProps.size === 0) return properties;
     for (const [key, value] of Object.entries(properties)) {
       if (allowedProps.has(key)) {
         filtered[key] = value;
@@ -617,13 +619,14 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
         return new TextDecoder().decode(cached);
       }
 
-      // In production, load from EphemeralDB
+      // Load from EphemeralDB simplifiedBuffers (stage simplify2)
       console.log(`Loading tile buffer ${bufferId} from storage`);
-      
-      const buffer = await this.ephemeralDB.tileBuffers.get(bufferId);
-      if (buffer) {
-        this.tileCache.set(bufferId, buffer.data);
-        return new TextDecoder().decode(buffer.data);
+      const db = getEphemeralShapeDB();
+      const rec = await db.simplifiedBuffers.get(bufferId);
+      if (rec) {
+        const bytes = new TextEncoder().encode(rec.data).buffer;
+        this.tileCache.set(bufferId, bytes);
+        return rec.data;
       }
       
       return null;
@@ -645,15 +648,26 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       // Calculate hash for integrity
       const hash = await this.calculateHash(tile);
       
-      // In production, persist to EphemeralDB
-      // await this.ephemeralDB.vectorTiles.put({
-      //   id: tileId,
-      //   data: tile,
-      //   hash: hash,
-      //   size: tile.byteLength,
-      //   timestamp: Date.now(),
-      //   contentType: 'application/vnd.mapbox-vector-tile'
-      // });
+      // Persist to EphemeralDB vectorTiles
+      try {
+        const db = getEphemeralShapeDB();
+        await db.vectorTiles.put({
+          id: tileId,
+          sessionId: '',
+          nodeId: '' as any,
+          z: 0,
+          x: 0,
+          y: 0,
+          data: tile,
+          hash,
+          size: tile.byteLength,
+          featureCount: 0,
+          timestamp: Date.now(),
+          contentType: 'application/vnd.mapbox-vector-tile',
+        });
+      } catch (e) {
+        console.warn('VectorTileWorker: failed to persist tile to EphemeralDB:', e);
+      }
       
       console.log(`Tile ${tileId} saved with hash: ${hash.substring(0, 8)}...`);
       

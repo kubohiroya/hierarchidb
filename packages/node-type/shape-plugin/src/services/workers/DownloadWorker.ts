@@ -22,6 +22,7 @@ import type {
   //DataSourceName
 } from '../types';
 import { createShapeDownloadService } from '../download/factory';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 /**
@@ -89,10 +90,29 @@ export class DownloadWorker implements DownloadWorkerAPI {
       const downloadTime = Date.now() - startTime;
       const compressionRatio = this.calculateCompressionRatio(rawData);
 
+      // 7. Persist raw buffer to Ephemeral DB for downstream stages
+      const outputBufferId = `raw-${task.taskId}`;
+      try {
+        const db = getEphemeralShapeDB();
+        await db.rawBuffers.put({
+          id: outputBufferId,
+          sessionId: task.sessionId,
+          nodeId: task.nodeId,
+          data: JSON.stringify(geoJson),
+          featureCount: geoJson.features.length,
+          bbox: turf.bbox(geoJson) as [number, number, number, number],
+          downloadTime,
+          size: rawData.byteLength,
+          timestamp: Date.now(),
+        });
+      } catch (e) {
+        console.warn('DownloadWorker: failed to persist raw buffer to EphemeralDB:', e);
+      }
+
       const result: DownloadResult = {
         taskId: task.taskId,
         status: 'completed',
-        outputBufferId: `buffer-${task.taskId}-${Date.now()}`,
+        outputBufferId,
         featureCount: geoJson.features.length,
         downloadTime,
         downloadSize: rawData.byteLength,
