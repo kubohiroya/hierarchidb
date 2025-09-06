@@ -1,4 +1,5 @@
 import { getRowStoreDB } from './RowStoreDB';
+import { TabularIndexer } from './Indexer';
 
 export type ColumnFilter = {
   column: string;
@@ -23,6 +24,30 @@ export class TabularQueryService {
   constructor(private readonly pluginId: string) {}
   async query(tableId: string, filters: ColumnFilter[], limit = 1000): Promise<any[]> {
     const db = getRowStoreDB();
+    // Try index-assisted path for eq-only filters
+    const eqFilters = filters.filter((f) => f.op === 'eq');
+    const canUseIndex = filters.length > 0 && eqFilters.length === filters.length;
+    if (canUseIndex) {
+      const indexer = new TabularIndexer(this.pluginId);
+      let acc: Set<number> | null = null;
+      for (const f of eqFilters) {
+        let ids = await indexer.getRowIds(tableId, f.column, f.value);
+        if (!ids || ids.length === 0) {
+          // Build index lazily for the requested column
+          await indexer.indexRows(tableId, [f.column]);
+          ids = await indexer.getRowIds(tableId, f.column, f.value);
+        }
+        const set = new Set(ids);
+        acc = acc ? new Set([...acc].filter((x) => set.has(x))) : set;
+        if (acc.size === 0) return [];
+      }
+      const rowIds = [...(acc || new Set<number>())].slice(0, limit);
+      if (rowIds.length > 0) {
+        return await new TabularIndexer(this.pluginId).getRowsByIds(tableId, rowIds, limit);
+      }
+    }
+
+    // Fallback full scan
     const chunks = await db.table('rowChunks').where(['pluginId+tableId'] as any).equals([this.pluginId, tableId] as any).sortBy('chunkIndex');
     const out: any[] = [];
     for (const c of chunks) {
@@ -35,4 +60,3 @@ export class TabularQueryService {
     return out;
   }
 }
-

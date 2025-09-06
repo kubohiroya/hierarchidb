@@ -8,7 +8,7 @@ import { LocationBatchSession } from './LocationBatchSession';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 
 export class LocationBatchSessionManager {
-  private controllers = new Map<string, SessionController>();
+  private shared = new Map<string, LocationBatchSession>();
   private progress = new Map<string, Set<(p: ProgressEvent) => void>>();
   private summaries = new Map<string, SessionSummary>();
 
@@ -19,7 +19,6 @@ export class LocationBatchSessionManager {
   ): Promise<SessionSummary> {
     const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new SessionController(sessionId, nodeId, points, settings);
-    this.controllers.set(sessionId, controller);
     const bbox = computeBbox(points);
     const summary: SessionSummary = {
       sessionId,
@@ -41,16 +40,14 @@ export class LocationBatchSessionManager {
       // @ts-ignore
       await db.table('sessions').put({ sessionId, nodeId, bbox, zoomMin: summary.zoomMin, zoomMax: summary.zoomMax, totalPoints: points.length, createdAt: Date.now(), status: 'running' });
     } catch {}
-    const set = this.progress.get(sessionId);
-    if (set && set.size > 0) controller.setProgressCallback((ev) => {
-      for (const cb of set) cb(ev);
-    });
-    // Fire and forget (shared session wrapper)
+    // Fire and forget（共有セッション）
     const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: 4 }, controller, (ev) => {
       const set2 = this.progress.get(sessionId);
       if (!set2) return;
       for (const cb of set2) cb(ev);
     });
+    this.shared.set(sessionId, shared);
+
     shared.start().then(async () => {
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
@@ -77,12 +74,7 @@ export class LocationBatchSessionManager {
       this.progress.set(sessionId, set);
     }
     set.add(cb);
-    const ctl = this.controllers.get(sessionId);
-    if (ctl) ctl.setProgressCallback((ev) => {
-      const s = this.progress.get(sessionId);
-      if (!s) return;
-      for (const fn of s) fn(ev);
-    });
+    // 共有セッションのシンクで late subscriber にも配信されるため、ここでの再配線は不要
     return () => {
       const s = this.progress.get(sessionId);
       if (!s) return;
@@ -96,9 +88,9 @@ export class LocationBatchSessionManager {
   }
 
   // Control APIs
-  pause(sessionId: string) { this.controllers.get(sessionId)?.pause(); }
-  resume(sessionId: string) { this.controllers.get(sessionId)?.resume(); }
-  cancel(sessionId: string) { this.controllers.get(sessionId)?.cancel(); }
+  pause(sessionId: string) { this.shared.get(sessionId)?.pause(); }
+  resume(sessionId: string) { this.shared.get(sessionId)?.resume(); }
+  cancel(sessionId: string) { this.shared.get(sessionId)?.cancel(); }
 }
 
 function computeBbox(points: LocationPointInput[]): [number, number, number, number] {

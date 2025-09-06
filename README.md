@@ -20,6 +20,18 @@ High-performance tree-structured data management framework for browser environme
 - 🌍 **国際化対応**: 多言語サポート（i18n）
 - ♿ **アクセシビリティ**: WCAG 2.1 準拠
 
+### Tabular Preview（Location/Shape/Route）
+- 3つのノードタイプで正規化済みの“表”を保存（フラグON時）し、UIでプレビューできます。
+- 機能:
+  - 複数条件フィルタ（AND: eq/neq/contains/gt/gte/lt/lte）
+  - 表示列の切り替え（可視列セレクタ）
+  - eq 条件はインデックス（遅延作成）を用いて高速化
+- 既定はOFF（既存挙動を変更しません）。必要に応じて以下の環境変数で有効化してください。
+  - `LOCATION_TABULAR=1`
+  - `SHAPE_TABULAR=1`
+  - `ROUTE_TABULAR=1`
+※ ノードの統合的なシリアライズ/デシリアライズは従来どおり Import/Export を利用してください。
+
 ## 技術スタック
 
 - **Frontend**: React 18, React Router v7, Material-UI v6

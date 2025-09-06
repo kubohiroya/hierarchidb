@@ -327,10 +327,8 @@ export class LocationBatchManager {
     }
 
     try {
-      const { authFetch } = await import('./utils/authFetch');
-      const response = await authFetch(`${endpoint}?${params}`);
-      const data = await response.json();
-
+      const { getJson } = await import('./utils/sharedNet');
+      const data = await getJson(`${endpoint}?${params}`);
       return this.convertOSMToLocations(data);
     } catch (error) {
       console.error('OSM search failed:', error);
@@ -364,16 +362,8 @@ export class LocationBatchManager {
     const query = config.options?.overpassQuery || this.buildOverpassQuery(config);
 
     try {
-      const { authFetch } = await import('./utils/authFetch');
-      const response = await authFetch(endpoint, {
-        method: 'POST',
-        body: query,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-
-      const data = await response.json();
+      const { postJson } = await import('./utils/sharedNet');
+      const data = await postJson(endpoint, query, { 'Content-Type': 'application/x-www-form-urlencoded' });
       return this.convertOverpassToLocations(data);
     } catch (error) {
       console.error('Overpass search failed:', error);
@@ -391,12 +381,10 @@ export class LocationBatchManager {
     }
 
     try {
-      const { authFetch } = await import('./utils/authFetch');
-      const response = await authFetch(config.options.customEndpoint, {
-        headers: config.options.customHeaders || {},
-      });
-
-      const data = await response.json();
+      const { getJson } = await import('./utils/sharedNet');
+      const url = config.options.customEndpoint;
+      const params = new URLSearchParams((config.options.queryParams || {}) as any).toString();
+      const data = await getJson(params ? `${url}?${params}` : url, { headers: config.options.customHeaders as any });
       return this.convertCustomToLocations(data);
     } catch (error) {
       console.error('Custom search failed:', error);

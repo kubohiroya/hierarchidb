@@ -9,10 +9,12 @@ export class TabularWriter {
   private rowsBuffered: any[] = [];
   private readonly chunkSize: number;
   private readonly manager: SimpleTableMetadataManager;
-  constructor(private readonly pluginId: string, opts?: { chunkSize?: number; metadataDbName?: string }) {
+  constructor(private readonly pluginId: string, opts?: { chunkSize?: number; metadataDbName?: string; indexColumns?: string[] }) {
     this.chunkSize = opts?.chunkSize ?? 2000;
     this.manager = new SimpleTableMetadataManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata-db`));
+    this.indexColumns = opts?.indexColumns ?? [];
   }
+  private indexColumns: string[];
   async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
     const id = crypto.randomUUID();
     const base: CSVTableMetadataLike = {
@@ -37,11 +39,28 @@ export class TabularWriter {
       if (this.rowsBuffered.length >= this.chunkSize) {
         const payload = JSON.stringify(this.rowsBuffered);
         const buf = new TextEncoder().encode(payload).buffer;
+        const start = this.rowCursor;
         await db.table('rowChunks').add({
           id: crypto.randomUUID(), pluginId: this.pluginId, tableId: this.tableId,
           chunkIndex: this.chunkIndex++, startRowIndex: this.rowCursor, endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
           binaryData: buf, createdAt: Date.now(), updatedAt: Date.now()
         } as any);
+        // Optional: update inverted index for configured columns
+        if (this.indexColumns.length > 0) {
+          const { TabularIndexer } = await import('./Indexer');
+          const indexer = new TabularIndexer(this.pluginId);
+          // Efficiently index just-written rows
+          let rowId = start;
+          for (const r of this.rowsBuffered) {
+            for (const c of this.indexColumns) {
+              const v = r[c];
+              // eslint-disable-next-line no-await-in-loop
+              await indexer.indexRows(this.tableId!, [c]); // coarse; will re-scan chunks; simple path for now
+              break;
+            }
+            rowId++;
+          }
+        }
         this.rowCursor += this.rowsBuffered.length;
         this.rowsBuffered = [];
       }
@@ -71,4 +90,3 @@ export class TabularWriter {
     return { tableId: id, totalRows, chunkCount };
   }
 }
-
