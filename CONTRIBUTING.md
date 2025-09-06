@@ -16,3 +16,28 @@ Further details are duplicated in:
 - `packages/ui/README.md` (UI libraries)
 - `packages/runtime-ui/README.md` (app integration packages)
 - `packages/node-type/README.md` (plugin system packages)
+
+---
+
+# Shared Batch Execution (Plugins)
+
+This repository consolidates plugin batch execution on a shared architecture:
+
+- Execution: use `@hierarchidb/batch` `BatchService.mapChunks` for parallel work.
+- Session abstraction: extend `runtime-shared/AbstractBatchSession` and delegate pause/resume/cancel and progress updates.
+- Download: use `runtime-shared/batch-processor/downloadAdapter` (`createSharedDownloadService()` for GET; `postJson()` for POST).
+- Progress types: adopt `@hierarchidb/common-type` `ProgressEvent` across plugins; UI wires via injected emitter/store.
+- Lane control: when external API concurrency must be capped (e.g., OSRM), gate calls with a semaphore per lane in addition to mapChunks concurrency.
+
+Minimal template (TS):
+```ts
+class FooBatchSession extends AbstractBatchSession<Config, Task, void> {
+  constructor(id: string, nodeId: NodeId, cfg: Config, private tasks: Task[], private sink?: (e: ProgressEvent)=>void) { super(id, nodeId, cfg); }
+  protected async processBatch() {
+    const batch = new BatchService();
+    let completed = 0;
+    await batch.mapChunks(this.tasks, async (t) => { await this.processOne(t); completed++; this.updateProgress({ total: this.tasks.length, completed, currentStage: t.stage, currentTask: t.taskId }); }, { concurrency: 4 });
+  }
+  protected onProgressUpdate() { const p = this.getProgress(); this.sink?.({ sessionId: this['sessionId'] as any, stage: p.currentStage||'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask||'' }); }
+}
+```

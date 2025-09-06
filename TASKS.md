@@ -1223,6 +1223,14 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- feat/route/batch-shared-session-m1（共有セッション＋DL＋冪等/一時停止/レーン＋テスト）
+  - ブランチ: `feat/route/batch-shared-session-m1` → main マージ済
+  - 要点: `AbstractBatchSession` 導入、DownloadService/Adapter 統合、Dexie カーソル（pause/resume）、jobKey 冪等、OSRM レーン直列テスト。
+
+- feat/shared-batch-post-docs（3プラグイン実行統一＋POST対応＋ドキュメント更新）
+  - ブランチ: `feat/shared-batch-post-docs`（PR 作成用ブランチ、push後PR化）
+  - 要点: shape/location/route の Executor を `@hierarchidb/batch` に統一、location の GET を共有DLへ、POST は shared `postJson()` 経由、README 反映、route テスト追加。
+
 - fix/shape/complete-simplify2-vectortiles（simplify2 と vectorTiles の完全化）
   - ブランチ: `fix/shape/complete-simplify2-vectortiles`（PR #118、マージ後ブランチ削除）
   - 要点: Download→Simplify1→Simplify2→VectorTiles を EphemeralDB 経由で連結。S1/S2/VT で入出力を永続化し、タイル単位で MVT を生成・保存。空プロパティ定義時は全プロパティを許容。
