@@ -402,7 +402,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
-- 2025-09-06 start: refactor/node-type/remove-plugin-suffix — 互換レイヤ実装と利用箇所の置換に着手（まずレジストリ互換→UI/プラグイン内 `extends` 置換）。
+- 2025-09-06 start: refactor/node-type/remove-plugin-suffix — 入口のみで旧名(`*-plugin`)受理に方針転換（UI ルーティングで一度だけ正規化）。内部は短い識別子で統一。
 - 2025-09-06 start: chore/node-type/unify-dexie-db-names — Entities DB の命名統一対応に着手。
 - 2025-09-06 done: chore/db/unify-dexie-names-and-tables — `*-entities-db` へ統一、README/TASKS に移行ガイド追記。
 
