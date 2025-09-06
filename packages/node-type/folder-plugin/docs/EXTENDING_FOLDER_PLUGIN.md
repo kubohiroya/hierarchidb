@@ -1,5 +1,9 @@
 # Folderプラグイン拡張ガイド
 
+> Step 0（MUST）: 公開TSXの戻り値型
+>
+> プラグインが公開する TSX 関数/コンポーネントの戻り値は、必ず `JSX.Element`（必要なら `| null`）を明示してください。これは TypeScript の d.ts ロールアップ時に推論戻り値が `jsx-runtime` に依存してポータブルでなくなる（TS2742）問題を防ぐための必須ルールです。詳細は `packages/node-type/README.md` の「Plugin Dev MUSTs」を参照してください。
+
 ## 概要
 
 このドキュメントでは、folderプラグインを基底として、他のプラグインを差分的に開発する方法について説明します。folderプラグインは、名前(name)と説明(description)という基本的なフィールドを持つシンプルな構造のため、他のプラグインの基底として最適です。
