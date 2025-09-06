@@ -503,6 +503,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/node-type/docs` を削除。
 
 ### 2025-09-06
 - start: route M1（共有化）着手。

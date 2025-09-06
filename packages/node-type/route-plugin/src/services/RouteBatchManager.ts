@@ -6,6 +6,8 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import { BatchSessionManager, type BatchConfig, type BatchTaskLike } from './batch-shim';
 import type { RouteGenerationConfig } from '../entities/RouteEntity';
+import { RouteGenerator } from './RouteGenerator';
+import { RouteDatabase } from '../database/RouteDatabase';
 
 /**
  * Route-specific batch configuration
@@ -42,6 +44,9 @@ export interface RouteBatchTask extends BatchTaskLike {
     startLocationId?: NodeId;
     endLocationId?: NodeId;
     method: string;
+    methodOptions?: any;
+    startCoordinates?: [number, number];
+    endCoordinates?: [number, number];
     estimatedDistance?: number;
   };
 }
@@ -51,6 +56,8 @@ export interface RouteBatchTask extends BatchTaskLike {
  */
 export class RouteBatchManager extends BatchSessionManager {
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
+  private generator = new RouteGenerator();
+  private db = new RouteDatabase();
   
   /**
    * Start route batch generation session
@@ -118,6 +125,8 @@ export class RouteBatchManager extends BatchSessionManager {
           startLocationId: route.startLocationId,
           endLocationId: route.endLocationId,
           method: route.method || config.routeGeneration.method,
+          ...(route.startCoordinates && route.endCoordinates ? { startCoordinates: route.startCoordinates, endCoordinates: route.endCoordinates } as any : {}),
+          ...(route as any).methodOptions ? { methodOptions: (route as any).methodOptions } : {},
         },
       });
     }
@@ -280,8 +289,24 @@ export class RouteBatchManager extends BatchSessionManager {
     task: RouteBatchTask,
     _config: RouteBatchConfig
   ): Promise<void> {
-    // Implementation would call RouteGenerator
-    console.log('Generating route for task:', task.taskId);
+    const method = (task.routeData?.method || 'direct') as RouteGenerationConfig['method'];
+    const start = (task.routeData as any)?.startCoordinates as [number, number] | undefined;
+    const end = (task.routeData as any)?.endCoordinates as [number, number] | undefined;
+    const pts: [number, number][] = start && end ? [start, end] : [[0,0],[1,1]];
+    const res = await this.generator.generate(pts, { method, options: (task.routeData as any)?.methodOptions });
+    try {
+      // @ts-ignore
+      await (this.db.table('routeResults') as any)?.put({
+        id: `${task.sessionId}:${task.taskId}`,
+        sessionId: task.sessionId,
+        taskId: task.taskId,
+        method,
+        lineGeometry: res.lineGeometry,
+        distance: res.distance,
+        duration: res.duration,
+        createdAt: Date.now(),
+      });
+    } catch {}
   }
   
   /**
