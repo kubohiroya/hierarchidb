@@ -22,6 +22,7 @@ import type {
   TopoJSONObject,
 } from '../types';
 import type { Feature } from '../../types';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB';
 
 /**
  * SimplifyWorker2 - Tile-level geometry simplification
@@ -302,7 +303,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
       };
 
       const bufferId = `tile-${taskId}-${tile.z}-${tile.x}-${tile.y}`;
-      await this.saveTileBuffer(bufferId, JSON.stringify(tileGeoJson));
+      await this.saveTileBuffer(bufferId, JSON.stringify(tileGeoJson), task);
 
       return { bufferId, topologyValid };
     } catch (error) {
@@ -689,13 +690,44 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   }
 
   private async loadInputBuffer(bufferId: string): Promise<string | null> {
-    // Mock implementation - would load from actual buffer storage
-    return this.tileCache.get(bufferId) || null;
+    // Try cache first
+    const cached = this.tileCache.get(bufferId);
+    if (cached) return cached;
+    // Load from EphemeralDB simplifiedBuffers (stage simplify1)
+    try {
+      const db = getEphemeralShapeDB();
+      const rec = await db.simplifiedBuffers.get(bufferId);
+      if (rec) {
+        this.tileCache.set(bufferId, rec.data);
+        return rec.data as any;
+      }
+      return null;
+    } catch (e) {
+      console.error('SimplifyWorker2: failed to load input buffer from EphemeralDB:', e);
+      return null;
+    }
   }
 
-  private async saveTileBuffer(bufferId: string, data: string): Promise<void> {
-    // Mock implementation - would save to actual buffer storage
+  private async saveTileBuffer(bufferId: string, data: string, task: Simplify2Task): Promise<void> {
+    // Save in-memory and persist to EphemeralDB (simplify2 stage)
     this.tileCache.set(bufferId, data);
+    try {
+      const db = getEphemeralShapeDB();
+      const parsed = JSON.parse(data);
+      await db.simplifiedBuffers.put({
+        id: bufferId,
+        sessionId: task.sessionId,
+        nodeId: (await db.simplifiedBuffers.get(task.inputBufferId))?.nodeId as any,
+        stage: 'simplify2',
+        data,
+        featureCount: parsed?.features?.length || 0,
+        simplificationRatio: 0,
+        tolerance: task.config.tolerance,
+        timestamp: Date.now(),
+      });
+    } catch (e) {
+      console.warn('SimplifyWorker2: failed to persist tile buffer:', e);
+    }
   }
 }
 
