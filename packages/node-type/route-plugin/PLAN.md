@@ -1,220 +1,290 @@
-# Route Plugin — バッチ処理基盤 実装計画（feat/route/batch-processing-implementation）
+# Route Plugin — Batch Processing Implementation Plan
 
-状態: Draft（合意後に確定）
-対象ブランチ: `feat/route/batch-processing-implementation`
-最終更新: 2025-09-06
+Status: Draft (to be refined with reviewer input)
+Target Branch: `feat/route/batch-processing-implementation`
+Last Updated: 2025-09-06
 
-この計画は、route-plugin にバッチ処理基盤を導入し、shape-plugin から抽出された `feature/batch`・`feature/download`・`feature/compute` を再利用して、
-大規模な経路計算/加工を安全に段階導入するためのものです。ドキュメント/会話は日本語、コード内コメントは英語とします。
+## 1. Goals / Non‑Goals
 
-## 1. 目的 / 非目的
+- Goals:
+  - Add a robust, resumable batch processing foundation to the Route plugin, reusing existing extracted features: `@hierarchidb/batch`, `@hierarchidb/download`, `@hierarchidb/compute`.
+  - Support large sets of route computations (e.g., bulk re-routing, distance/duration calculations, segment enrichment, route smoothing) with progress reporting, cancellation, retry, and export.
+  - Keep work off the main thread via Runtime Worker; persist job state and outputs; expose UI affordances for launching and monitoring jobs.
+  - Provide idempotent APIs so the same batch spec doesn’t duplicate work when retried.
 
-- 目的
-  - Route プラグインに、再開可能・観測可能・拡張可能なバッチ処理基盤を導入する。
-  - 既存の `feature/*`（batch/download/compute）を再利用し、重複実装を避ける。
-  - UI から “大量の経路再計算/マトリクス/属性付加” を非同期ジョブとして実行・監視・エクスポートできるようにする。
-  - 直線/大圏/OSRM/searoute の各エンジンを、レーン別スロットリングとリトライで安定運用する。
+- Non‑Goals:
+  - Building new routing algorithms from scratch (we will integrate existing engines/services or the `feature/compute` building blocks).
+  - New server/BFF functionality beyond minimal passthrough/proxy if absolutely necessary.
+  - Replacing `feature/*` job/execution model; we will compose it.
+  - Duplicating utilities/components already present in the workspace. Prefer promotion/reuse over re‑implementation.
 
-- 非目的
-  - 新しいスケジューラ/ジョブ基盤の自作（既存の `feature/batch` を利用）。
-  - 既存のネットワーク層/RateLimiter の再発明（`feature/download` の NetworkPort を拡張/再利用）。
-  - ルーティングアルゴリズムの新規開発（必要最小のアダプタ実装に限定）。
+## 1.B De‑duplication Strategy (Important)
 
-## 2. 既存実装へのアライン
+- Scheduler/Batching: reuse `@hierarchidb/runtime-shared-batch-processor` for queues, checkpoints, and execution loop. Implement only Route‑specific adapters (job mappers, executors, lane configuration). No new scheduler core.
+- Throttling/Backoff: promote the lightweight RateLimiter currently embedded in `runtime-ui/datasource` into a shared module (e.g., `runtime-shared/batch-processor` or `@hierarchidb/util`) and reuse. Do not create a new limiter.
+- Storage/Schema: use `feature/batch` Dexie stores for jobs/tasks/results. For route outputs, extend existing route stores or add a small route‑specific table; avoid parallel bespoke stores.
+- Geometry/Encoding/Simplification: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON simplification, geobuf, pako). Wire through `feature/compute` steps instead of re‑writing.
+- Vector Tiles: if MVT generation exists in shape pipeline (or documented as planned), factor common parts into shared steps; otherwise keep tiler as optional follow‑up, not a blocker for the first delivery.
+- Engine adapters: check for existing `feature/route-searoute` and any OSRM client. Implement thin adapters that conform to a common engine interface.
 
-- エントリ/配置
-  - バッチ制御の入口は `packages/node-type/route-plugin/src/services/RouteBatchManager.ts` を用いる。
-  - エンジン呼び出しは `src/services/RouteGenerator.ts` に集約し、`osm_route`/`searoute` は注入アダプタへ委譲（direct/great_circle は既存維持）。
-  - Feature Registry から `net.port`（`@hierarchidb/download` 提供）や `route.engine.*` を取得して使用する。
+## 1.C Project Alignment (Concrete Anchors)
 
-- 重複排除（最重要）
-  - スケジューラ/ジョブ: `feature/batch` のストア/実行ループを利用し、Route 固有は薄いアダプタのみ。
-  - ネットワーク/スロットリング: `feature/download` の `FetchNetworkPort`（RPS・globalConcurrency・指数バックオフ付き）を再利用。
-  - 幾何/TopoJSON/MVT: shape-plugin の既存ユーティリティ/ワーカーを `feature/compute` 経由で再配線。新規実装は行わない。
+- Route batch orchestration must extend existing scaffolding:
+  - Use `packages/node-type/route-plugin/src/services/RouteBatchManager.ts` as the primary entry point. Replace current shim usage with the shared batch processor once promotion is ready; keep the surface compatible.
+  - Keep task types aligned with current placeholders: `location_resolution` → `route_generation` → `validation` → `optimization` stages.
+- Route engines must sit behind the existing service:
+  - Implement engines inside `packages/node-type/route-plugin/src/services/RouteGenerator.ts` by adding concrete branches for `osm_route` and `searoute` instead of new modules. Reuse existing `direct` and `great_circle` implementations.
+  - Add thin adapters that call feature services (see below) rather than hardcoding HTTP in the generator.
+- Feature registry wiring:
+  - Register engine capabilities via `@hierarchidb/feature-registry` at worker bootstrap. Provide caps such as `route.engine.osrm`, `route.engine.searoute` and consume them from `RouteGenerator`.
+- Reuse/promote shared utilities:
+  - Move the simple RateLimiter from `packages/runtime-ui/datasource/src/services/DataSourceManager.ts` into a shared module (e.g., `packages/runtime-shared/batch-processor/src/RateLimiter.ts` or `packages/util/src/rateLimiter.ts`). Import it in Route scheduler; remove duplicate implementations.
+  - Geometry encoding/simplification should reuse shape-plugin workers/utilities; do not build a new TopoJSON/MVT stack under route.
 
-### 2.A Cross-Plugin Sharing（shape/location との共用最大化）
+Deliverables MUST reference these files/paths to avoid drift.
 
-- Batch セッション管理の共通化
-  - 参照元: `packages/node-type/shape-plugin/src/services/BatchSessionManager.ts`、`packages/node-type/location-plugin/src/services/batch/BatchSessionManager.ts`
-  - 方針: `BatchSessionCore` を runtime-shared（または `@hierarchidb/batch`）へ抽出し、route/shape/location が継承利用。
-  - 最小化案: 当面 route は互換 I/F を持つラッパ（shim）を維持しつつ、内部実装を shape の `BatchSessionManager` と同等のイベント/スナップショット構造へ寄せる。
+## 2. User Stories (Representative)
 
-- 進捗イベント/スナップショット
-  - 参照元: location の `LocationBatchSessionManager.onProgress()` と Ephemeral DB への sessions 記録。
-  - 方針: `ProgressEmitter`/`ProgressSnapshotStore` を runtime-shared へ昇格し、shape/location/route で共用。Dexie のスキーマはプラグインごとの差分を許容。
+- As a user, I can select N route candidates and run “Recompute routes with profile X” as a background job; I can close the tab and later resume.
+- As a user, I can compute a distance/duration matrix for many origin/destination pairs and export the results as CSV/Parquet.
+- As a user, I can batch-enrich routes (e.g., add elevation, snap to network, smooth geometry) and track per-item success/failure with retry.
+- As a user, I can cancel a running batch job, later resume it, or re-run only failed items.
 
-- ネットワーク/認証の統一
-  - 参照元: shape のダウンロード段階（AuthRecovery/通知）、feature/download の `FetchNetworkPort`。
-  - 方針: 認証通知（`AuthNotificationRegistry`）と `net.port` の注入を route へ導入し、429/401 リカバリの規約を統一。
+## 3. Architecture Overview
 
-- ベクトルタイル/幾何パイプライン
-  - 参照元: shape の `SimplifyWorker1/2`, TopoJSON トポロジ生成、vt-pbf 生成手順。
-  - 方針: TopoJSON 簡略化・MVT 生成ステップを `feature/compute` の共有ステップとして切り出し、route は線形ジオメトリをそのまま投入できるようにする。
+- Job Model (reuse `@hierarchidb/batch`):
+  - Entities: `BatchJob`, `BatchTask`, `BatchResult` with statuses: `queued` → `running` → `succeeded | failed | cancelled`.
+  - Idempotency: `jobKey` derived from job spec hash (inputs + parameters + plugin version + compute profile).
+  - Persistence: Dexie stores via runtime worker; job progress events via worker postMessage channel.
 
-- UI フック/コンポーネント
-  - 参照元: location の `useLocationProgress` / `BatchProgressDialog`。
-  - 方針: 進捗フック構造を共通化（`useBatchProgress(capKey: string, id)` など）し、route は薄いラッパを提供。
+- Execution (reuse `@hierarchidb/compute`):
+  - Compose a pipeline from small, pure steps (e.g., decode input → chunk → compute → persist result → emit progress).
+  - Concurrency controls: pool size, per-domain rate limits (to avoid API throttling), backpressure to storage.
+  - Retry policy: exponential backoff up to N attempts; permanent failure classification (4xx, validation, invariant violations).
 
-## 3. ユースケース
+- Export (reuse `@hierarchidb/download`):
+  - Stream results that meet a filter (all, succeeded only, failed only) to file; formats: CSV (default), JSON Lines; extensible to Parquet if present.
 
-- N 本の候補経路を選択して、プロファイル X で再計算し、完了後に TopoJSON/GeoJSON/CSV でエクスポート。
-- 多数の起終点ペアから距離/所要時間マトリクスを作成し、CSV で取得。
-- 既存経路に対して標高付与・スナップ・平滑化などの属性付加を一括実行、失敗のみ再試行可能。
+- Route Plugin Integration:
+  - Provide high-level job types:
+    - `route/recompute`: recompute geometry/attributes under a routing profile.
+    - `route/matrix`: origin-destination distance/duration matrix.
+    - `route/enrich`: smoothing, elevation, snap-to-network, segment stats, etc.
+  - Each job type defines its task mapper (input → tasks) and compute step(s) wired through `feature/compute`.
 
-## 4. アーキテクチャ概観
-
-- ジョブ/タスク（`feature/batch`）
-  - エンティティ: BatchJob / BatchTask / BatchResult（`queued → running → succeeded|failed|cancelled`）。
-  - 冪等性: `jobKey = hash(spec + pluginVersion + profile)`。同一キーの再実行は既存ジョブを返す。
-  - チェックポイント: チャンク完了ごとにカーソルと件数を保存、クラッシュ後に再開。
-
-- 実行（`feature/compute`）
-  - 小さな純粋関数の鎖としてパイプライン化（入力復元→分割→計算→永続化→進捗通知）。
-  - 並列/レート制御: レーン別セマフォ + NetworkPort（RPS/並列/バックオフ）。
-  - リトライ: 指数バックオフ、最大試行、恒久/一時的エラー分類。
-
-- ネットワーク（`feature/download`）
-  - `FetchNetworkPort` を利用。既定: `perHostConcurrency`、`globalConcurrency`、`rps`、`retryPolicy` を環境/設定で上書き可能。
-  - Feature Registry で `provide('net.port', instance)`。Route 側は `require('net.port')` で取得。
-
-- ジョブ種別（Route）
-  - `route/recompute`: ルート再計算（profile 付き）。
-  - `route/matrix`: OD マトリクス（距離/時間）。
-  - `route/enrich`: 平滑化・標高・スナップなどの属性付加。
-
-## 5. E2E フロー（段階パイプライン）
+### 3.A End‑to‑End Flow (Stage Pipeline)
 
 1) Job Ingest
-   - OD ペアとエンジン/モードを永続化（IndexedDB/Dexie; `feature/batch` ストア）。
-   - 例: `jobs{ id, startId, endId, type, mode, priority, regionKey, lengthKmApprox, status, attempts }`
-   - `regionKey`（geohash/S2/Morton）で地理分割、`lengthKmApprox`（大圏推定）で距離ビン分け。
+- Persist OD pairs and route type (straight/great‑circle/osrm/searoute + mode) to IndexedDB as durable jobs via `@hierarchidb/batch`.
+- Example schema (conceptual):
+  - `jobs{ id, startId, endId, type, mode, priority, regionKey, lengthKmApprox, status, attempts }`
+  - `regionKey`: geospatial bucketing (geohash/S2/Morton) for locality.
+  - `lengthKmApprox`: coarse great‑circle estimate for downstream binning.
 
-2) Scheduler（公平 + スロットリング）
-   - レーン分割: `LANE_OSRM(rps=1, conc=1)`, `LANE_SEAROUTE(conc=2–4)`, `LANE_LOCAL(direct/great_circle; conc=16–64)`。
-   - Weighted-fair queue + レーン別セマフォ。NetworkPort で RPS/バックオフを統合制御。
-   - `regionKey × 距離ビン` の小バッチ（200–1000）でローカリティ向上。
+2) Scheduler (Fair + Throttled)
+- Lane partitioning with different default caps:
+  - `LANE_OSRM`: RPS=1, concurrency=1 (respect public API limits).
+  - `LANE_SEAROUTE`: CPU‑intensive; concurrency=2–4.
+  - `LANE_LOCAL`: straight/great‑circle; concurrency=16–64.
+- Weighted‑fair queue: round‑robin across lanes; per‑lane internal throttler governs RPS/concurrency/exponential backoff.
+- Block by geography/distance: batch by `regionKey × lengthBin` (short/medium/long) to increase I/O locality and tile cache hit rate.
 
-3) Routing Workers
-   - OSRM: 1RPS/1並列。429/5xx は指数バックオフ。
-   - Searoute: CPU 負荷が高く 2–4 並列。Local（直線/大圏）は大並列可。
-   - 出力: `RouteFeature{ distance_m, duration_s?, engine, mode, profile }` をストリーム保存。
+3) Routing Workers (WebWorker/Comlink)
+- OSRM Worker: enforce 1 RPS / 1 concurrency; use throttler for retries.
+- Searoute Worker: parallel workers at 2–4 concurrency; CPU‑bound.
+- Local Worker: straight/great‑circle; large parallelism acceptable.
+- Output stream: each computed item yields a `RouteFeature` with distance, optional duration, and metadata; append to store.
 
-4) Route Store（Dexie）
-   - `routes{ routeId, odId, type, mode, distance_km, duration_min?, bbox, geom }`
-   - `geom`: 量子化（1e5）+ Δエンコード or geobuf、必要に応じて pako 圧縮。
+4) Route Store (IndexedDB/Dexie)
+- `routes{ routeId, odId, type, mode, distance_km, duration_min?, bbox, geom }`
+- `geom` uses compact binary encoding: quantized (1e5) Int32 Δ‑encoding or geobuf; pako compression optional.
 
-5) Tile-Index → Tiler（任意・shape 共通化）
-   - bbox→候補タイル集合（minZ,maxZ）→ クリップ/簡略化 → `vt-pbf` でエンコード。
-   - `tile_index{ tileKey, routeId }`（append-only）と `tiles{ tileKey, mvtPbf, stats }` を保存。
+5) Tile Index (Streaming)
+- For each route, compute candidate tile set for [minZ,maxZ].
+- First pass: bbox→tile range; second pass (tiler) does precise segment clipping.
+- `tile_index{ tileKey(z/x/y), routeId }` append‑only to enable external‑memory processing per tile.
 
-6) UI 進捗/制御
-   - 進捗スナップショットを 10Hz で合流・送出（`ProgressEmitter`）。Dexie に最後のスナップショットを保存して復元。
-   - 一覧/詳細ビュー、レーン別メトリクス（RPS/並列/スロットリング時間）、失敗のみ再実行、エクスポート。
+6) Tiler (Offline/Background)
+- Process tiles in tileKey order; write `tiles{ tileKey, zxy, mvtPbf, stats }`.
+- Steps: read routeIds for tileKey → decode geom → clip to tile bounds → simplify by zoom tolerance → `geojson‑vt`‑like slicing → `vt‑pbf` encode → persist.
+- Design avoids holding all data in memory; streaming/page through Dexie.
 
-## 6. データ/型 追加（破壊的変更なし）
+7) UI Progress & Control
+- Show cursors: `jobsDone / routesDone / tilesDone` and per‑lane RPS/errors.
+- Support pause/resume/cancel via batch job status + checkpoint cursors.
 
-- `RouteBatchSpec`: 入力（route ids / waypoints / OD ペア）、オプション（profile, chunkSize, concurrency）。
-- `RouteBatchOutput`: 各タスクの出力（距離、所要時間、ジオメトリ、エラー）。
-- 由来メタ: ルートに `lastBatchJobId`, `lastBatchAt`, `profileUsed`（任意）を追加。
+8) Blocking Strategy (High‑yield ordering)
+- Use small batches (e.g., 200–1000) per `lane × region × distanceBin`.
+- Benefits: fairness for OSRM, smooth CPU load for searoute/great‑circle, higher tile locality.
+- Region bucketing: geohash 5–6 or S2 level 6–8; distance bins: `<200km / <1500km / ≥1500km`.
 
-## 7. API 表面
+## 4. Data Model Additions (Route Domain)
 
-- Worker/Command
+- Extend (or add) Route batch metadata types:
+  - `RouteBatchSpec`: inputs (route ids, waypoints, OD pairs), options (profile, constraints, chunkSize, concurrency), output schema selection.
+  - `RouteBatchOutput`: per-task output schema including core metrics, geometry, errors.
+  - `RouteEntity` soft-link fields for provenance: `lastBatchJobId`, `lastBatchAt`, `profileUsed`.
+
+No breaking changes to existing Route entities; batch writes will use upserts on computed targets (either updating the source route entities or writing to a dedicated result collection depending on job type).
+
+## 5. Worker/Plugin Wiring
+
+- Use Runtime Worker bootstrap to register a `RouteBatchWorker` that implements the `@hierarchidb/batch` JobExecutor interface for the three job types.
+- Job definitions exported by route-plugin so the UI can discover capabilities (via Feature Registry).
+- Progress events throttled (e.g., 10/s) and memoized to reduce UI noise; final snapshot on completion.
+
+## 6. API Surfaces
+
+- Command API (Worker-bound):
   - `startRouteBatch(spec: RouteBatchSpec): Promise<BatchJobId>`
-  - `getRouteBatch(jobId): Promise<BatchJob>` / `cancelRouteBatch(jobId)` / `resumeRouteBatch(jobId)`
-  - `exportRouteBatch(jobId, filter, format): Promise<DownloadHandle>`
+  - `getRouteBatch(jobId): Promise<BatchJob>`
+  - `cancelRouteBatch(jobId): Promise<void>`
+  - `resumeRouteBatch(jobId): Promise<void>`
+  - `exportRouteBatch(jobId, filters, format): Promise<DownloadHandle>`
 
-- UI Hooks（雛形あり）
-  - `useRouteBatchProgress(jobId)`→ 進捗スナップショット（Dexie 復元 + ライブ）。
-  - 一覧/詳細は runtime-ui の既存パターンを踏襲。
+- UI Hooks (in route-plugin UI or runtime-ui plugin-dialog):
+  - `useRouteBatchLauncher()` returns submit + validation helpers.
+  - `useRouteBatchProgress(jobId)` returns progress totals, ETA, failure sample, export options.
 
-## 8. 並列・RPS・バックオフ（既定値）
+### 6.A Library‑Level Engines and Properties
+- Engines supported: `straight` (Euclidean), `great_circle` (spherical), `osrm`, `searoute`.
+- Modes: `road_general`, `road_express`, `rail`, `rail_highspeed` etc., mapped to engine profiles (e.g., OSRM car/bicycle/foot or custom; searoute parameters).
+- Output per route feature:
+  - `properties.distance_m` (always present; computed or taken from engine response).
+  - `properties.duration_s` (OSRM and engines that supply or can infer from speed; optional/derived in others).
+  - `properties.engine`, `properties.mode`, `properties.profile`, `properties.specHash`.
+- TopoJSON bundling: line features aggregated under a single Topology; optional GeoJSON output switch.
 
-- レーン既定
-  - OSRM: `rps=1`, `concurrency=1`, `backoffBaseMs=500`, `factor=2`, `maxMs=10000`
-  - Searoute: `rps=5`, `concurrency=2–4`
-  - Local: `rps=20`, `concurrency=16–64`
-- 上書き: ジョブ Spec/環境変数で可。実装は `FetchNetworkPort` の `globalConcurrency`/`rps` を利用。
+Implementation notes in this repo:
+- Extend `RouteGenerationConfig` and ensure its union keys match `RouteGenerationMethod` in `src/entities/RouteEntity.ts` (already: `direct | osm_route | great_circle | searoute | custom`).
+- `RouteGenerator.generate()` already switches on these methods. Fill `generateOSMRoute()` and `generateSeaRoute()` by delegating to Feature Registry provided services.
+- Distance/duration properties map directly to `distance`/`duration` fields on `RouteEntity` and to feature.properties in exported TopoJSON.
 
-## 9. 信頼性 / 冪等
+## 7. Job Types and Pipelines
 
-- `jobKey` により重複投入を回避。チャンク単位でチェックポイントを保存し再開。
-- 恒久エラー（検証/4xx）と一時エラー（429/5xx/ネットワーク）を分類して再試行。
+### 7.1 route/recompute
+- Input: route ids or waypoint arrays.
+- Steps: fetch inputs → chunk → compute route (profile) via `feature/compute` → persist route geometries/attrs → emit metrics.
+- Edge cases: unreachable segments; fallback profile; partial path success.
 
-## 10. 観測性
+### 7.2 route/matrix
+- Input: arrays of origins/destinations (points, snapped nodes, or route endpoints).
+- Steps: enumerate OD pairs (cartesian or sampled) → chunk → compute distance/duration → persist matrix rows → export-friendly schema.
+- Optimizations: symmetric matrices, caching last N pair results by profile, avoid duplicate pairs via canonical keying.
 
-- 進捗: `jobsDone/routesDone/tilesDone`、フェーズ別%、ETA、平均/95p レイテンシ。
-- レーン: `rps, concurrency, throttledMs, errors` を集計。
-- ログ: チャンクサマリ、失敗サンプル（上限 N）を保持。
+### 7.3 route/enrich
+- Input: route ids or geometries.
+- Steps: fetch → run one or more enrichment steps (smoothing, elevation, segment stats) via `feature/compute` chain → write back enriched attributes.
+- Config: step list, tolerances, sources (DEM, network), fail-strategy (skip/stop).
+
+## 8. Concurrency, Chunking, and Limits
+
+- Defaults (configurable via env/UI):
+  - `chunkSize`: 100 tasks; `concurrency`: 4; `maxRetries`: 3; `retryBackoffMs`: 500 → 2000.
+  - Per-service rate limiter tokens (if calling external routing backends).
+  - Memory cap: periodically flush to IndexedDB; avoid keeping all results in RAM.
+
+### 8.A Built‑in Throttler (Overridable)
+- Per‑lane throttles with defaults, overridable via options/env:
+  - OSRM: `rps=1`, `concurrency=1`, `backoffBaseMs=500`, `backoffFactor=2`, `backoffMaxMs=10000`.
+  - Searoute: `rps=5`, `concurrency=2–4`, `backoffBaseMs=300`, `factor=2`.
+  - Local: `rps=20`, `concurrency=16–64` (cap by CPU), minimal backoff.
+- Expose overrides in public API and in batch job spec; persist effective values in job metadata for auditability.
+
+Project placement:
+- Add lane scheduler and limiter usage inside `RouteBatchManager.processTaskGroup()` batching, not in UI. Keep maxConcurrent from config, but gate each engine call through shared RateLimiter instances keyed per lane.
+
+## 9. Reliability & Idempotency
+
+- `jobKey = hash(spec + pluginVersion)`; starting a job with the same key returns the existing job.
+- Checkpoint after each chunk: persisted cursor and counts to support resume after crash.
+- Distinguish permanent vs transient errors to avoid retry storms.
+
+## 10. Observability
+
+- Metrics: total tasks, done, failed, skipped, avg latency, p95 latency, retries, bytes exported.
+- Logs: per-chunk summary; error samples capped; attach lastError to failed tasks.
+ - Per‑lane metrics: current RPS, concurrency, throttled time, backoff counts; tile throughput (tiles/sec) during tiling.
 
 ## 11. UI/UX
 
-- 起動: ツールバー「Batch → Recompute / Matrix / Enrich」→ ダイアログ。
-- 進捗: 全体バー + フェーズ別バー、レーンメトリクス、失敗のみ再実行、エクスポート（CSV/GeoJSON/TopoJSON）。
-- 通知: 開始/完了/失敗を Snackbar/OS 通知（任意）で提示。
+- New entry points:
+  - Navigator/toolbar action: “Batch → Recompute Routes…”, “Batch → Matrix…”, “Batch → Enrich…”.
+  - Dialog (runtime-ui plugin-dialog) to configure spec; validate counts and estimated compute time.
+  - Progress panel: stacked bar of statuses; list failed samples with ‘retry failed only’ action; export buttons.
 
-## 12. テスト戦略（TDD）
+## 12. Testing Strategy
 
-- 単体: 各エンジンアダプタ、距離/時間計算、TopoJSON 生成、スロットリング。
-- 統合: Worker 内でキャンセル/再開/失敗のみ再実行、10k 件でチェックポイント確認。
-- UI: ダイアログ検証、進捗フックの状態遷移、イベント合流（10Hz）。
+- Unit: pipeline step functions (pure), idempotency hashing, retry classifier.
+- Worker Integration: fake-indexeddb; simulate cancellation/resume; large N with small chunkSize to exercise checkpoints.
+- UI: dialog spec validation; progress hook state transitions.
+- Performance: 10k tasks in CI-light profile; memory checks (no growth beyond threshold).
 
-## 13. ロールアウト / フラグ / ロールバック
+## 13. Migration & Backward Compatibility
 
-- フラグ
-  - `ROUTE_BATCH_ENABLED`（dev 既定 ON、prod 既定 OFF → 検証後に段階的有効化）。
-  - 必要に応じて `ROUTE_MATRIX_ENABLED` を個別制御。
-- ロールバック
-  - フラグ OFF で即切戻し可能。DB スキーマは追加のみで互換維持。
+- No schema-breaking changes; route entities get optional provenance fields.
+- Jobs stored in dedicated `batch` stores (already provided by `feature/batch`).
 
-## 14. 受け入れ基準（DoD）
+## 14. Rollout & Flags
 
-- 3 ジョブ種別（recompute/matrix/enrich）が 1 万件規模で完走し、再開/失敗のみ再実行を確認済み。
-- UI で進捗/メトリクスが表示され、CSV/GeoJSON/TopoJSON のエクスポートが可能。
-- メインスレッドブロックなし、メモリは閾値内、型/テスト/リンタ/ビルドが全てグリーン。
+- Feature flag: `ROUTE_BATCH_ENABLED` (default ON for dev, OFF for prod until validated).
+- Gradual enablement per job type; matrix job can ship behind `ROUTE_MATRIX_ENABLED` if needed.
 
-## 15. 作業分解（WBS / マイルストーン）
+## 15. Work Breakdown (Milestones)
 
-M1: スキャフォールディング & 重複排除（1–2日）
-- [ ] 既存資産の棚卸し（engine/NetworkPort/batch/geometry）。
-- [ ] `RouteBatchManager` にレーンセマフォを導入（OSRM=1, SEA=2–4, LOCAL=16–64）。
-- [ ] `RouteGenerator` をアダプタ注入型に整理（osm_route/searoute 委譲）。
- - [ ] ProgressEmitter/Store の共通 I/F を runtime-shared に昇格（または共通 import パスを暫定定義）。
+M1: Scaffolding (1–2 days)
+- [ ] Add route-plugin job type descriptors for `recompute`, `matrix`, `enrich`.
+- [ ] Wire `RouteBatchWorker` that conforms to `@hierarchidb/batch` executor interface.
+- [ ] Add provenance fields to route entity typings (optional fields only).
+- [ ] De-dup groundwork: inventory existing engines (route-searoute, OSRM client), batch-processor, geometry utilities; decide promotion targets (RateLimiter → shared).
+ - [ ] Align types and options: `RouteGenerationConfig` vs `RouteGenerationMethod`; verify properties on `RouteEntity` and TopoJSON export schema.
 
-M2: パイプライン実装（3–5日）
-- [ ] タスクマッパ（recompute/matrix/enrich）を実装。
-- [ ] `feature/compute` で処理鎖を構成、チェックポイント/`jobKey` 実装。
-- [ ] NetworkPort をレーンごとに適用（RPS/並列/バックオフ）。
- - [ ] shape の TopoJSON/MVT ステップを `feature/compute` 共有化し、route の最終段に接続。
+M2: Pipelines (3–5 days)
+- [ ] Implement task mappers for each job type.
+- [ ] Compose compute chains using `@hierarchidb/compute` (routing call, smoothing, etc.).
+- [ ] Implement checkpointing and idempotent jobKey logic.
+- [ ] Implement scheduler lanes (OSRM/SEA/LOCAL) with fair queue + throttler.
+- [ ] Add regionKey and lengthKmApprox computation; binning strategy and batch builder.
+- [ ] Extract/promote RateLimiter to shared and replace local usages.
+- [ ] Engine adapters reuse: wrap `feature/route-searoute`; implement OSRM adapter against existing HTTP client/bff proxy if available.
+ - [ ] Replace `batch-shim` with `runtime-shared/batch-processor` (or keep shim behind a compat interface) to run the session lifecycle.
+ - [ ] Implement lane scheduling inside `RouteBatchManager` using shared RateLimiter.
 
-M3: UI（2–3日）
-- [ ] 起動ダイアログ、入力検証、見積表示。
-- [ ] 進捗ビュー（10Hz 合流・Dexie 復元）、失敗のみ再実行、エクスポート。
- - [ ] location の BatchProgressDialog パターンを流用し、共通フック `useBatchProgress` 形に寄せる。
+M3: UI (2–3 days)
+- [ ] Dialogs for three job types; client-side validation and estimation.
+- [ ] Progress view with live updates and ‘retry failed only’ action.
+- [ ] Export buttons integrated with `@hierarchidb/download`.
+ - [ ] Lane metrics panel (RPS, concurrency, throttled %, errors), global cursors (jobs/routes/tiles).
 
-M4: 観測性/ハードニング（2–3日）
-- [ ] レーン別メトリクス、ETA 安定化、429/5xx リトライ分類強化。
-- [ ] 10k soak、メモリ上限/スループット測定、閾値内で合格。
- - [ ] AuthRecovery と 401/403 ハンドリングを shape と同一規約に合わせる。
+M4: Observability & Hardening (2–3 days)
+- [ ] Add metrics counters; throttle progress events.
+- [ ] Robust retry classification; cancellation tests; large-N soak test.
+- [ ] Tiler pipeline with external‑memory streaming; tile_index builder; MVT writer.
+- [ ] Dedup check: ensure no duplicate stores/schemas/utils; document shared module boundaries.
+ - [ ] Feature Registry integration tests: engines are discoverable and required by `RouteGenerator`.
 
-M5: ドキュメント/サンプル（1日）
-- [ ] README/使用例/FAQ を更新。Example スクリプトを追加。
+M5: Docs & Examples (1 day)
+- [ ] README/usage for batch jobs in route-plugin.
+- [ ] Example scripts to create common specs (recompute, matrix).
 
-## 16. 依存/リスク/緩和
+Exit Criteria
+- [ ] All three job types run to completion for 10k items with resume and ‘retry failed only’ validated.
+- [ ] UI shows correct progress and supports export.
+- [ ] No main-thread blocking; memory stays bounded; policy checks and CI green.
+ - [ ] Tile pipeline generates MVTs for configured z‑range with bounded memory and measured throughput.
 
-- 依存: `@hierarchidb/batch`, `@hierarchidb/download`, `@hierarchidb/compute`, Runtime Worker, Feature Registry。
-- リスク: 外部 API のレート制限、巨大ジオメトリの書き込み、IndexedDB 容量。
-- 緩和: レーン/RPS 制御、チャンク/圧縮、エクスポート・分割処理、キャッシュ。
+## 16. Dependencies & Risks
 
-## 17. オープン事項（要合意）
+- Dependencies: `@hierarchidb/batch`, `@hierarchidb/compute`, `@hierarchidb/download`, Runtime Worker bootstrap, Feature Registry.
+- Risks: external routing API rate limits; large geometry write performance; IndexedDB quotas.
+- Mitigations: rate limiter, chunking, incremental flush, output size caps, export-first workflows.
 
-- モード→エンジンプロフィールの正規マッピング（OSRM/searoute）。
-- 出力既定（TopoJSON を既定、GeoJSON/CSV は任意）と圧縮方針。
-- タイル z 範囲（minZ/maxZ）の既定値。
-- 本番既定の RPS/並列（環境変数で可変）。
+## 17. Open Questions / To Confirm
 
-## 18. 運用（TASKS.md との連携）
-
-- すべてのタスク/進捗はリポジトリ直下の `TASKS.md` に記録（Single Source of Truth）。
-- ブランチ命名: `<type>/<scope>/<slug>`（例: `feat/route/batch-processing-implementation`）。
-- 受け入れ基準（DoD）とロールバック手順をタスクごとに明記。小粒差分で PR を積み上げ、既定 OFF のフラグで段階導入。
+- Preferred routing backends/profiles and quota constraints.
+- Matrix symmetry assumptions and caching window.
+- Whether enrichment writes should mutate original routes or write parallel result collections.
+ - Exact mapping table: modes → OSRM/searoute profiles; defaults and validation rules.
+- TopoJSON vs GeoJSON default in public API; output size limits and compression choices.
+ - Batch shim replacement timeline: when to depend on `runtime-shared/batch-processor` directly from route-plugin.
+ - Exact file path for the promoted RateLimiter module and its API shape.

@@ -6,6 +6,8 @@ export interface FetchNetworkPortOptions {
   baseDelayMs?: number;
   maxDelayMs?: number;
   perHostConcurrency?: number; // simple semaphore per host
+  globalConcurrency?: number;   // optional global semaphore across hosts
+  rps?: number;                 // optional requests-per-second token bucket (global)
 }
 
 type HostKey = string;
@@ -13,6 +15,8 @@ type HostKey = string;
 export class FetchNetworkPort implements NetworkPort {
   private opts: Required<FetchNetworkPortOptions>;
   private semaphores = new Map<HostKey, Semaphore>();
+  private globalSemaphore?: Semaphore;
+  private tokenBucket?: TokenBucket;
 
   constructor(opts: FetchNetworkPortOptions = {}) {
     this.opts = {
@@ -21,7 +25,11 @@ export class FetchNetworkPort implements NetworkPort {
       baseDelayMs: opts.baseDelayMs ?? 300,
       maxDelayMs: opts.maxDelayMs ?? 5000,
       perHostConcurrency: opts.perHostConcurrency ?? 4,
+      globalConcurrency: opts.globalConcurrency ?? 0,
+      rps: opts.rps ?? 0,
     };
+    if (this.opts.globalConcurrency > 0) this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
+    if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
   }
 
   async head(url: string, init?: RequestInit): Promise<ResponseLike> {
@@ -41,7 +49,11 @@ export class FetchNetworkPort implements NetworkPort {
   private async request(url: string, init?: RequestInit): Promise<ResponseLike> {
     const host = new URL(url).host;
     const sem = this.getSemaphore(host);
-    await sem.acquire();
+    if (this.tokenBucket) await this.tokenBucket.take();
+    await Promise.all([
+      sem.acquire(),
+      this.globalSemaphore ? this.globalSemaphore.acquire() : Promise.resolve(),
+    ]);
     try {
       const headers = await this.mergeHeaders(init?.headers);
       let attempt = 0;
@@ -61,6 +73,7 @@ export class FetchNetworkPort implements NetworkPort {
       throw new Error('Fetch failed');
     } finally {
       sem.release();
+      if (this.globalSemaphore) this.globalSemaphore.release();
     }
   }
 
@@ -105,6 +118,33 @@ class Semaphore {
   }
 }
 
+class TokenBucket {
+  private tokens: number;
+  private queue: Array<() => void> = [];
+  private lastRefill: number;
+  constructor(private rps: number) {
+    this.tokens = rps;
+    this.lastRefill = Date.now();
+    // Refill timer (best-effort)
+    setInterval(() => this.refill(), 1000);
+  }
+  private refill() {
+    const now = Date.now();
+    if (now - this.lastRefill >= 1000) {
+      this.tokens = this.rps;
+      this.lastRefill = now;
+      while (this.tokens > 0 && this.queue.length) {
+        this.tokens--; const r = this.queue.shift()!; r();
+      }
+    }
+  }
+  take(): Promise<void> {
+    this.refill();
+    if (this.tokens > 0) { this.tokens--; return Promise.resolve(); }
+    return new Promise((resolve) => this.queue.push(resolve));
+  }
+}
+
 function wrap(r: Response): ResponseLike { return { ok: r.ok, status: r.status, headers: r.headers, arrayBuffer: () => r.arrayBuffer() }; }
 function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 function backoff(attempt: number, base: number, max: number): number {
@@ -112,4 +152,3 @@ function backoff(attempt: number, base: number, max: number): number {
   const jitter = Math.random() * base;
   return Math.min(max, exp + jitter);
 }
-

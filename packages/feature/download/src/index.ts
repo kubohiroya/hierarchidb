@@ -9,6 +9,14 @@ export * from './adapters/DexieChunkStoragePort';
 export * from './adapters/FetchNetworkPort';
 export * from './helpers/auth';
 export const featureDefinition = {
-  manifest: { name: '@hierarchidb/download', provides: ['download', 'cas'] },
-  init() {},
+  manifest: { name: '@hierarchidb/download', provides: ['download', 'cas', 'net.port'] },
+  init(ctx?: { provide?: (cap: string, value: any) => void }) {
+    // Provide a default network port capability for consumers (worker/UI)
+    try {
+      const port = new (require('./adapters/FetchNetworkPort').FetchNetworkPort)();
+      ctx?.provide?.('net.port', port);
+    } catch {
+      // ignore if require not available in this bundling mode
+    }
+  },
 };
