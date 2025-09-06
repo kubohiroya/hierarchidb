@@ -49,7 +49,6 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
-
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ名: `chore/node-type/unify-dexie-db-names`
   - 着手: 2025-09-06 10:00
@@ -61,7 +60,6 @@
   - 着手: 2025-09-06 10:15
   - 内容: 既存テーブル名の監査（CamelCase複数形の統一を確認）＋ 上記と同時適用。
   - DoD: 実装・ガイド追記・typecheck 通過。
-
 - feat/project/serialization-impl（Project の直列化/逆直列化の実装）
   - ブランチ: `feat/project/serialization-impl`
   - PR: #110 https://github.com/kubohiroya/hierarchidb/pull/110

@@ -50,7 +50,11 @@ async function main() {
         const m = raw.match(/"paths"\s*:\s*\{([\s\S]*?)\}/);
         if (m) {
           const block = m[1];
-          const lines = block.split(/\n|\r/).map(s => s.trim());
+<<<<<<< HEAD
+          const lines = block.split(/\n|\r/).map((s) => s.trim());
+=======
+          const lines = block.split(/\n|\r/).map((s) => s.trim());
+>>>>>>> origin/main
           for (const line of lines) {
             const hasDistDts = /dist[\/].*\.d\.ts/.test(line);
             if (hasDistDts) {
