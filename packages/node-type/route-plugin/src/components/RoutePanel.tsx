@@ -44,6 +44,8 @@ import { useTranslation } from '../i18n';
 import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
 import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress';
+import { TabularPreview } from '@hierarchidb/ui-core/src';
+import { RouteDatabase } from '../database/RouteDatabase';
 import { createRouteBatchManager } from '../services/createRouteBatchManager';
 import { isFlagEnabled } from '../services/config/flags';
 
@@ -346,6 +348,38 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {lastJobId && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Typography variant="subtitle1" gutterBottom>
+              データテーブル
+            </Typography>
+            <RouteTablePreview sessionId={lastJobId} />
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 };
+
+function RouteTablePreview({ sessionId }: { sessionId: string }) {
+  const [tableId, setTableId] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const db = new RouteDatabase();
+        // @ts-ignore
+        const cursor = await (db.table('routeCursors') as any)?.get(sessionId);
+        if (!cancelled) setTableId(cursor?.tableId || null);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [sessionId]);
+  return (
+    <div style={{ minHeight: 360 }}>
+      <TabularPreview pluginId="route" tableId={tableId || undefined} />
+    </div>
+  );
+}

@@ -19,6 +19,8 @@ import {
   StepLabel,
   CircularProgress,
   IconButton,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -32,6 +34,8 @@ import { EntityId } from '@hierarchidb/common-type';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
 import { useShapeProgress } from '../hooks/useShapeProgress';
 import { BatchProgressEvent, ProgressInfo } from '../../shared';
+import { TabularPreview } from '@hierarchidb/ui-core/src';
+import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
 
 export interface BatchProcessingDialogProps {
   open: boolean;
@@ -62,6 +66,8 @@ export function BatchProcessingDialog({
   const [isPaused, setIsPaused] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [completionTimer, setCompletionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [tab, setTab] = useState(0);
+  const [tableId, setTableId] = useState<string | null>(null);
 
   // Real-time progress subscription
   const {
@@ -158,6 +164,20 @@ export function BatchProcessingDialog({
       onClose();
     }
   }, [isProcessing, isPaused, handlePause, onClose]);
+
+  // Load tableId for preview
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const db = getEphemeralShapeDB();
+        // @ts-ignore
+        const sess = await (db.table('sessions') as any).get(sessionId);
+        if (!cancelled) setTableId(sess?.tableId || null);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [sessionId]);
 
   // Format duration
   const formatDuration = (ms: number): string => {
@@ -337,61 +357,77 @@ export function BatchProcessingDialog({
         </Box>
       </DialogTitle>
 
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+          <Tab label="Progress" />
+          <Tab label="Data Table" />
+        </Tabs>
+      </Box>
+
       <DialogContent>
-        {renderStatusSection()}
+        {tab === 0 && (
+          <>
+            {renderStatusSection()}
         
-        {(isFailed || progressError) && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {status?.error || progressError?.message || 'An error occurred during processing'}
-          </Alert>
+            {(isFailed || progressError) && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {status?.error || progressError?.message || 'An error occurred during processing'}
+              </Alert>
+            )}
+
+            {isCompleted && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Processing completed successfully! Dialog will close automatically.
+              </Alert>
+            )}
+
+            {renderStageProgress()}
+            {renderProgressSection()}
+
+            {showDetails && progress && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Processing Details
+                </Typography>
+                
+                <List dense>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total Tasks"
+                      secondary={progress.total}
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Completed"
+                      secondary={progress.completed}
+                    />
+                  </ListItem>
+                  {progress.failed > 0 && (
+                    <ListItem>
+                      <ListItemIcon>
+                        <ErrorIcon color="error" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary="Failed"
+                        secondary={progress.failed}
+                      />
+                    </ListItem>
+                  )}
+                  <ListItem>
+                    <ListItemText 
+                      primary="Current Stage"
+                      secondary={status?.stage || 'Unknown'}
+                    />
+                  </ListItem>
+                </List>
+              </Box>
+            )}
+          </>
         )}
-
-        {isCompleted && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Processing completed successfully! Dialog will close automatically.
-          </Alert>
-        )}
-
-        {renderStageProgress()}
-        {renderProgressSection()}
-
-        {showDetails && progress && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Processing Details
-            </Typography>
-            
-            <List dense>
-              <ListItem>
-                <ListItemText 
-                  primary="Total Tasks"
-                  secondary={progress.total}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemText 
-                  primary="Completed"
-                  secondary={progress.completed}
-                />
-              </ListItem>
-              {progress.failed > 0 && (
-                <ListItem>
-                  <ListItemIcon>
-                    <ErrorIcon color="error" />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Failed"
-                    secondary={progress.failed}
-                  />
-                </ListItem>
-              )}
-              <ListItem>
-                <ListItemText 
-                  primary="Current Stage"
-                  secondary={status?.stage || 'Unknown'}
-                />
-              </ListItem>
-            </List>
+        {tab === 1 && (
+          <Box sx={{ minHeight: 360 }}>
+            <TabularPreview pluginId="shape" tableId={tableId || undefined} />
           </Box>
         )}
       </DialogContent>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
-import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid/src';
+import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { TabularQueryService, type ColumnFilter } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
@@ -79,4 +79,3 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
     </Box>
   );
 }
-

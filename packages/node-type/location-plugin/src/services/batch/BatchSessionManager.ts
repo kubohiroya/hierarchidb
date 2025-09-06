@@ -4,6 +4,7 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import { SessionController, type LocationPointInput, type LocationTileSettings, type SessionSummary } from './SessionController';
+import { LocationBatchSession } from './LocationBatchSession';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 
 export class LocationBatchSessionManager {
@@ -44,8 +45,13 @@ export class LocationBatchSessionManager {
     if (set && set.size > 0) controller.setProgressCallback((ev) => {
       for (const cb of set) cb(ev);
     });
-    // Fire and forget
-    controller.start().then(async () => {
+    // Fire and forget (shared session wrapper)
+    const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: 4 }, controller, (ev) => {
+      const set2 = this.progress.get(sessionId);
+      if (!set2) return;
+      for (const cb of set2) cb(ev);
+    });
+    shared.start().then(async () => {
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
         const db = getEphemeralLocationDB();

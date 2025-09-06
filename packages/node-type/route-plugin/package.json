@@ -25,6 +25,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
@@ -60,4 +61,3 @@
     ]
   }
 }
-    "@hierarchidb/tabular-store": "workspace:*",
