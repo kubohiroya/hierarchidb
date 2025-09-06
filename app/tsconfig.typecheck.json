@@ -6,6 +6,16 @@
     "noEmit": true,
     "incremental": true,
     "composite": false,
+    "rootDir": "..",
+    "rootDirs": ["./src", "../packages"],
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*", "../packages/runtime-worker/worker-bootstrap/src/*"],
+      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/src/index.ts"],
+      "@hierarchidb/ui-dialog": ["../packages/ui/dialog/src/index.ts"],
+      "@hierarchidb/ui-theme": ["../packages/ui/theme/src/index.ts"],
+      "@hierarchidb/common-auth": ["../packages/common/auth/src/index.ts"]
+    },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },
   "include": [
