@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { runWithPolicies } from '../packages/tools/check-deps/dist/index.js';
-import { defaultPolicies } from '../packages/tools/check-deps/dist/config.default.js';
+import { runWithPolicies, defaultPolicies } from '../packages/tools/check-deps/dist/index.js';
 
 const findings = runWithPolicies(defaultPolicies);
 const offenders = findings.filter(f => f.rule === 'maplibre-direct-dep' && f.severity === 'ERROR');
