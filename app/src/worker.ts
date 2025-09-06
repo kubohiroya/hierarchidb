@@ -145,13 +145,14 @@ reporter.reportStepProgress('Load Comlink', 0);
       initialize: () => services.initialize(),
       shutdown: () => services.shutdown(),
       getSystemHealth: () => services.getSystemHealth(),
-      getQueryAPI: () => services.getQueryAPI(),
-      getMutationAPI: () => services.getMutationAPI(),
-      getSubscriptionAPI: () => services.getSubscriptionAPI(),
-      getWorkingCopyAPI: () => services.getWorkingCopyAPI(),
-      getPluginLifecycleAPI: () => services.getPluginLifecycleAPI(),
-      getImportExportAPI: () => services.getImportExportAPI(),
-      getTagAPI: () => services.getTagAPI(),
+      // Return proxy-marked service facades so Comlink treats them as remote objects
+      getQueryAPI: () => Comlink.proxy(services.getQueryAPI()),
+      getMutationAPI: () => Comlink.proxy(services.getMutationAPI()),
+      getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI()),
+      getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI()),
+      getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
+      getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
+      getTagAPI: () => Comlink.proxy(services.getTagAPI()),
     };
 
     reporter.reportStepProgress('Create API facade', 100);
