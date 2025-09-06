@@ -76,6 +76,7 @@
     - route-plugin 側で共有参照を戻し、ローカル ProgressEmitter/Store を復活させる（git revert）。
     - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
 
+
 - feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
   - ブランチ: `feat/location/batch-mvt-fastpath-v1`
   - 依存: `@hierarchidb/batch`（workspace） / `geojson-vt` / `@maplibre/vt-pbf`
@@ -111,6 +112,7 @@
     - done: 2025-09-06 22:40 added bbox-aware styling UI and refresh
     - done: 2025-09-06 22:55 add auto-refresh until completed + per-zoom summary + map onLoad fitBounds
     - done: 2025-09-06 23:10 unify shape preview rendering + add ui-map layer presets + sessions TTL cleanup + common ProgressEvent
+
 
 - chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
   - ブランチ: `chore/tests/add-vitest-coverage`
@@ -160,14 +162,14 @@
   - ブランチ: `refactor/node-type/remove-plugin-suffix`
   - 依存: README 比較表の更新完了
   - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
-  - 方針: 互換マッピング（旧→新）をレジストリ層に追加し、段階的に既存参照を置換。旧識別子は受理（当面）。
+  - 方針: 入口（UI ルーティング等）でのみ旧 `*-plugin` を一回正規化し内部は常に短い識別子。レジストリ層等での広域正規化は行わない。
   - 受け入れ基準（DoD）:
     - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン。現状は大半が短縮済みのため差分少）。
     - [ ] UI/Worker のハードコード参照を新識別子へ統一（例: `folder`）。
-    - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（Extension Registry の登録・取得・呼出し）。
-    - [ ] `pnpm typecheck && pnpm test` がグリーン（互換で旧名でも動作）。
+    - [ ] 入口のみで旧識別子（`*-plugin`）を受理（UI ルートのパラメータ正規化）。
+    - [ ] `pnpm typecheck && pnpm test` がグリーン（入口互換で旧名 URL でも動作）。
   - ロールバック手順:
-    - 互換マッピングを残したまま、識別子変更コミットをリバートすれば即復旧可能。
+    - 入口の正規化をリバートするだけで即時復旧可能（内部は短い識別子のみのため影響限定）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -506,7 +508,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - start: route M1（共有化）着手。
   - ProgressEmitter/Store を runtime-shared へ追加し、route-plugin は共有参照へ切替（型チェックOK）。
   - PLAN.md に Cross-Plugin Sharing を追加し、WBS を同期。
-
+  - shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（simplify2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
@@ -1193,6 +1195,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- fix/shape/complete-simplify2-vectortiles（simplify2 と vectorTiles の完全化）
+  - ブランチ: `fix/shape/complete-simplify2-vectortiles`（PR #118、マージ後ブランチ削除）
+  - 要点: Download→Simplify1→Simplify2→VectorTiles を EphemeralDB 経由で連結。S1/S2/VT で入出力を永続化し、タイル単位で MVT を生成・保存。空プロパティ定義時は全プロパティを許容。
+
+- feat/shape/use-feature-batch（@hierarchidb/batch で全段のオーケストレーション）
+  - ブランチ: `feat/shape/use-feature-batch`（PR #116、マージ後ブランチ削除）
+  - 要点: `BatchService.mapChunks` を download/simplify1/simplify2/vectorTiles に適用し、既存 WorkerPool のタスク実装は維持。進捗イベントを既存 UI フローへ橋渡し。
+
+- refactor/shape/integrate-batch-download-compute（batch/download/compute の導入配線）
+  - ブランチ: `refactor/shape/integrate-batch-download-compute`（PR #115、マージ後ブランチ削除）
+  - 要点: `services/batch/BatchSessionManager` への参照統一、レガシー `services/BatchSessionManager.ts` を削除、`services/index.ts` で `download/factory` を再エクスポート。テスト/参照パスも更新。
 
 - fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
   - ブランチ: `fix/app/init-loading-ux-polish`（PR #104、マージ後ブランチ削除）

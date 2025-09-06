@@ -1,4 +1,5 @@
 export * from './MockShapeService';
-export * from './BatchSessionManager';
+export * from './batch/BatchSessionManager';
 export * from './RecoveryStrategy';
 export * from './ComputeBatchDownloadDemo';
+export * from './download/factory';

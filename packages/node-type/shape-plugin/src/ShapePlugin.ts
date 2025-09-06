@@ -4,7 +4,7 @@
  */
 
 import type { TreeNodeId } from '@hierarchidb/core';
-import { BatchSessionManager } from './services/BatchSessionManager';
+import { BatchSessionManager } from './services/batch/BatchSessionManager';
 import type { BatchConfig } from './types/BatchConfig';
 
 /**

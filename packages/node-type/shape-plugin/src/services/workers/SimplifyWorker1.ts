@@ -20,6 +20,7 @@ import type {
   QualityMetrics,
 } from '../types';
 import type { Feature } from '../../types';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB';
 
 /**
  * SimplifyWorker1 - Feature-level geometry simplification
@@ -91,8 +92,8 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         features: simplifiedFeatures,
       };
 
-      const outputBufferId = `simplified1-${task.taskId}-${Date.now()}`;
-      await this.saveOutputBuffer(outputBufferId, JSON.stringify(outputGeoJson));
+      const outputBufferId = `simp1-${task.taskId}`;
+      await this.saveOutputBuffer(outputBufferId, JSON.stringify(outputGeoJson), task);
 
       // 6. Calculate reduction metrics
       const originalSize = JSON.stringify(geoJson).length;
@@ -675,10 +676,13 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     // In production, this would load from EphemeralDB or buffer storage
     // For now, we'll simulate loading GeoJSON data
     try {
-      // Simulate fetching from storage (would be EphemeralDB query)
-      console.log(`Loading buffer ${bufferId} from storage`);
-      
-      // Return null if not found (caller should handle)
+      // Load from EphemeralDB raw buffers (download stage output)
+      const db = getEphemeralShapeDB();
+      const rec = await db.rawBuffers.get(bufferId);
+      if (rec) {
+        this.processingCache.set(bufferId, rec.data);
+        return rec.data;
+      }
       return null;
     } catch (error) {
       console.error(`Failed to load buffer ${bufferId}:`, error);
@@ -686,20 +690,30 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     }
   }
 
-  private async saveOutputBuffer(bufferId: string, data: string): Promise<void> {
+  private async saveOutputBuffer(bufferId: string, data: string, task: Simplify1Task): Promise<void> {
     try {
       // Save to processing cache for immediate access
       this.processingCache.set(bufferId, data);
       console.log(`Saved buffer ${bufferId} to cache (${this.formatBytes(data.length)})`);
-      
-      // In production, this would persist to EphemeralDB
-      // await this.ephemeralDB.buffers.put({
-      //   id: bufferId,
-      //   data: data,
-      //   timestamp: Date.now(),
-      //   type: 'simplified-features'
-      // });
-      
+      // Persist to EphemeralDB simplified buffers (stage simplify1)
+      try {
+        const db = getEphemeralShapeDB();
+        const parsed = JSON.parse(data);
+        await db.simplifiedBuffers.put({
+          id: bufferId,
+          sessionId: task.sessionId,
+          // nodeId is not part of Simplify1Task; fallback by looking up raw buffer
+          nodeId: (await db.rawBuffers.get(task.inputBufferId))?.nodeId as any,
+          stage: 'simplify1',
+          data,
+          featureCount: parsed?.features?.length || 0,
+          simplificationRatio: 0,
+          tolerance: task.config.tolerance,
+          timestamp: Date.now(),
+        });
+      } catch (e) {
+        console.warn('SimplifyWorker1: failed to persist output to EphemeralDB:', e);
+      }
     } catch (error) {
       console.error(`Failed to save buffer ${bufferId}:`, error);
       throw error;

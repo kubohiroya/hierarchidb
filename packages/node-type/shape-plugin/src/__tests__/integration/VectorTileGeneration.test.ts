@@ -11,7 +11,7 @@ import type { NodeId } from '@hierarchidb/common-type';
 const createNodeId = (prefix: string): NodeId => {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` as NodeId;
 };
-import { BatchSessionManager } from '../../services/BatchSessionManager';
+import { BatchSessionManager } from '../../services/batch/BatchSessionManager';
 import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
 import type { BatchConfig } from '../../types/BatchConfig';
 import type { BatchTaskLike } from '../../types/BatchTaskLike';

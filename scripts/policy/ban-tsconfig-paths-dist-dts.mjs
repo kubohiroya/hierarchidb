@@ -83,7 +83,3 @@ async function main() {
 }
 
 main();
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore/tests/add-vitest-coverage
