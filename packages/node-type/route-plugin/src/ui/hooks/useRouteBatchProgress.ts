@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ProgressEmitter, type ProgressSnapshot, type ProgressSnapshotStore } from '@hierarchidb/runtime-shared-batch-processor';
+import { ProgressEmitter, type ProgressSnapshot, type ProgressSnapshotStore } from './progress-compat';
 
 export function useRouteBatchProgress(jobId: string, deps?: { emitter?: ProgressEmitter; store?: ProgressSnapshotStore }) {
   const emitter = useMemo(() => deps?.emitter ?? new ProgressEmitter(10), [deps?.emitter]);

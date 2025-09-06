@@ -1,4 +1,4 @@
-import type { ProgressSnapshot } from '@hierarchidb/runtime-shared-batch-processor';
+import type { ProgressSnapshot } from '../hooks/progress-compat';
 
 export function RouteBatchProgressBar({ snapshot }: { snapshot?: ProgressSnapshot }) {
   const p = Math.round(snapshot?.progress ?? 0);
