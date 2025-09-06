@@ -606,3 +606,10 @@ ui-usermenu ← ui-auth, ui-i18n, ui-monitoring, ui-theme
 - [基盤モジュール](../../docs/5-base-module.md)
 - [開発ガイドライン](../../docs/4-development-guidelines.md)
 - [アーキテクチャ詳細](../../docs/7-aop-architecture.md)
+## Plugin/Library MUSTs (重要な開発規約)
+- 公開TSXの戻り値型: すべての公開 TSX 関数/コンポーネントは `JSX.Element`（必要なら `| null`）を明示する（TS2742 回避）。
+- 型エクスポート: `package.json` の `types` と `exports.types` は必ず `src/index.ts` を指す（prebuild typecheck を安定化）。
+- パスエイリアス禁止: 公開ソースでは `~/` など tsconfig の paths に依存しない。相対参照（../）かビルド時のパス置換のみ許可。
+- React/MUI をバンドルしない: UI パッケージは React/MUI を `peerDependencies` に置き、tsup では `external` 指定する（ホストアプリでの単一インスタンス維持）。
+- 環境変数: ブラウザコードで `process.env` は使用しない。`import.meta.env` / `VITE_*` を用いる（必要なら共通の `env` ヘルパーを利用）。
+- 依存解決: 他パッケージの `../src` 直参照は禁止。公開 API（パッケージ名）経由、または d.ts のみ参照する。

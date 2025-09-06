@@ -93,4 +93,16 @@ module.exports = {
     'coverage',
     'playwright-report',
   ],
+  overrides: [
+    {
+      files: ['**/*.tsx'],
+      rules: {
+        // Enforce explicit return types for exported TSX (public API) to avoid TS2742 at d.ts rollup time
+        '@typescript-eslint/explicit-module-boundary-types': [
+          'error',
+          { allowHigherOrderFunctions: true, allowDirectConstAssertionInArrowFunctions: true },
+        ],
+      },
+    },
+  ],
 };

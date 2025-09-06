@@ -11,7 +11,12 @@
   ],
   "scripts": {
     "start": "node dist/cli.js",
-    "build": "node -e \"process.exit(0)\""
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "license-checker": "^25.0.1"
   }
 }
-

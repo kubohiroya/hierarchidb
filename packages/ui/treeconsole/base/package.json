@@ -2,6 +2,7 @@
   "name": "@hierarchidb/ui-treeconsole-base",
   "version": "0.1.0",
   "description": "Base Tree Console UI orchestrator components for HierarchiDB - migrated from eria-cartograph/app0",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "src/index.ts",
   "exports": {

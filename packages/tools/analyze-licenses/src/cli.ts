@@ -1,0 +1,74 @@
+import { createRequire } from 'module';
+import path from 'path';
+
+const require = createRequire(import.meta.url);
+
+type LicenseCheckerInit = (
+  opts: Record<string, any>,
+  cb: (err: Error | null, packages: Record<string, any>) => void
+) => void;
+
+async function main() {
+  const cwd = process.cwd();
+  const start = cwd; // analyze workspace root by default
+
+  // license-checker is CJS; load via createRequire
+  let checker: { init: LicenseCheckerInit };
+  try {
+    checker = require('license-checker');
+  } catch (err) {
+    console.error('[licenses] Failed to load license-checker. Ensure it is installed.');
+    console.error(String(err));
+    process.exit(2);
+    return;
+  }
+
+  const opts: Record<string, any> = {
+    start,
+    production: true,
+    json: true,
+    direct: true,
+    // excludePackages expects a semicolon-separated string; provide none and filter manually
+    // excludePackages: '',
+  };
+
+  await new Promise<void>((resolve) => {
+    checker.init(opts, (err: Error | null, packages: Record<string, any>) => {
+      if (err) {
+        console.error('[licenses] Analysis failed:', err.message);
+        // Do not block the build on analysis failure; exit code 1 will break prebuild.
+        // Exit 3 to signal analysis tool error specifically.
+        process.exit(3);
+        return;
+      }
+
+      const entries = Object.entries(packages).filter(([name, info]) => {
+        // Ignore workspace paths (node_modules/.pnpm links still have paths)
+        const p = (info as any).path as string | undefined;
+        return !p || !p.includes(path.sep + 'packages' + path.sep);
+      });
+
+      let missing = 0;
+      for (const [pkgKey, info] of entries) {
+        const license = (info as any).licenses as string | undefined;
+        if (!license || license === 'UNLICENSED' || license === 'UNKNOWN') {
+          missing++;
+          console.warn(`[licenses] Missing/unknown license: ${pkgKey}`);
+        }
+      }
+
+      console.log(`[licenses] Scanned ${entries.length} third-party packages.`);
+      if (missing > 0) {
+        console.warn(`[licenses] ${missing} package(s) missing/unknown license.`);
+      }
+
+      // Always exit 0 to keep prebuild non-blocking but informative.
+      resolve();
+    });
+  });
+}
+
+main().catch((e) => {
+  console.error('[licenses] Unexpected error:', e);
+  process.exit(3);
+});

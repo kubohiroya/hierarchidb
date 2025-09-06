@@ -151,6 +151,17 @@ export class WorkerAPIClient {
   }
 
   /**
+   * Convenience: ensure initialized and return the instance.
+   * Safe to call anywhere you would have used getSingleton() + initialize().
+   */
+  static async getOrInit(): Promise<WorkerInterface> {
+    if (!this.isReady()) {
+      await this.initialize();
+    }
+    return this.getSingleton();
+  }
+
+  /**
    * Reset the WorkerAPIClient state to allow re-initialization
    * Useful when connection fails and needs to be retried
    */
@@ -174,9 +185,16 @@ export class WorkerAPIClient {
       }
     } catch {}
     const ready = this.state === 'initialized' && this.workerInstance !== null;
-    console.log(
-      `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`
-    );
+    // Reduce console noise: only log when explicitly enabled
+    // To re-enable: set VITE_WORKERAPI_LOG=1
+    try {
+      if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`
+        );
+      }
+    } catch {}
     return ready;
   }
 
