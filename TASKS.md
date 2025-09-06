@@ -50,7 +50,10 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- 現在なし（2025-09-06）。方針: マージ後にブランチを削除する運用のため、origin にブランチ不在の作業は Done とみなす。
+- feat/project/serialization-impl（Project の直列化/逆直列化の実装）
+  - ブランチ: `feat/project/serialization-impl`
+  - PR: draft 準備済（`PR_BODY_project_serialization.md`）。push 後に作成予定。
+  - 要点: `ProjectEntitySerializer` 追加し、`ProjectEntityHandler` の serialize/deserialize 系を実装。`Uint8Array`/`ArrayBuffer` を UUID 参照へ退避し Map で同梱。
 
 ---
 
@@ -323,6 +326,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 
 ## 運用ログ（today） <a id="log-today"></a>
 
+- 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR本文を作成しローカルブランチにコミット完了（push/PR作成はこの後）。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
 
