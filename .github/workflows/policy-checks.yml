@@ -23,6 +23,7 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
+      
         with:
           node-version: 20
           cache: 'pnpm'
@@ -45,5 +46,5 @@ jobs:
       - name: publint (package publish sanity)
         run: pnpm -w pkg:publint || true
 
-      - name: @arethetypeswrong/cli (types sanity)
+      - name: '@arethetypeswrong/cli (types sanity)'
         run: pnpm -w pkg:attw || true
