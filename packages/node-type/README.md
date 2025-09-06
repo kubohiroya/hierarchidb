@@ -69,7 +69,6 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 graph TB
     %% 分類
     subgraph "分類"
-        SIMPLE[シンプル<br/>独立]
         EXTENDING[拡張<br/>単一継承]
         MIXIN[feature<br/>ミックスイン]
     end

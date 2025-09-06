@@ -2,7 +2,7 @@
  * Location SessionController - minimal point -> MVT pipeline
  */
 import { BatchService } from '@hierarchidb/batch';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
 // External libs (ambient types declared under types/external.d.ts)
 import vtpbf from '@maplibre/vt-pbf';
@@ -25,15 +25,8 @@ export interface LocationTileSettings {
   extent?: number; // MVT extent; encoded as 4096 default
 }
 
-export interface ProgressInfo {
-  sessionId: string;
-  stage: 'import' | 'normalize' | 'tilegen' | 'completed';
-  total: number;
-  completed: number;
-  failed: number;
-  percentage: number;
-  currentTask: string;
-}
+// Use common progress event type to decouple worker from UI
+export type ProgressInfo = ProgressEvent;
 
 export interface SessionSummary {
   sessionId: string;
@@ -149,7 +142,7 @@ export class SessionController {
   }
 
   private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {
-    this.progressCb?.({ sessionId: this.sessionId, stage, total, completed, failed, percentage: total>0? (completed/total)*100 : 0, currentTask });
+    this.progressCb?.({ sessionId: this.sessionId, stage, total, completed, failed, percentage: total>0? (completed/total)*100 : 0, currentTask, timestamp: Date.now() });
   }
 
   // Control API (minimal)

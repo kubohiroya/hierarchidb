@@ -3,11 +3,12 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { SessionController, type LocationPointInput, type LocationTileSettings, type ProgressInfo, type SessionSummary } from './SessionController';
+import { SessionController, type LocationPointInput, type LocationTileSettings, type SessionSummary } from './SessionController';
+import type { ProgressEvent } from '@hierarchidb/common-type';
 
 export class LocationBatchSessionManager {
   private controllers = new Map<string, SessionController>();
-  private progress = new Map<string, Set<(p: ProgressInfo) => void>>();
+  private progress = new Map<string, Set<(p: ProgressEvent) => void>>();
   private summaries = new Map<string, SessionSummary>();
 
   async createSession(
@@ -63,7 +64,7 @@ export class LocationBatchSessionManager {
     return summary;
   }
 
-  onProgress(sessionId: string, cb: (p: ProgressInfo) => void): () => void {
+  onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void {
     let set = this.progress.get(sessionId);
     if (!set) {
       set = new Set();

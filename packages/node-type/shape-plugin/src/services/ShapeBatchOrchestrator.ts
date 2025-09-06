@@ -37,20 +37,22 @@ export class ShapeBatchOrchestrator {
     let processed = 0; let failed = 0; let totalSize = 0; let totalFeatures = 0;
     for (const t of downloadTasks) {
       try {
-        const url = this.buildUrl(t);
-        const fileId = `${sessionId}-${t.config?.country}-L${t.config?.adminLevel}`;
-        const res = await dl.download(url, fileId, {});
-        totalSize += res.sizeBytes || 0;
-        // Prefer StoragePort.readAll() if available (DexieChunkStoragePort supports it)
-        let text: string;
-        if (typeof store.readAll === 'function') {
-          const buf = await store.readAll(fileId);
-          text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
+        // Strategy (feature-gated) or default HTTP path
+        let text: string; let sizeBytes: number | undefined;
+        const { resolveShapeDownloadStrategy } = await import('./download/registry');
+        const strat = resolveShapeDownloadStrategy(t);
+        if (strat) {
+          const out = await strat.download(t);
+          text = out.text; sizeBytes = out.sizeBytes;
         } else {
-          // Fallback: refetch as text (with auth)
+          // Prefer auth-aware fetch to ensure 401/403 triggers UI flow
+          const url = this.buildUrl(t);
           const { authFetch } = await import('./utils/authFetch');
-          text = await (await authFetch(url)).text();
+          const res = await authFetch(url, { headers: { Accept: 'application/geo+json, application/json, */*' } });
+          sizeBytes = Number(res.headers.get('content-length') || '0') || undefined;
+          text = await res.text();
         }
+        totalSize += sizeBytes || 0;
         const geoJson = JSON.parse(text);
         if (!geoJson.type || !geoJson.features) throw new Error('Invalid GeoJSON');
         const featureCount = geoJson.features.length;

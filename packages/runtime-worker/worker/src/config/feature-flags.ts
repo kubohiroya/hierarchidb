@@ -18,4 +18,12 @@ export const FEATURE_FLAGS = {
     (typeof process !== 'undefined' && process?.env?.WORKER_TX_ENABLED) === '1',
   WORKER_ENTITY_UNIFIED:
     (typeof process !== 'undefined' && process?.env?.WORKER_ENTITY_UNIFIED) === '1',
+  // Common progress type adoption across plugins (UI-independent)
+  WORKER_PROGRESS_COMMON_TYPES:
+    (typeof process !== 'undefined' && process?.env?.WORKER_PROGRESS_COMMON_TYPES) === '1',
+  // Download strategy adoption (DI) for plugins
+  LOCATION_DOWNLOAD_STRATEGY:
+    (typeof process !== 'undefined' && process?.env?.LOCATION_DOWNLOAD_STRATEGY) === '1',
+  SHAPE_DOWNLOAD_STRATEGY:
+    (typeof process !== 'undefined' && process?.env?.SHAPE_DOWNLOAD_STRATEGY) === '1',
 } as const;

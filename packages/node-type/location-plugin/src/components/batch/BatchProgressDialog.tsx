@@ -51,6 +51,8 @@ import {
 
 } from '@mui/icons-material';
 import type { NodeId } from '../../types';
+import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
+import { useLocationProgress } from '../../hooks/useLocationProgress';
 
 // 進捗情報の型定義
 interface ProgressInfo {
@@ -119,7 +121,8 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 
 export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   open,
-  onClose
+  onClose,
+  sessionId,
 }) => {
   const [tabValue, setTabValue] = useState(0);
   const [progress, setProgress] = useState<ProgressInfo>({
@@ -273,6 +276,16 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       </Box>
       
       <DialogContent sx={{ flex: 1, overflow: 'hidden', p: 0 }}>
+        {(() => {
+          const svc = new LocationVectorTileService();
+          const { progress: realProgress } = useLocationProgress(svc, sessionId, { autoSubscribe: true });
+          const showAuthRequired = realProgress?.stage === 'auth-required';
+          return showAuthRequired ? (
+            <Alert severity="warning" sx={{ m: 2 }}>
+              🔐 認証が必要です — {realProgress?.currentTask || 'Authentication required to continue'}
+            </Alert>
+          ) : null;
+        })()}
         {/* Tab 1: 進捗状況 */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>

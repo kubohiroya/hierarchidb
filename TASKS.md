@@ -113,6 +113,26 @@
     - done: 2025-09-06 22:55 add auto-refresh until completed + per-zoom summary + map onLoad fitBounds
     - done: 2025-09-06 23:10 unify shape preview rendering + add ui-map layer presets + sessions TTL cleanup + common ProgressEvent
 
+- feat/node-type/progress-type-extract — 進捗データ型を common-type へ抽出（UI 依存排除）
+  - ブランチ: `feat/node-type/progress-type-extract`
+  - フラグ: `WORKER_PROGRESS_COMMON_TYPES`（既定OFF）
+  - スコープ: `@hierarchidb/common-type` に `BatchProgress`（UI/Worker 共有進捗型）を追加し、location/shape の進捗イベントをこの型に準拠させる。`ui-core/useBatchProgress` は後方互換アダプタで接続。
+  - 受け入れ基準（DoD）:
+    - [ ] フラグON時、location/shape の progress イベントが `BatchProgress` でUIに届く
+    - [ ] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
+    - [ ] OFF時は完全非回帰（UI表示/イベント契約）
+  - ロールバック: フラグOFFで旧 UnifiedProgressInfo/各プラグイン ProgressInfo を使用
+
+- feat/node-type/download-strategy — Download 戦略を location/shape でStrategy化
+  - ブランチ: `feat/node-type/download-strategy`
+  - フラグ: `LOCATION_DOWNLOAD_STRATEGY`, `SHAPE_DOWNLOAD_STRATEGY`（既定OFF）
+  - スコープ: location の `LocationBatchManager` から OSM/Nominatim/Overpass を Strategy 実装へ分離。shape は雛形（1実装 or mock）を導入。
+  - 受け入れ基準（DoD）:
+    - [ ] Location: `ILocationDownloadStrategy`/`StrategyRegistry`/`DefaultStrategies` を実装、既存実装はフォールバック
+    - [ ] Shape: `IShapeDownloadStrategy`/Registry の雛形を追加（最小実装orモック）
+    - [ ] OFF時は switch 実装に戻り、非回帰
+  - ロールバック: *_DOWNLOAD_STRATEGY を OFF
+
 
 - chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
   - ブランチ: `chore/tests/add-vitest-coverage`
@@ -1283,6 +1303,8 @@ P2:
   - `WORKER_TRASH_USE_HOLDER="0|1"`
   - `WORKER_USE_CMDPROC_MOVE_REMOVE="0|1"`
   - `WORKER_METRICS_ENABLED="0|1"`
+  - `WORKER_PROGRESS_COMMON_TYPES="0|1"`
+  - `LOCATION_DOWNLOAD_STRATEGY="0|1"`, `SHAPE_DOWNLOAD_STRATEGY="0|1"`
 
 ## ロールバック指針 <a id="rollback"></a>
 

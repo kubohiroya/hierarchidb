@@ -15,6 +15,7 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
@@ -27,6 +28,7 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@emotion/react": "^11.11.0",
