@@ -44,14 +44,13 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   private tasks: RouteBatchTask[] = [];
   private laneSemaphores = new Map<string, Semaphore>();
   private laneConfig: Record<string, number> = { osm_route: 1, searoute: 3, direct: 64, great_circle: 64, custom: 8 };
-  private generator: RouteGenerator;
+  private generator = new RouteGenerator();
   private writer: TabularWriter | null = null;
   private writerReady = false;
-  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void, deps?: { generator?: RouteGenerator }) {
+  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void) {
     super(sessionId, nodeId, config);
     this.db = new RouteDatabase();
     this.tasks = tasks;
-    this.generator = deps?.generator ?? new RouteGenerator();
   }
 
   protected async onInitialize(): Promise<void> {
@@ -95,12 +94,13 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       completed++;
       await this.db.routeCursors?.put({ sessionId: this.sessionId, completed, total: this.tasks.length, updatedAt: Date.now(), paused: this.getState().status === 'paused' } as any);
       this.updateProgress({ total: this.tasks.length, completed, currentStage: task.stage, currentTask: `Processing ${task.taskType}` });
-      // Pause handling (poll cursor flag)
-      for (;;) {
-        const cur = await (this.db.routeCursors as any)?.get(this.sessionId);
-        if (!cur?.paused) break;
+      // Pause handling
+      const cursor = await (this.db.routeCursors as any)?.get(this.sessionId);
+      while (cursor?.paused) {
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
         await this.delay(250);
+        const cur = await (this.db.routeCursors as any)?.get(this.sessionId);
+        if (!cur?.paused) break;
       }
     }, { concurrency: maxConcurrent });
   }

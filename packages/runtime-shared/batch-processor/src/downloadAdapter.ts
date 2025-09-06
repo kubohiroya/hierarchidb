@@ -12,20 +12,3 @@ export async function createSharedDownloadService(opts?: SharedDownloadOptions) 
   return { service, net, readAll: (fileId: string) => storage.readAll!(fileId) };
 }
 
-/**
- * POST helper (JSON) using AuthRecovery — complements DownloadService (GET-oriented).
- */
-export async function postJson(url: string, body: string | object, headers?: Record<string,string>) {
-  const auth = await AuthRecoveryService.getSingleton();
-  const init: RequestInit = {
-    method: 'POST',
-    body: typeof body === 'string' ? body : JSON.stringify(body),
-    headers: {
-      'Content-Type': typeof body === 'string' ? 'application/x-www-form-urlencoded' : 'application/json',
-      ...(headers || {}),
-    },
-  };
-  const res = await auth.fetchWithAuth(url, init, { pluginType: 'shared' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}

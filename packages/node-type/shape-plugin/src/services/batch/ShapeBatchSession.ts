@@ -1,22 +1,16 @@
 import { AbstractBatchSession } from '@hierarchidb/runtime-shared/batch-processor/src/AbstractBatchSession';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
-import type { ProgressInfo } from '../types';
-import { SessionController } from './SessionController';
 
 export interface ShapeBatchConfig { concurrency?: number }
 export interface ShapeBatchTask { taskId: string; stage: string; }
 
 export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, ShapeBatchTask, void> {
-  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) { super(sessionId, nodeId, config); }
+  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private tasks: ShapeBatchTask[], private sink?: (e: ProgressEvent) => void) { super(sessionId, nodeId, config); }
   protected async onInitialize(): Promise<void> {}
   protected async onStart(): Promise<void> {}
   protected async processBatch(): Promise<void> {
-    // Bridge controller progress into shared session progress
-    this.controller.setProgressCallback((p: ProgressInfo) => {
-      this.updateProgress({ total: p.total, completed: p.completed, failed: p.failed, currentStage: (p.currentStage as any) || 'processing', currentTask: p.currentTask });
-    });
-    await this.controller.initialize();
-    await this.controller.start();
+    const total = this.tasks.length; let completed = 0;
+    for (const t of this.tasks) { if (this.isAborted()) break; completed++; this.updateProgress({ total, completed, currentStage: t.stage, currentTask: t.taskId }); await this.delay(1); }
   }
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
@@ -27,3 +21,4 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
     this.sink?.({ sessionId: this['sessionId'] as any, stage: p.currentStage || 'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask || '' });
   }
 }
+
