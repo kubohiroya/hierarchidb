@@ -103,6 +103,8 @@ export class BatchSessionManager {
     );
 
     this.activeSessions.set(session.sessionId, controller);
+    const cb = this.progressCallbacks.get(session.sessionId);
+    if (cb) controller.setProgressCallback(cb);
 
     // Start processing
     this.startSessionProcessing(controller);
@@ -209,6 +211,10 @@ export class BatchSessionManager {
   // Progress Tracking
   onProgress(sessionId: string, callback: (progress: ProgressInfo) => void): void {
     this.progressCallbacks.set(sessionId, callback);
+    const controller = this.activeSessions.get(sessionId);
+    if (controller) {
+      controller.setProgressCallback(callback);
+    }
   }
 
   /*
@@ -322,4 +328,3 @@ export class BatchSessionManager {
     return { tasksPerSecond, bytesPerSecond };
   }
 }
-
