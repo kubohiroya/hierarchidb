@@ -10,6 +10,18 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "import": "./dist/types.js"
+    },
+    "./ports": {
+      "types": "./src/ports.ts",
+      "import": "./dist/ports.js"
+    },
+    "./registry": {
+      "types": "./src/registry.ts",
+      "import": "./dist/registry.js"
     }
   },
   "scripts": {
