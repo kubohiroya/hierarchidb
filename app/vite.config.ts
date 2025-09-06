@@ -41,7 +41,12 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         },
       },
     }),
-    dts(),
+    dts({
+      outDir: isSsrBuild ? 'build/server-types' : 'build/client-types',
+      rollupTypes: false,
+      insertTypesEntry: false,
+      copyDtsFiles: true,
+    }),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     comlink(), // Add Comlink plugin for Worker support
     reactRouter(),

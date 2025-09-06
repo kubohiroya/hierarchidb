@@ -1,16 +1,10 @@
-import { AuthNotificationRegistry, AuthNotificationFactory } from '@hierarchidb/common-auth';
-
-export type AuthRequiredPayload = {
-  context: {
-    requestId: string;
-    url: string;
-    method: string;
-    pluginType?: 'shape' | 'spreadsheet' | 'styler' | 'generic';
-    sessionId?: string;
-    errorCode?: number;
-    errorMessage?: string;
-  };
-};
+import {
+  AuthNotificationRegistry,
+  AuthNotificationFactory,
+  type AuthRequiredNotification,
+  type AuthSuccessNotification,
+  type AuthCancelledNotification,
+} from '@hierarchidb/common-auth';
 
 export type AuthPromptResult = {
   token: string;
@@ -18,7 +12,7 @@ export type AuthPromptResult = {
   expiresAt?: number;
 };
 
-export type AuthPrompt = (n: AuthRequiredPayload) => Promise<AuthPromptResult>;
+export type AuthPrompt = (n: AuthRequiredNotification) => Promise<AuthPromptResult>;
 
 /**
  * Register UI-side handlers to resolve AuthRequired notifications.
@@ -28,29 +22,28 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
   const registry = AuthNotificationRegistry.getInstance();
   const id = opts?.id ?? 'ui-auth-recovery-client';
   registry.register(id, {
-    onAuthRequired: async (n: AuthRequiredPayload) => {
-      const { requestId, pluginType } = n.context;
+    onAuthRequired: async (notification: AuthRequiredNotification): Promise<void> => {
+      const { requestId, sessionId } = notification.context;
       try {
-        const res = await prompt(n);
-        await registry.dispatch(
-          AuthNotificationFactory.createAuthSuccess({
-            context: {
-              requestId,
-              pluginType,
-              newToken: res.token,
-              tokenType: res.type ?? 'Bearer',
-              expiresAt: res.expiresAt,
-            },
-          })
-        );
+        const res = await prompt(notification);
+        const success = AuthNotificationFactory.createAuthSuccess({
+          requestId,
+          newToken: res.token,
+          tokenType: res.type ?? 'Bearer',
+          expiresAt: res.expiresAt ?? Date.now() + 60 * 60 * 1000,
+          sessionId,
+        });
+        await registry.dispatch(success as AuthSuccessNotification);
       } catch (e: any) {
-        await registry.dispatch(
-          AuthNotificationFactory.createAuthCancelled({
-            context: { requestId, pluginType, reason: e?.message || 'cancelled' },
-          })
-        );
+        const cancelled = AuthNotificationFactory.createAuthCancelled({
+          requestId,
+          sessionId,
+          reason: 'error',
+        });
+        await registry.dispatch(cancelled as AuthCancelledNotification);
       }
     },
+    onAuthSuccess: async () => {},
+    onAuthCancelled: async () => {},
   });
 }
-
