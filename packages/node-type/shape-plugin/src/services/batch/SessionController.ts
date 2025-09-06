@@ -190,27 +190,19 @@ export class SessionController {
       expectedFormat: 'geojson',
     }));
     
-    // Process download tasks in parallel
-    const results = await Promise.allSettled(
-      tasks.map(task => this.workerPool!.processDownloadTask(task))
-    );
-    
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    // Process download tasks via shared BatchService
+    const { BatchService } = await import('@hierarchidb/batch');
+    const batch = new BatchService();
+    let completed = 0; let failed = 0;
+    await batch.mapChunks(tasks, async (task) => {
+      try { await this.workerPool!.processDownloadTask(task); completed++; }
+      catch { failed++; }
+      this.progressCallback?.({ sessionId: this.sessionId, stage: 'download', total: tasks.length, completed, failed, percentage: (completed / tasks.length) * 100, currentTask: task.taskId });
+    }, { concurrency: this.config.downloadWorkers || 2 });
     
     console.log(`[Session ${this.sessionId}] Download stage completed: ${successful} successful, ${failed} failed`);
     
-    if (this.progressCallback) {
-      this.progressCallback({
-        sessionId: this.sessionId,
-        stage: 'download',
-        total: tasks.length,
-        completed: successful,
-        failed,
-        percentage: (successful / tasks.length) * 100,
-        currentTask: 'Download completed',
-      });
-    }
+    this.progressCallback?.({ sessionId: this.sessionId, stage: 'download', total: tasks.length, completed, failed, percentage: (completed / tasks.length) * 100, currentTask: 'Download completed' });
   }
   
   /**
@@ -231,13 +223,15 @@ export class SessionController {
       minArea: this.config.minArea || 100,
     }));
     
-    // Process simplify1 tasks
-    const results = await Promise.allSettled(
-      tasks.map(task => this.workerPool!.processSimplify1Task(task))
-    );
-    
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${successful}/${tasks.length} successful`);
+    const { BatchService } = await import('@hierarchidb/batch');
+    const batch = new BatchService();
+    let completed = 0; let failed = 0;
+    await batch.mapChunks(tasks, async (task) => {
+      try { await this.workerPool!.processSimplify1Task(task); completed++; }
+      catch { failed++; }
+      this.progressCallback?.({ sessionId: this.sessionId, stage: 'simplify1', total: tasks.length, completed, failed, percentage: (completed / tasks.length) * 100, currentTask: task.taskId });
+    }, { concurrency: this.config.simplify1Workers || 2 });
+    console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${completed}/${tasks.length} successful`);
   }
   
   /**
@@ -258,13 +252,15 @@ export class SessionController {
       tileSize: this.config.tileSize || 512,
     }));
     
-    // Process simplify2 tasks
-    const results = await Promise.allSettled(
-      tasks.map(task => this.workerPool!.processSimplify2Task(task))
-    );
-    
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${successful}/${tasks.length} successful`);
+    const { BatchService } = await import('@hierarchidb/batch');
+    const batch = new BatchService();
+    let completed = 0; let failed = 0;
+    await batch.mapChunks(tasks, async (task) => {
+      try { await this.workerPool!.processSimplify2Task(task); completed++; }
+      catch { failed++; }
+      this.progressCallback?.({ sessionId: this.sessionId, stage: 'simplify2', total: tasks.length, completed, failed, percentage: (completed / tasks.length) * 100, currentTask: task.taskId });
+    }, { concurrency: this.config.simplify2Workers || 1 });
+    console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${completed}/${tasks.length} successful`);
   }
   
   /**
@@ -285,13 +281,15 @@ export class SessionController {
       compression: 'gzip',
     }));
     
-    // Process vector tile tasks
-    const results = await Promise.allSettled(
-      tasks.map(task => this.workerPool!.processVectorTileTask(task))
-    );
-    
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${successful}/${tasks.length} successful`);
+    const { BatchService } = await import('@hierarchidb/batch');
+    const batch = new BatchService();
+    let completed = 0; let failed = 0;
+    await batch.mapChunks(tasks, async (task) => {
+      try { await this.workerPool!.processVectorTileTask(task); completed++; }
+      catch { failed++; }
+      this.progressCallback?.({ sessionId: this.sessionId, stage: 'vectorTiles', total: tasks.length, completed, failed, percentage: (completed / tasks.length) * 100, currentTask: task.taskId });
+    }, { concurrency: this.config.vectorTileWorkers || 1 });
+    console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${completed}/${tasks.length} successful`);
   }
   
   /**
