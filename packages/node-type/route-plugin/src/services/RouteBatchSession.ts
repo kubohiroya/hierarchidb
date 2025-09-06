@@ -95,13 +95,12 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       completed++;
       await this.db.routeCursors?.put({ sessionId: this.sessionId, completed, total: this.tasks.length, updatedAt: Date.now(), paused: this.getState().status === 'paused' } as any);
       this.updateProgress({ total: this.tasks.length, completed, currentStage: task.stage, currentTask: `Processing ${task.taskType}` });
-      // Pause handling
-      const cursor = await (this.db.routeCursors as any)?.get(this.sessionId);
-      while (cursor?.paused) {
-        this.updateProgress({ currentTask: `paused:${task.taskType}` });
-        await this.delay(250);
+      // Pause handling (poll cursor flag)
+      for (;;) {
         const cur = await (this.db.routeCursors as any)?.get(this.sessionId);
         if (!cur?.paused) break;
+        this.updateProgress({ currentTask: `paused:${task.taskType}` });
+        await this.delay(250);
       }
     }, { concurrency: maxConcurrent });
   }

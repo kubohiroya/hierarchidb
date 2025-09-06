@@ -11,6 +11,9 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 | 特徴 | 説明 | 実装レベル |
 |------|------|-----------|
 | **UI/Worker分離** | Comlink RPCによる完全な層分離 | ✅ 完成 |
+| **実行基盤の共有化** | @hierarchidb/batch による実行統一（shape/location/route） | ✅ 完成 |
+| **ダウンロード共有** | 共有 Download アダプタ（AuthRecovery + DownloadService） | ✅ 完成 |
+| **進捗/制御の共有** | AbstractBatchSession（pause/resume/cancel・ProgressEvent） | ✅ 完成 |
 | **型安全性** | TypeScript Branded Typesによる厳密な型管理 | ✅ 完成 |
 | **動的登録** | 実行時プラグイン登録・管理 | ✅ 完成 |
 | **拡張システム** | 基盤プラグインを継承した拡張パターン | ✅ 完成 |
@@ -142,7 +145,7 @@ graph TB
 | basemap-plugin | basemap | folder | Dexie('basemap-db') |  |  | supported | （タイルサーバ利用時）運用時にネット接続が必要 | MapLibre 統合 |
 | shape-plugin | shape | folder（に統一予定） | Dexie('shape-db'), Dexie('shape-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
 | location-plugin | location | folder | Dexie('location-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
-| route-plugin | route | location | Dexie('route-db') | Yes（予定） | create | supported | 作成・編集時はネット必須（運用中は不要） | Location 解決/統計 |
+| route-plugin | route | location | Dexie('route-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | BatchService/AbstractBatchSession/Lane制御 |
 | resolver-plugin | resolver | folder | Dexie('resolver-db') |  |  |  | なし | Schema 検出/前処理 |
 | project-plugin | project | folder | Dexie('project-db') |  |  | supported | （プレビューで basemap に依存する場合あり） | 領域/設定 |
 
