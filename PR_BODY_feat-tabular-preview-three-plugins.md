@@ -8,11 +8,6 @@ Summary
   - shape: ShapeBatchOrchestrator persists rows; BatchProcessingDialog gets a new “Data Table” tab.
   - route: RouteBatchSession persists rows; RoutePanel shows a “データテーブル” card.
 
-Enhancements added in v2 (this PR):
-- Index-assisted queries: lazy-built inverted index per (pluginId, tableId, column, value) with rowIds[] for fast eq filters.
-- Multi-condition filters (AND): UI supports multiple conditions (eq/neq/contains/gt/gte/lt/lte).
-- Column visibility selector: choose visible columns in the grid for better readability.
-
 Motivation
 - Allow column-wise search and inspection of downloaded/processed data across plugins while maximizing code sharing.
 
@@ -52,17 +47,16 @@ How To Test (smoke)
 
 Acceptance Criteria
 - Each plugin persists rows with a stable tableId retrievable from its session/cursor record.
-
-- TabularPreview loads columns/rows and supports multi-condition filter and column visibility control.
-- eq-only filters utilize the index (observe faster response on repeated queries).
+- TabularPreview loads columns/rows and supports basic contains filter.
 - No change in default behavior when flags are OFF.
 
 Risk / Rollback
-- Initial index build can take time on large tables (done lazily on first eq filter per column).
-- Mitigation: Index builds are incremental; features are behind flags.
-- Rollback: Remove @hierarchidb/tabular-store dependency + TabularPreview usage and revert dialog/panel additions.
+- Risk: Large tables may be slow to scan (current implementation scans row chunks in-memory).
+- Mitigation: This is behind flags; can be disabled per plugin.
+- Rollback: Remove @hierarchidb/tabular-store dependency + TabularPreview usage and revert small dialog/panel additions.
 
 Follow-ups (not in this PR)
-- Progress UI for explicit index build per column + cancellation.
-- Range/neq optimization (bitmap/range projections) and query planner.
-- Virtualized grid + server-side pagination for very large tables.
+- Add lightweight per-column index projection for frequent filters (e.g., type, countryCode, name).
+- CSV/JSON export from TabularPreview.
+- Virtualized grid + server-side pagination when tables grow large.
+

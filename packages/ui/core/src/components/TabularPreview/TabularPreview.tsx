@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, TextField, IconButton, Chip, Tooltip, Checkbox, ListItemText, OutlinedInput, Button, Divider } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid';
@@ -117,3 +117,4 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
     </Box>
   );
 }
+
