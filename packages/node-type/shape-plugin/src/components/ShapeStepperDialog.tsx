@@ -2,9 +2,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import { PlayArrow as PlayArrowIcon, Category as CategoryIcon } from '@mui/icons-material';
 import { StepperDialog, useWorkingCopy } from '@hierarchidb/runtime-base-dialog';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/types';
-import { DEFAULT_PROCESSING_CONFIG } from '~/types';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/shared';
+import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
 import { mockShapeService } from '~/services/MockShapeService';
 import { generateUrlMetadata } from '~/mock/data';
 
@@ -17,7 +17,7 @@ import { Step5CountrySelection } from './steps/Step5CountrySelection';
 import { BatchProcessingMonitorDialog } from './BatchProcessingMonitorDialog';
 
 const getInitialShapeData = (): ShapeWorkingCopy => ({
-  id: '' as EntityId,
+  id: '' as NodeId,
   nodeId: '' as NodeId,
   name: '',
   description: '',

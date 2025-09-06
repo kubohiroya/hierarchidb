@@ -61,7 +61,7 @@ function notifyListeners() {
  * announceToScreenReader('Error: Invalid file format', 'assertive');
  * ```
  */
-export function AriaLiveRegion() {
+export function AriaLiveRegion(): JSX.Element {
   const [messages, setMessages] = useState<AriaLiveMessage[]>([]);
   const politeRef = useRef<HTMLDivElement>(null);
   const assertiveRef = useRef<HTMLDivElement>(null);

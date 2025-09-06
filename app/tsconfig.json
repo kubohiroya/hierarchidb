@@ -11,6 +11,7 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
+      "@hierarchidb/common-auth": ["../packages/common/auth/src/index.ts"],
       "@hierarchidb/ui-dialog": ["../packages/ui/dialog/dist/index.d.ts"],
       "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist/index.d.ts"],
       "@hierarchidb/ui-theme": ["../packages/ui/theme/dist/index.d.ts"]

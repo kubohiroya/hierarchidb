@@ -38,6 +38,10 @@ interface WorkerProviderProps {
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
+// Module-level guards to survive React StrictMode dev remounts
+let __WORKER_INIT_STARTED__ = false;
+let __WORKER_INIT_COMPLETED__ = false;
+
 // ===========================
 // コンポーネント
 // ===========================
@@ -45,9 +49,9 @@ const WorkerContext = createContext<WorkerContextValue | null>(null);
 /**
  * 初期化中の表示コンポーネント
  */
-const InitializingView: React.FC<{ progress: number; message: string }> = ({ 
-  progress, 
-  message 
+const InitializingView: React.FC<{ progress: number; message: string }> = ({
+  progress,
+  message,
 }) => (
   <Box
     sx={{
@@ -67,28 +71,37 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
     <TitleLogo showProgress={false} />
     
     <Box sx={{ width: '100%', maxWidth: 400, mt: 4 }}>
-      <LinearProgress 
-        variant="determinate" 
-        value={progress} 
+      {/**
+       * UX: Avoid flicker from "0%" regression
+       * - When progress is 0 (initial), show indeterminate bar and hide texts
+       * - Once progress > 0, switch to determinate with percentage and step message
+       */}
+      <LinearProgress
+        variant={progress > 0 ? 'determinate' : 'indeterminate'}
+        value={progress}
         sx={{ height: 8, borderRadius: 4 }}
       />
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
-        align="center" 
-        sx={{ mt: 2 }}
-      >
-        {message}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        color="text.secondary" 
-        align="center" 
-        display="block"
-        sx={{ mt: 1 }}
-      >
-        {progress}% Complete
-      </Typography>
+      {progress > 0 && (
+        <>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 2 }}
+          >
+            {message}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            align="center"
+            display="block"
+            sx={{ mt: 1 }}
+          >
+            {progress}% Complete
+          </Typography>
+        </>
+      )}
     </Box>
   </Box>
 );
@@ -199,21 +212,65 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
   const [initChannel, setInitChannel] = useState<WorkerInitializationChannel | null>(null);
 
+  // Helper to finalize initialization and hide the banner
+  const finalizeInitialized = async () => {
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      setState({
+        client,
+        isInitialized: true,
+        initProgress: 100,
+        initMessage: 'Worker初期化完了',
+        error: null,
+      });
+    } catch (e) {
+      console.warn('[WorkerProvider] finalizeInitialized failed, will rely on channel', e);
+    }
+  };
+
   /**
    * Worker初期化処理
    */
   const initializeWorker = async () => {
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider] initializeWorker invoked');
     try {
       // 既存のエラーをクリア
       setState(prev => ({ ...prev, error: null }));
 
       // WorkerAPIClientを初期化（これによりWorkerが起動）
       await WorkerAPIClient.initialize();
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] WorkerAPIClient.initialize resolved');
+      // Fast-path if already ready
+      try {
+        if (WorkerAPIClient.isReady()) {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerProvider] fast-path isReady=true, finalizing');
+          __WORKER_INIT_COMPLETED__ = true;
+          await finalizeInitialized();
+          return;
+        }
+      } catch {}
+
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
       
       if (!rawWorker) {
         throw new Error('Worker instance is not available');
       }
+
+      // 進捗反映用のメッセージリスナ（INIT_PROGRESSをUIに反映）
+      const onProgressMessage = (event: MessageEvent) => {
+        const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
+        if (data?.type === 'INIT_PROGRESS') {
+          setState(prev => ({
+            ...prev,
+            initProgress: typeof data.payload?.progress === 'number' ? data.payload!.progress! : prev.initProgress,
+            initMessage: data.payload?.message || prev.initMessage,
+          }));
+        }
+      };
+      try { rawWorker.addEventListener('message', onProgressMessage); } catch {}
 
       // 初期化チャンネルを作成し、初期化完了を待機
       const channel = new WorkerInitializationChannel();
@@ -225,15 +282,12 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         debug,
       });
 
+      // 進捗リスナを解除
+      try { rawWorker.removeEventListener('message', onProgressMessage); } catch {}
+
       if (result.success) {
-        const client = await WorkerAPIClient.getSingleton();
-        setState({
-          client,
-          isInitialized: true,
-          initProgress: 100,
-          initMessage: 'Worker初期化完了',
-          error: null,
-        });
+        __WORKER_INIT_COMPLETED__ = true;
+        await finalizeInitialized();
       } else {
         throw new Error(result.error?.message || 'Worker initialization failed');
       }
@@ -247,13 +301,62 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     }
   };
 
-  // 初期化実行
+  // 初期化実行 + event listener for INIT_COMPLETE
   useEffect(() => {
-    initializeWorker();
+    // eslint-disable-next-line no-console
+    console.log('[WorkerProvider] mount');
+    // In dev, add a short fallback to finalize if WorkerAPIClient becomes ready but the channel hasn't resolved (StrictMode races)
+    let devFallbackTimer: number | undefined;
+    const onInitComplete = async () => {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] window event: hierarchidb-worker-init-complete');
+      __WORKER_INIT_COMPLETED__ = true;
+      try {
+        await WorkerAPIClient.initialize();
+        const client = await WorkerAPIClient.getSingleton();
+        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+      } catch (e) {
+        console.warn('[WorkerProvider] finalize on event failed', e);
+      }
+    };
+    try { window.addEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
 
-    // クリーンアップ
+    if (!__WORKER_INIT_STARTED__) {
+      __WORKER_INIT_STARTED__ = true;
+      void initializeWorker();
+    } else {
+      // Fast finalize on remount if completed
+      try {
+        if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
+          const client = WorkerAPIClient.getSingleton();
+          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+        }
+      } catch {}
+    }
+
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log('[WorkerProvider] scheduling dev fallback finalization');
+      // @ts-ignore setTimeout returns number in browsers
+      devFallbackTimer = window.setTimeout(async () => {
+        try {
+          if (!state.isInitialized && WorkerAPIClient.isReady()) {
+            // eslint-disable-next-line no-console
+            console.log('[WorkerProvider] dev fallback finalizing');
+            await finalizeInitialized();
+          }
+        } catch {}
+      }, 1500);
+    }
+
     return () => {
-      initChannel?.dispose();
+      if (!import.meta.env.DEV) {
+        initChannel?.dispose();
+        try { window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
+      }
+      if (devFallbackTimer) {
+        window.clearTimeout(devFallbackTimer);
+      }
     };
   }, []);
 

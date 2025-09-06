@@ -6,7 +6,6 @@
       "WebWorker"
     ],
     "outDir": "./dist",
-    "rootDir": "./src",
     "module": "ESNext",
     "target": "es2022",
     "moduleResolution": "node",
@@ -23,6 +22,12 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "@hierarchidb/tabular": [
+        "../../feature/tabular/src/index.ts"
+      ],
+      "@hierarchidb/tabular/*": [
+        "../../feature/tabular/src/*"
       ]
     },
     "jsx": "react-jsx"

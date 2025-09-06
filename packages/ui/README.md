@@ -198,6 +198,24 @@ HierarchiDB のユーザーインターフェース層を構成するReactコン
 - **役割**: 新規ユーザー向けインタラクティブチュートリアル
 - **特徴**: ステップバイステップガイド、プログレス管理
 
+## 公開コンポーネントの戻り値型（MUST）
+
+- 目的: 依存パッケージの d.ts ロールアップ時に、`jsx-runtime` など外部型への暗黙依存が原因の TS2742 を防ぐため、公開 API の TSX コンポーネントには明示の戻り値型を付けます。
+- ルール:
+  - `export function Foo(...)` は `: JSX.Element` もしくは `: JSX.Element | null` を明記する。
+  - `export const Foo = (...) => (...)` の場合は、`React.FC<Props>` を使うか、戻り値注釈 `: JSX.Element` を付ける。
+  - 返り値に `null` を返す可能性がある場合は `| null` を含める。
+- 背景: モノレポでは `exports.types` を `src` に向ける設計のため、依存側の d.ts 生成が公開コンポーネントの戻り値推論に影響を受けます。明示注釈により型名が安定し、ビルド前 typecheck/dts 生成が安定します。
+
+## tsconfig のパスエイリアス使用ポリシー
+
+- 公開ソースでのエイリアス禁止（MUST）: ライブラリの公開ソース内では、パッケージ内専用の tsconfig paths（例: `~/*`）に依存しないでください。外部が同じエイリアスを持たない場合に解決できず、依存側の typecheck/ビルドが失敗します。
+- `types` は `src` 指向で統一（MUST）: すべての内部パッケージは `package.json` で `types: "src/index.ts"`、`exports.types: "./src/index.ts"` に統一し、ビルド前 typecheck を安定化します。
+- エイリアスが必要な場合（SHOULD）: 次のいずれかを採用します。
+  - ビルド時に相対へ書き換える構成（例: ts-transform-paths / tsc-alias）を使う。
+  - 公開面（エクスポートされるファイル）では相対参照を用いる。
+ いずれの場合も、依存パッケージ側が追加設定なしで解決できることを確認してください。
+
 #### [@hierarchidb/ui-plugin-base](./plugin-base/)
 **プラグインベースUI**
 

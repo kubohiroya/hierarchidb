@@ -84,13 +84,13 @@ export function calculateStatistics(values: number[]): DataStatistics {
   const n = sorted.length;
   
   // 基本統計量
-  const min = sorted[0];
-  const max = sorted[n - 1];
+  const min = sorted[0] ?? 0;
+  const max = sorted[n - 1] ?? min;
   const sum = values.reduce((acc, val) => acc + val, 0);
   const mean = sum / n;
   const median = n % 2 === 0 
-    ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 
-    : sorted[Math.floor(n / 2)];
+    ? (((sorted[n / 2 - 1] ?? min) + (sorted[n / 2] ?? max)) / 2) 
+    : (sorted[Math.floor(n / 2)] ?? min);
 
   // 標準偏差
   const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / n;
@@ -100,9 +100,9 @@ export function calculateStatistics(values: number[]): DataStatistics {
   const q1Index = Math.floor(n * 0.25);
   const q2Index = Math.floor(n * 0.5);
   const q3Index = Math.floor(n * 0.75);
-  const q1 = sorted[q1Index];
-  const q2 = sorted[q2Index];
-  const q3 = sorted[q3Index];
+  const q1 = sorted[q1Index] ?? min;
+  const q2 = sorted[q2Index] ?? median;
+  const q3 = sorted[q3Index] ?? max;
 
   // 歪度（Skewness）
   const skewness = n > 2 && stdDev > 0
@@ -167,8 +167,8 @@ export function detectNaturalBreaks(values: number[], binCount: number = 20): {
   }
 
   const sorted = [...values].sort((a, b) => a - b);
-  const min = sorted[0];
-  const max = sorted[sorted.length - 1];
+  const min = sorted[0] ?? 0;
+  const max = sorted[sorted.length - 1] ?? min;
   const range = max - min;
   
   if (range === 0) {

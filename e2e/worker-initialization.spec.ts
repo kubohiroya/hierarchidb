@@ -23,7 +23,7 @@ test.describe('Worker Initialization System', () => {
 
   test('should initialize worker before rendering app content', async () => {
     // Navigate to the app
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle',
       timeout: 30000
     });
@@ -51,7 +51,7 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should properly handle Worker-UI communication', async () => {
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle'
     });
 
@@ -96,7 +96,7 @@ test.describe('Worker Initialization System', () => {
     });
 
     // Navigate and immediately start checking for loading state
-    const navigationPromise = page.goto('http://localhost:4204/hierarchidb/', {
+    const navigationPromise = page.goto('/hierarchidb/', {
       waitUntil: 'commit' // Don't wait for load to complete
     });
 
@@ -156,7 +156,7 @@ test.describe('Worker Initialization System', () => {
       } as any;
     });
 
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle',
       timeout: 30000
     });
@@ -171,7 +171,7 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should establish Comlink communication after Worker ready', async () => {
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle'
     });
 
@@ -218,7 +218,7 @@ test.describe('Worker Initialization System', () => {
     ];
 
     for (const path of navigationTests) {
-      await page.goto(`http://localhost:4204${path}`, {
+      await page.goto(path, {
         waitUntil: 'networkidle'
       });
       
@@ -248,7 +248,7 @@ test.describe('Worker Initialization System', () => {
       }
     });
 
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle'
     });
 
@@ -286,7 +286,7 @@ test.describe('Worker API Facade Usage', () => {
       }
     });
 
-    await page.goto('http://localhost:4204/hierarchidb/', {
+    await page.goto('/hierarchidb/', {
       waitUntil: 'networkidle'
     });
 

@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "description": "Base Tree Console UI orchestrator components for HierarchiDB - migrated from eria-cartograph/app0",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -20,7 +20,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@dnd-kit/modifiers": "^9.0.0",

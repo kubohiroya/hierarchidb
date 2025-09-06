@@ -14,7 +14,7 @@ export const ProjectPluginDefinition: PluginDefinition = {
   },
 
   database: {
-    dbName: 'projectDB',
+    dbName: 'project-db',
     schema: {
       projects: '&id, nodeId, type, name, category, [category+name], createdAt, updatedAt',
     },

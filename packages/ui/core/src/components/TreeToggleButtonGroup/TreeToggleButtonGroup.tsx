@@ -81,7 +81,7 @@ export function TreeToggleButtonGroup({
   showLabelsOnSmallScreens = false,
   sx,
   onTreeSelect,
-}: TreeToggleButtonGroupProps) {
+}: TreeToggleButtonGroupProps): JSX.Element | null {
   const navigate = useNavigate();
 
   // Safe handling of loader data that might not be available

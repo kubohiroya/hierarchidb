@@ -11,6 +11,9 @@
       "@hierarchidb/tabular": [
         "../tabular/src"
       ],
+      "@hierarchidb/tabular/*": [
+        "../tabular/src/*"
+      ],
       "~/*": [
         "src/*"
       ]

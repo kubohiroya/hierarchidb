@@ -7,7 +7,7 @@ import type {
   ProcessingConfig,
   UrlMetadata,
   BatchTaskStage,
-} from '~/types';
+} from '~/shared';
 import { mockShapeService } from '~/services/MockShapeService';
 import {
   generateMockDownloadTasks,

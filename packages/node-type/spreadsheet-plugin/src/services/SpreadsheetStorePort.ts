@@ -10,6 +10,7 @@ import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
 import type { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
 import { calculateFileHash, calculateTextHash } from '../utils/hashUtils';
+import { getDBName } from '@hierarchidb/util';
 
 type SessionData = {
   rawFileMetadataId: string;
@@ -25,9 +26,9 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> 
   private sessions = new Map<string, SessionData>();
 
   constructor(private pluginId: string = 'spreadsheet') {
-    const dbName = `${pluginId}DB`;
-    this.tableManager = new SimpleTableMetadataManager(dbName);
-    this.db = new SpreadsheetDatabase(dbName);
+    const metadataDbName = getDBName('spreadsheet-metadata-db');
+    this.tableManager = new SimpleTableMetadataManager(metadataDbName);
+    this.db = new SpreadsheetDatabase(getDBName('spreadsheet-db'));
   }
 
   async beginIngest(schema: TabularSchema, ctx: { filename?: string; sizeBytes?: number; source?: any }): Promise<TabularIngestSession> {

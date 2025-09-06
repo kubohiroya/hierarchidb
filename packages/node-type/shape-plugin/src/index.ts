@@ -19,3 +19,5 @@ export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/typ
 export type { ShapeAPI } from './shared/api';
 
 // Batch processing exports are temporarily internal-only until type contracts are stabilized
+// Export plugin definition for worker fallback loading
+export { ShapePluginDefinition } from './definitions/ShapePluginDefinition';

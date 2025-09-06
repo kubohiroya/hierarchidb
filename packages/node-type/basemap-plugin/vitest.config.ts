@@ -16,6 +16,8 @@ export default defineConfig({
     alias: {
       '~': 'src/*', //path.resolve(__dirname, './src')
       '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      // Resolve workspace package to source during tests to avoid prebuild requirement
+      '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
     },
   },
 });

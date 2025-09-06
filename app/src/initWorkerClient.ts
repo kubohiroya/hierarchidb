@@ -8,6 +8,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 // Global instance - properly typed
 let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;
+let workerInitCompleted = false;
 
 /**
  * Initialize the Worker
@@ -65,6 +66,14 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
           const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
           console.log('[initWorker] Worker message:', t, e.data);
+          // Track INIT_COMPLETE and broadcast a window event for UI fast-paths
+          try {
+            if ((e as any)?.data?.type === 'INIT_COMPLETE') {
+              workerInitCompleted = true;
+              try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
+              try { window.dispatchEvent(new Event('hierarchidb-worker-init-complete')); } catch {}
+            }
+          } catch {}
         });
       } catch {}
       
@@ -123,4 +132,11 @@ export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
  */
 export function getRawWorkerInstance(): Worker | null {
   return rawWorkerInstance;
+}
+
+/**
+ * Has the worker posted INIT_COMPLETE?
+ */
+export function isWorkerInitCompleted(): boolean {
+  return workerInitCompleted;
 }

@@ -10,7 +10,7 @@
     "build:dev": "react-router build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
     "preview": "vite preview --config vite.preview.config.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -p tsconfig.typecheck.json --noEmit --pretty false",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "predeploy": "pnpm run build",

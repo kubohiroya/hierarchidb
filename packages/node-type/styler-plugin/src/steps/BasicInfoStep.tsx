@@ -10,7 +10,7 @@ import {
   FormHelperText
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
-import { useTranslation } from 'provider-i18next';
+import { useTranslation } from 'react-i18next';
 import { TagInput, CategorySelector } from '@hierarchidb/ui-core';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 type TagId = string;
@@ -47,6 +47,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   disabled = false
 }) => {
   const { t } = useTranslation('styler-plugin');
+  const tStr = (key: string, def: string): string => {
+    const val = t(key, { defaultValue: def } as any);
+    return typeof val === 'string' ? val : def;
+  };
   const [localData, setLocalData] = useState<StylemapBasicInfoData>(data);
 
   // カテゴリオプション（i18n対応）
@@ -126,11 +130,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
               if (updates.description !== undefined) handleInputChange('description', updates.description);
             }}
             disabled={disabled}
-            nameLabel={t('basicInfo.name.label', 'Stylemap Name')}
-            nameHelperText={t('basicInfo.name.hint', 'Enter a descriptive name for this styler')}
-            nameRequiredText={t('basicInfo.name.required', 'Stylemap name is required')}
-            descriptionLabel={t('basicInfo.description.label', 'Description')}
-            descriptionHelperText={t('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
+            nameLabel={tStr('basicInfo.name.label', 'Stylemap Name')}
+            nameHelperText={tStr('basicInfo.name.hint', 'Enter a descriptive name for this styler')}
+            nameRequiredText={tStr('basicInfo.name.required', 'Stylemap name is required')}
+            descriptionLabel={tStr('basicInfo.description.label', 'Description')}
+            descriptionHelperText={tStr('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
           />
         </Grid>
 
@@ -190,7 +194,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             onChange={(e) => handleInputChange('dataSource', e.target.value)}
             helperText={t('basicInfo.dataSource.hint', 'Optional reference to the data source or layer')}
             disabled={disabled}
-            placeholder={t('basicInfo.dataSource.placeholder', 'e.g., Census data, OpenStreetMap layers')}
+            placeholder={tStr('basicInfo.dataSource.placeholder', 'e.g., Census data, OpenStreetMap layers')}
           />
         </Grid>
 

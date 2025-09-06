@@ -163,6 +163,8 @@ export interface WorkerPluginRouterAction {
 // Database configuration for plugins
 export interface PluginDatabaseConfig {
   dbName: string;
+  // Optional default entity store name used by some plugins (e.g., folders)
+  entityStore?: string;
   schema: DatabaseSchema; // Dexie schema
   version: number;
 }

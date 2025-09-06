@@ -22,6 +22,7 @@ export class WorkerAPIClient {
     'uninitialized';
   private static initializationPromise: Promise<void> | null = null;
   private static lastError: Error | null = null;
+  private static verified: boolean = false;
 
   /**
    * Initialize the Worker (must be called once at app startup)
@@ -61,8 +62,8 @@ export class WorkerAPIClient {
 
     this.initializationPromise = this.doInitialize()
       .then(() => {
-
-        this.state = 'initialized';
+        // Only mark initialized when we've verified readiness (ping or INIT_COMPLETE observed)
+        this.state = this.verified ? 'initialized' : 'initializing';
         this.lastError = null;
         this.initializationPromise = null;
       })
@@ -84,22 +85,37 @@ export class WorkerAPIClient {
 
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
 
+      // Set the instance early so Provider fast-paths can see it
+      this.workerInstance = remoteWorker;
 
-      // Test the connection immediately
+
+      // Test the connection (best-effort). Skip if we already saw INIT_COMPLETE.
       try {
-        const pingResult = await remoteWorker.ping();
-        
-        // Check if this was a retry (error state indicates previous failure)
+        let initComplete = false;
+        try {
+          const mod = await import('./initWorkerClient');
+          if (typeof (mod as any)?.isWorkerInitCompleted === 'function') {
+            initComplete = Boolean((mod as any).isWorkerInitCompleted());
+          }
+        } catch {}
+
+        if (!initComplete) {
+          const pingResult = await remoteWorker.ping();
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
+          this.verified = true;
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('[WorkerAPIClient.doInitialize] INIT_COMPLETE observed; skipping ping');
+          this.verified = true;
+        }
         if (this.lastError) {
           console.log('👍 [WorkerAPIClient.doInitialize] Reconnection successful after previous failure!');
         }
       } catch (pingError) {
-        console.error('[WorkerAPIClient.doInitialize] Worker connection test failed:', pingError);
-        throw new Error(`Worker connection test failed: ${pingError}`);
+        console.warn('[WorkerAPIClient.doInitialize] Ping failed (continuing, channel will gate readiness):', pingError);
+        // Leave this.verified as false; Provider will wait on channel/event.
       }
-
-      // Store the worker instance only after successful connection test
-      this.workerInstance = remoteWorker;
 
       if (!this.workerInstance) {
         throw new Error('getWorkerClient returned null');
@@ -147,6 +163,16 @@ export class WorkerAPIClient {
    * Check if initialized
    */
   static isReady(): boolean {
+    // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
+    try {
+      const globalInit = (typeof window !== 'undefined') && (window as any).__HDB_INIT_COMPLETE__;
+      if (!this.verified && globalInit) this.verified = true;
+      if (this.state !== 'initialized' && this.workerInstance && globalInit) {
+        this.state = 'initialized';
+        // eslint-disable-next-line no-console
+        console.log('[WorkerAPIClient] Promoted to initialized via global INIT_COMPLETE');
+      }
+    } catch {}
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     console.log(
       `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`

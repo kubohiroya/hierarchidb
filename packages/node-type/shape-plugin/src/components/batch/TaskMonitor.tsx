@@ -17,7 +17,7 @@ import {
   Cancel as CancelIcon,
   HourglassEmpty as WaitIcon,
 } from '@mui/icons-material';
-import type { BatchTask, BatchTaskStage } from '~/types';
+import type { BatchTask, BatchTaskStage } from '~/shared';
 
 interface TaskMonitorProps {
   tasks: BatchTask[];

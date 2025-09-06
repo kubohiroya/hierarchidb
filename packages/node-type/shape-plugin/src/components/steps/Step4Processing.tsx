@@ -23,7 +23,7 @@ import {
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import type { StepProps, FeatureFilterMethod } from '~/types';
+import type { StepProps, FeatureFilterMethod } from '~/shared';
 
 /**
  * Step 4: Processing Configuration

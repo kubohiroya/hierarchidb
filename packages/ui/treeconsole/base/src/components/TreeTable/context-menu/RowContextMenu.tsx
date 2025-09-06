@@ -312,8 +312,8 @@ export const RowContextMenu = memo(
                 (type === '_shapes_buggy' && prevType === 'basemap') ||
                 // Divider after Routes (before Styler)
                 (type === 'styler' && prevType === 'routes') ||
-                // Divider after Styler (before PropertyResolver)
-                (type === 'propertyresolver' && prevType === 'styler');
+                // Divider after Styler (before Resolver)
+                (type === 'resolver' && prevType === 'styler');
 
               const items: React.ReactNode[] = [];
 

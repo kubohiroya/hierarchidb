@@ -50,7 +50,7 @@ export function ResourceProjectPreviewGroup({
   onPreviewClick: _onPreviewClick,
   orientation = 'horizontal',
   size = 'medium',
-}: ResourceProjectPreviewGroupProps) {
+}: ResourceProjectPreviewGroupProps): JSX.Element {
   const navigate = useNavigate();
 
   const handleToggle = (targetType: ResourceProjectType) => {

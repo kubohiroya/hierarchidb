@@ -6,11 +6,11 @@
   "author": "HierarchiDB Contributors",
   "license": "MIT",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./dist/index.js"
     }
   },

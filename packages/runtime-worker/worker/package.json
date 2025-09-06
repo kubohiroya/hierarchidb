@@ -37,6 +37,9 @@
     "uuid": "^11.1.0",
     "zod": "^3.22.3"
   },
+  "optionalDependencies": {
+    "@hierarchidb/tabular-xlsx": "workspace:*"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
     "@types/node": "^24.3.0",

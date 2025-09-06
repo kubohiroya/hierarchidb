@@ -77,7 +77,19 @@ export function PluginProvider({
   useEffect(() => {
     const registerPlugins = async () => {
       // 既存のプラグインをクリア（開発時のホットリロード対応）
-      if (process.env.NODE_ENV === 'development') {
+      // Avoid direct `process` in browser builds; prefer Vite-style DEV flag when available.
+      const isDev = (() => {
+        try {
+          return (
+            (typeof globalThis !== 'undefined' &&
+              (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } })?.import?.meta?.env?.DEV) || false
+          );
+        } catch {
+          return false;
+        }
+      })();
+
+      if (isDev) {
         for (const pluginName of registry.getPlugins().map(p => p.name)) {
           registry.unregister(pluginName);
         }

@@ -22,7 +22,7 @@ export const BaseMapPluginDefinition = {
 
   // Database schema
   database: {
-    dbName: 'basemapDB',
+    dbName: 'basemap-db',
     schema: {
       baseMaps:
         '&id, nodeId, name, [nodeId+name], createdAt, updatedAt, baseMapMetadataId',

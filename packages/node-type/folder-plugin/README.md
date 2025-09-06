@@ -198,6 +198,14 @@ This would require:
 1. Worker-side entity handling for tag management
 2. RelationalEntity implementation for tag-folder associations
 3. UI components for tag input and display
+
+## 依存管理とインポート規約（重要）
+共通方針は packages/node-type/CONTRIBUTING.md を参照してください。要点:
+- peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （必要時）react-i18next, i18next
+- dependencies: @hierarchidb/util などプラグイン実行に必要なもの
+- devDependencies: typescript/tsup/vitest/@testing-library/*/@types/*
+- import は公開APIのみ、型は `import type`。重い機能は dynamic import。
+- tsup external は共通設定で外部化済み。
 4. Search and filter capabilities based on tags
 
 Currently, the folder plugin operates as a Worker-less plugin (TreeNode only). When implementing these features in the future, proper null checks should be maintained for backward compatibility with systems that don't have the Worker-side tag services available.
