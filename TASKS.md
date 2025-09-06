@@ -49,12 +49,6 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
-
-- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
-  - ブランチ: `chore/tests/add-vitest-coverage`
-  - PR: #111（本PRの方針を優先）
-  - 要点: ルート/各パッケージに v8 カバレッジを統一導入、Turbo `coverage` タスク追加、CI で各パッケージの HTML/LCOV をアーティファクト化。
-
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ名: `chore/node-type/unify-dexie-db-names`
   - 着手: 2025-09-06 10:00
