@@ -45,6 +45,7 @@ import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
 import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress';
 import { createRouteBatchManager } from '../services/createRouteBatchManager';
+import { isFlagEnabled } from '../services/config/flags';
 
 export interface RoutePanelProps {
   nodeId: NodeId;
@@ -316,19 +317,21 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
         </CardActions>
       </Card>
 
-      {/* Batch Launch */}
-      <Card sx={{ mt: 2 }}>
-        <CardContent>
-          <Typography variant="subtitle1" gutterBottom>
-            {t('panel.batch', 'Batch')}
-          </Typography>
-          <RouteBatchLaunchForm
-            nodeId={_nodeId as any}
-            createRouteBatchManager={createRouteBatchManager as any}
-            onLaunched={(r) => setLastJobId(r.jobId)}
-          />
-        </CardContent>
-      </Card>
+      {/* Batch Launch (feature flag) */}
+      {isFlagEnabled('ROUTE_BATCH_ENABLED', true) && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Typography variant="subtitle1" gutterBottom>
+              {t('panel.batch', 'Batch')}
+            </Typography>
+            <RouteBatchLaunchForm
+              nodeId={_nodeId as any}
+              createRouteBatchManager={createRouteBatchManager as any}
+              onLaunched={(r) => setLastJobId(r.jobId)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {lastJobId && (
         <Card sx={{ mt: 2 }}>
