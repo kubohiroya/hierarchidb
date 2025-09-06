@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "hono": "^4.9.2",
-    "jose": "^6.0.12"
+    "jose": "^6.0.12",
+    "change-case": "^5.4.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250821.0",
