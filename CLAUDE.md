@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-Note for all AI assistants: the canonical guide for AI contributors in this repo is AGENTS.md. If any guidance here conflicts with AGENTS.md, follow AGENTS.md.
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
