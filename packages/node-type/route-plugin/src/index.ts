@@ -19,6 +19,8 @@ export { createRouteBatchManager } from './services/createRouteBatchManager';
 export * from './orchestrator/types';
 export * from './orchestrator/RouteSourceOrchestrator';
 export * from './orchestrator/RouteBatchOrchestrationService';
+export * from './services/config/osrm-defaults';
+export * from './ui/components/RouteBatchLaunchForm';
 export * from './orchestrator/RouteSourceOrchestrator';
 export * from './orchestrator/RouteBatchOrchestrationService';
 export * from './ui/hooks/useRouteBatchProgress';
