@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Paper, Typography, Alert, IconButton, Tooltip } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 import { MapWithVectorTiles, type MapViewState } from '@hierarchidb/ui-map';
+import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { DownloadTask, VectorTileTask } from '~/shared';
 
@@ -98,6 +99,21 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
                   'fill-outline-color': '#004444',
                 },
                 layerType: 'fill'
+              }}
+              tileDataProvider={async (z, x, y, nodeIdArg) => {
+                try {
+                  const db = getEphemeralShapeDB();
+                  const tiles = await db.vectorTiles
+                    .where('[z+x+y]')
+                    .equals([z, x, y])
+                    .and(t => String(t.nodeId) === String(nodeIdArg ?? nodeId))
+                    .reverse()
+                    .sortBy('timestamp');
+                  const latest = tiles[0];
+                  return latest ? latest.data : null;
+                } catch {
+                  return null;
+                }
               }}
               mapOptions={{
                 interactive: true,

@@ -11,6 +11,13 @@ export * from './types';
 export * from './entities/RouteEntityHandler';
 export * from './components';
 export * from './i18n';
+export * from './orchestrator/RouteSourceOrchestrator';
+export * from './orchestrator/RouteBatchOrchestrationService';
+export * from './ui/hooks/useRouteBatchProgress';
+export * from './ui/components/RouteBatchProgressBar';
+// UI Hooks/Components (minimal)
+export * from './ui/hooks/useRouteBatchProgress';
+export * from './ui/components/RouteBatchProgressBar';
 
 /**
  * Route Plugin Definition

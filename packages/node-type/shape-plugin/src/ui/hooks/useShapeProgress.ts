@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useBatchProgress, type UnifiedProgressInfo } from '@hierarchidb/ui-core/src/hooks/useBatchProgress';
 import { EntityId, NodeId } from '@hierarchidb/common-type';
 import { useShapeAPIGetter } from './useShapeAPI';
 import { ProgressInfo, ProcessingStatus, BatchProgressEvent } from '../../shared';
@@ -128,7 +129,25 @@ export function useShapeProgress(
     }
   }, [sessionId, getShapeAPI]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates via shared hook (if available)
+  const adapter = sessionId
+    ? {
+        subscribe: (cb: (u: UnifiedProgressInfo) => void) => {
+          return (async () => {
+            const api = await getShapeAPI();
+            if (typeof (api as any).subscribeToProgress === 'function') {
+              return (api as any).subscribeToProgress(sessionId, (event: any) => {
+                if (event?.type === 'progress') cb(event.progress as UnifiedProgressInfo);
+              });
+            }
+            return () => {};
+          })();
+        }
+      }
+    : null;
+  const shared = useBatchProgress(adapter as any, { autoSubscribe });
+
+  // Legacy path remains for polling fallback
   const subscribe = useCallback(async () => {
     if (!sessionId || isSubscribed) return;
     
@@ -211,7 +230,7 @@ export function useShapeProgress(
   }, [unsubscribe]);
 
   return {
-    progress,
+    progress: (shared.progress as any) ?? progress,
     status,
     isSubscribed,
     error,

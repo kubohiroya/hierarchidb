@@ -34,4 +34,5 @@ export * from './commit-types';
 export * from './package-json';
 export type { TagEntity, TagSuggestion, NodeTagAssociation } from './tag-entity-types';
 export * from './id-util';
+export * from './progress-types';
 // plugin-resolution already covered above with selective exports
