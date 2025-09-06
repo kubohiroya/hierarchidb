@@ -12,7 +12,7 @@ export class LocationEntitiesDB extends Dexie {
   groupEntities!: Table<LocationGroupRow, [NodeId, string]>;
   relations!: Table<LocationRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = getDBName('location-entities')) {
+  constructor(name = getDBName('location-entities-db')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

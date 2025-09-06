@@ -12,7 +12,7 @@ export class SpreadsheetEntitiesDB extends Dexie {
   groupEntities!: Table<SheetGroupRow, [NodeId, string]>;
   relations!: Table<SheetRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = getDBName('spreadsheet-entities')) {
+  constructor(name = getDBName('spreadsheet-entities-db')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

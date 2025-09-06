@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
 export type ShapePeerRow = { nodeId: NodeId; data?: unknown; updatedAt?: number };
@@ -10,7 +11,7 @@ export class ShapeEntitiesDB extends Dexie {
   groupEntities!: Table<ShapeGroupRow, [NodeId, string]>;
   relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = 'shape-plugin-entities') {
+  constructor(name = getDBName('shape-entities-db')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',

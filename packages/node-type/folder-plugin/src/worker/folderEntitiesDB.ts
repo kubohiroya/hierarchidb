@@ -28,7 +28,7 @@ export class FolderEntitiesDB extends Dexie {
   groupEntities!: Table<FolderGroupRow, [NodeId, string]>;
   relations!: Table<FolderRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = getDBName('folder-entities')) {
+  constructor(name = getDBName('folder-entities-db')) {
     super(name);
     this.version(1).stores({
       peerEntities: '&nodeId, updatedAt',
