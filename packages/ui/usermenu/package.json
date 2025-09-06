@@ -24,6 +24,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",

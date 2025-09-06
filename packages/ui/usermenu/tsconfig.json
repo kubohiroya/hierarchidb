@@ -10,6 +10,12 @@
       "~/*": [
         "./src/*"
       ],
+      "@hierarchidb/common-auth": [
+        "../../common/auth/src/index.ts"
+      ],
+      "@hierarchidb/common-auth/*": [
+        "../../common/auth/src/*"
+      ],
       "@hierarchidb/ui-core": [
         "../core/dist/index.d.ts"
       ]

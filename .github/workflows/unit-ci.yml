@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -30,8 +32,18 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+      - name: Prune PNPM store (avoid stale cache)
+        run: pnpm store prune || true
+
+      - name: Install dependencies (force re-resolve)
+        run: pnpm install --no-frozen-lockfile --force
+
+      - name: Show HEAD and tool versions
+        run: |
+          git rev-parse HEAD
+          node -v
+          pnpm -v
+          npx tsc -v || true
 
       - name: Typecheck (entire workspace)
         run: pnpm -r --workspace-concurrency 1 typecheck
@@ -45,6 +57,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -55,8 +69,11 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+      - name: Prune PNPM store (avoid stale cache)
+        run: pnpm store prune || true
+
+      - name: Install dependencies (force re-resolve)
+        run: pnpm install --no-frozen-lockfile --force
 
       - name: Build (entire workspace)
         run: pnpm -r --workspace-concurrency 1 build
@@ -78,6 +95,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -89,7 +108,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile --force
 
       - name: Run unit/integration tests
         env:
@@ -121,6 +140,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
@@ -132,7 +153,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile --force
 
       - name: Typecheck (with deps)
         run: pnpm -r --filter "${{ matrix.pkg.filter }}^..." typecheck

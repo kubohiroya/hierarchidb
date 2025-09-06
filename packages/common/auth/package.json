@@ -10,6 +10,10 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./AuthNotificationSystem": {
+      "types": "./src/AuthNotificationSystem.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {

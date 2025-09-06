@@ -1,10 +1,4 @@
-import {
-  AuthNotificationRegistry,
-  AuthNotificationFactory,
-  type AuthRequiredNotification,
-  type AuthSuccessNotification,
-  type AuthCancelledNotification,
-} from '@hierarchidb/common-auth';
+import { AuthNotificationRegistry, AuthNotificationFactory } from '@hierarchidb/common-auth';
 
 export type AuthPromptResult = {
   token: string;
@@ -12,7 +6,7 @@ export type AuthPromptResult = {
   expiresAt?: number;
 };
 
-export type AuthPrompt = (n: AuthRequiredNotification) => Promise<AuthPromptResult>;
+export type AuthPrompt = (n: { context: { requestId: string; sessionId?: string } }) => Promise<AuthPromptResult>;
 
 /**
  * Register UI-side handlers to resolve AuthRequired notifications.
@@ -22,7 +16,7 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
   const registry = AuthNotificationRegistry.getInstance();
   const id = opts?.id ?? 'ui-auth-recovery-client';
   registry.register(id, {
-    onAuthRequired: async (notification: AuthRequiredNotification): Promise<void> => {
+    onAuthRequired: async (notification: { context: { requestId: string; sessionId?: string } }): Promise<void> => {
       const { requestId, sessionId } = notification.context;
       try {
         const res = await prompt(notification);
@@ -33,14 +27,14 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
           expiresAt: res.expiresAt ?? Date.now() + 60 * 60 * 1000,
           sessionId,
         });
-        await registry.dispatch(success as AuthSuccessNotification);
+        await registry.dispatch(success as any);
       } catch (e: any) {
         const cancelled = AuthNotificationFactory.createAuthCancelled({
           requestId,
           sessionId,
           reason: 'error',
         });
-        await registry.dispatch(cancelled as AuthCancelledNotification);
+        await registry.dispatch(cancelled as any);
       }
     },
     onAuthSuccess: async () => {},
