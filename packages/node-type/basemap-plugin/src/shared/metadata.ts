@@ -8,12 +8,12 @@ export const PLUGIN_METADATA = {
   name: 'BaseMap Plugin',
   version: '1.0.0',
   description: 'BaseMap visualization plugin extending folder functionality',
-  extends: 'folder-plugin',
+  extends: 'folder',
   architecture: 'extension',
   
   // Extension metadata
   extensionInfo: {
-    basePlugin: 'folder-plugin',
+    basePlugin: 'folder',
     extensionType: 'visualization',
     stepsAdded: 4,
     fieldsAdded: 9

@@ -20,7 +20,7 @@
         "src/*"
       ],
       "@hierarchidb/common-type": [
-        "../../common/types/dist/index.d.ts"
+        "../../common/types/src/index.ts"
       ]
     }
   },

@@ -2,7 +2,7 @@
  * Compatibility extension definition for tests expecting legacy path
  */
 export const BaseMapExtension = {
-  extends: 'folder-plugin',
+  extends: 'folder',
   nodeType: 'basemap',
   name: 'BaseMap',
   displayName: 'ベースマップ',

@@ -13,9 +13,9 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
-      "@hierarchidb/util": ["../../util/dist/index.d.ts"],
-      "@hierarchidb/tag": ["../../feature/tag/dist/index.d.ts"],
-      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
+      "@hierarchidb/util": ["../../util/src/index.ts"],
+      "@hierarchidb/tag": ["../../feature/tag/src/index.ts"],
+      "@hierarchidb/common-type": ["../../common/types/src/index.ts"],
       "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/dist"],
       "@hierarchidb/runtime-ui-plugin-dialog/*": ["../../runtime-ui/plugin-dialog/dist/*"]
     },

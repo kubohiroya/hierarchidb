@@ -59,6 +59,6 @@ export const PLUGIN_INFO = {
   id: 'com.hierarchidb.basemap',
   name: 'BaseMap Plugin',
   version: '1.0.0',
-  extends: 'folder-plugin',
+  extends: 'folder',
   architecture: 'extension',
 } as const;

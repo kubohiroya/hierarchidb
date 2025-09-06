@@ -176,7 +176,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
   }, [anchorEl]);
 
   const isFolder =
-    nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+    nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
 
   return (
     <>

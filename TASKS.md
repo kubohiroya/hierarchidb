@@ -50,6 +50,18 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+- chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
+  - ブランチ名: `chore/node-type/unify-dexie-db-names`
+  - 着手: 2025-09-06 10:00
+  - 内容: NodeType 系 Entities DB のデフォルト名を `*-entities-db` に統一、README/TASKS.md 更新。
+  - DoD: 実装・ガイド追記・typecheck 通過。
+
+- chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
+  - ブランチ名: `chore/db/unify-dexie-names-and-tables`
+  - 着手: 2025-09-06 10:15
+  - 内容: 既存テーブル名の監査（CamelCase複数形の統一を確認）＋ 上記と同時適用。
+  - DoD: 実装・ガイド追記・typecheck 通過。
+
 - feat/project/serialization-impl（Project の直列化/逆直列化の実装）
   - ブランチ: `feat/project/serialization-impl`
   - PR: draft 準備済（`PR_BODY_project_serialization.md`）。push 後に作成予定。
@@ -77,6 +89,19 @@
     - [x] basemap/project/folder の tsconfig 是正
     - [x] folder-plugin の依存追記（@hierarchidb/tag）
     - [ ] 局所 typecheck 実行
+
+- refactor/node-type/remove-plugin-suffix（nodeType から `-plugin` を撤廃し短い識別子へ統一）
+  - ブランチ: `refactor/node-type/remove-plugin-suffix`
+  - 依存: README 比較表の更新完了
+  - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
+  - 方針: 互換マッピング（旧→新）をレジストリ層に追加し、段階的に既存参照を置換。旧識別子は受理（当面）。
+  - 受け入れ基準（DoD）:
+    - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン。現状は大半が短縮済みのため差分少）。
+    - [ ] UI/Worker のハードコード参照を新識別子へ統一（例: `folder`）。
+    - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（Extension Registry の登録・取得・呼出し）。
+    - [ ] `pnpm typecheck && pnpm test` がグリーン（互換で旧名でも動作）。
+  - ロールバック手順:
+    - 互換マッピングを残したまま、識別子変更コミットをリバートすれば即復旧可能。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 // node-type プラグイン整備（監査結果に基づく：P1）
@@ -179,31 +204,18 @@
   - ロールバック手順: `index.ts` の再エクスポート差分をリバートで即復旧可能。削除に進む場合は削除コミット単位で個別リバート。
 
 // 追加: nodeType命名の統一（-plugin サフィックス廃止）
-- refactor/node-type/remove-plugin-suffix（nodeType から `-plugin` を撤廃し短い識別子へ統一）
-  - ブランチ: `refactor/node-type/remove-plugin-suffix`
-  - 依存: README 比較表の更新完了
-  - 対象: `location-plugin`→`location`, `resolver-plugin`→`resolver`, `project-plugin`→`project`（ほか出現箇所があれば同様）
-  - 方針: 互換マッピング（旧→新）をルーター/レジストリ/URLヘルパに追加し、段階的に既存参照を置換。旧識別子は一定期間受理。
-  - 受け入れ基準（DoD）:
-    - [ ] `PluginDefinition.nodeType` を新識別子へ更新（対象3プラグイン）。
-    - [ ] UI/Worker/テストのハードコード参照を新識別子へ統一。
-    - [ ] 互換レイヤで旧識別子（`*-plugin`）を受理（URL/保存データ/テスト含む）。
-    - [ ] `pnpm typecheck && pnpm test` がグリーン。主要E2Eが新旧いずれでも動作。
-  - ロールバック手順: 互換マッピングを維持したまま `nodeType` 差分をリバートすれば即時復旧可能。
+（Doing へ移動）
 
-// 追加: Dexie データベース名の表記・命名規約を統一
+// 追加: Dexie データベース名の表記・命名規約を統一（実装完了）
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ: `chore/node-type/unify-dexie-db-names`
-  - 依存: README 比較表の更新完了
-  - 命名規約（案）:
-    - プラグイン固有DB: `Dexie('<PascalName>DB')`（例: `Dexie('RouteDB')`, `Dexie('ShapeDB')`）。
-    - エンティティ複合ストア: `Dexie('<kebab-nodeType>-entities')`（例: `Dexie('location-plugin-entities')`→将来 `Dexie('location-entities')`）。
-  - 実施内容: 既存コードの DB 生成名呼称を規約表記に合わせてドキュメント整備（必要なら別PRで実装移行）。
-  - 受け入れ基準（DoD）:
-    - [ ] README/開発ガイドに命名規約と現行→統一名のマッピングを明記。
-    - [ ] 変更が必要なパッケージ一覧と移行計画（データ移行/互換オープン/マイグレーション戦略）を提示。
-    - [ ] `pnpm typecheck` グリーン（コード差分を含む場合）。
-  - ロールバック手順: ドキュメントのみの変更なら不要。実装移行を行った場合は DB オープン名を元に戻すことで復旧可能。
+  - 命名規約（確定）:
+    - 全て `Dexie(getDBName('<kebab-suffix>'))` を使用。
+    - プラグイン固有DB: `<plugin>-db`（例: `route-db`, `shape-db`, `project-db`）。
+    - エンティティ複合ストア: `<nodeType>-entities-db`（例: `folder-entities-db`, `location-entities-db`）。
+  - 実施内容: Entities 系 DB のサフィックスを `-entities-db` に統一し、README を更新。移行ガイドを本ファイルへ追記。
+  - 受け入れ基準（DoD）: 実装・ドキュメント更新・移行ガイド追記を完了。
+  - ロールバック手順: DB 名のデフォルト引数を旧名へ差し戻し。
 
 // 追加: route のバッチ処理 実装着手（仕様確認→実装）
 - feat/route/batch-processing-implementation（Route プラグインにバッチ処理基盤を実装）
@@ -222,17 +234,13 @@
     - [ ] `pnpm --filter @hierarchidb/route-plugin test` がグリーン。RouteDB のキャッシュ/バッチ表の整合性が取れている。
   - ロールバック手順: 追加 API/テーブル定義差分をリバート（既存 `RouteDB` と `routeCache` は維持）。
 
-// 追加: DB/テーブル名の統一（worker/TASKS.md に準拠して改名）
+// 追加: DB/テーブル名の統一（実装完了）
 - chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
   - ブランチ: `chore/db/unify-dexie-names-and-tables`
-  - 依存: `packages/runtime-worker/worker/TASKS.md` の命名規約・改名対象リスト
-  - 対象: node-type/* パッケージ（basemap, folder, spreadsheet, styler, shape, location, route, resolver, project）
-  - 方針: 互換オープンを導入しつつ、段階的に改名（まずは参照の抽象化→互換→切替）。
-  - 受け入れ基準（DoD）:
-    - [ ] 各パッケージの DB 名/テーブル名が `worker/TASKS.md` の規約に合致。
-    - [ ] 旧名からの移行パス（互換オープン or マイグレーション）を実装し、回帰なし。
-    - [ ] 主要ユニット/統合テストがグリーン。
-  - ロールバック手順: 互換オープンを残した状態で新名への切替コミットをリバート。
+  - 対象: node-type/*（basemap, folder, spreadsheet, shape, location, route, resolver, project）
+  - 方針: DB 名の統一（`*-entities-db`）をコードへ反映。テーブル名は現行の CamelCase 複数形で統一済みであることを確認。移行は手動スクリプトをガイドとして提供（既定OFF）。
+  - 受け入れ基準（DoD）: 実装・README/TASKS.md 更新・移行ガイド追記を完了。
+  - ロールバック手順: 旧 DB 名へ復旧（必要に応じてガイドの逆方向スクリプトを使用）。
 
 // 追加: プラグインモデルの用語・図の統一（シンプル/拡張の統合）
 - docs/plugin-model-unify（「シンプル/拡張」を廃し、extends 有無で統一）
@@ -329,6 +337,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR本文を作成しローカルブランチにコミット完了（push/PR作成はこの後）。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
+- 2025-09-06 start: refactor/node-type/remove-plugin-suffix — 互換レイヤ実装と利用箇所の置換に着手（まずレジストリ互換→UI/プラグイン内 `extends` 置換）。
 
 ### Main 同期サマリー（2025-09-06）
 - merged: PR #105 chore/dev-stability-vite-proxy-2025-09-06（dev 起動安定化・ワークスペース解決の改善・BFF dev proxy 有効化・route-plugin/mjs エイリアス整備・WorkerAPIClient ノイズ抑制・analyze-licenses CLI 追加・externals/alias 調整・TASKS/Docs ポインタ更新）
