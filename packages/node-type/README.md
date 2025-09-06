@@ -137,12 +137,12 @@ graph TB
 | プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapのプレビュー | ネットワーク要件 | 備考 |
 |---|---|---|---|---|---|---|---|---|
 | base-plugin | base | - | - |  |  |  | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
-| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities') |  |  |  | なし | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities') |  |  |  | なし（ローカル取り込み想定） | CSV/TSV/Excel |
+| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities-db') |  |  |  | なし | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities-db') |  |  |  | なし（ローカル取り込み想定） | CSV/TSV/Excel |
 | styler-plugin | styler | spreadsheet | Dexie('styler-metadata-db') |  |  |  | なし | CSVメタDB |
 | basemap-plugin | basemap | folder | Dexie('basemap-db') |  |  | supported | （タイルサーバ利用時）運用時にネット接続が必要 | MapLibre 統合 |
-| shape-plugin | shape | folder（に統一予定） | Dexie('shape-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
-| location-plugin | location | folder | Dexie('location-entities') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
+| shape-plugin | shape | folder（に統一予定） | Dexie('shape-db'), Dexie('shape-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
+| location-plugin | location | folder | Dexie('location-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
 | route-plugin | route | location | Dexie('route-db') | Yes（予定） | create | supported | 作成・編集時はネット必須（運用中は不要） | Location 解決/統計 |
 | resolver-plugin | resolver | folder | Dexie('resolver-db') |  |  |  | なし | Schema 検出/前処理 |
 | project-plugin | project | folder | Dexie('project-db') |  |  | supported | （プレビューで basemap に依存する場合あり） | 領域/設定 |

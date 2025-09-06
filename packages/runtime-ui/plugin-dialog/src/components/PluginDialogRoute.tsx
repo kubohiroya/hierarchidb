@@ -21,7 +21,8 @@ export const PluginDialogRoute: React.FC = () => {
 
   // Parse params
   const treeId = params.treeId as TreeId;
-  const nodeType = params.nodeType || '';
+  const rawNodeType = params.nodeType || '';
+  const nodeType = rawNodeType.endsWith('-plugin') ? rawNodeType.slice(0, -8) : rawNodeType;
   const action = params.action as 'create' | 'edit' | undefined;
   const targetNodeId = params.targetNodeId as NodeId | undefined;
   const pageNodeId = params.pageNodeId as NodeId | undefined;
