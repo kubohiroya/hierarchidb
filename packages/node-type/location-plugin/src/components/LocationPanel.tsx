@@ -3,7 +3,7 @@
  * 地点情報ノードの詳細表示パネル
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Paper,
@@ -19,10 +19,14 @@ import {
 import {
   LocationOn,
   Edit,
-  Refresh
+  Refresh,
+  Map as MapIcon
 } from '@mui/icons-material';
 import type { NodeId } from '../types';
 import type { LocationEntity } from '../types';
+import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService';
+import type { LocationPointInput, LocationTileSettings } from '../services/tiles/LocationVectorTileService';
+import { BatchProgressDialog } from './batch/BatchProgressDialog';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -30,6 +34,8 @@ export interface LocationPanelProps {
 }
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
+  const batchEnabled = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LOCATION_BATCH_V1 === '1') ||
+                       (typeof process !== 'undefined' && (process as any).env?.LOCATION_BATCH_V1 === '1');
   const [entity] = useState<LocationEntity>({
     id: nodeId as any,
     nodeId,
@@ -49,7 +55,25 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     version: 1
   });
 
+  // Batch session wiring (demo fast-path)
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const service = useMemo(() => new LocationVectorTileService(), []);
+
+  const handleStartBatch = async () => {
+    const points: LocationPointInput[] = [
+      { lon: 139.767, lat: 35.681 },
+      { lon: 139.700, lat: 35.689 },
+      { lon: 139.730, lat: 35.710 },
+    ];
+    const settings: LocationTileSettings = { zoomMinGenerate: 5, zoomMaxGenerate: 6 };
+    const { sessionId } = await service.startSession(nodeId, points, settings);
+    setSessionId(sessionId);
+    setProgressOpen(true);
+  };
+
   return (
+    <>
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -73,6 +97,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <Refresh />
               </IconButton>
             </Tooltip>
+            {batchEnabled && (
+              <Tooltip title="ポイント→MVT バッチ（デモ）">
+                <IconButton size="small" color="primary" onClick={handleStartBatch}>
+                  <MapIcon />
+                </IconButton>
+              </Tooltip>
+            )}
             {onEdit && (
               <Tooltip title="編集">
                 <IconButton size="small" onClick={onEdit}>
@@ -173,5 +204,15 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
         </Grid2>
       </Box>
     </Box>
+    {progressOpen && sessionId && (
+      <BatchProgressDialog
+        open={progressOpen}
+        onClose={() => setProgressOpen(false)}
+        nodeId={nodeId}
+        sessionId={sessionId}
+        service={service}
+      />
+    )}
+    </>
   );
 };

@@ -49,6 +49,76 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+
+- feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
+  - ブランチ: `feat/route/batch-processing-implementation`
+  - 依存: `@hierarchidb/batch`（workspace） / `@hierarchidb/download`（net.port, retry/rps） / `@hierarchidb/runtime-shared-batch-processor`
+  - フラグ: `ROUTE_BATCH_ENABLED`（prod 既定OFF）
+  - スコープ（M1）:
+    - ProgressEmitter/Store の共有化（runtime-shared へ昇格 or 参照切替）
+    - RouteGenerator のエンジン委譲（osm_route/searoute の注入I/F）
+    - RouteBatchManager のレーン別セマフォ（osrm=1, searoute=2–4, local=16–64）
+    - PLAN.md の Cross-Plugin Sharing を反映（shape/location との共用前提に整理）
+  - 受け入れ基準（DoD）:
+    - [ ] route-plugin が `@hierarchidb/runtime-shared-batch-processor` の ProgressEmitter/Store を参照（型チェックOK）
+    - [ ] RouteGenerator の osm_route/searoute が委譲実装を許容（モックで単体テスト可）
+    - [ ] RouteBatchManager のレーン別並列が構成可能（設定値でOverridable）
+    - [ ] PLAN.md と TASKS.md が同期（WBS, 依存, ロールバック）
+  - チェックリスト（M1）:
+    - [x] PLAN.md に Cross-Plugin Sharing を追記
+    - [x] ProgressEmitter/Store を runtime-shared に追加、route 参照切替（型チェックOK）
+    - [x] route-plugin のローカル ProgressEmitter/Store を削除
+    - [x] useRouteBatchProgress / ProgressBar を共有型へ移行
+    - [x] RouteGenerator: エンジン委譲I/F（osrm/searoute）
+    - [ ] RouteBatchManager: レーン別セマフォ（osrm=1, searoute=2–4, local=16–64）を適用
+    - [ ] 既存テストの補強（モックエンジン/簡易レーン検証）
+  - ロールバック手順:
+    - route-plugin 側で共有参照を戻し、ローカル ProgressEmitter/Store を復活させる（git revert）。
+    - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
+
+
+- feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
+  - ブランチ: `feat/location/batch-mvt-fastpath-v1`
+  - 依存: `@hierarchidb/batch`（workspace） / `geojson-vt` / `@maplibre/vt-pbf`
+  - フラグ: `LOCATION_BATCH_V1`（既定OFF）
+  - スコープ: points → normalize → tilegen（MVT）をセッション単位で実行し、Ephemeral DB（Dexie）へ保存。可視化API（tiles/summary/progress）を公開。
+  - 受け入れ基準（DoD）:
+    - [x] `SessionController` が `@hierarchidb/batch` に移行（ローカル BatchService を削除）
+    - [x] `EphemeralLocationDB` に `vectorTiles` テーブル（`&id, sessionId, nodeId, [z+x+y], timestamp`）
+    - [x] `LocationVectorTileService` の API（`startSession/onProgress/getVectorTile/getSessionSummary`）
+    - [x] UI フック `useLocationProgress` の追加（購読/解除可能）
+    - [x] UI 結線：`BatchProgressDialog` を実進捗に接続、`LocationPanel` から開始→ダイアログ起動の導線を追加（デモポイント）
+    - [x] ダイアログ「マッププレビュー」タブで Ephemeral DB からの MVT を描画（`@hierarchidb/ui-map` の MapWithVectorTiles を使用）
+    - [x] セッション initial summary から bbox/zoom を利用可能に（in-memory）＋ getSessionSummary に bbox を追加
+    - [x] スタイル切替（auto/simple）と半径スケール
+    - [x] ズーム範囲（min/max）コントロールを追加
+    - [x] タイル取得失敗数のインジケータと手動 Refresh（再読込）
+    - [x] 進捗完了までの自動リフレッシュ（2.5s）
+    - [x] ズーム別タイル数のサマリ表示（listTileCoords 利用）
+    - [x] shape プレビューも MapWithVectorTiles + Dexie tileDataProvider で統一
+    - [x] @hierarchidb/ui-map に vector layer プリセット（points/lines/polygons）を追加
+    - [x] EphemeralLocationDB に sessions TTL クリーンアップ（7日）を追加し、セッション作成時にbest-effort実行
+    - [x] 共通 ProgressEvent 型を @hierarchidb/common-type に昇格
+    - [x] ユニット/統合テスト（小規模点群での生成、進捗イベント、タイル取得のスモーク）が追加済み（ローカルで実行）
+  - ロールバック手順:
+    - フラグ `LOCATION_BATCH_V1` を OFF に戻すと新フローは無効化。
+    - 変更差分はプラグイン内に限定。`SessionController` の import を元に戻せば局所復旧可能。
+  - 運用ログ:
+    - start: 2025-09-06 21:20 implement batch wiring and tests
+    - done: 2025-09-06 21:40 replace local BatchService → `@hierarchidb/batch`; add tests `LocationVectorTileService.test.ts`
+    - done: 2025-09-06 21:55 add `useLocationProgress` and unsubscribe wiring
+    - done: 2025-09-06 22:10 wire UI: LocationPanel start button → BatchProgressDialog (real progress)
+    - done: 2025-09-06 22:25 map preview: render MVT via dexie:// protocol + tileDataProvider
+    - done: 2025-09-06 22:40 added bbox-aware styling UI and refresh
+    - done: 2025-09-06 22:55 add auto-refresh until completed + per-zoom summary + map onLoad fitBounds
+    - done: 2025-09-06 23:10 unify shape preview rendering + add ui-map layer presets + sessions TTL cleanup + common ProgressEvent
+
+
+- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
+  - ブランチ: `chore/tests/add-vitest-coverage`
+  - PR: #111（本PRの方針を優先）
+  - 要点: ルート/各パッケージに v8 カバレッジを統一導入、Turbo `coverage` タスク追加、CI で各パッケージの HTML/LCOV をアーティファクト化。
+
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ名: `chore/node-type/unify-dexie-db-names`
   - 着手: 2025-09-06 10:00
@@ -102,6 +172,47 @@
     - 入口の正規化をリバートするだけで即時復旧可能（内部は短い識別子のみのため影響限定）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
+
+- feat/route/shared-batch-core-adoption（route: shape/location と共通のバッチ基盤に寄せる）
+  - ブランチ: `feat/route/shared-batch-core-adoption`
+  - 依存: `packages/node-type/shape-plugin/src/services/BatchSessionManager.ts`, `packages/node-type/location-plugin/src/services/batch/BatchSessionManager.ts`, `@hierarchidb/download`
+  - 受け入れ基準（DoD）:
+    - [ ] route の ProgressEmitter/Store を runtime-shared（または共通 import パス）に昇格し、shape/location と同型のイベントを扱える
+    - [ ] RouteBatchManager の進捗通知が location と同等の購読 API で利用可能（UI フックの流用が効く）
+    - [ ] `batch-shim` 依存を薄め、shape の BatchSessionManager と互換の `notifyProgress`/snapshot 形に寄せた内部実装へ差し替え
+  - ロールバック手順: 互換層（shim）を残しておくため、問題時は import を旧 shim に戻す。
+
+- feat/route/compute-tiler-sharing（TopoJSON/MVT の compute ステップ共用化）
+  - ブランチ: `feat/route/compute-tiler-sharing`
+  - 依存: `packages/node-type/shape-plugin/src/services/workers/SimplifyWorker1.ts`, `SimplifyWorker2.ts`, `vt-pbf` 経路
+  - 受け入れ基準（DoD）:
+    - [ ] shape の簡略化/TopoJSON/MVT 生成を `feature/compute` の共有ステップに抽出（ファイル/関数名とシグネチャを明文化）
+    - [ ] route の最終段（optimization）で共有ステップを呼び出し、ルート線形のタイル生成が可能
+    - [ ] ルート/シェイプの双方で CI ビルド/型チェックグリーン
+  - ロールバック: 共有ステップは非破壊追加。route 側の利用をフラグ `ROUTE_VTILE_V1`（既定OFF）で切替し、OFF で現状維持。
+
+- feat/route/net-auth-recovery（net.port + 認証回復を統一）
+  - ブランチ: `feat/route/net-auth-recovery`
+  - 依存: `@hierarchidb/download`（net.port 提供）, `@hierarchidb/common-auth`（AuthNotificationRegistry）, shape の Download 段
+  - 受け入れ基準（DoD）:
+    - [ ] Route プラグインが `net.port` を注入で利用し、RPS/並列/指数バックオフが OSRM/searoute 呼び出しに適用
+    - [ ] 401/403/429 を shape と同じ規約で扱い、AuthRecovery と通知が動作
+  - ロールバック: フラグ `ROUTE_NET_V1`（既定OFF）で切替可能。
+
+- feat/route/ui-progress-unify（UI 進捗フック/ダイアログの共通化）
+  - ブランチ: `feat/route/ui-progress-unify`
+  - 依存: location の `useLocationProgress` / `BatchProgressDialog`
+  - 受け入れ基準（DoD）:
+    - [ ] 共通フック `useBatchProgress(capKey, id)` を runtime-shared/ui に追加し、route/location で薄いラッパ経由で利用
+    - [ ] route の進捗表示を共通コンポーネントで置換（既定OFFフラグ）
+  - ロールバック: 既存 `useRouteBatchProgress` に戻す。
+
+- chore/route/plan-sync-with-shape-location（計画同期の定着）
+  - ブランチ: `chore/route/plan-sync-with-shape-location`
+  - 受け入れ基準（DoD）:
+    - [ ] `packages/node-type/route-plugin/PLAN.md` の Cross-Plugin Sharing セクションに、参照ファイル/関数名/移行順が具体化
+    - [ ] 依存/リスク/ロールバックが明記され、TASKS.md と相互参照
+  - ロールバック: ドキュメントのみの変更。リバート可能。
 // node-type プラグイン整備（監査結果に基づく：P1）
 - chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
   - Why: 回帰検出力が不足。プラグイン横断の仕様変更が多い本リポでは未実行領域が見えず品質リスクが高い。
@@ -393,7 +504,11 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 
 ## 運用ログ（today） <a id="log-today"></a>
 
-- 2025-09-06 done: shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（simplify2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
+### 2025-09-06
+- start: route M1（共有化）着手。
+  - ProgressEmitter/Store を runtime-shared へ追加し、route-plugin は共有参照へ切替（型チェックOK）。
+  - PLAN.md に Cross-Plugin Sharing を追加し、WBS を同期。
+  - shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（simplify2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
