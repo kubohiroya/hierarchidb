@@ -1,5 +1,5 @@
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared/batch-processor/src/downloadAdapter';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { createSharedDownloadService, postJson } from '@hierarchidb/runtime-shared/batch-processor/src/downloadAdapter';
+
 
 let cached: Promise<ReturnType<typeof createSharedDownloadService>> | undefined;
 
@@ -25,11 +25,5 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   return JSON.parse(text);
 }
 
-export async function postJson(url: string, body: string, headers?: Record<string,string>) {
-  // Fallback to auth-recovery for POST (shared net is GET-oriented)
-  const auth = await AuthRecoveryService.getSingleton();
-  const res = await auth.fetchWithAuth(url, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...(headers||{}) } }, { pluginType: 'location' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+export { postJson };
 
