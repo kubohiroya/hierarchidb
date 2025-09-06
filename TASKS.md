@@ -64,7 +64,7 @@
 
 - feat/project/serialization-impl（Project の直列化/逆直列化の実装）
   - ブランチ: `feat/project/serialization-impl`
-  - PR: draft 準備済（`PR_BODY_project_serialization.md`）。push 後に作成予定。
+  - PR: #110 https://github.com/kubohiroya/hierarchidb/pull/110
   - 要点: `ProjectEntitySerializer` 追加し、`ProjectEntityHandler` の serialize/deserialize 系を実装。`Uint8Array`/`ArrayBuffer` を UUID 参照へ退避し Map で同梱。
 
 ---
@@ -240,7 +240,68 @@
   - 対象: node-type/*（basemap, folder, spreadsheet, shape, location, route, resolver, project）
   - 方針: DB 名の統一（`*-entities-db`）をコードへ反映。テーブル名は現行の CamelCase 複数形で統一済みであることを確認。移行は手動スクリプトをガイドとして提供（既定OFF）。
   - 受け入れ基準（DoD）: 実装・README/TASKS.md 更新・移行ガイド追記を完了。
-  - ロールバック手順: 旧 DB 名へ復旧（必要に応じてガイドの逆方向スクリプトを使用）。
+- ロールバック手順: 旧 DB 名へ復旧（必要に応じてガイドの逆方向スクリプトを使用）。
+
+## 移行ガイド（Dexie DB 名の変更）
+
+対象変更（新→旧のマッピング）:
+- folder-plugin: `folder-entities-db` ← 旧: `folder-entities`
+- location-plugin: `location-entities-db` ← 旧: `location-entities`
+- spreadsheet-plugin: `spreadsheet-entities-db` ← 旧: `spreadsheet-entities`
+- shape-plugin(worker): `shape-entities-db` ← 旧: `shape-plugin-entities`
+
+方針:
+- 既定は新 DB 名を使用。既存データの移行は手動スクリプト（開発用）で実施。
+- 本番/長期データ保持が必要な環境は、バックアップ取得後に実行してください。
+
+ブラウザコンソール（または任意の実行環境）での移行スクリプト例（Entities 系・3表共通）:
+
+```ts
+// 前提: Dexie が利用可能な実行環境（アプリ実行中の DevTools 等）
+// 任意に置換: <prefix>（例: hidb）と <nodeType> を設定
+// 例）nodeType = 'folder' | 'location' | 'spreadsheet'
+import Dexie from 'dexie';
+
+const prefix = (window as any)?.VITE_APP_PREFIX || 'hidb';
+const oldName = `${prefix}-<nodeType>-entities`;     // 例: hidb-folder-entities
+const newName = `${prefix}-<nodeType>-entities-db`;  // 例: hidb-folder-entities-db
+
+const oldDB = new Dexie(oldName);
+const newDB = new Dexie(newName);
+
+oldDB.version(1).stores({
+  peerEntities: '&nodeId, updatedAt',
+  groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
+  relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+});
+newDB.version(1).stores({
+  peerEntities: '&nodeId, updatedAt',
+  groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
+  relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+});
+
+await oldDB.open();
+await newDB.open();
+
+for (const table of ['peerEntities', 'groupEntities', 'relations'] as const) {
+  const rows = await (oldDB.table(table) as any).toArray();
+  if (rows.length) await (newDB.table(table) as any).bulkPut(rows);
+}
+
+console.log('Migration completed:', { oldName, newName });
+```
+
+注意点:
+- Shape(worker) の旧名は接頭辞なしの `shape-plugin-entities` でした。`prefix` が付かない可能性がある点に留意してください。
+- 旧 DB を削除する場合は、稼働確認後にブラウザのアプリケーションストレージから手動で削除してください。
+
+検証手順（DoD）:
+- `pnpm typecheck` / 主要パッケージの `pnpm --filter @hierarchidb/* test` がグリーン。
+- 変更対象のプラグインで CRUD を実行し、エラーが発生しないこと。
+
+ロールバック:
+- 旧名に戻す（コンストラクタのデフォルト値を旧サフィックスへ差し戻し）。
+- データは新旧どちらにも残るため、必要に応じて上記スクリプトを逆方向に実行可能。
 
 // 追加: プラグインモデルの用語・図の統一（シンプル/拡張の統合）
 - docs/plugin-model-unify（「シンプル/拡張」を廃し、extends 有無で統一）
@@ -334,10 +395,12 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 
 ## 運用ログ（today） <a id="log-today"></a>
 
-- 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR本文を作成しローカルブランチにコミット完了（push/PR作成はこの後）。
+- 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
 - 2025-09-06 start: refactor/node-type/remove-plugin-suffix — 互換レイヤ実装と利用箇所の置換に着手（まずレジストリ互換→UI/プラグイン内 `extends` 置換）。
+- 2025-09-06 start: chore/node-type/unify-dexie-db-names — Entities DB の命名統一対応に着手。
+- 2025-09-06 done: chore/db/unify-dexie-names-and-tables — `*-entities-db` へ統一、README/TASKS に移行ガイド追記。
 
 ### Main 同期サマリー（2025-09-06）
 - merged: PR #105 chore/dev-stability-vite-proxy-2025-09-06（dev 起動安定化・ワークスペース解決の改善・BFF dev proxy 有効化・route-plugin/mjs エイリアス整備・WorkerAPIClient ノイズ抑制・analyze-licenses CLI 追加・externals/alias 調整・TASKS/Docs ポインタ更新）
