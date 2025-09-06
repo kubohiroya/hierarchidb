@@ -19,31 +19,6 @@ OpenStreetMapやGeoNames等のオープンデータソースから、空港、�
 - 🔄 **リアルタイム進捗確認**: ダウンロード状況の可視化
 - 💾 **効率的なデータ管理**: IndexedDBによる永続化とキャッシング
 
-### バッチ API / フック（ポイント → MVT ファストパス）
-
-位置ポイント配列から Mapbox Vector Tile を生成し、Ephemeral DB に保存します。進捗は購読型で受け取れます。
-
-```ts
-import { LocationVectorTileService, useLocationProgress } from '@hierarchidb/location-plugin';
-
-const svc = new LocationVectorTileService();
-const { sessionId } = await svc.startSession(nodeId, points, { zoomMinGenerate: 5, zoomMaxGenerate: 7 });
-
-// React フックで進捗購読
-function ProgressWidget() {
-  const { progress } = useLocationProgress(svc, sessionId);
-  return <div>{progress ? `${progress.percentage.toFixed(0)}%` : '...'}</div>;
-}
-
-// タイル取得
-const bytes = await svc.getVectorTile(sessionId, nodeId, z, x, y); // Uint8Array | null
-```
-
-フラグ（UI 表示の有効化）
-- パネルからの起動ボタンは既定OFFです。下記いずれかで有効化してください。
-  - Vite 環境: `VITE_LOCATION_BATCH_V1=1 pnpm dev`
-  - Node 環境: `LOCATION_BATCH_V1=1 pnpm dev`
-
 ## 利用可能なオープンデータソース
 
 ### 主要データソース一覧

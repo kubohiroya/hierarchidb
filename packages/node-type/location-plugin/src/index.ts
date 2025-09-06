@@ -15,8 +15,3 @@ export * from './components/batch/LocationMapPreview';
 // Import and re-export the plugin definition
 export { LocationPluginDefinition } from './definitions/LocationDefinition';
 export { LocationPluginDefinition as default } from './definitions/LocationDefinition';
-
-// Public API: vector tile generation service (points -> MVT)
-export { LocationVectorTileService } from './services/tiles/LocationVectorTileService';
-export type { LocationPointInput, LocationTileSettings, ProgressInfo } from './services/tiles/LocationVectorTileService';
-export { useLocationProgress } from './hooks/useLocationProgress';
