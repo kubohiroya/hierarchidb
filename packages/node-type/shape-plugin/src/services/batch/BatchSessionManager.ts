@@ -111,6 +111,7 @@ export class BatchSessionManager {
     // Run withoutブロッキング
     shared.initialize().then(() => shared.start()).catch((e) => console.error('Shape shared session failed', e));
 
+
     return session;
   }
 

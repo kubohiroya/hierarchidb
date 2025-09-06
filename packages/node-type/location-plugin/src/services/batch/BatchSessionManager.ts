@@ -47,6 +47,7 @@ export class LocationBatchSessionManager {
       for (const cb of set2) cb(ev);
     });
     this.shared.set(sessionId, shared);
+
     shared.start().then(async () => {
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');

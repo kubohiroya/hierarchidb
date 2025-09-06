@@ -52,6 +52,7 @@ How To Test (smoke)
 
 Acceptance Criteria
 - Each plugin persists rows with a stable tableId retrievable from its session/cursor record.
+
 - TabularPreview loads columns/rows and supports multi-condition filter and column visibility control.
 - eq-only filters utilize the index (observe faster response on repeated queries).
 - No change in default behavior when flags are OFF.
