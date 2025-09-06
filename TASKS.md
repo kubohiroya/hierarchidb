@@ -393,6 +393,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 
 ## 運用ログ（today） <a id="log-today"></a>
 
+- 2025-09-06 done: shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（simplify2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
@@ -1079,6 +1080,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- fix/shape/complete-simplify2-vectortiles（simplify2 と vectorTiles の完全化）
+  - ブランチ: `fix/shape/complete-simplify2-vectortiles`（PR #118、マージ後ブランチ削除）
+  - 要点: Download→Simplify1→Simplify2→VectorTiles を EphemeralDB 経由で連結。S1/S2/VT で入出力を永続化し、タイル単位で MVT を生成・保存。空プロパティ定義時は全プロパティを許容。
+
+- feat/shape/use-feature-batch（@hierarchidb/batch で全段のオーケストレーション）
+  - ブランチ: `feat/shape/use-feature-batch`（PR #116、マージ後ブランチ削除）
+  - 要点: `BatchService.mapChunks` を download/simplify1/simplify2/vectorTiles に適用し、既存 WorkerPool のタスク実装は維持。進捗イベントを既存 UI フローへ橋渡し。
+
+- refactor/shape/integrate-batch-download-compute（batch/download/compute の導入配線）
+  - ブランチ: `refactor/shape/integrate-batch-download-compute`（PR #115、マージ後ブランチ削除）
+  - 要点: `services/batch/BatchSessionManager` への参照統一、レガシー `services/BatchSessionManager.ts` を削除、`services/index.ts` で `download/factory` を再エクスポート。テスト/参照パスも更新。
 
 - fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
   - ブランチ: `fix/app/init-loading-ux-polish`（PR #104、マージ後ブランチ削除）
