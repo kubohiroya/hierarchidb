@@ -77,72 +77,59 @@
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 // node-type プラグイン整備（監査結果に基づく：P1）
-- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤の導入・しきい値設定）
-  - ブランチ: `chore/tests/add-vitest-coverage`
-  - 依存: なし（リスク低）
-  - 方針: ルート `vitest.config.ts` に coverage 設定（V8/c8）を追加し、`packages/node-type/*-plugin` は個別設定不要（必要なら最小上書き）。`pnpm test --coverage` をワークスペース全体で有効化。
-  - 受け入れ基準（DoD）:
-    - [ ] ルートで `coverage` 設定（レポート: text-summary, html; include: `packages/node-type/**/src/**/*.{ts,tsx}`）。
-    - [ ] しきい値: 行≥70%, 分岐≥60%（段階導入）。
-    - [ ] CI/ローカルで `pnpm test --coverage` が成功し、`coverage/` が出力される。
-  - ロールバック手順: ルート `vitest.config.ts` の coverage 差分をリバート。
+- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
+  - Why: 回帰検出力が不足。プラグイン横断の仕様変更が多い本リポでは未実行領域が見えず品質リスクが高い。
+  - Scope: ルート `vitest.config.ts` に coverage を追加（V8/c8）。`packages/node-type/**/src/**/*.{ts,tsx}` を集計対象に限定。各パッケージでの個別設定は最小限のみ許可。
+  - Outcome/DoD: `pnpm test --coverage` が成功し、text-summary/html を出力。行≥70%、分岐≥60%（段階導入）。CIでカバレッジ要約が確認できる。
+  - Approach: ルート設定に coverage を追記→CI ワークフローで `--coverage` を有効化→しきい値はグローバルで一元管理。
+  - Risk/Rollback: 閾値起因でCIが赤化する可能性→一時的に閾値低減で回避し、追って引き上げる。差分は設定リバートで即時復旧。
+  - Flags/Deps: なし。
+  - Effort/Impact: Effort S / Impact High。
 
-- feat/project/serialization-impl（Project のシリアライズ/デシリアライズ実装＋テスト）
-  - ブランチ: `feat/project/serialization-impl`
-  - 依存: なし（単独で可能）
-  - 対象: `packages/node-type/project-plugin/src/handlers/ProjectEntityHandler.ts:522,530,542,553`
-  - 方針: `PluginEntitySerializer` 不在でも暫定の型安全な直列化/配列直列化を実装。将来の正式 Serializer 導入に備え関数切り出し。
-  - 受け入れ基準（DoD）:
-    - [ ] 上記 4 箇所の TODO を実装し、例外ハンドリングと型を明示。
-    - [ ] Unit: 正常/異常（必須フィールド欠如・不正型）カバレッジ。
-    - [ ] Integration: ハンドラ経由で保存→復元が往復一致。
-    - [ ] `pnpm --filter @hierarchidb/project-plugin test` グリーン。
-  - ロールバック手順: 実装関数を Feature Flag で切替（既定OFF）→問題時は旧挙動に復帰。
-  - フラグ: `PROJECT_SERIALIZATION_V1`（読み取り: `config/feature-flags.ts`、既定OFF）。
+- feat/project/serialization-impl（Project の直列化/逆直列化の実装）
+  - Why: `ProjectEntityHandler` に TODO が残存し、保存/復元の互換性・堅牢性にリスク。エクスポート/複製機能の土台にも直結する。
+  - Scope: `ProjectEntityHandler.ts` の対象4箇所を型安全な暫定Serializerで実装（既存フォーマット非破壊）。
+  - Outcome/DoD: 必須欠如/不正型のエラーハンドリングを含む Unit/Integration を追加し、往復一致が担保される。
+  - Approach: 純関数に抽出しSerializer/Deserializerを分離。将来の正式Serializerへ置換可能な構造にする。
+  - Risk/Rollback: 互換性問題は `PROJECT_SERIALIZATION_V1`（既定OFF）で切替・回避可能。
+  - Flags/Deps: `PROJECT_SERIALIZATION_V1`（既定OFF）。
+  - Effort/Impact: Effort M / Impact High。
 
-- feat/shape/worker-api-and-tiles（Shape: Worker API/VectorTile/WorkerPool の未実装解消）
-  - ブランチ: `feat/shape/worker-api-and-tiles`
-  - 依存: なし（個別対応）
-  - 対象: `WorkerPool.ts:203` 追加ワーカー、`VectorTileService.ts:396`、`plugin.ts:33,58` Worker API、`DataSourceStrategy.ts:329,332` の TODO。
-  - 方針: ワーカー生成を Factory で注入、VectorTile の未実装を最小動作で埋め、DataSourceStrategy の TODO を実装。新経路はフラグ既定OFFで段階導入。
-  - 受け入れ基準（DoD）:
-    - [ ] 4 箇所の未実装/TODO が解消。
-    - [ ] Unit/Integration 追加（ワーカー生成・タイル生成・データソース戦略のハッピーパス/失敗系）。
-    - [ ] 既存テスト（20+3）がグリーン。
-  - ロールバック手順: フラグを OFF に戻すだけで旧経路に戻る。
-  - フラグ: `SHAPE_WORKER_API_V1`, `SHAPE_VTILE_V1`（`config/feature-flags.ts`、既定OFF）。
+- feat/shape/worker-api-and-tiles（Worker API / VectorTile / WorkerPool 未実装の解消）
+  - Why: Shape は他機能の基盤。未実装の残存は性能・UX・回帰の温床。
+  - Scope: `WorkerPool.ts` 追加ワーカー、`VectorTileService.ts`、`plugin.ts` Worker API、`DataSourceStrategy.ts` の TODO を最小実装で解消。既存 20+3 テストは維持。
+  - Outcome/DoD: 4 未実装の解消。Unit/Integration を追加（ハッピーパス/失敗系）。既存テスト全緑。
+  - Approach: 生成を Factory 注入、VT の最小パス実装、Strategy TODO 埋め。新経路は既定OFFで段階導入。
+  - Risk/Rollback: 性能・安定性低下時は `SHAPE_WORKER_API_V1`/`SHAPE_VTILE_V1` を OFF に戻す。
+  - Flags/Deps: `SHAPE_WORKER_API_V1`, `SHAPE_VTILE_V1`（既定OFF）。
+  - Effort/Impact: Effort M / Impact High。
 
-- feat/route/osm-sea-routing-toggle（Route: OSM/海上ルートを実装 or 既定OFFで明示）
-  - ブランチ: `feat/route/osm-sea-routing-toggle`
-  - 依存: なし
-  - 対象: `RouteGenerator.ts:110,123`（未実装ウォーニング箇所）。
-  - 方針: まずはフラグ既定OFFで OSM/海上ルート計算器を組み込み、フォールバックは現行の直線/大圏。簡易モック計算器でユニットテストを担保。
-  - 受け入れ基準（DoD）:
-    - [ ] フラグON時に OSM/Sea 計算器が有効化、OFF時は現行フォールバック。
-    - [ ] Unit: 入力検証/直線・大圏・OSM/Sea スイッチの分岐網羅。
-    - [ ] `pnpm --filter @hierarchidb/route-plugin test` グリーン。
-    - [ ] 将来の E2E 追加に向け helper を雛形化。
-  - ロールバック手順: フラグOFFに戻す。
-  - フラグ: `ROUTE_OSM_ENABLE`, `ROUTE_SEA_ENABLE`（`config/feature-flags.ts`、既定OFF）。
+- feat/route/osm-sea-routing-toggle（OSM/海上ルートの切替導入）
+  - Why: `RouteGenerator` に未実装警告があり、期待機能と実装が乖離。正確性・将来拡張性の観点で欠落。
+  - Scope: OSM/Sea 計算器を実装し、フラグで既定OFF導入。現行フォールバック（直線/大圏）は維持。
+  - Outcome/DoD: フラグON時に OSM/Sea が有効、OFF時は現行。分岐網羅のUnitを追加。
+  - Approach: インターフェイス注入で計算器を交換可能にし、簡易モックでテスト担保。E2E準備のhelper雛形化。
+  - Risk/Rollback: 回帰時は `ROUTE_OSM_ENABLE`/`ROUTE_SEA_ENABLE` をOFF。
+  - Flags/Deps: `ROUTE_OSM_ENABLE`, `ROUTE_SEA_ENABLE`（既定OFF）。
+  - Effort/Impact: Effort M / Impact Medium-High。
 
-- feat/location/complete-dialog-and-batch（Location: ダイアログ保存/バッチAPI/変換ロジックの実装＋テスト）
-  - ブランチ: `feat/location/complete-dialog-and-batch`
-  - 依存: なし（UI/サービス単独対応）
-  - 対象: `LocationDialog.tsx:55`, `BatchProgressDialog.tsx:188,194,198`, `LocationSelectionStep.tsx:185`。
-  - 受け入れ基準（DoD）:
-    - [ ] 保存・開始・キャンセル・確認の UI/サービス連携が実装。
-    - [ ] Unit: 主要ハンドラと変換の正常/異常。
-    - [ ] `pnpm --filter @hierarchidb/location-plugin test` グリーン。
-  - ロールバック手順: UI イベントを旧 NO-OP 実装へ切替（フラグOFF）。
-  - フラグ: `LOCATION_BATCH_V1`（既定OFF）。
+- feat/location/complete-dialog-and-batch（ダイアログ保存/バッチAPIの実装）
+  - Why: UIの主要操作（保存/開始/キャンセル/確認）が未接続で、ユーザ操作が無効に見える。機能不全によるUX低下。
+  - Scope: `LocationDialog.tsx`、`BatchProgressDialog.tsx`、`LocationSelectionStep.tsx` の TODO を実装し、サービス層と結線。
+  - Outcome/DoD: 主要ハンドラの正常/異常をUnitで担保し、`@hierarchidb/location-plugin` のテストがグリーン。
+  - Approach: 既存イベントを束ねる薄いアダプタを追加し、副作用をサービスへ集約。段階導入。
+  - Risk/Rollback: 想定外挙動は `LOCATION_BATCH_V1`（既定OFF）で無効化可能。
+  - Flags/Deps: `LOCATION_BATCH_V1`（既定OFF）。
+  - Effort/Impact: Effort S-M / Impact Medium。
 
-- test/base-plugin/minimal-unit（Base: 最小ユニットテストの追加）
-  - ブランチ: `test/base-plugin/minimal-unit`
-  - 依存: なし
-  - 受け入れ基準（DoD）:
-    - [ ] `BaseEntityHandler`/`HierarchicalEntityHandler` のハッピーパス1件・エラー系1件ずつ。
-    - [ ] `pnpm --filter @hierarchidb/base-plugin test` グリーン。
-  - ロールバック手順: 追加テスト削除で影響なし。
+- test/base-plugin/minimal-unit（最小ユニットテストの追加）
+  - Why: Base の振る舞いは全プラグインに波及。最低限の回帰防止線を敷く必要がある。
+  - Scope: `BaseEntityHandler`/`HierarchicalEntityHandler` にハッピーパス/エラー系各1の最小テストを追加。
+  - Outcome/DoD: `@hierarchidb/base-plugin` のテストがグリーン。基本契約の破壊が検出可能。
+  - Approach: 既存APIの不変条件を明文化し、Unitを配置。
+  - Risk/Rollback: 影響はテスト追加のみ。問題時は取り消しで復旧。
+  - Flags/Deps: なし。
+  - Effort/Impact: Effort S / Impact Medium。
 
 // node-type プラグイン整備（監査結果に基づく：P2）
 - fix/resolver/error-notify（Resolver: エラー通知 UI の実装）
