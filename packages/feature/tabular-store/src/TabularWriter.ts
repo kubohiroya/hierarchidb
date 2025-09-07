@@ -1,4 +1,4 @@
-import { SimpleTableMetadataManager, type CSVTableMetadataLike } from '@hierarchidb/table-metadata';
+import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB } from './RowStoreDB';
 
@@ -17,7 +17,17 @@ export class TabularWriter {
   private indexColumns: string[];
   async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
     const id = crypto.randomUUID();
-    const base: CSVTableMetadataLike = {
+    // Local shape compatible with SimpleTableMetadataManager.create()
+    const base: {
+      id: string;
+      filename: string;
+      columns: string[];
+      totalRows: number;
+      isChunked: boolean;
+      chunkCount: number;
+      fileSizeBytes: number;
+      contentHash?: string;
+    } = {
       id,
       filename: schema.filename || `${this.pluginId}-${id}.json`,
       columns: schema.columns,
@@ -39,7 +49,6 @@ export class TabularWriter {
       if (this.rowsBuffered.length >= this.chunkSize) {
         const payload = JSON.stringify(this.rowsBuffered);
         const buf = new TextEncoder().encode(payload).buffer;
-        const start = this.rowCursor;
         await db.table('rowChunks').add({
           id: crypto.randomUUID(), pluginId: this.pluginId, tableId: this.tableId,
           chunkIndex: this.chunkIndex++, startRowIndex: this.rowCursor, endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
@@ -50,15 +59,12 @@ export class TabularWriter {
           const { TabularIndexer } = await import('./Indexer');
           const indexer = new TabularIndexer(this.pluginId);
           // Efficiently index just-written rows
-          let rowId = start;
-          for (const r of this.rowsBuffered) {
+          for (const _r of this.rowsBuffered) {
             for (const c of this.indexColumns) {
-              const v = r[c];
               // eslint-disable-next-line no-await-in-loop
               await indexer.indexRows(this.tableId!, [c]); // coarse; will re-scan chunks; simple path for now
               break;
             }
-            rowId++;
           }
         }
         this.rowCursor += this.rowsBuffered.length;

@@ -15,7 +15,7 @@ function makeKey(pluginId: string, tableId: string, column: string, value: strin
 export class TabularIndexer {
   constructor(private readonly pluginId: string) {}
 
-  async indexRows(tableId: string, columns: string[], chunkSize = 2000): Promise<void> {
+  async indexRows(tableId: string, columns: string[], _chunkSize = 2000): Promise<void> {
     const db = getRowStoreDB();
     const chunks = await db.table('rowChunks').where(['pluginId+tableId'] as any).equals([this.pluginId, tableId] as any).sortBy('chunkIndex');
     for (const ch of chunks) {
@@ -68,4 +68,3 @@ export class TabularIndexer {
     return out;
   }
 }
-
