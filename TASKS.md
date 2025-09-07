@@ -53,6 +53,24 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+- chore/route/remove-unused-helpers-and-ci-typecheck（Route 未使用ヘルパ削除 + CI 安定化）
+  - ブランチ: `chore/route/remove-unused-helpers-and-ci-typecheck`
+  - PR: #143 https://github.com/kubohiroya/hierarchidb/pull/143
+  - 依存: なし（小粒）。影響は route-plugin と ルート `package.json` のスクリプトのみ。
+  - スコープ:
+    - Route-plugin の未使用ヘルパ（datasources 定義ファイル）の完全削除。
+    - `ThrottledPort` の基本挙動（並列・RPS）を担保するユニットテスト追加。
+    - ルートに `typecheck:ci` を追加し、`pnpm -r typecheck` を CI 互換（低並列/省メモリ）で安定化。
+  - 受け入れ基準（DoD）:
+    - [x] `packages/node-type/route-plugin/src/datasources/RouteDataSourceDefinitions.ts` が削除されている。
+    - [x] `packages/node-type/route-plugin/src/__tests__/ThrottledPort.test.ts` が追加され、ローカルで `pnpm --filter @hierarchidb/route-plugin test` がグリーン。
+    - [x] ルート `package.json` に `typecheck:ci` が追加され、`pnpm typecheck:ci` で低並列（`--workspace-concurrency 1`）かつ省メモリ（`--max-old-space-size=4096`）で実行できる。
+  - ロールバック手順:
+    - 上記削除ファイルを復旧し、テストファイルを削除。`package.json` の `typecheck:ci` を削除する（git revert 推奨）。
+  - 運用ログ:
+    - start: 2025-09-07 17:05
+    - done: 2025-09-07 17:25（差分作成・ローカル検証・PR 本文作成）
+
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
   - ブランチ: `feat/route/batch-processing-implementation`
   - 依存: `@hierarchidb/batch`（workspace） / `@hierarchidb/download`（net.port, retry/rps） / `@hierarchidb/runtime-shared-batch-processor`
@@ -203,6 +221,215 @@
     - 入口の正規化をリバートするだけで即時復旧可能（内部は短い識別子のみのため影響限定）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
+
+以下は「packages/node-type/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
+
+— UI-DESIGN.md 反映タスク（最小復旧プランの実装） —
+
+- feat/route/progress-controls-pause-resume（Route: 進捗UIに Pause/Resume を配線）
+  - ブランチ: `feat/route/progress-controls-pause-resume`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] `RoutePanel` の Progress セクションに Pause/Resume ボタンを追加
+    - [ ] `RouteBatchManager.pauseRouteBatchSession/resumeRouteBatchSession` を呼び出し、Dexie `routeCursors.paused` が切り替わる
+    - [ ] `RouteBatchSummary` に failed 件数/直近エラー要約を表示
+    - [ ] `pnpm --filter @hierarchidb/route-plugin typecheck` グリーン
+  - ロールバック: UI ボタンを隠すフラグ `ROUTE_PROGRESS_CONTROLS=0`
+
+- feat/shape/batch-monitor-wireup（Shape: 監視ダイアログの実装配線最小化）
+  - ブランチ: `feat/shape/batch-monitor-wireup`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] Start/Pause/Resume/Stop を I/F 化し DI（mock/real）で切替可能
+    - [ ] 進捗イベント（download/simplify*/vectortile）をストアに集約し UI は購読で更新
+    - [ ] MapPreview は vectorTileTasks 完了時のみ有効化
+    - [ ] Step検証（Step1/3/4/5）にユニットテストを追加
+  - ロールバック: フラグ `SHAPE_BATCH_MONITOR_REAL=0` で mock 実装にフォールバック
+
+- feat/location/stepper-migration-and-wiring（Location: 4ステップ化＋バッチ配線）
+  - ブランチ: `feat/location/stepper-migration-and-wiring`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] StepperDialog（4ステップ）へ移行（現行単一画面を Step1/3 に分割して再利用）
+    - [ ] バッチ起動→進捗ダイアログ表示の配線を整理（Dexie セッション/テーブル解決の非同期化）
+    - [ ] `getStepCapabilities` のユニットテスト追加
+  - ロールバック: フラグ `LOCATION_STEPPER_V1=0` で単一画面に戻す
+
+- feat/basemap/extract-dialog-and-apply-validation（BaseMap: Dialog 抽出と検証適用）
+  - ブランチ: `feat/basemap/extract-dialog-and-apply-validation`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] `BaseMapPanel` から `BaseMapDialog` を抽出し `dialogComponentPath` を差し替え
+    - [ ] 拡張定義のバリデーション（Map Style/Viewport/Display Options）を保存時に適用
+    - [ ] 既存の extension テストがグリーン
+  - ロールバック: `dialogComponentPath` を元の Panel に差し戻し
+
+- feat/spreadsheet/steps-impl-minimum（Spreadsheet: Step2/3 の最小実装）
+  - ブランチ: `feat/spreadsheet/steps-impl-minimum`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] Step2: `DataSourceStep`（file/url/manual）で working copy に `dataSource` を反映
+    - [ ] Step3: `FilteringStep`（列選択/簡易条件）を最小実装（任意）
+    - [ ] 拡張定義 `component` を `null` から実装へ差替、既存テストを更新
+  - ロールバック: `component` を `null` に戻し、テストを元の前提に復帰
+
+- feat/styler/preview-stub-and-config-io（Styler: プレビュースタブと保存 I/O 確認）
+  - ブランチ: `feat/styler/preview-stub-and-config-io`
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）:
+    - [ ] Map スタイルのプレビュー用スタブを追加し、基本的なレイヤ設定を反映
+    - [ ] `stylerConfig` の保存/読込（FolderEntity 拡張フィールド）を確認する単体テスト
+  - ロールバック: プレビューを無効化するフラグ `STYLER_PREVIEW=0`
+
+
+- feat/common/progress-stage-vocab-unify（進捗ステージ語彙の統一）
+  - ブランチ: `feat/common/progress-stage-vocab-unify`
+  - 依存: analysis-20250907（セクション3）
+  - 受け入れ基準（DoD）:
+    - [ ] 共通語彙 `ingest|process1|process2|optimize|persist` を `@hierarchidb/common-type` に定義
+    - [ ] shape/location/route の進捗イベント `stage` が上記語彙で出力（互換マッピングを維持）
+    - [ ] UI 側凡例/テレメトリが新語彙に対応（旧→新のマッピングも可）
+  - ロールバック: フラグ `PROGRESS_STAGE_VOCAB` を OFF にし、旧ステージ名で出力
+  - チェックリスト:
+    - [ ] 型の追加と ESLint ルール（語彙外禁止）の導入
+    - [ ] shape のマッピング実装
+    - [ ] location のマッピング実装
+    - [ ] route のマッピング実装
+
+- feat/route/engine-registry（ルート生成エンジンのレジストリ化）
+  - ブランチ: `feat/route/engine-registry`
+  - 依存: analysis-20250907（セクション4）
+  - 受け入れ基準（DoD）:
+    - [ ] `@hierarchidb/route-engine-registry` を新設（`id/capabilities/factory`）
+    - [ ] RouteGenerator がレジストリ解決で `direct|osm_route|searoute` を切替
+    - [ ] 環境変数/Feature Flag で engine の優先度/無効化を制御
+  - ロールバック: フラグ `ROUTE_ENGINE_REGISTRY` OFF で旧 DI にフォールバック
+  - チェックリスト:
+    - [ ] レジストリ本体/型
+    - [ ] OSRM/Searoute のアダプタ
+    - [ ] 直列/並列の上限を capabilities に反映
+
+- feat/location/batch-session-v2（Location を AbstractBatchSession 化）
+  - ブランチ: `feat/location/batch-session-v2`
+  - 依存: analysis-20250907（セクション2,12,13）
+  - 受け入れ基準（DoD）:
+    - [ ] `LocationBatchSession` 実装（pause/resume/cancel, cursor 更新, mapChunks）
+    - [ ] ProgressEvent 共通型で通知（UI のフック使い回し可）
+    - [ ] 既存 `LocationBatchManager` は薄いファサードに縮退
+  - ロールバック: フラグ `LOCATION_BATCH_V2` OFF で旧 Manager に切替
+  - チェックリスト:
+    - [ ] セッション実装/テスト
+    - [ ] 進捗発火置換
+    - [ ] UI 影響の回帰確認
+
+- refactor/shape/batch-to-session（Shape の Batch 責務集約）
+  - ブランチ: `refactor/shape/batch-to-session`
+  - 依存: analysis-20250907（セクション2）
+  - 受け入れ基準（DoD）:
+    - [ ] `BatchSessionManager` の実行責務を `ShapeBatchSession` へ移し、API は互換ファサードのみ
+    - [ ] pause/resume/cancel/カーソルが Route/Location と同等の意味
+  - ロールバック: フラグ `SHAPE_BATCH_V2` OFF で旧 Manager 実行に戻す
+  - チェックリスト:
+    - [ ] Session 内へ移植
+    - [ ] 互換ファサード
+    - [ ] e2eでの一時停止/再開
+
+- feat/common/validation-pipeline（検証/フィルタ共通パイプライン）
+  - ブランチ: `feat/common/validation-pipeline`
+  - 依存: analysis-20250907（セクション11）
+  - 受け入れ基準（DoD）:
+    - [ ] `@hierarchidb/validation-pipeline` を追加（Sync/Async Rule, combinator, metrics）
+    - [ ] location/route に標準ルール（重複・距離/面積閾値・必須属性・座標正常性）を適用
+    - [ ] shape の既存ロジックをルール化
+  - ロールバック: フラグ `VALIDATION_PIPELINE_V1` OFF で旧ロジック
+  - チェックリスト:
+    - [ ] ライブラリ実装
+    - [ ] 各プラグイン適用
+    - [ ] メトリクス表示
+
+- feat/common/lane-semaphores（レーン別同時実行制御の横展開）
+  - ブランチ: `feat/common/lane-semaphores`
+  - 依存: analysis-20250907（セクション7）
+  - 受け入れ基準（DoD）:
+    - [ ] shape/location にレーンセマフォ導入（データソース/戦略単位）
+    - [ ] 既存のバッチ並列と二重制御にならない設計（単一制御点）
+  - ロールバック: 環境変数 `*_LANE_LIMITS=0` で無効化
+  - チェックリスト:
+    - [ ] lane 設計
+    - [ ] shape 反映
+    - [ ] location 反映
+
+- feat/location/auth-registry-integration（認証レジストリ連携）
+  - ブランチ: `feat/location/auth-registry-integration`
+  - 依存: analysis-20250907（セクション8）、shape の `AuthNotificationRegistry`
+  - 受け入れ基準（DoD）:
+    - [ ] 401/403 検知時に location バッチが自動 pause、認証成功で resume、キャンセルで cancel
+    - [ ] e2e（mock 401）で確認
+  - ロールバック: フラグ `LOCATION_AUTH_REGISTRY=0` で従来動線
+  - チェックリスト:
+    - [ ] registry 購読
+    - [ ] pause/resume 実装
+    - [ ] e2e 追加
+
+- feat/route/vector-tiler-lite（ルートのベクタータイル化）
+  - ブランチ: `feat/route/vector-tiler-lite`
+  - 依存: analysis-20250907（セクション9）、shape の tiler ロジック
+  - 受け入れ基準（DoD）:
+    - [ ] `@hierarchidb/vector-tiler-lite` を抽出し route の optimization 段で利用
+    - [ ] 1e4 規模のルートでもズーム別に実用的描画が可能（ベンチ結果を PR に添付）
+  - ロールバック: フラグ `ROUTE_TILER_V2` OFF
+  - チェックリスト:
+    - [ ] tiler 抽出
+    - [ ] route 組込み
+    - [ ] ベンチ/E2E
+
+- feat/ui/ui-batch-wizard（ウィザード/ダイアログの共通部品化）
+  - ブランチ: `feat/ui/ui-batch-wizard`
+  - 依存: analysis-20250907（セクション10）、location の既存 UI
+  - 受け入れ基準（DoD）:
+    - [ ] `@hierarchidb/ui-batch-wizard` を新設（Step/Progress/Resume/TabularPreview）
+    - [ ] shape/route のダイアログを置換（既定OFF）
+  - ロールバック: フラグ `UI_BATCH_WIZARD=0` で旧ダイアログ
+  - チェックリスト:
+    - [ ] パッケージ追加
+    - [ ] shape 適用
+    - [ ] route 適用
+
+- refactor/shape/base-entity-handler-adoption（shape を BaseEntityHandler 準拠へ）
+  - ブランチ: `refactor/shape/base-entity-handler-adoption`
+  - 依存: analysis-20250907（セクション1）
+  - 受け入れ基準（DoD）:
+    - [ ] CRUD/WC が `BaseEntityHandler` 継承へ移行し、既存ユースケースが動作
+    - [ ] テーブル抽象と検索条件（BaseSearchCriteria）を統一
+  - ロールバック: フラグ `SHAPE_BASE_HANDLER_V2` OFF
+  - チェックリスト:
+    - [ ] Adapter 層追加
+    - [ ] 既存 API 互換
+    - [ ] 単体テスト
+
+- feat/location/storage-abstraction（Location 用 DB ラッパ導入）
+  - ブランチ: `feat/location/storage-abstraction`
+  - 依存: analysis-20250907（セクション12）
+  - 受け入れ基準（DoD）:
+    - [ ] `LocationDatabase` 追加（entities/cursors/results/tables）
+    - [ ] TabularWriter 連携/再開/インデックスの統一
+  - ロールバック: フラグ `LOCATION_DB_V2` OFF
+  - チェックリスト:
+    - [ ] DB 実装
+    - [ ] セッション連携
+    - [ ] 最小 e2e
+
+- feat/common/batch-control-api-unify（pause/resume/cancel API を統一）
+  - ブランチ: `feat/common/batch-control-api-unify`
+  - 依存: analysis-20250907（セクション13）
+  - 受け入れ基準（DoD）:
+    - [ ] `AbstractBatchSession` にコマンドハンドラを標準化
+    - [ ] route/location/shape のファサードから同一シグネチャで公開
+  - ロールバック: フラグ `BATCH_CONTROL_API_V2` OFF
+  - チェックリスト:
+    - [ ] 共通インターフェース定義
+    - [ ] 各プラグイン適用
+    - [ ] UI/ドキュメント更新
 
 - feat/route/shared-batch-core-adoption（route: shape/location と共通のバッチ基盤に寄せる）
   - ブランチ: `feat/route/shared-batch-core-adoption`
@@ -540,6 +767,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/node-type/docs` を削除。
 - 2025-09-07 done: fix/route-plugin/build — 重複依存キーの削除（`@hierarchidb/tabular-store`）、`AbstractBatchSession` の import を `@hierarchidb/runtime-shared-batch-processor` へ修正。併せて `@hierarchidb/runtime-shared-batch-processor` の `src/index.ts` に `AbstractBatchSession`/`AbstractWorkerPoolManager` の再エクスポートを追加。
 - 2025-09-07 done: fix/runtime-shared/dts — shims.d.ts は採用せず、CONTRIBUTING の方針に合わせて解決。
+ - 2025-09-07 done: tasks/node-type-analysis-followups — `packages/node-type/analysis-20250907.md` に基づく横断タスク（語彙統一/Engine Registry/Location Batch v2/Shape 集約/Validation/Lane/認証/VectorTiler/UI Wizard/EntityHandler/LocationDB/Batch API）を ToDo へ追加（既定OFFフラグと DoD/ロールバックを明記）。
   - runtime-shared/batch-processor: `tsconfig.json` の `rootDir` 固定を撤廃（TS6059回避）
   - ルート `tsconfig.base.json` に `@hierarchidb/download` / `@hierarchidb/auth-recovery` の `paths` を追加
   - `tsup.config.ts` で両依存を external 化（実行時解決）
@@ -1247,6 +1475,16 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- chore/spreadsheet/ui-only-typecheck（UI限定型チェック＋サービス分離の土台）
+  - ブランチ: `chore/spreadsheet/ui-only-typecheck`（ローカル作業）
+  - PR: #142 https://github.com/kubohiroya/hierarchidb/pull/142
+  - 要点: `tsconfig.ui.json` を導入し UI のみを型対象に限定。`src/ui/facade/index.ts` を追加して UI→サービス層の境界をダイナミックインポートで分離。`CSVUploadPanel` は `../services` から `../ui/facade` へ依存を切替。UI型チェック緑を確認。
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` がグリーン（UI限定）
+    - [x] サービス層（`src/services/**`, `src/worker/**`）は型チェックの対象外
+  - ロールバック: `src/ui/facade/index.ts` を削除し `CSVUploadPanel` の import を `../services` に戻す。`tsconfig.ui.json` の include を元に戻す。
+  - メモ: 本対応は Option 1（UIのみtypecheck）に相当。サービス層は将来、feature パッケージとして抽出予定（下記方針）。
 
 - feat/route/batch-shared-session-m1（共有セッション＋DL＋冪等/一時停止/レーン＋テスト）
   - ブランチ: `feat/route/batch-shared-session-m1` → main マージ済
