@@ -14,7 +14,10 @@
       "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/src/index.ts"],
       "@hierarchidb/ui-dialog": ["../packages/ui/dialog/src/index.ts"],
       "@hierarchidb/ui-theme": ["../packages/ui/theme/src/index.ts"],
-      "@hierarchidb/common-auth": ["../packages/common/auth/src/index.ts"]
+      "@hierarchidb/common-auth": ["../packages/common/auth/src/index.ts"],
+      "@hierarchidb/ui-data-grid": ["../packages/ui/data-grid/src/index.ts"],
+      "@hierarchidb/table-metadata": ["../packages/feature/table-metadata/src/index.ts"],
+      "@hierarchidb/tabular-store": ["../packages/feature/tabular-store/src/index.ts"]
     },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },

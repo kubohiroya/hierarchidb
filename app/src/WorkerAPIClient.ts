@@ -169,7 +169,7 @@ export class WorkerAPIClient {
     try {
       if (this.workerInstance) {
         // Attempt to terminate raw worker if possible
-        const raw = _getRawWorkerInstance();
+        const raw = WorkerAPIClient.getRawWorkerInstance();
         try { raw?.terminate(); } catch {}
       }
     } catch {}
