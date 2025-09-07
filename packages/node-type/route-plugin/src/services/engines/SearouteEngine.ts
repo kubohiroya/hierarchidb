@@ -130,7 +130,6 @@ export class SearouteEngine implements RoutingEngine {
           case 'nm':
           case 'nauticalmile':
           case 'nauticalmiles':
-          case 'nm':
             distance_m = d * 1852; break;
           default:
             // Unknown units; fall back to geometry-based calculation

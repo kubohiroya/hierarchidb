@@ -44,7 +44,7 @@ import { useTranslation } from '../i18n';
 import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
 import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress';
-import { TabularPreview } from '@hierarchidb/ui-core/src';
+import { TabularPreview } from '@hierarchidb/ui-core';
 import { RouteDatabase } from '../database/RouteDatabase';
 import { createRouteBatchManager } from '../services/createRouteBatchManager';
 import { isFlagEnabled } from '../services/config/flags';
