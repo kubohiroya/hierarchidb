@@ -53,23 +53,7 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- chore/route/remove-unused-helpers-and-ci-typecheck（Route 未使用ヘルパ削除 + CI 安定化）
-  - ブランチ: `chore/route/remove-unused-helpers-and-ci-typecheck`
-  - PR: #143 https://github.com/kubohiroya/hierarchidb/pull/143
-  - 依存: なし（小粒）。影響は route-plugin と ルート `package.json` のスクリプトのみ。
-  - スコープ:
-    - Route-plugin の未使用ヘルパ（datasources 定義ファイル）の完全削除。
-    - `ThrottledPort` の基本挙動（並列・RPS）を担保するユニットテスト追加。
-    - ルートに `typecheck:ci` を追加し、`pnpm -r typecheck` を CI 互換（低並列/省メモリ）で安定化。
-  - 受け入れ基準（DoD）:
-    - [x] `packages/node-type/route-plugin/src/datasources/RouteDataSourceDefinitions.ts` が削除されている。
-    - [x] `packages/node-type/route-plugin/src/__tests__/ThrottledPort.test.ts` が追加され、ローカルで `pnpm --filter @hierarchidb/route-plugin test` がグリーン。
-    - [x] ルート `package.json` に `typecheck:ci` が追加され、`pnpm typecheck:ci` で低並列（`--workspace-concurrency 1`）かつ省メモリ（`--max-old-space-size=4096`）で実行できる。
-  - ロールバック手順:
-    - 上記削除ファイルを復旧し、テストファイルを削除。`package.json` の `typecheck:ci` を削除する（git revert 推奨）。
-  - 運用ログ:
-    - start: 2025-09-07 17:05
-    - done: 2025-09-07 17:25（差分作成・ローカル検証・PR 本文作成）
+ - （空）
 
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
   - ブランチ: `feat/route/batch-processing-implementation`
@@ -91,50 +75,15 @@
     - [x] route-plugin のローカル ProgressEmitter/Store を削除
     - [x] useRouteBatchProgress / ProgressBar を共有型へ移行
     - [x] RouteGenerator: エンジン委譲I/F（osrm/searoute）
-    - [ ] RouteBatchManager: レーン別セマフォ（osrm=1, searoute=2–4, local=16–64）を適用
-    - [ ] 既存テストの補強（モックエンジン/簡易レーン検証）
+    - [x] RouteBatchManager/Session: レーン別セマフォ（osrm=1, searoute=2–4, local=16–64）を適用
+    - [x] 既存テストの補強（モックエンジン/簡易レーン検証）
   - ロールバック手順:
     - route-plugin 側で共有参照を戻し、ローカル ProgressEmitter/Store を復活させる（git revert）。
     - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
-  - 現状: 共有基盤（shared-batch）で代替実現済（Done へ記録, 2025-09-07）。
-
-
-- feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
-  - ブランチ: `feat/location/batch-mvt-fastpath-v1`
-  - 依存: `@hierarchidb/batch`（workspace） / `geojson-vt` / `@maplibre/vt-pbf`
-  - フラグ: `LOCATION_BATCH_V1`（既定OFF）
-  - スコープ: points → normalize → tilegen（MVT）をセッション単位で実行し、Ephemeral DB（Dexie）へ保存。可視化API（tiles/summary/progress）を公開。
-  - 受け入れ基準（DoD）:
-    - [x] `SessionController` が `@hierarchidb/batch` に移行（ローカル BatchService を削除）
-    - [x] `EphemeralLocationDB` に `vectorTiles` テーブル（`&id, sessionId, nodeId, [z+x+y], timestamp`）
-    - [x] `LocationVectorTileService` の API（`startSession/onProgress/getVectorTile/getSessionSummary`）
-    - [x] UI フック `useLocationProgress` の追加（購読/解除可能）
-    - [x] UI 結線：`BatchProgressDialog` を実進捗に接続、`LocationPanel` から開始→ダイアログ起動の導線を追加（デモポイント）
-    - [x] ダイアログ「マッププレビュー」タブで Ephemeral DB からの MVT を描画（`@hierarchidb/ui-map` の MapWithVectorTiles を使用）
-    - [x] セッション initial summary から bbox/zoom を利用可能に（in-memory）＋ getSessionSummary に bbox を追加
-    - [x] スタイル切替（auto/simple）と半径スケール
-    - [x] ズーム範囲（min/max）コントロールを追加
-    - [x] タイル取得失敗数のインジケータと手動 Refresh（再読込）
-    - [x] 進捗完了までの自動リフレッシュ（2.5s）
-    - [x] ズーム別タイル数のサマリ表示（listTileCoords 利用）
-    - [x] shape プレビューも MapWithVectorTiles + Dexie tileDataProvider で統一
-    - [x] @hierarchidb/ui-map に vector layer プリセット（points/lines/polygons）を追加
-    - [x] EphemeralLocationDB に sessions TTL クリーンアップ（7日）を追加し、セッション作成時にbest-effort実行
-    - [x] 共通 ProgressEvent 型を @hierarchidb/common-type に昇格
-    - [x] ユニット/統合テスト（小規模点群での生成、進捗イベント、タイル取得のスモーク）が追加済み（ローカルで実行）
-  - ロールバック手順:
-    - フラグ `LOCATION_BATCH_V1` を OFF に戻すと新フローは無効化。
-    - 変更差分はプラグイン内に限定。`SessionController` の import を元に戻せば局所復旧可能。
-  - 現状: 実装完了（Ephemeral DB / VectorTileService）。Done へ反映（2025-09-07）。
+  - 現状: レーン別セマフォと最小テストまで完了（RouteBatchSessionに実装、Session/Managerのテスト整備）。ドキュメント（PLAN.md 抜粋追記）のみ未了。
   - 運用ログ:
-    - start: 2025-09-06 21:20 implement batch wiring and tests
-    - done: 2025-09-06 21:40 replace local BatchService → `@hierarchidb/batch`; add tests `LocationVectorTileService.test.ts`
-    - done: 2025-09-06 21:55 add `useLocationProgress` and unsubscribe wiring
-    - done: 2025-09-06 22:10 wire UI: LocationPanel start button → BatchProgressDialog (real progress)
-    - done: 2025-09-06 22:25 map preview: render MVT via dexie:// protocol + tileDataProvider
-    - done: 2025-09-06 22:40 added bbox-aware styling UI and refresh
-    - done: 2025-09-06 22:55 add auto-refresh until completed + per-zoom summary + map onLoad fitBounds
-    - done: 2025-09-06 23:10 unify shape preview rendering + add ui-map layer presets + sessions TTL cleanup + common ProgressEvent
+    - updated: 2025-09-07 19:45 進捗同期（前半完了・残タスク明記）。
+    - updated: 2025-09-07 20:10 レーン別セマフォ実装とテスト確認（Session/Manager）。
 
 - feat/node-type/progress-type-extract — 進捗データ型を common-type へ抽出（UI 依存排除）
   - ブランチ: `feat/node-type/progress-type-extract`
@@ -142,10 +91,13 @@
   - スコープ: `@hierarchidb/common-type` に `BatchProgress`（UI/Worker 共有進捗型）を追加し、location/shape の進捗イベントをこの型に準拠させる。`ui-core/useBatchProgress` は後方互換アダプタで接続。
   - 受け入れ基準（DoD）:
     - [ ] フラグON時、location/shape の progress イベントが `BatchProgress` でUIに届く
-    - [ ] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
-    - [ ] OFF時は完全非回帰（UI表示/イベント契約）
+    - [x] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
+    - [x] OFF時は完全非回帰（UI表示/イベント契約）
   - ロールバック: フラグOFFで旧 UnifiedProgressInfo/各プラグイン ProgressInfo を使用
-  - 現状: `@hierarchidb/common-type` に `progress-types.ts` 追加済（Done へ反映, 2025-09-07）。
+  - 現状: 型定義の抽出は完了。`ui-core` に変換アダプタ（`progressAdapters.ts`）を追加し、location の `useLocationProgress` をアダプタ経由に統一。shape は既存のセッション実装で `ProgressEvent` をシンクしており互換。フラグON時のE2E確認は未。
+  - 運用ログ:
+    - updated: 2025-09-07 19:55 `progress-types.ts` 追加済を確認。
+    - updated: 2025-09-07 20:20 `ui-core` にアダプタ追加、location フックをアダプタ化、typecheck 緑を確認。
 
 - feat/node-type/download-strategy — Download 戦略を location/shape でStrategy化
   - ブランチ: `feat/node-type/download-strategy`
@@ -177,35 +129,16 @@
   - 着手: 2025-09-06 10:15
   - 内容: 既存テーブル名の監査（CamelCase複数形の統一を確認）＋ 上記と同時適用。
   - DoD: 実装・ガイド追記・typecheck 通過。
-  - 現状: 実装/ガイド済（Done へ反映, 2025-09-07）。
+  - ステータス: Done へ移動（2025-09-07）。詳細は Done セクション参照。
 - feat/project/serialization-impl（Project の直列化/逆直列化の実装）
   - ブランチ: `feat/project/serialization-impl`
   - PR: #110 https://github.com/kubohiroya/hierarchidb/pull/110
   - 要点: `ProjectEntitySerializer` 追加し、`ProjectEntityHandler` の serialize/deserialize 系を実装。`Uint8Array`/`ArrayBuffer` を UUID 参照へ退避し Map で同梱。
-  - 現状: Serializer 実装とテストを確認（Done へ反映, 2025-09-07）。
+  - ステータス: Done へ移動（2025-09-07）。詳細は Done セクション参照。
 
 ---
 
-- chore/policy/ban-tsconfig-paths-dist-dts（tsconfig.paths の dist.d.ts 参照を全面禁止）
-  - ブランチ名: `chore/policy/ban-tsconfig-paths-dist-dts`
-  - 依存: なし（小粒）。影響は型解決のみ。
-  - 背景: 隣パッケージの `dist/*.d.ts` を `paths` で参照しており、未ビルド/出力場所変更に脆弱、規約逸脱も発生。
-  - 方針: チェックツールに検知ルールを追加し、該当パッケージの `tsconfig.json` を是正。以後はパッケージ名 import＋`workspace:*` に統一。
-  - 受け入れ基準（DoD）:
-    - [x] `tools/check-deps`: ルール `paths-to-dist-dts` 追加（ERROR）。
-    - [x] `policies.publishable-tsconfig-hygiene` に同ルールを適用。
-    - [x] `@hierarchidb/basemap-plugin` の `tsconfig.json` から他パッケージ `dist/*.d.ts` の `paths` を削除。
-    - [x] `@hierarchidb/project-plugin` の `tsconfig.json` から同様の `paths` を削除。
-    - [x] `@hierarchidb/folder-plugin` の `tsconfig.json` から同様の `paths` を削除し、必要な依存（`@hierarchidb/tag`）を `package.json` に追加。
-    - [x] 変更後に `pnpm --filter "@hierarchidb/{basemap-plugin,project-plugin,folder-plugin}" typecheck` がグリーン。
-    - [x] ガイド `AGENTS.md` に方針を明文化（Monorepo Type Resolution Policy）。
-  - ロールバック手順:
-    - 影響が出た場合は、当該パッケージのみ一時的に `paths` を復旧し、ルールは WARN に緩和して再実行。根因修正後に ERROR に戻す。
-  - チェックリスト:
-    - [x] ルール実装とテキスト整備
-    - [x] basemap/project/folder の tsconfig 是正
-    - [x] folder-plugin の依存追記（@hierarchidb/tag）
-    - [ ] 局所 typecheck 実行
+// chore/policy/ban-tsconfig-paths-dist-dts は Done セクションに集約（PR #86, 2025-09-04）。
 
 - refactor/node-type/remove-plugin-suffix（nodeType から `-plugin` を撤廃し短い識別子へ統一）
   - ブランチ: `refactor/node-type/remove-plugin-suffix`
@@ -219,6 +152,10 @@
     - [ ] `pnpm typecheck && pnpm test` がグリーン（入口互換で旧名 URL でも動作）。
   - ロールバック手順:
     - 入口の正規化をリバートするだけで即時復旧可能（内部は短い識別子のみのため影響限定）。
+  - 現状: 方針を「入口で旧名受理・内部短縮名統一」に確定。影響調査とリストアップは完了、実実装は未着手（UI ルート正規化→PluginDefinition更新→参照置換の順で進める）。
+  - 運用ログ:
+    - start: 2025-09-06 方針転換を決定（旧 `*-plugin` は入口でのみ受理）。
+    - updated: 2025-09-07 20:00 影響範囲をレビュー（location/resolver/project の3件中心、その他出現箇所は検索済）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1476,15 +1413,39 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
+  - ブランチ: `chore/db/unify-dexie-names-and-tables` → main 反映済（2025-09-07）
+  - 要点: NodeType 系の Entities DB 名を `*-entities-db` に統一し、既存テーブル名の監査とガイド更新を実施。型チェックもグリーンを確認。
+  - 参照: 各 EntitiesDB 実装（folder/location/shape/spreadsheet）と README のマトリクス。
+  - ロールバック: 影響が出た場合は当該パッケージ単位で旧名に戻すだけで局所復旧可能。
+
+- feat/project/serialization-impl（Project の直列化/逆直列化の実装）
+  - ブランチ: `feat/project/serialization-impl` → main マージ済（PR #110）
+  - 要点: `ProjectEntitySerializer` 実装、`ProjectEntityHandler` の serialize/deserialize 完了、ユニットテスト追加。バイナリ類は UUID 参照に退避し Map 同梱。
+  - ロールバック: 直前のフォーマットにリバート（Serializer/Handler の該当差分のみ）。
+
+- chore/route/remove-unused-helpers-and-ci-typecheck（Route 未使用ヘルパ削除 + CI 安定化）
+  - ブランチ: `chore/route/remove-unused-helpers-and-ci-typecheck` → main マージ済（PR #143）
+  - 要点: 未使用ヘルパ削除、`ThrottledPort` ユニットテスト追加、`typecheck:ci` 導入でCIの型チェック安定化。
+  - DoD: 3項目すべて満たし、2025-09-07 にマージ完了。
+  - 影響範囲: route-plugin、ルート `package.json` のスクリプトのみ（非破壊）。
+
 - chore/spreadsheet/ui-only-typecheck（UI限定型チェック＋サービス分離の土台）
   - ブランチ: `chore/spreadsheet/ui-only-typecheck`（ローカル作業）
   - PR: #142 https://github.com/kubohiroya/hierarchidb/pull/142
+  - ステータス: 2025-09-07 に main へマージ済。
   - 要点: `tsconfig.ui.json` を導入し UI のみを型対象に限定。`src/ui/facade/index.ts` を追加して UI→サービス層の境界をダイナミックインポートで分離。`CSVUploadPanel` は `../services` から `../ui/facade` へ依存を切替。UI型チェック緑を確認。
   - 受け入れ基準（DoD）:
     - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` がグリーン（UI限定）
     - [x] サービス層（`src/services/**`, `src/worker/**`）は型チェックの対象外
   - ロールバック: `src/ui/facade/index.ts` を削除し `CSVUploadPanel` の import を `../services` に戻す。`tsconfig.ui.json` の include を元に戻す。
   - メモ: 本対応は Option 1（UIのみtypecheck）に相当。サービス層は将来、feature パッケージとして抽出予定（下記方針）。
+
+- feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
+  - ブランチ: `feat/location/batch-mvt-fastpath-v1` → main マージ済
+  - 要点: Batch への移行、EphemeralLocationDB に vectorTiles テーブル追加、LocationVectorTileService の API 提供、`useLocationProgress`/`BatchProgressDialog` 結線、MVT 描画、TTL クリーンアップ等。
+  - DoD: スコープ項目を満たし、2025-09-07 時点で完了。
+  - ロールバック: `LOCATION_BATCH_V1` を OFF に戻し、従来フローへ退避可能。
 
 - feat/route/batch-shared-session-m1（共有セッション＋DL＋冪等/一時停止/レーン＋テスト）
   - ブランチ: `feat/route/batch-shared-session-m1` → main マージ済
