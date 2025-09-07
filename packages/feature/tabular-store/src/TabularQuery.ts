@@ -37,8 +37,14 @@ export class TabularQueryService {
           await indexer.indexRows(tableId, [f.column]);
           ids = await indexer.getRowIds(tableId, f.column, f.value);
         }
-        const set = new Set(ids);
-        acc = acc ? new Set([...acc].filter((x) => set.has(x))) : set;
+        const set = new Set<number>(ids as number[]);
+        if (acc) {
+          const prev: number[] = Array.from(acc.values());
+          const inter: number[] = prev.filter((x: number) => set.has(x));
+          acc = new Set<number>(inter as number[]);
+        } else {
+          acc = set;
+        }
         if (acc.size === 0) return [];
       }
       const rowIds = [...(acc || new Set<number>())].slice(0, limit);
