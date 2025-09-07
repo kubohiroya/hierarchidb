@@ -28,6 +28,7 @@
     "build:app": "turbo run build --filter=@hierarchidb/app",
     "preview": "turbo run preview",
     "typecheck": "turbo run typecheck",
+    "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" pnpm -r --workspace-concurrency 1 --reporter append-only typecheck",
     "typecheck:watch": "turbo run typecheck --parallel -- --watch",
     "test": "turbo run test --parallel",
     "test:run": "turbo run test:run",
