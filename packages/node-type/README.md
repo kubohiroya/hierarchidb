@@ -158,6 +158,22 @@ graph TB
 - Mapプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
 - nodeType の命名方針: ユーザーに露出しうる識別子のため、`-plugin` サフィックスを廃止し、`folder`/`basemap`/`location`/`project`/`resolver` などに統一します（既存実装は順次移行）。
 
+
+## 🔎 Tabular Preview（Location/Shape/Route 共通）
+
+location / shape / route の各プラグインは、バッチ処理で正規化した“表データ”を保存してUIでプレビューできます（デフォルトOFF）。
+
+- 有効化フラグ（環境変数 or `globalThis.FEATURE_FLAGS`）
+  - `LOCATION_TABULAR=1`
+  - `SHAPE_TABULAR=1`
+  - `ROUTE_TABULAR=1`
+- UI 機能
+  - 複数条件フィルタ（AND: `eq`/`neq`/`contains`/`gt`/`gte`/`lt`/`lte`）
+  - 表示列の切替（列セレクタ）
+  - `eq` 条件は遅延作成される倒立インデックスで高速化
+- 注意: 表プレビューは検索・検証用途です。ノード群の統合シリアライズ/デシリアライズは従来どおり Import/Export 機能をお使いください。
+
+
 ### base-plugin の責務（役割）
 
 base-plugin は UI に表示されない「共通基盤」です。プラグイン実装から再利用される抽象と補助型を提供します。親子継承の「親」ではなく、ライブラリ層と捉えてください。
