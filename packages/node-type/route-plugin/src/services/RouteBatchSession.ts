@@ -17,6 +17,8 @@ export interface RouteBatchConfig extends BaseBatchConfig {
   };
   locationResolution?: { batchSize: number; cacheResults: boolean; fallbackToCoordinates: boolean };
   validation?: { checkLocationExists: boolean; checkDuplicateRoutes: boolean; validateDistance: boolean; maxDistanceKm?: number };
+  /** Optional per-lane concurrency caps override (e.g. { osm_route: 1, searoute: 4 }) */
+  laneCaps?: Partial<Record<'osm_route' | 'searoute' | 'direct' | 'great_circle' | 'custom', number>>;
 }
 
 export interface RouteBatchTask {
@@ -52,6 +54,20 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     this.db = new RouteDatabase();
     this.tasks = tasks;
     this.generator = deps?.generator ?? new RouteGenerator();
+    // Apply lane cap overrides from config and env/global flags (best-effort, safe parse)
+    try {
+      if (config.laneCaps) {
+        this.laneConfig = { ...this.laneConfig, ...pickNumeric(config.laneCaps) };
+      }
+    } catch {}
+    try {
+      const envJson = (typeof process !== 'undefined' && (process as any)?.env?.ROUTE_LANE_CAPS) || undefined;
+      const flagCaps = (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.ROUTE_LANE_CAPS) || undefined;
+      const parsed = typeof envJson === 'string' ? JSON.parse(envJson) : flagCaps;
+      if (parsed && typeof parsed === 'object') {
+        this.laneConfig = { ...this.laneConfig, ...pickNumeric(parsed) };
+      }
+    } catch {}
   }
 
   protected async onInitialize(): Promise<void> {
@@ -172,4 +188,12 @@ class Semaphore {
   constructor(private capacity: number) { this.count = capacity; }
   acquire(): Promise<void> { if (this.count > 0) { this.count--; return Promise.resolve(); } return new Promise((r) => this.queue.push(r)); }
   release(): void { if (this.queue.length > 0) { const resolve = this.queue.shift()!; resolve(); } else this.count = Math.min(this.count + 1, this.capacity); }
+}
+
+function pickNumeric(obj: Record<string, unknown>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'number' && isFinite(v) && v > 0) out[k] = Math.floor(v);
+  }
+  return out;
 }

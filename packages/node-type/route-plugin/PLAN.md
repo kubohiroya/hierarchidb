@@ -242,7 +242,15 @@ M2: Pipelines (3–5 days)
 - [ ] Implement task mappers for each job type.
 - [ ] Compose compute chains using `@hierarchidb/compute` (routing call, smoothing, etc.).
 - [ ] Implement checkpointing and idempotent jobKey logic.
-- [ ] Implement scheduler lanes (OSRM/SEA/LOCAL) with fair queue + throttler.
+- [x] Implement per‑lane semaphores (OSRM/SEA/LOCAL) to cap concurrency regardless of batch size.
+  - Defaults: osm_route=1, searoute=3, direct=64, great_circle=64, custom=8.
+  - Overrides:
+    - Config: `RouteBatchConfig.laneCaps` (e.g. `{ osm_route: 1, searoute: 4 }`).
+    - Env: `ROUTE_LANE_CAPS` as JSON string (e.g. `{"osm_route":1,"searoute":4}`).
+    - Global flag: `globalThis.FEATURE_FLAGS.ROUTE_LANE_CAPS` (object with numeric caps).
+  - Placement: enforced in `RouteBatchSession` around `RouteGenerator.generate()`.
+  - Tests: session-level gating test ensures `osm_route` max concurrency stays 1 even with high `maxConcurrent`.
+  - Note: Fair queue + shared throttler remain optional; can be promoted from shared download `RateLimiter` later.
 - [ ] Add regionKey and lengthKmApprox computation; binning strategy and batch builder.
 - [ ] Extract/promote RateLimiter to shared and replace local usages.
 - [ ] Engine adapters reuse: wrap `feature/route-searoute`; implement OSRM adapter against existing HTTP client/bff proxy if available.
