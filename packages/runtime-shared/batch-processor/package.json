@@ -21,7 +21,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^18.19.24",

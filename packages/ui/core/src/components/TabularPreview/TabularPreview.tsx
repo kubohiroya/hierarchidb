@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, TextField, IconButton, Chip, Tooltip, Checkbox, ListItemText, OutlinedInput, Button, Divider } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, TextField, IconButton, Chip, Tooltip, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';

@@ -538,6 +538,17 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-07 start: docs/tasks — ガイド準拠の構造整備（セクション追加: 実行コマンドの原則/禁止事項・注意/失敗時の取り扱い、目次更新）。コード差分なし。
 - 2025-09-07 done: 上記を反映。運用方針（小粒PR・既定OFFフラグ・DoD/ロールバック明記）を本ファイル先頭にも再確認として明示。
 - 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/node-type/docs` を削除。
+- 2025-09-07 done: fix/route-plugin/build — 重複依存キーの削除（`@hierarchidb/tabular-store`）、`AbstractBatchSession` の import を `@hierarchidb/runtime-shared-batch-processor` へ修正。併せて `@hierarchidb/runtime-shared-batch-processor` の `src/index.ts` に `AbstractBatchSession`/`AbstractWorkerPoolManager` の再エクスポートを追加。
+- 2025-09-07 done: fix/runtime-shared/dts — shims.d.ts は採用せず、CONTRIBUTING の方針に合わせて解決。
+  - runtime-shared/batch-processor: `tsconfig.json` の `rootDir` 固定を撤廃（TS6059回避）
+  - ルート `tsconfig.base.json` に `@hierarchidb/download` / `@hierarchidb/auth-recovery` の `paths` を追加
+  - `tsup.config.ts` で両依存を external 化（実行時解決）
+  - 結果: `@hierarchidb/{download,auth-recovery,runtime-shared-batch-processor,route-plugin}` のビルド成功
+ - 2025-09-07 done: chore/backend/typecheck-no-dlx — backend の typecheck を環境非依存化。
+   - 対象: `packages/backend/{bff,cors-proxy}`
+   - 変更: `pnpm dlx tsc` を廃止し、ローカル `tsc --noEmit` を使用。devDeps に `typescript: workspace:*` 追加。`tsconfig.json` の `moduleResolution: node`、`types: ['node']` を明示（Workers 型と併用）。
+   - 検証: `pnpm --filter @hierarchidb/{bff,cors-proxy} typecheck` グリーン。`pnpm build` で EPERM による停止なし。
+   - PR: `chore/backend/typecheck-no-dlx`（PR_BODY_chore-backend-typecheck-no-dlx.md）— backend 配下のみの差分で PR を作成。
 
 ### 2025-09-06
 - start: route M1（共有化）着手。

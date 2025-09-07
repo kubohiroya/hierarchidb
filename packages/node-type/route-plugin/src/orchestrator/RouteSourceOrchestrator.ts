@@ -9,7 +9,7 @@ export interface OrchestratorDeps { net: NetworkPortLike }
 
 export class RouteSourceOrchestrator {
   private strategies = [new CsvStrategy(), new GeoJsonStrategy()];
-  constructor(private deps: OrchestratorDeps) {}
+  constructor(private deps: OrchestratorDeps) { void this.deps; }
 
   async plan(spec: RouteBatchSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
@@ -31,7 +31,7 @@ export class RouteSourceOrchestrator {
     for (const f of plan.fetch) {
       try {
         const fileId = `route-src:${crypto.randomUUID()}`;
-        const res = await service.download(f.url, fileId);
+        await service.download(f.url, fileId);
         const full = await readAll(fileId);
         blobs.set(f.url, new Blob([full]));
       } catch (e: any) {

@@ -1,6 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { AuthHeadersProvider, AuthContext, AuthPluginType } from './ports';
 import { AuthNotificationRegistry, AuthNotificationFactory, AUTH_CONSTANTS } from '@hierarchidb/common-auth';
+import type { PluginType } from '@hierarchidb/common-auth';
 
 type Pending = {
   resolve: (r: Response) => void;
@@ -37,7 +38,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
 
   async fetchWithAuth(url: string, init: RequestInit = {}, ctx: AuthContext = {}): Promise<Response> {
     const maxRetries = ctx.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT;
-    const pluginType: AuthPluginType = ctx.pluginType ?? 'generic';
+    const pluginType: AuthPluginType = ctx.pluginType ?? 'shape';
     let attempt = 0;
     let lastErr: any;
     for (; attempt <= maxRetries; attempt++) {
@@ -60,6 +61,11 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   }
 
   private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: AuthContext): Promise<Response> {
+    // Narrow plugin type to common-auth.PluginType
+    const pluginTypeNarrow: PluginType = ((): PluginType => {
+      const p = ctx.pluginType ?? 'shape';
+      return (p === 'shape' || p === 'spreadsheet' || p === 'styler') ? p : 'shape';
+    })();
     const notification = AuthNotificationFactory.createAuthRequired({
       source: 'worker',
       requestId,
@@ -68,7 +74,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
       errorCode: 401,
       errorMessage: 'Unauthorized',
       sessionId: ctx.sessionId,
-      pluginType: (ctx.pluginType as AuthPluginType) ?? 'generic',
+      pluginType: pluginTypeNarrow,
       retryCount: 0,
     });
 
