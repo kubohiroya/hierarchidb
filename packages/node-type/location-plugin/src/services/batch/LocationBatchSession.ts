@@ -1,9 +1,9 @@
-import { AbstractBatchSession } from '@hierarchidb/runtime-shared/batch-processor/src/AbstractBatchSession';
+import { AbstractBatchSession, type StandardProgressEvent, type BaseBatchConfig } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import type { SessionController } from './SessionController';
 import type { ProgressEvent as LocationProgress } from '@hierarchidb/common-type';
 
-export interface LocationBatchConfig { concurrency?: number }
+export interface LocationBatchConfig extends BaseBatchConfig { concurrency?: number }
 
 export class LocationBatchSession extends AbstractBatchSession<LocationBatchConfig, any, void> {
   constructor(sessionId: string, nodeId: NodeId, config: LocationBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) { super(sessionId, nodeId, config); }
@@ -21,6 +21,29 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
   protected async onComplete(): Promise<void> {}
   protected onProgressUpdate(): void {
     const p = this.getProgress();
-    this.sink?.({ sessionId: this['sessionId'] as any, stage: p.currentStage || 'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask || '' });
+    const event: StandardProgressEvent = {
+      sessionId: this.sessionId,
+      stage: p.currentStage || 'processing',
+      total: p.total,
+      completed: p.completed,
+      failed: p.failed,
+      percentage: Math.round(p.percentage),
+      currentTask: p.currentTask || '',
+    };
+    this.onStandardProgressUpdate(event);
+  }
+
+  protected onStandardProgressUpdate(event: StandardProgressEvent): void {
+    // Convert to legacy ProgressEvent for compatibility
+    const legacyEvent: ProgressEvent = {
+      sessionId: event.sessionId as any,
+      stage: event.stage,
+      total: event.total,
+      completed: event.completed,
+      failed: event.failed,
+      percentage: event.percentage,
+      currentTask: event.currentTask || '',
+    };
+    this.sink?.(legacyEvent);
   }
 }
