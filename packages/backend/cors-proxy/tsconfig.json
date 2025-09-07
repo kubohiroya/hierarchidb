@@ -11,14 +11,15 @@
     },
     "skipLibCheck": true,
     "types": [
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+      "node"
     ],
     "lib": [
       "ES2022"
     ],
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "jsx": "react-jsx",
     "rootDir": "src"
   },

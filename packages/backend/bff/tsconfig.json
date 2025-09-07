@@ -20,7 +20,7 @@
     ],
     "target": "es2022",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "jsx": "react-jsx",
     "rootDir": "src"
   },
