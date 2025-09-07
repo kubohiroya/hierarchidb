@@ -163,9 +163,12 @@ reporter.reportStepProgress('Load Comlink', 0);
     const mutationFacade = {
       createNode: (args: any) => mutation.createNode(args),
       updateNode: (args: any) => mutation.updateNode(args),
-      deleteNode: (id: any) => mutation.deleteNode(id),
-      moveNode: (id: any, parentId: any) => mutation.moveNode(id, parentId),
-      duplicateNode: (id: any, parentId: any, newId?: any) => mutation.duplicateNode(id, parentId, newId),
+      removeNodes: (nodeIds: any[]) => mutation.removeNodes(nodeIds as any),
+      moveNodes: (nodeIds: any[], toParentId: any, onNameConflict?: 'error' | 'auto-rename') =>
+        mutation.moveNodes({ nodeIds: nodeIds as any, toParentId, onNameConflict }),
+      duplicateNodes: (nodeIds: any[], toParentId?: any) => mutation.duplicateNodes({ nodeIds: nodeIds as any, toParentId }),
+      moveNodesToTrash: (nodeIds: any[]) => mutation.moveNodesToTrash(nodeIds as any),
+      recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => mutation.recoverNodesFromTrash({ nodeIds: nodeIds as any, toParentId }),
     };
 
     const subscriptionFacade = {
@@ -175,38 +178,57 @@ reporter.reportStepProgress('Load Comlink', 0);
     } as any;
 
     const tagFacade = {
-      list: () => tag.list(),
-      create: (name: string, category?: string) => tag.create(name, category),
-      remove: (id: any) => tag.remove(id),
-      assign: (nodeId: any, tagId: any) => tag.assign(nodeId, tagId),
-      unassign: (nodeId: any, tagId: any) => tag.unassign(nodeId, tagId),
+      getAllTags: () => tag.getAllTags(),
+      createTag: (request: any) => tag.createTag(request),
+      deleteTag: (id: any) => tag.deleteTag(id),
+      addTagToNode: (req: any) => tag.addTagToNode(req),
+      removeTagFromNode: (req: any) => tag.removeTagFromNode(req),
+      getTagsForNode: (nodeId: any) => tag.getTagsForNode(nodeId),
+      getTag: (id: any) => tag.getTag(id),
+      updateTag: (id: any, updates: any) => tag.updateTag(id, updates),
+      searchTags: (q: string) => tag.searchTags(q),
+      getTagSuggestions: (q: string, limit = 10) => tag.getTagSuggestions(q, limit),
+      getTagStats: () => tag.getTagStats(),
+      getNodesByTag: (id: any) => tag.getNodesByTag(id),
     };
 
     const importExportFacade = {
       importNodes: (p: any) => importExport.importNodes(p),
       exportNodes: (p: any) => importExport.exportNodes(p),
-      validateImport: (p: any) => importExport.validateImport(p),
+      validateImportData: (p: any) => importExport.validateImportData(p),
       getOperationStatus: (id: string) => importExport.getOperationStatus(id),
     };
 
     const workingCopyFacade = {
-      createWorkingCopy: (p: any) => workingCopy.createWorkingCopy(p),
-      commitWorkingCopy: (p: any) => workingCopy.commitWorkingCopy(p),
-      discardWorkingCopy: (p: any) => workingCopy.discardWorkingCopy(p),
-      listWorkingCopies: (id: any) => workingCopy.listWorkingCopies(id),
+      createDraftWorkingCopy: (nodeType: any, parentId: any, initial?: any) =>
+        workingCopy.createDraftWorkingCopy(nodeType, parentId, initial),
+      createWorkingCopyFromNode: (nodeId: any) => workingCopy.createWorkingCopyFromNode(nodeId),
+      getWorkingCopy: (nodeId: any) => workingCopy.getWorkingCopy(nodeId),
+      updateWorkingCopy: (nodeId: any, updates: any) => workingCopy.updateWorkingCopy(nodeId, updates),
+      listWorkingCopies: () => workingCopy.listWorkingCopies(),
+      hasWorkingCopy: (nodeId: any) => workingCopy.hasWorkingCopy(nodeId),
+      commitWorkingCopy: (nodeId: any) => workingCopy.commitWorkingCopy(nodeId),
+      discardWorkingCopy: (nodeId: any) => workingCopy.discardWorkingCopy(nodeId),
+      discardAllWorkingCopies: () => workingCopy.discardAllWorkingCopies(),
+      validateWorkingCopy: (nodeId: any) => workingCopy.validateWorkingCopy(nodeId),
+      hasUnsavedChanges: (nodeId: any) => workingCopy.hasUnsavedChanges(nodeId),
+      commitMultipleWorkingCopies: (nodeIds: any[]) => workingCopy.commitMultipleWorkingCopies(nodeIds as any),
+      createMultipleWorkingCopies: (nodeIds: any[]) => workingCopy.createMultipleWorkingCopies(nodeIds as any),
+      getWorkingCopyStats: () => workingCopy.getWorkingCopyStats(),
+      cleanupOldWorkingCopies: (olderThan: number) => workingCopy.cleanupOldWorkingCopies(olderThan),
     };
 
     const pluginLifecycleFacade = {
       register: (p: any) => pluginLifecycle.register(p),
       unregister: (p: any) => pluginLifecycle.unregister(p),
       validatePlugin: (p: any) => pluginLifecycle.validatePlugin(p),
-      checkHealth: () => pluginLifecycle.checkHealth(),
-      listRegistered: () => pluginLifecycle.listRegistered(),
+      checkHealth: (nodeType: any) => pluginLifecycle.checkHealth(nodeType),
+      listRegistered: (options?: any) => pluginLifecycle.listRegistered(options),
       getDependencies: (n: any) => pluginLifecycle.getDependencies(n),
       bulkOperation: (p: any) => pluginLifecycle.bulkOperation(p),
       resetPlugin: (p: any) => pluginLifecycle.resetPlugin(p),
       deletePlugin: (n: any) => pluginLifecycle.deletePlugin(n),
-      resetSystem: () => pluginLifecycle.resetSystem(),
+      resetSystem: (createBackup?: boolean) => pluginLifecycle.resetSystem(createBackup),
     };
 
     const api: any = {
