@@ -1,1 +1,0 @@
-{"version":3,"file":"UnifiedDownloadService.d.ts","sourceRoot":"","sources":["UnifiedDownloadService.ts"],"names":[],"mappings":"AAAA,qBAAa,sBAAsB;WACpB,YAAY,CACvB,GAAG,EAAE,MAAM,EACX,OAAO,CAAC,EAAE;QACR,UAAU,CAAC,EAAE,CAAC,QAAQ,EAAE,MAAM,KAAK,IAAI,CAAC;QACxC,MAAM,CAAC,EAAE,WAAW,CAAC;KACtB,GACA,OAAO,CAAC,IAAI,CAAC;CAwCjB"}

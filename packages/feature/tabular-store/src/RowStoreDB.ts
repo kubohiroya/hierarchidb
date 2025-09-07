@@ -26,7 +26,6 @@ export interface RowIndexEntry {
 export class RowStoreDB extends Dexie {
   rowChunks!: Table<RowChunk>;
   rowIndexes!: Table<RowIndexEntry>;
-  rowIndexes!: Table<RowIndexEntry>;
   constructor(name: string = getDBName('tabular-rowstore-db')) {
     super(name);
     this.version(1).stores({

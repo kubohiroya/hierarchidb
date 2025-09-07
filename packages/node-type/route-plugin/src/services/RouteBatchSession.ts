@@ -1,4 +1,4 @@
-import { AbstractBatchSession } from '@hierarchidb/runtime-shared/batch-processor/src/AbstractBatchSession';
+import { AbstractBatchSession, type BaseBatchConfig } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
@@ -7,7 +7,7 @@ import type { RouteGenerationConfig } from '../entities/RouteEntity';
 import { RouteGenerator } from './RouteGenerator';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 
-export interface RouteBatchConfig {
+export interface RouteBatchConfig extends BaseBatchConfig {
   routeGeneration: {
     method: 'direct' | 'osm_route' | 'great_circle' | 'searoute';
     parallel: boolean;
@@ -145,9 +145,11 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       this.updateProgress({ failed: (this.getProgress().failed || 0) + 1, currentTask: `error:${task.taskType}` });
       if (this.config.routeGeneration.retryOnFailure) {
         // rudimentary retry with small delay
-        for (let i = 0; i < (this.config.routeGeneration.maxRetries || 0) && task.status !== 'completed'; i++) {
+        const max = this.config.routeGeneration.maxRetries || 0;
+        let done = false;
+        for (let i = 0; i < max && !done; i++) {
           await this.delay(150);
-          try { await this.processTask({ ...task, status: 'pending' }); } catch {}
+          try { await this.processTask({ ...task, status: 'pending' }); done = true; } catch {}
         }
       }
     }

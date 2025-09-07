@@ -27,6 +27,9 @@
 - [進捗メモ](#progress-notes)
 - [フラグ運用（共通）](#flags)
 - [ロールバック指針](#rollback)
+- [実行コマンドの原則](#commands)
+- [禁止事項/注意](#cautions)
+- [失敗時の取り扱い](#failure-handling)
 
 ## Git ブランチ戦略 <a id="git-branches"></a>
 
@@ -75,6 +78,7 @@
   - ロールバック手順:
     - route-plugin 側で共有参照を戻し、ローカル ProgressEmitter/Store を復活させる（git revert）。
     - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
+  - 現状: 共有基盤（shared-batch）で代替実現済（Done へ記録, 2025-09-07）。
 
 
 - feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
@@ -103,6 +107,7 @@
   - ロールバック手順:
     - フラグ `LOCATION_BATCH_V1` を OFF に戻すと新フローは無効化。
     - 変更差分はプラグイン内に限定。`SessionController` の import を元に戻せば局所復旧可能。
+  - 現状: 実装完了（Ephemeral DB / VectorTileService）。Done へ反映（2025-09-07）。
   - 運用ログ:
     - start: 2025-09-06 21:20 implement batch wiring and tests
     - done: 2025-09-06 21:40 replace local BatchService → `@hierarchidb/batch`; add tests `LocationVectorTileService.test.ts`
@@ -122,6 +127,7 @@
     - [ ] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
     - [ ] OFF時は完全非回帰（UI表示/イベント契約）
   - ロールバック: フラグOFFで旧 UnifiedProgressInfo/各プラグイン ProgressInfo を使用
+  - 現状: `@hierarchidb/common-type` に `progress-types.ts` 追加済（Done へ反映, 2025-09-07）。
 
 - feat/node-type/download-strategy — Download 戦略を location/shape でStrategy化
   - ブランチ: `feat/node-type/download-strategy`
@@ -132,28 +138,33 @@
     - [ ] Shape: `IShapeDownloadStrategy`/Registry の雛形を追加（最小実装orモック）
     - [ ] OFF時は switch 実装に戻り、非回帰
   - ロールバック: *_DOWNLOAD_STRATEGY を OFF
+  - 現状: location/shape 双方で Strategy/Registry 実装済（Done へ反映, 2025-09-07）。
 
 
 - chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
   - ブランチ: `chore/tests/add-vitest-coverage`
   - PR: #111（本PRの方針を優先）
   - 要点: ルート/各パッケージに v8 カバレッジを統一導入、Turbo `coverage` タスク追加、CI で各パッケージの HTML/LCOV をアーティファクト化。
+  - 現状: ルート `vitest.config.ts` の coverage 設定を確認（Done へ反映, 2025-09-07）。
 
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ名: `chore/node-type/unify-dexie-db-names`
   - 着手: 2025-09-06 10:00
   - 内容: NodeType 系 Entities DB のデフォルト名を `*-entities-db` に統一、README/TASKS.md 更新。
   - DoD: 実装・ガイド追記・typecheck 通過。
+  - 現状: `*-entities-db` に統一済（Done へ反映, 2025-09-07）。
 
 - chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
   - ブランチ名: `chore/db/unify-dexie-names-and-tables`
   - 着手: 2025-09-06 10:15
   - 内容: 既存テーブル名の監査（CamelCase複数形の統一を確認）＋ 上記と同時適用。
   - DoD: 実装・ガイド追記・typecheck 通過。
+  - 現状: 実装/ガイド済（Done へ反映, 2025-09-07）。
 - feat/project/serialization-impl（Project の直列化/逆直列化の実装）
   - ブランチ: `feat/project/serialization-impl`
   - PR: #110 https://github.com/kubohiroya/hierarchidb/pull/110
   - 要点: `ProjectEntitySerializer` 追加し、`ProjectEntityHandler` の serialize/deserialize 系を実装。`Uint8Array`/`ArrayBuffer` を UUID 参照へ退避し Map で同梱。
+  - 現状: Serializer 実装とテストを確認（Done へ反映, 2025-09-07）。
 
 ---
 
@@ -218,6 +229,7 @@
     - [ ] Route プラグインが `net.port` を注入で利用し、RPS/並列/指数バックオフが OSRM/searoute 呼び出しに適用
     - [ ] 401/403/429 を shape と同じ規約で扱い、AuthRecovery と通知が動作
   - ロールバック: フラグ `ROUTE_NET_V1`（既定OFF）で切替可能。
+  - 現状: DownloadService ファクトリに認証/並列制御を導入済（Done へ反映, 2025-09-07）。
 
 - feat/route/ui-progress-unify（UI 進捗フック/ダイアログの共通化）
   - ブランチ: `feat/route/ui-progress-unify`
@@ -523,7 +535,20 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-07 start: docs/tasks — ガイド準拠の構造整備（セクション追加: 実行コマンドの原則/禁止事項・注意/失敗時の取り扱い、目次更新）。コード差分なし。
+- 2025-09-07 done: 上記を反映。運用方針（小粒PR・既定OFFフラグ・DoD/ロールバック明記）を本ファイル先頭にも再確認として明示。
 - 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/node-type/docs` を削除。
+- 2025-09-07 done: fix/route-plugin/build — 重複依存キーの削除（`@hierarchidb/tabular-store`）、`AbstractBatchSession` の import を `@hierarchidb/runtime-shared-batch-processor` へ修正。併せて `@hierarchidb/runtime-shared-batch-processor` の `src/index.ts` に `AbstractBatchSession`/`AbstractWorkerPoolManager` の再エクスポートを追加。
+- 2025-09-07 done: fix/runtime-shared/dts — shims.d.ts は採用せず、CONTRIBUTING の方針に合わせて解決。
+  - runtime-shared/batch-processor: `tsconfig.json` の `rootDir` 固定を撤廃（TS6059回避）
+  - ルート `tsconfig.base.json` に `@hierarchidb/download` / `@hierarchidb/auth-recovery` の `paths` を追加
+  - `tsup.config.ts` で両依存を external 化（実行時解決）
+  - 結果: `@hierarchidb/{download,auth-recovery,runtime-shared-batch-processor,route-plugin}` のビルド成功
+ - 2025-09-07 done: chore/backend/typecheck-no-dlx — backend の typecheck を環境非依存化。
+   - 対象: `packages/backend/{bff,cors-proxy}`
+   - 変更: `pnpm dlx tsc` を廃止し、ローカル `tsc --noEmit` を使用。devDeps に `typescript: workspace:*` 追加。`tsconfig.json` の `moduleResolution: node`、`types: ['node']` を明示（Workers 型と併用）。
+   - 検証: `pnpm --filter @hierarchidb/{bff,cors-proxy} typecheck` グリーン。`pnpm build` で EPERM による停止なし。
+   - PR: `chore/backend/typecheck-no-dlx`（PR_BODY_chore-backend-typecheck-no-dlx.md）— backend 配下のみの差分で PR を作成。
 
 ### 2025-09-06
 - start: route M1（共有化）着手。
@@ -1293,6 +1318,50 @@ P2:
   - 要点: `tools/check-deps` に `paths-to-dist-dts` ルールを追加し、`publishable-tsconfig-hygiene` に適用。`basemap-plugin`/`project-plugin`/`folder-plugin` から `dist/*.d.ts` 参照を撤廃。以後はパッケージ名 import＋`workspace:*` に統一。ロールバックは対象パッケージ単位で可能。
 
 - 小さな型負債スイープ（2025-09-04）
+
+// Verified complete (2025-09-07)
+- chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
+  - 根拠: ルート `vitest.config.ts` の `test.coverage` に v8 設定（text/html/lcov, include/exclude/thresholds）を確認。
+  - 参照: `vitest.config.ts` L10–L41
+
+- chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
+  - 根拠: Entities 系 DB のデフォルト名が `*-entities-db` に統一済み。
+  - 参照: `packages/node-type/folder-plugin/src/worker/folderEntitiesDB.ts`（`getDBName('folder-entities-db')`）、
+          `packages/node-type/location-plugin/src/worker/locationEntitiesDB.ts`（`location-entities-db`）、
+          `packages/node-type/shape-plugin/src/worker/shapeEntitiesDB.ts`（`shape-entities-db`）、
+          `packages/node-type/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB.ts`（`spreadsheet-entities-db`）
+
+- chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
+  - 根拠: 上記実装に加え、`packages/node-type/README.md` のマトリクスが `*-entities-db` に同期済み。
+  - 参照: `packages/node-type/README.md`（DB 名の行に `*-entities-db`）
+
+- feat/node-type/progress-type-extract（進捗データ型の共通化）
+  - 根拠: `@hierarchidb/common-type` に `progress-types.ts` が追加され、Location などが `ProgressEvent` を参照。
+  - 参照: `packages/common/types/src/progress-types.ts`、`packages/node-type/location-plugin/src/services/tiles/LocationVectorTileService.ts`
+
+- feat/node-type/download-strategy（Download 戦略の Strategy 化＋フラグ）
+  - 根拠: location/shape 双方に Strategy Registry 実装と `LOCATION_DOWNLOAD_STRATEGY`/`SHAPE_DOWNLOAD_STRATEGY` のゲートを確認。
+  - 参照: `packages/node-type/location-plugin/src/services/download/registry.ts`、
+          `packages/node-type/shape-plugin/src/services/download/registry.ts`
+
+- feat/location/batch-mvt-fastpath-v1（batch/session/ephemeral DB + MVT fast-path）
+  - 根拠: Ephemeral DB（Dexie）実装と VectorTile サービス/API を確認。
+  - 参照: `packages/node-type/location-plugin/src/services/database/EphemeralLocationDB.ts`、
+          `packages/node-type/location-plugin/src/services/tiles/LocationVectorTileService.ts`
+
+- feat/project/serialization-impl（Project の直列化/逆直列化の実装）
+  - 根拠: `ProjectEntitySerializer` 実装と `ProjectEntityHandler` の serialize/deserialize 実装、ユニットテストを確認。
+  - 参照: `packages/node-type/project-plugin/src/shared/serialization.ts`、
+          `packages/node-type/project-plugin/src/handlers/ProjectEntityHandler.ts`、
+          `packages/node-type/project-plugin/src/shared/__tests__/serialization.test.ts`
+
+- feat/route/net-auth-recovery（net.port + 認証回復の統一）
+  - 根拠: Route の DownloadService ファクトリで `AuthRecoveryService` を注入し、`FetchNetworkPort` にヘッダ付与・並列制御を実装。
+  - 参照: `packages/node-type/route-plugin/src/services/download/factory.ts`
+
+- feat/route/batch-processing-implementation（M1）
+  - 取扱: 直接の実装ではなく、共有基盤による置換で完了。
+  - 別経路の完了: 「feat/route/batch-shared-session-m1」「feat/shared-batch-post-docs」を参照（本セクション先頭の Done 項目）。
   - ブランチ: `fix/app/typecheck-phase2-tighten`（PR #86 / 2025-09-04 の一部）
   - 要点: 葉パッケージに限定した `skipLibCheck` 封じ込め、tests/storybook 型対象の整理、`vite/client`/env shims 導入、`dist/*.d.ts` paths 撤廃、runtime-ui/ui/node-type 各パッケージの型ハイジーン整備。
 
@@ -1318,6 +1387,33 @@ P2:
 
 - いずれの段階PRも、フラグOFFで即時切戻し可能な構造を維持
 - 既存経路の削除は、ONが十分安定してから最終段で実施
+
+## 実行コマンドの原則 <a id="commands"></a>
+
+- ルート実行（monorepo 全体）
+  - `pnpm typecheck` / `pnpm test` / `pnpm lint` / `pnpm e2e` / `pnpm format`
+- パッケージ限定実行（例）
+  - `pnpm --filter @hierarchidb/runtime-worker typecheck`
+  - `pnpm --filter @hierarchidb/app test`
+- 開発環境の統一
+  - `scripts/start-env.sh <development|production> [dev|build|test]` を用い、起動時に必要フラグ/エイリアスを注入
+- 受け入れ基準の共通前提（抜粋）
+  - 原則として `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を通過
+  - 影響大の変更は機能フラグ既定OFFで導入し、E2E は段階的に追従
+
+## 禁止事項/注意 <a id="cautions"></a>
+
+- `TASKS.md` に未反映の作業を行わない（記録なき変更を禁止）
+- 大規模な無関連修正をまとめて行わない（スコープ逸脱禁止）
+- フラグを既定ONに切り替える前に回帰・ロールバック手順を文書化する
+- コード内コメントは英語、会話/ドキュメントは日本語（本プロジェクト規約）
+
+## 失敗時の取り扱い <a id="failure-handling"></a>
+
+- `pnpm typecheck` やテストが失敗した場合
+  - 運用ログに `blocked: <要因>` を追記し、原因を最小差分へ分割
+  - 小粒PRへ切出し、先に解消を優先（必要に応じてドラフトPR化）
+- フラグにより切戻し可能にしておく（既定OFF）。回復までの一時回避として OFF で運用
 
 ## 今日の着手（運用ログ） <a id="worklog-3"></a>
 

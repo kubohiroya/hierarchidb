@@ -5,7 +5,6 @@
     "incremental": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": ".",
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "lib": [
@@ -18,9 +17,6 @@
     "paths": {
       "~/*": [
         "src/*"
-      ],
-      "@hierarchidb/common-type": [
-        "../../common/types/src/index.ts"
       ]
     }
   },

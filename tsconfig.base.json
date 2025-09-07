@@ -7,6 +7,7 @@
       "dom"
     ],
     "moduleResolution": "node",
+    "baseUrl": ".",
     "strict": true,
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
@@ -45,8 +46,20 @@
       "@hierarchidb/runtime-shared-batch-processor": [
         "./packages/runtime-shared/batch-processor/src/index.ts"
       ],
+      "@hierarchidb/download": [
+        "./packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/auth-recovery": [
+        "./packages/feature/auth-recovery/src/index.ts"
+      ],
       "@hierarchidb/table-metadata": [
         "./packages/feature/table-metadata/src/index.ts"
+      ],
+      "@hierarchidb/ui-data-grid": [
+        "./packages/ui/data-grid/src/index.ts"
+      ],
+      "@hierarchidb/tabular-store": [
+        "./packages/feature/tabular-store/src/index.ts"
       ]
     }
   },

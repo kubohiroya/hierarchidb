@@ -7,9 +7,10 @@
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "paths": {
-      "~/*": [
-        "./src/*"
-      ]
+      "~/*": ["./src/*"],
+      "@hierarchidb/ui-data-grid": ["./packages/ui/data-grid/src/index.ts"],
+      "@hierarchidb/table-metadata": ["./packages/feature/table-metadata/src/index.ts"],
+      "@hierarchidb/tabular-store": ["./packages/feature/tabular-store/src/index.ts"]
     },
     "jsx": "react-jsx",
     "types": ["node"],
