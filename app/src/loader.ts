@@ -11,6 +11,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import { useRouteLoaderData } from 'react-router';
 import { loadAppConfig } from '~/loadAppConfig';
 import type { LoadAppConfigReturn } from '~/loadAppConfig';
+import { normalizeNodeType } from '~/utils/nodeTypeNormalize';
 export type { LoadAppConfigReturn };
 
 export type LoadWorkerAPIClientReturn = {
@@ -251,7 +252,7 @@ export async function loadNodeType({
   });
   return {
     ...loadTargetNodeReturn,
-    nodeType: nodeType as NodeType | undefined,
+    nodeType: normalizeNodeType(nodeType),
   };
 }
 
