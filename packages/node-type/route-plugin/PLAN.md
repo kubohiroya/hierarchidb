@@ -26,6 +26,25 @@ Last Updated: 2025-09-06
 - Vector Tiles: if MVT generation exists in shape pipeline (or documented as planned), factor common parts into shared steps; otherwise keep tiler as optional follow‑up, not a blocker for the first delivery.
 - Engine adapters: check for existing `feature/route-searoute` and any OSRM client. Implement thin adapters that conform to a common engine interface.
 
+## 1.B.1 Cross-Plugin Sharing
+
+The route batch processing implementation prioritizes shared infrastructure to reduce duplication and ensure consistency across plugins:
+
+### Progress Management (Shared)
+- **ProgressEmitter/Store**: Use `@hierarchidb/runtime-shared-batch-processor` for unified progress tracking across all plugins (route, shape, location)
+- **UI Components**: Progress bars and live progress indicators should reference shared progress types
+- **Elimination**: Remove local progress implementations in route-plugin to prevent divergence
+
+### Batch Session Architecture (Shared)
+- **AbstractBatchSession**: Base class from `@hierarchidb/runtime-shared-batch-processor` provides session lifecycle, pause/resume, and persistence
+- **Lane Management**: Session-level concurrency control with configurable lane caps (osrm=1, searoute=3, local=64)
+- **Download Service**: Unified `@hierarchidb/download` with auth recovery for external API calls
+
+### Engine Architecture (Route-Specific)
+- **RouteGenerator**: Maintains plugin-specific routing logic with injected engine dependencies
+- **Engine Providers**: Abstract interfaces (RouteEnginesProvider) allow mock testing and implementation swapping
+- **Integration**: Wire external services (OSRM, searoute) through dependency injection rather than hard-coded clients
+
 ## 1.C Project Alignment (Concrete Anchors)
 
 - Route batch orchestration must extend existing scaffolding:
