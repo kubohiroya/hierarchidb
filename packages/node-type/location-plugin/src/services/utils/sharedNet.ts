@@ -1,6 +1,5 @@
 import { createSharedDownloadService, postJson } from '@hierarchidb/runtime-shared/batch-processor/src/downloadAdapter';
 
-
 let cached: Promise<ReturnType<typeof createSharedDownloadService>> | undefined;
 
 async function ensure() {
@@ -26,4 +25,3 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
 }
 
 export { postJson };
-

@@ -19,7 +19,6 @@ export class LocationBatchSessionManager {
   ): Promise<SessionSummary> {
     const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new SessionController(sessionId, nodeId, points, settings);
-    this.controllers.set(sessionId, controller);
     const bbox = computeBbox(points);
     const summary: SessionSummary = {
       sessionId,

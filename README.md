@@ -32,13 +32,6 @@ High-performance tree-structured data management framework for browser environme
   - `ROUTE_TABULAR=1`
 ※ ノードの統合的なシリアライズ/デシリアライズは従来どおり Import/Export を利用してください。
 
-### Sea Routing（searoute-js 統合）
-- ルートプラグインの `searoute` モードで海上経路を計算できます（既定OFF）。
-- 有効化手順:
-  - 依存追加: `pnpm add searoute`（または互換の `searoute-js`）
-  - フラグON: `WORKER_FEATURE_ROUTE_SEAROUTE=1`（または `globalThis.FEATURE_FLAGS.ROUTE_SEAROUTE = true`）
-- 実装は動的 import でライブラリ不在時は自動フォールバック（大圏/直線）。
-
 ## 技術スタック
 
 - **Frontend**: React 18, React Router v7, Material-UI v6
