@@ -20,7 +20,6 @@ async function main() {
     console.error('[licenses] Failed to load license-checker. Ensure it is installed.');
     console.error(String(err));
     process.exit(2);
-    return;
   }
 
   const opts: Record<string, any> = {
@@ -39,10 +38,9 @@ async function main() {
         // Do not block the build on analysis failure; exit code 1 will break prebuild.
         // Exit 3 to signal analysis tool error specifically.
         process.exit(3);
-        return;
       }
 
-      const entries = Object.entries(packages).filter(([name, info]) => {
+      const entries = Object.entries(packages).filter(([_name, info]) => {
         // Ignore workspace paths (node_modules/.pnpm links still have paths)
         const p = (info as any).path as string | undefined;
         return !p || !p.includes(path.sep + 'packages' + path.sep);
