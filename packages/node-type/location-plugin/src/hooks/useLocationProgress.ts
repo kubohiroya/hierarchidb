@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService';
-import { useBatchProgress, type UnifiedProgressInfo } from '@hierarchidb/ui-core/src/hooks/useBatchProgress';
+import { useBatchProgress } from '@hierarchidb/ui-core/src/hooks/useBatchProgress';
+import { createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core/src/hooks/progressAdapters';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 
 export interface UseLocationProgressOptions {
@@ -35,17 +36,7 @@ export function useLocationProgress(
 
   // Unified adapter for shared hook
   const adapter = sessionId
-    ? {
-        subscribe: (cb: (u: UnifiedProgressInfo) => void) =>
-          service.onProgress(sessionId, (p) => cb({
-            stage: p.stage,
-            total: p.total,
-            completed: p.completed,
-            failed: p.failed,
-            percentage: p.percentage,
-            currentTask: p.currentTask,
-          })),
-      }
+    ? createAdapterFromProgressSubscribe((cb) => service.onProgress(sessionId, cb))
     : null;
   const shared = useBatchProgress(adapter, { autoSubscribe });
 
