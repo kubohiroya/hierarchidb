@@ -32,7 +32,6 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*",
     "dexie": "^4.2.0",
     "searoute-js": "^0.1.0"
   },
