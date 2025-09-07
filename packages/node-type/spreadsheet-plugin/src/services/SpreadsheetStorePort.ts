@@ -8,7 +8,8 @@ import type {
 } from '@hierarchidb/tabular';
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
-import type { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
+import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';
+import type { CSVTableMetadataLike } from '@hierarchidb/table-metadata/src/table/SimpleTableMetadataManager';
 import { calculateFileHash, calculateTextHash } from '../utils/hashUtils';
 import { getDBName } from '@hierarchidb/util';
 
@@ -20,7 +21,7 @@ type SessionData = {
   startRowIndex: number;
 };
 
-export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> {
+export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLike> {
   private tableManager: SimpleTableMetadataManager;
   private db: SpreadsheetDatabase;
   private sessions = new Map<string, SessionData>();
@@ -77,10 +78,10 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadata> 
     s.startRowIndex += chunk.rows.length;
   }
 
-  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadata>> {
+  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadataLike>> {
     const s = this.sessions.get(session.id)!;
     // Build CSVTableMetadata
-    const metadata: CSVTableMetadata = {
+    const metadata: CSVTableMetadataLike = {
       id: session.id,
       filename: s.filename,
       contentHash: s.contentHash,

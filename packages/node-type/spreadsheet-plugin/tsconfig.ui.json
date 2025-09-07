@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/steps/**/*.tsx", "src/types/**/*.ts", "src/ui/facade/**/*.ts"],
+  "exclude": ["dist", "node_modules", "src/worker/**", "src/services/**", "**/*.test.*", "**/*.spec.*"]
+}

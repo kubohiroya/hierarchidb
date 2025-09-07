@@ -18,7 +18,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "typecheck:ui": "tsc --noEmit",
+    "typecheck:ui": "tsc -p tsconfig.ui.json --noEmit",
     "typecheck": "pnpm -s typecheck:ui",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"

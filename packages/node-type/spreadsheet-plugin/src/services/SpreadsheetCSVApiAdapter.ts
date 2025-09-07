@@ -18,7 +18,8 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
 
   async uploadCSVFile(file: File, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
     const driver = new SpreadsheetTabularDriver(this.pluginId);
-    return await driver.ingestFile(file);
+    // Driver returns a CSVTableMetadataLike; cast to strict metadata for UI boundary.
+    return (await driver.ingestFile(file)) as unknown as CSVTableMetadata;
   }
 
   async downloadCSVFromUrl(url: string, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
