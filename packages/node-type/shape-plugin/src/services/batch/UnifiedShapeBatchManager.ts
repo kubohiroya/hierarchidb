@@ -6,33 +6,21 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { IBatchSessionManager, BatchSessionStatus, BatchProgressCallback } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { createUnifiedBatchManagerFacade } from '@hierarchidb/runtime-shared-batch-processor';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager';
 import type { BatchProcessConfig } from './types';
-import type { UrlMetadata } from '../../types';
+import type { UrlMetadata } from '../../shared/types';
 
 /**
  * Unified shape batch manager implementing the standard interface
  */
 export class UnifiedShapeBatchManager implements IBatchSessionManager {
   private manager: BatchSessionManager;
-  private facade: IBatchSessionManager;
 
   constructor() {
     this.manager = new BatchSessionManager();
     
     // Initialize manager
     this.manager.initialize().catch(console.error);
-    
-    // Create facade using the factory function
-    this.facade = createUnifiedBatchManagerFacade(this.manager, {
-      startMethod: 'createSession',
-      pauseMethod: 'pauseSession',
-      resumeMethod: 'resumeSession',
-      cancelMethod: 'cancelSession',
-      statusMethod: 'getSessionStatus',
-      progressMethod: 'onProgress',
-    });
   }
 
   async startBatchSession(nodeId: NodeId, config: ShapeBatchConfig, data?: ShapeBatchData): Promise<string> {
@@ -56,7 +44,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     };
 
     const session = await this.manager.createSession(nodeId, batchProcessConfig, data.urlMetadata, options);
-    return session.sessionId;
+    return session.sessionId as string;
   }
 
   async pauseBatchSession(sessionId: string): Promise<void> {
@@ -83,7 +71,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       startedAt: status.session.startedAt,
       completedAt: status.session.completedAt,
       lastActivity: status.session.updatedAt,
-      error: status.errors.length > 0 ? status.errors[0].error : undefined,
+      error: status.errors && status.errors.length > 0 ? status.errors[0]?.error : undefined,
     };
   }
 
@@ -98,7 +86,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
         failed: progress.failed,
         percentage: progress.percentage,
         currentTask: progress.currentTask,
-        estimatedTimeRemaining: progress.estimatedTimeRemaining,
+        estimatedTimeRemaining: undefined, // ProgressInfo doesn't have this field
       });
     });
 
