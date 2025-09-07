@@ -314,6 +314,7 @@ export class StylerEntityHandler extends BaseEntityHandler<StylerEntity> {
 }
 ```
 
+
 データベースは CoreDB（共通）とプラグイン専用 DB を分離し、Worker 内でトランザクション一貫性を担保します。
 
 ## ✅ 開発チェックリスト（最新版）
@@ -367,6 +368,7 @@ export class StylerEntityHandler extends BaseEntityHandler<StylerEntity> {
 | **fake-indexeddb** | テスト環境 | IndexedDBモック |
 | **Turborepo** | モノレポ管理 | 高速ビルド・キャッシュ |
 | **pnpm** | パッケージ管理 | ワークスペース管理 |
+
 
 
 ## 📚 詳細ドキュメント
