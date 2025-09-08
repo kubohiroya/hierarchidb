@@ -92,7 +92,7 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)(terser@5.43.1))
       change-case:
         specifier: ^5.4.4
         version: 5.4.4
@@ -144,6 +144,9 @@ importers:
       minimist:
         specifier: ^1.2.8
         version: 1.2.8
+      mrtask:
+        specifier: ^0.3.0
+        version: 0.3.0
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -673,9 +676,6 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
     devDependencies:
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
       tsup:
         specifier: ^8.0.1
         version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
@@ -780,18 +780,12 @@ importers:
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
-      '@hierarchidb/runtime-worker':
-        specifier: workspace:*
-        version: link:../../runtime-worker/worker
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../feature/tag
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
-      '@hierarchidb/ui-dialog':
-        specifier: workspace:*
-        version: link:../../ui/dialog
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -2424,7 +2418,7 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1))
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -6948,6 +6942,10 @@ packages:
   comlink@4.4.2:
     resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+
   commander@13.1.0:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
     engines: {node: '>=18'}
@@ -8685,6 +8683,11 @@ packages:
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
+
+  mrtask@0.3.0:
+    resolution: {integrity: sha512-h7oFNuHI6KFrOwKM2OGGC0oAiqjReFoP+r3xgPzyWm6LodckPHo06mtZJByrIrdL8+17JI/HPvhDeh9VAhzvyA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -15553,7 +15556,7 @@ snapshots:
       vite: 5.4.19(@types/node@18.19.123)(terser@5.43.1)
       vitefu: 1.1.1(vite@5.4.19(@types/node@18.19.123)(terser@5.43.1))
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4)':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)(terser@5.43.1))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -15569,6 +15572,25 @@ snapshots:
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)(terser@5.43.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 1.0.2
+      ast-v8-to-istanbul: 0.3.4
+      debug: 4.4.1
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.18
+      magicast: 0.3.5
+      std-env: 3.9.0
+      test-exclude: 7.0.1
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -16139,6 +16161,8 @@ snapshots:
       delayed-stream: 1.0.0
 
   comlink@4.4.2: {}
+
+  commander@12.1.0: {}
 
   commander@13.1.0: {}
 
@@ -18229,6 +18253,12 @@ snapshots:
   moment@2.30.1: {}
 
   mrmime@2.0.1: {}
+
+  mrtask@0.3.0:
+    dependencies:
+      commander: 12.1.0
+      fast-glob: 3.3.3
+      yaml: 2.8.1
 
   ms@2.1.3: {}
 
@@ -20533,8 +20563,7 @@ snapshots:
 
   yaml@1.10.2: {}
 
-  yaml@2.8.1:
-    optional: true
+  yaml@2.8.1: {}
 
   yocto-queue@0.1.0: {}
 

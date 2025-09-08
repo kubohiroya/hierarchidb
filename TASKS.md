@@ -53,22 +53,7 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
- - （空）
-
-- test/base-plugin/minimal-unit（最小ユニットテストの追加）
-  - ブランチ: `test/base-plugin/minimal-unit`
-  - 依存: なし
-  - スコープ:
-    - `BaseEntityHandler` のハッピーパス/エラー系（各1）
-    - `HierarchicalEntityHandler` のハッピーパス/エラー系（各1）
-  - 受け入れ基準（DoD）:
-    - [ ] `@hierarchidb/base-plugin` のユニットテストが追加され `pnpm --filter @hierarchidb/base-plugin test` がグリーン
-    - [ ] 主要な基本契約（create/get、tree 操作の基本、存在しないID更新時のエラー等）が検出可能
-  - ロールバック手順:
-    - テスト追加のみのため、当該コミットを revert すれば即復旧
-  - 運用ログ:
-    - start: 2025-09-07 `BaseEntityHandler/HierarchicalEntityHandler` の最小テスト方針を確定し、実装着手。
-    - updated: 2025-09-07 `pnpm --filter @hierarchidb/base-plugin exec vitest run` がグリーン（ローカル設定で実行）。
+ 
 
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
   - ブランチ: `feat/route/batch-processing-implementation`
@@ -96,6 +81,10 @@
     - route-plugin 側で共有参照を戻し、ローカル ProgressEmitter/Store を復活させる（git revert）。
     - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
   - 現状: レーン別セマフォと最小テストまで完了（RouteBatchSessionに実装、Session/Managerのテスト整備）。ドキュメント（PLAN.md 抜粋追記）のみ未了。
+
+<!-- moved to Doing: feat/common/progress-stage-vocab-unify -->
+
+<!-- moved to Doing: feat/location/batch-session-v2 -->
   - 運用ログ:
     - updated: 2025-09-07 19:45 進捗同期（前半完了・残タスク明記）。
     - updated: 2025-09-07 20:10 レーン別セマフォ実装とテスト確認（Session/Manager）。
@@ -175,6 +164,21 @@
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/node-type/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
+
+優先実施順（インデックス）
+1) feat/route/progress-controls-pause-resume（Pause/Resume UI）
+2) feat/common/lane-semaphores（Shape/Location への横展開）
+3) refactor/shape/batch-to-session（Batch責務のSession集約）
+4) feat/location/stepper-migration-and-wiring（4ステップ化＋配線）
+5) feat/route/engine-registry（エンジン切替レジストリ）
+6) feat/route/vector-tiler-lite（ベクタータイル軽量化）
+7) feat/common/validation-pipeline（検証/フィルタ共通化）
+8) feat/ui/ui-batch-wizard（ウィザード共通部品）
+9) feat/spreadsheet/steps-impl-minimum + feat/spreadsheet/filtering-ui（統合）
+10) feat/styler/preview-stub-and-config-io + feat/styler/jenks-equal-interval（統合）
+11) feat/location/auth-registry-integration（認証連携）
+12) fix/resolver/error-notify（エラー通知）
+13) test/base-plugin/minimal-unit（最小ユニット）
 
 — UI-DESIGN.md 反映タスク（最小復旧プランの実装） —
 
@@ -537,22 +541,7 @@
   - 受け入れ基準（DoD）: 実装・ドキュメント更新・移行ガイド追記を完了。
   - ロールバック手順: DB 名のデフォルト引数を旧名へ差し戻し。
 
-// 追加: route のバッチ処理 実装着手（仕様確認→実装）
-- feat/route/batch-processing-implementation（Route プラグインにバッチ処理基盤を実装）
-  - ブランチ: `feat/route/batch-processing-implementation`
-  - 依存: 仕様確認（要求事項の再確認）、README 比較表の更新完了
-  - 背景: 仕様としてバッチ処理（セッション/タスク/進捗・再試行・キャッシュ）を指示済み。現状コードに基盤未確認のため実装を進める。
-  - 方針:
-    - [ ] 仕様確認: 入力（開始/終了地点、経路種別、制約）、出力（経路、統計、コスト）、タスク分割（候補生成→評価→選択）、失敗時リトライ、TTL付きキャッシュの扱い。
-    - [ ] DB 設計: `RouteDB` に `batchSessions`/`batchTasks` テーブルを追加（Shape準拠の簡易版）または専用 Ephemeral DB を導入し、統計/進捗/ログを保持。
-    - [ ] API: Worker に `startRouteBatch`, `getBatchStatus`, `cancelBatch`, `resumeBatch` を追加。UI には最小の監視UIを後続で。
-    - [ ] 実装: 並列度・キャンセル・チェックポイント・キャッシュ利用方針（`routeCache` 再利用）を反映。
-    - [ ] テスト: ユニット（分割・リトライ・キャッシュ・キャンセル）＋統合（小規模データでの完走）
-  - 受け入れ基準（DoD）:
-    - [ ] Worker API 経由でバッチ開始→進捗取得→完了/キャンセルが可能。
-    - [ ] 失敗タスクの自動/手動リトライ・再開が機能。
-    - [ ] `pnpm --filter @hierarchidb/route-plugin test` がグリーン。RouteDB のキャッシュ/バッチ表の整合性が取れている。
-  - ロールバック手順: 追加 API/テーブル定義差分をリバート（既存 `RouteDB` と `routeCache` は維持）。
+<!-- removed duplicate: feat/route/batch-processing-implementation (already in Doing) -->
 
 // 追加: DB/テーブル名の統一（実装完了）
 - chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
@@ -1427,6 +1416,11 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
+  - ブランチ: `chore/node-type/unify-dexie-db-names` → main 反映済（2025-09-07）
+  - 要点: NodeType 系 Entities DB のデフォルト名を `*-entities-db` に統一。README/TASKS.md の更新と移行ガイドを整備。
+  - ロールバック: 旧 DB 名に戻すのみ（局所復旧可能）。
 
 - chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
   - ブランチ: `chore/db/unify-dexie-names-and-tables` → main 反映済（2025-09-07）
