@@ -55,6 +55,21 @@
 
  - （空）
 
+- test/base-plugin/minimal-unit（最小ユニットテストの追加）
+  - ブランチ: `test/base-plugin/minimal-unit`
+  - 依存: なし
+  - スコープ:
+    - `BaseEntityHandler` のハッピーパス/エラー系（各1）
+    - `HierarchicalEntityHandler` のハッピーパス/エラー系（各1）
+  - 受け入れ基準（DoD）:
+    - [ ] `@hierarchidb/base-plugin` のユニットテストが追加され `pnpm --filter @hierarchidb/base-plugin test` がグリーン
+    - [ ] 主要な基本契約（create/get、tree 操作の基本、存在しないID更新時のエラー等）が検出可能
+  - ロールバック手順:
+    - テスト追加のみのため、当該コミットを revert すれば即復旧
+  - 運用ログ:
+    - start: 2025-09-07 `BaseEntityHandler/HierarchicalEntityHandler` の最小テスト方針を確定し、実装着手。
+    - updated: 2025-09-07 `pnpm --filter @hierarchidb/base-plugin exec vitest run` がグリーン（ローカル設定で実行）。
+
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
   - ブランチ: `feat/route/batch-processing-implementation`
   - 依存: `@hierarchidb/batch`（workspace） / `@hierarchidb/download`（net.port, retry/rps） / `@hierarchidb/runtime-shared-batch-processor`
