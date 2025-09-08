@@ -1,4 +1,4 @@
-@hierarchidb/check-deps について（日本語）
+dep-fence について（日本語）
 
 このパッケージは、モノレポにおける依存関係/TypeScriptポリシーを「条件（属性）と理由」で表現し、常に“なぜ”を出力できるようにする薄いチェッカーです。
 
@@ -32,12 +32,12 @@
 - 条件 DSL: all(...), any(...), not(...) と isUI(), isPublishable(), usesTsup() 等
 - 理由つき指摘: すべての Finding に「Because: <理由>」を表示
 - 型付きポリシー: TypeScript で安全にルール記述
-- CLI: hdb-check-deps [--strict]
+- CLI: dep-fence [--strict]
 
 クイックスタート
 1) リポジトリに導入（このリポのようにツール用パッケージとして保持してもOK）。
-2) 必要なら、リポジトリ直下に check-deps.config.ts を作成して既定ポリシーを上書き。
-3) 実行: hdb-check-deps（--strict で ERROR 時に非ゼロ終了）。
+2) 必要なら、リポジトリ直下に dep-fence.config.ts を作成して既定ポリシーを上書き。
+3) 実行: dep-fence（--strict で ERROR 時に非ゼロ終了）。
 
 同梱ポリシー（概要）
 - UI（公開物）: React/MUI を peer に、バンドル禁止、peer ⊆ tsup.externals を担保
@@ -46,4 +46,4 @@
 - TSX あり: jsx: react-jsx を推奨/要求
 - skipLibCheck: 例外許可または理由明示がない限り禁止
 
-詳細は packages/tools/check-deps/src/config.default.ts を参照してください。
+詳細はパッケージ内の `src/config.default.ts` を参照してください。

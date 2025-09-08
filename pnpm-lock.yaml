@@ -96,6 +96,9 @@ importers:
       change-case:
         specifier: ^5.4.4
         version: 5.4.4
+      dep-fence:
+        specifier: ^0.1.0
+        version: 0.1.0
       eslint:
         specifier: ^9.34.0
         version: 9.34.0(jiti@1.21.7)
@@ -670,6 +673,9 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
     devDependencies:
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       tsup:
         specifier: ^8.0.1
         version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
@@ -774,12 +780,18 @@ importers:
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../feature/tag
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../../ui/dialog
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1846,18 +1858,6 @@ importers:
       license-checker:
         specifier: ^25.0.1
         version: 25.0.1
-
-  packages/tools/check-deps:
-    devDependencies:
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
-      tsx:
-        specifier: ^4.20.5
-        version: 4.20.5
-      typescript:
-        specifier: 4.9.5
-        version: 4.9.5
 
   packages/tools/vite-plugin-package-reader:
     dependencies:
@@ -7245,6 +7245,11 @@ packages:
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+
+  dep-fence@0.1.0:
+    resolution: {integrity: sha512-DKucfFG3A6FsebpVbbNGQqK7/OlLi/Kai0iiHCTS2d4MOkGGkUQ0M+02EUhGfPi01FclNmwxjDcF7OR40Zcn1w==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   detect-libc@2.0.4:
     resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
@@ -16420,6 +16425,8 @@ snapshots:
   defu@6.1.4: {}
 
   delayed-stream@1.0.0: {}
+
+  dep-fence@0.1.0: {}
 
   detect-libc@2.0.4: {}
 
