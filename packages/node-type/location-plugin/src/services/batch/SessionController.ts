@@ -71,7 +71,7 @@ export class SessionController {
       if (enabled) {
         const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
         const writer = new TabularWriter('location');
-        const tableId = await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
+        await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
         const rows = featuresToRows(norm.features);
         // Write in chunks
         const CHUNK = 2000;

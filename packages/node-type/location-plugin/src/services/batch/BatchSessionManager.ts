@@ -55,7 +55,7 @@ export class LocationBatchSessionManager {
         // @ts-ignore
         await db.table('sessions').update(sessionId, { status: 'completed' });
       } catch {}
-    }).catch(async (e) => {
+    }).catch(async (e: any) => {
       console.error('Location session failed', e);
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');

@@ -865,6 +865,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1172,6 +1175,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
       '@hierarchidb/runtime-shared-fetch-metadata':
         specifier: workspace:*
         version: link:../../runtime-shared/fetch-metadata

@@ -1,9 +1,9 @@
-import { AbstractBatchSession } from '@hierarchidb/runtime-shared/batch-processor/src/AbstractBatchSession';
+import { AbstractBatchSession, type StandardProgressEvent, type BaseBatchConfig } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import type { ProgressInfo } from '../types';
 import { SessionController } from './SessionController';
 
-export interface ShapeBatchConfig { concurrency?: number }
+export interface ShapeBatchConfig extends BaseBatchConfig { concurrency?: number }
 export interface ShapeBatchTask { taskId: string; stage: string; }
 
 export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, ShapeBatchTask, void> {
@@ -24,6 +24,29 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
   protected async onComplete(): Promise<void> {}
   protected onProgressUpdate(): void {
     const p = this.getProgress();
-    this.sink?.({ sessionId: this['sessionId'] as any, stage: p.currentStage || 'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask || '' });
+    const event: StandardProgressEvent = {
+      sessionId: this.sessionId,
+      stage: p.currentStage || 'processing',
+      total: p.total,
+      completed: p.completed,
+      failed: p.failed,
+      percentage: Math.round(p.percentage),
+      currentTask: p.currentTask || '',
+    };
+    this.onStandardProgressUpdate(event);
+  }
+
+  protected onStandardProgressUpdate(event: StandardProgressEvent): void {
+    // Convert to legacy ProgressEvent for compatibility
+    const legacyEvent: ProgressEvent = {
+      sessionId: event.sessionId as any,
+      stage: event.stage,
+      total: event.total,
+      completed: event.completed,
+      failed: event.failed,
+      percentage: event.percentage,
+      currentTask: event.currentTask || '',
+    };
+    this.sink?.(legacyEvent);
   }
 }

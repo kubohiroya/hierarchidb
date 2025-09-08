@@ -4,6 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
+import type { IBatchControlCommands, StandardProgressEvent } from './BatchControlAPI';
 
 /**
  * Base configuration for all batch sessions
@@ -69,7 +70,7 @@ export abstract class AbstractBatchSession<
   TConfig extends BaseBatchConfig = BaseBatchConfig,
   _TTask = any,
   _TResult = any
-> {
+> implements IBatchControlCommands {
   protected sessionId: string;
   protected nodeId: NodeId;
   protected config: TConfig;
@@ -310,5 +311,28 @@ export abstract class AbstractBatchSession<
   /**
    * Called when progress is updated
    */
-  protected abstract onProgressUpdate(progress: BatchProgress): void;
+  protected onProgressUpdate(progress: BatchProgress): void {
+    // Default implementation: emit standardized progress event
+    const event: StandardProgressEvent = {
+      sessionId: this.sessionId,
+      stage: progress.currentStage || 'processing',
+      total: progress.total,
+      completed: progress.completed,
+      failed: progress.failed,
+      percentage: progress.percentage,
+      currentTask: progress.currentTask,
+      estimatedTimeRemaining: progress.estimatedTimeRemaining,
+    };
+    
+    this.onStandardProgressUpdate(event);
+  }
+
+  /**
+   * Called when standardized progress event is emitted
+   * Can be overridden by subclasses for custom handling
+   */
+  protected onStandardProgressUpdate(_event: StandardProgressEvent): void {
+    // Default implementation: no-op
+    // Subclasses should override this to emit progress to their specific systems
+  }
 }
