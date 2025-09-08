@@ -28,6 +28,7 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",

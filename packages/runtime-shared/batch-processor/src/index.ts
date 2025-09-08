@@ -45,3 +45,6 @@ export * from './downloadAdapter';
 // Core abstract base classes
 export * from './AbstractBatchSession';
 export * from './AbstractWorkerPoolManager';
+// Unified batch control API
+export * from './BatchControlAPI';
+export * from './BaseBatchSessionManager';

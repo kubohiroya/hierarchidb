@@ -7,13 +7,10 @@ const ROOT = process.cwd();
 const outDir = path.join(ROOT, 'artifacts');
 fs.mkdirSync(outDir, { recursive: true });
 
-// Ensure package is built
-spawnSync('pnpm', ['--filter', '@hierarchidb/check-deps', 'build'], { stdio: 'inherit' });
-
-// Run checker in JSON mode
-const res = spawnSync('node', ['packages/tools/check-deps/dist/cli.js', '--json'], { encoding: 'utf8' });
+// Run checker via its CLI binary installed as a devDependency
+const res = spawnSync('pnpm', ['exec', 'dep-fence', '--json'], { encoding: 'utf8' });
 const json = res.stdout || '{}';
-fs.writeFileSync(path.join(outDir, 'check-deps.json'), json);
+fs.writeFileSync(path.join(outDir, 'dep-fence.json'), json);
 
 let data;
 try { data = JSON.parse(json); } catch { data = { findings: [] }; }
@@ -42,6 +39,5 @@ for (const [pkg, cnt] of Array.from(byPkg.entries()).sort((a, b) => b[1] - a[1])
   md += `- ${pkg}: ${cnt}\n`;
 }
 
-fs.writeFileSync(path.join(outDir, 'check-deps-summary.md'), md);
+fs.writeFileSync(path.join(outDir, 'dep-fence-summary.md'), md);
 console.log(md);
-

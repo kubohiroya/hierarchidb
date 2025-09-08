@@ -1,4 +1,4 @@
-import { AbstractBatchSession, type BaseBatchConfig } from '@hierarchidb/runtime-shared-batch-processor';
+import { AbstractBatchSession, type BaseBatchConfig, type StandardProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
@@ -123,8 +123,30 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
 
   protected onProgressUpdate(_p: any): void {
     const p = this.getProgress();
-    const ev: ProgressEvent = { sessionId: this.sessionId, stage: p.currentStage || 'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask || '' };
-    try { this.progressSink?.(ev); } catch {}
+    const event: StandardProgressEvent = {
+      sessionId: this.sessionId,
+      stage: p.currentStage || 'processing',
+      total: p.total,
+      completed: p.completed,
+      failed: p.failed,
+      percentage: Math.round(p.percentage),
+      currentTask: p.currentTask || '',
+    };
+    this.onStandardProgressUpdate(event);
+  }
+
+  protected onStandardProgressUpdate(event: StandardProgressEvent): void {
+    // Convert to legacy ProgressEvent for compatibility
+    const legacyEvent: ProgressEvent = {
+      sessionId: event.sessionId,
+      stage: event.stage,
+      total: event.total,
+      completed: event.completed,
+      failed: event.failed,
+      percentage: event.percentage,
+      currentTask: event.currentTask || '',
+    };
+    try { this.progressSink?.(legacyEvent); } catch {}
   }
 
   private async processTask(task: RouteBatchTask): Promise<void> {

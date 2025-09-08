@@ -26,6 +26,11 @@ export * from './orchestrator/RouteBatchOrchestrationService';
 export * from './ui/hooks/useRouteBatchProgress';
 export * from './ui/components/RouteBatchProgressBar';
 export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabular-store';
+
+// Unified Batch Control API (API v2)
+export * from './services/UnifiedRouteBatchManager';
+export { RouteBatchManager } from './services/RouteBatchManager';
+
 // UI Hooks/Components (minimal)
 export * from './ui/hooks/useRouteBatchProgress';
 export * from './ui/components/RouteBatchProgressBar';

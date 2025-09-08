@@ -13,6 +13,10 @@ export * from './components/steps/LocationSelectionStep';
 export * from './components/batch/BatchProgressDialog';
 export * from './components/batch/LocationMapPreview';
 
+// Unified Batch Control API (API v2)
+export * from './services/batch/UnifiedLocationBatchManager';
+export { LocationBatchSessionManager } from './services/batch/BatchSessionManager';
+
 // Import and re-export the plugin definition
 export { LocationPluginDefinition } from './definitions/LocationDefinition';
 export { LocationPluginDefinition as default } from './definitions/LocationDefinition';

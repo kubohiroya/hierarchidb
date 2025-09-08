@@ -18,6 +18,10 @@ export { ShapeMetadata } from './shared/metadata';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types';
 export type { ShapeAPI } from './shared/api';
 
+// Unified Batch Control API (API v2)
+export * from './services/batch/UnifiedShapeBatchManager';
+export { BatchSessionManager as ShapeBatchSessionManager } from './services/batch/BatchSessionManager';
+
 // Batch processing exports are temporarily internal-only until type contracts are stabilized
 // Export plugin definition for worker fallback loading
 export { ShapePluginDefinition } from './definitions/ShapePluginDefinition';
