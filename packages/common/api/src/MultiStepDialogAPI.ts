@@ -3,14 +3,14 @@
  * @description API for managing multi-step dialog workflows with working copies
  */
 
-import type { EntityId, NodeId, ValidationResult } from '@hierarchidb/common-type';
+import type { NodeId, ValidationResult } from '@hierarchidb/common-type';
 import type { ProxyMarked } from 'comlink';
 
 /**
  * Working copy data structure
  */
 export interface WorkingCopyData {
-  id: EntityId;
+  id: NodeId;
   nodeType: string;
   parentNodeId?: NodeId;
   data: Record<string, any>;
@@ -47,7 +47,7 @@ export interface MultiStepDialogAPI {
    * @param parentNodeId - Optional parent node ID
    * @returns The ID of the created working copy
    */
-  createWorkingCopy(nodeType: string, parentNodeId?: NodeId): Promise<EntityId>;
+  createWorkingCopy(nodeType: string, parentNodeId?: NodeId): Promise<NodeId>;
 
   /**
    * Get a working copy by ID
@@ -55,7 +55,7 @@ export interface MultiStepDialogAPI {
    * @param workingCopyId - The ID of the working copy
    * @returns The working copy data or undefined if not found
    */
-  getWorkingCopy(workingCopyId: EntityId): Promise<WorkingCopyData | undefined>;
+  getWorkingCopy(workingCopyId: NodeId): Promise<WorkingCopyData | undefined>;
 
   /**
    * Update a working copy
@@ -65,8 +65,8 @@ export interface MultiStepDialogAPI {
    * @returns The updated working copy data
    */
   updateWorkingCopy(
-    workingCopyId: EntityId,
-    updates: Partial<WorkingCopyData>
+    workingCopyId: NodeId,
+    updates: Partial<WorkingCopyData>,
   ): Promise<WorkingCopyData>;
 
   /**
@@ -74,7 +74,7 @@ export interface MultiStepDialogAPI {
    *
    * @param workingCopyId - The ID of the working copy to delete
    */
-  deleteWorkingCopy(workingCopyId: EntityId): Promise<void>;
+  deleteWorkingCopy(workingCopyId: NodeId): Promise<void>;
 
   /**
    * Validate multiple working copies
@@ -82,7 +82,7 @@ export interface MultiStepDialogAPI {
    * @param workingCopyIds - Array of working copy IDs to validate
    * @returns Map of working copy IDs to validation results
    */
-  batchValidate(workingCopyIds: EntityId[]): Promise<Record<EntityId, ValidationResult>>;
+  batchValidate(workingCopyIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
 
   /**
    * Evaluate step capabilities for a working copy
@@ -91,7 +91,7 @@ export interface MultiStepDialogAPI {
    * @param step - The step number (0-based)
    * @returns The capabilities for the specified step
    */
-  evaluateCapabilities(workingCopyId: EntityId, step: number): Promise<StepCapabilities>;
+  evaluateCapabilities(workingCopyId: NodeId, step: number): Promise<StepCapabilities>;
 
   /**
    * Batch evaluate capabilities for multiple working copies and steps
@@ -100,8 +100,8 @@ export interface MultiStepDialogAPI {
    * @returns Map of working copy IDs to step capabilities
    */
   batchEvaluateCapabilities(
-    requests: Array<{ workingCopyId: EntityId; step: number }>
-  ): Promise<Record<EntityId, StepCapabilities>>;
+    requests: Array<{ workingCopyId: NodeId; step: number }>,
+  ): Promise<Record<NodeId, StepCapabilities>>;
 
   /**
    * Save a working copy as a permanent entity
@@ -109,7 +109,7 @@ export interface MultiStepDialogAPI {
    * @param workingCopyId - The ID of the working copy to save
    * @returns The ID of the created entity
    */
-  saveWorkingCopy(workingCopyId: EntityId): Promise<EntityId>;
+  saveWorkingCopy(workingCopyId: NodeId): Promise<NodeId>;
 }
 
 /**

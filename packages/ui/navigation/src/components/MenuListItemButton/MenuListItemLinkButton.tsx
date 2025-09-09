@@ -1,11 +1,5 @@
 // Local implementation - using provider-router-dom directly
-import {
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-} from '@mui/material';
+import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
 import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,9 +11,9 @@ export type MenuItemLinkType = {
 };
 
 export const MenuListItemLinkButton = ({
-  id,
-  items,
-}: {
+                                         id,
+                                         items,
+                                       }: {
   id: string;
   items: Array<MenuItemLinkType | null>;
 }) => {
@@ -69,7 +63,7 @@ export const MenuListItemLinkButton = ({
             </MenuItem>
           ) : (
             <MenuItem key={index} divider />
-          )
+          ),
         )}
       </Menu>
     </>

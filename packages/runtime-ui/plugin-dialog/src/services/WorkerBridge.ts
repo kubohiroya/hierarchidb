@@ -3,15 +3,11 @@
  * Manages communication between UI (Jotai) and Worker
  */
 
+import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
 import { NodeId } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { Remote } from 'comlink';
-import type { 
-  WorkingCopyData, 
-  ValidationResult, 
-  StepCapabilities 
-} from '../atoms/workingCopyAtoms';
+import type { StepCapabilities, ValidationResult, WorkingCopyData } from '../atoms/workingCopyAtoms';
 
 /**
  * Worker validation request
@@ -38,7 +34,7 @@ export interface CapabilitiesRequest {
 /**
  * Worker notification types
  */
-export type WorkerNotification = 
+export type WorkerNotification =
   | { type: 'validation'; result: ValidationResult }
   | { type: 'capabilities'; stepIndex: number; capabilities: StepCapabilities }
   | { type: 'workingCopyUpdated'; data: WorkingCopyData }
@@ -65,7 +61,7 @@ export class WorkerBridge {
       // Create Worker
       this.worker = new Worker(
         new URL('../../../worker/src/index.ts', import.meta.url),
-        { type: 'module' }
+        { type: 'module' },
       );
 
       // Wrap with Comlink
@@ -73,10 +69,10 @@ export class WorkerBridge {
 
       // MessageChannel setup removed as not implemented in WorkerAPI
       // const { port1, port2 } = new MessageChannel();
-      
+
       // Send port2 to Worker (remove this as setNotificationPort doesn't exist)
       // await this.api.setNotificationPort(Comlink.transfer(port2, [port2]));
-      
+
       // Listen for notifications on port1 (commented out as we're not using MessageChannel)
       // port1.onmessage = (event) => {
       //   this.handleWorkerNotification(event.data);
@@ -84,7 +80,7 @@ export class WorkerBridge {
 
       // Initialize Worker
       await this.api.initialize();
-      
+
       console.log('Worker Bridge initialized');
     } catch (error) {
       console.error('Failed to initialize Worker Bridge:', error);
@@ -164,7 +160,7 @@ export class WorkerBridge {
         const results: ValidationResult[] = [];
         // Suppress unused variable warning
         void requests;
-        
+
         // Send results to subscribers
         results.forEach(result => {
           this.handleWorkerNotification({
@@ -189,7 +185,7 @@ export class WorkerBridge {
       try {
         // batchEvaluateCapabilities method doesn't exist in WorkerAPI, skip for now
         const results: StepCapabilities[] = [];
-        
+
         // Send results to subscribers
         results.forEach((capabilities, index) => {
           const request = requests[index];
@@ -221,7 +217,7 @@ export class WorkerBridge {
     try {
       const workingCopyAPI = await this.api.getWorkingCopyAPI();
       const data = await workingCopyAPI.getWorkingCopy(nodeId);
-      
+
       if (!data) {
         throw new Error(`Working copy not found: ${nodeId}`);
       }
@@ -241,7 +237,7 @@ export class WorkerBridge {
   async saveWorkingCopy(
     nodeId: NodeId,
     _data: WorkingCopyData,
-    _asDraft: boolean = false
+    _asDraft: boolean = false,
   ): Promise<NodeId> {
     if (!this.api) {
       throw new Error('Worker API not initialized');
@@ -250,7 +246,7 @@ export class WorkerBridge {
     try {
       const workingCopyAPI = await this.api.getWorkingCopyAPI();
       const result = await workingCopyAPI.commitWorkingCopy(nodeId);
-      
+
       if (result.success) return nodeId;
       throw new Error(result.error || 'Commit failed');
     } catch (error) {
@@ -264,7 +260,7 @@ export class WorkerBridge {
    */
   async updateWorkingCopy(
     nodeId: NodeId,
-    _updates: Partial<WorkingCopyData>
+    _updates: Partial<WorkingCopyData>,
   ): Promise<void> {
     if (!this.api) {
       throw new Error('Worker API not initialized');
@@ -302,7 +298,7 @@ export class WorkerBridge {
    */
   async startBatch(
     nodeId: NodeId,
-    batchConfig: any
+    batchConfig: any,
   ): Promise<void> {
     if (!this.api) {
       throw new Error('Worker API not initialized');
@@ -325,12 +321,12 @@ export class WorkerBridge {
     if (this.processingTimeout) {
       clearTimeout(this.processingTimeout);
     }
-    
+
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
     }
-    
+
     this.api = null;
     this.subscribers.clear();
     this.validationQueue.clear();

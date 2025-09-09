@@ -6,13 +6,7 @@
  * until changes are committed or discarded.
  */
 
-import type {
-  NodeId,
-  TreeNode,
-  CommitResult,
-  ValidationResult,
-  NodeType,
-} from '@hierarchidb/common-type';
+import type { CommitResult, NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-type';
 
 /**
  * Working copy management API
@@ -46,7 +40,7 @@ export interface WorkingCopyAPI {
   createDraftWorkingCopy(
     nodeType: NodeType,
     parentId: NodeId,
-    initialData?: Partial<TreeNode>
+    initialData?: Partial<TreeNode>,
   ): Promise<TreeNode>;
 
   /**

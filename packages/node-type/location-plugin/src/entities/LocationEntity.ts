@@ -3,34 +3,28 @@
  * @description Location entity definition extending Shape plugin
  */
 
-import type { 
-  NodeId, 
-  EntityId, 
-  BaseEntity,
-  Timestamp 
-} from '@hierarchidb/common-type';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
 import type { BaseSearchCriteria } from '@hierarchidb/base-plugin';
 
 /**
  * Location type categories
  */
-export type LocationCategory = 
-  | 'transportation'  // 交通関連施設
-  | 'administrative' // 行政施設
-  | 'infrastructure' // インフラ施設
-  | 'commercial'     // 商業施設
-  | 'education'      // 教育施設
-  | 'healthcare'     // 医療施設
-  | 'leisure'        // レジャー施設
-  | 'cultural'       // 文化施設
-  | 'religious'      // 宗教施設
-  | 'natural';       // 自然地形
-
+export type LocationCategory =
+  | 'transportation'
+  | 'administrative'
+  | 'infrastructure'
+  | 'commercial'
+  | 'education'
+  | 'healthcare'
+  | 'leisure'
+  | 'cultural'
+  | 'religious'
+  | 'natural';
 /**
  * Specific location types
  */
-export type LocationType = 
-  // Transportation
+export type LocationType =
+// Transportation
   | 'airport'
   | 'railway_station'
   | 'bus_stop'
@@ -70,7 +64,7 @@ export type LocationType =
 /**
  * Data source for location data
  */
-export type LocationDataSource = 
+export type LocationDataSource =
   | 'openstreetmap'  // OpenStreetMap Nominatim/Overpass
   | 'geonames'       // GeoNames database
   | 'wikidata'       // Wikidata SPARQL
@@ -97,17 +91,17 @@ export interface LocationAttributes {
   osmId?: string;
   osmType?: 'node' | 'way' | 'relation';
   osmTags?: Record<string, string>;
-  
+
   // GeoNames-specific
   geonameId?: number;
   featureClass?: string;
   featureCode?: string;
   population?: number;
-  
+
   // Wikidata-specific
   wikidataId?: string;
   wikipediaUrl?: string;
-  
+
   // Common attributes
   alternateNames?: string[];
   website?: string;
@@ -123,29 +117,29 @@ export interface LocationAttributes {
  */
 export interface LocationEntity extends BaseEntity {
   // Entity ID
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
-  
+
   // Basic information
   name: string;
   description?: string;
   category: LocationCategory;
   type: LocationType;
   // Note: Tags are managed by Folder plugin, not stored here
-  
+
   // Metadata fields
   metadata?: Record<string, any>;
   customFields?: Record<string, any>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number;
-  
+
   // Geographic information
   point: LocationPoint;
   boundingBox?: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
   area?: number;                // Area in square meters
   perimeter?: number;            // Perimeter in meters
-  
+
   // Address information
   address?: {
     street?: string;
@@ -157,29 +151,29 @@ export interface LocationEntity extends BaseEntity {
     country?: string;
     countryCode?: string;
   };
-  
+
   // Data source information
   dataSource: LocationDataSource;
   dataSourceId?: string;
   attributes?: LocationAttributes;
   licenseAgreement: boolean;
   licenseAgreedAt?: number;
-  
+
   // Relations to other locations
   parentLocationId?: NodeId;     // Parent location (e.g., city for a building)
   childLocationIds?: NodeId[];   // Child locations
   nearbyLocationIds?: NodeId[];  // Nearby related locations
-  
+
   // Shape plugin integration
-  relatedShapeId?: EntityId;     // Associated Shape entity
+  relatedShapeId?: NodeId;     // Associated Shape entity
   isShapeAnchor?: boolean;       // Is this a key point for shapes
-  
+
   // Processing metadata
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   processingError?: string;
   geocodingConfidence?: number;  // 0-1 confidence score
-  
+
   // Visualization properties
   icon?: {
     type: 'marker' | 'circle' | 'icon';
@@ -188,11 +182,11 @@ export interface LocationEntity extends BaseEntity {
     size?: number;
     anchor?: [number, number];  // Icon anchor point
   };
-  
+
   // Clustering configuration
   clusterGroup?: string;         // Clustering group identifier
   clusterPriority?: number;      // Priority in cluster (higher = more important)
-  
+
   // Search and filtering
   searchKeywords?: string[];     // Additional search keywords
   importance?: number;           // Importance score (0-1)
@@ -207,13 +201,13 @@ export interface LocationEntity extends BaseEntity {
  * Location working copy for editing
  */
 export interface LocationWorkingCopy extends LocationEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
   isDraft: boolean;
   copiedAt?: number;
   originalVersion?: number;
   modifiedFields?: string[];
-  
+
   // UI state for wizard
   selectedCountries?: string[];
   selectedTypes?: LocationType[];
@@ -267,16 +261,16 @@ export interface LocationSearchConfig {
     addressDetails?: boolean;
     extraTags?: boolean;
     nameDetails?: boolean;
-    
+
     // Overpass options
     overpassEndpoint?: string;
     overpassQuery?: string;
     timeout?: number;
-    
+
     // GeoNames options
     geonamesUsername?: string;
     featureClass?: string[];
-    
+
     // Custom options
     customEndpoint?: string;
     customHeaders?: Record<string, string>;

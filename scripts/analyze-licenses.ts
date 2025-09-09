@@ -10,7 +10,6 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// 自社（内部）パッケージの接頭辞をここで調整
 const INTERNAL_PREFIX = '@hierarchidb/';
 
 type LicenseField = string | string[] | undefined;
@@ -21,8 +20,7 @@ interface LicenseCheckerRaw {
   publisher?: string;
   email?: string;
   url?: string;
-  // 他にも出力されるが、本スクリプトでは未使用
-}
+  }
 
 interface FilteredEntry {
   licenses?: string | string[];
@@ -41,7 +39,7 @@ function normalizeLicense(lic: LicenseField): string {
 console.log('🔍 Analyzing project dependencies for license information...\n');
 
 try {
-  // license-checker 実行
+  //  license-checker
   const output = execSync('npx license-checker --json --excludePrivatePackages', {
     encoding: 'utf-8',
     maxBuffer: 1024 * 1024 * 10, // 10MB buffer
@@ -49,8 +47,7 @@ try {
 
   const licenseData = JSON.parse(output) as Record<string, LicenseCheckerRaw>;
 
-  // 内部パッケージを除外して整形
-  const filteredData: Record<string, FilteredEntry> = {};
+    const filteredData: Record<string, FilteredEntry> = {};
   for (const [packageName, info] of Object.entries(licenseData)) {
     if (!packageName.startsWith(INTERNAL_PREFIX)) {
       filteredData[packageName] = {
@@ -63,19 +60,16 @@ try {
     }
   }
 
-  // アプリで利用するために書き出し
-  const outputPath = path.join(process.cwd(), 'app', 'public', 'licenses.json');
+    const outputPath = path.join(process.cwd(), 'app', 'public', 'licenses.json');
 
-  // ディレクトリ作成
-  const dir = path.dirname(outputPath);
+    const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
   fs.writeFileSync(outputPath, JSON.stringify(filteredData, null, 2));
 
-  // ライセンス種別ごとに集計
-  const licenseCounts: Record<string, number> = {};
+    const licenseCounts: Record<string, number> = {};
   for (const info of Object.values(filteredData)) {
     const key = normalizeLicense(info.licenses);
     licenseCounts[key] = (licenseCounts[key] || 0) + 1;

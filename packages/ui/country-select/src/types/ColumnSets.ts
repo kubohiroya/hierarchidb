@@ -5,18 +5,18 @@
 
 import {
   AdminPanelSettings,
-  LocationCity,
   Business,
-  Home,
-  Flight,
   DirectionsBoat,
-  Train,
   DirectionsCar,
-  Public,
+  Flight,
+  Home,
   LocalShipping,
+  LocationCity,
+  Public,
+  Train,
 } from '@mui/icons-material';
 
-import type { ColumnSet, AdminLevelColumn, TransportHubColumn, RouteTypeColumn } from './MatrixColumn';
+import type { AdminLevelColumn, ColumnSet, RouteTypeColumn, TransportHubColumn } from './MatrixColumn';
 
 /** Administrative levels column set (for shapes/boundaries) */
 export const ADMIN_LEVELS_COLUMN_SET: ColumnSet = {

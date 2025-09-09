@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyledAccordion, StyledAccordionProps } from '../components/StyledAccordion';
-import { Settings, Save, Restore } from '@mui/icons-material';
-import { IconButton, Tooltip, Box } from '@mui/material';
+import { Restore, Save, Settings } from '@mui/icons-material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 
 export interface SettingsAccordionProps extends Omit<StyledAccordionProps, 'headerActions'> {
   /** Whether to show settings icon */
@@ -25,19 +25,19 @@ export interface SettingsAccordionProps extends Omit<StyledAccordionProps, 'head
  * Includes save/reset actions and change indicators
  */
 export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
-  showSettingsIcon = true,
-  hasChanges = false,
-  onSave,
-  onReset,
-  customActions,
-  saveTooltip = 'Save changes',
-  resetTooltip = 'Reset to defaults',
-  icon,
-  ...accordionProps
-}) => {
+                                                                      showSettingsIcon = true,
+                                                                      hasChanges = false,
+                                                                      onSave,
+                                                                      onReset,
+                                                                      customActions,
+                                                                      saveTooltip = 'Save changes',
+                                                                      resetTooltip = 'Reset to defaults',
+                                                                      icon,
+                                                                      ...accordionProps
+                                                                    }) => {
   const headerActions = React.useMemo(() => {
     const actions = [];
-    
+
     if (onSave) {
       actions.push(
         <Tooltip key="save" title={saveTooltip}>
@@ -54,10 +54,10 @@ export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
               <Save fontSize="small" />
             </IconButton>
           </span>
-        </Tooltip>
+        </Tooltip>,
       );
     }
-    
+
     if (onReset) {
       actions.push(
         <Tooltip key="reset" title={resetTooltip}>
@@ -70,18 +70,18 @@ export const SettingsAccordion: React.FC<SettingsAccordionProps> = ({
           >
             <Restore fontSize="small" />
           </IconButton>
-        </Tooltip>
+        </Tooltip>,
       );
     }
-    
+
     if (customActions) {
       actions.push(
         <React.Fragment key="custom">
           {customActions}
-        </React.Fragment>
+        </React.Fragment>,
       );
     }
-    
+
     return actions.length > 0 ? (
       <Box sx={{ display: 'flex', gap: 0.5 }}>
         {actions}

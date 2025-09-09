@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import { TextField, Grid as Grid } from '@mui/material';
+import React, { useCallback, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid as Grid,
+  TextField,
   Typography,
 } from '@mui/material';
 import { FolderIcon } from './FolderIcon';
@@ -38,11 +39,11 @@ export interface FolderCreateDialogProps {
  * Dialog for creating new folders
  */
 export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
-  parentId: _parentId,
-  onSubmit,
-  onCancel,
-  open = true,
-}) => {
+                                                                        parentId: _parentId,
+                                                                        onSubmit,
+                                                                        onCancel,
+                                                                        open = true,
+                                                                      }) => {
   const [formData, setFormData] = useState<FolderCreateData>({
     name: '',
     description: '',
@@ -79,7 +80,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
         });
       }
     },
-    [errors.name, formData.name]
+    [errors.name, formData.name],
   );
 
   // Handle form submission

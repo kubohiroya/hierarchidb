@@ -2,7 +2,7 @@
  * @fileoverview CommonDialog - Base base-dialog component for plugins
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { CommonDialogActions } from './CommonDialogActions';
@@ -39,25 +39,25 @@ export interface CommonPluginDialogProps {
 }
 
 export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
-  mode,
-  open,
-  nodeId,
-  parentId: _parentId, // TODO: Use for create mode
-  title,
-  subtitle,
-  isDraft = false,
-  icon,
-  children,
-  maxWidth = 'md',
-  fullScreen: initialFullScreen = false,
-  hasUnsavedChanges = false,
-  supportsDraft = false,
-  isValid = true,
-  onSubmit,
-  onSaveDraft,
-  onCancel,
-  additionalActions,
-}) => {
+                                                                  mode,
+                                                                  open,
+                                                                  nodeId,
+                                                                  parentId: _parentId, // TODO: Use for create mode
+                                                                  title,
+                                                                  subtitle,
+                                                                  isDraft = false,
+                                                                  icon,
+                                                                  children,
+                                                                  maxWidth = 'md',
+                                                                  fullScreen: initialFullScreen = false,
+                                                                  hasUnsavedChanges = false,
+                                                                  supportsDraft = false,
+                                                                  isValid = true,
+                                                                  onSubmit,
+                                                                  onSaveDraft,
+                                                                  onCancel,
+                                                                  additionalActions,
+                                                                }) => {
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,15 +122,15 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
         PaperProps={
           isFullscreen
             ? {
-                sx: {
-                  borderRadius: 2,
-                  m: 2,
-                  height: 'calc(100% - 32px)',
-                  width: 'calc(100% - 32px)',
-                  maxHeight: 'calc(100% - 32px)',
-                  maxWidth: 'calc(100% - 32px)',
-                },
-              }
+              sx: {
+                borderRadius: 2,
+                m: 2,
+                height: 'calc(100% - 32px)',
+                width: 'calc(100% - 32px)',
+                maxHeight: 'calc(100% - 32px)',
+                maxWidth: 'calc(100% - 32px)',
+              },
+            }
             : {}
         }
       >

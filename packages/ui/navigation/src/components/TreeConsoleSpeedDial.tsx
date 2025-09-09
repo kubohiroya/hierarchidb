@@ -1,22 +1,20 @@
 /**
- * TreeConsoleSpeedDialToBeRefactored - プラグインベースのSpeedDialメニュー
- *
- * プラグインから動的に作成オプションを生成し、
- * descriptionをツールチップとして表示
- */
+  * TreeConsoleSpeedDialToBeRefactored - SpeedDial
+   * description
+  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as FolderIcon,
-  Note as NoteIcon,
   Extension as ExtensionIcon,
+  Note as NoteIcon,
 } from '@mui/icons-material';
 
-import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
+import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
 
-// 拡張型定義（UIコンポーネント用のプロパティを追加）
+//  UI
 /*
 interface CorePluginDefinition extends BasePluginDefinition {
   description?: string;
@@ -32,8 +30,8 @@ interface TreeConsoleSpeedDialProps {
 }
 
 /**
- * MUIアイコン名から実際のアイコンコンポーネントを取得
- */
+  * MUI
+  */
 function getIconComponent(iconName?: string, emoji?: string) {
   switch (iconName) {
     case 'Folder':
@@ -45,7 +43,6 @@ function getIconComponent(iconName?: string, emoji?: string) {
     case 'Extension':
       return <ExtensionIcon />;
     default:
-      // 絵文字またはデフォルトアイコン
       if (emoji) {
         return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
       }
@@ -54,17 +51,16 @@ function getIconComponent(iconName?: string, emoji?: string) {
 }
 
 /**
- * プラグインベースのSpeedDialメニュー
- */
+  * SpeedDial
+  */
 export function TreeConsoleSpeedDial({
-  plugins = [],
-  onCreate,
-  position = { bottom: 16, right: 16 },
-  hidden = false,
-}: TreeConsoleSpeedDialProps) {
+                                       plugins = [],
+                                       onCreate,
+                                       position = { bottom: 16, right: 16 },
+                                       hidden = false,
+                                     }: TreeConsoleSpeedDialProps) {
   const [open, setOpen] = useState(false);
 
-  // プラグインを優先度順にソート
   const sortedPlugins = useMemo(() => {
     return [...plugins].sort((a, b) => {
       const priorityA = a.priority ?? 999;
@@ -111,7 +107,7 @@ export function TreeConsoleSpeedDial({
         const displayName = plugin.displayName || plugin.name;
         const icon = getIconComponent(plugin.icon?.muiIconName, plugin.icon?.emoji);
 
-        // descriptionがある場合はツールチップとして表示
+        //  description
         const tooltipTitle = plugin.description
           ? `${displayName}: ${plugin.description}`
           : displayName;
@@ -124,7 +120,6 @@ export function TreeConsoleSpeedDial({
             onClick={() => handleActionClick(plugin.nodeType)}
             sx={{
               color: plugin.icon?.color || 'inherit',
-              // ツールチップを長めに表示
               '& .MuiTooltip-tooltip': {
                 maxWidth: 300,
                 fontSize: '0.875rem',
@@ -134,7 +129,7 @@ export function TreeConsoleSpeedDial({
               size: 'medium',
               color: 'default',
             }}
-            // descriptionがある場合は長めのツールチップを表示
+            //  description
             tooltipOpen={plugin.description ? undefined : false}
             tooltipPlacement="left"
           />
@@ -145,8 +140,7 @@ export function TreeConsoleSpeedDial({
 }
 
 /**
- * デフォルトのプラグイン設定例
- */
+    */
 export const defaultPlugins: Partial<PluginDefinition>[] = [
   {
     nodeType: 'folder' as NodeType,

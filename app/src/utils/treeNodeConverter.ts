@@ -5,9 +5,8 @@
  * for use with TreeConsolePanel.
  */
 
-import type { TreeNode } from "@hierarchidb/common-type";
-import type { TreeNodeData } from "@hierarchidb/ui-treeconsole-base";
-import type { TreeTableColumn } from "@hierarchidb/ui-treeconsole-base";
+import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 
 /**
  * Convert TreeNode to TreeNodeData for UI display
@@ -39,39 +38,39 @@ export function convertTreeNodesToTreeNodeData(
 export function createDefaultColumns(): TreeTableColumn[] {
   return [
     {
-      id: "name",
-      label: "Name",
+      id: 'name',
+      label: 'Name',
       sortable: true,
       width: 300,
       render: (_value, node) => node.name,
     },
     {
-      id: "description",
-      label: "Description",
+      id: 'description',
+      label: 'Description',
       sortable: true,
       width: 300,
-      render: (_value, node) => node.description || "-",
+      render: (_value, node) => node.description || '-',
     },
     {
-      id: "createdAt",
-      label: "Created",
+      id: 'createdAt',
+      label: 'Created',
       sortable: true,
       width: 160,
       render: (_value, node) => {
         return node.createdAt
           ? new Date(node.createdAt).toLocaleDateString()
-          : "";
+          : '';
       },
     },
     {
-      id: "updatedAt",
-      label: "Modified",
+      id: 'updatedAt',
+      label: 'Modified',
       sortable: true,
       width: 160,
       render: (_value, node) => {
         return node.updatedAt
           ? new Date(node.updatedAt).toLocaleDateString()
-          : "";
+          : '';
       },
     },
   ];
@@ -120,26 +119,26 @@ export function filterTreeNodeData(
 export function sortTreeNodeData(
   nodes: TreeNodeData[],
   sortBy: string,
-  sortDirection: "asc" | "desc",
+  sortDirection: 'asc' | 'desc',
 ): TreeNodeData[] {
   return [...nodes].sort((a, b) => {
     let aValue: string | number;
     let bValue: string | number;
 
     switch (sortBy) {
-      case "name":
+      case 'name':
         aValue = a.name;
         bValue = b.name;
         break;
-      case "description":
-        aValue = a.description || "";
-        bValue = b.description || "";
+      case 'description':
+        aValue = a.description || '';
+        bValue = b.description || '';
         break;
-      case "createdAt":
+      case 'createdAt':
         aValue = a.createdAt || 0;
         bValue = b.createdAt || 0;
         break;
-      case "updatedAt":
+      case 'updatedAt':
         aValue = a.updatedAt || 0;
         bValue = b.updatedAt || 0;
         break;
@@ -149,20 +148,20 @@ export function sortTreeNodeData(
     }
 
     // Handle string comparison
-    if (typeof aValue === "string" && typeof bValue === "string") {
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
       const comparison = aValue.localeCompare(bValue);
-      return sortDirection === "asc" ? comparison : -comparison;
+      return sortDirection === 'asc' ? comparison : -comparison;
     }
 
     // Handle numeric comparison
-    if (typeof aValue === "number" && typeof bValue === "number") {
-      return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     }
 
     // Fallback to string comparison
     const aStr = String(aValue ?? '');
     const bStr = String(bValue ?? '');
     const comparison = aStr.localeCompare(bStr);
-    return sortDirection === "asc" ? comparison : -comparison;
+    return sortDirection === 'asc' ? comparison : -comparison;
   });
 }

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
+import type { FolderEntityExtended } from '../handlers/FolderEntityHandler';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import type { FolderEntity } from '../types/index';
-import type { FolderEntityExtended } from '../handlers/FolderEntityHandler';
 
 describe('FolderEntityHandler', () => {
   let handler: FolderEntityHandler;

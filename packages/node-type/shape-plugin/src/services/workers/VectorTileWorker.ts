@@ -26,16 +26,15 @@ import { toGeoJSONFeature } from '../../utils/featureConverter';
 
 import Protobuf from 'pbf';
 import type {
-  VectorTileWorkerAPI,
-  VectorTileTask,
-  VectorTileResult,
-  VectorTileTaskConfig,
+  LayerConfig,
   TileMetadata,
   ValidationResult,
-  LayerConfig,
-  //FeatureData,
+  VectorTileResult,
+  VectorTileTask,
+  VectorTileTaskConfig,
+  VectorTileWorkerAPI,
 } from '../types';
-import type { Feature } from '../../types';
+import type { Feature } from '../types';
 import type { NodeId } from '@hierarchidb/common-type';
 
 interface TileLayer {
@@ -122,7 +121,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       const processingTime = Date.now() - startTime;
       console.log(`VectorTileWorker: Completed ${task.taskId} in ${processingTime}ms`);
       console.log(
-        `Generated ${finalBuffer.byteLength} bytes MVT with quality ${qualityScore.toFixed(2)}`
+        `Generated ${finalBuffer.byteLength} bytes MVT with quality ${qualityScore.toFixed(2)}`,
       );
 
       return result;
@@ -305,7 +304,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private async transformFeaturesToTile(
     features: Feature[],
-    config: VectorTileTaskConfig
+    config: VectorTileTaskConfig,
   ): Promise<TileFeature[]> {
     const { zoomLevel, tileX, tileY, extent, buffer } = config;
     const tileFeatures: TileFeature[] = [];
@@ -357,7 +356,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
 
     for (const layerConfig of layerConfigs) {
       const layerFeatures = features.filter((feature) =>
-        this.featureMatchesLayer(feature, layerConfig)
+        this.featureMatchesLayer(feature, layerConfig),
       );
 
       if (layerFeatures.length > 0) {
@@ -378,7 +377,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private async encodeMVT(
     layers: TileLayer[],
-    _config: VectorTileTaskConfig
+    _config: VectorTileTaskConfig,
   ): Promise<ArrayBuffer> {
     // This is a simplified MVT encoding
     // Real implementation would use proper MVT encoder like @mapbox/vector-tile
@@ -417,7 +416,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   private calculateQualityScore(
     originalFeatures: Feature[],
     tileFeatures: TileFeature[],
-    config: VectorTileTaskConfig
+    config: VectorTileTaskConfig,
   ): number {
     try {
       // Feature preservation ratio
@@ -449,7 +448,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
   private transformGeometry(
     geometry: any,
     tileBounds: { minX: number; minY: number; maxX: number; maxY: number },
-    extent: number
+    extent: number,
   ): number[][] {
     const scaleX = extent / (tileBounds.maxX - tileBounds.minX);
     const scaleY = extent / (tileBounds.maxY - tileBounds.minY);
@@ -492,7 +491,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private featureIntersectsTile(
     feature: Feature,
-    bounds: { minX: number; minY: number; maxX: number; maxY: number }
+    bounds: { minX: number; minY: number; maxX: number; maxY: number },
   ): boolean {
     try {
       const featureBbox = turf.bbox(toGeoJSONFeature(feature));
@@ -569,7 +568,7 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
    */
   private filterProperties(
     properties: Record<string, any>,
-    layerConfigs: LayerConfig[]
+    layerConfigs: LayerConfig[],
   ): Record<string, any> {
     const filtered: Record<string, any> = {};
 
@@ -619,13 +618,13 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
 
       // In production, load from EphemeralDB
       console.log(`Loading tile buffer ${bufferId} from storage`);
-      
+
       const buffer = await this.ephemeralDB.tileBuffers.get(bufferId);
       if (buffer) {
         this.tileCache.set(bufferId, buffer.data);
         return new TextDecoder().decode(buffer.data);
       }
-      
+
       return null;
     } catch (error) {
       console.error(`Failed to load tile buffer ${bufferId}:`, error);
@@ -641,10 +640,10 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       // Save to cache for immediate access
       this.tileCache.set(tileId, tile);
       console.log(`Saved tile ${tileId} to cache (${this.formatBytes(tile.byteLength)})`);
-      
+
       // Calculate hash for integrity
       const hash = await this.calculateHash(tile);
-      
+
       // In production, persist to EphemeralDB
       // await this.ephemeralDB.vectorTiles.put({
       //   id: tileId,
@@ -654,9 +653,9 @@ export class VectorTileWorker implements VectorTileWorkerAPI {
       //   timestamp: Date.now(),
       //   contentType: 'application/vnd.mapbox-vector-tile'
       // });
-      
+
       console.log(`Tile ${tileId} saved with hash: ${hash.substring(0, 8)}...`);
-      
+
     } catch (error) {
       console.error(`Failed to save tile ${tileId}:`, error);
       throw error;

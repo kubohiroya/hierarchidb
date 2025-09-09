@@ -3,7 +3,7 @@
  * @description Low-level hook for drag operations
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Position } from '../types/WindowState';
 
 export interface UseDraggingOptions {
@@ -43,10 +43,10 @@ export function useDragging(options: UseDraggingOptions = {}): UseDraggingResult
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     dragStartPos.current = { x: rect.left, y: rect.top };
     initialMousePos.current = { x: e.clientX, y: e.clientY };
-    
+
     setIsDragging(true);
     onDragStart?.();
-    
+
     e.preventDefault();
   }, [onDragStart]);
 
@@ -56,7 +56,7 @@ export function useDragging(options: UseDraggingOptions = {}): UseDraggingResult
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - initialMousePos.current.x;
       const deltaY = e.clientY - initialMousePos.current.y;
-      
+
       let newX = dragStartPos.current.x + deltaX;
       let newY = dragStartPos.current.y + deltaY;
 
@@ -76,7 +76,7 @@ export function useDragging(options: UseDraggingOptions = {}): UseDraggingResult
     const handleMouseUp = (e: MouseEvent) => {
       const deltaX = e.clientX - initialMousePos.current.x;
       const deltaY = e.clientY - initialMousePos.current.y;
-      
+
       let finalX = dragStartPos.current.x + deltaX;
       let finalY = dragStartPos.current.y + deltaY;
 

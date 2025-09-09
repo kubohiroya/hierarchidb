@@ -18,6 +18,14 @@
 - `pnpm lint` / `pnpm format` / `pnpm typecheck`: ESLint, Prettier/Biome formatting, and TS checks.
 - `pnpm storybook`: Launch Storybook for UI packages.
 
+## Task Management (mrtask as SSOT)
+- SSOT: Tasks are managed with mrtask (YAML/CSV). Do not edit PLAN.md/TASKS.md.
+- Create: `mrtask add <branch> <slug> -d "desc" <dir1> [dir2 ...]` (runs `git worktree add`).
+- Complete/Cancel: `mrtask done|cancel <task.yml|branch>` (runs `git worktree remove`).
+- CSV import: prepare `TASKS.csv` with headers `branch,slug,description,dir1,dir2,...`, then `mrtask add -t TASKS.csv:<lineNo>`.
+- Worktrees: One task = one branch = one worktree. Use full package paths (no aliases).
+- Naming: Use full package names and stable task IDs in mrtask; avoid ad‑hoc abbreviations.
+
 ## Coding Style & Naming Conventions
 - Language: TypeScript, 2-space indent, 100-col width, single quotes, semicolons (Prettier, Biome).
 - Imports: Do not use relative paths; use aliases (`~`, `@hierarchidb/*`).

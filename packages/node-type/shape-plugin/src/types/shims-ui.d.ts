@@ -12,5 +12,6 @@ declare module '@hierarchidb/folder-plugin/ui' {
 declare module '@hierarchidb/runtime-base-dialog' {
   import * as React from 'react';
   export const StepperDialog: React.FC<any>;
+
   export function useWorkingCopy<T = any>(initial?: T): [T | null, (u: Partial<T>) => void];
 }

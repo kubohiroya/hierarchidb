@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from './BaseEntityHandler';
 
 interface TestEntity extends BaseEntity {
@@ -9,7 +9,8 @@ interface TestEntity extends BaseEntity {
 }
 
 class TestDb extends Dexie {
-  public testEntities!: Table<TestEntity, EntityId>;
+  public testEntities!: Table<TestEntity, NodeId>;
+
   constructor(name: string) {
     super(name);
     this.version(1).stores({
@@ -19,12 +20,14 @@ class TestDb extends Dexie {
 }
 
 class TestEntityHandler extends BaseEntityHandler<TestEntity> {
-  protected table: Table<TestEntity, EntityId>;
-  constructor(table: Table<TestEntity, EntityId>) {
+  protected table: Table<TestEntity, NodeId>;
+
+  constructor(table: Table<TestEntity, NodeId>) {
     super();
-    this.table = table as unknown as Table<TestEntity, EntityId, TestEntity>;
+    this.table = table as unknown as Table<TestEntity, NodeId, TestEntity>;
   }
-  protected buildEntity(nodeId: NodeId, entityId: EntityId, data: Partial<TestEntity>): TestEntity {
+
+  protected buildEntity(nodeId: NodeId, entityId: NodeId, data: Partial<TestEntity>): TestEntity {
     const now = Date.now();
     return {
       id: entityId,
@@ -59,10 +62,9 @@ describe('BaseEntityHandler (minimal)', () => {
   });
 
   it('error path: update non-existing entity should throw', async () => {
-    const missingId = 'missing-entity' as EntityId;
+    const missingId = 'missing-entity' as unknown as NodeId;
     await expect(handler.updateEntity(missingId, { name: 'x' } as Partial<TestEntity>)).rejects.toThrow(
       `Entity not found: ${missingId}`,
     );
   });
 });
-

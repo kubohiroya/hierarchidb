@@ -3,23 +3,9 @@
  * @description Customizable toast notification provider with hide/show functionality
  */
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
-import {
-  Alert,
-  AlertColor,
-  Box,
-  Button,
-  IconButton,
-  Snackbar,
-} from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { Alert, AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 /**
  * Toast notification configuration with enhanced customization
@@ -54,8 +40,8 @@ export interface ToastConfig {
   action?: {
     label: ReactNode;
     onClick: () => void;
-    color?: "inherit" | "primary" | "secondary";
-    variant?: "text" | "outlined" | "contained";
+    color?: 'inherit' | 'primary' | 'secondary';
+    variant?: 'text' | 'outlined' | 'contained';
   };
 
   /**
@@ -71,8 +57,8 @@ export interface ToastConfig {
    * @default { vertical: 'bottom', horizontal: 'left' }
    */
   position?: {
-    vertical: "top" | "bottom";
-    horizontal: "left" | "center" | "right";
+    vertical: 'top' | 'bottom';
+    horizontal: 'left' | 'center' | 'right';
   };
 
   /**
@@ -137,15 +123,15 @@ interface ActiveToast extends ToastConfig {
  */
 const DEFAULT_TOAST_CONFIG: Partial<ToastConfig> = {
   enabled: true,
-  severity: "info",
+  severity: 'info',
   duration: 4000,
   position: {
-    vertical: "bottom",
-    horizontal: "left",
+    vertical: 'bottom',
+    horizontal: 'left',
   },
   closable: {
     enabled: true,
-    label: "Close notification",
+    label: 'Close notification',
   },
 };
 
@@ -169,10 +155,10 @@ interface ToastProviderProps {
  * Provider component for toast notifications
  */
 export function ToastProvider({
-  children,
-  maxToasts = 3,
-  defaultConfig = {},
-}: ToastProviderProps): JSX.Element {
+                                children,
+                                maxToasts = 3,
+                                defaultConfig = {},
+                              }: ToastProviderProps): JSX.Element {
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
 
   const mergedDefaultConfig = useMemo(
@@ -187,7 +173,7 @@ export function ToastProvider({
     (config: ToastConfig): string => {
       // If toast is disabled, return empty ID and don't show
       if (config.enabled === false) {
-        return "";
+        return '';
       }
 
       const id = config.id || generateId();
@@ -294,17 +280,17 @@ export function ToastProvider({
           anchorOrigin={toast.position}
           sx={{
             // Stack toasts vertically
-            "& .MuiSnackbar-root": {
-              position: "static",
-              transform: "none",
+            '& .MuiSnackbar-root': {
+              position: 'static',
+              transform: 'none',
             },
             // Adjust position based on stack index
             bottom:
-              toast.position?.vertical === "bottom"
+              toast.position?.vertical === 'bottom'
                 ? `${80 + index * 70}px`
                 : undefined,
             top:
-              toast.position?.vertical === "top"
+              toast.position?.vertical === 'top'
                 ? `${80 + index * 70}px`
                 : undefined,
           }}
@@ -317,18 +303,18 @@ export function ToastProvider({
             }
             sx={{
               ...toast.style,
-              "& .MuiAlert-message": {
-                display: "flex",
-                alignItems: "center",
+              '& .MuiAlert-message': {
+                display: 'flex',
+                alignItems: 'center',
                 gap: 1,
               },
             }}
             action={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {toast.action && (
                   <Button
-                    color={toast.action.color || "inherit"}
-                    variant={toast.action.variant || "text"}
+                    color={toast.action.color || 'inherit'}
+                    variant={toast.action.variant || 'text'}
                     size="small"
                     onClick={toast.action.onClick}
                   >
@@ -337,7 +323,7 @@ export function ToastProvider({
                 )}
                 {toast.closable?.enabled && (
                   <IconButton
-                    aria-label={toast.closable.label || "Close notification"}
+                    aria-label={toast.closable.label || 'Close notification'}
                     color="inherit"
                     size="small"
                     onClick={() => handleClose(toast.id)}
@@ -363,7 +349,7 @@ export function ToastProvider({
 export function useToast(): ToastContextType {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 }
@@ -376,16 +362,16 @@ export function useToastNotifications() {
 
   return {
     success: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: "success" }),
+      showToast({ ...options, message, severity: 'success' }),
 
     error: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: "error" }),
+      showToast({ ...options, message, severity: 'error' }),
 
     warning: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: "warning" }),
+      showToast({ ...options, message, severity: 'warning' }),
 
     info: (message: ReactNode, options?: Partial<ToastConfig>) =>
-      showToast({ ...options, message, severity: "info" }),
+      showToast({ ...options, message, severity: 'info' }),
 
     custom: (config: ToastConfig) => showToast(config),
   };

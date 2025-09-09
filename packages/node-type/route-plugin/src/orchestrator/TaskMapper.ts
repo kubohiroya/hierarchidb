@@ -7,7 +7,10 @@ export interface RouteTaskInput {
   methodOptions?: any;
 }
 
-export interface MapRecomputeOptions { chunkSize?: number; methodOptions?: any }
+export interface MapRecomputeOptions {
+  chunkSize?: number;
+  methodOptions?: any;
+}
 
 export function mapRecomputeTasks(odPairs: OdPair[], defaults?: RouteBatchSpec['defaults'], opts?: MapRecomputeOptions): RouteTaskInput[] {
   return odPairs.map((o) => ({

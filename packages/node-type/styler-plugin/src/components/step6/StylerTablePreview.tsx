@@ -1,14 +1,18 @@
 /**
- * @file StylerTablePreview.tsx
+  * @file StylerTablePreview.tsx
  * @description Styler table preview with color visualization (Step 6)
- * 【機能概要】: スタイルマッピングのテーブルプレビュー
- * 【実装方針】: eria-cartographから移植、仮想化テーブルでパフォーマンス最適化
- * 🟢 信頼性レベル: 大容量データ対応の仮想化実装
- */
+ * :
+ * : eria-cartograph
+ * :
+  */
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Box,
+  Chip,
+  IconButton,
+  Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -16,33 +20,28 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Paper,
-  Typography,
-  IconButton,
-  Stack,
-  Chip,
   Tooltip,
+  Typography,
   useTheme,
 } from '@mui/material';
 import {
-  Palette as PaletteIcon,
   GridView as GridViewIcon,
+  Palette as PaletteIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 // import { VariableSizeList as List } from 'provider-window';
-
 import type { StylerConfig } from '../../types/stylerTypes';
 import { valueToColor } from '../../utils/colorUtils';
 
 /**
- * 【型定義】: ソート方向
- */
+  * :
+  */
 type SortDirection = 'asc' | 'desc' | null;
 
 /**
- * 【型定義】: テーブルプレビューのプロパティ
- */
+  * :
+  */
 export interface StylerTablePreviewProps {
   data: Array<Record<string, any>>;
   selectedKeyColumn?: string;
@@ -54,17 +53,17 @@ export interface StylerTablePreviewProps {
 }
 
 /**
- * 【型定義】: 列幅の状態
- */
+  * :
+  */
 interface ColumnWidths {
   [key: string]: number;
 }
 
 /**
- * 【機能概要】: リサイズ可能なテーブルヘッダー
- * 【実装方針】: ドラッグによる列幅調整
- * 🟡 信頼性レベル: 基本的なリサイズ機能
- */
+  * :
+ * :
+ * :
+  */
 const ResizableTableHeader: React.FC<{
   column: string;
   width: number;
@@ -74,14 +73,14 @@ const ResizableTableHeader: React.FC<{
   isKeyColumn?: boolean;
   isValueColumn?: boolean;
 }> = ({
-  column,
-  width,
-  onResize,
-  sortDirection,
-  onSort,
-  isKeyColumn,
-  isValueColumn,
-}) => {
+        column,
+        width,
+        onResize,
+        sortDirection,
+        onSort,
+        isKeyColumn,
+        isValueColumn,
+      }) => {
   const [isResizing, setIsResizing] = useState(false);
   const startX = useRef<number>(0);
   const startWidth = useRef<number>(width);
@@ -133,7 +132,7 @@ const ResizableTableHeader: React.FC<{
             {column}
           </Typography>
         </TableSortLabel>
-        
+
         {(isKeyColumn || isValueColumn) && (
           <Chip
             size="small"
@@ -165,10 +164,10 @@ const ResizableTableHeader: React.FC<{
 };
 
 /**
- * 【機能概要】: テーブル行コンポーネント
- * 【実装方針】: 色プレビュー表示付きの行レンダリング
- * 🟢 信頼性レベル: メモ化による最適化
- */
+  * :
+ * :
+ * :
+  */
 const TableRowComponent: React.FC<{
   rowData: Record<string, any>;
   columns: string[];
@@ -178,22 +177,22 @@ const TableRowComponent: React.FC<{
   config: StylerConfig;
   showColorPreview: boolean;
 }> = React.memo(({
-  rowData,
-  columns,
-  columnWidths,
-  selectedKeyColumn,
-  selectedValueColumn,
-  config,
-  showColorPreview,
-}) => {
+                   rowData,
+                   columns,
+                   columnWidths,
+                   selectedKeyColumn,
+                   selectedValueColumn,
+                   config,
+                   showColorPreview,
+                 }) => {
   const theme = useTheme();
 
-  // 【色計算】: 値列の色を計算
+  //  :
   const colorResult = useMemo(() => {
     if (!selectedValueColumn || !showColorPreview) {
       return null;
     }
-    
+
     const value = rowData[selectedValueColumn];
     if (typeof value === 'number') {
       return valueToColor(value, config);
@@ -207,8 +206,7 @@ const TableRowComponent: React.FC<{
         const isKeyColumn = col === selectedKeyColumn;
         const isValueColumn = col === selectedValueColumn;
         const cellValue = rowData[col];
-        
-        // 【セル表示値のフォーマット】
+
         const formatValue = (value: any): string => {
           if (value === null || value === undefined) {
             return '-';
@@ -228,10 +226,10 @@ const TableRowComponent: React.FC<{
               maxWidth: columnWidths[col],
               borderRight: '1px solid',
               borderColor: 'divider',
-              backgroundColor: isKeyColumn 
+              backgroundColor: isKeyColumn
                 ? theme.palette.primary.main + '10'
-                : isValueColumn 
-                  ? theme.palette.secondary.main + '10' 
+                : isValueColumn
+                  ? theme.palette.secondary.main + '10'
                   : undefined,
             }}
           >
@@ -252,12 +250,12 @@ const TableRowComponent: React.FC<{
                   />
                 </Tooltip>
               )}
-              
+
               {/* Cell Value */}
               <Typography variant="body2" noWrap>
                 {formatValue(cellValue)}
               </Typography>
-              
+
               {/* RGB Values (if color column) */}
               {isValueColumn && showColorPreview && colorResult?.metadata && (
                 <Typography variant="caption" color="text.secondary" noWrap>
@@ -275,42 +273,38 @@ const TableRowComponent: React.FC<{
 TableRowComponent.displayName = 'TableRowComponent';
 
 /**
- * 【機能概要】: Stylerテーブルプレビューコンポーネント
- * 【実装方針】: 大容量データ対応の仮想化テーブル
- * 【テスト対応】: ソート、リサイズ、色プレビュー機能
- * 🟢 信頼性レベル: パフォーマンス最適化済み
- */
+  * : Styler
+ * :
+ * :
+ * :
+  */
 export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
-  data,
-  selectedKeyColumn,
-  selectedValueColumn,
-  config,
-  onColumnSelect: _onColumnSelect,
-  maxRows = 1000,
-  // enableVirtualization = true,
-}) => {
-  // 【状態管理】
+                                                                        data,
+                                                                        selectedKeyColumn,
+                                                                        selectedValueColumn,
+                                                                        config,
+                                                                        onColumnSelect: _onColumnSelect,
+                                                                        maxRows = 1000,
+                                                                        // enableVirtualization = true,
+                                                                      }) => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>({});
   const [showColorPreview, setShowColorPreview] = useState(true);
 
-  // 【列リスト取得】
   const columns = useMemo(() => {
     if (data.length === 0) return [];
     return data && data.length > 0 && data[0] ? Object.keys(data[0]) : [];
   }, [data]);
 
-  // 【列幅初期化】
   useMemo(() => {
     const initialWidths: ColumnWidths = {};
     columns.forEach(col => {
-      initialWidths[col] = 150; // デフォルト幅
+      initialWidths[col] = 150;
     });
     setColumnWidths(initialWidths);
   }, [columns]);
 
-  // 【ソート済みデータ】
   const sortedData = useMemo(() => {
     if (!sortColumn || !sortDirection) {
       return data.slice(0, maxRows);
@@ -329,7 +323,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
 
       const aStr = String(aVal);
       const bStr = String(bVal);
-      return sortDirection === 'asc' 
+      return sortDirection === 'asc'
         ? aStr.localeCompare(bStr)
         : bStr.localeCompare(aStr);
     });
@@ -337,7 +331,6 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
     return sorted.slice(0, maxRows);
   }, [data, sortColumn, sortDirection, maxRows]);
 
-  // 【ソートハンドラ】
   const handleSort = useCallback((column: string) => {
     if (sortColumn === column) {
       if (sortDirection === 'asc') {
@@ -352,7 +345,6 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
     }
   }, [sortColumn, sortDirection]);
 
-  // 【列幅変更ハンドラ】
   const handleColumnResize = useCallback((column: string, width: number) => {
     setColumnWidths(prev => ({
       ...prev,
@@ -360,23 +352,22 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
     }));
   }, []);
 
-  // 【列クリックハンドラ】
   // const handleColumnClick = useCallback((column: string) => {
   //   if (!onColumnSelect) return;
 
-  //   // 数値列のみ値列として選択可能
+  //  //
   //   const isNumericColumn = data.some(row => typeof row[column] === 'number');
-    
+
   //   if (column === selectedKeyColumn) {
-  //     // キー列のクリアまたは値列への切り替え
+  //  //
   //     if (isNumericColumn) {
   //       onColumnSelect(column, 'value');
   //     }
   //   } else if (column === selectedValueColumn) {
-  //     // 値列のクリア
+  //  //
   //     onColumnSelect('', 'value');
   //   } else {
-  //     // 新規選択
+  //  //
   //     if (!selectedKeyColumn) {
   //       onColumnSelect(column, 'key');
   //     } else if (isNumericColumn && !selectedValueColumn) {
@@ -385,7 +376,6 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
   //   }
   // }, [data, selectedKeyColumn, selectedValueColumn, onColumnSelect]);
 
-  // 【データが空の場合】
   if (data.length === 0 || columns.length === 0) {
     return (
       <Paper sx={{ p: 3 }}>
@@ -403,7 +393,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
         <Typography variant="h6">
           Step 6: Table Preview with Style Mapping
         </Typography>
-        
+
         <Stack direction="row" spacing={1}>
           <Chip
             icon={<GridViewIcon />}
@@ -411,7 +401,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
             size="small"
             variant="outlined"
           />
-          
+
           <IconButton
             size="small"
             onClick={() => setShowColorPreview(!showColorPreview)}

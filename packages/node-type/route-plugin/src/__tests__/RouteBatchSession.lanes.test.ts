@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession';
-import type { RouteBatchTask, RouteBatchConfig } from '../../src/services/RouteBatchSession';
 
 class TestGenerator {
   public activeOsm = 0;
   public maxOsm = 0;
+
   async generate(points: [number, number][], opts: { method: string; options?: any }): Promise<any> {
     if (opts.method === 'osm_route') {
       this.activeOsm++;
@@ -27,14 +28,22 @@ function makeTasks(sessionId: string, n: number, method: string): RouteBatchTask
     stage: 'route_generation',
     status: 'pending',
     index: i,
-    routeData: { method, startCoordinates: [0,0], endCoordinates: [1,1] },
+    routeData: { method, startCoordinates: [0, 0], endCoordinates: [1, 1] },
   }));
 }
 
 describe('RouteBatchSession lane gating', () => {
   it('keeps osm_route concurrency at 1 even when maxConcurrent is high', async () => {
     const sessionId = 's1';
-    const cfg = { routeGeneration: { method: 'osm_route', parallel: true, maxConcurrent: 8, retryOnFailure: false, maxRetries: 0 } } as RouteBatchConfig;
+    const cfg = {
+      routeGeneration: {
+        method: 'osm_route',
+        parallel: true,
+        maxConcurrent: 8,
+        retryOnFailure: false,
+        maxRetries: 0,
+      },
+    } as RouteBatchConfig;
     const tasks: RouteBatchTask[] = [
       ...makeTasks(sessionId, 5, 'osm_route'),
       ...makeTasks(sessionId, 5, 'direct'),

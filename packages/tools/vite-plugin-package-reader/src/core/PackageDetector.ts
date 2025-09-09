@@ -1,11 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { glob } from 'glob';
-import type { 
-  PackageJson, 
-  PackageDetectionStrategy, 
-  MonorepoOptions 
-} from '../types';
+import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../types';
 import { Logger } from './Logger';
 import { PackageCache } from './PackageCache';
 
@@ -31,12 +27,11 @@ export class PackageDetector {
   }
 
   /**
-   * パッケージを検出
-   */
+            */
   async detect(strategies: PackageDetectionStrategy[]): Promise<Map<string, PackageJson>> {
     this.logger.info('Starting package detection...');
-    
-    // すべてのpackage.jsonを見つける
+
+    //  package.json
     const packagePaths = await this.findPackageJsonPaths();
     this.logger.debug(`Found ${packagePaths.length} package.json files`);
 
@@ -46,25 +41,22 @@ export class PackageDetector {
       const packageJson = await this.readPackageJson(packagePath);
       if (!packageJson) continue;
 
-      // 戦略に基づいてフィルタリング
       for (const strategy of strategies) {
         if (strategy.test(packageJson.name, packageJson)) {
           this.logger.debug(`Strategy "${strategy.name}" matched package "${packageJson.name}"`);
-          
-          // メタデータを抽出
+
           if (strategy.extractMetadata) {
             const metadata = strategy.extractMetadata(packageJson);
             packageJson.__metadata = { ...packageJson.__metadata, ...metadata };
           }
 
-          // 優先度を設定
           if (strategy.getPriority) {
             const priority = strategy.getPriority(packageJson.name, packageJson);
             packageJson.__priority = priority;
           }
 
           results.set(packageJson.name, packageJson);
-          break; // 最初にマッチした戦略を使用
+          break;
         }
       }
     }
@@ -74,23 +66,23 @@ export class PackageDetector {
   }
 
   /**
-   * package.jsonファイルのパスを検索
-   */
+      * package.json
+      */
   private async findPackageJsonPaths(): Promise<string[]> {
     const paths: string[] = [];
 
-    // ルートのpackage.json
+    //  package.json
     const rootPackageJson = path.join(this.rootDir, 'package.json');
     if (await this.fileExists(rootPackageJson)) {
       paths.push(rootPackageJson);
     }
 
-    // appディレクトリ
+    //  app
     const appPackageJson = path.join(this.rootDir, 'app', 'package.json');
     if (await this.fileExists(appPackageJson)) {
       paths.push(appPackageJson);
 
-      // app/node_modules内のパッケージ
+      //  app/node_modules
       const nodeModulesPath = path.join(this.rootDir, 'app', 'node_modules');
       if (await this.dirExists(nodeModulesPath)) {
         const nodeModulesPaths = await glob('*/package.json', {
@@ -99,7 +91,6 @@ export class PackageDetector {
         });
         paths.push(...nodeModulesPaths);
 
-        // スコープ付きパッケージ
         const scopedPaths = await glob('@*/*/package.json', {
           cwd: nodeModulesPath,
           absolute: true,
@@ -108,7 +99,6 @@ export class PackageDetector {
       }
     }
 
-    // モノレポのパッケージ
     if (this.monorepo.packages) {
       for (const packagePattern of this.monorepo.packages) {
         const pattern = path.join(this.rootDir, packagePattern, 'package.json');
@@ -127,14 +117,13 @@ export class PackageDetector {
       }
     }
 
-    return [...new Set(paths)]; // 重複を削除
+    return [...new Set(paths)];
   }
 
   /**
-   * package.jsonを読み込む
-   */
+      * package.json
+      */
   private async readPackageJson(filePath: string): Promise<PackageJson | null> {
-    // キャッシュチェック
     if (this.cache && this.cache.has(filePath)) {
       return this.cache.get(filePath);
     }
@@ -142,11 +131,9 @@ export class PackageDetector {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       const packageJson = JSON.parse(content) as PackageJson;
-      
-      // パスを追加
+
       packageJson.__path = filePath;
-      
-      // キャッシュに保存
+
       if (this.cache) {
         this.cache.set(filePath, packageJson);
       }
@@ -161,13 +148,13 @@ export class PackageDetector {
   }
 
   /**
-   * pnpm-workspace.yamlを読み込む
-   */
+      * pnpm-workspace.yaml
+      */
   private async readPnpmWorkspace(): Promise<string[]> {
     const workspacePath = path.join(this.rootDir, 'pnpm-workspace.yaml');
     try {
       const content = await fs.readFile(workspacePath, 'utf-8');
-      // 簡易的なYAMLパース
+      //  YAML
       const lines = content.split('\n');
       const packages: string[] = [];
       let inPackages = false;
@@ -192,8 +179,7 @@ export class PackageDetector {
   }
 
   /**
-   * ファイルの存在確認
-   */
+            */
   private async fileExists(filePath: string): Promise<boolean> {
     try {
       const stat = await fs.stat(filePath);
@@ -204,8 +190,7 @@ export class PackageDetector {
   }
 
   /**
-   * ディレクトリの存在確認
-   */
+            */
   private async dirExists(dirPath: string): Promise<boolean> {
     try {
       const stat = await fs.stat(dirPath);
@@ -216,8 +201,7 @@ export class PackageDetector {
   }
 
   /**
-   * 優先度でソート
-   */
+            */
   private sortByPriority(packages: Map<string, PackageJson>): Map<string, PackageJson> {
     const entries = Array.from(packages.entries());
     entries.sort((a, b) => {
@@ -229,8 +213,7 @@ export class PackageDetector {
   }
 
   /**
-   * キャッシュをクリア
-   */
+            */
   clearCache(): void {
     if (this.cache) {
       this.cache.clear();
@@ -239,8 +222,7 @@ export class PackageDetector {
   }
 
   /**
-   * キャッシュの統計情報を取得
-   */
+            */
   getCacheStats(): any {
     if (!this.cache) {
       return null;

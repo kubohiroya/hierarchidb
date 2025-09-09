@@ -6,8 +6,11 @@ import { storeRegistry } from './store-registry';
 
 export class EntityLifecycleManager {
   private static instance: EntityLifecycleManager | undefined;
-  private constructor(private coreDB: CoreDB) {}
-  // Temporary registry to pass source→target ID mappings from services to lifecycle.
+
+  private constructor(private coreDB: CoreDB) {
+  }
+
+  //  Temporary registry to pass sourcetarget ID mappings from services to lifecycle.
   private static idMappingByCommand = new Map<string, Map<string, string>>();
 
   static getSingleton(coreDB: CoreDB): EntityLifecycleManager {
@@ -15,7 +18,7 @@ export class EntityLifecycleManager {
     return this.instance;
   }
 
-  // Register a source→target ID mapping for a specific command.
+  //  Register a sourcetarget ID mapping for a specific command.
   static setIdMapping(commandId: string, mapping: Map<string, string>): void {
     this.idMappingByCommand.set(commandId, mapping);
   }
@@ -49,7 +52,10 @@ export class EntityLifecycleManager {
 
   // Below are no-op placeholders to be implemented in later phases.
   // They intentionally do not mutate state yet.
-  async onCreateWorkingCopy(env: CommandEnvelope<'createWorkingCopy', { originalId: any; workingCopyId: any }>): Promise<void> {
+  async onCreateWorkingCopy(env: CommandEnvelope<'createWorkingCopy', {
+    originalId: any;
+    workingCopyId: any
+  }>): Promise<void> {
     try {
       const originalId = env.payload?.originalId as any;
       const wcId = env.payload?.workingCopyId as any;
@@ -61,7 +67,8 @@ export class EntityLifecycleManager {
       if (!store) return;
       const peer = new PeerEntityHandler(store);
       await peer.copyPeer(originalId, wcId);
-    } catch {}
+    } catch {
+    }
   }
 
   async onDiscardWorkingCopy(env: CommandEnvelope<'discardWorkingCopy', { workingCopyId: any }>): Promise<void> {
@@ -75,8 +82,10 @@ export class EntityLifecycleManager {
       if (!store) return;
       const peer = new PeerEntityHandler(store);
       await peer.deletePeer(wcId);
-    } catch {}
+    } catch {
+    }
   }
+
   async onCommitWorkingCopy(env: CommandEnvelope<'commitWorkingCopy', { workingCopyId: any }>): Promise<void> {
     try {
       // Resolve WC node and its holder to discover targetId
@@ -107,8 +116,9 @@ export class EntityLifecycleManager {
       // Best-effort; never throw from lifecycle in base implementation
     }
   }
+
   async onDuplicateNodes(env: CommandEnvelope<'duplicateNodes', { nodeIds: any[] }>): Promise<void> {
-    // Use registered mapping (source root → new root). Subtree mapping is a later enhancement.
+    //  Use registered mapping (source root new root). Subtree mapping is a later enhancement.
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     await this.copyPeersByMapping(mapping);
@@ -116,7 +126,10 @@ export class EntityLifecycleManager {
     await this.copyRelationsByMapping(mapping);
   }
 
-  async onPasteNodes(env: CommandEnvelope<'pasteNodes', { nodes: Record<string, any>; nodeIds: string[] }>): Promise<void> {
+  async onPasteNodes(env: CommandEnvelope<'pasteNodes', {
+    nodes: Record<string, any>;
+    nodeIds: string[]
+  }>): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     // Prefer nodeType from payload nodes map where available.
@@ -125,7 +138,10 @@ export class EntityLifecycleManager {
     await this.copyRelationsByMapping(mapping, env.payload.nodes);
   }
 
-  async onImportNodes(env: CommandEnvelope<'importNodes', { nodes: Record<string, any>; nodeIds: string[] }>): Promise<void> {
+  async onImportNodes(env: CommandEnvelope<'importNodes', {
+    nodes: Record<string, any>;
+    nodeIds: string[]
+  }>): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     await this.copyPeersByMapping(mapping, env.payload.nodes);
@@ -135,7 +151,7 @@ export class EntityLifecycleManager {
 
   private async copyPeersByMapping(
     mapping: Map<string, string>,
-    sourceNodes?: Record<string, { nodeType?: string }>
+    sourceNodes?: Record<string, { nodeType?: string }>,
   ): Promise<void> {
     // Group pairs by nodeType to leverage bulk upsert if available
     const byType = new Map<string, Array<{ src: string; dst: string }>>();
@@ -158,7 +174,7 @@ export class EntityLifecycleManager {
         const handler = new PeerEntityHandler(store);
         // Try bulk path
         await handler.bulkUpsertFromIds(
-          pairs.map((p) => ({ targetId: p.dst as any, fromId: p.src as any }))
+          pairs.map((p) => ({ targetId: p.dst as any, fromId: p.src as any })),
         );
       } catch {
         // ignore and continue other types
@@ -168,7 +184,7 @@ export class EntityLifecycleManager {
 
   private async copyGroupsByMapping(
     mapping: Map<string, string>,
-    sourceNodes?: Record<string, { nodeType?: string }>
+    sourceNodes?: Record<string, { nodeType?: string }>,
   ): Promise<void> {
     try {
       for (const [src, dst] of mapping.entries()) {
@@ -188,7 +204,7 @@ export class EntityLifecycleManager {
 
   private async copyRelationsByMapping(
     mapping: Map<string, string>,
-    sourceNodes?: Record<string, { nodeType?: string }>
+    sourceNodes?: Record<string, { nodeType?: string }>,
   ): Promise<void> {
     try {
       const storeReg = (await import('./store-registry')).storeRegistry;

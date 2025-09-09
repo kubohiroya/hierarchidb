@@ -36,11 +36,11 @@ export class LocationResolver {
       // In real implementation, this would call Location plugin API
       // For now, return mock data
       const location = await this.fetchLocationFromPlugin(locationId);
-      
+
       if (location) {
         this.locationCache.set(locationId, location);
       }
-      
+
       return location;
     } catch (error) {
       console.error(`Failed to resolve location ${locationId}:`, error);
@@ -53,14 +53,14 @@ export class LocationResolver {
    */
   async getLocations(locationIds: NodeId[]): Promise<Map<NodeId, LocationData>> {
     const locations = new Map<NodeId, LocationData>();
-    
+
     for (const id of locationIds) {
       const location = await this.getLocation(id);
       if (location) {
         locations.set(id, location);
       }
     }
-    
+
     return locations;
   }
 
@@ -91,7 +91,7 @@ export class LocationResolver {
     // This would actually call:
     // const locationAPI = await getWorkerAPI().getLocationAPI();
     // return await locationAPI.getLocation(locationId);
-    
+
     // Mock data for development
     const mockLocations: Record<string, LocationData> = {
       'loc_tokyo': {
@@ -113,7 +113,7 @@ export class LocationResolver {
         type: 'city',
       },
     };
-    
+
     return mockLocations[locationId] || null;
   }
 }

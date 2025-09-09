@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { DialogTitle, Typography, IconButton, Stack, Box, Chip } from '@mui/material';
+import { Box, Chip, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
@@ -24,16 +24,16 @@ export interface CommonDialogTitleProps {
 }
 
 export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
-  title,
-  subtitle,
-  icon,
-  mode,
-  nodeId,
-  isDraft = false,
-  onClose,
-  toggleFullscreen,
-  isFullscreen = false,
-}) => {
+                                                                      title,
+                                                                      subtitle,
+                                                                      icon,
+                                                                      mode,
+                                                                      nodeId,
+                                                                      isDraft = false,
+                                                                      onClose,
+                                                                      toggleFullscreen,
+                                                                      isFullscreen = false,
+                                                                    }) => {
   return (
     <DialogTitle>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

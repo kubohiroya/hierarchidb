@@ -1,12 +1,11 @@
 /**
- * Location Basic Info Step Component
- * 地点情報の基本情報入力ステップ
- */
+  * Location Basic Info Step Component
+   */
 
 import React from 'react';
-import { Box, TextField, Typography, Stack, Divider } from '@mui/material';
+import { Box, Divider, Stack, TextField, Typography } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
-import type { LocationWorkingCopy, LocationCategory, TagId } from '../../types';
+import type { LocationCategory, LocationWorkingCopy, TagId } from '../../types';
 import { useTranslation } from '../../i18n';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 
@@ -17,55 +16,54 @@ export interface LocationBasicInfoStepProps {
 }
 
 /**
- * 地点情報の基本情報入力コンポーネント
- * 名前、説明、タグ、カテゴリの入力フォームを提供
- */
+     */
 export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
-  workingCopy,
-  onUpdate,
-  disabled = false
-}) => {
+                                                                              workingCopy,
+                                                                              onUpdate,
+                                                                              disabled = false,
+                                                                            }) => {
   const { translations } = useTranslation();
   const handleTagChange = (tags: TagId[]) => {
-    onUpdate({ 
+    onUpdate({
       tags,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleCategoryChange = (category: LocationCategory) => {
-    onUpdate({ 
+    onUpdate({
       category,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleNameChange = (name: string) => {
-    onUpdate({ 
+    onUpdate({
       name,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleDescriptionChange = (description: string) => {
-    onUpdate({ 
+    onUpdate({
       description,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   return (
     <Box sx={{ p: 3, maxWidth: 600, margin: '0 auto' }}>
-      {/* セクションヘッダー */}
+      {/*
+*/}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <LocationIcon color="primary" />
         <Typography variant="h6">{translations.basicInfo.title}</Typography>
       </Box>
-      
+
       <Typography variant="body2" color="text.secondary" paragraph>
         {translations.basicInfo.subtitle}
       </Typography>
@@ -87,7 +85,8 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
 
         <Divider />
 
-        {/* カテゴリ選択 */}
+        {/*
+*/}
         <TextField
           select
           label={translations.basicInfo.categoryLabel}
@@ -105,7 +104,8 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
           <option value="infrastructure">{translations.categories.infrastructure}</option>
         </TextField>
 
-        {/* タグ入力（簡易版） */}
+        {/*
+*/}
         <TextField
           label={translations.basicInfo.tagsLabel}
           value={(workingCopy.tags || []).join(', ')}
@@ -120,7 +120,8 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
         />
       </Stack>
 
-      {/* フォーム下部の情報表示 */}
+      {/*
+*/}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           {translations.basicInfo.hint}

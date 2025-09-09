@@ -21,21 +21,22 @@ export class WorkerPool<T extends object> {
   private errorCount = 0;
   private totalTaskTime = 0;
   private activeWorkers = new Set<number>();
-  
-  constructor(private rawWorkers: Worker[]) {}
-  
+
+  constructor(private rawWorkers: Worker[]) {
+  }
+
   /**
    * Initialize the Worker pool
    */
   async initialize(): Promise<void> {
-    this.workers = this.rawWorkers.map(worker => 
-      Comlink.wrap<T>(worker)
+    this.workers = this.rawWorkers.map(worker =>
+      Comlink.wrap<T>(worker),
     );
-    
+
     // Verify all workers are responsive
     await this.healthCheck();
   }
-  
+
   /**
    * Execute a method on the next available Worker (round-robin)
    */
@@ -45,14 +46,14 @@ export class WorkerPool<T extends object> {
   ): Promise<T[K] extends (...args: any[]) => Promise<infer R> ? R : never> {
     const workerIndex = this.getNextWorkerIndex();
     const worker = this.workers[workerIndex];
-    
+
     if (!worker) {
       throw new Error('No workers available');
     }
-    
+
     const startTime = Date.now();
     this.activeWorkers.add(workerIndex);
-    
+
     try {
       // @ts-ignore - Dynamic method call
       const result = await worker[method](...args);
@@ -66,7 +67,7 @@ export class WorkerPool<T extends object> {
       this.activeWorkers.delete(workerIndex);
     }
   }
-  
+
   /**
    * Execute a method on all workers in parallel
    */
@@ -83,10 +84,10 @@ export class WorkerPool<T extends object> {
         this.activeWorkers.delete(index);
       }
     });
-    
+
     return Promise.all(promises);
   }
-  
+
   /**
    * Execute with callback for progress updates
    */
@@ -97,14 +98,14 @@ export class WorkerPool<T extends object> {
   ): Promise<T[K] extends (...args: any[]) => Promise<infer R> ? R : never> {
     const workerIndex = this.getNextWorkerIndex();
     const worker = this.workers[workerIndex];
-    
+
     if (!worker) {
       throw new Error('No workers available');
     }
-    
+
     // Create progress proxy
     const progressProxy = Comlink.proxy(onProgress);
-    
+
     try {
       // Pass progress callback as last argument
       const allArgs = [...args, progressProxy];
@@ -119,7 +120,7 @@ export class WorkerPool<T extends object> {
       }
     }
   }
-  
+
   /**
    * Get the next Worker index (round-robin)
    */
@@ -128,9 +129,8 @@ export class WorkerPool<T extends object> {
     this.currentIndex = (this.currentIndex + 1) % this.workers.length;
     return index;
   }
-  
 
-  
+
   /**
    * Dispose of all workers
    */
@@ -140,14 +140,14 @@ export class WorkerPool<T extends object> {
       this.rawWorkers.map(worker => {
         worker.terminate();
         return Promise.resolve();
-      })
+      }),
     );
-    
+
     this.workers = [];
     this.rawWorkers = [];
     this.activeWorkers.clear();
   }
-  
+
   /**
    * Get pool statistics
    */
@@ -158,10 +158,10 @@ export class WorkerPool<T extends object> {
       idle: this.workers.length - this.activeWorkers.size,
       tasksProcessed: this.taskCount,
       averageTaskTime: this.taskCount > 0 ? this.totalTaskTime / this.taskCount : 0,
-      errors: this.errorCount
+      errors: this.errorCount,
     };
   }
-  
+
   /**
    * Health check all workers
    */
@@ -174,25 +174,25 @@ export class WorkerPool<T extends object> {
             return await worker.ping();
           }
           return true;
-        })
+        }),
       );
-      
+
       return results.every(result => result.status === 'fulfilled');
     } catch {
       return false;
     }
   }
-  
+
   /**
    * Resize the pool (add or remove workers)
    */
   async resize(newSize: number): Promise<void> {
     const currentSize = this.workers.length;
-    
+
     if (newSize === currentSize) {
       return;
     }
-    
+
     if (newSize > currentSize) {
       // Add workers
       const workersToAdd = newSize - currentSize;
@@ -214,7 +214,7 @@ export class WorkerPool<T extends object> {
       }
     }
   }
-  
+
   /**
    * Execute with timeout
    */
@@ -225,12 +225,12 @@ export class WorkerPool<T extends object> {
   ): Promise<T[K] extends (...args: any[]) => Promise<infer R> ? R : never> {
     return Promise.race([
       this.execute(method, ...args),
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(`Worker timeout after ${timeoutMs}ms`)), timeoutMs)
-      )
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Worker timeout after ${timeoutMs}ms`)), timeoutMs),
+      ),
     ]);
   }
-  
+
   /**
    * Execute with retry
    */
@@ -240,7 +240,7 @@ export class WorkerPool<T extends object> {
     ...args: T[K] extends (...args: infer P) => any ? P : never
   ): Promise<T[K] extends (...args: any[]) => Promise<infer R> ? R : never> {
     let lastError: Error | undefined;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await this.execute(method, ...args);
@@ -248,13 +248,13 @@ export class WorkerPool<T extends object> {
         lastError = error as Error;
         if (attempt < maxRetries) {
           // Exponential backoff
-          await new Promise(resolve => 
-            setTimeout(resolve, Math.pow(2, attempt) * 100)
+          await new Promise(resolve =>
+            setTimeout(resolve, Math.pow(2, attempt) * 100),
           );
         }
       }
     }
-    
+
     throw lastError || new Error('All retries failed');
   }
 }

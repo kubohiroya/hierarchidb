@@ -1,22 +1,16 @@
 /**
- * Folder plugin utilities - UI・Worker共通ユーティリティ
- */
+  * Folder plugin utilities - UIWorker
+  */
 
-import { NodeId, EntityId } from '@hierarchidb/common-type';
-import {
-  FolderEntity,
-  FolderDisplayData,
-  FolderBreadcrumb,
-  FolderTreeNode,
-  CreateFolderData,
-} from './types';
-import { FOLDER_VALIDATION, FOLDER_DISPLAY } from './constants';
+import { NodeId } from '@hierarchidb/common-type';
+import { CreateFolderData, FolderBreadcrumb, FolderDisplayData, FolderEntity, FolderTreeNode } from './types';
+import { FOLDER_DISPLAY, FOLDER_VALIDATION } from './constants';
 
 /**
  * ID generation utilities
  */
-export function generateFolderId(): EntityId {
-  return crypto.randomUUID() as EntityId;
+export function generateFolderId(): NodeId {
+  return crypto.randomUUID() as unknown as NodeId;
 }
 
 // Bookmark/Template ID helpers removed
@@ -125,7 +119,7 @@ export function generateFolderPath(breadcrumbs: FolderBreadcrumb[]): string {
 }
 
 export function generateFolderBreadcrumbs(
-  pathNodes: Array<{ nodeId: NodeId; name: string; isRoot: boolean }>
+  pathNodes: Array<{ nodeId: NodeId; name: string; isRoot: boolean }>,
 ): FolderBreadcrumb[] {
   return pathNodes.map((node) => ({
     nodeId: node.nodeId,
@@ -141,7 +135,7 @@ export function generateFolderBreadcrumbs(
 export function buildFolderTree(
   folders: FolderDisplayData[],
   parentId?: NodeId,
-  level: number = 0
+  level: number = 0,
 ): FolderTreeNode[] {
   const children = folders.filter(() => {
     // Filter logic would depend on actual parent-child relationships
@@ -181,7 +175,7 @@ export function flattenFolderTree(treeNodes: FolderTreeNode[]): FolderTreeNode[]
 
 export function findFolderInTree(
   treeNodes: FolderTreeNode[],
-  nodeId: NodeId
+  nodeId: NodeId,
 ): FolderTreeNode | undefined {
   for (const node of treeNodes) {
     if (node.nodeId === nodeId) {
@@ -201,7 +195,7 @@ export function findFolderInTree(
  * Search utilities
  */
 export function createFolderSearchIndex(
-  folders: FolderDisplayData[]
+  folders: FolderDisplayData[],
 ): Map<string, FolderDisplayData[]> {
   const index = new Map<string, FolderDisplayData[]>();
 
@@ -246,7 +240,7 @@ export function createFolderSearchIndex(
 
 export function searchFoldersInIndex(
   index: Map<string, FolderDisplayData[]>,
-  query: string
+  query: string,
 ): FolderDisplayData[] {
   if (!query.trim()) return [];
 
@@ -302,7 +296,7 @@ export function searchFoldersInIndex(
 export function sortFolders(
   folders: FolderDisplayData[],
   sortOrder: 'name' | 'date' | 'type' | 'custom' = 'name',
-  sortDirection: 'asc' | 'desc' = 'asc'
+  sortDirection: 'asc' | 'desc' = 'asc',
 ): FolderDisplayData[] {
   const sorted = [...folders].sort((a, b) => {
     let comparison = 0;

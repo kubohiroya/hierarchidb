@@ -13,7 +13,7 @@ export class SingletonMixin {
 
   static async getSingleton<T>(className: string, factory?: () => T | Promise<T>): Promise<T> {
     console.log(`[SingletonMixin] getSingleton called for ${className}`);
-    
+
     // If already instantiated, return it
     if (this.instances.has(className)) {
       console.log(`[SingletonMixin] Returning existing instance for ${className}`);

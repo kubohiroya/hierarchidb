@@ -4,27 +4,13 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Chip,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  Typography,
-  Stack,
-  Link,
-} from '@mui/material';
-import {
-  Public as PublicIcon,
-  Layers as LayersIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material';
+import { Box, Chip, FormControl, FormControlLabel, Link, Radio, RadioGroup, Stack, Typography } from '@mui/material';
+import { Info as InfoIcon, Layers as LayersIcon, Public as PublicIcon } from '@mui/icons-material';
 
-import { 
-  DataSourceName, 
-  DataSourceInfo,
+import {
   DataSourceConfigs,
+  DataSourceInfo,
+  DataSourceName,
   getLicenseColor,
   getLicenseLimitations,
 } from '../types/DataSource';
@@ -34,23 +20,23 @@ export interface DataSourceSelectorProps {
    * Currently selected data source
    */
   selectedDataSource?: DataSourceName;
-  
+
   /**
    * Available data sources to choose from
    * If not provided, uses all available data sources
    */
   availableDataSources?: DataSourceName[];
-  
+
   /**
    * Filter by category
    */
   category?: 'geographic' | 'location' | 'route';
-  
+
   /**
    * Additional information for each data source (e.g., country count)
    */
   dataSourceInfo?: Partial<Record<DataSourceName, Partial<DataSourceInfo>>>;
-  
+
   /**
    * Layout configuration
    */
@@ -58,12 +44,12 @@ export interface DataSourceSelectorProps {
     columns?: 1 | 2 | 3 | 4;
     minCardHeight?: number;
   };
-  
+
   /**
    * Callback when data source is selected
    */
   onDataSourceChange: (dataSource: DataSourceName) => void;
-  
+
   /**
    * Show additional details
    */
@@ -80,27 +66,27 @@ export interface DataSourceSelectorProps {
  * Used in Shape, Location, and Route plugins
  */
 export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
-  selectedDataSource,
-  availableDataSources,
-  category,
-  dataSourceInfo = {},
-  layout = { columns: 2, minCardHeight: 200 },
-  onDataSourceChange,
-  showDetails = {
-    adminLevels: true,
-    countryCount: true,
-    limitations: true,
-    website: true,
-  },
-}) => {
+                                                                        selectedDataSource,
+                                                                        availableDataSources,
+                                                                        category,
+                                                                        dataSourceInfo = {},
+                                                                        layout = { columns: 2, minCardHeight: 200 },
+                                                                        onDataSourceChange,
+                                                                        showDetails = {
+                                                                          adminLevels: true,
+                                                                          countryCount: true,
+                                                                          limitations: true,
+                                                                          website: true,
+                                                                        },
+                                                                      }) => {
   // Filter available data sources
   const filteredDataSources = useMemo(() => {
     let sources = availableDataSources || Object.keys(DataSourceConfigs) as DataSourceName[];
-    
+
     if (category) {
       sources = sources.filter(name => DataSourceConfigs[name].category === category);
     }
-    
+
     return sources;
   }, [availableDataSources, category]);
 
@@ -110,7 +96,7 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
       const config = DataSourceConfigs[name];
       const additional = dataSourceInfo[name] || {};
       const limitations = additional.limitations || getLicenseLimitations(config.licenseType);
-      
+
       return {
         ...config,
         ...additional,
@@ -137,7 +123,7 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
         >
           {enhancedDataSources.map((info) => {
             const isSelected = selectedDataSource === info.name;
-            
+
             return (
               <FormControlLabel
                 key={info.name}
@@ -173,14 +159,14 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
                         minHeight: layout.minCardHeight,
                         border: '1px solid',
                         borderRadius: 1,
-                        backgroundColor: isSelected 
-                          ? (theme) => theme.palette.mode === 'dark' 
-                            ? 'rgba(144, 202, 249, 0.08)' 
+                        backgroundColor: isSelected
+                          ? (theme) => theme.palette.mode === 'dark'
+                            ? 'rgba(144, 202, 249, 0.08)'
                             : '#e5e5f5'
                           : 'transparent',
                         borderColor: isSelected ? 'primary.main' : 'divider',
                         '&:hover': {
-                          backgroundColor: isSelected 
+                          backgroundColor: isSelected
                             ? (theme) => theme.palette.mode === 'dark'
                               ? 'rgba(144, 202, 249, 0.12)'
                               : '#e5e5f5'
@@ -193,19 +179,19 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
                         <Typography variant="h6" fontWeight="bold">
                           {info.displayName}
                         </Typography>
-                        <Chip 
-                          label={info.license} 
-                          size="small" 
+                        <Chip
+                          label={info.license}
+                          size="small"
                           color={getLicenseColor(info.licenseType)}
                           variant="outlined"
                         />
                       </Stack>
-                      
+
                       {/* Description */}
                       <Typography variant="body2" color="text.secondary">
                         {info.description}
                       </Typography>
-                      
+
                       {/* Stats row */}
                       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                         {showDetails.countryCount && info.countryCount && (
@@ -225,7 +211,7 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
                           </Stack>
                         )}
                       </Stack>
-                      
+
                       {/* Features (if provided) */}
                       {info.features && info.features.length > 0 && (
                         <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -240,7 +226,7 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
                           ))}
                         </Stack>
                       )}
-                      
+
                       {/* Limitations */}
                       {showDetails.limitations && info.limitations && info.limitations.length > 0 && (
                         <Stack direction="row" spacing={0.5} alignItems="flex-start">
@@ -255,7 +241,7 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
                         </Stack>
                       )}
                     </Box>
-                    
+
                     {/* Website link */}
                     {showDetails.website && (
                       <Link

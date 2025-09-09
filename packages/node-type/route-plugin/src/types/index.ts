@@ -1,11 +1,9 @@
 /**
- * Route Plugin Type Definitions
- * ルートプラグインの型定義
- */
+  * Route Plugin Type Definitions
+   */
 
 // Branded types
 export type NodeId = string & { readonly __brand: 'NodeId' };
-export type EntityId = string & { readonly __brand: 'EntityId' };
 export type TagId = string & { readonly __brand: 'TagId' };
 
 // Route Category Type
@@ -51,25 +49,25 @@ export enum TransportMode {
 // ================================
 
 export interface RouteEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
-  
+
   // Basic Information
   name: string;
   description?: string;
   tags?: TagId[];
   category?: RouteCategory;
-  
+
   // Route Specifications
   routeType: RouteType;
   transportModes: TransportMode[];
-  
+
   // Geographic Data
   startPoint?: [number, number]; // [longitude, latitude]
   endPoint?: [number, number];   // [longitude, latitude]
   waypoints?: [number, number][];
   boundingBox?: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
-  
+
   // Route Metrics
   distance?: number; // in meters
   duration?: number; // in seconds
@@ -79,21 +77,21 @@ export interface RouteEntity {
     min: number;
     max: number;
   };
-  
+
   // Data Source
   dataSourceName: 'openstreetmap' | 'mapbox' | 'google' | 'custom';
-  
+
   // License Agreement
   licenseAgreement: boolean;
   licenseAgreedAt?: string;
-  
+
   // Processing Configuration
   processingConfig: RouteProcessingConfig;
-  
+
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
-  
+
   // Metadata
   createdAt: number;
   updatedAt: number;

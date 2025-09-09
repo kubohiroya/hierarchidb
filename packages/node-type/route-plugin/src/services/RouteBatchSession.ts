@@ -1,6 +1,9 @@
-import { AbstractBatchSession, type BaseBatchConfig, type StandardProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
-import type { NodeId } from '@hierarchidb/common-type';
-import type { ProgressEvent } from '@hierarchidb/common-type';
+import {
+  AbstractBatchSession,
+  type BaseBatchConfig,
+  type StandardProgressEvent,
+} from '@hierarchidb/runtime-shared-batch-processor';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
 import { RouteDatabase } from '../database/RouteDatabase';
 import type { RouteGenerationConfig } from '../entities/RouteEntity';
@@ -16,7 +19,12 @@ export interface RouteBatchConfig extends BaseBatchConfig {
     maxRetries: number;
   };
   locationResolution?: { batchSize: number; cacheResults: boolean; fallbackToCoordinates: boolean };
-  validation?: { checkLocationExists: boolean; checkDuplicateRoutes: boolean; validateDistance: boolean; maxDistanceKm?: number };
+  validation?: {
+    checkLocationExists: boolean;
+    checkDuplicateRoutes: boolean;
+    validateDistance: boolean;
+    maxDistanceKm?: number
+  };
   /** Optional per-lane concurrency caps override (e.g. { osm_route: 1, searoute: 4 }) */
   laneCaps?: Partial<Record<'osm_route' | 'searoute' | 'direct' | 'great_circle' | 'custom', number>>;
 }
@@ -49,7 +57,10 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   private generator: RouteGenerator;
   private writer: TabularWriter | null = null;
   private writerReady = false;
-  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void, deps?: { generator?: RouteGenerator }) {
+
+  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void, deps?: {
+    generator?: RouteGenerator
+  }) {
     super(sessionId, nodeId, config);
     this.db = new RouteDatabase();
     this.tasks = tasks;
@@ -59,7 +70,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       if (config.laneCaps) {
         this.laneConfig = { ...this.laneConfig, ...pickNumeric(config.laneCaps) };
       }
-    } catch {}
+    } catch {
+    }
     try {
       const envJson = (typeof process !== 'undefined' && (process as any)?.env?.ROUTE_LANE_CAPS) || undefined;
       const flagCaps = (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.ROUTE_LANE_CAPS) || undefined;
@@ -67,30 +79,46 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       if (parsed && typeof parsed === 'object') {
         this.laneConfig = { ...this.laneConfig, ...pickNumeric(parsed) };
       }
-    } catch {}
+    } catch {
+    }
   }
 
   protected async onInitialize(): Promise<void> {
-    await this.db.routeCursors?.put({ sessionId: this.sessionId, completed: 0, total: this.tasks.length, updatedAt: Date.now(), paused: false } as any);
+    await this.db.routeCursors?.put({
+      sessionId: this.sessionId,
+      completed: 0,
+      total: this.tasks.length,
+      updatedAt: Date.now(),
+      paused: false,
+    } as any);
     const enabled = (typeof process !== 'undefined' && (process as any)?.env?.ROUTE_TABULAR === '1') || (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.ROUTE_TABULAR === true);
     if (enabled) {
       this.writer = new TabularWriter('route');
-      const columns = ['taskId','method','distance','duration','startLon','startLat','endLon','endLat'];
+      const columns = ['taskId', 'method', 'distance', 'duration', 'startLon', 'startLat', 'endLon', 'endLat'];
       await this.writer.begin({ filename: `route-${this.sessionId}.json`, columns });
       this.writerReady = true;
     }
   }
 
-  protected async onStart(): Promise<void> {}
-  protected async onPause(): Promise<void> {}
-  protected async onResume(): Promise<void> {}
-  protected async onCancel(): Promise<void> {}
+  protected async onStart(): Promise<void> {
+  }
+
+  protected async onPause(): Promise<void> {
+  }
+
+  protected async onResume(): Promise<void> {
+  }
+
+  protected async onCancel(): Promise<void> {
+  }
+
   protected async onComplete(): Promise<void> {
     if (this.writer && this.writerReady) {
       try {
         const { tableId } = await this.writer.commit();
         await (this.db.table('routeCursors') as any)?.update(this.sessionId, { tableId });
-      } catch {}
+      } catch {
+      }
     }
   }
 
@@ -104,15 +132,30 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
         const sem = this.getLaneSemaphore(method);
         await sem.acquire();
-        try { await this.processTask(task); } finally { sem.release(); }
+        try {
+          await this.processTask(task);
+        } finally {
+          sem.release();
+        }
       } else {
         await this.processTask(task);
       }
       completed++;
-      await this.db.routeCursors?.put({ sessionId: this.sessionId, completed, total: this.tasks.length, updatedAt: Date.now(), paused: this.getState().status === 'paused' } as any);
-      this.updateProgress({ total: this.tasks.length, completed, currentStage: task.stage, currentTask: `Processing ${task.taskType}` });
+      await this.db.routeCursors?.put({
+        sessionId: this.sessionId,
+        completed,
+        total: this.tasks.length,
+        updatedAt: Date.now(),
+        paused: this.getState().status === 'paused',
+      } as any);
+      this.updateProgress({
+        total: this.tasks.length,
+        completed,
+        currentStage: task.stage,
+        currentTask: `Processing ${task.taskType}`,
+      });
       // Pause handling (poll cursor flag)
-      for (;;) {
+      for (; ;) {
         const cur = await (this.db.routeCursors as any)?.get(this.sessionId);
         if (!cur?.paused) break;
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
@@ -146,7 +189,10 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       percentage: event.percentage,
       currentTask: event.currentTask || '',
     };
-    try { this.progressSink?.(legacyEvent); } catch {}
+    try {
+      this.progressSink?.(legacyEvent);
+    } catch {
+    }
   }
 
   private async processTask(task: RouteBatchTask): Promise<void> {
@@ -160,14 +206,34 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
           const res = await this.generator.generate(pts, { method, options: (task.routeData as any)?.methodOptions });
           try {
             // @ts-ignore best-effort
-            await (this.db.table('routeResults') as any)?.put({ id: `${this.sessionId}:${task.taskId}`, sessionId: this.sessionId, taskId: task.taskId, method, lineGeometry: res.lineGeometry, distance: res.distance, duration: res.duration, createdAt: Date.now() });
-          } catch {}
+            await (this.db.table('routeResults') as any)?.put({
+              id: `${this.sessionId}:${task.taskId}`,
+              sessionId: this.sessionId,
+              taskId: task.taskId,
+              method,
+              lineGeometry: res.lineGeometry,
+              distance: res.distance,
+              duration: res.duration,
+              createdAt: Date.now(),
+            });
+          } catch {
+          }
           try {
             if (this.writer && this.writerReady) {
-              const row = { taskId: task.taskId, method, distance: res.distance, duration: res.duration, startLon: pts[0]?.[0], startLat: pts[0]?.[1], endLon: pts[1]?.[0], endLat: pts[1]?.[1] };
+              const row = {
+                taskId: task.taskId,
+                method,
+                distance: res.distance,
+                duration: res.duration,
+                startLon: pts[0]?.[0],
+                startLat: pts[0]?.[1],
+                endLon: pts[1]?.[0],
+                endLat: pts[1]?.[1],
+              };
               await this.writer.writeRows([row]);
             }
-          } catch {}
+          } catch {
+          }
           break;
         }
         case 'location_resolution':
@@ -187,7 +253,11 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         let done = false;
         for (let i = 0; i < max && !done; i++) {
           await this.delay(150);
-          try { await this.processTask({ ...task, status: 'pending' }); done = true; } catch {}
+          try {
+            await this.processTask({ ...task, status: 'pending' });
+            done = true;
+          } catch {
+          }
         }
       }
     }
@@ -207,9 +277,25 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
 class Semaphore {
   private queue: Array<() => void> = [];
   private count: number;
-  constructor(private capacity: number) { this.count = capacity; }
-  acquire(): Promise<void> { if (this.count > 0) { this.count--; return Promise.resolve(); } return new Promise((r) => this.queue.push(r)); }
-  release(): void { if (this.queue.length > 0) { const resolve = this.queue.shift()!; resolve(); } else this.count = Math.min(this.count + 1, this.capacity); }
+
+  constructor(private capacity: number) {
+    this.count = capacity;
+  }
+
+  acquire(): Promise<void> {
+    if (this.count > 0) {
+      this.count--;
+      return Promise.resolve();
+    }
+    return new Promise((r) => this.queue.push(r));
+  }
+
+  release(): void {
+    if (this.queue.length > 0) {
+      const resolve = this.queue.shift()!;
+      resolve();
+    } else this.count = Math.min(this.count + 1, this.capacity);
+  }
 }
 
 function pickNumeric(obj: Record<string, unknown>): Record<string, number> {

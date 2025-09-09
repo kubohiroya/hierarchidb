@@ -1,4 +1,4 @@
-import type { TreeNode, NodeId, NodeType, PluginDefinition } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, PluginDefinition, TreeNode } from '@hierarchidb/common-type';
 import type { CoreDB } from './CoreDB';
 import { workerError } from '../utils/workerLogger';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types';
@@ -10,7 +10,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 export class NodeLifecycleManager {
   static async getSingleton(
     coreDB: CoreDB,
-    plugins: { [key: NodeType]: PluginDefinition }
+    plugins: { [key: NodeType]: PluginDefinition },
   ): Promise<NodeLifecycleManager> {
     return SingletonMixin.getSingleton(NodeLifecycleManager.name, () => {
       return new NodeLifecycleManager(coreDB, plugins);
@@ -21,8 +21,9 @@ export class NodeLifecycleManager {
 
   constructor(
     private coreDB: CoreDB,
-    private plugins: { [key: NodeType]: PluginDefinition }
-  ) {}
+    private plugins: { [key: NodeType]: PluginDefinition },
+  ) {
+  }
 
   /**
    * Execute a specific lifecycle hook
@@ -77,7 +78,7 @@ export class NodeLifecycleManager {
   async handleNodeCreation(
     parentId: NodeId,
     nodeData: TreeNode,
-    nodeType: NodeType
+    nodeType: NodeType,
   ): Promise<NodeId> {
     // Execute beforeCreate hook
     await this.executeLifecycleHook('beforeCreate', nodeType, parentId, nodeData);
@@ -100,7 +101,7 @@ export class NodeLifecycleManager {
   async handleNodeUpdate(
     nodeId: NodeId,
     updates: Partial<TreeNode>,
-    nodeType: NodeType
+    nodeType: NodeType,
   ): Promise<void> {
     // Execute beforeUpdate hook
     await this.executeLifecycleHook('beforeUpdate', nodeType, nodeId, updates);
@@ -136,7 +137,7 @@ export class NodeLifecycleManager {
     nodeId: NodeId,
     oldParentId: NodeId,
     newParentId: NodeId,
-    nodeType: NodeType
+    nodeType: NodeType,
   ): Promise<void> {
     // Execute beforeMove hook
     await this.executeLifecycleHook('beforeMove', nodeType, nodeId, oldParentId, newParentId);
@@ -168,7 +169,7 @@ export class NodeLifecycleManager {
   async handleBatchCreate(
     parentId: NodeId,
     nodes: Array<TreeNode>,
-    nodeType: NodeType
+    nodeType: NodeType,
   ): Promise<NodeId[]> {
     const nodeIds: NodeId[] = [];
 
@@ -259,7 +260,7 @@ export class NodeLifecycleManager {
     } catch (e) {
       workerError(
         `Failed to increment reference count for ${nodeType} node ${nodeId}:`,
-        e as Record<string, any>
+        e as Record<string, any>,
       );
     }
   }
@@ -278,7 +279,7 @@ export class NodeLifecycleManager {
     } catch (e) {
       workerError(
         `Failed to decrement reference count for ${nodeType} node ${nodeId}:`,
-        e as Record<string, any>
+        e as Record<string, any>,
       );
     }
   }
@@ -297,7 +298,10 @@ export class NodeLifecycleManager {
   /**
    * Inject reference counting handler registry (optional)
    */
-  setReferenceCountingRegistry(registry: Record<string, { incrementReferenceCount(nodeId: NodeId): Promise<void>; decrementReferenceCount(nodeId: NodeId): Promise<void> }>) {
+  setReferenceCountingRegistry(registry: Record<string, {
+    incrementReferenceCount(nodeId: NodeId): Promise<void>;
+    decrementReferenceCount(nodeId: NodeId): Promise<void>
+  }>) {
     (this as any).refCountRegistry = registry;
   }
 

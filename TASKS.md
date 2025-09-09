@@ -703,6 +703,10 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-08 done: fix/ui-dialog/ts2742 — `AutoHideFullScreenDialog` に戻り値型注釈（`React.ReactElement`）を追加し、`@hierarchidb/runtime-ui-plugin-dialog` の型チェック時に他パッケージの `jsx-runtime` 型参照が漏れる問題（TS2742）を解消。
+  - 検証: `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` グリーン。
+  - 影響範囲: 公開APIの型表面を安定化（機能挙動は無変更）。
+  - ロールバック: `packages/ui/dialog/src/components/AutoHideFullScreenDialog.tsx` の関数戻り値注釈を削除。
 - 2025-09-07 start: docs/tasks — ガイド準拠の構造整備（セクション追加: 実行コマンドの原則/禁止事項・注意/失敗時の取り扱い、目次更新）。コード差分なし。
 - 2025-09-07 done: 上記を反映。運用方針（小粒PR・既定OFFフラグ・DoD/ロールバック明記）を本ファイル先頭にも再確認として明示。
 - 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/node-type/docs` を削除。

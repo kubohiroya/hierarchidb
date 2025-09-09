@@ -1,12 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession';
-import type { RouteBatchTask, RouteBatchConfig } from '../../src/services/RouteBatchSession';
 import { RouteDatabase } from '../../src/database/RouteDatabase';
 
 describe('RouteBatchSession pause/resume integration', () => {
   it('honors paused cursor flag and resumes processing', async () => {
     const sessionId = 's2';
-    const cfg = { routeGeneration: { method: 'direct', parallel: true, maxConcurrent: 2, retryOnFailure: false, maxRetries: 0 } } as RouteBatchConfig;
+    const cfg = {
+      routeGeneration: {
+        method: 'direct',
+        parallel: true,
+        maxConcurrent: 2,
+        retryOnFailure: false,
+        maxRetries: 0,
+      },
+    } as RouteBatchConfig;
     const tasks: RouteBatchTask[] = Array.from({ length: 4 }, (_, i) => ({
       taskId: `t-${i}`,
       treeNodeId: 'n1' as any,
@@ -15,7 +23,7 @@ describe('RouteBatchSession pause/resume integration', () => {
       stage: 'route_generation',
       status: 'pending',
       index: i,
-      routeData: { method: 'direct', startCoordinates: [0,0], endCoordinates: [1,1] },
+      routeData: { method: 'direct', startCoordinates: [0, 0], endCoordinates: [1, 1] },
     }));
     const s = new RouteBatchSession(sessionId, 'n1' as any, cfg, tasks);
     await s.initialize();

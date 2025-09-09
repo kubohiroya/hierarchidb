@@ -1,23 +1,22 @@
 /**
- * TreeConsoleActions - 元のデザインの忠実な再現
- *
- * 元のeria-cartographのTreeConsoleActionsのUIを正確に再現。
- * SpeedDialMenuを使用した右下のフローティングアクションボタン。
- */
+  * TreeConsoleActions -
+  * eria-cartographTreeConsoleActionsUI
+ * SpeedDialMenu
+  */
 
 import { DialogActions } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as CreateFolderIcon,
-  NoteAdd as NoteAddIcon,
   InsertDriveFile as FileIcon,
+  NoteAdd as NoteAddIcon,
 } from '@mui/icons-material';
-import type { TreeConsoleActionsProps, SpeedDialActionType } from '../types';
+import type { SpeedDialActionType, TreeConsoleActionsProps } from '../types';
 import { SpeedDialMenu } from './SpeedDialMenu';
 
 /**
- * 既定のSpeedDialアクションを生成
- */
+  * SpeedDial
+  */
 function getDefaultSpeedDialActions(): SpeedDialActionType[] {
   return [
     {
@@ -45,9 +44,9 @@ function getDefaultSpeedDialActions(): SpeedDialActionType[] {
 }
 
 /**
- * TreeConsoleActions メインコンポーネント
- * 元のTreeConsoleActionsの構造を完全に再現
- */
+  * TreeConsoleActions
+ * TreeConsoleActions
+  */
 export function TreeConsoleActions(props: TreeConsoleActionsProps): React.JSX.Element {
   const {
     isProjectsPage = false,
@@ -62,7 +61,7 @@ export function TreeConsoleActions(props: TreeConsoleActionsProps): React.JSX.El
     backActionButton,
   } = props;
 
-  // SpeedDialのアクション定義（propsで渡されない場合はデフォルトを使用）
+  //  SpeedDialprops
   const actions = speedDialActions || getDefaultSpeedDialActions();
 
   return (

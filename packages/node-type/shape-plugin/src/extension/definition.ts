@@ -160,7 +160,7 @@ export const ShapeExtension = {
         validate: (data: any) => {
           if (!Array.isArray(data.selectedAdminLevels)) return false;
           return data.selectedAdminLevels.every(
-            (level: number) => typeof level === 'number' && level >= 0 && level <= 3
+            (level: number) => typeof level === 'number' && level >= 0 && level <= 3,
           );
         },
         message: 'Administrative levels must be numbers between 0 and 3',
@@ -169,7 +169,7 @@ export const ShapeExtension = {
         validate: (data: any) => {
           if (!Array.isArray(data.selectedCountries)) return false;
           return data.selectedCountries.every(
-            (country: string) => typeof country === 'string' && country.length >= 2
+            (country: string) => typeof country === 'string' && country.length >= 2,
           );
         },
         message: 'Country codes must be valid strings',

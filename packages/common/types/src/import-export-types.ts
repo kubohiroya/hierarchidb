@@ -1,15 +1,14 @@
 /**
- * Import/Export機能の型定義
+  * Import/Export
  * @module core/types/import-export
- */
+  */
 
 import { NodeId } from './id-types';
 import { TreeNode } from './tree-node-types';
 
 /**
- * インポートマニフェスト
- * ZIPアーカイブまたはテンプレートのメタデータ
- */
+   * ZIP
+  */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -32,8 +31,7 @@ export interface ImportManifest {
 }
 
 /**
- * エクスポートマニフェスト
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -44,8 +42,7 @@ export interface ExportManifest extends ImportManifest {
 }
 
 /**
- * インポート進捗情報
- */
+    */
 export interface ImportProgress {
   phase: 'reading' | 'validating' | 'importing-nodes' | 'importing-resources' | 'finalizing';
   current: number;
@@ -54,8 +51,7 @@ export interface ImportProgress {
 }
 
 /**
- * エクスポート進捗情報
- */
+    */
 export interface ExportProgress {
   phase: 'collecting-nodes' | 'collecting-resources' | 'creating-archive' | 'finalizing';
   current: number;
@@ -64,8 +60,7 @@ export interface ExportProgress {
 }
 
 /**
- * インポート結果
- */
+    */
 export interface ImportResult {
   success: boolean;
   importedNodeIds: NodeId[];
@@ -75,8 +70,7 @@ export interface ImportResult {
 }
 
 /**
- * エクスポート結果
- */
+    */
 export interface ExportResult {
   success: boolean;
   blob?: Blob;
@@ -85,8 +79,7 @@ export interface ExportResult {
 }
 
 /**
- * インポートオプション
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -97,8 +90,7 @@ export interface ImportOptions {
 }
 
 /**
- * ファイルインポートオプション
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -107,8 +99,7 @@ export interface FileImportOptions extends ImportOptions {
 }
 
 /**
- * テンプレートインポートオプション
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -117,8 +108,7 @@ export interface TemplateImportOptions extends ImportOptions {
 }
 
 /**
- * エクスポートオプション
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -131,8 +121,7 @@ export interface ExportOptions {
 }
 
 /**
- * テンプレート定義
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -149,8 +138,7 @@ export interface TemplateDefinition {
 }
 
 /**
- * ツリーノードエクスポートデータ
- */
+    */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -165,9 +153,7 @@ export interface TreeNodeExportData {
 }
 
 /**
- * クリップボードデータ
- * ノードのコピー・ペースト用のデータ構造
- */
+     */
 export interface ClipboardData {
   type: 'nodes-copy';
   timestamp: number;
@@ -179,8 +165,8 @@ export interface ClipboardData {
 // OnNameConflict is already exported from command-types, no need to re-export
 
 /**
- * IDマッピング（インポート時の旧ID→新IDマッピング）
- */
+  * IDIDID
+  */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */

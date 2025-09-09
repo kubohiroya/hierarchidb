@@ -2,10 +2,14 @@
  * BatchSessionManager for Location plugin
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
-import { SessionController, type LocationPointInput, type LocationTileSettings, type SessionSummary } from './SessionController';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
+import {
+  type LocationPointInput,
+  type LocationTileSettings,
+  SessionController,
+  type SessionSummary,
+} from './SessionController';
 import { LocationBatchSession } from './LocationBatchSession';
-import type { ProgressEvent } from '@hierarchidb/common-type';
 
 export class LocationBatchSessionManager {
   private shared = new Map<string, LocationBatchSession>();
@@ -36,11 +40,24 @@ export class LocationBatchSessionManager {
       const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
       const db = getEphemeralLocationDB();
       // Opportunistic cleanup (7 days)
-      try { await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000); } catch {}
+      try {
+        await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000);
+      } catch {
+      }
       // @ts-ignore
-      await db.table('sessions').put({ sessionId, nodeId, bbox, zoomMin: summary.zoomMin, zoomMax: summary.zoomMax, totalPoints: points.length, createdAt: Date.now(), status: 'running' });
-    } catch {}
-    // Fire and forget（共有セッション）
+      await db.table('sessions').put({
+        sessionId,
+        nodeId,
+        bbox,
+        zoomMin: summary.zoomMin,
+        zoomMax: summary.zoomMax,
+        totalPoints: points.length,
+        createdAt: Date.now(),
+        status: 'running',
+      });
+    } catch {
+    }
+    //  Fire and forget
     const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: 4 }, controller, (ev) => {
       const set2 = this.progress.get(sessionId);
       if (!set2) return;
@@ -54,7 +71,8 @@ export class LocationBatchSessionManager {
         const db = getEphemeralLocationDB();
         // @ts-ignore
         await db.table('sessions').update(sessionId, { status: 'completed' });
-      } catch {}
+      } catch {
+      }
     }).catch(async (e: any) => {
       console.error('Location session failed', e);
       try {
@@ -62,7 +80,8 @@ export class LocationBatchSessionManager {
         const db = getEphemeralLocationDB();
         // @ts-ignore
         await db.table('sessions').update(sessionId, { status: 'failed' });
-      } catch {}
+      } catch {
+      }
     });
     return summary;
   }
@@ -74,7 +93,7 @@ export class LocationBatchSessionManager {
       this.progress.set(sessionId, set);
     }
     set.add(cb);
-    // 共有セッションのシンクで late subscriber にも配信されるため、ここでの再配線は不要
+    //  late subscriber
     return () => {
       const s = this.progress.get(sessionId);
       if (!s) return;
@@ -88,9 +107,17 @@ export class LocationBatchSessionManager {
   }
 
   // Control APIs
-  pause(sessionId: string) { this.shared.get(sessionId)?.pause(); }
-  resume(sessionId: string) { this.shared.get(sessionId)?.resume(); }
-  cancel(sessionId: string) { this.shared.get(sessionId)?.cancel(); }
+  pause(sessionId: string) {
+    this.shared.get(sessionId)?.pause();
+  }
+
+  resume(sessionId: string) {
+    this.shared.get(sessionId)?.resume();
+  }
+
+  cancel(sessionId: string) {
+    this.shared.get(sessionId)?.cancel();
+  }
 }
 
 function computeBbox(points: LocationPointInput[]): [number, number, number, number] {
@@ -101,6 +128,6 @@ function computeBbox(points: LocationPointInput[]): [number, number, number, num
     if (p.lon > maxLon) maxLon = p.lon;
     if (p.lat > maxLat) maxLat = p.lat;
   }
-  if (!isFinite(minLon)) return [0,0,0,0];
+  if (!isFinite(minLon)) return [0, 0, 0, 0];
   return [minLon, minLat, maxLon, maxLat];
 }

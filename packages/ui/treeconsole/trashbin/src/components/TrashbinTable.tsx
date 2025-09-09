@@ -1,33 +1,21 @@
 /**
- * TrashbinTable - ゴミ箱内のアイテム表示テーブル
- *
- * 削除されたアイテムの一覧表示と復元・完全削除機能
- */
+  * TrashbinTable -
+    */
 
-import { useMemo, useState, MouseEvent } from 'react';
-import {
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Checkbox,
-  Typography,
-  Chip,
-} from '@mui/material';
+import { MouseEvent, useMemo, useState } from 'react';
+import { Box, Checkbox, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TrashbinTableProps, TrashItem } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
-// スタイル定義
 const StyledTableContainer = styled(Box)`
   width: 100%;
   height: 100%;
   overflow: auto;
   position: relative;
-  
+
   /* Custom scrollbar styling */
+
   &::-webkit-scrollbar {
     width: 12px;
     height: 12px;
@@ -40,7 +28,7 @@ const StyledTableContainer = styled(Box)`
   &::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
-    
+
     &:hover {
       background: rgba(0, 0, 0, 0.3);
     }
@@ -58,7 +46,7 @@ const StyledTableHead = styled(TableHead)`
   top: 0;
   z-index: 10;
   background: ${({ theme }) => theme.palette.background.paper};
-  
+
   & .MuiTableCell-root {
     font-weight: 600;
     border-bottom: 2px solid ${({ theme }) => theme.palette.divider};
@@ -71,13 +59,12 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
   &:hover {
     background-color: rgba(0, 0, 0, 0.04);
   }
-  
+
   ${({ selected }) =>
     selected &&
     `
     background-color: rgba(25, 118, 210, 0.08) !important;
   `}
-  
   & .MuiTableCell-root {
     padding: 8px 12px;
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
@@ -92,20 +79,19 @@ const ItemCell = styled(Box)`
 `;
 
 /**
- * TrashbinTable メインコンポーネント
- */
+  * TrashbinTable
+  */
 export function TrashbinTable({
-  controller,
-  viewHeight = 400,
-  viewWidth = 800,
-  showMetadata = true,
-  allowMultiSelect = true,
-  NodeTypeIcon: CustomNodeTypeIcon,
-  NodeContextMenu: CustomNodeContextMenu,
-  onItemDoubleClick,
-  onItemContextMenu,
-}: TrashbinTableProps) {
-  // コンポーネントの選択
+                                controller,
+                                viewHeight = 400,
+                                viewWidth = 800,
+                                showMetadata = true,
+                                allowMultiSelect = true,
+                                NodeTypeIcon: CustomNodeTypeIcon,
+                                NodeContextMenu: CustomNodeContextMenu,
+                                onItemDoubleClick,
+                                onItemContextMenu,
+                              }: TrashbinTableProps) {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
@@ -131,7 +117,7 @@ export function TrashbinTable({
       (item) =>
         item.name.toLowerCase().includes(lowerSearchText) ||
         item.nodeType.toLowerCase().includes(lowerSearchText) ||
-        item.originalPath?.toLowerCase().includes(lowerSearchText)
+        item.originalPath?.toLowerCase().includes(lowerSearchText),
     );
   }, [trashItems, searchText]);
 

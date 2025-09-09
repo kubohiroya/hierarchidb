@@ -1,16 +1,15 @@
 import {
+  NodeId,
+  NodeTagAssociation,
+  NodeType,
+  TagEntity,
   Tree,
+  TreeChangeEvent,
   TreeId,
   TreeNode,
-  NodeType,
   TreeRootState,
-  TreeChangeEvent,
-  TagEntity,
-  NodeTagAssociation,
-  NodeId,
 } from '@hierarchidb/common-type';
-import { SingletonMixin } from '@hierarchidb/util';
-import { getDBName } from '@hierarchidb/util';
+import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import Dexie, { type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
@@ -21,7 +20,7 @@ export class CoreDB extends Dexie {
   tags!: Table<TagEntity, TagEntity['id']>;
   tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
 
-  // イベント通知用のSubject
+  //  Subject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
 
   /**
@@ -32,7 +31,7 @@ export class CoreDB extends Dexie {
   async runInTx<T>(
     mode: 'r' | 'rw',
     tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
-    fn: () => Promise<T>
+    fn: () => Promise<T>,
   ): Promise<T> {
     const tables = tableNames
       .map((n) => (this as any)[n])
@@ -93,6 +92,7 @@ export class CoreDB extends Dexie {
       }
 
       type RootNodeId = NodeId;
+
       function getRootNodeId(treeId: string, nodeId: string): RootNodeId {
         return `${treeId}:${nodeId}` as RootNodeId;
       }
@@ -106,7 +106,7 @@ export class CoreDB extends Dexie {
             rootId: getRootNodeId(treeId, 'root'),
             trashRootId: getRootNodeId(treeId, 'trash'),
             workingCopyRootId: getRootNodeId(treeId, 'workingCopy'),
-          }))
+          })),
         );
       }
       if (nodesCount === 0) {
@@ -142,7 +142,7 @@ export class CoreDB extends Dexie {
               updatedAt: now,
               version: 1,
             },
-          ]) satisfies TreeNode[]
+          ]) satisfies TreeNode[],
         );
       }
 
@@ -152,7 +152,7 @@ export class CoreDB extends Dexie {
             treeId: treeId as TreeId,
             rootNodeId: getRootNodeId(treeId, treeRootNodeType),
             expanded: {},
-          }))
+          })),
         );
 
         try {
@@ -207,7 +207,7 @@ export class CoreDB extends Dexie {
         rootId: tree.rootId,
         trashRootId: tree.trashRootId,
         superRootId: tree.superRootId,
-      })
+      }),
     );
   }
 
@@ -260,7 +260,6 @@ export class CoreDB extends Dexie {
 
     await this.nodes.add(node);
 
-    // 作成イベントを通知
     this.changeSubject.next({
       type: 'node-created' as const,
       nodeId: node.id,
@@ -272,7 +271,6 @@ export class CoreDB extends Dexie {
   }
 
   async updateNode(node: Pick<TreeNode, 'id'> & Partial<TreeNode>): Promise<void> {
-    // 更新は永続化し、更新前後のイベントを通知
     const oldNode = await this.nodes.get(node.id);
     const next: TreeNode | undefined = oldNode
       ? ({ ...oldNode, ...node } as TreeNode)
@@ -312,7 +310,6 @@ export class CoreDB extends Dexie {
   async deleteNode(nodeId: NodeId): Promise<void> {
     await this.nodes.delete(nodeId);
 
-    // 削除イベントを通知
     this.changeSubject.next({
       type: 'node-deleted' as const,
       nodeId: nodeId,
@@ -335,25 +332,23 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
-      })
+      }),
     );
   }
 
   /**
-   * データベース接続を閉じる際にSubjectもクリーンアップ
-   */
+      * Subject
+      */
   close(): void {
     this.changeSubject.complete();
     super.close();
   }
 
   /**
-   * バルク操作用のメソッド
-   */
+            */
   async bulkCreateNodes(nodes: TreeNode[]): Promise<void> {
     await this.nodes.bulkAdd(nodes);
 
-    // バルク作成イベントを個別に通知
     nodes.forEach((node) => {
       this.changeSubject.next({
         type: 'node-created' as const,
@@ -365,12 +360,10 @@ export class CoreDB extends Dexie {
   }
 
   async bulkUpdateNodes(nodes: TreeNode[]): Promise<void> {
-    // 更新前の状態を取得
     const oldNodes = await Promise.all(nodes.map((node) => this.nodes.get(node.id)));
 
     await this.nodes.bulkPut(nodes);
 
-    // バルク更新イベントを個別に通知
     nodes.forEach((node, index) => {
       const oldNode = oldNodes[index];
       if (oldNode) {
@@ -402,7 +395,6 @@ export class CoreDB extends Dexie {
   async bulkDeleteNodes(nodeIds: NodeId[]): Promise<void> {
     await this.nodes.bulkDelete(nodeIds);
 
-    // バルク削除イベントを個別に通知
     nodeIds.forEach((nodeId) => {
       this.changeSubject.next({
         type: 'node-deleted' as const,
@@ -479,7 +471,7 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
-      })
+      }),
     );
   }
 
@@ -569,7 +561,7 @@ export class CoreDB extends Dexie {
   async duplicateNode(
     sourceNodeId: NodeId,
     targetParentId: NodeId,
-    newNodeId?: NodeId
+    newNodeId?: NodeId,
   ): Promise<NodeId> {
     const sourceNode = await this.nodes.get(sourceNodeId);
     if (!sourceNode) {
@@ -586,8 +578,7 @@ export class CoreDB extends Dexie {
       ...sourceNode,
       id: duplicatedNodeId,
       parentId: targetParentId,
-      depth: targetParent.depth + 1, // 正しい深度を設定
-      name: sourceNode.name + ' (Copy)',
+      depth: targetParent.depth + 1, name: sourceNode.name + ' (Copy)',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
@@ -606,11 +597,11 @@ export class CoreDB extends Dexie {
   }
 
   /**
-   * Duplicate a subtree and return the full old→new id mapping as well as the new root id.
-   */
+      * Duplicate a subtree and return the full oldnew id mapping as well as the new root id.
+      */
   async duplicateSubtreeWithMap(
     sourceRootId: NodeId,
-    targetParentId: NodeId
+    targetParentId: NodeId,
   ): Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }> {
     const sourceRoot = await this.nodes.get(sourceRootId);
     if (!sourceRoot) {
@@ -720,7 +711,7 @@ export class CoreDB extends Dexie {
       if (children.length > 0) {
         await this.pasteNodes(
           children.map((c) => c.id),
-          newNodeId
+          newNodeId,
         );
       }
     }
@@ -729,7 +720,7 @@ export class CoreDB extends Dexie {
     await this._recalcDepthsAfterPaste(targetParentId);
     return pastedNodeIds;
   }
-  
+
   // Ensure depths stay consistent after paste operations
   // This also marks updateSubtreeDepthFromParent as used for TS noUnusedLocals
   private async _recalcDepthsAfterPaste(targetParentId: NodeId): Promise<void> {
@@ -845,7 +836,7 @@ export class CoreDB extends Dexie {
    */
   async getTagAssociation(
     nodeId: NodeId,
-    tagId: TagEntity['id']
+    tagId: TagEntity['id'],
   ): Promise<NodeTagAssociation | undefined> {
     return await this.tagAssociations.get([nodeId, tagId]);
   }

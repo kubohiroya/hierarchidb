@@ -4,15 +4,15 @@
  */
 
 // (no direct Dexie typings to avoid cross-version conflicts)
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import type {
+  LocationCategory,
   LocationEntity,
-  LocationWorkingCopy,
   LocationFilterCriteria,
   LocationPoint,
-  LocationCategory,
   LocationType,
+  LocationWorkingCopy,
 } from './LocationEntity';
 
 /**
@@ -43,11 +43,11 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: CreateLocationData
+    entityId: NodeId,
+    data: CreateLocationData,
   ): LocationEntity {
     const now = Date.now();
-    
+
     // Default point if not provided
     const defaultPoint: LocationPoint = {
       coordinates: [0, 0],
@@ -142,7 +142,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    * Create new draft working copy
    */
   async createNewDraftWorkingCopy(nodeId?: NodeId): Promise<LocationWorkingCopy> {
-    const entityId = 'draft-location' as EntityId;
+    const entityId = 'draft-location' as unknown as NodeId;
     const now = Date.now();
 
     const workingCopy: LocationWorkingCopy = {
@@ -211,7 +211,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       const parent = await super.getEntityByNodeId(entity.parentLocationId);
       if (parent && parent.childLocationIds) {
         const updatedChildren = parent.childLocationIds.filter(
-          (id: NodeId) => id !== entity.nodeId
+          (id: NodeId) => id !== entity.nodeId,
         );
         await super.updateEntity(parent.id, {
           childLocationIds: updatedChildren,
@@ -225,7 +225,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
         const nearby = await super.getEntityByNodeId(nearbyId);
         if (nearby && nearby.nearbyLocationIds) {
           const updatedNearby = nearby.nearbyLocationIds.filter(
-            (id: NodeId) => id !== entity.nodeId
+            (id: NodeId) => id !== entity.nodeId,
           );
           await super.updateEntity(nearby.id, {
             nearbyLocationIds: updatedNearby,
@@ -240,7 +240,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    */
   protected applyAdditionalSearchCriteria(
     query: any,
-    criteria: LocationFilterCriteria
+    criteria: LocationFilterCriteria,
   ): any {
     // Apply parent class criteria first
     query = super.applyAdditionalSearchCriteria(query, criteria);
@@ -248,19 +248,19 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
     // Apply location-specific criteria
     if (criteria.categories && criteria.categories.length > 0) {
       query = query.filter((entity: LocationEntity) =>
-        criteria.categories!.includes(entity.category)
+        criteria.categories!.includes(entity.category),
       );
     }
 
     if (criteria.types && criteria.types.length > 0) {
       query = query.filter((entity: LocationEntity) =>
-        criteria.types!.includes(entity.type)
+        criteria.types!.includes(entity.type),
       );
     }
 
     if (criteria.dataSources && criteria.dataSources.length > 0) {
       query = query.filter((entity: LocationEntity) =>
-        criteria.dataSources!.includes(entity.dataSource)
+        criteria.dataSources!.includes(entity.dataSource),
       );
     }
 
@@ -291,7 +291,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       query = query.filter((entity: LocationEntity) => {
         const distance = this.calculateDistance(
           coordinates,
-          entity.point.coordinates
+          entity.point.coordinates,
         );
         return distance <= radius;
       });
@@ -299,7 +299,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
 
     if (criteria.minImportance !== undefined) {
       query = query.filter((entity: LocationEntity) =>
-        (entity.importance || 0) >= criteria.minImportance!
+        (entity.importance || 0) >= criteria.minImportance!,
       );
     }
 
@@ -319,13 +319,13 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
 
     if (criteria.parentLocationId) {
       query = query.filter((entity: LocationEntity) =>
-        entity.parentLocationId === criteria.parentLocationId
+        entity.parentLocationId === criteria.parentLocationId,
       );
     }
 
     if (criteria.processingStatus) {
       query = query.filter((entity: LocationEntity) =>
-        entity.processingStatus === criteria.processingStatus
+        entity.processingStatus === criteria.processingStatus,
       );
     }
 
@@ -338,11 +338,11 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
   async searchByProximity(
     center: [number, number],
     radius: number,
-    limit?: number
+    limit?: number,
   ): Promise<LocationEntity[]> {
     try {
       const locations = await this.table.toArray();
-      
+
       // Calculate distances and sort
       const locationsWithDistance = locations
         .map((location: LocationEntity) => ({
@@ -413,8 +413,8 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    * Update location coordinates
    */
   async updateLocationPoint(
-    entityId: EntityId,
-    point: LocationPoint
+    entityId: NodeId,
+    point: LocationPoint,
   ): Promise<LocationEntity> {
     try {
       return await super.updateEntity(entityId, {
@@ -431,9 +431,9 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    * Update processing status
    */
   async updateProcessingStatus(
-    entityId: EntityId,
+    entityId: NodeId,
     status: 'pending' | 'processing' | 'completed' | 'failed',
-    error?: string
+    error?: string,
   ): Promise<void> {
     try {
       const updates: Partial<LocationEntity> = {
@@ -457,7 +457,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
    */
   private calculateDistance(
     point1: [number, number],
-    point2: [number, number]
+    point2: [number, number],
   ): number {
     const R = 6371000; // Earth radius in meters
     const φ1 = (point1[1] * Math.PI) / 180;
@@ -494,12 +494,10 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
   }
 
   // ==================
-  // 多段階ダイアログサポート
   // ==================
 
   /**
-   * ロケーション作成の多段階ダイアログのステップ能力を評価
-   */
+            */
   async getStepCapabilities(data: any, step: number): Promise<{
     canNavigateTo: boolean;
     canStartBatch: boolean;
@@ -507,67 +505,66 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
     canProceedToNext: boolean;
     canBackToPrevious: boolean;
   }> {
-    // ロケーションは4段階のステップを持つ
-    // Step 0: 基本情報 (名前、説明、種類)
-    // Step 1: 位置情報 (座標、住所)
-    // Step 2: 詳細情報 (カテゴリー、タグ、メタデータ)
-    // Step 3: 検証と最終確認
+    //  4
+    //  Step 0: ()
+    //  Step 1: ()
+    //  Step 2: ()
+    //  Step 3:
 
     switch (step) {
-      case 0: // 基本情報ステップ
+      case 0:
         return {
           canNavigateTo: true,
-          canStartBatch: false, // 基本情報が必要
-          canSave: false, // 位置情報が必要
+          canStartBatch: false,
+          canSave: false,
           canProceedToNext: !!(data.name && data.name.trim().length > 0 && data.locationType),
-          canBackToPrevious: false // 最初のステップ
+          canBackToPrevious: false,
         };
 
-      case 1: // 位置情報ステップ
+      case 1:
         const hasBasicInfo = !!(data.name && data.name.trim().length > 0 && data.locationType);
         const hasLocation = !!(
-          (data.latitude !== undefined && data.longitude !== undefined) || 
+          (data.latitude !== undefined && data.longitude !== undefined) ||
           (data.address && data.address.trim().length > 0)
         );
-        
+
         return {
           canNavigateTo: hasBasicInfo,
-          canStartBatch: hasBasicInfo && hasLocation, // 位置情報があればバッチ処理可能
-          canSave: hasBasicInfo && hasLocation, // 最低限の情報で保存可能
+          canStartBatch: hasBasicInfo && hasLocation,
+          canSave: hasBasicInfo && hasLocation,
           canProceedToNext: hasLocation,
-          canBackToPrevious: true
+          canBackToPrevious: true,
         };
 
-      case 2: // 詳細情報ステップ
+      case 2:
         const hasMinimalInfo = !!(
-          data.name && data.name.trim().length > 0 && 
+          data.name && data.name.trim().length > 0 &&
           data.locationType &&
-          ((data.latitude !== undefined && data.longitude !== undefined) || 
-           (data.address && data.address.trim().length > 0))
+          ((data.latitude !== undefined && data.longitude !== undefined) ||
+            (data.address && data.address.trim().length > 0))
         );
-        
+
         return {
           canNavigateTo: hasMinimalInfo,
           canStartBatch: hasMinimalInfo,
           canSave: hasMinimalInfo,
           canProceedToNext: hasMinimalInfo,
-          canBackToPrevious: true
+          canBackToPrevious: true,
         };
 
-      case 3: // 検証と最終確認ステップ
+      case 3:
         const isComplete = !!(
-          data.name && data.name.trim().length > 0 && 
+          data.name && data.name.trim().length > 0 &&
           data.locationType &&
-          ((data.latitude !== undefined && data.longitude !== undefined) || 
-           (data.address && data.address.trim().length > 0))
+          ((data.latitude !== undefined && data.longitude !== undefined) ||
+            (data.address && data.address.trim().length > 0))
         );
-        
+
         return {
           canNavigateTo: isComplete,
           canStartBatch: isComplete,
           canSave: isComplete,
-          canProceedToNext: false, // 最終ステップ
-          canBackToPrevious: true
+          canProceedToNext: false, canBackToPrevious: true,
         };
 
       default:
@@ -576,19 +573,17 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canStartBatch: false,
           canSave: false,
           canProceedToNext: false,
-          canBackToPrevious: false
+          canBackToPrevious: false,
         };
     }
   }
 
   /**
-   * ロケーションデータのバリデーション
-   */
+            */
   async validate(data: any): Promise<{ valid: boolean; errors: string[]; warnings?: string[] }> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // 必須フィールドのチェック
     if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
       errors.push('ロケーション名は必須です');
     } else if (data.name.trim().length > 255) {
@@ -599,7 +594,6 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       errors.push('ロケーションタイプは必須です');
     }
 
-    // 位置情報のチェック
     const hasCoordinates = data.latitude !== undefined && data.longitude !== undefined;
     const hasAddress = data.address && typeof data.address === 'string' && data.address.trim().length > 0;
 
@@ -607,7 +601,6 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       errors.push('座標または住所のいずれかは必須です');
     }
 
-    // 座標の妥当性チェック
     if (hasCoordinates) {
       if (typeof data.latitude !== 'number' || data.latitude < -90 || data.latitude > 90) {
         errors.push('緯度は-90から90の数値である必要があります');
@@ -617,22 +610,18 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       }
     }
 
-    // 住所の形式チェック
     if (hasAddress && data.address.length > 500) {
       warnings.push('住所が長すぎます（500文字以下を推奨）');
     }
 
-    // 説明の長さチェック
     if (data.description && typeof data.description === 'string' && data.description.length > 1000) {
       warnings.push('説明が長すぎます（1000文字以下を推奨）');
     }
 
-    // カテゴリーのチェック
     if (data.category && typeof data.category !== 'string') {
       errors.push('カテゴリーは文字列である必要があります');
     }
 
-    // タグのチェック
     if (data.tags && !Array.isArray(data.tags)) {
       errors.push('タグは配列である必要があります');
     } else if (data.tags) {
@@ -644,12 +633,10 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
       }
     }
 
-    // 営業時間のチェック
     if (data.businessHours && typeof data.businessHours !== 'object') {
       errors.push('営業時間の形式が正しくありません');
     }
 
-    // 連絡先情報のチェック
     if (data.contact) {
       if (typeof data.contact !== 'object') {
         errors.push('連絡先情報の形式が正しくありません');
@@ -671,7 +658,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

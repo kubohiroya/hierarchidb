@@ -42,21 +42,21 @@ const getStatusColor = (status?: WorkflowStep['status']) => {
  * Can be used for wizards, multi-step forms, batch processes, etc.
  */
 export const WorkflowAccordion: React.FC<WorkflowAccordionProps> = ({
-  step,
-  showStepBadge = true,
-  renderStep,
-  ...accordionProps
-}) => {
+                                                                      step,
+                                                                      showStepBadge = true,
+                                                                      renderStep,
+                                                                      ...accordionProps
+                                                                    }) => {
   const stepElement = React.useMemo(() => {
     if (!step || !showStepBadge) return null;
-    
+
     if (renderStep) {
       return renderStep(step);
     }
-    
+
     const label = step.label || `Step ${step.id}`;
     const color = step.badgeColor || getStatusColor(step.status);
-    
+
     return (
       <Chip
         label={label}

@@ -1,13 +1,12 @@
 /**
- * Worker Provider - UI層とWorker層を接続するReact Context
- * 
- * Worker初期化の完了を待ち、初期化状態を管理します。
- * @hierarchidb/runtime-worker-worker-bootstrapの仕組みを利用して、
- * Worker側から初期化完了通知を受け取ってからアプリケーションを開始します。
- */
+  * Worker Provider - UIWorkerReact Context
+  * Worker
+ * @hierarchidb/runtime-worker-worker-bootstrap
+ * Worker
+  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Box, CircularProgress, Typography, LinearProgress } from '@mui/material';
+import { Box, LinearProgress, Typography } from '@mui/material';
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Remote } from 'comlink';
@@ -15,7 +14,6 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import { TitleLogo } from '../components/TitleLogo';
 
 // ===========================
-// 型定義
 // ===========================
 
 interface WorkerContextValue {
@@ -43,16 +41,14 @@ let __WORKER_INIT_STARTED__ = false;
 let __WORKER_INIT_COMPLETED__ = false;
 
 // ===========================
-// コンポーネント
 // ===========================
 
 /**
- * 初期化中の表示コンポーネント
- */
+    */
 const InitializingView: React.FC<{ progress: number; message: string }> = ({
-  progress,
-  message,
-}) => (
+                                                                             progress,
+                                                                             message,
+                                                                           }) => (
   <Box
     sx={{
       position: 'fixed',
@@ -107,12 +103,11 @@ const InitializingView: React.FC<{ progress: number; message: string }> = ({
 );
 
 /**
- * エラー表示コンポーネント
- */
-const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({ 
-  error, 
-  onRetry 
-}) => (
+    */
+const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
+                                                                      error,
+                                                                      onRetry,
+                                                                    }) => (
   <Box
     sx={{
       position: 'fixed',
@@ -131,29 +126,29 @@ const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
     <Typography variant="h5" color="error" gutterBottom>
       Worker初期化エラー
     </Typography>
-    
+
     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
       Workerの初期化に失敗しました。
     </Typography>
-    
-    <Box 
-      sx={{ 
-        p: 2, 
-        backgroundColor: 'rgba(0,0,0,0.05)', 
+
+    <Box
+      sx={{
+        p: 2,
+        backgroundColor: 'rgba(0,0,0,0.05)',
         borderRadius: 1,
         maxWidth: 600,
         width: '100%',
-        mb: 3
+        mb: 3,
       }}
     >
-      <Typography 
-        variant="body2" 
+      <Typography
+        variant="body2"
         sx={{ fontFamily: 'monospace', color: 'error.main' }}
       >
         {error.message || 'Unknown error'}
       </Typography>
     </Box>
-    
+
     <Box sx={{ display: 'flex', gap: 2 }}>
       <button
         onClick={onRetry}
@@ -169,7 +164,7 @@ const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
       >
         再試行
       </button>
-      
+
       <button
         onClick={() => window.location.reload()}
         style={{
@@ -189,19 +184,18 @@ const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
 );
 
 // ===========================
-// Provider実装
+//  Provider
 // ===========================
 
 /**
- * WorkerProvider
- * 
- * Worker初期化を管理し、初期化完了後に子コンポーネントをレンダリング
- */
-export const WorkerProvider: React.FC<WorkerProviderProps> = ({ 
-  children, 
-  timeout = 30000,
-  debug = false 
-}) => {
+  * WorkerProvider
+  * Worker
+  */
+export const WorkerProvider: React.FC<WorkerProviderProps> = ({
+                                                                children,
+                                                                timeout = 30000,
+                                                                debug = false,
+                                                              }) => {
   const [state, setState] = useState<WorkerContextValue>({
     client: null,
     isInitialized: false,
@@ -229,16 +223,15 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   };
 
   /**
-   * Worker初期化処理
-   */
+      * Worker
+      */
   const initializeWorker = async () => {
     // eslint-disable-next-line no-console
     console.log('[WorkerProvider] initializeWorker invoked');
     try {
-      // 既存のエラーをクリア
       setState(prev => ({ ...prev, error: null }));
 
-      // WorkerAPIClientを初期化（これによりWorkerが起動）
+      //  WorkerAPIClientWorker
       await WorkerAPIClient.initialize();
       // eslint-disable-next-line no-console
       console.log('[WorkerProvider] WorkerAPIClient.initialize resolved');
@@ -251,15 +244,16 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
           await finalizeInitialized();
           return;
         }
-      } catch {}
+      } catch {
+      }
 
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
-      
+
       if (!rawWorker) {
         throw new Error('Worker instance is not available');
       }
 
-      // 進捗反映用のメッセージリスナ（INIT_PROGRESSをUIに反映）
+      //  INIT_PROGRESSUI
       const onProgressMessage = (event: MessageEvent) => {
         const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
         if (data?.type === 'INIT_PROGRESS') {
@@ -270,9 +264,11 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
           }));
         }
       };
-      try { rawWorker.addEventListener('message', onProgressMessage); } catch {}
+      try {
+        rawWorker.addEventListener('message', onProgressMessage);
+      } catch {
+      }
 
-      // 初期化チャンネルを作成し、初期化完了を待機
       const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
 
@@ -282,8 +278,10 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         debug,
       });
 
-      // 進捗リスナを解除
-      try { rawWorker.removeEventListener('message', onProgressMessage); } catch {}
+      try {
+        rawWorker.removeEventListener('message', onProgressMessage);
+      } catch {
+      }
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
@@ -301,7 +299,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     }
   };
 
-  // 初期化実行 + event listener for INIT_COMPLETE
+  //  + event listener for INIT_COMPLETE
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.log('[WorkerProvider] mount');
@@ -319,7 +317,10 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         console.warn('[WorkerProvider] finalize on event failed', e);
       }
     };
-    try { window.addEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
+    try {
+      window.addEventListener('hierarchidb-worker-init-complete', onInitComplete);
+    } catch {
+    }
 
     if (!__WORKER_INIT_STARTED__) {
       __WORKER_INIT_STARTED__ = true;
@@ -331,7 +332,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
           const client = WorkerAPIClient.getSingleton();
           setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
         }
-      } catch {}
+      } catch {
+      }
     }
 
     if (import.meta.env.DEV) {
@@ -345,14 +347,18 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
             console.log('[WorkerProvider] dev fallback finalizing');
             await finalizeInitialized();
           }
-        } catch {}
+        } catch {
+        }
       }, 1500);
     }
 
     return () => {
       if (!import.meta.env.DEV) {
         initChannel?.dispose();
-        try { window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete); } catch {}
+        try {
+          window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
+        } catch {
+        }
       }
       if (devFallbackTimer) {
         window.clearTimeout(devFallbackTimer);
@@ -360,7 +366,6 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     };
   }, []);
 
-  // レンダリング
   if (state.error) {
     return <ErrorView error={state.error} onRetry={initializeWorker} />;
   }
@@ -381,10 +386,9 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 // ===========================
 
 /**
- * useWorker Hook
- * 
- * WorkerContextの値を取得
- */
+  * useWorker Hook
+  * WorkerContext
+  */
 export const useWorker = (): WorkerContextValue => {
   const context = useContext(WorkerContext);
   if (!context) {
@@ -394,17 +398,16 @@ export const useWorker = (): WorkerContextValue => {
 };
 
 /**
- * useWorkerClient Hook
- * 
- * WorkerAPIClientインスタンスを取得（後方互換性のため）
- */
+  * useWorkerClient Hook
+  * WorkerAPIClient
+  */
 export const useWorkerClient = () => {
   const { client, isInitialized } = useWorker();
-  
+
   if (!client) {
     throw new Error('Worker client is not initialized');
   }
-  
+
   return {
     client,
     isConnected: isInitialized,

@@ -7,16 +7,15 @@ import { Provider, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { MultiStepDialogEnhanced } from '@hierarchidb/ui-dialog';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 import {
-  workingCopyAtom,
+  canStartBatchAtom,
+  currentStepValidationAtom,
   dialogStateAtom,
   dialogStepsAtom,
-  canSaveAtom,
-  canStartBatchAtom,
-  navigateToStepAtom,
   markStepCompletedAtom,
-  updateWorkingCopyAtom,
-  currentStepValidationAtom,
+  navigateToStepAtom,
   resetDialogAtom,
+  updateWorkingCopyAtom,
+  workingCopyAtom,
 } from '../atoms/workingCopyAtoms';
 import { useWorkerSync } from '../hooks/useWorkerSync';
 import { PluginStepRegistry } from '../registry/PluginStepRegistry';
@@ -35,14 +34,14 @@ interface PluginDialogProps {
  * Plugin Dialog Component with Jotai
  */
 function PluginDialogContent({
-  nodeId,
-  treeId,
-  nodeType,
-  mode,
-  open,
-  onClose,
-  onSuccess,
-}: PluginDialogProps) {
+                               nodeId,
+                               treeId,
+                               nodeType,
+                               mode,
+                               open,
+                               onClose,
+                               onSuccess,
+                             }: PluginDialogProps) {
   // Jotai atoms
   const [workingCopy] = useAtom(workingCopyAtom);
   const [dialogState, setDialogState] = useAtom(dialogStateAtom);
@@ -75,12 +74,12 @@ function PluginDialogContent({
   useEffect(() => {
     const registry = PluginStepRegistry.getInstance();
     const provider = registry.getProvider(nodeType);
-    
+
     if (provider) {
       const pluginSteps = mode === 'create'
         ? provider.getCreateSteps()
         : provider.getEditSteps(nodeId as string, workingCopy?.data);
-      
+
       setSteps(pluginSteps);
     }
   }, [nodeType, mode, nodeId, workingCopy, setSteps]);
@@ -111,7 +110,7 @@ function PluginDialogContent({
     if (newStep > dialogState.currentStep) {
       markStepCompleted(dialogState.currentStep);
     }
-    
+
     navigateToStep(newStep);
   };
 
@@ -123,7 +122,7 @@ function PluginDialogContent({
   // Handle save
   const handleSave = async () => {
     setDialogState({ ...dialogState, isSubmitting: true });
-    
+
     try {
       const savedId = await saveWorkingCopy(false);
       onSuccess?.(savedId);
@@ -139,7 +138,7 @@ function PluginDialogContent({
   // Handle save as draft
   const handleSaveDraft = async () => {
     setDialogState({ ...dialogState, isSubmitting: true });
-    
+
     try {
       await saveWorkingCopy(true);
       resetDialog();
@@ -154,9 +153,9 @@ function PluginDialogContent({
   // Handle batch start
   const handleStartBatch = async () => {
     if (!workingCopy) return;
-    
+
     setDialogState({ ...dialogState, isSubmitting: true });
-    
+
     try {
       await startBatch(workingCopy.data.batchConfig);
       onSuccess?.(nodeId);
@@ -175,10 +174,10 @@ function PluginDialogContent({
       // Show unsaved changes dialog
       const confirmed = window.confirm('Discard unsaved changes?');
       if (!confirmed) return;
-      
+
       await discardWorkingCopy();
     }
-    
+
     resetDialog();
     onClose();
   };

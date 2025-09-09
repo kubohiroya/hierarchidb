@@ -3,6 +3,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
 export interface VectorTileRecord {
@@ -22,15 +23,25 @@ export interface VectorTileRecord {
 
 export class EphemeralLocationDB extends Dexie {
   vectorTiles!: Table<VectorTileRecord>;
-  sessions!: Table<{ sessionId: string; nodeId: NodeId; bbox: [number,number,number,number]; zoomMin: number; zoomMax: number; totalPoints: number; createdAt: number; status: 'running'|'completed'|'failed'; tableId?: string }>; 
+  sessions!: Table<{
+    sessionId: string;
+    nodeId: NodeId;
+    bbox: [number, number, number, number];
+    zoomMin: number;
+    zoomMax: number;
+    totalPoints: number;
+    createdAt: number;
+    status: 'running' | 'completed' | 'failed';
+    tableId?: string
+  }>;
 
   constructor() {
-    super('ephemeral-location-db');
+    super(getDBName('location-ephemeral-db'));
     this.version(1).stores({
       vectorTiles: '&id, sessionId, nodeId, [z+x+y], timestamp',
     });
     this.version(2).stores({
-      sessions: '&sessionId, nodeId, createdAt, status'
+      sessions: '&sessionId, nodeId, createdAt, status',
     });
     // v3: add optional tableId for tabular (column-wise) search linkage
     this.version(3).upgrade(async () => {
@@ -65,6 +76,7 @@ export class EphemeralLocationDB extends Dexie {
 }
 
 let singleton: EphemeralLocationDB | null = null;
+
 export function getEphemeralLocationDB(): EphemeralLocationDB {
   if (!singleton) singleton = new EphemeralLocationDB();
   return singleton;

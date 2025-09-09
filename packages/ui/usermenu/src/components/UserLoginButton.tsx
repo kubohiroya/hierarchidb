@@ -24,10 +24,10 @@ import {
   Memory as MemoryIcon,
   MemoryOutlined as MemoryOutlinedIcon,
 } from '@mui/icons-material';
-import { AuthProviderType, UserAvatar, AuthProviderDialog, useAuth } from '@hierarchidb/ui-auth';
-import { useThemeMode, ThemeMode } from '@hierarchidb/ui-theme';
-import { getThemeIcon, getThemeDisplayName } from '@hierarchidb/ui-core';
-import { useLanguage, type LanguageConfig } from '@hierarchidb/ui-i18n';
+import { AuthProviderDialog, AuthProviderType, useAuth, UserAvatar } from '@hierarchidb/ui-auth';
+import { ThemeMode, useThemeMode } from '@hierarchidb/ui-theme';
+import { getThemeDisplayName, getThemeIcon } from '@hierarchidb/ui-core';
+import { type LanguageConfig, useLanguage } from '@hierarchidb/ui-i18n';
 
 export const UserLoginButton: React.FC = () => {
   const { user, signIn, signOut, auth } = useAuth();
@@ -99,7 +99,7 @@ export const UserLoginButton: React.FC = () => {
     window.dispatchEvent(
       new CustomEvent('memoryMonitorToggle', {
         detail: { visible: newVisibility },
-      })
+      }),
     );
   }, [memoryMonitorVisible]);
 
@@ -133,7 +133,7 @@ export const UserLoginButton: React.FC = () => {
               });
             }
             return Promise.resolve();
-          })
+          }),
         );
       }
 

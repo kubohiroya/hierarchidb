@@ -1,45 +1,43 @@
 /**
- * RoutePanel - Side panel component for route plugin
- * ルートプラグイン用のサイドパネルコンポーネント
- */
+  * RoutePanel - Side panel component for route plugin
+   */
 
 import React, { useState } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
-  Card,
-  CardContent,
-  CardActions,
   Button,
+  Card,
+  CardActions,
+  CardContent,
   Chip,
-  Stack,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
+  Collapse,
   Divider,
   IconButton,
-  Collapse,
-  Alert,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Stack,
+  Typography,
 } from '@mui/material';
 import {
-  Route as RouteIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
+  DirectionsBike,
   DirectionsWalk,
   DriveEta,
-  Train,
-  DirectionsBike,
+  Edit as EditIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
   Flight,
   LocalShipping,
+  Route as RouteIcon,
+  Train,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import { TransportMode } from '../types';
 import type { RouteEntity, RouteType } from '../types';
+import { TransportMode } from '../types';
 import { useTranslation } from '../i18n';
 import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
@@ -71,7 +69,7 @@ const getTransportModeIcon = (mode: TransportMode) => {
     [TransportMode.AIRPLANE]: Flight,
     [TransportMode.FERRY]: LocalShipping,
   };
-  
+
   const IconComponent = iconMap[mode] || DriveEta;
   return <IconComponent fontSize="small" />;
 };
@@ -89,23 +87,23 @@ const getRouteTypeColor = (routeType: RouteType): 'primary' | 'secondary' | 'suc
     pipeline: 'error',
     powerline: 'warning',
   };
-  
+
   return colorMap[routeType] || 'primary';
 };
 
 export const RoutePanel: React.FC<RoutePanelProps> = ({
-  nodeId: _nodeId,
-  entity,
-  onEdit,
-  onDelete,
-  onToggleVisibility,
-}) => {
+                                                        nodeId: _nodeId,
+                                                        entity,
+                                                        onEdit,
+                                                        onDelete,
+                                                        onToggleVisibility,
+                                                      }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [lastJobId, setLastJobId] = useState<string | null>(null);
 
-  // LaunchForm 内で net.port を取得するため、ここでは何もしない
+  //  LaunchForm net.port
 
   if (!entity) {
     return (
@@ -119,7 +117,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
 
   const formatDistance = (meters: number | undefined): string => {
     if (typeof meters !== 'number') return t('panel.unknown', 'Unknown');
-    
+
     if (meters < 1000) {
       return `${Math.round(meters)} m`;
     } else {
@@ -129,10 +127,10 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
 
   const formatDuration = (seconds: number | undefined): string => {
     if (typeof seconds !== 'number') return t('panel.unknown', 'Unknown');
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     } else {
@@ -229,11 +227,11 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
             >
               {t('panel.details', 'Details')}
             </Button>
-            
+
             <Collapse in={expanded}>
               <Box sx={{ mt: 2 }}>
                 <Divider sx={{ mb: 2 }} />
-                
+
                 {/* Waypoints */}
                 {entity.waypoints && entity.waypoints.length > 0 && (
                   <Box sx={{ mb: 2 }}>
@@ -259,7 +257,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
                           />
                         </ListItem>
                       ))})
-                      
+
                       {!showDetails && entity.waypoints.length > 3 && (
                         <ListItem sx={{ px: 0 }}>
                           <Button
@@ -373,9 +371,12 @@ function RouteTablePreview({ sessionId }: { sessionId: string }) {
         // @ts-ignore
         const cursor = await (db.table('routeCursors') as any)?.get(sessionId);
         if (!cancelled) setTableId(cursor?.tableId || null);
-      } catch {}
+      } catch {
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId]);
   return (
     <div style={{ minHeight: 360 }}>

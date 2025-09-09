@@ -1,9 +1,9 @@
 import { MenuItem, MenuList, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 // Mock InlineIcon component
 const InlineIcon = ({ iconName, ...props }: { iconName: string; [key: string]: any }) => (
   <span {...props}>{iconName}</span>
 );
-import type { ReactNode } from 'react';
 
 export type NavLinkItemType = {
   name: string;

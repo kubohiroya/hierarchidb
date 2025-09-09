@@ -1,8 +1,8 @@
-import type { DataSourceLogics } from "./utils/types.js";
-import { fetchGADM } from "./fetchers/gadm.js";
-import { fetchNaturalEarth } from "./fetchers/naturalearth.js";
-import { fetchOSM } from "./fetchers/osm.js";
-import { fetchGeoBoundaries } from "./fetchers/geoboundaries.js";
+import type { DataSourceLogics } from './utils/types.js';
+import { fetchGADM } from './fetchers/gadm.js';
+import { fetchNaturalEarth } from './fetchers/naturalearth.js';
+import { fetchOSM } from './fetchers/osm.js';
+import { fetchGeoBoundaries } from './fetchers/geoboundaries.js';
 
 /**
  * Available data source fetchers
@@ -26,7 +26,7 @@ export async function fetchMetadata(
 
   if (!fetcher) {
     throw new Error(
-      `Unknown data source: ${dataSource}. Available sources: ${Object.keys(dataSourceLogics).join(", ")}`,
+      `Unknown data source: ${dataSource}. Available sources: ${Object.keys(dataSourceLogics).join(', ')}`,
     );
   }
 
@@ -45,9 +45,9 @@ export type {
   RegionMetadata,
   DataSourceFetcher,
   DataSourceLogics,
-} from "./utils/types.js";
+} from './utils/types.js';
 
 export type {
   CountryMetadata,
   DataSourceName,
-} from "./types.js";
+} from './types.js';

@@ -4,14 +4,14 @@
  */
 
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
-import type { NodeLifecycleHooks, PluginRoutingConfig, NodeId } from '@hierarchidb/common-type';
+import type { NodeId, PluginRoutingConfig } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../entities/FolderEntity';
 
 // Create singleton instance of entity handler
 export const entityHandler = new FolderEntityHandler();
 
 // Lifecycle hooks for folder operations
-export const lifecycle: NodeLifecycleHooks<FolderEntity> = {
+export const lifecycle: any = {
   afterCreate: async (nodeId: NodeId, entity: FolderEntity) => {
     console.log(`Folder created: ${nodeId}`, entity.name);
   },
@@ -66,7 +66,7 @@ try {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
-    // Prefer Dexie-backed stores when indexedDB is available; otherwise fallback to in‑memory dev stores
+    //  Prefer Dexie-backed stores when indexedDB is available; otherwise fallback to inmemory dev stores
     const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
     if (hasIndexedDB) {
       try {
@@ -105,7 +105,8 @@ try {
       const { folderRelationStore } = await import('./folderRelationStore');
       if (!storeRegistry.getRelations('folder')) storeRegistry.registerRelations('folder', folderRelationStore);
     }
-  }).catch(() => {});
+  }).catch(() => {
+  });
 } catch {
   // ignore
 }

@@ -1,18 +1,18 @@
 /**
- * @file BatchConfig.ts
- * @description ERIA-Cartograph移植: バッチ処理設定の型定義
- */
+  * @file BatchConfig.ts
+ * @description ERIA-Cartograph:
+  */
 
 import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 
-export type FeatureFilterMethod = "bbox_only" | "polygon_only" | "hybrid";
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 
 /**
  * Configuration for hybrid feature filtering algorithm
  */
 export interface HybridFilterConfig {
   // Step 1: Quick rejection threshold
-  quickRejectThreshold: number; // Features smaller than main threshold × this value are immediately rejected (default: 0.1)
+  quickRejectThreshold: number; //  Features smaller than main threshold this value are immediately rejected (default: 0.1)
 
   // Step 2: Regular shape-plugin aspect ratio
   regularShapeMinRatio: number; // Min aspect ratio for regular shapes (default: 0.5)
@@ -48,7 +48,7 @@ export interface DownloadSessionConfig {
  */
 export interface SimplifySession1Config {
   concurrentProcesses: number;
-  
+
   // Feature filtering parameters
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number; // Percentage threshold for filtering small features (0-100)
@@ -56,7 +56,7 @@ export interface SimplifySession1Config {
   aspectRatioThreshold: number; // Aspect ratio threshold for switching to polygon area calculation
   featureFilterMethod: FeatureFilterMethod; // Method for feature filtering
   hybridFilterConfig?: HybridFilterConfig; // Hybrid filter specific configuration
-  
+
   deleteOnComplete?: boolean; // Delete FeatureIndex/FeatureBuffer after session completes
 }
 
@@ -65,13 +65,13 @@ export interface SimplifySession1Config {
  */
 export interface SimplifySession2Config {
   concurrentProcesses: number;
-  
+
   // Simplification parameters
   quantize: number;
   simplify: number;
   tolerance: number;
   enablePerFeatureSimplification: boolean;
-  
+
   deleteOnComplete?: boolean; // Delete TileBuffer after session completes
 }
 
@@ -94,7 +94,7 @@ export interface BatchConfig extends CommonSessionConfig {
   simplify1: SimplifySession1Config;
   simplify2: SimplifySession2Config;
   vectorTiles: GenerateVectorTilesConfig;
-  
+
   // Legacy flat structure for backward compatibility
   // TODO: Remove these after migrating all usages to nested structure
   concurrentDownloads?: number;

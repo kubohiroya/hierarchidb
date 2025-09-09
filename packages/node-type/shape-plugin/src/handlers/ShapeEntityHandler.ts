@@ -4,7 +4,7 @@
  * Avoids direct coupling to worker/services APIs to keep types consistent.
  */
 
-import type { NodeId, EntityId, ShapeEntity, ShapeWorkingCopy, ProcessingConfig, NodeType } from '../shared';
+import type { NodeId, NodeType, ProcessingConfig, ShapeEntity, ShapeWorkingCopy } from '../shared';
 
 /**
  * Create shape data interface (UI layer)
@@ -30,8 +30,7 @@ export interface ShapeFilterCriteria {
 }
 
 export class ShapeEntityHandler {
-  private entitiesById: Map<EntityId, ShapeEntity> = new Map();
-  private entityIdByNodeId: Map<NodeId, EntityId> = new Map();
+  private entitiesById: Map<NodeId, ShapeEntity> = new Map();
 
   private buildDefaultProcessingConfig(overrides?: Partial<ProcessingConfig>): ProcessingConfig {
     return {
@@ -48,11 +47,10 @@ export class ShapeEntityHandler {
   }
 
   async createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> {
-    const entityId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as EntityId;
     const now = Date.now();
 
     const entity: ShapeEntity = {
-      id: entityId,
+      id: nodeId,
       nodeId,
       name: data.name,
       description: data.description,
@@ -68,13 +66,12 @@ export class ShapeEntityHandler {
       version: 1,
     };
 
-    this.entitiesById.set(entityId, entity);
-    this.entityIdByNodeId.set(nodeId, entityId);
+    this.entitiesById.set(nodeId, entity);
     return entity;
   }
 
-  async updateEntity(entityId: EntityId, updates: Partial<ShapeEntity>): Promise<ShapeEntity> {
-    const existing = this.entitiesById.get(entityId);
+  async updateEntity(nodeId: NodeId, updates: Partial<ShapeEntity>): Promise<ShapeEntity> {
+    const existing = this.entitiesById.get(nodeId);
     if (!existing) {
       throw new Error('Shape entity not found');
     }
@@ -86,26 +83,24 @@ export class ShapeEntityHandler {
       updatedAt: Date.now(),
       version: existing.version + 1,
     };
-    this.entitiesById.set(entityId, updated);
+    this.entitiesById.set(nodeId, updated);
     return updated;
   }
 
-  async deleteEntity(entityId: EntityId): Promise<void> {
-    const existing = this.entitiesById.get(entityId);
+  async deleteEntity(nodeId: NodeId): Promise<void> {
+    const existing = this.entitiesById.get(nodeId);
     if (!existing) {
       throw new Error('Shape entity not found');
     }
-    this.entitiesById.delete(entityId);
-    this.entityIdByNodeId.delete(existing.nodeId);
+    this.entitiesById.delete(nodeId);
   }
 
-  async getEntity(entityId: EntityId): Promise<ShapeEntity | null> {
-    return this.entitiesById.get(entityId) ?? null;
+  async getEntity(nodeId: NodeId): Promise<ShapeEntity | null> {
+    return this.entitiesById.get(nodeId) ?? null;
   }
 
   async getEntityByNodeId(nodeId: NodeId): Promise<ShapeEntity | null> {
-    const entityId = this.entityIdByNodeId.get(nodeId);
-    return entityId ? this.entitiesById.get(entityId) ?? null : null;
+    return this.entitiesById.get(nodeId) ?? null;
   }
 
   async listEntities(limit?: number, offset?: number): Promise<ShapeEntity[]> {
@@ -194,7 +189,7 @@ export class ShapeEntityHandler {
     return workingCopy;
   }
 
-  async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
+  async applyWorkingCopy(nodeId: NodeId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
     const updates: Partial<ShapeEntity> = {
       name: workingCopy.name,
       description: workingCopy.description,
@@ -206,25 +201,25 @@ export class ShapeEntityHandler {
       adminLevels: workingCopy.adminLevels,
       urlMetadata: workingCopy.urlMetadata,
     };
-    return this.updateEntity(entityId, updates);
+    return this.updateEntity(nodeId, updates);
   }
 
   async updateProcessingStatus(
-    entityId: EntityId,
+    nodeId: NodeId,
     status: 'idle' | 'processing' | 'completed' | 'failed',
-    batchSessionId?: string
+    batchSessionId?: string,
   ): Promise<void> {
-    const existing = await this.getEntity(entityId);
+    const existing = await this.getEntity(nodeId);
     if (!existing) {
       throw new Error('Shape entity not found');
     }
-    await this.updateEntity(entityId, {
+    await this.updateEntity(nodeId, {
       processingStatus: status,
       batchSessionId,
     });
   }
 
-  async getProcessingStats(_entityId: EntityId): Promise<{
+  async getProcessingStats(_nodeId: NodeId): Promise<{
     featureCount: number;
     tileCount: number;
     storageUsed: number;
@@ -234,21 +229,21 @@ export class ShapeEntityHandler {
   }
 
   async startBatchProcessing(
-    entityId: EntityId,
+    nodeId: NodeId,
     _config: Partial<ProcessingConfig>,
     _countries: string[],
-    _adminLevels: number[]
+    _adminLevels: number[],
   ): Promise<string> {
     const sessionId = `session-${Date.now()}`;
-    await this.updateProcessingStatus(entityId, 'processing', sessionId);
+    await this.updateProcessingStatus(nodeId, 'processing', sessionId);
     return sessionId;
   }
 
   async cancelBatchProcessing(sessionId: string): Promise<void> {
     // Find entity by sessionId and reset
-    for (const [entityId, entity] of this.entitiesById.entries()) {
+    for (const [nodeId, entity] of this.entitiesById.entries()) {
       if (entity.batchSessionId === sessionId) {
-        await this.updateProcessingStatus(entityId, 'idle', undefined);
+        await this.updateProcessingStatus(nodeId, 'idle', undefined);
       }
     }
   }

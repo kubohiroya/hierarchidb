@@ -1,6 +1,6 @@
 /**
- * Folder plugin metadata - UI・Worker共通メタデータ
- */
+  * Folder plugin metadata - UIWorker
+  */
 
 import type { NodeType } from '@hierarchidb/common-type';
 

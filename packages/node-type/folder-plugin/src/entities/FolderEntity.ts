@@ -1,36 +1,36 @@
 /**
- * Folder Entity Definitions
- * 6分類エンティティシステム対応
- *
- * FolderはTreeNodeそのものに近い存在だが、
- * フォルダ固有のメタデータや設定を管理するためのエンティティを定義
- */
+  * Folder Entity Definitions
+ * 6
+  * FolderTreeNode
+   */
 
-import type { NodeId, EntityId, PeerEntity, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 
 /**
- * FolderEntity - フォルダのメタデータ（PeerEntity）
- * TreeNodeと1:1対応で、フォルダ固有の設定を保持
- */
+  * FolderEntity - PeerEntity
+ * TreeNode1:1
+  */
 export interface FolderSettings {
   allowNestedFolders: boolean;
   maxDepth: number;
   sortOrder: 'name' | 'date' | 'size';
 }
 
-export interface FolderEntity extends PeerEntity {
-  id: EntityId;
+export interface FolderEntity {
+  id: NodeId;
   nodeId: NodeId;
   name?: string;
   description?: string;
   category?: string;
   settings?: FolderSettings;
-  tags?: EntityId[];
+  tags?: string[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  version: number;
 }
 
 /**
- * フォルダ操作の結果
- */
+    */
 export interface FolderOperationResult {
   success: boolean;
   folderId?: NodeId;
@@ -40,8 +40,7 @@ export interface FolderOperationResult {
 }
 
 /**
- * フォルダ検索クエリ
- */
+    */
 export interface FolderSearchQuery {
   name?: string;
   parentId?: NodeId;
@@ -57,7 +56,7 @@ export interface FolderSearchQuery {
 }
 
 // Additional types re-exported by types/index.ts
-export type FolderWorkingCopy = FolderEntity & { workingCopyId: EntityId };
+export type FolderWorkingCopy = FolderEntity & { workingCopyId: NodeId };
 
 export interface FolderStatsSummary {
   totalFolders: number;

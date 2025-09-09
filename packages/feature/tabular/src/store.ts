@@ -1,4 +1,4 @@
-import type { TabularSchema, TabularChunk } from './types';
+import type { TabularChunk, TabularSchema } from './types';
 
 export interface TabularIngestContext {
   filename?: string;
@@ -23,8 +23,11 @@ export interface TabularIngestResult<TMeta = any> {
 
 export interface TabularStorePort<TMeta = any> {
   beginIngest(schema: TabularSchema, ctx: TabularIngestContext): Promise<TabularIngestSession>;
+
   writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void>;
+
   commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<TMeta>>;
+
   abort(session: TabularIngestSession, reason?: string): Promise<void>;
 }
 

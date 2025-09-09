@@ -1,25 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Typography, 
-  TextField, 
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText
-} from '@mui/material';
+import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import { useTranslation } from 'react-i18next';
-import { TagInput, CategorySelector } from '@hierarchidb/ui-core';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
-type TagId = string;
-type TagEntity = { id: TagId; name?: string };
+import { BasicInfoFields, CategorySelector, TagInput } from '@hierarchidb/ui-core';
 import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types';
 
+type TagId = string;
+type TagEntity = { id: TagId; name?: string };
+
 /**
- * スタイルマップ基本情報ステップのデータ型
- */
+    */
 export interface StylemapBasicInfoData {
   name: string;
   description?: string;
@@ -38,14 +28,13 @@ export interface BasicInfoStepProps {
 }
 
 /**
- * スタイルマップ作成・編集のための基本情報入力ステップ
- */
+    */
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
-  data,
-  onNext,
-  errors = [],
-  disabled = false
-}) => {
+                                                              data,
+                                                              onNext,
+                                                              errors = [],
+                                                              disabled = false,
+                                                            }) => {
   const { t } = useTranslation('styler-plugin');
   const tStr = (key: string, def: string): string => {
     const val = t(key, { defaultValue: def } as any);
@@ -53,29 +42,31 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   };
   const [localData, setLocalData] = useState<StylemapBasicInfoData>(data);
 
-  // カテゴリオプション（i18n対応）
+  //  i18n
   const categoryOptions: StylemapCategoryConfig[] = [
     { value: 'choropleth' as StylemapCategory, label: t('categories.choropleth', 'Choropleth Map'), color: '#4CAF50' },
     { value: 'symbol' as StylemapCategory, label: t('categories.symbol', 'Symbol Map'), color: '#2196F3' },
     { value: 'heatmap' as StylemapCategory, label: t('categories.heatmap', 'Heat Map'), color: '#FF5722' },
     { value: 'cluster' as StylemapCategory, label: t('categories.cluster', 'Cluster Map'), color: '#9C27B0' },
     { value: 'graduated' as StylemapCategory, label: t('categories.graduated', 'Graduated Symbols'), color: '#FF9800' },
-    { value: 'categorized' as StylemapCategory, label: t('categories.categorized', 'Categorized Map'), color: '#607D8B' },
+    {
+      value: 'categorized' as StylemapCategory,
+      label: t('categories.categorized', 'Categorized Map'),
+      color: '#607D8B',
+    },
     { value: 'terrain' as StylemapCategory, label: t('categories.terrain', 'Terrain Visualization'), color: '#8BC34A' },
     { value: 'network' as StylemapCategory, label: t('categories.network', 'Network Map'), color: '#E91E63' },
     { value: 'flow' as StylemapCategory, label: t('categories.flow', 'Flow Map'), color: '#00BCD4' },
-    { value: 'custom' as StylemapCategory, label: t('categories.custom', 'Custom Style'), color: '#795548' }
+    { value: 'custom' as StylemapCategory, label: t('categories.custom', 'Custom Style'), color: '#795548' },
   ];
 
-  // スタイルタイプオプション
   const styleTypeOptions = [
     { value: 'point' as const, label: t('styleTypes.point', 'Point Style') },
     { value: 'line' as const, label: t('styleTypes.line', 'Line Style') },
     { value: 'polygon' as const, label: t('styleTypes.polygon', 'Polygon Style') },
-    { value: 'raster' as const, label: t('styleTypes.raster', 'Raster Style') }
+    { value: 'raster' as const, label: t('styleTypes.raster', 'Raster Style') },
   ];
 
-  // カラースキームオプション
   const colorSchemeOptions = [
     { value: 'viridis', label: t('colorSchemes.viridis', 'Viridis') },
     { value: 'plasma', label: t('colorSchemes.plasma', 'Plasma') },
@@ -84,7 +75,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     { value: 'turbo', label: t('colorSchemes.turbo', 'Turbo') },
     { value: 'spectral', label: t('colorSchemes.spectral', 'Spectral') },
     { value: 'rdylbu', label: t('colorSchemes.rdylbu', 'RdYlBu') },
-    { value: 'custom', label: t('colorSchemes.custom', 'Custom Colors') }
+    { value: 'custom', label: t('colorSchemes.custom', 'Custom Colors') },
   ];
 
   const handleInputChange = (field: keyof StylemapBasicInfoData, value: any) => {
@@ -102,7 +93,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     handleInputChange('category', category);
   };
 
-  // エラーメッセージの取得
   const getFieldError = (field: string): string | undefined => {
     return errors.find(error => error.toLowerCase().includes(field.toLowerCase()));
   };
@@ -116,7 +106,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Typography variant="h6" gutterBottom>
         {t('basicInfo.title', 'Basic Information')}
       </Typography>
-      
+
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {t('basicInfo.description', 'Enter the basic information for your styler. This will help organize and identify your map style configuration.')}
       </Typography>
@@ -138,7 +128,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           />
         </Grid>
 
-        {/* スタイルタイプ */}
+        {/*
+*/}
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth required error={!!styleTypeError}>
             <InputLabel>{t('basicInfo.styleType.label', 'Style Type')}</InputLabel>
@@ -160,7 +151,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </FormControl>
         </Grid>
 
-        {/* カラースキーム */}
+        {/*
+*/}
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth>
             <InputLabel>{t('basicInfo.colorScheme.label', 'Color Scheme')}</InputLabel>
@@ -185,7 +177,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </FormControl>
         </Grid>
 
-        {/* データソース */}
+        {/*
+*/}
         <Grid item xs={12}>
           <TextField
             fullWidth
@@ -198,7 +191,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           />
         </Grid>
 
-        {/* カテゴリ選択 */}
+        {/*
+*/}
         <Grid item xs={12}>
           <Typography variant="subtitle2" gutterBottom>
             {t('basicInfo.category.label', 'Category')}
@@ -220,7 +214,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </Typography>
         </Grid>
 
-        {/* タグ入力 */}
+        {/*
+*/}
         <Grid item xs={12}>
           <Typography variant="subtitle2" gutterBottom>
             {t('basicInfo.tags.label', 'Tags')}

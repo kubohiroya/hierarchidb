@@ -10,9 +10,10 @@ import type {
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
 import { addProtocol } from 'maplibre-gl';
+import type { MapLibreMapInstance } from '../types/maplibre-public';
 import type { VectorTileProps } from '../types/unified-map-props';
+import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;
@@ -23,27 +24,25 @@ export interface VectorTileLayerProps extends VectorTileProps {
   map: MapLibreMapInstance;
 }
 
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
-
 const defaultPaint = DEFAULT_MAP_CONFIG.vectorTileLayer.paint;
 
 export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
-  map,
-  dbName,
-  nodeId,
-  layerId = DEFAULT_MAP_CONFIG.vectorTileLayer.layerId,
-  sourceId = DEFAULT_MAP_CONFIG.vectorTileLayer.sourceId,
-  tiles,
-  paint = defaultPaint,
-  layout = {},
-  filter,
-  minzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.minzoom,
-  maxzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.maxzoom,
-  visible = DEFAULT_MAP_CONFIG.vectorTileLayer.visible,
-  layerType = DEFAULT_MAP_CONFIG.vectorTileLayer.layerType,
-  sourceLayer,
-  tileDataProvider,
-}) => {
+                                                                  map,
+                                                                  dbName,
+                                                                  nodeId,
+                                                                  layerId = DEFAULT_MAP_CONFIG.vectorTileLayer.layerId,
+                                                                  sourceId = DEFAULT_MAP_CONFIG.vectorTileLayer.sourceId,
+                                                                  tiles,
+                                                                  paint = defaultPaint,
+                                                                  layout = {},
+                                                                  filter,
+                                                                  minzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.minzoom,
+                                                                  maxzoom = DEFAULT_MAP_CONFIG.vectorTileLayer.maxzoom,
+                                                                  visible = DEFAULT_MAP_CONFIG.vectorTileLayer.visible,
+                                                                  layerType = DEFAULT_MAP_CONFIG.vectorTileLayer.layerType,
+                                                                  sourceLayer,
+                                                                  tileDataProvider,
+                                                                }) => {
   const [sourceAdded, setSourceAdded] = useState(false);
   const [computedTiles, setComputedTiles] = useState<string[] | undefined>(tiles);
   const tilesLoadedRef = useRef(false);
@@ -73,7 +72,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
             try {
               const tileData = await tileDataProvider(zInt, xInt, yInt, nodeId);
-              
+
               if (tileData) {
                 return {
                   data: tileData,

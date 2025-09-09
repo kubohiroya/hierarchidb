@@ -3,7 +3,7 @@
  * Run these tests against your deployed service
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 // Production/staging URLs - set via environment variables
 const DEPLOYED_PROXY_URL = process.env.DEPLOYED_CORS_PROXY_URL;
@@ -18,7 +18,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
     if (!DEPLOYED_PROXY_URL) {
       console.log('Skipping E2E tests - DEPLOYED_CORS_PROXY_URL not set');
       console.log(
-        'To run E2E tests: DEPLOYED_CORS_PROXY_URL=https://your-proxy.workers.dev npm test'
+        'To run E2E tests: DEPLOYED_CORS_PROXY_URL=https://your-proxy.workers.dev npm test',
       );
     }
   });
@@ -44,7 +44,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
   describe('Authentication', () => {
     it('should reject requests without authentication', async () => {
       const response = await fetch(
-        `${DEPLOYED_PROXY_URL}/?url=${encodeURIComponent('https://api.github.com/meta')}`
+        `${DEPLOYED_PROXY_URL}/?url=${encodeURIComponent('https://api.github.com/meta')}`,
       );
 
       expect(response.status).toBe(401);
@@ -59,7 +59,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
           headers: {
             Authorization: 'Bearer invalid-token-12345',
           },
-        }
+        },
       );
 
       expect(response.status).toBe(401);
@@ -78,7 +78,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
             headers: {
               Authorization: `Bearer ${TEST_BFF_TOKEN}`,
             },
-          }
+          },
         );
 
         if (response.status === 200) {
@@ -98,7 +98,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
             headers: {
               Authorization: `Bearer ${TEST_BFF_TOKEN}`,
             },
-          }
+          },
         );
 
         expect(response.status).toBe(403);
@@ -113,7 +113,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
             headers: {
               Authorization: `Bearer ${TEST_BFF_TOKEN}`,
             },
-          }
+          },
         );
 
         // If httpbin.org is allowed, should get 418 (I'm a teapot)
@@ -133,7 +133,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
             Origin: 'https://your-app.com',
             Authorization: 'Bearer fake-token',
           },
-        }
+        },
       );
 
       // Check CORS headers are present even on error responses
@@ -161,7 +161,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
               headers: {
                 Authorization: `Bearer ${TEST_BFF_TOKEN}`,
               },
-            }
+            },
           );
 
           // Should accept the BFF token
@@ -179,7 +179,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
           headers: {
             Authorization: `Bearer ${TEST_BFF_TOKEN || 'fake-token'}`,
           },
-        }
+        },
       );
 
       // Should fail gracefully
@@ -207,7 +207,7 @@ describe.skipIf(skipE2E)('CORS Proxy E2E Tests (Deployed)', () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
       const responses = await Promise.all(requests);

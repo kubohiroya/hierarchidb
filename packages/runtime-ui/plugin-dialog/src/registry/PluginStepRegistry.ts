@@ -12,13 +12,13 @@ import { DialogStep } from '@hierarchidb/ui-dialog';
 export interface PluginStepProvider {
   /** Node type this provider handles */
   nodeType: string;
-  
+
   /** Get steps for create mode */
   getCreateSteps(): DialogStep[];
-  
+
   /** Get steps for edit mode */
   getEditSteps(nodeId: string, data?: any): DialogStep[];
-  
+
   /** Optional validation before showing dialog */
   validateAccess?(nodeId?: string): Promise<boolean>;
 }
@@ -29,16 +29,16 @@ export interface PluginStepProvider {
 export interface PluginStepConfig {
   /** Step ID */
   id: string;
-  
+
   /** Step label */
   label: string;
-  
+
   /** Step component factory */
   componentFactory: (props: StepComponentProps) => ReactNode;
-  
+
   /** Validation function */
   validate?: () => boolean | Promise<boolean>;
-  
+
   /** Step capabilities */
   capabilities?: {
     canNavigateTo?: (fromStep: number, data: any) => boolean | Promise<boolean>;
@@ -47,10 +47,10 @@ export interface PluginStepConfig {
     canProceedToNext?: (data: any) => boolean | Promise<boolean>;
     canBackToPrevious?: (data: any) => boolean | Promise<boolean>;
   };
-  
+
   /** Whether step is optional */
   optional?: boolean;
-  
+
   /** Step icon */
   icon?: ReactNode;
 }
@@ -61,22 +61,22 @@ export interface PluginStepConfig {
 export interface StepComponentProps {
   /** Dialog mode */
   mode: 'create' | 'edit';
-  
+
   /** Node ID (for edit mode) */
   nodeId?: string;
-  
+
   /** Parent node ID (for create mode) */
   parentId?: string;
-  
+
   /** Current data */
   data: any;
-  
+
   /** Update data */
   onChange: (data: any) => void;
-  
+
   /** Mark step as valid/invalid */
   setValid: (valid: boolean) => void;
-  
+
   /** Set step error message */
   setError: (error: string | null) => void;
 }
@@ -88,7 +88,8 @@ export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
   private providers: Map<string, PluginStepProvider> = new Map();
 
-  private constructor() {}
+  private constructor() {
+  }
 
   /**
    * Get singleton instance
@@ -164,11 +165,11 @@ export class PluginStepRegistry {
     if (!provider) {
       return false;
     }
-    
+
     if (provider.validateAccess) {
       return provider.validateAccess(nodeId);
     }
-    
+
     return true;
   }
 

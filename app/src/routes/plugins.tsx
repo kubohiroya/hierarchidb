@@ -1,57 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Typography,
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Menu,
+  MenuItem,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
-  Box,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Collapse,
-  Stack,
   Tooltip,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  List,
-  ListItem,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Divider,
+  Typography,
 } from '@mui/material';
 import {
+  AccountTree as AccountTreeIcon,
+  CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
+  Extension as ExtensionIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
-  Extension as ExtensionIcon,
-  Science as ScienceIcon,
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  MoreVert as MoreVertIcon,
-  AccountTree as AccountTreeIcon,
   Link as LinkIcon,
-  Storage as StorageIcon,
+  MoreVert as MoreVertIcon,
+  Refresh as RefreshIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType, TreeId } from '@hierarchidb/common-type';
-import { type PluginDefinition, type PluginDatabaseConfig } from '@hierarchidb/common-type';
+import { type PluginDefinition } from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 import { useNavigate } from 'react-router';
@@ -103,13 +101,13 @@ type DisplayPlugin = {
 };
 
 function EnhancedPluginRow({
-  plugin,
-  index,
-  dependencies,
-  onDelete,
-  onReload,
-  disabled = false,
-}: Omit<EnhancedPluginRowProps, 'plugin'> & { plugin: DisplayPlugin }) {
+                             plugin,
+                             index,
+                             dependencies,
+                             onDelete,
+                             onReload,
+                             disabled = false,
+                           }: Omit<EnhancedPluginRowProps, 'plugin'> & { plugin: DisplayPlugin }) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
@@ -294,14 +292,14 @@ function EnhancedPluginRow({
 
 // Reset Plugin Confirmation Dialog
 function ResetPluginDialog({
-  open,
-  pluginName,
-  affectedPlugins,
-  isProduction,
-  onConfirm,
-  onCancel,
-  loading = false,
-}: ResetPluginDialogProps) {
+                             open,
+                             pluginName,
+                             affectedPlugins,
+                             isProduction,
+                             onConfirm,
+                             onCancel,
+                             loading = false,
+                           }: ResetPluginDialogProps) {
   const isFolderPlugin = pluginName === 'folder';
 
   return (
@@ -398,13 +396,13 @@ function ResetPluginDialog({
 
 // Delete Plugin Confirmation Dialog
 function DeletePluginDialog({
-  open,
-  pluginName,
-  affectedPlugins,
-  onConfirm,
-  onCancel,
-  loading = false,
-}: DeletePluginDialogProps) {
+                              open,
+                              pluginName,
+                              affectedPlugins,
+                              onConfirm,
+                              onCancel,
+                              loading = false,
+                            }: DeletePluginDialogProps) {
   const [clearDatabase, setClearDatabase] = useState(true);
 
   return (
@@ -637,7 +635,7 @@ export default function PluginsPage() {
   async function loadPlugins() {
     try {
       setLoading(true);
-      // Phase 2: Use UI registry only; worker analyzer is optional and未型公開
+      //  Phase 2: Use UI registry only; worker analyzer is optional and
       const plugins: DisplayPlugin[] = uiPlugins.map((p, idx) => ({
         nodeType: p.nodeType as NodeType,
         displayName: (typeof (p as unknown as { displayName?: string }).displayName === 'string'

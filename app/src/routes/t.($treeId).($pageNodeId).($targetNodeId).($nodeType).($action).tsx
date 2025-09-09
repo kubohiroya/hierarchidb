@@ -1,6 +1,6 @@
+import type { LoaderFunctionArgs } from 'react-router';
 import { Outlet, useLoaderData, useSearchParams } from 'react-router';
 import type { Tree, TreeNode } from '@hierarchidb/common-type';
-import type { LoaderFunctionArgs } from 'react-router';
 import { loadNodeAction, LoadNodeActionArgs } from '~/loader';
 import TrashDialog, { clientLoader as trashDialogClientLoader } from '~/components/dialogs/TrashDialog';
 

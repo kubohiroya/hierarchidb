@@ -45,18 +45,20 @@ export function createWorkerProvider<T>() {
   const { WorkerClientProvider, useWorkerClient } = createWorkerClientProvider<T>();
 
   const WorkerProvider: React.FC<WorkerProviderProps<T>> = ({
-    createWorker,
-    wrapWorker,
-    children,
-    loadingWorkerComponent = <div>Initializing Worker...</div>,
-    loadingClientComponent = <div>Setting up Worker client...</div>,
-    // errorWorkerComponent,
-    // workerTimeout = 30000,
-    healthCheckInterval = 30000,
-    debug = false,
-    // onWorkerInitialized,
-    onClientReady,
-  }) => {
+                                                              createWorker,
+                                                              wrapWorker,
+                                                              children,
+                                                              loadingWorkerComponent = <div>Initializing
+                                                                Worker...</div>,
+                                                              loadingClientComponent = <div>Setting up Worker
+                                                                client...</div>,
+                                                              // errorWorkerComponent,
+                                                              // workerTimeout = 30000,
+                                                              healthCheckInterval = 30000,
+                                                              debug = false,
+                                                              // onWorkerInitialized,
+                                                              onClientReady,
+                                                            }) => {
     // Temporary workaround: directly render WorkerClientProvider
     // TODO: Fix WorkerSingletonProvider to support render props properly
     const [worker, setWorker] = React.useState<Worker | null>(null);

@@ -2,17 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { Provider } from 'jotai';
 import { useState } from 'react';
 import {
-  Button,
-  Stack,
-  Typography,
   Box,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
+  Button,
   Checkbox,
   Divider,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Paper,
+  Stack,
+  Typography,
 } from '@mui/material';
 import { useMultiSelection } from '../hooks/useMultiSelection.js';
 import type { SearchResult } from '../types/index.js';
@@ -35,7 +35,6 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// モックデータ
 const mockResults: SearchResult[] = [
   {
     nodeId: 'result-1' as NodeId,
@@ -99,7 +98,6 @@ const mockResults: SearchResult[] = [
   },
 ];
 
-// デモコンポーネント
 function MultiSelectionDemo() {
   const [selectionLog, setSelectionLog] = useState<string[]>([]);
   const [mapFocusLog, setMapFocusLog] = useState<string[]>([]);
@@ -137,7 +135,8 @@ function MultiSelectionDemo() {
       </Typography>
 
       <Stack spacing={3}>
-        {/* 統計情報 */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Selection Status
@@ -152,7 +151,8 @@ function MultiSelectionDemo() {
           </Stack>
         </Paper>
 
-        {/* 操作ボタン */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Actions
@@ -181,7 +181,8 @@ function MultiSelectionDemo() {
           </Stack>
         </Paper>
 
-        {/* 検索結果リスト */}
+        {/*
+*/}
         <Paper>
           <Typography variant="h6" sx={{ p: 2, pb: 0 }}>
             Search Results (Interactive)
@@ -224,7 +225,8 @@ function MultiSelectionDemo() {
           </List>
         </Paper>
 
-        {/* ログ表示 */}
+        {/*
+*/}
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           <Paper sx={{ flex: 1, p: 2 }}>
             <Typography variant="h6" gutterBottom>
@@ -269,7 +271,8 @@ function MultiSelectionDemo() {
           </Paper>
         </Stack>
 
-        {/* 選択されたアイテムの詳細 */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Selected Items Detail
@@ -302,7 +305,6 @@ export const Default: Story = {
   render: () => <MultiSelectionDemo />,
 };
 
-// 大量データでのテスト
 function LargeDataDemo() {
   const largeResults: SearchResult[] = Array.from({ length: 100 }, (_, i) => ({
     nodeId: `large-result-${i + 1}` as NodeId,

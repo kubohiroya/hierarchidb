@@ -1,7 +1,6 @@
 import crypto from 'crypto';
-import type { CommandId, NodeType } from '@hierarchidb/common-type';
-import type { TreeNode, NodeId, Timestamp, Seq } from '@hierarchidb/common-type';
-import { createNewName } from './WorkingCopyTreeNodeOperations';
+import type { CommandId, NodeId, NodeType, Seq, Timestamp, TreeNode } from '@hierarchidb/common-type';
+import { commitWorkingCopyV2, createNewName } from './WorkingCopyTreeNodeOperations';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types';
 import { WorkerErrorCode } from './command-types';
 import type { CoreDB } from './CoreDB';
@@ -10,7 +9,6 @@ import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import { commandRegistry } from './command/registry';
 import { validateAndNormalizeEnvelope } from './validation/envelope';
 import { FEATURE_FLAGS } from '../config/feature-flags';
-import { commitWorkingCopyV2 } from './WorkingCopyTreeNodeOperations';
 import { encodeTrashHolderName } from './utils/holder-encoding';
 import { hasWorkingCopyInSubtree } from './utils/policy-c';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
@@ -52,7 +50,7 @@ export class CommandProcessor {
   createEnvelope<TType extends string, TPayload>(
     type: TType,
     payload: TPayload,
-    meta?: Partial<CommandMeta>
+    meta?: Partial<CommandMeta>,
   ): CommandEnvelope<TType, TPayload> {
     const commandId = meta?.commandId ?? (crypto.randomUUID() as CommandId);
     const timestamp = meta?.timestamp ?? (Date.now() as Timestamp);
@@ -77,7 +75,7 @@ export class CommandProcessor {
    * Process a command safely and record to undo/redo stacks when applicable.
    */
   async processCommand<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>
+    envelope: CommandEnvelope<TType, TPayload>,
   ): Promise<CommandResult> {
     try {
       const startedAt = Date.now();
@@ -86,7 +84,7 @@ export class CommandProcessor {
       if ((checked as any).ok === false) {
         return this.createErrorResult(
           (checked as ReturnType<typeof validateAndNormalizeEnvelope> & { error: string }).error,
-          WorkerErrorCode.VALIDATION_ERROR
+          WorkerErrorCode.VALIDATION_ERROR,
         );
       }
       envelope = (checked as { ok: true; envelope: CommandEnvelope<TType, TPayload> }).envelope;
@@ -95,7 +93,7 @@ export class CommandProcessor {
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
         return this.createErrorResult(
           `Command ID too long (max ${PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH} chars)`,
-          WorkerErrorCode.INVALID_OPERATION
+          WorkerErrorCode.INVALID_OPERATION,
         );
       }
 
@@ -103,7 +101,7 @@ export class CommandProcessor {
       if (!this.isValidCommand(envelope.kind)) {
         return this.createErrorResult(
           `Invalid command type: ${envelope.kind}`,
-          WorkerErrorCode.INVALID_OPERATION
+          WorkerErrorCode.INVALID_OPERATION,
         );
       }
 
@@ -143,7 +141,7 @@ export class CommandProcessor {
    * Execute the actual command logic using registry when available.
    */
   private async executeCommand<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>
+    envelope: CommandEnvelope<TType, TPayload>,
   ): Promise<CommandResult> {
     if (FEATURE_FLAGS.WORKER_TX_ENABLED) {
       return await (this.coreDB as any).runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope));
@@ -156,7 +154,7 @@ export class CommandProcessor {
    * Used internally and by the TX wrapper.
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>
+    envelope: CommandEnvelope<TType, TPayload>,
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
@@ -206,7 +204,7 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Create failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'updateNode':
@@ -233,7 +231,7 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Update failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'ping':
@@ -297,13 +295,13 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Move failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'moveToTrash':
         try {
           const p = envelope.payload as unknown as { nodeIds: NodeId[] };
-          // Legacy path removed — always use holder-based Trash
+          //  Legacy path removed always use holder-based Trash
 
           // Holder path: create holder under trash root and move node beneath
           const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
@@ -360,7 +358,7 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'MoveToTrash failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'remove':
@@ -391,7 +389,7 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Remove failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'recoverFromTrash':
@@ -450,7 +448,7 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Recover failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'commitWorkingCopy':
@@ -471,18 +469,18 @@ export class CommandProcessor {
           if (result.status === 'COMMIT_CONFLICT') {
             return this.createErrorResult(
               `Commit conflict (original=${result.originalVersion}, wc=${result.wcVersion})`,
-              WorkerErrorCode.COMMIT_CONFLICT
+              WorkerErrorCode.COMMIT_CONFLICT,
             );
           }
-          // NAME_CONFLICT → VALIDATION_ERROR with suggestion
+          //  NAME_CONFLICT VALIDATION_ERROR with suggestion
           return this.createErrorResult(
             `Name conflict. Suggested: ${result.suggestedName}`,
-            WorkerErrorCode.VALIDATION_ERROR
+            WorkerErrorCode.VALIDATION_ERROR,
           );
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Commit failed',
-            WorkerErrorCode.DATABASE_ERROR
+            WorkerErrorCode.DATABASE_ERROR,
           );
         }
       case 'invalidCommand':
@@ -496,42 +494,48 @@ export class CommandProcessor {
    * Check if command type is valid
    */
   private isValidCommand(type: string): boolean {
-    // Treat only registered commands as valid; others map to INVALID_OPERATION
-    return Boolean(commandRegistry.get(type));
+    // Registered commands are always valid
+    if (commandRegistry.get(type)) return true;
+    // Allow legacy commands handled by the fallback switch
+    const LEGACY_SUPPORTED = new Set([
+      'createNode',
+      'updateNode',
+      'moveNodes',
+      'moveToTrash',
+      'remove',
+      'recoverFromTrash',
+      'commitWorkingCopy',
+    ]);
+    return LEGACY_SUPPORTED.has(type);
   }
 
   /**
-   * 【コード品質向上】: Undo可能コマンドの集約管理
-   * 【改善内容】: 設定値の外部化と保守性向上
-   * 【拡張性】: 新しいコマンドタイプの追加容易性
-   * 🟢 信頼性レベル: 標準的なCommand Patternに準拠
-   */
+      * : Undo
+   * :
+   * :
+   * : Command Pattern
+      */
   private static readonly UNDOABLE_COMMANDS = new Set([
-    // 【基本操作】: ノードの基本的なCRUD操作
+    // Mutations in current command set
     'createNode',
     'updateNode',
-    'deleteNode',
-    'moveNode',
-
-    // 【汎用操作】: 汎用ノード操作コマンド
-    'create', // 【汎用ノード作成】: 任意のノードタイプに対応
-    'moveFolder', // 【フォルダ移動】: 将来対応のため追加
-    'updateFolder', // 【フォルダ更新】: 将来対応のため追加
-
-    // 【Working Copy操作】: 作業コピーの管理コマンド
-    'commitWorkingCopyForCreate', // 【Working Copy コミット】: 実際の作成処理
+    'moveNodes',
+    'moveToTrash',
+    'remove',
+    'recoverFromTrash',
+    'commitWorkingCopy',
   ]);
 
   /**
-   * 【機能概要】: コマンドがUndo可能かどうかを高速判定する
-   * 【改善内容】: Set使用によるO(1)時間計算量での判定
-   * 【パフォーマンス】: 配列のincludes()からSetのhas()への最適化
-   * 🟢 信頼性レベル: 標準的なアルゴリズム最適化手法に準拠
-   * @param type コマンドタイプ
-   * @returns Undo可能かどうか
-   */
+      * : Undo
+   * : SetO(1)
+   * : includes()Sethas()
+   * :
+   * @param type
+   * @returns Undo
+      */
   private isUndoableCommand(type: string): boolean {
-    // 【パフォーマンス最適化】: Setによる高速ルックアップ 🟢
+    //  : Set
     return CommandProcessor.UNDOABLE_COMMANDS.has(type);
   }
 
@@ -558,7 +562,7 @@ export class CommandProcessor {
    * Add to undo stack with ring buffer semantics.
    */
   private addToUndoStackSafely<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>
+    envelope: CommandEnvelope<TType, TPayload>,
   ): void {
     if (this.undoStack.length >= this.MAX_UNDO_STACK_SIZE) {
       this.undoStack.shift();
@@ -571,7 +575,7 @@ export class CommandProcessor {
    * Add to redo stack with ring buffer semantics.
    */
   private addToRedoStackSafely<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>
+    envelope: CommandEnvelope<TType, TPayload>,
   ): void {
     if (this.redoStack.length >= this.MAX_REDO_STACK_SIZE) {
       this.redoStack.shift();
@@ -592,7 +596,7 @@ export class CommandProcessor {
    */
   private recordEventSafely<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
-    result: CommandResult
+    result: CommandResult,
   ): void {
     if (!envelope?.commandId) {
       return;
@@ -682,24 +686,24 @@ export class CommandProcessor {
   }
 
   /**
-   * 【機能概要】: 最後のコマンドをUndo（元に戻す）する
-   * 【実装方針】: テストを通すための最小限のUndo実装
-   * 【テスト対応】: フォルダ作成Undoテストで期待される動作を実現
-   * 🟢 信頼性レベル: 元資料の分析に基づいた逆操作実装
-   * @returns Undoの結果
-   */
+      * : Undo
+   * : Undo
+   * : Undo
+   * :
+   * @returns Undo
+      */
   async undo(): Promise<CommandResult> {
-    // 【Undoスタック確認】: Undo可能なコマンドが存在するかチェック 🟢
+    //  Undo: Undo
     const command = this.undoStack.pop();
     if (!command) {
       return this.createErrorResult('No command to undo', WorkerErrorCode.INVALID_OPERATION);
     }
 
     try {
-      // 【逆操作実行】: コマンドの逆操作を実行してデータを元の状態に戻す 🟢
+      //  :
       await this.executeReverseCommand(command);
 
-      // 【Ring Buffer適用】: 安全なRedoスタック追加 🟢
+      //  Ring Buffer: Redo
       this.addToRedoStackSafely(command);
 
       return {
@@ -707,34 +711,34 @@ export class CommandProcessor {
         seq: this.getNextSeq(),
       };
     } catch (error) {
-      // 【失敗時のロールバック】: Undo失敗時は元のスタックに戻す 🟡
+      //  : Undo
       this.undoStack.push(command);
       return this.createErrorResult(
         error instanceof Error ? error.message : 'Undo operation failed',
-        WorkerErrorCode.INVALID_OPERATION
+        WorkerErrorCode.INVALID_OPERATION,
       );
     }
   }
 
   /**
-   * 【機能概要】: Undoした操作をRedo（やり直し）する
-   * 【実装方針】: テストを通すための最小限のRedo実装
-   * 【テスト対応】: フォルダ作成Redoテストで期待される動作を実現
-   * 🟢 信頼性レベル: 元資料の分析に基づいた再実行実装
-   * @returns Redoの結果
-   */
+      * : UndoRedo
+   * : Redo
+   * : Redo
+   * :
+   * @returns Redo
+      */
   async redo(): Promise<CommandResult> {
-    // 【Redoスタック確認】: Redo可能なコマンドが存在するかチェック 🟢
+    //  Redo: Redo
     const command = this.redoStack.pop();
     if (!command) {
       return this.createErrorResult('No command to redo', WorkerErrorCode.INVALID_OPERATION);
     }
 
     try {
-      // 【コマンド再実行】: Undoで取り消されたコマンドを再実行 🟢
+      //  : Undo
       await this.executeRedoCommand(command);
 
-      // 【Undoスタック追加】: Redo成功後はUndoスタックに戻す 🟢
+      //  Undo: RedoUndo
       this.undoStack.push(command);
 
       return {
@@ -742,11 +746,11 @@ export class CommandProcessor {
         seq: this.getNextSeq(),
       };
     } catch (error) {
-      // 【失敗時のロールバック】: Redo失敗時は元のスタックに戻す 🟡
+      //  : Redo
       this.redoStack.push(command);
       return this.createErrorResult(
         error instanceof Error ? error.message : 'Redo operation failed',
-        WorkerErrorCode.INVALID_OPERATION
+        WorkerErrorCode.INVALID_OPERATION,
       );
     }
   }
@@ -761,16 +765,16 @@ export class CommandProcessor {
   }
 
   /**
-   * 【機能概要】: コマンドの逆操作を実行してデータを元の状態に戻す
-   * 【実装方針】: テストを通すための最小限の逆操作実装
-   * 【テスト対応】: フォルダ作成Undoで期待されるノード削除動作を実現
-   * 🟡 信頼性レベル: 元資料から推測したフォルダ削除ロジック
-   * @param command 逆操作を実行するコマンド
-   */
+      * :
+   * :
+   * : Undo
+   * :
+   * @param command
+      */
   private async executeReverseCommand<TType extends string, TPayload>(
-    command: CommandEnvelope<TType, TPayload>
+    command: CommandEnvelope<TType, TPayload>,
   ): Promise<void> {
-    // 【コマンド種別による逆操作分岐】: コマンドタイプに応じて適切な逆操作を実行 🟢
+    //  :
     switch (command.kind) {
       case 'createNode':
       case 'create': {
@@ -818,22 +822,22 @@ export class CommandProcessor {
       }
 
       default:
-        // 【未対応コマンド】: Refactorフェーズで拡張予定 🔴
+        //  : Refactor
         throw new Error(`Reverse operation not implemented for command type: ${command.kind}`);
     }
   }
 
   /**
-   * 【機能概要】: Undoされたコマンドを再実行する
-   * 【実装方針】: テストを通すための最小限のRedo実装
-   * 【テスト対応】: フォルダ作成Redoで期待されるノード復元動作を実現
-   * 🟡 信頼性レベル: 元資料から推測したフォルダ再作成ロジック
-   * @param command 再実行するコマンド
-   */
+      * : Undo
+   * : Redo
+   * : Redo
+   * :
+   * @param command
+      */
   private async executeRedoCommand<TType extends string, TPayload>(
-    command: CommandEnvelope<TType, TPayload>
+    command: CommandEnvelope<TType, TPayload>,
   ): Promise<void> {
-    // 【コマンド種別による再実行分岐】: コマンドタイプに応じて適切な再実行を行う 🟢
+    //  :
     switch (command.kind) {
       case 'createNode':
       case 'create': {
@@ -941,17 +945,18 @@ export class CommandProcessor {
       }
 
       default:
-        // 【未対応コマンド】: Refactorフェーズで拡張予定 🔴
+        //  : Refactor
         throw new Error(`Redo operation not implemented for command type: ${command.kind}`);
     }
   }
 
   /**
-   * 【コンストラクタ注入】: 依存関係の明示的な注入による堅牢な設計
-   * 【改善内容】: 暫定的なsetCoreDBメソッドを排除し、コンストラクタベースの注入を実装
-   * 【設計方針】: インターフェース分離原則に基づく疎結合設計
-   * 【型安全性】: any型を排除し、適切な型定義による安全性向上
-   * 🟢 信頼性レベル: DIパターンのベストプラクティスに準拠
-   */
-  constructor(private coreDB: CoreDB) {}
+      * :
+   * : setCoreDB
+   * :
+   * : any
+   * : DI
+      */
+  constructor(private coreDB: CoreDB) {
+  }
 }

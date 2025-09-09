@@ -1,54 +1,52 @@
 /**
- * @file StylerStep6.tsx
+  * @file StylerStep6.tsx
  * @description Step 6 wrapper component for Styler table preview
- * 【機能概要】: スタイルマッピングのプレビューステップ
- * 【実装方針】: 設定に基づいた色付きテーブル表示
- * 🟢 信頼性レベル: データビジュアライゼーション対応
- */
+ * :
+ * :
+ * :
+  */
 
 import React, { useCallback, useMemo } from 'react';
-import { Box, Alert, AlertTitle } from '@mui/material';
+import { Alert, AlertTitle, Box } from '@mui/material';
 import { StylerTablePreview } from '../../components/step6/StylerTablePreview';
 import type { StylerConfig } from '../../types/stylerTypes';
 import { StylerConfigDefault } from '../../types/stylerTypes';
 
 /**
- * 【型定義】: Step6のプロパティ
- */
+  * : Step6
+  */
 export interface StylerStep6Props {
   data: any;
   onChange: (data: any) => void;
   onValidate?: (isValid: boolean) => void;
-  // CSVデータ関連
+  //  CSV
   csvData?: Array<Record<string, any>>;
   columns?: string[];
 }
 
 /**
- * 【機能概要】: Styler Step6コンポーネント
- * 【実装方針】: StylerTablePreviewをラップしてプレビュー機能を提供
- * 【テスト対応】: 大容量データでのプレビュー動作確認
- * 🟢 信頼性レベル: パフォーマンス最適化済み
- */
+  * : Styler Step6
+ * : StylerTablePreview
+ * :
+ * :
+  */
 export const StylerStep6: React.FC<StylerStep6Props> = ({
-  data,
-  onChange,
-  onValidate,
-  csvData = [],
-  // columns = [],
-}) => {
-  // 【設定の取得】
+                                                          data,
+                                                          onChange,
+                                                          onValidate,
+                                                          csvData = [],
+                                                          // columns = [],
+                                                        }) => {
   const config: StylerConfig = data?.stylerConfig || StylerConfigDefault;
   const selectedKeyColumn = data?.selectedKeyColumn;
   const selectedValueColumn = data?.selectedValueColumn;
 
-  // 【プレビューデータの準備】
   const previewData = useMemo(() => {
-    // 最大1000行までプレビュー
+    //  1000
     return csvData.slice(0, 1000);
   }, [csvData]);
 
-  // 【列選択ハンドラ】: プレビュー画面での列選択変更
+  //  :
   const handleColumnSelect = useCallback(
     (columnName: string, type: 'key' | 'value') => {
       const updatedData = {
@@ -56,7 +54,6 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
         [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: columnName,
       };
 
-      // 設定にも反映
       if (data?.stylerConfig) {
         updatedData.stylerConfig = {
           ...data.stylerConfig,
@@ -66,18 +63,17 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 
       onChange(updatedData);
     },
-    [data, onChange]
+    [data, onChange],
   );
 
-  // 【バリデーション状態の更新】
   React.useEffect(() => {
     if (onValidate) {
-      // Step6は確認ステップなので常に有効
+      //  Step6
       onValidate(true);
     }
   }, [onValidate]);
 
-  // 【エラー表示】: 設定が不完全な場合
+  //  :
   if (!config.targetProperty || !selectedValueColumn) {
     return (
       <Box sx={{ p: 3 }}>
@@ -93,7 +89,6 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
     );
   }
 
-  // 【データ不足の警告】
   if (csvData.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
@@ -118,7 +113,8 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
         enableVirtualization={previewData.length > 100}
       />
 
-      {/* パフォーマンス警告 */}
+      {/*
+*/}
       {csvData.length > 1000 && (
         <Alert severity="info" sx={{ mt: 2 }}>
           Showing preview of first 1,000 rows. Full dataset contains{' '}
@@ -130,16 +126,15 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 };
 
 /**
- * 【エクスポート】: Step定義オブジェクト
- */
+  * : Step
+  */
 export const StylerStep6Definition = {
   stepNumber: 6,
   title: 'Preview with Style Mapping',
   component: StylerStep6,
   validation: {
     validate: async (_data: any) => {
-      // プレビューステップは常に有効
-      // ユーザーが最終確認できればOK
+      //  OK
       return { isValid: true, errors: [] };
     },
   },

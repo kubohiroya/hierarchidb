@@ -1,11 +1,4 @@
-import {
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  useRouteError,
-} from 'react-router';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router-dom';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { StrictMode, useMemo } from 'react';
@@ -14,19 +7,33 @@ import { createAppTheme, ThemeProvider as CustomThemeProvider } from '@hierarchi
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { WorkerProvider } from './contexts/WorkerProvider';
-import { TitleLogo } from './components/TitleLogo';
 import { InitInspector } from './dev/InitInspector';
-import { NotificationSystem } from '@hierarchidb/ui-core';
+// Initialize UI plugins
+import { NotificationSystem, registerAllUIPlugins } from '@hierarchidb/ui-core';
 import { APP_VERSION, BUILD_TIME } from './version';
+// Bridge: provide app's Worker client hook to shape-plugin UI hooks
+import { registerWorkerClientHook } from '@hierarchidb/shape-plugin/ui';
+import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
 
 // Log version and build time at startup (local time)
 try {
   const localBuildTime = (() => {
-    try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+    try {
+      return new Date(BUILD_TIME).toLocaleString();
+    } catch {
+      return String(BUILD_TIME);
+    }
   })();
   // eslint-disable-next-line no-console
   console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
-} catch {}
+} catch {
+}
+
+// Register the app-provided hook once at module load
+try {
+  registerWorkerClientHook(useWorkerAPIClient);
+} catch {
+}
 
 declare global {
   interface Window {
@@ -35,9 +42,6 @@ declare global {
 }
 
 // Initialize worker URL configuration
-
-// Initialize UI plugins
-import { registerAllUIPlugins } from '@hierarchidb/ui-core';
 
 // Register all UI plugins at startup (only once)
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
@@ -73,15 +77,15 @@ if (typeof window !== 'undefined') {
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <Meta />
-        <Links />
-      </head>
-      <body suppressHydrationWarning>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
+    <head>
+      <Meta />
+      <Links />
+    </head>
+    <body suppressHydrationWarning>
+    {children}
+    <ScrollRestoration />
+    <Scripts />
+    </body>
     </html>
   );
 }
@@ -113,12 +117,14 @@ export function HydrateFallback() {
           animation: 'hdb-spin 0.8s linear infinite',
         }}
       />
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes hdb-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-      ` }} />
+      `,
+      }} />
     </div>
   );
 }
@@ -143,26 +149,26 @@ export function ErrorBoundary() {
   }
 
   return (
-    <div style={{ 
-      padding: '20px', 
+    <div style={{
+      padding: '20px',
       color: 'red',
       fontFamily: 'monospace',
       backgroundColor: '#fff5f5',
       border: '1px solid #fecaca',
       borderRadius: '8px',
-      margin: '20px'
+      margin: '20px',
     }}>
       <h1 style={{ color: '#dc2626', marginBottom: '20px' }}>
         {isDevelopment ? 'Development Error' : 'Application Error'}
       </h1>
-      
+
       <h3 style={{ color: '#991b1b', marginBottom: '10px' }}>Message:</h3>
-      <pre style={{ 
-        backgroundColor: '#fef2f2', 
-        padding: '10px', 
+      <pre style={{
+        backgroundColor: '#fef2f2',
+        padding: '10px',
         borderRadius: '4px',
         marginBottom: '20px',
-        overflow: 'auto'
+        overflow: 'auto',
       }}>
         {error instanceof Error ? error.message : JSON.stringify(error, null, 2)}
       </pre>
@@ -170,14 +176,14 @@ export function ErrorBoundary() {
       {error instanceof Error && error.stack && (
         <>
           <h3 style={{ color: '#991b1b', marginBottom: '10px' }}>Stack Trace:</h3>
-          <pre style={{ 
-            fontSize: '12px', 
-            backgroundColor: '#fef2f2', 
-            padding: '10px', 
+          <pre style={{
+            fontSize: '12px',
+            backgroundColor: '#fef2f2',
+            padding: '10px',
             borderRadius: '4px',
             overflow: 'auto',
             maxHeight: '300px',
-            marginBottom: '20px'
+            marginBottom: '20px',
           }}>
             {error.stack}
           </pre>
@@ -187,13 +193,13 @@ export function ErrorBoundary() {
       {isDevelopment && error instanceof Error && error.cause ? (
         <>
           <h3 style={{ color: '#991b1b', marginBottom: '10px' }}>Cause:</h3>
-          <pre style={{ 
-            fontSize: '12px', 
-            backgroundColor: '#fef2f2', 
-            padding: '10px', 
+          <pre style={{
+            fontSize: '12px',
+            backgroundColor: '#fef2f2',
+            padding: '10px',
             borderRadius: '4px',
             overflow: 'auto',
-            marginBottom: '20px'
+            marginBottom: '20px',
           }}>
             {JSON.stringify(error.cause, null, 2)}
           </pre>
@@ -207,24 +213,24 @@ export function ErrorBoundary() {
             <summary style={{ cursor: 'pointer', marginBottom: '10px' }}>
               Click to expand full error object
             </summary>
-            <pre style={{ 
-              fontSize: '11px', 
-              backgroundColor: '#fef2f2', 
-              padding: '10px', 
+            <pre style={{
+              fontSize: '11px',
+              backgroundColor: '#fef2f2',
+              padding: '10px',
               borderRadius: '4px',
               overflow: 'auto',
-              maxHeight: '400px'
+              maxHeight: '400px',
             }}>
               {JSON.stringify(error, null, 2)}
             </pre>
           </details>
-          
-          <div style={{ 
-            backgroundColor: '#fef9c3', 
-            padding: '10px', 
+
+          <div style={{
+            backgroundColor: '#fef9c3',
+            padding: '10px',
             borderRadius: '4px',
             border: '1px solid #fcd34d',
-            fontSize: '14px'
+            fontSize: '14px',
           }}>
             <strong>💡 Development Tips:</strong>
             <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>

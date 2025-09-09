@@ -1,5 +1,5 @@
-import { Outlet, useParams } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
+import { Outlet, useParams } from 'react-router';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
 
 export async function clientLoader(args: LoaderFunctionArgs) {

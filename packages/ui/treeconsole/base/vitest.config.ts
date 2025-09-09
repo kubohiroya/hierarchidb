@@ -12,8 +12,8 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**']
-    }
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
   },
   resolve: {
     alias: {

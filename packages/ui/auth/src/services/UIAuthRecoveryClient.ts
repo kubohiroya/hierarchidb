@@ -1,4 +1,4 @@
-import { AuthNotificationRegistry, AuthNotificationFactory } from '@hierarchidb/common-auth';
+import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
 
 export type AuthPromptResult = {
   token: string;
@@ -37,7 +37,9 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
         await registry.dispatch(cancelled as any);
       }
     },
-    onAuthSuccess: async () => {},
-    onAuthCancelled: async () => {},
+    onAuthSuccess: async () => {
+    },
+    onAuthCancelled: async () => {
+    },
   });
 }

@@ -23,10 +23,10 @@ export interface CSVProviderProps {
  * CSV Provider Component
  * Injects CSV API implementation into the component tree
  */
-export const CSVProvider: React.FC<CSVProviderProps> = ({ 
-  children, 
-  csvApi 
-}) => {
+export const CSVProvider: React.FC<CSVProviderProps> = ({
+                                                          children,
+                                                          csvApi,
+                                                        }) => {
   return (
     <CSVApiContext.Provider value={csvApi}>
       {children}
@@ -43,7 +43,7 @@ export const useCSVApi = (): ICSVDataApi => {
   if (!api) {
     throw new Error(
       'useCSVApi must be used within CSVProvider. ' +
-      'Ensure your component is wrapped with <CSVProvider csvApi={yourApiImplementation}>'
+      'Ensure your component is wrapped with <CSVProvider csvApi={yourApiImplementation}>',
     );
   }
   return api;

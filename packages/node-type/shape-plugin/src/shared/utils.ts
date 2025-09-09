@@ -4,12 +4,12 @@
  */
 
 import type {
-  ValidationResult,
+  CountryMetadata,
+  DataSourceName,
+  ProcessingConfig,
   SelectionStats,
   UrlMetadata,
-  CountryMetadata,
-  ProcessingConfig,
-  DataSourceName,
+  ValidationResult,
 } from './types';
 import { DEFAULT_PROCESSING_CONFIG } from './constants';
 
@@ -110,7 +110,7 @@ export function calculateSelectionStats(urlMetadata: UrlMetadata[]): SelectionSt
     }
     if (typeof metadata.estimatedSize === 'number') {
       estimatedSize += metadata.estimatedSize;
-      // Rough estimate: 1MB ≈ 1000 features
+      //  Rough estimate: 1MB 1000 features
       estimatedFeatures += Math.floor(metadata.estimatedSize / 1000);
     }
   });
@@ -135,7 +135,7 @@ export function generateUrlMetadata(
   dataSource: DataSourceName,
   countries: string[],
   adminLevels: number[],
-  countryMetadata: CountryMetadata[]
+  countryMetadata: CountryMetadata[],
 ): UrlMetadata[] {
   const urlMetadata: UrlMetadata[] = [];
   const countryMap = new Map(countryMetadata.map((c) => [c.countryCode, c]));
@@ -170,7 +170,7 @@ export function generateUrlMetadata(
 function buildDataSourceUrl(
   dataSource: DataSourceName,
   countryCode: string,
-  adminLevel: number
+  adminLevel: number,
 ): string | null {
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download',
@@ -211,7 +211,7 @@ function estimateDataSize(
   dataSource: DataSourceName,
   _countryCode: string,
   adminLevel: number,
-  country: CountryMetadata
+  country: CountryMetadata,
 ): number {
   // Base size factors per data source (in KB)
   const baseSizeFactors = {
@@ -312,8 +312,7 @@ export function serializeCheckboxState(state: boolean[][]): string {
  */
 export function buildShapeEntityFromCreate(
   params: {
-    nodeId: import('@hierarchidb/common-type').NodeId;
-    entityId: import('@hierarchidb/common-type').EntityId;
+    nodeId: import('./types').NodeId;
     data: {
       name: string;
       description?: string;
@@ -321,14 +320,14 @@ export function buildShapeEntityFromCreate(
       processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
     };
     now?: number;
-  }
+  },
 ): import('./types').ShapeEntity {
   const now = params.now ?? Date.now();
   const merged = mergeProcessingConfig(
-    (params.data.processingConfig as Partial<ProcessingConfig>) || {}
+    (params.data.processingConfig as Partial<ProcessingConfig>) || {},
   );
   return {
-    id: params.entityId,
+    id: params.nodeId,
     nodeId: params.nodeId,
     name: params.data.name,
     description: params.data.description || '',
@@ -350,7 +349,7 @@ export function buildShapeEntityFromCreate(
  * Create a ShapeWorkingCopy from an entity (shared mapping)
  */
 export function createWorkingCopyFromEntity(
-  entity: import('./types').ShapeEntity
+  entity: import('./types').ShapeEntity,
 ): import('./types').ShapeWorkingCopy {
   const obj = {
     id: entity.id,
@@ -376,7 +375,7 @@ export function createWorkingCopyFromEntity(
  * Map a working copy back to entity updates (shared mapping)
  */
 export function mapWorkingCopyToUpdates(
-  workingCopy: import('./types').ShapeWorkingCopy
+  workingCopy: import('./types').ShapeWorkingCopy,
 ): Partial<import('./types').ShapeEntity> {
   const updates: Partial<import('./types').ShapeEntity> = {
     name: workingCopy.name,

@@ -9,7 +9,7 @@ export const TextCopyComponent = ({ createText }: { createText: () => string }) 
     try {
       const text = createText();
       // if (import.meta.env.DEV) {
-      console.log("text", text);
+      console.log('text', text);
       // }
       await navigator.clipboard.writeText(text);
       setCopyResult(true);

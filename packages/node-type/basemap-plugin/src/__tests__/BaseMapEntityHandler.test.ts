@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
@@ -15,22 +15,36 @@ vi.mock('@hierarchidb/folder-plugin', () => ({
         settings: {
           allowNestedFolders: true,
           maxDepth: 10,
-          sortOrder: 'name'
+          sortOrder: 'name',
         },
         metadata: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        version: 1
+        version: 1,
       };
     }
-    async updateEntity() {}
-    async deleteEntity() {}
-    async getEntity() {}
-    async createWorkingCopy() {}
-    async commitWorkingCopy() {}
-    async discardWorkingCopy() {}
-    async cleanup() {}
-  }
+
+    async updateEntity() {
+    }
+
+    async deleteEntity() {
+    }
+
+    async getEntity() {
+    }
+
+    async createWorkingCopy() {
+    }
+
+    async commitWorkingCopy() {
+    }
+
+    async discardWorkingCopy() {
+    }
+
+    async cleanup() {
+    }
+  },
 }));
 
 describe('BaseMapEntityHandler', () => {
@@ -54,7 +68,7 @@ describe('BaseMapEntityHandler', () => {
   describe('createEntity', () => {
     it('should create a BaseMap entity with default values', async () => {
       const entity = await handler.createEntity(testNodeId);
-      
+
       expect(entity.nodeId).toBe(testNodeId);
       expect(entity.name).toBe('New BaseMap');
       expect(entity.mapStyle.style).toBe('streets');
@@ -70,13 +84,13 @@ describe('BaseMapEntityHandler', () => {
         name: 'Tokyo Streets',
         description: 'Tokyo street map configuration',
         mapStyle: {
-          style: 'terrain'
+          style: 'terrain',
         },
         viewport: {
           center: [139.6917, 35.6895], // Tokyo
           zoom: 12,
           bearing: 45,
-          pitch: 15
+          pitch: 15,
         },
         displayOptions: {
           show3dBuildings: true,
@@ -84,12 +98,12 @@ describe('BaseMapEntityHandler', () => {
           showTransit: false,
           showTerrain: true,
           showLabels: true,
-          tags: ['tokyo', 'streets']
-        }
+          tags: ['tokyo', 'streets'],
+        },
       };
 
       const entity = await handler.createEntity(testNodeId, customData);
-      
+
       expect(entity.name).toBe('Tokyo Streets');
       expect(entity.description).toBe('Tokyo street map configuration');
       expect(entity.mapStyle.style).toBe('terrain');
@@ -111,13 +125,13 @@ describe('BaseMapEntityHandler', () => {
           customStyleConfig: {
             attribution: 'Custom Map Style',
             sprite: 'https://api.mapbox.com/sprites/custom',
-            glyphs: 'https://api.mapbox.com/fonts/custom/{fontstack}/{range}.pbf'
-          }
-        }
+            glyphs: 'https://api.mapbox.com/fonts/custom/{fontstack}/{range}.pbf',
+          },
+        },
       };
 
       const entity = await handler.createEntity(testNodeId, customData);
-      
+
       expect(entity.mapStyle.style).toBe('custom');
       expect(entity.mapStyle.customStyleUrl).toBe('https://api.mapbox.com/styles/v1/custom-style');
       expect(entity.mapStyle.customStyleConfig?.attribution).toBe('Custom Map Style');
@@ -128,28 +142,28 @@ describe('BaseMapEntityHandler', () => {
     it('should update BaseMap-specific fields', async () => {
       // Create initial entity
       await handler.createEntity(testNodeId, {
-        name: 'Original Map'
+        name: 'Original Map',
       });
 
       // Update BaseMap-specific fields
       await handler.updateEntity(testNodeId, {
         name: 'Updated Map',
         mapStyle: {
-          style: 'satellite'
+          style: 'satellite',
         },
         viewport: {
           center: [139.6917, 35.6895],
           zoom: 15,
           bearing: 0,
-          pitch: 0
+          pitch: 0,
         },
         displayOptions: {
           show3dBuildings: true,
           showTraffic: false,
           showTransit: true,
           showTerrain: false,
-          showLabels: true
-        }
+          showLabels: true,
+        },
       });
 
       const updatedEntity = await handler.getEntity(testNodeId);
@@ -177,7 +191,7 @@ describe('BaseMapEntityHandler', () => {
       workingCopy.viewport.zoom = 8;
 
       await handler.commitWorkingCopy(testNodeId, workingCopy);
-      
+
       const committedEntity = await handler.getEntity(testNodeId);
       expect(committedEntity?.name).toBe('Test BaseMap Working Copy');
       expect(committedEntity?.mapStyle.style).toBe('dark');
@@ -189,7 +203,7 @@ describe('BaseMapEntityHandler', () => {
       expect(workingCopy.isDraft).toBe(true);
 
       await handler.discardWorkingCopy(testNodeId);
-      
+
       // Verify entity was not created
       const entity = await handler.getEntity(testNodeId);
       expect(entity).toBeUndefined();
@@ -200,7 +214,7 @@ describe('BaseMapEntityHandler', () => {
       const originalEntity = await handler.createEntity(testNodeId, {
         name: 'Existing Map',
         mapStyle: { style: 'terrain' },
-        viewport: { center: [100, 50], zoom: 10, bearing: 0, pitch: 0 }
+        viewport: { center: [100, 50], zoom: 10, bearing: 0, pitch: 0 },
       });
 
       const workingCopy = await handler.createWorkingCopy(testNodeId);
@@ -220,7 +234,7 @@ describe('BaseMapEntityHandler', () => {
 
       const newMapStyle = {
         style: 'custom' as const,
-        customStyleUrl: 'https://example.com/style.json'
+        customStyleUrl: 'https://example.com/style.json',
       };
 
       await handler.updateMapStyle(testNodeId, newMapStyle);
@@ -237,7 +251,7 @@ describe('BaseMapEntityHandler', () => {
         center: [139.6917, 35.6895] as [number, number],
         zoom: 15,
         bearing: 90,
-        pitch: 30
+        pitch: 30,
       };
 
       await handler.updateViewport(testNodeId, newViewport);
@@ -259,7 +273,7 @@ describe('BaseMapEntityHandler', () => {
         showTerrain: true,
         showLabels: false,
         attribution: 'Custom Attribution',
-        tags: ['custom', 'map']
+        tags: ['custom', 'map'],
       };
 
       await handler.updateDisplayOptions(testNodeId, newDisplayOptions);
@@ -276,7 +290,7 @@ describe('BaseMapEntityHandler', () => {
       const customEntity = await handler.createEntity(testNodeId, {
         mapStyle: { style: 'satellite' },
         viewport: { center: [0, 0], zoom: 5, bearing: 45, pitch: 30 },
-        displayOptions: { show3dBuildings: true, showLabels: false }
+        displayOptions: { show3dBuildings: true, showLabels: false },
       });
 
       const config = await handler.getConfiguration(testNodeId);
@@ -299,14 +313,14 @@ describe('BaseMapEntityHandler', () => {
     it('should validate correct BaseMap configuration', async () => {
       const validConfig: Partial<BaseMapEntity> = {
         mapStyle: {
-          style: 'streets'
+          style: 'streets',
         },
         viewport: {
           center: [139.6917, 35.6895],
           zoom: 12,
           bearing: 45,
-          pitch: 15
-        }
+          pitch: 15,
+        },
       };
 
       const result = await handler.validateConfiguration(validConfig);
@@ -318,8 +332,8 @@ describe('BaseMapEntityHandler', () => {
       const validConfig: Partial<BaseMapEntity> = {
         mapStyle: {
           style: 'custom',
-          customStyleUrl: 'https://api.mapbox.com/styles/v1/custom'
-        }
+          customStyleUrl: 'https://api.mapbox.com/styles/v1/custom',
+        },
       };
 
       const result = await handler.validateConfiguration(validConfig);
@@ -330,8 +344,8 @@ describe('BaseMapEntityHandler', () => {
     it('should reject invalid map style', async () => {
       const invalidConfig: Partial<BaseMapEntity> = {
         mapStyle: {
-          style: 'invalid-style' as any
-        }
+          style: 'invalid-style' as any,
+        },
       };
 
       const result = await handler.validateConfiguration(invalidConfig);
@@ -342,9 +356,9 @@ describe('BaseMapEntityHandler', () => {
     it('should reject custom style without URL', async () => {
       const invalidConfig: Partial<BaseMapEntity> = {
         mapStyle: {
-          style: 'custom'
+          style: 'custom',
           // Missing customStyleUrl
-        }
+        },
       };
 
       const result = await handler.validateConfiguration(invalidConfig);
@@ -358,8 +372,8 @@ describe('BaseMapEntityHandler', () => {
           center: [200, 100], // Invalid longitude/latitude
           zoom: 12,
           bearing: 0,
-          pitch: 0
-        }
+          pitch: 0,
+        },
       };
 
       const result = await handler.validateConfiguration(invalidConfig);
@@ -374,8 +388,8 @@ describe('BaseMapEntityHandler', () => {
           center: [0, 0],
           zoom: 30, // Invalid zoom
           bearing: 0,
-          pitch: 0
-        }
+          pitch: 0,
+        },
       };
 
       const result = await handler.validateConfiguration(invalidConfig);
@@ -389,8 +403,8 @@ describe('BaseMapEntityHandler', () => {
           center: [0, 0],
           zoom: 10,
           bearing: 400, // Invalid bearing
-          pitch: 80    // Invalid pitch
-        }
+          pitch: 80,    // Invalid pitch
+        },
       };
 
       const result = await handler.validateConfiguration(invalidConfig);
@@ -406,19 +420,19 @@ describe('BaseMapEntityHandler', () => {
       await handler.createEntity('map1' as NodeId, {
         name: 'Tokyo Streets',
         mapStyle: { style: 'streets' },
-        displayOptions: { tags: ['tokyo', 'japan'] }
+        displayOptions: { tags: ['tokyo', 'japan'] },
       });
-      
+
       await handler.createEntity('map2' as NodeId, {
         name: 'New York Satellite',
         mapStyle: { style: 'satellite' },
-        displayOptions: { tags: ['newyork', 'usa'] }
+        displayOptions: { tags: ['newyork', 'usa'] },
       });
-      
+
       await handler.createEntity('map3' as NodeId, {
         name: 'London Terrain',
         mapStyle: { style: 'terrain' },
-        displayOptions: { tags: ['london', 'uk'] }
+        displayOptions: { tags: ['london', 'uk'] },
       });
     });
 
@@ -426,7 +440,7 @@ describe('BaseMapEntityHandler', () => {
       // Clean up test data
       try {
         await handler.deleteEntity('map1' as NodeId);
-        await handler.deleteEntity('map2' as NodeId); 
+        await handler.deleteEntity('map2' as NodeId);
         await handler.deleteEntity('map3' as NodeId);
       } catch {
         // Ignore cleanup errors

@@ -3,19 +3,20 @@
  * @description Route batch processing manager extending Shape's batch infrastructure
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../entities/RouteEntity';
 // import { RouteGenerator } from './RouteGenerator';
 import { RouteDatabase } from '../database/RouteDatabase';
-import type { ProgressEvent } from '@hierarchidb/common-type';
-import { RouteBatchSession, type RouteBatchTask, type RouteBatchConfig } from './RouteBatchSession';
+import { type RouteBatchConfig, RouteBatchSession, type RouteBatchTask } from './RouteBatchSession';
 
 /**
  * Route-specific batch configuration
  */
 export class RouteBatchManager {
-  constructor(private deps?: { engines?: any; emitter?: any; store?: any }) {}
+  constructor(private deps?: { engines?: any; emitter?: any; store?: any }) {
+  }
+
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
   // private generator = new RouteGenerator();
   private db = new RouteDatabase();
@@ -30,7 +31,7 @@ export class RouteBatchManager {
   //   great_circle: 64,
   //   custom: 8,
   // };
-  
+
   /**
    * Start route batch generation session
    */
@@ -43,7 +44,7 @@ export class RouteBatchManager {
       startCoordinates?: [number, number];
       endCoordinates?: [number, number];
       method?: RouteGenerationConfig['method'];
-    }>
+    }>,
   ): Promise<string> {
     // Idempotency: reuse an existing session if the same payload arrives
     const jobKey = this.computeJobKey(config, routes);
@@ -51,10 +52,10 @@ export class RouteBatchManager {
     if (existing) return existing;
     const sessionId = crypto.randomUUID();
     RouteBatchManager.jobKeyToSession.set(jobKey, sessionId);
-    
+
     // Create route-specific tasks
     const routeTasks: RouteBatchTask[] = [];
-    
+
     // Phase 1: Location resolution tasks
     if (config.validation && config.validation.checkLocationExists) {
       for (const route of routes) {
@@ -76,7 +77,7 @@ export class RouteBatchManager {
         }
       }
     }
-    
+
     // Phase 2: Route generation tasks
     for (let i = 0; i < routes.length; i++) {
       const route = routes[i]!;
@@ -92,12 +93,15 @@ export class RouteBatchManager {
           startLocationId: route.startLocationId,
           endLocationId: route.endLocationId,
           method: route.method || config.routeGeneration.method,
-          ...(route.startCoordinates && route.endCoordinates ? { startCoordinates: route.startCoordinates, endCoordinates: route.endCoordinates } as any : {}),
+          ...(route.startCoordinates && route.endCoordinates ? {
+            startCoordinates: route.startCoordinates,
+            endCoordinates: route.endCoordinates,
+          } as any : {}),
           ...(route as any).methodOptions ? { methodOptions: (route as any).methodOptions } : {},
         },
       });
     }
-    
+
     // Phase 3: Validation tasks
     if (config.validation && (config.validation.checkDuplicateRoutes || config.validation.validateDistance)) {
       routeTasks.push({
@@ -110,7 +114,7 @@ export class RouteBatchManager {
         index: routeTasks.length,
       });
     }
-    
+
     // Phase 4: Optimization tasks (vector tiles for routes)
     routeTasks.push({
       taskId: crypto.randomUUID(),
@@ -121,12 +125,18 @@ export class RouteBatchManager {
       status: 'pending',
       index: routeTasks.length,
     });
-    
+
     // Store route-specific tasks
     this.routeSpecificTasks.set(sessionId, routeTasks);
-    
+
     // Initialize cursor
-    await this.db.routeCursors?.put({ sessionId, completed: 0, total: routeTasks.length, updatedAt: Date.now(), paused: false } as any);
+    await this.db.routeCursors?.put({
+      sessionId,
+      completed: 0,
+      total: routeTasks.length,
+      updatedAt: Date.now(),
+      paused: false,
+    } as any);
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks, (ev: ProgressEvent) => this.emitProgress(ev));
     await session.initialize();
@@ -134,11 +144,11 @@ export class RouteBatchManager {
 
     return sessionId;
   }
-  
+
   // Process route tasks using RouteBatchSession (handled within session)
-  
+
   // Grouping helper kept for reference (not used in current flow)
-  
+
   // private async processTaskGroup(...): Promise<void> { /* consolidated into RouteBatchSession */ }
 
   // private getLaneSemaphore(method: string): Semaphore {
@@ -150,37 +160,38 @@ export class RouteBatchManager {
   //   }
   //   return sem;
   // }
-  
+
   /**
    * Process individual route task
    */
   // private async processIndividualTask(...): Promise<void> { /* handled by RouteBatchSession */ }
-  
+
   /**
    * Resolve location references
    */
   // private async resolveLocations(...): Promise<void> {}
-  
+
   /**
    * Generate route geometry
    */
   // private async generateRoute(...): Promise<void> {}
-  
+
   /**
    * Validate route
    */
   // private async validateRoute(...): Promise<void> {}
-  
+
   /**
    * Optimize route for rendering
    */
   // private async optimizeRoute(...): Promise<void> {}
-  
+
   /**
    * Retry failed task
    */
+
   // private async retryTask(...): Promise<void> {}
-  
+
   /**
    * Get route batch progress
    */
@@ -194,10 +205,10 @@ export class RouteBatchManager {
     const tasks = this.routeSpecificTasks.get(sessionId) || [];
     const completedTasks = tasks.filter(t => t.status === 'completed');
     const failedTasks = tasks.filter(t => t.status === 'failed');
-    
+
     const routeGenerationTasks = tasks.filter(t => t.taskType === 'route_generation');
     const completedRoutes = routeGenerationTasks.filter(t => t.status === 'completed').length;
-    
+
     // Determine current phase
     let phase = 'idle';
     if (tasks.some(t => t.taskType === 'location_resolution' && t.status === 'processing')) {
@@ -209,7 +220,7 @@ export class RouteBatchManager {
     } else if (tasks.some(t => t.taskType === 'optimization' && t.status === 'processing')) {
       phase = 'optimizing';
     }
-    
+
     return {
       phase,
       progress: (completedTasks.length / tasks.length) * 100,
@@ -223,25 +234,50 @@ export class RouteBatchManager {
   async pauseRouteBatchSession(sessionId: string): Promise<void> {
     try {
       const c = await (this.db.routeCursors as any)?.get(sessionId);
-      await (this.db.routeCursors as any)?.put({ ...(c ?? { sessionId, completed: 0, total: 0, updatedAt: Date.now() }), paused: true, updatedAt: Date.now() });
-    } catch {}
+      await (this.db.routeCursors as any)?.put({
+        ...(c ?? { sessionId, completed: 0, total: 0, updatedAt: Date.now() }),
+        paused: true,
+        updatedAt: Date.now(),
+      });
+    } catch {
+    }
   }
 
   /** Resume a paused session */
   async resumeRouteBatchSession(_sessionId: string): Promise<void> {
     try {
       const c = await (this.db.routeCursors as any)?.get(_sessionId);
-      await (this.db.routeCursors as any)?.put({ ...(c ?? { sessionId: _sessionId, completed: 0, total: 0 }), paused: false, updatedAt: Date.now() });
-    } catch {}
+      await (this.db.routeCursors as any)?.put({
+        ...(c ?? { sessionId: _sessionId, completed: 0, total: 0 }),
+        paused: false,
+        updatedAt: Date.now(),
+      });
+    } catch {
+    }
   }
 
   private emitProgress(ev: ProgressEvent): void {
     // bridge to UI progress emitter/store if provided via deps in createRouteBatchManager
-    try { this.deps?.emitter?.emit({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() }); } catch {}
-    try { this.deps?.store?.upsert(ev.sessionId, { jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() }); } catch {}
+    try {
+      this.deps?.emitter?.emit({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() });
+    } catch {
+    }
+    try {
+      this.deps?.store?.upsert(ev.sessionId, {
+        jobId: ev.sessionId,
+        progress: ev.percentage,
+        phase: ev.stage,
+        ts: Date.now(),
+      });
+    } catch {
+    }
   }
 
-  private computeJobKey(config: RouteBatchConfig, routes: Array<{ startCoordinates?: [number,number]; endCoordinates?: [number,number]; method?: string }>): string {
+  private computeJobKey(config: RouteBatchConfig, routes: Array<{
+    startCoordinates?: [number, number];
+    endCoordinates?: [number, number];
+    method?: string
+  }>): string {
     const payload = {
       method: config.routeGeneration.method,
       mc: config.routeGeneration.maxConcurrent,
@@ -253,7 +289,7 @@ export class RouteBatchManager {
 
 function stableStringify(x: any): string {
   const seen = new WeakSet();
-  return JSON.stringify(x, function (_key, value) {
+  return JSON.stringify(x, function(_key, value) {
     if (value && typeof value === 'object') {
       if (seen.has(value)) return;
       seen.add(value);
@@ -282,15 +318,22 @@ function hashCyrb53(str: string, seed = 0): string {
 
 // Bridge notifyProgress (shim) to UI progress emitter/store using common ProgressEvent shape
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-(RouteBatchManager.prototype as any)['notifyProgress'] = function (this: any, sessionId: string, ev: any) {
+(RouteBatchManager.prototype as any)['notifyProgress'] = function(this: any, sessionId: string, ev: any) {
   try {
     const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
     this['deps']?.emitter?.emit({ jobId: sessionId, progress: pct, phase: ev?.stage ?? 'processing', ts: Date.now() });
-  } catch {}
+  } catch {
+  }
   try {
     const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
-    this['deps']?.store?.upsert(sessionId, { jobId: sessionId, progress: pct, phase: ev?.stage ?? 'processing', ts: Date.now() });
-  } catch {}
+    this['deps']?.store?.upsert(sessionId, {
+      jobId: sessionId,
+      progress: pct,
+      phase: ev?.stage ?? 'processing',
+      ts: Date.now(),
+    });
+  } catch {
+  }
 };
 
 // (removed) Semaphore helper; concurrency control is handled in RouteBatchSession

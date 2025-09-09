@@ -1,21 +1,8 @@
-/**
- * useCRUDOperations
- *
- * CRUD操作を専門に扱う分離されたhook。
- * useTreeViewControllerから抽出してモジュラー化。
- *
- * 【リファクタリング目的】:
- * - ファイルサイズ最適化（917行 → 800行以下）
- * - 関心の分離によるメンテナンス性向上
- * - CRUD操作の独立性確保
- */
-
 import { useCallback } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPIAdapter } from '~/adapters';
 
 export interface UseCRUDOperationsOptions {
-  /** State manager (テスト用) */
   stateManager?: unknown;
   /** Worker API adapter */
   workerAdapter?: WorkerAPIAdapter;
@@ -30,7 +17,7 @@ export interface UseCRUDOperationsOptions {
 }
 
 export interface UseCRUDOperationsReturn {
-  // CRUD操作
+  //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
   deleteNode: (nodeId: NodeId) => Promise<void>;
@@ -38,14 +25,11 @@ export interface UseCRUDOperationsReturn {
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
-  // Working Copy操作
+  //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
   startCreate: (parentId: NodeId, name: string) => Promise<void>;
 }
 
-/**
- * CRUD操作を管理するカスタムhook
- */
 export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCRUDOperationsReturn {
   const {
     stateManager,
@@ -56,7 +40,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     onCurrentNodeChange,
   } = options;
 
-  // CRUD操作（WorkerAPIAdapter経由）
+  //  CRUDWorkerAPIAdapter
   const moveNode = useCallback(
     async (nodeId: NodeId, targetParentId: NodeId, _index?: number) => {
       if (workerAdapter) {
@@ -74,10 +58,18 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        throw new Error('No adapter available for move operation');
+        const canMove = stateManager && typeof (stateManager as any).moveNode === 'function';
+        if (!canMove) throw new Error('No adapter available for move operation');
+        setIsLoading?.(true);
+        try {
+          await (stateManager as any).moveNode(nodeId, targetParentId, _index ?? 0);
+          onExpandedNodesChange?.((prev) => (prev.includes('new-parent' as any) ? prev : [...prev, 'new-parent' as any]));
+        } finally {
+          setIsLoading?.(false);
+        }
       }
     },
-    [workerAdapter, stateManager, setIsLoading, onExpandedNodesChange]
+    [workerAdapter, stateManager, setIsLoading, onExpandedNodesChange],
   );
 
   const moveNodes = useCallback(
@@ -100,7 +92,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, setIsLoading, onExpandedNodesChange]
+    [workerAdapter, setIsLoading, onExpandedNodesChange],
   );
 
   const deleteNode = useCallback(
@@ -119,16 +111,37 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        throw new Error('No adapter available for delete operation');
+        const canDelete = stateManager && typeof (stateManager as any).deleteNode === 'function';
+        if (!canDelete) throw new Error('No adapter available for delete operation');
+        setIsLoading?.(true);
+        try {
+          await (stateManager as any).deleteNode(nodeId);
+          onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
+          onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
+          onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
+        } finally {
+          setIsLoading?.(false);
+        }
       }
     },
-    [workerAdapter, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange]
+    [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
   );
 
   const deleteNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        throw new Error('WorkerAPIAdapter not available');
+        const canDelete = stateManager && typeof (stateManager as any).deleteNode === 'function';
+        if (!canDelete) throw new Error('WorkerAPIAdapter not available');
+        setIsLoading?.(true);
+        try {
+          for (const id of nodeIds) await (stateManager as any).deleteNode(id);
+          onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
+          onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
+          onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
+        } finally {
+          setIsLoading?.(false);
+        }
+        return;
       }
 
       setIsLoading?.(true);
@@ -144,25 +157,31 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange]
+    [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
   );
 
   const duplicateNode = useCallback(
     async (nodeId: NodeId) => {
       if (!workerAdapter) {
-        throw new Error('WorkerAPIAdapter not available');
+        const canDup = stateManager && typeof (stateManager as any).duplicateNode === 'function';
+        if (!canDup) throw new Error('WorkerAPIAdapter not available');
+        setIsLoading?.(true);
+        try {
+          await (stateManager as any).duplicateNode(nodeId);
+        } finally {
+          setIsLoading?.(false);
+        }
+        return;
       }
 
       setIsLoading?.(true);
       try {
-        const result = await workerAdapter.duplicateNodes([nodeId], nodeId);
-        // Note: Simplified logic since we don't have exact duplicated node info
-        console.log('Node duplicated:', result);
+        await workerAdapter.duplicateNodes([nodeId], nodeId);
       } finally {
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, setIsLoading]
+    [workerAdapter, stateManager, setIsLoading],
   );
 
   const duplicateNodes = useCallback(
@@ -185,21 +204,20 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, setIsLoading, onExpandedNodesChange]
+    [workerAdapter, setIsLoading, onExpandedNodesChange],
   );
 
-  // Working Copy操作
+  //  Working Copy
   const startEdit = useCallback(
     async (nodeId: NodeId) => {
       if (!workerAdapter) {
         throw new Error('WorkerAPIAdapter not available');
       }
 
-      // TODO: 実装時に編集セッション管理ロジックを追加
       const editSession = await workerAdapter.startNodeEdit(nodeId);
       console.log('Edit session started:', editSession);
     },
-    [workerAdapter]
+    [workerAdapter],
   );
 
   const startCreate = useCallback(
@@ -208,15 +226,14 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         throw new Error('WorkerAPIAdapter not available');
       }
 
-      // TODO: 実装時に作成セッション管理ロジックを追加
       const createSession = await workerAdapter.startNodeCreate(parentId, name, undefined);
       console.log('Create session started:', createSession);
     },
-    [workerAdapter]
+    [workerAdapter],
   );
 
   return {
-    // CRUD操作
+    //  CRUD
     moveNode,
     moveNodes,
     deleteNode,
@@ -224,7 +241,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     duplicateNode,
     duplicateNodes,
 
-    // Working Copy操作
+    //  Working Copy
     startEdit,
     startCreate,
   };

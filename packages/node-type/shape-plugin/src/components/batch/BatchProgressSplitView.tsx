@@ -1,26 +1,12 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  LinearProgress,
-  Card,
-  CardContent,
-  Stack,
-  Chip,
-} from "@mui/material";
-import { Allotment } from "allotment";
-import "allotment/dist/style.css";
+import React from 'react';
+import { Box, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import { Allotment } from 'allotment';
+import 'allotment/dist/style.css';
+import { BatchTaskStage, DownloadTask, ProcessingConfig, SimplifyTask, VectorTileTask } from '~/shared';
+import { TaskMonitor } from './TaskMonitor';
 
 // Temporary JSX typing workaround for Allotment with React 19 types
 const A: any = Allotment as any;
-import {
-  DownloadTask,
-  SimplifyTask,
-  VectorTileTask,
-  ProcessingConfig,
-  BatchTaskStage,
-} from "~/shared";
-import { TaskMonitor } from "./TaskMonitor";
 
 interface BatchProgressSplitViewProps {
   config: ProcessingConfig;
@@ -33,18 +19,18 @@ interface BatchProgressSplitViewProps {
 }
 
 export const BatchProgressSplitView: React.FC<BatchProgressSplitViewProps> = ({
-  config,
-  downloadTasks,
-  simplify1Tasks,
-  simplify2Tasks,
-  vectorTileTasks,
-  onCancelTask,
-  onResumeTask,
-}) => {
+                                                                                config,
+                                                                                downloadTasks,
+                                                                                simplify1Tasks,
+                                                                                simplify2Tasks,
+                                                                                vectorTileTasks,
+                                                                                onCancelTask,
+                                                                                onResumeTask,
+                                                                              }) => {
   // Calculate progress for each stage
   const calculateProgress = (tasks: any[]) => {
     if (tasks.length === 0) return 0;
-    const completed = tasks.filter((t) => t.stage === "success").length;
+    const completed = tasks.filter((t) => t.stage === 'success').length;
     return Math.round((completed / tasks.length) * 100);
   };
 
@@ -53,38 +39,38 @@ export const BatchProgressSplitView: React.FC<BatchProgressSplitViewProps> = ({
       title: `Download Shape Data (${config.concurrentDownloads} concurrent)`,
       tasks: downloadTasks,
       progress: calculateProgress(downloadTasks),
-      color: "primary" as const,
+      color: 'primary' as const,
     },
     {
-      title: "Feature Processing",
+      title: 'Feature Processing',
       tasks: simplify1Tasks,
       progress: calculateProgress(simplify1Tasks),
-      color: "secondary" as const,
+      color: 'secondary' as const,
     },
     {
-      title: "Tile Simplification",
+      title: 'Tile Simplification',
       tasks: simplify2Tasks,
       progress: calculateProgress(simplify2Tasks),
-      color: "warning" as const,
+      color: 'warning' as const,
     },
     {
       title: `Vector Tiles (${config.concurrentProcesses} concurrent)`,
       tasks: vectorTileTasks,
       progress: calculateProgress(vectorTileTasks),
-      color: "success" as const,
+      color: 'success' as const,
     },
   ];
 
   return (
-    <Box sx={{ height: "100%", width: "100%" }}>
+    <Box sx={{ height: '100%', width: '100%' }}>
       <A vertical={false} proportionalLayout={false}>
         {stages.map((stage, index) => (
           <A.Pane key={index} minSize={200}>
             <Box
               sx={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 p: 2,
               }}
             >
@@ -103,7 +89,7 @@ export const BatchProgressSplitView: React.FC<BatchProgressSplitViewProps> = ({
                       <Chip
                         label={`${stage.progress}%`}
                         size="small"
-                        color={stage.progress === 100 ? "success" : stage.color}
+                        color={stage.progress === 100 ? 'success' : stage.color}
                       />
                     </Stack>
                     <LinearProgress
@@ -117,7 +103,7 @@ export const BatchProgressSplitView: React.FC<BatchProgressSplitViewProps> = ({
                           (t: { stage: BatchTaskStage }) =>
                             t.stage === BatchTaskStage.SUCCESS,
                         ).length
-                      }{" "}
+                      }{' '}
                       / {stage.tasks.length} completed
                     </Typography>
                   </Stack>
@@ -125,7 +111,7 @@ export const BatchProgressSplitView: React.FC<BatchProgressSplitViewProps> = ({
               </Card>
 
               {/* Task List */}
-              <Box sx={{ flex: 1, overflowY: "auto" }}>
+              <Box sx={{ flex: 1, overflowY: 'auto' }}>
                 <TaskMonitor
                   tasks={stage.tasks}
                   onCancelTask={onCancelTask}

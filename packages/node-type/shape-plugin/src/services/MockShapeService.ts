@@ -1,23 +1,23 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { 
-  ShapeEntity, 
-  ShapeWorkingCopy,
-  ProcessingConfig,
+import type { NodeId } from '@hierarchidb/common-type';
+import type {
   BatchTask,
   BatchTaskStage,
+  ProcessingConfig,
+  SelectionStats,
+  ShapeEntity,
+  ShapeWorkingCopy,
   SimplifyTask,
   ValidationResult,
-  SelectionStats
 } from '~/shared';
 import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
-import { 
+import {
+  calculateEstimatedFeatures,
+  calculateEstimatedProcessingTime,
+  calculateEstimatedSize,
   generateMockDownloadTasks,
   generateMockSimplifyTasks,
   generateMockVectorTileTasks,
-  calculateEstimatedSize,
-  calculateEstimatedFeatures,
-  calculateEstimatedProcessingTime,
-  SAMPLE_COUNTRIES
+  SAMPLE_COUNTRIES,
 } from '~/mock/data';
 
 /**
@@ -26,7 +26,7 @@ import {
  */
 export class MockShapeService {
   private workingCopies: Map<NodeId, ShapeWorkingCopy> = new Map();
-  private entities: Map<EntityId, ShapeEntity> = new Map();
+  private entities: Map<NodeId, ShapeEntity> = new Map();
   private batchTasks: Map<string, BatchTask[]> = new Map();
 
   // ================================
@@ -34,9 +34,8 @@ export class MockShapeService {
   // ================================
 
   async createEntity(nodeId: NodeId, data: Partial<ShapeEntity>): Promise<ShapeEntity> {
-    const entityId = `shape-entity-${Date.now()}` as EntityId;
     const entity: ShapeEntity = {
-      id: entityId,
+      id: nodeId,
       nodeId,
       name: data.name || 'New Shape Configuration',
       description: data.description,
@@ -53,18 +52,18 @@ export class MockShapeService {
       version: 1,
     };
 
-    this.entities.set(entityId, entity);
+    this.entities.set(nodeId, entity);
     return entity;
   }
 
-  async getEntity(entityId: EntityId): Promise<ShapeEntity | undefined> {
-    return this.entities.get(entityId);
+  async getEntity(nodeId: NodeId): Promise<ShapeEntity | undefined> {
+    return this.entities.get(nodeId);
   }
 
-  async updateEntity(entityId: EntityId, updates: Partial<ShapeEntity>): Promise<ShapeEntity> {
-    const entity = this.entities.get(entityId);
+  async updateEntity(nodeId: NodeId, updates: Partial<ShapeEntity>): Promise<ShapeEntity> {
+    const entity = this.entities.get(nodeId);
     if (!entity) {
-      throw new Error(`Entity ${entityId} not found`);
+      throw new Error(`Entity ${nodeId} not found`);
     }
 
     const updated = {
@@ -74,12 +73,12 @@ export class MockShapeService {
       version: entity.version + 1,
     };
 
-    this.entities.set(entityId, updated);
+    this.entities.set(nodeId, updated);
     return updated;
   }
 
-  async deleteEntity(entityId: EntityId): Promise<void> {
-    this.entities.delete(entityId);
+  async deleteEntity(nodeId: NodeId): Promise<void> {
+    this.entities.delete(nodeId);
   }
 
   // ================================
@@ -153,15 +152,15 @@ export class MockShapeService {
   async startBatchProcessing(
     _nodeId: NodeId,
     _config: ProcessingConfig,
-    urlMetadata: any[]
+    urlMetadata: any[],
   ): Promise<{ batchId: string }> {
     const batchId = `batch-${Date.now()}`;
-    
+
     // Generate mock tasks
     const downloadTasks = generateMockDownloadTasks(urlMetadata);
     const simplify1Tasks = generateMockSimplifyTasks(
       urlMetadata.map(m => m.countryCode),
-      urlMetadata.map(m => m.adminLevel)
+      urlMetadata.map(m => m.adminLevel),
     );
     const simplify2Tasks: SimplifyTask[] = simplify1Tasks.map(task => ({
       ...task,
@@ -170,7 +169,7 @@ export class MockShapeService {
     }));
     const vectorTileTasks = generateMockVectorTileTasks(
       urlMetadata.map(m => m.countryCode),
-      urlMetadata.map(m => m.adminLevel)
+      urlMetadata.map(m => m.adminLevel),
     );
 
     this.batchTasks.set(batchId, [

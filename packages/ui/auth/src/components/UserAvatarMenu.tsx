@@ -13,20 +13,20 @@ import {
 import { UserAvatar } from './UserAvatar';
 // import { KeyboardArrowDownIcon, LoginIcon, LogoutIcon } from "@/icons";
 import {
+  DeleteForever,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Login as LoginIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 
 import { DropdownMenu } from '@hierarchidb/ui-core';
-import { DeleteForever } from '@mui/icons-material';
 // Working copy cleanup removed - functionality was deprecated
 
 export const UserProfile = (props: { auth: AuthContextProps }) => {
-  // 【機能概要】: ユーザープロファイル表示コンポーネント
-  // 【実装方針】: provider-oidc-contextのAuthContextPropsを使用
-  // 【テスト対応】: UserAvatarMenu.test.tsxのテストケースを通すための実装
-  // 🟢 信頼性レベル: テストと既存実装から推測
+  //  :
+  //  : provider-oidc-contextAuthContextProps
+  //  : UserAvatarMenu.test.tsx
+  //  :
   const auth = props.auth;
   const signIn = () => auth.signinRedirect();
   const signOut = () => auth.signoutRedirect();
@@ -54,7 +54,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
               });
             }
             return Promise.resolve();
-          })
+          }),
         );
       }
 
@@ -87,25 +87,25 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     );
   }
 
-  // 【メニュー構造】: DropdownMenuItemType形式に合わせた構造
-  // 【テスト対応】: テストではnameプロパティを期待するが、DropdownMenuはlabelを使用
-  // 🟢 信頼性レベル: DropdownMenuItemType定義から確認
+  //  : DropdownMenuItemType
+  //  : nameDropdownMenulabel
+  //  : DropdownMenuItemType
   const userMenu = [
     {
       id: 'logout',
-      label: 'Logout', // 【変更】: nameからlabelへ
-      name: 'Logout', // 【互換性】: テスト用にnameも保持
+      label: 'Logout', //  : namelabel
+      name: 'Logout', //  : name
       icon: <LogoutIcon />,
       onClick: () => signOut(),
     } as any,
     {
       id: 'separator',
-      divider: true, // 【セパレータ】: nullからdividerプロパティへ
+      divider: true, //  : nulldivider
     } as any,
     {
       id: 'clear-cache',
-      label: 'Clear All Cache', // 【変更】: nameからlabelへ
-      name: 'Clear All Cache', // 【互換性】: テスト用にnameも保持
+      label: 'Clear All Cache', //  : namelabel
+      name: 'Clear All Cache', //  : name
       icon: <DeleteForever />,
       onClick: () => setClearCacheDialogOpen(true),
       color: 'error',

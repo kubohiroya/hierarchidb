@@ -3,10 +3,9 @@
  * Manages CRUD operations for Project entities
  */
 
-import type { EntityId, NodeId } from '@hierarchidb/common-type';
-import { generateEntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
-import type { ProjectEntity, ProjectWorkingCopy, ProjectCategory } from '~/types/project-types';
+import type { ProjectCategory, ProjectEntity, ProjectWorkingCopy } from '~/types/project-types';
 import { projectPluginAPI } from '~/api/ProjectPluginAPI';
 import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/utils';
 import { ProjectEntitySerializer } from '../shared/serialization';
@@ -60,7 +59,8 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
       add: async (_entity: any): Promise<any> => _entity,
       get: async (_id: any): Promise<any> => null,
       put: async (_entity: any): Promise<any> => _entity,
-      delete: async (_id: any): Promise<void> => {},
+      delete: async (_id: any): Promise<void> => {
+      },
       where: (_field: string) => ({
         equals: (_value: any) => ({
           first: async (): Promise<any> => null,
@@ -104,59 +104,53 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: CreateProjectData
+    entityId: NodeId,
+    data: CreateProjectData,
   ): ProjectEntity {
     const now = Date.now();
-    
+
     return {
       id: entityId,
       nodeId: nodeId,
       type: 'project',
-      
-      // 基本情報
+
       name: data.name,
       description: data.description || '',
       category: (data.category || 'research') as ProjectCategory,
       tags: data.tags || [],
-      
-      // 期間
+
       startDate: data.startDate || new Date(),
       endDate: data.endDate,
       milestones: data.milestones || [],
-      
-      // 地理的範囲
+
       coverage: data.coverage || {
         type: 'bbox',
         bbox: {
           minLon: 139.0,
           minLat: 35.0,
           maxLon: 140.0,
-          maxLat: 36.0
-        }
+          maxLat: 36.0,
+        },
       },
       mapConfig: data.mapConfig || {
         defaultView: {
           center: [139.6917, 35.6895],
-          zoom: 10
+          zoom: 10,
         },
-        baseMap: 'streets'
+        baseMap: 'streets',
       },
-      
-      // データレイヤー
+
       layers: data.layers || [],
       layerGroups: data.layerGroups || [],
-      
-      // 解析設定
+
       spatialAnalyses: data.spatialAnalyses || [],
       temporalAnalyses: data.temporalAnalyses || [],
-      
-      // 出力設定
+
       outputConfig: data.outputConfig || {
         report: {
           enabled: false,
           format: 'pdf',
-          sections: []
+          sections: [],
         },
         tiles: {
           enabled: false,
@@ -168,34 +162,32 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
             optimization: {
               simplification: true,
               compression: 'gzip',
-              tileSize: 512
-            }
-          }
+              tileSize: 512,
+            },
+          },
         },
         export: {
           formats: [],
-          packaging: 'zip'
+          packaging: 'zip',
         },
         sharing: {
           permissions: {
             download: true,
             print: true,
-            edit: false
-          }
-        }
+            edit: false,
+          },
+        },
       },
-      
-      // 共有設定
+
       visibility: data.visibility || 'private',
       permissions: data.permissions || [],
       collaborators: data.collaborators || [],
-      
-      // メタデータ
+
       createdAt: now,
       createdBy: 'system',
       updatedAt: now,
       updatedBy: 'system',
-      version: 1
+      version: 1,
     };
   }
 
@@ -203,7 +195,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
    * Override create to use API
    */
   async createEntity(nodeId: NodeId, data: CreateProjectData): Promise<ProjectEntity> {
-    const entityId = generateEntityId() as EntityId;
+    const entityId = crypto.randomUUID() as unknown as NodeId;
     const entity = this.buildEntity(nodeId, entityId, data);
 
     // Store in database via the project plugin API
@@ -238,7 +230,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Get Project entity by ID
    */
-  async getEntity(entityId: EntityId): Promise<ProjectEntity | null> {
+  async getEntity(entityId: NodeId): Promise<ProjectEntity | null> {
     try {
       const entity = await this.table.get(entityId);
       return entity || null;
@@ -251,7 +243,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Update an existing Project entity
    */
-  async updateEntity(entityId: EntityId, updates: Partial<ProjectEntity>): Promise<ProjectEntity> {
+  async updateEntity(entityId: NodeId, updates: Partial<ProjectEntity>): Promise<ProjectEntity> {
     try {
       const existing = await this.table.get(entityId);
       if (!existing) {
@@ -265,7 +257,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
         nodeId: existing.nodeId,
         updatedAt: Date.now(),
         updatedBy: 'system',
-        version: existing.version + 1
+        version: existing.version + 1,
       };
 
       await this.table.put(updatedEntity);
@@ -281,7 +273,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Delete a Project entity
    */
-  async deleteEntity(entityId: EntityId): Promise<void> {
+  async deleteEntity(entityId: NodeId): Promise<void> {
     try {
       const entity = await this.table.get(entityId);
       if (!entity) {
@@ -311,9 +303,9 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Apply working copy changes to entity
    */
-  async applyWorkingCopy(entityId: EntityId, workingCopy: ProjectWorkingCopy): Promise<ProjectEntity> {
+  async applyWorkingCopy(entityId: NodeId, workingCopy: ProjectWorkingCopy): Promise<ProjectEntity> {
     const updates: Partial<ProjectEntity> = mapWorkingCopyToUpdates(
-      workingCopy
+      workingCopy,
     ) as Partial<ProjectEntity>;
     return this.updateEntity(entityId, updates);
   }
@@ -349,7 +341,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
 
       if (criteria.name) {
         query = query.filter((_entity: any) =>
-          _entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
+          _entity.name.toLowerCase().includes(criteria.name!.toLowerCase()),
         );
       }
 
@@ -363,7 +355,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
 
       if (criteria.tags && criteria.tags.length > 0) {
         query = query.filter((_entity: any) =>
-          criteria.tags!.some(tag => _entity.tags.includes(tag))
+          criteria.tags!.some(tag => _entity.tags.includes(tag)),
         );
       }
 
@@ -377,7 +369,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Start analysis processing for an entity
    */
-  async startAnalysisProcessing(entityId: EntityId, analysisId: string): Promise<string> {
+  async startAnalysisProcessing(entityId: NodeId, analysisId: string): Promise<string> {
     try {
       const entity = await this.getEntity(entityId);
       if (!entity) {
@@ -389,7 +381,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
       // Find the analysis configuration
       const spatialAnalysis = entity.spatialAnalyses.find(a => a.id === analysisId);
       const temporalAnalysis = entity.temporalAnalyses.find(a => a.id === analysisId);
-      
+
       if (!spatialAnalysis && !temporalAnalysis) {
         throw new Error(`Analysis not found: ${analysisId}`);
       }
@@ -399,11 +391,11 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
       if (!analysisConfig) {
         throw new Error(`Analysis configuration not found: ${analysisId}`);
       }
-      
+
       const sessionId = await projectPluginAPI.startAnalysis(
         entity.nodeId,
         analysisId,
-        analysisConfig
+        analysisConfig,
       );
 
       return sessionId;
@@ -416,7 +408,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
   /**
    * Get analysis status for an entity
    */
-  async getAnalysisStatus(entityId: EntityId, sessionId: string): Promise<any> {
+  async getAnalysisStatus(entityId: NodeId, sessionId: string): Promise<any> {
     try {
       const entity = await this.getEntity(entityId);
       if (!entity) {
@@ -504,7 +496,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
 
     return {
       valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined
+      errors: errors.length > 0 ? errors : undefined,
     };
   }
 
@@ -549,7 +541,7 @@ export class ProjectEntityHandler extends BaseEntityHandler<ProjectEntity, Creat
    */
   async deserializeEntityArray(
     jsonArray: any[],
-    _binaryData: Map<string, Uint8Array>
+    _binaryData: Map<string, Uint8Array>,
   ): Promise<ProjectEntity[]> {
     const restored = ProjectEntitySerializer.deserializeEntityArray(jsonArray, _binaryData);
     return restored as ProjectEntity[];

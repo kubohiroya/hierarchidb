@@ -1,7 +1,7 @@
 /**
- * @file DialogStepRegistry.ts
- * @description ダイアログステップの登録と管理
- */
+  * @file DialogStepRegistry.ts
+ * @description
+  */
 
 // Local type definitions until common-type exports are fixed
 export interface ValidationResult {
@@ -23,54 +23,59 @@ export interface DialogStepDefinition {
 }
 
 // ============================================================================
-// 型定義
 // ============================================================================
 
 /**
- * ステップ登録情報
- */
+    */
 export interface StepRegistration {
-  /** プラグイン名 */
+  /**
+      */
   pluginName: string;
-  /** ステップ定義 */
+  /**
+      */
   definition: DialogStepDefinition;
-  /** 登録日時 */
+  /**
+      */
   registeredAt: number;
-  /** 優先度 */
+  /**
+      */
   priority?: number;
 }
 
 /**
- * ステップ依存関係
- */
+    */
 export interface StepDependency {
-  /** ステップ番号 */
+  /**
+      */
   stepNumber: number;
-  /** 依存先ステップ番号 */
+  /**
+      */
   dependsOn: number[];
-  /** 必須か */
+  /**
+      */
   required: boolean;
 }
 
 /**
- * レジストリオプション
- */
+    */
 export interface RegistryOptions {
-  /** 重複登録を許可するか */
+  /**
+      */
   allowDuplicates?: boolean;
-  /** 自動ソートするか */
+  /**
+      */
   autoSort?: boolean;
-  /** 循環依存チェックをするか */
+  /**
+      */
   checkCircularDependencies?: boolean;
 }
 
 // ============================================================================
-// DialogStepRegistry クラス
+//  DialogStepRegistry
 // ============================================================================
 
 /**
- * ダイアログステップレジストリ
- */
+    */
 export class DialogStepRegistry {
   private static instance: DialogStepRegistry;
   private registrations: Map<string, StepRegistration[]> = new Map();
@@ -86,8 +91,7 @@ export class DialogStepRegistry {
   }
 
   /**
-   * シングルトンインスタンス取得
-   */
+            */
   public static getInstance(options?: RegistryOptions): DialogStepRegistry {
     if (!DialogStepRegistry.instance) {
       DialogStepRegistry.instance = new DialogStepRegistry(options);
@@ -96,12 +100,11 @@ export class DialogStepRegistry {
   }
 
   /**
-   * ステップを登録
-   */
+            */
   public registerStep(
     pluginName: string,
     definition: DialogStepDefinition,
-    priority?: number
+    priority?: number,
   ): void {
     const registration: StepRegistration = {
       pluginName,
@@ -116,36 +119,32 @@ export class DialogStepRegistry {
 
     const steps = this.registrations.get(pluginName)!;
 
-    // 重複チェック
     if (!this.options.allowDuplicates) {
       const exists = steps.some((s) => s.definition.stepNumber === definition.stepNumber);
       if (exists) {
         throw new Error(
-          `Step ${definition.stepNumber} is already registered for plugin ${pluginName}`
+          `Step ${definition.stepNumber} is already registered for plugin ${pluginName}`,
         );
       }
     }
 
     steps.push(registration);
 
-    // 自動ソート
     if (this.options.autoSort) {
       steps.sort((a, b) => a.definition.stepNumber - b.definition.stepNumber);
     }
 
-    // 循環依存チェック
     if (this.options.checkCircularDependencies && definition.dependsOn) {
       this.checkCircularDependencies(pluginName, definition.stepNumber);
     }
   }
 
   /**
-   * 複数ステップを一括登録
-   */
+            */
   public registerSteps(
     pluginName: string,
     definitions: DialogStepDefinition[],
-    priority?: number
+    priority?: number,
   ): void {
     definitions.forEach((def) => {
       this.registerStep(pluginName, def, priority);
@@ -153,8 +152,7 @@ export class DialogStepRegistry {
   }
 
   /**
-   * ステップを取得
-   */
+            */
   public getStep(pluginName: string, stepNumber: number): DialogStepDefinition | undefined {
     const steps = this.registrations.get(pluginName);
     if (!steps) return undefined;
@@ -164,8 +162,7 @@ export class DialogStepRegistry {
   }
 
   /**
-   * プラグインの全ステップを取得
-   */
+            */
   public getSteps(pluginName: string): DialogStepDefinition[] {
     const steps = this.registrations.get(pluginName);
     if (!steps) return [];
@@ -174,18 +171,15 @@ export class DialogStepRegistry {
   }
 
   /**
-   * プラグインをマージして統合ステップリストを取得
-   */
+            */
   public getMergedSteps(basePlugin: string, ...extendedPlugins: string[]): DialogStepDefinition[] {
     const stepMap = new Map<number, DialogStepDefinition>();
 
-    // 基底プラグインのステップ
     const baseSteps = this.getSteps(basePlugin);
     baseSteps.forEach((step) => {
       stepMap.set(step.stepNumber, step);
     });
 
-    // 拡張プラグインのステップ（オーバーライド可能）
     for (const plugin of extendedPlugins) {
       const steps = this.getSteps(plugin);
       steps.forEach((step) => {
@@ -193,13 +187,11 @@ export class DialogStepRegistry {
       });
     }
 
-    // マップから配列に変換してソート
     return Array.from(stepMap.values()).sort((a, b) => a.stepNumber - b.stepNumber);
   }
 
   /**
-   * ステップを削除
-   */
+            */
   public unregisterStep(pluginName: string, stepNumber: number): boolean {
     const steps = this.registrations.get(pluginName);
     if (!steps) return false;
@@ -217,15 +209,13 @@ export class DialogStepRegistry {
   }
 
   /**
-   * プラグインの全ステップを削除
-   */
+            */
   public unregisterPlugin(pluginName: string): boolean {
     return this.registrations.delete(pluginName);
   }
 
   /**
-   * 依存関係を検証
-   */
+            */
   public validateDependencies(pluginName: string): ValidationResult {
     const steps = this.getSteps(pluginName);
     const stepNumbers = new Set(steps.map((s) => s.stepNumber));
@@ -251,8 +241,7 @@ export class DialogStepRegistry {
   }
 
   /**
-   * 循環依存をチェック
-   */
+            */
   private checkCircularDependencies(pluginName: string, stepNumber: number): void {
     const visited = new Set<number>();
     const recursionStack = new Set<number>();
@@ -282,8 +271,7 @@ export class DialogStepRegistry {
   }
 
   /**
-   * ステップの実行順序を取得（依存関係を考慮）
-   */
+            */
   public getExecutionOrder(pluginName: string): number[] {
     const steps = this.getSteps(pluginName);
     const visited = new Set<number>();
@@ -307,15 +295,13 @@ export class DialogStepRegistry {
   }
 
   /**
-   * ステップ結果を集約
-   */
+            */
   public async aggregateResults(
     pluginName: string,
-    stepData: Map<number, Record<string, unknown>>
+    stepData: Map<number, Record<string, unknown>>,
   ): Promise<Record<string, unknown>> {
     let aggregated: Record<string, unknown> = {};
 
-    // 実行順序に従って集約
     const order = this.getExecutionOrder(pluginName);
     for (const stepNumber of order) {
       const data = stepData.get(stepNumber);
@@ -328,11 +314,10 @@ export class DialogStepRegistry {
   }
 
   /**
-   * バリデーションチェーンを実行
-   */
+            */
   public async runValidationChain(
     pluginName: string,
-    stepData: Map<number, Record<string, unknown>>
+    stepData: Map<number, Record<string, unknown>>,
   ): Promise<Map<number, ValidationResult>> {
     const steps = this.getSteps(pluginName);
     const results = new Map<number, ValidationResult>();
@@ -343,9 +328,7 @@ export class DialogStepRegistry {
         const result = await step.validation.validate(data);
         results.set(step.stepNumber, result);
 
-        // エラーがあれば後続のステップはスキップ（オプション）
         if (!result.isValid && step.dependsOn) {
-          // 依存するステップもスキップ
           const dependentSteps = steps.filter((s) => s.dependsOn?.includes(step.stepNumber));
           dependentSteps.forEach((s) => {
             results.set(s.stepNumber, {
@@ -361,22 +344,19 @@ export class DialogStepRegistry {
   }
 
   /**
-   * レジストリをクリア
-   */
+            */
   public clear(): void {
     this.registrations.clear();
   }
 
   /**
-   * 登録情報を取得
-   */
+            */
   public getRegistrationInfo(): Map<string, StepRegistration[]> {
     return new Map(this.registrations);
   }
 
   /**
-   * 統計情報を取得
-   */
+            */
   public getStatistics(): {
     totalPlugins: number;
     totalSteps: number;
@@ -398,5 +378,4 @@ export class DialogStepRegistry {
   }
 }
 
-// デフォルトインスタンスをエクスポート
 export const stepRegistry = DialogStepRegistry.getInstance();

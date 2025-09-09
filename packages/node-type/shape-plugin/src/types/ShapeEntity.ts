@@ -1,9 +1,9 @@
 /**
- * @file ShapeEntity.ts
- * @description ERIA-Cartograph移植: Shape Entity型定義
- */
+  * @file ShapeEntity.ts
+ * @description ERIA-Cartograph: Shape Entity
+  */
 
-import type { NodeId, EntityId } from '@hierarchidb/core';
+import type { NodeId } from '@hierarchidb/core';
 import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 import type { BatchConfig } from './BatchConfig';
 
@@ -11,7 +11,7 @@ import type { BatchConfig } from './BatchConfig';
  * Shape entity stored in CoreDB
  */
 export interface ShapeEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
   dataSourceName: DataSourceName;
   selectedCountries: string[];

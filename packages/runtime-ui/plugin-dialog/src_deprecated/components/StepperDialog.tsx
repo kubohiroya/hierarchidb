@@ -3,20 +3,20 @@
  * Enhanced with fullscreen toggle and custom footer support
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
+  Box,
+  Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
-  Typography,
-  Stepper,
+  Stack,
   Step,
   StepButton,
-  Box,
-  Stack,
-  Button,
+  Stepper,
+  Typography,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -83,27 +83,27 @@ export interface StepperDialogProps {
 }
 
 export const StepperDialog: React.FC<StepperDialogProps> = ({
-  mode,
-  open,
-  nodeId,
-  parentId: _parentId, // TODO: Use for create mode
-  title,
-  icon,
-  steps,
-  activeStep: controlledActiveStep,
-  onStepChange,
-  nonLinear = false,
-  hasUnsavedChanges = false,
-  supportsDraft = false,
-  maxWidth = 'lg',
-  fullScreen: initialFullScreen = false,
-  headerActions,
-  customFooterContent,
-  onSubmit,
-  onSaveDraft,
-  onCancel,
-  onClose,
-}) => {
+                                                              mode,
+                                                              open,
+                                                              nodeId,
+                                                              parentId: _parentId, // TODO: Use for create mode
+                                                              title,
+                                                              icon,
+                                                              steps,
+                                                              activeStep: controlledActiveStep,
+                                                              onStepChange,
+                                                              nonLinear = false,
+                                                              hasUnsavedChanges = false,
+                                                              supportsDraft = false,
+                                                              maxWidth = 'lg',
+                                                              fullScreen: initialFullScreen = false,
+                                                              headerActions,
+                                                              customFooterContent,
+                                                              onSubmit,
+                                                              onSaveDraft,
+                                                              onCancel,
+                                                              onClose,
+                                                            }) => {
   // Internal state
   const [internalActiveStep, setInternalActiveStep] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
@@ -143,7 +143,7 @@ export const StepperDialog: React.FC<StepperDialogProps> = ({
         setInternalActiveStep(newStep);
       }
     },
-    [onStepChange]
+    [onStepChange],
   );
 
   // Navigation handlers
@@ -220,7 +220,7 @@ export const StepperDialog: React.FC<StepperDialogProps> = ({
         handleStepChange(stepIndex);
       }
     },
-    [nonLinear, currentStep, canGoNext, handleStepChange]
+    [nonLinear, currentStep, canGoNext, handleStepChange],
   );
 
   // Custom footer props

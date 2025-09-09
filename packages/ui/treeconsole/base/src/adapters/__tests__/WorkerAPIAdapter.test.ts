@@ -1,17 +1,15 @@
 /**
- * WorkerAPIAdapter テストファイル
- *
- * APIアダプターの基本動作を確認します。
- * 実際の移植作業時に、アダプターの変換ロジックを検証するために使用します。
- */
+  * WorkerAPIAdapter
+  * API
+   */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
-import type { TreeChangeEvent, CommandResult } from '@hierarchidb/common-type';
+import type { CommandResult, TreeChangeEvent } from '@hierarchidb/common-type';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
 
-// WorkerAPI のモックを作成
+//  WorkerAPI
 const createMockWorkerAPI = () =>
   ({
     // TreeObservableService methods
@@ -39,10 +37,10 @@ const createMockWorkerAPI = () =>
     undo: vi.fn(),
     redo: vi.fn(),
 
-    // TreeQueryService methods (必要に応じて追加)
+    //  TreeQueryService methods ()
     // getNode: vi.fn(),
     // getChildren: vi.fn(),
-    // など...
+    //  ...
   }) as any;
 
 describe('WorkerAPIAdapter', () => {
@@ -78,7 +76,7 @@ describe('WorkerAPIAdapter', () => {
 
   describe('Observable Operations', () => {
     it('should convert observeSubtree to callback-based subscription', async () => {
-      // モックの Observable を作成
+      //  Observable
       const mockObservable = new Observable<TreeChangeEvent>((subscriber) => {
         subscriber.next({
           type: 'node-updated',
@@ -98,7 +96,7 @@ describe('WorkerAPIAdapter', () => {
         subtreeCallbackCalled = true;
       });
 
-      // CommandEnvelope の構造を検証
+      //  CommandEnvelope
       expect(mockWorkerAPI.observeSubtree).toHaveBeenCalledWith(
         expect.objectContaining({
           kind: 'observeSubtree',
@@ -109,14 +107,13 @@ describe('WorkerAPIAdapter', () => {
           commandId: expect.any(String),
           groupId: expect.any(String),
           issuedAt: expect.any(Number),
-        })
+        }),
       );
 
       // Test callback functionality
       expect(expandedCallbackCalled).toBe(false); // Initially false
       expect(subtreeCallbackCalled).toBe(false); // Initially false
 
-      // クリーンアップ確認
       expect(typeof unsubscribe).toBe('function');
       unsubscribe();
     });
@@ -125,7 +122,8 @@ describe('WorkerAPIAdapter', () => {
       const error = new Error('Connection failed');
       mockWorkerAPI.observeSubtree.mockRejectedValue(error);
 
-      await expect(adapter.subscribeToSubtree('test-node' as any, () => {})).rejects.toThrow();
+      await expect(adapter.subscribeToSubtree('test-node' as any, () => {
+      })).rejects.toThrow();
     });
   });
 
@@ -151,7 +149,7 @@ describe('WorkerAPIAdapter', () => {
           commandId: expect.any(String),
           groupId: expect.any(String),
           issuedAt: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -166,7 +164,7 @@ describe('WorkerAPIAdapter', () => {
       mockWorkerAPI.moveNodes.mockResolvedValue(failureResult);
 
       await expect(adapter.moveNodes(['node1'] as any, 'invalid-target' as any)).rejects.toThrow(
-        'Failed to move nodes: Target not found'
+        'Failed to move nodes: Target not found',
       );
     });
 
@@ -189,7 +187,7 @@ describe('WorkerAPIAdapter', () => {
           commandId: expect.any(String),
           groupId: expect.any(String),
           issuedAt: expect.any(Number),
-        })
+        }),
       );
     });
   });
@@ -205,7 +203,7 @@ describe('WorkerAPIAdapter', () => {
           workingCopyId: expect.any(String),
           sourceNodeId: 'test-node',
           isCreate: false,
-        })
+        }),
       );
 
       expect(mockWorkerAPI.createWorkingCopy).toHaveBeenCalledWith(
@@ -215,7 +213,7 @@ describe('WorkerAPIAdapter', () => {
             sourceNodeId: 'test-node',
             workingCopyId: expect.any(String),
           }),
-        })
+        }),
       );
     });
 
@@ -225,7 +223,7 @@ describe('WorkerAPIAdapter', () => {
       const editSession = await adapter.startNodeCreate(
         'parent-node' as any,
         'New Node',
-        'Description'
+        'Description',
       );
 
       expect(editSession).toEqual(
@@ -233,7 +231,7 @@ describe('WorkerAPIAdapter', () => {
           workingCopyId: expect.any(String),
           parentId: 'parent-node',
           isCreate: true,
-        })
+        }),
       );
 
       expect(mockWorkerAPI.createWorkingCopyForCreate).toHaveBeenCalledWith(
@@ -245,23 +243,23 @@ describe('WorkerAPIAdapter', () => {
             description: 'Description',
             workingCopyId: expect.any(String),
           }),
-        })
+        }),
       );
     });
   });
 
   describe('Lifecycle Management', () => {
     it('should cleanup all subscriptions on cleanup()', async () => {
-      // いくつかのサブスクリプションを作成
-      const mockObservable = new Observable<TreeChangeEvent>(() => {});
+      const mockObservable = new Observable<TreeChangeEvent>(() => {
+      });
       mockWorkerAPI.observeSubtree.mockResolvedValue(mockObservable);
 
-      await adapter.subscribeToSubtree('test-node' as any, () => {});
+      await adapter.subscribeToSubtree('test-node' as any, () => {
+      });
 
       let stats = adapter.getAdapterInfo().subscriptionStats;
       expect(stats.total).toBeGreaterThan(0);
 
-      // クリーンアップ実行
       adapter.cleanup();
 
       stats = adapter.getAdapterInfo().subscriptionStats;
@@ -280,7 +278,7 @@ describe('WorkerAPIAdapter', () => {
             children: 0,
           }),
           byNodeId: expect.any(Object),
-        })
+        }),
       );
     });
   });
@@ -301,7 +299,7 @@ describe('WorkerAPIAdapter', () => {
           viewId: 'custom-view',
           groupId: 'custom-group',
           onNameConflict: 'error',
-        } as any
+        } as any,
       );
 
       expect(mockWorkerAPI.moveNodes).toHaveBeenCalledWith(
@@ -310,7 +308,7 @@ describe('WorkerAPIAdapter', () => {
             onNameConflict: 'error',
           }),
           groupId: 'custom-group',
-        })
+        }),
       );
     });
   });

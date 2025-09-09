@@ -1,20 +1,21 @@
 import type {
-  ICSVDataApi,
-  CSVTableMetadata,
-  CSVProcessingConfig,
-  CSVFilterRule,
   CSVDataResult,
+  CSVFilterRule,
+  CSVProcessingConfig,
+  CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
+  CSVTableMetadata,
+  ICSVDataApi,
   PaginationOptions,
-  CSVProcessingStatus,
 } from '@hierarchidb/ui-csv-extract';
 import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver';
 import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver';
 import { authFetch } from './utils/authFetch';
 
 export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
-  constructor(private pluginId: string = 'spreadsheet') {}
+  constructor(private pluginId: string = 'spreadsheet') {
+  }
 
   async uploadCSVFile(file: File, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
     const driver = new SpreadsheetTabularDriver(this.pluginId);
@@ -35,7 +36,7 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
     tableId: string,
     filters: CSVFilterRule[],
     rowCount: number,
-    startRow?: number
+    startRow?: number,
   ): Promise<CSVDataResult> {
     // Delegate to existing driver which knows how to read stored chunks
     const legacy = new SpreadsheetCSVApiDriver(this.pluginId);

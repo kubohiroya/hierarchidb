@@ -39,7 +39,7 @@ type Summary = {
 function countLines(filePath: string): number {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
-    // CRLF/CR も考慮
+    //  CRLF/CR
     return content.split(/\r\n|\r|\n/).length;
   } catch {
     return 0;
@@ -134,8 +134,7 @@ function countDirectory(dirPath: string, _indent = '', showDetails = true): numb
     console.log(`\n📁 ${dirPath}:`);
     console.log('─'.repeat(50));
 
-    // ディレクトリ→ファイルの順でソート
-    const sorted = results.sort((a, b) => {
+        const sorted = results.sort((a, b) => {
       if (a.isDir && !b.isDir) return -1;
       if (!a.isDir && b.isDir) return 1;
       return a.name.localeCompare(b.name);

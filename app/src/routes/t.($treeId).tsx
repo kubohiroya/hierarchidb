@@ -1,15 +1,15 @@
-import { Outlet, useLoaderData, useNavigate, type LoaderFunctionArgs } from 'react-router';
-import { Suspense, useState, useEffect } from 'react';
+import { type LoaderFunctionArgs, Outlet, useLoaderData, useNavigate } from 'react-router';
+import { Suspense, useEffect, useState } from 'react';
 import {
+  AppBar,
   Box,
   CircularProgress,
-  AppBar,
-  Toolbar,
+  IconButton,
+  Stack,
   ToggleButton,
   ToggleButtonGroup,
+  Toolbar,
   Typography,
-  Stack,
-  IconButton,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
 import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
@@ -22,28 +22,28 @@ import type { Tree } from '@hierarchidb/common-type';
 export async function clientLoader(args: LoaderFunctionArgs) {
   console.log('[t.($treeId).tsx] clientLoader called with params:', args.params);
   const { treeId } = args.params as LoadTreeArgs;
-  
+
   try {
     const treeData = await loadTree({ treeId });
-  
-  console.log('[t.($treeId).tsx] Loaded tree data:', treeData);
-  
-  // If tree doesn't exist, throw an error
-  if (!treeData.tree) {
-    throw new Error(`Tree with ID '${treeId}' does not exist`);
-  }
-  
-  if (treeData.tree?.rootId) {
-    // Use facade pattern: get QueryAPI first
-    const queryAPI = await treeData.client.getQueryAPI();
-    const rootNode = await queryAPI.getNode(treeData.tree.rootId);
-    console.log('[t.($treeId).tsx] Loaded root node:', rootNode);
-    return {
-      ...treeData,
-      rootNode,
-    };
-  }
-  return treeData;
+
+    console.log('[t.($treeId).tsx] Loaded tree data:', treeData);
+
+    // If tree doesn't exist, throw an error
+    if (!treeData.tree) {
+      throw new Error(`Tree with ID '${treeId}' does not exist`);
+    }
+
+    if (treeData.tree?.rootId) {
+      // Use facade pattern: get QueryAPI first
+      const queryAPI = await treeData.client.getQueryAPI();
+      const rootNode = await queryAPI.getNode(treeData.tree.rootId);
+      console.log('[t.($treeId).tsx] Loaded root node:', rootNode);
+      return {
+        ...treeData,
+        rootNode,
+      };
+    }
+    return treeData;
   } catch (error) {
     console.error('[t.($treeId).tsx] clientLoader error:', error);
     throw error;
@@ -56,7 +56,7 @@ export default function TLayout() {
   console.log('[TLayout] Component rendering');
   const data = useLoaderData() as TLayoutLoaderData;
   console.log('[TLayout] Loader data:', data);
-  
+
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data?.tree?.id || null);
@@ -67,13 +67,13 @@ export default function TLayout() {
         console.log('[TreePage] Loading trees...');
         const client = await WorkerAPIClient.getSingleton();
         console.log('[TreePage] WorkerAPIClient obtained:', client);
-        
+
         console.log('[TreePage] Client obtained:', client);
-        
+
         // Use facade pattern: get QueryAPI first
         const queryAPI = await client.getQueryAPI();
         console.log('[TreePage] QueryAPI obtained:', queryAPI);
-        
+
         const availableTrees = await queryAPI.listTrees();
         console.log('[TreePage] Trees loaded:', availableTrees);
         setTrees(availableTrees);
@@ -107,7 +107,7 @@ export default function TLayout() {
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
           {/* HierarchiDB Icon - Left side, navigates to top page */}
-          <IconButton 
+          <IconButton
             onClick={() => navigate('/')}
             edge="start"
             color="primary"
@@ -115,7 +115,8 @@ export default function TLayout() {
             sx={{ mr: 2 }}
           >
             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M2 20h20v-4H2m18-2h2v-4h-2m-2 0v4h-2v-4h-2v4h-2v-4h-2v4H10v-4H8v4H6v-4H4v4H2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v8z"/>
+              <path
+                d="M2 20h20v-4H2m18-2h2v-4h-2m-2 0v4h-2v-4h-2v4h-2v-4h-2v4H10v-4H8v4H6v-4H4v4H2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v8z" />
             </svg>
           </IconButton>
 
@@ -135,9 +136,9 @@ export default function TLayout() {
               onChange={handleTreeChange}
               aria-label="tree selection"
               size="small"
-              sx={{ 
+              sx={{
                 borderRadius: '24px',
-                '& .MuiToggleButton-root': { 
+                '& .MuiToggleButton-root': {
                   px: 2,
                   py: 0.5,
                   border: '1px solid rgba(0, 0, 0, 0.12)',
@@ -152,8 +153,8 @@ export default function TLayout() {
                   },
                   '&:not(:first-of-type)': {
                     borderLeft: 'none',
-                  }
-                } 
+                  },
+                },
               }}
             >
               {/* Sort trees to show Resources first, then Projects */}
@@ -179,7 +180,7 @@ export default function TLayout() {
                   </ToggleButton>
                 ))}
             </ToggleButtonGroup>
-            
+
             <LanguageSelector />
             {/* User Login Button - Right Aligned with 8px gap */}
             <Box sx={{ ml: '8px' }}>

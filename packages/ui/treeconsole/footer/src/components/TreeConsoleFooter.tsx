@@ -1,18 +1,16 @@
 /**
- * TreeConsoleFooter - 元のデザインの忠実な再現
- *
- * 元のeria-cartographのTreeConsoleFooterのUIを正確に再現。
- * 選択数・フィルタ件数・総件数の要約表示とガイド起動ボタン。
- */
+  * TreeConsoleFooter -
+  * eria-cartographTreeConsoleFooterUI
+   */
 
 import { Box, IconButton, Typography } from '@mui/material';
 import { HelpOutline } from '@mui/icons-material';
 import type { TreeConsoleFooterProps } from '../types';
 
 /**
- * TreeConsoleFooter メインコンポーネント
- * 元のTreeConsoleFooterの構造とロジックを完全に再現
- */
+  * TreeConsoleFooter
+ * TreeConsoleFooter
+  */
 export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Element {
   const {
     controller,
@@ -23,7 +21,6 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
     position = 'absolute',
   } = props;
 
-  // カスタムテキストが指定されている場合はそれを使用
   if (customText) {
     return (
       <Box
@@ -63,8 +60,8 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         ) : (
           <Box sx={{ width: 16, color: 'text.secondary' }} />
         )}
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           sx={{ color: 'text.secondary' }}
         >
           {customText}
@@ -73,7 +70,6 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
     );
   }
 
-  // コントローラーが無い場合のフォールバック表示
   if (!controller) {
     return (
       <Box
@@ -113,8 +109,8 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         ) : (
           <Box sx={{ width: 16, color: 'text.secondary' }} />
         )}
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           sx={{ color: 'text.secondary' }}
         >
           Loading...
@@ -123,7 +119,6 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
     );
   }
 
-  // フッターテキストの生成（元のロジックを完全に再現）
   const getFooterText = () => {
     const selectedCount = Object.keys(controller?.rowSelection || {}).length;
     const filteredCount = controller?.filteredItemCount ?? controller?.data?.length ?? 0;
@@ -131,22 +126,18 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
 
     const parts = [];
 
-    // 選択数の表示
     if (selectedCount > 0) {
       parts.push(`${selectedCount} selected`);
     }
 
-    // 検索/フィルタリング状態に応じた表示
+    //  /
     if (controller?.searchText && controller.searchText.trim() !== '') {
-      // 検索中の表示
       parts.push(`${filteredCount} found`);
       parts.push(`${totalCount} total`);
     } else if (totalCount !== filteredCount) {
-      // フィルタリング中の表示
       parts.push(`${filteredCount} ${filteredCount <= 1 ? 'branch' : 'branches'}`);
       parts.push(`${totalCount} ${totalCount === 1 ? 'node' : 'nodes'} shown`);
     } else {
-      // 通常の表示
       parts.push(`${totalCount} ${totalCount === 1 ? 'node' : 'nodes'} shown`);
     }
 
@@ -191,8 +182,8 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
       ) : (
         <Box sx={{ width: 16, color: 'text.secondary' }} />
       )}
-      <Typography 
-        variant="body2" 
+      <Typography
+        variant="body2"
         sx={{ color: 'text.secondary' }}
       >
         {getFooterText()}

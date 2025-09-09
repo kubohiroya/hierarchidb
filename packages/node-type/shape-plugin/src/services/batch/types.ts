@@ -13,12 +13,12 @@ export interface BatchProcessConfig extends BatchConfig {
   simplify1Workers?: number;
   simplify2Workers?: number;
   vectorTileWorkers?: number;
-  
+
   // Worker options
   workerTimeout?: number;
   workerRetries?: number;
   maxMemoryPerWorker?: number;
-  
+
   // Simplification settings (if not already in BatchConfig)
   simplifyTolerance?: number;
   minArea?: number;

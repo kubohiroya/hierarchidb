@@ -31,36 +31,18 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@hierarchidb/util": [
-        "./packages/util/src/index.ts"
-      ],
-      "@hierarchidb/base-plugin": [
-        "./packages/node-type/base-plugin/src/index.ts"
-      ],
-      "@hierarchidb/folder-plugin": [
-        "./packages/node-type/folder-plugin/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "./packages/runtime-ui/plugin-dialog/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-batch-processor": [
-        "./packages/runtime-shared/batch-processor/src/index.ts"
-      ],
-      "@hierarchidb/download": [
-        "./packages/feature/download/src/index.ts"
-      ],
-      "@hierarchidb/auth-recovery": [
-        "./packages/feature/auth-recovery/src/index.ts"
-      ],
-      "@hierarchidb/table-metadata": [
-        "./packages/feature/table-metadata/src/index.ts"
-      ],
-      "@hierarchidb/ui-data-grid": [
-        "./packages/ui/data-grid/src/index.ts"
-      ],
-      "@hierarchidb/tabular-store": [
-        "./packages/feature/tabular-store/src/index.ts"
-      ]
+      "@hierarchidb/util": ["./packages/util/dist/index.d.ts"],
+      "@hierarchidb/ui-dialog": ["./packages/ui/dialog/dist/index.d.ts"],
+      "@hierarchidb/base-plugin": ["./packages/node-type/base-plugin/dist/index.d.ts"],
+      "@hierarchidb/folder-plugin": ["./packages/node-type/folder-plugin/dist/index.d.ts"],
+      "@hierarchidb/runtime-ui-plugin-dialog": ["./packages/runtime-ui/plugin-dialog/dist/index.d.ts"],
+      "@hierarchidb/runtime-shared-batch-processor": ["./packages/runtime-shared/batch-processor/dist/index.d.ts"],
+      "@hierarchidb/runtime-worker": ["./packages/runtime-worker/worker/dist/index.d.ts"],
+      "@hierarchidb/download": ["./packages/feature/download/dist/index.d.ts"],
+      "@hierarchidb/auth-recovery": ["./packages/feature/auth-recovery/dist/index.d.ts"],
+      "@hierarchidb/table-metadata": ["./packages/feature/table-metadata/dist/index.d.ts"],
+      "@hierarchidb/ui-data-grid": ["./packages/ui/data-grid/dist/index.d.ts"],
+      "@hierarchidb/tabular-store": ["./packages/feature/tabular-store/dist/index.d.ts"]
     }
   },
   "exclude": [

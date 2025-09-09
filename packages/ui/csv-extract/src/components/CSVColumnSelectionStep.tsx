@@ -3,15 +3,21 @@
  * @description Column selection and mapping interface for CSV data
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Paper,
-  Typography,
-  FormControl,
-  Select,
-  MenuItem,
   Checkbox,
+  Chip,
+  FormControl,
+  FormControlLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -19,25 +25,14 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Chip,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  FormControlLabel,
-  Switch,
+  Typography,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
-  VisibilityOff as VisibilityOffIcon,
   SwapHoriz as SwapHorizIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import type { 
-  CSVTableMetadata, 
-  CSVColumnMapping,
-  CSVColumnType,
-  CSVDataResult 
-} from '../types';
+import type { CSVColumnMapping, CSVColumnType, CSVDataResult, CSVTableMetadata } from '../types';
 
 export interface CSVColumnSelectionStepProps {
   tableMetadata: CSVTableMetadata;
@@ -51,15 +46,15 @@ export interface CSVColumnSelectionStepProps {
 }
 
 export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
-  tableMetadata,
-  previewData,
-  targetColumns = [],
-  onSelectionChanged,
-  onPreviewChanged,
-  allowRename = true,
-  allowTypeChange = true,
-  maxPreviewRows = 50,
-}) => {
+                                                                                tableMetadata,
+                                                                                previewData,
+                                                                                targetColumns = [],
+                                                                                onSelectionChanged,
+                                                                                onPreviewChanged,
+                                                                                allowRename = true,
+                                                                                allowTypeChange = true,
+                                                                                maxPreviewRows = 50,
+                                                                              }) => {
   const [columnMappings, setColumnMappings] = useState<CSVColumnMapping[]>([]);
   const [showPreview, setShowPreview] = useState(true);
   const [selectAll, setSelectAll] = useState(true);
@@ -94,15 +89,15 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
       prev.map(mapping =>
         mapping.sourceColumn === sourceColumn
           ? { ...mapping, included }
-          : mapping
-      )
+          : mapping,
+      ),
     );
   };
 
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
     setColumnMappings(prev =>
-      prev.map(mapping => ({ ...mapping, included: checked }))
+      prev.map(mapping => ({ ...mapping, included: checked })),
     );
   };
 
@@ -111,8 +106,8 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
       prev.map(mapping =>
         mapping.sourceColumn === sourceColumn
           ? { ...mapping, targetColumn }
-          : mapping
-      )
+          : mapping,
+      ),
     );
   };
 
@@ -121,8 +116,8 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
       prev.map(mapping =>
         mapping.sourceColumn === sourceColumn
           ? { ...mapping, targetType: targetType as CSVColumnType }
-          : mapping
-      )
+          : mapping,
+      ),
     );
   };
 
@@ -131,8 +126,8 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
       prev.map(mapping =>
         mapping.sourceColumn === sourceColumn
           ? { ...mapping, targetColumn }
-          : mapping
-      )
+          : mapping,
+      ),
     );
   };
 
@@ -141,8 +136,8 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
       prev.map(mapping =>
         mapping.sourceColumn === sourceColumn
           ? { ...mapping, order }
-          : mapping
-      )
+          : mapping,
+      ),
     );
   };
 
@@ -151,11 +146,11 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
   const getMappingValidation = () => {
     const errors: string[] = [];
     const selectedMappings = getSelectedColumns();
-    
+
     // Check for required target columns
     const requiredColumns = targetColumns.filter(tc => tc.required);
     const mappedTargets = selectedMappings.map(m => m.targetColumn);
-    
+
     for (const required of requiredColumns) {
       if (!mappedTargets.includes(required.name)) {
         errors.push(`Required column "${required.name}" is not mapped`);

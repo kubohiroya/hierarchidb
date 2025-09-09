@@ -1,70 +1,78 @@
 /**
- * TagInput Component
- * タグ入力・選択のためのUIコンポーネント
- */
+  * TagInput Component
+ * UI
+  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Box,
-  TextField,
-  Chip,
   Autocomplete,
-  Typography,
+  Box,
+  Button,
+  Checkbox,
+  Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   Paper,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  FormControlLabel,
-  Checkbox
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  LocalOffer as TagIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import type { EntityId } from '@hierarchidb/common-type';
-type TagId = EntityId;
-import type { TagSuggestion } from '@hierarchidb/common-type';
+import { Add as AddIcon, Delete as DeleteIcon, LocalOffer as TagIcon } from '@mui/icons-material';
+import type { TagSuggestion as BaseTagSuggestion } from '@hierarchidb/common-type';
+import type { TagId } from '../../types';
+
+type TagSuggestion = Omit<BaseTagSuggestion, 'id'> & { id: TagId };
 
 export interface TagInputProps {
-  /** 選択済みタグのID配列 */
+  /**
+   * ID
+   */
   value: TagId[];
-  /** タグ変更コールバック */
+  /**
+      */
   onChange: (tags: TagId[]) => void;
-  /** プレースホルダーテキスト */
+  /**
+      */
   placeholder?: string;
-  /** 最大タグ数 */
+  /**
+      */
   maxTags?: number;
-  /** 新規タグ作成許可 */
+  /**
+      */
   allowCreate?: boolean;
-  /** 無効化フラグ */
+  /**
+      */
   disabled?: boolean;
-  /** ラベル */
+  /**
+      */
   label?: string;
-  /** ヘルプテキスト */
+  /**
+      */
   helperText?: string;
-  /** エラー状態 */
+  /**
+      */
   error?: boolean;
-  /** 必須フィールド */
+  /**
+      */
   required?: boolean;
 }
 
 export const TagInput: React.FC<TagInputProps> = ({
-  value = [],
-  onChange,
-  placeholder = 'タグを入力または選択...',
-  maxTags = 10,
-  allowCreate = true,
-  disabled = false,
-  label = 'タグ',
-  helperText,
-  error = false,
-  required = false
-}) => {
+                                                    value = [],
+                                                    onChange,
+                                                    placeholder = 'タグを入力または選択...',
+                                                    maxTags = 10,
+                                                    allowCreate = true,
+                                                    disabled = false,
+                                                    label = 'タグ',
+                                                    helperText,
+                                                    error = false,
+                                                    required = false,
+                                                  }) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<TagSuggestion[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagSuggestion[]>([]);
@@ -72,19 +80,18 @@ export const TagInput: React.FC<TagInputProps> = ({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTagName, setNewTagName] = useState('');
 
-  // モック関数（実際の実装ではworkerのTagServiceを使用）
+  //  workerTagService
   const mockSearchTags = useCallback(async (query: string): Promise<TagSuggestion[]> => {
-    // 模擬データ
     const mockTags: TagSuggestion[] = [
       { id: 'tag_1' as TagId, name: '重要', color: '#f44336', usageCount: 15 },
       { id: 'tag_2' as TagId, name: 'プロジェクト', color: '#2196f3', usageCount: 8 },
       { id: 'tag_3' as TagId, name: '完了', color: '#4caf50', usageCount: 12 },
       { id: 'tag_4' as TagId, name: 'レビュー待ち', color: '#ff9800', usageCount: 5 },
-      { id: 'tag_5' as TagId, name: 'バックログ', color: '#9c27b0', usageCount: 3 }
+      { id: 'tag_5' as TagId, name: 'バックログ', color: '#9c27b0', usageCount: 3 },
     ];
 
-    return mockTags.filter(tag => 
-      tag.name.toLowerCase().includes(query.toLowerCase())
+    return mockTags.filter(tag =>
+      tag.name.toLowerCase().includes(query.toLowerCase()),
     );
   }, []);
 
@@ -94,11 +101,10 @@ export const TagInput: React.FC<TagInputProps> = ({
       id: `tag_${Date.now()}` as TagId,
       name,
       color: colors[Math.floor(Math.random() * colors.length)] as string,
-      usageCount: 0
+      usageCount: 0,
     };
   }, []);
 
-  // タグ検索
   const searchTags = useCallback(async (query: string) => {
     if (!query) {
       setSuggestions([]);
@@ -108,7 +114,6 @@ export const TagInput: React.FC<TagInputProps> = ({
     setLoading(true);
     try {
       const results = await mockSearchTags(query);
-      // 既に選択されているタグを除外
       const filtered = results.filter(tag => !value.includes(tag.id));
       setSuggestions(filtered);
     } catch (error) {
@@ -119,15 +124,14 @@ export const TagInput: React.FC<TagInputProps> = ({
     }
   }, [mockSearchTags, value]);
 
-  // 選択済みタグの詳細情報を取得
   useEffect(() => {
     const loadSelectedTags = async () => {
-      // 実際の実装では、TagServiceを使ってTagIdからTagSuggestionを取得
+      //  TagServiceTagIdTagSuggestion
       const mockSelected: TagSuggestion[] = value.map((id, index) => ({
         id,
         name: `Tag ${index + 1}`,
         color: '#2196f3',
-        usageCount: 0
+        usageCount: 0,
       }));
       setSelectedTags(mockSelected);
     };
@@ -135,7 +139,6 @@ export const TagInput: React.FC<TagInputProps> = ({
     loadSelectedTags();
   }, [value]);
 
-  // 入力値変更時のタグ検索
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchTags(inputValue);
@@ -144,7 +147,6 @@ export const TagInput: React.FC<TagInputProps> = ({
     return () => clearTimeout(timeoutId);
   }, [inputValue, searchTags]);
 
-  // タグ追加
   const handleTagAdd = useCallback((tag: TagSuggestion) => {
     if (value.length >= maxTags) {
       return;
@@ -156,12 +158,10 @@ export const TagInput: React.FC<TagInputProps> = ({
     }
   }, [value, maxTags, onChange]);
 
-  // タグ削除
   const handleTagRemove = useCallback((tagId: TagId) => {
     onChange(value.filter(id => id !== tagId));
   }, [value, onChange]);
 
-  // 新規タグ作成
   const handleCreateTag = useCallback(async () => {
     if (!newTagName.trim()) return;
 
@@ -175,15 +175,13 @@ export const TagInput: React.FC<TagInputProps> = ({
     }
   }, [newTagName, mockCreateTag, handleTagAdd]);
 
-  // キーボード操作
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Enter' && inputValue && allowCreate) {
       event.preventDefault();
-      // 既存のタグが見つからない場合、新規作成
-      const existingTag = suggestions.find(tag => 
-        tag.name.toLowerCase() === inputValue.toLowerCase()
+      const existingTag = suggestions.find(tag =>
+        tag.name.toLowerCase() === inputValue.toLowerCase(),
       );
-      
+
       if (existingTag) {
         handleTagAdd(existingTag);
       } else {
@@ -191,7 +189,6 @@ export const TagInput: React.FC<TagInputProps> = ({
         setCreateDialogOpen(true);
       }
     } else if (event.key === 'Backspace' && !inputValue && value.length > 0) {
-      // 最後のタグを削除
       const lastTag = value[value.length - 1];
       if (lastTag) {
         handleTagRemove(lastTag);
@@ -206,7 +203,8 @@ export const TagInput: React.FC<TagInputProps> = ({
         {required && <span style={{ color: 'error.main' }}> *</span>}
       </Typography>
 
-      {/* 選択済みタグ表示 */}
+      {/*
+*/}
       {selectedTags.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -225,7 +223,8 @@ export const TagInput: React.FC<TagInputProps> = ({
         </Box>
       )}
 
-      {/* タグ入力フィールド */}
+      {/*
+*/}
       <Autocomplete
         multiple={false}
         options={suggestions}
@@ -266,7 +265,7 @@ export const TagInput: React.FC<TagInputProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              py: 1
+              py: 1,
             }}
           >
             <Box
@@ -274,7 +273,7 @@ export const TagInput: React.FC<TagInputProps> = ({
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
-                backgroundColor: option.color
+                backgroundColor: option.color,
               }}
             />
             <Typography variant="body2" sx={{ flex: 1 }}>
@@ -288,8 +287,8 @@ export const TagInput: React.FC<TagInputProps> = ({
         PaperComponent={({ children, ...paperProps }) => (
           <Paper {...paperProps}>
             {children}
-            {allowCreate && inputValue && !suggestions.some(s => 
-              s.name.toLowerCase() === inputValue.toLowerCase()
+            {allowCreate && inputValue && !suggestions.some(s =>
+              s.name.toLowerCase() === inputValue.toLowerCase(),
             ) && (
               <Box
                 sx={{
@@ -300,7 +299,7 @@ export const TagInput: React.FC<TagInputProps> = ({
                   alignItems: 'center',
                   gap: 1,
                   cursor: 'pointer',
-                  '&:hover': { backgroundColor: 'action.hover' }
+                  '&:hover': { backgroundColor: 'action.hover' },
                 }}
                 onClick={() => {
                   setNewTagName(inputValue);
@@ -317,7 +316,8 @@ export const TagInput: React.FC<TagInputProps> = ({
         )}
       />
 
-      {/* 新規タグ作成ダイアログ */}
+      {/*
+*/}
       <Dialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}

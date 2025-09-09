@@ -2,24 +2,22 @@ import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
 export class PluginDependencyResolver {
   /**
-   * プラグインの読み込み順序を決定する
-   * @param definitions プラグイン定義のマップ
-   * @returns 読み込み順序（NodeType配列）
-   */
+   * @param definitions
+   * @returns NodeType
+*/
   resolveLoadOrder(definitions: Map<NodeType, PluginDefinition>): NodeType[] {
     const graph = this.buildDependencyGraph(definitions);
     const visited = new Set<NodeType>();
     const visiting = new Set<NodeType>();
     const loadOrder: NodeType[] = [];
 
-    // folder-pluginを最優先で処理
+    //  folder-plugin
     const folderNodeType = 'folder' as NodeType;
     if (definitions.has(folderNodeType)) {
       this.visit(folderNodeType, graph, visited, visiting, loadOrder, definitions);
     }
 
-    // 残りのプラグインを処理（優先度順）
-    const sortedNodeTypes = this.sortNodeTypesByPriority(
+        const sortedNodeTypes = this.sortNodeTypesByPriority(
       Array.from(definitions.keys()).filter(nt => nt !== folderNodeType),
       definitions
     );
@@ -34,10 +32,9 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * 循環依存を事前検出する
-   * @param definitions プラグイン定義のマップ
-   * @returns エラーメッセージの配列
-   */
+   * @param definitions
+   * @returns
+*/
   checkCircularDependencies(definitions: Map<NodeType, PluginDefinition>): string[] {
     const graph = this.buildDependencyGraph(definitions);
     const errors: string[] = [];
@@ -57,17 +54,16 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * 依存関係グラフを構築
-   * @param definitions プラグイン定義のマップ
-   * @returns 依存関係グラフ（NodeType -> Set<NodeType>）
-   */
+   * @param definitions
+   * @returns NodeType -> Set<NodeType>
+*/
   private buildDependencyGraph(definitions: Map<NodeType, PluginDefinition>): Map<NodeType, Set<NodeType>> {
     const graph = new Map<NodeType, Set<NodeType>>();
 
     for (const [nodeType, definition] of definitions.entries()) {
       const dependencies = new Set<NodeType>();
 
-      // extends依存を追加
+      //  extends
       if (definition.extends) {
         const parentNodeType = definition.extends as NodeType;
         if (definitions.has(parentNodeType)) {
@@ -77,7 +73,7 @@ export class PluginDependencyResolver {
         }
       }
 
-      // dependencies依存を追加
+      //  dependencies
       if (definition.dependencies && Array.isArray(definition.dependencies)) {
         for (const dep of definition.dependencies) {
           const depNodeType = dep as NodeType;
@@ -96,14 +92,13 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * 深さ優先探索によるトポロジカルソート（訪問処理）
-   * @param nodeType 現在のノードタイプ
-   * @param graph 依存関係グラフ
-   * @param visited 訪問済みセット
-   * @param visiting 訪問中セット
-   * @param loadOrder 読み込み順序配列
-   * @param definitions プラグイン定義（優先度参照用）
-   */
+   * @param nodeType
+   * @param graph
+   * @param visited
+   * @param visiting
+   * @param loadOrder
+   * @param definitions
+*/
   private visit(
     nodeType: NodeType,
     graph: Map<NodeType, Set<NodeType>>,
@@ -122,8 +117,7 @@ export class PluginDependencyResolver {
 
     visiting.add(nodeType);
 
-    // 依存先を優先度順に訪問
-    const dependencies = graph.get(nodeType) || new Set();
+        const dependencies = graph.get(nodeType) || new Set();
     const sortedDeps = this.sortDependenciesByPriority(Array.from(dependencies), definitions);
     
     for (const dep of sortedDeps) {
@@ -136,14 +130,13 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * 依存関係を優先度順にソート
-   * @param deps 依存関係のNodeType配列
-   * @param definitions プラグイン定義
-   * @returns ソート済み配列
-   */
+   * @param deps NodeType
+   * @param definitions
+   * @returns
+*/
   private sortDependenciesByPriority(deps: NodeType[], definitions: Map<NodeType, PluginDefinition>): NodeType[] {
     return deps.sort((a, b) => {
-      // folder-pluginを最優先
+      //  folder-plugin
       if (a === 'folder') return -1;
       if (b === 'folder') return 1;
 
@@ -158,11 +151,11 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * NodeType配列を優先度順にソート
-   * @param nodeTypes NodeType配列
-   * @param definitions プラグイン定義
-   * @returns ソート済み配列
-   */
+   * NodeType
+   * @param nodeTypes NodeType
+   * @param definitions
+   * @returns
+*/
   private sortNodeTypesByPriority(nodeTypes: NodeType[], definitions: Map<NodeType, PluginDefinition>): NodeType[] {
     return nodeTypes.sort((a, b) => {
       const defA = definitions.get(a);
@@ -176,14 +169,13 @@ export class PluginDependencyResolver {
   }
 
   /**
-   * 循環依存を検出
-   * @param nodeType 現在のノードタイプ
-   * @param graph 依存関係グラフ
-   * @param visited 訪問済みセット
-   * @param visiting 訪問中セット
-   * @param path 現在のパス
-   * @returns 循環パス（循環がない場合は空配列）
-   */
+   * @param nodeType
+   * @param graph
+   * @param visited
+   * @param visiting
+   * @param path
+   * @returns
+*/
   private detectCycle(
     nodeType: NodeType,
     graph: Map<NodeType, Set<NodeType>>,
@@ -196,8 +188,7 @@ export class PluginDependencyResolver {
     }
 
     if (visiting.has(nodeType)) {
-      // 循環を検出
-      const cycleStart = path.indexOf(nodeType);
+            const cycleStart = path.indexOf(nodeType);
       return [...path.slice(cycleStart), nodeType];
     }
 
@@ -220,12 +211,11 @@ export class PluginDependencyResolver {
   }
 }
 
-// 使用例とテストコード
-// ESMモジュールとして実行時のチェック
+//  ESM
 if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('=== Plugin Dependency Resolver Test ===\n');
 
-  // テストケース1: 正常系
+  //  1:
   console.log('Test Case 1: Normal Dependencies');
   const definitions1 = new Map<NodeType, PluginDefinition>([
     ['folder' as NodeType, {
@@ -257,7 +247,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Load order:', loadOrder1);
   console.log('Expected: folder first, then dependencies resolved\n');
 
-  // テストケース2: 循環依存の検出
+  //  2:
   console.log('Test Case 2: Circular Dependencies');
   const definitions2 = new Map<NodeType, PluginDefinition>([
     ['a' as NodeType, {
@@ -281,7 +271,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Circular dependency errors:', errors);
   console.log('Expected: Circular dependency detected\n');
 
-  // テストケース3: 複雑な依存関係
+  //  3:
   console.log('Test Case 3: Complex Dependencies with Priority');
   const definitions3 = new Map<NodeType, PluginDefinition>([
     ['folder' as NodeType, {
@@ -320,15 +310,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('Load order:', loadOrder3);
   console.log('Expected: folder, basemap, layer, shape, project\n');
 
-  // エラーチェック
-  const errors3 = resolver.checkCircularDependencies(definitions3);
+    const errors3 = resolver.checkCircularDependencies(definitions3);
   if (errors3.length === 0) {
     console.log('✓ No circular dependencies detected');
   } else {
     console.log('✗ Unexpected circular dependencies:', errors3);
   }
 
-  // テストケース4: 存在しない依存への対処
+  //  4:
   console.log('\nTest Case 4: Non-existent Dependencies');
   const definitions4 = new Map<NodeType, PluginDefinition>([
     ['shape' as NodeType, {

@@ -6,13 +6,7 @@
  * It handles real-time updates through event-driven notifications and manages subscription lifecycles.
  */
 
-import type {
-  NodeId,
-  TreeId,
-  TreeNodeEvent,
-  SubscriptionId,
-  SubscriptionOptions,
-} from '@hierarchidb/common-type';
+import type { NodeId, SubscriptionId, SubscriptionOptions, TreeId, TreeNodeEvent } from '@hierarchidb/common-type';
 
 /**
  * Real-time data subscription and monitoring API
@@ -47,7 +41,7 @@ export interface TreeSubscriptionAPI {
   subscribeNode(
     nodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId>;
 
   /**
@@ -72,7 +66,7 @@ export interface TreeSubscriptionAPI {
   subscribeSubtree(
     rootNodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId>;
 
   /**
@@ -86,7 +80,7 @@ export interface TreeSubscriptionAPI {
   subscribeTree(
     treeId: TreeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId>;
 
   // ==================

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 
 type Manifest = {
-  languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr'|'rtl' }>
+  languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr' | 'rtl' }>
 };
 
 const readCurrent = (): string => {
@@ -13,7 +13,7 @@ const readCurrent = (): string => {
   return ((nav || 'en').split('-')[0]) as string;
 };
 
-export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size = 'small' }) => {
+export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size = 'small' }) => {
   const [langs, setLangs] = useState<Manifest['languages']>([]);
   const [value, setValue] = useState<string>(readCurrent());
 
@@ -22,7 +22,7 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
     const load = async () => {
       try {
         const base = (import.meta as any)?.env?.BASE_URL || '/';
-        const res = await fetch(`${String(base).replace(/\/+$/, '/') }locales/manifest.json`).catch(() => null);
+        const res = await fetch(`${String(base).replace(/\/+$/, '/')}locales/manifest.json`).catch(() => null);
         if (active && res && res.ok) {
           const data = (await res.json()) as Manifest;
           const detected = (data.languages || []);
@@ -33,7 +33,9 @@ export const LanguageSelector: React.FC<{ size?: 'small'|'medium' }> = ({ size =
       }
     };
     load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   const options = useMemo(() => (

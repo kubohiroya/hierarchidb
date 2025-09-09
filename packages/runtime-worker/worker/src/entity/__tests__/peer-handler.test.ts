@@ -1,14 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { PeerEntityHandler } from '~/entity/handlers/PeerEntityHandler';
-import type { PeerStore } from '~/entity/store';
+import { PeerEntityHandler } from '../handlers/PeerEntityHandler';
+import type { PeerStore } from '../store';
 
 function makePeerStoreStub(): PeerStore<any> & { _map: Map<string, any> } {
   const map = new Map<string, any>();
   return {
-    async get(id: NodeId) { return map.get(id as unknown as string); },
-    async put(e: any) { map.set(e.nodeId as unknown as string, e); },
-    async delete(id: NodeId) { map.delete(id as unknown as string); },
+    async get(id: NodeId) {
+      return map.get(id as unknown as string);
+    },
+    async put(e: any) {
+      map.set(e.nodeId as unknown as string, e);
+    },
+    async delete(id: NodeId) {
+      map.delete(id as unknown as string);
+    },
     _map: map,
   } as any;
 }

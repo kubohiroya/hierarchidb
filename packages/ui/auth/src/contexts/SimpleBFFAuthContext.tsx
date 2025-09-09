@@ -48,7 +48,7 @@ const normalizeGooglePhotoUrl = (photoUrl: string | undefined): string | undefin
  */
 const normalizeProfilePhotoUrl = (
   photoUrl: string | undefined,
-  provider: AuthProviderType
+  provider: AuthProviderType,
 ): string | undefined => {
   if (!photoUrl) return undefined;
 
@@ -177,7 +177,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             // Mark as authenticated
             setIsAuthenticating(false);
             return; // Exit early to prevent further processing
-          } catch (_error) {}
+          } catch (_error) {
+          }
         }
 
         if (storedUser && storedToken) {
@@ -353,7 +354,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           const popup = window.open(
             authUrl.toString(),
             `${provider}-auth`,
-            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`,
           );
 
           if (!popup) {
@@ -435,7 +436,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
               if (!popup.closed) {
                 popup.close();
               }
-            } catch (e) {}
+            } catch (e) {
+            }
           };
 
           windowWithAuth.handleAuthError = (_error: string) => {
@@ -446,7 +448,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
               if (!popup.closed) {
                 popup.close();
               }
-            } catch (e) {}
+            } catch (e) {
+            }
           };
 
           // Additional COOP-safe mechanism: Use a shared timestamp to detect completion
@@ -559,7 +562,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         sessionStorage.setItem('auth_force_cleanup', 'true');
       }
     },
-    [isAuthenticating, user]
+    [isAuthenticating, user],
   );
 
   const signOut = React.useCallback(async () => {
@@ -761,7 +764,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           sessionStorage.removeItem('pkce_timestamp');
           sessionStorage.removeItem('auth_callback_processing');
           sessionStorage.removeItem('auth_processing_code');
-        } catch (_error) {}
+        } catch (_error) {
+        }
       }
     };
 
@@ -866,7 +870,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       getAccessToken,
       getIdToken,
       refreshAccessToken,
-    ]
+    ],
   );
 
   // Make auth theme globally accessible for token refresh

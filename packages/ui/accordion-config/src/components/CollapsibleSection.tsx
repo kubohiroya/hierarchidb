@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Collapse, IconButton, Typography, SxProps, Theme } from '@mui/material';
-import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import { Box, Collapse, IconButton, SxProps, Theme, Typography } from '@mui/material';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 export interface CollapsibleSectionProps {
   /** Section title */
@@ -45,21 +45,21 @@ const paddingSizes = {
  * Useful for inline collapsible content
  */
 export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-  title,
-  defaultCollapsed = false,
-  collapsible = true,
-  collapseIcon = <ExpandLess />,
-  expandIcon = <ExpandMore />,
-  togglePosition = 'end',
-  onCollapseChange,
-  children,
-  sx,
-  headerSx,
-  contentSx,
-  bordered = false,
-  padding = 'medium',
-  animationDuration = 300,
-}) => {
+                                                                        title,
+                                                                        defaultCollapsed = false,
+                                                                        collapsible = true,
+                                                                        collapseIcon = <ExpandLess />,
+                                                                        expandIcon = <ExpandMore />,
+                                                                        togglePosition = 'end',
+                                                                        onCollapseChange,
+                                                                        children,
+                                                                        sx,
+                                                                        headerSx,
+                                                                        contentSx,
+                                                                        bordered = false,
+                                                                        padding = 'medium',
+                                                                        animationDuration = 300,
+                                                                      }) => {
   const [collapsed, setCollapsed] = React.useState(defaultCollapsed);
 
   const handleToggle = () => {
@@ -111,7 +111,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           {togglePosition === 'end' && toggleButton}
         </Box>
       )}
-      
+
       <Collapse in={!collapsed} timeout={animationDuration}>
         <Box
           sx={{

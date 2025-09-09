@@ -10,16 +10,17 @@ export type {
 } from '../entities/FolderEntity';
 
 // Import tag-related types
-import type { EntityId } from '@hierarchidb/common-type';
-export type TagId = EntityId;
-export type { TagSuggestion } from '@hierarchidb/common-type';
-
+export type { TagId } from '@hierarchidb/common-type';
 // Keep existing simple types for backward compatibility if needed
 import type { FolderSettings as ImportedFolderSettings } from '../entities/FolderEntity';
 
+export type { TagSuggestion } from '@hierarchidb/common-type';
+
 // Additional display types for UI
+import type { NodeId } from '@hierarchidb/common-type';
+
 export interface FolderDisplayData {
-  id: EntityId;
+  id: NodeId;
   name: string;
   description?: string;
   hasChildren: boolean;
@@ -32,5 +33,6 @@ export interface FolderEditData {
   name: string;
   description?: string;
   settings: ImportedFolderSettings;
+
   [key: string]: any; // Allow additional properties for extensibility
 }

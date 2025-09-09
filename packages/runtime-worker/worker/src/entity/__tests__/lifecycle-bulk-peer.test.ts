@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import { storeRegistry } from '~/entity/store-registry';
+import { storeRegistry } from '../store-registry';
 
 describe('Lifecycle uses bulkUpsert when available', () => {
   beforeEach(() => {
@@ -11,15 +11,24 @@ describe('Lifecycle uses bulkUpsert when available', () => {
   it('paste: calls store.bulkUpsert once for same nodeType', async () => {
     const core: any = {
       listChildren: vi.fn(async () => []),
-      createNode: vi.fn(async () => {}),
-      bulkCreateNodes: vi.fn(async () => {}),
+      createNode: vi.fn(async () => {
+      }),
+      bulkCreateNodes: vi.fn(async () => {
+      }),
     };
     const calls: any[] = [];
     const store = {
-      async get(id: NodeId) { return { nodeId: id, data: { from: id } }; },
-      async put(_e: any) { throw new Error('should not be called in bulk path'); },
-      async delete(_id: NodeId) {},
-      async bulkUpsert(entities: any[]) { calls.push(entities); },
+      async get(id: NodeId) {
+        return { nodeId: id, data: { from: id } };
+      },
+      async put(_e: any) {
+        throw new Error('should not be called in bulk path');
+      },
+      async delete(_id: NodeId) {
+      },
+      async bulkUpsert(entities: any[]) {
+        calls.push(entities);
+      },
     } as any;
     storeRegistry.registerPeer('folder', store);
 
@@ -46,4 +55,3 @@ describe('Lifecycle uses bulkUpsert when available', () => {
     expect(calls[0].length).toBe(2);
   });
 });
-

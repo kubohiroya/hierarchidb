@@ -16,7 +16,9 @@ export interface MapLibreDeckAdapterOptions {
 export class MapLibreDeckAdapter implements MapAdapterPort {
   private map?: any;
   private deck?: any;
-  constructor(private opts: MapLibreDeckAdapterOptions) {}
+
+  constructor(private opts: MapLibreDeckAdapterOptions) {
+  }
 
   init(container: HTMLElement, initialView: ViewState, style?: MapStyleSpec): void {
     const { maplibregl, Deck, mapOptions } = this.opts;
@@ -32,12 +34,25 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     // @ts-ignore deck.gl overlay (using maplibre integration pattern)
     this.deck = new Deck({
       parent: container,
-      initialViewState: { longitude: initialView.longitude, latitude: initialView.latitude, zoom: initialView.zoom, bearing: initialView.bearing ?? 0, pitch: initialView.pitch ?? 0 },
+      initialViewState: {
+        longitude: initialView.longitude,
+        latitude: initialView.latitude,
+        zoom: initialView.zoom,
+        bearing: initialView.bearing ?? 0,
+        pitch: initialView.pitch ?? 0,
+      },
       controller: true,
       layers: [],
     });
   }
-  destroy(): void { this.deck?.finalize(); this.map?.remove(); this.deck = undefined; this.map = undefined; }
+
+  destroy(): void {
+    this.deck?.finalize();
+    this.map?.remove();
+    this.deck = undefined;
+    this.map = undefined;
+  }
+
   setView(view: Partial<ViewState>): void {
     if (!this.map) return;
     if (view.zoom !== undefined) this.map.setZoom(view.zoom);
@@ -45,11 +60,24 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     if (view.bearing !== undefined) this.map.setBearing(view.bearing);
     if (view.pitch !== undefined) this.map.setPitch(view.pitch);
   }
-  setStyle(style: MapStyleSpec): void { if (!this.map) return; this.map.setStyle(style.styleUrl || style.styleObject); }
-  addDeckLayers(layers: DeckLayerSpec[]): void { this.updateDeckLayers([...(this.deck?.props.layers || []), ...toLayers(layers)]); }
-  updateDeckLayers(layers: DeckLayerSpec[]): void { if (!this.deck) return; this.deck.setProps({ layers: toLayers(layers) }); }
+
+  setStyle(style: MapStyleSpec): void {
+    if (!this.map) return;
+    this.map.setStyle(style.styleUrl || style.styleObject);
+  }
+
+  addDeckLayers(layers: DeckLayerSpec[]): void {
+    this.updateDeckLayers([...(this.deck?.props.layers || []), ...toLayers(layers)]);
+  }
+
+  updateDeckLayers(layers: DeckLayerSpec[]): void {
+    if (!this.deck) return;
+    this.deck.setProps({ layers: toLayers(layers) });
+  }
+
   removeDeckLayers(ids: string[]): void {
-    if (!this.deck) return; const rest = (this.deck.props.layers || []).filter((l: any) => !ids.includes(l.id));
+    if (!this.deck) return;
+    const rest = (this.deck.props.layers || []).filter((l: any) => !ids.includes(l.id));
     this.deck.setProps({ layers: rest });
   }
 }

@@ -208,7 +208,7 @@ export class PluginDefinitionBuilder {
   private buildDependencies(pluginConfig: any, nodeType: NodeType): string[] {
     const dependencies = pluginConfig.dependencies || [];
     
-    // folder以外のプラグインには自動的にfolder依存を追加
+    //  folderfolder
     if (nodeType !== ('folder' as NodeType) && 
         nodeType !== ('folder-plugin' as NodeType) &&
         !dependencies.includes('folder') &&

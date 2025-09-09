@@ -3,24 +3,14 @@
  * @description Simple error report panel with chronological error log
  */
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Alert, AlertTitle, Box, Chip, Divider, IconButton, Paper, Stack, Typography } from '@mui/material';
 import {
-  Box,
-  Typography,
-  Paper,
-  Stack,
-  IconButton,
-  Divider,
-  Chip,
-  Alert,
-  AlertTitle,
-} from '@mui/material';
-import {
+  BugReport as CriticalIcon,
   Clear as ClearIcon,
   ErrorOutline as ErrorIcon,
-  Warning as WarningIcon,
   Info as InfoIcon,
-  BugReport as CriticalIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 export interface ErrorLogEntry {
@@ -51,34 +41,34 @@ const ERROR_LEVEL_CONFIG = {
     icon: CriticalIcon,
     color: '#d32f2f' as const,
     bgcolor: '#ffebee' as const,
-    label: 'CRITICAL'
+    label: 'CRITICAL',
   },
   error: {
     icon: ErrorIcon,
     color: '#f57c00' as const,
     bgcolor: '#fff3e0' as const,
-    label: 'ERROR'
+    label: 'ERROR',
   },
   warning: {
     icon: WarningIcon,
     color: '#ed6c02' as const,
     bgcolor: '#fff8e1' as const,
-    label: 'WARNING'
+    label: 'WARNING',
   },
   info: {
     icon: InfoIcon,
     color: '#0288d1' as const,
     bgcolor: '#e3f2fd' as const,
-    label: 'INFO'
-  }
+    label: 'INFO',
+  },
 };
 
 export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
-  errors,
-  onClearErrors,
-  batchStatus,
-  taskCounts,
-}) => {
+                                                                    errors,
+                                                                    onClearErrors,
+                                                                    batchStatus,
+                                                                    taskCounts,
+                                                                  }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new errors are added
@@ -95,7 +85,7 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
       error: 0,
       warning: 0,
       info: 0,
-      total: errors.length
+      total: errors.length,
     };
 
     errors.forEach(error => {
@@ -110,7 +100,7 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   };
 
@@ -144,16 +134,16 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
             <ClearIcon />
           </IconButton>
         </Stack>
-        
+
         {/* Status Summary */}
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-          <Chip 
-            size="small" 
+          <Chip
+            size="small"
             label={`Status: ${batchStatus}`}
             color={batchStatus === 'error' ? 'error' : 'default'}
           />
-          <Chip 
-            size="small" 
+          <Chip
+            size="small"
             label={`Total Tasks: ${Object.values(taskCounts).reduce((a, b) => a + b, 0)}`}
             variant="outlined"
           />
@@ -167,7 +157,7 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
             {(Object.keys(ERROR_LEVEL_CONFIG) as Array<keyof typeof ERROR_LEVEL_CONFIG>).map((level) => {
               const count = errorStats[level];
               if (count === 0) return null;
-              
+
               const config = ERROR_LEVEL_CONFIG[level];
               return (
                 <Chip
@@ -177,7 +167,7 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
                   sx={{
                     color: config.color,
                     bgcolor: config.bgcolor,
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
                   }}
                 />
               );
@@ -213,7 +203,7 @@ export const ErrorReportPanel: React.FC<ErrorReportPanelProps> = ({
                 const config = ERROR_LEVEL_CONFIG[error.level];
                 const Icon = config.icon;
                 const rowInfo = formatRowInfo(error.rowNumber, error.columnName);
-                
+
                 return (
                   <Box
                     key={error.id}

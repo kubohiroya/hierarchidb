@@ -1,31 +1,30 @@
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
+  Box,
+  Checkbox,
+  Chip,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Checkbox,
   Typography,
-  Box,
-  Chip,
-  Paper,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { SearchResult } from '../types/index.js';
 import type { NodeId } from '@hierarchidb/common-type';
 import {
-  searchResultsAtom,
-  selectedNodeIdsAtom,
+  clearSelectionAtom,
   isAllSelectedAtom,
   isSomeSelectedAtom,
-  selectNodeAtom,
-  toggleNodeSelectionAtom,
-  selectRangeAtom,
+  searchResultsAtom,
   selectAllAtom,
-  clearSelectionAtom,
+  selectedNodeIdsAtom,
+  selectNodeAtom,
+  selectRangeAtom,
+  toggleNodeSelectionAtom,
 } from '../state/index.js';
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -82,11 +81,11 @@ interface SearchResultTableProps {
 }
 
 export const SearchResultTable: React.FC<SearchResultTableProps> = ({
-  results,
-  selectedResults: propsSelectedResults, // propsから渡される選択状態（互換性のため保持）
-  onResultSelect,
-  onMapFocus,
-}) => {
+                                                                      results,
+                                                                      selectedResults: propsSelectedResults, //  props
+                                                                      onResultSelect,
+                                                                      onMapFocus,
+                                                                    }) => {
   // Jotai atoms
   const [, setSearchResults] = useAtom(searchResultsAtom);
   const selectedNodeIds = useAtomValue(selectedNodeIdsAtom);
@@ -97,19 +96,19 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
   const selectRange = useSetAtom(selectRangeAtom);
   const selectAll = useSetAtom(selectAllAtom);
   const clearSelection = useSetAtom(clearSelectionAtom);
-  
-  // 互換性のため、propsとatomsどちらも対応
+
+  //  propsatoms
   const selectedResults = propsSelectedResults || selectedNodeIds;
-  
-  // 検索結果をatomに同期
+
+  //  atom
   useEffect(() => {
     setSearchResults(results);
   }, [results, setSearchResults]);
   const handleRowClick = useCallback(
     (result: SearchResult, event: React.MouseEvent) => {
       const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-      
-      // Jotai atomsを使用
+
+      //  Jotai atoms
       if (!isMultiSelect) {
         selectNode(result.nodeId);
       } else if (event.shiftKey) {
@@ -117,20 +116,19 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
       } else {
         toggleNodeSelection(result.nodeId);
       }
-      
-      // 互換性のためコールバックも呼ぶ
+
       if (onResultSelect) {
         onResultSelect(result, isMultiSelect);
       }
     },
-    [selectNode, selectRange, toggleNodeSelection, onResultSelect]
+    [selectNode, selectRange, toggleNodeSelection, onResultSelect],
   );
 
   const handleRowDoubleClick = useCallback(
     (result: SearchResult) => {
       onMapFocus(result);
     },
-    [onMapFocus]
+    [onMapFocus],
   );
 
   const renderRowData = useCallback((result: SearchResult) => {
@@ -166,7 +164,6 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
   }, []);
 
 
-
   const handleSelectAll = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.checked) {
@@ -174,8 +171,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
       } else {
         clearSelection();
       }
-      
-      // 互換性のためコールバックも呼ぶ
+
       if (onResultSelect) {
         if (event.target.checked) {
           results.forEach((result) => onResultSelect(result, true));
@@ -188,7 +184,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
         }
       }
     },
-    [results, selectedResults, selectAll, clearSelection, onResultSelect]
+    [results, selectedResults, selectAll, clearSelection, onResultSelect],
   );
 
   if (results.length === 0) {

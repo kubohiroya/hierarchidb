@@ -3,36 +3,19 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { 
-  NodeId, 
-  EntityId,
-  BaseEntity,
-  Timestamp
-} from '@hierarchidb/common-type';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
 
 /**
  * Transport mode types
  */
-export type TransportMode = 
-  | 'air'        // 航空路
-  | 'rail'       // 鉄道
-  | 'road'       // 道路
-  | 'sea'        // 海路
-  | 'ferry'      // フェリー
-  | 'pipeline'   // パイプライン
-  | 'cable'      // ケーブル（通信・電力）
-  | 'walking'    // 歩行路
-  | 'cycling';   // 自転車道
-
+export type TransportMode =
+  | 'air' | 'rail' | 'road' | 'sea' | 'ferry' | 'pipeline' | 'cable' | 'walking' | 'cycling';
 /**
  * Route generation method
  */
-export type RouteGenerationMethod = 
-  | 'direct'       // 直線
-  | 'osm_route'    // OpenStreetMapルーティング
-  | 'great_circle' // 大圏航路
-  | 'searoute'     // 海上航路
-  | 'custom';      // カスタム経路
+export type RouteGenerationMethod =
+  | 'direct' | 'osm_route'    //  OpenStreetMap
+  | 'great_circle' | 'searoute' | 'custom';
 
 /**
  * Point type for hybrid location management
@@ -41,7 +24,7 @@ export interface RoutePoint {
   coordinates: [number, number];
   name?: string;
   type?: 'location_ref' | 'custom' | 'osm_node';
-  locationId?: NodeId;  // Locationプラグインへの参照
+  locationId?: NodeId;  //  Location
 }
 
 /**
@@ -58,38 +41,38 @@ export interface RouteCategory {
  */
 export interface RouteEntity extends BaseEntity {
   // Entity ID
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
-  
+
   // Basic information
   name: string;
   description?: string;
   category: RouteCategory;
   // Note: Tags are managed by Folder plugin, not stored here
-  
+
   // Metadata fields
   metadata?: Record<string, any>;
   customFields?: Record<string, any>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number;
-  
+
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference
   endLocationId?: NodeId;       // Location plugin reference
   waypointLocationIds?: NodeId[]; // Waypoints
-  
+
   // Direct coordinates (fallback/custom)
   startPoint?: RoutePoint;
   endPoint?: RoutePoint;
   waypoints?: RoutePoint[];
-  
+
   // Generated route information
   lineGeometry: [number, number][];  // LineString coordinates
   generationMethod: RouteGenerationMethod;
   distance?: number;              // Distance in meters
   duration?: number;              // Duration in seconds
-  
+
   // Transport-specific metadata
   transportMode: TransportMode;
   operator?: string;
@@ -99,17 +82,17 @@ export interface RouteEntity extends BaseEntity {
     schedule?: string;  // CRON expression or description
     averageInterval?: number; // In minutes
   };
-  
+
   // Data source information
   dataSourceId?: string;
   dataSourceName?: string;
   originalData?: Record<string, any>;
-  
+
   // Processing metadata
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   processingError?: string;
-  
+
   // Visualization properties
   style?: {
     color?: string;
@@ -118,11 +101,11 @@ export interface RouteEntity extends BaseEntity {
     dashArray?: number[];
     animate?: boolean;
   };
-  
+
   // Relations
-  parentRouteId?: EntityId;  // For route segments
-  childRouteIds?: EntityId[]; // Sub-routes
-  relatedShapeId?: EntityId; // Parent Shape entity
+  parentRouteId?: NodeId;  // For route segments
+  childRouteIds?: NodeId[]; // Sub-routes
+  relatedShapeId?: NodeId; // Parent Shape entity
 }
 
 /**
@@ -160,14 +143,14 @@ export interface RouteGenerationConfig {
     osmProfile?: 'car' | 'bike' | 'foot' | 'truck';
     avoidTolls?: boolean;
     avoidHighways?: boolean;
-    
+
     // Great circle options
     numPoints?: number;  // Number of interpolation points
-    
+
     // Sea route options
     avoidCanals?: boolean;
     preferredChannels?: string[];
-    
+
     // Custom options
     customAlgorithm?: string;
     customParameters?: Record<string, any>;

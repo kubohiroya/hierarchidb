@@ -1,4 +1,4 @@
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared/batch-processor/src/downloadAdapter';
+import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
 
 /**
  * Creates a DownloadService wired with auth headers and IndexedDB-backed storage + CAS index.

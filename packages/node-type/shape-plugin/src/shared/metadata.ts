@@ -9,5 +9,5 @@ export const ShapeMetadata = {
   description: 'Geographic shape-plugin data management and processing',
   version: '1.0.0',
   author: 'HierarchiDB Team',
-  status: 'active'
+  status: 'active',
 } as const;

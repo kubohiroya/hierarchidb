@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, ReactNode, useContext } from 'react';
 
 export interface AppConfig {
   appPrefix: string;
@@ -18,24 +18,24 @@ export interface AppConfig {
 
 // Get configuration from environment variables
 const getAppConfig = (): AppConfig => ({
-  appPrefix: import.meta.env.VITE_APP_PREFIX || "hierarchidb",
-  appName: import.meta.env.VITE_APP_NAME || "HierarchiDB",
-  appTitle: import.meta.env.VITE_APP_TITLE || "HierarchiDB",
+  appPrefix: import.meta.env.VITE_APP_PREFIX || 'hierarchidb',
+  appName: import.meta.env.VITE_APP_NAME || 'HierarchiDB',
+  appTitle: import.meta.env.VITE_APP_TITLE || 'HierarchiDB',
   appDescription:
     import.meta.env.VITE_APP_DESCRIPTION ||
-    "High-performance tree-structured data management framework for browser environments",
+    'High-performance tree-structured data management framework for browser environments',
   appDetails:
     import.meta.env.VITE_APP_DETAILS ||
-    "A powerful framework for managing hierarchical data in browser environments",
+    'A powerful framework for managing hierarchical data in browser environments',
   appHomepage:
-    import.meta.env.APP_HOMEPAGE || "https://github.com/kubohiroya/hierarchidb",
-  appLogo: import.meta.env.VITE_APP_LOGO || "logo.png",
-  appFavicon: import.meta.env.VITE_APP_FAVICON || "favicon.svg",
-  appTheme: import.meta.env.VITE_APP_THEME || "light",
-  appLocale: import.meta.env.VITE_APP_LOCALE || "en-US",
-  appDefaultLocale: "en-US",
-  appDefaultLanguage: "en",
-  appAttribution: import.meta.env.VITE_APP_ATTRIBUTION || "",
+    import.meta.env.APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
+  appLogo: import.meta.env.VITE_APP_LOGO || 'logo.png',
+  appFavicon: import.meta.env.VITE_APP_FAVICON || 'favicon.svg',
+  appTheme: import.meta.env.VITE_APP_THEME || 'light',
+  appLocale: import.meta.env.VITE_APP_LOCALE || 'en-US',
+  appDefaultLocale: 'en-US',
+  appDefaultLanguage: 'en',
+  appAttribution: import.meta.env.VITE_APP_ATTRIBUTION || '',
 });
 
 const AppConfigContext = createContext<AppConfig | undefined>(undefined);

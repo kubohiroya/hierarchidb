@@ -1,11 +1,11 @@
 /**
  * TreeConsole Demo Page (Deprecated)
- * 
+ *
  * This demo page is no longer maintained.
  * Please use the actual tree routes for testing TreeConsole functionality.
  */
 
-import { Container, Typography, Alert, Box } from "@mui/material";
+import { Alert, Box, Container, Typography } from '@mui/material';
 
 export default function TreeConsoleDemo() {
   return (

@@ -21,8 +21,7 @@ find . -path "*/node_modules" -prune -o -name "*.ts" -o -name "*.tsx" | xargs se
 # Fix DialogStepDefinition imports
 find . -path "*/node_modules" -prune -o -name "*.ts" -o -name "*.tsx" | xargs grep -l "DialogStepDefinition" | xargs sed -i '' "s/DialogStepDefinition/any/g"
 
-# Fix spreadsheet-plugin import paths
-find . -path "*/node_modules" -prune -o -name "*.ts" -o -name "*.tsx" | xargs sed -i '' "s|from '@hierarchidb/node-type-spreadsheet-plugin'|from '@hierarchidb/node-type-spreadsheet-plugin/src'|g"
+# Avoid forcing deep /src imports; rely on public package entrypoints instead.
 
 # Fix test setup globals
 find . -path "*/node_modules" -prune -o -name "setup.ts" -type f -exec sed -i '' "s/globalThis\[/(global as any)[/g" {} \;

@@ -1,5 +1,4 @@
-import { SingletonMixin } from '@hierarchidb/util';
-import { getDBName } from '@hierarchidb/util';
+import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { TreeViewState } from '@hierarchidb/common-type';
 import Dexie, { type Table } from 'dexie';
 

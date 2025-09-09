@@ -6,11 +6,7 @@
 import React from 'react';
 import { Layers as LayersIcon } from '@mui/icons-material';
 import { NodeId } from '@hierarchidb/common-type';
-import type {
-  UIPluginDefinition,
-  CreateDialogProps,
-  EditDialogProps,
-} from '@hierarchidb/ui-core/src/plugins/types';
+import type { CreateDialogProps, EditDialogProps, UIPluginDefinition } from '@hierarchidb/ui-core';
 import { ShapeDialog } from './components/ShapeDialog';
 
 /**
@@ -41,12 +37,13 @@ const ShapeCreateDialog: React.FC<CreateDialogProps> = ({ parentId, onSubmit, on
  * Shape Edit Dialog Wrapper
  */
 const ShapeEditDialog: React.FC<EditDialogProps> = ({
-  nodeId,
-  currentData,
-  onSubmit,
-  onCancel,
-  open,
-}) => <ShapeDialog mode="edit" nodeId={nodeId} onClose={onCancel} open={open} />;
+                                                      nodeId,
+                                                      currentData,
+                                                      onSubmit,
+                                                      onCancel,
+                                                      open,
+                                                    }) => <ShapeDialog mode="edit" nodeId={nodeId} onClose={onCancel}
+                                                                       open={open} />;
 
 /**
  * Shape UI Plugin Definition
@@ -147,14 +144,12 @@ export const ShapeUIPlugin: UIPluginDefinition = {
  */
 export function registerShapeUIPlugin(): void {
   try {
-    // Dynamic import to avoid circular dependencies
-    import('@hierarchidb/ui-core/src/plugins/registry/UIPluginRegistry').then(
-      ({ getUIPluginRegistry }) => {
+    // Dynamic import to avoid circular dependencies, using public API
+    import('@hierarchidb/ui-core').then(({ getUIPluginRegistry }) => {
         const registry = getUIPluginRegistry();
         registry.register(ShapeUIPlugin);
         console.log('Shape UI Plugin registered successfully');
-      }
-    );
+      });
   } catch (error) {
     console.error('Failed to register Shape UI Plugin:', error);
   }

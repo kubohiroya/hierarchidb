@@ -2,7 +2,7 @@
  * @fileoverview useWorkingCopy - Hook for managing temporary working copy state
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 // import { useSnackbar } from 'notistack'; // Temporarily disabled to fix build
 
 // Export aliases for backwards compatibility
@@ -33,16 +33,16 @@ export interface WorkingCopyState<T = unknown> {
 }
 
 export function useWorkingCopy<T = any>({
-  mode,
-  nodeId: _nodeId,
-  parentId: _parentId,
-  initialData,
-  autoSave = true,
-  autoSaveDelay = 1000,
-  onSave,
-  onCommit,
-  onDiscard,
-}: WorkingCopyOptions<T>): WorkingCopyState<T> {
+                                          mode,
+                                          nodeId: _nodeId,
+                                          parentId: _parentId,
+                                          initialData,
+                                          autoSave = true,
+                                          autoSaveDelay = 1000,
+                                          onSave,
+                                          onCommit,
+                                          onDiscard,
+                                        }: WorkingCopyOptions<T>): WorkingCopyState<T> {
   const [workingCopy, setWorkingCopy] = useState<T>(initialData);
   const [originalData] = useState<T>(initialData);
   const [isDirty, setIsDirty] = useState(false);
@@ -83,7 +83,7 @@ export function useWorkingCopy<T = any>({
         return updated;
       });
     },
-    [originalData, autoSave, onSave, autoSaveDelay, enqueueSnackbar]
+    [originalData, autoSave, onSave, autoSaveDelay, enqueueSnackbar],
   );
 
   // Commit changes to permanent storage

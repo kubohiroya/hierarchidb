@@ -1,11 +1,11 @@
 /**
- * @file BaseMapDatabase.ts  
+ * @file BaseMapDatabase.ts
  * @description Database class for BaseMap plugin using Dexie
  */
 
 import Dexie from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
 
 /**
@@ -13,15 +13,15 @@ import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
  * Manages BaseMap entities and working copies with IndexedDB
  */
 export class BaseMapDatabase extends Dexie {
-  baseMaps!: Dexie.Table<BaseMapEntity, EntityId>;
-  workingCopies!: Dexie.Table<BaseMapWorkingCopy, EntityId>;
+  baseMaps!: Dexie.Table<BaseMapEntity, NodeId>;
+  workingCopies!: Dexie.Table<BaseMapWorkingCopy, NodeId>;
 
   constructor() {
     super(getDBName('basemap-db'));
 
     this.version(1).stores({
       baseMaps: '&id, nodeId, name, createdAt, updatedAt, baseMapMetadataId',
-      workingCopies: '&id, nodeId, originalId, createdAt, copiedAt'
+      workingCopies: '&id, nodeId, originalId, createdAt, copiedAt',
     });
   }
 
@@ -61,8 +61,8 @@ export class BaseMapDatabase extends Dexie {
    */
   async getCustomStyleBaseMaps(): Promise<BaseMapEntity[]> {
     const baseMaps = await this.baseMaps.toArray();
-    return baseMaps.filter(baseMap => 
-      baseMap.mapStyle.style === 'custom' && baseMap.mapStyle.customStyleUrl
+    return baseMaps.filter(baseMap =>
+      baseMap.mapStyle.style === 'custom' && baseMap.mapStyle.customStyleUrl,
     );
   }
 }

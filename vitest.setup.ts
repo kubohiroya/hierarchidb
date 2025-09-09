@@ -4,6 +4,6 @@
  */
 
 // Import base setup (includes common mocks and utilities)
-import 'vitest.setup.base';
+import './vitest.setup.base';
 
 // Package-specific setup can be added here if needed

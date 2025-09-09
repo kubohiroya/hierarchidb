@@ -44,7 +44,7 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
       }
       onLoad?.(m);
     },
-    [OverlayCtor, deck.getTooltip, deck.layers, deck.onClick, deck.interleaved, onLoad]
+    [OverlayCtor, deck.getTooltip, deck.layers, deck.onClick, deck.interleaved, onLoad],
   );
 
   // Update overlay when layers/tooltips change
@@ -61,7 +61,10 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
   // Cleanup overlay on unmount
   useEffect(() => () => {
     if (overlayRef.current) {
-      try { overlayRef.current.setProps({ layers: [] }); } catch {}
+      try {
+        overlayRef.current.setProps({ layers: [] });
+      } catch {
+      }
       overlayRef.current = null;
     }
   }, []);

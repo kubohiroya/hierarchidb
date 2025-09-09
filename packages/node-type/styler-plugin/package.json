@@ -5,23 +5,26 @@
   "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "ui": ["dist/ui/index.d.ts"],
+      "shared": ["dist/shared/index.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./shared": {
-      "types": "./src/shared/index.ts",
+      "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
     },
     "./ui": {
-      "types": "./src/ui/index.ts",
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./dist/worker/index.js"
     }
   },
   "scripts": {
@@ -44,7 +47,6 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
-    
     "jszip": "^3.4.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",

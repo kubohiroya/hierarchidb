@@ -32,17 +32,18 @@ interface UseUrlDownloadReturn {
 }
 
 export function useUrlDownload({
-  accept,
-  disabled,
-  loading,
-  defaultDownloadUrl,
-  handleFileSelect,
-  handleUrlDownload,
-  onDownloadProgress,
-}: UseUrlDownloadProps): UseUrlDownloadReturn {
+                                 accept,
+                                 disabled,
+                                 loading,
+                                 defaultDownloadUrl,
+                                 handleFileSelect,
+                                 handleUrlDownload,
+                                 onDownloadProgress,
+                               }: UseUrlDownloadProps): UseUrlDownloadReturn {
   // const { user, signIn, isAuthenticated, isLoading } = useAuth();
   const user = null as { access_token?: string } | null;
-  const signIn = () => {};
+  const signIn = () => {
+  };
   const isAuthenticated = false;
   const isLoading = false;
   const isLoadingAuth = isLoading ?? false;
@@ -109,7 +110,7 @@ export function useUrlDownload({
         .filter((ext) => ext.startsWith('.'));
 
       const hasValidExtension = acceptedExtensions.some((ext) =>
-        filename.toLowerCase().endsWith(ext)
+        filename.toLowerCase().endsWith(ext),
       );
 
       if (!hasValidExtension) {
@@ -120,13 +121,13 @@ export function useUrlDownload({
         }
 
         throw new Error(
-          `Unable to determine file type or unsupported file type. Please ensure the URL points to one of: ${acceptedExtensions.join(', ')}`
+          `Unable to determine file type or unsupported file type. Please ensure the URL points to one of: ${acceptedExtensions.join(', ')}`,
         );
       }
 
       return filename;
     },
-    [accept]
+    [accept],
   );
 
   // RemovedProperties downloadWithProgress - now handled by UnifiedDownloadService
@@ -168,7 +169,7 @@ export function useUrlDownload({
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
         throw new Error(
-          'Authentication required. Please sign in to download data from external sources.'
+          'Authentication required. Please sign in to download data from external sources.',
         );
       }
 
@@ -190,12 +191,12 @@ export function useUrlDownload({
       // Create final file
       const finalFile = file;
       /*
-      if (downloadInfo?.deduplicationInfo?.wasDeduped) {
-        console.log(
-          `✓ Content deduplication saved ${downloadInfo.deduplicationInfo.savedBytes} bytes`,
-        );
-      }
-      */
+ if (downloadInfo?.deduplicationInfo?.wasDeduped) {
+ console.log(
+ ` Content deduplication saved ${downloadInfo.deduplicationInfo.savedBytes} bytes`,
+ );
+ }
+*/
 
       // Process the file with the original URL
       await handleFileSelect(finalFile, validatedUrl);
@@ -245,7 +246,7 @@ export function useUrlDownload({
 
         setIsAuthError(true);
         setDownloadError(
-          'Authentication failed. Please sign in again to download data from external sources.'
+          'Authentication failed. Please sign in again to download data from external sources.',
         );
       } else {
         setDownloadError(errorMessage);
@@ -279,7 +280,7 @@ export function useUrlDownload({
         handleDownload();
       }
     },
-    [handleDownload]
+    [handleDownload],
   );
 
   // Reset auth error state when user becomes authenticated
@@ -300,7 +301,7 @@ export function useUrlDownload({
       // Mock sign in - do nothing since auth is not available
       signIn();
     },
-    [signIn]
+    [signIn],
   );
 
   return {

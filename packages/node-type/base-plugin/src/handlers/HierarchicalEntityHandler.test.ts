@@ -1,14 +1,15 @@
 import Dexie, { type Table } from 'dexie';
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { HierarchicalEntityHandler, type HierarchicalEntity } from './HierarchicalEntityHandler';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { NodeId } from '@hierarchidb/common-type';
+import { type HierarchicalEntity, HierarchicalEntityHandler } from './HierarchicalEntityHandler';
 
 interface HEntity extends HierarchicalEntity {
   name?: string;
 }
 
 class HDb extends Dexie {
-  public entities!: Table<HEntity, EntityId>;
+  public entities!: Table<HEntity, NodeId>;
+
   constructor(name: string) {
     super(name);
     this.version(1).stores({
@@ -18,12 +19,14 @@ class HDb extends Dexie {
 }
 
 class HHandler extends HierarchicalEntityHandler<HEntity> {
-  protected table: Table<HEntity, EntityId>;
-  constructor(table: Table<HEntity, EntityId>) {
+  protected table: Table<HEntity, NodeId>;
+
+  constructor(table: Table<HEntity, NodeId>) {
     super();
-    this.table = table as unknown as Table<HEntity, EntityId, HEntity>;
+    this.table = table as unknown as Table<HEntity, NodeId, HEntity>;
   }
-  protected buildEntity(nodeId: NodeId, entityId: EntityId, data: Partial<HEntity>): HEntity {
+
+  protected buildEntity(nodeId: NodeId, entityId: NodeId, data: Partial<HEntity>): HEntity {
     const now = Date.now();
     return {
       id: entityId,
@@ -75,4 +78,3 @@ describe('HierarchicalEntityHandler (minimal)', () => {
     await expect(handler.moveNode(a, c)).rejects.toThrow('Cannot move node to its descendant');
   });
 });
-

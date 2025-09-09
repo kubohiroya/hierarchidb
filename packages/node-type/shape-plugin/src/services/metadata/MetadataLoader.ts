@@ -17,7 +17,8 @@ export class MetadataLoader {
     OpenStreetMap: 'osm.json',
   };
 
-  private constructor() {}
+  private constructor() {
+  }
 
   static getInstance(): MetadataLoader {
     if (!MetadataLoader.instance) {
@@ -48,22 +49,22 @@ export class MetadataLoader {
       switch (dataSource) {
         case 'GADM':
           rawData = await import('@hierarchidb/runtime-shared-fetch-metadata/output/gadm.json').then(
-            (m) => m.default
+            (m) => m.default,
           );
           break;
         case 'GeoBoundaries':
           rawData = await import(
             '@hierarchidb/runtime-shared-fetch-metadata/output/geoboundaries.json'
-          ).then((m) => m.default);
+            ).then((m) => m.default);
           break;
         case 'NaturalEarth':
           rawData = await import(
             '@hierarchidb/runtime-shared-fetch-metadata/output/naturalearth.json'
-          ).then((m) => m.default);
+            ).then((m) => m.default);
           break;
         case 'OpenStreetMap':
           rawData = await import('@hierarchidb/runtime-shared-fetch-metadata/output/osm.json').then(
-            (m) => m.default
+            (m) => m.default,
           );
           break;
         default:
@@ -88,7 +89,7 @@ export class MetadataLoader {
    */
   private transformMetadata(
     rawData: FetchedCountryMetadata[],
-    _dataSource: string
+    _dataSource: string,
   ): CountryMetadata[] {
     return rawData.map((item) => ({
       countryCode: item.iso3 || item.countryCode || item.id,
@@ -116,13 +117,13 @@ export class MetadataLoader {
    */
   async getCountryMetadata(
     dataSource: string,
-    countryCode: string
+    countryCode: string,
   ): Promise<CountryMetadata | undefined> {
     const allMetadata = await this.loadMetadata(dataSource);
     return allMetadata.find(
       (country) =>
         country.countryCode === countryCode ||
-        country.countryCode.toLowerCase() === countryCode.toLowerCase()
+        country.countryCode.toLowerCase() === countryCode.toLowerCase(),
     );
   }
 
@@ -131,7 +132,7 @@ export class MetadataLoader {
    */
   async getCountriesMetadata(
     dataSource: string,
-    countryCodes: string[]
+    countryCodes: string[],
   ): Promise<CountryMetadata[]> {
     const allMetadata = await this.loadMetadata(dataSource);
     const lowerCodes = countryCodes.map((code) => code.toLowerCase());

@@ -6,21 +6,24 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
     globals: true,
+    pool: 'threads',
+    maxThreads: 1,
+    minThreads: 1,
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',
       reporter: ['text', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**']
-    }
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
   },
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
-      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
+      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/dist/index.js'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
     },
   },
 });

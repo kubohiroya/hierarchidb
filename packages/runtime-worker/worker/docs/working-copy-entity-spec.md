@@ -15,9 +15,9 @@ vk:doc kind=spec audience=dev scope=worker,node-type
 - Canonical 行とは `workingCopyOf` フィールドで関係付ける（編集 WC は `workingCopyOf = originalEntityId`、ドラフト WC は `null`）。
 
 フィールド定義（追加/予約）
-- `id: EntityId`（PK）: Canonical/WorkingCopy 共通。WC の場合は `id = workingCopyId` を採用する（別 ID 空間）。
+- `id: NodeId`（PK）: Canonical/WorkingCopy 共通。WC の場合は `id = workingCopyId`（Tree 側 WC 子の NodeId と一致）。
 - `workingCopyId?: NodeId`（WC のみ）: TreeNode WC child の NodeId。
-- `workingCopyOf?: EntityId | null`（編集 WC のみ）: 対象の Canonical EntityId。ドラフトは `null`。
+- `workingCopyOf?: NodeId | null`（編集 WC のみ）: 対象の Canonical NodeId（Entity の id）。ドラフトは `null`。
 - `isWorkingCopy?: boolean`（任意）: クエリ簡略化用の補助フラグ（導出可だが利便性のため保持可）。
 - `version: number`（必須）: 楽観ロック。WC はスナップショット時の `version` を保持。Commit 時に比較し、競合を検出。
 - 既存の Entity フィールドは不変（JSON シリアライズ可能な構造に限定）。

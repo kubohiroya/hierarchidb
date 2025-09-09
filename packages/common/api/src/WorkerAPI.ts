@@ -16,7 +16,6 @@ import type { WorkingCopyAPI } from './WorkingCopyAPI';
 
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI';
-
 import { TagAPI } from './TagAPI';
 
 /**

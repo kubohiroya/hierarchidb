@@ -3,7 +3,7 @@
  * @description BaseMap entity types extending Folder entity
  */
 
-import type { NodeId, EntityId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import type { HierarchicalEntity } from '@hierarchidb/base-plugin';
 
 /**
@@ -54,7 +54,7 @@ export interface BaseMapEntity extends HierarchicalEntity {
   description?: string;
   category?: string;
   settings?: FolderSettings;
-  tags?: EntityId[];
+  tags?: string[];
   // BaseMap specific fields
   baseMapMetadataId?: string;
   mapStyle: MapStyle;
@@ -71,9 +71,9 @@ export interface BaseMapEntity extends HierarchicalEntity {
  * BaseMap working copy for edit operations
  */
 export interface BaseMapWorkingCopy extends BaseMapEntity {
-  workingCopyId: EntityId;
+  workingCopyId: NodeId;
   isDraft: true;
-  originalId?: EntityId;
+  originalId?: NodeId;
   copiedAt: Timestamp;
 }
 

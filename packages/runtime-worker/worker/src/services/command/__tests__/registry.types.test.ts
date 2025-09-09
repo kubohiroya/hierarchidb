@@ -1,4 +1,4 @@
-import { describe, it, expectTypeOf } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../envelope.util';
 import type { PayloadOf, ResultOf } from '../registry.types';
 import type { NodeId } from '@hierarchidb/common-type';
@@ -36,7 +36,7 @@ describe('CommandRegistry types: envelope inference', () => {
         nodeIds: [] as NodeId[],
         toParentId: 'p' as NodeId,
       } as PayloadOf<'pasteNodes'>,
-      { commandId: 'c1', groupId: 'g1', sourceViewId: 'view-1' }
+      { commandId: 'c1', groupId: 'g1', sourceViewId: 'view-1' },
     );
     expectTypeOf(env.payload).toEqualTypeOf<PayloadOf<'pasteNodes'>>();
   });

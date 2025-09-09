@@ -1,6 +1,6 @@
 /**
- * Worker layer exports - Worker環境専用
- */
+  * Worker layer exports - Worker
+  */
 
 // API implementation
 export * from './api';
@@ -37,5 +37,7 @@ try {
         // If Dexie fails, no-op; dev stores can be registered elsewhere if needed
       }
     }
-  }).catch(() => {});
-} catch {}
+  }).catch(() => {
+  });
+} catch {
+}

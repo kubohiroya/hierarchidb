@@ -4,11 +4,11 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { 
-  IBatchSessionManager, 
-  BatchSessionStatus, 
-  BatchProgressCallback, 
-  StandardProgressEvent 
+import type {
+  BatchProgressCallback,
+  BatchSessionStatus,
+  IBatchSessionManager,
+  StandardProgressEvent,
 } from './BatchControlAPI';
 import { isBatchControlAPIV2Enabled } from './BatchControlAPI';
 import type { AbstractBatchSession } from './AbstractBatchSession';
@@ -111,7 +111,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
    */
   protected registerSession(session: AbstractBatchSession): void {
     this.sessions.set(session.getState().sessionId, session);
-    
+
     // Set up progress forwarding if API v2 is enabled
     if (isBatchControlAPIV2Enabled()) {
       const originalOnStandardProgressUpdate = (session as any).onStandardProgressUpdate?.bind(session);
@@ -145,7 +145,7 @@ export function createUnifiedBatchManagerFacade<TManager extends Record<string, 
     cancelMethod?: string;
     statusMethod?: string;
     progressMethod?: string;
-  }
+  },
 ): IBatchSessionManager {
   return {
     async startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string> {

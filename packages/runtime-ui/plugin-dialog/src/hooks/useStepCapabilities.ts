@@ -3,7 +3,7 @@
  * Manages step capabilities evaluation and updates
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NodeId } from '@hierarchidb/common-type';
 import { StepCapabilitiesState } from '../services/WorkingCopyService';
 import { useWorkerAPI } from './useWorkerAPI';
@@ -26,11 +26,11 @@ interface UseStepCapabilitiesResult {
  * Hook for managing step capabilities
  */
 export function useStepCapabilities({
-  // nodeId,
-  steps,
-  currentStep,
-  data,
-}: UseStepCapabilitiesOptions): UseStepCapabilitiesResult {
+                                      // nodeId,
+                                      steps,
+                                      currentStep,
+                                      data,
+                                    }: UseStepCapabilitiesOptions): UseStepCapabilitiesResult {
   const { api } = useWorkerAPI();
   const [capabilities, setCapabilities] = useState<StepCapabilitiesState>({
     canNavigateToSteps: new Map(),
@@ -51,44 +51,44 @@ export function useStepCapabilities({
     if (!currentStepConfig) return;
 
     setIsEvaluating(true);
-    
+
     try {
-      
+
       // Evaluate current step capabilities
       const promises: Promise<any>[] = [];
-      
+
       // Check if can proceed to next
       if (currentStepConfig.capabilities?.canProceedToNext) {
         promises.push(
           Promise.resolve(currentStepConfig.capabilities.canProceedToNext(data))
-            .then(result => ({ type: 'canProceedToNext', value: result }))
+            .then(result => ({ type: 'canProceedToNext', value: result })),
         );
       }
-      
+
       // Check if can go back
       if (currentStepConfig.capabilities?.canBackToPrevious) {
         promises.push(
           Promise.resolve(currentStepConfig.capabilities.canBackToPrevious(data))
-            .then(result => ({ type: 'canBackToPrevious', value: result }))
+            .then(result => ({ type: 'canBackToPrevious', value: result })),
         );
       }
-      
+
       // Check if can save
       if (currentStepConfig.capabilities?.canSave) {
         promises.push(
           Promise.resolve(currentStepConfig.capabilities.canSave(data))
-            .then(result => ({ type: 'canSave', value: result }))
+            .then(result => ({ type: 'canSave', value: result })),
         );
       }
-      
+
       // Check if can start batch
       if (currentStepConfig.capabilities?.canStartBatch) {
         promises.push(
           Promise.resolve(currentStepConfig.capabilities.canStartBatch(data))
-            .then(result => ({ type: 'canStartBatch', value: result }))
+            .then(result => ({ type: 'canStartBatch', value: result })),
         );
       }
-      
+
       // Check navigation to other steps
       const navigationChecks = steps.map((step, index) => {
         if (step.capabilities?.canNavigateTo) {
@@ -97,12 +97,12 @@ export function useStepCapabilities({
         }
         return Promise.resolve({ stepIndex: index, canNavigate: index <= currentStep + 1 });
       });
-      
+
       promises.push(...navigationChecks);
-      
+
       // Wait for all evaluations
       const results = await Promise.all(promises);
-      
+
       // Build capabilities state
       const newCapabilities: StepCapabilitiesState = {
         canNavigateToSteps: new Map(),
@@ -111,7 +111,7 @@ export function useStepCapabilities({
         canSave: true,
         canStartBatch: false,
       };
-      
+
       results.forEach(result => {
         if ('type' in result) {
           switch (result.type) {
@@ -132,7 +132,7 @@ export function useStepCapabilities({
           newCapabilities.canNavigateToSteps.set(result.stepIndex, result.canNavigate);
         }
       });
-      
+
       setCapabilities(newCapabilities);
     } catch (error) {
       console.error('Failed to evaluate capabilities:', error);
@@ -149,7 +149,7 @@ export function useStepCapabilities({
     if (evaluationTimeoutRef.current) {
       clearTimeout(evaluationTimeoutRef.current);
     }
-    
+
     // Schedule new evaluation
     evaluationTimeoutRef.current = setTimeout(() => {
       evaluateCapabilities();
@@ -159,7 +159,7 @@ export function useStepCapabilities({
   // Evaluate when data or step changes
   useEffect(() => {
     scheduleEvaluation();
-    
+
     return () => {
       if (evaluationTimeoutRef.current) {
         clearTimeout(evaluationTimeoutRef.current);

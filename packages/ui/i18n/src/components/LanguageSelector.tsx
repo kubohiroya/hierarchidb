@@ -1,15 +1,7 @@
 import React from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-  Box,
-  Typography,
-} from '@mui/material';
-import { useLanguage } from '../provider/LanguageProvider';
+import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import type { LanguageConfig } from '../provider/LanguageProvider';
+import { useLanguage } from '../provider/LanguageProvider';
 
 export interface LanguageSelectorProps {
   variant?: 'dropdown' | 'buttons' | 'compact';
@@ -21,13 +13,13 @@ export interface LanguageSelectorProps {
 }
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
-  variant = 'dropdown',
-  showFlags = true,
-  showNativeNames = true,
-  label = 'Language',
-  size = 'medium',
-  disabled = false,
-}) => {
+                                                                    variant = 'dropdown',
+                                                                    showFlags = true,
+                                                                    showNativeNames = true,
+                                                                    label = 'Language',
+                                                                    size = 'medium',
+                                                                    disabled = false,
+                                                                  }) => {
   const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
 
   const handleChange = (event: SelectChangeEvent<string>) => {

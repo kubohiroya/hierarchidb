@@ -4,33 +4,31 @@ import styles from './SparkleAnimation.module.css';
 interface SparkleAnimationProps {
   showSparkle: boolean;
   /**
-   * アニメーション時間（ミリ秒）
-   * デフォルトは5000ms（5秒）
-   */
+         * 5000ms5
+      */
   duration?: number;
 }
 
 export const SparkleAnimation: React.FC<SparkleAnimationProps> = ({
-  showSparkle,
-  duration = 5000,
-}) => {
+                                                                    showSparkle,
+                                                                    duration = 5000,
+                                                                  }) => {
   const [isVisible, setIsVisible] = useState(showSparkle);
 
   useEffect(() => {
-    // showSparkleがtrueに変わったときだけタイマーを設定
+    //  showSparkletrue
     if (showSparkle) {
       setIsVisible(true);
 
-      // 指定された時間後に非表示にする
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, duration);
 
       return () => clearTimeout(timer);
     } else {
-      // falseになったら即座に非表示
+      //  false
       setIsVisible(false);
-      // cleanup関数を明示的に返す
+      //  cleanup
       return () => {
         // No cleanup needed
       };

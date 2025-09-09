@@ -2,7 +2,7 @@
  * Shape plugin constants
  */
 
-import type { ProcessingConfig, DataSourceConfig } from './types';
+import type { DataSourceConfig, ProcessingConfig } from './types';
 
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   concurrentDownloads: 2,
@@ -35,7 +35,7 @@ export const DEFAULT_DATA_SOURCES = [
     attribution: 'Made with Natural Earth',
     color: '#2E8B57',
     icon: '🌍',
-    maxAdminLevel: 2
+    maxAdminLevel: 2,
   },
   {
     name: 'geoboundaries',
@@ -46,7 +46,7 @@ export const DEFAULT_DATA_SOURCES = [
     attribution: 'geoBoundaries Global Database',
     color: '#4169E1',
     icon: '🗺️',
-    maxAdminLevel: 5
+    maxAdminLevel: 5,
   },
   {
     name: 'gadm',
@@ -57,7 +57,7 @@ export const DEFAULT_DATA_SOURCES = [
     attribution: 'GADM.org',
     color: '#FF6347',
     icon: '🌐',
-    maxAdminLevel: 4
+    maxAdminLevel: 4,
   },
   {
     name: 'openstreetmap',
@@ -68,8 +68,8 @@ export const DEFAULT_DATA_SOURCES = [
     attribution: '© OpenStreetMap contributors',
     color: '#7EDD00',
     icon: '🛣️',
-    maxAdminLevel: 3
-  }
+    maxAdminLevel: 3,
+  },
 ] as DataSourceConfig[];
 
 // Batch processing constants
@@ -80,7 +80,7 @@ export const BATCH_CONSTANTS = {
   MAX_RETRY_ATTEMPTS: 3,
   TASK_TIMEOUT_MS: 300000, // 5 minutes
   SESSION_CLEANUP_INTERVAL_MS: 60000, // 1 minute
-  MAX_BATCH_TASKS: 1000
+  MAX_BATCH_TASKS: 1000,
 } as const;
 
 // File and storage constants
@@ -89,7 +89,7 @@ export const STORAGE_CONSTANTS = {
   MAX_TILE_CACHE_SIZE: 100 * 1024 * 1024, // 100MB
   FEATURE_INDEX_CHUNK_SIZE: 10000,
   VECTOR_TILE_COMPRESSION: 'gzip',
-  DEFAULT_TILE_SIZE: 256
+  DEFAULT_TILE_SIZE: 256,
 } as const;
 
 // UI constants
@@ -98,10 +98,10 @@ export const UI_CONSTANTS = {
   STEPPER_STEPS: [
     'Basic Information',
     'Data Source',
-    'License Agreement', 
+    'License Agreement',
     'Processing Configuration',
-    'Country Selection'
+    'Country Selection',
   ],
   BATCH_MONITOR_REFRESH_INTERVAL: 1000,
-  PROGRESS_UPDATE_THROTTLE: 500
+  PROGRESS_UPDATE_THROTTLE: 500,
 } as const;

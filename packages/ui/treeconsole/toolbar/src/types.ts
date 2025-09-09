@@ -5,7 +5,7 @@
 /**
  * Action types and their parameters for TreeConsoleToolbar
  */
-export type TreeConsoleToolbarAction = 
+export type TreeConsoleToolbarAction =
   | { action: 'undo' }
   | { action: 'redo' }
   | { action: 'copy' }
@@ -21,9 +21,9 @@ export type TreeConsoleToolbarAction =
 /**
  * Parameters type for TreeConsoleToolbar actions
  */
-export type TreeConsoleToolbarActionParams = 
+export type TreeConsoleToolbarActionParams =
   | undefined
-  | ('Select' | 'Edit' | 'Navigate')| {treeId: string } |{templateId: string};
+  | ('Select' | 'Edit' | 'Navigate') | { treeId: string } | { templateId: string };
 
 export interface TreeConsoleToolbarController {
   searchText?: string;

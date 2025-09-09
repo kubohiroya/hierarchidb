@@ -1,10 +1,10 @@
 import { Box, CircularProgress, LinearProgress, Typography, useTheme } from '@mui/material';
-import { type ReactNode, useEffect, useState, useMemo } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
-  getThemeBackgroundColor,
-  getThemeTextColor,
   getBackgroundColorForTheme,
   getTextColorForTheme,
+  getThemeBackgroundColor,
+  getThemeTextColor,
 } from '../utils/theme';
 
 interface ThemedLoadingScreenProps {
@@ -15,11 +15,11 @@ interface ThemedLoadingScreenProps {
 }
 
 export function ThemedLoadingScreen({
-  variant = 'linear',
-  message,
-  size = 40,
-  children,
-}: ThemedLoadingScreenProps): JSX.Element {
+                                      variant = 'linear',
+                                      message,
+                                      size = 40,
+                                      children,
+                                    }: ThemedLoadingScreenProps): JSX.Element {
   const [isHydrated, setIsHydrated] = useState(false);
   const [themeError, setThemeError] = useState<string | null>(null);
   const theme = useTheme();
@@ -68,7 +68,7 @@ export function ThemedLoadingScreen({
   // Performance optimization: Memoize primary color fallback
   const primaryColor = useMemo(
     () => theme?.palette?.primary?.main || '#1976d2',
-    [theme?.palette?.primary?.main]
+    [theme?.palette?.primary?.main],
   );
 
   return (

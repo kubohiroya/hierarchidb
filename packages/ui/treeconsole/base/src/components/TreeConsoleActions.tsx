@@ -1,33 +1,32 @@
 /**
- * TreeConsoleActions - 元のデザインの忠実な再現
- *
- * 元のeria-cartographのTreeConsoleActionsのUIを正確に再現。
- * SpeedDialMenuを使用した右下のフローティングアクションボタン。
- */
+  * TreeConsoleActions -
+  * eria-cartographTreeConsoleActionsUI
+ * SpeedDialMenu
+  */
 
 import { DialogActions } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as CreateFolderIcon,
-  NoteAdd as NoteAddIcon,
   InsertDriveFile as FileIcon,
+  NoteAdd as NoteAddIcon,
 } from '@mui/icons-material';
 import type { TreeConsoleActionsProps } from '../types/index';
 // import { getPageButtonColor } from '@hierarchidb/common-type'; // Function not found
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
+
 /**
- * TreeConsoleActions メインコンポーネント
- * 元のTreeConsoleActionsの構造を完全に再現
- */
+  * TreeConsoleActions
+ * TreeConsoleActions
+  */
 export function TreeConsoleActions(props: TreeConsoleActionsProps): React.JSX.Element {
   const { isProjectsPage, isResourcesPage, controller } = props;
 
-  // ページタイプと色の決定
   // const pageType = isProjectsPage ? 'projects' : isResourcesPage ? 'resources' : 'preview';
   // const buttonColor = getPageButtonColor(pageType); // Function not found
   const buttonColor = 'primary'; // fallback
 
-  // SpeedDialのアクション定義（ダミー実装）
+  //  SpeedDial
   const speedDialActions = [
     {
       icon: <CreateFolderIcon />,
@@ -52,7 +51,6 @@ export function TreeConsoleActions(props: TreeConsoleActionsProps): React.JSX.El
     },
   ];
 
-  // 戻るボタン（必要に応じて表示）
   const backActionButton = null; // TODO: Implement back button logic
 
   return (

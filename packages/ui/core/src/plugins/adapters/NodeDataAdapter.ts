@@ -10,7 +10,8 @@ import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
  * and Entity-based nodes (maps, projects) transparently.
  */
 export class NodeDataAdapter {
-  constructor(private readonly workerAPI: WorkerAPI) {}
+  constructor(private readonly workerAPI: WorkerAPI) {
+  }
 
   /**
    * Get direct access to workerAPI for advanced operations
@@ -345,13 +346,22 @@ export class NodeDataAdapter {
 // Worker API interface (placeholder - should match actual implementation)
 interface WorkerAPI {
   getTreeNode(nodeId: NodeId): Promise<any>;
+
   createTreeNode(data: any): Promise<NodeId>;
+
   updateTreeNode(nodeId: NodeId, changes: any): Promise<void>;
+
   deleteTreeNode(nodeId: NodeId): Promise<void>;
+
   getChildren(nodeId: NodeId): Promise<any[]>;
+
   moveNode(nodeId: NodeId, newParentId: NodeId): Promise<void>;
+
   getEntity(nodeId: NodeId, entityType: string): Promise<any>;
+
   createNodeWithEntity(data: any): Promise<NodeId>;
+
   updateEntity(nodeId: NodeId, entityType: string, changes: any): Promise<void>;
+
   getAllowedChildTypes?(nodeType: string): Promise<string[]>;
 }

@@ -1,47 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Box,
-  Typography,
-  Button,
-  Paper,
   Alert,
-  Grid,
-  LinearProgress,
+  Box,
+  Button,
   Chip,
+  Collapse,
+  Grid,
+  IconButton,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
-  Collapse,
-  Tab,
   Tabs,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-
+  Typography,
 } from '@mui/material';
 import {
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-  Warning as WarningIcon,
-  ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  Speed as SpeedIcon,
+  ExpandMore as ExpandMoreIcon,
   Memory as MemoryIcon,
+  PlayArrow as PlayIcon,
+  Speed as SpeedIcon,
+  Stop as StopIcon,
   Storage as StorageIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
-import type {
-  ResolverWorkingCopyEntity,
-  SchemaInfo,
-  MappingValidationResult,
-  MappingPreviewResult,
-} from '~/types';
+import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
 interface PreviewTestStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -67,13 +61,13 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 };
 
 export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
-  data,
-  onUpdate: _onUpdate,
-  onValidationChange,
-  sourceSchema,
-  targetSchema,
-  onValidationResult,
-}) => {
+                                                                  data,
+                                                                  onUpdate: _onUpdate,
+                                                                  onValidationChange,
+                                                                  sourceSchema,
+                                                                  targetSchema,
+                                                                  onValidationResult,
+                                                                }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<MappingPreviewResult | null>(null);
   const [validationResult, setValidationResult] = useState<MappingValidationResult | null>(null);
@@ -108,7 +102,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
           data.mappingRules!.forEach(rule => {
             if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
               let value = (sample as Record<string, unknown>)[rule.sourceProperty];
-              
+
               // Apply simple transformations if specified
               if (rule.transformFunction) {
                 if (rule.transformFunction === 'lowercase' && typeof value === 'string') {
@@ -117,11 +111,11 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   value = value.toUpperCase();
                 }
               }
-              
+
               mapped[rule.targetProperty] = value;
             }
           });
-          
+
           // Add mock ID for display
           mapped._id = index + 1;
           return mapped;
@@ -163,13 +157,13 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
 
       const endTime = performance.now();
       const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
-      
+
       setExecutionTime(endTime - startTime);
       setMemoryUsage(Math.max(0, endMemory - startMemory));
 
     } catch (error) {
       console.error('Preview failed:', error);
-      
+
       const errorResult: MappingPreviewResult = {
         success: false,
         mappedData: [],
@@ -183,7 +177,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
           duplicatesResolved: 0,
         },
       };
-      
+
       setPreviewResult(errorResult);
     } finally {
       setIsRunning(false);
@@ -251,7 +245,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
             {isRunning ? 'Running...' : 'Run Preview'}
           </Button>
         </Box>
-        
+
         {isRunning && (
           <LinearProgress sx={{ mt: 2 }} />
         )}
@@ -275,7 +269,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
               </Box>
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12} sm={4}>
             <Paper sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -291,7 +285,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
               </Box>
             </Paper>
           </Grid>
-          
+
           <Grid item xs={12} sm={4}>
             <Paper sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

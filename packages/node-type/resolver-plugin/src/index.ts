@@ -18,7 +18,7 @@ export type {
 } from './types';
 
 // Export handlers
-export { 
+export {
   ResolverEntityHandler,
   type ResolverSearchCriteria,
   type CreateResolverData,
@@ -44,7 +44,7 @@ export const ResolverPlugin: PluginDefinition = {
   ui: {
     dialogComponentPath: '@hierarchidb/resolver-plugin/components/ResolverDialog',
     panelComponentPath: '@hierarchidb/resolver-plugin/components/ResolverPanel',
-  }
+  },
 } as PluginDefinition;
 
 // Default export for convenient plugin registration

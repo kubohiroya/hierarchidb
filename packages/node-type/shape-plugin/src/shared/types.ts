@@ -4,10 +4,10 @@
 
 // Local minimal type aliases to decouple from common-type DTS export quirks
 export type NodeId = string;
-export type EntityId = string;
 export type NodeType = string;
+
 export interface PeerEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
   createdAt: number;
   updatedAt: number;
@@ -17,7 +17,8 @@ export interface PeerEntity {
   mapParams?: { zoom: number; lng: number; lat: number };
   disabled?: boolean;
 }
-import type { Geometry, BBox } from 'geojson';
+
+import type { BBox, Geometry } from 'geojson';
 
 // ================================
 // Core Entity Types
@@ -67,15 +68,15 @@ export interface ShapeWorkingCopy extends Omit<ShapeEntity, 'id' | 'nodeId'> {
   nodeId: NodeId;
   name: string;
   depth: number;
-  
+
   // WorkingCopyProperties
   originalNodeId?: NodeId;
   copiedAt: number;
   hasEntityCopy?: boolean;
-  entityWorkingCopyId?: EntityId;
+  entityWorkingCopyId?: NodeId;
   originalVersion?: number;
   hasGroupEntityCopy?: Record<string, boolean>;
-  
+
   // Shape-specific working copy properties
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
@@ -207,12 +208,25 @@ export interface BatchSession {
     currentTask?: string;
   };
 
-  // ✅ Direct link recovery metadata
+  //  Direct link recovery metadata
   canResume: boolean;
   lastActivity: number;
   expiresAt: number;
   stages: Record<string, any>;
   resourceUsage?: any;
+}
+
+// Lightweight task views for UI/console components
+export interface DownloadTask extends BatchTask {
+  taskType: 'download';
+}
+
+export interface SimplifyTask extends BatchTask {
+  taskType: 'simplify1' | 'simplify2';
+}
+
+export interface VectorTileTask extends BatchTask {
+  taskType: 'vectortile';
 }
 
 // ================================
@@ -273,9 +287,9 @@ export type ProcessingStage = 'download' | 'simplify1' | 'simplify2' | 'vectorti
 // ================================
 
 export interface Feature {
-  type: 'Feature'; // GeoJSON標準のtypeプロパティ
-  id: number; // Dexie.js内部管理用ID（自動インクリメント）
-  originalId?: string | number; // GeoJSON由来の元ID（保持用）
+  type: 'Feature'; //  GeoJSONtype
+  id: number; //  Dexie.jsID
+  originalId?: string | number; //  GeoJSONID
   nodeId: NodeId;
   properties: Record<string, any>;
   geometry: Geometry;

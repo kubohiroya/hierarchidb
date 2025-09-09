@@ -1,7 +1,7 @@
 /**
- * @file BatchTaskLike.ts
- * @description ERIA-Cartograph移植: バッチタスク型定義
- */
+  * @file BatchTaskLike.ts
+ * @description ERIA-Cartograph:
+  */
 
 import type { TreeNodeId } from '@hierarchidb/core';
 

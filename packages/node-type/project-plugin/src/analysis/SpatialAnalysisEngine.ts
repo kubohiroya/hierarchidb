@@ -1,17 +1,17 @@
 import * as turf from '@turf/turf';
 import { cellToBoundary, latLngToCell } from 'h3-js';
-import type { FeatureCollection, Feature } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
 import type {
-  SpatialAnalysis,
+  AnalysisResult,
   BufferAnalysis,
-  IntersectionAnalysis,
-  NearestAnalysis,
   ClusterAnalysis,
   DensityAnalysis,
+  IntersectionAnalysis,
+  NearestAnalysis,
   NetworkAnalysis,
-  AnalysisResult,
+  SpatialAnalysis,
 } from '~/types/project-types';
-import type { EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 
 export class SpatialAnalysisEngine {
   /**
@@ -20,7 +20,7 @@ export class SpatialAnalysisEngine {
   async execute(
     analysis: SpatialAnalysis,
     inputData: Map<string, FeatureCollection>,
-    projectEntityId: EntityId
+    projectEntityId: NodeId,
   ): Promise<AnalysisResult> {
     const startTime = Date.now();
     let result: any;
@@ -58,7 +58,7 @@ export class SpatialAnalysisEngine {
       }
 
       return {
-        id: crypto.randomUUID() as EntityId,
+        id: crypto.randomUUID() as unknown as NodeId,
         projectEntityId,
         analysisId: analysis.id,
         analysisType: analysis.type,
@@ -80,7 +80,7 @@ export class SpatialAnalysisEngine {
       };
     } catch (error) {
       return {
-        id: crypto.randomUUID() as EntityId,
+        id: crypto.randomUUID() as unknown as NodeId,
         projectEntityId,
         analysisId: analysis.id,
         analysisType: analysis.type,
@@ -106,7 +106,7 @@ export class SpatialAnalysisEngine {
    */
   private async executeBuffer(
     config: BufferAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const sourceData = inputData.get(config.sourceLayer);
     if (!sourceData) {
@@ -139,7 +139,7 @@ export class SpatialAnalysisEngine {
         (acc: Feature | undefined, curr) => {
           return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
         },
-        buffered[0] as Feature | undefined
+        buffered[0] as Feature | undefined,
       );
       return {
         type: 'FeatureCollection',
@@ -158,7 +158,7 @@ export class SpatialAnalysisEngine {
    */
   private async executeIntersection(
     config: IntersectionAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const layer1 = inputData.get(config.layer1);
     const layer2 = inputData.get(config.layer2);
@@ -231,7 +231,7 @@ export class SpatialAnalysisEngine {
    * Union Analysis - Combine multiple features
    */
   private async executeUnion(
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const allFeatures: Feature[] = [];
 
@@ -248,7 +248,7 @@ export class SpatialAnalysisEngine {
         (acc: Feature | undefined, curr) => {
           return acc ? (turf.union(acc as any, curr as any) as Feature) || curr : curr;
         },
-        allFeatures[0] as Feature | undefined
+        allFeatures[0] as Feature | undefined,
       );
       return {
         type: 'FeatureCollection',
@@ -266,6 +266,7 @@ export class SpatialAnalysisEngine {
   /**
    * Difference Analysis - Subtract one layer from another
    */
+
   /*
 private async executeDifference(
   inputData: Map<string, FeatureCollection>
@@ -308,7 +309,7 @@ private async executeDifference(
    */
   private async executeNearest(
     config: NearestAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const fromLayer = inputData.get(config.fromLayer);
     const toLayer = inputData.get(config.toLayer);
@@ -377,7 +378,7 @@ private async executeDifference(
    */
   private async executeCluster(
     config: ClusterAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const layer = inputData.get(config.layer);
     if (!layer) {
@@ -403,7 +404,7 @@ private async executeDifference(
         clusters = await this.dbscanClustering(
           points,
           config.parameters.eps || 0.5,
-          config.parameters.minPoints || 5
+          config.parameters.minPoints || 5,
         );
         break;
       case 'hierarchical':
@@ -503,7 +504,7 @@ private async executeDifference(
   private async dbscanClustering(
     points: number[][],
     eps: number,
-    minPoints: number
+    minPoints: number,
   ): Promise<number[]> {
     const labels = new Array(points.length).fill(-1); // -1 = unvisited
     let clusterId = 0;
@@ -546,7 +547,7 @@ private async executeDifference(
     neighbors: number[],
     clusterId: number,
     eps: number,
-    minPoints: number
+    minPoints: number,
   ): void {
     labels[pointIdx] = clusterId;
 
@@ -652,7 +653,7 @@ private async executeDifference(
    */
   private async executeDensity(
     config: DensityAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const layer = inputData.get(config.layer);
     if (!layer) {
@@ -702,7 +703,7 @@ private async executeDifference(
    */
   private async executeNetwork(
     config: NetworkAnalysis,
-    inputData: Map<string, FeatureCollection>
+    inputData: Map<string, FeatureCollection>,
   ): Promise<FeatureCollection> {
     const network = inputData.get(config.networkLayer);
     const facilities = inputData.get(config.facilityLayer);
@@ -805,7 +806,7 @@ private async executeDifference(
       return 0;
     }
     return Math.sqrt(
-      Math.pow((p1[0] ?? 0) - (p2[0] ?? 0), 2) + Math.pow((p1[1] ?? 0) - (p2[1] ?? 0), 2)
+      Math.pow((p1[0] ?? 0) - (p2[0] ?? 0), 2) + Math.pow((p1[1] ?? 0) - (p2[1] ?? 0), 2),
     );
   }
 
@@ -875,7 +876,7 @@ private async executeDifference(
    */
   async generateH3Grid(
     bbox: [number, number, number, number],
-    resolution: number
+    resolution: number,
   ): Promise<FeatureCollection> {
     const features: Feature[] = [];
     const [minLng, minLat, maxLng, maxLat] = bbox;

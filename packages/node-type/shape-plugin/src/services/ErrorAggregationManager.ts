@@ -1,13 +1,11 @@
 /**
- * @file ErrorAggregationManager.ts
- * @description Workerから受信したエラーを階層的に集約・詳細化する管理システム
- *
- * エラー集約の流れ：
- * 1. Worker → タスクレベルエラー受信
- * 2. タスクエラー → パターン検出 → グループエラーに集約
- * 3. グループエラー → 閾値超過 → セッションエラーにエスカレート
- * 4. 各レベルで詳細情報を付加・更新
- */
+  * @file ErrorAggregationManager.ts
+ * @description Worker
+   * 1. Worker
+ * 2.
+ * 3.
+ * 4.
+  */
 
 import type { NodeId } from '@hierarchidb/common-type';
 import { BaseShapeError, ErrorCategory, ErrorSeverity } from '../types/ShapeErrorHierarchy';
@@ -15,37 +13,25 @@ import { ErrorPersistenceManager } from './ErrorPersistenceStrategy';
 import { RecoveryStrategyManager } from './RecoveryStrategy';
 
 // ========================================
-// エラー階層の定義
 // ========================================
 
 /**
- * エラーの階層レベル
- */
+    */
 export enum ErrorHierarchyLevel {
-  TASK = 'TASK', // 個別タスク
-  GROUP = 'GROUP', // タスクグループ
-  STAGE = 'STAGE', // 処理ステージ
-  SESSION = 'SESSION', // セッション全体
-  SYSTEM = 'SYSTEM', // システム全体
+  TASK = 'TASK', GROUP = 'GROUP', STAGE = 'STAGE', SESSION = 'SESSION', SYSTEM = 'SYSTEM',
 }
 
 /**
- * 階層化されたエラー状態
- */
+    */
 export interface HierarchicalErrorState {
-  // タスクレベル（最下層）
   taskErrors: Map<string, TaskErrorState>;
 
-  // グループレベル（中間層）
   groupErrors: Map<string, GroupErrorState>;
 
-  // ステージレベル
   stageErrors: Map<string, StageErrorState>;
 
-  // セッションレベル（最上層）
   sessionError?: SessionErrorState;
 
-  // メタデータ
   metadata: {
     totalErrors: number;
     firstErrorTime: number;
@@ -55,8 +41,7 @@ export interface HierarchicalErrorState {
 }
 
 /**
- * タスクレベルのエラー状態
- */
+    */
 export interface TaskErrorState {
   taskId: string;
   taskType: TaskErrorState; //'download' | 'process' | 'simplify' | 'tile';
@@ -66,7 +51,6 @@ export interface TaskErrorState {
     tileCoords?: { x: number; y: number; z: number };
   };
 
-  // エラー情報
   error: BaseShapeError;
   workerInfo?: {
     workerId: string;
@@ -74,25 +58,21 @@ export interface TaskErrorState {
     timestamp: number;
   };
 
-  // 状態
   status: 'active' | 'retrying' | 'failed' | 'skipped' | 'recovered';
   retryCount: number;
   lastRetryTime?: number;
 
-  // 影響
   dependencies: string[];
   blockedTasks: string[];
   canSkip: boolean;
 }
 
 /**
- * グループレベルのエラー状態
- */
+    */
 export interface GroupErrorState {
   groupId: string;
   groupType: 'country' | 'admin_level' | 'data_source' | 'worker_pool';
 
-  // 集約情報
   affectedTasks: Set<string>;
   commonPattern?: {
     type: string;
@@ -100,12 +80,10 @@ export interface GroupErrorState {
     evidence: string[];
   };
 
-  // エラー分析
   errorDistribution: Map<string, number>;
   failureRate: number;
   trend: 'increasing' | 'stable' | 'decreasing';
 
-  // 共通原因分析
   rootCause?: {
     identified: boolean;
     type: string;
@@ -115,22 +93,18 @@ export interface GroupErrorState {
 }
 
 /**
- * ステージレベルのエラー状態
- */
+    */
 export interface StageErrorState {
   stage: 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
 
-  // ステージ全体の状態
   status: 'running' | 'degraded' | 'failed' | 'recovered';
   health: number; // 0-100
 
-  // 集約メトリクス
   totalTasks: number;
   failedTasks: number;
   succeededTasks: number;
   skippedTasks: number;
 
-  // パフォーマンス影響
   performanceImpact: {
     throughputReduction: number;
     latencyIncrease: number;
@@ -139,18 +113,15 @@ export interface StageErrorState {
 }
 
 /**
- * セッションレベルのエラー状態
- */
+    */
 export interface SessionErrorState {
   sessionId: string;
   criticalityLevel: 'low' | 'medium' | 'high' | 'critical';
 
-  // 全体影響
   canContinue: boolean;
   requiresIntervention: boolean;
   dataIntegrity: 'intact' | 'partial' | 'compromised';
 
-  // リカバリ可能性
   recoveryOptions: {
     fullRecovery: boolean;
     partialRecovery: boolean;
@@ -159,8 +130,7 @@ export interface SessionErrorState {
 }
 
 /**
- * エスカレーションイベント
- */
+    */
 export interface EscalationEvent {
   timestamp: number;
   fromLevel: ErrorHierarchyLevel;
@@ -171,19 +141,18 @@ export interface EscalationEvent {
 }
 
 // ========================================
-// Workerメッセージインターフェース
+//  Worker
 // ========================================
 
 /**
- * Workerから受信するエラーメッセージ
- */
+  * Worker
+  */
 export interface WorkerErrorMessage {
   type: 'ERROR';
   workerId: string;
   workerType: string;
   timestamp: number;
 
-  // エラー詳細
   error: {
     code: string;
     message: string;
@@ -191,7 +160,6 @@ export interface WorkerErrorMessage {
     technical?: Record<string, any>;
   };
 
-  // コンテキスト
   context: {
     taskId: string;
     stage: string;
@@ -199,7 +167,7 @@ export interface WorkerErrorMessage {
     progress?: number;
   };
 
-  // Worker状態
+  //  Worker
   workerState?: {
     memoryUsage: number;
     taskQueueLength: number;
@@ -208,26 +176,23 @@ export interface WorkerErrorMessage {
 }
 
 // ========================================
-// エラー集約マネージャー
 // ========================================
 
 /**
- * Workerエラーを階層的に集約・管理
- */
+  * Worker
+  */
 export class ErrorAggregationManager {
   private hierarchicalState: HierarchicalErrorState;
   private persistenceManager: ErrorPersistenceManager;
   private recoveryManager: RecoveryStrategyManager;
 
-  // エスカレーション閾値
   private escalationThresholds = {
-    taskToGroup: 3, // 3つのタスクエラー → グループエラー
-    groupToStage: 2, // 2つのグループエラー → ステージエラー
-    stageToSession: 1, // 1つのステージ失敗 → セッションエラー
-    failureRateThreshold: 0.3, // 30%の失敗率で自動エスカレート
+    taskToGroup: 3, //  3
+    groupToStage: 2, //  2
+    stageToSession: 1, //  1
+    failureRateThreshold: 0.3, //  30%
   };
 
-  // パターン検出
   private patterns = {
     commonErrors: new Map<string, number>(),
     errorSequences: [] as string[][],
@@ -236,7 +201,7 @@ export class ErrorAggregationManager {
 
   constructor(
     private sessionId: string,
-    private treeNodeId: NodeId
+    private treeNodeId: NodeId,
   ) {
     this.hierarchicalState = this.initializeState();
     this.persistenceManager = new ErrorPersistenceManager();
@@ -244,8 +209,7 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * 初期状態を作成
-   */
+            */
   private initializeState(): HierarchicalErrorState {
     return {
       taskErrors: new Map(),
@@ -262,36 +226,35 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * Workerからエラーを受信して処理
-   */
+      * Worker
+      */
   async handleWorkerError(message: WorkerErrorMessage): Promise<void> {
     console.log(
       `[ErrorAggregation] Received error from worker ${message.workerId}:`,
-      message.error
+      message.error,
     );
 
-    // 1. タスクレベルエラーを記録
+    //  1.
     const taskError = await this.recordTaskError(message);
 
-    // 2. パターン検出
+    //  2.
     this.detectTaskPatterns(taskError);
 
-    // 3. グループへの集約を検討
+    //  3.
     await this.aggregateToGroup(taskError);
 
-    // 4. エスカレーション判定
+    //  4.
     await this.checkEscalation();
 
-    // 5. 永続化
+    //  5.
     await this.persistCurrentState();
 
-    // 6. リカバリ戦略の選択
+    //  6.
     await this.selectRecoveryStrategy(taskError);
   }
 
   /**
-   * タスクエラーを記録
-   */
+            */
   private async recordTaskError(message: WorkerErrorMessage): Promise<TaskErrorState> {
     const context = message.context || {};
     const taskError: TaskErrorState = {
@@ -311,7 +274,6 @@ export class ErrorAggregationManager {
       canSkip: this.canSkipTask(message),
     };
 
-    // 既存のエラーがあれば更新、なければ追加
     const existing = this.hierarchicalState.taskErrors.get(context.taskId || `task-${Date.now()}`);
     if (existing) {
       taskError.retryCount = existing.retryCount + 1;
@@ -325,30 +287,25 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * パターン検出
-   */
+            */
   private detectTaskPatterns(taskError: TaskErrorState): void {
-    // 安全性チェック
     if (!taskError.error || !taskError.error.type) {
       console.warn(
         '[ErrorAggregationManager] Invalid error object in detectTaskPatterns:',
-        taskError
+        taskError,
       );
       return;
     }
 
     const errorKey = `${taskError.error.type}_${taskError.error.code}`;
 
-    // エラータイプの頻度
     this.patterns.commonErrors.set(errorKey, (this.patterns.commonErrors.get(errorKey) || 0) + 1);
 
-    // エラーシーケンスの記録
     const recentSequence = Array.from(this.hierarchicalState.taskErrors.values())
       .slice(-5)
       .map((e) => e.error.type);
     this.patterns.errorSequences.push(recentSequence);
 
-    // 時間パターン
     const currentHour = Math.floor(Date.now() / (60 * 60 * 1000));
     const hourPattern = this.patterns.timePatterns.find((p) => p.time === currentHour);
     if (hourPattern) {
@@ -359,10 +316,9 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * グループレベルへの集約
-   */
+            */
   private async aggregateToGroup(taskError: TaskErrorState): Promise<void> {
-    // グループIDを決定（例：国別、エラータイプ別）
+    //  ID
     const groupId = this.determineGroupId(taskError);
 
     let groupError = this.hierarchicalState.groupErrors.get(groupId);
@@ -378,43 +334,35 @@ export class ErrorAggregationManager {
       this.hierarchicalState.groupErrors.set(groupId, groupError);
     }
 
-    // グループエラーを更新
     groupError.affectedTasks.add(taskError.taskId);
     groupError.errorDistribution.set(
       taskError.error.type,
-      (groupError.errorDistribution.get(taskError.error.type) || 0) + 1
+      (groupError.errorDistribution.get(taskError.error.type) || 0) + 1,
     );
 
-    // 失敗率を計算
     const totalTasksInGroup = this.countTasksInGroup(groupId);
     groupError.failureRate = groupError.affectedTasks.size / totalTasksInGroup;
 
-    // トレンドを分析
     groupError.trend = this.analyzeTrend(groupError);
 
-    // 共通パターンを検出
     if (groupError.affectedTasks.size >= 3) {
       groupError.commonPattern = this.findCommonPattern(groupError);
     }
 
-    // 根本原因を推定
     if (groupError.failureRate > 0.5) {
       groupError.rootCause = await this.identifyRootCause(groupError);
     }
   }
 
   /**
-   * エスカレーション判定
-   */
+            */
   private async checkEscalation(): Promise<void> {
-    // タスク → グループ
     for (const [groupId, group] of this.hierarchicalState.groupErrors) {
       if (group.affectedTasks.size >= this.escalationThresholds.taskToGroup) {
         await this.escalateToStage(groupId, group);
       }
     }
 
-    // ステージ → セッション
     for (const [stageId, stage] of this.hierarchicalState.stageErrors) {
       const failureRate = stage.failedTasks / stage.totalTasks;
       if (
@@ -427,8 +375,7 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * ステージレベルへエスカレート
-   */
+            */
   private async escalateToStage(groupId: string, group: GroupErrorState): Promise<void> {
     const stage = this.extractStageFromGroup(groupId);
 
@@ -451,7 +398,6 @@ export class ErrorAggregationManager {
       this.hierarchicalState.stageErrors.set(stage, stageError);
     }
 
-    // ステージ状態を更新
     stageError.failedTasks += group.affectedTasks.size;
     stageError.health = Math.max(0, 100 - group.failureRate * 100);
 
@@ -462,20 +408,17 @@ export class ErrorAggregationManager {
       stageError.status = 'failed';
     }
 
-    // パフォーマンス影響を計算
     stageError.performanceImpact = this.calculatePerformanceImpact(stageError);
 
-    // エスカレーション記録
     this.recordEscalation(
       ErrorHierarchyLevel.GROUP,
       ErrorHierarchyLevel.STAGE,
-      `Group ${groupId} failure rate: ${group.failureRate}`
+      `Group ${groupId} failure rate: ${group.failureRate}`,
     );
   }
 
   /**
-   * セッションレベルへエスカレート
-   */
+            */
   private async escalateToSession(stageId: string, stage: StageErrorState): Promise<void> {
     if (!this.hierarchicalState.sessionError) {
       this.hierarchicalState.sessionError = {
@@ -492,21 +435,17 @@ export class ErrorAggregationManager {
       };
     }
 
-    // クリティカリティを更新
     if (stage.status === 'failed') {
       this.hierarchicalState.sessionError.criticalityLevel = 'high';
 
-      // ダウンロードステージが失敗した場合は継続不可
       if (stageId === 'download') {
         this.hierarchicalState.sessionError.canContinue = false;
         this.hierarchicalState.sessionError.criticalityLevel = 'critical';
       }
     }
 
-    // データ整合性を評価
     this.hierarchicalState.sessionError.dataIntegrity = this.evaluateDataIntegrity();
 
-    // 介入の必要性を判定
     this.hierarchicalState.sessionError.requiresIntervention =
       this.hierarchicalState.sessionError.criticalityLevel === 'critical' ||
       !this.hierarchicalState.sessionError.canContinue;
@@ -514,23 +453,20 @@ export class ErrorAggregationManager {
     this.recordEscalation(
       ErrorHierarchyLevel.STAGE,
       ErrorHierarchyLevel.SESSION,
-      `Stage ${stageId} failed`
+      `Stage ${stageId} failed`,
     );
   }
 
   /**
-   * 現在の状態を永続化
-   */
+            */
   private async persistCurrentState(): Promise<void> {
-    // 3層アプローチに従って簡素化 - 複雑なオブジェクトは保存しない
+    //  3 -
     const latestError = Array.from(this.hierarchicalState.taskErrors.values()).sort(
-      (a, b) => (b.workerInfo?.timestamp || 0) - (a.workerInfo?.timestamp || 0)
+      (a, b) => (b.workerInfo?.timestamp || 0) - (a.workerInfo?.timestamp || 0),
     )[0];
 
     if (latestError) {
-      // 基本情報のみ保存（複雑なオブジェクトを除外）
       await this.persistenceManager.saveError(this.sessionId, this.treeNodeId, latestError.error, {
-        // 複雑なオブジェクトは保存せず、基本情報のみ
         errorCount: this.hierarchicalState.taskErrors.size,
         timestamp: Date.now(),
       });
@@ -538,8 +474,7 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * リカバリ戦略を選択
-   */
+            */
   private async selectRecoveryStrategy(taskError: TaskErrorState): Promise<void> {
     const context = {
       error: taskError.error,
@@ -549,9 +484,8 @@ export class ErrorAggregationManager {
         retryLimit: 3,
         timeoutMs: 30000,
         enableRecovery: true,
-        logLevel: 'info'
-      }, // 実際の設定を取得
-      attemptNumber: taskError.retryCount,
+        logLevel: 'info',
+      }, attemptNumber: taskError.retryCount,
       previousAttempts: [],
     };
 
@@ -560,7 +494,6 @@ export class ErrorAggregationManager {
   }
 
   // ========================================
-  // ヘルパーメソッド
   // ========================================
 
   private inferTaskType(stage: string): TaskErrorState['taskType'] {
@@ -599,20 +532,16 @@ export class ErrorAggregationManager {
 
   private canSkipTask(message: WorkerErrorMessage): boolean {
     const context = message.context || {};
-    // ダウンロード失敗は通常スキップ不可
     if (context.stage === 'download') return false;
 
-    // その他のステージは条件によりスキップ可能
     return message.error.category !== ErrorCategory.SYSTEM;
   }
 
   private determineGroupId(taskError: TaskErrorState): string {
-    // 国別グループ
     if (taskError.target.country) {
       return `country_${taskError.target.country}`;
     }
 
-    // エラータイプ別グループ
     return `error_${taskError.error.type}`;
   }
 
@@ -624,34 +553,33 @@ export class ErrorAggregationManager {
   }
 
   private countTasksInGroup(groupId: string): number {
-    // グループIDからタスク数を計算
-    const tasksInGroup = Array.from(this.taskErrors.values()).filter(task => 
-      this.categorizeTaskError(task) === this.extractGroupTypeFromId(groupId)
+    //  ID
+    const tasksInGroup = Array.from(this.taskErrors.values()).filter(task =>
+      this.categorizeTaskError(task) === this.extractGroupTypeFromId(groupId),
     );
-    return tasksInGroup.length || 1; // 最低1つは存在するとみなす
+    return tasksInGroup.length || 1; //  1
   }
 
   private analyzeTrend(group: GroupErrorState): 'increasing' | 'stable' | 'decreasing' {
-    // 時系列分析: 最近のエラー頻度を分析
+    //  :
     const now = Date.now();
-    const recentWindow = 60000; // 1分間
-    const previousWindow = 120000; // 2分間
-    
-    const recentErrors = group.errors.filter(error => 
-      now - error.timestamp < recentWindow
+    const recentWindow = 60000; //  1
+    const previousWindow = 120000; //  2
+
+    const recentErrors = group.errors.filter(error =>
+      now - error.timestamp < recentWindow,
     ).length;
-    
-    const previousErrors = group.errors.filter(error => 
-      now - error.timestamp >= recentWindow && now - error.timestamp < previousWindow
+
+    const previousErrors = group.errors.filter(error =>
+      now - error.timestamp >= recentWindow && now - error.timestamp < previousWindow,
     ).length;
-    
+
     if (recentErrors > previousErrors * 1.2) return 'increasing';
     if (recentErrors < previousErrors * 0.8) return 'decreasing';
     return 'stable';
   }
 
   private findCommonPattern(group: GroupErrorState): GroupErrorState['commonPattern'] {
-    // 最も多いエラータイプを見つける
     let maxCount = 0;
     let commonType = '';
 
@@ -670,11 +598,9 @@ export class ErrorAggregationManager {
   }
 
   private async identifyRootCause(group: GroupErrorState): Promise<GroupErrorState['rootCause']> {
-    // パターンベースの原因推定
     const pattern = group.commonPattern;
     if (!pattern) return undefined;
 
-    // ネットワークエラーの集中
     if (pattern.type.includes('NETWORK')) {
       return {
         identified: true,
@@ -684,7 +610,6 @@ export class ErrorAggregationManager {
       };
     }
 
-    // メモリエラーの集中
     if (pattern.type.includes('MEMORY')) {
       return {
         identified: true,
@@ -698,14 +623,13 @@ export class ErrorAggregationManager {
   }
 
   private extractStageFromGroup(groupId: string): string {
-    // グループIDからステージを抽出
+    //  ID
     if (groupId.includes('download')) return 'download';
     if (groupId.includes('simplify')) return 'simplify';
     if (groupId.includes('tile')) return 'vectorTiles';
     if (groupId.includes('upload')) return 'upload';
     if (groupId.includes('validate')) return 'validate';
-    
-    // デフォルトステージを返す
+
     return 'process';
   }
 
@@ -721,7 +645,7 @@ export class ErrorAggregationManager {
 
   private evaluateDataIntegrity(): 'intact' | 'partial' | 'compromised' {
     const stageFailures = Array.from(this.hierarchicalState.stageErrors.values()).filter(
-      (s) => s.status === 'failed'
+      (s) => s.status === 'failed',
     ).length;
 
     if (stageFailures === 0) return 'intact';
@@ -732,7 +656,7 @@ export class ErrorAggregationManager {
   private recordEscalation(
     from: ErrorHierarchyLevel,
     to: ErrorHierarchyLevel,
-    trigger: string
+    trigger: string,
   ): void {
     this.hierarchicalState.metadata.escalationHistory.push({
       timestamp: Date.now(),
@@ -754,15 +678,14 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * 汎用エラー記録メソッド
-   */
+            */
   async recordError(errorInfo: {
     type: string;
     timestamp: number;
     category: TaskErrorState;
     severity: string;
   }): Promise<void> {
-    // TaskErrorStateとして記録
+    //  TaskErrorState
     const taskError: TaskErrorState = {
       taskId: `error-${Date.now()}`,
       taskType: errorInfo.category,
@@ -786,8 +709,7 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * 集約されたエラー情報を取得
-   */
+            */
   async getAggregatedErrors(): Promise<{
     tasks: Map<string, TaskErrorState>;
     groups: Map<string, any>;
@@ -803,29 +725,24 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * エラーパターンを分析（ShapeErrorHandler用）
-   */
+      * ShapeErrorHandler
+      */
   async detectPatterns(errors: Array<{ type: string; timestamp: number }>): Promise<{
     cyclical: boolean;
     memoryIncreasing: boolean;
     networkSpikes: boolean;
     bursty: boolean;
   }> {
-    // エラー頻度とタイミングパターンを分析
     const now = Date.now();
-    const recentWindow = 5 * 60 * 1000; // 5分
+    const recentWindow = 5 * 60 * 1000; //  5
     const recentErrors = errors.filter((e) => now - e.timestamp < recentWindow);
 
-    // 循環的エラーパターン検出
     const cyclical = this.detectCyclicalPattern(recentErrors);
 
-    // メモリ関連エラーの増加傾向
     const memoryIncreasing = this.detectMemoryIncreasingPattern(recentErrors);
 
-    // ネットワークエラーのスパイク検出
     const networkSpikes = this.detectNetworkSpikes(recentErrors);
 
-    // バースト的エラーパターン検出
     const bursty = this.detectBurstPattern(recentErrors);
 
     return {
@@ -837,19 +754,16 @@ export class ErrorAggregationManager {
   }
 
   // ========================================
-  // 公開メソッド
   // ========================================
 
   /**
-   * 現在の階層状態を取得
-   */
+            */
   getHierarchicalState(): HierarchicalErrorState {
     return this.hierarchicalState;
   }
 
   /**
-   * 特定レベルの状態を取得
-   */
+            */
   getErrorsAtLevel(level: ErrorHierarchyLevel): any {
     switch (level) {
       case ErrorHierarchyLevel.TASK:
@@ -866,8 +780,7 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * エラーの影響範囲を分析
-   */
+            */
   analyzeImpact(errorId: string): {
     directImpact: string[];
     indirectImpact: string[];
@@ -886,32 +799,29 @@ export class ErrorAggregationManager {
   }
 
   private findIndirectlyAffectedTasks(taskError: TaskErrorState): string[] {
-    // 依存関係グラフを辿って間接的に影響を受けるタスクを特定
     const affectedTasks: string[] = [];
     const visited = new Set<string>();
-    
-    // 直接的にブロックされたタスクから開始
+
     const queue = [...taskError.blockedTasks];
-    
+
     while (queue.length > 0) {
       const taskId = queue.shift()!;
       if (visited.has(taskId)) continue;
       visited.add(taskId);
       affectedTasks.push(taskId);
-      
-      // このタスクがブロックする他のタスクを探す
+
       for (const otherError of this.taskErrors.values()) {
         if (otherError.blockedTasks.includes(taskId) && !visited.has(otherError.taskId)) {
           queue.push(otherError.taskId);
         }
       }
     }
-    
+
     return affectedTasks;
   }
 
   private calculateCascadeRisk(taskError: TaskErrorState): number {
-    // 0-1の範囲でカスケード障害のリスクを計算
+    //  0-1
     const blockedCount = taskError.blockedTasks.length;
     const totalTasks = this.hierarchicalState.taskErrors.size;
 
@@ -919,24 +829,21 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * 循環的エラーパターンを検出
-   */
+            */
   private detectCyclicalPattern(errors: Array<{ type: string; timestamp: number }>): boolean {
     if (errors.length < 3) return false;
 
-    // 同じタイプのエラーが定期的に発生しているかチェック
     const errorsByType = errors.reduce(
       (acc, error) => {
         acc[error.type] = acc[error.type] || [];
         acc[error.type]?.push(error.timestamp);
         return acc;
       },
-      {} as Record<string, number[]>
+      {} as Record<string, number[]>,
     );
 
     for (const [_type, timestamps] of Object.entries(errorsByType)) {
       if (timestamps.length >= 3) {
-        // 時間間隔の一貫性をチェック
         const intervals = [];
         for (let i = 1; i < timestamps.length; i++) {
           if (timestamps[i] && timestamps[i - 1]) {
@@ -949,7 +856,6 @@ export class ErrorAggregationManager {
           intervals.reduce((acc, interval) => acc + Math.pow(interval - avgInterval, 2), 0) /
           intervals.length;
 
-        // 分散が小さい場合、循環的パターンと判定
         if (variance < avgInterval * 0.3) {
           return true;
         }
@@ -960,18 +866,16 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * メモリ関連エラーの増加傾向を検出
-   */
+            */
   private detectMemoryIncreasingPattern(
-    errors: Array<{ type: string; timestamp: number }>
+    errors: Array<{ type: string; timestamp: number }>,
   ): boolean {
     const memoryErrors = errors.filter(
-      (e) => e.type.includes('MEMORY') || e.type.includes('OUT_OF_MEMORY')
+      (e) => e.type.includes('MEMORY') || e.type.includes('OUT_OF_MEMORY'),
     );
 
     if (memoryErrors.length < 2) return false;
 
-    // 時系列でメモリエラーが増加傾向にあるかチェック
     const sortedByTime = memoryErrors.sort((a, b) => a.timestamp - b.timestamp);
     const recentHalf = sortedByTime.slice(Math.floor(sortedByTime.length / 2));
 
@@ -979,17 +883,15 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * ネットワークエラーのスパイクを検出
-   */
+            */
   private detectNetworkSpikes(errors: Array<{ type: string; timestamp: number }>): boolean {
     const networkErrors = errors.filter(
-      (e) => e.type.includes('NETWORK') || e.type.includes('CONNECTION') || e.type.includes('CORS')
+      (e) => e.type.includes('NETWORK') || e.type.includes('CONNECTION') || e.type.includes('CORS'),
     );
 
     if (networkErrors.length < 3) return false;
 
-    // 短時間内の集中的な発生をチェック
-    const spikeWindow = 2 * 60 * 1000; // 2分
+    const spikeWindow = 2 * 60 * 1000; //  2
     const now = Date.now();
     const recentSpike = networkErrors.filter((e) => now - e.timestamp < spikeWindow);
 
@@ -997,13 +899,11 @@ export class ErrorAggregationManager {
   }
 
   /**
-   * バースト的エラーパターンを検出
-   */
+            */
   private detectBurstPattern(errors: Array<{ type: string; timestamp: number }>): boolean {
     if (errors.length < 5) return false;
 
-    // 短期間に集中的にエラーが発生しているかチェック
-    const burstWindow = 1 * 60 * 1000; // 1分
+    const burstWindow = 1 * 60 * 1000; //  1
     const now = Date.now();
     const recentBurst = errors.filter((e) => now - e.timestamp < burstWindow);
 

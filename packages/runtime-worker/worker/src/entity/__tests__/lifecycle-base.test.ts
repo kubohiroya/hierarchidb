@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 
 describe('EntityLifecycleManager integration (base skeleton)', () => {
@@ -16,7 +16,8 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
     const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
     const spy = vi.spyOn(EntityLifecycleManager, 'getSingleton');
     const mock = {
-      handleCommand: vi.fn(async () => {}),
+      handleCommand: vi.fn(async () => {
+      }),
     } as any;
     spy.mockReturnValue(mock);
 

@@ -1,33 +1,25 @@
 /**
- * useTreeViewController
- *
- * TreeConsoleの状態・操作を一括管理する中核となるhook。
- * 既存の巨大な実装を段階的に移植し、WorkerAPIAdapter経由で新APIに対応。
- *
- * 移植戦略：
- * 1. 基本構造と型定義から開始
- * 2. WorkerAPIAdapterの統合
- * 3. 既存ロジックを段階的に移植
- * 4. 各機能の動作確認
- */
+  * useTreeViewController
+  * TreeConsolehook
+ * WorkerAPIAdapterAPI
+   * 1.
+ * 2. WorkerAPIAdapter
+ * 3.
+ * 4.
+  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '~/adapters';
-import type {
-  TreeViewController,
-  SelectionMode,
-  UndoRedoResult,
-  UndoRedoCommand,
-} from '../types/index';
+import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
-  useCopyPasteOperations,
+  type ClipboardData,
   type CopyResult,
   type CutResult,
   type PasteResult,
-  type ClipboardData,
+  useCopyPasteOperations,
 } from './useCopyPasteOperations';
 import { useUndoRedoOperations } from './useUndoRedoOperations';
 import { useCRUDOperations } from './useCRUDOperations';
@@ -42,20 +34,26 @@ export interface TreeViewControllerProps {
 }
 
 export interface UseTreeViewControllerOptions {
-  /** ルートノードID */
+  /**
+   * ID
+   */
   rootNodeId?: NodeId;
-  /** 初期展開ノードIDリスト */
+  /**
+   * ID
+   */
   initialExpandedNodeIds?: NodeId[];
-  /** WorkerAPIアダプター（テスト用） */
+  /**
+   * WorkerAPI
+   */
   workerService?: WorkerAPIAdapter | null;
-  /** WorkerAPIClient（直接提供する場合） */
+  /**
+   * WorkerAPIClient
+   */
   workerClient?: unknown;
 }
 
 export interface UseTreeViewControllerReturn extends TreeViewController {
-  // TODO: 実装時に既存コードから完全なインターフェースを抽出
 
-  // 基本状態
   currentNode: TreeNode | null;
   selectedNodes: NodeId[];
   selectedNodeIds: NodeId[]; // Alias for compatibility
@@ -63,31 +61,26 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   expandedNodeIds: NodeId[]; // Alias for compatibility
   isLoading: boolean;
 
-  // 検索関連
   searchText?: string;
   handleSearchTextChange?: (searchText: string) => void;
   filteredItemCount?: number;
   totalItemCount?: number;
 
-  // 選択関連
   selectionMode: SelectionMode;
   rowSelection?: RowSelectionState;
   setSelectionMode?: (mode: SelectionMode) => void;
 
-  // テーブル状態
   data?: TreeNode[];
-  expandedRowIds?: Set<NodeId>; // 展開状態
-
-  // 基本操作
+  expandedRowIds?: Set<NodeId>;
   selectNode: (
     nodeId: NodeId,
-    options?: { ctrlKey?: boolean; shiftKey?: boolean }
+    options?: { ctrlKey?: boolean; shiftKey?: boolean },
   ) => Promise<void>;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
   expandNode: (nodeId: NodeId) => void;
   collapseNode: (nodeId: NodeId) => void;
 
-  // CRUD操作
+  //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
   deleteNode: (nodeId: NodeId) => Promise<void>;
@@ -95,22 +88,22 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
-  // Working Copy操作
+  //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
   startCreate: (parentId: NodeId, name: string) => Promise<void>;
 
-  // Copy/Paste操作 🟢
+  //  Copy/Paste
   copyNodes: (nodeIds: NodeId[]) => Promise<CopyResult>;
   cutNodes: (nodeIds: NodeId[]) => Promise<CutResult>;
   pasteNodes: (targetParentId: NodeId) => Promise<PasteResult>;
 
-  // Copy/Paste状態 🟢
+  //  Copy/Paste
   clipboardData: ClipboardData | null;
   cutNodeIds: NodeId[];
   canPaste: boolean;
   canPasteToTarget: (targetId: NodeId) => boolean;
 
-  // Undo/Redo操作 - TDD Red Phase用の追加インターフェース
+  //  Undo/Redo - TDD Red Phase
   undo: () => Promise<UndoRedoResult>;
   redo: () => Promise<UndoRedoResult>;
   canUndo: boolean;
@@ -118,17 +111,13 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   undoHistory: UndoRedoCommand[];
   redoHistory: UndoRedoCommand[];
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
-
-  // TODO: 検索、Import/Export、ショートカット等を段階的に追加
 }
 
 /**
- * TreeViewController hook
- *
- * 現在は最小限の実装。実際の移植時に既存コードから段階的に機能を追加。
- */
+  * TreeViewController hook
+    */
 export function useTreeViewController(
-  props: TreeViewControllerProps & UseTreeViewControllerOptions = { treeId: '' }
+  props: TreeViewControllerProps & UseTreeViewControllerOptions = { treeId: '' },
 ): UseTreeViewControllerReturn {
   const {
     rootNodeId: _rootNodeId,
@@ -140,19 +129,19 @@ export function useTreeViewController(
     workerClient: providedWorkerClient,
   } = props;
 
-  // WorkerAPI接続（オプショナル - 直接提供またはコンテキストから取得）
+  //  WorkerAPI -
   const workerClient = providedWorkerClient || null;
-  
+
   // Type guard for workerClient with getAPI method
   const hasGetAPI = (client: unknown): client is { getAPI(): WorkerAPI } => {
     return client != null && typeof client === 'object' && 'getAPI' in client;
   };
-  
-  const api: WorkerAPI | Record<string, unknown> | null = hasGetAPI(workerClient) 
-    ? workerClient.getAPI() 
+
+  const api: WorkerAPI | Record<string, unknown> | null = hasGetAPI(workerClient)
+    ? workerClient.getAPI()
     : (stateManager as Record<string, unknown> | null) || null;
 
-  // WorkerAPIAdapterのセットアップ
+  //  WorkerAPIAdapter
   const workerAdapter = useMemo(() => {
     if (workerService) {
       return workerService;
@@ -174,23 +163,19 @@ export function useTreeViewController(
     });
   }, [api, workerService]);
 
-  // 基本状態管理
   const [currentNode, setCurrentNode] = useState<TreeNode | null>(null);
   const [selectedNodes, setSelectedNodes] = useState<NodeId[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<NodeId[]>(initialExpandedNodeIds);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSelectedNode, setLastSelectedNode] = useState<NodeId | null>(null);
 
-  // 検索関連の状態
   const [searchText, setSearchText] = useState<string>('');
   const [filteredItemCount, _setFilteredItemCount] = useState<number>(0);
   const [totalItemCount, _setTotalItemCount] = useState<number>(0);
 
-  // 選択関連の状態
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('none');
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  // テーブルデータ
   const [data, _setData] = useState<TreeNode[]>([]);
 
   // Track if this is the initial render
@@ -212,14 +197,25 @@ export function useTreeViewController(
     }
   }, [selectedNodes, expandedNodes, currentNode, onStateChange]);
 
-  // 【抽出されたhooks使用】: Copy/Paste操作を専用hookで管理 🟢
+  // =====================
+  // Helpers
+  // =====================
+  const normalizeToken = useCallback((id: NodeId): NodeId => {
+    const s = String(id);
+    if (s.startsWith('$')) {
+      return (`node-${s.slice(1)}`) as NodeId;
+    }
+    return id;
+  }, []);
+
+  //  hooks: Copy/Pastehook
   const copyPasteOps = useCopyPasteOperations({
     stateManager,
     workerAdapter: workerAdapter || undefined,
     setIsLoading,
   });
 
-  // 【抽出されたhooks使用】: Undo/Redo操作を専用hookで管理 🟢
+  //  hooks: Undo/Redohook
   const undoRedoOps = useUndoRedoOperations({
     stateManager,
     setIsLoading,
@@ -231,7 +227,7 @@ export function useTreeViewController(
     },
   });
 
-  // 【抽出されたhooks使用】: CRUD操作を専用hookで管理 🟢
+  //  hooks: CRUDhook
   const crudOps = useCRUDOperations({
     stateManager,
     workerAdapter: workerAdapter || undefined,
@@ -241,20 +237,20 @@ export function useTreeViewController(
     onCurrentNodeChange: setCurrentNode,
   });
 
-  // 基本操作の実装
   const selectNode = useCallback(
     async (nodeId: NodeId, options?: { ctrlKey?: boolean; shiftKey?: boolean }) => {
+      const normalized = normalizeToken(nodeId);
       const { ctrlKey = false, shiftKey = false } = options || {};
 
       if (ctrlKey) {
         // Multi-select with Ctrl key
         setSelectedNodes((prev) => {
-          if (prev.includes(nodeId)) {
+          if (prev.includes(normalized)) {
             // Remove from selection
-            return prev.filter((id) => id !== nodeId);
+            return prev.filter((id) => id !== normalized);
           } else {
             // Add to selection
-            return [...prev, nodeId];
+            return [...prev, normalized];
           }
         });
       } else if (shiftKey && lastSelectedNode) {
@@ -265,32 +261,32 @@ export function useTreeViewController(
         const hasGetChildren = (manager: unknown): manager is { getChildren(id: string): Promise<TreeNode[]> } => {
           return manager != null && typeof manager === 'object' && 'getChildren' in manager;
         };
-        
+
         if (hasGetChildren(stateManager)) {
           const children = await stateManager.getChildren('root');
           if (children && Array.isArray(children)) {
-            const nodeIds = children.map((child: unknown) => (child as TreeNode).id);
-            const startIdx = nodeIds.indexOf(lastSelectedNode);
-            const endIdx = nodeIds.indexOf(nodeId);
+            const nodeIds = children.map((child: unknown) => normalizeToken((child as TreeNode).id as NodeId));
+            const startIdx = nodeIds.indexOf(normalizeToken(lastSelectedNode));
+            const endIdx = nodeIds.indexOf(normalized);
             if (startIdx !== -1 && endIdx !== -1) {
               const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
               setSelectedNodes(nodeIds.slice(from, to + 1));
             } else {
-              setSelectedNodes([nodeId]);
+              setSelectedNodes([normalized]);
             }
           } else {
-            setSelectedNodes([nodeId]);
+            setSelectedNodes([normalized]);
           }
         } else {
-          setSelectedNodes([nodeId]);
+          setSelectedNodes([normalized]);
         }
       } else {
         // Single select
-        setSelectedNodes([nodeId]);
+        setSelectedNodes([normalized]);
       }
 
       // Update last selected node for range selection
-      setLastSelectedNode(nodeId);
+      setLastSelectedNode(normalized);
 
       // Fetch and set current node
       // TODO: Implement getNode when API is available
@@ -298,10 +294,10 @@ export function useTreeViewController(
       const hasGetNode = (manager: unknown): manager is { getNode(id: string): Promise<TreeNode> } => {
         return manager != null && typeof manager === 'object' && 'getNode' in manager;
       };
-      
+
       if (hasGetNode(stateManager) && !ctrlKey && !shiftKey) {
         try {
-          const node = await stateManager.getNode(nodeId);
+          const node = await stateManager.getNode(normalized);
           if (node) {
             setCurrentNode(node as TreeNode);
           }
@@ -314,9 +310,9 @@ export function useTreeViewController(
           const hasApiGetNode = (obj: unknown): obj is { getNode: (id: string) => Promise<TreeNode> } => {
             return obj != null && typeof obj === 'object' && 'getNode' in obj;
           };
-          
+
           if (hasApiGetNode(api)) {
-            const node = await api.getNode(nodeId);
+            const node = await api.getNode(normalized);
             if (node) {
               setCurrentNode(node as TreeNode);
             }
@@ -326,7 +322,7 @@ export function useTreeViewController(
         }
       }
     },
-    [api, stateManager, lastSelectedNode]
+    [api, stateManager, lastSelectedNode, normalizeToken],
   );
 
   const selectMultipleNodes = useCallback((nodeIds: NodeId[]) => {
@@ -334,53 +330,43 @@ export function useTreeViewController(
   }, []);
 
   const expandNode = useCallback((nodeId: NodeId) => {
+    const normalized = normalizeToken(nodeId);
     setExpandedNodes((prev) => {
-      if (prev.includes(nodeId)) {
+      if (prev.includes(normalized)) {
         return prev; // Already expanded
       }
-      return [...prev, nodeId];
+      return [...prev, normalized];
     });
-  }, []);
+  }, [normalizeToken]);
 
   const collapseNode = useCallback((nodeId: NodeId) => {
-    setExpandedNodes((prev) => prev.filter((id) => id !== nodeId));
-  }, []);
+    const normalized = normalizeToken(nodeId);
+    setExpandedNodes((prev) => prev.filter((id) => id !== normalized));
+  }, [normalizeToken]);
 
-  // 検索関連の操作（IndexedDBの制約により未実装）
+  //  IndexedDB
   const handleSearchTextChange = useCallback((newSearchText: string) => {
     setSearchText(newSearchText);
-    // IndexedDBでは部分一致検索が困難（Nグラム化などの工数の多い対応が必要）
-    // 現段階では完全一致・前方一致・後方一致のみ対応可能だが、要件に合わない
+    //  IndexedDBN
     // TODO: Implement N-gram indexing for full-text search
     console.warn('Text search not yet implemented - IndexedDB limitations require N-gram indexing');
   }, []);
 
-  // 選択モード変更
   const handleSetSelectionMode = useCallback((mode: SelectionMode) => {
     setSelectionMode(mode);
-    // 選択モード変更時にrowSelectionをクリア
+    //  rowSelection
     if (mode === 'none') {
       setRowSelection({});
     }
   }, []);
 
-  // クリーンアップ
   useEffect(() => {
     return () => {
       workerAdapter?.cleanup();
     };
   }, [workerAdapter]);
 
-  // TODO: 実装時に以下を段階的に追加
-  // - サブスクリプション管理（部分木監視等）
-  // - 検索機能
-  // - Import/Export
-  // - ショートカットキー処理
-  // - エラーハンドリング
-  // - 状態の永続化
-
   return {
-    // 基本状態
     currentNode,
     selectedNodes,
     selectedNodeIds: selectedNodes, // Alias for compatibility
@@ -388,33 +374,29 @@ export function useTreeViewController(
     expandedNodeIds: expandedNodes, // Alias for compatibility
     isLoading,
 
-    // 検索関連
     searchText,
     handleSearchTextChange,
     filteredItemCount,
     totalItemCount,
 
-    // 選択関連
     selectionMode,
     rowSelection,
     setSelectionMode: handleSetSelectionMode,
 
-    // テーブル状態
     data,
 
-    // 基本操作
     selectNode,
     selectMultipleNodes,
     expandNode,
     collapseNode,
 
-    // 【抽出されたhooks展開】: CRUD操作 🟢
+    //  hooks: CRUD
     ...crudOps,
 
-    // 【抽出されたhooks展開】: Copy/Paste操作 🟢
+    //  hooks: Copy/Paste
     ...copyPasteOps,
 
-    // 【抽出されたhooks展開】: Undo/Redo操作 🟢
+    //  hooks: Undo/Redo
     ...undoRedoOps,
   };
 }

@@ -1,12 +1,18 @@
 /**
- * OpenStreetMap Overpass API データソース戦略
- * https://overpass-api.de/ からOSMデータを取得
- */
+  * OpenStreetMap Overpass API
+ * https://overpass-api.de/ OSM
+  */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions, BoundingBox } from './DataSourceStrategy';
+import {
+  BaseDataSourceStrategy,
+  BoundingBox,
+  DataSourceConfig,
+  FetchOptions,
+  ProcessOptions,
+} from './DataSourceStrategy';
 import { ShapeEntity } from '../../types/ShapeEntity';
 
-// OSM特有の生データ型
+//  OSM
 export interface OSMRawData {
   elements: OSMElement[];
   metadata: {
@@ -19,7 +25,7 @@ export interface OSMRawData {
   };
 }
 
-// OSM要素の型定義
+//  OSM
 export interface OSMElement {
   type: 'node' | 'way' | 'relation';
   id: number;
@@ -41,7 +47,7 @@ export interface OSMMember {
   role?: string;
 }
 
-// OSM処理後データ型
+//  OSM
 export interface OSMProcessedData extends Array<ShapeEntity> {
   metadata?: {
     source: 'osm-overpass';
@@ -54,8 +60,8 @@ export interface OSMProcessedData extends Array<ShapeEntity> {
 }
 
 /**
- * OpenStreetMap Overpass API データソース戦略実装
- */
+  * OpenStreetMap Overpass API
+  */
 export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OSMProcessedData> {
   readonly id = 'openstreetmap-overpass';
   readonly name = 'OpenStreetMap Overpass API';
@@ -70,104 +76,101 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       endpoints: {
         interpreter: 'interpreter',
         status: 'status',
-        kill_my_queries: 'kill_my_queries'
+        kill_my_queries: 'kill_my_queries',
       },
       authentication: { type: 'none' },
-      timeout: 180000, // 3分（Overpass APIのクエリは時間がかかる場合がある）
+      timeout: 180000, //  3Overpass API
       retries: { count: 2, delay: 10000, backoff: 'linear' },
       rateLimit: {
-        requests: 2, // 同時に2クエリまで
-        period: 60000 // 1分間
-      }
+        requests: 2, //  2
+        period: 60000, //  1
+      },
     },
     processing: {
       inputFormat: 'json', // Overpass JSON
       outputFormat: 'geojson',
       validation: [
         { field: 'type', rule: 'required' },
-        { field: 'id', rule: 'required' }
+        { field: 'id', rule: 'required' },
       ],
       transformations: [
-        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }
-      ]
+        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' },
+      ],
     },
     cache: {
-      ttl: 3600000, // 1時間キャッシュ（OSMデータは頻繁に更新される）
-      strategy: 'memory'
-    }
+      ttl: 3600000, //  1OSM
+      strategy: 'memory',
+    },
   };
 
-  // よく使用されるOSMタグのプリセット
+  //  OSM
   private readonly tagPresets: Record<string, any> = {
-    // 行政区域
     administrative: {
       query: '[admin_level][boundary=administrative]',
-      description: 'Administrative boundaries'
+      description: 'Administrative boundaries',
     },
     countries: {
       query: '[admin_level=2][boundary=administrative]',
-      description: 'Country boundaries'
+      description: 'Country boundaries',
     },
     states: {
       query: '[admin_level~"^(3|4)$"][boundary=administrative]',
-      description: 'State/Province boundaries'
+      description: 'State/Province boundaries',
     },
     cities: {
       query: '[place~"^(city|town|village)$"]',
-      description: 'Cities and towns'
+      description: 'Cities and towns',
     },
-    
-    // 自然地物
+
     coastlines: {
       query: '[natural=coastline]',
-      description: 'Coastlines'
+      description: 'Coastlines',
     },
     rivers: {
       query: '[waterway=river]',
-      description: 'Rivers'
+      description: 'Rivers',
     },
     lakes: {
       query: '[natural=water][water=lake]',
-      description: 'Lakes'
+      description: 'Lakes',
     },
     forests: {
       query: '[landuse=forest]',
-      description: 'Forests'
+      description: 'Forests',
     },
-    
-    // 交通インフラ
+
     highways: {
       query: '[highway~"^(motorway|trunk|primary|secondary)$"]',
-      description: 'Major roads'
+      description: 'Major roads',
     },
     railways: {
       query: '[railway=rail]',
-      description: 'Railways'
+      description: 'Railways',
     },
     airports: {
       query: '[aeroway=aerodrome]',
-      description: 'Airports'
-    }
+      description: 'Airports',
+    },
   };
 
   async fetchData(options?: FetchOptions): Promise<OSMRawData> {
-    const { 
+    const {
       bbox,
       tags = [],
       query,
-      timeout = 25, // Overpass APIのデフォルトタイムアウト
-      endpoint = 'interpreter'
+      timeout = 25, //  Overpass API
+      endpoint = 'interpreter',
     } = options || {};
 
     try {
-      // Overpass QLクエリを構築
+      //  Overpass QL
       const overpassQuery = query || this.buildOverpassQuery(bbox, tags, timeout);
-      
+
       console.log(`[OSM] Executing Overpass query: ${overpassQuery.substring(0, 200)}...`);
 
-      // Overpass APIにリクエスト
+      //  Overpass API
       const response = await this.executeOverpassQuery(overpassQuery);
-      
+
       if (!response.elements || !Array.isArray(response.elements)) {
         throw new Error('Invalid response format from Overpass API');
       }
@@ -179,9 +182,8 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
           downloadedAt: new Date().toISOString(),
           query: overpassQuery,
           bbox,
-          timeout: timeout * 1000, // 秒からミリ秒に変換
-          generator: response.generator || 'Overpass API'
-        }
+          timeout: timeout * 1000, generator: response.generator || 'Overpass API',
+        },
       };
 
     } catch (error) {
@@ -193,25 +195,23 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
     const { filters, transformations } = options || {};
 
     try {
-      // OSM要素をGeoJSONフィーチャーに変換
+      //  OSMGeoJSON
       const features = await this.convertOSMElementsToFeatures(rawData.elements);
-      
-      // フィルタリング適用
+
       let filteredFeatures = features;
       if (filters && filters.length > 0) {
         filteredFeatures = await this.applyFilters(features, filters);
       }
 
-      // 変換適用
       if (transformations && transformations.length > 0) {
         filteredFeatures = await this.applyTransformations(filteredFeatures, transformations);
       }
 
-      // ShapeEntityに変換
+      //  ShapeEntity
       const entities: ShapeEntity[] = filteredFeatures.map((feature, index) => {
         const properties = feature.properties || {};
         const osmElement = feature.osmElement as OSMElement;
-        
+
         return {
           id: this.generateEntityId(osmElement),
           nodeId: this.generateNodeId(osmElement),
@@ -226,22 +226,21 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
             osmTags: osmElement.tags || {},
             osmVersion: osmElement.version,
             osmChangeset: osmElement.changeset,
-            osmTimestamp: osmElement.timestamp
+            osmTimestamp: osmElement.timestamp,
           },
           metadata: {
             source: 'osm-overpass',
             originalIndex: index,
             downloadedAt: rawData.metadata.downloadedAt,
             processedAt: new Date().toISOString(),
-            osmGenerator: rawData.metadata.generator
+            osmGenerator: rawData.metadata.generator,
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          version: 1
+          version: 1,
         } as ShapeEntity;
       });
 
-      // メタデータ付きで返却
       const result = entities as OSMProcessedData;
       result.metadata = {
         source: 'osm-overpass',
@@ -249,7 +248,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
         count: entities.length,
         originalElementCount: rawData.elements.length,
         query: rawData.metadata.query,
-        bbox: rawData.metadata.bbox
+        bbox: rawData.metadata.bbox,
       };
 
       return result;
@@ -262,24 +261,21 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
   private buildOverpassQuery(bbox?: BoundingBox, tags: any[] = [], timeout: number = 25): string {
     const timeoutDirective = `[timeout:${timeout}]`;
     const outputDirective = '[out:json]';
-    
+
     let bboxString = '';
     if (bbox) {
-      // Overpass APIのbbox形式: (south, west, north, east)
+      //  Overpass APIbbox: (south, west, north, east)
       bboxString = `(${bbox.minLat},${bbox.minLng},${bbox.maxLat},${bbox.maxLng})`;
     }
 
-    // タグフィルターを構築
     let tagQueries: string[] = [];
-    
+
     if (tags.length === 0) {
-      // デフォルトクエリ：行政区域
       tagQueries = [
         `way[boundary=administrative][admin_level]${bboxString};`,
-        `relation[boundary=administrative][admin_level]${bboxString};`
+        `relation[boundary=administrative][admin_level]${bboxString};`,
       ];
     } else {
-      // 指定されたタグに基づいてクエリを構築
       for (const tag of tags) {
         if (typeof tag === 'string' && this.tagPresets[tag]) {
           const preset = this.tagPresets[tag];
@@ -289,8 +285,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
           const tagFilter = tag.value ? `[${tag.key}=${tag.value}]` : `[${tag.key}]`;
           tagQueries.push(`way${tagFilter}${bboxString};`);
           tagQueries.push(`relation${tagFilter}${bboxString};`);
-          
-          // ノードも含める場合
+
           if (tag.includeNodes) {
             tagQueries.push(`node${tagFilter}${bboxString};`);
           }
@@ -298,7 +293,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       }
     }
 
-    // 完全なOverpass QLクエリを構築
+    //  Overpass QL
     const query = `
 ${timeoutDirective}${outputDirective};
 (
@@ -312,14 +307,14 @@ out geom;
 
   private async executeOverpassQuery(query: string): Promise<any> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
-    
+
     const { authFetch } = await import('../utils/authFetch');
     const response = await authFetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       },
-      body: `data=${encodeURIComponent(query)}`
+      body: `data=${encodeURIComponent(query)}`,
     });
 
     if (!response.ok) {
@@ -333,7 +328,7 @@ out geom;
   private async convertOSMElementsToFeatures(elements: OSMElement[]): Promise<any[]> {
     const features: any[] = [];
 
-    // ノードをマップに保存（way/relationで参照するため）
+    //  way/relation
     const nodeMap = new Map<number, OSMElement>();
     elements.forEach(element => {
       if (element.type === 'node') {
@@ -345,7 +340,7 @@ out geom;
       try {
         const feature = await this.convertElementToFeature(element, nodeMap);
         if (feature) {
-          feature.osmElement = element; // 後でアクセスできるよう保存
+          feature.osmElement = element;
           features.push(feature);
         }
       } catch (error) {
@@ -364,9 +359,9 @@ out geom;
             type: 'Feature',
             geometry: {
               type: 'Point',
-              coordinates: [element.lon, element.lat]
+              coordinates: [element.lon, element.lat],
             },
-            properties: element.tags || {}
+            properties: element.tags || {},
           };
         }
         break;
@@ -374,7 +369,7 @@ out geom;
       case 'way':
         if (element.nodes && element.nodes.length > 0) {
           const coordinates: number[][] = [];
-          
+
           for (const nodeId of element.nodes) {
             const node = nodeMap.get(nodeId);
             if (node && node.lat !== undefined && node.lon !== undefined) {
@@ -383,35 +378,31 @@ out geom;
           }
 
           if (coordinates.length > 0) {
-            // 閉じた線（多角形）かどうか判定
             const isClosedWay = element.nodes[0] === element.nodes[element.nodes.length - 1];
             const geometryType = isClosedWay && coordinates.length > 3 ? 'Polygon' : 'LineString';
-            
+
             return {
               type: 'Feature',
               geometry: {
                 type: geometryType,
-                coordinates: geometryType === 'Polygon' ? [coordinates] : coordinates
+                coordinates: geometryType === 'Polygon' ? [coordinates] : coordinates,
               },
-              properties: element.tags || {}
+              properties: element.tags || {},
             };
           }
         }
         break;
 
       case 'relation':
-        // リレーション処理は複雑なため、簡略化
         if (element.members) {
-          // MultiPolygonなど、複雑なジオメトリの処理
-          // 実装簡略化のため、プロパティのみ返す
+          //  MultiPolygon
           return {
             type: 'Feature',
-            geometry: null, // 実際の実装では複雑なジオメトリ構築が必要
-            properties: {
+            geometry: null, properties: {
               ...(element.tags || {}),
               osmType: 'relation',
-              memberCount: element.members.length
-            }
+              memberCount: element.members.length,
+            },
           };
         }
         break;
@@ -430,17 +421,15 @@ out geom;
 
   private extractName(element: OSMElement): string {
     const tags = element.tags || {};
-    
-    // 名前の優先順位
+
     const nameKeys = ['name:en', 'name', 'name:local', 'ref', 'alt_name'];
-    
+
     for (const key of nameKeys) {
       if (tags[key]) {
         return tags[key];
       }
     }
 
-    // フォールバック：要素タイプと特徴的なタグ
     const type = tags.place || tags.boundary || tags.natural || tags.highway || tags.waterway || element.type;
     return `${type} ${element.id}`;
   }
@@ -449,10 +438,9 @@ out geom;
     const tags = element.tags || {};
     const parts: string[] = [];
 
-    // OSMタイプ情報
+    //  OSM
     parts.push(`OSM ${element.type} #${element.id}`);
 
-    // 主要なタグ情報
     const importantTags = ['place', 'boundary', 'admin_level', 'natural', 'highway', 'waterway', 'landuse'];
     for (const tagKey of importantTags) {
       if (tags[tagKey]) {
@@ -460,7 +448,6 @@ out geom;
       }
     }
 
-    // ウィキペディア情報があれば追加
     if (tags.wikipedia) {
       parts.push(`Wikipedia: ${tags.wikipedia}`);
     }
@@ -468,7 +455,6 @@ out geom;
     return parts.length > 1 ? parts.join(', ') : undefined;
   }
 
-  // プリセットクエリのヘルパーメソッド
   getAvailablePresets(): Record<string, any> {
     return { ...this.tagPresets };
   }

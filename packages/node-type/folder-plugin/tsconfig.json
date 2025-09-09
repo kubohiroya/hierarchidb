@@ -11,16 +11,19 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/util": ["../../util/src/index.ts"],
-      "@hierarchidb/tag": ["../../feature/tag/src/index.ts"],
-      "@hierarchidb/common-type": ["../../common/types/src/index.ts"],
-      "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/dist"],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": ["../../runtime-ui/plugin-dialog/dist/*"]
+      "~/*": ["./src/*"]
     },
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "node"]
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "vite/client",
+      "node"
+    ]
   },
+  "checkDeps": { "allowSkipLibCheck": true, "reason": "UI transitive types (MUI/Emotion) — tracked to remove." },
   "include": [
     "src/types.ts",
     "src/types/**/*.d.ts"

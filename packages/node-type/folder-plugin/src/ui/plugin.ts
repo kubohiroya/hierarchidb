@@ -43,13 +43,13 @@ export const FolderUIPlugin: UIPluginDefinition = {
     createDialog: FolderCreateDialog,
     editDialog: FolderEditDialog,
   },
-  
+
   // Action Hooks
   hooks: {
     onValidateCreateForm: async (params: { formData: unknown }) => {
       const validation = validateFolderData(params.formData as CreateFolderData);
       const errors: Record<string, string> = {};
-      
+
       // Convert array of errors to Record format
       if (validation.errors) {
         validation.errors.forEach((error, index) => {
@@ -62,23 +62,23 @@ export const FolderUIPlugin: UIPluginDefinition = {
           }
         });
       }
-      
+
       return {
         valid: validation.isValid,
-        errors: Object.keys(errors).length > 0 ? errors : undefined
+        errors: Object.keys(errors).length > 0 ? errors : undefined,
       };
     },
   },
-  
+
   // Menu and Display Settings
   menu: {
     createOrder: 10,
     group: 'container',
   },
-  
+
   // Visual Styling
   style: {
     primaryColor: '#FFC107',
     icon: 'folder',
-  }
+  },
 };

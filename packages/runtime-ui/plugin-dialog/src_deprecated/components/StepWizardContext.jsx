@@ -1,8 +1,8 @@
 "use strict";
 /**
  * @file StepWizardContext.tsx
- * @description マルチステップウィザードのコンテキスト
- */
+ * @description
+*/
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -39,8 +39,7 @@ function wizardReducer(state, action) {
             var updatedStep = __assign(__assign({}, step), { data: __assign(__assign({}, step.data), data) });
             var newSteps = new Map(state.steps);
             newSteps.set(stepNumber, updatedStep);
-            // 全体データも更新
-            var allData = __assign(__assign({}, state.data), data);
+                        var allData = __assign(__assign({}, state.data), data);
             return __assign(__assign({}, state), { steps: newSteps, data: allData });
         }
         case 'VALIDATE_STEP': {
@@ -70,7 +69,6 @@ function wizardReducer(state, action) {
     }
 }
 // ============================================================================
-// ヘルパー関数
 // ============================================================================
 function createEmptyStep(stepNumber) {
     return {
@@ -103,8 +101,7 @@ function WizardProvider(_a) {
     var children = _a.children, stepDefinitions = _a.stepDefinitions, _b = _a.initialData, initialData = _b === void 0 ? {} : _b, initialStep = _a.initialStep, onStepChange = _a.onStepChange;
     var _c = (0, react_1.useReducer)(wizardReducer, (function () {
         var initialState = createInitialState(stepDefinitions);
-        // 初期ステップが指定されていれば設定
-        if (initialStep !== undefined && stepDefinitions.some(function (s) { return s.stepNumber === initialStep; })) {
+                if (initialStep !== undefined && stepDefinitions.some(function (s) { return s.stepNumber === initialStep; })) {
             initialState.currentStep = initialStep;
         }
         // Set initial data for the first step
@@ -118,8 +115,7 @@ function WizardProvider(_a) {
         }
         return __assign(__assign({}, initialState), { data: initialData });
     })()), state = _c[0], dispatch = _c[1];
-    // アクション
-    var actions = (0, react_1.useMemo)(function () { return ({
+        var actions = (0, react_1.useMemo)(function () { return ({
         goToNext: function () {
             var sortedSteps = __spreadArray([], stepDefinitions, true).sort(function (a, b) { return a.stepNumber - b.stepNumber; });
             var currentIndex = sortedSteps.findIndex(function (s) { return s.stepNumber === state.currentStep; });
@@ -142,8 +138,7 @@ function WizardProvider(_a) {
         },
         goToStep: function (stepNumber) {
             dispatch({ type: 'SET_CURRENT_STEP', payload: stepNumber });
-            // ステップ変更のコールバックを呼び出し
-            if (onStepChange) {
+                        if (onStepChange) {
                 onStepChange(stepNumber);
             }
         },
@@ -166,8 +161,7 @@ function WizardProvider(_a) {
             dispatch({ type: 'COMPLETE_WIZARD' });
         },
     }); }, [state.currentStep, stepDefinitions]);
-    // ヘルパー
-    var helpers = (0, react_1.useMemo)(function () { return ({
+        var helpers = (0, react_1.useMemo)(function () { return ({
         canGoNext: function () {
             var currentStepState = state.steps.get(state.currentStep);
             return (currentStepState === null || currentStepState === void 0 ? void 0 : currentStepState.isValidated) === true && currentStepState.errors.length === 0;
@@ -178,8 +172,7 @@ function WizardProvider(_a) {
             return currentIndex > 0;
         },
         canGoToStep: function (stepNumber) {
-            // 依存関係をチェック
-            var targetStep = stepDefinitions.find(function (s) { return s.stepNumber === stepNumber; });
+                        var targetStep = stepDefinitions.find(function (s) { return s.stepNumber === stepNumber; });
             if (!targetStep)
                 return false;
             if (targetStep.dependsOn) {
@@ -202,8 +195,7 @@ function WizardProvider(_a) {
 }
 exports.WizardProvider = WizardProvider;
 /**
- * ウィザードコンテキストを使用するフック
- */
+*/
 function useWizard() {
     var context = (0, react_1.useContext)(WizardContext);
     if (!context) {

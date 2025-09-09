@@ -1,42 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Badge,
   Box,
-  Paper,
-  Typography,
   Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  IconButton,
+  LinearProgress,
   List,
   ListItem,
   ListItemText,
-
-  IconButton,
-  Chip,
-  Divider,
-
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Tooltip,
-  LinearProgress,
   Menu,
   MenuItem,
-  Badge,
-  CircularProgress,
+  Paper,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
+  Cached as CachedIcon,
+  CheckCircle as CheckIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
+  Error as ErrorIcon,
+  Link as LinkIcon,
+  Memory as MemoryIcon,
+  Merge as MergeIcon,
+  MoreVert as MoreIcon,
   PlayArrow as PlayIcon,
   Speed as SpeedIcon,
-  Link as LinkIcon,
-  MoreVert as MoreIcon,
-  Cached as CachedIcon,
-  Memory as MemoryIcon,
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
   Timeline as TimelineIcon,
-  Merge as MergeIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ResolverEntity } from '~/types';
@@ -61,14 +59,14 @@ interface ResolverPanelProps {
 }
 
 export const ResolverPanel: React.FC<ResolverPanelProps> = ({
-  nodeId: _nodeId,
-  entity,
-  onEdit,
-  onDelete,
-  onTest,
-  onCompile,
-  onViewChain,
-}) => {
+                                                              nodeId: _nodeId,
+                                                              entity,
+                                                              onEdit,
+                                                              onDelete,
+                                                              onTest,
+                                                              onCompile,
+                                                              onViewChain,
+                                                            }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [compilationStatus, setCompilationStatus] = useState<'idle' | 'compiling' | 'compiled' | 'error'>('idle');
   const [statistics, setStatistics] = useState<MappingStatistics | null>(null);
@@ -80,7 +78,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       const totalMappings = entity.mappingRules.length;
       // const _totalValidations = entity.validationRules.length;
       // const _totalTransformations = entity.dataTransformations.length;
-      
+
       setStatistics({
         totalSourceProperties: 0, // Would be calculated from actual schema
         totalTargetProperties: 0, // Would be calculated from actual schema
@@ -89,7 +87,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
         coverage: totalMappings > 0 ? 100 : 0,
         conflicts: [],
       } as any);
-      
+
       // Check if compiled version exists (mock)
       if (totalMappings > 5) {
         setCompilationStatus('compiled');
@@ -108,7 +106,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
   const handleCompile = async () => {
     setIsProcessing(true);
     setCompilationStatus('compiling');
-    
+
     // Simulate compilation
     setTimeout(() => {
       setCompilationStatus('compiled');
@@ -119,10 +117,10 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
 
   const getStatusIcon = () => {
     if (!entity) return null;
-    
+
     const hasErrors = entity.mappingRules.length === 0;
     const hasWarnings = entity.validationRules.length === 0;
-    
+
     if (hasErrors) {
       return <ErrorIcon color="error" />;
     } else if (hasWarnings) {
@@ -444,25 +442,40 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={() => { handleMenuClose(); onEdit?.(); }}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          onEdit?.();
+        }}>
           <EditIcon sx={{ mr: 1 }} fontSize="small" />
           Edit Configuration
         </MenuItem>
-        <MenuItem onClick={() => { handleMenuClose(); onTest?.(); }}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          onTest?.();
+        }}>
           <PlayIcon sx={{ mr: 1 }} fontSize="small" />
           Run Test
         </MenuItem>
-        <MenuItem onClick={() => { handleMenuClose(); handleCompile(); }}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          handleCompile();
+        }}>
           <SpeedIcon sx={{ mr: 1 }} fontSize="small" />
           Compile & Optimize
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => { handleMenuClose(); onViewChain?.(); }}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          onViewChain?.();
+        }}>
           <LinkIcon sx={{ mr: 1 }} fontSize="small" />
           View in Chain
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => { handleMenuClose(); onDelete?.(); }}>
+        <MenuItem onClick={() => {
+          handleMenuClose();
+          onDelete?.();
+        }}>
           <DeleteIcon sx={{ mr: 1 }} fontSize="small" color="error" />
           Delete
         </MenuItem>

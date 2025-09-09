@@ -1,16 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { TextField } from '@mui/material';
-import {
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-} from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, TextField, Typography } from '@mui/material';
 import { FolderIcon } from './FolderIcon';
-import type { FolderEditData, FolderDisplayData } from '../types';
+import type { FolderDisplayData, FolderEditData } from '../types';
 import { NodeId } from '@hierarchidb/common-type';
 
 export interface FolderEditDialogProps {
@@ -44,12 +35,12 @@ export interface FolderEditDialogProps {
  * Dialog for editing existing folders
  */
 export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
-  nodeId: _nodeId,
-  currentData,
-  onSubmit,
-  onCancel,
-  open = true,
-}) => {
+                                                                    nodeId: _nodeId,
+                                                                    currentData,
+                                                                    onSubmit,
+                                                                    onCancel,
+                                                                    open = true,
+                                                                  }) => {
   const [formData, setFormData] = useState<FolderEditData>({
     name: currentData.name,
     description: currentData.description || '',
@@ -104,7 +95,7 @@ export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
         });
       }
     },
-    [errors.name, formData.name, hasChanges]
+    [errors.name, formData.name, hasChanges],
   );
 
   // Handle form submission

@@ -4,64 +4,64 @@
  * Tests for the main plugin API integration with PluginAPI
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { NodeId } from "@hierarchidb/common-type";
-import { ShapesPluginAPI } from "../ShapesPluginAPI";
-import type { BatchProcessConfig, DataSourceInfo } from "../types";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NodeId } from '@hierarchidb/common-type';
+import { ShapesPluginAPI } from '../ShapesPluginAPI';
+import type { BatchProcessConfig, DataSourceInfo } from '../types';
 
 // Mock ShapeDB - define everything inside the mock factory to avoid hoisting issues
-vi.mock("../database/ShapeDB", () => {
+vi.mock('../database/ShapeDB', () => {
   const mockInstance = {
-      createBatchSession: vi.fn().mockResolvedValue({
-        sessionId: "session-123",
-        nodeId: "node-123",
-        status: "running",
-        config: {},
-        startedAt: Date.now(),
-        updatedAt: Date.now(),
-        progress: {
-          total: 0,
-          completed: 0,
-          failed: 0,
-          skipped: 0,
-          percentage: 0,
-          currentStage: "download",
-          currentTask: "Initializing...",
-        },
-        stages: {},
-        resourceUsage: {
-          memoryUsed: 0,
-          memoryPeak: 0,
-          cpuPercent: 0,
-          storageUsed: 0,
-          networkBytesReceived: 0,
-          networkBytesSent: 0,
-        },
-      }),
-      getActiveBatchSessions: vi.fn().mockResolvedValue([]),
-      getBatchSession: vi.fn().mockResolvedValue({
-        sessionId: "session-123",
-        status: "paused"
-      }),
-      updateBatchSession: vi.fn().mockResolvedValue(undefined),
-      deleteBatchSession: vi.fn().mockResolvedValue(undefined),
-    };
-    
+    createBatchSession: vi.fn().mockResolvedValue({
+      sessionId: 'session-123',
+      nodeId: 'node-123',
+      status: 'running',
+      config: {},
+      startedAt: Date.now(),
+      updatedAt: Date.now(),
+      progress: {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 0,
+        currentStage: 'download',
+        currentTask: 'Initializing...',
+      },
+      stages: {},
+      resourceUsage: {
+        memoryUsed: 0,
+        memoryPeak: 0,
+        cpuPercent: 0,
+        storageUsed: 0,
+        networkBytesReceived: 0,
+        networkBytesSent: 0,
+      },
+    }),
+    getActiveBatchSessions: vi.fn().mockResolvedValue([]),
+    getBatchSession: vi.fn().mockResolvedValue({
+      sessionId: 'session-123',
+      status: 'paused',
+    }),
+    updateBatchSession: vi.fn().mockResolvedValue(undefined),
+    deleteBatchSession: vi.fn().mockResolvedValue(undefined),
+  };
+
   return {
     ShapeDB: {
-      getInstance: vi.fn().mockReturnValue(mockInstance)
+      getInstance: vi.fn().mockReturnValue(mockInstance),
     },
-    shapeDB: mockInstance
+    shapeDB: mockInstance,
   };
 });
 
 // Mock BatchSessionManager  
-vi.mock("../batch/BatchSessionManager", () => ({
+vi.mock('../batch/BatchSessionManager', () => ({
   BatchSessionManager: vi.fn().mockImplementation(() => ({
     createSession: vi.fn().mockImplementation(async (nodeId, config, urlMetadata) => ({
-      sessionId: "session-123",
+      sessionId: 'session-123',
       nodeId: nodeId,
-      status: "running",
+      status: 'running',
       config: config, // Return the actual config passed in
       startedAt: Date.now(),
       updatedAt: Date.now(),
@@ -70,98 +70,98 @@ vi.mock("../batch/BatchSessionManager", () => ({
     resumeSession: vi.fn().mockResolvedValue(undefined),
     cancelSession: vi.fn().mockResolvedValue(undefined),
     getSessionStatus: vi.fn().mockResolvedValue({
-      sessionId: "session-123",
-      status: "running"
+      sessionId: 'session-123',
+      status: 'running',
     }),
-  }))
+  })),
 }));
 
 // Mock other services
-vi.mock("../workers/WorkerPoolManager", () => ({
-  WorkerPoolManager: vi.fn().mockImplementation(() => ({}))
+vi.mock('../workers/WorkerPoolManager', () => ({
+  WorkerPoolManager: vi.fn().mockImplementation(() => ({})),
 }));
-vi.mock("@hierarchidb/runtime-ui-datasource", () => ({
+vi.mock('@hierarchidb/runtime-ui-datasource', () => ({
   DataSourceManager: vi.fn().mockImplementation(() => ({
     getAvailableDataSources: vi.fn().mockResolvedValue([
       {
-        name: "GADM",
-        displayName: "GADM Administrative Areas",
-        description: "Global administrative boundaries",
-        license: "Academic use only",
-        attribution: "GADM",
-        availableCountries: ["JP", "US", "GB"],
+        name: 'GADM',
+        displayName: 'GADM Administrative Areas',
+        description: 'Global administrative boundaries',
+        license: 'Academic use only',
+        attribution: 'GADM',
+        availableCountries: ['JP', 'US', 'GB'],
         maxAdminLevel: 5,
-        dataFormat: "geojson",
-        updateFrequency: "Annually",
-        features: ["boundaries", "names", "codes"],
+        dataFormat: 'geojson',
+        updateFrequency: 'Annually',
+        features: ['boundaries', 'names', 'codes'],
       },
       {
-        name: "NaturalEarth",
-        displayName: "Natural Earth",
-        description: "Public domain map dataset",
-        license: "Public Domain",
-        attribution: "Natural Earth",
-        availableCountries: ["JP", "US", "GB", "FR", "DE"],
+        name: 'NaturalEarth',
+        displayName: 'Natural Earth',
+        description: 'Public domain map dataset',
+        license: 'Public Domain',
+        attribution: 'Natural Earth',
+        availableCountries: ['JP', 'US', 'GB', 'FR', 'DE'],
         maxAdminLevel: 2,
-        dataFormat: "geojson",
-        updateFrequency: "As needed",
-        features: ["boundaries", "physical_features"],
+        dataFormat: 'geojson',
+        updateFrequency: 'As needed',
+        features: ['boundaries', 'physical_features'],
       },
     ]),
-    getCountryMetadata: vi.fn().mockImplementation((dataSource, countryCode) => 
+    getCountryMetadata: vi.fn().mockImplementation((dataSource, countryCode) =>
       Promise.resolve({
         countries: [
           {
-            code: "JP",
-            name: "Japan",
+            code: 'JP',
+            name: 'Japan',
             adminLevels: [1, 2, 3, 4],
             featureCount: 47,
             totalArea: 377975,
-            bbox: [122.93, 20.42, 153.99, 45.55]
-          }
+            bbox: [122.93, 20.42, 153.99, 45.55],
+          },
         ],
         adminLevelNames: {
-          0: "Country",
-          1: "Prefecture",
-          2: "City",
-          3: "Ward"
+          0: 'Country',
+          1: 'Prefecture',
+          2: 'City',
+          3: 'Ward',
         },
-        lastUpdated: "2024-01-01",
+        lastUpdated: '2024-01-01',
         dataQuality: {
           completeness: 100,
           accuracy: 99.5,
-          consistency: 100
-        }
-      })
+          consistency: 100,
+        },
+      }),
     ),
     getDataSourceConfig: vi.fn().mockResolvedValue({
-      baseUrl: "https://example.com",
-      format: "topojson"
+      baseUrl: 'https://example.com',
+      format: 'topojson',
     }),
     validateDataSource: vi.fn().mockResolvedValue({
       isValid: true,
       errors: [],
-      warnings: []
-    })
-  }))
+      warnings: [],
+    }),
+  })),
 }));
-vi.mock("../tiles/VectorTileService", () => ({
+vi.mock('../tiles/VectorTileService', () => ({
   VectorTileService: vi.fn().mockImplementation(() => ({
     getTile: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
     getTileMetadata: vi.fn().mockResolvedValue({
-      z: 5, x: 10, y: 20, features: 100
+      z: 5, x: 10, y: 20, features: 100,
     }),
     searchFeatures: vi.fn().mockResolvedValue([
-      { id: "1", properties: { name: "Tokyo" } }
+      { id: '1', properties: { name: 'Tokyo' } },
     ]),
     getFeaturesInBbox: vi.fn().mockResolvedValue([
-      { id: "2", properties: { name: "Osaka" } }
+      { id: '2', properties: { name: 'Osaka' } },
     ]),
-    clearTileCache: vi.fn().mockResolvedValue(undefined)
-  }))
+    clearTileCache: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
-describe("ShapesPluginAPI", () => {
+describe('ShapesPluginAPI', () => {
   let api: ShapesPluginAPI;
   let mockPluginAPI: any;
 
@@ -193,18 +193,18 @@ describe("ShapesPluginAPI", () => {
     };
 
     api = new ShapesPluginAPI(); // mockPluginAPI
-    
+
     // Reset all mocks
     vi.clearAllMocks();
   });
 
-  describe("batch processing", () => {
-    it("should start batch process successfully", async () => {
+  describe('batch processing', () => {
+    it('should start batch process successfully', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const config: BatchProcessConfig = {
-        dataSource: "GADM",
-        countryCode: "JP",
+        dataSource: 'GADM',
+        countryCode: 'JP',
         adminLevels: [1, 2],
         workerPoolSize: 4,
         enableFeatureExtraction: true,
@@ -220,8 +220,8 @@ describe("ShapesPluginAPI", () => {
 
       // Mock worker response
       mockPluginAPI.getWorkerAPI().executeCommand.mockResolvedValue({
-        sessionId: "session-123",
-        status: "running",
+        sessionId: 'session-123',
+        status: 'running',
       });
 
       // Act
@@ -229,17 +229,17 @@ describe("ShapesPluginAPI", () => {
 
       // Assert
       expect(session).toBeDefined();
-      expect(session.sessionId).toBe("session-123");
-      expect(session.status).toBe("running");
+      expect(session.sessionId).toBe('session-123');
+      expect(session.status).toBe('running');
       expect(session.nodeId).toBe(nodeId);
       expect(session.config).toEqual(config);
       // The API directly calls BatchSessionManager, not through executeCommand
       // So we don't need to check executeCommand calls for this method
     });
 
-    it("should pause batch process", async () => {
+    it('should pause batch process', async () => {
       // Arrange
-      const sessionId = "session-123";
+      const sessionId = 'session-123';
 
       // Act
       await api.pauseBatchProcess(sessionId);
@@ -248,9 +248,9 @@ describe("ShapesPluginAPI", () => {
       expect(api).toBeDefined(); // Simple assertion since BatchSessionManager is mocked
     });
 
-    it("should resume batch process", async () => {
+    it('should resume batch process', async () => {
       // Arrange
-      const sessionId = "session-123";
+      const sessionId = 'session-123';
 
       // Act
       await api.resumeBatchProcess(sessionId);
@@ -259,9 +259,9 @@ describe("ShapesPluginAPI", () => {
       expect(api).toBeDefined(); // Simple assertion since BatchSessionManager is mocked
     });
 
-    it("should cancel batch process", async () => {
+    it('should cancel batch process', async () => {
       // Arrange
-      const sessionId = "session-123";
+      const sessionId = 'session-123';
 
       // Act
       await api.cancelBatchProcess(sessionId);
@@ -270,13 +270,13 @@ describe("ShapesPluginAPI", () => {
       expect(api).toBeDefined(); // Simple assertion since BatchSessionManager is mocked
     });
 
-    it("should get batch status", async () => {
+    it('should get batch status', async () => {
       // Arrange
-      const sessionId = "session-123";
+      const sessionId = 'session-123';
       const mockStatus = {
         session: {
           sessionId,
-          status: "running",
+          status: 'running',
           progress: {
             total: 100,
             completed: 50,
@@ -298,38 +298,38 @@ describe("ShapesPluginAPI", () => {
 
       // Assert
       expect(status).toBeDefined();
-      expect(status.sessionId).toBe("session-123");
-      expect(status.status).toBe("running");
+      expect(status.sessionId).toBe('session-123');
+      expect(status.status).toBe('running');
     });
   });
 
-  describe("data sources", () => {
-    it("should get available data sources", async () => {
+  describe('data sources', () => {
+    it('should get available data sources', async () => {
       // Arrange
       const mockDataSources: DataSourceInfo[] = [
         {
-          name: "GADM",
-          displayName: "GADM Administrative Areas",
-          description: "Global administrative boundaries",
-          license: "Academic use only",
-          attribution: "GADM",
-          availableCountries: ["JP", "US", "GB"],
+          name: 'GADM',
+          displayName: 'GADM Administrative Areas',
+          description: 'Global administrative boundaries',
+          license: 'Academic use only',
+          attribution: 'GADM',
+          availableCountries: ['JP', 'US', 'GB'],
           maxAdminLevel: 5,
-          dataFormat: "geojson",
-          updateFrequency: "Annually",
-          features: ["boundaries", "names", "codes"],
+          dataFormat: 'geojson',
+          updateFrequency: 'Annually',
+          features: ['boundaries', 'names', 'codes'],
         },
         {
-          name: "NaturalEarth",
-          displayName: "Natural Earth",
-          description: "Public domain map dataset",
-          license: "Public Domain",
-          attribution: "Natural Earth",
-          availableCountries: ["JP", "US", "GB", "FR", "DE"],
+          name: 'NaturalEarth',
+          displayName: 'Natural Earth',
+          description: 'Public domain map dataset',
+          license: 'Public Domain',
+          attribution: 'Natural Earth',
+          availableCountries: ['JP', 'US', 'GB', 'FR', 'DE'],
           maxAdminLevel: 2,
-          dataFormat: "geojson",
-          updateFrequency: "As needed",
-          features: ["boundaries", "physical_features"],
+          dataFormat: 'geojson',
+          updateFrequency: 'As needed',
+          features: ['boundaries', 'physical_features'],
         },
       ];
 
@@ -341,29 +341,29 @@ describe("ShapesPluginAPI", () => {
       // Assert
       expect(dataSources).toEqual(mockDataSources);
       expect(dataSources).toHaveLength(2);
-      expect(dataSources[0]?.name).toBe("GADM");
-      expect(dataSources[1]?.name).toBe("NaturalEarth");
+      expect(dataSources[0]?.name).toBe('GADM');
+      expect(dataSources[1]?.name).toBe('NaturalEarth');
     });
 
-    it("should get country metadata", async () => {
+    it('should get country metadata', async () => {
       // Arrange
       const mockMetadata = [
         {
-          countryCode: "JP",
-          countryName: "Japan",
-          countryNameLocal: "日本",
+          countryCode: 'JP',
+          countryName: 'Japan',
+          countryNameLocal: '日本',
           adminLevels: [
             {
               level: 1,
-              name: "Prefectures",
-              localName: "都道府県",
+              name: 'Prefectures',
+              localName: '都道府県',
               featureCount: 47,
               available: true,
             },
             {
               level: 2,
-              name: "Municipalities",
-              localName: "市町村",
+              name: 'Municipalities',
+              localName: '市町村',
               featureCount: 1741,
               available: true,
             },
@@ -371,7 +371,7 @@ describe("ShapesPluginAPI", () => {
           bbox: [122.93, 24.25, 145.82, 45.52],
           center: [138.25, 36.2],
           featureCount: 1788,
-          lastUpdated: "2023-01-01",
+          lastUpdated: '2023-01-01',
           available: true,
         },
       ];
@@ -379,20 +379,20 @@ describe("ShapesPluginAPI", () => {
       mockPluginAPI.getWorkerAPI().query.mockResolvedValue(mockMetadata);
 
       // Act
-      const metadata = await api.getCountryMetadata("GADM", "JP");
+      const metadata = await api.getCountryMetadata('GADM', 'JP');
 
       // Assert
       expect(metadata).toBeDefined();
       expect(metadata.countries).toBeDefined();
-      expect(metadata.countries[0].code).toBe("JP");
+      expect(metadata.countries[0].code).toBe('JP');
     });
 
-    it("should validate data source configuration", async () => {
+    it('should validate data source configuration', async () => {
       // Arrange
       const mockValidation = {
         valid: true,
         errors: [],
-        warnings: ["Large dataset may take significant time to process"],
+        warnings: ['Large dataset may take significant time to process'],
         estimatedSize: 150000000,
         estimatedFeatures: 50000,
         estimatedDuration: 3600,
@@ -404,8 +404,8 @@ describe("ShapesPluginAPI", () => {
         .executeCommand.mockResolvedValue(mockValidation);
 
       // Act
-      const validation = await api.validateDataSource("GADM", {
-        countryCode: "JP",
+      const validation = await api.validateDataSource('GADM', {
+        countryCode: 'JP',
         adminLevels: [1, 2, 3],
         bbox: [130, 30, 140, 40],
       });
@@ -417,10 +417,10 @@ describe("ShapesPluginAPI", () => {
     });
   });
 
-  describe("vector tiles", () => {
-    it("should get vector tile", async () => {
+  describe('vector tiles', () => {
+    it('should get vector tile', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const mockTile = new Uint8Array([1, 2, 3]);
 
       mockPluginAPI.getWorkerAPI().query.mockResolvedValue(mockTile);
@@ -434,13 +434,13 @@ describe("ShapesPluginAPI", () => {
       // Direct service call, no Worker API verification needed
     });
 
-    it("should get tile metadata", async () => {
+    it('should get tile metadata', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const mockMetadata = {
         exists: true,
         nodeId,
-        tileKey: "10-512-256",
+        tileKey: '10-512-256',
         z: 10,
         x: 512,
         y: 256,
@@ -448,22 +448,22 @@ describe("ShapesPluginAPI", () => {
         features: 150,
         layers: [
           {
-            name: "admin_1",
+            name: 'admin_1',
             featureCount: 47,
             minZoom: 0,
             maxZoom: 18,
-            fields: ["name", "code"],
+            fields: ['name', 'code'],
           },
           {
-            name: "admin_2",
+            name: 'admin_2',
             featureCount: 103,
             minZoom: 8,
             maxZoom: 18,
-            fields: ["name", "code", "population"],
+            fields: ['name', 'code', 'population'],
           },
         ],
         generatedAt: Date.now(),
-        contentHash: "abc123def456",
+        contentHash: 'abc123def456',
         version: 1,
       };
 
@@ -478,9 +478,9 @@ describe("ShapesPluginAPI", () => {
       expect(metadata.features).toBe(100);
     });
 
-    it("should clear tile cache", async () => {
+    it('should clear tile cache', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       mockPluginAPI
         .getWorkerAPI()
         .executeCommand.mockResolvedValue({ success: true });
@@ -494,16 +494,16 @@ describe("ShapesPluginAPI", () => {
     });
   });
 
-  describe("feature queries", () => {
-    it("should search features", async () => {
+  describe('feature queries', () => {
+    it('should search features', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const mockFeatures = [
         {
           id: 1,
           nodeId,
-          properties: { name: "Tokyo", admin_level: 1, population: 13960000 },
-          geometry: { type: "Polygon", coordinates: [] },
+          properties: { name: 'Tokyo', admin_level: 1, population: 13960000 },
+          geometry: { type: 'Polygon', coordinates: [] },
           bbox: [139.69, 35.68, 139.7, 35.69],
         },
       ];
@@ -511,11 +511,11 @@ describe("ShapesPluginAPI", () => {
       mockPluginAPI.getWorkerAPI().query.mockResolvedValue(mockFeatures);
 
       // Act
-      const features = await api.searchFeatures(nodeId, "Tokyo", {
+      const features = await api.searchFeatures(nodeId, 'Tokyo', {
         limit: 10,
         adminLevel: 1,
-        sortBy: "population",
-        sortOrder: "desc",
+        sortBy: 'population',
+        sortOrder: 'desc',
       });
 
       // Assert
@@ -523,14 +523,14 @@ describe("ShapesPluginAPI", () => {
       expect(Array.isArray(features)).toBe(true);
     });
 
-    it("should get feature by ID", async () => {
+    it('should get feature by ID', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const mockFeature = {
         id: 1,
         nodeId,
-        properties: { name: "Tokyo", admin_level: 1 },
-        geometry: { type: "Polygon", coordinates: [] },
+        properties: { name: 'Tokyo', admin_level: 1 },
+        geometry: { type: 'Polygon', coordinates: [] },
         bbox: [139.69, 35.68, 139.7, 35.69],
       };
 
@@ -543,23 +543,23 @@ describe("ShapesPluginAPI", () => {
       expect(feature).toBeNull(); // API returns null for now
     });
 
-    it("should get features by bounding box", async () => {
+    it('should get features by bounding box', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const bbox: [number, number, number, number] = [139, 35, 140, 36];
       const mockFeatures = [
         {
           id: 1,
           nodeId,
-          properties: { name: "Tokyo", admin_level: 1 },
-          geometry: { type: "Polygon", coordinates: [] },
+          properties: { name: 'Tokyo', admin_level: 1 },
+          geometry: { type: 'Polygon', coordinates: [] },
           bbox: [139.69, 35.68, 139.7, 35.69],
         },
         {
           id: 2,
           nodeId,
-          properties: { name: "Kanagawa", admin_level: 1 },
-          geometry: { type: "Polygon", coordinates: [] },
+          properties: { name: 'Kanagawa', admin_level: 1 },
+          geometry: { type: 'Polygon', coordinates: [] },
           bbox: [139.0, 35.1, 139.8, 35.7],
         },
       ];
@@ -578,8 +578,8 @@ describe("ShapesPluginAPI", () => {
     });
   });
 
-  describe("cache management", () => {
-    it("should get cache statistics", async () => {
+  describe('cache management', () => {
+    it('should get cache statistics', async () => {
       // Arrange
       const mockStats = {
         totalSize: 500000000,
@@ -636,31 +636,31 @@ describe("ShapesPluginAPI", () => {
       expect(stats.itemCount).toBe(0);
     });
 
-    it("should clear cache for specific node", async () => {
+    it('should clear cache for specific node', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       mockPluginAPI
         .getWorkerAPI()
         .executeCommand.mockResolvedValue({ success: true });
 
       // Act
-      await api.clearCache(nodeId, "features");
+      await api.clearCache(nodeId, 'features');
 
       // Assert
       // Direct service call, no Worker API verification needed
       expect(api).toBeDefined();
     });
 
-    it("should optimize storage", async () => {
+    it('should optimize storage', async () => {
       // Arrange
-      const nodeId: NodeId = "node-123" as NodeId;
+      const nodeId: NodeId = 'node-123' as NodeId;
       const mockResult = {
         freedSpace: 50000000,
         removedItems: 100,
         compactedItems: 200,
         duration: 5000,
         errors: [],
-        suggestions: ["Consider increasing cache size for better performance"],
+        suggestions: ['Consider increasing cache size for better performance'],
       };
 
       mockPluginAPI.getWorkerAPI().executeCommand.mockResolvedValue(mockResult);

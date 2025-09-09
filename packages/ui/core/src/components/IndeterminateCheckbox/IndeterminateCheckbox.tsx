@@ -12,14 +12,14 @@ interface IndeterminateCheckboxProps {
 }
 
 export function IndeterminateCheckbox({
-  id,
-  checked,
-  indeterminate,
-  cascadingSelected,
-  onChange,
-  size,
-  sx,
-}: IndeterminateCheckboxProps): JSX.Element {
+                                        id,
+                                        checked,
+                                        indeterminate,
+                                        cascadingSelected,
+                                        onChange,
+                                        size,
+                                        sx,
+                                      }: IndeterminateCheckboxProps): JSX.Element {
   return (
     <Checkbox
       id={id}

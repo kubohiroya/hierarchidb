@@ -1,10 +1,10 @@
 /**
- * @file steps/index.ts
+  * @file steps/index.ts
  * @description Export all Styler step components
- * 【機能概要】: Stylerステップコンポーネントのエクスポート
- * 【実装方針】: Spreadsheetプラグインの拡張ステップとして提供
- * 🟢 信頼性レベル: モジュールエクスポート
- */
+ * : Styler
+ * : Spreadsheet
+ * :
+  */
 
 // Step 5: Style Mapping Configuration
 export { StylerStep5, StylerStep5Definition } from './StylerStep5';

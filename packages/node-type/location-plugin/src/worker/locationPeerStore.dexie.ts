@@ -5,14 +5,22 @@ import type { LocationPeerData } from '../types/entities';
 
 export function createLocationPeerStoreDexie(db: LocationEntitiesDB): PeerStore<LocationPeerData> {
   return {
-    async get(nodeId: NodeId) { return (await db.peerEntities.get(nodeId)) as any; },
+    async get(nodeId: NodeId) {
+      return (await db.peerEntities.get(nodeId)) as any;
+    },
     async put(e: PeerEntity<LocationPeerData>) {
       const data = normalizeV1(e.data);
       await db.peerEntities.put({ ...e, data, updatedAt: Date.now() } as LocationPeerRow);
     },
-    async delete(nodeId: NodeId) { await db.peerEntities.delete(nodeId); },
+    async delete(nodeId: NodeId) {
+      await db.peerEntities.delete(nodeId);
+    },
     async bulkUpsert(entities: PeerEntity<LocationPeerData>[]) {
-      const rows = entities.map((e) => ({ ...e, data: normalizeV1(e.data), updatedAt: Date.now() })) as LocationPeerRow[];
+      const rows = entities.map((e) => ({
+        ...e,
+        data: normalizeV1(e.data),
+        updatedAt: Date.now(),
+      })) as LocationPeerRow[];
       await db.peerEntities.bulkPut(rows);
     },
   };

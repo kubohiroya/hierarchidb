@@ -7,7 +7,7 @@ export interface CORSOptions {
 
 export function getCORSHeaders(
   requestOrigin: string | undefined,
-  options: CORSOptions
+  options: CORSOptions,
 ): Record<string, string> {
   const {
     allowedOrigins,

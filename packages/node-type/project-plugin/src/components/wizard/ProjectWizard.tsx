@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import {
+  Box,
+  Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  Stepper,
+  DialogContent,
+  DialogTitle,
   Step,
   StepLabel,
-  Button,
-  Box,
-  Typography
+  Stepper,
+  Typography,
 } from '@mui/material';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ProjectEntity } from '~/types/project-types';
@@ -34,19 +34,19 @@ const steps = [
   'Data Layers',
   'Spatial Analysis',
   'Temporal Analysis',
-  'Output Settings'
+  'Output Settings',
 ];
 
 export const ProjectWizard: React.FC<ProjectWizardProps> = ({
-  open,
-  nodeId,
-  initialData,
-  onClose,
-  onComplete
-}) => {
+                                                              open,
+                                                              nodeId,
+                                                              initialData,
+                                                              onClose,
+                                                              onComplete,
+                                                            }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [projectData, setProjectData] = useState<Partial<ProjectEntity>>(
-    initialData || {}
+    initialData || {},
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,9 +61,9 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
   const handleStepComplete = (stepData: any) => {
     setProjectData((prev) => ({
       ...prev,
-      ...stepData
+      ...stepData,
     }));
-    
+
     if (activeStep === steps.length - 1) {
       handleSubmit();
     } else {
@@ -140,13 +140,13 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
       maxWidth="lg"
       fullWidth
       PaperProps={{
-        sx: { height: '90vh', display: 'flex', flexDirection: 'column' }
+        sx: { height: '90vh', display: 'flex', flexDirection: 'column' },
       }}
     >
       <DialogTitle>
         <Typography variant="h5">Create Project</Typography>
       </DialogTitle>
-      
+
       <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
           {steps.map((label) => (
@@ -155,12 +155,12 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
             </Step>
           ))}
         </Stepper>
-        
+
         <Box sx={{ flex: 1, overflow: 'auto' }}>
           {renderStepContent()}
         </Box>
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button

@@ -1,12 +1,12 @@
 import type { WorkingCopyAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNode, NodeType, ValidationResult, CommitResult } from '@hierarchidb/common-type';
+import type { CommitResult, NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-type';
 import { CoreDB } from './CoreDB';
 import {
   createDraftWorkingCopyGetOrCreate,
   createWorkingCopyFromNode as createWcFromNode,
+  discardWorkingCopy as discardWc,
   getWorkingCopy as getWc,
   updateWorkingCopy as updateWc,
-  discardWorkingCopy as discardWc,
 } from './WorkingCopyTreeNodeOperations';
 import { CommandProcessor } from './CommandProcessor';
 import { FEATURE_FLAGS } from '../config/feature-flags';
@@ -17,12 +17,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
-  constructor(private coreDB: CoreDB, _ephemeralDB: unknown, private commandProcessor?: CommandProcessor) {}
+  constructor(private coreDB: CoreDB, _ephemeralDB: unknown, private commandProcessor?: CommandProcessor) {
+  }
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
     parentId: NodeId,
-    initialData?: Partial<TreeNode>
+    initialData?: Partial<TreeNode>,
   ): Promise<TreeNode> {
     // Use holder-based create (get-or-create)
     const treeId = (parentId.split(':')[0] as unknown) as any; // expected 'r'|'p' format

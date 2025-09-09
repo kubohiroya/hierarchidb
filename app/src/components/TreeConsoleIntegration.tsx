@@ -5,20 +5,16 @@
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { Box, Alert, CircularProgress } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Box, CircularProgress } from '@mui/material';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial';
-import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
+import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
 import { useWorkerClient } from '~/contexts/WorkerProvider';
-import {
-  TopPageGuidedTour,
-  ProjectsGuidedTour,
-  ResourcesGuidedTour,
-} from '@hierarchidb/runtime-ui-tour';
+import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
-import type { NodeId, TreeNode, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -122,7 +118,7 @@ const TreeConsoleIntegrationInner: React.FC<
           console.log('Unhandled toolbar action:', action, params);
       }
     },
-    [navigate, treeId, pageNodeId, actions]
+    [navigate, treeId, pageNodeId, actions],
   );
 
   // Handler for starting guided tour
@@ -276,10 +272,10 @@ const TreeConsoleIntegrationInner: React.FC<
 
 // Outer component that handles client loading
 export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
-  treeId,
-  pageNodeId,
-  pageTreeNode,
-}) => {
+                                                                                treeId,
+                                                                                pageNodeId,
+                                                                                pageTreeNode,
+                                                                              }) => {
   console.log('[TreeConsoleIntegration] Rendering with props:', {
     treeId,
     pageNodeId,

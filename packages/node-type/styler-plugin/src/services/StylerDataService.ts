@@ -1,17 +1,17 @@
 /**
- * @file StylerDataService.ts
+  * @file StylerDataService.ts
  * @description Styler plugin data service integrating with Spreadsheet CSV API
- * 【機能概要】: Stylerのデータ処理サービス
- * 【実装方針】: SpreadsheetCSVApiDriverを活用してCSVデータを管理
- * 🟢 信頼性レベル: Spreadsheetプラグインとの完全統合
- */
+ * : Styler
+ * : SpreadsheetCSVApiDriverCSV
+ * : Spreadsheet
+  */
 
 import type {
-  ICSVDataApi,
-  CSVTableMetadata,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
+  CSVTableMetadata,
+  ICSVDataApi,
 } from '@hierarchidb/ui-csv-extract';
 
 import type { StylerEntity } from '../entities/StylerEntity';
@@ -19,11 +19,11 @@ import type { StylerConfig } from '../types/stylerTypes';
 import { valueToColor } from '../utils/colorUtils';
 
 /**
- * 【機能概要】: Stylerデータ統合サービス
- * 【実装方針】: SpreadsheetのCSV機能を継承・拡張してスタイル機能を追加
- * 【テスト対応】: データ取得・色計算・プレビュー機能
- * 🟢 信頼性レベル: 完全なSpreadsheet統合
- */
+  * : Styler
+ * : SpreadsheetCSV
+ * :
+ * : Spreadsheet
+  */
 export class StylerDataService {
   private csvApiDriver: ICSVDataApi;
   private pluginId: string = 'styler';
@@ -33,22 +33,22 @@ export class StylerDataService {
   }
 
   /**
-   * 【機能概要】: CSVファイルのアップロードと初期設定
-   * 【実装方針】: SpreadsheetのuploadCSVFileを活用
-   * 【テスト対応】: ファイルアップロード→メタデータ生成→初期Styler設定
-   * 🟢 信頼性レベル: Spreadsheet機能の完全活用
-   */
+      * : CSV
+   * : SpreadsheetuploadCSVFile
+   * : Styler
+   * : Spreadsheet
+      */
   async uploadCSVFile(
     file: File,
-    config: CSVProcessingConfig = {}
+    config: CSVProcessingConfig = {},
   ): Promise<{
     tableMetadata: CSVTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
   }> {
-    // SpreadsheetのCSVアップロード機能を使用
+    //  SpreadsheetCSV
     const tableMetadata = await this.csvApiDriver.uploadCSVFile(file, config);
 
-    // Styler用の初期設定を生成
+    //  Styler
     const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
 
     return {
@@ -58,13 +58,13 @@ export class StylerDataService {
   }
 
   /**
-   * 【機能概要】: URLからのCSVダウンロードと設定
-   * 【実装方針】: SpreadsheetのdownloadCSVFromUrlを活用
-   * 🟢 信頼性レベル: Spreadsheet機能の完全活用
-   */
+      * : URLCSV
+   * : SpreadsheetdownloadCSVFromUrl
+   * : Spreadsheet
+      */
   async downloadCSVFromUrl(
     url: string,
-    config: CSVProcessingConfig = {}
+    config: CSVProcessingConfig = {},
   ): Promise<{
     tableMetadata: CSVTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
@@ -79,16 +79,16 @@ export class StylerDataService {
   }
 
   /**
-   * 【機能概要】: スタイル適用済みデータプレビューの取得
-   * 【実装方針】: Spreadsheetのデータ取得＋Stylerの色計算
-   * 【テスト対応】: フィルタ適用→色計算→プレビューデータ生成
-   * 🟢 信頼性レベル: 両プラグイン機能の統合
-   */
+      * :
+   * : SpreadsheetStyler
+   * :
+   * :
+      */
   async getStyledPreview(
     tableId: string,
     stylerConfig: StylerConfig,
     filters: CSVFilterRule[] = [],
-    rowCount: number = 100
+    rowCount: number = 100,
   ): Promise<{
     data: CSVDataResult;
     styledRows: Array<{
@@ -96,10 +96,9 @@ export class StylerDataService {
       styles: Record<string, any>;
     }>;
   }> {
-    // Spreadsheetからフィルタ済みデータを取得
+    //  Spreadsheet
     const data = await this.csvApiDriver.getFilteredPreview(tableId, filters, rowCount);
 
-    // 各行にスタイル情報を付加
     const styledRows = data.rows.map((row) => {
       const styles: Record<string, any> = {};
 
@@ -122,14 +121,14 @@ export class StylerDataService {
   }
 
   /**
-   * 【機能概要】: MapLibreスタイル仕様の生成
-   * 【実装方針】: StylerConfigからMapLibre GL JS用のスタイルを生成
-   * 【テスト対応】: 設定値→MapLibreスタイル変換
-   * 🟢 信頼性レベル: MapLibre仕様準拠
-   */
+      * : MapLibre
+   * : StylerConfigMapLibre GL JS
+   * : MapLibre
+   * : MapLibre
+      */
   async generateMapLibreStyle(
     tableId: string,
-    entity: StylerEntity
+    entity: StylerEntity,
   ): Promise<{
     styleSpec: any;
     colorMapping: Record<string, string>;
@@ -140,7 +139,6 @@ export class StylerDataService {
       throw new Error('Key column, value column, and target property are required');
     }
 
-    // データを取得して値の範囲を確認
     const data = await this.csvApiDriver.getFilteredPreview(tableId, [], 1000);
     const values = data.rows
       .map((row) => row[selectedValueColumn])
@@ -150,7 +148,6 @@ export class StylerDataService {
       throw new Error('No numeric values found in selected column');
     }
 
-    // 色マッピングテーブルを生成
     const colorMapping: Record<string, string> = {};
     const styleSpec: any = {
       version: 8,
@@ -158,21 +155,18 @@ export class StylerDataService {
       layers: [
         {
           id: `styler-layer-${entity.id}`,
-          type: 'fill', // 基本レイヤータイプ
-          paint: {},
+          type: 'fill', paint: {},
         },
       ],
     };
 
-    // 値に基づく色マッピング
     values.forEach((value) => {
       const colorResult = valueToColor(value, stylerConfig, values);
       colorMapping[value.toString()] = colorResult.color;
     });
 
-    // MapLibre paint プロパティを設定
+    //  MapLibre paint
     if (stylerConfig.targetProperty) {
-      // データ駆動型スタイリングの設定
       const colorStops = Object.entries(colorMapping).map(([value, color]) => [
         parseFloat(value),
         color,
@@ -190,43 +184,41 @@ export class StylerDataService {
   }
 
   /**
-   * 【機能概要】: テーブル参照の管理
-   * 【実装方針】: SpreadsheetのaddTableReference機能を活用
-   * 🟢 信頼性レベル: 参照カウント管理
-   */
+      * :
+   * : SpreadsheetaddTableReference
+   * :
+      */
   async addTableReference(tableId: string): Promise<void> {
     await this.csvApiDriver.addTableReference(tableId, this.pluginId);
   }
 
   /**
-   * 【機能概要】: テーブル参照の削除
-   * 【実装方針】: SpreadsheetのremoveTableReference機能を活用
-   * 🟢 信頼性レベル: 自動削除対応
-   */
+      * :
+   * : SpreadsheetremoveTableReference
+   * :
+      */
   async removeTableReference(tableId: string): Promise<void> {
     await this.csvApiDriver.removeTableReference(tableId, this.pluginId);
   }
 
   /**
-   * 【機能概要】: テーブル一覧の取得
-   * 【実装方針】: Stylerプラグインが参照しているテーブルのみ取得
-   * 🟢 信頼性レベル: フィルタ済みリスト
-   */
+      * :
+   * : Styler
+   * :
+      */
   async listStylerTables(): Promise<CSVTableMetadata[]> {
     const allTables = await this.csvApiDriver.listTables();
-    // Stylerプラグインが参照しているテーブルのみフィルタ
+    //  Styler
     return allTables.tables.filter((table) => table.referencingPlugins?.includes(this.pluginId));
   }
 
   /**
-   * 【機能概要】: 初期Styler設定の生成
-   * 【実装方針】: テーブルメタデータから推奨設定を生成
-   * 🟡 信頼性レベル: ヒューリスティック推定
-   */
+      * : Styler
+   * :
+   * :
+      */
   private generateInitialStylerConfig(tableMetadata: CSVTableMetadata): Partial<StylerConfig> {
-    // 数値列を検出
     const numericColumns = tableMetadata.columns.filter((col) => col.type === 'number');
-    // 最初の数値列を値列として推奨
     const selectedValueColumn = numericColumns[0]?.name;
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
@@ -235,8 +227,7 @@ export class StylerDataService {
     const cfg: Partial<StylerConfig> = {
       algorithm: 'linear',
       colorSpace: 'hsv',
-      targetProperty: 'fill-color', // デフォルト
-      mapping: {
+      targetProperty: 'fill-color', mapping: {
         min: 0,
         max: 100,
         hueStart: 0,

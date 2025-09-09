@@ -1,16 +1,14 @@
 /**
- * SearchOrchestrator
- *
- * 検索に関するユーザーストーリーの管理
- * - リアルタイム検索
- * - デバウンス処理
- * - 検索結果のハイライト
- */
+  * SearchOrchestrator
+   * -
+ * -
+ * -
+  */
 
 import { useAtom } from 'jotai';
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { TreeViewController } from '../../../types/index';
-import { searchTermAtom, filteredDataAtom, tableDataAtom } from '../state';
+import { filteredDataAtom, searchTermAtom, tableDataAtom } from '../state';
 
 export interface SearchOrchestratorResult {
   // State
@@ -25,10 +23,9 @@ export interface SearchOrchestratorResult {
 }
 
 /**
- * 検索操作のオーケストレーター
- */
+    */
 export function useSearchOrchestrator(
-  controller: TreeViewController | null
+  controller: TreeViewController | null,
 ): SearchOrchestratorResult {
   // State atoms
   const [searchTerm, setSearchTerm] = useAtom(searchTermAtom);
@@ -40,25 +37,22 @@ export function useSearchOrchestrator(
   const isSearchingRef = useRef(false);
 
   /**
-   * 検索条件の即時更新
-   */
+            */
   const updateSearchTerm = useCallback(
     (term: string) => {
       setSearchTerm(term);
 
-      // 空文字の場合は即座にControllerに通知
+      //  Controller
       if (!term) {
         controller?.handleSearchTextChange?.('');
       }
     },
-    [setSearchTerm, controller]
+    [setSearchTerm, controller],
   );
 
   /**
-   * 検索クリア
-   */
+            */
   const clearSearch = useCallback(() => {
-    // デバウンスタイマーをクリア
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
@@ -67,43 +61,38 @@ export function useSearchOrchestrator(
     setSearchTerm('');
     isSearchingRef.current = false;
 
-    // Controllerに通知
+    //  Controller
     controller?.handleSearchTextChange?.('');
   }, [setSearchTerm, controller]);
 
   /**
-   * デバウンス付き検索
-   */
+            */
   const searchWithDebounce = useCallback(
     (term: string, delay: number = 300) => {
-      // 即座にUIを更新
+      //  UI
       setSearchTerm(term);
       isSearchingRef.current = true;
 
-      // 既存のタイマーをクリア
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
-      // 空文字の場合は即座に処理
       if (!term) {
         isSearchingRef.current = false;
         controller?.handleSearchTextChange?.('');
         return;
       }
 
-      // デバウンス処理
       debounceTimerRef.current = setTimeout(() => {
-        // Controllerに検索を通知
+        //  Controller
         controller?.handleSearchTextChange?.(term);
         isSearchingRef.current = false;
         debounceTimerRef.current = null;
       }, delay);
     },
-    [setSearchTerm, controller]
+    [setSearchTerm, controller],
   );
 
-  // クリーンアップ
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -112,7 +101,6 @@ export function useSearchOrchestrator(
     };
   }, []);
 
-  // 結果カウント計算
   const resultCount = filteredData.length;
 
   return {

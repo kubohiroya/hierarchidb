@@ -1,14 +1,14 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import { resolverDB } from '../database/ResolverDatabase';
-import type { 
-  ResolverEntity, 
-  ResolverWorkingCopy,
-  PropertyMappingRule,
-  ValidationRule,
+import type {
+  DataTransformation,
   DuplicateResolutionStrategy,
-  DataTransformation
+  PropertyMappingRule,
+  ResolverEntity,
+  ResolverWorkingCopy,
+  ValidationRule,
 } from '../types';
 
 /**
@@ -48,18 +48,18 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   CreateResolverData,
   ResolverSearchCriteria
 > {
-  protected table: Table<ResolverEntity, EntityId> = resolverDB.resolvers;
+  protected table: Table<ResolverEntity, NodeId> = resolverDB.resolvers;
 
   /**
    * Build a Resolver entity from creation data
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: CreateResolverData
+    entityId: NodeId,
+    data: CreateResolverData,
   ): ResolverEntity {
     const now = Date.now();
-    
+
     return {
       id: entityId,
       nodeId,
@@ -86,23 +86,23 @@ export class ResolverEntityHandler extends BaseEntityHandler<
    */
   protected applyAdditionalSearchCriteria(
     query: any,
-    criteria: ResolverSearchCriteria
+    criteria: ResolverSearchCriteria,
   ): any {
     if (criteria.sourceSchema) {
       query = query.filter((entity: ResolverEntity) =>
-        entity.sourceSchema?.toLowerCase().includes(criteria.sourceSchema!.toLowerCase())
+        entity.sourceSchema?.toLowerCase().includes(criteria.sourceSchema!.toLowerCase()),
       );
     }
 
     if (criteria.targetSchema) {
       query = query.filter((entity: ResolverEntity) =>
-        entity.targetSchema?.toLowerCase().includes(criteria.targetSchema!.toLowerCase())
+        entity.targetSchema?.toLowerCase().includes(criteria.targetSchema!.toLowerCase()),
       );
     }
 
     if (criteria.isCompiled !== undefined) {
       query = query.filter((entity: ResolverEntity) =>
-        entity.isCompiled === criteria.isCompiled
+        entity.isCompiled === criteria.isCompiled,
       );
     }
 
@@ -115,7 +115,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   protected async cleanupEntityData(entity: ResolverEntity): Promise<void> {
     // Delete working copies associated with this entity
     await resolverDB.workingCopies.delete(entity.id);
-    
+
     // Additional cleanup for compiled functions or cached data could go here
   }
 
@@ -127,8 +127,8 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     if (!entity) {
       throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
     }
-    
-    const workingCopyId = crypto.randomUUID() as EntityId;
+
+    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
     const workingCopy: ResolverWorkingCopy = {
       ...entity,
       id: workingCopyId, // Use id as primary key for database
@@ -137,7 +137,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
       isDirty: false,
       modifiedFields: [],
     };
-    
+
     await resolverDB.workingCopies.put(workingCopy);
     return workingCopy;
   }
@@ -163,8 +163,8 @@ export class ResolverEntityHandler extends BaseEntityHandler<
    * Update working copy
    */
   async updateWorkingCopy(
-    workingCopyId: EntityId,
-    updates: Partial<ResolverWorkingCopy>
+    workingCopyId: NodeId,
+    updates: Partial<ResolverWorkingCopy>,
   ): Promise<ResolverWorkingCopy> {
     const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
     if (!workingCopy) {
@@ -177,7 +177,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
       isDirty: true,
       modifiedFields: Array.from(new Set([
         ...workingCopy.modifiedFields,
-        ...Object.keys(updates)
+        ...Object.keys(updates),
       ])),
     };
 
@@ -188,7 +188,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   /**
    * Commit working copy changes back to the entity
    */
-  async commitWorkingCopy(workingCopyId: EntityId): Promise<ResolverEntity> {
+  async commitWorkingCopy(workingCopyId: NodeId): Promise<ResolverEntity> {
     const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
@@ -196,20 +196,20 @@ export class ResolverEntityHandler extends BaseEntityHandler<
 
     // Remove working copy specific fields
     const { id: _, workingCopyId: __, originalId, isDirty, modifiedFields, ...entityData } = workingCopy;
-    
+
     // Update the main entity using the original entity id
     const updatedEntity = await this.updateEntity(originalId, entityData);
-    
+
     // Delete the working copy
     await resolverDB.workingCopies.delete(workingCopyId);
-    
+
     return updatedEntity;
   }
 
   /**
    * Discard working copy changes
    */
-  async discardWorkingCopy(workingCopyId: EntityId): Promise<void> {
+  async discardWorkingCopy(workingCopyId: NodeId): Promise<void> {
     await resolverDB.workingCopies.delete(workingCopyId);
   }
 
@@ -239,7 +239,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   /**
    * Compile the Resolver mapping rules
    */
-  async compileMapping(entityId: EntityId): Promise<void> {
+  async compileMapping(entityId: NodeId): Promise<void> {
     const entity = await this.getEntity(entityId);
     if (!entity) {
       throw new Error(`Resolver entity not found: ${entityId}`);
@@ -260,7 +260,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   /**
    * Clear compiled mapping data
    */
-  async clearCompiledMapping(entityId: EntityId): Promise<void> {
+  async clearCompiledMapping(entityId: NodeId): Promise<void> {
     await this.updateEntity(entityId, {
       isCompiled: false,
       lastCompiled: undefined,
@@ -272,7 +272,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
   /**
    * Validate mapping rules
    */
-  async validateMapping(entityId: EntityId): Promise<{
+  async validateMapping(entityId: NodeId): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];

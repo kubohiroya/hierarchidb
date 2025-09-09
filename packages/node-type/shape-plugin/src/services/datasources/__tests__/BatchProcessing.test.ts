@@ -1,13 +1,55 @@
 /**
- * データソース戦略のバッチ処理テスト
- * DATA_SOURCE_STRATEGY_DESIGN.mdで定義されたバッチ処理システムのテスト
- */
+   * DATA_SOURCE_STRATEGY_DESIGN.md
+  */
 
-import { describe, it, expect, beforeEach, vi, beforeAll, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory';
-import { DataSourceStrategy, FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy';
+import { FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy';
 
-// バッチ処理システムの型定義
+// Mock AuthRecoveryService used by authFetch so strategies avoid real network
+vi.mock('@hierarchidb/auth-recovery', () => {
+  const fetchWithAuth = async (input: string | URL, _init?: RequestInit): Promise<Response> => {
+    const url = String(input);
+    // Natural Earth ZIP
+    if (url.includes('naturalearthdata.com')) {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      zip.file('dummy.txt', 'hello');
+      const buf = await zip.generateAsync({ type: 'arraybuffer' });
+      return new Response(buf, { status: 200 });
+    }
+    // GADM ZIP with .gpkg
+    if (url.includes('geodata.ucdavis.edu/gadm')) {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      zip.file('gadm41_JPN.gpkg', 'dummy');
+      const buf = await zip.generateAsync({ type: 'arraybuffer' });
+      return new Response(buf, { status: 200 });
+    }
+    // GeoBoundaries metadata and download
+    if (url.includes('geoboundaries.org/api/current/available')) {
+      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
+    }
+    if (url.includes('/gbOpen/')) {
+      return new Response(JSON.stringify({ gjDownloadURL: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
+    }
+    if (url.includes('mock.local/gb.geojson')) {
+      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });
+    }
+    // OSM Overpass
+    if (url.includes('overpass-api.de')) {
+      return new Response(JSON.stringify({ elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }], generator: 'mock' }), { status: 200 });
+    }
+    // Default OK
+    return new Response('OK', { status: 200 });
+  };
+  return {
+    AuthRecoveryService: {
+      getSingleton: () => Promise.resolve({ fetchWithAuth }),
+    },
+  };
+});
+
 export interface BatchJob {
   id: string;
   config: BatchConfig;
@@ -49,13 +91,16 @@ export interface BatchResult {
 
 export interface BatchStatusReporter {
   startJob(jobId: string): void;
+
   updatePhase(jobId: string, phase: BatchJob['progress']['phase'], percentage?: number, message?: string): void;
+
   completeJob(jobId: string): void;
+
   failJob(jobId: string, error: Error): void;
+
   getJobStatus(jobId: string): BatchJob | undefined;
 }
 
-// バッチ処理システムの実装
 export class DataSourceBatchProcessor {
   private jobQueue = new Map<string, BatchJob>();
   private statusReporter: MockBatchStatusReporter;
@@ -77,35 +122,31 @@ export class DataSourceBatchProcessor {
       status: 'pending',
       progress: {
         phase: 'fetching',
-        percentage: 0
-      }
+        percentage: 0,
+      },
     };
 
     this.jobQueue.set(jobId, job);
 
     try {
-      // 同時実行数の制限
       await this.waitForSlot();
       this.runningJobs.add(jobId);
-      
+
       job.status = 'running';
       this.statusReporter.startJob(jobId);
 
-      // 前処理
       await this.preProcess(job);
-      
-      // メイン処理
+
       const result = await this.processJob(job);
-      
-      // 後処理
+
       await this.postProcess(job, result);
-      
+
       job.status = 'completed';
       job.result = result;
       this.statusReporter.completeJob(jobId);
-      
+
       return result;
-      
+
     } catch (error) {
       job.status = 'failed';
       job.error = error as Error;
@@ -127,7 +168,6 @@ export class DataSourceBatchProcessor {
   }
 
   private async preProcess(job: BatchJob): Promise<void> {
-    // バリデーションやリソース確保など
     if (!this.factory.hasStrategy(job.config.strategyId as any)) {
       throw new Error(`Unknown strategy: ${job.config.strategyId}`);
     }
@@ -136,39 +176,35 @@ export class DataSourceBatchProcessor {
   private async processJob(job: BatchJob): Promise<BatchResult> {
     const startTime = Date.now();
     const phases = { fetching: 0, processing: 0, validating: 0, saving: 0 };
-    
+
     const strategy = this.factory.create(job.config.strategyId as any);
-    
-    // フェッチフェーズ
+
     this.statusReporter.updatePhase(job.id, 'fetching', 10);
     const fetchStart = Date.now();
     const rawData = await strategy.fetchData(job.config.fetchOptions);
     phases.fetching = Date.now() - fetchStart;
-    
-    // 処理フェーズ
+
     this.statusReporter.updatePhase(job.id, 'processing', 50);
     const processStart = Date.now();
     const processedData = await strategy.processData(rawData, job.config.processOptions);
     phases.processing = Date.now() - processStart;
-    
-    // バリデーションフェーズ
+
     this.statusReporter.updatePhase(job.id, 'validating', 75);
     const validateStart = Date.now();
     const validationResult = await strategy.validateData(processedData);
     phases.validating = Date.now() - validateStart;
-    
+
     if (!validationResult.isValid) {
       throw new Error(`Validation failed: ${validationResult.errors.join(', ')}`);
     }
-    
-    // 保存フェーズ
+
     this.statusReporter.updatePhase(job.id, 'saving', 90);
     const saveStart = Date.now();
     const saveResult = await strategy.saveData(processedData, job.config.saveTarget);
     phases.saving = Date.now() - saveStart;
-    
+
     this.statusReporter.updatePhase(job.id, 'completed', 100);
-    
+
     return {
       jobId: job.id,
       success: true,
@@ -176,16 +212,14 @@ export class DataSourceBatchProcessor {
       validationResult,
       saveResult,
       duration: Date.now() - startTime,
-      phases
+      phases,
     };
   }
 
   private async postProcess(job: BatchJob, result: BatchResult): Promise<void> {
-    // ログ記録、通知送信など
     console.log(`Batch job ${job.id} completed in ${result.duration}ms`);
   }
 
-  // パブリックメソッド
   getJobStatus(jobId: string): BatchJob | undefined {
     return this.jobQueue.get(jobId);
   }
@@ -207,7 +241,7 @@ export class DataSourceBatchProcessor {
     if (!job || job.status === 'completed' || job.status === 'failed') {
       return false;
     }
-    
+
     job.status = 'cancelled';
     this.runningJobs.delete(jobId);
     return true;
@@ -222,14 +256,13 @@ export class DataSourceBatchProcessor {
   }
 }
 
-// モックステータスレポーター
 class MockBatchStatusReporter implements BatchStatusReporter {
   private jobs = new Map<string, BatchJob['progress']>();
 
   startJob(jobId: string): void {
     this.jobs.set(jobId, {
       phase: 'fetching',
-      percentage: 0
+      percentage: 0,
     });
   }
 
@@ -240,28 +273,27 @@ class MockBatchStatusReporter implements BatchStatusReporter {
   completeJob(jobId: string): void {
     this.jobs.set(jobId, {
       phase: 'completed',
-      percentage: 100
+      percentage: 100,
     });
   }
 
   failJob(jobId: string, error: Error): void {
     this.jobs.set(jobId, {
-      phase: 'fetching', // エラー時の最後のフェーズ
-      percentage: 0,
-      message: error.message
+      phase: 'fetching', percentage: 0,
+      message: error.message,
     });
   }
 
   getJobStatus(jobId: string): BatchJob | undefined {
     const progress = this.jobs.get(jobId);
     if (!progress) return undefined;
-    
+
     return {
       id: jobId,
       config: {} as BatchConfig,
       startTime: Date.now(),
       status: 'running',
-      progress
+      progress,
     };
   }
 }
@@ -289,21 +321,21 @@ describe('Batch Processing System', () => {
         strategyId: 'natural-earth-shapes',
         fetchOptions: {
           endpoint: 'countries-50m',
-          bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 }
+          bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
         },
         processOptions: {
           simplify: true,
-          tolerance: 0.01
+          tolerance: 0.01,
         },
         saveTarget: {
           type: 'hierarchidb',
           entityType: 'shape',
-          parentId: 'test-parent'
-        }
+          parentId: 'test-parent',
+        },
       };
 
       const result = await batchProcessor.executeBatch(config);
-      
+
       expect(result.success).toBe(true);
       expect(result.jobId).toBeDefined();
       expect(result.duration).toBeGreaterThan(0);
@@ -315,8 +347,8 @@ describe('Batch Processing System', () => {
       const config: BatchConfig = {
         strategyId: 'unknown-strategy',
         saveTarget: {
-          type: 'hierarchidb'
-        }
+          type: 'hierarchidb',
+        },
       };
 
       await expect(batchProcessor.executeBatch(config)).rejects.toThrow('Unknown strategy');
@@ -325,23 +357,23 @@ describe('Batch Processing System', () => {
     it('should track job status', async () => {
       const config: BatchConfig = {
         strategyId: 'natural-earth-shapes',
-        saveTarget: { type: 'hierarchidb' }
+        saveTarget: { type: 'hierarchidb' },
       };
 
-      // 非同期でjobを実行
+      //  job
       const jobPromise = batchProcessor.executeBatch(config);
-      
-      // 少し待ってからstatus確認
+
+      //  status
       await new Promise(resolve => setTimeout(resolve, 50));
-      
+
       const runningJobs = batchProcessor.getRunningJobs();
       expect(runningJobs.length).toBeGreaterThanOrEqual(0);
 
-      // job完了まで待つ
+      //  job
       const result = await jobPromise;
       expect(result.success).toBe(true);
-      
-      // 完了後のjob情報確認
+
+      //  job
       const job = batchProcessor.getJobStatus(result.jobId);
       expect(job?.status).toBe('completed');
     });
@@ -351,27 +383,26 @@ describe('Batch Processing System', () => {
         {
           strategyId: 'natural-earth-shapes',
           fetchOptions: { endpoint: 'countries-50m' },
-          saveTarget: { type: 'hierarchidb' }
+          saveTarget: { type: 'hierarchidb' },
         },
         {
           strategyId: 'gadm-administrative-areas',
           fetchOptions: { country: 'JPN', adminLevel: 1 },
-          saveTarget: { type: 'hierarchidb' }
+          saveTarget: { type: 'hierarchidb' },
         },
         {
           strategyId: 'geoboundaries-admin-areas',
           fetchOptions: { country: 'USA', adminLevel: 1 },
-          saveTarget: { type: 'hierarchidb' }
-        }
+          saveTarget: { type: 'hierarchidb' },
+        },
       ];
 
-      // 並列実行
-      const jobPromises = configs.map(config => 
-        batchProcessor.executeBatch(config)
+      const jobPromises = configs.map(config =>
+        batchProcessor.executeBatch(config),
       );
 
       const results = await Promise.all(jobPromises);
-      
+
       expect(results).toHaveLength(3);
       results.forEach(result => {
         expect(result.success).toBe(true);
@@ -384,28 +415,28 @@ describe('Batch Processing System', () => {
         strategyId: 'openstreetmap-overpass',
         fetchOptions: {
           bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
-          timeout: 30
+          timeout: 30,
         },
-        saveTarget: { type: 'hierarchidb' }
+        saveTarget: { type: 'hierarchidb' },
       };
 
-      // 長時間実行されるjobを開始
+      //  job
       const jobPromise = batchProcessor.executeBatch(config);
-      
-      // 少し待ってからcancel
+
+      //  cancel
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       const runningJobs = batchProcessor.getRunningJobs();
-      if (runningJobs.length > 0) {
-        const cancelled = await batchProcessor.cancelJob(runningJobs[0].id);
+      if (runningJobs.length > 0 && runningJobs[0]?.id) {
+        const cancelled = await batchProcessor.cancelJob(runningJobs[0]?.id);
         expect(typeof cancelled).toBe('boolean');
       }
 
-      // job完了まで待つ（cancelされても例外は発生しない想定）
+      //  jobcancel
       try {
         await jobPromise;
       } catch (error) {
-        // cancel による例外は想定内
+        //  cancel
         expect(error).toBeInstanceOf(Error);
       }
     });
@@ -413,7 +444,7 @@ describe('Batch Processing System', () => {
     it('should provide job statistics', async () => {
       const config: BatchConfig = {
         strategyId: 'natural-earth-shapes',
-        saveTarget: { type: 'hierarchidb' }
+        saveTarget: { type: 'hierarchidb' },
       };
 
       await batchProcessor.executeBatch(config);
@@ -426,7 +457,7 @@ describe('Batch Processing System', () => {
       expect(pendingJobs.length).toBeGreaterThanOrEqual(0);
       expect(runningJobs.length).toBeGreaterThanOrEqual(0);
 
-      // 完了したjobをクリア
+      //  job
       batchProcessor.clearCompletedJobs();
       const jobsAfterClear = batchProcessor.getAllJobs();
       expect(jobsAfterClear.length).toBeLessThanOrEqual(allJobs.length);
@@ -436,19 +467,19 @@ describe('Batch Processing System', () => {
   describe('Batch Configuration Validation', () => {
     it('should validate required batch config fields', async () => {
       const invalidConfigs = [
-        // 戦略IDなし
+        //  ID
         {
-          saveTarget: { type: 'hierarchidb' }
+          saveTarget: { type: 'hierarchidb' },
         },
-        // 保存ターゲットなし
         {
-          strategyId: 'natural-earth-shapes'
-        }
+          strategyId: 'natural-earth-shapes',
+        },
       ];
 
       for (const config of invalidConfigs) {
         await expect(
-          batchProcessor.executeBatch(config as BatchConfig)
+          // Cast via unknown to satisfy strict type check for intentional invalid configs
+          batchProcessor.executeBatch(config as unknown as BatchConfig),
         ).rejects.toThrow();
       }
     });
@@ -458,28 +489,28 @@ describe('Batch Processing System', () => {
         strategyId: 'natural-earth-shapes',
         fetchOptions: {
           endpoint: 'countries-50m',
-          adminLevel: 0
+          adminLevel: 0,
         },
         processOptions: {
           simplify: true,
           tolerance: 0.001,
           filters: [
-            { field: 'properties.POP_EST', operator: 'gt', value: 1000000 }
-          ]
+            { field: 'properties.POP_EST', operator: 'gt', value: 1000000 },
+          ],
         },
         saveTarget: {
           type: 'hierarchidb',
           entityType: 'shape',
-          parentId: 'test-parent'
+          parentId: 'test-parent',
         },
         priority: 'high',
         timeout: 60000,
-        retryCount: 3
+        retryCount: 3,
       };
 
       const result = await batchProcessor.executeBatch(config);
       expect(result.success).toBe(true);
-      
+
       const job = batchProcessor.getJobStatus(result.jobId);
       expect(job?.config.priority).toBe('high');
       expect(job?.config.timeout).toBe(60000);
@@ -491,41 +522,40 @@ describe('Batch Processing System', () => {
     it('should measure phase execution times', async () => {
       const config: BatchConfig = {
         strategyId: 'natural-earth-shapes',
-        saveTarget: { type: 'hierarchidb' }
+        saveTarget: { type: 'hierarchidb' },
       };
 
       const result = await batchProcessor.executeBatch(config);
-      
+
       expect(result.phases).toBeDefined();
       expect(result.phases.fetching).toBeGreaterThanOrEqual(0);
       expect(result.phases.processing).toBeGreaterThanOrEqual(0);
       expect(result.phases.validating).toBeGreaterThanOrEqual(0);
       expect(result.phases.saving).toBeGreaterThanOrEqual(0);
-      
+
       const totalPhaseTime = Object.values(result.phases).reduce((sum, time) => sum + time, 0);
-      expect(totalPhaseTime).toBeLessThanOrEqual(result.duration + 100); // 100msの誤差許容
+      expect(totalPhaseTime).toBeLessThanOrEqual(result.duration + 100); //  100ms
     });
 
     it('should respect concurrency limits', async () => {
       const configs = Array(5).fill(null).map((_, i) => ({
         strategyId: 'natural-earth-shapes',
         fetchOptions: { endpoint: `test-${i}` },
-        saveTarget: { type: 'hierarchidb' }
+        saveTarget: { type: 'hierarchidb' },
       }));
 
-      // 並列実行開始
-      const jobPromises = configs.map(config => 
-        batchProcessor.executeBatch(config as BatchConfig)
+      const jobPromises = configs.map(config =>
+        batchProcessor.executeBatch(config as BatchConfig),
       );
 
-      // 少し待ってから実行中のjob数を確認
+      //  job
       await new Promise(resolve => setTimeout(resolve, 10));
       const runningJobs = batchProcessor.getRunningJobs();
-      
-      // 同時実行数の制限（maxConcurrentJobs = 3）を確認
+
+      //  maxConcurrentJobs = 3
       expect(runningJobs.length).toBeLessThanOrEqual(3);
 
-      // 全job完了まで待つ
+      //  job
       const results = await Promise.all(jobPromises);
       expect(results).toHaveLength(5);
       results.forEach(result => {
@@ -534,7 +564,3 @@ describe('Batch Processing System', () => {
     });
   });
 });
-// Skip integration tests by default unless ENABLE_INTEGRATION_TESTS is set
-if (!process.env.ENABLE_INTEGRATION_TESTS) {
-  describe.skip('Batch Processing System (integration disabled)', () => {});
-} else {

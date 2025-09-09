@@ -1,5 +1,5 @@
 import { type MouseEvent, useCallback, useEffect, useState } from 'react';
-import Joyride, { Step, STATUS, CallBackProps } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useTheme } from '@mui/material/styles';
 import { Box, Checkbox, FormControlLabel, GlobalStyles, IconButton, Portal } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -15,13 +15,13 @@ export interface GenericGuidedTourProps {
 }
 
 export const GenericGuidedTour = ({
-  run,
-  onFinish,
-  steps,
-  tourType = 'mainTour',
-  callback,
-  stepIndex: controlledStepIndex,
-}: GenericGuidedTourProps) => {
+                                    run,
+                                    onFinish,
+                                    steps,
+                                    tourType = 'mainTour',
+                                    callback,
+                                    stepIndex: controlledStepIndex,
+                                  }: GenericGuidedTourProps) => {
   const theme = useTheme();
   const [internalStepIndex, setInternalStepIndex] = useState(0);
   const [showOnNextStartup, setShowOnNextStartup] = useState(true);
@@ -38,7 +38,7 @@ export const GenericGuidedTour = ({
       // Note: We invert the logic here - if showOnNextStartup is false, the tour is disabled
       tourManager.setTourDisabled(tourType, !checked);
     },
-    [tourManager, tourType]
+    [tourManager, tourType],
   );
 
   // Handle tour start logic
@@ -126,7 +126,7 @@ export const GenericGuidedTour = ({
       callback,
       controlledStepIndex,
       steps.length,
-    ]
+    ],
   );
 
   const joyrideStyles = {
@@ -189,7 +189,7 @@ export const GenericGuidedTour = ({
       e.currentTarget.style.backgroundColor = theme.palette.primary.dark;
       e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
     },
-    [theme.palette.primary.dark]
+    [theme.palette.primary.dark],
   );
 
   const handleFooterPrimaryLeave = useCallback(
@@ -197,16 +197,16 @@ export const GenericGuidedTour = ({
       e.currentTarget.style.backgroundColor = theme.palette.primary.main;
       e.currentTarget.style.boxShadow = 'none';
     },
-    [theme.palette.primary.main]
+    [theme.palette.primary.main],
   );
 
   // Custom footer component with checkbox - defined inside to access theme and handlers
   const CustomFooter = useCallback(
     ({
-      primaryProps,
-      backProps,
-      index,
-    }: {
+       primaryProps,
+       backProps,
+       index,
+     }: {
       primaryProps: { title: string; [key: string]: unknown };
       backProps?: { title: string; [key: string]: unknown };
       index: number;
@@ -294,19 +294,19 @@ export const GenericGuidedTour = ({
       handleFooterPrimaryEnter,
       handleFooterPrimaryLeave,
       theme,
-    ]
+    ],
   );
 
   // Tooltip render function
   const renderTooltip = useCallback(
     ({
-      index,
-      step,
-      backProps,
-      primaryProps,
-      skipProps,
-      tooltipProps,
-    }: {
+       index,
+       step,
+       backProps,
+       primaryProps,
+       skipProps,
+       tooltipProps,
+     }: {
       index: number;
       step: Step;
       backProps?: { title: string; [key: string]: unknown };
@@ -355,7 +355,7 @@ export const GenericGuidedTour = ({
         </div>
       );
     },
-    [CustomFooter, theme.palette.background.paper]
+    [CustomFooter, theme.palette.background.paper],
   );
 
   return (

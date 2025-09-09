@@ -8,7 +8,6 @@
 import { Box } from '@mui/material';
 import { TreeConsolePanel, type TreeConsolePanelProps, type TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DynamicSpeedDial } from './DynamicSpeedDial';
-import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
@@ -22,13 +21,14 @@ interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProp
 }
 
 export function TreeConsolePanelWithDynamicSpeedDial({
-  treeId,
-  workerClient,
-  onStartTour,
-  menuContext,
-  ...panelProps
-}: TreeConsolePanelWithDynamicSpeedDialProps) {
-  const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {});
+                                                       treeId,
+                                                       workerClient,
+                                                       onStartTour,
+                                                       menuContext,
+                                                       ...panelProps
+                                                     }: TreeConsolePanelWithDynamicSpeedDialProps) {
+  const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {
+  });
   return (
     <Box sx={{ position: 'relative', height: '100%' }}>
       {/* TreeConsolePanel without SpeedDial (we'll add our own)

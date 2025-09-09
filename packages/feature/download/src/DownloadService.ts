@@ -13,12 +13,17 @@ export interface DownloadResult {
 }
 
 export class DownloadService {
-  constructor(private net: NetworkPort, private store: StoragePort, private integrity?: IntegrityPort) {}
+  constructor(private net: NetworkPort, private store: StoragePort, private integrity?: IntegrityPort) {
+  }
 
   async download(url: string, fileId: string, opts: DownloadOptions = {}): Promise<DownloadResult> {
     // Use chunked download if partSize is provided
     const partSize = opts.partSize ?? 0;
-    if (partSize > 0) return await this.downloadChunked(url, fileId, { ...opts, partSize, concurrency: opts.concurrency ?? 4 });
+    if (partSize > 0) return await this.downloadChunked(url, fileId, {
+      ...opts,
+      partSize,
+      concurrency: opts.concurrency ?? 4,
+    });
 
     // Serial download
     const res = await this.net.get(url);
@@ -45,7 +50,7 @@ export class DownloadService {
 
     const resume = await this.store.getResumeInfo(fileId);
     const startIndex = resume?.nextIndex ?? 0;
-    const parts = totalSize > 0 ? Math.ceil(totalSize / partSize) : startIndex + 1; // unknown size → single part fallback
+    const parts = totalSize > 0 ? Math.ceil(totalSize / partSize) : startIndex + 1; //  unknown size single part fallback
 
     // Simple worker pool
     let next = startIndex;

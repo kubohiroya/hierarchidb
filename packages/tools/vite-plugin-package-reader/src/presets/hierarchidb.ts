@@ -1,18 +1,18 @@
 import path from 'path';
 import fs from 'fs';
-import type { 
-  PackageJson,
+import type {
   PackageDetectionStrategy,
+  PackageJson,
   TransformPipelineOptions,
   VirtualModuleGenerator,
-  VitePluginPackageReaderOptions
+  VitePluginPackageReaderOptions,
 } from '../types';
 import { RegexStrategy } from '../strategies';
 import { DependencyResolver } from '../pipeline/DependencyResolver';
 
 /**
- * HierarchiDB プラグイン定義
- */
+  * HierarchiDB
+  */
 export interface PluginDefinition {
   name: string;
   version: string;
@@ -28,8 +28,8 @@ export interface PluginDefinition {
 }
 
 /**
- * HierarchiDB戦略のオプション
- */
+  * HierarchiDB
+  */
 export interface HierarchiDBStrategyOptions {
   pattern?: RegExp;
   priorityPlugin?: string;
@@ -38,10 +38,10 @@ export interface HierarchiDBStrategyOptions {
 }
 
 /**
- * HierarchiDB用の検出戦略を作成
- */
+  * HierarchiDB
+  */
 export function createHierarchiDBStrategy(
-  options: HierarchiDBStrategyOptions = {}
+  options: HierarchiDBStrategyOptions = {},
 ): PackageDetectionStrategy {
   const pattern = options.pattern || /@hierarchidb\/node-type-.*-plugin$/;
   const priorityPlugin = options.priorityPlugin || 'folder';
@@ -52,14 +52,14 @@ export function createHierarchiDBStrategy(
     pattern,
     metadataExtractor: (packageJson: PackageJson) => {
       const metadata: Record<string, any> = {};
-      
-      // node-typeを抽出
+
+      //  node-type
       const match = packageJson.name.match(/node-type-(.+)-plugin$/);
       if (match) {
         metadata.nodeType = match[1];
       }
 
-      // hierarchidb設定を抽出
+      //  hierarchidb
       if (options.extractPluginConfig && packageJson.hierarchidb?.plugin) {
         metadata.pluginConfig = packageJson.hierarchidb.plugin;
       }
@@ -67,44 +67,42 @@ export function createHierarchiDBStrategy(
       return metadata;
     },
   });
-  
-  // testメソッドをオーバーライド
+
+  //  test
   const originalTest = strategy.test.bind(strategy);
   strategy.test = function(packageName: string, packageJson: PackageJson): boolean {
     if (!originalTest(packageName, packageJson)) {
       return false;
     }
 
-    // 優先度設定
     let priority = 1000;
     if (packageName.includes(priorityPlugin)) {
-      priority = 1; // 最優先
+      priority = 1;
     } else {
-      // アルファベット順
       const match = packageName.match(/node-type-(.+)-plugin$/);
       if (match && match[1]) {
         priority = match[1].charCodeAt(0) + priorityBoost;
       }
     }
-    
+
     packageJson.__priority = priority;
-    
+
     return true;
   };
-  
+
   return strategy;
 }
 
 /**
- * PluginDefinition生成パイプラインを作成
- */
+  * PluginDefinition
+  */
 export function createPluginDefinitionPipeline(): TransformPipelineOptions<PluginDefinition[]> {
   return {
     transform: (packages: Map<string, PackageJson>) => {
       const definitions: PluginDefinition[] = [];
-      
+
       for (const [name, pkg] of packages) {
-        const nodeType = pkg.__metadata?.nodeType || 
+        const nodeType = pkg.__metadata?.nodeType ||
           name.replace('@hierarchidb/', '').replace('-plugin', '');
         // Resolve dist entries for Vite dev via /@fs
         let resolvedImport: string | undefined;
@@ -129,7 +127,7 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
           };
 
           const prefer = (
-            candidates: Array<string | undefined>
+            candidates: Array<string | undefined>,
           ): string | undefined => candidates.find((p) => !!p && fs.existsSync(p as string));
 
           const genericByExport = resolveFromExport('.');
@@ -154,7 +152,7 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
           resolvedWorkerImport = toFs(workerByExport || workerByScan);
           resolvedUiImport = toFs(uiByExport || uiByScan);
         }
-        
+
         definitions.push({
           name: nodeType,
           version: pkg.version,
@@ -168,20 +166,20 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
           resolvedUiImport,
         });
       }
-      
-      // 定義をpriority順にソート
+
+      //  priority
       return definitions.sort((a, b) => a.priority - b.priority);
     },
   };
 }
 
 /**
- * Virtual Module生成器を作成
- */
+  * Virtual Module
+  */
 export function createPluginVirtualModule(): VirtualModuleGenerator<PluginDefinition[]> {
   return {
     moduleId: 'plugin-definitions',
-    
+
     generate: (definitions: PluginDefinition[]) => {
       // Worker-safe: do not import plugin packages here.
       const registrations: string[] = definitions.map(def => `{
@@ -202,10 +200,10 @@ export const pluginDefinitions = [
 export default pluginDefinitions;
 `;
     },
-    
+
     generateTypes: (definitions: PluginDefinition[]) => {
       const nodeTypes = definitions.map(d => `'${d.nodeType}'`).join(' | ');
-      
+
       return `
 export interface PluginDefinition {
   name: string;
@@ -227,10 +225,10 @@ export default pluginDefinitions;
 }
 
 /**
- * HierarchiDB用のプリセット設定
- */
+  * HierarchiDB
+  */
 export function hierarchiDBPreset(
-  options: Partial<HierarchiDBStrategyOptions> = {}
+  options: Partial<HierarchiDBStrategyOptions> = {},
 ): VitePluginPackageReaderOptions<PluginDefinition[]> {
   return {
     strategies: [createHierarchiDBStrategy(options)],
@@ -256,14 +254,14 @@ export function hierarchiDBPreset(
 }
 
 /**
- * 複数のVirtual Moduleを生成するプリセット
- */
+  * Virtual Module
+  */
 export function hierarchiDBMultiModulePreset(
-  options: Partial<HierarchiDBStrategyOptions> = {}
+  options: Partial<HierarchiDBStrategyOptions> = {},
 ): VitePluginPackageReaderOptions<PluginDefinition[]> {
   const base = hierarchiDBPreset(options);
-  
-  // 追加のVirtual Modules
+
+  //  Virtual Modules
   const pluginMapModule: VirtualModuleGenerator<PluginDefinition[]> = {
     moduleId: 'plugin-map',
     generate: (definitions) => {
@@ -272,7 +270,7 @@ export function hierarchiDBMultiModulePreset(
         const target = d.resolvedWorkerImport || d.resolvedImport || d.packageName;
         return `  '${d.nodeType}': () => import('${target}')`;
       });
-      
+
       return `// Auto-generated plugin map
 export const pluginMap = {
 ${entries.join(',\n')}
@@ -282,12 +280,12 @@ export default pluginMap;
 `;
     },
   };
-  
+
   const pluginTypesModule: VirtualModuleGenerator<PluginDefinition[]> = {
     moduleId: 'plugin-types',
     generate: (definitions) => {
       const types = definitions.map(d => `  ${d.nodeType}: '${d.nodeType}'`);
-      
+
       return `// Auto-generated plugin types
 export const NodeTypes = {
 ${types.join(',\n')}
@@ -297,7 +295,7 @@ export type NodeType = keyof typeof NodeTypes;
 `;
     },
   };
-  
+
   return {
     ...base,
     virtualModules: [

@@ -3,7 +3,7 @@
  * @description Context for sharing dialog state between components
  */
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 
 export interface DialogContextData<T = any> {
@@ -49,9 +49,9 @@ const DialogContext = createContext<DialogContextData | null>(null);
  * Dialog context provider
  */
 export const DialogProvider = <T extends any>({
-  children,
-  value,
-}: {
+                                                children,
+                                                value,
+                                              }: {
   children: ReactNode;
   value: DialogContextData<T>;
 }) => {

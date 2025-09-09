@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 // Local replicas of menu types to avoid hard dependency on virtual modules
 export type TreeContext = 'resources' | 'projects';
+
 export interface PluginMenuItem {
   key: string;
   nodeType: string;
@@ -24,7 +25,8 @@ export function usePluginMenuItems(context: TreeContext): PluginMenuItem[] {
       if (mod?.buildMenuItemsForContext) {
         return mod.buildMenuItemsForContext(context) as PluginMenuItem[];
       }
-    } catch {}
+    } catch {
+    }
     // No cached builders; return empty and let caller fallback
     return [] as PluginMenuItem[];
   }, [context]);

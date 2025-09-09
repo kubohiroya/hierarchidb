@@ -3,31 +3,31 @@
  * Displays Shape node information and provides management controls
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  Button,
-  Stack,
   Chip,
-  LinearProgress,
-  Alert,
+  Divider,
   Grid,
   IconButton,
+  LinearProgress,
+  Stack,
   Tooltip,
-  Divider,
+  Typography,
 } from '@mui/material';
 import {
-  PlayArrow as PlayIcon,
+  Map as MapIcon,
   Pause as PauseIcon,
-  Stop as StopIcon,
+  PlayArrow as PlayIcon,
   Refresh as RefreshIcon,
   Settings as SettingsIcon,
-  Timeline as TimelineIcon,
+  Stop as StopIcon,
   Storage as StorageIcon,
-  Map as MapIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { NodeId } from '@hierarchidb/common-type';
 import type { ShapeEntity } from '~/shared';
@@ -41,11 +41,11 @@ interface ShapeViewPanelProps {
 }
 
 export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
-  nodeId: _nodeId,
-  entity,
-  onEdit,
-  onRefresh,
-}) => {
+                                                                nodeId: _nodeId,
+                                                                entity,
+                                                                onEdit,
+                                                                onRefresh,
+                                                              }) => {
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

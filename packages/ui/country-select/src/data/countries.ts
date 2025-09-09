@@ -188,8 +188,8 @@ export function getCountryByCode(code: string): Country | undefined {
 /** Search countries by name */
 export function searchCountries(query: string): Country[] {
   const lowercaseQuery = query.toLowerCase();
-  return SAMPLE_COUNTRIES.filter(country => 
+  return SAMPLE_COUNTRIES.filter(country =>
     country.name.toLowerCase().includes(lowercaseQuery) ||
-    (country.nativeName && country.nativeName.toLowerCase().includes(lowercaseQuery))
+    (country.nativeName && country.nativeName.toLowerCase().includes(lowercaseQuery)),
   );
 }

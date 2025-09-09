@@ -1,9 +1,9 @@
 /**
- * Folder API interface - UI-Worker通信契約
- */
+  * Folder API interface - UI-Worker
+  */
 
 import { NodeId } from '@hierarchidb/common-type';
-import { FolderEntity, CreateFolderData, UpdateFolderData, FolderSearchQuery } from './types';
+import { CreateFolderData, FolderEntity, FolderSearchQuery, UpdateFolderData } from './types';
 
 /**
  * Main Folder API interface for UI-Worker communication via PluginRegistryImpl
@@ -11,35 +11,46 @@ import { FolderEntity, CreateFolderData, UpdateFolderData, FolderSearchQuery } f
 export interface FolderAPI extends Record<string, (...args: any[]) => Promise<any>> {
   // Core folder-plugin operations
   createEntity(nodeId: NodeId, data: CreateFolderData): Promise<FolderEntity>;
+
   getEntity(nodeId: NodeId): Promise<FolderEntity | undefined>;
+
   updateEntity(nodeId: NodeId, data: UpdateFolderData): Promise<void>;
+
   deleteEntity(nodeId: NodeId): Promise<void>;
 
   // Folder hierarchy operations
   moveFolder(folderNodeId: NodeId, newParentNodeId: NodeId): Promise<void>;
+
   copyFolder(
     sourceNodeId: NodeId,
     targetParentNodeId: NodeId,
-    newName?: string
+    newName?: string,
   ): Promise<FolderEntity>;
+
   duplicateFolder(folderNodeId: NodeId): Promise<FolderEntity>;
 
   // Folder settings operations
   updateSettings(nodeId: NodeId, settings: NodeId): Promise<void>;
+
   getSettings(nodeId: NodeId): Promise<NodeId | undefined>;
+
   resetSettings(nodeId: NodeId): Promise<void>;
 
   // Folder search operations
   searchFolders(query: FolderSearchQuery): Promise<FolderSearchResult>;
+
   findSimilarFolders(nodeId: NodeId): Promise<FolderEntity[]>;
+
   getFolderPath(nodeId: NodeId): Promise<FolderPathInfo[]>;
 
   // Batch operations
   bulkMove(folderNodeIds: NodeId[], newParentNodeId: NodeId): Promise<BulkOperationResult>;
+
   bulkDelete(folderNodeIds: NodeId[]): Promise<BulkOperationResult>;
+
   bulkUpdateSettings(
     folderNodeIds: NodeId[],
-    settings: Partial<FolderEntity>
+    settings: Partial<FolderEntity>,
   ): Promise<BulkOperationResult>;
 }
 
@@ -65,6 +76,7 @@ export interface FolderPathInfo {
 /**
  * Template application result
  */
+
 // Template application result removed
 
 /**

@@ -4,22 +4,21 @@
  * @description Integration test for end-to-end vector tile generation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
+import { BatchSessionManager } from '../../services/BatchSessionManager';
+import { closeEphemeralShapeDB, getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
+import type { BatchConfig } from '../../types/BatchConfig';
 
 // Helper function to generate node IDs
 const createNodeId = (prefix: string): NodeId => {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` as NodeId;
 };
-import { BatchSessionManager } from '../../services/BatchSessionManager';
-import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
-import type { BatchConfig } from '../../types/BatchConfig';
-import type { BatchTaskLike } from '../../types/BatchTaskLike';
 
 // Mock fetch for testing
 global.fetch = async (url: string) => {
   console.log(`Mock fetch: ${url}`);
-  
+
   // Return mock GeoJSON data
   const mockGeoJSON = {
     type: 'FeatureCollection',
@@ -29,7 +28,7 @@ global.fetch = async (url: string) => {
         id: 1,
         properties: {
           name: 'Test Region 1',
-          admin_level: 1
+          admin_level: 1,
         },
         geometry: {
           type: 'Polygon',
@@ -38,16 +37,16 @@ global.fetch = async (url: string) => {
             [140.0, 35.0],
             [140.0, 36.0],
             [139.0, 36.0],
-            [139.0, 35.0]
-          ]]
-        }
+            [139.0, 35.0],
+          ]],
+        },
       },
       {
         type: 'Feature',
         id: 2,
         properties: {
           name: 'Test Region 2',
-          admin_level: 1
+          admin_level: 1,
         },
         geometry: {
           type: 'Polygon',
@@ -56,11 +55,11 @@ global.fetch = async (url: string) => {
             [141.0, 35.0],
             [141.0, 36.0],
             [140.0, 36.0],
-            [140.0, 35.0]
-          ]]
-        }
-      }
-    ]
+            [140.0, 35.0],
+          ]],
+        },
+      },
+    ],
   };
 
   return {
@@ -69,7 +68,7 @@ global.fetch = async (url: string) => {
     statusText: 'OK',
     headers: new Headers({
       'content-type': 'application/json',
-      'content-length': JSON.stringify(mockGeoJSON).length.toString()
+      'content-length': JSON.stringify(mockGeoJSON).length.toString(),
     }),
     json: async () => mockGeoJSON,
     text: async () => JSON.stringify(mockGeoJSON),
@@ -87,7 +86,7 @@ describe('Vector Tile Generation - End to End', () => {
     manager = new BatchSessionManager();
     ephemeralDB = getEphemeralShapeDB();
     nodeId = createNodeId('test-node');
-    
+
     // Clear any existing data
     await ephemeralDB.clearAll();
   });
@@ -107,14 +106,14 @@ describe('Vector Tile Generation - End to End', () => {
       simplification: {
         enabled: true,
         tolerance: 0.005,
-        preserveTopology: true
+        preserveTopology: true,
       },
       tiling: {
         minZoom: 0,
         maxZoom: 6,
         buffer: 64,
-        extent: 4096
-      }
+        extent: 4096,
+      },
     };
 
     // Start batch session
@@ -122,7 +121,7 @@ describe('Vector Tile Generation - End to End', () => {
       nodeId,
       config,
       config.countries,
-      config.adminLevels
+      config.adminLevels,
     );
 
     expect(sessionId).toBeDefined();
@@ -142,7 +141,7 @@ describe('Vector Tile Generation - End to End', () => {
     const downloadResult = await manager.executeDownloadStage(sessionId);
     expect(downloadResult.success).toBe(true);
     expect(downloadResult.processedTasks).toBeGreaterThan(0);
-    
+
     // Verify data was saved to EphemeralDB
     const rawBuffers = await ephemeralDB.rawBuffers
       .where('sessionId')
@@ -197,33 +196,33 @@ describe('Vector Tile Generation - End to End', () => {
       simplification: {
         enabled: true,
         tolerance: 0.01,
-        preserveTopology: true
-      }
+        preserveTopology: true,
+      },
     };
 
     const sessionId = await manager.startBatchSession(
       nodeId,
       config,
       config.countries,
-      config.adminLevels
+      config.adminLevels,
     );
 
     // Start download
     const downloadPromise = manager.executeDownloadStage(sessionId);
-    
+
     // Abort session
     await manager.abortSession(sessionId);
-    
+
     // Download should complete or fail gracefully
     const result = await downloadPromise;
-    
+
     // Check session is aborted
     const status = manager.getSessionStatus(sessionId);
     expect(status?.isAborted).toBe(true);
-    
+
     // Clean up aborted session data
     await ephemeralDB.clearSession(sessionId);
-    
+
     const stats = await ephemeralDB.getStatistics();
     expect(stats.sessions).toBe(0);
   });
@@ -236,19 +235,19 @@ describe('Vector Tile Generation - End to End', () => {
       simplification: {
         enabled: true,
         tolerance: 0.01,
-        preserveTopology: false
+        preserveTopology: false,
       },
       tiling: {
         minZoom: 2,
-        maxZoom: 4
-      }
+        maxZoom: 4,
+      },
     };
 
     const sessionId = await manager.startBatchSession(
       nodeId,
       config,
       config.countries,
-      config.adminLevels
+      config.adminLevels,
     );
 
     // Execute full pipeline
@@ -261,7 +260,7 @@ describe('Vector Tile Generation - End to End', () => {
     // Verify tile generation details
     console.log(`Session ${sessionId} completed`);
     console.log(`Generated tiles for zoom levels 2-4`);
-    
+
     // In a real implementation, we would check the actual tile data
     // For now, just verify the pipeline completed
     expect(status?.progress).toBe(100);
@@ -275,15 +274,15 @@ describe('Vector Tile Generation - End to End', () => {
       simplification: {
         enabled: true,
         tolerance: 0.005,
-        preserveTopology: true
-      }
+        preserveTopology: true,
+      },
     };
 
     const sessionId = await manager.startBatchSession(
       nodeId,
       config,
       config.countries,
-      config.adminLevels
+      config.adminLevels,
     );
 
     // This should create 4 tasks: JP_L0, JP_L1, KR_L0, KR_L1
@@ -295,13 +294,13 @@ describe('Vector Tile Generation - End to End', () => {
 
     const status = manager.getSessionStatus(sessionId);
     expect(status?.isCompleted).toBe(true);
-    
+
     // Verify all tasks were processed
     const rawBuffers = await ephemeralDB.rawBuffers
       .where('sessionId')
       .equals(sessionId)
       .toArray();
-    
+
     // Should have data for each country/level combination
     expect(rawBuffers.length).toBeGreaterThan(0);
   });
@@ -315,7 +314,7 @@ describe('Vector Tile Generation - End to End', () => {
         type: 'raw',
         size: 100,
         lastAccessed: Date.now() - 10000, // 10 seconds ago
-        ttl: 5000 // 5 second TTL (expired)
+        ttl: 5000, // 5 second TTL (expired)
       },
       {
         key: 'test-cache-2',
@@ -323,8 +322,8 @@ describe('Vector Tile Generation - End to End', () => {
         type: 'raw',
         size: 100,
         lastAccessed: Date.now(),
-        ttl: 60000 // 1 minute TTL (not expired)
-      }
+        ttl: 60000, // 1 minute TTL (not expired)
+      },
     ]);
 
     // Clear expired cache

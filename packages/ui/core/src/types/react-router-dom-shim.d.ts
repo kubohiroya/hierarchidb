@@ -11,13 +11,13 @@ declare module 'react-router-dom' {
 
   export const Link: React.FC<
     React.ComponentProps<'a'> & {
-      to: string;
-      replace?: boolean;
-      state?: unknown;
-      relative?: 'path' | 'route';
-      preventScrollReset?: boolean;
-      viewTransition?: boolean;
-    }
+    to: string;
+    replace?: boolean;
+    state?: unknown;
+    relative?: 'path' | 'route';
+    preventScrollReset?: boolean;
+    viewTransition?: boolean;
+  }
   >;
 
   export function useLocation(): LocationLike;

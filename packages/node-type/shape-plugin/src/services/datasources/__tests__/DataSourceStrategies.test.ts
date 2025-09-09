@@ -1,105 +1,99 @@
 /**
- * データソース戦略の包括的テスト
- */
+    */
 
-import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory';
-import { 
-  DataSourceStrategy,
-  BaseDataSourceStrategy,
-  FetchOptions,
-  ProcessOptions,
-  ValidationResult,
-  SaveTarget,
-  SaveResult
-} from '../DataSourceStrategy';
+import { BaseDataSourceStrategy, FetchOptions, ProcessOptions, SaveTarget, DataSourceConfig } from '../DataSourceStrategy';
 import { NaturalEarthStrategy } from '../NaturalEarthStrategy';
 import { GADMStrategy } from '../GADMStrategy';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
-import { ShapeEntity } from '../../../types/ShapeEntity';
+import type { ShapeEntity } from '../../../types/ShapeEntity';
 
-// モック用のfetch
+// Mock AuthRecoveryService used by authFetch so strategies avoid real network
+vi.mock('@hierarchidb/auth-recovery', () => {
+  const fetchWithAuth = async (input: string | URL, _init?: RequestInit): Promise<Response> => {
+    const url = String(input);
+    // Natural Earth downloads a ZIP; return a tiny valid zip buffer
+    if (url.includes('naturalearthdata.com')) {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      zip.file('dummy.txt', 'hello');
+      const buf = await zip.generateAsync({ type: 'arraybuffer' });
+      return new Response(buf, { status: 200 });
+    }
+
+    // GeoBoundaries metadata endpoints
+    if (url.includes('geoboundaries.org/api/current/available')) {
+      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
+    }
+    if (url.includes('/gbOpen/')) {
+      return new Response(JSON.stringify({ gjDownloadURL: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
+    }
+    if (url.includes('mock.local/gb.geojson')) {
+      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] } as any), { status: 200 });
+    }
+
+    // OSM Overpass interpreter
+    if (url.includes('overpass-api.de')) {
+      return new Response(JSON.stringify({ elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }], generator: 'mock' }), { status: 200 });
+    }
+
+    // Default health check OK
+    return new Response('OK', { status: 200 });
+  };
+
+  return {
+    AuthRecoveryService: {
+      getSingleton: () => Promise.resolve({ fetchWithAuth }),
+    },
+  };
+});
+
+//  fetch
 global.fetch = vi.fn();
 const mockFetch = vi.mocked(fetch);
 
-// テスト用のモックデータ
-const mockGeoJSON = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[
-          [139.0, 35.0],
-          [140.0, 35.0], 
-          [140.0, 36.0],
-          [139.0, 36.0],
-          [139.0, 35.0]
-        ]]
-      },
-      properties: {
-        NAME: 'Test Area',
-        ISO_A3: 'TST',
-        POP_EST: 1000000
-      }
-    }
-  ]
-};
+// (Removed unused mock fixtures)
 
-const mockOSMData = {
-  elements: [
-    {
-      type: 'way' as const,
-      id: 123456,
-      nodes: [1, 2, 3, 4, 1],
-      tags: {
-        name: 'Test Boundary',
-        boundary: 'administrative',
-        admin_level: '2'
-      }
-    }
-  ],
-  generator: 'Overpass API'
-};
-
-// テスト用のカスタム戦略
 class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
   readonly id = 'test-strategy';
   readonly name = 'Test Strategy';
-  readonly config = {
+  readonly config: DataSourceConfig = {
     id: 'test-strategy',
     name: 'Test Strategy',
     version: '1.0.0',
     access: {
-      method: 'REST' as const,
-      authentication: { type: 'none' as const }
+      method: 'REST',
+      authentication: { type: 'none' },
+      baseUrl: 'https://example.com',
     },
     processing: {
-      inputFormat: 'json' as const,
-      outputFormat: 'geojson' as const
-    }
+      inputFormat: 'json',
+      outputFormat: 'geojson',
+    },
   };
 
   async fetchData(options?: FetchOptions): Promise<any> {
     return { test: 'data', options };
   }
 
-  async processData(rawData: any, options?: ProcessOptions): Promise<ShapeEntity[]> {
-    return [{
-      id: 'test-entity-1',
-      nodeId: 'test-node-1',
-      name: 'Test Entity',
-      geometry: {
-        type: 'Point',
-        coordinates: [139.0, 35.0]
-      },
-      properties: { test: true },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1
-    } as ShapeEntity];
+  async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeEntity[]> {
+    // Minimal valid ShapeEntity per current type definition
+    const now = Date.now();
+    const entity: ShapeEntity = {
+      // Cast string to branded ids for test purposes
+      id: 'test-entity-1' as unknown as any,
+      nodeId: 'test-node-1' as unknown as any,
+      dataSourceName: 'naturalearth',
+      selectedCountries: ['JPN'],
+      selectedAdminLevels: [0],
+      licenseAgreement: true,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    };
+    return [entity];
   }
 }
 
@@ -123,7 +117,7 @@ describe('DataSourceStrategy', () => {
 
     it('should fetch data with options', async () => {
       const options: FetchOptions = {
-        bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 }
+        bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
       };
 
       const result = await strategy.fetchData(options);
@@ -134,21 +128,29 @@ describe('DataSourceStrategy', () => {
       const rawData = { test: 'raw' };
       const options: ProcessOptions = {
         simplify: true,
-        tolerance: 0.01
+        tolerance: 0.01,
       };
 
       const result = await strategy.processData(rawData, options);
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('test-entity-1');
-      expect(result[0].name).toBe('Test Entity');
+      expect(result[0]?.id).toBe('test-entity-1');
+      // ShapeEntity no longer carries display name; ensure id exists
+      expect(result[0]?.id).toBeDefined();
     });
 
     it('should validate data successfully', async () => {
-      const data = [{
-        id: 'test',
-        name: 'Test',
-        geometry: { type: 'Point', coordinates: [0, 0] }
-      }] as ShapeEntity[];
+      const now = Date.now();
+      const data: ShapeEntity[] = [{
+        id: 'test' as unknown as any,
+        nodeId: 'node' as unknown as any,
+        dataSourceName: 'naturalearth',
+        selectedCountries: [],
+        selectedAdminLevels: [],
+        licenseAgreement: true,
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+      }];
 
       const result = await strategy.validateData(data);
       expect(result.isValid).toBe(true);
@@ -162,10 +164,20 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should save data successfully', async () => {
-      const data = [{ id: 'test' }] as ShapeEntity[];
+      const data = [{
+        id: 'test' as unknown as any,
+        nodeId: 'node' as unknown as any,
+        dataSourceName: 'naturalearth',
+        selectedCountries: [],
+        selectedAdminLevels: [],
+        licenseAgreement: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      }] as ShapeEntity[];
       const target: SaveTarget = {
         type: 'hierarchidb',
-        entityType: 'shape'
+        entityType: 'shape',
       };
 
       const result = await strategy.saveData(data, target);
@@ -175,8 +187,8 @@ describe('DataSourceStrategy', () => {
 
     it('should perform health check', async () => {
       mockFetch.mockResolvedValue(new Response('OK', { status: 200 }));
-      
-      // baseUrlを設定してテスト
+
+      //  baseUrl
       strategy.config.access.baseUrl = 'https://test.example.com/';
       const isHealthy = await strategy.healthCheck();
       expect(isHealthy).toBe(true);
@@ -184,7 +196,7 @@ describe('DataSourceStrategy', () => {
 
     it('should handle health check failure', async () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
-      
+
       strategy.config.access.baseUrl = 'https://test.example.com/';
       const isHealthy = await strategy.healthCheck();
       expect(isHealthy).toBe(false);
@@ -274,7 +286,7 @@ describe('DataSourceStrategyFactory', () => {
       updateFrequency: 'irregular',
       license: 'MIT',
       attribution: 'Test',
-      supported: true
+      supported: true,
     });
 
     expect(factory.hasStrategy('test-strategy' as any)).toBe(true);
@@ -311,19 +323,18 @@ describe('DataSourceStrategyFactory', () => {
 
   it('should perform health check on single strategy', async () => {
     mockFetch.mockResolvedValue(new Response('OK', { status: 200 }));
-    
+
     const isHealthy = await factory.healthCheck('natural-earth-shapes');
-    // 実際のNaturalEarthStrategyはbaseUrlを持たないため、常にtrue
+    //  NaturalEarthStrategybaseUrltrue
     expect(isHealthy).toBe(true);
   });
 
   it('should perform health check on all strategies', async () => {
     mockFetch.mockResolvedValue(new Response('OK', { status: 200 }));
-    
+
     const results = await factory.healthCheckAll();
     expect(results.size).toBeGreaterThan(0);
-    
-    // 各戦略の結果をチェック
+
     for (const [strategyId, isHealthy] of results.entries()) {
       expect(typeof isHealthy).toBe('boolean');
     }
@@ -345,11 +356,10 @@ describe('Natural Earth Strategy', () => {
   });
 
   it('should select appropriate endpoint', () => {
-    // プライベートメソッドのテストのため、publicメソッド経由でテスト
-    const options1: FetchOptions = { endpoint: 'countries-50m' };
-    const options2: FetchOptions = { adminLevel: 0 };
-    
-    // 実際のfetchDataはモック化が複雑なため、設定のテストに留める
+    //  public
+    // Ensure endpoints exist in config
+
+    //  fetchData
     expect(strategy.config.access.endpoints).toHaveProperty('countries-50m');
     expect(strategy.config.access.endpoints).toHaveProperty('states-50m');
     expect(strategy.config.access.endpoints).toHaveProperty('cities-50m');
@@ -371,7 +381,6 @@ describe('GADM Strategy', () => {
   });
 
   it('should normalize country codes', () => {
-    // プライベートメソッドのテスト用に、設定を確認
     expect(strategy.config.access.endpoints).toHaveProperty('country-gpkg');
     expect(strategy.config.access.endpoints).toHaveProperty('country-shp');
   });
@@ -430,7 +439,7 @@ describe('GeoBoundaries Strategy', () => {
   it('should get available countries (mocked)', async () => {
     mockFetch.mockResolvedValue(new Response(JSON.stringify({
       USA: ['ADM0', 'ADM1', 'ADM2'],
-      JPN: ['ADM0', 'ADM1']
+      JPN: ['ADM0', 'ADM1'],
     }), { status: 200 }));
 
     const countries = await strategy.getAvailableCountries();
@@ -440,7 +449,7 @@ describe('GeoBoundaries Strategy', () => {
   it('should get available admin levels (mocked)', async () => {
     mockFetch.mockResolvedValue(new Response(JSON.stringify({
       USA: ['ADM0', 'ADM1', 'ADM2'],
-      JPN: ['ADM0', 'ADM1']
+      JPN: ['ADM0', 'ADM1'],
     }), { status: 200 }));
 
     const levels = await strategy.getAvailableAdminLevels('USA');
@@ -451,18 +460,16 @@ describe('GeoBoundaries Strategy', () => {
 describe('Integration Tests', () => {
   it('should create and use strategies through factory', async () => {
     const factory = defaultDataSourceFactory;
-    
-    // 各戦略を作成してbasic operationsをテスト
+
+    //  basic operations
     const strategies = factory.getSupportedStrategies();
-    
+
     for (const strategyId of strategies) {
       const strategy = factory.create(strategyId);
-      
-      // 設定の存在確認
+
       expect(strategy.config).toBeDefined();
       expect(strategy.config.id).toBe(strategyId);
-      
-      // メソッドの存在確認
+
       expect(typeof strategy.fetchData).toBe('function');
       expect(typeof strategy.processData).toBe('function');
       expect(typeof strategy.validateData).toBe('function');
@@ -472,57 +479,47 @@ describe('Integration Tests', () => {
 
   it('should handle errors gracefully', async () => {
     const strategy = new TestStrategy();
-    
-    // バリデーションエラー
+
     const invalidData = null as any;
     const result = await strategy.validateData(invalidData);
     expect(result.isValid).toBe(false);
-    
-    // 保存エラー（モック）
-    const mockStrategy = { ...strategy };
-    mockStrategy.saveData = vi.fn().mockRejectedValue(new Error('Save failed'));
-    
+
+    const saveSpy = vi.spyOn(strategy, 'saveData').mockRejectedValue(new Error('Save failed'));
+
     try {
-      await mockStrategy.saveData([], { type: 'hierarchidb' });
+      await strategy.saveData([] as unknown as ShapeEntity[], { type: 'hierarchidb' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
+    saveSpy.mockRestore();
   });
 
   it('should work with real-like data flow', async () => {
     const strategy = new TestStrategy();
-    
-    // データ取得
+
     const fetchOptions: FetchOptions = {
       bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
-      adminLevel: 1
+      adminLevel: 1,
     };
     const rawData = await strategy.fetchData(fetchOptions);
     expect(rawData).toBeDefined();
-    
-    // データ処理
+
     const processOptions: ProcessOptions = {
       simplify: true,
-      tolerance: 0.01
+      tolerance: 0.01,
     };
     const processedData = await strategy.processData(rawData, processOptions);
     expect(processedData).toHaveLength(1);
-    
-    // バリデーション
+
     const validation = await strategy.validateData(processedData);
     expect(validation.isValid).toBe(true);
-    
-    // 保存
+
     const saveTarget: SaveTarget = {
       type: 'hierarchidb',
       entityType: 'shape',
-      parentId: 'test-parent'
+      parentId: 'test-parent',
     };
     const saveResult = await strategy.saveData(processedData, saveTarget);
     expect(saveResult.success).toBe(true);
   });
 });
-// Health-check and network-related strategy tests are considered integration
-if (!process.env.ENABLE_INTEGRATION_TESTS) {
-  describe.skip('DataSourceStrategy (integration disabled)', () => {});
-} else {

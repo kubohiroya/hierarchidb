@@ -1,20 +1,20 @@
 /**
  * @file WorkerAuthHandler.ts
  * @description Authentication handler for Shape Plugin batch processing
- * 
+ *
  * Handles authentication errors during batch processing and coordinates
  * with UI layer for authentication flows.
  */
 
 import {
+  AUTH_CONSTANTS,
   AuthNotification,
-  AuthRequiredNotification,
-  AuthSuccessNotification,
   AuthNotificationFactory,
   AuthNotificationRegistry,
-  generateRequestId,
+  AuthRequiredNotification,
+  AuthSuccessNotification,
   detectAuthSource,
-  AUTH_CONSTANTS,
+  generateRequestId,
 } from '@hierarchidb/common-auth';
 import * as Comlink from 'comlink';
 
@@ -43,11 +43,11 @@ export class WorkerAuthHandler {
     timeout: NodeJS.Timeout;
     requestInfo: AuthRequestInfo;
   }>();
-  
+
   private notificationRegistry = AuthNotificationRegistry.getInstance();
   private uiNotificationCallback?: (notification: AuthNotification) => void;
   private currentToken?: { token: string; type: 'Bearer' | 'Basic'; expiresAt?: number };
-  
+
   constructor() {
     // Register this handler with the notification registry
     this.notificationRegistry.register('worker-auth-handler', {
@@ -56,11 +56,13 @@ export class WorkerAuthHandler {
       onAuthCancelled: this.handleAuthCancelled.bind(this),
     });
   }
+
   /** Current state of authentication handler */
   private currentState: 'idle' | 'waiting' | 'processing' = 'idle';
-  
+
   /** Session IDs currently waiting for authentication */
   private waitingSessions: Set<string> = new Set();
+
   /**
    * Add session to waiting state
    */
@@ -95,28 +97,28 @@ export class WorkerAuthHandler {
       activeRequests: this.authCallbacks.size,
     };
   }
-  
+
   /**
    * Set callback for sending notifications to UI layer
    */
   setUINotificationCallback(callback: (notification: AuthNotification) => void): void {
     this.uiNotificationCallback = Comlink.proxy(callback);
   }
-  
+
   /**
    * Execute HTTP request with automatic authentication error handling
    */
   async fetchWithAuth(
     url: string,
     init: RequestInit = {},
-    context: AuthContext
+    context: AuthContext,
   ): Promise<Response> {
     const requestId = generateRequestId();
     const maxRetries = context.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT;
-    
+
     return this.executeRequestWithRetry(url, init, context, requestId, 0, maxRetries);
   }
-  
+
   /**
    * Execute request with retry logic
    */
@@ -126,20 +128,20 @@ export class WorkerAuthHandler {
     context: AuthContext,
     requestId: string,
     retryCount: number,
-    maxRetries: number
+    maxRetries: number,
   ): Promise<Response> {
     try {
       console.log(`🔐 Executing request (attempt ${retryCount + 1}): ${url}`);
-      
+
       const response = await fetch(url, init);
-      
+
       if (response.status === 401) {
         console.warn(`🚨 Authentication error (401) for: ${url}`);
-        
+
         if (retryCount >= maxRetries) {
           throw new Error(`Authentication failed after ${maxRetries + 1} attempts`);
         }
-        
+
         // Create auth required notification
         const authNotification = AuthNotificationFactory.createAuthRequired({
           source: detectAuthSource(response),
@@ -152,7 +154,7 @@ export class WorkerAuthHandler {
           pluginType: context.pluginType,
           retryCount,
         });
-        
+
         // Wait for authentication and retry
         return this.waitForAuthAndRetry(
           authNotification,
@@ -161,35 +163,35 @@ export class WorkerAuthHandler {
           context,
           requestId,
           retryCount + 1,
-          maxRetries
+          maxRetries,
         );
       }
-      
+
       // Success case
       console.log(`✅ Request successful: ${url} (${response.status})`);
       return response;
-      
+
     } catch (error) {
       console.error(`❌ Request failed: ${url}`, error);
-      
+
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         // Network error - may indicate CORS/auth issues
         if (retryCount < maxRetries) {
           console.log(`🔄 Retrying due to network error (attempt ${retryCount + 2})`);
-          
+
           // Wait a bit before retrying
           await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-          
+
           return this.executeRequestWithRetry(
-            url, init, context, requestId, retryCount + 1, maxRetries
+            url, init, context, requestId, retryCount + 1, maxRetries,
           );
         }
       }
-      
+
       throw error;
     }
   }
-  
+
   /**
    * Wait for authentication completion and retry request
    */
@@ -203,7 +205,7 @@ export class WorkerAuthHandler {
     context: AuthContext,
     requestId: string,
     retryCount: number,
-    maxRetries: number
+    maxRetries: number,
   ): Promise<Response> {
     // Add session to waiting state if provided
     if (context.sessionId) {
@@ -219,7 +221,7 @@ export class WorkerAuthHandler {
         }
         reject(new Error('Authentication timeout'));
       }, AUTH_CONSTANTS.DEFAULT_TIMEOUT);
-      
+
       // Store callback for when authentication completes
       this.authCallbacks.set(requestId, {
         resolve,
@@ -234,9 +236,9 @@ export class WorkerAuthHandler {
           maxRetries,
         },
       });
-      
+
       console.log(`⏳ Waiting for authentication: ${requestId}`);
-      
+
       // Send auth notification to UI
       if (this.uiNotificationCallback) {
         this.uiNotificationCallback(authNotification);
@@ -252,7 +254,7 @@ export class WorkerAuthHandler {
       }
     });
   }
-  
+
   /**
    * Handle authentication required event
    */
@@ -260,7 +262,7 @@ export class WorkerAuthHandler {
     console.log(`🔐 Auth required for request: ${notification.context.requestId}`);
     // This is handled by waitForAuthAndRetry, so just log it
   }
-  
+
   /**
    * Handle authentication success event
    */
@@ -270,23 +272,23 @@ export class WorkerAuthHandler {
   private async handleAuthSuccess(notification: AuthSuccessNotification): Promise<void> {
     const { requestId, newToken, tokenType = 'Bearer', sessionId } = notification.context;
     const callback = this.authCallbacks.get(requestId);
-    
+
     if (!callback) {
       console.warn(`⚠️ No callback found for auth success: ${requestId}`);
       return;
     }
-    
+
     console.log(`✅ Auth success for request: ${requestId}`);
-    
+
     const { resolve, reject, timeout, requestInfo } = callback;
     clearTimeout(timeout);
     this.authCallbacks.delete(requestId);
-    
+
     // Remove session from waiting state
     if (sessionId) {
       this.removeWaitingSession(sessionId);
     }
-    
+
     try {
       // Remember latest token for subsequent requests
       this.currentToken = { token: newToken, type: tokenType, expiresAt: notification.context.expiresAt };
@@ -298,7 +300,7 @@ export class WorkerAuthHandler {
           'Authorization': `${tokenType} ${newToken}`,
         },
       };
-      
+
       // Retry the original request with new token
       const response = await this.executeRequestWithRetry(
         requestInfo.url,
@@ -306,9 +308,9 @@ export class WorkerAuthHandler {
         requestInfo.context,
         requestInfo.requestId,
         requestInfo.retryCount,
-        requestInfo.context.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT
+        requestInfo.context.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT,
       );
-      
+
       resolve(response);
     } catch (error) {
       reject(error instanceof Error ? error : new Error('Request failed after auth'));
@@ -331,7 +333,7 @@ export class WorkerAuthHandler {
     }
     return {};
   }
-  
+
   /**
    * Handle authentication cancelled event
    */
@@ -341,27 +343,27 @@ export class WorkerAuthHandler {
   private async handleAuthCancelled(notification: AuthCancelledNotification): Promise<void> {
     const { requestId, reason, sessionId } = notification.context;
     const callback = this.authCallbacks.get(requestId);
-    
+
     if (!callback) {
       console.warn(`⚠️ No callback found for auth cancellation: ${requestId}`);
       return;
     }
-    
+
     console.log(`❌ Auth cancelled for request: ${requestId}, reason: ${reason}`);
-    
+
     const { reject, timeout } = callback;
     clearTimeout(timeout);
     this.authCallbacks.delete(requestId);
-    
+
     // Remove session from waiting state
     if (sessionId) {
       this.removeWaitingSession(sessionId);
     }
-    
+
     // Reject the request with cancellation error
     reject(new Error(`Authentication cancelled: ${reason}`));
   }
-  
+
   /**
    * Send notification to UI layer
    */
@@ -377,14 +379,14 @@ export class WorkerAuthHandler {
       console.warn('⚠️ No UI notification callback registered');
     }
   }
-  
+
   /**
    * Extract error message from response
    */
   private async extractErrorMessage(response: Response): Promise<string> {
     try {
       const contentType = response.headers.get('content-type');
-      
+
       if (contentType?.includes('application/json')) {
         const errorData = await response.json();
         return errorData.error || errorData.message || 'Authentication required';
@@ -396,39 +398,39 @@ export class WorkerAuthHandler {
       return 'Authentication required';
     }
   }
-  
+
   /**
    * Get pending authentication requests
    */
   getPendingRequests(): AuthRequestInfo[] {
     return Array.from(this.authCallbacks.values()).map(callback => callback.requestInfo);
   }
-  
+
   /**
    * Cancel all pending authentication requests
    */
   cancelAllPendingRequests(reason: string = 'cancelled'): void {
     const callbacks = Array.from(this.authCallbacks.values());
-    
+
     console.log(`🚫 Cancelling ${callbacks.length} pending auth requests`);
-    
+
     for (const { reject, timeout, requestInfo } of callbacks) {
       clearTimeout(timeout);
       reject(new Error(`Request cancelled: ${reason}`));
-      
+
       // Send cancellation notification
       const cancelNotification = AuthNotificationFactory.createAuthCancelled({
         requestId: requestInfo.requestId,
         sessionId: requestInfo.context.sessionId,
         reason: 'error',
       });
-      
+
       this.notifyUI(cancelNotification);
     }
-    
+
     this.authCallbacks.clear();
   }
-  
+
   /**
    * Clean up resources
    */

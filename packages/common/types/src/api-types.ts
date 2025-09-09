@@ -1,9 +1,7 @@
-// バリデーションルール
-
 import { GroupEntity, PeerEntity, RelationalEntity } from './entity-types';
-import { NodeId } from "./id-types";
+import { NodeId } from './id-types';
 
-// 共通のAPIメソッドの型
+//  API
 export type APIMethodArgs = readonly [NodeId, ...any[]];
 export type APIMethodReturn =
   | PeerEntity
@@ -18,7 +16,7 @@ export type APIMethodReturn =
   | void
   | { [key: string]: string | number | boolean };
 
-// Worker API拡張メソッド
+//  Worker API
 export type WorkerAPIMethod<
   TArgs extends APIMethodArgs = APIMethodArgs,
   TReturn extends APIMethodReturn = APIMethodReturn,
@@ -28,7 +26,7 @@ export interface WorkerAPIExtensions {
   [methodName: string]: WorkerAPIMethod;
 }
 
-// 型安全なWorker API拡張
+//  Worker API
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -36,7 +34,7 @@ export interface TypedWorkerAPIExtensions<T extends Record<string, WorkerAPIMeth
   methods: T;
 }
 
-// Client API拡張メソッド
+//  Client API
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -49,7 +47,7 @@ export interface ClientAPIExtensions {
   [methodName: string]: ClientAPIMethod;
 }
 
-// 型安全なClient API拡張
+//  Client API
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */

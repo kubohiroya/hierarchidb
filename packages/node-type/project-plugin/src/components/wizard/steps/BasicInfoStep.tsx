@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Select, MenuItem, FormControl, InputLabel, Typography, Grid } from '@mui/material';
+import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Business as BusinessIcon, Public as PublicIcon } from '@mui/icons-material';
-import { LocalizationProvider, AdapterDateFns } from '@hierarchidb/ui-date';
-import type { ProjectEntity, ProjectCategory } from '~/types/project-types';
+import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
+import type { ProjectCategory, ProjectEntity } from '~/types/project-types';
 
 interface BasicInfoStepProps {
   data: Partial<ProjectEntity>;
@@ -52,11 +52,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data }) => {
               onChange={(updates) =>
                 Object.entries(updates).forEach(([k, v]) => handleChange(k, v))
               }
-              nameLabel={"Project Name"}
-              nameHelperText={"Enter a descriptive project name"}
-              nameRequiredText={"Project name is required"}
-              descriptionLabel={"Description"}
-              descriptionHelperText={"Optional description for the project"}
+              nameLabel={'Project Name'}
+              nameHelperText={'Enter a descriptive project name'}
+              nameRequiredText={'Project name is required'}
+              descriptionLabel={'Description'}
+              descriptionHelperText={'Optional description for the project'}
             />
           </Grid>
 

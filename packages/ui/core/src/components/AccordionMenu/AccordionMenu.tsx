@@ -3,13 +3,13 @@ import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/materia
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export const AccordionMenu = ({
-  id,
-  expanded,
-  toggleExpanded,
-  onClick,
-  accordionDetails,
-  children,
-}: {
+                                id,
+                                expanded,
+                                toggleExpanded,
+                                onClick,
+                                accordionDetails,
+                                children,
+                              }: {
   id: string;
   expanded: boolean;
   toggleExpanded: () => void;

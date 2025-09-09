@@ -5,45 +5,45 @@
  * completely decoupled from specific data types or storage implementations.
  */
 
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
+  Alert,
   Box,
+  Checkbox,
+  Chip,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Paper,
   TablePagination,
-  Typography,
-  IconButton,
-  Tooltip,
-  Chip,
+  TableRow,
   TextField,
-  InputAdornment,
-  Checkbox,
-  LinearProgress,
-  Alert,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import {
-  KeyboardArrowUp,
-  KeyboardArrowDown,
-  Search,
-  FilterList,
   Download,
+  FilterList,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
   Refresh,
+  Search,
   ViewColumn,
 } from '@mui/icons-material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type {
-  DataProvider,
-  DataItem,
-  QueryParams,
-  QueryResult,
   ColumnDefinition,
   DataChangeEvent,
+  DataItem,
+  DataProvider,
   FilterParams,
+  QueryParams,
+  QueryResult,
   SortParams,
 } from './types/DataProvider';
 
@@ -119,36 +119,36 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
 }
 
 export function AbstractDataGrid<T extends DataItem = DataItem>({
-  dataProvider,
-  columns: initialColumns,
-  initialQuery = {},
-  paginate = true,
-  sortable = true,
-  filterable = true,
-  searchable = true,
-  selectable = false,
-  selectionMode = 'multiple',
-  exportable = false,
-  refreshable = true,
-  realtime = false,
-  columnToggle = false,
-  virtual = false,
-  rowHeight = 52,
-  height = 600,
-  dense = false,
-  stickyHeader = true,
-  striped = false,
-  gridLines = false,
-  onRowClick,
-  onRowDoubleClick,
-  onSelectionChange,
-  onExport,
-  onError,
-  emptyMessage = 'No data available',
-  errorComponent,
-  loadingComponent,
-  toolbarActions,
-}: AbstractDataGridProps<T>) {
+                                                                  dataProvider,
+                                                                  columns: initialColumns,
+                                                                  initialQuery = {},
+                                                                  paginate = true,
+                                                                  sortable = true,
+                                                                  filterable = true,
+                                                                  searchable = true,
+                                                                  selectable = false,
+                                                                  selectionMode = 'multiple',
+                                                                  exportable = false,
+                                                                  refreshable = true,
+                                                                  realtime = false,
+                                                                  columnToggle = false,
+                                                                  virtual = false,
+                                                                  rowHeight = 52,
+                                                                  height = 600,
+                                                                  dense = false,
+                                                                  stickyHeader = true,
+                                                                  striped = false,
+                                                                  gridLines = false,
+                                                                  onRowClick,
+                                                                  onRowDoubleClick,
+                                                                  onSelectionChange,
+                                                                  onExport,
+                                                                  onError,
+                                                                  emptyMessage = 'No data available',
+                                                                  errorComponent,
+                                                                  loadingComponent,
+                                                                  toolbarActions,
+                                                                }: AbstractDataGridProps<T>): ReactElement {
   // State
   const [data, setData] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
@@ -360,7 +360,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
 
   const handleColumnToggle = (field: string) => {
     setColumns((prev) =>
-      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col))
+      prev.map((col) => (String(col.field) === field ? { ...col, visible: !col.visible } : col)),
     );
   };
 
@@ -481,9 +481,9 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           maxHeight: !virtual ? height : undefined,
           '& .MuiTableCell-root': gridLines
             ? {
-                border: '1px solid',
-                borderColor: 'divider',
-              }
+              border: '1px solid',
+              borderColor: 'divider',
+            }
             : undefined,
         }}
         ref={virtual ? parentRef : undefined}
@@ -553,8 +553,8 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           </TableHead>
           <TableBody>
             {(virtual
-              ? virtualizer.getVirtualItems()
-              : data.map((_item, index) => ({ index }))
+                ? virtualizer.getVirtualItems()
+                : data.map((_item, index) => ({ index }))
             ).map((virtualRow) => {
               const item = data[virtualRow.index];
               if (!item) return null;

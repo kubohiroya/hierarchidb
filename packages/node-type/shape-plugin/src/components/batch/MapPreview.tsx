@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Box, Paper, Typography, Alert, IconButton, Tooltip } from '@mui/material';
+import { Alert, Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
-import { MapWithVectorTiles, type MapViewState } from '@hierarchidb/ui-map';
+import { type MapViewState, MapWithVectorTiles } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { DownloadTask, VectorTileTask } from '~/shared';
 
@@ -20,21 +20,21 @@ interface MapPreviewProps {
 }
 
 export const MapPreview: React.FC<MapPreviewProps> = ({
-  nodeId,
-  downloadTasks,
-  vectorTileTasks,
-  hasStarted,
-  initialViewport,
-  zxy,
-}) => {
+                                                        nodeId,
+                                                        downloadTasks,
+                                                        vectorTileTasks,
+                                                        hasStarted,
+                                                        initialViewport,
+                                                        zxy,
+                                                      }) => {
   // Default viewport (world view)
   const defaultViewport = {
     center: [0, 0] as [number, number],
-    zoom: 2
+    zoom: 2,
   };
 
   const viewport = initialViewport || defaultViewport;
-  
+
   // Convert to MapLibre view state
   const initialViewState = useMemo<MapViewState>(() => ({
     longitude: viewport.center[0],
@@ -61,7 +61,14 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
 
   return (
     <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{
+        p: 2,
+        borderBottom: 1,
+        borderColor: 'divider',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
         <Typography variant="h6">
           Map Preview
         </Typography>
@@ -73,7 +80,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
           </Tooltip>
         )}
       </Box>
-      
+
       <Box sx={{ flex: 1, position: 'relative' }}>
         {!hasStarted ? (
           <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -97,7 +104,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
                   'fill-color': 'rgba(0, 136, 136, 0.7)',
                   'fill-outline-color': '#004444',
                 },
-                layerType: 'fill'
+                layerType: 'fill',
               }}
               mapOptions={{
                 interactive: true,
@@ -108,7 +115,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
                 touchZoomRotate: true,
               }}
             />
-            
+
             {/* Progress Overlay */}
             <Box
               sx={{
@@ -132,7 +139,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
                 Vector tiles: {successfulVectorTiles} / {vectorTileTasks.length}
               </Typography>
             </Box>
-            
+
             {/* Click to open indicator */}
             <Box
               sx={{

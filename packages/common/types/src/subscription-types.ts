@@ -1,6 +1,5 @@
 import { TreeNodeEvent } from './tree-node-event-types';
 
-// サブスクリプション関連の型定義
 export type SubscriptionId = string & { readonly __brand: 'SubscriptionId' };
 
 export interface SubscriptionOptions {

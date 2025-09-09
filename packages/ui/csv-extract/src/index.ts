@@ -18,7 +18,7 @@ export type {
   PaginationOptions,
   CSVTableListResult,
   CSVProcessingStatus,
-  ICSVDataApi
+  ICSVDataApi,
 } from './types';
 
 // Context

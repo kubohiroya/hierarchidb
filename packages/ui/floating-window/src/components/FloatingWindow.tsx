@@ -3,19 +3,9 @@
  * @description Main floating window component with drag and resize functionality
  */
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  IconButton,
-  styled,
-} from '@mui/material';
-import {
-  Close as CloseIcon,
-  Minimize as MinimizeIcon,
-  CropSquare as RestoreIcon,
-} from '@mui/icons-material';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
+import { Close as CloseIcon, CropSquare as RestoreIcon, Minimize as MinimizeIcon } from '@mui/icons-material';
 import type { FloatingWindowProps, WindowState } from '../types/WindowState';
 
 const StyledWindow = styled(Paper)(({ theme }) => ({
@@ -113,20 +103,20 @@ const ResizeHandle = styled(Box)({
 });
 
 export const FloatingWindow: React.FC<FloatingWindowProps> = ({
-  title,
-  children,
-  initialState,
-  onStateChange,
-  onClose,
-  minWidth = 200,
-  minHeight = 100,
-  maxWidth,
-  maxHeight,
-  resizable = true,
-  draggable = true,
-  className,
-  style,
-}) => {
+                                                                title,
+                                                                children,
+                                                                initialState,
+                                                                onStateChange,
+                                                                onClose,
+                                                                minWidth = 200,
+                                                                minHeight = 100,
+                                                                maxWidth,
+                                                                maxHeight,
+                                                                resizable = true,
+                                                                draggable = true,
+                                                                className,
+                                                                style,
+                                                              }) => {
 
   const windowRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -155,7 +145,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   // Handle dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!draggable || e.button !== 0) return;
-    
+
     // Check if clicking on title bar
     const target = e.target as HTMLElement;
     if (!target.closest('.title-bar')) return;

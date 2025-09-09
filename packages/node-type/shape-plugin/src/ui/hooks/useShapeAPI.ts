@@ -1,23 +1,20 @@
 /**
- * Shape API hook - PluginRegistryAPIを使用してプラグインAPIにアクセス
- * アプリケーションコンテキスト経由でWorkerAPIClientにアクセスし、
- * PluginRegistryAPIからShapeプラグインのAPI拡張を取得
- */
+  * Shape API hook - PluginRegistryAPIAPI
+ * WorkerAPIClient
+ * PluginRegistryAPIShapeAPI
+  */
 
 import { useMemo } from 'react';
 import type { ShapeAPI } from '../../shared';
-
-// WorkerAPIClientへの条件付きインポート（アプリケーション実行時のみ利用可能）
-// Resolve from app context (aliased to a test stub in vitest)
-import { useWorkerAPIClient as appUseWorkerAPIClient } from '@hierarchidb/app/src/hooks/useWorkerAPIClient';
-const useWorkerAPIClientHook: (() => any) | null = appUseWorkerAPIClient ?? null;
+import { getWorkerClientHook } from './workerClientProvider';
 
 /**
- * Shape APIにアクセスするためのhook
- * WorkerAPIClient経由でPluginRegistryAPIからShapeプラグインのAPI拡張を取得
- */
+  * Shape APIhook
+ * WorkerAPIClientPluginRegistryAPIShapeAPI
+  */
 export function useShapeAPI(): Promise<ShapeAPI> {
   return useMemo(async () => {
+    const useWorkerAPIClientHook = getWorkerClientHook();
     if (!useWorkerAPIClientHook) {
       throw new Error('useShapeAPI requires application context - WorkerAPIClient not available');
     }
@@ -31,7 +28,7 @@ export function useShapeAPI(): Promise<ShapeAPI> {
       const workerAPI = client.getAPI();
       const pluginRegistry = await workerAPI.getPluginRegistryAPI();
       const shapeAPI = await pluginRegistry.getExtension('shape');
-      
+
       if (!shapeAPI) {
         throw new Error('Shape plugin API extension not found');
       }
@@ -50,6 +47,7 @@ export function useShapeAPI(): Promise<ShapeAPI> {
  */
 export function useShapeAPIGetter(): () => Promise<ShapeAPI> {
   return useMemo(() => {
+    const useWorkerAPIClientHook = getWorkerClientHook();
     return async (): Promise<ShapeAPI> => {
       if (!useWorkerAPIClientHook) {
         throw new Error('useShapeAPIGetter requires application context - WorkerAPIClient not available');
@@ -64,7 +62,7 @@ export function useShapeAPIGetter(): () => Promise<ShapeAPI> {
         const workerAPI = client.getAPI();
         const pluginRegistry = await workerAPI.getPluginRegistryAPI();
         const shapeAPI = await pluginRegistry.getExtension('shape');
-        
+
         if (!shapeAPI) {
           throw new Error('Shape plugin API extension not found');
         }

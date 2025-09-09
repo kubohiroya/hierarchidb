@@ -4,21 +4,17 @@
 
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Button,
-  Stack,
   Alert,
   AlertTitle,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
 } from '@mui/material';
-import {
-  Warning as WarningIcon,
-  Save as SaveIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Delete as DeleteIcon, Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
 
 export interface UnsavedChangesDialogProps {
   open: boolean;
@@ -36,15 +32,15 @@ export interface UnsavedChangesDialogProps {
 }
 
 export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
-  open,
-  title,
-  message,
-  children,
-  showSaveDraft = false,
-  onDiscard,
-  onSaveDraft,
-  onCancel,
-}) => {
+                                                                            open,
+                                                                            title,
+                                                                            message,
+                                                                            children,
+                                                                            showSaveDraft = false,
+                                                                            onDiscard,
+                                                                            onSaveDraft,
+                                                                            onCancel,
+                                                                          }) => {
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
       <DialogTitle>

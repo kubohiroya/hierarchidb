@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { storeRegistry } from '~/entity/store-registry';
-import type { PeerStore } from '~/entity/store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager';
+import { storeRegistry } from '../store-registry';
+import type { PeerStore } from '../store';
 
 describe('EntityLifecycleManager working copy peer (create/discard)', () => {
   beforeEach(() => {
@@ -14,17 +14,27 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
     const nodeMap = new Map<string, any>();
     const core: any = {
       nodes: {
-        async get(id: NodeId) { return nodeMap.get(id as unknown as string); },
-        _put(obj: any) { nodeMap.set(obj.id as unknown as string, obj); },
+        async get(id: NodeId) {
+          return nodeMap.get(id as unknown as string);
+        },
+        _put(obj: any) {
+          nodeMap.set(obj.id as unknown as string, obj);
+        },
       },
       getNode: async (id: NodeId) => nodeMap.get(id as unknown as string),
     };
 
     const peer = new Map<string, any>();
     const store: PeerStore<any> = {
-      async get(id: NodeId) { return peer.get(id as unknown as string); },
-      async put(e: any) { peer.set(e.nodeId as unknown as string, e); },
-      async delete(id: NodeId) { peer.delete(id as unknown as string); },
+      async get(id: NodeId) {
+        return peer.get(id as unknown as string);
+      },
+      async put(e: any) {
+        peer.set(e.nodeId as unknown as string, e);
+      },
+      async delete(id: NodeId) {
+        peer.delete(id as unknown as string);
+      },
     };
     storeRegistry.registerPeer('folder', store);
 
@@ -50,4 +60,3 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
     expect(await store.get(wcId)).toBeUndefined();
   });
 });
-

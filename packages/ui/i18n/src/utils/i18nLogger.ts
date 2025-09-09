@@ -21,7 +21,7 @@ const isDev: boolean = (() => {
     return Boolean(
       (typeof globalThis !== 'undefined' &&
         (globalThis as { import?: { meta?: { env?: { DEV?: boolean } } } }).import?.meta?.env?.DEV) ||
-        false,
+      false,
     );
   } catch {
     return false;
@@ -41,45 +41,45 @@ const t = (key: string, _options?: I18nInterpolationOptions): string => {
 // Console logging with i18n support
 export const i18nLog = isDev
   ? (key: string, options?: I18nInterpolationOptions, ...args: unknown[]) => {
-      console.log(t(key, options), ...args);
-    }
+    console.log(t(key, options), ...args);
+  }
   : noop;
 
 export const i18nWarn = isDev
   ? (key: string, options?: I18nInterpolationOptions, ...args: unknown[]) => {
-      console.warn(t(key, options), ...args);
-    }
+    console.warn(t(key, options), ...args);
+  }
   : noop;
 
 export const i18nError = isDev
   ? (key: string, options?: I18nInterpolationOptions, ...args: unknown[]) => {
-      console.error(t(key, options), ...args);
-    }
+    console.error(t(key, options), ...args);
+  }
   : noop;
 
 export const i18nInfo = isDev
   ? (key: string, options?: I18nInterpolationOptions, ...args: unknown[]) => {
-      console.info(t(key, options), ...args);
-    }
+    console.info(t(key, options), ...args);
+  }
   : noop;
 
 export const i18nDebug = isDev
   ? (key: string, options?: I18nInterpolationOptions, ...args: unknown[]) => {
-      console.debug(t(key, options), ...args);
-    }
+    console.debug(t(key, options), ...args);
+  }
   : noop;
 
 // Group logging for organized output
 export const i18nGroup = isDev
   ? (key: string, options?: I18nInterpolationOptions) => {
-      console.group(t(key, options));
-    }
+    console.group(t(key, options));
+  }
   : noop;
 
 export const i18nGroupCollapsed = isDev
   ? (key: string, options?: I18nInterpolationOptions) => {
-      console.groupCollapsed(t(key, options));
-    }
+    console.groupCollapsed(t(key, options));
+  }
   : noop;
 
 export const i18nGroupEnd = isDev ? console.groupEnd.bind(console) : noopVoid;
@@ -87,14 +87,14 @@ export const i18nGroupEnd = isDev ? console.groupEnd.bind(console) : noopVoid;
 // Timing utilities with i18n
 export const i18nTime = isDev
   ? (key: string, options?: I18nInterpolationOptions) => {
-      console.time(t(key, options));
-    }
+    console.time(t(key, options));
+  }
   : noop;
 
 export const i18nTimeEnd = isDev
   ? (key: string, options?: I18nInterpolationOptions) => {
-      console.timeEnd(t(key, options));
-    }
+    console.timeEnd(t(key, options));
+  }
   : noop;
 
 // Performance logging with i18n
@@ -113,7 +113,7 @@ export const i18nPerf = (labelKey: string, fn: () => void, options?: I18nInterpo
 export const i18nPerfAsync = async <T>(
   labelKey: string,
   fn: () => Promise<T>,
-  options?: I18nInterpolationOptions
+  options?: I18nInterpolationOptions,
 ): Promise<T> => {
   if (!isDev) {
     return await fn();

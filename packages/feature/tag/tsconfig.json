@@ -15,7 +15,7 @@
         "../../common/api/src"
       ],
       "@hierarchidb/util": [
-        "../../util/src"
+        "../../util/src/index.ts"
       ],
       "~/*": [
         "src/*"

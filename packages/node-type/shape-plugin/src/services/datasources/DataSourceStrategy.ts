@@ -1,11 +1,9 @@
 /**
- * データソースストラテジー基底クラス
- * DATA_SOURCE_STRATEGY_DESIGN.mdに基づく実装
- */
+   * DATA_SOURCE_STRATEGY_DESIGN.md
+  */
 
 import { ShapeEntity } from '../../types/ShapeEntity';
 
-// データソース設定の基本インターフェース
 export interface DataSourceConfig {
   id: string;
   name: string;
@@ -17,7 +15,6 @@ export interface DataSourceConfig {
   cache?: CacheConfig;
 }
 
-// アクセス設定
 export interface AccessConfig {
   method: 'REST' | 'GraphQL' | 'File' | 'WebSocket' | 'FTP' | 'Custom';
   baseUrl?: string;
@@ -28,14 +25,12 @@ export interface AccessConfig {
   retries?: RetryConfig;
 }
 
-// 認証設定
 export interface AuthConfig {
   type: 'none' | 'api-key' | 'oauth' | 'basic' | 'bearer' | 'custom';
   credentials?: Record<string, string>;
   refreshStrategy?: RefreshStrategy;
 }
 
-// 処理設定
 export interface ProcessingConfig {
   inputFormat: DataFormat;
   outputFormat: DataFormat;
@@ -45,10 +40,9 @@ export interface ProcessingConfig {
   aggregations?: AggregationRule[];
 }
 
-// その他の型定義
 export interface RateLimitConfig {
   requests: number;
-  period: number; // ミリ秒
+  period: number;
 }
 
 export interface RetryConfig {
@@ -86,6 +80,7 @@ export interface TransformationRule {
   from?: string;
   to?: string;
   tolerance?: number;
+
   [key: string]: any;
 }
 
@@ -101,7 +96,6 @@ export interface AggregationRule {
   groupBy?: string;
 }
 
-// データ取得オプション
 export interface FetchOptions {
   bbox?: BoundingBox;
   adminLevel?: number;
@@ -114,10 +108,10 @@ export interface FetchOptions {
   timeout?: number;
   filters?: FilterRule[];
   geoFilters?: GeographicFilter[];
+
   [key: string]: any;
 }
 
-// データ処理オプション
 export interface ProcessOptions {
   filters?: FilterRule[];
   transformations?: TransformationRule[];
@@ -125,6 +119,7 @@ export interface ProcessOptions {
   outputFormat?: DataFormat;
   simplify?: boolean;
   tolerance?: number;
+
   [key: string]: any;
 }
 
@@ -147,24 +142,22 @@ export interface GeographicFilter {
   radius?: number;
 }
 
-// バリデーション結果
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   warnings?: string[];
 }
 
-// 保存ターゲット
 export interface SaveTarget {
   type: 'hierarchidb' | 'file' | 'database' | 'api';
   entityType?: string;
   parentId?: string;
   path?: string;
   format?: DataFormat;
+
   [key: string]: any;
 }
 
-// 保存結果
 export interface SaveResult {
   success: boolean;
   entityId?: string;
@@ -174,51 +167,43 @@ export interface SaveResult {
 }
 
 /**
- * データソース戦略の基本インターフェース
- */
+    */
 export interface DataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity[]> {
   readonly id: string;
   readonly name: string;
   readonly config: DataSourceConfig;
-  
-  // データ取得
+
   fetchData(options?: FetchOptions): Promise<TRawData>;
-  
-  // データ処理
+
   processData(rawData: TRawData, options?: ProcessOptions): Promise<TProcessedData>;
-  
-  // バリデーション
+
   validateData(data: TProcessedData): Promise<ValidationResult>;
-  
-  // 保存
+
   saveData(data: TProcessedData, target: SaveTarget): Promise<SaveResult>;
-  
-  // ヘルスチェック
+
   healthCheck?(): Promise<boolean>;
-  
-  // キャッシュクリア
+
   clearCache?(): Promise<void>;
 }
 
 /**
- * 抽象データソース戦略基底クラス
- */
-export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity[]> 
+    */
+export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity[]>
   implements DataSourceStrategy<TRawData, TProcessedData> {
-  
+
   abstract readonly id: string;
   abstract readonly name: string;
   abstract readonly config: DataSourceConfig;
 
   abstract fetchData(options?: FetchOptions): Promise<TRawData>;
+
   abstract processData(rawData: TRawData, options?: ProcessOptions): Promise<TProcessedData>;
 
   async validateData(data: TProcessedData): Promise<ValidationResult> {
-    // デフォルトのバリデーション実装
     if (!data || (Array.isArray(data) && data.length === 0)) {
       return {
         isValid: false,
-        errors: ['データが空です']
+        errors: ['データが空です'],
       };
     }
 
@@ -232,32 +217,30 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
 
       return {
         isValid: errors.length === 0,
-        errors
+        errors,
       };
     }
 
     return { isValid: true, errors: [] };
   }
 
-  async saveData(data: TProcessedData, target: SaveTarget): Promise<SaveResult> {
-    // デフォルトの保存実装
+  async saveData(data: TProcessedData, _target: SaveTarget): Promise<SaveResult> {
     try {
-      // HierarchiDBへの保存ロジックを実装
+      //  HierarchiDB
       return {
         success: true,
-        count: Array.isArray(data) ? data.length : 1
+        count: Array.isArray(data) ? data.length : 1,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      // 基本的なヘルスチェック
       if (this.config.access.baseUrl) {
         const { authFetch } = await import('../utils/authFetch');
         const response = await authFetch(this.config.access.baseUrl);
@@ -270,12 +253,10 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
   }
 
   async clearCache(): Promise<void> {
-    // キャッシュクリアのデフォルト実装
     console.log(`Cache cleared for ${this.id}`);
   }
 
   protected validateItem(item: any): boolean {
-    // アイテム単体のバリデーション
     return item && typeof item === 'object';
   }
 
@@ -310,26 +291,33 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
 
   private applyFilterRule(value: any, filter: FilterRule): boolean {
     switch (filter.operator) {
-      case 'eq': return value === filter.value;
-      case 'ne': return value !== filter.value;
-      case 'gt': return value > filter.value;
-      case 'gte': return value >= filter.value;
-      case 'lt': return value < filter.value;
-      case 'lte': return value <= filter.value;
-      case 'contains': return String(value).includes(String(filter.value));
-      case 'in': return Array.isArray(filter.value) && filter.value.includes(value);
-      default: return true;
+      case 'eq':
+        return value === filter.value;
+      case 'ne':
+        return value !== filter.value;
+      case 'gt':
+        return value > filter.value;
+      case 'gte':
+        return value >= filter.value;
+      case 'lt':
+        return value < filter.value;
+      case 'lte':
+        return value <= filter.value;
+      case 'contains':
+        return String(value).includes(String(filter.value));
+      case 'in':
+        return Array.isArray(filter.value) && filter.value.includes(value);
+      default:
+        return true;
     }
   }
 
   private async applyTransformation(data: any[], transformation: TransformationRule): Promise<any[]> {
     switch (transformation.type) {
       case 'simplify':
-        // 簡略化の実装
-        return data; // TODO: 実装
+        return data;
       case 'filter':
-        // フィルタリングの実装
-        return data; // TODO: 実装
+        return data;
       default:
         return data;
     }

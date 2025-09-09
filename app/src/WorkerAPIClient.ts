@@ -2,7 +2,7 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import { getWorkerClient } from './initWorkerClient';
+import { getWorkerClient } from './client';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -36,14 +36,14 @@ export class WorkerAPIClient {
 
       case 'initializing':
         console.log(
-          '[WorkerAPIClient.initialize] Already initializing, returning existing promise'
+          '[WorkerAPIClient.initialize] Already initializing, returning existing promise',
         );
         if (this.initializationPromise) {
           return this.initializationPromise;
         }
         // If promise is somehow null, fall through to reinitialize
         console.warn(
-          '[WorkerAPIClient.initialize] State is initializing but no promise found, reinitializing'
+          '[WorkerAPIClient.initialize] State is initializing but no promise found, reinitializing',
         );
         break;
 
@@ -93,11 +93,12 @@ export class WorkerAPIClient {
       try {
         let initComplete = false;
         try {
-          const mod = await import('./initWorkerClient');
+          const mod = await import('./client');
           if (typeof (mod as any)?.isWorkerInitCompleted === 'function') {
             initComplete = Boolean((mod as any).isWorkerInitCompleted());
           }
-        } catch {}
+        } catch {
+        }
 
         if (!initComplete) {
           const pingResult = await remoteWorker.ping();
@@ -170,9 +171,13 @@ export class WorkerAPIClient {
       if (this.workerInstance) {
         // Attempt to terminate raw worker if possible
         const raw = WorkerAPIClient.getRawWorkerInstance();
-        try { raw?.terminate(); } catch {}
+        try {
+          raw?.terminate();
+        } catch {
+        }
       }
-    } catch {}
+    } catch {
+    }
     this.workerInstance = null;
     this.state = 'uninitialized';
     this.initializationPromise = null;
@@ -194,7 +199,8 @@ export class WorkerAPIClient {
         // eslint-disable-next-line no-console
         console.log('[WorkerAPIClient] Promoted to initialized via global INIT_COMPLETE');
       }
-    } catch {}
+    } catch {
+    }
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
@@ -202,10 +208,11 @@ export class WorkerAPIClient {
       if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
         // eslint-disable-next-line no-console
         console.log(
-          `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`
+          `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`,
         );
       }
-    } catch {}
+    } catch {
+    }
     return ready;
   }
 
@@ -215,7 +222,7 @@ export class WorkerAPIClient {
   static getRawWorkerInstance(): Worker | null {
     // Import the function from initWorkerClient
     // @ts-ignore - dynamic import
-    const { getRawWorkerInstance } = require('./initWorkerClient');
+    const { getRawWorkerInstance } = require('./client');
     return getRawWorkerInstance();
   }
 

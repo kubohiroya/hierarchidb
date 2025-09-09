@@ -5,11 +5,10 @@
  */
 
 import React from 'react';
-import { Box, Typography, Stack, Divider } from '@mui/material';
+import { Box, Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';
+import { BasicInfoFields, CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';
 import type { SpreadsheetCategory } from '../types/category-types';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 export interface BasicInfoStepProps {
   data: {
@@ -25,28 +24,47 @@ export interface BasicInfoStepProps {
 }
 
 /**
- * スプレッドシートの基本情報入力コンポーネント
- */
+    */
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
-  data,
-  onNext,
-  disabled = false
-}) => {
+                                                              data,
+                                                              onNext,
+                                                              disabled = false,
+                                                            }) => {
   const { t } = useTranslation('spreadsheet-plugin');
-  
+
   const categoryOptions = [
-    { value: 'data-analysis' as SpreadsheetCategory, label: String(t('categories.dataAnalysis', 'Data Analysis')), color: '#4CAF50' },
-    { value: 'financial' as SpreadsheetCategory, label: String(t('categories.financial', 'Financial')), color: '#2196F3' },
-    { value: 'inventory' as SpreadsheetCategory, label: String(t('categories.inventory', 'Inventory')), color: '#FF9800' },
-    { value: 'reporting' as SpreadsheetCategory, label: String(t('categories.reporting', 'Reporting')), color: '#9C27B0' },
-    { value: 'dashboard' as SpreadsheetCategory, label: String(t('categories.dashboard', 'Dashboard')), color: '#F44336' },
-    { value: 'template' as SpreadsheetCategory, label: String(t('categories.template', 'Template')), color: '#795548' }
+    {
+      value: 'data-analysis' as SpreadsheetCategory,
+      label: String(t('categories.dataAnalysis', 'Data Analysis')),
+      color: '#4CAF50',
+    },
+    {
+      value: 'financial' as SpreadsheetCategory,
+      label: String(t('categories.financial', 'Financial')),
+      color: '#2196F3',
+    },
+    {
+      value: 'inventory' as SpreadsheetCategory,
+      label: String(t('categories.inventory', 'Inventory')),
+      color: '#FF9800',
+    },
+    {
+      value: 'reporting' as SpreadsheetCategory,
+      label: String(t('categories.reporting', 'Reporting')),
+      color: '#9C27B0',
+    },
+    {
+      value: 'dashboard' as SpreadsheetCategory,
+      label: String(t('categories.dashboard', 'Dashboard')),
+      color: '#F44336',
+    },
+    { value: 'template' as SpreadsheetCategory, label: String(t('categories.template', 'Template')), color: '#795548' },
   ];
 
   const handleUpdate = (updates: Partial<typeof data>) => {
     onNext({
       ...data,
-      ...updates
+      ...updates,
     });
   };
 
@@ -56,11 +74,12 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
   return (
     <Box sx={{ p: 3, maxWidth: 600, margin: '0 auto' }}>
-      {/* セクションヘッダー */}
+      {/*
+*/}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <Typography variant="h6">📄 {String(t('basicInfo.title', 'Basic Information'))}</Typography>
       </Box>
-      
+
       <Typography variant="body2" color="text.secondary" paragraph>
         {String(t('basicInfo.description', 'Configure the basic settings for your spreadsheet. Add tags and categories to organize and find your data easily.'))}
       </Typography>
@@ -79,7 +98,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
         <Divider />
 
-        {/* カテゴリ選択 */}
+        {/*
+*/}
         <Box>
           <Typography variant="subtitle2" gutterBottom>
             {String(t('basicInfo.category.label', 'Category'))}
@@ -103,10 +123,13 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           />
         </Box>
 
-        {/* タグ入力は後続PRで統合（共通TagInput導入時）*/}
+        {/*
+ PRTagInput
+*/}
       </Stack>
 
-      {/* フォーム下部の情報表示 */}
+      {/*
+*/}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           📊 <strong>{String(t('basicInfo.hint.title', 'Tip:'))}</strong>{' '}

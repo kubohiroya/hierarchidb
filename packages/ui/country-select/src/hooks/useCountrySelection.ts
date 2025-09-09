@@ -3,8 +3,8 @@
  * @module @hierarchidb/ui-country-select/hooks
  */
 
-import { useState, useCallback, useMemo } from 'react';
-import type { MatrixSelection, MatrixColumn } from '../types/MatrixColumn';
+import { useCallback, useMemo, useState } from 'react';
+import type { MatrixColumn, MatrixSelection } from '../types/MatrixColumn';
 
 export interface UseCountrySelectionOptions {
   /** Initial selections */
@@ -45,10 +45,10 @@ export interface UseCountrySelectionResult {
  * Hook for managing country matrix selections with utilities
  */
 export function useCountrySelection({
-  initialSelections = [],
+                                      initialSelections = [],
 
-  minSelections = 1,
-}: UseCountrySelectionOptions = {}): UseCountrySelectionResult {
+                                      minSelections = 1,
+                                    }: UseCountrySelectionOptions = {}): UseCountrySelectionResult {
   const [selections, setSelections] = useState<MatrixSelection[]>(initialSelections);
 
   // Update a specific selection
@@ -56,7 +56,7 @@ export function useCountrySelection({
     setSelections(prev => {
       const newSelections = [...prev];
       const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
-      
+
       if (existingIndex >= 0) {
         const existing = newSelections[existingIndex];
         if (existing) {
@@ -83,14 +83,14 @@ export function useCountrySelection({
   const selectAllForCountries = useCallback((countryCodes: string[], columnIds: string[]) => {
     setSelections(prev => {
       const newSelections = [...prev];
-      
+
       countryCodes.forEach(countryCode => {
         const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
         const selections = columnIds.reduce((acc, columnId) => {
           acc[columnId] = true;
           return acc;
         }, {} as Record<string, boolean>);
-        
+
         if (existingIndex >= 0) {
           const existing = newSelections[existingIndex];
           if (existing) {
@@ -138,7 +138,7 @@ export function useCountrySelection({
     const selectedCountries = selections
       .filter(s => Object.values(s.selections).some(Boolean))
       .map(s => s.countryCode);
-    
+
     const totalSelections = selections.reduce((sum, selection) => {
       return sum + Object.values(selection.selections).filter(Boolean).length;
     }, 0);

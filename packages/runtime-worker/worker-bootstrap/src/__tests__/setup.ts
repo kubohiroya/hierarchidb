@@ -2,7 +2,7 @@
  * Test setup for vitest
  */
 
-import { vi, beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 // Mock console methods to reduce noise in tests
 global.console = {

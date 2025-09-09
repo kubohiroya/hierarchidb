@@ -1,7 +1,6 @@
 /**
- * Route Plugin Components
- * ルートプラグインコンポーネントのエクスポート
- */
+  * Route Plugin Components
+   */
 
 export { RouteDialog } from './RouteDialog';
 export { RoutePanel } from './RoutePanel';

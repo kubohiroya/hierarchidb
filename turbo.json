@@ -9,7 +9,14 @@
     },
     "check:deps": {
       "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$", "scripts/check-deps.mjs", "**/package.json", "**/tsup.config.*", "**/tsconfig.json"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "dep-fence.config.mjs",
+        "scripts/dep-fence/**",
+        "**/package.json",
+        "**/tsup.config.*",
+        "**/tsconfig.json"
+      ]
     },
     "@hierarchidb/app#dev": {
       "dependsOn": ["^build"],

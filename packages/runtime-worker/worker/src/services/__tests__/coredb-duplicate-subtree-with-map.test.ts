@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
+import { CoreDB } from '../CoreDB';
 
 function node(id: string, parentId: string, name: string, depth = 1, type: NodeType = 'folder' as any): TreeNode {
   return {
@@ -29,12 +29,16 @@ describe('CoreDB.duplicateSubtreeWithMap', () => {
     const created: TreeNode[] = [];
     const fake: any = {
       nodes: {
-        async get(id: NodeId) { return map.get(id as any); },
+        async get(id: NodeId) {
+          return map.get(id as any);
+        },
       },
       async listChildren(parentId: NodeId) {
         return Array.from(map.values()).filter((n) => n.parentId === parentId) as any;
       },
-      async bulkCreateNodes(nodes: TreeNode[]) { created.push(...nodes); },
+      async bulkCreateNodes(nodes: TreeNode[]) {
+        created.push(...nodes);
+      },
     };
 
     const { idMap, newRootId } = await CoreDB.prototype.duplicateSubtreeWithMap.call(fake, a as any, p as any);
@@ -49,4 +53,3 @@ describe('CoreDB.duplicateSubtreeWithMap', () => {
     expect(newB?.parentId).toBe(newA?.id);
   });
 });
-

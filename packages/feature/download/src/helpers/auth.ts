@@ -5,7 +5,10 @@ export interface AuthHeadersProviderLike {
   getAuthHeaders(): Record<string, string>;
 }
 
-export function createAuthAwareNetworkPort(provider: AuthHeadersProviderLike, opts?: { perHostConcurrency?: number; retries?: number }): FetchNetworkPort {
+export function createAuthAwareNetworkPort(provider: AuthHeadersProviderLike, opts?: {
+  perHostConcurrency?: number;
+  retries?: number
+}): FetchNetworkPort {
   return new FetchNetworkPort({
     headers: () => provider.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency,

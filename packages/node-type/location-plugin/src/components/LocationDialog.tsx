@@ -1,35 +1,33 @@
 /**
- * Location Dialog Component
- * 地点情報ノードの作成・編集ダイアログ
- */
+  * Location Dialog Component
+   */
 
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
   Box,
-  Typography,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   FormControlLabel,
-  Checkbox
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
-import type { NodeId } from '../types';
-import type { LocationWorkingCopy, LocationDialogProps } from '../types';
+import type { LocationDialogProps, LocationWorkingCopy, NodeId } from '../types';
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
-  mode,
-  nodeId,
-  open,
-  onClose
-}) => {
+                                                                mode,
+                                                                nodeId,
+                                                                open,
+                                                                onClose,
+                                                              }) => {
   const [workingCopy, setWorkingCopy] = useState<LocationWorkingCopy>({
     id: 'temp' as any,
     nodeId: nodeId || 'temp' as NodeId,
@@ -40,7 +38,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       concurrentDownloads: 2,
       enableLocationFiltering: false,
       enableClustering: false,
-      enableGeocoding: false
+      enableGeocoding: false,
     },
     processingStatus: 'idle',
     checkboxState: {},
@@ -48,7 +46,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     locationTypes: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    version: 1
+    version: 1,
   });
 
   const handleSave = () => {
@@ -80,7 +78,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
           </Typography>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ pt: 2 }}>
           <TextField
@@ -91,7 +89,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             onChange={(e) => updateWorkingCopy({ name: e.target.value })}
             sx={{ mb: 3 }}
           />
-          
+
           <TextField
             fullWidth
             multiline
@@ -101,7 +99,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             onChange={(e) => updateWorkingCopy({ description: e.target.value })}
             sx={{ mb: 3 }}
           />
-          
+
           <FormControl fullWidth sx={{ mb: 3 }}>
             <InputLabel>データソース</InputLabel>
             <Select
@@ -115,7 +113,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
               <MenuItem value="overpass">Overpass API</MenuItem>
             </Select>
           </FormControl>
-          
+
           <FormControlLabel
             control={
               <Checkbox
@@ -128,7 +126,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
           />
         </Box>
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={handleCancel}>
           キャンセル

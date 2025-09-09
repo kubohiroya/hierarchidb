@@ -17,7 +17,7 @@ const parseCSVContent = (content: string, delimiter: string = ','): {
 
   // Parse header
   const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
-  
+
   // Parse rows
   const rows: Array<Array<string | number>> = [];
   for (let i = 1; i < lines.length; i++) {
@@ -28,7 +28,7 @@ const parseCSVContent = (content: string, delimiter: string = ','): {
       const num = parseFloat(cleaned);
       return isNaN(num) ? cleaned : num;
     });
-    
+
     if (values.length === headers.length) {
       rows.push(values);
     }
@@ -50,7 +50,7 @@ Bob,35,Kyoto`;
     expect(result.rows).toEqual([
       ['John', 30, 'Tokyo'],
       ['Jane', 25, 'Osaka'],
-      ['Bob', 35, 'Kyoto']
+      ['Bob', 35, 'Kyoto'],
     ]);
   });
 
@@ -64,7 +64,7 @@ Jane\t25\tOsaka`;
     expect(result.columns).toEqual(['name', 'age', 'city']);
     expect(result.rows).toEqual([
       ['John', 30, 'Tokyo'],
-      ['Jane', 25, 'Osaka']
+      ['Jane', 25, 'Osaka'],
     ]);
   });
 
@@ -78,7 +78,7 @@ Jane\t25\tOsaka`;
     expect(result.columns).toEqual(['name', 'age', 'description']);
     expect(result.rows).toEqual([
       ['John Doe', 30, 'A person from Tokyo'],
-      ['Jane Smith', 25, 'Lives in Osaka']
+      ['Jane Smith', 25, 'Lives in Osaka'],
     ]);
   });
 

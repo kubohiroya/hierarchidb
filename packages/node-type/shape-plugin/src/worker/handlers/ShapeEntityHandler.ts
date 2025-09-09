@@ -5,15 +5,15 @@
 
 import type { Table } from 'dexie';
 import type { NodeId, NodeType } from '../../shared';
-import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 import {
+  buildShapeEntityFromCreate,
+  DEFAULT_PROCESSING_CONFIG,
+  mapWorkingCopyToUpdates,
+  ProcessingConfig,
   ShapeEntity,
   ShapeWorkingCopy,
-  ProcessingConfig,
-  DEFAULT_PROCESSING_CONFIG,
-  buildShapeEntityFromCreate,
-  mapWorkingCopyToUpdates,
 } from '../../shared';
+import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 
 /**
  * Create shape data interface
@@ -47,10 +47,10 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   CreateShapeData,
   ShapeFilterCriteria
 > {
-  protected table: Table<ShapeEntity, EntityId>;
+  protected table: Table<ShapeEntity, NodeId>;
   private ephemeralDB: any; // EphemeralDB reference for working copies
 
-  constructor(table: Table<ShapeEntity, EntityId>, ephemeralDB?: any) {
+  constructor(table: Table<ShapeEntity, NodeId>, ephemeralDB?: any) {
     super();
     this.table = table;
     this.ephemeralDB = ephemeralDB;
@@ -61,12 +61,11 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: CreateShapeData
+    _entityId: NodeId,
+    data: CreateShapeData,
   ): ShapeEntity {
     return buildShapeEntityFromCreate({
       nodeId,
-      entityId,
       data: {
         name: data.name,
         description: data.description,
@@ -98,25 +97,25 @@ export class ShapeEntityHandler extends BaseEntityHandler<
 
       if (criteria.name) {
         query = query.filter((entity: ShapeEntity) =>
-          entity.name.toLowerCase().includes(criteria.name!.toLowerCase())
+          entity.name.toLowerCase().includes(criteria.name!.toLowerCase()),
         );
       }
 
       if (criteria.dataSource) {
-        query = query.filter((entity: ShapeEntity) => 
-          entity.dataSourceName === criteria.dataSource
+        query = query.filter((entity: ShapeEntity) =>
+          entity.dataSourceName === criteria.dataSource,
         );
       }
 
       if (criteria.processingStatus) {
-        query = query.filter((entity: ShapeEntity) => 
-          entity.processingStatus === criteria.processingStatus
+        query = query.filter((entity: ShapeEntity) =>
+          entity.processingStatus === criteria.processingStatus,
         );
       }
 
       if (criteria.hasActiveBatch !== undefined) {
         query = query.filter((entity: ShapeEntity) =>
-          criteria.hasActiveBatch ? !!entity.batchSessionId : !entity.batchSessionId
+          criteria.hasActiveBatch ? !!entity.batchSessionId : !entity.batchSessionId,
         );
       }
 
@@ -132,21 +131,21 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    */
   async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
     const workingCopy: ShapeWorkingCopy = {
-      // Convert EntityId to NodeId for TreeNode compatibility
-      id: (entity.id as string) as NodeId,
+      // Use nodeId as id for working copy
+      id: entity.nodeId as NodeId,
       parentId: entity.nodeId, // Use nodeId as parentId for working copy
       nodeType: 'shape' as NodeType,
       nodeId: entity.nodeId,
       name: entity.name,
       depth: 0, // Set appropriate depth
-      
+
       // WorkingCopyProperties
       originalNodeId: entity.nodeId,
       copiedAt: Date.now(),
       hasEntityCopy: true,
       entityWorkingCopyId: entity.id,
       originalVersion: entity.version,
-      
+
       // Shape entity properties
       description: entity.description,
       dataSourceName: entity.dataSourceName,
@@ -180,10 +179,10 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       nodeId: '' as NodeId, // Will be set when committed
       name: '',
       depth: 0, // Set appropriate depth
-      
+
       // WorkingCopyProperties
       copiedAt: Date.now(),
-      
+
       // Shape entity properties
       description: '',
       dataSourceName: 'naturalearth',
@@ -229,7 +228,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    */
   async updateWorkingCopy(
     workingCopyId: NodeId,
-    data: Partial<ShapeEntity>
+    data: Partial<ShapeEntity>,
   ): Promise<ShapeWorkingCopy> {
     try {
       const existing = await this.getWorkingCopy(workingCopyId);
@@ -287,7 +286,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
 
       // Remove working copy from EphemeralDB
       await this.discardWorkingCopy(workingCopyId);
-      
+
       console.log(`Committed working copy: ${workingCopyId} to node: ${nodeId}`);
       return nodeId;
     } catch (error) {
@@ -314,18 +313,18 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   /**
    * Apply working copy changes to entity
    */
-  async applyWorkingCopy(entityId: EntityId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
+  async applyWorkingCopy(nodeId: NodeId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
     const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(workingCopy) as Partial<ShapeEntity>;
-    return this.updateEntity(entityId, updates);
+    return this.updateEntity(nodeId, updates);
   }
 
   /**
    * Update processing status for batch operations
    */
   async updateProcessingStatus(
-    entityId: EntityId,
+    nodeId: NodeId,
     status: 'idle' | 'processing' | 'completed' | 'failed',
-    batchSessionId?: string
+    batchSessionId?: string,
   ): Promise<void> {
     const updates: Partial<ShapeEntity> = {
       processingStatus: status,
@@ -335,20 +334,20 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       updates.batchSessionId = batchSessionId;
     }
 
-    await this.updateEntity(entityId, updates);
+    await this.updateEntity(nodeId, updates);
   }
 
   /**
    * Get processing statistics for entity
    */
-  async getProcessingStats(entityId: EntityId): Promise<{
+  async getProcessingStats(nodeId: NodeId): Promise<{
     featureCount: number;
     tileCount: number;
     storageUsed: number;
     lastProcessed?: number;
   }> {
     // In real implementation, would query related tables for statistics
-    console.log(`Getting processing stats for entity: ${entityId}`);
+    console.log(`Getting processing stats for entity: ${nodeId}`);
     return {
       featureCount: 0,
       tileCount: 0,
@@ -359,11 +358,11 @@ export class ShapeEntityHandler extends BaseEntityHandler<
   /**
    * Override delete to handle batch session cleanup
    */
-  async deleteEntity(entityId: EntityId): Promise<void> {
+  async deleteEntity(nodeId: NodeId): Promise<void> {
     try {
-      const entity = await this.table.get(entityId);
+      const entity = await this.table.get(nodeId);
       if (!entity) {
-        throw new Error(`Shape entity not found: ${entityId}`);
+        throw new Error(`Shape entity not found: ${nodeId}`);
       }
 
       // Cancel any active batch sessions
@@ -375,9 +374,9 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       await this.cleanupEntityData(entity);
 
       // Call parent delete method
-      await super.deleteEntity(entityId);
+      await super.deleteEntity(nodeId);
 
-      console.log(`Deleted Shape entity: ${entityId}`);
+      console.log(`Deleted Shape entity: ${nodeId}`);
     } catch (error) {
       console.error('Failed to delete Shape entity:', error);
       throw error;

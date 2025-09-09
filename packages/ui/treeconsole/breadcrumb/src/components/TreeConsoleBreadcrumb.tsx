@@ -1,34 +1,32 @@
 /**
- * TreeConsoleBreadcrumb - 元のデザインの忠実な再現
- *
- * 元のeria-cartographのTreeConsoleBreadcrumbのUIを正確に再現。
- * パンくずナビゲーションの見た目とスタイルを完全に再現。
- */
+  * TreeConsoleBreadcrumb -
+  * eria-cartographTreeConsoleBreadcrumbUI
+   */
 
-import { useCallback, useState, type MouseEvent } from 'react';
+import { type MouseEvent, useCallback, useState } from 'react';
 import {
   Box,
+  Breadcrumbs,
   Button,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Typography,
-  Breadcrumbs,
-  Link,
   IconButton,
+  Link,
+  Typography,
 } from '@mui/material';
 import styled from '@emotion/styled';
 import type { Theme } from '@mui/material/styles';
-import { NavigateNext as NavigateNextIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
-import type { TreeConsoleBreadcrumbProps, BreadcrumbNode } from '../types';
+import { MoreVert as MoreVertIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types';
 import { NodeContextMenu } from './NodeContextMenu';
 import { NodeTypeIcon } from './NodeTypeIcon';
 
 /**
- * BreadcrumbContainer - 元のスタイルを完全に再現
- */
+  * BreadcrumbContainer -
+  */
 const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   width: 100%;
   opacity: 1;
@@ -42,6 +40,7 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   white-space: nowrap;
 
   /* Custom scrollbar styling for horizontal scroll */
+
   &::-webkit-scrollbar {
     width: 0px;
     height: 6px;
@@ -114,9 +113,9 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
 `;
 
 /**
- * TreeConsoleBreadcrumb メインコンポーネント
- * 元のTreeConsoleBreadcrumbの構造とスタイルを完全に再現
- */
+  * TreeConsoleBreadcrumb
+ * TreeConsoleBreadcrumb
+  */
 export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
   const {
     nodePath = [],
@@ -135,25 +134,19 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
-  // コンテキストメニューの状態
   const [contextMenuAnchor, setContextMenuAnchor] = useState<HTMLElement | null>(null);
   const [contextMenuNode, setContextMenuNode] = useState<BreadcrumbNode | null>(null);
 
-  // 削除確認ダイアログの状態
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState<string | null>(null);
 
-  // ナビゲーション中のローディング状態
   const [isNavigating, _setIsNavigating] = useState(false);
 
-  // 使用するパスを決定（元のロジックを再現）
   let pathToUse: BreadcrumbNode[] = [];
 
   if (nodePath && nodePath.length > 0) {
-    // プロップスから渡されたパスを使用
     pathToUse = [...nodePath];
   } else {
-    // ローディング状態で前のパスもない場合：ルートノードのみ表示
     const rootNodeName = isProjectsPage ? 'Projects' : 'Resources';
     pathToUse = [
       {
@@ -165,7 +158,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
     ];
   }
 
-  // ノードクリックハンドラー
   const handleNodeClick = useCallback(
     (nodeId: string, node?: BreadcrumbNode) => {
       if (onNodeClick) {
@@ -174,10 +166,9 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         console.log(`Navigate to node: ${nodeId} - TODO: Connect to controller`);
       }
     },
-    [onNodeClick]
+    [onNodeClick],
   );
 
-  // 削除確認ダイアログの処理
   const handleConfirmDelete = useCallback(async () => {
     if (pendingDeleteNodeId) {
       console.log(`Delete node: ${pendingDeleteNodeId} - TODO: Connect to controller`);
@@ -186,7 +177,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
     setPendingDeleteNodeId(null);
   }, [pendingDeleteNodeId]);
 
-  // コンテキストメニューのハンドラー
   const handleContextMenuOpen = (event: MouseEvent<HTMLElement>, node: BreadcrumbNode) => {
     event.preventDefault();
     event.stopPropagation();
@@ -199,7 +189,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
     setContextMenuNode(null);
   };
 
-  // コンテキストメニューのアクションハンドラー
   const handleCreate = (type: string) => {
     console.log(`Create ${type} under node:`, contextMenuNode?.id);
     // TODO: Connect to controller
@@ -246,7 +235,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
               const nodeName = node.name || 'Unknown';
 
               if (isLast) {
-                // 最後のアイテムは現在位置（クリック不可）
                 return (
                   <Typography
                     key={nodeId}
@@ -265,7 +253,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                 );
               }
 
-              // 通常のパンくずアイテム（クリック可能）
               return (
                 <Box
                   key={nodeId}
@@ -307,7 +294,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         </Box>
       </BreadcrumbContainer>
 
-      {/* ノードコンテキストメニュー */}
+      {/*
+*/}
       <ContextMenuComponent
         anchorEl={contextMenuAnchor}
         open={Boolean(contextMenuAnchor)}
@@ -326,20 +314,21 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         onOpen={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined
+            contextMenuNode || undefined,
           )
         }
         onOpenFolder={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined
+            contextMenuNode || undefined,
           )
         }
         onCheckReference={() => console.log('Check reference:', contextMenuNode?.id)}
         onPreview={() => console.log('PreviewStep:', contextMenuNode?.id)}
       />
 
-      {/* 削除確認ダイアログ */}
+      {/*
+*/}
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>

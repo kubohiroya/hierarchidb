@@ -1,5 +1,5 @@
 /**
- * @file component-usage-examples.ts  
+ * @file component-usage-examples.ts
  * @description Usage examples showing the unified API across all map components
  */
 
@@ -9,7 +9,7 @@ import type { VectorTileLayerProps } from '../components/VectorTileLayer';
 
 /**
  * UNIFIED USAGE EXAMPLES
- * 
+ *
  * The following examples show how the unified props design creates
  * consistent and intuitive APIs across all map components
  */
@@ -33,7 +33,7 @@ const basicVectorTilesConfig: MapWithVectorTilesProps = {
   onLoad: (_map) => console.log('Map loaded'),           // NOT onMapLoad
   onViewStateChange: (viewState) => console.log('View changed', viewState),
   onClick: (event) => console.log('Map clicked', event), // NOT onMapClick
-  
+
   // Plus vector tile specific props
   dbName: 'my-tiles',
   nodeId: 'region-123',
@@ -54,17 +54,17 @@ const advancedConfig: MapWithVectorTilesProps = {
     dragRotate: false,
 
   },
-  
+
   // Event handlers (unified naming)
   onLoad: (_map) => {
     // Consistent callback name across all components
     console.log('Map ready');
   },
-  
+
   // Vector tile data source (clearly separated concern)
   dbName: 'tokyo-districts',
   nodeId: 'ward-shibuya',
-  
+
   // Layer configuration (unified from old LayerOptions)
   layerConfig: {
     layerId: 'district-boundaries',
@@ -103,11 +103,11 @@ const advancedConfig: MapWithVectorTilesProps = {
 const unifiedProps = {
   // Same event handlers across all components
   onLoad: (_map: any) => console.log('loaded'),
-  onClick: (_event: any) => console.log('clicked'), 
-  
+  onClick: (_event: any) => console.log('clicked'),
+
   // Same dimensions and defaults
   height: '400px', // or omit to use DEFAULT_MAP_CONFIG.dimensions.height
-  
+
   // Clear separation of concerns
   layerConfig: { /* display config */ },
   dbName: 'tiles', nodeId: 'node123', // data source config
@@ -115,25 +115,25 @@ const unifiedProps = {
 
 /**
  * BENEFITS OF THE UNIFIED DESIGN:
- * 
+ *
  * 1. **Learning Once, Use Everywhere**
  *    - Same prop names across MapLibreMap and MapWithVectorTiles
  *    - No need to remember onLoad vs onMapLoad
- * 
- * 2. **Consistent Defaults**  
+ *
+ * 2. **Consistent Defaults**
  *    - All components use DEFAULT_MAP_CONFIG
  *    - No more 400px vs 500px height confusion
- * 
+ *
  * 3. **Clear Separation of Concerns**
  *    - Base map props: dimensions, events, styling
- *    - Data source props: dbName, nodeId, tileDataProvider  
+ *    - Data source props: dbName, nodeId, tileDataProvider
  *    - Layer config props: paint, layout, filters
- * 
+ *
  * 4. **Type Safety & IntelliSense**
  *    - Shared interfaces prevent typos
  *    - Better autocompletion across components
- * 
- * 5. **Easier Component Migration** 
+ *
+ * 5. **Easier Component Migration**
  *    - Switch from MapLibreMap to MapWithVectorTiles
  *    - Only need to add vector tile specific props
  *    - All base functionality remains identical
@@ -141,6 +141,6 @@ const unifiedProps = {
 
 export type {
   MapLibreMapProps,
-  MapWithVectorTilesProps, 
+  MapWithVectorTilesProps,
   VectorTileLayerProps,
 };

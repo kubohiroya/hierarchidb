@@ -1,11 +1,9 @@
 /**
- * Location Plugin Type Definitions
- * 地点情報プラグインの型定義
- */
+  * Location Plugin Type Definitions
+   */
 
-// 簡素化された型定義（実際は@hierarchidb/common-typeから取得）
+//  @hierarchidb/common-type
 export type NodeId = string & { readonly __brand: 'NodeId' };
-export type EntityId = string & { readonly __brand: 'EntityId' };
 export type TagId = string & { readonly __brand: 'TagId' };
 
 // Location Category Type
@@ -43,32 +41,32 @@ export enum LocationType {
 // ================================
 
 export interface LocationEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
-  
+
   // Basic Information
   name: string;
   description?: string;
   tags?: TagId[];
   category?: LocationCategory;
-  
+
   // Map Position
   zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)]
-  
+
   // Data Source
   dataSourceName: 'openstreetmap' | 'geonames' | 'wikidata' | 'overpass';
-  
+
   // License Agreement
   licenseAgreement: boolean;
   licenseAgreedAt?: string;
-  
+
   // Processing Configuration
   processingConfig: LocationProcessingConfig;
-  
+
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
-  
+
   // Metadata
   createdAt: number;
   updatedAt: number;

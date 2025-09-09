@@ -3,7 +3,7 @@
  * @description Robust user avatar component with multiple fallback mechanisms
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Avatar, Box } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import Gravatar from 'react-gravatar';
@@ -49,12 +49,12 @@ interface UserAvatarProps {
  * 4. Generic person icon
  */
 export const UserAvatar: React.FC<UserAvatarProps> = ({
-  pictureUrl,
-  email,
-  name,
-  size = 40,
-  sx,
-}) => {
+                                                        pictureUrl,
+                                                        email,
+                                                        name,
+                                                        size = 40,
+                                                        sx,
+                                                      }) => {
   const [googleImageFailed, setGoogleImageFailed] = useState(false);
   const [gravatarFailed, setGravatarFailed] = useState(false);
   const [workingGoogleUrl, setWorkingGoogleUrl] = useState<string | null>(null);

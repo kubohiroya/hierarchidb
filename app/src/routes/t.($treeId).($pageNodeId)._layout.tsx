@@ -1,30 +1,30 @@
-import { Outlet, useLoaderData, useNavigate, type LoaderFunctionArgs } from 'react-router';
-import { Suspense, useState, useEffect } from 'react';
+import { type LoaderFunctionArgs, Outlet, useLoaderData, useNavigate } from 'react-router';
+import { Suspense, useEffect, useState } from 'react';
 import {
-  Box,
-  CircularProgress,
   AppBar,
-  Toolbar,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
   ToggleButton,
   ToggleButtonGroup,
+  Toolbar,
   Typography,
-  Stack,
-  Button,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
 import { loadPageNode, LoadPageNodeArgs } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import { Tree, type NodeId } from '@hierarchidb/common-type';
+import { type NodeId, Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadPageNodeArgs;
 
-  // pageNodeIdが省略された場合、デフォルトのルートノードIDを設定
+  //  pageNodeIdID
   const pageNodeId = params.nodeId || (`${params.treeId}Root` as NodeId);
 
-  // undefinedという文字列の場合もデフォルト値に置き換え
+  //  undefined
   const actualPageNodeId =
     pageNodeId === 'undefined' ? (`${params.treeId}Root` as NodeId) : pageNodeId;
 

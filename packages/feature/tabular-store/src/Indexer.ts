@@ -13,7 +13,8 @@ function makeKey(pluginId: string, tableId: string, column: string, value: strin
 }
 
 export class TabularIndexer {
-  constructor(private readonly pluginId: string) {}
+  constructor(private readonly pluginId: string) {
+  }
 
   async indexRows(tableId: string, columns: string[], _chunkSize = 2000): Promise<void> {
     const db = getRowStoreDB();
@@ -35,7 +36,15 @@ export class TabularIndexer {
               await db.table('rowIndexes').put(existing as any);
             }
           } else {
-            const entry: RowIndexEntry = { id, pluginId: this.pluginId, tableId, column: c, value, rowIds: [rowId], updatedAt: Date.now() };
+            const entry: RowIndexEntry = {
+              id,
+              pluginId: this.pluginId,
+              tableId,
+              column: c,
+              value,
+              rowIds: [rowId],
+              updatedAt: Date.now(),
+            };
             await db.table('rowIndexes').add(entry as any);
           }
         }

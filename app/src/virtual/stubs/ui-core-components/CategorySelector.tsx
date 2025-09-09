@@ -8,11 +8,11 @@ export interface CategorySelectorProps {
 }
 
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
-  value,
-  options = [],
-  onChange,
-  placeholder = 'Select category',
-}) => {
+                                                                    value,
+                                                                    options = [],
+                                                                    onChange,
+                                                                    placeholder = 'Select category',
+                                                                  }) => {
   return (
     <div data-stub="CategorySelector" style={{ border: '1px dashed #ccc', padding: 8, borderRadius: 4 }}>
       <strong>CategorySelector (stub)</strong>

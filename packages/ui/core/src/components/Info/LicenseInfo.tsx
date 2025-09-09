@@ -1,4 +1,4 @@
-import { Fragment, memo, useState, useMemo } from 'react';
+import { Fragment, memo, useMemo, useState } from 'react';
 import {
   Box,
   Chip,
@@ -17,8 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { Clear as ClearIcon } from '@mui/icons-material';
+import { Clear as ClearIcon, Search as SearchIcon } from '@mui/icons-material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
@@ -102,16 +101,16 @@ const defaultGetLicenseColor = (license: string): 'success' | 'info' | 'warning'
  * in a sortable, searchable table format.
  */
 export const LicenseInfo = memo(function LicenseInfo({
-  licenseData,
-  title = 'Open Source Licenses',
-  description = 'This application is built using various open-source libraries and containers. Please review the license information below for details on the licenses of the included libraries.',
-  searchPlaceholder = 'Search packages...',
-  getLicenseColor = defaultGetLicenseColor,
-  showSearch = true,
-  showCount = true,
-  initialOrderBy = 'name',
-  initialOrderDirection = 'asc',
-}: LicenseInfoProps) {
+                                                       licenseData,
+                                                       title = 'Open Source Licenses',
+                                                       description = 'This application is built using various open-source libraries and containers. Please review the license information below for details on the licenses of the included libraries.',
+                                                       searchPlaceholder = 'Search packages...',
+                                                       getLicenseColor = defaultGetLicenseColor,
+                                                       showSearch = true,
+                                                       showCount = true,
+                                                       initialOrderBy = 'name',
+                                                       initialOrderDirection = 'asc',
+                                                     }: LicenseInfoProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [orderBy, setOrderBy] = useState<OrderBy>(initialOrderBy);
@@ -135,7 +134,7 @@ export const LicenseInfo = memo(function LicenseInfo({
 
   const filteredData = useMemo(() => {
     const entries = Object.entries(licenseData).filter(([packageName]) =>
-      packageName.toLowerCase().includes(searchTerm.toLowerCase())
+      packageName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     entries.sort((a, b) => {

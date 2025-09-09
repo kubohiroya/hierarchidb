@@ -13,9 +13,9 @@ export type { StepperDialogProps, StepConfiguration } from './StepperDialog';
 // export type { FullScreenDialogProps } from './FullScreenDialog';
 
 export { MultiStepDialog } from './MultiStepDialog';
-export type { 
-  MultiStepDialogProps, 
-  IconGroupSettings, 
-  IconGroupDisplayMode 
+export type {
+  MultiStepDialogProps,
+  IconGroupSettings,
+  IconGroupDisplayMode,
 } from './MultiStepDialog';
 export * from './StepWizardContext';

@@ -48,12 +48,12 @@ export interface CSVTableMetadata {
   createdAt: number;
   /** Last update timestamp */
   updatedAt?: number;
-  
+
   /** Reference management (RelationalEntity) */
   referenceCount: number;
   /** List of plugin IDs that reference this table */
   referencingPlugins: string[];
-  
+
   /** Whether data is stored in chunks for large files */
   isChunked?: boolean;
   /** Number of chunks if data is chunked */
@@ -66,18 +66,18 @@ export interface CSVTableMetadata {
 /**
  * CSV Filter Operator
  */
-export type CSVFilterOperator = 
-  | 'equals' 
-  | 'not_equals' 
-  | 'contains' 
+export type CSVFilterOperator =
+  | 'equals'
+  | 'not_equals'
+  | 'contains'
   | 'not_contains'
-  | 'starts_with' 
+  | 'starts_with'
   | 'ends_with'
-  | 'greater_than' 
-  | 'less_than' 
-  | 'greater_equal' 
+  | 'greater_than'
+  | 'less_than'
+  | 'greater_equal'
   | 'less_equal'
-  | 'is_null' 
+  | 'is_null'
   | 'is_not_null'
   | 'regex';
 
@@ -109,7 +109,7 @@ export interface CSVProcessingConfig {
   /** Maximum number of rows to process (0 = no limit) */
   maxRows?: number;
   /** Quote character for CSV parsing */
-  quoteChar?: '"' | "'" | '';
+  quoteChar?: '"' | '\'' | '';
   /** Escape character */
   escapeChar?: '\\';
   /** Whether to skip empty lines */
@@ -144,7 +144,7 @@ export interface CSVDataResult {
   rows: Array<Record<string, string | number | null>>;
   /** Total number of rows after filtering */
   totalRows: number;
-  
+
   /** Whether result is from chunked data */
   isChunked?: boolean;
   /** Chunk information if applicable */
@@ -231,16 +231,16 @@ export interface ICSVDataApi {
    * Upload and process CSV file
    */
   uploadCSVFile(
-    file: File, 
-    config: CSVProcessingConfig
+    file: File,
+    config: CSVProcessingConfig,
   ): Promise<CSVTableMetadata>;
 
   /**
    * Download CSV from URL and process
    */
   downloadCSVFromUrl(
-    url: string, 
-    config: CSVProcessingConfig
+    url: string,
+    config: CSVProcessingConfig,
   ): Promise<CSVTableMetadata>;
 
   /**
@@ -253,7 +253,7 @@ export interface ICSVDataApi {
    */
   listTables(
     pluginId?: string,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
   ): Promise<CSVTableListResult>;
 
   /**
@@ -267,7 +267,7 @@ export interface ICSVDataApi {
   getFilteredPreview(
     tableId: string,
     filters: CSVFilterRule[],
-    rowCount: number
+    rowCount: number,
   ): Promise<CSVDataResult>;
 
   /**
@@ -275,7 +275,7 @@ export interface ICSVDataApi {
    */
   getFilteredData(
     tableId: string,
-    selection: CSVSelectionConfig
+    selection: CSVSelectionConfig,
   ): Promise<CSVDataResult>;
 
   /**
@@ -283,7 +283,7 @@ export interface ICSVDataApi {
    */
   addTableReference(
     tableId: string,
-    pluginId: string
+    pluginId: string,
   ): Promise<void>;
 
   /**
@@ -291,7 +291,7 @@ export interface ICSVDataApi {
    */
   removeTableReference(
     tableId: string,
-    pluginId: string
+    pluginId: string,
   ): Promise<void>;
 
   /**

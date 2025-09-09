@@ -80,7 +80,7 @@ export const dialogStateAtom = atom<DialogState>({
  * Map from stepId to validation result
  */
 export const validationResultsAtom = atom<Map<string, ValidationResult>>(
-  new Map()
+  new Map(),
 );
 
 /**
@@ -88,7 +88,7 @@ export const validationResultsAtom = atom<Map<string, ValidationResult>>(
  * Map from step index to capabilities
  */
 export const stepCapabilitiesAtom = atom<Map<number, StepCapabilities>>(
-  new Map()
+  new Map(),
 );
 
 /**
@@ -115,10 +115,10 @@ export const currentStepValidationAtom = atom((get) => {
   const dialogState = get(dialogStateAtom);
   const validationResults = get(validationResultsAtom);
   const steps = get(dialogStepsAtom);
-  
+
   const currentStep = steps[dialogState.currentStep];
   if (!currentStep) return null;
-  
+
   return validationResults.get(currentStep.id);
 });
 
@@ -128,7 +128,7 @@ export const currentStepValidationAtom = atom((get) => {
 export const currentStepCapabilitiesAtom = atom((get) => {
   const dialogState = get(dialogStateAtom);
   const capabilities = get(stepCapabilitiesAtom);
-  
+
   return capabilities.get(dialogState.currentStep) || {
     canNavigateTo: false,
     canProceedToNext: false,
@@ -150,7 +150,7 @@ export const canSaveAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const dialogState = get(dialogStateAtom);
   const validationResults = get(validationResultsAtom);
-  
+
   // Check if current step is valid
   const steps = get(dialogStepsAtom);
   const currentStep = steps[dialogState.currentStep];
@@ -160,7 +160,7 @@ export const canSaveAtom = atom((get) => {
       return false;
     }
   }
-  
+
   // Check capabilities
   return capabilities.canSave && !dialogState.isSubmitting;
 });
@@ -171,7 +171,7 @@ export const canSaveAtom = atom((get) => {
 export const canStartBatchAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const dialogState = get(dialogStateAtom);
-  
+
   return capabilities.canStartBatch && !dialogState.isSubmitting;
 });
 
@@ -182,9 +182,9 @@ export const canGoNextAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const dialogState = get(dialogStateAtom);
   const steps = get(dialogStepsAtom);
-  
+
   const isLastStep = dialogState.currentStep === steps.length - 1;
-  
+
   return !isLastStep && capabilities.canProceedToNext && !dialogState.isSubmitting;
 });
 
@@ -194,10 +194,10 @@ export const canGoNextAtom = atom((get) => {
 export const canGoPreviousAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const dialogState = get(dialogStateAtom);
-  
-  return dialogState.currentStep > 0 && 
-         capabilities.canBackToPrevious && 
-         !dialogState.isSubmitting;
+
+  return dialogState.currentStep > 0 &&
+    capabilities.canBackToPrevious &&
+    !dialogState.isSubmitting;
 });
 
 // ============================================================================
@@ -212,19 +212,19 @@ export const updateWorkingCopyAtom = atom(
   (get, set, update: Partial<WorkingCopyData>) => {
     const current = get(workingCopyAtom);
     if (!current) return;
-    
+
     set(workingCopyAtom, {
       ...current,
       ...update,
       lastModified: Date.now(),
     });
-    
+
     // Mark as having unsaved changes
     set(dialogStateAtom, (prev: DialogState) => ({
       ...prev,
       hasUnsavedChanges: true,
     }));
-  }
+  },
 );
 
 /**
@@ -237,7 +237,7 @@ export const updateDialogStateAtom = atom(
       ...prev,
       ...update,
     }));
-  }
+  },
 );
 
 /**
@@ -253,7 +253,7 @@ export const setValidationResultAtom = atom(
       timestamp: Date.now(),
     });
     set(validationResultsAtom, results);
-  }
+  },
 );
 
 /**
@@ -265,7 +265,7 @@ export const setStepCapabilitiesAtom = atom(
     const caps = new Map(get(stepCapabilitiesAtom));
     caps.set(stepIndex, capabilities);
     set(stepCapabilitiesAtom, caps);
-  }
+  },
 );
 
 /**
@@ -277,13 +277,13 @@ export const navigateToStepAtom = atom(
     const dialogState = get(dialogStateAtom);
     const visitedSteps = new Set(dialogState.visitedSteps);
     visitedSteps.add(stepIndex);
-    
+
     set(dialogStateAtom, {
       ...dialogState,
       currentStep: stepIndex,
       visitedSteps,
     });
-  }
+  },
 );
 
 /**
@@ -295,12 +295,12 @@ export const markStepCompletedAtom = atom(
     const dialogState = get(dialogStateAtom);
     const completedSteps = new Set(dialogState.completedSteps);
     completedSteps.add(stepIndex);
-    
+
     set(dialogStateAtom, {
       ...dialogState,
       completedSteps,
     });
-  }
+  },
 );
 
 /**
@@ -319,5 +319,5 @@ export const resetDialogAtom = atom(
     });
     set(validationResultsAtom, new Map());
     set(stepCapabilitiesAtom, new Map());
-  }
+  },
 );

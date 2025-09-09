@@ -1,24 +1,23 @@
-import React from 'react';
-import { memo, useState, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as CreateFolderIcon,
-  NoteAdd as NoteAddIcon,
   InsertDriveFile as FileIcon,
-  Public as PublicIcon,
   Map as MapIcon,
+  NoteAdd as NoteAddIcon,
   Palette as PaletteIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
-import { /*TreeTableToolbar,*/ RowContextMenu } from './TreeTable';
 import type { TreeTableColumn } from './TreeTable';
+import { RowContextMenu } from './TreeTable';
+import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeTableController, TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 //import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
+import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 // import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
-import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 import type { TreeNodeData } from '../types/index';
 
 export interface TreeConsolePanelProps {
@@ -141,7 +140,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       }
       handleContextMenuClose();
     },
-    [contextMenuState.node, props.onContextMenuAction, handleContextMenuClose]
+    [contextMenuState.node, props.onContextMenuAction, handleContextMenuClose],
   );
 
   // SpeedDial actions

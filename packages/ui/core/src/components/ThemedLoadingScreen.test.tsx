@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { ThemedLoadingScreen, ThemedLinearProgress, ThemedCircularProgress } from './ThemedLoadingScreen';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { ThemedCircularProgress, ThemedLinearProgress, ThemedLoadingScreen } from './ThemedLoadingScreen';
 
 const renderWithTheme = (ui: React.ReactElement, mode: 'light' | 'dark' = 'light') => {
   const theme = createTheme({ palette: { mode } });
@@ -16,7 +16,7 @@ describe('ThemedLoadingScreen', () => {
     rerender(
       <ThemeProvider theme={createTheme()}>
         <ThemedLoadingScreen variant="circular" />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
     expect(screen.getByRole('progressbar', { name: /loading progress/i })).toBeInTheDocument();
   });
@@ -25,7 +25,7 @@ describe('ThemedLoadingScreen', () => {
     renderWithTheme(
       <ThemedLoadingScreen variant="circular" message="Loading message">
         <div data-testid="child" />
-      </ThemedLoadingScreen>
+      </ThemedLoadingScreen>,
     );
     expect(screen.getByText('Loading message')).toBeInTheDocument();
     expect(screen.getByTestId('child')).toBeInTheDocument();

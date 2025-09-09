@@ -12,10 +12,18 @@ export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
         const cursor = await (db.table('routeCursors') as any)?.get(sessionId);
         // @ts-ignore
         const results = await (db.table('routeResults') as any)?.where('sessionId').equals(sessionId).count();
-        if (!cancelled) setState({ completed: cursor?.completed ?? 0, total: cursor?.total ?? 0, results: results ?? 0 });
-      } catch { if (!cancelled) setState({ completed: 0, total: 0, results: 0 }); }
+        if (!cancelled) setState({
+          completed: cursor?.completed ?? 0,
+          total: cursor?.total ?? 0,
+          results: results ?? 0,
+        });
+      } catch {
+        if (!cancelled) setState({ completed: 0, total: 0, results: 0 });
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId]);
   if (!state) return <div style={{ fontSize: 12, color: '#666' }}>Loading…</div>;
   const pct = state.total > 0 ? Math.round((state.completed / state.total) * 100) : 0;

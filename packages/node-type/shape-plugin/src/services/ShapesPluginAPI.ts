@@ -4,28 +4,29 @@
  */
 
 import { PluginExtensionAPI } from '@hierarchidb/common-api';
-import { NodeType, NodeId } from '@hierarchidb/common-type';
+import { NodeId, NodeType } from '@hierarchidb/common-type';
 import type {
-  ShapesAPIMethods,
   BatchProcessConfig,
   BatchSession,
   BatchStatus,
-  DataSourceInfo,
-  CountryMetadata,
-  DataSourceConfig,
-  ValidationResult,
-  TileMetadata,
-  Feature,
-  SearchOptions,
   BboxQueryOptions,
+  BoundingBox,
   CacheStatistics,
   CacheType,
-  OptimizationResult,
-  BoundingBox,
+  CountryMetadata,
+  DataSourceConfig,
+  DataSourceInfo,
   DataSourceName,
+  Feature,
+  OptimizationResult,
+  SearchOptions,
+  ShapesAPIMethods,
+  TileMetadata,
+  ValidationResult,
 } from './types';
 import { WorkerPoolManager } from './workers/WorkerPoolManager';
-import { BatchSessionManager } from './batch/BatchSessionManager';
+import { createShapeBatchManager } from './batch/UnifiedShapeBatchManager';
+import type { IBatchSessionManager } from '@hierarchidb/runtime-shared-batch-processor';
 import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
 import { VectorTileService } from './tiles/VectorTileService';
 import { UrlMetadata } from '~/shared';
@@ -39,7 +40,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
   readonly methods: ShapesAPIMethods;
 
   private workerPoolManager: WorkerPoolManager;
-  private batchSessionManager: BatchSessionManager;
+  private batchSessionManager: IBatchSessionManager;
   private dataSourceManager: DataSourceManager;
   private vectorTileService: VectorTileService;
 
@@ -56,7 +57,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
         restartThreshold: 32,
       },
     });
-    this.batchSessionManager = new BatchSessionManager();
+    this.batchSessionManager = createShapeBatchManager();
     this.dataSourceManager = new DataSourceManager();
     this.vectorTileService = new VectorTileService();
 
@@ -98,7 +99,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
    */
   async initialize(): Promise<void> {
     await this.workerPoolManager.initialize();
-    await this.batchSessionManager.initialize();
+    // Unified manager does not require explicit initialize
     //await this.dataSourceManager.initialize();
     //await this.vectorTileService.initialize();
   }
@@ -108,7 +109,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
    */
   async dispose(): Promise<void> {
     await this.workerPoolManager.shutdown();
-    await this.batchSessionManager.shutdown();
+    // No-op for unified manager
     //await this.dataSourceManager.shutdown();
     //await this.vectorTileService.shutdown();
   }
@@ -118,21 +119,22 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
   async startBatchProcess(
     nodeId: NodeId,
     config: BatchProcessConfig,
-    urlMetadata: UrlMetadata[]
+    urlMetadata: UrlMetadata[],
   ): Promise<BatchSession> {
-    return this.batchSessionManager.createSession(nodeId, config, urlMetadata);
+    const sessionId = await this.batchSessionManager.startBatchSession(nodeId, { maxConcurrentTasks: config.workerPoolSize } as any, { urlMetadata } as any);
+    return { sessionId } as any;
   }
 
   async pauseBatchProcess(sessionId: string): Promise<void> {
-    return this.batchSessionManager.pauseSession(sessionId);
+    return this.batchSessionManager.pauseBatchSession(sessionId);
   }
 
   async resumeBatchProcess(sessionId: string): Promise<void> {
-    return this.batchSessionManager.resumeSession(sessionId);
+    return this.batchSessionManager.resumeBatchSession(sessionId);
   }
 
   async cancelBatchProcess(sessionId: string): Promise<void> {
-    return this.batchSessionManager.cancelSession(sessionId);
+    return this.batchSessionManager.cancelBatchSession(sessionId);
   }
 
   async getBatchStatus(sessionId: string): Promise<BatchStatus> {
@@ -147,20 +149,19 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
 
   async getCountryMetadata(
     dataSource: DataSourceName,
-    countryCode?: string
+    countryCode?: string,
   ): Promise<CountryMetadata> {
     return this.dataSourceManager.getCountryMetadata(dataSource, countryCode);
   }
 
   async validateDataSource(
     dataSource: DataSourceName,
-    config: DataSourceConfig
+    config: DataSourceConfig,
   ): Promise<ValidationResult> {
     return this.dataSourceManager.validateDataSource(
       dataSource,
       config.countryCode,
-      config.adminLevels // 管理レベル配列を直接渡す
-    );
+      config.adminLevels);
   }
 
   // === Vector Tile Methods ===
@@ -182,7 +183,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
   async searchFeatures(
     nodeId: NodeId,
     query: string,
-    options?: SearchOptions
+    options?: SearchOptions,
   ): Promise<Feature[]> {
     // Use VectorTileService to search features
     return this.vectorTileService.searchFeatures?.(nodeId, query, options) || [];
@@ -197,7 +198,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
   async getFeaturesByBbox(
     nodeId: NodeId,
     bbox: BoundingBox,
-    options?: BboxQueryOptions
+    options?: BboxQueryOptions,
   ): Promise<Feature[]> {
     // Use VectorTileService to get features in bbox
     return this.vectorTileService.getFeaturesInBbox?.(nodeId, bbox, options) || [];
@@ -214,7 +215,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
       missRate: 0,
       evictionCount: 0,
       lastCleared: null,
-      breakdown: {}
+      breakdown: {},
     };
   }
 
@@ -230,7 +231,7 @@ export class ShapesPluginAPI implements PluginExtensionAPI<ShapesAPIMethods> {
       defragmented: false,
       compacted: false,
       duration: 0,
-      errors: []
+      errors: [],
     };
   }
 

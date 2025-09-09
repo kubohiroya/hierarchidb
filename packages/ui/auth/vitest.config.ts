@@ -12,12 +12,14 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**']
-    }
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
   },
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
+      // Stub Google OAuth hook to avoid requiring GoogleOAuthProvider in tests
+      '@react-oauth/google': path.resolve(__dirname, './src/test-shims/react-oauth-google.ts'),
     },
   },
 });

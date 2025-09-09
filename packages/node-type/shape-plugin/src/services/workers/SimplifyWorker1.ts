@@ -12,14 +12,8 @@
 import * as turf from '@turf/turf';
 import type { Geometry } from 'geojson';
 import { toGeoJSONFeature } from '../../utils/featureConverter';
-import type {
-  SimplifyWorker1API,
-  Simplify1Task,
-  Simplify1Result,
-  SimplifyTaskConfig,
-  QualityMetrics,
-} from '../types';
-import type { Feature } from '../../types';
+import type { QualityMetrics, Simplify1Result, Simplify1Task, SimplifyTaskConfig, SimplifyWorker1API } from '../types';
+import type { Feature } from '../types';
 
 /**
  * SimplifyWorker1 - Feature-level geometry simplification
@@ -82,7 +76,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       const qualityMetrics = await this.calculateQualityMetrics(
         geoJson.features,
         simplifiedFeatures,
-        task.config
+        task.config,
       );
 
       // 5. Generate output buffer
@@ -112,7 +106,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       const processingTime = Date.now() - startTime;
       console.log(`SimplifyWorker1: Completed task ${task.taskId} in ${processingTime}ms`);
       console.log(
-        `Reduction: ${(reductionRatio * 100).toFixed(1)}%, Quality: ${qualityMetrics.geometricAccuracy.toFixed(2)}`
+        `Reduction: ${(reductionRatio * 100).toFixed(1)}%, Quality: ${qualityMetrics.geometricAccuracy.toFixed(2)}`,
       );
 
       return result;
@@ -137,7 +131,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
    */
   private async simplifyFeatures(
     features: Feature[],
-    config: SimplifyTaskConfig
+    config: SimplifyTaskConfig,
   ): Promise<Feature[]> {
     const simplifiedFeatures: Feature[] = [];
     let processedCount = 0;
@@ -236,7 +230,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((ring: number[][]) =>
-            this.douglasPeuckerLine(ring, config.tolerance)
+            this.douglasPeuckerLine(ring, config.tolerance),
           ),
         };
 
@@ -244,7 +238,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((polygon: number[][][]) =>
-            polygon.map((ring: number[][]) => this.douglasPeuckerLine(ring, config.tolerance))
+            polygon.map((ring: number[][]) => this.douglasPeuckerLine(ring, config.tolerance)),
           ),
         };
 
@@ -310,7 +304,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         return {
           ...geometry,
           coordinates: geometry.coordinates.map((ring: number[][]) =>
-            this.visvalingamLine(ring, config.tolerance)
+            this.visvalingamLine(ring, config.tolerance),
           ),
         };
 
@@ -332,7 +326,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       areas[i] = this.triangleArea(
         points[i - 1] as number[],
         points[i] as number[],
-        points[i + 1] as number[]
+        points[i + 1] as number[],
       );
     }
 
@@ -355,7 +349,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
   private async calculateQualityMetrics(
     originalFeatures: Feature[],
     simplifiedFeatures: Feature[],
-    _config: SimplifyTaskConfig
+    _config: SimplifyTaskConfig,
   ): Promise<QualityMetrics> {
     let totalGeometricAccuracy = 0;
     let totalTopologicalIntegrity = 0;
@@ -458,14 +452,14 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         case 'Polygon':
           return geometry.coordinates.reduce(
             (sum: number, ring: number[][]) => sum + ring.length,
-            0
+            0,
           );
 
         case 'MultiPolygon':
           return geometry.coordinates.reduce(
             (sum: number, polygon: number[][][]) =>
               sum + polygon.reduce((ringSum: number, ring: number[][]) => ringSum + ring.length, 0),
-            0
+            0,
           );
 
         default:
@@ -569,7 +563,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       throw new Error('Invalid point array');
     }
     return Math.abs(
-      (p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1])) / 2
+      (p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1])) / 2,
     );
   }
 
@@ -613,7 +607,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
           (ring: number[][]) =>
             ring.length >= 4 &&
             ring[0]?.[0] === ring[ring.length - 1]?.[0] &&
-            ring[0]?.[1] === ring[ring.length - 1]?.[1]
+            ring[0]?.[1] === ring[ring.length - 1]?.[1],
         );
       }
       return true;
@@ -635,7 +629,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         {
           tolerance: 0.01,
           highQuality: false,
-        }
+        },
       ).geometry;
     } catch {
       return geometry;
@@ -677,7 +671,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
     try {
       // Simulate fetching from storage (would be EphemeralDB query)
       console.log(`Loading buffer ${bufferId} from storage`);
-      
+
       // Return null if not found (caller should handle)
       return null;
     } catch (error) {
@@ -691,7 +685,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       // Save to processing cache for immediate access
       this.processingCache.set(bufferId, data);
       console.log(`Saved buffer ${bufferId} to cache (${this.formatBytes(data.length)})`);
-      
+
       // In production, this would persist to EphemeralDB
       // await this.ephemeralDB.buffers.put({
       //   id: bufferId,
@@ -699,7 +693,7 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
       //   timestamp: Date.now(),
       //   type: 'simplified-features'
       // });
-      
+
     } catch (error) {
       console.error(`Failed to save buffer ${bufferId}:`, error);
       throw error;

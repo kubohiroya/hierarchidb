@@ -45,7 +45,10 @@ export class SearouteEngine implements RoutingEngine {
         }
       } catch (e: any) {
         // Fall through to GC fallback with a warning
-        try { console.warn?.(`searoute-js unavailable, fallback to great-circle: ${e?.message ?? e}`); } catch {}
+        try {
+          console.warn?.(`searoute-js unavailable, fallback to great-circle: ${e?.message ?? e}`);
+        } catch {
+        }
       }
     }
 
@@ -118,19 +121,23 @@ export class SearouteEngine implements RoutingEngine {
           case 'm':
           case 'meter':
           case 'meters':
-            distance_m = d; break;
+            distance_m = d;
+            break;
           case 'km':
           case 'kilometer':
           case 'kilometers':
-            distance_m = d * 1000; break;
+            distance_m = d * 1000;
+            break;
           case 'mile':
           case 'miles':
           case 'mi':
-            distance_m = d * 1609.344; break;
+            distance_m = d * 1609.344;
+            break;
           case 'nm':
           case 'nauticalmile':
           case 'nauticalmiles':
-            distance_m = d * 1852; break;
+            distance_m = d * 1852;
+            break;
           default:
             // Unknown units; fall back to geometry-based calculation
             break;
@@ -176,7 +183,8 @@ export class SearouteEngine implements RoutingEngine {
   private distanceFromLine(line: [number, number][]): number {
     let sum = 0;
     for (let i = 0; i < line.length - 1; i++) {
-      const a = line[i]!; const b = line[i + 1]!;
+      const a = line[i]!;
+      const b = line[i + 1]!;
       sum += haversine(a[1], a[0], b[1], b[0]);
     }
     return sum;
@@ -184,7 +192,8 @@ export class SearouteEngine implements RoutingEngine {
 }
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000; const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
   const s1 = Math.sin(dLat / 2), s2 = Math.sin(dLon / 2);
   const a = s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;

@@ -3,15 +3,15 @@
  * @description Shared MapLibre GL map component for HierarchiDB
  */
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import type { MapLibreMapInstance } from '../types/maplibre-public';
+import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
   void import('maplibre-gl/dist/maplibre-gl.css');
 }
-import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
 
 // Re-export types for backward compatibility
 export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props';
@@ -35,18 +35,18 @@ export interface MapLibreMapProps extends BaseMapProps {
 const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
-  initialViewState,
-  mapStyle = defaultMapStyle,
-  width = DEFAULT_MAP_CONFIG.dimensions.width,
-  height = DEFAULT_MAP_CONFIG.dimensions.height,
-  style,
-  onLoad,
-  onViewStateChange,
-  onClick,
-  children,
-  mapOptions = defaultMapOptions,
-  controls,
-}) => {
+                                                          initialViewState,
+                                                          mapStyle = defaultMapStyle,
+                                                          width = DEFAULT_MAP_CONFIG.dimensions.width,
+                                                          height = DEFAULT_MAP_CONFIG.dimensions.height,
+                                                          style,
+                                                          onLoad,
+                                                          onViewStateChange,
+                                                          onClick,
+                                                          children,
+                                                          mapOptions = defaultMapOptions,
+                                                          controls,
+                                                        }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 

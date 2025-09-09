@@ -11,7 +11,7 @@ export const FolderUIPlugin = {
   createDialog: FolderCreateDialog,
   editDialog: FolderEditDialog,
   label: 'Folder',
-  displayName: 'Folder'
+  displayName: 'Folder',
 };
 
 export default FolderUIPlugin;

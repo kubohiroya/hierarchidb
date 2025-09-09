@@ -78,7 +78,7 @@ const initializeI18n = () => {
       debug: false,
 
       // Interpolation options
-      // i18next v25 の型では formatters は型定義に含まれていないため、実装上はサポートするが型は緩める
+      //  i18next v25 formatters
       interpolation: {
         escapeValue: false,
         formatters: {
@@ -93,9 +93,9 @@ const initializeI18n = () => {
           currency: (value: unknown, lng?: string) =>
             typeof value === 'number'
               ? new Intl.NumberFormat(lng, {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(value)
+                style: 'currency',
+                currency: 'USD',
+              }).format(value)
               : value,
         },
       } as any,
@@ -158,7 +158,7 @@ const initializeI18n = () => {
 if (typeof window !== 'undefined') {
   initializeI18n();
 } else {
-  // SSRではwindow依存のプラグインを使わず、最低限の設定のみ
+  //  SSRwindow
   i18n.use(initReactI18next).init({
     fallbackLng: 'en',
     supportedLngs: ['en', 'ja'],
@@ -178,9 +178,9 @@ if (typeof window !== 'undefined') {
         currency: (value: unknown, lng?: string) =>
           typeof value === 'number'
             ? new Intl.NumberFormat(lng, {
-                style: 'currency',
-                currency: 'USD',
-              }).format(value)
+              style: 'currency',
+              currency: 'USD',
+            }).format(value)
             : value,
       },
     } as any,

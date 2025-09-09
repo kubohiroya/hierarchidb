@@ -1,11 +1,8 @@
 /**
- * TreeConsoleContent - 元のTreeTableCoreの忠実な再現
- *
- * メインのツリーテーブル表示コンポーネント。
- * TanStack Table + Virtual を使用した高性能リスト表示。
- *
- * 元のeria-cartographのTreeTableCoreを完全に再現。
- */
+  * TreeConsoleContent - TreeTableCore
+   * TanStack Table + Virtual
+  * eria-cartographTreeTableCore
+  */
 
 import React, { memo, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
@@ -49,28 +46,28 @@ const StableContentContainer = styled(Box)`
 `;
 
 /**
- * TreeConsoleContent
- * 元のTreeTableCoreの構造に従って実装
- */
+  * TreeConsoleContent
+ * TreeTableCore
+  */
 export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
   ({
-    controller,
-    isProjectsPage,
-    isResourcesPage,
-    viewHeight,
-    viewWidth,
-    useTrashColumns,
-    depthOffset: _depthOffset,
-    rootNodeId: _treeRootNodeId,
-    currentNodeInfo: _currentNodeInfo,
-    onDragStateChange: _onDragStateChange,
-    canPreviewNode: _canPreviewNode = false,
-    mode: _mode,
-  }) => {
+     controller,
+     isProjectsPage,
+     isResourcesPage,
+     viewHeight,
+     viewWidth,
+     useTrashColumns,
+     depthOffset: _depthOffset,
+     rootNodeId: _treeRootNodeId,
+     currentNodeInfo: _currentNodeInfo,
+     onDragStateChange: _onDragStateChange,
+     canPreviewNode: _canPreviewNode = false,
+     mode: _mode,
+   }) => {
     const [isWebKit, setIsWebKit] = useState(false);
     const [webKitInitialized, setWebKitInitialized] = useState(false);
 
-    // WebKit ブラウザ検出（Safari等での描画問題対応）
+    //  WebKit Safari
     useEffect(() => {
       if (typeof window !== 'undefined') {
         const ua = window.navigator.userAgent.toLowerCase();
@@ -91,17 +88,13 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
       }
     }, []);
 
-    // ローディング状態判定
     const isLoading = !controller || controller.isLoading || (isWebKit && !webKitInitialized);
 
-    // データ状態判定
     const hasMinimumData =
       controller && controller.selectedNodes && Array.isArray(controller.selectedNodes);
 
-    // 空状態判定
     const isEmpty = controller && !controller.isLoading && controller.selectedNodes.length === 0;
 
-    // 表示状態判定
     const contentState = (() => {
       if (isLoading) return 'loading';
       if (isEmpty) return 'empty';
@@ -109,7 +102,6 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
       return 'loading';
     })();
 
-    // 空状態メッセージの生成
     const getEmptyMessage = () => {
       if (_mode === 'restore') {
         return 'ゴミ箱に復元可能なアイテムはありません。';
@@ -160,34 +152,34 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                   filteredItemCount: controller.filteredItemCount,
                   totalItemCount: controller.totalItemCount,
                   handleSearchTextChange: controller.handleSearchTextChange,
-                  onNodeClick: controller.onNodeClick ? 
-                    (nodeId: string, node?: any) => controller.onNodeClick!(nodeId as NodeId, node) : 
+                  onNodeClick: controller.onNodeClick ?
+                    (nodeId: string, node?: any) => controller.onNodeClick!(nodeId as NodeId, node) :
                     undefined,
-                  onNodeExpand: controller.onNodeExpand ? 
-                    (nodeId: string, expanded: boolean) => 
+                  onNodeExpand: controller.onNodeExpand ?
+                    (nodeId: string, expanded: boolean) =>
                       controller.onNodeExpand!(nodeId as NodeId, expanded) :
                     undefined,
-                  onNodeSelect: controller.onNodeSelect ? 
-                    (nodeIds: string[], selected: boolean) => 
+                  onNodeSelect: controller.onNodeSelect ?
+                    (nodeIds: string[], selected: boolean) =>
                       controller.onNodeSelect!(nodeIds as NodeId[], selected) :
                     undefined,
-                  startEdit: controller.startEdit ? 
+                  startEdit: controller.startEdit ?
                     (nodeId: string) => controller.startEdit!(nodeId as NodeId) :
                     undefined,
-                  finishEdit: controller.finishEdit ? 
-                    (nodeId: string, newName: string) => 
+                  finishEdit: controller.finishEdit ?
+                    (nodeId: string, newName: string) =>
                       controller.finishEdit!(nodeId as NodeId, newName) :
                     undefined,
                   cancelEdit: controller.cancelEdit,
-                  onCreate: controller.onCreate ? 
-                    (parentId: string, type: string) => 
+                  onCreate: controller.onCreate ?
+                    (parentId: string, type: string) =>
                       controller.onCreate!(parentId as NodeId, type) :
                     undefined,
-                  onDuplicate: controller.onDuplicate ? 
-                    (nodeId: string) => 
+                  onDuplicate: controller.onDuplicate ?
+                    (nodeId: string) =>
                       controller.onDuplicate!(nodeId as NodeId) :
                     undefined,
-                  onRemove: controller.onRemove ? 
+                  onRemove: controller.onRemove ?
                     (nodeIds: string[]) => controller.onRemove!(nodeIds as NodeId[]) :
                     undefined,
                 }}
@@ -197,7 +189,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                 depthOffset={_depthOffset}
                 disableDragAndDrop={false}
                 hideDragHandler={false}
-                onDragStateChange={_onDragStateChange ? 
+                onDragStateChange={_onDragStateChange ?
                   (draggingNodeId: string | undefined, descendantIdSet: Set<string> | undefined, _dragPreviewElement: HTMLElement | null) =>
                     _onDragStateChange(draggingNodeId as NodeId | undefined, descendantIdSet as Set<NodeId> | undefined) :
                   undefined}
@@ -207,7 +199,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
         </StableContentContainer>
       </StyledDialogContent>
     );
-  }
+  },
 );
 
 TreeConsoleContent.displayName = 'TreeConsoleContent';

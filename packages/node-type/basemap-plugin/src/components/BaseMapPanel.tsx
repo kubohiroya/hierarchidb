@@ -6,31 +6,31 @@
 
 import React, { useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  IconButton,
-  Stack,
-  Divider,
-  Tooltip,
-  Collapse,
   Alert,
+  Box,
+  Collapse,
+  Divider,
+  IconButton,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
-  ListItemIcon
+  Paper,
+  Stack,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import {
-  ExpandMore,
-  ExpandLess,
+  CameraAlt,
   Edit,
-  Refresh,
+  ExpandLess,
+  ExpandMore,
   Fullscreen,
-  Map as MapIcon,
   Info,
   Layers,
-  CameraAlt,
-  Settings
+  Map as MapIcon,
+  Refresh,
+  Settings,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
 import { BaseMapDisplay } from './BaseMapDisplay';
@@ -59,14 +59,14 @@ export interface BaseMapPanelProps {
  * Main panel for displaying a configured basemap with controls
  */
 export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
-  nodeId,
-  height = '500px',
-  showHeader = true,
-  showDetails = true,
-  onEdit,
-  onRefresh,
-  onFullscreen
-}) => {
+                                                            nodeId,
+                                                            height = '500px',
+                                                            showHeader = true,
+                                                            showDetails = true,
+                                                            onEdit,
+                                                            onRefresh,
+                                                            onFullscreen,
+                                                          }) => {
   const { entity, loading, error, refetch } = useBaseMapEntity(nodeId);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [currentViewState, setCurrentViewState] = useState<MapViewState | null>(null);
@@ -118,7 +118,7 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                   </Typography>
                 )}
               </Stack>
-              
+
               <Stack direction="row" spacing={1}>
                 {onEdit && (
                   <Tooltip title="Edit BaseMap">
@@ -140,7 +140,7 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                   </Tooltip>
                 )}
                 {showDetails && (
-                  <Tooltip title={detailsExpanded ? "Hide details" : "Show details"}>
+                  <Tooltip title={detailsExpanded ? 'Hide details' : 'Show details'}>
                     <IconButton
                       size="small"
                       onClick={() => setDetailsExpanded(!detailsExpanded)}
@@ -151,7 +151,7 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                 )}
               </Stack>
             </Stack>
-            
+
             {entity?.description && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 {entity.description}
@@ -181,7 +181,7 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
             <Typography variant="subtitle2" gutterBottom>
               Configuration Details
             </Typography>
-            
+
             <List dense>
               {/* Style Information */}
               <ListItem>
@@ -240,7 +240,7 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                         entity.displayOptions.showTraffic && 'Traffic',
                         entity.displayOptions.showTransit && 'Transit',
                         entity.displayOptions.showTerrain && 'Terrain',
-                        entity.displayOptions.showLabels !== false && 'Labels'
+                        entity.displayOptions.showLabels !== false && 'Labels',
                       ].filter(Boolean).join(', ') || 'Default'
                     }
                   />

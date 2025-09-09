@@ -1,33 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Typography,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  TextField,
-  Paper,
   Alert,
+  Box,
   Chip,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   List,
   ListItem,
   ListItemText,
+  Paper,
+  Radio,
+  RadioGroup,
   Switch,
-  Divider,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { 
+import {
+  Block as BlockIcon,
+  Functions as FunctionsIcon,
   MergeType as MergeIcon,
   SkipNext as SkipIcon,
   Update as UpdateIcon,
-  Block as BlockIcon,
-  Functions as FunctionsIcon,
 } from '@mui/icons-material';
-import type { 
-  ResolverWorkingCopyEntity,
-  DuplicateResolutionStrategy,
-} from '~/types';
+import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity } from '~/types';
 
 interface DuplicateResolutionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -69,18 +66,18 @@ const RESOLUTION_STRATEGIES = [
 ];
 
 export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = ({
-  data,
-  onUpdate,
-  onValidationChange,
-}) => {
+                                                                                  data,
+                                                                                  onUpdate,
+                                                                                  onValidationChange,
+                                                                                }) => {
   const [strategy, setStrategy] = useState<DuplicateResolutionStrategy['strategy']>(
-    data.duplicateResolution?.strategy || 'ignore'
+    data.duplicateResolution?.strategy || 'ignore',
   );
   const [customFunction, setCustomFunction] = useState<string>(
-    data.duplicateResolution?.customFunction || ''
+    data.duplicateResolution?.customFunction || '',
   );
   const [mergeProperties, setMergeProperties] = useState<string>(
-    data.duplicateResolution?.mergeProperties?.join(', ') || ''
+    data.duplicateResolution?.mergeProperties?.join(', ') || '',
   );
   const [enableDuplicateDetection, setEnableDuplicateDetection] = useState(true);
   const [customFunctionError, setCustomFunctionError] = useState<string>('');
@@ -90,18 +87,18 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
     const duplicateResolution: DuplicateResolutionStrategy = {
       strategy,
       customFunction: strategy === 'custom' ? customFunction : undefined,
-      mergeProperties: strategy === 'merge' && mergeProperties 
+      mergeProperties: strategy === 'merge' && mergeProperties
         ? mergeProperties.split(',').map(p => p.trim()).filter(p => p)
         : undefined,
     };
-    
+
     onUpdate({ duplicateResolution });
   }, [strategy, customFunction, mergeProperties, onUpdate]);
 
   // Validation
   useEffect(() => {
     let isValid = true;
-    
+
     if (strategy === 'custom') {
       if (!customFunction.trim()) {
         isValid = false;
@@ -120,7 +117,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
     } else {
       setCustomFunctionError('');
     }
-    
+
     onValidationChange(isValid);
   }, [strategy, customFunction, onValidationChange]);
 
@@ -158,25 +155,25 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
               </Typography>
               <List dense>
                 <ListItem>
-                  <ListItemText 
+                  <ListItemText
                     primary="Numbers"
                     secondary="Sum values by default"
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText 
+                  <ListItemText
                     primary="Arrays"
                     secondary="Concatenate and remove duplicates"
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText 
+                  <ListItemText
                     primary="Objects"
                     secondary="Deep merge with last-wins for conflicts"
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText 
+                  <ListItemText
                     primary="Strings"
                     secondary="Keep the last value"
                   />

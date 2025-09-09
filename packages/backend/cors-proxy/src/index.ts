@@ -1,18 +1,18 @@
 // scripts/split-with-deps.ts
 // pnpm add -D ts-morph globby minimist change-case tsx
-// 実行例:
+//  :
 //   pnpm tsx scripts/split-with-deps.ts --root src --tsconfig tsconfig.json --dry-run=true
 //   pnpm tsx scripts/split-with-deps.ts --root src --exclude "**/examples/**,**/*.demo.tsx" --dry-run=false
 
 import {
-  Project,
-  SyntaxKind,
-  Node,
-  SourceFile,
   ExportedDeclarations,
-  Symbol as TsSymbol,
-  Statement,
   ImportDeclaration,
+  Node,
+  Project,
+  SourceFile,
+  Statement,
+  Symbol as TsSymbol,
+  SyntaxKind,
 } from 'ts-morph';
 import { globby } from 'globby';
 import minimist from 'minimist';
@@ -31,7 +31,8 @@ const rel = (p: string) => p.replaceAll(path.sep, '/');
 const getFileStem = (p: string) => path.basename(p).replace(/\.(tsx|ts)$/i, '');
 const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 
-/** ★ デフォルト除外（ハードコード）*/
+/**
+  */
 const DEFAULT_EXCLUDES = [
   '**/*.d.ts',
   '**/*.backup',
@@ -41,18 +42,16 @@ const DEFAULT_EXCLUDES = [
   '**/*.stories.{ts,tsx}',
   '**/*.{test,spec}.{ts,tsx}',
 
-  // 設定ファイル類（*.config.ts / *config.ts）
+  //  *.config.ts / *config.ts
   '**/*config.{ts,tsx}',
   '**/*.config.{ts,tsx}',
-  '**/eslint.config.{ts,js,cjs,mjs}', // 念のため
-  '**/vite.config.{ts,tsx,js,cjs,mjs}',
+  '**/eslint.config.{ts,js,cjs,mjs}', '**/vite.config.{ts,tsx,js,cjs,mjs}',
   '**/vitest.config.{ts,tsx,js,cjs,mjs}',
   '**/playwright.config.{ts,tsx,js,cjs,mjs}',
   '**/tsup.config.{ts,tsx,js,cjs,mjs}',
   '**/rollup.config.{ts,tsx,js,cjs,mjs}',
   '**/tailwind.config.{ts,tsx,js,cjs,mjs}',
 
-  // ビルド成果物・キャッシュ・サンドボックス
   '**/node_modules/**',
   '**/dist/**',
   '**/build/**',
@@ -68,15 +67,17 @@ const DEFAULT_EXCLUDES = [
   '**/.storybook/**',
 ];
 
-/** 先頭コメントの @nosplit 指定で除外 */
+/**
+ * @nosplit
+ */
 function hasNoSplitGuard(sf: SourceFile): boolean {
   const text = sf.getFullText();
-  // ファイル先頭付近だけチェック（パフォーマンス配慮）
   const head = text.slice(0, 2048);
   return /^\s*\/\/\s*@nosplit\b/m.test(head);
 }
 
-/** 既に自動生成されたファイルは対象外 */
+/**
+  */
 function isGeneratedByOurTool(sf: SourceFile): boolean {
   const text = sf.getFullText();
   const head = text.slice(0, 2048);
@@ -156,12 +157,12 @@ function collectLocalDependencyDeclarations(targets: Node[], sf: SourceFile): St
       const decls = sym.getDeclarations();
       if (!decls || decls.length === 0) continue;
 
-      // import由来はスキップ
+      //  import
       const fromImport = decls.some(
         (d) =>
           (d.getParent() && Node.isImportClause(d.getParent())) ||
           Node.isImportSpecifier(d) ||
-          Node.isNamespaceImport(d)
+          Node.isNamespaceImport(d),
       );
       if (fromImport) continue;
 
@@ -175,7 +176,6 @@ function collectLocalDependencyDeclarations(targets: Node[], sf: SourceFile): St
     }
   }
 
-  // 簡易順序調整
   depStatements.sort((a, b) => a.getStart() - b.getStart());
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < depStatements.length; i++) {
@@ -193,8 +193,8 @@ function collectLocalDependencyDeclarations(targets: Node[], sf: SourceFile): St
             ? (B.getName?.() ?? '')
             : Node.isVariableStatement(B)
               ? B.getDeclarations()
-                  .map((d) => d.getName())
-                  .join('|')
+                .map((d) => d.getName())
+                .join('|')
               : '';
         if (bName && nameSet.has(bName)) {
           const tmp = depStatements[i];
@@ -219,7 +219,7 @@ function pickUsedImports(sf: SourceFile, includedNodes: Node[]): ImportDeclarati
   const imports: ImportDeclaration[] = [];
   for (const imp of sf.getImportDeclarations()) {
     if (!imp.getImportClause()) {
-      // 副作用importは必ず残す
+      //  import
       imports.push(imp);
       continue;
     }
@@ -260,12 +260,11 @@ async function main() {
 
   const project = new Project({ tsConfigFilePath: TSCONFIG });
 
-  // globbyの include / exclude を組み立て
+  //  globby include / exclude
   const ROOT_POSIX = ROOT.replaceAll(path.sep, '/');
   const includeGlobs = [`${ROOT_POSIX}/**/*.{ts,tsx}`];
   const excludeGlobs = [...DEFAULT_EXCLUDES, ...EXTRA_EXCLUDES].map((p) => {
-    const pat = p.replace(/^!+/, ''); // 念のため
-    // ルート基準に
+    const pat = p.replace(/^!+/, '');
     return `!${pat.startsWith('**/') ? `${ROOT_POSIX}/${pat.slice(3)}` : pat.startsWith(ROOT_POSIX) ? pat : `${ROOT_POSIX}/${pat}`}`;
   });
 
@@ -276,7 +275,6 @@ async function main() {
   for (const absPath of files) {
     const sf = project.addSourceFileAtPath(absPath);
 
-    // スキップ条件
     if (hasNoSplitGuard(sf)) {
       console.log(`SKIP @nosplit: ${rel(absPath)}`);
       continue;
@@ -313,7 +311,7 @@ async function main() {
 
     if (exportsMap.size === 0) continue;
 
-    // .backupへ
+    //  .backup
     const backupPath = path.join(dir, `${stem}${ext}.backup`);
     if (!DRY) await fs.rename(absPath, backupPath);
     console.log(`RENAMED: ${rel(absPath)} -> ${rel(backupPath)}`);
@@ -372,7 +370,7 @@ async function main() {
       const targetPath = path.join(dir, `${symName}${ext}`);
       if (!DRY) await fs.writeFile(targetPath, content, 'utf8');
       console.log(
-        `WRITE:   ${rel(targetPath)} (with ${deps.length} local deps, ${usedImports.length} imports)`
+        `WRITE:   ${rel(targetPath)} (with ${deps.length} local deps, ${usedImports.length} imports)`,
       );
 
       if (rawName === '__DEFAULT__') {
@@ -382,19 +380,20 @@ async function main() {
       }
     }
 
-    // 旧パスshim
+    //  shim
     const shimPath = path.join(dir, `${stem}${ext}`);
     const shimContent = shimLines.join('\n') + '\n';
     if (!DRY) await fs.writeFile(shimPath, shimContent, 'utf8');
     console.log(`SHIM:    ${rel(shimPath)}`);
 
-    // index.ts更新（明示列挙）
+    //  index.ts
     const indexPath = path.join(dir, 'index.ts');
     let indexLines: string[] = [];
     try {
       const prev = await fs.readFile(indexPath, 'utf8');
       indexLines = prev.split(/\r?\n/).filter(Boolean);
-    } catch {}
+    } catch {
+    }
     for (const line of shimLines) {
       const m = line.match(/export\s+\{\s*(.+?)\s*\}\s+from\s+'\.\/(.+?)';/);
       if (!m) continue;

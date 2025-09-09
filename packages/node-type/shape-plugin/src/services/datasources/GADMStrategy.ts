@@ -1,12 +1,12 @@
 /**
- * GADM (Database of Global Administrative Areas) データソース戦略
- * https://gadm.org/ から行政区域データを取得
- */
+  * GADM (Database of Global Administrative Areas)
+ * https://gadm.org/
+  */
 
 import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy';
 import { ShapeEntity } from '../../types/ShapeEntity';
 
-// GADM特有の生データ型
+//  GADM
 export interface GADMRawData {
   geopackage?: ArrayBuffer;
   shapefile?: Map<string, ArrayBuffer>;
@@ -20,7 +20,7 @@ export interface GADMRawData {
   };
 }
 
-// GADM処理後データ型
+//  GADM
 export interface GADMProcessedData extends Array<ShapeEntity> {
   metadata?: {
     source: 'gadm';
@@ -33,8 +33,8 @@ export interface GADMProcessedData extends Array<ShapeEntity> {
 }
 
 /**
- * GADM データソース戦略実装
- */
+  * GADM
+  */
 export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProcessedData> {
   readonly id = 'gadm-administrative-areas';
   readonly name = 'GADM Administrative Areas';
@@ -47,39 +47,37 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       method: 'File',
       baseUrl: 'https://geodata.ucdavis.edu/gadm/gadm4.1/',
       endpoints: {
-        // 国ごとのデータダウンロード
         'country-gpkg': '{format}/{country}_adm_{level}.{format}',
         'country-shp': 'shp/{country}_adm_shp.zip',
-        // 全世界データ
         'world-gpkg': 'gadm41.gpkg',
-        'world-levels': 'gadm41_levels.gpkg'
+        'world-levels': 'gadm41_levels.gpkg',
       },
       authentication: { type: 'none' },
-      timeout: 120000, // 2分（大きなファイルのため）
-      retries: { count: 3, delay: 5000, backoff: 'linear' }
+      timeout: 120000, //  2
+      retries: { count: 3, delay: 5000, backoff: 'linear' },
     },
     processing: {
-      inputFormat: 'geojson', // GeoPackageから変換後
+      inputFormat: 'geojson', //  GeoPackage
       outputFormat: 'geojson',
       validation: [
         { field: 'geometry', rule: 'required' },
         { field: 'properties.GID_0', rule: 'required' },
-        { field: 'properties.NAME_0', rule: 'required' }
+        { field: 'properties.NAME_0', rule: 'required' },
       ],
       transformations: [
-        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }
-      ]
+        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' },
+      ],
     },
     cache: {
-      ttl: 86400000 * 30, // 30日キャッシュ（データの更新頻度が低いため）
-      strategy: 'disk'
-    }
+      ttl: 86400000 * 30, //  30
+      strategy: 'disk',
+    },
   };
 
-  // ISO 3166-1 alpha-3 国コードマッピング
+  //  ISO 3166-1 alpha-3
   private readonly countryMappings: Record<string, string> = {
     'japan': 'JPN',
-    'usa': 'USA', 
+    'usa': 'USA',
     'united-states': 'USA',
     'canada': 'CAN',
     'mexico': 'MEX',
@@ -96,18 +94,17 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     'united-kingdom': 'GBR',
     'south-africa': 'ZAF',
     'egypt': 'EGY',
-    'nigeria': 'NGA'
+    'nigeria': 'NGA',
   };
 
   async fetchData(options?: FetchOptions): Promise<GADMRawData> {
-    const { 
-      country = 'JPN', 
+    const {
+      country = 'JPN',
       adminLevel = 1,
       endpoint = 'country-gpkg',
-      timeout = this.config.access.timeout 
+      timeout = this.config.access.timeout,
     } = options || {};
 
-    // 国コードの正規化
     const normalizedCountry = this.normalizeCountryCode(country);
     const level = Math.min(Math.max(adminLevel, 0), 5); // GADM supports levels 0-5
 
@@ -116,11 +113,11 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       let format: 'gpkg' | 'shp';
 
       if (endpoint === 'country-shp') {
-        // Shapefile形式
+        //  Shapefile
         format = 'shp';
         downloadUrl = `${this.config.access.baseUrl}shp/${normalizedCountry}_adm_shp.zip`;
       } else {
-        // GeoPackage形式（推奨）
+        //  GeoPackage
         format = 'gpkg';
         downloadUrl = `${this.config.access.baseUrl}gpkg/${normalizedCountry}_adm_gpkg.zip`;
       }
@@ -128,11 +125,11 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
       const response = await this.downloadWithRetry(downloadUrl, timeout);
-      
+
       if (format === 'gpkg') {
         const zipBuffer = await response.arrayBuffer();
         const geopackage = await this.extractGeoPackageFromZip(zipBuffer);
-        
+
         return {
           geopackage,
           metadata: {
@@ -141,13 +138,13 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             country: normalizedCountry,
             level,
             format,
-            version: '4.1'
-          }
+            version: '4.1',
+          },
         };
       } else {
         const zipBuffer = await response.arrayBuffer();
         const shapefile = await this.extractShapefileFromZip(zipBuffer);
-        
+
         return {
           shapefile,
           metadata: {
@@ -156,8 +153,8 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             country: normalizedCountry,
             level,
             format,
-            version: '4.1'
-          }
+            version: '4.1',
+          },
         };
       }
 
@@ -173,16 +170,15 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       let geojson: any;
 
       if (rawData.geopackage) {
-        // GeoPackageを処理
+        //  GeoPackage
         geojson = await this.processGeoPackage(rawData.geopackage, rawData.metadata.level);
       } else if (rawData.shapefile) {
-        // Shapefileを処理
+        //  Shapefile
         geojson = await this.processShapefile(rawData.shapefile);
       } else {
         throw new Error('No valid data found in raw data');
       }
 
-      // 管理レベルでフィルタリング
       let features = geojson.features;
       if (adminLevel !== undefined) {
         features = features.filter((feature: any) => {
@@ -191,15 +187,14 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         });
       }
 
-      // 追加フィルタリング
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
 
-      // ShapeEntityに変換
+      //  ShapeEntity
       const entities: ShapeEntity[] = features.map((feature: any, index: number) => {
         const properties = feature.properties || {};
-        
+
         return {
           id: this.generateEntityId(properties, index),
           nodeId: this.generateNodeId(properties, index),
@@ -210,22 +205,21 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             ...properties,
             source: 'gadm',
             country: rawData.metadata.country,
-            adminLevel: this.extractAdminLevel(properties)
+            adminLevel: this.extractAdminLevel(properties),
           },
           metadata: {
             source: 'gadm',
             originalIndex: index,
             downloadedAt: rawData.metadata.downloadedAt,
             processedAt: new Date().toISOString(),
-            gadmVersion: rawData.metadata.version
+            gadmVersion: rawData.metadata.version,
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          version: 1
+          version: 1,
         } as ShapeEntity;
       });
 
-      // メタデータ付きで返却
       const result = entities as GADMProcessedData;
       result.metadata = {
         source: 'gadm',
@@ -233,7 +227,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         count: entities.length,
         country: rawData.metadata.country,
         adminLevel: rawData.metadata.level,
-        version: rawData.metadata.version
+        version: rawData.metadata.version,
       };
 
       return result;
@@ -250,7 +244,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
   private async downloadWithRetry(url: string, timeout?: number): Promise<Response> {
     const { count = 3, delay = 5000, backoff = 'linear' } = this.config.access.retries || {};
-    
+
     for (let attempt = 0; attempt < count; attempt++) {
       try {
         const controller = new AbortController();
@@ -258,7 +252,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
         const { authFetch } = await import('../utils/authFetch');
         const response = await authFetch(url, {
-          signal: controller.signal
+          signal: controller.signal,
         });
 
         if (timeoutId) clearTimeout(timeoutId);
@@ -271,11 +265,11 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
       } catch (error) {
         if (attempt === count - 1) throw error;
-        
-        const waitTime = backoff === 'exponential' 
+
+        const waitTime = backoff === 'exponential'
           ? delay * Math.pow(2, attempt)
           : delay * (attempt + 1);
-        
+
         console.warn(`[GADM] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
@@ -288,14 +282,14 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const zipData = await zip.loadAsync(zipBuffer);
-    
-    // .gpkgファイルを探す
+
+    //  .gpkg
     for (const [fileName, fileData] of Object.entries(zipData.files)) {
       if (fileName.endsWith('.gpkg') && !fileData.dir) {
         return await fileData.async('arraybuffer');
       }
     }
-    
+
     throw new Error('No .gpkg file found in archive');
   }
 
@@ -303,24 +297,23 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const zipData = await zip.loadAsync(zipBuffer);
-    
+
     const files = new Map<string, ArrayBuffer>();
-    
+
     for (const [fileName, fileData] of Object.entries(zipData.files)) {
       if (!fileData.dir) {
         const buffer = await fileData.async('arraybuffer');
         files.set(fileName, buffer);
       }
     }
-    
+
     return files;
   }
 
   private async processGeoPackage(geopackage: ArrayBuffer, level: number): Promise<any> {
-    // GeoPackageの処理（実装簡略化）
-    // 実際の実装では @ngageoint/geopackage-js などを使用
-    
-    // モックデータを返す
+    //  GeoPackage
+    //  @ngageoint/geopackage-js
+
     return {
       type: 'FeatureCollection',
       features: [
@@ -330,11 +323,11 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             type: 'Polygon',
             coordinates: [[
               [139.0, 35.0],
-              [140.0, 35.0], 
+              [140.0, 35.0],
               [140.0, 36.0],
               [139.0, 36.0],
-              [139.0, 35.0]
-            ]]
+              [139.0, 35.0],
+            ]],
           },
           properties: {
             GID_0: 'JPN',
@@ -342,23 +335,23 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             GID_1: 'JPN.13_1',
             NAME_1: 'Tokyo',
             TYPE_1: 'Prefecture',
-            ENGTYPE_1: 'Prefecture'
-          }
-        }
-      ]
+            ENGTYPE_1: 'Prefecture',
+          },
+        },
+      ],
     };
   }
 
   private async processShapefile(shapefile: Map<string, ArrayBuffer>): Promise<any> {
-    // Shapefileの処理（実装簡略化）
+    //  Shapefile
     return {
       type: 'FeatureCollection',
-      features: []
+      features: [],
     };
   }
 
   private extractAdminLevel(properties: any): number {
-    // GADM管理レベルを抽出
+    //  GADM
     if (properties.GID_5 || properties.NAME_5) return 5;
     if (properties.GID_4 || properties.NAME_4) return 4;
     if (properties.GID_3 || properties.NAME_3) return 3;
@@ -368,12 +361,12 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
   }
 
   private generateEntityId(properties: any, index: number): string {
-    // GADMのGIDを使用
-    const gid = properties.GID_5 || properties.GID_4 || properties.GID_3 || 
-               properties.GID_2 || properties.GID_1 || properties.GID_0;
-    
+    //  GADMGID
+    const gid = properties.GID_5 || properties.GID_4 || properties.GID_3 ||
+      properties.GID_2 || properties.GID_1 || properties.GID_0;
+
     if (gid) return `gadm-${gid.toLowerCase()}`;
-    
+
     return `gadm-feature-${index}`;
   }
 
@@ -382,20 +375,18 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
   }
 
   private extractName(properties: any): string {
-    // 最も詳細なレベルの名前を使用
-    return properties.NAME_5 || properties.NAME_4 || properties.NAME_3 || 
-           properties.NAME_2 || properties.NAME_1 || properties.NAME_0 || 
-           'Unnamed Administrative Area';
+    return properties.NAME_5 || properties.NAME_4 || properties.NAME_3 ||
+      properties.NAME_2 || properties.NAME_1 || properties.NAME_0 ||
+      'Unnamed Administrative Area';
   }
 
   private extractDescription(properties: any): string | undefined {
     const parts: string[] = [];
-    
+
     if (properties.TYPE_1 || properties.ENGTYPE_1) {
       parts.push(`Type: ${properties.ENGTYPE_1 || properties.TYPE_1}`);
     }
-    
-    // 上位行政区域の情報
+
     if (properties.NAME_0 && properties.NAME_1 !== properties.NAME_0) {
       parts.push(`Country: ${properties.NAME_0}`);
     }
@@ -405,7 +396,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     if (properties.NAME_2 && properties.NAME_3 !== properties.NAME_2) {
       parts.push(`Level 2: ${properties.NAME_2}`);
     }
-    
+
     return parts.length > 0 ? parts.join(', ') : undefined;
   }
 }

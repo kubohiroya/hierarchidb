@@ -3,7 +3,7 @@
  * @description React hook for fetching and managing BaseMap entity data
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
@@ -31,10 +31,10 @@ export function useBaseMapEntity(
     pollingInterval?: number;
     /** Initial entity data */
     initialData?: BaseMapEntity;
-  } = {}
+  } = {},
 ): UseBaseMapEntityResult {
   const { skip = false, pollingInterval, initialData } = options;
-  
+
   const [entity, setEntity] = useState<BaseMapEntity | null>(initialData || null);
   const [loading, setLoading] = useState(!initialData && !skip);
   const [error, setError] = useState<Error | null>(null);
@@ -44,12 +44,12 @@ export function useBaseMapEntity(
   // Fetch entity
   const fetchEntity = async () => {
     if (!nodeId || skip) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       const data = await handler.getEntityByNodeId(nodeId);
-      
+
       if (data) {
         setEntity(data);
       } else {
@@ -91,7 +91,7 @@ export function useBaseMapEntity(
   // Polling
   useEffect(() => {
     if (!pollingInterval || !nodeId || skip) return;
-    
+
     const interval = setInterval(fetchEntity, pollingInterval);
     return () => clearInterval(interval);
   }, [nodeId, pollingInterval, skip]);
@@ -101,7 +101,7 @@ export function useBaseMapEntity(
     loading,
     error,
     refetch: fetchEntity,
-    updateEntity
+    updateEntity,
   };
 }
 
@@ -127,7 +127,7 @@ export function useBaseMapConfiguration(nodeId: NodeId | null) {
     }
 
     const handler = new BaseMapEntityHandler();
-    
+
     const fetchConfig = async () => {
       try {
         setLoading(true);
@@ -163,7 +163,7 @@ export function useBaseMapValidation(config: Partial<BaseMapEntity>) {
 
   useEffect(() => {
     const handler = new BaseMapEntityHandler();
-    
+
     const validate = async () => {
       setValidating(true);
       try {
@@ -173,7 +173,7 @@ export function useBaseMapValidation(config: Partial<BaseMapEntity>) {
         console.error('Validation error:', err);
         setValidation({
           isValid: false,
-          errors: ['Validation failed: ' + (err as Error).message]
+          errors: ['Validation failed: ' + (err as Error).message],
         });
       } finally {
         setValidating(false);

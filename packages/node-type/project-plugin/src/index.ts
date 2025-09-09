@@ -44,7 +44,7 @@ import { projectPluginAPI } from './api/ProjectPluginAPI';
 export async function registerProjectPlugin(registry: any): Promise<void> {
   // Initialize the plugin API
   await projectPluginAPI.initialize();
-  
+
   // Register the plugin
   registry.register(ProjectPluginDefinition);
   console.log('Project plugin registered successfully');
@@ -54,7 +54,7 @@ export async function registerProjectPlugin(registry: any): Promise<void> {
 export const ProjectPluginModule = {
   plugin: ProjectPluginDefinition,
   register: registerProjectPlugin,
-  api: projectPluginAPI
+  api: projectPluginAPI,
 };
 
 // Default export

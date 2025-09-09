@@ -7,7 +7,7 @@ export default createTsupConfig({
     '@mui/material',
     '@mui/icons-material',
     '@emotion/react',
-    '@emotion/styled'
+    '@emotion/styled',
   ],
 });
 

@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
 
 describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
   beforeEach(() => {
-    // Default: OFF（従来互換）
+    //  Default: OFF
     delete (process as any).env.WORKER_USE_CMDPROC_CREATE_UPDATE;
     delete (process as any).env.WORKER_USE_CMDPROC_MOVE_REMOVE;
     delete (process as any).env.WORKER_TRASH_USE_HOLDER;
@@ -29,14 +29,14 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
         name: 'FolderA',
-      })
+      }),
     );
     expect(createRes.success).toBe(true);
     const nodeId = (createRes as any).nodeId as NodeId;
 
     // Update name
     const updateRes = await cp.processCommand(
-      cp.createEnvelope('updateNode', { nodeId, name: 'FolderA1' })
+      cp.createEnvelope('updateNode', { nodeId, name: 'FolderA1' }),
     );
     expect(updateRes.success).toBe(true);
 
@@ -52,7 +52,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       version: 1,
     } as any);
     const moveRes = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId })
+      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId }),
     );
     expect(moveRes.success).toBe(true);
 
@@ -61,7 +61,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(
-      cp.createEnvelope('recoverFromTrash', { nodeIds: [nodeId], toParentId: 'r:root' as NodeId })
+      cp.createEnvelope('recoverFromTrash', { nodeIds: [nodeId], toParentId: 'r:root' as NodeId }),
     );
     expect(rec.success).toBe(true);
   });
@@ -80,13 +80,13 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
         name: 'FolderB',
-      })
+      }),
     );
     expect(createRes.success).toBe(true);
     const nodeId = (createRes as any).nodeId as NodeId;
 
     const updateRes = await cp.processCommand(
-      cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' })
+      cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' }),
     );
     expect(updateRes.success).toBe(true);
 
@@ -101,7 +101,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       version: 1,
     } as any);
     const moveRes = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId })
+      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId }),
     );
     expect(moveRes.success).toBe(true);
 
@@ -109,9 +109,8 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(
-      cp.createEnvelope('recoverFromTrash', { nodeIds: [nodeId] })
+      cp.createEnvelope('recoverFromTrash', { nodeIds: [nodeId] }),
     );
     expect(rec.success).toBe(true);
   });
 });
-

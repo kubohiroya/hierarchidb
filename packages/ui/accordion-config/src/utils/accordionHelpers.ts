@@ -4,9 +4,9 @@ import { AccordionTheme, defaultAccordionTheme } from '../types';
  * Get phase color based on theme mode
  */
 export function getPhaseColor(
-  phase: number, 
-  isDark: boolean, 
-  theme: AccordionTheme = defaultAccordionTheme
+  phase: number,
+  isDark: boolean,
+  theme: AccordionTheme = defaultAccordionTheme,
 ): string {
   const colors = isDark ? theme.phaseColorsDark : theme.phaseColorsLight;
   return colors[phase] || colors[1] || (isDark ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5');
@@ -17,7 +17,7 @@ export function getPhaseColor(
  */
 export function createAccordionTheme(
   lightColors: Record<number, string>,
-  darkColors?: Record<number, string>
+  darkColors?: Record<number, string>,
 ): AccordionTheme {
   return {
     phaseColorsLight: lightColors,
@@ -30,11 +30,11 @@ export function createAccordionTheme(
  */
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 

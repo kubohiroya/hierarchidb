@@ -31,14 +31,14 @@ export function isValidationFailure(x: ValidationSuccess | ValidationFailure): x
 }
 
 export function isValidationSuccess<TType extends string = string, TPayload = unknown>(
-  x: ValidationSuccess<TType, TPayload> | ValidationFailure
+  x: ValidationSuccess<TType, TPayload> | ValidationFailure,
 ): x is ValidationSuccess<TType, TPayload> {
   return (x as any)?.ok === true;
 }
 
 // Strict parse + normalization: ensure `kind` exists, preserve alias `type` for compatibility.
 export function validateAndNormalizeEnvelope(
-  envelope: EnvelopeInput
+  envelope: EnvelopeInput,
 ): ValidationSuccess | ValidationFailure {
   const obj = envelope as Record<string, unknown>;
   if (!obj || typeof obj !== 'object') {

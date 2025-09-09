@@ -1,10 +1,10 @@
 /**
- * @file ShapeBatchProgressDisplay.tsx
- * @description ERIA-Cartograph移植: バッチ進捗表示コンポーネント
- */
+  * @file ShapeBatchProgressDisplay.tsx
+ * @description ERIA-Cartograph:
+  */
 
 import * as React from 'react';
-import type { TreeNodeId } from '@hierarchidb/core';
+import type { NodeId as TreeNodeId } from '../../shared/types';
 import type { BatchProgressEvent } from '../../types/BatchProgressEvent';
 
 // Mock PaneProgress type for now
@@ -36,12 +36,12 @@ export interface ShapeBatchProgressDisplayProps {
  * Uses LRU SplitView for intelligent progress display
  */
 export const ShapeBatchProgressDisplay: React.FC<ShapeBatchProgressDisplayProps> = ({
-  treeNodeId,
-  sessionId,
-  progressEvents = [],
-  paneProgressData = [],
-  maxPanes = 4,
-}) => {
+                                                                                      treeNodeId,
+                                                                                      sessionId,
+                                                                                      progressEvents = [],
+                                                                                      paneProgressData = [],
+                                                                                      maxPanes = 4,
+                                                                                    }) => {
   // Convert progress events to pane data
   const convertToPaneData = (event: BatchProgressEvent): PaneProgress => ({
     id: `${event.stage}-stage`,
@@ -65,10 +65,10 @@ export const ShapeBatchProgressDisplay: React.FC<ShapeBatchProgressDisplayProps>
 
   // First deduplicate by stage - keep only the most recent event per stage
   const deduplicatedPanes = new Map<string, PaneProgress>();
-  
+
   // Sort by timestamp first, then process to keep the latest per stage
   const sortedByTime = allPaneData.sort((a, b) => a.lastUpdated - b.lastUpdated);
-  
+
   for (const pane of sortedByTime) {
     const stage = pane.id.replace('-stage', '');
     deduplicatedPanes.set(stage, pane);
@@ -98,43 +98,44 @@ export const ShapeBatchProgressDisplay: React.FC<ShapeBatchProgressDisplayProps>
     React.createElement('div', { 'data-testid': 'lru-splitview-container' },
       managedPanes.map((pane) =>
         React.createElement('div', {
-          key: pane.id,
-          'data-testid': getTestId(pane.id),
-          className: `progress-pane ${isExpanded(pane) ? 'expanded' : 'collapsed'} ${
-            pane.status === 'error' ? 'error-state' : ''
-          } ${isExpanded(pane) ? 'detailed-render' : 'minimal-render'}`,
-          'data-auto-expanded': isExpanded(pane),
-        },
-          React.createElement('h6', null, pane.title),
-          React.createElement('div', { 
-            style: { 
-              width: '100%', 
-              backgroundColor: '#f0f0f0', 
-              borderRadius: '4px',
-              height: '8px',
-              marginBottom: '8px' 
-            }
+            key: pane.id,
+            'data-testid': getTestId(pane.id),
+            className: `progress-pane ${isExpanded(pane) ? 'expanded' : 'collapsed'} ${
+              pane.status === 'error' ? 'error-state' : ''
+            } ${isExpanded(pane) ? 'detailed-render' : 'minimal-render'}`,
+            'data-auto-expanded': isExpanded(pane),
           },
+          React.createElement('h6', null, pane.title),
+          React.createElement('div', {
+              style: {
+                width: '100%',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '4px',
+                height: '8px',
+                marginBottom: '8px',
+              },
+            },
             React.createElement('div', {
               style: {
                 width: `${pane.progress}%`,
                 backgroundColor: '#1976d2',
                 height: '100%',
                 borderRadius: '4px',
-                transition: 'width 0.3s'
-              }
-            })
+                transition: 'width 0.3s',
+              },
+            }),
           ),
           React.createElement('span', null, `${pane.progress}%`),
           pane.details && React.createElement('div', null,
             React.createElement('div', null, pane.details.current),
-            React.createElement('small', null, `${pane.details.completed} / ${pane.details.total} completed`)
+            React.createElement('small', null, `${pane.details.completed} / ${pane.details.total} completed`),
           ),
           pane.status === 'error' && React.createElement('div', { style: { color: 'red' } },
-            'Failed to process features: Network timeout'
-          )
-        )
-      )
-    )
+            'Failed to process features: Network timeout',
+          ),
+        ),
+      ),
+    ),
   );
-};;
+};
+;

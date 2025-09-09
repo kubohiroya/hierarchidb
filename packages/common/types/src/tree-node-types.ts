@@ -26,9 +26,9 @@ export interface NodeBase {
  * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface DescendantProperties {
-  hasChildren?: boolean; // 子ノードの有無
-  descendantCount?: number; // 直接の子ノード数
-  isEstimated?: boolean; // 推定値フラグ（大量データ時の最適化）
+  hasChildren?: boolean;
+  descendantCount?: number;
+  isEstimated?: boolean;
 }
 
 /**
@@ -64,5 +64,5 @@ export type TreeNode = NodeBase &
   }>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
-  children?: NodeId[]; // フラット構造維持
+  children?: NodeId[];
 }

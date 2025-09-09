@@ -1,24 +1,22 @@
 /**
- * NodeContextMenu - 共通のノードコンテキストメニュー
- *
- * パンくずリストとTreeTable行の両方で使用される
- * ノード操作用の統一されたコンテキストメニュー
- * eria-cartographのRowContextMenuMUIの見た目を忠実に再現
- */
+  * NodeContextMenu -
+  * TreeTable
+  * eria-cartographRowContextMenuMUI
+  */
 
-import { useState, MouseEvent, useRef, useEffect } from 'react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { MouseEvent, useEffect, useRef, useState } from 'react';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import {
-  ChevronRight as ChevronRightIcon,
   Add as AddIcon,
-  Edit as EditIcon,
-  ContentCopy as ContentCopyIcon,
-  Clear as ClearIcon,
-  Folder as FolderIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
-  PlayArrow as PlayArrowIcon,
+  ChevronRight as ChevronRightIcon,
+  Clear as ClearIcon,
+  ContentCopy as ContentCopyIcon,
   CreateNewFolder as CreateFolderIcon,
+  Edit as EditIcon,
+  Folder as FolderIcon,
   NoteAdd as NoteAddIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 
 
@@ -49,9 +47,9 @@ export interface NodeContextMenuProps {
 }
 
 /**
- * NodeContextMenu コンポーネント
- * eria-cartographのRowContextMenuMUIのデザインを完全再現
- */
+  * NodeContextMenu
+ * eria-cartographRowContextMenuMUI
+  */
 export function NodeContextMenu(props: NodeContextMenuProps) {
   const {
     anchorEl,
@@ -72,7 +70,6 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
     onRemove: _onRemove,
     onCheckReference: _onCheckReference,
   } = props;
-  
 
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -180,7 +177,8 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
 
   return (
     <>
-      {/* メインメニュー */}
+      {/*
+*/}
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -287,7 +285,9 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
         )}
       </Menu>
 
-      {/* Create サブメニュー */}
+      {/*
+ Create
+*/}
       <Menu
         anchorEl={addMenuAnchor}
         open={addMenuOpen}
@@ -329,7 +329,7 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
           </ListItemIcon>
           <ListItemText>Folder</ListItemText>
         </MenuItem>
-        
+
         <MenuItem onClick={() => handleCreateClick('note')} aria-label="Note">
           <ListItemIcon>
             <NoteAddIcon />

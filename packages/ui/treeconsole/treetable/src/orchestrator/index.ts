@@ -1,25 +1,22 @@
 /**
- * TreeTableOrchestrator (Simplified)
- *
- * TreeTableの状態管理とアクションを統合する
- * 簡化されたオーケストレーター
- */
+  * TreeTableOrchestrator (Simplified)
+  * TreeTable
+   */
 
 import { useMemo } from 'react';
 import type { TreeTableController, TreeTableOrchestratorResult } from '../types';
 
 /**
- * TreeTableOrchestrator Hook
- *
- * TreeTableの基本的な状態管理を提供
- */
+  * TreeTableOrchestrator Hook
+  * TreeTable
+  */
 export function useTreeTableOrchestrator(
-  controller: TreeTableController | null
+  controller: TreeTableController | null,
 ): TreeTableOrchestratorResult {
   // Selection operations
   const selection = useMemo(() => {
     const selectedRowIds = new Set(
-      Object.keys(controller?.rowSelection || {}).filter((id) => controller?.rowSelection?.[id])
+      Object.keys(controller?.rowSelection || {}).filter((id) => controller?.rowSelection?.[id]),
     );
 
     return {
@@ -80,7 +77,7 @@ export function useTreeTableOrchestrator(
         controller?.cancelEdit?.();
       },
     }),
-    [controller?.startEdit, controller?.cancelEdit]
+    [controller?.startEdit, controller?.cancelEdit],
   );
 
   // Search operations
@@ -95,7 +92,7 @@ export function useTreeTableOrchestrator(
         controller?.handleSearchTextChange?.('');
       },
     }),
-    [controller?.searchText, controller?.handleSearchTextChange]
+    [controller?.searchText, controller?.handleSearchTextChange],
   );
 
   // Drag & Drop operations
@@ -117,7 +114,7 @@ export function useTreeTableOrchestrator(
         // TODO: Implement drop
       },
     }),
-    []
+    [],
   );
 
   return {

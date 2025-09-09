@@ -1,106 +1,127 @@
 /**
- * @file MultiStepDialog.tsx
- * @description マルチステップダイアログコンポーネント
- */
+  * @file MultiStepDialog.tsx
+ * @description
+  */
 
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  StepButton,
-  Box,
-  Typography,
-  CircularProgress,
   Alert,
-  IconButton,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Fade,
+  IconButton,
   Slide,
   Stack,
+  Step,
+  StepButton,
+  StepLabel,
+  Stepper,
+  Typography,
 } from '@mui/material';
-import { 
-  Close, 
-  NavigateBefore, 
-  NavigateNext, 
+import {
   Check,
+  Close,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
+  NavigateBefore,
+  NavigateNext,
 } from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
-import { WizardProvider, useWizard } from './StepWizardContext';
+import { useWizard, WizardProvider } from './StepWizardContext';
 import type { DialogStepDefinition } from '../services/DialogStepRegistry';
 
 // ============================================================================
-// 型定義
 // ============================================================================
 
 /**
- * アイコンボタングループの表示モード
- */
+    */
 export type IconGroupDisplayMode = 'hidden' | 'always' | 'hover';
 
 /**
- * アイコンボタングループの設定
- */
+    */
 export interface IconGroupSettings {
-  /** 通常サイズ画面での表示モード */
+  /**
+      */
   normalMode: IconGroupDisplayMode;
-  /** 全画面での表示モード */
+  /**
+      */
   fullscreenMode: IconGroupDisplayMode;
 }
 
 /**
- * マルチステップダイアログのプロパティ
- */
+    */
 export interface MultiStepDialogProps {
-  /** ダイアログが開いているか */
+  /**
+      */
   open: boolean;
-  /** ダイアログを閉じる */
+  /**
+      */
   onClose: () => void;
-  /** 完了時の処理 */
+  /**
+      */
   onComplete: (data: Record<string, unknown>) => Promise<void>;
-  /** ステップ定義 */
+  /**
+      */
   steps: DialogStepDefinition[];
-  /** ダイアログタイトル */
+  /**
+      */
   title?: string;
-  /** 初期データ */
+  /**
+      */
   initialData?: Record<string, unknown>;
-  /** 最大幅 */
+  /**
+      */
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  /** 全幅表示 */
+  /**
+      */
   fullWidth?: boolean;
-  /** ステップラベルをクリック可能にするか */
+  /**
+      */
   allowStepNavigation?: boolean;
-  /** トランジション */
+  /**
+      */
   transition?: 'fade' | 'slide';
-  /** ノードID（PeerEntityベースの設定保存用） */
+  /**
+   * IDPeerEntity
+   */
   nodeId?: NodeId;
-  /** ノードタイプ（PeerEntityベースの設定保存用） */
+  /**
+   * PeerEntity
+   */
   nodeType?: string;
-  /** アイコンボタングループの初期設定 */
+  /**
+      */
   iconGroupSettings?: IconGroupSettings;
-  /** URLパラメータからの初期ステップ */
+  /**
+   * URL
+   */
   initialStepFromUrl?: number;
-  /** URLパラメータからの初期全画面モード */
+  /**
+   * URL
+   */
   initialFullscreenFromUrl?: boolean;
-  /** URLパラメータからの初期地図パラメータ */
+  /**
+   * URL
+   */
   initialMapParamsFromUrl?: { zoom: number; lng: number; lat: number };
-  /** ステップ変更時のコールバック */
+  /**
+      */
   onStepChange?: (step: number) => void;
-  /** 全画面モード変更時のコールバック */
+  /**
+      */
   onFullscreenChange?: (isFullscreen: boolean) => void;
-  /** 地図パラメータ変更時のコールバック */
+  /**
+      */
   onMapParamsChange?: (params: { zoom: number; lng: number; lat: number } | undefined) => void;
 }
 
 // ============================================================================
-// トランジション
 // ============================================================================
 
 const SlideTransition = (function Transition(
@@ -113,36 +134,34 @@ const SlideTransition = (function Transition(
 });
 
 // ============================================================================
-// 内部コンポーネント
 // ============================================================================
 
 /**
- * ステップコンテンツレンダラー
- */
+    */
 function StepContentRenderer() {
   const { state, actions, stepDefinitions } = useWizard();
   const currentStepDef = stepDefinitions.find(s => s.stepNumber === state.currentStep);
-  
+
   if (!currentStepDef) {
     return <Typography>Step not found</Typography>;
   }
-  
+
   const StepComponent = currentStepDef.component;
   const stepState = state.steps.get(state.currentStep);
-  
+
   const handleChange = useCallback((data: any) => {
     actions.updateStepData(state.currentStep, data);
   }, [actions, state.currentStep]);
-  
+
   const handleNext = useCallback((data: any) => {
     actions.updateStepData(state.currentStep, data);
     actions.goToNext();
   }, [actions, state.currentStep]);
-  
+
   const handlePrevious = useCallback(() => {
     actions.goPrevious();
   }, [actions]);
-  
+
   return (
     <Box sx={{ minHeight: 300, position: 'relative' }}>
       {state.isLoading && (
@@ -163,7 +182,7 @@ function StepContentRenderer() {
           <CircularProgress />
         </Box>
       )}
-      
+
       <Fade in key={state.currentStep}>
         <Box>
           <StepComponent
@@ -181,23 +200,22 @@ function StepContentRenderer() {
 }
 
 /**
- * ステップナビゲーション
- */
+    */
 function StepNavigation({ allowStepNavigation = false }: { allowStepNavigation?: boolean }) {
   const { state, actions, helpers, stepDefinitions } = useWizard();
-  
+
   const handleStepClick = (stepNumber: number) => {
     if (allowStepNavigation && helpers.canGoToStep(stepNumber)) {
       actions.goToStep(stepNumber);
     }
   };
-  
+
   return (
     <Stepper activeStep={state.currentStep - 1} sx={{ pt: 3, pb: 5 }}>
       {stepDefinitions.map((step) => {
         const stepState = state.steps.get(step.stepNumber);
         const canNavigate = allowStepNavigation && helpers.canGoToStep(step.stepNumber);
-        
+
         return (
           <Step key={step.stepNumber} completed={stepState?.isCompleted}>
             {allowStepNavigation ? (
@@ -236,39 +254,39 @@ function StepNavigation({ allowStepNavigation = false }: { allowStepNavigation?:
 }
 
 /**
- * ダイアログアクション
- */
-function DialogActionsContent({ onComplete, onClose }: { onComplete: (data: Record<string, unknown>) => Promise<void>; onClose: () => void }) {
+    */
+function DialogActionsContent({ onComplete, onClose }: {
+  onComplete: (data: Record<string, unknown>) => Promise<void>;
+  onClose: () => void
+}) {
   const { state, actions, helpers, stepDefinitions } = useWizard();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const isLastStep = useMemo(() => {
     const sortedSteps = [...stepDefinitions].sort((a, b) => a.stepNumber - b.stepNumber);
     return state.currentStep === sortedSteps[sortedSteps.length - 1]?.stepNumber;
   }, [state.currentStep, stepDefinitions]);
-  
+
   const handleNext = async () => {
     const currentStepDef = stepDefinitions.find(s => s.stepNumber === state.currentStep);
     const stepState = state.steps.get(state.currentStep);
-    
-    // バリデーション実行
+
     if (currentStepDef?.validation) {
       const result = await currentStepDef.validation.validate(stepState?.data || {});
       actions.validateStep(state.currentStep, result);
-      
+
       if (!result.isValid) {
         return;
       }
     }
-    
+
     actions.completeStep(state.currentStep);
-    
+
     if (isLastStep) {
-      // 最後のステップの場合は完了処理
       setIsSubmitting(true);
       setSubmitError(null);
-      
+
       try {
         await onComplete(helpers.getAllData());
         actions.complete();
@@ -282,7 +300,7 @@ function DialogActionsContent({ onComplete, onClose }: { onComplete: (data: Reco
       actions.goToNext();
     }
   };
-  
+
   return (
     <>
       {submitError && (
@@ -290,7 +308,7 @@ function DialogActionsContent({ onComplete, onClose }: { onComplete: (data: Reco
           {submitError}
         </Alert>
       )}
-      
+
       <Button
         onClick={() => actions.goPrevious()}
         disabled={!helpers.canGoPrevious() || isSubmitting}
@@ -298,16 +316,16 @@ function DialogActionsContent({ onComplete, onClose }: { onComplete: (data: Reco
       >
         Previous
       </Button>
-      
+
       <Box sx={{ flex: '1 0 auto' }} />
-      
+
       <Button
         onClick={onClose}
         disabled={isSubmitting}
       >
         Cancel
       </Button>
-      
+
       <Button
         onClick={handleNext}
         variant="contained"
@@ -323,50 +341,48 @@ function DialogActionsContent({ onComplete, onClose }: { onComplete: (data: Reco
 //import { useDialogMode } from '../hooks/useDialogMode.ts.bak';
 
 // ============================================================================
-// メインコンポーネント
 // ============================================================================
 
 /**
- * マルチステップダイアログコンポーネント
- */
+    */
 export function MultiStepDialog({
-  open,
-  onClose,
-  onComplete,
-  steps,
-  title = 'Multi-Step Dialog',
-  initialData = {},
-  maxWidth = 'md',
-  fullWidth = true,
-  allowStepNavigation = false,
-  transition = 'fade',
-  nodeId,
-  nodeType,
-  iconGroupSettings: initialIconGroupSettings,
-  initialStepFromUrl,
-  initialFullscreenFromUrl,
-  initialMapParamsFromUrl,
-  onStepChange,
-  onFullscreenChange,
-  onMapParamsChange,
-}: MultiStepDialogProps) {
+                                  open,
+                                  onClose,
+                                  onComplete,
+                                  steps,
+                                  title = 'Multi-Step Dialog',
+                                  initialData = {},
+                                  maxWidth = 'md',
+                                  fullWidth = true,
+                                  allowStepNavigation = false,
+                                  transition = 'fade',
+                                  nodeId,
+                                  nodeType,
+                                  iconGroupSettings: initialIconGroupSettings,
+                                  initialStepFromUrl,
+                                  initialFullscreenFromUrl,
+                                  initialMapParamsFromUrl,
+                                  onStepChange,
+                                  onFullscreenChange,
+                                  onMapParamsChange,
+                                }: MultiStepDialogProps) {
   if (steps.length === 0) {
     return null;
   }
 
-  // PeerEntityベースのダイアログモード管理
-  const { 
-    dialogMode: savedDialogMode, 
+  //  PeerEntity
+  const {
+    dialogMode: savedDialogMode,
     setDialogMode: saveDialogMode,
     resumeStep: savedResumeStep,
     setResumeStep,
     clearResumeStep,
     mapParams: savedMapParams,
-    setMapParams
+    setMapParams,
   } = useDialogMode(
     nodeId,
     nodeType,
-    'normal'
+    'normal',
   );
 
   const defaultIconGroupSettings: IconGroupSettings = initialIconGroupSettings ?? {
@@ -374,21 +390,20 @@ export function MultiStepDialog({
     fullscreenMode: 'hover',
   };
 
-  // URL パラメータの優先順位: URL > PeerEntity > デフォルト
-  const initialFullscreen = initialFullscreenFromUrl !== undefined 
-    ? initialFullscreenFromUrl 
+  //  URL : URL > PeerEntity >
+  const initialFullscreen = initialFullscreenFromUrl !== undefined
+    ? initialFullscreenFromUrl
     : savedDialogMode === 'full';
 
-  // 初期ステップの優先順位: URL > PeerEntity > デフォルト
+  //  : URL > PeerEntity >
   const initialStep = initialStepFromUrl || savedResumeStep || 1;
 
-  // 初期地図パラメータの優先順位: URL > PeerEntity
+  //  : URL > PeerEntity
   const initialMapParams = initialMapParamsFromUrl || savedMapParams;
 
-  // 状態管理
   const [isFullscreen, setIsFullscreen] = useState(initialFullscreen);
   const [iconGroupSettings] = useState<IconGroupSettings>(
-    initialIconGroupSettings ?? defaultIconGroupSettings
+    initialIconGroupSettings ?? defaultIconGroupSettings,
   );
   const [isHovering, setIsHovering] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(!initialFullscreen);
@@ -399,12 +414,10 @@ export function MultiStepDialog({
   const headerTimeoutRef = useRef<NodeJS.Timeout>();
   const footerTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // 全画面切り替え
   const toggleFullscreen = useCallback(() => {
     const newFullscreen = !isFullscreen;
     setIsFullscreen(newFullscreen);
-    
-    // フルスクリーン切り替え時にヘッダー・フッターの表示状態を調整
+
     if (newFullscreen) {
       setIsHeaderVisible(false);
       setIsFooterVisible(false);
@@ -412,22 +425,20 @@ export function MultiStepDialog({
       setIsHeaderVisible(true);
       setIsFooterVisible(true);
     }
-    
-    // PeerEntityに保存
+
+    //  PeerEntity
     if (nodeId && nodeType) {
       saveDialogMode(newFullscreen ? 'full' : 'normal');
     }
-    
-    // コールバックを呼び出し
+
     if (onFullscreenChange) {
       onFullscreenChange(newFullscreen);
     }
   }, [isFullscreen, nodeId, nodeType, saveDialogMode, onFullscreenChange]);
 
-  // アイコングループの表示判定
   const shouldShowIconGroup = useMemo(() => {
     const currentMode = isFullscreen ? iconGroupSettings.fullscreenMode : iconGroupSettings.normalMode;
-    
+
     switch (currentMode) {
       case 'hidden':
         return false;
@@ -440,47 +451,42 @@ export function MultiStepDialog({
     }
   }, [isFullscreen, iconGroupSettings, isHovering]);
 
-  // ホバー処理（全画面時のみ）
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isFullscreen) {
       return;
     }
 
-    const headerThreshold = 60; // ヘッダー表示の閾値
-    const footerThreshold = 60; // フッター表示の閾値
+    const headerThreshold = 60;
+    const footerThreshold = 60;
     const windowHeight = window.innerHeight;
 
-    // ヘッダー領域のホバー判定
     if (e.clientY < headerThreshold) {
       if (!isHeaderVisible) {
         setIsHeaderVisible(true);
-        setIsHovering(true); // アイコングループも表示
+        setIsHovering(true);
       }
-      
-      // タイムアウトをリセット
+
       if (headerTimeoutRef.current) {
         clearTimeout(headerTimeoutRef.current);
       }
-      
-      // 3秒後に自動的に非表示
+
+      //  3
       headerTimeoutRef.current = setTimeout(() => {
         setIsHeaderVisible(false);
         setIsHovering(false);
       }, 3000);
     }
 
-    // フッター領域のホバー判定
     if (e.clientY > windowHeight - footerThreshold) {
       if (!isFooterVisible) {
         setIsFooterVisible(true);
       }
-      
-      // タイムアウトをリセット
+
       if (footerTimeoutRef.current) {
         clearTimeout(footerTimeoutRef.current);
       }
-      
-      // 3秒後に自動的に非表示
+
+      //  3
       footerTimeoutRef.current = setTimeout(() => {
         setIsFooterVisible(false);
       }, 3000);
@@ -488,7 +494,6 @@ export function MultiStepDialog({
   }, [isFullscreen, isHeaderVisible, isFooterVisible]);
 
   const handleMouseLeave = useCallback(() => {
-    // 各タイムアウトをクリア
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
@@ -498,8 +503,7 @@ export function MultiStepDialog({
     if (footerTimeoutRef.current) {
       clearTimeout(footerTimeoutRef.current);
     }
-    
-    // フルスクリーン時は即座に隠す
+
     if (isFullscreen) {
       setIsHovering(false);
       setIsHeaderVisible(false);
@@ -507,7 +511,6 @@ export function MultiStepDialog({
     }
   }, [isFullscreen]);
 
-  // クリーンアップ
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -522,25 +525,25 @@ export function MultiStepDialog({
     };
   }, []);
 
-  // ステップ変更時にresumeStepを保存
+  //  resumeStep
   useEffect(() => {
     if (nodeId && nodeType && currentStep !== savedResumeStep) {
       setResumeStep(currentStep);
     }
   }, [currentStep, nodeId, nodeType, savedResumeStep, setResumeStep]);
 
-  // ダイアログが閉じられる時にresumeStepを保存
+  //  resumeStep
   const handleDialogClose = useCallback(() => {
-    // 現在のステップをresumeStepとして保存
+    //  resumeStep
     if (nodeId && nodeType) {
       setResumeStep(currentStep);
     }
     onClose();
   }, [currentStep, nodeId, nodeType, setResumeStep, onClose]);
 
-  // ダイアログが完了した時にresumeStepをクリア
+  //  resumeStep
   const handleDialogComplete = useCallback(async (data: Record<string, unknown>) => {
-    // 完了時はresumeStep・mapParamsをクリア
+    //  resumeStepmapParams
     if (nodeId && nodeType) {
       await clearResumeStep();
       await setMapParams(undefined);
@@ -548,20 +551,18 @@ export function MultiStepDialog({
     await onComplete(data);
   }, [nodeId, nodeType, clearResumeStep, setMapParams, onComplete]);
 
-  // 地図パラメータ変更の処理
   const handleMapParamsChange = useCallback((params: { zoom: number; lng: number; lat: number } | undefined) => {
-    // PeerEntityに保存
+    //  PeerEntity
     if (nodeId && nodeType) {
       setMapParams(params);
     }
-    // コールバックを呼び出し
     if (onMapParamsChange) {
       onMapParamsChange(params);
     }
   }, [nodeId, nodeType, setMapParams, onMapParamsChange]);
 
   const TransitionComponent = transition === 'slide' ? SlideTransition : Fade;
-  
+
   return (
     <Dialog
       ref={dialogRef}
@@ -574,12 +575,12 @@ export function MultiStepDialog({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <WizardProvider 
-        stepDefinitions={steps} 
+      <WizardProvider
+        stepDefinitions={steps}
         initialData={{
           ...initialData,
           mapInitialParams: initialMapParams,
-          onMapParamsChange: handleMapParamsChange
+          onMapParamsChange: handleMapParamsChange,
         }}
         initialStep={currentStep}
         onStepChange={onStepChange}
@@ -598,23 +599,24 @@ export function MultiStepDialog({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6">{title}</Typography>
-            
-            {/* アイコンボタングループ */}
+
+            {/*
+*/}
             <Fade in={shouldShowIconGroup}>
-              <Stack 
-                direction="row" 
+              <Stack
+                direction="row"
                 spacing={1}
                 sx={{
                   position: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' ? 'absolute' : 'relative',
                   right: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' ? 16 : 0,
                   top: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' ? 16 : 0,
-                  backgroundColor: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' 
-                    ? 'rgba(255, 255, 255, 0.95)' 
+                  backgroundColor: isFullscreen && iconGroupSettings.fullscreenMode === 'hover'
+                    ? 'rgba(255, 255, 255, 0.95)'
                     : 'transparent',
                   borderRadius: 1,
                   padding: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' ? 1 : 0,
-                  boxShadow: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' 
-                    ? '0 2px 8px rgba(0,0,0,0.15)' 
+                  boxShadow: isFullscreen && iconGroupSettings.fullscreenMode === 'hover'
+                    ? '0 2px 8px rgba(0,0,0,0.15)'
                     : 'none',
                 }}
               >
@@ -638,17 +640,17 @@ export function MultiStepDialog({
             </Fade>
           </Box>
         </DialogTitle>
-        
+
         <DialogContent
           sx={{
-            // フルスクリーン時はヘッダー・フッターのスペースを考慮
             paddingTop: isFullscreen ? '80px' : undefined,
             paddingBottom: isFullscreen ? '80px' : undefined,
             height: isFullscreen ? '100vh' : 'auto',
             overflow: 'auto',
           }}
         >
-          {/* ステッパーもヘッダーと一緒に隠す */}
+          {/*
+*/}
           <Box
             sx={{
               opacity: isFullscreen ? (isHeaderVisible ? 1 : 0) : 1,
@@ -660,9 +662,9 @@ export function MultiStepDialog({
           </Box>
           <StepContentRenderer />
         </DialogContent>
-        
-        <DialogActions 
-          sx={{ 
+
+        <DialogActions
+          sx={{
             p: 2,
             position: isFullscreen ? 'fixed' : 'relative',
             bottom: isFullscreen ? (isFooterVisible ? 0 : -80) : 'auto',

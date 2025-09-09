@@ -1,15 +1,14 @@
 import type { PackageDetectionStrategy, PackageJson } from '../types';
 
 /**
- * 戦略の基底クラス
- */
+    */
 export abstract class BaseStrategy implements PackageDetectionStrategy {
   abstract name: string;
-  
+
   abstract test(packageName: string, packageJson: PackageJson): boolean;
 
   getPriority(_packageName: string, _packageJson: PackageJson): number {
-    return 1000; // デフォルト優先度
+    return 1000;
   }
 
   extractMetadata(_packageJson: PackageJson): Record<string, any> {
@@ -18,8 +17,7 @@ export abstract class BaseStrategy implements PackageDetectionStrategy {
 }
 
 /**
- * 正規表現による戦略
- */
+    */
 export class RegexStrategy extends BaseStrategy {
   name: string;
   private pattern: RegExp;
@@ -59,8 +57,7 @@ export class RegexStrategy extends BaseStrategy {
 }
 
 /**
- * フィールド存在チェック戦略
- */
+    */
 export class FieldStrategy extends BaseStrategy {
   name: string;
   private fields: string[];
@@ -81,7 +78,7 @@ export class FieldStrategy extends BaseStrategy {
     const hasField = (field: string): boolean => {
       const parts = field.split('.');
       let current: any = packageJson;
-      
+
       for (const part of parts) {
         if (current && typeof current === 'object' && part in current) {
           current = current[part];
@@ -89,7 +86,7 @@ export class FieldStrategy extends BaseStrategy {
           return false;
         }
       }
-      
+
       return true;
     };
 
@@ -102,8 +99,7 @@ export class FieldStrategy extends BaseStrategy {
 }
 
 /**
- * 複合戦略
- */
+    */
 export class CompositeStrategy extends BaseStrategy {
   name: string;
   private strategies: PackageDetectionStrategy[];
@@ -129,14 +125,12 @@ export class CompositeStrategy extends BaseStrategy {
   }
 
   getPriority(packageName: string, packageJson: PackageJson): number {
-    // 各戦略の優先度の最小値を使用
     const priorities = this.strategies
       .map(s => s.getPriority ? s.getPriority(packageName, packageJson) : 1000);
     return Math.min(...priorities);
   }
 
   extractMetadata(packageJson: PackageJson): Record<string, any> {
-    // すべての戦略からメタデータを収集してマージ
     const metadata: Record<string, any> = {};
     for (const strategy of this.strategies) {
       if (strategy.extractMetadata) {
@@ -148,8 +142,7 @@ export class CompositeStrategy extends BaseStrategy {
 }
 
 /**
- * カスタム関数戦略
- */
+    */
 export class FunctionStrategy extends BaseStrategy {
   name: string;
   private testFn: (packageName: string, packageJson: PackageJson) => boolean;

@@ -1,50 +1,56 @@
 /**
- * @file StepWizardContext.tsx
- * @description マルチステップウィザードのコンテキスト
- */
+  * @file StepWizardContext.tsx
+ * @description
+  */
 
-import { createContext, useContext, useReducer, useMemo } from 'react';
+import { createContext, useContext, useMemo, useReducer } from 'react';
 import type { DialogStepDefinition, ValidationResult } from '../services/DialogStepRegistry';
 
 // ============================================================================
-// 型定義
 // ============================================================================
 
 /**
- * ステップの状態
- */
+    */
 export interface StepState {
-  /** ステップ番号 */
+  /**
+      */
   stepNumber: number;
-  /** 完了済みか */
+  /**
+      */
   isCompleted: boolean;
-  /** 検証済みか */
+  /**
+      */
   isValidated: boolean;
-  /** エラーメッセージ */
+  /**
+      */
   errors: string[];
-  /** データ */
+  /**
+      */
   data: Record<string, unknown>;
 }
 
 /**
- * ウィザード全体の状態
- */
+    */
 export interface WizardState {
-  /** 現在のステップ番号 */
+  /**
+      */
   currentStep: number;
-  /** 各ステップの状態 */
+  /**
+      */
   steps: Map<number, StepState>;
-  /** 全体のデータ */
+  /**
+      */
   data: Record<string, unknown>;
-  /** ウィザード完了済みか */
+  /**
+      */
   isCompleted: boolean;
-  /** ローディング中か */
+  /**
+      */
   isLoading: boolean;
 }
 
 /**
- * ウィザードアクション
- */
+    */
 export type WizardAction =
   | { type: 'SET_CURRENT_STEP'; payload: number }
   | { type: 'UPDATE_STEP_DATA'; payload: { stepNumber: number; data: Record<string, unknown> } }
@@ -55,44 +61,60 @@ export type WizardAction =
   | { type: 'COMPLETE_WIZARD' };
 
 /**
- * ウィザードコンテキスト値
- */
+    */
 export interface WizardContextValue {
-  /** 現在の状態 */
+  /**
+      */
   state: WizardState;
-  /** アクション */
+  /**
+      */
   actions: {
-    /** 次のステップへ */
+    /**
+          */
     goToNext: () => void;
-    /** 前のステップへ */
+    /**
+          */
     goPrevious: () => void;
-    /** 特定のステップへ */
+    /**
+          */
     goToStep: (stepNumber: number) => void;
-    /** ステップデータ更新 */
+    /**
+          */
     updateStepData: (stepNumber: number, data: Record<string, unknown>) => void;
-    /** ステップ検証 */
+    /**
+          */
     validateStep: (stepNumber: number, result: ValidationResult) => void;
-    /** ステップ完了 */
+    /**
+          */
     completeStep: (stepNumber: number) => void;
-    /** ウィザードリセット */
+    /**
+          */
     reset: () => void;
-    /** ウィザード完了 */
+    /**
+          */
     complete: () => void;
   };
-  /** ヘルパー */
+  /**
+      */
   helpers: {
-    /** 次へ進めるか */
+    /**
+          */
     canGoNext: () => boolean;
-    /** 前へ戻れるか */
+    /**
+          */
     canGoPrevious: () => boolean;
-    /** 特定のステップへ行けるか */
+    /**
+          */
     canGoToStep: (stepNumber: number) => boolean;
-    /** 現在のステップ取得 */
+    /**
+          */
     getCurrentStep: () => StepState | undefined;
-    /** 全データ取得 */
+    /**
+          */
     getAllData: () => Record<string, unknown>;
   };
-  /** ステップ定義 */
+  /**
+      */
   stepDefinitions: DialogStepDefinition[];
 }
 
@@ -114,10 +136,9 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       const updatedStep = { ...step, data: { ...step.data, ...data } };
       const newSteps = new Map(state.steps);
       newSteps.set(stepNumber, updatedStep);
-      
-      // 全体データも更新
+
       const allData = { ...state.data, ...data };
-      
+
       return {
         ...state,
         steps: newSteps,
@@ -135,7 +156,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       };
       const newSteps = new Map(state.steps);
       newSteps.set(stepNumber, updatedStep);
-      
+
       return {
         ...state,
         steps: newSteps,
@@ -148,7 +169,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       const updatedStep = { ...step, isCompleted: true };
       const newSteps = new Map(state.steps);
       newSteps.set(stepNumber, updatedStep);
-      
+
       return {
         ...state,
         steps: newSteps,
@@ -176,7 +197,6 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
 }
 
 // ============================================================================
-// ヘルパー関数
 // ============================================================================
 
 function createEmptyStep(stepNumber: number): StepState {
@@ -194,7 +214,7 @@ function createInitialState(stepDefinitions: DialogStepDefinition[]): WizardStat
   stepDefinitions.forEach((def) => {
     steps.set(def.stepNumber, createEmptyStep(def.stepNumber));
   });
-  
+
   return {
     currentStep: stepDefinitions[0]?.stepNumber || 1,
     steps,
@@ -211,38 +231,41 @@ function createInitialState(stepDefinitions: DialogStepDefinition[]): WizardStat
 const WizardContext = createContext<WizardContextValue | undefined>(undefined);
 
 /**
- * ウィザードコンテキストプロバイダー
- */
+    */
 export interface WizardProviderProps {
-  /** 子要素 */
+  /**
+      */
   children: React.ReactNode;
-  /** ステップ定義 */
+  /**
+      */
   stepDefinitions: DialogStepDefinition[];
-  /** 初期データ */
+  /**
+      */
   initialData?: Record<string, unknown>;
-  /** 初期ステップ番号 */
+  /**
+      */
   initialStep?: number;
-  /** ステップ変更時のコールバック */
+  /**
+      */
   onStepChange?: (step: number) => void;
 }
 
 export function WizardProvider({
-  children,
-  stepDefinitions,
-  initialData = {},
-  initialStep,
-  onStepChange,
-}: WizardProviderProps) {
+                                 children,
+                                 stepDefinitions,
+                                 initialData = {},
+                                 initialStep,
+                                 onStepChange,
+                               }: WizardProviderProps) {
   const [state, dispatch] = useReducer(
     wizardReducer,
     (() => {
       const initialState = createInitialState(stepDefinitions);
-      
-      // 初期ステップが指定されていれば設定
+
       if (initialStep !== undefined && stepDefinitions.some(s => s.stepNumber === initialStep)) {
         initialState.currentStep = initialStep;
       }
-      
+
       // Set initial data for the first step
       if (stepDefinitions.length > 0 && Object.keys(initialData).length > 0) {
         const firstStepNumber = stepDefinitions[0]!.stepNumber;
@@ -253,10 +276,9 @@ export function WizardProvider({
         }
       }
       return { ...initialState, data: initialData };
-    })()
+    })(),
   );
 
-  // アクション
   const actions = useMemo(() => ({
     goToNext: () => {
       const sortedSteps = [...stepDefinitions].sort((a, b) => a.stepNumber - b.stepNumber);
@@ -268,7 +290,7 @@ export function WizardProvider({
         }
       }
     },
-    
+
     goPrevious: () => {
       const sortedSteps = [...stepDefinitions].sort((a, b) => a.stepNumber - b.stepNumber);
       const currentIndex = sortedSteps.findIndex(s => s.stepNumber === state.currentStep);
@@ -279,71 +301,68 @@ export function WizardProvider({
         }
       }
     },
-    
+
     goToStep: (stepNumber: number) => {
       dispatch({ type: 'SET_CURRENT_STEP', payload: stepNumber });
-      // ステップ変更のコールバックを呼び出し
       if (onStepChange) {
         onStepChange(stepNumber);
       }
     },
-    
+
     updateStepData: (stepNumber: number, data: Record<string, unknown>) => {
       dispatch({ type: 'UPDATE_STEP_DATA', payload: { stepNumber, data } });
     },
-    
+
     validateStep: (stepNumber: number, result: ValidationResult) => {
       dispatch({
         type: 'VALIDATE_STEP',
         payload: { stepNumber, isValid: result.isValid, errors: result.errors },
       });
     },
-    
+
     completeStep: (stepNumber: number) => {
       dispatch({ type: 'COMPLETE_STEP', payload: stepNumber });
     },
-    
+
     reset: () => {
       dispatch({ type: 'RESET_WIZARD' });
     },
-    
+
     complete: () => {
       dispatch({ type: 'COMPLETE_WIZARD' });
     },
   }), [state.currentStep, stepDefinitions]);
 
-  // ヘルパー
   const helpers = useMemo(() => ({
     canGoNext: () => {
       const currentStepState = state.steps.get(state.currentStep);
       return currentStepState?.isValidated === true && currentStepState.errors.length === 0;
     },
-    
+
     canGoPrevious: () => {
       const sortedSteps = [...stepDefinitions].sort((a, b) => a.stepNumber - b.stepNumber);
       const currentIndex = sortedSteps.findIndex(s => s.stepNumber === state.currentStep);
       return currentIndex > 0;
     },
-    
+
     canGoToStep: (stepNumber: number) => {
-      // 依存関係をチェック
       const targetStep = stepDefinitions.find(s => s.stepNumber === stepNumber);
       if (!targetStep) return false;
-      
+
       if (targetStep.dependsOn) {
         return targetStep.dependsOn.every((depNum: number) => {
           const depStep = state.steps.get(depNum);
           return depStep?.isCompleted === true;
         });
       }
-      
+
       return true;
     },
-    
+
     getCurrentStep: () => {
       return state.steps.get(state.currentStep);
     },
-    
+
     getAllData: () => {
       return state.data;
     },
@@ -351,15 +370,14 @@ export function WizardProvider({
 
   const value = useMemo(
     () => ({ state, actions, helpers, stepDefinitions }),
-    [state, actions, helpers, stepDefinitions]
+    [state, actions, helpers, stepDefinitions],
   );
 
   return <WizardContext.Provider value={value}>{children}</WizardContext.Provider>;
 }
 
 /**
- * ウィザードコンテキストを使用するフック
- */
+    */
 export function useWizard() {
   const context = useContext(WizardContext);
   if (!context) {

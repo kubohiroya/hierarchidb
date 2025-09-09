@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  HOLDER_NAME_TAB,
-  encodeWorkingCopyHolderName,
+  decodeTrashHolderName,
   decodeWorkingCopyHolderName,
   encodeTrashHolderName,
-  decodeTrashHolderName,
-  isValidWorkingCopyHolderName,
+  encodeWorkingCopyHolderName,
+  HOLDER_NAME_TAB,
   isValidTrashHolderName,
+  isValidWorkingCopyHolderName,
 } from './holder-encoding';
 
 describe('holder-encoding v1 (TAB separator)', () => {

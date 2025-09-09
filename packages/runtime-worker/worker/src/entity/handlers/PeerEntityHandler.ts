@@ -4,7 +4,8 @@ import type { PeerEntity, PeerStore } from '../store';
 // Lightweight handler that expects coreDB.peerEntities having Dexie-like API
 // with get/put/delete methods. In tests, provide a stub with the same surface.
 export class PeerEntityHandler {
-  constructor(private store: PeerStore<any>) {}
+  constructor(private store: PeerStore<any>) {
+  }
 
   async copyPeer(originalId: NodeId, wcId: NodeId): Promise<void> {
     const src: PeerEntity | undefined = await this.store.get(originalId);

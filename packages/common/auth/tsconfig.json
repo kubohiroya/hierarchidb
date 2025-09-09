@@ -16,5 +16,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
   }
 }

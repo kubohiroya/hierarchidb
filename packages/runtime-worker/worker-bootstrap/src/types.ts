@@ -5,7 +5,7 @@
 /**
  * Message types for worker initialization communication
  */
-export type WorkerInitMessageType = 
+export type WorkerInitMessageType =
   | 'INIT_REQUEST'
   | 'INIT_COMPLETE'
   | 'INIT_ERROR'
@@ -61,7 +61,7 @@ export interface InitializationStep {
 /**
  * Worker initialization state
  */
-export type WorkerInitState = 
+export type WorkerInitState =
   | 'uninitialized'
   | 'initializing'
   | 'ready'

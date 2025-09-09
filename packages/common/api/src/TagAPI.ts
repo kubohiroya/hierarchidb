@@ -1,10 +1,4 @@
-import type {
-  EntityId,
-  NodeId,
-  NodeTagAssociation,
-  TagEntity,
-  TagSuggestion,
-} from '@hierarchidb/common-type';
+import type { TagId, NodeId, NodeTagAssociation, TagEntity, TagSuggestion } from '@hierarchidb/common-type';
 
 export interface CreateTagRequest {
   name: string;
@@ -23,7 +17,7 @@ export interface UpdateTagRequest {
 
 export interface TagAssociationRequest {
   nodeId: NodeId;
-  tagId: EntityId;
+  tagId: TagId;
 }
 
 export interface TagAPI {
@@ -35,17 +29,17 @@ export interface TagAPI {
   /**
    * Get a tag by ID
    */
-  getTag(tagId: EntityId): Promise<TagEntity | undefined>;
+  getTag(tagId: TagId): Promise<TagEntity | undefined>;
 
   /**
    * Update an existing tag
    */
-  updateTag(tagId: EntityId, updates: UpdateTagRequest): Promise<TagEntity | undefined>;
+  updateTag(tagId: TagId, updates: UpdateTagRequest): Promise<TagEntity | undefined>;
 
   /**
    * Delete a tag and all its associations
    */
-  deleteTag(tagId: EntityId): Promise<boolean>;
+  deleteTag(tagId: TagId): Promise<boolean>;
 
   /**
    * Get all tags
@@ -80,7 +74,7 @@ export interface TagAPI {
   /**
    * Get all nodes associated with a tag
    */
-  getNodesByTag(tagId: EntityId): Promise<NodeTagAssociation[]>;
+  getNodesByTag(tagId: TagId): Promise<NodeTagAssociation[]>;
 
   /**
    * Get all tag associations for multiple nodes
@@ -100,5 +94,5 @@ export interface TagAPI {
   /**
    * Generate a unique tag ID using UUID
    */
-  generateTagId(): TagEntity['id'];
+  generateTagId(): TagId;
 }

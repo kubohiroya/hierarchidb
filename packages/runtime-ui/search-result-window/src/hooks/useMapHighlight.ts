@@ -4,7 +4,7 @@ import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
 import { MapHighlightService } from '~/services/MapHighlightService.js';
 
 interface UseMapHighlightProps {
-  mapInstance?: any; // MapLibre GL JSインスタンス
+  mapInstance?: any; //  MapLibre GL JS
   initialStyles?: Partial<MapHighlightStyles>;
   onStateChange?: (state: MapHighlightState) => void;
 }
@@ -25,10 +25,10 @@ interface UseMapHighlightReturn {
 }
 
 export const useMapHighlight = ({
-  mapInstance,
-  initialStyles,
-  onStateChange,
-}: UseMapHighlightProps): UseMapHighlightReturn => {
+                                  mapInstance,
+                                  initialStyles,
+                                  onStateChange,
+                                }: UseMapHighlightProps): UseMapHighlightReturn => {
   const serviceRef = useRef<MapHighlightService>();
   const [highlightState, setHighlightState] = useState<MapHighlightState>({
     searchMatched: new Set(),
@@ -47,7 +47,6 @@ export const useMapHighlight = ({
     },
   });
 
-  // サービスの初期化
   if (!serviceRef.current) {
     serviceRef.current = new MapHighlightService(initialStyles, mapInstance);
     serviceRef.current.setOnStateChange((state) => {
@@ -58,59 +57,48 @@ export const useMapHighlight = ({
     });
   }
 
-  // マップインスタンスが変更された場合の処理
   useEffect(() => {
     if (mapInstance && serviceRef.current) {
       serviceRef.current.setMapInstance(mapInstance);
     }
   }, [mapInstance]);
 
-  // 検索マッチした要素を設定
   const setSearchMatched = useCallback((nodeIds: NodeId[]) => {
     serviceRef.current?.setSearchMatched(nodeIds);
   }, []);
 
-  // 選択された要素を設定
   const setSelected = useCallback((nodeIds: NodeId[]) => {
     serviceRef.current?.setSelected(nodeIds);
   }, []);
 
-  // 検索マッチに追加
   const addSearchMatched = useCallback((nodeId: NodeId) => {
     serviceRef.current?.addSearchMatched(nodeId);
   }, []);
 
-  // 選択に追加
   const addSelected = useCallback((nodeId: NodeId) => {
     serviceRef.current?.addSelected(nodeId);
   }, []);
 
-  // 検索マッチから削除
   const removeSearchMatched = useCallback((nodeId: NodeId) => {
     serviceRef.current?.removeSearchMatched(nodeId);
   }, []);
 
-  // 選択から削除
   const removeSelected = useCallback((nodeId: NodeId) => {
     serviceRef.current?.removeSelected(nodeId);
   }, []);
 
-  // 全てクリア
   const clearAll = useCallback(() => {
     serviceRef.current?.clearAll();
   }, []);
 
-  // 検索マッチのみクリア
   const clearSearchMatched = useCallback(() => {
     serviceRef.current?.clearSearchMatched();
   }, []);
 
-  // 選択のみクリア
   const clearSelected = useCallback(() => {
     serviceRef.current?.clearSelected();
   }, []);
 
-  // スタイル更新
   const updateStyles = useCallback((styles: Partial<MapHighlightStyles>) => {
     serviceRef.current?.updateStyles(styles);
   }, []);

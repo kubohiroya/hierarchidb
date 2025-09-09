@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CommandProcessor } from '../CommandProcessor';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Trash holder flow (flag ON)', () => {
@@ -64,4 +64,3 @@ describe('Trash holder flow (flag ON)', () => {
     expect(state['a'].parentId).toBe('r:root');
   });
 });
-

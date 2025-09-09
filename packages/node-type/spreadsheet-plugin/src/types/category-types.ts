@@ -4,9 +4,7 @@
  */
 
 /**
- * スプレッドシートのカテゴリ型
- * ブランド型として定義することで型安全性を確保
- */
+     */
 export type SpreadsheetCategory =
   | 'data-analysis'
   | 'financial'
@@ -16,8 +14,7 @@ export type SpreadsheetCategory =
   | 'template';
 
 /**
- * カテゴリ表示用の設定
- */
+    */
 export interface SpreadsheetCategoryConfig {
   value: SpreadsheetCategory;
   label: string;
@@ -26,8 +23,7 @@ export interface SpreadsheetCategoryConfig {
 }
 
 /**
- * 事前定義されたカテゴリ設定
- */
+    */
 export const SPREADSHEET_CATEGORIES: SpreadsheetCategoryConfig[] = [
   {
     value: 'data-analysis',

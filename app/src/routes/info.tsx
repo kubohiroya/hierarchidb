@@ -1,6 +1,5 @@
 /**
- * アプリケーション情報ページ
- */
+    */
 
 //import { Container, Typography, Paper, Box, List, ListItem, ListItemText } from '@mui/material';
 /*
@@ -21,7 +20,7 @@ import { loadAppConfig } from '~/loadAppConfig';
 export function meta() {
   return [
     { title: 'About - HierarchiDB' },
-    { name: 'description', content: 'Application information and licenses' }
+    { name: 'description', content: 'Application information and licenses' },
   ];
 }
 

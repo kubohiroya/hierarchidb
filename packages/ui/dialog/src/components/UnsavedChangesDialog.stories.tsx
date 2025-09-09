@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { Box, Typography, List, ListItem, ListItemText, Chip } from '@mui/material';
+import { Box, Chip, List, ListItem, ListItemText, Typography } from '@mui/material';
 
 const meta = {
   title: 'UI Dialog/UnsavedChangesDialog',
@@ -54,8 +54,10 @@ export const Default: Story = {
     open: true,
     title: '未保存の変更',
     message: '変更が保存されていません。このまま移動すると、変更は失われます。',
-    onDiscard: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -65,9 +67,12 @@ export const WithSaveDraft: Story = {
     title: '未保存の変更',
     message: '編集中の内容が保存されていません。',
     showSaveDraft: true,
-    onDiscard: () => {},
-    onSaveDraft: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onSaveDraft: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -89,8 +94,10 @@ export const WithDetails: Story = {
         </ListItem>
       </List>
     ),
-    onDiscard: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -109,12 +116,12 @@ export const WithModifiedFiles: Story = {
             { name: 'styles.css', status: 'modified', lines: '+8, -3' },
           ].map((file) => (
             <ListItem key={file.name}>
-              <ListItemText 
+              <ListItemText
                 primary={file.name}
                 secondary={file.lines}
               />
-              <Chip 
-                label={file.status} 
+              <Chip
+                label={file.status}
                 size="small"
                 color={file.status === 'new' ? 'success' : 'warning'}
               />
@@ -123,9 +130,12 @@ export const WithModifiedFiles: Story = {
         </List>
       </Box>
     ),
-    onDiscard: () => {},
-    onSaveDraft: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onSaveDraft: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -135,9 +145,12 @@ export const LongMessage: Story = {
     title: 'プロジェクト設定の変更',
     message: 'プロジェクトの重要な設定が変更されています。これらの変更を保存せずに終了すると、すべての設定変更が失われ、デフォルト値にリセットされます。変更を確認してから続行してください。',
     showSaveDraft: true,
-    onDiscard: () => {},
-    onSaveDraft: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onSaveDraft: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -154,8 +167,10 @@ export const WithWarning: Story = {
         </Typography>
       </Box>
     ),
-    onDiscard: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -178,8 +193,10 @@ export const DataMigration: Story = {
         </Typography>
       </Box>
     ),
-    onDiscard: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onCancel: () => {
+    },
   },
 };
 
@@ -192,30 +209,33 @@ export const FormValidation: Story = {
     children: (
       <List dense>
         <ListItem>
-          <ListItemText 
-            primary="メールアドレス" 
+          <ListItemText
+            primary="メールアドレス"
             secondary="無効な形式です"
             secondaryTypographyProps={{ color: 'error' }}
           />
         </ListItem>
         <ListItem>
-          <ListItemText 
-            primary="パスワード" 
+          <ListItemText
+            primary="パスワード"
             secondary="8文字以上で入力してください"
             secondaryTypographyProps={{ color: 'error' }}
           />
         </ListItem>
         <ListItem>
-          <ListItemText 
-            primary="利用規約" 
+          <ListItemText
+            primary="利用規約"
             secondary="同意が必要です"
             secondaryTypographyProps={{ color: 'error' }}
           />
         </ListItem>
       </List>
     ),
-    onDiscard: () => {},
-    onSaveDraft: () => {},
-    onCancel: () => {},
+    onDiscard: () => {
+    },
+    onSaveDraft: () => {
+    },
+    onCancel: () => {
+    },
   },
 };

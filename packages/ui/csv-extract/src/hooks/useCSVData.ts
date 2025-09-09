@@ -3,14 +3,9 @@
  * @description Hook for managing CSV table metadata
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useCSVApi } from '~/context/CSVContext';
-import type { 
-  CSVTableMetadata, 
-  CSVProcessingConfig,
-  PaginationOptions,
-  CSVTableListResult 
-} from '~/types';
+import type { CSVProcessingConfig, CSVTableListResult, CSVTableMetadata, PaginationOptions } from '~/types';
 
 /**
  * Options for useCSVData hook
@@ -38,7 +33,7 @@ export interface UseCSVDataResult {
   loading: boolean;
   /** Error message */
   error: string | null;
-  
+
   /** Upload CSV file */
   uploadCSVFile: (file: File, config?: CSVProcessingConfig) => Promise<CSVTableMetadata>;
   /** Download CSV from URL */
@@ -51,7 +46,7 @@ export interface UseCSVDataResult {
   removeReference: () => Promise<void>;
   /** Clear current data */
   clear: () => void;
-  
+
   // Upload state management
   isUploading: boolean;
   uploadError: string | null;
@@ -63,7 +58,7 @@ export interface UseCSVDataResult {
 export const useCSVData = (options: UseCSVDataOptions): UseCSVDataResult => {
   const { tableMetadataId, autoload = true, pluginId, onUploadSuccess, onUploadError } = options;
   const csvApi = useCSVApi();
-  
+
   const [metadata, setMetadata] = useState<CSVTableMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +72,10 @@ export const useCSVData = (options: UseCSVDataOptions): UseCSVDataResult => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await csvApi.getTableMetadata(id);
       setMetadata(data);
-      
+
       if (!data) {
         setError(`Table metadata not found: ${id}`);
       }
@@ -97,29 +92,29 @@ export const useCSVData = (options: UseCSVDataOptions): UseCSVDataResult => {
    * Upload CSV file
    */
   const uploadCSVFile = useCallback(async (
-    file: File, 
-    config: CSVProcessingConfig = {}
+    file: File,
+    config: CSVProcessingConfig = {},
   ): Promise<CSVTableMetadata> => {
     try {
       setIsUploading(true);
       setUploadError(null);
-      
+
       const defaultConfig: CSVProcessingConfig = {
         delimiter: ',',
         encoding: 'utf-8',
         hasHeader: true,
         ...config,
       };
-      
+
       const newMetadata = await csvApi.uploadCSVFile(file, defaultConfig);
       setMetadata(newMetadata);
-      
+
       // Add reference for this plugin
       await csvApi.addTableReference(newMetadata.id, pluginId);
-      
+
       // Call success callback
       onUploadSuccess?.(newMetadata);
-      
+
       return newMetadata;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload file';
@@ -135,29 +130,29 @@ export const useCSVData = (options: UseCSVDataOptions): UseCSVDataResult => {
    * Download CSV from URL
    */
   const downloadCSVFromUrl = useCallback(async (
-    url: string, 
-    config: CSVProcessingConfig = {}
+    url: string,
+    config: CSVProcessingConfig = {},
   ): Promise<CSVTableMetadata> => {
     try {
       setIsUploading(true);
       setUploadError(null);
-      
+
       const defaultConfig: CSVProcessingConfig = {
         delimiter: ',',
         encoding: 'utf-8',
         hasHeader: true,
         ...config,
       };
-      
+
       const newMetadata = await csvApi.downloadCSVFromUrl(url, defaultConfig);
       setMetadata(newMetadata);
-      
+
       // Add reference for this plugin
       await csvApi.addTableReference(newMetadata.id, pluginId);
-      
+
       // Call success callback
       onUploadSuccess?.(newMetadata);
-      
+
       return newMetadata;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to download from URL';
@@ -268,7 +263,7 @@ export interface UseCSVTableListResult {
   loading: boolean;
   /** Error message */
   error: string | null;
-  
+
   /** Reload table list */
   reload: () => Promise<void>;
   /** Load with new pagination */
@@ -281,7 +276,7 @@ export interface UseCSVTableListResult {
 export const useCSVTableList = (options: UseCSVTableListOptions = {}): UseCSVTableListResult => {
   const { pluginId, pagination, autoload = true } = options;
   const csvApi = useCSVApi();
-  
+
   const [result, setResult] = useState<CSVTableListResult>({ tables: [], total: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -293,7 +288,7 @@ export const useCSVTableList = (options: UseCSVTableListOptions = {}): UseCSVTab
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await csvApi.listTables(pluginId, paginationOptions);
       setResult(data);
     } catch (err) {

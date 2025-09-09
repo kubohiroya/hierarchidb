@@ -2,6 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useGoogleLogin } from '@react-oauth/google';
 // import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
 import { AuthProviderType } from '../types/AuthProviderType';
+import { AuthContextType } from '../types/AuthContextType';
+import { AuthProviderConfig } from '../types/AuthProviderConfig';
+import { AuthUser } from '../types/AuthUser';
 // import { getSecureConfig } from "@/config/secureConfig"; // TODO: Fix config import
 // import { notify } from "@/shared/containers/NotificationSystem/NotificationSystem"; // TODO: Fix notification import
 
@@ -18,9 +21,6 @@ const notify = {
   error: (message: string) => console.error(message),
   success: (message: string) => console.log(message),
 };
-import { AuthContextType } from '../types/AuthContextType';
-import { AuthProviderConfig } from '../types/AuthProviderConfig';
-import { AuthUser } from '../types/AuthUser';
 
 const MultiAuthContext = createContext<AuthContextType | null>(null);
 
@@ -184,7 +184,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
         const providerName =
           provider === 'microsoft' ? 'Microsoft' : provider === 'github' ? 'GitHub' : provider;
         notify.error(
-          `${providerName} Client ID is not configured. Please check your environment variables.`
+          `${providerName} Client ID is not configured. Please check your environment variables.`,
         );
         return;
       }
@@ -207,7 +207,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
 
       window.location.href = `${config.authUrl}?${params.toString()}`;
     },
-    [googleLogin, homeUrl]
+    [googleLogin, homeUrl],
   );
 
   const signOut = useCallback(() => {

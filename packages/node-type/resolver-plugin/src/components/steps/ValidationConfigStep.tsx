@@ -1,42 +1,38 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
-  Paper,
   Button,
+  Chip,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  Grid,
   IconButton,
+  InputLabel,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
-  FormControl,
-  InputLabel,
-  Select,
+  ListItemText,
   MenuItem,
-  TextField,
-  Chip,
-  Alert,
-  Grid,
+  Paper,
+  Select,
   Switch,
-  FormControlLabel,
-  Divider,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { 
+import {
   Add as AddIcon,
+  Close as CloseIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Close as CloseIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { 
-  ResolverWorkingCopyEntity, 
-  SchemaInfo, 
-  ValidationRule,
-} from '~/types';
+import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '~/types';
 
 interface ValidationConfigStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -62,12 +58,12 @@ const VALIDATION_RULE_TYPES: { value: ValidationRule['ruleType'], label: string,
 ];
 
 export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
-  data,
-  onUpdate,
-  onValidationChange,
-  sourceSchema,
-  targetSchema,
-}) => {
+                                                                            data,
+                                                                            onUpdate,
+                                                                            onValidationChange,
+                                                                            sourceSchema,
+                                                                            targetSchema,
+                                                                          }) => {
   const [validationRules, setValidationRules] = useState<ValidationRule[]>([]);
   const [showRuleDialog, setShowRuleDialog] = useState(false);
   const [editingRule, setEditingRule] = useState<ValidationRule | null>(null);
@@ -173,8 +169,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
             <InputLabel>Expected Type</InputLabel>
             <Select
               value={ruleFormData.parameters.expectedType || 'string'}
-              onChange={(e) => updateRuleFormData({ 
-                parameters: { ...ruleFormData.parameters, expectedType: e.target.value }
+              onChange={(e) => updateRuleFormData({
+                parameters: { ...ruleFormData.parameters, expectedType: e.target.value },
               })}
               label="Expected Type"
             >
@@ -196,8 +192,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                 label="Minimum Value"
                 type="number"
                 value={ruleFormData.parameters.min || ''}
-                onChange={(e) => updateRuleFormData({ 
-                  parameters: { ...ruleFormData.parameters, min: parseFloat(e.target.value) || undefined }
+                onChange={(e) => updateRuleFormData({
+                  parameters: { ...ruleFormData.parameters, min: parseFloat(e.target.value) || undefined },
                 })}
               />
             </Grid>
@@ -207,8 +203,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                 label="Maximum Value"
                 type="number"
                 value={ruleFormData.parameters.max || ''}
-                onChange={(e) => updateRuleFormData({ 
-                  parameters: { ...ruleFormData.parameters, max: parseFloat(e.target.value) || undefined }
+                onChange={(e) => updateRuleFormData({
+                  parameters: { ...ruleFormData.parameters, max: parseFloat(e.target.value) || undefined },
                 })}
               />
             </Grid>
@@ -221,8 +217,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
             fullWidth
             label="Regex Pattern"
             value={ruleFormData.parameters.pattern || ''}
-            onChange={(e) => updateRuleFormData({ 
-              parameters: { ...ruleFormData.parameters, pattern: e.target.value }
+            onChange={(e) => updateRuleFormData({
+              parameters: { ...ruleFormData.parameters, pattern: e.target.value },
             })}
             placeholder="^[A-Z][a-z]+$"
             helperText="Enter a JavaScript regular expression"
@@ -238,8 +234,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
             rows={3}
             label="Custom Validation Function"
             value={ruleFormData.parameters.function || ''}
-            onChange={(e) => updateRuleFormData({ 
-              parameters: { ...ruleFormData.parameters, function: e.target.value }
+            onChange={(e) => updateRuleFormData({
+              parameters: { ...ruleFormData.parameters, function: e.target.value },
             })}
             placeholder="function validate(value) { return value.length > 0; }"
             helperText="JavaScript function that returns true for valid values"
@@ -284,7 +280,8 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
         Validation Rules
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Configure validation rules to ensure data quality during property mapping. These rules will be applied to check data integrity.
+        Configure validation rules to ensure data quality during property mapping. These rules will be applied to check
+        data integrity.
       </Typography>
 
       <FormControlLabel
@@ -338,16 +335,16 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                       <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Chip 
-                              label={rule.property} 
-                              size="small" 
-                              color="primary" 
-                              variant="outlined" 
+                            <Chip
+                              label={rule.property}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
                             />
-                            <Chip 
-                              label={rule.ruleType} 
-                              size="small" 
-                              color="secondary" 
+                            <Chip
+                              label={rule.ruleType}
+                              size="small"
+                              color="secondary"
                             />
                           </Box>
                         }
@@ -365,14 +362,14 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                         }
                       />
                       <ListItemSecondaryAction>
-                        <IconButton 
+                        <IconButton
                           onClick={() => openRuleDialog(rule)}
                           size="small"
                           sx={{ mr: 1 }}
                         >
                           <EditIcon />
                         </IconButton>
-                        <IconButton 
+                        <IconButton
                           onClick={() => deleteRule(rule.id)}
                           size="small"
                           color="error"
@@ -391,7 +388,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
           {validationRules.length > 0 && (
             <Alert severity="info">
               <Typography variant="body2">
-                Validation rules will be applied during property mapping to ensure data quality. 
+                Validation rules will be applied during property mapping to ensure data quality.
                 Failed validation will be reported in the mapping results.
               </Typography>
             </Alert>
@@ -437,9 +434,9 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
             <InputLabel>Rule Type</InputLabel>
             <Select
               value={ruleFormData.ruleType}
-              onChange={(e) => updateRuleFormData({ 
+              onChange={(e) => updateRuleFormData({
                 ruleType: e.target.value as ValidationRule['ruleType'],
-                parameters: {} // Reset parameters when rule type changes
+                parameters: {}, // Reset parameters when rule type changes
               })}
               label="Rule Type"
             >
@@ -469,7 +466,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={closeRuleDialog}>Cancel</Button>
-          <Button 
+          <Button
             onClick={saveRule}
             variant="contained"
             disabled={!ruleFormData.property || !ruleFormData.ruleType}

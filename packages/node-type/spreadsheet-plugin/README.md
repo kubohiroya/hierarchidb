@@ -49,7 +49,7 @@ HierarchiDB用のスプレッドシートプラグインです。CSV/TSV/Excel/Z
 ##### RawFileMetadata
 ```typescript
 {
-  id: EntityId;
+  id: NodeId;
   fileName: string;
   originalUrl?: string;        // ダウンロード元URL
   fileSize: number;
@@ -66,8 +66,8 @@ HierarchiDB用のスプレッドシートプラグインです。CSV/TSV/Excel/Z
 ##### RowChunk
 ```typescript
 {
-  id: EntityId;
-  rawFileMetadataId: EntityId; // RawFileMetadataへの参照
+  id: NodeId;
+  rawFileMetadataId: NodeId; // RawFileMetadataへの参照
   chunkIndex: number;          // 0から開始
   binaryData: ArrayBuffer;     // バイナリ化された行データ
   rowCount: number;
@@ -80,8 +80,8 @@ HierarchiDB用のスプレッドシートプラグインです。CSV/TSV/Excel/Z
 ##### SpreadsheetRow
 ```typescript
 {
-  id: EntityId;
-  spreadsheetEntityId: EntityId;  // SpreadsheetEntityへの参照
+  id: NodeId;
+  spreadsheetEntityId: NodeId;  // SpreadsheetEntityへの参照
   originalRowIndex: number;       // 元データでの行位置
   cellValues: (string|number|null)[]; // 現在選択されているカラムの値
   columnMapping: number[];        // 元データのカラムインデックスマッピング
@@ -95,9 +95,9 @@ HierarchiDB用のスプレッドシートプラグインです。CSV/TSV/Excel/Z
 ##### SpreadsheetEntity
 ```typescript
 {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;              // TreeNodeとの紐づけ
-  rawFileMetadataId?: EntityId; // RawFileMetadataへの参照
+  rawFileMetadataId?: NodeId; // RawFileMetadataへの参照
   
   // フォルダ継承
   name: string;

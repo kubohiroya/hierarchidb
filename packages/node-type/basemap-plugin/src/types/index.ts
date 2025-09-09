@@ -3,12 +3,12 @@
  * @description BaseMap type exports
  */
 
-export type { 
-  BaseMapEntity, 
+export type {
+  BaseMapEntity,
   BaseMapWorkingCopy,
   CreateBaseMapData,
   BaseMapSearchCriteria,
   MapStyle,
   MapViewport,
-  DisplayOptions
+  DisplayOptions,
 } from './BaseMapEntity';

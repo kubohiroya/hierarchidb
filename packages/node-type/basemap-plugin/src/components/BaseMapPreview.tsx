@@ -5,9 +5,9 @@
  */
 
 import React, { useMemo } from 'react';
-import { Box, Typography, Paper, Chip, Stack } from '@mui/material';
-import { Map as MapIcon, Terrain, Satellite, DarkMode, LightMode, Tune } from '@mui/icons-material';
-import { MapLibreMap, type MapViewState, type MapLibreLayer, type MapLibreStyle } from '@hierarchidb/ui-map';
+import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
+import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
+import { type MapLibreLayer, MapLibreMap, type MapLibreStyle, type MapViewState } from '@hierarchidb/ui-map';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles';
 
 export interface BaseMapPreviewProps {
@@ -64,16 +64,16 @@ const STYLE_ICONS: Record<string, React.ReactElement> = {
  * Provides a preview of the basemap configuration
  */
 export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
-  mapStyle,
-  viewport,
-  zxy,
-  displayOptions = {},
-  width = '100%',
-  height = 300,
-  showMetadata = true,
-  interactive = false,
-  title = 'BaseMap Preview',
-}) => {
+                                                                mapStyle,
+                                                                viewport,
+                                                                zxy,
+                                                                displayOptions = {},
+                                                                width = '100%',
+                                                                height = 300,
+                                                                showMetadata = true,
+                                                                interactive = false,
+                                                                title = 'BaseMap Preview',
+                                                              }) => {
   // Convert to MapLibre view state
   const initialViewState = useMemo<MapViewState>(
     () => ({
@@ -83,7 +83,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
       bearing: viewport.bearing || 0,
       pitch: viewport.pitch || 0,
     }),
-    [viewport]
+    [viewport],
   );
 
   // Generate zxy string from viewport if not provided
@@ -229,7 +229,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                         'fill-extrusion-opacity': 0.6,
                       },
                     },
-                    labelLayerId
+                    labelLayerId,
                   );
                 }
               }

@@ -1,13 +1,13 @@
 import type {
-  ICSVDataApi,
-  CSVProcessingConfig,
-  CSVFilterRule,
   CSVDataResult,
+  CSVFilterRule,
+  CSVProcessingConfig,
+  CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
-  PaginationOptions,
   CSVTableMetadata,
-  CSVProcessingStatus,
+  ICSVDataApi,
+  PaginationOptions,
 } from '@hierarchidb/ui-csv-extract';
 
 // UI-only facade to avoid pulling service layer into typecheck.
@@ -30,7 +30,7 @@ export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVD
     getFilteredPreview: async (
       tableId: string,
       filters: CSVFilterRule[],
-      rowCount: number
+      rowCount: number,
     ): Promise<CSVDataResult> => {
       const a = await getAdapter();
       return a.getFilteredPreview(tableId, filters, rowCount);

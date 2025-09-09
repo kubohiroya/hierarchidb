@@ -5,10 +5,10 @@ import type {
   GetAncestorsPayload,
   GetChildrenPayload,
   GetDescendantsPayload,
-  Tree,
-  TreeNode,
   NodeId,
+  Tree,
   TreeId,
+  TreeNode,
 } from '@hierarchidb/common-type';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -21,7 +21,8 @@ export class TreeQueryService implements TreeQueryAPI {
     });
   }
 
-  constructor(private coreDB: CoreDB) {}
+  constructor(private coreDB: CoreDB) {
+  }
 
   // Basic Query Operations
 
@@ -61,7 +62,7 @@ export class TreeQueryService implements TreeQueryAPI {
 
     const collectDescendants = async (
       currentNodeId: NodeId,
-      currentDepth: number
+      currentDepth: number,
     ): Promise<void> => {
       if (maxDepth !== undefined && currentDepth >= maxDepth) return;
       if (visited.has(currentNodeId)) return;
@@ -269,17 +270,17 @@ export class TreeQueryService implements TreeQueryAPI {
   // Copy/Export Operations
 
   /**
-   * 【機能概要】: 指定されたノード群とその子孫を全てコピーしてクリップボードデータを生成する
-   * 【セキュリティ改善】: 大量データ処理制限とバリデーション強化を実装
-   * 【パフォーマンス改善】: バッチ処理とメモリ効率化を実現
-   * 【設計方針】: DoS攻撃防止と効率的なデータ収集を両立する設計
-   * 🟢 信頼性レベル: docs/14-copy-paste-analysis.mdの実装方針に準拠
-   */
+      * :
+   * :
+   * :
+   * : DoS
+   * : docs/14-copy-paste-analysis.md
+      */
   async copyNodes(payload: CopyNodesPayload): Promise<CommandResult> {
     const { nodeIds } = payload;
 
     try {
-      // 【セキュリティ: 入力値検証】: 不正なペイロードに対する防御 🟢
+      //  : :
       if (!nodeIds || !Array.isArray(nodeIds) || nodeIds.length === 0) {
         return {
           success: false,
@@ -288,8 +289,8 @@ export class TreeQueryService implements TreeQueryAPI {
         };
       }
 
-      // 【セキュリティ: DoS攻撃防止】: 大量データ処理の制限 🟡
-      const MAX_COPY_NODES = 1000; // 【設定値】: 一度にコピー可能な最大ノード数
+      //  : DoS:
+      const MAX_COPY_NODES = 1000; //  :
       if (nodeIds.length > MAX_COPY_NODES) {
         return {
           success: false,
@@ -298,9 +299,9 @@ export class TreeQueryService implements TreeQueryAPI {
         };
       }
 
-      // 【入力値サニタイズ】: nodeIdの形式検証 🟡
+      //  : nodeId
       const validNodeIds: NodeId[] = nodeIds.filter(
-        (id) => typeof id === 'string' && id.length > 0 && id.length <= 255
+        (id) => typeof id === 'string' && id.length > 0 && id.length <= 255,
       ) as NodeId[];
 
       if (validNodeIds.length === 0) {
@@ -314,20 +315,19 @@ export class TreeQueryService implements TreeQueryAPI {
       const nodeData: Record<string, TreeNode> = {};
       const allNodes = new Set<NodeId>();
 
-      // 【パフォーマンス改善】: バッチ処理による効率的なノード収集 🟡
+      //  :
       for (const nodeId of validNodeIds) {
         const descendants = await this.getAllDescendantsWithSelf(nodeId);
 
-        // 【メモリ効率化】: 重複ノードの排除 🟢
+        //  :
         descendants.forEach((node) => {
           if (!nodeData[node.id]) {
-            // 重複チェックで無駄な処理を回避
             nodeData[node.id] = node;
             allNodes.add(node.id);
           }
         });
 
-        // 【セキュリティ: メモリ使用量監視】: 過剰なメモリ使用の防止 🟡
+        //  : :
         if (Object.keys(nodeData).length > MAX_COPY_NODES) {
           return {
             success: false,
@@ -337,23 +337,23 @@ export class TreeQueryService implements TreeQueryAPI {
         }
       }
 
-      // 【クリップボードデータ構造】: 標準化されたデータ形式 🟢
+      //  :
       const clipboardData = {
-        type: 'nodes-copy' as const, // 【型安全性】: リテラル型で型安全性確保
-        timestamp: Date.now(), // 【履歴管理】: コピー時刻の記録
-        nodes: nodeData, // 【データ本体】: ノードの実際のデータ
-        rootIds: validNodeIds, // 【ルート識別】: コピー元のノード群
-        nodeCount: Object.keys(nodeData).length, // 【統計情報】: 効率的な処理のための件数情報
+        type: 'nodes-copy' as const, //  :
+        timestamp: Date.now(), //  :
+        nodes: nodeData, //  :
+        rootIds: validNodeIds, //  :
+        nodeCount: Object.keys(nodeData).length, //  :
       };
 
-      // 【成功レスポンス】: 標準化されたレスポンス形式 🟢
+      //  :
       return {
         success: true,
         seq: this.getNextSeq(),
         clipboardData,
       };
     } catch (error) {
-      // 【エラーハンドリング】: セキュリティを考慮したエラー情報の制限 🟢
+      //  :
       console.error('Copy operation failed:', error);
       return {
         success: false,

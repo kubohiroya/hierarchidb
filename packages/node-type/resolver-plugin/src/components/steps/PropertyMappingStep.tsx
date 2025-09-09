@@ -1,36 +1,25 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Box,
-  Typography,
-  TextField,
-  Paper,
   Alert,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
+  IconButton,
   List,
   ListItem,
   ListItemText,
-  Chip,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
+  Paper,
+  TextField,
   Tooltip,
-
+  Typography,
 } from '@mui/material';
-import { 
-  Help as HelpIcon,
-  Preview as PreviewIcon,
-  Add as AddIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
-import type { 
-  ResolverWorkingCopyEntity, 
-  SchemaInfo, 
-  PropertyMappingRule,
-  MappingPreviewResult,
-} from '~/types';
+import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
+import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
 interface PropertyMappingStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -41,12 +30,12 @@ interface PropertyMappingStepProps {
 }
 
 export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
-  data,
-  onUpdate,
-  onValidationChange,
-  sourceSchema,
-  targetSchema,
-}) => {
+                                                                          data,
+                                                                          onUpdate,
+                                                                          onValidationChange,
+                                                                          sourceSchema,
+                                                                          targetSchema,
+                                                                        }) => {
   const [mappingText, setMappingText] = useState<string>('');
   const [mappingErrors, setMappingErrors] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
@@ -65,7 +54,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
       // Simple mapping: source_prop -> target_prop
       const simpleMatch = trimmed.match(/^(.+?)\s*->\s*(.+?)(\s*\|\s*(.+))?$/);
-      
+
       if (simpleMatch) {
         const sourceProperty = simpleMatch[1]?.trim() || '';
         const targetProperty = simpleMatch[2]?.trim() || '';
@@ -116,7 +105,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
   // Parse and validate mapping text
   const handleMappingTextChange = useCallback((text: string) => {
     setMappingText(text);
-    
+
     if (!text.trim()) {
       setMappingErrors([]);
       onUpdate({ mappingRules: [] });
@@ -141,11 +130,11 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
     if (!sourceSchema || !targetSchema) return [];
 
     const suggestions: string[] = [];
-    
+
     // Try exact name matches first
     sourceSchema.properties.forEach(sourceProp => {
-      const exactMatch = targetSchema.properties.find(targetProp => 
-        targetProp.name === sourceProp.name
+      const exactMatch = targetSchema.properties.find(targetProp =>
+        targetProp.name === sourceProp.name,
       );
       if (exactMatch) {
         suggestions.push(`${sourceProp.name} -> ${exactMatch.name}`);
@@ -159,7 +148,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         const targetLower = targetProp.name.toLowerCase();
         return sourceLower.includes(targetLower) || targetLower.includes(sourceLower);
       });
-      
+
       if (similarMatch && !suggestions.some(s => s.includes(sourceProp.name))) {
         suggestions.push(`${sourceProp.name} -> ${similarMatch.name}`);
       }
@@ -199,7 +188,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         failedMappings: mappingErrors.length,
         duplicatesFound: 0,
         duplicatesResolved: 0,
-      }
+      },
     };
 
     setPreviewResult(mockPreview);
@@ -236,8 +225,8 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
               </IconButton>
             </Tooltip>
             <Tooltip title="Preview mapping results">
-              <IconButton 
-                onClick={generatePreview} 
+              <IconButton
+                onClick={generatePreview}
                 size="small"
                 disabled={mappingErrors.length > 0 || !mappingText.trim()}
               >
@@ -277,7 +266,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
           <Typography variant="subtitle1" sx={{ mb: 2 }}>
             Suggested Mappings
           </Typography>
-          
+
           {suggestedMappings.length > 0 && (
             <Paper sx={{ p: 2, mb: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -307,10 +296,10 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {sourceSchema.properties.map((prop) => (
-                <Chip 
-                  key={prop.name} 
-                  label={prop.name} 
-                  size="small" 
+                <Chip
+                  key={prop.name}
+                  label={prop.name}
+                  size="small"
                   variant="outlined"
                   color="primary"
                 />
@@ -325,10 +314,10 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {targetSchema.properties.map((prop) => (
-                <Chip 
-                  key={prop.name} 
-                  label={prop.name} 
-                  size="small" 
+                <Chip
+                  key={prop.name}
+                  label={prop.name}
+                  size="small"
                   variant="outlined"
                   color="secondary"
                 />
@@ -352,7 +341,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
           <Typography variant="body1" sx={{ mb: 2 }}>
             Use simple text rules to define how properties map from source to target schema:
           </Typography>
-          
+
           <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
             <Typography variant="h6" sx={{ mb: 1 }}>Basic Syntax</Typography>
             <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', mb: 1 }}>
@@ -376,7 +365,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
           <Typography variant="h6" sx={{ mb: 1 }}>Examples</Typography>
           <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
             <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
-{`# Direct mapping
+              {`# Direct mapping
 id -> user_id
 name -> full_name
 
@@ -409,7 +398,7 @@ date -> created_at | parse_date
           {previewResult && (
             <Box>
               <Typography variant="h6" sx={{ mb: 2 }}>Preview Results</Typography>
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Sample Mapped Data</Typography>
@@ -419,14 +408,15 @@ date -> created_at | parse_date
                     </Typography>
                   </Paper>
                 </Grid>
-                
+
                 <Grid item xs={6}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Statistics</Typography>
                   <Paper sx={{ p: 2 }}>
                     <Typography variant="body2">Total Records: {previewResult.statistics.totalRecords}</Typography>
-                    <Typography variant="body2">Successful Mappings: {previewResult.statistics.successfulMappings}</Typography>
+                    <Typography variant="body2">Successful
+                      Mappings: {previewResult.statistics.successfulMappings}</Typography>
                     <Typography variant="body2">Failed Mappings: {previewResult.statistics.failedMappings}</Typography>
-                    
+
                     {previewResult.unmappedProperties.length > 0 && (
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>Unmapped Source Properties:</Typography>

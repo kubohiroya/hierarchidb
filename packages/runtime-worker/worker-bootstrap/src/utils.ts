@@ -11,17 +11,17 @@ import type { InitializationStep } from './types';
 export async function initializeWorkerWithReporting(
   initFunction: () => Promise<void>,
   steps?: InitializationStep[],
-  debug = false
+  debug = false,
 ): Promise<void> {
   const reporter = new WorkerInitializationReporter(steps || [], debug);
-  
+
   try {
     // Run the main initialization function
     await initFunction();
-    
+
     // Report completion
     reporter.reportComplete();
-    
+
     if (debug) {
       console.log('[Worker] Initialization completed successfully');
     }
@@ -34,26 +34,26 @@ export async function initializeWorkerWithReporting(
 
 /**
  * Create a lazy singleton initializer for Worker
- * 
+ *
  * This creates a singleton pattern that initializes only once,
  * suitable for use with the dual-layer provider system.
  */
 export function createLazySingletonInitializer<T>(
   factory: () => Promise<T>,
-  reportProgress?: (message: string, progress: number) => void
+  reportProgress?: (message: string, progress: number) => void,
 ): () => Promise<T> {
   let instance: T | null = null;
   let initPromise: Promise<T> | null = null;
-  
+
   return async () => {
     if (instance) {
       return instance;
     }
-    
+
     if (initPromise) {
       return initPromise;
     }
-    
+
     initPromise = (async () => {
       try {
         reportProgress?.('Starting initialization', 0);
@@ -65,7 +65,7 @@ export function createLazySingletonInitializer<T>(
         throw error;
       }
     })();
-    
+
     return initPromise;
   };
 }
@@ -88,10 +88,10 @@ export const DEFAULT_INIT_STEPS: InitializationStep[] = [
 export function createReportingWorker(
   workerUrl: URL | string,
   options?: WorkerOptions,
-  debug = false
+  debug = false,
 ): Worker {
   const worker = new Worker(workerUrl, options);
-  
+
   if (debug) {
     worker.addEventListener('message', (event) => {
       if (event.data.type?.startsWith('INIT_')) {
@@ -99,6 +99,6 @@ export function createReportingWorker(
       }
     });
   }
-  
+
   return worker;
 }

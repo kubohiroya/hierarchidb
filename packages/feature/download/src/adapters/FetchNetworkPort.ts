@@ -79,7 +79,10 @@ export class FetchNetworkPort implements NetworkPort {
 
   private getSemaphore(host: string): Semaphore {
     let sem = this.semaphores.get(host);
-    if (!sem) { sem = new Semaphore(this.opts.perHostConcurrency); this.semaphores.set(host, sem); }
+    if (!sem) {
+      sem = new Semaphore(this.opts.perHostConcurrency);
+      this.semaphores.set(host, sem);
+    }
     return sem;
   }
 
@@ -107,14 +110,24 @@ export class FetchNetworkPort implements NetworkPort {
 class Semaphore {
   private queue: Array<() => void> = [];
   private count: number;
-  constructor(private capacity: number) { this.count = capacity; }
+
+  constructor(private capacity: number) {
+    this.count = capacity;
+  }
+
   acquire(): Promise<void> {
-    if (this.count > 0) { this.count--; return Promise.resolve(); }
+    if (this.count > 0) {
+      this.count--;
+      return Promise.resolve();
+    }
     return new Promise((resolve) => this.queue.push(resolve));
   }
+
   release(): void {
-    if (this.queue.length > 0) { const resolve = this.queue.shift()!; resolve(); }
-    else this.count = Math.min(this.count + 1, this.capacity);
+    if (this.queue.length > 0) {
+      const resolve = this.queue.shift()!;
+      resolve();
+    } else this.count = Math.min(this.count + 1, this.capacity);
   }
 }
 
@@ -122,31 +135,45 @@ class TokenBucket {
   private tokens: number;
   private queue: Array<() => void> = [];
   private lastRefill: number;
+
   constructor(private rps: number) {
     this.tokens = rps;
     this.lastRefill = Date.now();
     // Refill timer (best-effort)
     setInterval(() => this.refill(), 1000);
   }
+
   private refill() {
     const now = Date.now();
     if (now - this.lastRefill >= 1000) {
       this.tokens = this.rps;
       this.lastRefill = now;
       while (this.tokens > 0 && this.queue.length) {
-        this.tokens--; const r = this.queue.shift()!; r();
+        this.tokens--;
+        const r = this.queue.shift()!;
+        r();
       }
     }
   }
+
   take(): Promise<void> {
     this.refill();
-    if (this.tokens > 0) { this.tokens--; return Promise.resolve(); }
+    if (this.tokens > 0) {
+      this.tokens--;
+      return Promise.resolve();
+    }
     return new Promise((resolve) => this.queue.push(resolve));
   }
 }
 
-function wrap(r: Response): ResponseLike { return { ok: r.ok, status: r.status, headers: r.headers, arrayBuffer: () => r.arrayBuffer() }; }
-function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+function wrap(r: Response): ResponseLike {
+  return { ok: r.ok, status: r.status, headers: r.headers, arrayBuffer: () => r.arrayBuffer() };
+}
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function backoff(attempt: number, base: number, max: number): number {
   const exp = Math.min(max, base * Math.pow(2, attempt));
   const jitter = Math.random() * base;

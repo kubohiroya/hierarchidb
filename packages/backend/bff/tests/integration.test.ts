@@ -3,7 +3,7 @@
  * Tests OAuth2 flows and session management
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Test configuration
 const BFF_URL = process.env.BFF_TEST_URL || 'http://localhost:8787';
@@ -69,11 +69,11 @@ describe('BFF Service Integration Tests', () => {
       it('should initiate Google OAuth2 flow', async () => {
         const response = await fetch(
           `${config.bffUrl}/auth/google/authorize?` +
-            'scope=openid%20profile%20email&' +
-            'state=test-state',
+          'scope=openid%20profile%20email&' +
+          'state=test-state',
           {
             redirect: 'manual',
-          }
+          },
         );
 
         expect(response.status).toBe(302);
@@ -92,11 +92,11 @@ describe('BFF Service Integration Tests', () => {
         const codeChallenge = 'test-challenge-123';
         const response = await fetch(
           `${config.bffUrl}/auth/google/authorize?` +
-            `code_challenge=${codeChallenge}&` +
-            'code_challenge_method=S256',
+          `code_challenge=${codeChallenge}&` +
+          'code_challenge_method=S256',
           {
             redirect: 'manual',
-          }
+          },
         );
 
         expect(response.status).toBe(302);
@@ -149,11 +149,11 @@ describe('BFF Service Integration Tests', () => {
         const codeChallenge = 'test-challenge-456';
         const response = await fetch(
           `${config.bffUrl}/auth/microsoft/authorize?` +
-            `code_challenge=${codeChallenge}&` +
-            'code_challenge_method=S256',
+          `code_challenge=${codeChallenge}&` +
+          'code_challenge_method=S256',
           {
             redirect: 'manual',
-          }
+          },
         );
 
         if (response.status === 302) {
@@ -288,7 +288,7 @@ describe('BFF Service Integration Tests', () => {
         `${config.bffUrl}/auth/callback?state=test&error=access_denied`,
         {
           redirect: 'manual',
-        }
+        },
       );
 
       expect(response.status).toBe(302);

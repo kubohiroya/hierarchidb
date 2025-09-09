@@ -46,14 +46,17 @@ export class SessionController {
     private readonly nodeId: NodeId,
     private readonly points: LocationPointInput[],
     private readonly settings: LocationTileSettings,
-  ) {}
+  ) {
+  }
 
   private batch = new BatchService();
   private progressCb?: (p: ProgressInfo) => void;
   private paused = false;
   private cancelled = false;
 
-  setProgressCallback(cb: (p: ProgressInfo) => void) { this.progressCb = cb; }
+  setProgressCallback(cb: (p: ProgressInfo) => void) {
+    this.progressCb = cb;
+  }
 
   async start(): Promise<void> {
     // Stage 1: import (noop: we already have points)
@@ -84,7 +87,8 @@ export class SessionController {
           const db = getEphemeralLocationDB();
           // @ts-ignore
           await db.table('sessions').update(this.sessionId, { tableId: committedId });
-        } catch {}
+        } catch {
+        }
       }
     } catch (e) {
       console.warn('[Location][Session] tabular persist skipped:', e);
@@ -107,7 +111,11 @@ export class SessionController {
     return { type: 'FeatureCollection' as const, features, bbox };
   }
 
-  private async generateTiles(fc: { type: 'FeatureCollection'; features: any[]; bbox: [number, number, number, number] }) {
+  private async generateTiles(fc: {
+    type: 'FeatureCollection';
+    features: any[];
+    bbox: [number, number, number, number]
+  }) {
     const db = getEphemeralLocationDB();
     const zmin = this.settings.zoomMinGenerate;
     const zmax = this.settings.zoomMaxGenerate;
@@ -127,24 +135,25 @@ export class SessionController {
       maxPointsPerTile: tileLimit,
     } as any);
 
-    let total = 0; let done = 0;
+    let total = 0;
+    let done = 0;
     // Estimate tiles to process from bbox ranges
     const ranges = enumerateTilesForBbox(fc.bbox, zmin, zmax);
     total = ranges.reduce((s, r) => s + (r.x2 - r.x1 + 1) * (r.y2 - r.y1 + 1), 0);
 
     const tasks = ranges.flatMap(r => {
-      const list: Array<{z:number,x:number,y:number}> = [];
-      for (let z=r.z; z<=r.z; z++) {
-        for (let x=r.x1; x<=r.x2; x++) {
-          for (let y=r.y1; y<=r.y2; y++) list.push({z,x,y});
+      const list: Array<{ z: number, x: number, y: number }> = [];
+      for (let z = r.z; z <= r.z; z++) {
+        for (let x = r.x1; x <= r.x2; x++) {
+          for (let y = r.y1; y <= r.y2; y++) list.push({ z, x, y });
         }
       }
       return list;
     });
 
-    await this.batch.mapChunks(tasks, async ({z,x,y}: {z:number;x:number;y:number}) => {
+    await this.batch.mapChunks(tasks, async ({ z, x, y }: { z: number; x: number; y: number }) => {
       if (this.cancelled) return;
-      while (this.paused) await new Promise(r=>setTimeout(r,100));
+      while (this.paused) await new Promise(r => setTimeout(r, 100));
       const tile = index.getTile(z, x, y);
       done++;
       this.emit('tilegen', total, done, 0, `Tile ${z}/${x}/${y}`);
@@ -158,7 +167,7 @@ export class SessionController {
         id,
         sessionId: this.sessionId,
         nodeId: this.nodeId,
-        z,x,y,
+        z, x, y,
         data,
         hash,
         size: data.byteLength,
@@ -170,13 +179,30 @@ export class SessionController {
   }
 
   private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {
-    this.progressCb?.({ sessionId: this.sessionId, stage, total, completed, failed, percentage: total>0? (completed/total)*100 : 0, currentTask, timestamp: Date.now() });
+    this.progressCb?.({
+      sessionId: this.sessionId,
+      stage,
+      total,
+      completed,
+      failed,
+      percentage: total > 0 ? (completed / total) * 100 : 0,
+      currentTask,
+      timestamp: Date.now(),
+    });
   }
 
   // Control API (minimal)
-  pause() { this.paused = true; }
-  resume() { this.paused = false; }
-  cancel() { this.cancelled = true; }
+  pause() {
+    this.paused = true;
+  }
+
+  resume() {
+    this.paused = false;
+  }
+
+  cancel() {
+    this.cancelled = true;
+  }
 }
 
 // Helpers
@@ -210,7 +236,10 @@ function enumerateTilesForBbox(bbox: [number, number, number, number], zmin: num
   return ranges;
 }
 
-function long2tile(lon: number, z: number) { return Math.floor(((lon + 180) / 360) * Math.pow(2, z)); }
+function long2tile(lon: number, z: number) {
+  return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
+}
+
 function lat2tile(lat: number, z: number) {
   const rad = (lat * Math.PI) / 180;
   return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, z));

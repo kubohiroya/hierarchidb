@@ -1,7 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "noEmit": false,
     "composite": false,
     "outDir": "./dist",
@@ -20,10 +23,15 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src/types/**/*.ts", "src/types/**/*.d.ts"],
+  "include": [
+    "src/types/**/*.ts",
+    "src/types/**/*.d.ts"
+  ],
   "exclude": [
     "dist",
     "node_modules",
@@ -32,5 +40,9 @@
     "**/*.spec.*",
     "src/tests/**"
   ],
-  "references": []
+  "references": [],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

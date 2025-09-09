@@ -11,8 +11,13 @@ export class FeatureRegistry {
     this.defs.set(name, def);
   }
 
-  get(name: string): FeatureDefinition | undefined { return this.defs.get(name); }
-  list(): FeatureManifest[] { return [...this.defs.values()].map((d) => d.manifest); }
+  get(name: string): FeatureDefinition | undefined {
+    return this.defs.get(name);
+  }
+
+  list(): FeatureManifest[] {
+    return [...this.defs.values()].map((d) => d.manifest);
+  }
 
   async startAll(): Promise<void> {
     const order = this.topoSort();
@@ -40,7 +45,8 @@ export class FeatureRegistry {
   }
 
   async stop(name: string): Promise<void> {
-    const def = this.defs.get(name); if (!def) return;
+    const def = this.defs.get(name);
+    if (!def) return;
     if (!this.started.has(name)) return;
     await def.stop?.();
     this.started.delete(name);
@@ -56,7 +62,9 @@ export class FeatureRegistry {
       temp.add(n);
       const d = this.defs.get(n);
       if (d) for (const dep of d.manifest.depends || []) visit(dep);
-      temp.delete(n); visited.add(n); order.push(n);
+      temp.delete(n);
+      visited.add(n);
+      order.push(n);
     };
     for (const name of this.defs.keys()) visit(name);
     return order;

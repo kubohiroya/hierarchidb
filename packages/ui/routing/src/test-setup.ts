@@ -1,15 +1,15 @@
 /**
- * Vitest Test Setup
- * Jest完全排除、Vitestネイティブ設定
- */
+  * Vitest Test Setup
+ * JestVitest
+  */
 
-// @testing-library/jest-dom matchers (Vitestでも互換使用可能)
+//  @testing-library/jest-dom matchers (Vitest)
 import '@testing-library/jest-dom';
 
-// Vitestグローバル設定
+//  Vitest
 import { vi } from 'vitest';
 
-// WebAPIモック (VitestのviでJest.mockを置換)
+//  WebAPI (VitestviJest.mock)
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
@@ -24,14 +24,14 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// ResizeObserver mock (Vitestのvi.fn()使用)
+//  ResizeObserver mock (Vitestvi.fn())
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
 
-// IntersectionObserver mock (Vitestのvi.fn()使用)
+//  IntersectionObserver mock (Vitestvi.fn())
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   disconnect: vi.fn(),

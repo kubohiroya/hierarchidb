@@ -1,4 +1,4 @@
-import type { PropertyMappingRule, ValidationRule, DuplicateResolutionStrategy } from '~/types';
+import type { DuplicateResolutionStrategy, PropertyMappingRule, ValidationRule } from '~/types';
 
 /**
  * Optimization levels for compilation
@@ -88,7 +88,7 @@ export class MappingCompiler {
       optimizationLevel?: OptimizationLevel;
       enableCache?: boolean;
       parallelThreshold?: number;
-    } = {}
+    } = {},
   ): Promise<CompiledMapping> {
     const {
       optimizationLevel = 'aggressive',
@@ -98,7 +98,7 @@ export class MappingCompiler {
 
     // Generate cache key
     const cacheKey = this.generateCacheKey(mappingRules, validationRules, duplicateStrategy);
-    
+
     // Check cache
     if (enableCache && this.compiledCache.has(cacheKey)) {
       return this.compiledCache.get(cacheKey)!;
@@ -109,7 +109,7 @@ export class MappingCompiler {
       mappingRules,
       validationRules,
       duplicateStrategy,
-      optimizationLevel
+      optimizationLevel,
     );
 
     // Generate optimized function
@@ -117,7 +117,7 @@ export class MappingCompiler {
       executionPlan,
       mappingRules,
       validationRules,
-      duplicateStrategy
+      duplicateStrategy,
     );
 
     // Create compiled mapping
@@ -155,7 +155,7 @@ export class MappingCompiler {
     mappingRules: PropertyMappingRule[],
     validationRules: ValidationRule[],
     duplicateStrategy: DuplicateResolutionStrategy,
-    optimizationLevel: OptimizationLevel
+    optimizationLevel: OptimizationLevel,
   ): ExecutionPlan {
     const steps: ExecutionStep[] = [];
     const optimizations: Optimization[] = [];
@@ -165,7 +165,7 @@ export class MappingCompiler {
 
     // Group independent mappings for parallel execution
     const parallelGroups = this.groupParallelizable(mappingRules, dependencies);
-    
+
     // Add mapping steps
     parallelGroups.forEach((group, index) => {
       steps.push({
@@ -222,7 +222,7 @@ export class MappingCompiler {
     plan: ExecutionPlan,
     mappingRules: PropertyMappingRule[],
     validationRules: ValidationRule[],
-    duplicateStrategy: DuplicateResolutionStrategy
+    duplicateStrategy: DuplicateResolutionStrategy,
   ): string {
     const functionBody = `
       // Optimized mapping function generated at ${new Date().toISOString()}
@@ -268,17 +268,17 @@ export class MappingCompiler {
    */
   private generateMappingCode(rules: PropertyMappingRule[], plan: ExecutionPlan): string {
     const parallelGroups = plan.steps.filter(s => s.type === 'map' && s.canParallelize);
-    
+
     if (parallelGroups.length > 0) {
       // Generate parallel mapping code
       return rules.map(rule => `
           // Map ${rule.sourceProperty} -> ${rule.targetProperty}
           if (record['${rule.sourceProperty}'] !== undefined) {
             mapped['${rule.targetProperty}'] = ${
-              rule.transformFunction 
-                ? this.generateTransformCode(rule.transformFunction, `record['${rule.sourceProperty}']`)
-                : `record['${rule.sourceProperty}']`
-            };
+        rule.transformFunction
+          ? this.generateTransformCode(rule.transformFunction, `record['${rule.sourceProperty}']`)
+          : `record['${rule.sourceProperty}']`
+      };
           }
       `).join('\n');
     } else {
@@ -336,34 +336,34 @@ export class MappingCompiler {
           // Validation
           const errors = [];
           ${rules.map(rule => {
-            switch (rule.ruleType) {
-              case 'required':
-                return `
+      switch (rule.ruleType) {
+        case 'required':
+          return `
           if (mapped['${rule.property}'] === undefined || mapped['${rule.property}'] === null) {
             errors.push('${rule.errorMessage || `${rule.property} is required`}');
           }`;
-              case 'type':
-                return `
+        case 'type':
+          return `
           if (typeof mapped['${rule.property}'] !== '${rule.parameters.expectedType}') {
             errors.push('${rule.errorMessage || `${rule.property} must be ${rule.parameters.expectedType}`}');
           }`;
-              case 'range':
-                const min = rule.parameters.min;
-                const max = rule.parameters.max;
-                return `
+        case 'range':
+          const min = rule.parameters.min;
+          const max = rule.parameters.max;
+          return `
           if (${min !== undefined ? `mapped['${rule.property}'] < ${min}` : 'false'} || 
               ${max !== undefined ? `mapped['${rule.property}'] > ${max}` : 'false'}) {
             errors.push('${rule.errorMessage || `${rule.property} out of range`}');
           }`;
-              case 'pattern':
-                return `
+        case 'pattern':
+          return `
           if (!/${rule.parameters.pattern}/.test(String(mapped['${rule.property}']))) {
             errors.push('${rule.errorMessage || `${rule.property} does not match pattern`}');
           }`;
-              default:
-                return '';
-            }
-          }).join('\n')}
+        default:
+          return '';
+      }
+    }).join('\n')}
           
           if (errors.length > 0) {
             mapped._errors = errors;
@@ -384,20 +384,20 @@ export class MappingCompiler {
           if (seen.has(key)) {
             const existing = seen.get(key);
             ${(() => {
-              switch (strategy.strategy) {
-                case 'skip':
-                  return 'continue; // Skip duplicate';
-                case 'overwrite':
-                  return '// Overwrite with new value';
-                case 'merge':
-                  return `
+      switch (strategy.strategy) {
+        case 'skip':
+          return 'continue; // Skip duplicate';
+        case 'overwrite':
+          return '// Overwrite with new value';
+        case 'merge':
+          return `
             // Merge with existing
             Object.assign(existing, mapped);
             continue;`;
-                default:
-                  return '';
-              }
-            })()}
+        default:
+          return '';
+      }
+    })()}
           } else {
             seen.set(key, mapped);
           }
@@ -409,21 +409,21 @@ export class MappingCompiler {
    */
   private analyzeDependencies(rules: PropertyMappingRule[]): Map<string, Set<string>> {
     const deps = new Map<string, Set<string>>();
-    
+
     rules.forEach(rule => {
       const dependencies = new Set<string>();
-      
+
       // Check if this rule depends on other mapped properties
       rules.forEach(otherRule => {
-        if (rule.id !== otherRule.id && 
-            rule.transformFunction?.includes(otherRule.targetProperty)) {
+        if (rule.id !== otherRule.id &&
+          rule.transformFunction?.includes(otherRule.targetProperty)) {
           dependencies.add(otherRule.id);
         }
       });
-      
+
       deps.set(rule.id, dependencies);
     });
-    
+
     return deps;
   }
 
@@ -432,25 +432,25 @@ export class MappingCompiler {
    */
   private groupParallelizable(
     rules: PropertyMappingRule[],
-    dependencies: Map<string, Set<string>>
+    dependencies: Map<string, Set<string>>,
   ): PropertyMappingRule[][] {
     const groups: PropertyMappingRule[][] = [];
     const processed = new Set<string>();
-    
+
     while (processed.size < rules.length) {
       const group: PropertyMappingRule[] = [];
-      
+
       for (const rule of rules) {
         if (processed.has(rule.id)) continue;
-        
+
         const deps = dependencies.get(rule.id) || new Set();
         const canAdd = Array.from(deps).every(dep => processed.has(dep));
-        
+
         if (canAdd) {
           group.push(rule);
         }
       }
-      
+
       if (group.length > 0) {
         groups.push(group);
         group.forEach(rule => processed.add(rule.id));
@@ -459,7 +459,7 @@ export class MappingCompiler {
         break;
       }
     }
-    
+
     return groups;
   }
 
@@ -469,13 +469,13 @@ export class MappingCompiler {
   private identifyOptimizations(
     mappingRules: PropertyMappingRule[],
     validationRules: ValidationRule[],
-    level: OptimizationLevel
+    level: OptimizationLevel,
   ): Optimization[] {
     const optimizations: Optimization[] = [];
-    
+
     // Constant folding
-    const constantTransforms = mappingRules.filter(r => 
-      r.transformFunction && /^\d+$/.test(r.transformFunction)
+    const constantTransforms = mappingRules.filter(r =>
+      r.transformFunction && /^\d+$/.test(r.transformFunction),
     );
     if (constantTransforms.length > 0) {
       optimizations.push({
@@ -484,7 +484,7 @@ export class MappingCompiler {
         estimatedImprovement: constantTransforms.length * 2,
       });
     }
-    
+
     // Common subexpression elimination
     const duplicateTransforms = this.findDuplicateTransforms(mappingRules);
     if (duplicateTransforms.length > 0) {
@@ -494,7 +494,7 @@ export class MappingCompiler {
         estimatedImprovement: duplicateTransforms.length * 5,
       });
     }
-    
+
     // Dead code elimination
     const unusedMappings = this.findUnusedMappings(mappingRules, validationRules);
     if (unusedMappings.length > 0 && level === 'aggressive') {
@@ -504,7 +504,7 @@ export class MappingCompiler {
         estimatedImprovement: unusedMappings.length * 3,
       });
     }
-    
+
     // Loop fusion
     if (mappingRules.length > 10 && level === 'aggressive') {
       optimizations.push({
@@ -513,7 +513,7 @@ export class MappingCompiler {
         estimatedImprovement: 15,
       });
     }
-    
+
     // Parallelization
     const parallelizable = this.countParallelizable(mappingRules);
     if (parallelizable > 5) {
@@ -523,7 +523,7 @@ export class MappingCompiler {
         estimatedImprovement: parallelizable * 10,
       });
     }
-    
+
     return optimizations;
   }
 
@@ -532,14 +532,14 @@ export class MappingCompiler {
    */
   private findDuplicateTransforms(rules: PropertyMappingRule[]): string[] {
     const transforms = new Map<string, number>();
-    
+
     rules.forEach(rule => {
       if (rule.transformFunction) {
         const count = transforms.get(rule.transformFunction) || 0;
         transforms.set(rule.transformFunction, count + 1);
       }
     });
-    
+
     return Array.from(transforms.entries())
       .filter(([_, count]) => count > 1)
       .map(([transform, _]) => transform);
@@ -550,18 +550,18 @@ export class MappingCompiler {
    */
   private findUnusedMappings(
     mappingRules: PropertyMappingRule[],
-    validationRules: ValidationRule[]
+    validationRules: ValidationRule[],
   ): PropertyMappingRule[] {
     const usedProperties = new Set<string>();
-    
+
     // Collect properties used in validations
     validationRules.forEach(rule => {
       usedProperties.add(rule.property);
     });
-    
+
     // Find mappings not used anywhere
-    return mappingRules.filter(rule => 
-      !usedProperties.has(rule.targetProperty)
+    return mappingRules.filter(rule =>
+      !usedProperties.has(rule.targetProperty),
     );
   }
 
@@ -582,7 +582,7 @@ export class MappingCompiler {
   private generateCacheKey(
     mappingRules: PropertyMappingRule[],
     validationRules: ValidationRule[],
-    duplicateStrategy: DuplicateResolutionStrategy
+    duplicateStrategy: DuplicateResolutionStrategy,
   ): string {
     const rulesHash = JSON.stringify({
       mappings: mappingRules.map(r => ({
@@ -597,7 +597,7 @@ export class MappingCompiler {
       })) || [],
       duplicate: duplicateStrategy.strategy,
     });
-    
+
     // Simple hash function
     let hash = 0;
     for (let i = 0; i < rulesHash.length; i++) {
@@ -605,7 +605,7 @@ export class MappingCompiler {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash;
     }
-    
+
     return `compiled_${hash}`;
   }
 
@@ -614,14 +614,14 @@ export class MappingCompiler {
    */
   private extractInputSchema(rules: PropertyMappingRule[]): any {
     const properties: Record<string, any> = {};
-    
+
     rules.forEach(rule => {
       properties[rule.sourceProperty] = {
         type: 'any', // Would be inferred from actual data
         required: rule.isRequired,
       };
     });
-    
+
     return { properties };
   }
 
@@ -630,14 +630,14 @@ export class MappingCompiler {
    */
   private extractOutputSchema(rules: PropertyMappingRule[]): any {
     const properties: Record<string, any> = {};
-    
+
     rules.forEach(rule => {
       properties[rule.targetProperty] = {
         type: 'any', // Would be inferred from transformation
         source: rule.sourceProperty,
       };
     });
-    
+
     return { properties };
   }
 
@@ -647,10 +647,10 @@ export class MappingCompiler {
   private estimateSpeedup(plan: ExecutionPlan): number {
     const baselineCoast = plan.steps.length * 100;
     const optimizedCost = plan.estimatedCost;
-    const optimizationBonus = plan.optimizations.reduce((sum, opt) => 
-      sum + opt.estimatedImprovement, 0
+    const optimizationBonus = plan.optimizations.reduce((sum, opt) =>
+      sum + opt.estimatedImprovement, 0,
     );
-    
+
     return Math.max(1, (baselineCoast - optimizationBonus) / optimizedCost);
   }
 
@@ -659,18 +659,18 @@ export class MappingCompiler {
    */
   async execute(compiled: CompiledMapping, data: any): Promise<any> {
     const startTime = performance.now();
-    
+
     try {
       // Create function from compiled string
       const func = new Function('return ' + compiled.compiledFunction)();
-      
+
       // Execute the function
       const result = func(data);
-      
+
       // Update statistics
       const executionTime = performance.now() - startTime;
       this.updateStats(compiled.id, executionTime);
-      
+
       return result;
     } catch (error) {
       console.error('Compiled execution failed:', error);
@@ -689,10 +689,10 @@ export class MappingCompiler {
       memoryReduction: 0,
       cacheHitRate: 0,
     };
-    
+
     // Update rolling average
     stats.compiledExecutionTime = (stats.compiledExecutionTime * 0.9) + (executionTime * 0.1);
-    
+
     this.executionStats.set(compiledId, stats);
   }
 

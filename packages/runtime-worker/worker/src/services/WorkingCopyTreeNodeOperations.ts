@@ -1,12 +1,4 @@
-import {
-  Timestamp,
-  TreeNode,
-  NodeId,
-  NodeType,
-  TreeId,
-  generateNodeId,
-  NodeBase,
-} from '@hierarchidb/common-type';
+import { generateNodeId, NodeBase, NodeId, NodeType, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { CommandResult } from './command-types';
 import { WorkerErrorCode } from './command-types';
 import type { CoreDB } from './CoreDB';
@@ -33,7 +25,7 @@ export async function createNewDraftWorkingCopy(
   treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
-  baseName: string
+  baseName: string,
 ): Promise<NodeId> {
   const workingCopyNodeHolderParentId = createWorkingCopyNodeHolderParentId(treeId);
 
@@ -102,7 +94,7 @@ export async function createDraftWorkingCopyGetOrCreate(
   treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
-  baseName: string
+  baseName: string,
 ): Promise<{ wcHolderId: NodeId; wcNodeId: NodeId; returnedExisting: boolean }> {
   const workingCopyRootId = createWorkingCopyNodeHolderParentId(treeId);
   const siblingNames = await getChildNames(coreDB, parentId);
@@ -118,7 +110,11 @@ export async function createDraftWorkingCopyGetOrCreate(
   if (existing) {
     const children = await (coreDB.nodes as any).where?.('parentId').equals(existing.id).toArray?.();
     const child = Array.isArray(children) ? children[0] : undefined;
-    return { wcHolderId: existing.id as NodeId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: true };
+    return {
+      wcHolderId: existing.id as NodeId,
+      wcNodeId: (child?.id as NodeId) || ('' as NodeId),
+      returnedExisting: true,
+    };
   }
 
   // Create new
@@ -135,7 +131,7 @@ export async function createDraftWorkingCopyGetOrCreate(
 export async function createWorkingCopyFromNode(
   coreDB: CoreDB,
   treeId: TreeId,
-  nodeId: NodeId
+  nodeId: NodeId,
 ): Promise<NodeId> {
   const workingCopyNodeHolderParentId = createWorkingCopyNodeHolderParentId(treeId);
 
@@ -201,7 +197,8 @@ export async function createWorkingCopyFromNode(
         type: 'createWorkingCopy' as any,
       } as any);
     }
-  } catch {}
+  } catch {
+  }
 
   return nodeId;
 }
@@ -213,14 +210,14 @@ export type NameConflict = { status: 'NAME_CONFLICT'; suggestedName: string };
 export type CommitResultV2 = CommitOk | CommitConflict | NameConflict;
 
 /**
- * Commit working copy (V2)
- * - Editing WC: merge to original (optimistic lock). On name conflict → NAME_CONFLICT (or auto-rename).
+  * Commit working copy (V2)
+ * - Editing WC: merge to original (optimistic lock). On name conflict NAME_CONFLICT (or auto-rename).
  * - Draft WC: create new node under targetParentId with targetNodeId. Handle name conflicts similarly.
- */
+  */
 export async function commitWorkingCopyV2(
   coreDB: CoreDB,
   workingCopyNodeId: NodeId,
-  onNameConflict: 'error' | 'auto-rename' = 'error'
+  onNameConflict: 'error' | 'auto-rename' = 'error',
 ): Promise<CommitResultV2> {
   const now = Date.now() as Timestamp;
   const wcNode = await coreDB.nodes.get(workingCopyNodeId);
@@ -303,7 +300,7 @@ export async function commitWorkingCopy(
   coreDB: CoreDB,
   workingCopyNodeId: NodeId,
   isDraft: boolean,
-  onNameConflict: 'error' | 'auto-rename' = 'error'
+  onNameConflict: 'error' | 'auto-rename' = 'error',
 ): Promise<CommandResult> {
   try {
     const now = Date.now() as Timestamp;
@@ -415,7 +412,7 @@ export async function commitWorkingCopy(
  */
 export async function discardWorkingCopy(
   coreDB: CoreDB,
-  workingCopyNodeIdPair: NodeId[]
+  workingCopyNodeIdPair: NodeId[],
 ): Promise<void> {
   await coreDB.nodes.bulkDelete(workingCopyNodeIdPair);
   // workingCopyNodeIdPair = [holderId, wcId]; inform lifecycle to drop wc peer
@@ -436,7 +433,8 @@ export async function discardWorkingCopy(
         } as any);
       }
     }
-  } catch {}
+  } catch {
+  }
 }
 
 /**
@@ -444,7 +442,7 @@ export async function discardWorkingCopy(
  */
 export async function getWorkingCopy(
   coreDB: CoreDB,
-  originalNodeId: NodeId
+  originalNodeId: NodeId,
 ): Promise<NodeBase | undefined> {
   const holder = await (coreDB.nodes as any)
     .where?.('[holderType+holderTargetId]')
@@ -461,7 +459,7 @@ export async function getWorkingCopy(
 export async function updateWorkingCopy(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updates: Partial<NodeBase>
+  updates: Partial<NodeBase>,
 ): Promise<void> {
   const existing = await getWorkingCopy(coreDB, nodeId);
   if (!existing) {
@@ -497,18 +495,18 @@ export async function checkWorkingCopyConflict(coreDB: CoreDB, nodeId: NodeId): 
 }
 
 /**
- * Get names of all children of a parent node
- * 🟢 Utility function from eria-cartograph
- */
+  * Get names of all children of a parent node
+ * Utility function from eria-cartograph
+  */
 export async function getChildNames(coreDB: CoreDB, parentId: NodeId): Promise<string[]> {
   const children = (await (coreDB as any).getChildren?.(parentId)) || [];
   return children.map((child: TreeNode) => child.name);
 }
 
 /**
- * Create a unique name by adding (n) suffix if needed
- * 🟢 Based on user requirements and eria-cartograph pattern
- */
+  * Create a unique name by adding (n) suffix if needed
+ * Based on user requirements and eria-cartograph pattern
+  */
 export function createNewName(siblingNames: string[], baseName: string): string {
   if (!siblingNames.includes(baseName)) {
     return baseName;

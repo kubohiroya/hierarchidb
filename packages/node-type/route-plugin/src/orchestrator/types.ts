@@ -21,8 +21,17 @@ export interface RouteBatchSpec {
   defaults?: { engine?: EngineMethod; mode?: TransportMode };
 }
 
-export interface FetchTask { kind: 'fetch'; url: string; opts?: RequestInit }
-export interface ParseTask { kind: 'parse'; source: 'csv' | 'geojson'; payloadRef: string }
+export interface FetchTask {
+  kind: 'fetch';
+  url: string;
+  opts?: RequestInit;
+}
+
+export interface ParseTask {
+  kind: 'parse';
+  source: 'csv' | 'geojson';
+  payloadRef: string;
+}
 
 export interface TaskPlan {
   fetch: FetchTask[];
@@ -35,7 +44,9 @@ export interface StrategyContext {
 
 export interface DataSourceStrategy {
   supports(spec: DataSourceSpec): boolean;
+
   plan(spec: DataSourceSpec, ctx: StrategyContext): Promise<TaskPlan>;
+
   executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]>;
 }
 

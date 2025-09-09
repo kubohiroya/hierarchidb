@@ -4,10 +4,10 @@
  */
 
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Removed unused imports - NodeId, EntityId
 import { SpreadsheetCSVApiDriver } from '../services/SpreadsheetCSVApiDriver';
-import type { CSVProcessingConfig, CSVFilterRule } from '@hierarchidb/ui-csv-extract';
+import type { CSVFilterRule, CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
 
 // Mock external dependencies
 vi.mock('../utils/hashUtils', () => ({
@@ -15,7 +15,7 @@ vi.mock('../utils/hashUtils', () => ({
     // Generate different hashes for different content
     const content = await file.text();
     return `hash-${content.length}-${content.charCodeAt(0)}`;
-  })
+  }),
 }));
 
 vi.mock('../utils/csvParser', () => ({
@@ -23,26 +23,26 @@ vi.mock('../utils/csvParser', () => ({
     if (content.includes('product,price,category')) {
       return {
         rows: [
-          { product: 'Laptop', price: 999, category: 'Electronics' }
+          { product: 'Laptop', price: 999, category: 'Electronics' },
         ],
         columns: [
           { name: 'product', type: 'string' },
           { name: 'price', type: 'number' },
-          { name: 'category', type: 'string' }
-        ]
+          { name: 'category', type: 'string' },
+        ],
       };
     }
     // Default case
     return {
       rows: [
         { name: 'John', age: 25, email: 'john@test.com' },
-        { name: 'Jane', age: 30, email: 'jane@test.com' }
+        { name: 'Jane', age: 30, email: 'jane@test.com' },
       ],
       columns: [
         { name: 'name', type: 'string' },
         { name: 'age', type: 'number' },
-        { name: 'email', type: 'string' }
-      ]
+        { name: 'email', type: 'string' },
+      ],
     };
   }),
   detectColumnTypes: vi.fn().mockImplementation((columnNames, _rows) => {
@@ -50,35 +50,35 @@ vi.mock('../utils/csvParser', () => ({
       return [
         { name: 'product', type: 'string' },
         { name: 'price', type: 'number' },
-        { name: 'category', type: 'string' }
+        { name: 'category', type: 'string' },
       ];
     }
     // Default case
     return [
       { name: 'name', type: 'string' },
       { name: 'age', type: 'number' },
-      { name: 'email', type: 'string' }
+      { name: 'email', type: 'string' },
     ];
-  })
+  }),
 }));
 
 vi.mock('../utils/securityUtils', () => ({
   validateFileUrl: vi.fn(),
   sanitizeCsvData: vi.fn().mockImplementation(data => data),
-  validateFileContent: vi.fn()
+  validateFileContent: vi.fn(),
 }));
 
 vi.mock('../utils/fileProcessingUtils', () => ({
   processExcelFile: vi.fn().mockResolvedValue({
     content: 'name,age,email\nJohn,25,john@test.com',
-    detectedConfig: { delimiter: ',' }
+    detectedConfig: { delimiter: ',' },
   }),
   processZipFile: vi.fn().mockResolvedValue({
     content: 'name,age,email\nJohn,25,john@test.com',
-    detectedConfig: { delimiter: ',' }
+    detectedConfig: { delimiter: ',' },
   }),
   detectFileTypeFromContent: vi.fn().mockResolvedValue('csv'),
-  detectCSVDelimiter: vi.fn().mockReturnValue(',')
+  detectCSVDelimiter: vi.fn().mockReturnValue(','),
 }));
 
 vi.mock('../utils/filterUtils', () => ({
@@ -88,8 +88,8 @@ vi.mock('../utils/filterUtils', () => ({
     originalCount: 2,
     filteredCount: 2,
     reductionPercentage: 0,
-    activeFiltersCount: 0
-  })
+    activeFiltersCount: 0,
+  }),
 }));
 
 // Mock SimpleTableMetadataManager to avoid database conflicts
@@ -107,7 +107,7 @@ vi.mock('../services/SimpleTableMetadataManager', () => ({
     list: vi.fn().mockResolvedValue([]),
     removeReference: vi.fn().mockResolvedValue(true),
     delete: vi.fn().mockResolvedValue(undefined),
-  }))
+  })),
 }));
 
 // Mock SpreadsheetDatabase to provide expected methods
@@ -124,18 +124,18 @@ vi.mock('../database/SpreadsheetDatabase', () => ({
       return existing || null;
     }),
     createRawFileMetadata: vi.fn().mockImplementation(async (data: any) => {
-      const metadata = { 
-        id: 'metadata-' + crypto.randomUUID(), 
+      const metadata = {
+        id: 'metadata-' + crypto.randomUUID(),
         ...data,
         columns: data.fileName?.includes('product') ? [
           { name: 'product', type: 'string' },
           { name: 'price', type: 'number' },
-          { name: 'category', type: 'string' }
+          { name: 'category', type: 'string' },
         ] : [
           { name: 'name', type: 'string' },
           { name: 'age', type: 'number' },
-          { name: 'email', type: 'string' }
-        ]
+          { name: 'email', type: 'string' },
+        ],
       };
       mockHashToMetadata.set(data.contentHash, metadata);
       return metadata;
@@ -145,7 +145,7 @@ vi.mock('../database/SpreadsheetDatabase', () => ({
       totalRawFiles: mockHashToMetadata.size,
       duplicateDataReused: duplicateCount,
     })),
-  }))
+  })),
 }));
 
 describe('SpreadsheetCSVApiDriver', () => {
@@ -158,12 +158,12 @@ describe('SpreadsheetCSVApiDriver', () => {
     mockHashToMetadata.clear();
     mockTables.clear();
     duplicateCount = 0;
-    
+
     driver = new SpreadsheetCSVApiDriver('test-spreadsheet-plugin');
-    
+
     // Mock CSV file with proper File interface methods
     const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
-    
+
     // Create proper File mock with text() method
     mockFile = {
       name: 'test.csv',
@@ -172,7 +172,7 @@ describe('SpreadsheetCSVApiDriver', () => {
       text: vi.fn().mockResolvedValue(csvContent),
       stream: vi.fn().mockReturnValue(new ReadableStream()),
     } as any;
-    
+
     mockConfig = {
       delimiter: ',',
       encoding: 'utf-8',
@@ -190,12 +190,12 @@ describe('SpreadsheetCSVApiDriver', () => {
   describe('Hash-based Data Reuse', () => {
     it('should reuse existing raw data when same content hash is found', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: First upload to create raw data
       const firstUpload = await driver.uploadCSVFile(mockFile, mockConfig);
       expect(firstUpload).toBeDefined();
       expect(firstUpload.contentHash).toBeDefined();
-      
+
       // Act: Second upload with same content (different filename)
       const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
       const secondFile = {
@@ -206,12 +206,12 @@ describe('SpreadsheetCSVApiDriver', () => {
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
       const secondUpload = await driver.uploadCSVFile(secondFile, mockConfig);
-      
+
       // Assert: Should reuse existing raw data
       expect(secondUpload.contentHash).toBe(firstUpload.contentHash);
       expect(secondUpload.filename).toBe('duplicate.csv'); // Different filename
       expect(secondUpload.totalRows).toBe(firstUpload.totalRows); // Same data
-      
+
       // Verify duplicate data was reused 
       await driver.getStatistics?.();
       // duplicateDataReused field doesn't exist in the current implementation
@@ -220,11 +220,11 @@ describe('SpreadsheetCSVApiDriver', () => {
     });
 
     it('should create new raw data when content hash is different', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: First file
       const firstUpload = await driver.uploadCSVFile(mockFile, mockConfig);
-      
+
       // Act: Different content
       const differentContent = 'product,price,category\nLaptop,999,Electronics';
       const differentFile = {
@@ -235,22 +235,22 @@ describe('SpreadsheetCSVApiDriver', () => {
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
       const secondUpload = await driver.uploadCSVFile(differentFile, mockConfig);
-      
+
       // Assert: Should create new raw data
       expect(secondUpload.contentHash).not.toBe(firstUpload.contentHash);
       expect(secondUpload.columns).not.toEqual(firstUpload.columns);
-      
+
       // Verify separate raw data was created
       const stats = await driver.getStatistics?.();
       expect(stats?.totalFiles).toBeGreaterThan(1);
     });
 
     it('should handle concurrent uploads with same hash correctly', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Act: Concurrent uploads with same content
       const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
-      
+
       // Upload first file to establish initial hash
       const firstFile = {
         name: 'first.csv',
@@ -260,7 +260,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
       await driver.uploadCSVFile(firstFile, mockConfig);
-      
+
       // Then do concurrent uploads with same content
       const promises = Array.from({ length: 5 }, async (_, i) => {
         const file = {
@@ -272,13 +272,13 @@ describe('SpreadsheetCSVApiDriver', () => {
         } as any;
         return driver.uploadCSVFile(file, mockConfig);
       });
-      
+
       const results = await Promise.all(promises);
-      
+
       // Assert: All should have same content hash
       const contentHashes = results.map(r => r.contentHash);
       expect(new Set(contentHashes).size).toBe(1); // Only one unique hash
-      
+
       // Verify statistics
       const stats = await driver.getStatistics?.();
       expect(stats?.totalFiles).toBeGreaterThan(0);
@@ -289,11 +289,11 @@ describe('SpreadsheetCSVApiDriver', () => {
 
   describe('Chunked Data Processing', () => {
     it('should create chunked data for large files', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Large CSV file (15K rows)
-      const largeRows = Array.from({ length: 15000 }, (_, i) => 
-        `user${i},${20 + i % 50},user${i}@test.com`
+      const largeRows = Array.from({ length: 15000 }, (_, i) =>
+        `user${i},${20 + i % 50},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
       const largeFile = {
@@ -303,10 +303,10 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(largeContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       // Act
       const result = await driver.uploadCSVFile(largeFile, mockConfig);
-      
+
       // Assert: Based on mock parseCSVContent (returns only 2 rows), won't be chunked
       expect(result.isChunked).toBe(false);
       expect(result.chunkCount).toBe(1);
@@ -314,11 +314,11 @@ describe('SpreadsheetCSVApiDriver', () => {
     });
 
     it('should not chunk small files', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Act: Small file (3 rows)
       const result = await driver.uploadCSVFile(mockFile, mockConfig);
-      
+
       // Assert: Should not be chunked
       expect(result.isChunked).toBe(false);
       expect(result.chunkCount).toBe(1);
@@ -326,11 +326,11 @@ describe('SpreadsheetCSVApiDriver', () => {
     });
 
     it('should handle chunked data filtering correctly', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Upload large chunked file
-      const largeRows = Array.from({ length: 15000 }, (_, i) => 
-        `user${i},${20 + (i % 50)},user${i}@test.com`
+      const largeRows = Array.from({ length: 15000 }, (_, i) =>
+        `user${i},${20 + (i % 50)},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
       const largeFile = {
@@ -340,9 +340,9 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(largeContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
-      
+
       // Act: Apply filter across chunks
       const filters: CSVFilterRule[] = [{
         id: 'age-filter',
@@ -351,14 +351,14 @@ describe('SpreadsheetCSVApiDriver', () => {
         value: '30',
         enabled: true,
       }];
-      
+
       const filteredResult = await driver.getFilteredPreview(
-        metadata.id, 
-        filters, 
-        1000, 
-        0
+        metadata.id,
+        filters,
+        1000,
+        0,
       );
-      
+
       // Assert: Should filter across all chunks (based on mock, not chunked)
       expect(filteredResult.rows.length).toBeLessThanOrEqual(1000);
       expect(filteredResult.totalRows).toBeGreaterThan(0);
@@ -369,21 +369,21 @@ describe('SpreadsheetCSVApiDriver', () => {
 
   describe('Error Handling', () => {
     it('should handle corrupted chunk data gracefully', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Upload file then simulate corruption by causing data not found
       await driver.uploadCSVFile(mockFile, mockConfig);
-      
+
       // Simulate corruption by clearing stored data to cause "CSV data not found" error
       // Act & Assert: Should throw meaningful error
       await expect(
-        driver.getFilteredPreview('non-existent-table', [], 100, 0)
+        driver.getFilteredPreview('non-existent-table', [], 100, 0),
       ).rejects.toThrow(/Table not found|CSV data not found/);
     });
 
     it('should handle memory exhaustion gracefully', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Mock extremely large file that would exceed memory limits
       const hugeFile = {
         name: 'huge.csv',
@@ -392,16 +392,16 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockRejectedValue(new Error('Memory limit exceeded during file read')),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       // Act & Assert: Should handle gracefully
       await expect(
-        driver.uploadCSVFile(hugeFile, mockConfig)
+        driver.uploadCSVFile(hugeFile, mockConfig),
       ).rejects.toThrow(/memory|limit|size/i);
     });
 
     it('should validate file size limits', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: File exceeding size limit
       const oversizedFile = {
         name: 'huge.txt',
@@ -410,21 +410,21 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue('dummy content'),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       // Act & Assert
       await expect(
-        driver.uploadCSVFile(oversizedFile, mockConfig)
+        driver.uploadCSVFile(oversizedFile, mockConfig),
       ).rejects.toThrow(/file size.*exceeds maximum/i);
     });
   });
 
   describe('Data Integrity', () => {
     it('should maintain data integrity across chunk boundaries', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: File with exactly chunk boundary data
-      const exactBoundaryRows = Array.from({ length: 20000 }, (_, i) => 
-        `user${i},${i},user${i}@test.com`
+      const exactBoundaryRows = Array.from({ length: 20000 }, (_, i) =>
+        `user${i},${i},user${i}@test.com`,
       ).join('\n');
       const boundaryContent = 'name,age,email\n' + exactBoundaryRows;
       const boundaryFile = {
@@ -434,21 +434,21 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(boundaryContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       const metadata = await driver.uploadCSVFile(boundaryFile, mockConfig);
-      
+
       // Act: Get all data through filtering
       const allData = await driver.getFilteredPreview(
-        metadata.id, 
-        [], 
+        metadata.id,
+        [],
         25000, // More than total rows
-        0
+        0,
       );
-      
+
       // Assert: Based on mock data (2 rows)
       expect(allData.rows.length).toBe(2);
       expect(allData.totalRows).toBe(2);
-      
+
       // Verify no duplicate rows 
       const userIds = allData.rows.map(row => row.name);
       const uniqueUserIds = new Set(userIds);
@@ -456,8 +456,8 @@ describe('SpreadsheetCSVApiDriver', () => {
     });
 
     it('should preserve column order and types across operations', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Mixed data types
       const mixedContent = 'name,age,salary,active,join_date\n' +
         'John,25,50000.50,true,2023-01-15\n' +
@@ -469,18 +469,18 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(mixedContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       const metadata = await driver.uploadCSVFile(mixedFile, mockConfig);
-      
+
       // Act: Filter and retrieve
       const result = await driver.getFilteredPreview(metadata.id, [], 100, 0);
-      
+
       // Assert: Column types and order preserved (based on mock)
       expect(result.columns).toHaveLength(3);
       expect(result.columns[0]?.name).toBe('name');
       expect(result.columns[1]?.name).toBe('age');
       expect(result.columns[2]?.name).toBe('email');
-      
+
       // Verify data type inference (based on detectColumnTypes mock)
       expect(result.columns[0]?.type).toBe('string');
       expect(result.columns[1]?.type).toBe('number');
@@ -490,12 +490,12 @@ describe('SpreadsheetCSVApiDriver', () => {
 
   describe('Performance Requirements', () => {
     it('should process large files within acceptable time limits', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Large file (50K rows)
       const startTime = Date.now();
-      const largeRows = Array.from({ length: 50000 }, (_, i) => 
-        `user${i},${20 + (i % 50)},user${i}@test.com,${i % 10},${Math.random()}`
+      const largeRows = Array.from({ length: 50000 }, (_, i) =>
+        `user${i},${20 + (i % 50)},user${i}@test.com,${i % 10},${Math.random()}`,
       ).join('\n');
       const largeContent = 'name,age,email,department,score\n' + largeRows;
       const largeFile = {
@@ -505,11 +505,11 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(largeContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       // Act
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
       const processingTime = Date.now() - startTime;
-      
+
       // Assert: Should complete within 10 seconds
       expect(processingTime).toBeLessThan(10000);
       expect(metadata.totalRows).toBe(2); // Based on mock parseCSVContent
@@ -518,11 +518,11 @@ describe('SpreadsheetCSVApiDriver', () => {
     });
 
     it('should handle concurrent filtering operations efficiently', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Upload large file
-      const largeRows = Array.from({ length: 30000 }, (_, i) => 
-        `user${i},${20 + (i % 50)},user${i}@test.com`
+      const largeRows = Array.from({ length: 30000 }, (_, i) =>
+        `user${i},${20 + (i % 50)},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
       const largeFile = {
@@ -532,9 +532,9 @@ describe('SpreadsheetCSVApiDriver', () => {
         text: vi.fn().mockResolvedValue(largeContent),
         stream: vi.fn().mockReturnValue(new ReadableStream()),
       } as any;
-      
+
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
-      
+
       // Act: Concurrent filtering operations
       const startTime = Date.now();
       const filterPromises = Array.from({ length: 5 }, (_, i) => {
@@ -547,10 +547,10 @@ describe('SpreadsheetCSVApiDriver', () => {
         }];
         return driver.getFilteredPreview(metadata.id, filters, 1000, 0);
       });
-      
+
       const results = await Promise.all(filterPromises);
       const totalTime = Date.now() - startTime;
-      
+
       // Assert: Should complete efficiently
       expect(totalTime).toBeLessThan(5000); // 5 seconds for all operations
       expect(results).toHaveLength(5);

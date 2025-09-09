@@ -60,7 +60,11 @@ export const BaseMapExtension = {
     {
       stepNumber: 4,
       title: 'Display Options',
-      validation: { async validate() { return { isValid: true, errors: [] as string[] }; } },
+      validation: {
+        async validate() {
+          return { isValid: true, errors: [] as string[] };
+        },
+      },
     },
   ],
   extendedValidation: {
@@ -80,7 +84,12 @@ export const BaseMapExtension = {
           const s = data?.mapStyle;
           if (!s || s.style !== 'custom') return true;
           const url = s.customStyleUrl;
-          try { new URL(url); return true; } catch { return false; }
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
         },
       },
     },

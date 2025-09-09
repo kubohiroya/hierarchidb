@@ -5,9 +5,8 @@
  */
 
 import { useState } from 'react';
-import { Box, Container, Typography, Alert, Button } from '@mui/material';
+import { Alert, Box, Button, Container, Typography } from '@mui/material';
 import { WorkerAPIClient } from '../WorkerAPIClient';
-import { getWorkerClient } from '../initWorkerClient';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -55,7 +54,7 @@ export default function WorkerTest() {
           ? `${err.message}
 
 Stack: ${err.stack}`
-          : String(err)
+          : String(err),
       );
       setStatus('Failed');
     }

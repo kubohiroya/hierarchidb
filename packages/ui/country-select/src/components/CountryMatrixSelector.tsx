@@ -3,32 +3,32 @@
  * @module @hierarchidb/ui-country-select/components
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Box,
-  Paper,
-  Typography,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
   Button,
   Checkbox,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  SelectAll as SelectAllIcon,
   ClearAll as ClearAllIcon,
   FilterList as FilterListIcon,
+  Search as SearchIcon,
+  SelectAll as SelectAllIcon,
 } from '@mui/icons-material';
 
 import { Virtuoso } from 'react-virtuoso';
 
-import type { Country, CountryFilter, ContinentCode } from '../types/Country';
-import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn';
+import type { ContinentCode, Country, CountryFilter } from '../types/Country';
 import { CONTINENTS } from '../types/Country';
+import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn';
 
 export interface CountryMatrixSelectorProps {
   /** Available countries to select from */
@@ -66,7 +66,7 @@ interface TableRowData {
 
 /**
  * CountryMatrixSelector - Virtualized table for country and matrix selection
- * 
+ *
  * Features:
  * - Virtualized scrolling for performance with large datasets
  * - Flexible matrix columns (admin levels, transport hubs, routes, etc.)
@@ -75,16 +75,16 @@ interface TableRowData {
  * - Responsive design
  */
 export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
-  countries,
-  matrixConfig,
-  selections,
-  onSelectionsChange,
-  initialFilter = {},
-  height = 600,
-  showBulkTools = true,
-  showCountryInfo = true,
-  rowHeight = 56,
-}) => {
+                                                                              countries,
+                                                                              matrixConfig,
+                                                                              selections,
+                                                                              onSelectionsChange,
+                                                                              initialFilter = {},
+                                                                              height = 600,
+                                                                              showBulkTools = true,
+                                                                              showCountryInfo = true,
+                                                                              rowHeight = 56,
+                                                                            }) => {
   const [filter, setFilter] = useState<CountryFilter>(initialFilter);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -104,7 +104,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       if (filter.searchQuery) {
         const query = filter.searchQuery.toLowerCase();
         if (!country.name.toLowerCase().includes(query) &&
-            !(country.nativeName && country.nativeName.toLowerCase().includes(query))) {
+          !(country.nativeName && country.nativeName.toLowerCase().includes(query))) {
           return false;
         }
       }
@@ -143,7 +143,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   const handleSelectionChange = useCallback((countryCode: string, columnId: string, selected: boolean) => {
     const newSelections = [...selections];
     const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
-    
+
     if (existingIndex >= 0) {
       const existing = newSelections[existingIndex];
       if (existing) {
@@ -196,7 +196,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       <Box sx={{ minWidth: 200, p: 1, fontWeight: 'bold' }}>
         Country
       </Box>
-      
+
       {showCountryInfo && (
         <>
           <Box sx={{ minWidth: 100, p: 1, fontWeight: 'bold' }}>
@@ -362,9 +362,9 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               <InputLabel>Continent</InputLabel>
               <Select
                 value={filter.continent || ''}
-                onChange={(e) => setFilter(prev => ({ 
-                  ...prev, 
-                  continent: e.target.value as ContinentCode || undefined 
+                onChange={(e) => setFilter(prev => ({
+                  ...prev,
+                  continent: e.target.value as ContinentCode || undefined,
                 }))}
               >
                 <MenuItem value="">All</MenuItem>
@@ -381,9 +381,9 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               type="number"
               size="small"
               value={filter.minPopulation ? filter.minPopulation / 1000000 : ''}
-              onChange={(e) => setFilter(prev => ({ 
-                ...prev, 
-                minPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined 
+              onChange={(e) => setFilter(prev => ({
+                ...prev,
+                minPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined,
               }))}
               sx={{ width: 200 }}
             />
@@ -393,9 +393,9 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               type="number"
               size="small"
               value={filter.maxPopulation ? filter.maxPopulation / 1000000 : ''}
-              onChange={(e) => setFilter(prev => ({ 
-                ...prev, 
-                maxPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined 
+              onChange={(e) => setFilter(prev => ({
+                ...prev,
+                maxPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined,
               }))}
               sx={{ width: 200 }}
             />
@@ -410,9 +410,9 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
           style={{ height: height - 180 }} // Account for header and controls
           totalCount={tableData.length}
           itemContent={(index: number) => (
-            <TableRow 
-              index={index} 
-              style={{ height: rowHeight, display: 'flex', alignItems: 'center' }} 
+            <TableRow
+              index={index}
+              style={{ height: rowHeight, display: 'flex', alignItems: 'center' }}
             />
           )}
           overscan={matrixConfig.virtualization?.overscan || 5}

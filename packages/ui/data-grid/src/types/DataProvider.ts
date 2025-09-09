@@ -1,6 +1,6 @@
 /**
  * Abstract Data Provider Interface
- * 
+ *
  * Defines a generic contract for data sources that can be displayed in the data grid.
  * This abstraction allows the grid to work with any data source (database, API, file, etc.)
  * without knowing the specific implementation details.
@@ -17,6 +17,7 @@ export interface DataItem {
   createdAt?: number | string | Date;
   /** Optional timestamp for when the item was last updated */
   updatedAt?: number | string | Date;
+
   /** Any additional properties */
   [key: string]: any;
 }
@@ -94,27 +95,27 @@ export interface DataProvider<T extends DataItem = DataItem> {
    * Fetch data based on query parameters
    */
   query(params: QueryParams): Promise<QueryResult<T>>;
-  
+
   /**
    * Get a single item by ID
    */
   getById(id: string | number): Promise<T | null>;
-  
+
   /**
    * Get multiple items by IDs
    */
   getByIds(ids: (string | number)[]): Promise<T[]>;
-  
+
   /**
    * Get the total count of items
    */
   count(filters?: FilterParams[]): Promise<number>;
-  
+
   /**
    * Export data in a specific format
    */
   export?(format: 'csv' | 'json' | 'excel', params?: QueryParams): Promise<Blob>;
-  
+
   /**
    * Subscribe to real-time updates (optional)
    */

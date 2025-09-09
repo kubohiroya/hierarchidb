@@ -1,90 +1,85 @@
 /**
- * i18n utilities for Route Plugin
- * ルートプラグインのi18nユーティリティ
- */
+  * i18n utilities for Route Plugin
+ * i18n
+  */
 
 import { useMemo } from 'react';
-import type { SupportedLocale, RoutePluginTranslations } from './types';
+import type { RoutePluginTranslations, SupportedLocale } from './types';
 import { ja } from './ja';
 import { en } from './en';
 
-// 翻訳データ
 const translations: Record<SupportedLocale, RoutePluginTranslations> = {
   ja,
   en,
 };
 
-// デフォルトロケール
 const DEFAULT_LOCALE: SupportedLocale = 'ja';
 
 /**
- * ブラウザの言語設定から適切なロケールを取得
- */
+    */
 export function detectLocale(): SupportedLocale {
   if (typeof window === 'undefined') {
     return DEFAULT_LOCALE;
   }
 
   const browserLocale = navigator.language.toLowerCase();
-  
+
   if (browserLocale.startsWith('ja')) {
     return 'ja';
   } else if (browserLocale.startsWith('en')) {
     return 'en';
   }
-  
+
   return DEFAULT_LOCALE;
 }
 
 /**
- * 翻訳テキストを取得する関数
- */
+    */
 export function getTranslation(
-  locale: SupportedLocale, 
-  key: string, 
-  fallback?: string
+  locale: SupportedLocale,
+  key: string,
+  fallback?: string,
 ): string {
   const translation = translations[locale] || translations[DEFAULT_LOCALE];
-  
+
   const keys = key.split('.');
   let value: any = translation;
-  
+
   for (const k of keys) {
     value = value?.[k];
     if (value === undefined) break;
   }
-  
+
   if (typeof value === 'string') {
     return value;
   }
-  
+
   if (fallback) {
     return fallback;
   }
-  
+
   if (locale !== DEFAULT_LOCALE) {
     return getTranslation(DEFAULT_LOCALE, key, key);
   }
-  
+
   return key;
 }
 
 /**
- * 翻訳フック
- */
+    */
 export function useTranslation(locale?: SupportedLocale) {
   const currentLocale = locale || detectLocale();
-  
+
   const t = useMemo(() => {
-    return (key: string, fallback?: string) => 
+    return (key: string, fallback?: string) =>
       getTranslation(currentLocale, key, fallback);
   }, [currentLocale]);
-  
-  const translation = useMemo(() => 
-    translations[currentLocale] || translations[DEFAULT_LOCALE], 
-    [currentLocale]
+
+  const translation = useMemo(() =>
+      translations[currentLocale] || translations[DEFAULT_LOCALE],
+    [currentLocale],
   );
-  
+
   return {
     t,
     locale: currentLocale,
@@ -93,41 +88,37 @@ export function useTranslation(locale?: SupportedLocale) {
 }
 
 /**
- * ヘルパー関数：ルートタイプ名を取得
- */
+    */
 export function getRouteTypeName(
-  type: string, 
-  locale: SupportedLocale = detectLocale()
+  type: string,
+  locale: SupportedLocale = detectLocale(),
 ): string {
   return getTranslation(locale, `routeTypes.${type}`, type);
 }
 
 /**
- * ヘルパー関数：交通手段名を取得
- */
+    */
 export function getTransportModeName(
-  mode: string, 
-  locale: SupportedLocale = detectLocale()
+  mode: string,
+  locale: SupportedLocale = detectLocale(),
 ): string {
   return getTranslation(locale, `transportModes.${mode}`, mode);
 }
 
 /**
- * ヘルパー関数：カテゴリ名を取得
- */
+    */
 export function getCategoryName(
-  category: string, 
-  locale: SupportedLocale = detectLocale()
+  category: string,
+  locale: SupportedLocale = detectLocale(),
 ): string {
   return getTranslation(locale, `categories.${category}`, category);
 }
 
 /**
- * ヘルパー関数：距離をローカライズされた形式でフォーマット
- */
+    */
 export function formatDistance(
-  meters: number, 
-  locale: SupportedLocale = detectLocale()
+  meters: number,
+  locale: SupportedLocale = detectLocale(),
 ): string {
   if (meters < 1000) {
     return locale === 'ja' ? `${meters}m` : `${meters}m`;
@@ -138,15 +129,14 @@ export function formatDistance(
 }
 
 /**
- * ヘルパー関数：時間をローカライズされた形式でフォーマット
- */
+    */
 export function formatDuration(
-  seconds: number, 
-  locale: SupportedLocale = detectLocale()
+  seconds: number,
+  locale: SupportedLocale = detectLocale(),
 ): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
+
   if (locale === 'ja') {
     if (hours > 0) {
       return `${hours}時間${minutes}分`;
@@ -162,6 +152,5 @@ export function formatDuration(
   }
 }
 
-// エクスポート
 export type { SupportedLocale, RoutePluginTranslations } from './types';
 export { translations };

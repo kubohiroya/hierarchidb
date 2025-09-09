@@ -49,7 +49,7 @@ export interface IPluginRegistry extends INodeTypeRegistry<unknown> {
    * Register a plugin with its unified definition
    */
   registerPlugin(
-    definition: any // PluginDefinition type would be imported from worker
+    definition: any, // PluginDefinition type would be imported from worker
   ): void;
 
   /**

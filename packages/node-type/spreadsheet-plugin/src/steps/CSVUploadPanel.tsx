@@ -1,6 +1,6 @@
 import React from 'react';
-import { CSVProvider, CSVFileUploadStep } from '@hierarchidb/ui-csv-extract';
 import type { CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
+import { CSVFileUploadStep, CSVProvider } from '@hierarchidb/ui-csv-extract';
 import { createSpreadsheetCSVApi } from '../ui/facade';
 
 export interface CSVUploadPanelProps {
@@ -13,13 +13,13 @@ export interface CSVUploadPanelProps {
 }
 
 export const CSVUploadPanel: React.FC<CSVUploadPanelProps> = ({
-  pluginId = 'spreadsheet',
-  acceptedFileTypes,
-  maxFileSize,
-  disabled,
-  onUploaded,
-  onError,
-}) => {
+                                                                pluginId = 'spreadsheet',
+                                                                acceptedFileTypes,
+                                                                maxFileSize,
+                                                                disabled,
+                                                                onUploaded,
+                                                                onError,
+                                                              }) => {
   const api = React.useMemo(() => createSpreadsheetCSVApi(pluginId), [pluginId]);
   return (
     <CSVProvider csvApi={api}>

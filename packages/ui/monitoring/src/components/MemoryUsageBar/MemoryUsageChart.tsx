@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Box, Typography, Paper, IconButton, Tooltip, useTheme } from '@mui/material';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 
 import { formatBytes } from '@hierarchidb/util';
@@ -15,52 +15,64 @@ interface MemoryDataPoint {
 }
 
 interface MemoryUsageChartProps {
-  /** チャートの幅 */
+  /**
+      */
   width?: string | number;
-  /** チャートの高さ */
+  /**
+      */
   height?: number;
-  /** データ収集間隔（ミリ秒） */
+  /**
+      */
   updateInterval?: number;
-  /** 表示する時間範囲（秒） */
+  /**
+      */
   timeRange?: number;
-  /** 最大データポイント数 */
+  /**
+      */
   maxDataPoints?: number;
-  /** カテゴリー別の色 */
+  /**
+      */
   categoryColors?: { [key: string]: string };
-  /** 警告しきい値（0-1） */
+  /**
+   * 0-1
+   */
   warningThreshold?: number;
-  /** 危険しきい値（0-1） */
+  /**
+   * 0-1
+   */
   criticalThreshold?: number;
-  /** グリッド線を表示するか */
+  /**
+      */
   showGrid?: boolean;
-  /** 凡例を表示するか */
+  /**
+      */
   showLegend?: boolean;
-  /** 最大メモリサイズ（バイト） */
+  /**
+      */
   maxMemory?: number;
 }
 
 /**
- * メモリ使用量の時系列積み上げ面グラフコンポーネント
- */
+    */
 export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
-  width = '100%',
-  height = 300,
-  updateInterval = 10000,
-  timeRange = 300, // 5分
-  maxDataPoints = 100,
-  categoryColors = {
-    JavaScript: '#F7DF1E',
-    DOM: '#E34C26',
-    Images: '#00D8FF',
-    Styles: '#1572B6',
-    Other: '#9CA3AF',
-  },
-  warningThreshold = 0.7,
-  criticalThreshold = 0.9,
-  showGrid = true,
-  showLegend = true,
-  maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
-}) => {
+                                                                    width = '100%',
+                                                                    height = 300,
+                                                                    updateInterval = 10000,
+                                                                    timeRange = 300, //  5
+                                                                    maxDataPoints = 100,
+                                                                    categoryColors = {
+                                                                      JavaScript: '#F7DF1E',
+                                                                      DOM: '#E34C26',
+                                                                      Images: '#00D8FF',
+                                                                      Styles: '#1572B6',
+                                                                      Other: '#9CA3AF',
+                                                                    },
+                                                                    warningThreshold = 0.7,
+                                                                    criticalThreshold = 0.9,
+                                                                    showGrid = true,
+                                                                    showLegend = true,
+                                                                    maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
+                                                                  }) => {
   const theme = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -76,10 +88,9 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     data: MemoryDataPoint;
   } | null>(null);
 
-  // カテゴリー分類関数
   const categorizeMemory = useCallback(
     (
-      breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>
+      breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>,
     ): { [key: string]: number } => {
       const categories: { [key: string]: number } = {
         JavaScript: 0,
@@ -113,10 +124,9 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
       return categories;
     },
-    []
+    [],
   );
 
-  // メモリデータ収集関数
   const collectMemoryData = useCallback(async () => {
     if (isPaused) return;
 
@@ -133,7 +143,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         ).measureUserAgentSpecificMemory();
         const totalUsed = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0
+          0,
         );
 
         let totalMemory = maxMemory;
@@ -184,7 +194,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
       setDataPoints((prev) => {
         const newPoints = [...prev, memoryData];
-        // 最大データポイント数を超えたら古いデータを削除
         if (newPoints.length > maxDataPoints) {
           return newPoints.slice(-maxDataPoints);
         }
@@ -199,7 +208,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     }
   }, [isPaused, maxMemory, categorizeMemory, maxDataPoints]);
 
-  // キャンバス描画関数
   const drawChart = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || dataPoints.length < 2) return;
@@ -207,28 +215,25 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Retinaディスプレイ対応
+    //  Retina
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
-    // クリア
     ctx.clearRect(0, 0, rect.width, rect.height);
 
     const padding = { top: 20, right: 80, bottom: 40, left: 60 };
     const chartWidth = rect.width - padding.left - padding.right;
     const chartHeight = rect.height - padding.top - padding.bottom;
 
-    // 時間範囲の計算
     const now = Date.now();
     const startTime = now - (timeRange * 1000) / zoomLevel;
     const visiblePoints = dataPoints.filter((p) => p.timestamp >= startTime);
 
     if (visiblePoints.length < 2) return;
 
-    // スケール関数
     const xScale = (timestamp: number) => {
       return padding.left + ((timestamp - startTime) / (now - startTime)) * chartWidth;
     };
@@ -238,13 +243,11 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       return padding.top + (1 - value / maxValue) * chartHeight;
     };
 
-    // グリッド線の描画
     if (showGrid) {
       ctx.strokeStyle = theme.palette.divider;
       ctx.lineWidth = 0.5;
       ctx.setLineDash([2, 2]);
 
-      // 横線
       for (let i = 0; i <= 4; i++) {
         const y = padding.top + (chartHeight / 4) * i;
         ctx.beginPath();
@@ -253,7 +256,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         ctx.stroke();
       }
 
-      // 縦線
       for (let i = 0; i <= 5; i++) {
         const x = padding.left + (chartWidth / 5) * i;
         ctx.beginPath();
@@ -265,10 +267,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       ctx.setLineDash([]);
     }
 
-    // しきい値ラインの描画
     const maxValue = Math.max(...visiblePoints.map((p) => p.total));
 
-    // 警告ライン
     const warningY = yScale(maxValue * warningThreshold);
     ctx.strokeStyle = theme.palette.warning.main;
     ctx.lineWidth = 1;
@@ -278,7 +278,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     ctx.lineTo(padding.left + chartWidth, warningY);
     ctx.stroke();
 
-    // 危険ライン
     const criticalY = yScale(maxValue * criticalThreshold);
     ctx.strokeStyle = theme.palette.error.main;
     ctx.beginPath();
@@ -287,7 +286,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 積み上げエリアの描画
     const categories = Object.keys(categoryColors);
     const paths: { [key: string]: Path2D } = {};
 
@@ -295,7 +293,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       paths[category] = new Path2D();
     });
 
-    // 各カテゴリーの累積値を計算して描画
     visiblePoints.forEach((point, index) => {
       const x = xScale(point.timestamp);
       let cumulativeY = 0;
@@ -317,7 +314,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       });
     });
 
-    // 各エリアを塗りつぶし
     categories.reverse().forEach((category, index) => {
       const color = categoryColors[category];
       if (!color) return;
@@ -331,7 +327,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       const path = new Path2D();
       path.addPath(categoryPath);
 
-      // 下端まで線を引いて閉じる
       const lastPoint = visiblePoints[visiblePoints.length - 1];
       const firstPoint = visiblePoints[0];
 
@@ -340,7 +335,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
           path.lineTo(xScale(lastPoint.timestamp), padding.top + chartHeight);
           path.lineTo(xScale(firstPoint.timestamp), padding.top + chartHeight);
         } else {
-          // 前のカテゴリーのパスを逆順で追加
           path.lineTo(xScale(lastPoint.timestamp), yScale(0));
           path.lineTo(xScale(firstPoint.timestamp), yScale(0));
         }
@@ -352,11 +346,10 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
     ctx.globalAlpha = 1;
 
-    // 軸ラベルの描画
     ctx.fillStyle = theme.palette.text.primary;
     ctx.font = '12px sans-serif';
 
-    // Y軸ラベル
+    //  Y
     for (let i = 0; i <= 4; i++) {
       const value = (maxValue / 4) * (4 - i);
       const y = padding.top + (chartHeight / 4) * i;
@@ -364,7 +357,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       ctx.fillText(formatBytes(value), padding.left - 10, y + 4);
     }
 
-    // X軸ラベル
+    //  X
     ctx.textAlign = 'center';
     for (let i = 0; i <= 5; i++) {
       const time = startTime + ((now - startTime) / 5) * i;
@@ -374,7 +367,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       ctx.fillText(label, x, padding.top + chartHeight + 20);
     }
 
-    // アニメーションループ
     animationRef.current = requestAnimationFrame(drawChart);
   }, [
     dataPoints,
@@ -387,7 +379,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     criticalThreshold,
   ]);
 
-  // マウスイベントハンドラー
   const handleMouseMove = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -405,7 +396,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         const startTime = now - (timeRange * 1000) / zoomLevel;
         const timestamp = startTime + ((x - padding.left) / chartWidth) * (now - startTime);
 
-        // 最も近いデータポイントを見つける
         const closestPoint = dataPoints.reduce((prev, curr) => {
           return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
             ? curr
@@ -413,7 +403,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         });
 
         if (Math.abs(closestPoint.timestamp - timestamp) < 5000) {
-          // 5秒以内
+          //  5
           setHoveredPoint({ x, y, data: closestPoint });
         } else {
           setHoveredPoint(null);
@@ -422,10 +412,9 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         setHoveredPoint(null);
       }
     },
-    [dataPoints, timeRange, zoomLevel]
+    [dataPoints, timeRange, zoomLevel],
   );
 
-  // 初期化とクリーンアップ
   useEffect(() => {
     collectMemoryData();
     const safeInterval = Math.max(updateInterval, 10000);
@@ -441,7 +430,6 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     };
   }, [updateInterval, collectMemoryData]);
 
-  // 描画の開始
   useEffect(() => {
     drawChart();
     return () => {
@@ -472,7 +460,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
   return (
     <Paper sx={{ width, height, p: 2, position: 'relative' }}>
-      {/* コントロールバー */}
+      {/*
+*/}
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'flex', gap: 1 }}>
         <Tooltip title={isPaused ? 'Resume' : 'Pause'}>
           <IconButton size="small" onClick={() => setIsPaused(!isPaused)}>
@@ -499,12 +488,14 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         </Tooltip>
       </Box>
 
-      {/* タイトル */}
+      {/*
+*/}
       <Typography variant="subtitle2" sx={{ mb: 1 }}>
         Memory Usage Timeline
       </Typography>
 
-      {/* チャートキャンバス */}
+      {/*
+*/}
       <Box sx={{ position: 'relative', width: '100%', height: 'calc(100% - 80px)' }}>
         <canvas
           ref={canvasRef}
@@ -513,7 +504,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
           onMouseLeave={() => setHoveredPoint(null)}
         />
 
-        {/* ツールチップ */}
+        {/*
+*/}
         {hoveredPoint && (
           <Paper
             elevation={3}
@@ -546,7 +538,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         )}
       </Box>
 
-      {/* 凡例 */}
+      {/*
+*/}
       {showLegend && (
         <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'center' }}>
           {Object.entries(categoryColors).map(([category, color]) => (

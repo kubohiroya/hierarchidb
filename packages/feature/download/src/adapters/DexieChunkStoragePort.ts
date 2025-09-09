@@ -9,6 +9,7 @@ import type { StoragePort } from '../ports';
 class ChunkDB extends Dexie {
   files!: any;
   chunks!: any;
+
   constructor(name: string = getDBName('chunks-db')) {
     super(name);
     this.version(1).stores({
@@ -20,7 +21,10 @@ class ChunkDB extends Dexie {
 
 export class DexieChunkStoragePort implements StoragePort {
   private db: ChunkDB;
-  constructor(dbName?: string) { this.db = new ChunkDB(dbName); }
+
+  constructor(dbName?: string) {
+    this.db = new ChunkDB(dbName);
+  }
 
   async putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void> {
     const now = Date.now();
@@ -33,7 +37,12 @@ export class DexieChunkStoragePort implements StoragePort {
   }
 
   async commit(fileId: string, metadata: Record<string, any>): Promise<void> {
-    await this.db.files.update(fileId, { committed: true, sizeBytes: metadata?.sizeBytes, extra: metadata, updatedAt: Date.now() });
+    await this.db.files.update(fileId, {
+      committed: true,
+      sizeBytes: metadata?.sizeBytes,
+      extra: metadata,
+      updatedAt: Date.now(),
+    });
   }
 
   async getResumeInfo(fileId: string): Promise<{ nextIndex: number } | undefined> {
@@ -48,7 +57,10 @@ export class DexieChunkStoragePort implements StoragePort {
     const total = chunks.reduce((s: number, c: any) => s + c.data.byteLength, 0);
     const out = new Uint8Array(total);
     let offset = 0;
-    for (const c of chunks) { out.set(new Uint8Array(c.data), offset); offset += c.data.byteLength; }
+    for (const c of chunks) {
+      out.set(new Uint8Array(c.data), offset);
+      offset += c.data.byteLength;
+    }
     return out.buffer;
   }
 }

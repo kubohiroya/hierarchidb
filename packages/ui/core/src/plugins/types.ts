@@ -72,7 +72,7 @@ export interface UIPluginDefinition {
 export interface UIActionHooks {
   // Create Hooks
   beforeShowCreateDialog?: (
-    params: BeforeShowCreateDialogParams
+    params: BeforeShowCreateDialogParams,
   ) => Promise<BeforeShowCreateDialogResult>;
   onShowCreateDialog?: (params: ShowCreateDialogParams) => Promise<void>;
   onValidateCreateForm?: (params: ValidateCreateFormParams) => Promise<ValidateCreateFormResult>;

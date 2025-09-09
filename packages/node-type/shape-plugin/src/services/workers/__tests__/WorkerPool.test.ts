@@ -1,21 +1,24 @@
 /**
  * WorkerPool Integration Tests
- * 
+ *
  * Tests for Worker pool management and load balancing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkerPool } from '../WorkerPool';
 
 // Mock Worker API for testing
 interface MockWorkerAPI {
   ping(): Promise<boolean>;
+
   processTask(data: any): Promise<{ result: string; workerId: number }>;
+
   heavyTask(duration: number): Promise<string>;
 }
 
 class MockWorker implements MockWorkerAPI {
-  constructor(private workerId: number) {}
+  constructor(private workerId: number) {
+  }
 
   async ping(): Promise<boolean> {
     return true;
@@ -26,7 +29,7 @@ class MockWorker implements MockWorkerAPI {
     await new Promise(resolve => setTimeout(resolve, 10));
     return {
       result: `Processed: ${JSON.stringify(data)}`,
-      workerId: this.workerId
+      workerId: this.workerId,
     };
   }
 
@@ -37,18 +40,23 @@ class MockWorker implements MockWorkerAPI {
 }
 
 if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
-  describe.skip('WorkerPool (deep tests disabled)', () => {});
+  describe.skip('WorkerPool (deep tests disabled)', () => {
+  });
 } else describe('WorkerPool', () => {
   let pool: WorkerPool<MockWorkerAPI>;
   let mockWorkers: Worker[];
 
   beforeEach(async () => {
     // Create mock workers
-    mockWorkers = Array.from({ length: 3 }, (_, i) => ({
-      terminate: () => {},
-      postMessage: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
+    mockWorkers = Array.from({ length: 3 }, (_, _i) => ({
+      terminate: () => {
+      },
+      postMessage: () => {
+      },
+      addEventListener: () => {
+      },
+      removeEventListener: () => {
+      },
     } as any));
 
     // Create pool
@@ -88,16 +96,16 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
         pool.execute('processTask', { id: 1 }),
         pool.execute('processTask', { id: 2 }),
         pool.execute('processTask', { id: 3 }),
-        pool.execute('processTask', { id: 4 })
+        pool.execute('processTask', { id: 4 }),
       ]);
 
       // Assert
       expect(results).toHaveLength(4);
-      
+
       // Check that different workers were used (round-robin)
       const workerIds = results.map(r => r.workerId);
       expect(new Set(workerIds).size).toBeGreaterThan(1);
-      
+
       // Verify results
       results.forEach((result, index) => {
         expect(result.result).toContain(`"id":${index + 1}`);
@@ -108,7 +116,7 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
       // Act
       await Promise.all([
         pool.execute('processTask', { test: 1 }),
-        pool.execute('processTask', { test: 2 })
+        pool.execute('processTask', { test: 2 }),
       ]);
 
       // Assert
@@ -123,7 +131,7 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
         processTask: async () => {
           throw new Error('Task failed');
         },
-        ping: async () => true
+        ping: async () => true,
       };
       (pool as any).workers[0] = failingWorker;
 
@@ -144,7 +152,7 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
       const results = await Promise.all([
         pool.execute('heavyTask', 50),
         pool.execute('heavyTask', 50),
-        pool.execute('heavyTask', 50)
+        pool.execute('heavyTask', 50),
       ]);
 
       const endTime = Date.now();
@@ -154,7 +162,7 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
       expect(results).toHaveLength(3);
       // Should complete in roughly 50ms (parallel) rather than 150ms (sequential)
       expect(totalTime).toBeLessThan(100);
-      
+
       // Verify different workers were used
       const workerIds = results.map(r => parseInt(r.split(' ').pop()!));
       expect(new Set(workerIds).size).toBe(3);
@@ -163,13 +171,13 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
     it('should queue tasks when all workers are busy', async () => {
       // This test would require more sophisticated mocking to test queuing behavior
       // For now, we'll test that more tasks than workers can be handled
-      
+
       const results = await Promise.all([
         pool.execute('processTask', { id: 1 }),
         pool.execute('processTask', { id: 2 }),
         pool.execute('processTask', { id: 3 }),
         pool.execute('processTask', { id: 4 }),
-        pool.execute('processTask', { id: 5 })
+        pool.execute('processTask', { id: 5 }),
       ]);
 
       expect(results).toHaveLength(5);
@@ -194,7 +202,7 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
     it('should timeout tasks that take too long', async () => {
       // Act & Assert
       await expect(
-        pool.executeWithTimeout('heavyTask', 10, 100) // 100ms task with 10ms timeout
+        pool.executeWithTimeout('heavyTask', 10, 100), // 100ms task with 10ms timeout
       ).rejects.toThrow('Worker timeout after 10ms');
     });
 
@@ -212,14 +220,14 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
       // Arrange
       let attemptCount = 0;
       const unreliableWorker = {
-        processTask: async (data: any) => {
+        processTask: async (_data: any) => {
           attemptCount++;
           if (attemptCount < 3) {
             throw new Error(`Attempt ${attemptCount} failed`);
           }
           return { result: 'Success after retries', workerId: 0 };
         },
-        ping: async () => true
+        ping: async () => true,
       };
       (pool as any).workers[0] = unreliableWorker;
 
@@ -237,13 +245,13 @@ if (!process.env.ENABLE_SHAPE_DEEP_TESTS) {
         processTask: async () => {
           throw new Error('Always fails');
         },
-        ping: async () => true
+        ping: async () => true,
       };
       (pool as any).workers[0] = alwaysFailingWorker;
 
       // Act & Assert
       await expect(
-        pool.executeWithRetry('processTask', 2, { test: 'fail' })
+        pool.executeWithRetry('processTask', 2, { test: 'fail' }),
       ).rejects.toThrow('Always fails');
     });
   });

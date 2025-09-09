@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CommandProcessor } from '../CommandProcessor';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Policy C: block move/remove when WC exists', () => {
@@ -67,4 +67,3 @@ describe('Policy C: block move/remove when WC exists', () => {
     expect(r.success).toBe(false);
   });
 });
-

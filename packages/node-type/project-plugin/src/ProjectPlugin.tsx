@@ -1,4 +1,4 @@
-import type { PluginDefinition, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeType, PluginDefinition, TreeId } from '@hierarchidb/common-type';
 
 // Main plugin definition
 export const ProjectPluginDefinition: PluginDefinition = {

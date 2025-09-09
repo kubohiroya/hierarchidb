@@ -1,4 +1,12 @@
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
+/**
+  * : StylerEntity
+ * : SpreadsheetEntity
+ * : SpreadsheetEntity -> FolderEntity -> BaseEntity
+ * :
+  */
+//import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
+import type { StylerConfig } from '../types/stylerTypes';
 
 // Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };
@@ -16,11 +24,11 @@ export interface PersistentPeerEntity {
  * Inherits from PeerEntity to link node to spreadsheet-plugin metadata
  */
 
-// 【Spreadsheetプラグイン完成前の暫定型定義】
-// SpreadsheetEntityの仮定義（実装完成後に正式import予定）
+//  Spreadsheet
+//  SpreadsheetEntityimport
 export interface SpreadsheetEntity {
-  // FolderEntityから継承される基本フィールド
-  id: EntityId;
+  //  FolderEntity
+  id: NodeId;
   nodeId: NodeId;
   name: string;
   description?: string;
@@ -28,7 +36,7 @@ export interface SpreadsheetEntity {
   updatedAt: number;
   version: number;
 
-  // SpreadsheetEntityの拡張フィールド（暫定）
+  //  SpreadsheetEntity
   spreadsheetMetadataId?: string;
   dataSource: {
     type: 'file' | 'url' | 'manual';
@@ -42,8 +50,24 @@ export interface SpreadsheetEntity {
   };
 }
 
-// 【色変換で使用する型定義群】
-// extension/definition.tsから移行
+//  extension/definition.ts
+export interface StylerStyle {
+  backgroundColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  opacity?: number;
+}
+
+export interface StylerColorRule {
+  column: string;
+  operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'range';
+  value: unknown;
+  maxValue?: unknown; // For range operator
+  style: StylerStyle;
+  label?: string;
+}
+
 export interface StylerStyle {
   backgroundColor?: string;
   textColor?: string;
@@ -62,62 +86,34 @@ export interface StylerColorRule {
 }
 
 /**
- * 【型定義】: StylerEntityの完全な型定義
- * 【実装方針】: SpreadsheetEntityを継承してスタイル情報を追加
- * 【継承関係】: SpreadsheetEntity -> FolderEntity -> BaseEntity
- * 🟢 信頼性レベル: プラグイン拡張仕様準拠
- */
-//import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
-import type { StylerConfig } from '../types/stylerTypes';
-
-// 【色変換で使用する型定義群】
-export interface StylerStyle {
-  backgroundColor?: string;
-  textColor?: string;
-  borderColor?: string;
-  borderWidth?: number;
-  opacity?: number;
-}
-
-export interface StylerColorRule {
-  column: string;
-  operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'range';
-  value: unknown;
-  maxValue?: unknown; // For range operator
-  style: StylerStyle;
-  label?: string;
-}
-
-/**
- * 【型定義】: StylerEntityの完全な型定義
- * 【実装方針】: SpreadsheetEntityを継承してスタイル情報を追加
- * 【継承関係】: SpreadsheetEntity -> FolderEntity -> BaseEntity
- * 🟢 信頼性レベル: プラグイン拡張仕様準拠
- */
+  * : StylerEntity
+ * : SpreadsheetEntity
+ * : SpreadsheetEntity -> FolderEntity -> BaseEntity
+ * :
+  */
 export interface StylerEntity extends SpreadsheetEntity {
-  // SpreadsheetEntityから継承される全フィールド (実際に含まれる)
-  // - id: EntityId (PeerEntityから)
-  // - nodeId: NodeId (PeerEntityから)
-  // - name: string (SpreadsheetEntityで定義)
-  // - description?: string (SpreadsheetEntityで定義)
-  // - createdAt, updatedAt, version: number (PeerEntityから)
-  // - spreadsheetMetadataId?: string (SpreadsheetEntityで定義)
-  // - dataSource: object (SpreadsheetEntityで定義)
-  // - filters?: object (SpreadsheetEntityで定義)
+  //  SpreadsheetEntity ()
+  //  - id: NodeId (PeerEntity)
+  //  - nodeId: NodeId (PeerEntity)
+  //  - name: string (SpreadsheetEntity)
+  //  - description?: string (SpreadsheetEntity)
+  //  - createdAt, updatedAt, version: number (PeerEntity)
+  //  - spreadsheetMetadataId?: string (SpreadsheetEntity)
+  //  - dataSource: object (SpreadsheetEntity)
+  //  - filters?: object (SpreadsheetEntity)
 
-  // Styler固有のフィールド
+  //  Styler
   stylerConfig: StylerConfig;
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
 
-  // 生成されたスタイル情報（オプション）
   generatedStyle?: {
     maplibreStyleSpec: any;
     colorMapping: Record<string, string>;
     lastUpdated: number;
   };
 
-  // 後方互換性のための旧フィールド（deprecatedマーク）
+  //  deprecated
   /** @deprecated Use stylerConfig instead */
   keyColumn?: string;
   /** @deprecated Use stylerConfig instead */
@@ -127,9 +123,9 @@ export interface StylerEntity extends SpreadsheetEntity {
 }
 
 /**
- * 【型定義】: StylerWorkingCopyの型定義
- * 🟢 信頼性レベル: Working Copyパターン準拠
- */
+  * : StylerWorkingCopy
+ * : Working Copy
+  */
 export interface StylerWorkingCopy extends StylerEntity {
   isDraft: boolean;
   originalId?: string;

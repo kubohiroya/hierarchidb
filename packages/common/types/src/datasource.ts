@@ -15,16 +15,16 @@ export interface BaseDataSourceConfig {
   name: string;
   displayName: string;
   description: string;
-  
+
   // License information
   license: string;
   licenseUrl: string;
   attribution: string;
-  
+
   // UI presentation
   color: string;
   icon: string;
-  
+
   // Coverage
   supportedCountries?: string[];
 }
@@ -71,30 +71,21 @@ export interface RouteDataSourceConfig extends BaseDataSourceConfig {
 /**
  * Union type for all data source configurations
  */
-export type DataSourceConfig = 
-  | ShapeDataSourceConfig 
-  | LocationDataSourceConfig 
+export type DataSourceConfig =
+  | ShapeDataSourceConfig
+  | LocationDataSourceConfig
   | RouteDataSourceConfig;
 
 /**
  * Location types for location plugin
  */
-export type LocationType = 
-  | 'administrative_center'  // 行政の中心地
-  | 'airport'                // 空港
-  | 'port'                   // 港
-  | 'railway_station'        // 鉄道駅
-  | 'highway_interchange';   // インターチェンジ
-
+export type LocationType =
+  | 'administrative_center' | 'airport' | 'port' | 'railway_station' | 'highway_interchange';
 /**
  * Route types for route plugin
  */
-export type RouteType = 
-  | 'airway'        // 空路
-  | 'seaway'        // 海路（運河）
-  | 'road'          // 道路
-  | 'railway'       // 鉄道
-  | 'high_speed_rail'; // 高速鉄道
+export type RouteType =
+  | 'airway' | 'seaway' | 'road' | 'railway' | 'high_speed_rail';
 
 /**
  * Common country metadata
@@ -178,7 +169,7 @@ export interface LocationUrlMetadata extends BaseUrlMetadata {
 }
 
 /**
- * Route-specific URL metadata  
+ * Route-specific URL metadata
  */
 /**
  * @deprecated Unused across the repository; scheduled for removal.

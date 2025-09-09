@@ -1,36 +1,36 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Grid,
-  Typography,
-  Paper,
-  IconButton,
   Button,
   Card,
-  CardContent,
   CardActions,
+  CardContent,
   Chip,
-  Stack,
-  TextField,
-  Select,
-  MenuItem,
   FormControl,
-  InputLabel,
   FormControlLabel,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
   Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon,
-  Settings as SettingsIcon,
-  PlayArrow as PlayIcon,
   Adjust as BufferIcon,
+  BubbleChart as ClusterIcon,
+  Delete as DeleteIcon,
+  Gradient as DensityIcon,
+  Info as InfoIcon,
   Layers as IntersectionIcon,
   NearMe as NearestIcon,
-  BubbleChart as ClusterIcon,
-  Gradient as DensityIcon,
+  PlayArrow as PlayIcon,
   Route as NetworkIcon,
-  Info as InfoIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import type { ProjectEntity, SpatialAnalysis, SpatialAnalysisType } from '~/types/project-types';
 
@@ -91,11 +91,11 @@ interface AnalysisConfigPanelProps {
 }
 
 const AnalysisConfigPanel: React.FC<AnalysisConfigPanelProps> = ({
-  analysis,
-  layers,
-  onChange,
-  onDelete,
-}) => {
+                                                                   analysis,
+                                                                   layers,
+                                                                   onChange,
+                                                                   onDelete,
+                                                                 }) => {
   const renderConfig = () => {
     switch (analysis.type) {
       case 'buffer':

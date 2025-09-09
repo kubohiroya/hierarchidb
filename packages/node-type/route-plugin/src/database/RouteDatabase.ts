@@ -5,7 +5,7 @@
 
 import Dexie, { type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteEntity, RouteWorkingCopy } from '../entities/RouteEntity';
 
 /**
@@ -13,7 +13,7 @@ import type { RouteEntity, RouteWorkingCopy } from '../entities/RouteEntity';
  */
 export interface RouteCacheEntry {
   id: string;
-  routeId: EntityId;
+  routeId: NodeId;
   cacheKey: string;
   data: any;
   createdAt: number;
@@ -24,17 +24,32 @@ export interface RouteCacheEntry {
  * Route database schema
  */
 export class RouteDatabase extends Dexie {
-  routes!: Table<RouteEntity, EntityId>;
-  workingCopies!: Table<RouteWorkingCopy, EntityId>;
+  routes!: Table<RouteEntity, NodeId>;
+  workingCopies!: Table<RouteWorkingCopy, NodeId>;
   routeCache!: Table<RouteCacheEntry, string>;
   // Batch session tracking (cursor/progress)
-  routeCursors!: Table<{ sessionId: string; completed: number; total: number; paused?: boolean; updatedAt: number }, string>;
+  routeCursors!: Table<{
+    sessionId: string;
+    completed: number;
+    total: number;
+    paused?: boolean;
+    updatedAt: number
+  }, string>;
   // Optional results storage for batch-generated routes
-  routeResults!: Table<{ id: string; sessionId: string; taskId: string; method: string; lineGeometry: [number, number][]; distance?: number; duration?: number; createdAt: number }, string>;
+  routeResults!: Table<{
+    id: string;
+    sessionId: string;
+    taskId: string;
+    method: string;
+    lineGeometry: [number, number][];
+    distance?: number;
+    duration?: number;
+    createdAt: number
+  }, string>;
 
   constructor(dbName: string = getDBName('route-db')) {
     super(dbName);
-    
+
     this.version(1).stores({
       routes: '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
       workingCopies: '&id, nodeId, copiedAt',
@@ -43,7 +58,7 @@ export class RouteDatabase extends Dexie {
     // v2: add cursor/results tables for batch processing (idempotency, pause/resume, observability)
     this.version(2).stores({
       routeCursors: '&sessionId, completed, total, updatedAt',
-      routeResults: '&id, sessionId, taskId, method, createdAt'
+      routeResults: '&id, sessionId, taskId, method, createdAt',
     });
   }
 
@@ -61,7 +76,7 @@ export class RouteDatabase extends Dexie {
   /**
    * Clean up route-specific cache
    */
-  async cleanupRouteCache(routeId: EntityId): Promise<void> {
+  async cleanupRouteCache(routeId: NodeId): Promise<void> {
     await this.routeCache
       .where('routeId')
       .equals(routeId)
@@ -71,20 +86,20 @@ export class RouteDatabase extends Dexie {
   /**
    * Get cached data for route
    */
-  async getCachedData(routeId: EntityId, cacheKey: string): Promise<any | null> {
+  async getCachedData(routeId: NodeId, cacheKey: string): Promise<any | null> {
     const entry = await this.routeCache
       .where('[routeId+cacheKey]')
       .equals([routeId, cacheKey])
       .first();
-    
+
     if (!entry) return null;
-    
+
     // Check if expired
     if (entry.expiresAt < Date.now()) {
       await this.routeCache.delete(entry.id);
       return null;
     }
-    
+
     return entry.data;
   }
 
@@ -92,10 +107,10 @@ export class RouteDatabase extends Dexie {
    * Set cached data for route
    */
   async setCachedData(
-    routeId: EntityId,
+    routeId: NodeId,
     cacheKey: string,
     data: any,
-    ttl: number = 3600000 // 1 hour default
+    ttl: number = 3600000, // 1 hour default
   ): Promise<void> {
     const now = Date.now();
     const entry: RouteCacheEntry = {
@@ -106,7 +121,7 @@ export class RouteDatabase extends Dexie {
       createdAt: now,
       expiresAt: now + ttl,
     };
-    
+
     await this.routeCache.put(entry);
   }
 
@@ -135,13 +150,13 @@ export class RouteDatabase extends Dexie {
       this.workingCopies.count(),
       this.routeCache.count(),
     ]);
-    
+
     // Estimate cache size
     const cacheEntries = await this.routeCache.toArray();
     const cacheSize = cacheEntries.reduce((sum, entry) => {
       return sum + JSON.stringify(entry.data).length;
     }, 0);
-    
+
     return {
       totalRoutes,
       totalWorkingCopies,

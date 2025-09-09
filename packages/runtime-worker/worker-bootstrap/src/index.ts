@@ -1,6 +1,6 @@
 /**
  * @hierarchidb/runtime-worker-worker-init-notifier
- * 
+ *
  * Worker initialization notification system for reliable Worker-UI communication
  */
 
@@ -14,8 +14,7 @@ export { WorkerInitializationChannel } from './WorkerInitializationChannel';
 export { WorkerInitializationReporter } from './WorkerInitializationReporter';
 
 // React components
-export { WorkerSingletonProvider, useWorker } from '~/provider/WorkerSingletonProvider';
-
+export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider';
 
 
 // Re-export types for convenience

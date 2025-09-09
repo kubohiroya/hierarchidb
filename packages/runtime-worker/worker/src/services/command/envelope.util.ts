@@ -2,7 +2,7 @@
 // Keeps the runtime behavior unchanged; this is a typing utility only.
 
 import type { Timestamp } from '@hierarchidb/common-type';
-import type { CommandEnvelope, CommandKind, PayloadOf, EnvelopeInit } from './registry.types';
+import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types';
 
 function randomId(prefix: string): string {
   const g: any = (globalThis as any);
@@ -10,14 +10,14 @@ function randomId(prefix: string): string {
   if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
     return cryptoObj.randomUUID();
   }
-  // Fallback – sufficient for non-crypto use (tests/dev only)
+  //  Fallback sufficient for non-crypto use (tests/dev only)
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function createEnvelope<K extends CommandKind>(
   kind: K,
   payload: PayloadOf<K>,
-  init?: EnvelopeInit
+  init?: EnvelopeInit,
 ): CommandEnvelope<K> {
   const issuedAt = (init?.issuedAt ?? (Date.now() as unknown)) as Timestamp;
   return {

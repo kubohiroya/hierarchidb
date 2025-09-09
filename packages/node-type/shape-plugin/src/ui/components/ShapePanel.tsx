@@ -3,41 +3,34 @@
  * Panel component for displaying shape-plugin entity information
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Typography,
+  Button,
   Card,
   CardContent,
-  Button,
   Chip,
   CircularProgress,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Grid,
   LinearProgress,
+  Typography,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   Edit as EditIcon,
-  PlayArrow as PlayIcon,
+  ExpandMore as ExpandMoreIcon,
   Pause as PauseIcon,
-  Stop as StopIcon,
+  PlayArrow as PlayIcon,
   Refresh as RefreshIcon,
+  Stop as StopIcon,
 } from '@mui/icons-material';
-import { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '../../shared/types';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
 import { useShapeEntityProgress } from '../hooks/useShapeProgress';
-import {
-  ShapeEntity,
-  ProcessingStatus,
-  ProgressInfo,
-  formatBytes,
-  //formatDuration,
-  //parseCheckboxState,
-} from '../../shared';
+import { formatBytes, ShapeEntity } from '../../shared';
 
 export interface ShapePanelProps {
   nodeId: NodeId;
@@ -58,7 +51,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
     progress: batchProgress,
     status: processingStatus,
     error: progressError,
-    isSubscribed,
+    // isSubscribed,
     refresh: refreshProgress,
   } = useShapeEntityProgress(nodeId, {
     autoSubscribe: true,
@@ -111,12 +104,12 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
     try {
       const api = await getShapeAPI();
-      // Note: startBatchProcessing expects a workingCopyId (EntityId), not nodeId
+      // Note: startBatchProcessing expects a workingCopyId (NodeId alias), not nodeId
       // For now, we cast the nodeId, but this should be refactored to use proper WorkingCopyTypes
       await api.startBatchProcessing(
-        nodeId as EntityId,
+        nodeId as unknown as string,
         entity.processingConfig,
-        entity.urlMetadata
+        entity.urlMetadata,
       );
       await handleRefresh();
     } catch (error) {
@@ -130,7 +123,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
     try {
       const api = await getShapeAPI();
-      await api.pauseBatchProcessing(entity.batchSessionId as EntityId);
+      await api.pauseBatchProcessing(entity.batchSessionId as unknown as string);
       await handleRefresh();
     } catch (error) {
       console.error('Failed to pause processing:', error);
@@ -143,7 +136,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
     try {
       const api = await getShapeAPI();
-      await api.cancelBatchProcessing(entity.batchSessionId as EntityId);
+      await api.cancelBatchProcessing(entity.batchSessionId as unknown as string);
       await handleRefresh();
     } catch (error) {
       console.error('Failed to stop processing:', error);

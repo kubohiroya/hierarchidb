@@ -3,7 +3,7 @@
  * @description Base handler for entities with hierarchical parent-child relationships
  */
 
-import type { NodeId, BaseEntity } from '@hierarchidb/common-type';
+import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
 import type { Collection } from 'dexie';
 import { BaseEntityHandler } from './BaseEntityHandler';
 import type { BaseSearchCriteria } from '../types';
@@ -182,7 +182,7 @@ export abstract class HierarchicalEntityHandler<
   private async populateSubtree(
     node: TreeNode<TEntity>,
     maxDepth?: number,
-    currentDepth: number = 1
+    currentDepth: number = 1,
   ): Promise<void> {
     if (maxDepth && currentDepth > maxDepth) {
       return;
@@ -358,7 +358,7 @@ export abstract class HierarchicalEntityHandler<
    */
   async deleteNodeWithDescendants(
     nodeId: NodeId,
-    deleteDescendants: boolean = true
+    deleteDescendants: boolean = true,
   ): Promise<void> {
     try {
       const entity = await this.getEntityByNodeId(nodeId);
@@ -393,7 +393,7 @@ export abstract class HierarchicalEntityHandler<
    */
   protected applyAdditionalSearchCriteria(
     query: Collection<TEntity>,
-    criteria: TSearchCriteria
+    criteria: TSearchCriteria,
   ): Collection<TEntity, any> {
     if (criteria.parentId !== undefined) {
       query = query.filter((entity) => entity.parentId === criteria.parentId);

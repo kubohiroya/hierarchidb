@@ -1,29 +1,27 @@
 /**
- * SubscriptionOrchestrator
- *
- * SubTree購読に関するユーザーストーリーの管理
- * - Worker購読管理
- * - リアルタイム更新処理
- * - バッチング最適化
- */
+  * SubscriptionOrchestrator
+  * SubTree
+ * - Worker
+ * -
+ * -
+  */
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
-  subscribedRootNodeIdAtom,
-  subscriptionIdAtom,
-  subscriptionDepthAtom,
   lastUpdateTimestampAtom,
   pendingUpdatesAtom,
+  subscribedRootNodeIdAtom,
+  subscriptionDepthAtom,
+  subscriptionIdAtom,
   tableDataAtom,
 } from '../state';
 
 /**
- * SubTree変更の型定義
- */
+  * SubTree
+  */
 export interface SubTreeChanges {
   added?: TreeNode[];
   updated?: Array<{
@@ -56,8 +54,8 @@ export interface SubscriptionOrchestratorResult {
 }
 
 /**
- * SubTree購読のオーケストレーター
- */
+  * SubTree
+  */
 export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionOrchestratorResult {
   // State atoms
   const [subscribedRootNodeId, setSubscribedRootNodeId] = useAtom(subscribedRootNodeIdAtom);
@@ -72,21 +70,18 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
   const subscriptionRef = useRef<any>(null);
 
   /**
-   * 更新のマージ処理
-   */
+            */
   const mergeUpdates = useCallback(
     (updates: SubTreeChanges[]): TreeNode[] => {
       let mergedData = [...tableData];
 
       updates.forEach((update) => {
-        // 追加
         if (update.added) {
           const existingIds = new Set(mergedData.map((n) => n.id));
           const newNodes = update.added.filter((n) => !existingIds.has(n.id));
           mergedData = [...mergedData, ...newNodes];
         }
 
-        // 更新
         if (update.updated) {
           update.updated.forEach(({ nodeId, changes }) => {
             const index = mergedData.findIndex((node) => node.id === nodeId);
@@ -96,19 +91,16 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
           });
         }
 
-        // 削除
         if (update.removed) {
           const removedSet = new Set(update.removed);
           mergedData = mergedData.filter((node) => !removedSet.has(node.id!));
         }
 
-        // 移動
         if (update.moved) {
           update.moved.forEach((move) => {
             const node = mergedData.find((n) => n.id === move.nodeId);
             if (node) {
               node.parentId = move.newParentId as NodeId;
-              // TODO: 順序の更新も実装
             }
           });
         }
@@ -116,18 +108,17 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
 
       return mergedData;
     },
-    [tableData]
+    [tableData],
   );
 
   /**
-   * SubTree更新ハンドラー
-   */
+      * SubTree
+      */
   const handleSubTreeUpdate = useCallback(
     (changes: SubTreeChanges) => {
-      // タイムスタンプ更新
       setLastUpdateTimestamp(changes.timestamp);
 
-      // バッチング: 100ms以内の更新をまとめる
+      //  : 100ms
       setPendingUpdates((prev) => [...prev, changes]);
 
       if (updateBatchTimerRef.current) {
@@ -138,21 +129,19 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
         processPendingUpdates();
       }, 100);
     },
-    [setLastUpdateTimestamp, setPendingUpdates]
+    [setLastUpdateTimestamp, setPendingUpdates],
   );
 
   /**
-   * 保留中の更新を処理
-   */
+            */
   const processPendingUpdates = useCallback(() => {
     setPendingUpdates((pending) => {
       if (pending.length === 0) return [];
 
-      // すべての更新をマージして適用
       const mergedData = mergeUpdates(pending);
       setTableData(mergedData);
 
-      return []; // 保留をクリア
+      return [];
     });
 
     if (updateBatchTimerRef.current) {
@@ -162,44 +151,42 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
   }, [setPendingUpdates, mergeUpdates, setTableData]);
 
   /**
-   * SubTree購読開始
-   */
+      * SubTree
+      */
   const subscribe = useCallback(
     async (rootNodeId: string, _depth: number = 2) => {
-      // 既存の購読があれば解除
       if (subscriptionRef.current) {
         await unsubscribe();
       }
 
       try {
-        // WorkerAPIを通じて購読
+        //  WorkerAPI
         const subscriptionAPI = await workerAPI.getSubscriptionAPI();
         const subscription = await subscriptionAPI.subscribeSubtree(
           rootNodeId as NodeId,
           (event: any) => {
-            // イベントタイプに応じて処理を分岐
             if (event.type === 'expanded') {
               console.log('Expanded changes:', event);
             } else {
-              // SubTreeの変更を処理
+              //  SubTree
               handleSubTreeUpdate(event as SubTreeChanges);
             }
-          }
+          },
         );
 
         subscriptionRef.current = subscription;
-        setSubscriptionId(rootNodeId); // 簡易的にrootNodeIdを使用
+        setSubscriptionId(rootNodeId); //  rootNodeId
         setSubscribedRootNodeId(rootNodeId);
       } catch (error) {
         console.error('Failed to subscribe to subtree:', error);
       }
     },
-    [workerAPI, handleSubTreeUpdate, setSubscriptionId, setSubscribedRootNodeId]
+    [workerAPI, handleSubTreeUpdate, setSubscriptionId, setSubscribedRootNodeId],
   );
 
   /**
-   * SubTree購読解除
-   */
+      * SubTree
+      */
   const unsubscribe = useCallback(async () => {
     if (subscriptionRef.current) {
       try {
@@ -210,21 +197,17 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       }
     }
 
-    // バッチタイマーをクリア
     if (updateBatchTimerRef.current) {
       clearTimeout(updateBatchTimerRef.current);
       updateBatchTimerRef.current = null;
     }
 
-    // 保留中の更新を処理
     processPendingUpdates();
 
-    // 状態をクリア
     setSubscriptionId(null);
     setSubscribedRootNodeId(null);
   }, [processPendingUpdates, setSubscriptionId, setSubscribedRootNodeId]);
 
-  // クリーンアップ
   useEffect(() => {
     return () => {
       if (subscriptionRef.current) {

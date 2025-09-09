@@ -1,38 +1,43 @@
 /**
- * Tag Entity Types
- * システム全体で使用されるタグ管理のためのエンティティ型定義
- */
+  * Tag Entity Types
+   */
 
-import type { NodeId, EntityId } from './id-types';
+import type { NodeId, TagId } from './id-types';
 import type { RelationalEntity } from './entity-types';
 import { Timestamp } from './primitive-types';
 
 /**
- * TagEntity - システム全体で使用されるタグ
- * RelationalEntityとして実装し、複数のノードから参照される
- */
-export interface TagEntity extends RelationalEntity {
-  /** タグの名前（表示名） */
+  * TagEntity -
+ * RelationalEntity
+  */
+export interface TagEntity extends RelationalEntity<TagId> {
+  /**
+      */
   name: string;
 
-  /** タグの色（16進数カラーコード） */
+  /**
+   * 16
+   */
   color: string;
 
-  /** タグの説明 */
+  /**
+      */
   description?: string;
 
-  /** タグのカテゴリ（システム定義またはユーザー定義） */
+  /**
+      */
   category: 'system' | 'user' | 'auto';
 
-  /** 使用頻度（検索時の順序決定に使用） */
+  /**
+      */
   usageCount: number;
 }
 
 /**
- * TagSuggestion - タグ入力時の候補表示用
- */
+  * TagSuggestion -
+  */
 export interface TagSuggestion {
-  id: EntityId;
+  id: TagId;
   name: string;
   color: string;
   usageCount: number;
@@ -40,34 +45,36 @@ export interface TagSuggestion {
 }
 
 /**
- * NodeTagAssociation - ノードとタグの関連付け
- * Many-to-Many関係を管理するための中間テーブル
- */
+  * NodeTagAssociation -
+ * Many-to-Many
+  */
+export type NodeTagAssociationId = string & { readonly __brand: 'NodeTagAssociationId' };
+
 export interface NodeTagAssociation {
-  id: EntityId;
+  id: NodeTagAssociationId;
   nodeId: NodeId;
-  tagId: EntityId;
+  tagId: TagId;
   assignedAt: Timestamp;
-  assignedBy?: string; // ユーザーID（オプション）
+  assignedBy?: string; //  ID
 }
 
 /**
- * TagUsageStatistics - タグの使用統計
- */
+  * TagUsageStatistics -
+  */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface TagUsageStatistics {
-  tagId: EntityId;
+  tagId: TagId;
   totalUsage: number;
-  recentUsage: number; // 過去30日間の使用回数
-  nodeTypes: Record<string, number>; // ノードタイプ別使用回数
+  recentUsage: number; //  30
+  nodeTypes: Record<string, number>;
   lastUsedAt: Timestamp;
 }
 
 /**
- * TagSearchOptions - タグ検索オプション
- */
+  * TagSearchOptions -
+  */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */

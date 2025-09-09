@@ -1,26 +1,24 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Typography,
-  Stack,
-  IconButton,
-  Button,
-  Box,
-  Paper,
-  Tabs,
-  Tab,
-  Fab,
   Badge,
+  Box,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
 } from '@mui/material';
 import {
-  Close as CloseIcon,
-  Stop as StopIcon,
-  ErrorOutline as ErrorOutlineIcon,
-  Timeline as TimelineIcon,
-  Map as MapIcon,
   BugReport as BugReportIcon,
+  Close as CloseIcon,
+  Map as MapIcon,
+  Stop as StopIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import type { BatchMonitorDialogProps, BatchStatus } from '~/shared';
@@ -35,13 +33,13 @@ import { useBatchWorkerConsole } from '~/hooks/useBatchWorkerConsole';
 import { useErrorConsole } from '~/hooks/useErrorConsole';
 
 export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = ({
-  open,
-  onClose,
-  nodeId,
-  config,
-  urlMetadata,
-  onBatchCompleted,
-}) => {
+                                                                                  open,
+                                                                                  onClose,
+                                                                                  nodeId,
+                                                                                  config,
+                                                                                  urlMetadata,
+                                                                                  onBatchCompleted,
+                                                                                }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [selectedTab, setSelectedTab] = useState(0);
   const [batchStatus, setBatchStatus] = useState<BatchStatus>('preparing');
@@ -58,11 +56,11 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
       level: ErrorLogEntry['level'] = 'error',
       phase: string = 'processing',
       rowNumber?: number,
-      columnName?: string
+      columnName?: string,
     ) => {
       addError(message, { level, phase, rowNumber, columnName });
     },
-    [addError]
+    [addError],
   );
 
   // Batch worker console hook (mock implementation)
@@ -92,7 +90,7 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
         addErrorWithContext(
           `Failed to start batch processing: ${error.message}`,
           'critical',
-          'startup'
+          'startup',
         );
         setBatchStatus('error');
       });
@@ -125,7 +123,7 @@ export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = (
           'error',
           'validation',
           892,
-          'admin_code'
+          'admin_code',
         );
       }, 10000);
 

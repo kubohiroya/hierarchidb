@@ -1,81 +1,62 @@
 /**
- * @file ShapeErrorHierarchy.ts
- * @description Shape処理における体系的なエラー階層定義
- * 
- * エラー設計方針：
- * 1. エラーをカテゴリ別に分類（Worker/Network/Data/Validation）
- * 2. 各エラーに明確な属性を定義（リカバリ可能性、リトライ可否など）
- * 3. ユーザーフレンドリーなメッセージとアクションを提供
- * 4. エラーコンテキストの保持（デバッグ情報、スタックトレース）
- */
+  * @file ShapeErrorHierarchy.ts
+ * @description Shape
+   * 1. Worker/Network/Data/Validation
+ * 2.
+ * 3.
+ * 4.
+  */
 
 import type { TreeNodeId } from '@hierarchidb/core';
 
 // ========================================
-// エラーカテゴリの定義
 // ========================================
 
 /**
- * エラーの大分類
- */
+    */
 export enum ErrorCategory {
-  WORKER = 'worker',           // Worker通信・処理関連
-  NETWORK = 'network',         // ネットワーク通信関連
-  DATA = 'data',              // データ処理・検証関連
-  VALIDATION = 'validation',   // 入力検証関連
-  SYSTEM = 'system'           // システムエラー
+  WORKER = 'worker',           //  Worker
+  NETWORK = 'network', DATA = 'data', VALIDATION = 'validation', SYSTEM = 'system'
 }
 
 /**
- * エラーの深刻度
- */
+    */
 export enum ErrorSeverity {
-  CRITICAL = 'CRITICAL',   // 致命的エラー（処理継続不可）
-  ERROR = 'ERROR',        // エラー（リトライ可能）
-  WARNING = 'WARNING',     // 警告（処理は継続可能）
-  INFO = 'INFO'           // 情報（ユーザー通知）
+  CRITICAL = 'CRITICAL', ERROR = 'ERROR', WARNING = 'WARNING', INFO = 'INFO'
 }
 
 // ========================================
-// 基底エラー型
 // ========================================
 
 /**
- * Shape処理エラーの基底インターフェース
- */
+  * Shape
+  */
 export interface BaseShapeError extends Error {
-  // エラー識別情報
   category: ErrorCategory;
   type: string;
   code: string;
   severity: ErrorSeverity;
-  
-  // エラー詳細
+
   message: string;
   userMessage?: string;
   technicalDetails?: Record<string, any>;
-  
-  // リカバリ情報
+
   recoverable: boolean;
   retryable: boolean;
   suggestedActions?: SuggestedAction[];
-  
-  // コンテキスト情報
+
   timestamp: number;
   sessionId?: string;
   treeNodeId?: TreeNodeId;
   stage?: BatchProcessingStage;
-  // 任意の付帯情報
   metadata?: Record<string, any>;
-  
-  // エラーチェーン
+
   cause?: Error | BaseShapeError;
   stack?: string;
 }
 
 /**
- * 推奨アクション
- */
+    */
 export interface SuggestedAction {
   type: ActionType;
   label: string;
@@ -95,14 +76,14 @@ export enum ActionType {
   CANCEL = 'CANCEL'
 }
 
-export type BatchProcessingStage = 
+export type BatchProcessingStage =
   | 'download'
   | 'simplify1'
   | 'simplify2'
   | 'vectorTiles';
 
 // ========================================
-// Worker関連エラー
+//  Worker
 // ========================================
 
 export interface WorkerError extends BaseShapeError {
@@ -134,7 +115,6 @@ export interface WorkerMemoryError extends WorkerError {
 }
 
 // ========================================
-// ネットワーク関連エラー
 // ========================================
 
 export interface NetworkError extends BaseShapeError {
@@ -172,7 +152,6 @@ export interface NetworkTimeoutError extends NetworkError {
 }
 
 // ========================================
-// データ関連エラー
 // ========================================
 
 export interface DataError extends BaseShapeError {
@@ -206,7 +185,6 @@ export interface DataCorruptionError extends DataError {
 }
 
 // ========================================
-// 検証関連エラー
 // ========================================
 
 export interface ValidationError extends BaseShapeError {
@@ -242,20 +220,18 @@ export interface ConfigurationError extends ValidationError {
 }
 
 // ========================================
-// エラーファクトリー
 // ========================================
 
 /**
- * エラーファクトリークラス
- */
+    */
 export class ShapeErrorFactory {
   /**
-   * Worker切断エラーを作成
-   */
+      * Worker
+      */
   static createWorkerDisconnectedError(
     message: string,
     sessionId?: string,
-    workerId?: string
+    workerId?: string,
   ): WorkerDisconnectedError {
     return {
       name: 'WorkerDisconnectedError',
@@ -271,23 +247,22 @@ export class ShapeErrorFactory {
         {
           type: ActionType.RETRY,
           label: '再接続',
-          description: 'Worker接続を再試行します'
-        }
+          description: 'Worker接続を再試行します',
+        },
       ],
       timestamp: Date.now(),
       sessionId,
       workerId,
-      lastHeartbeat: Date.now()
+      lastHeartbeat: Date.now(),
     };
   }
 
   /**
-   * レート制限エラーを作成
-   */
+            */
   static createRateLimitError(
     url: string,
     retryAfter: number,
-    limit?: number
+    limit?: number,
   ): RateLimitError {
     return {
       name: 'RateLimitError',
@@ -304,28 +279,27 @@ export class ShapeErrorFactory {
           type: ActionType.RETRY_WITH_BACKOFF,
           label: '自動リトライ',
           description: `${retryAfter}秒後に自動的に再試行`,
-          params: { delay: retryAfter * 1000 }
+          params: { delay: retryAfter * 1000 },
         },
         {
           type: ActionType.REDUCE_CONCURRENCY,
           label: '並行数を減らす',
-          description: '同時ダウンロード数を減らして再試行'
-        }
+          description: '同時ダウンロード数を減らして再試行',
+        },
       ],
       timestamp: Date.now(),
       url,
       method: 'GET',
       retryAfter,
-      limit
+      limit,
     };
   }
 
   /**
-   * 無効な国コードエラーを作成
-   */
+            */
   static createInvalidCountryCodeError(
     invalidCodes: string[],
-    validCodes?: string[]
+    validCodes?: string[],
   ): InvalidCountryCodeError {
     return {
       name: 'InvalidCountryCodeError',
@@ -342,13 +316,13 @@ export class ShapeErrorFactory {
           type: ActionType.CHANGE_CONFIGURATION,
           label: '国コードを修正',
           description: '有効なISO A2国コードを選択してください',
-          params: { validCodes }
-        }
+          params: { validCodes },
+        },
       ],
       timestamp: Date.now(),
       invalidCodes,
       validCodes,
-      validationContext: 'country_selection'
+      validationContext: 'country_selection',
     };
   }
 
@@ -358,7 +332,7 @@ export class ShapeErrorFactory {
   static createWorkerError(
     type: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): WorkerError {
     return {
       name: 'WorkerError',
@@ -374,11 +348,11 @@ export class ShapeErrorFactory {
         {
           type: ActionType.RETRY,
           label: '再試行',
-          description: '処理を再実行します'
-        }
+          description: '処理を再実行します',
+        },
       ],
       timestamp: Date.now(),
-      metadata: metadata
+      metadata: metadata,
     };
   }
 
@@ -388,7 +362,7 @@ export class ShapeErrorFactory {
   static createNetworkError(
     type: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): NetworkError {
     return {
       name: 'NetworkError',
@@ -404,16 +378,16 @@ export class ShapeErrorFactory {
         {
           type: ActionType.CHECK_CONNECTION,
           label: '接続確認',
-          description: 'ネットワーク接続を確認してください'
+          description: 'ネットワーク接続を確認してください',
         },
         {
           type: ActionType.RETRY,
           label: '再試行',
-          description: '処理を再実行します'
-        }
+          description: '処理を再実行します',
+        },
       ],
       timestamp: Date.now(),
-      metadata: metadata
+      metadata: metadata,
     };
   }
 
@@ -423,7 +397,7 @@ export class ShapeErrorFactory {
   static createDataError(
     type: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): DataError {
     return {
       name: 'DataError',
@@ -439,11 +413,11 @@ export class ShapeErrorFactory {
         {
           type: ActionType.REPORT_ISSUE,
           label: '問題を報告',
-          description: 'データの問題を報告してください'
-        }
+          description: 'データの問題を報告してください',
+        },
       ],
       timestamp: Date.now(),
-      metadata: metadata
+      metadata: metadata,
     };
   }
 
@@ -453,7 +427,7 @@ export class ShapeErrorFactory {
   static createValidationError(
     type: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): ValidationError {
     return {
       name: 'ValidationError',
@@ -469,11 +443,11 @@ export class ShapeErrorFactory {
         {
           type: ActionType.CHANGE_CONFIGURATION,
           label: '設定を修正',
-          description: '入力値を正しい形式に修正してください'
-        }
+          description: '入力値を正しい形式に修正してください',
+        },
       ],
       timestamp: Date.now(),
-      metadata: metadata
+      metadata: metadata,
     };
   }
 
@@ -483,7 +457,7 @@ export class ShapeErrorFactory {
   static createSystemError(
     type: string,
     message: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): BaseShapeError {
     return {
       name: 'SystemError',
@@ -499,48 +473,46 @@ export class ShapeErrorFactory {
         {
           type: ActionType.REPORT_ISSUE,
           label: 'システム管理者に連絡',
-          description: 'システムエラーが発生しました。管理者に連絡してください。'
-        }
+          description: 'システムエラーが発生しました。管理者に連絡してください。',
+        },
       ],
       timestamp: Date.now(),
-      metadata: metadata
+      metadata: metadata,
     };
   }
 }
 
 // ========================================
-// エラー判定ヘルパー
 // ========================================
 
 /**
- * エラー型ガード
- */
+    */
 export const ErrorTypeGuards = {
   isWorkerError: (error: any): error is WorkerError => {
     return error?.category === ErrorCategory.WORKER;
   },
-  
+
   isNetworkError: (error: any): error is NetworkError => {
     return error?.category === ErrorCategory.NETWORK;
   },
-  
+
   isDataError: (error: any): error is DataError => {
     return error?.category === ErrorCategory.DATA;
   },
-  
+
   isValidationError: (error: any): error is ValidationError => {
     return error?.category === ErrorCategory.VALIDATION;
   },
-  
+
   isRetryable: (error: any): boolean => {
     return error?.retryable === true;
   },
-  
+
   isRecoverable: (error: any): boolean => {
     return error?.recoverable === true;
   },
-  
+
   isCritical: (error: any): boolean => {
     return error?.severity === ErrorSeverity.CRITICAL;
-  }
+  },
 };

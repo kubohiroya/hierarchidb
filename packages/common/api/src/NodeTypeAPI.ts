@@ -7,12 +7,12 @@
  */
 
 import type {
-  NodeType,
   NodeId,
-  ValidationResult,
-  TreeNode,
   NodeLifecycleHooks,
+  NodeType,
   PluginDefinition,
+  TreeNode,
+  ValidationResult,
 } from '@hierarchidb/common-type';
 
 /**
@@ -77,7 +77,7 @@ export interface NodeTypeAPI {
   validateOperation(
     nodeType: NodeType,
     operation: 'create' | 'update' | 'delete' | 'move',
-    context?: { parentId?: NodeId; targetNodeId?: NodeId }
+    context?: { parentId?: NodeId; targetNodeId?: NodeId },
   ): Promise<ValidationResult>;
 
   // ==================
@@ -91,7 +91,7 @@ export interface NodeTypeAPI {
    * @returns Array of operations that the node type supports
    */
   getSupportedOperations(
-    nodeType: NodeType
+    nodeType: NodeType,
   ): Promise<Array<'create' | 'read' | 'update' | 'delete' | 'move' | 'copy'>>;
 
   /**

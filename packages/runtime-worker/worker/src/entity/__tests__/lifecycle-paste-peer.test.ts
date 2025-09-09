@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { storeRegistry } from '~/entity/store-registry';
-import type { PeerStore } from '~/entity/store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager';
+import { storeRegistry } from '../store-registry';
+import type { PeerStore } from '../store';
 
 describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
   beforeEach(() => {
@@ -14,8 +14,12 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
     const nodeMap = new Map<string, any>();
     const core: any = {
       nodes: {
-        async get(id: NodeId) { return nodeMap.get(id as unknown as string); },
-        _put(obj: any) { nodeMap.set(obj.id as unknown as string, obj); },
+        async get(id: NodeId) {
+          return nodeMap.get(id as unknown as string);
+        },
+        _put(obj: any) {
+          nodeMap.set(obj.id as unknown as string, obj);
+        },
       },
       getNode: async (id: NodeId) => nodeMap.get(id as unknown as string),
     };
@@ -23,14 +27,21 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
     // Register a peer store for 'folder'
     const peerMap = new Map<string, any>();
     const store: PeerStore<any> = {
-      async get(id: NodeId) { return peerMap.get(id as unknown as string); },
-      async put(e: any) { peerMap.set(e.nodeId as unknown as string, e); },
-      async delete(id: NodeId) { peerMap.delete(id as unknown as string); },
+      async get(id: NodeId) {
+        return peerMap.get(id as unknown as string);
+      },
+      async put(e: any) {
+        peerMap.set(e.nodeId as unknown as string, e);
+      },
+      async delete(id: NodeId) {
+        peerMap.delete(id as unknown as string);
+      },
     };
     storeRegistry.registerPeer('folder', store);
 
     // Seed source nodes and peers
-    const s1 = 'src-a' as NodeId; const d1 = 'dst-a' as NodeId;
+    const s1 = 'src-a' as NodeId;
+    const d1 = 'dst-a' as NodeId;
     core.nodes._put({ id: s1, parentId: 'p', nodeType: 'folder' });
     await store.put({ nodeId: s1, data: { v: 7 } });
 
@@ -48,4 +59,3 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
     expect((await store.get(d1))?.data?.v).toBe(7);
   });
 });
-

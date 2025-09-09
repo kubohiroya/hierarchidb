@@ -3,7 +3,7 @@
  * @description Base types for base-plugin
  */
 
-import type { EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Base search criteria interface
@@ -36,7 +36,7 @@ export interface EntityLifecycleHooks<TEntity> {
   beforeUpdate?: (entity: TEntity, updates: Partial<TEntity>) => Promise<void>;
   afterUpdate?: (entity: TEntity) => Promise<void>;
   beforeDelete?: (entity: TEntity) => Promise<void>;
-  afterDelete?: (entityId: EntityId) => Promise<void>;
+  afterDelete?: (entityId: NodeId) => Promise<void>;
 }
 
 /**

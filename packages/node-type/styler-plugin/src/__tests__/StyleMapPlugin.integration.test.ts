@@ -1,12 +1,12 @@
 /**
- * @file StylerPlugin.integration.test.ts
+  * @file StylerPlugin.integration.test.ts
  * @description Styler plugin integration tests
- * 【機能概要】: Stylerプラグインの統合テスト
- * 【実装方針】: Spreadsheetプラグインとの統合動作を検証
- * 🟢 信頼性レベル: 完全な統合テスト
- */
+ * : Styler
+ * : Spreadsheet
+ * :
+  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 import { StylerExtension } from '../extension/definition';
 import { StylerEntityHandler } from '../handlers/StylerEntityHandler';
@@ -52,15 +52,15 @@ describe('Styler Plugin Integration', () => {
 
     it('should define extended steps correctly', () => {
       expect(StylerExtension.extendedSteps).toHaveLength(2);
-      
+
       const step5 = StylerExtension.extendedSteps![0];
       const step6 = StylerExtension.extendedSteps![1];
-      
+
       expect(step5.stepNumber).toBe(5);
       expect(step5.title).toBe('Style Mapping Configuration');
       expect(step5.component).toBeDefined();
       expect(step5.validation).toBeDefined();
-      
+
       expect(step6.stepNumber).toBe(6);
       expect(step6.title).toBe('Preview with Style Mapping');
       expect(step6.component).toBeDefined();
@@ -69,10 +69,10 @@ describe('Styler Plugin Integration', () => {
 
     it('should define extended fields correctly', () => {
       expect(StylerExtension.extendedFields).toHaveLength(4);
-      
+
       const fields = StylerExtension.extendedFields!;
       const fieldNames = fields.map(f => f.name);
-      
+
       expect(fieldNames).toContain('stylerConfig');
       expect(fieldNames).toContain('selectedKeyColumn');
       expect(fieldNames).toContain('selectedValueColumn');
@@ -121,7 +121,7 @@ describe('Styler Plugin Integration', () => {
       // Assert
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      
+
       if (result.success) {
         expect(result.data.name).toBe('Test Styler');
         expect(result.data.stylerConfig).toEqual(StylerConfigDefault);
@@ -129,13 +129,13 @@ describe('Styler Plugin Integration', () => {
         // Should inherit Spreadsheet fields
         expect(result.data.dataSource).toEqual({ type: 'file', source: 'test.csv' });
       }
-      
+
       expect(mockSpreadsheetHandler.createEntity).toHaveBeenCalledWith(
         testNodeId,
         expect.objectContaining({
           name: 'Test Styler',
           dataSource: { type: 'file', source: 'test.csv' },
-        })
+        }),
       );
     });
 
@@ -152,7 +152,7 @@ describe('Styler Plugin Integration', () => {
       // Assert
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      
+
       if (result.success && result.data) {
         // Should have Spreadsheet fields
         expect(result.data.name).toBe('Test Spreadsheet');
@@ -168,7 +168,7 @@ describe('Styler Plugin Integration', () => {
         success: true,
         data: { ...mockSpreadsheetEntity, name: 'Updated Name' },
       });
-      
+
       mockSpreadsheetHandler.getEntity.mockResolvedValue({
         success: true,
         data: {
@@ -219,7 +219,7 @@ describe('Styler Plugin Integration', () => {
           spreadsheetMetadataId: 'table-456',
         },
       });
-      
+
       mockSpreadsheetHandler.deleteEntity.mockResolvedValue({
         success: true,
         data: undefined,
@@ -241,7 +241,7 @@ describe('Styler Plugin Integration', () => {
       const mockFile = new File(['id,population\n1,100\n2,200'], 'test.csv', {
         type: 'text/csv',
       });
-      
+
       const mockTableMetadata = {
         id: 'table-123',
         filename: 'test.csv',
@@ -295,7 +295,7 @@ describe('Styler Plugin Integration', () => {
       // Assert
       expect(result.data).toEqual(mockData);
       expect(result.styledRows).toHaveLength(3);
-      
+
       result.styledRows.forEach((styledRow) => {
         expect(styledRow.row).toBeDefined();
         expect(styledRow.styles).toBeDefined();
@@ -341,7 +341,7 @@ describe('Styler Plugin Integration', () => {
       expect(result.styleSpec.version).toBe(8);
       expect(result.styleSpec.layers).toHaveLength(1);
       expect(result.styleSpec.layers[0].paint['fill-color']).toBeDefined();
-      
+
       expect(result.colorMapping).toBeDefined();
       expect(result.colorMapping['100']).toMatch(/^#[0-9a-f]{6}$/i);
       expect(result.colorMapping['200']).toMatch(/^#[0-9a-f]{6}$/i);

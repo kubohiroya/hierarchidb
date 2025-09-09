@@ -3,14 +3,14 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { SearchResult } from '~/types/index.js';
 import {
+  clearSelectionAtom,
   searchResultsAtom,
+  selectAllAtom,
   selectedNodeIdsAtom,
   selectedResultItemsAtom,
   selectNodeAtom,
-  toggleNodeSelectionAtom,
   selectRangeAtom,
-  selectAllAtom,
-  clearSelectionAtom,
+  toggleNodeSelectionAtom,
 } from '../state/index.js';
 
 interface UseMultiSelectionProps {
@@ -30,10 +30,10 @@ interface UseMultiSelectionReturn {
 }
 
 export const useMultiSelection = ({
-  results,
-  onSelectionChange,
-  onMapFocus,
-}: UseMultiSelectionProps): UseMultiSelectionReturn => {
+                                    results,
+                                    onSelectionChange,
+                                    onMapFocus,
+                                  }: UseMultiSelectionProps): UseMultiSelectionReturn => {
   // Atoms
   const [, setSearchResults] = useAtom(searchResultsAtom);
   const selectedResults = useAtomValue(selectedNodeIdsAtom);
@@ -44,64 +44,57 @@ export const useMultiSelection = ({
   const selectAllAction = useSetAtom(selectAllAtom);
   const clearSelectionAction = useSetAtom(clearSelectionAtom);
 
-  // 検索結果をatomに同期
+  //  atom
   useEffect(() => {
     setSearchResults(results);
   }, [results, setSearchResults]);
 
-  // 選択状態変更の通知
   useEffect(() => {
     if (onSelectionChange) {
       onSelectionChange(selectedResultItems);
     }
   }, [selectedResultItems, onSelectionChange]);
 
-  // 単一選択または複数選択の処理
   const handleResultSelect = useCallback(
     (result: SearchResult, isMultiSelect: boolean) => {
       if (!isMultiSelect) {
-        // 通常のクリック：単一選択
         selectNode(result.nodeId);
       } else {
-        // Shift/Cmd+クリック：複数選択
+        //  Shift/Cmd+
         if (event && (event as any).shiftKey) {
-          // Shift+クリック：範囲選択
+          //  Shift+
           selectRange(result.nodeId);
         } else {
-          // Cmd/Ctrl+クリック：トグル選択
+          //  Cmd/Ctrl+
           toggleNodeSelection(result.nodeId);
         }
       }
     },
-    [selectNode, selectRange, toggleNodeSelection]
+    [selectNode, selectRange, toggleNodeSelection],
   );
 
-  // 地図フォーカス処理
   const handleMapFocus = useCallback(
     (result: SearchResult) => {
       if (onMapFocus) {
         onMapFocus(result);
       }
     },
-    [onMapFocus]
+    [onMapFocus],
   );
 
-  // 全選択
   const selectAll = useCallback(() => {
     selectAllAction();
   }, [selectAllAction]);
 
-  // 選択解除
   const clearSelection = useCallback(() => {
     clearSelectionAction();
   }, [clearSelectionAction]);
 
-  // 個別トグル
   const toggleSelection = useCallback(
     (result: SearchResult) => {
       toggleNodeSelection(result.nodeId);
     },
-    [toggleNodeSelection]
+    [toggleNodeSelection],
   );
 
   return {

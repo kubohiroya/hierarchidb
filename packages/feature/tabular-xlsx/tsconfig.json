@@ -9,7 +9,7 @@
     "baseUrl": ".",
     "paths": {
       "@hierarchidb/tabular": [
-        "../tabular/src"
+        "../tabular/src/index.ts"
       ],
       "@hierarchidb/tabular/*": [
         "../tabular/src/*"

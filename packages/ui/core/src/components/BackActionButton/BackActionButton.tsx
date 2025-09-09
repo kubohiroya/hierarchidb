@@ -15,11 +15,11 @@ interface BackActionButtonProps {
 }
 
 export function BackActionButton({
-  isResourcesPage = false,
-  isProjectsPage: _isProjectsPage = false,
-  children,
-  to,
-}: BackActionButtonProps): JSX.Element {
+                                   isResourcesPage = false,
+                                   isProjectsPage: _isProjectsPage = false,
+                                   children,
+                                   to,
+                                 }: BackActionButtonProps): JSX.Element {
   return (
     <Button
       onClick={() => (window.location.href = to)}

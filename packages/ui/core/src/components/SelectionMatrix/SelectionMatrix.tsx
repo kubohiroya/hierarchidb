@@ -3,20 +3,20 @@
  * Reusable checkbox matrix for multi-dimensional selection
  */
 
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Box,
+  Checkbox,
+  Chip,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Checkbox,
-  Typography,
   Tooltip,
-  Paper,
-  Chip,
+  Typography,
 } from '@mui/material';
 
 export interface SelectionMatrixColumn {
@@ -51,29 +51,29 @@ export interface SelectionMatrixProps<T = any> {
 }
 
 export function SelectionMatrix<T = any>({
-  rows,
-  columns,
-  state,
-  onChange,
-  onSelectAll,
-  onSelectRow,
-  showRowSelection = false,
-  showColumnSelection = true,
-  showSelectionCount = true,
-  maxHeight = 400,
-  stickyHeader = true,
-  dense = false,
-}: SelectionMatrixProps<T>) {
+                                           rows,
+                                           columns,
+                                           state,
+                                           onChange,
+                                           onSelectAll,
+                                           onSelectRow,
+                                           showRowSelection = false,
+                                           showColumnSelection = true,
+                                           showSelectionCount = true,
+                                           maxHeight = 400,
+                                           stickyHeader = true,
+                                           dense = false,
+                                         }: SelectionMatrixProps<T>) {
   // Calculate selection counts
   const columnCounts = useMemo(() => {
-    return columns.map((_, colIndex) => 
-      state.reduce((count, row) => count + (row[colIndex] ? 1 : 0), 0)
+    return columns.map((_, colIndex) =>
+      state.reduce((count, row) => count + (row[colIndex] ? 1 : 0), 0),
     );
   }, [columns, state]);
 
   const rowCounts = useMemo(() => {
-    return rows.map((_, rowIndex) => 
-      state[rowIndex]?.reduce((count, cell) => count + (cell ? 1 : 0), 0) || 0
+    return rows.map((_, rowIndex) =>
+      state[rowIndex]?.reduce((count, cell) => count + (cell ? 1 : 0), 0) || 0,
     );
   }, [rows, state]);
 
@@ -128,15 +128,15 @@ export function SelectionMatrix<T = any>({
                 {/* Empty header for row selection column */}
               </TableCell>
             )}
-            
+
             {/* Row label column */}
             <TableCell sx={{ minWidth: 200 }}>
               <Typography variant="subtitle2">Region</Typography>
             </TableCell>
-            
+
             {/* Column headers with selection checkboxes */}
             {columns.map((column, colIndex) => (
-              <TableCell 
+              <TableCell
                 key={column.id}
                 align="center"
                 sx={{ width: column.width || 120 }}
@@ -172,7 +172,7 @@ export function SelectionMatrix<T = any>({
                 </Box>
               </TableCell>
             ))}
-            
+
             {/* Count column */}
             {showSelectionCount && (
               <TableCell align="center" sx={{ width: 80 }}>
@@ -181,15 +181,15 @@ export function SelectionMatrix<T = any>({
             )}
           </TableRow>
         </TableHead>
-        
+
         <TableBody>
           {rows.map((row, rowIndex) => (
-            <TableRow 
+            <TableRow
               key={row.id}
               hover
-              sx={{ 
+              sx={{
                 opacity: row.disabled ? 0.5 : 1,
-                '&:hover': { bgcolor: 'action.hover' }
+                '&:hover': { bgcolor: 'action.hover' },
               }}
             >
               {/* Row selection checkbox */}
@@ -204,7 +204,7 @@ export function SelectionMatrix<T = any>({
                   />
                 </TableCell>
               )}
-              
+
               {/* Row label */}
               <TableCell>
                 <Box>
@@ -226,7 +226,7 @@ export function SelectionMatrix<T = any>({
                   )}
                 </Box>
               </TableCell>
-              
+
               {/* Selection cells */}
               {columns.map((column, colIndex) => (
                 <TableCell key={column.id} align="center" padding="checkbox">
@@ -238,7 +238,7 @@ export function SelectionMatrix<T = any>({
                   />
                 </TableCell>
               ))}
-              
+
               {/* Row count */}
               {showSelectionCount && (
                 <TableCell align="center">

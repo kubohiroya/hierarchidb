@@ -1,10 +1,10 @@
 /**
- * @file StylerStep5.tsx
+  * @file StylerStep5.tsx
  * @description Step 5 wrapper component for Styler configuration
- * 【機能概要】: スタイルマッピング設定ステップ
- * 【実装方針】: Spreadsheetプラグインの拡張ステップとして動作
- * 🟢 信頼性レベル: フォーム統合済み
- */
+ * :
+ * : Spreadsheet
+ * :
+  */
 
 import React, { useCallback } from 'react';
 import { Box } from '@mui/material';
@@ -13,46 +13,45 @@ import type { StylerConfig } from '../../types/stylerTypes';
 import { StylerConfigDefault } from '../../types/stylerTypes';
 
 /**
- * 【型定義】: Step5のプロパティ
- * Spreadsheetプラグインから渡される標準的なステッププロパティ
- */
+  * : Step5
+ * Spreadsheet
+  */
 export interface StylerStep5Props {
   data: any;
   onChange: (data: any) => void;
   onValidate?: (isValid: boolean) => void;
-  // CSVデータ関連（spreadsheetから渡される）
+  //  CSVspreadsheet
   csvData?: Array<Record<string, any>>;
   columns?: string[];
 }
 
 /**
- * 【機能概要】: Styler Step5コンポーネント
- * 【実装方針】: StylerConfigurationをラップしてステップ形式で提供
- * 【テスト対応】: データ変更とバリデーションの連携
- * 🟢 信頼性レベル: Spreadsheetとの統合対応
- */
+  * : Styler Step5
+ * : StylerConfiguration
+ * :
+ * : Spreadsheet
+  */
 export const StylerStep5: React.FC<StylerStep5Props> = ({
-  data,
-  onChange,
-  onValidate,
-  csvData = [],
-  columns = [],
-}) => {
-  // 【設定の初期化】
+                                                          data,
+                                                          onChange,
+                                                          onValidate,
+                                                          csvData = [],
+                                                          columns = [],
+                                                        }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
-  // 【数値列の抽出】: 値列の候補として数値列を検出
+  //  :
   // const numericColumns = React.useMemo(() => {
   //   if (csvData.length === 0) return [];
   //
   //   return columns.filter(col => {
-  //     // サンプルデータから数値列を判定
+  //  //
   //     const sampleValues = csvData.slice(0, 10).map(row => row[col]);
   //     return sampleValues.some(val => typeof val === 'number' && !isNaN(val));
   //   });
   // }, [csvData, columns]);
 
-  // 【サンプル値の取得】: プレビュー用の数値データ
+  //  :
   const sampleValues = React.useMemo(() => {
     const valueColumn = data?.selectedValueColumn;
     if (!valueColumn || csvData.length === 0) return [];
@@ -60,10 +59,9 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
     return csvData
       .map((row) => row[valueColumn])
       .filter((val) => typeof val === 'number' && !isNaN(val))
-      .slice(0, 100); // 最初の100件をサンプルとして使用
+      .slice(0, 100); //  100
   }, [csvData, data?.selectedValueColumn]);
 
-  // 【設定変更ハンドラ】
   const handleConfigChange = useCallback(
     (newConfig: StylerConfig) => {
       const updatedData = {
@@ -72,16 +70,15 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
       };
       onChange(updatedData);
 
-      // バリデーション: targetPropertyが選択されていることを確認
+      //  : targetProperty
       if (onValidate) {
         const isValid = !!newConfig.targetProperty;
         onValidate(isValid);
       }
     },
-    [data, onChange, onValidate]
+    [data, onChange, onValidate],
   );
 
-  // 【列選択ハンドラ】
   const handleColumnSelect = useCallback(
     (column: string, type: 'key' | 'value') => {
       const updatedData = {
@@ -94,14 +91,13 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
       };
       onChange(updatedData);
 
-      // バリデーション更新
       if (onValidate) {
         const hasRequiredFields =
           !!updatedData.stylerConfig.targetProperty && !!updatedData.selectedValueColumn;
         onValidate(hasRequiredFields);
       }
     },
-    [data, currentConfig, onChange, onValidate]
+    [data, currentConfig, onChange, onValidate],
   );
 
   return (
@@ -121,9 +117,9 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 };
 
 /**
- * 【エクスポート】: Step定義オブジェクト
- * Spreadsheetプラグインの拡張ステップとして登録される
- */
+  * : Step
+ * Spreadsheet
+  */
 export const StylerStep5Definition = {
   stepNumber: 5,
   title: 'Style Mapping Configuration',
@@ -132,7 +128,6 @@ export const StylerStep5Definition = {
     validate: async (data: any) => {
       const config = data?.stylerConfig;
 
-      // 必須フィールドの確認
       if (!config?.targetProperty) {
         return {
           isValid: false,
@@ -147,7 +142,6 @@ export const StylerStep5Definition = {
         };
       }
 
-      // 数値範囲の妥当性確認
       if (config.mapping.min >= config.mapping.max) {
         return {
           isValid: false,

@@ -1,9 +1,4 @@
-import type {
-  NodeType,
-  APIMethodArgs,
-  APIMethodReturn,
-  WorkerAPIMethod,
-} from '@hierarchidb/common-type';
+import type { APIMethodArgs, APIMethodReturn, NodeType, WorkerAPIMethod } from '@hierarchidb/common-type';
 
 /**
  * @file PluginAPI.ts
@@ -159,7 +154,7 @@ export class PluginExtensionRegistry {
    * ```
    */
   getExtension<T extends Record<string, WorkerAPIMethod> = Record<string, WorkerAPIMethod>>(
-    nodeType: NodeType
+    nodeType: NodeType,
   ): PluginExtensionAPI<T> | undefined {
     const key = this.normalizeNodeType(nodeType);
     return this.extensions.get(key) as PluginExtensionAPI<T> | undefined;

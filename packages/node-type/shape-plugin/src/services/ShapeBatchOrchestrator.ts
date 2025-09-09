@@ -2,16 +2,30 @@ import type { BatchTaskLike } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { EphemeralShapeDB } from './database/EphemeralShapeDB';
-import { DownloadService, type NetworkPort, type StoragePort, type IntegrityPort, DexieChunkStoragePort, FetchNetworkPort } from '@hierarchidb/download';
+import {
+  DexieChunkStoragePort,
+  DownloadService,
+  FetchNetworkPort,
+  type IntegrityPort,
+  type StoragePort,
+} from '@hierarchidb/download';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 
 // FetchNetworkPort provides head/get/getRange; no local wrapper needed
 
 class MemoryStore implements StoragePort {
   last?: ArrayBuffer;
-  async putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void> { this.last = data; }
-  async commit(_fileId: string, _metadata: Record<string, any>): Promise<void> {}
-  async getResumeInfo(_fileId: string): Promise<{ nextIndex: number } | undefined> { return undefined; }
+
+  async putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void> {
+    this.last = data;
+  }
+
+  async commit(_fileId: string, _metadata: Record<string, any>): Promise<void> {
+  }
+
+  async getResumeInfo(_fileId: string): Promise<{ nextIndex: number } | undefined> {
+    return undefined;
+  }
 }
 
 class WebCryptoIntegrity implements IntegrityPort {
@@ -22,29 +36,35 @@ class WebCryptoIntegrity implements IntegrityPort {
 }
 
 export class ShapeBatchOrchestrator {
-  constructor(private ephemeralDB: EphemeralShapeDB) {}
+  constructor(private ephemeralDB: EphemeralShapeDB) {
+  }
 
   async executeDownload(
     sessionId: string,
     nodeId: NodeId,
     downloadTasks: BatchTaskLike[],
-    emit: (e: BatchProgressEvent) => void
+    emit: (e: BatchProgressEvent) => void,
   ): Promise<{ processed: number; failed: number; totalDownloadSize: number; totalFeatures: number }> {
     const net = new FetchNetworkPort({ perHostConcurrency: 4, retries: 3 });
     const store = new DexieChunkStoragePort('hidb-chunks');
     const integ = new WebCryptoIntegrity();
     const dl = new DownloadService(net, store, integ);
 
-    let processed = 0; let failed = 0; let totalSize = 0; let totalFeatures = 0;
+    let processed = 0;
+    let failed = 0;
+    let totalSize = 0;
+    let totalFeatures = 0;
     for (const t of downloadTasks) {
       try {
         // Strategy (feature-gated) or default HTTP path
-        let text: string; let sizeBytes: number | undefined;
+        let text: string;
+        let sizeBytes: number | undefined;
         const { resolveShapeDownloadStrategy } = await import('./download/registry');
         const strat = resolveShapeDownloadStrategy(t);
         if (strat) {
           const out = await strat.download(t);
-          text = out.text; sizeBytes = out.sizeBytes;
+          text = out.text;
+          sizeBytes = out.sizeBytes;
         } else {
           // Prefer auth-aware fetch to ensure 401/403 triggers UI flow
           const url = this.buildUrl(t);
@@ -112,8 +132,10 @@ export class ShapeBatchOrchestrator {
       if (typeof coords[0] === 'number') {
         const [x, y] = coords as [number, number];
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        minX = Math.min(minX, x); minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
       } else {
         for (const c of coords) visit(c);
       }
@@ -126,7 +148,7 @@ export class ShapeBatchOrchestrator {
     sessionId: string,
     nodeId: NodeId,
     simplifyTasks: BatchTaskLike[],
-    emit: (e: BatchProgressEvent) => void
+    emit: (e: BatchProgressEvent) => void,
   ): Promise<{ processedFeatures: number; filteredFeatures: number; processedTasks: number }> {
     let processedFeatures = 0;
     let filteredFeatures = 0;
@@ -154,10 +176,16 @@ export class ShapeBatchOrchestrator {
         const outFeats: any[] = [];
         for (const f of fc.features || []) {
           const g = simplifyGeometry(f.geometry, tolerance);
-          if (!g) { filteredFeatures++; continue; }
+          if (!g) {
+            filteredFeatures++;
+            continue;
+          }
           if (g.type === 'Polygon') {
             const a = polygonArea(g.coordinates[0]);
-            if (a < minArea) { filteredFeatures++; continue; }
+            if (a < minArea) {
+              filteredFeatures++;
+              continue;
+            }
           }
           outFeats.push({ type: 'Feature', properties: f.properties, geometry: g });
           processedFeatures++;
@@ -182,7 +210,11 @@ export class ShapeBatchOrchestrator {
             await writer.begin({ filename: `shape-${sessionId}.json`, columns });
             writerReady = true;
           }
-          const rows = outFeats.slice(0, 100000).map((f, i) => ({ featureId: i, ...(f.properties || {}), country: task.config?.country, adminLevel: admin }));
+          const rows = outFeats.slice(0, 100000).map((f, i) => ({
+            featureId: i, ...(f.properties || {}),
+            country: task.config?.country,
+            adminLevel: admin,
+          }));
           await writer.writeRows(rows);
         }
 
@@ -208,7 +240,8 @@ export class ShapeBatchOrchestrator {
         const { tableId } = await writer.commit();
         // update session metadata with tableId
         await this.ephemeralDB.sessions.update(sessionId, { tableId } as any);
-      } catch {}
+      } catch {
+      }
     }
 
     return { processedFeatures, filteredFeatures, processedTasks };
@@ -218,7 +251,7 @@ export class ShapeBatchOrchestrator {
     sessionId: string,
     nodeId: NodeId,
     simplify2Tasks: BatchTaskLike[],
-    emit: (e: BatchProgressEvent) => void
+    emit: (e: BatchProgressEvent) => void,
   ): Promise<{ processedTiles: number; avgSimplificationRatio: number; processedTasks: number }> {
     let processedTiles = 0;
     let totalRatio = 0;
@@ -275,7 +308,7 @@ export class ShapeBatchOrchestrator {
     sessionId: string,
     nodeId: NodeId,
     tasks: BatchTaskLike[],
-    emit: (e: BatchProgressEvent) => void
+    emit: (e: BatchProgressEvent) => void,
   ): Promise<{ generatedTiles: number; maxZoomLevel: number; processedTasks: number }> {
     let generatedTiles = 0;
     let maxZoom = 0;
@@ -313,7 +346,7 @@ export class ShapeBatchOrchestrator {
         emit({
           sessionId,
           treeNodeId: nodeId,
-          stage: 'vectorTiles',
+          stage: 'vectortile',
           progress: 75 + Math.round((processedTasks / tasks.length) * 25),
           completedTasks: processedTasks,
           totalTasks: tasks.length,
@@ -331,10 +364,12 @@ export class ShapeBatchOrchestrator {
     const tolerances: Record<number, number> = { 0: 0.01, 1: 0.005, 2: 0.001, 3: 0.0005, 4: 0.0001 };
     return tolerances[adminLevel] ?? 0.001;
   }
+
   private getMinimumArea(adminLevel: number): number {
     const minAreas: Record<number, number> = { 0: 1000, 1: 500, 2: 100, 3: 50, 4: 10 };
     return minAreas[adminLevel] ?? 100;
   }
+
   private getZoomLevels(adminLevel: number): { minZoom: number; maxZoom: number } {
     const cfg: Record<number, { minZoom: number; maxZoom: number }> = {
       0: { minZoom: 0, maxZoom: 5 },
@@ -345,6 +380,7 @@ export class ShapeBatchOrchestrator {
     };
     return cfg[adminLevel] ?? { minZoom: 0, maxZoom: 10 };
   }
+
   private calculateTileCount(bbox: number[], minZoom: number, maxZoom: number): number {
     let total = 0;
     for (let z = minZoom; z <= maxZoom; z++) {
@@ -357,10 +393,12 @@ export class ShapeBatchOrchestrator {
     }
     return total;
   }
+
   private getZoomSimplification(minZoom: number, maxZoom: number): number {
     const avg = (minZoom + maxZoom) / 2;
     return Math.max(0.3, 1 - avg / 20);
   }
+
   private generateTilesForZoom(bbox: number[], zoom: number): number {
     const tilesPerAxis = Math.pow(2, zoom);
     const minX = Math.floor(((bbox[0] + 180) / 360) * tilesPerAxis);
@@ -375,13 +413,16 @@ function deriveColumnsFromFeatures(features: any[], cap = 64): string[] {
   const set = new Set<string>(['featureId', 'country', 'adminLevel']);
   for (const f of features) {
     const props = f?.properties || {};
-    for (const k of Object.keys(props)) { set.add(k); if (set.size >= cap) break; }
+    for (const k of Object.keys(props)) {
+      set.add(k);
+      if (set.size >= cap) break;
+    }
     if (set.size >= cap) break;
   }
   return Array.from(set);
 }
 
-// --- Geometry helpers (simple Douglas–Peucker for LineString/Polygon rings) ---
+//  --- Geometry helpers (simple DouglasPeucker for LineString/Polygon rings) ---
 function simplifyGeometry(geom: any, tol: number): any {
   if (!geom) return null;
   switch (geom.type) {
@@ -392,23 +433,31 @@ function simplifyGeometry(geom: any, tol: number): any {
     case 'Polygon':
       return { type: 'Polygon', coordinates: geom.coordinates.map((ring: any) => dp(ring, tol)) };
     case 'MultiPolygon':
-      return { type: 'MultiPolygon', coordinates: geom.coordinates.map((poly: any) => poly.map((ring: any) => dp(ring, tol))) };
+      return {
+        type: 'MultiPolygon',
+        coordinates: geom.coordinates.map((poly: any) => poly.map((ring: any) => dp(ring, tol))),
+      };
     default:
       return geom;
   }
 }
+
 function dp(coords: [number, number][], tol: number): [number, number][] {
   if (coords.length <= 2) return coords;
-  const out: [number, number][]= [];
+  const out: [number, number][] = [];
   const stack: Array<{ s: number; e: number }> = [{ s: 0, e: coords.length - 1 }];
   const keep = new Uint8Array(coords.length);
-  keep[0] = 1; keep[coords.length - 1] = 1;
+  keep[0] = 1;
+  keep[coords.length - 1] = 1;
   while (stack.length) {
     const { s, e } = stack.pop()!;
     let maxD = 0, idx = -1;
     for (let i = s + 1; i < e; i++) {
       const d = perpDist(coords[i], coords[s], coords[e]);
-      if (d > maxD) { maxD = d; idx = i; }
+      if (d > maxD) {
+        maxD = d;
+        idx = i;
+      }
     }
     if (maxD > tol) {
       keep[idx] = 1;
@@ -418,16 +467,25 @@ function dp(coords: [number, number][], tol: number): [number, number][] {
   for (let i = 0; i < coords.length; i++) if (keep[i]) out.push(coords[i]);
   return out;
 }
+
 function perpDist(p: [number, number], a: [number, number], b: [number, number]): number {
-  const [x, y] = p; const [x1, y1] = a; const [x2, y2] = b;
+  const [x, y] = p;
+  const [x1, y1] = a;
+  const [x2, y2] = b;
   const dx = x2 - x1, dy = y2 - y1;
   if (dx === 0 && dy === 0) return Math.hypot(x - x1, y - y1);
   const t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
   const xx = x1 + t * dx, yy = y1 + t * dy;
   return Math.hypot(x - xx, y - yy);
 }
+
 function polygonArea(ring: [number, number][]): number {
-  let sum = 0; for (let i = 0, n = ring.length; i < n; i++) { const [x1, y1] = ring[i]; const [x2, y2] = ring[(i + 1) % n]; sum += x1 * y2 - x2 * y1; }
+  let sum = 0;
+  for (let i = 0, n = ring.length; i < n; i++) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[(i + 1) % n];
+    sum += x1 * y2 - x2 * y1;
+  }
   return Math.abs(sum / 2);
 }
 

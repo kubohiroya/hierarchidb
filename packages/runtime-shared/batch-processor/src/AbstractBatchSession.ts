@@ -14,11 +14,11 @@ export interface BaseBatchConfig {
   corsProxyBaseURL?: string;
   maxRetries?: number;
   retryDelay?: number;
-  
+
   // Worker settings
   workerTimeout?: number;
   maxMemoryPerWorker?: number;
-  
+
   // Session settings
   enableProgressTracking?: boolean;
   enableResourceMonitoring?: boolean;
@@ -78,18 +78,18 @@ export abstract class AbstractBatchSession<
   protected progress: BatchProgress;
   protected resourceUsage?: ResourceUsage;
   protected abortController?: AbortController;
-  
+
   constructor(sessionId: string, nodeId: NodeId, config: TConfig) {
     this.sessionId = sessionId;
     this.nodeId = nodeId;
     this.config = config;
-    
+
     this.state = {
       sessionId,
       nodeId,
       status: 'idle',
     };
-    
+
     this.progress = {
       total: 0,
       completed: 0,
@@ -97,7 +97,7 @@ export abstract class AbstractBatchSession<
       percentage: 0,
     };
   }
-  
+
   /**
    * Initialize the session
    */
@@ -106,10 +106,10 @@ export abstract class AbstractBatchSession<
     this.state.startedAt = undefined;
     this.state.completedAt = undefined;
     this.state.error = undefined;
-    
+
     await this.onInitialize();
   }
-  
+
   /**
    * Start the batch processing
    */
@@ -117,16 +117,16 @@ export abstract class AbstractBatchSession<
     if (this.state.status !== 'idle' && this.state.status !== 'paused') {
       throw new Error(`Cannot start session in ${this.state.status} state`);
     }
-    
+
     this.state.status = 'running';
     this.state.startedAt = Date.now();
     this.state.lastActivity = Date.now();
     this.abortController = new AbortController();
-    
+
     try {
       await this.onStart();
       await this.processBatch();
-      
+
       if (this.state.status === 'running') {
         this.state.status = 'completed';
         this.state.completedAt = Date.now();
@@ -142,7 +142,7 @@ export abstract class AbstractBatchSession<
       await this.onComplete();
     }
   }
-  
+
   /**
    * Pause the batch processing
    */
@@ -150,14 +150,14 @@ export abstract class AbstractBatchSession<
     if (this.state.status !== 'running') {
       throw new Error(`Cannot pause session in ${this.state.status} state`);
     }
-    
+
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
     this.abortController?.abort();
-    
+
     await this.onPause();
   }
-  
+
   /**
    * Resume the batch processing
    */
@@ -165,15 +165,15 @@ export abstract class AbstractBatchSession<
     if (this.state.status !== 'paused') {
       throw new Error(`Cannot resume session in ${this.state.status} state`);
     }
-    
+
     this.state.status = 'running';
     this.state.lastActivity = Date.now();
     this.abortController = new AbortController();
-    
+
     await this.onResume();
     await this.processBatch();
   }
-  
+
   /**
    * Cancel the batch processing
    */
@@ -181,54 +181,54 @@ export abstract class AbstractBatchSession<
     if (this.state.status === 'completed' || this.state.status === 'cancelled') {
       return;
     }
-    
+
     this.state.status = 'cancelled';
     this.state.completedAt = Date.now();
     this.abortController?.abort();
-    
+
     await this.onCancel();
   }
-  
+
   /**
    * Get current session state
    */
   getState(): BatchSessionState {
     return { ...this.state };
   }
-  
+
   /**
    * Get current progress
    */
   getProgress(): BatchProgress {
     return { ...this.progress };
   }
-  
+
   /**
    * Get resource usage
    */
   getResourceUsage(): ResourceUsage | undefined {
     return this.resourceUsage ? { ...this.resourceUsage } : undefined;
   }
-  
+
   /**
    * Update progress
    */
   protected updateProgress(update: Partial<BatchProgress>): void {
     this.progress = { ...this.progress, ...update };
-    
+
     // Calculate percentage
     if (this.progress.total > 0) {
-      this.progress.percentage = 
+      this.progress.percentage =
         (this.progress.completed / this.progress.total) * 100;
     }
-    
+
     // Update last activity
     this.state.lastActivity = Date.now();
-    
+
     // Notify progress listeners
     this.onProgressUpdate(this.progress);
   }
-  
+
   /**
    * Update resource usage
    */
@@ -241,27 +241,27 @@ export abstract class AbstractBatchSession<
       ...this.resourceUsage,
       ...usage,
     };
-    
+
     // Track peak memory
     if (usage.memoryUsed && usage.memoryUsed > (this.resourceUsage.memoryPeak || 0)) {
       this.resourceUsage.memoryPeak = usage.memoryUsed;
     }
   }
-  
+
   /**
    * Check if abort was requested
    */
   protected isAborted(): boolean {
     return this.abortController?.signal.aborted || false;
   }
-  
+
   /**
    * Wait for a specified duration or until abort
    */
   protected async delay(ms: number): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(resolve, ms);
-      
+
       if (this.abortController) {
         this.abortController.signal.addEventListener('abort', () => {
           clearTimeout(timeout);
@@ -270,44 +270,44 @@ export abstract class AbstractBatchSession<
       }
     });
   }
-  
+
   // Abstract methods to be implemented by subclasses
-  
+
   /**
    * Called during initialization
    */
   protected abstract onInitialize(): Promise<void>;
-  
+
   /**
    * Called when starting the batch processing
    */
   protected abstract onStart(): Promise<void>;
-  
+
   /**
    * Main batch processing logic
    */
   protected abstract processBatch(): Promise<void>;
-  
+
   /**
    * Called when pausing
    */
   protected abstract onPause(): Promise<void>;
-  
+
   /**
    * Called when resuming
    */
   protected abstract onResume(): Promise<void>;
-  
+
   /**
    * Called when cancelling
    */
   protected abstract onCancel(): Promise<void>;
-  
+
   /**
    * Called when processing completes (success or failure)
    */
   protected abstract onComplete(): Promise<void>;
-  
+
   /**
    * Called when progress is updated
    */
@@ -323,7 +323,7 @@ export abstract class AbstractBatchSession<
       currentTask: progress.currentTask,
       estimatedTimeRemaining: progress.estimatedTimeRemaining,
     };
-    
+
     this.onStandardProgressUpdate(event);
   }
 

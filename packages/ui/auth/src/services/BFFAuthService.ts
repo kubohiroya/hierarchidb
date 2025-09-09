@@ -68,7 +68,7 @@ export class BFFAuthService {
     // Use proxy path for local development, direct URL for production
     const envUrl = import.meta.env.VITE_BFF_BASE_URL;
     const isDevelopment = import.meta.env.VITE_ENV_MODE === 'development';
-    
+
     // In development, use relative URL for proxy; in production, use full URL
     if (isDevelopment && (!envUrl || envUrl.startsWith('http'))) {
       // Use proxy path in development
@@ -76,7 +76,7 @@ export class BFFAuthService {
     } else {
       this.baseUrl = envUrl || '/api/auth';
     }
-    
+
     console.log('[BFFAuthService] Initialized with baseUrl:', this.baseUrl);
   }
 
@@ -133,7 +133,7 @@ export class BFFAuthService {
    */
   private async signInWithRedirect(
     provider: AuthProviderType,
-    returnUrl?: string
+    returnUrl?: string,
   ): Promise<BFFUser> {
     // Generate PKCE parameters
     const codeVerifier = PKCEUtils.generateCodeVerifier();
@@ -154,7 +154,8 @@ export class BFFAuthService {
     window.location.href = authUrl.toString();
 
     // This will never resolve as the page redirects
-    return new Promise(() => {});
+    return new Promise(() => {
+    });
   }
 
   /**
@@ -163,11 +164,11 @@ export class BFFAuthService {
   private buildAuthorizationUrl(
     provider: AuthProviderType,
     codeChallenge: string,
-    method: 'popup' | 'redirect'
+    method: 'popup' | 'redirect',
   ): URL {
     // Fix: Check if baseUrl is absolute or relative
     const isAbsoluteUrl = this.baseUrl.startsWith('http://') || this.baseUrl.startsWith('https://');
-    
+
     let authUrl: URL;
     if (isAbsoluteUrl) {
       // For absolute URLs, construct the auth endpoint correctly
@@ -229,7 +230,7 @@ export class BFFAuthService {
           popup.close();
           reject(new Error('Authentication timeout'));
         },
-        5 * 60 * 1000
+        5 * 60 * 1000,
       );
     });
   }
@@ -286,7 +287,7 @@ export class BFFAuthService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.error_description || `Token exchange failed: ${response.statusText}`
+        errorData.error_description || `Token exchange failed: ${response.statusText}`,
       );
     }
 
@@ -461,7 +462,7 @@ export class BFFAuthService {
       url,
       'oauth-popup',
       `width=${width},height=${height},left=${left},top=${top},` +
-        'toolbar=no,menubar=no,location=no,status=no'
+      'toolbar=no,menubar=no,location=no,status=no',
     );
 
     return this.popupWindow;

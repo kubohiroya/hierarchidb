@@ -1,9 +1,7 @@
 /**
- * TreeTable State Atoms - Central Export
- *
- * すべてのatomを統合エクスポート
- * 機能別・種類別に整理された構造
- */
+  * TreeTable State Atoms - Central Export
+  * atom
+   */
 
 // Core Data Atoms
 export {

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CommandProcessor } from '../CommandProcessor';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Undo/Redo for recoverFromTrash', () => {
@@ -31,7 +31,8 @@ describe('Undo/Redo for recoverFromTrash', () => {
         state[node.id] = { ...(state[node.id] as any), ...node } as TreeNode;
       }),
       listChildren: vi.fn(async (parentId: NodeId) => Object.values(state).filter((n: any) => n.parentId === parentId)),
-      deleteNode: vi.fn(async (_id: NodeId) => {}),
+      deleteNode: vi.fn(async (_id: NodeId) => {
+      }),
       createNode: vi.fn(async (_n: TreeNode) => _n.id),
     };
   });
@@ -55,4 +56,3 @@ describe('Undo/Redo for recoverFromTrash', () => {
     expect(state['x'].parentId).toBe('r_root');
   });
 });
-

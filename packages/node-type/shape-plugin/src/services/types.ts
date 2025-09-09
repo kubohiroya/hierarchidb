@@ -3,14 +3,14 @@
  */
 
 import { NodeId } from '@hierarchidb/common-type';
-import type { Feature } from '../types';
+import type { Feature as GeoJSONFeature } from 'geojson';
 import type {
-  DataSourceName,
-  DataSourceInfo,
-  CountryMetadata,
-  ValidationResult,
-  BoundingBox,
   AdminLevelInfo,
+  BoundingBox,
+  CountryMetadata,
+  DataSourceInfo,
+  DataSourceName,
+  ValidationResult,
 } from '@hierarchidb/runtime-ui-datasource';
 
 // === API Method Signatures ===
@@ -18,31 +18,44 @@ import type {
 export interface ShapesAPIMethods extends Record<string, any> {
   // Auth
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void> | void;
+
   // Batch processing
   startBatchProcess(nodeId: NodeId, config: BatchProcessConfig): Promise<BatchSession>;
+
   pauseBatchProcess(sessionId: string): Promise<void>;
+
   resumeBatchProcess(sessionId: string): Promise<void>;
+
   cancelBatchProcess(sessionId: string): Promise<void>;
+
   getBatchStatus(sessionId: string): Promise<BatchStatus>;
-  
+
   // Data sources
   getAvailableDataSources(): Promise<DataSourceInfo[]>;
+
   getCountryMetadata(dataSource: string, countryCode?: string): Promise<CountryMetadata[]>;
+
   validateDataSource(dataSource: string, config: DataSourceConfig): Promise<ValidationResult>;
-  
+
   // Vector tiles
   getTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array>;
+
   getTileMetadata(nodeId: NodeId, z: number, x: number, y: number): Promise<TileMetadata>;
+
   clearTileCache(nodeId: NodeId): Promise<void>;
-  
+
   // Feature queries
-  searchFeatures(nodeId: NodeId, query: string, options?: SearchOptions): Promise<Feature[]>;
-  getFeatureById(nodeId: NodeId, featureId: number): Promise<Feature | null>;
-  getFeaturesByBbox(nodeId: NodeId, bbox: BoundingBox, options?: BboxQueryOptions): Promise<Feature[]>;
-  
+  searchFeatures(nodeId: NodeId, query: string, options?: SearchOptions): Promise<GeoJSONFeature[]>;
+
+  getFeatureById(nodeId: NodeId, featureId: number): Promise<GeoJSONFeature | null>;
+
+  getFeaturesByBbox(nodeId: NodeId, bbox: BoundingBox, options?: BboxQueryOptions): Promise<GeoJSONFeature[]>;
+
   // Cache management
   getCacheStatistics(nodeId?: NodeId): Promise<CacheStatistics>;
+
   clearCache(nodeId: NodeId, cacheType?: CacheType): Promise<void>;
+
   optimizeStorage(nodeId: NodeId): Promise<OptimizationResult>;
 }
 
@@ -51,20 +64,20 @@ export interface ShapesAPIMethods extends Record<string, any> {
 // Re-export types from runtime/datasource for compatibility
 export type { DataSourceName, DataSourceInfo, CountryMetadata, ValidationResult, BoundingBox, AdminLevelInfo };
 
-export type ProcessingStage = 
+export type ProcessingStage =
   | 'download'
   | 'simplify1'
   | 'simplify2'
   | 'vectortile';
 
-export type TaskStatus = 
+export type TaskStatus =
   | 'waiting'
   | 'running'
   | 'completed'
   | 'failed'
   | 'cancelled';
 
-export type CacheType = 
+export type CacheType =
   | 'features'
   | 'tiles'
   | 'buffers'
@@ -231,8 +244,7 @@ export interface LayerInfo {
 
 // === Feature Types ===
 
-// Feature type is imported from '../types'
-export type { Feature } from '../types';
+export type Feature = GeoJSONFeature;
 
 export interface SearchOptions {
   limit?: number;
@@ -412,28 +424,39 @@ export interface VectorTileResult {
 
 export interface DownloadWorkerAPI {
   processDownload(task: DownloadTask): Promise<DownloadResult>;
+
   validateData(data: ArrayBuffer): Promise<ValidationResult>;
+
   cacheData(key: string, data: ArrayBuffer): Promise<void>;
+
   getCachedData(key: string): Promise<ArrayBuffer | null>;
 }
 
 export interface SimplifyWorker1API {
   processSimplification(task: Simplify1Task): Promise<Simplify1Result>;
+
   validateGeometry(geometry: any): Promise<boolean>;
+
   calculateComplexity(geometry: any): Promise<number>;
+
   optimizeFeatures(features: Feature[]): Promise<Feature[]>;
 }
 
 export interface SimplifyWorker2API {
   processTileSimplification(task: Simplify2Task): Promise<Simplify2Result>;
+
   processTopoJSON(features: Feature[], config: TileSimplifyConfig): Promise<TopoJSONResult>;
+
   validateTopology(features: Feature[]): Promise<TopologyValidationResult>;
 }
 
 export interface VectorTileWorkerAPI {
   generateVectorTile(task: VectorTileTask): Promise<VectorTileResult>;
+
   optimizeTile(tile: ArrayBuffer): Promise<ArrayBuffer>;
+
   validateTile(tile: ArrayBuffer): Promise<ValidationResult>;
+
   getTileMetadata(tile: ArrayBuffer): Promise<TileMetadata>;
 }
 

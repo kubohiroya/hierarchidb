@@ -1,15 +1,7 @@
 import { ReactNode, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  //IconButton,
-  Box,
-  //Button,
-  DialogContent,
-  Button,
-} from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
+
 export interface InfoDialogProps {
   /**
    * Whether the base-dialog is open
@@ -58,22 +50,22 @@ export interface InfoDialogProps {
  * in a modal base-dialog with consistent styling and behavior.
  */
 export const InfoDialog = ({
-  open,
-  onClose,
-  title = 'Information',
-  titleIcon = (
-    <InfoIcon
-      fontSize={'large'}
-      style={{ color: 'primary.main', width: 30, height: 30, verticalAlign: 'middle' }}
-    />
-  ),
-  children,
-  fullScreen = false,
-  maxWidth = '1200px',
-  //closeButtonText = 'Close',
-  actions,
-  disableTransition = false,
-}: InfoDialogProps) => {
+                             open,
+                             onClose,
+                             title = 'Information',
+                             titleIcon = (
+                               <InfoIcon
+                                 fontSize={'large'}
+                                 style={{ color: 'primary.main', width: 30, height: 30, verticalAlign: 'middle' }}
+                               />
+                             ),
+                             children,
+                             fullScreen = false,
+                             maxWidth = '1200px',
+                             //closeButtonText = 'Close',
+                             actions,
+                             disableTransition = false,
+                           }: InfoDialogProps) => {
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
@@ -87,9 +79,9 @@ export const InfoDialog = ({
       TransitionProps={
         disableTransition
           ? {
-              appear: false,
-              timeout: 0,
-            }
+            appear: false,
+            timeout: 0,
+          }
           : undefined
       }
       sx={{

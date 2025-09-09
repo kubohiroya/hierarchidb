@@ -4,7 +4,11 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { IBatchSessionManager, BatchSessionStatus, BatchProgressCallback } from '@hierarchidb/runtime-shared-batch-processor';
+import type {
+  BatchProgressCallback,
+  BatchSessionStatus,
+  IBatchSessionManager,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager';
 import type { BatchProcessConfig } from './types';
@@ -18,7 +22,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
 
   constructor() {
     this.manager = new BatchSessionManager();
-    
+
     // Initialize manager
     this.manager.initialize().catch(console.error);
   }
@@ -30,10 +34,31 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
 
     // Convert unified config to shape-specific config
     const batchProcessConfig: BatchProcessConfig = {
-      corsProxyBaseURL: config.corsProxyBaseURL,
-      maxRetries: config.maxRetries || 3,
-      retryDelay: config.retryDelay || 1000,
-      // Add shape-specific mappings as needed
+      corsProxyBaseURL: config.corsProxyBaseURL ?? '',
+      download: {
+        concurrentDownloads: 1,
+        deleteOnComplete: false,
+      },
+      simplify1: {
+        concurrentProcesses: 1,
+        enableFeatureFiltering: false,
+        featureAreaThreshold: 0,
+        minVertexCountForAreaFilter: 0,
+        aspectRatioThreshold: 1,
+        featureFilterMethod: 'bbox_only',
+      },
+      simplify2: {
+        concurrentProcesses: 1,
+        quantize: 1,
+        simplify: 1,
+        tolerance: 1,
+        enablePerFeatureSimplification: false,
+      },
+      vectorTiles: {
+        concurrentProcesses: 1,
+        maxZoom: 1,
+        tileCountThresholdForZoomStop: 1000,
+      },
     };
 
     const options: BatchSessionOptions = {
@@ -44,7 +69,11 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     };
 
     const session = await this.manager.createSession(nodeId, batchProcessConfig, data.urlMetadata, options);
-    return session.sessionId as string;
+    const sessionId = session.sessionId;
+    if (!sessionId) {
+      throw new Error('Failed to create shape batch session: missing sessionId');
+    }
+    return sessionId;
   }
 
   async pauseBatchSession(sessionId: string): Promise<void> {
@@ -61,7 +90,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
 
   async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
     const status = await this.manager.getSessionStatus(sessionId);
-    
+
     // Convert shape-specific status to standard format
     return {
       sessionId: status.session.sessionId,
@@ -91,7 +120,8 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     });
 
     // Return unsubscribe function (shape manager doesn't provide one, so we return a no-op)
-    return () => {};
+    return () => {
+    };
   }
 }
 

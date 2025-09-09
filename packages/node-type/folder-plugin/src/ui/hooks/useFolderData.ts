@@ -2,7 +2,7 @@
  * Folder data management hook
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NodeId } from '@hierarchidb/common-type';
 import { useFolderAPIGetter } from './useFolderAPI';
 import type { FolderEntity } from '../../shared';
@@ -74,7 +74,7 @@ export function useFolderData(nodeId: NodeId) {
         setLoading(false);
       }
     },
-    [nodeId, getFolderAPI]
+    [nodeId, getFolderAPI],
   );
 
   // Update existing folder-plugin
@@ -98,7 +98,7 @@ export function useFolderData(nodeId: NodeId) {
         setLoading(false);
       }
     },
-    [nodeId, getFolderAPI, loadEntity]
+    [nodeId, getFolderAPI, loadEntity],
   );
 
   // Delete folder-plugin
@@ -143,7 +143,7 @@ export function useFolderData(nodeId: NodeId) {
         setLoading(false);
       }
     },
-    [nodeId, getFolderAPI, loadEntity]
+    [nodeId, getFolderAPI, loadEntity],
   );
 
   // Copy folder-plugin
@@ -167,7 +167,7 @@ export function useFolderData(nodeId: NodeId) {
         setLoading(false);
       }
     },
-    [nodeId, getFolderAPI]
+    [nodeId, getFolderAPI],
   );
 
   // Update settings
@@ -184,7 +184,7 @@ export function useFolderData(nodeId: NodeId) {
         throw error;
       }
     },
-    [nodeId, getFolderAPI, loadEntity]
+    [nodeId, getFolderAPI, loadEntity],
   );
 
   // Refresh statistics

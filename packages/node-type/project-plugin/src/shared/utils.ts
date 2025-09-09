@@ -27,17 +27,17 @@ export function createWorkingCopyFromEntity(entity: ProjectEntity): ProjectWorki
  */
 export function mapWorkingCopyToUpdates(workingCopy: ProjectWorkingCopy): Partial<ProjectEntity> {
   // Remove working copy specific fields and TreeNode fields
-  const { 
-    isWorkingCopy, 
-    originalId, 
-    isDirty, 
+  const {
+    isWorkingCopy,
+    originalId,
+    isDirty,
     copiedAt,
     id,  // TreeNode id (NodeId)
     parentId,  // TreeNode field
     nodeType,  // TreeNode field  
     depth,  // TreeNode field
     originalNodeId,  // WorkingCopyProperties
-    ...updates 
+    ...updates
   } = workingCopy;
 
   // Convert id back to EntityId if needed
@@ -119,7 +119,7 @@ export function isPointInBoundingBox(
     minLat: number;
     maxLon: number;
     maxLat: number;
-  }
+  },
 ): boolean {
   const [lon, lat] = point;
   return lon >= bbox.minLon && lon <= bbox.maxLon && lat >= bbox.minLat && lat <= bbox.maxLat;

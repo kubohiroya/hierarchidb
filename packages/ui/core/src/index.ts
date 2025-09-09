@@ -21,6 +21,10 @@ export { useAsyncOperation } from './hooks/useAsyncOperation';
 export type { UseAsyncOperationResult } from './hooks/useAsyncOperation';
 export { useFormState } from './hooks/useFormState';
 export type { UseFormStateOptions, UseFormStateResult, FormFieldError } from './hooks/useFormState';
+// Batch progress hooks (public API)
+export { useBatchProgress } from './hooks/useBatchProgress';
+export { createAdapterFromProgressSubscribe } from './hooks/progressAdapters';
+export type { UnifiedProgressInfo, BatchProgressAdapter } from './hooks/useBatchProgress';
 
 // Utility Exports
 // Logger now exported from @hierarchidb/common-core
@@ -33,18 +37,18 @@ export {
   getThemeTextColor,
   getStoredThemeMode,
   getSystemTheme,
-  getActualTheme
+  getActualTheme,
 } from './utils/theme';
 export type { ThemeMode } from './utils/theme';
 
 // Type Exports (explicitly import to avoid conflicts with plugin types)
-export type { 
+export type {
   BaseDialogProps,
   NodeDialogProps,
   ConfirmDialogProps,
   BaseFormData,
   DialogResult,
-  EditDialogProps as BaseEditDialogProps
+  EditDialogProps as BaseEditDialogProps,
 } from './types/dialog';
 
 // Re-export EditDialogProps from plugins (which is the main one used)

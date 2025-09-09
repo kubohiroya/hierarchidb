@@ -8,26 +8,25 @@
 - 外部化: peer 管理ライブラリはバンドルから除外（`tsup.base.config.ts` の external 参照）。
 
 ## TypeScript 設定（必読）
-- rootDir を固定しない: ワークスペース内の他パッケージの型を「公開エントリ（`@hierarchidb/*`）」から解決する設計のため、`exports.types` が `src` を指すことがあります。プラグイン側で `rootDir: "src"` を固定すると、公開エントリ経由でも他パッケージの `src` を読む際に TS6059（rootDir の外参照）が発生します。したがって原則 `rootDir` は固定せず、TypeScript に共通ルートを自動計算させてください。
-- モジュール解決: 基本は `module: "ESNext"`, `moduleResolution: "node"` を使用。`node16`/`nodenext` は `.js` 拡張子必須の警告（TS2835）を誘発しやすいため使用しません。
+- rootDir の扱い: 原則として `rootDir` は固定しません（TypeScript に共通ルートを自動計算させる）。ただし、他パッケージの `src` を直接参照する構成は避け、依存は公開エントリ経由で解決してください。
+- モジュール解決: 基本は `module: "ESNext"`, `moduleResolution: "node"`。`node16`/`nodenext` は `.js` 拡張子必須の警告（TS2835）を誘発しやすいため使用しません。
 - 生成物: パッケージ側のビルドは `tsup` に任せ、`tsconfig` では `noEmit: true` を既定とし、必要に応じて `outDir: "dist"` のみ指定します。
 - include/exclude: `include: ["src/**/*.ts", "src/**/*.tsx"]` を推奨。`dist`, `node_modules`, `**/*.test.*` は `exclude` すること。
 
 ## クロスパッケージ import の取り扱い
 - 公開 API のみを使用: `@hierarchidb/{package}` のエクスポートから参照し、`src/*` などのディープパスは使用禁止。
-- 型参照の前提: 共通パッケージは `package.json` の `exports.types` を `src/index.ts` に向けています。これにより「ビルド前でも型解決が可能」です。プラグイン側は `import type` を優先して JS 出力を抑制してください。
+- 型参照の前提（日付更新）: 以前は多くのパッケージで `exports.types` を `src/index.ts` に向けていましたが、複数エントリ（UI/Worker/Workers/*）を公開するプラグインでは `dist/*.d.ts` を型エントリとします（例: shape-plugin）。利用側は公開エントリから解決し、`import type` を優先して JS 出力を抑制してください。
 - Node 環境型: Node グローバル（例: `process`）を型として使う必要がある場合、パッケージの `tsconfig.json` に `types: ["node"]` を追加します（例: `node-type/project-plugin`）。
 
-## package.json の `exports` / `types` ポリシー（重要）
-- 目的: モノレポ横断の「ビルド前型チェック（prebuild typecheck）」を安定させるため、型エントリはビルド生成物ではなく `src` を指す。
+## package.json の `exports` / `types` ポリシー（重要・更新）
+- 目的: 複数エントリ（UI/Worker/Workers/*）や Web Worker の公開があるプラグインでの型解決とビルド安定性を両立する。
 - ルール（ライブラリ側、=他パッケージに公開する側）
-  - `exports.types`: `"./src/index.ts"` を指すこと。
-  - `types`: `"src/index.ts"` を指すこと。
-  - `exports.import`/`module`/`main`: バンドル生成物（`dist/index.js` など）を指すこと。
+  - 単一エントリの軽量ライブラリ: `exports.types`/`types` は `src/index.ts` を指してよい。
+  - 複数エントリや Worker を公開するプラグイン（例: shape-plugin）: `exports.types`/`types` は `dist/*.d.ts` を指す。`exports.import`/`module`/`main` は `dist/*.js` を指す。
 - ルール（プラグイン／利用側）
-  - 公開エントリ（`@hierarchidb/*`）のみを import する。`rootDir` は固定しない。
-  - `module: "ESNext"` + `moduleResolution: "node"` に統一し、NodeNext/Node16 は使わない。
-- 備考: 生成される `.d.ts` は配布のために引き続き `dist` に出力されるが、型解決は上記 `src` を参照する設計です。
+  - 公開エントリ（`@hierarchidb/*`）のみ import。`rootDir` 固定は不要。
+  - `module: "ESNext"` + `moduleResolution: "node"` を使用。
+- 備考: UI パッケージ群で TS2742（jsx-runtime 依存の暗黙型）を防ぐため、公開 TSX は戻り値型を明示すること（下記参照）。
 
 ## 公開 TSX コンポーネントの戻り値型（MUST）
 
@@ -58,6 +57,12 @@
 - [ ] 型のみの依存は `import type` + `devDependencies` に出来ないか
 - [ ] 内部パッケージは公開 API からのみ参照しているか（ディープインポート禁止）
 - [ ] `tsconfig.json` が `module: ESNext` / `moduleResolution: node` で、`rootDir` を不要に固定していないか
+
+## ID ポリシー（更新）
+- Entity の ID は `NodeId` に統一します。従来の `EntityId` は廃止済みです。
+- タグ関連は独立した `TagId` を使用します（`NodeId` と混同しない）。
+- Working Copy/ダイアログ系 API も `NodeId` を受け渡し ID とします（例: `MultiStepDialogAPI.createWorkingCopy(): Promise<NodeId>`）。
+
 
 ## ライブラリ別の分類
 
@@ -104,3 +109,33 @@ react-i18next, i18next
 - [ ] tsup external で peer が二重バンドルされないか
 - [ ] 型のみの依存は `import type` + devDependencies に出来ないか
 - [ ] 内部パッケージは公開APIからのみ参照しているか
+## Shape Plugin Build/Exports
+
+The `@hierarchidb/shape-plugin` package now ships full ESM builds in `dist/`:
+
+- `dist/index.js` — main library entry (types: `dist/index.d.ts`)
+- `dist/shared/index.js` — shared types and helpers (types: `dist/shared/index.d.ts`)
+- `dist/ui/index.js` — UI exports (components, hooks) (types: `dist/ui/index.d.ts`)
+- `dist/worker/index.js` — worker-layer API (no .d.ts yet)
+- `dist/workers/*.js` — dedicated Worker entry points (Download/Simplify1/Simplify2/VectorTile)
+
+Consumers should import as follows:
+
+- App (main thread): `import { ... } from '@hierarchidb/shape-plugin'`
+- UI: `import { ... } from '@hierarchidb/shape-plugin/ui'`
+- Workers (new URL): `new Worker(new URL('@hierarchidb/shape-plugin/workers/DownloadWorker', import.meta.url), { type: 'module' })`
+
+Notes:
+
+- UI/Worker do not import app internals. The app provides the Worker client via:
+  `import { registerWorkerClientHook } from '@hierarchidb/shape-plugin/ui'`
+  and `registerWorkerClientHook(useWorkerAPIClient)` at startup.
+- The app should reference `@hierarchidb/shape-plugin` entries via dist (avoid src deep imports).
+- `exports` in package.json are configured accordingly; TS type resolution points to `dist/*.d.ts`.
+
+### DTS policy
+
+- `index` and `shared/index` emit .d.ts.
+- `ui/index` emits .d.ts (branded IDs are avoided; use plain string aliases in shared types).
+- `worker/index` JS-only for now; dedicated `workers/*` are compiled to JS bundles.
+  We can add .d.ts once internal Dexie store types are stabilized.

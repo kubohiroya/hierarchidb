@@ -5,26 +5,26 @@
 
 import React, { useState } from 'react';
 import {
-  Box,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Switch,
-  TextField,
-  Slider,
-  Button,
-  LinearProgress,
   Alert,
-  Stack,
+  Box,
+  Button,
   Card,
   CardContent,
   Chip,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  LinearProgress,
+  MenuItem,
+  Select,
+  Slider,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { PlayArrow, Stop, Settings } from '@mui/icons-material';
-import type { RouteWorkingCopy, RouteCategory } from '../types';
+import { PlayArrow, Settings, Stop } from '@mui/icons-material';
+import type { RouteCategory, RouteWorkingCopy } from '../types';
 import { useTranslation } from '../i18n';
 
 export interface RouteProcessingStepProps {
@@ -41,13 +41,13 @@ interface ProcessingStatus {
 }
 
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
-  workingCopy,
-  onUpdate,
-  onValidationChange,
-}) => {
+                                                                          workingCopy,
+                                                                          onUpdate,
+                                                                          onValidationChange,
+                                                                        }) => {
   const { t } = useTranslation();
   const [category, setCategory] = useState<RouteCategory>(
-    (workingCopy.category as RouteCategory) || 'urban'
+    (workingCopy.category as RouteCategory) || 'urban',
   );
   const [simplificationLevel, setSimplificationLevel] = useState(3);
   const [generateElevation, setGenerateElevation] = useState(true);
@@ -196,7 +196,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {t(
           'base-dialog.processing.description',
-          'Configure processing options for route generation'
+          'Configure processing options for route generation',
         )}
       </Typography>
 
@@ -355,7 +355,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           <Typography variant="body2">
             {t(
               'base-dialog.processing.successMessage',
-              'Route has been processed successfully and is ready to use!'
+              'Route has been processed successfully and is ready to use!',
             )}
           </Typography>
         </Alert>

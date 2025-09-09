@@ -1,6 +1,6 @@
 /**
  * @hierarchidb/ui-data-grid
- * 
+ *
  * Abstract data grid components using the Data Provider pattern.
  * Works with any data source through abstract interfaces.
  */

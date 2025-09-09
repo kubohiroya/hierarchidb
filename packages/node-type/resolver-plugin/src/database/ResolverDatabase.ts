@@ -11,7 +11,7 @@ class ResolverDatabase extends Dexie {
 
   constructor() {
     super(getDBName('resolver-db'));
-    
+
     this.version(1).stores({
       resolvers: '&id, nodeId, name, createdAt, updatedAt',
       workingCopies: '&id, nodeId, originalId, originalVersion',

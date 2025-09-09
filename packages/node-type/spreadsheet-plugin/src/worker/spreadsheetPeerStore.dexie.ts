@@ -1,16 +1,20 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { SpreadsheetEntitiesDB, SheetPeerRow } from './spreadsheetEntitiesDB';
+import type { SheetPeerRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB';
 import type { SpreadsheetPeerData } from '../types/entities';
 
 export function createSpreadsheetPeerStoreDexie(db: SpreadsheetEntitiesDB): PeerStore<SpreadsheetPeerData> {
   return {
-    async get(nodeId: NodeId) { return (await db.peerEntities.get(nodeId)) as any; },
+    async get(nodeId: NodeId) {
+      return (await db.peerEntities.get(nodeId)) as any;
+    },
     async put(e: PeerEntity<SpreadsheetPeerData>) {
       const data = normalizeV1(e.data);
       await db.peerEntities.put({ ...e, data, updatedAt: Date.now() } as SheetPeerRow);
     },
-    async delete(nodeId: NodeId) { await db.peerEntities.delete(nodeId); },
+    async delete(nodeId: NodeId) {
+      await db.peerEntities.delete(nodeId);
+    },
     async bulkUpsert(entities: PeerEntity<SpreadsheetPeerData>[]) {
       const rows = entities.map((e) => ({ ...e, data: normalizeV1(e.data), updatedAt: Date.now() })) as SheetPeerRow[];
       await db.peerEntities.bulkPut(rows);

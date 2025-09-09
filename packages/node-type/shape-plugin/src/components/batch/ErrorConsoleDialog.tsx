@@ -1,17 +1,17 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   List,
   ListItem,
   ListItemText,
   Typography,
-  IconButton,
 } from '@mui/material';
-import { Close as CloseIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Clear as ClearIcon, Close as CloseIcon } from '@mui/icons-material';
 import type { ErrorLogEntry } from '../../hooks/useErrorConsole';
 
 interface ErrorConsoleDialogProps {
@@ -22,11 +22,11 @@ interface ErrorConsoleDialogProps {
 }
 
 export const ErrorConsoleDialog: React.FC<ErrorConsoleDialogProps> = ({
-  open,
-  onClose,
-  errors,
-  onClearErrors,
-}) => {
+                                                                        open,
+                                                                        onClose,
+                                                                        errors,
+                                                                        onClearErrors,
+                                                                      }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -35,7 +35,7 @@ export const ErrorConsoleDialog: React.FC<ErrorConsoleDialogProps> = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
+
       <DialogContent dividers>
         {errors.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
@@ -56,7 +56,7 @@ export const ErrorConsoleDialog: React.FC<ErrorConsoleDialogProps> = ({
           </List>
         )}
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={onClearErrors} startIcon={<ClearIcon />} disabled={errors.length === 0}>
           Clear All

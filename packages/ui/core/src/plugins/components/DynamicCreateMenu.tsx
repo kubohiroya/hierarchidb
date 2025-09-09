@@ -1,15 +1,15 @@
 import React from 'react';
 import {
-  Menu,
-  MenuItem,
+  Alert,
+  CircularProgress,
+  Divider,
   ListItemIcon,
   ListItemText,
-  Divider,
+  Menu,
+  MenuItem,
   Typography,
-  CircularProgress,
-  Alert,
 } from '@mui/material';
-import type { NodeId, CreateMenuItem } from '@hierarchidb/common-type';
+import type { CreateMenuItem, NodeId } from '@hierarchidb/common-type';
 import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 
@@ -70,17 +70,23 @@ export interface DynamicCreateMenuProps {
  * - Worker layer restrictions
  */
 export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
-  parentId,
-  anchorEl,
-  open,
-  onClose,
-  onCreate,
-  nodeAdapter,
-  positioning = {
-    anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-    transformOrigin: { vertical: 'top', horizontal: 'left' },
-  },
-}) => {
+                                                                      parentId,
+                                                                      anchorEl,
+                                                                      open,
+                                                                      onClose,
+                                                                      onCreate,
+                                                                      nodeAdapter,
+                                                                      positioning = {
+                                                                        anchorOrigin: {
+                                                                          vertical: 'bottom',
+                                                                          horizontal: 'left',
+                                                                        },
+                                                                        transformOrigin: {
+                                                                          vertical: 'top',
+                                                                          horizontal: 'left',
+                                                                        },
+                                                                      },
+                                                                    }) => {
   const { menuItems, loading, error } = useDynamicCreateMenu(parentId, nodeAdapter);
 
   const handleItemClick = (nodeType: string) => {

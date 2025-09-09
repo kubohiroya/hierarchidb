@@ -8,7 +8,8 @@ export function getNetPort(): NetworkPortLike {
       const p = reg.require('net.port');
       if (p) return p as NetworkPortLike;
     }
-  } catch {}
+  } catch {
+  }
   return {
     async get(url: string, init?: RequestInit) {
       const res = await fetch(url, init);

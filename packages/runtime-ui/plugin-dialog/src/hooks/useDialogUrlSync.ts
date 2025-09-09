@@ -102,7 +102,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   const writeUrl = useCallback(
     (
       fields: { step?: number; mode?: DialogModeState; map?: DialogMapState },
-      which: 'step' | 'mode' | 'map'
+      which: 'step' | 'mode' | 'map',
     ) => {
       if (!isBrowser) return;
       const ns = (k: string) => `${namespace}_${k}`;
@@ -133,7 +133,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         writingRef.current = false;
       }, 0);
     },
-    [isBrowser, namespace, readFrom, history?.step]
+    [isBrowser, namespace, readFrom, history?.step],
   );
 
   // state -> URL (step, immediate)
@@ -149,7 +149,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   // state -> URL (map, debounced)
   const debouncedWriteMap = useMemo(
     () => debounceFn((m: DialogMapState) => writeUrl({ map: m }, 'map'), debounce?.map ?? 400),
-    [writeUrl, debounce?.map]
+    [writeUrl, debounce?.map],
   );
   useEffect(() => {
     if (map) debouncedWriteMap(map);
@@ -176,7 +176,9 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       url.hash = base;
     } else {
       const q = new URLSearchParams(url.search);
-      [...q.keys()].forEach((k) => { if (k.startsWith(ns)) q.delete(k); });
+      [...q.keys()].forEach((k) => {
+        if (k.startsWith(ns)) q.delete(k);
+      });
       url.search = q.toString();
     }
     window.history.replaceState(null, '', url);

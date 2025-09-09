@@ -3,23 +3,23 @@
  */
 
 import { NodeId } from '@hierarchidb/common-type';
-import type { 
-  ShapesAPIMethods,
+import type {
   BatchProcessConfig,
   BatchSession,
   BatchStatus,
-  DataSourceInfo,
-  CountryMetadata,
-  ValidationResult,
-  DataSourceConfig,
-  TileMetadata,
-  Feature,
-  SearchOptions,
-  BoundingBox,
   BboxQueryOptions,
+  BoundingBox,
   CacheStatistics,
   CacheType,
-  OptimizationResult
+  CountryMetadata,
+  DataSourceConfig,
+  DataSourceInfo,
+  Feature,
+  OptimizationResult,
+  SearchOptions,
+  ShapesAPIMethods,
+  TileMetadata,
+  ValidationResult,
 } from '~/services/types';
 
 import { ShapeService } from '~/services/ShapeService';
@@ -46,12 +46,12 @@ export class ShapePluginAPI implements ShapesAPIMethods {
   constructor() {
     // Initialize database
     this.database = new ShapeDB();
-    
+
     // Initialize services - would be implemented in full version
     // this.dataSourceManager = new DataSourceManager();
     this.vectorTileService = new VectorTileService();
     // this.batchSessionManager = new BatchSessionManager();
-    
+
     // Initialize worker pool with default configuration
     this.workerPoolManager = new WorkerPoolManager({
       downloadWorkers: 2,
@@ -65,7 +65,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
         restartThreshold: 5,
       },
     });
-    
+
     // Initialize main service
     this.shapeService = new ShapeService();
   }
@@ -81,13 +81,13 @@ export class ShapePluginAPI implements ShapesAPIMethods {
     try {
       // Initialize database
       await this.database.open();
-      
+
       // Initialize worker pool
       await this.workerPoolManager.initialize();
-      
+
       // Initialize services
       await this.shapeService.initialize();
-      
+
       this.isInitialized = true;
       console.log('ShapePluginAPI initialized successfully');
     } catch (error) {
@@ -287,7 +287,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
       ]);
 
       const totalQueuedTasks = Object.values(workerStats.queuedTasks).reduce((sum: number, count: number) => sum + count, 0);
-      
+
       return {
         status: 'healthy',
         services: {

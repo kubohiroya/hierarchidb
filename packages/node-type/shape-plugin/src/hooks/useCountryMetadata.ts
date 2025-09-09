@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata } from '~/shared';
 import { metadataLoader } from '~/services/metadata/MetadataLoader';
 
@@ -20,9 +20,9 @@ export interface UseCountryMetadataResult {
  * Hook to load and use country metadata from 02-fetch-metadata
  */
 export function useCountryMetadata({
-  dataSource,
-  countryCodes,
-}: UseCountryMetadataOptions): UseCountryMetadataResult {
+                                     dataSource,
+                                     countryCodes,
+                                   }: UseCountryMetadataOptions): UseCountryMetadataResult {
   const [metadata, setMetadata] = useState<CountryMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -39,13 +39,13 @@ export function useCountryMetadata({
 
     try {
       let data: CountryMetadata[];
-      
+
       if (countryCodes && countryCodes.length > 0) {
         data = await metadataLoader.getCountriesMetadata(dataSource, countryCodes);
       } else {
         data = await metadataLoader.loadMetadata(dataSource);
       }
-      
+
       setMetadata(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load metadata'));
@@ -62,20 +62,20 @@ export function useCountryMetadata({
   const getCountryName = useCallback(
     (countryCode: string): string => {
       const country = metadata.find(
-        c => c.countryCode.toLowerCase() === countryCode.toLowerCase()
+        c => c.countryCode.toLowerCase() === countryCode.toLowerCase(),
       );
       return country?.countryName || countryCode;
     },
-    [metadata]
+    [metadata],
   );
 
   const getCountryByCode = useCallback(
     (countryCode: string): CountryMetadata | undefined => {
       return metadata.find(
-        c => c.countryCode.toLowerCase() === countryCode.toLowerCase()
+        c => c.countryCode.toLowerCase() === countryCode.toLowerCase(),
       );
     },
-    [metadata]
+    [metadata],
   );
 
   return {

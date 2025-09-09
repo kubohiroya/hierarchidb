@@ -26,22 +26,24 @@ export interface RowIndexEntry {
 export class RowStoreDB extends Dexie {
   rowChunks!: Table<RowChunk>;
   rowIndexes!: Table<RowIndexEntry>;
+
   constructor(name: string = getDBName('tabular-rowstore-db')) {
     super(name);
     this.version(1).stores({
-      rowChunks: '&id, [pluginId+tableId], tableId, pluginId, chunkIndex, createdAt'
+      rowChunks: '&id, [pluginId+tableId], tableId, pluginId, chunkIndex, createdAt',
     });
     // v2: add indexes table and additional compound indexes for faster row resolution
     this.version(2).stores({
       // Query by plugin+table+startRowIndex to locate chunks for specific rowIds quickly
       rowChunks: '&id, [pluginId+tableId], [pluginId+tableId+startRowIndex], [pluginId+tableId+endRowIndex], tableId, pluginId, chunkIndex, createdAt',
       // Inverted index: one entry per (plugin, table, column, value)
-      rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]'
+      rowIndexes: '&id, [pluginId+tableId+column], [pluginId+tableId+column+value]',
     });
   }
 }
 
 let singleton: RowStoreDB | null = null;
+
 export function getRowStoreDB(): RowStoreDB {
   if (!singleton) singleton = new RowStoreDB();
   return singleton;

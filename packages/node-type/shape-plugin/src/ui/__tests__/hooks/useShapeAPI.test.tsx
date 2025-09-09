@@ -2,18 +2,19 @@
  * Shape API hook tests
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useShapeAPI, useShapeAPIGetter } from '../../hooks/useShapeAPI';
+import { registerWorkerClientHook } from '../../hooks/workerClientProvider';
 import type { ShapeAPI } from '../../../shared';
 
 // Mock @hierarchidb/runtime-shared-client
 const mockWorkerAPI = {
-  getPluginRegistryAPI: vi.fn()
+  getPluginRegistryAPI: vi.fn(),
 };
 
 const mockPluginRegistry = {
-  getExtension: vi.fn()
+  getExtension: vi.fn(),
 };
 
 const mockShapeAPI: ShapeAPI = {
@@ -41,28 +42,27 @@ const mockShapeAPI: ShapeAPI = {
   getProcessedFeatureCount: vi.fn(),
   getVectorTileInfo: vi.fn(),
   getProcessingStatus: vi.fn(),
-  cleanupProcessingData: vi.fn()
+  cleanupProcessingData: vi.fn(),
 };
 
 const mockClient = {
-  getAPI: vi.fn(() => mockWorkerAPI)
+  getAPI: vi.fn(() => mockWorkerAPI),
 };
 
-vi.mock('@hierarchidb/app/src/hooks/useWorkerAPIClient', () => ({
-  useWorkerAPIClient: () => mockClient
-}));
 
 describe('useShapeAPI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockWorkerAPI.getPluginRegistryAPI.mockResolvedValue(mockPluginRegistry);
     mockPluginRegistry.getExtension.mockResolvedValue(mockShapeAPI);
+    // Bridge app context by registering the Worker client hook
+    registerWorkerClientHook(() => mockClient as any);
   });
 
   it('should return Shape API instance', async () => {
     const { result } = renderHook(() => useShapeAPI());
     const api = await result.current;
-    
+
     expect(api).toBe(mockShapeAPI);
     expect(mockWorkerAPI.getPluginRegistryAPI).toHaveBeenCalled();
     expect(mockPluginRegistry.getExtension).toHaveBeenCalledWith('shape');
@@ -70,11 +70,11 @@ describe('useShapeAPI', () => {
 
   it('should memoize the API instance', async () => {
     const { result, rerender } = renderHook(() => useShapeAPI());
-    
+
     const api1 = await result.current;
     rerender();
     const api2 = await result.current;
-    
+
     expect(api1).toBe(api2);
     expect(mockWorkerAPI.getPluginRegistryAPI).toHaveBeenCalledTimes(1);
   });
@@ -85,14 +85,15 @@ describe('useShapeAPIGetter', () => {
     vi.clearAllMocks();
     mockWorkerAPI.getPluginRegistryAPI.mockResolvedValue(mockPluginRegistry);
     mockPluginRegistry.getExtension.mockResolvedValue(mockShapeAPI);
+    registerWorkerClientHook(() => mockClient as any);
   });
 
   it('should return a function that gets Shape API', async () => {
     const { result } = renderHook(() => useShapeAPIGetter());
     const getAPI = result.current;
-    
+
     expect(typeof getAPI).toBe('function');
-    
+
     const api = await getAPI();
     expect(api).toBe(mockShapeAPI);
     expect(mockPluginRegistry.getExtension).toHaveBeenCalledWith('shape');
@@ -100,21 +101,21 @@ describe('useShapeAPIGetter', () => {
 
   it('should return the same function instance on re-renders', () => {
     const { result, rerender } = renderHook(() => useShapeAPIGetter());
-    
+
     const getAPI1 = result.current;
     rerender();
     const getAPI2 = result.current;
-    
+
     expect(getAPI1).toBe(getAPI2);
   });
 
   it('should allow multiple calls to the getter function', async () => {
     const { result } = renderHook(() => useShapeAPIGetter());
     const getAPI = result.current;
-    
+
     const api1 = await getAPI();
     const api2 = await getAPI();
-    
+
     expect(api1).toBe(mockShapeAPI);
     expect(api2).toBe(mockShapeAPI);
     expect(mockPluginRegistry.getExtension).toHaveBeenCalledTimes(2);
@@ -122,5 +123,6 @@ describe('useShapeAPIGetter', () => {
 });
 // Skip UI hook tests by default (require app environment)
 if (!process.env.ENABLE_SHAPE_UI_TESTS) {
-  describe.skip('useShapeAPI (UI tests disabled)', () => {});
+  describe.skip('useShapeAPI (UI tests disabled)', () => {
+  });
 }

@@ -12,7 +12,7 @@ export async function deriveKey(secret: string): Promise<CryptoKey> {
     encoder.encode(secret),
     { name: 'PBKDF2' },
     false,
-    ['deriveBits', 'deriveKey']
+    ['deriveBits', 'deriveKey'],
   );
 
   return crypto.subtle.deriveKey(
@@ -25,7 +25,7 @@ export async function deriveKey(secret: string): Promise<CryptoKey> {
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt', 'decrypt']
+    ['encrypt', 'decrypt'],
   );
 }
 

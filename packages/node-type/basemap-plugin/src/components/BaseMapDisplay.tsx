@@ -4,9 +4,15 @@
  * Renders the configured basemap with all settings applied
  */
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Box, CircularProgress, Alert, Typography } from '@mui/material';
-import { MapLibreMap, type MapViewState, type MapLibreMapInstance, type MapLibreLayer, type MapLibreStyle } from '@hierarchidb/ui-map';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import {
+  type MapLibreLayer,
+  MapLibreMap,
+  type MapLibreMapInstance,
+  type MapLibreStyle,
+  type MapViewState,
+} from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity } from '../types/BaseMapEntity';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
@@ -38,16 +44,16 @@ export interface BaseMapDisplayProps {
  * Renders a MapLibre map with BaseMap entity configuration
  */
 export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
-  nodeId,
-  entity: providedEntity,
-  width = '100%',
-  height = '400px',
-  style,
-  onLoad,
-  onViewStateChange,
-  showLoadingIndicator = true,
-  interactive = true
-}) => {
+                                                                nodeId,
+                                                                entity: providedEntity,
+                                                                width = '100%',
+                                                                height = '400px',
+                                                                style,
+                                                                onLoad,
+                                                                onViewStateChange,
+                                                                showLoadingIndicator = true,
+                                                                interactive = true,
+                                                              }) => {
   const [entity, setEntity] = useState<BaseMapEntity | undefined>(providedEntity);
   const [loading, setLoading] = useState(!providedEntity);
   const [error, setError] = useState<string | null>(null);
@@ -81,13 +87,13 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   const initialViewState = useMemo<MapViewState | undefined>(() => {
     // Use viewport configuration
     if (!entity?.viewport) return undefined;
-    
+
     return {
       longitude: entity.viewport.center[0],
       latitude: entity.viewport.center[1],
       zoom: entity.viewport.zoom,
       bearing: entity.viewport.bearing || 0,
-      pitch: entity.viewport.pitch || 0
+      pitch: entity.viewport.pitch || 0,
     };
   }, [entity]);
 
@@ -127,10 +133,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
 
     // Apply display options
     if (entity?.displayOptions) {
-      const { 
-        show3dBuildings, 
+      const {
+        show3dBuildings,
         showTerrain,
-        showLabels 
+        showLabels,
       } = entity.displayOptions;
       // Note: showTraffic and showTransit depend on the specific map style
       // and may not be available in all styles
@@ -145,14 +151,14 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
         }
 
         // Toggle labels
-        const labelLayers = map.getStyle().layers.filter((layer: MapLibreLayer) => 
-          layer.type === 'symbol' && layer.id.includes('label')
+        const labelLayers = map.getStyle().layers.filter((layer: MapLibreLayer) =>
+          layer.type === 'symbol' && layer.id.includes('label'),
         );
         labelLayers.forEach((layer: MapLibreLayer) => {
           map.setLayoutProperty(
-            layer.id, 
-            'visibility', 
-            showLabels ? 'visible' : 'none'
+            layer.id,
+            'visibility',
+            showLabels ? 'visible' : 'none',
           );
         });
 
@@ -160,7 +166,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
         if (showTerrain && !map.getTerrain()) {
           // Check if terrain source exists
           const terrainSource = Object.keys(map.getStyle().sources).find(
-            source => source.includes('terrain')
+            source => source.includes('terrain'),
           );
           if (terrainSource) {
             map.setTerrain({ source: terrainSource, exaggeration: 1.5 });
@@ -178,7 +184,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     if (entity?.displayOptions?.attribution) {
       map.getContainer().setAttribute(
         'data-attribution',
-        entity.displayOptions.attribution
+        entity.displayOptions.attribution,
       );
     }
 
@@ -195,14 +201,14 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   // Loading state
   if (loading && showLoadingIndicator) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
           alignItems: 'center',
           width,
           height,
-          ...style
+          ...style,
         }}
       >
         <CircularProgress />
@@ -248,12 +254,12 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
           dragPan: interactive,
           dragRotate: interactive,
           doubleClickZoom: interactive,
-          touchZoomRotate: interactive
+          touchZoomRotate: interactive,
         }}
       >
         {/* Children components like markers, layers etc. can be added here */}
       </MapLibreMap>
-      
+
       {/* Attribution overlay if needed */}
       {entity.displayOptions?.attribution && (
         <Box
@@ -265,7 +271,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
             px: 1,
             py: 0.5,
             fontSize: '10px',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
           }}
         >
           {entity.displayOptions.attribution}

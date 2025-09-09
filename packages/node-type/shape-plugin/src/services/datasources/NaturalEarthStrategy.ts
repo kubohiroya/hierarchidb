@@ -1,15 +1,15 @@
 /**
- * Natural Earth データソース戦略
- * https://www.naturalearthdata.com/ からShapefileデータを取得
- */
+  * Natural Earth
+ * https://www.naturalearthdata.com/ Shapefile
+  */
 
 import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy';
 import { ShapeEntity } from '../../types/ShapeEntity';
 import JSZip from 'jszip';
 
-// Natural Earth特有の生データ型
+//  Natural Earth
 export interface NaturalEarthRawData {
-  files: Map<string, ArrayBuffer>; // ファイル名 -> バイナリデータ
+  files: Map<string, ArrayBuffer>; //  ->
   metadata: {
     source: string;
     downloadedAt: string;
@@ -18,7 +18,7 @@ export interface NaturalEarthRawData {
   };
 }
 
-// Natural Earth処理後データ型
+//  Natural Earth
 export interface NaturalEarthProcessedData extends Array<ShapeEntity> {
   metadata?: {
     source: 'natural-earth';
@@ -30,8 +30,8 @@ export interface NaturalEarthProcessedData extends Array<ShapeEntity> {
 }
 
 /**
- * Natural Earth データソース戦略実装
- */
+  * Natural Earth
+  */
 export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRawData, NaturalEarthProcessedData> {
   readonly id = 'natural-earth-shapes';
   readonly name = 'Natural Earth Vector Data';
@@ -51,7 +51,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         'coastline-10m': '10m/physical/ne_10m_coastline.zip',
         'rivers-10m': '10m/physical/ne_10m_rivers_lake_centerlines.zip',
         'lakes-10m': '10m/physical/ne_10m_lakes.zip',
-        
+
         // 1:50m (Medium scale data, 1:50,000,000)
         'countries-50m': '50m/cultural/ne_50m_admin_0_countries.zip',
         'states-50m': '50m/cultural/ne_50m_admin_1_states_provinces.zip',
@@ -59,67 +59,64 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         'coastline-50m': '50m/physical/ne_50m_coastline.zip',
         'rivers-50m': '50m/physical/ne_50m_rivers_lake_centerlines.zip',
         'lakes-50m': '50m/physical/ne_50m_lakes.zip',
-        
+
         // 1:110m (Small scale data, 1:110,000,000)
         'countries-110m': '110m/cultural/ne_110m_admin_0_countries.zip',
         'states-110m': '110m/cultural/ne_110m_admin_1_states_provinces.zip',
         'cities-110m': '110m/cultural/ne_110m_populated_places.zip',
         'coastline-110m': '110m/physical/ne_110m_coastline.zip',
         'rivers-110m': '110m/physical/ne_110m_rivers_lake_centerlines.zip',
-        'lakes-110m': '110m/physical/ne_110m_lakes.zip'
+        'lakes-110m': '110m/physical/ne_110m_lakes.zip',
       },
       authentication: { type: 'none' },
-      timeout: 60000, // 60秒
-      retries: { count: 3, delay: 2000, backoff: 'exponential' }
+      timeout: 60000, //  60
+      retries: { count: 3, delay: 2000, backoff: 'exponential' },
     },
     processing: {
       inputFormat: 'shapefile',
       outputFormat: 'geojson',
       validation: [
         { field: 'geometry', rule: 'required' },
-        { field: 'properties', rule: 'required' }
+        { field: 'properties', rule: 'required' },
       ],
       transformations: [
-        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }, // WGS84のまま
-        { type: 'simplify', tolerance: 0.001 } // 適度な簡略化
-      ]
+        { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }, //  WGS84
+        { type: 'simplify', tolerance: 0.001 }],
     },
     cache: {
-      ttl: 86400000 * 7, // 1週間キャッシュ
-      strategy: 'disk'
-    }
+      ttl: 86400000 * 7, //  1
+      strategy: 'disk',
+    },
   };
 
   async fetchData(options?: FetchOptions): Promise<NaturalEarthRawData> {
-    const { 
-      endpoint = 'countries-50m', 
-      adminLevel, 
+    const {
+      endpoint = 'countries-50m',
+      adminLevel,
       bbox,
-      timeout = this.config.access.timeout 
+      timeout = this.config.access.timeout,
     } = options || {};
 
-    // エンドポイントの決定
     const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
     if (!selectedEndpoint || !this.config.access.endpoints?.[selectedEndpoint]) {
       throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
     }
 
     const downloadUrl = `${this.config.access.baseUrl}${this.config.access.endpoints[selectedEndpoint]}`;
-    
+
     console.log(`[NaturalEarth] Downloading from: ${downloadUrl}`);
 
     try {
-      // ZIPファイルをダウンロード
+      //  ZIP
       const response = await this.downloadWithRetry(downloadUrl, timeout);
       const zipBuffer = await response.arrayBuffer();
-      
-      // ZIPファイルを解凍
+
+      //  ZIP
       const zip = new JSZip();
       const zipData = await zip.loadAsync(zipBuffer);
-      
-      // ファイルを抽出
+
       const files = new Map<string, ArrayBuffer>();
-      
+
       for (const [fileName, fileData] of Object.entries(zipData.files)) {
         if (!fileData.dir) {
           const buffer = await fileData.async('arraybuffer');
@@ -133,8 +130,8 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           source: 'natural-earth',
           downloadedAt: new Date().toISOString(),
           endpoint: selectedEndpoint,
-          totalSize: zipBuffer.byteLength
-        }
+          totalSize: zipBuffer.byteLength,
+        },
       };
 
     } catch (error) {
@@ -146,24 +143,22 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     const { filters, transformations, simplify = true, tolerance = 0.001 } = options || {};
 
     try {
-      // Shapefileを解析してGeoJSONに変換
+      //  ShapefileGeoJSON
       const geojson = await this.convertShapefilesToGeoJSON(rawData.files);
-      
-      // フィルタリング適用
+
       let features = geojson.features;
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
 
-      // 座標変換・簡略化
       if (transformations && transformations.length > 0) {
         features = await this.applyTransformations(features, transformations);
       }
 
-      // ShapeEntityに変換
+      //  ShapeEntity
       const entities: ShapeEntity[] = features.map((feature, index) => {
         const properties = feature.properties || {};
-        
+
         return {
           id: this.generateEntityId(properties, index),
           nodeId: this.generateNodeId(properties, index),
@@ -173,27 +168,26 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           properties: {
             ...properties,
             source: 'natural-earth',
-            endpoint: rawData.metadata.endpoint
+            endpoint: rawData.metadata.endpoint,
           },
           metadata: {
             source: 'natural-earth',
             originalIndex: index,
             downloadedAt: rawData.metadata.downloadedAt,
-            processedAt: new Date().toISOString()
+            processedAt: new Date().toISOString(),
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          version: 1
+          version: 1,
         } as ShapeEntity;
       });
 
-      // メタデータ付きで返却
       const result = entities as NaturalEarthProcessedData;
       result.metadata = {
         source: 'natural-earth',
         processedAt: new Date().toISOString(),
         count: entities.length,
-        adminLevel: this.extractAdminLevel(rawData.metadata.endpoint)
+        adminLevel: this.extractAdminLevel(rawData.metadata.endpoint),
       };
 
       return result;
@@ -204,24 +198,22 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   }
 
   private selectEndpoint(endpoint: string, adminLevel?: number): string {
-    // 管理レベルに基づいてエンドポイントを選択
     if (adminLevel !== undefined) {
       if (adminLevel === 0) {
-        return 'countries-50m'; // 国レベル
+        return 'countries-50m';
       } else if (adminLevel === 1) {
-        return 'states-50m'; // 州・県レベル
+        return 'states-50m';
       }
     }
 
-    // デフォルトまたは指定されたエンドポイント
-    // テスト用のダミーキー（test-1 など）が渡された場合はフォールバック
+    //  test-1
     if (endpoint?.startsWith('test-')) return 'countries-50m';
     return endpoint;
   }
 
   private async downloadWithRetry(url: string, timeout?: number): Promise<Response> {
     const { count = 3, delay = 2000, backoff = 'exponential' } = this.config.access.retries || {};
-    
+
     for (let attempt = 0; attempt < count; attempt++) {
       try {
         const controller = new AbortController();
@@ -229,7 +221,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 
         const { authFetch } = await import('../utils/authFetch');
         const response = await authFetch(url, {
-          signal: controller.signal
+          signal: controller.signal,
         });
 
         if (timeoutId) clearTimeout(timeoutId);
@@ -242,12 +234,11 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 
       } catch (error) {
         if (attempt === count - 1) throw error;
-        
-        // 指数バックオフまたは線形待機
-        const waitTime = backoff === 'exponential' 
+
+        const waitTime = backoff === 'exponential'
           ? delay * Math.pow(2, attempt)
           : delay * (attempt + 1);
-        
+
         console.warn(`[NaturalEarth] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
@@ -257,17 +248,15 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   }
 
   private async convertShapefilesToGeoJSON(files: Map<string, ArrayBuffer>): Promise<any> {
-    // Shapefileの解析ライブラリを使用（shapefile-jsなど）
-    // 実装簡略化のため、モックデータを返す
-    
-    // 実際の実装では shapefileライブラリを使用:
+    //  Shapefileshapefile-js
+
+    //  shapefile:
     // const shapefile = await import('shapefile');
     // const geojson = await shapefile.read(shpBuffer, dbfBuffer);
-    
+
     return {
       type: 'FeatureCollection',
       features: [
-        // モックデータ
         {
           type: 'Feature',
           geometry: {
@@ -277,28 +266,28 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
               [139.792, 35.689],
               [139.792, 35.789],
               [139.692, 35.789],
-              [139.692, 35.689]
-            ]]
+              [139.692, 35.689],
+            ]],
           },
           properties: {
             NAME: 'Sample Country',
             NAME_EN: 'Sample Country',
             ISO_A3: 'SAM',
-            POP_EST: 125000000
-          }
-        }
-      ]
+            POP_EST: 125000000,
+          },
+        },
+      ],
     };
   }
 
   private generateEntityId(properties: any, index: number): string {
-    // プロパティからユニークなIDを生成
+    //  ID
     const iso = properties.ISO_A3 || properties.ISO_3166_1 || properties.adm0_a3;
     const name = properties.NAME || properties.NAME_EN || properties.name;
-    
+
     if (iso) return `ne-${iso.toLowerCase()}`;
     if (name) return `ne-${name.toLowerCase().replace(/\s+/g, '-')}`;
-    
+
     return `ne-feature-${index}`;
   }
 
@@ -307,21 +296,21 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   }
 
   private extractName(properties: any): string {
-    return properties.NAME || 
-           properties.NAME_EN || 
-           properties.name || 
-           properties.NAME_LOCAL || 
-           `Unnamed Feature`;
+    return properties.NAME ||
+      properties.NAME_EN ||
+      properties.name ||
+      properties.NAME_LOCAL ||
+      `Unnamed Feature`;
   }
 
   private extractDescription(properties: any): string | undefined {
     const parts: string[] = [];
-    
+
     if (properties.TYPE) parts.push(`Type: ${properties.TYPE}`);
     if (properties.CONTINENT) parts.push(`Continent: ${properties.CONTINENT}`);
     if (properties.REGION_UN) parts.push(`Region: ${properties.REGION_UN}`);
     if (properties.POP_EST) parts.push(`Population: ${properties.POP_EST.toLocaleString()}`);
-    
+
     return parts.length > 0 ? parts.join(', ') : undefined;
   }
 

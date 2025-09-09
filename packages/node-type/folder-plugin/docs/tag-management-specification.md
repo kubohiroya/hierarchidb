@@ -28,7 +28,7 @@ interface TagEntity extends RelationalEntity {
 #### NodeTagAssociation（中間テーブル）
 ```typescript
 interface NodeTagAssociation {
-  id: EntityId;
+  id: EntityId;          // 一意ID（将来的に専用型に切替予定）
   nodeId: NodeId;         // ノードID
   tagId: TagId;           // タグID
   assignedAt: Timestamp;  // 割り当て日時
@@ -59,7 +59,7 @@ nodeTagAssociations: '&id, nodeId, tagId, assignedAt, [nodeId+tagId]'
   - 複合インデックス: `nodeIds`（マルチエントリ）
 
 - **nodeTagAssociations**テーブル:
-  - プライマリキー: `id` (EntityId)
+  - プライマリキー: `id` (EntityId)  // 将来 `AssociationId` に置換可能
   - ユニーク複合インデックス: `[nodeId+tagId]`
   - 外部キーインデックス: `nodeId`, `tagId`
 

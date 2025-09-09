@@ -1,27 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Box,
-  Typography,
-  TextField,
-
-  Paper,
-  Chip,
   Alert,
+  Box,
+  Chip,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
+  InputLabel,
   List,
   ListItem,
   ListItemText,
-
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { 
-  Schema as SchemaIcon,
-  CheckCircle as CheckIcon,
-} from '@mui/icons-material';
-import type { ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '~/types';
+import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
+import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
 interface SchemaSelectionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -38,12 +33,12 @@ const SCHEMA_INPUT_METHODS = [
 ];
 
 export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
-  data,
-  onUpdate,
-  onValidationChange,
-  onSourceSchemaChange,
-  onTargetSchemaChange,
-}) => {
+                                                                          data,
+                                                                          onUpdate,
+                                                                          onValidationChange,
+                                                                          onSourceSchemaChange,
+                                                                          onTargetSchemaChange,
+                                                                        }) => {
   const [sourceInputMethod, setSourceInputMethod] = useState<string>('sample');
   const [targetInputMethod, setTargetInputMethod] = useState<string>('sample');
   const [sourceInput, setSourceInput] = useState<string>('');
@@ -57,7 +52,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
     try {
       const data = JSON.parse(jsonText);
       const sampleArray = Array.isArray(data) ? data : [data];
-      
+
       if (sampleArray.length === 0) {
         throw new Error('No data found in sample');
       }
@@ -72,15 +67,15 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
           Object.keys(item).forEach(key => {
             allProperties.add(key);
             const value = item[key];
-            const type = Array.isArray(value) ? 'array' 
-                       : value === null ? 'string'
-                       : typeof value === 'object' ? 'object'
-                       : typeof value === 'number' ? 'number'
-                       : typeof value === 'boolean' ? 'boolean'
-                       : typeof value;
-                       
+            const type = Array.isArray(value) ? 'array'
+              : value === null ? 'string'
+                : typeof value === 'object' ? 'object'
+                  : typeof value === 'number' ? 'number'
+                    : typeof value === 'boolean' ? 'boolean'
+                      : typeof value;
+
             propertyTypes.set(key, type);
-            
+
             if (!propertyExamples.has(key)) {
               propertyExamples.set(key, []);
             }
@@ -113,7 +108,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
   const handleSourceInputChange = useCallback((value: string) => {
     setSourceInput(value);
     setSourceError('');
-    
+
     if (value.trim()) {
       const schema = parseSchemaFromSample(value, 'Source Schema');
       if (schema) {
@@ -134,7 +129,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
   const handleTargetInputChange = useCallback((value: string) => {
     setTargetInput(value);
     setTargetError('');
-    
+
     if (value.trim()) {
       const schema = parseSchemaFromSample(value, 'Target Schema');
       if (schema) {
@@ -199,8 +194,8 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         ))}
         {schema.properties.length > 8 && (
           <ListItem>
-            <ListItemText 
-              secondary={`... and ${schema.properties.length - 8} more properties`} 
+            <ListItemText
+              secondary={`... and ${schema.properties.length - 8} more properties`}
             />
           </ListItem>
         )}
@@ -214,7 +209,8 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         Schema Selection
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Define your source and target data schemas. You can paste sample JSON data to automatically detect the schema structure.
+        Define your source and target data schemas. You can paste sample JSON data to automatically detect the schema
+        structure.
       </Typography>
 
       <Grid container spacing={3}>
@@ -224,7 +220,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
             <SchemaIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Source Schema
           </Typography>
-          
+
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Input Method</InputLabel>
             <Select
@@ -261,7 +257,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
             <SchemaIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Target Schema
           </Typography>
-          
+
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Input Method</InputLabel>
             <Select
@@ -296,7 +292,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       {sourceSchema && targetSchema && (
         <Alert severity="success" sx={{ mt: 3 }}>
           <Typography variant="subtitle2">Schemas Ready</Typography>
-          Both source and target schemas have been successfully detected. 
+          Both source and target schemas have been successfully detected.
           You can now proceed to define property mapping rules.
         </Alert>
       )}

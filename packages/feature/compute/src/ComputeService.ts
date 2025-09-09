@@ -12,6 +12,8 @@ export class ComputeService {
     return this.pool.submit(spec);
   }
 
-  getPool(): WorkerPool { return this.pool; }
+  getPool(): WorkerPool {
+    return this.pool;
+  }
 }
 

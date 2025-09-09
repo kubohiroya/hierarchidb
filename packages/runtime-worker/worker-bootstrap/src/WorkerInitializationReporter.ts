@@ -1,15 +1,11 @@
 /**
  * Worker-side initialization reporter
- * 
+ *
  * This module handles sending initialization status messages from the Worker
  * to the UI thread via postMessage, independent of Comlink.
  */
 
-import type {
-  WorkerInitMessage,
-  WorkerInitRequest,
-  InitializationStep,
-} from './types';
+import type { InitializationStep, WorkerInitMessage, WorkerInitRequest } from './types';
 
 export class WorkerInitializationReporter {
   private isInitialized = false;
@@ -31,7 +27,7 @@ export class WorkerInitializationReporter {
     if (typeof self !== 'undefined' && 'addEventListener' in self) {
       self.addEventListener('message', (event: MessageEvent) => {
         const request = event.data as WorkerInitRequest;
-        
+
         if (request.type === 'INIT_REQUEST') {
           this.reportCurrentStatus();
         } else if (request.type === 'PING') {
@@ -61,11 +57,11 @@ export class WorkerInitializationReporter {
     }
 
     this.currentStep = stepIndex;
-    
+
     // Calculate overall progress
     let totalProgress = 0;
     const totalWeight = this.initSteps.reduce((sum, step) => sum + step.weight, 0);
-    
+
     for (let i = 0; i < stepIndex; i++) {
       const step = this.initSteps[i];
       if (step) {
@@ -76,7 +72,7 @@ export class WorkerInitializationReporter {
     if (currentStep) {
       totalProgress += (currentStep.weight * stepProgress / 100);
     }
-    
+
     this.currentProgress = Math.round((totalProgress / totalWeight) * 100);
 
     this.sendMessage('INIT_PROGRESS', {
@@ -139,11 +135,11 @@ export class WorkerInitializationReporter {
           timestamp: Date.now(),
         },
       };
-      
+
       if (this.debug) {
         console.log('[WorkerInitReporter] Sending message:', message);
       }
-      
+
       self.postMessage(message);
     }
   }
@@ -153,7 +149,7 @@ export class WorkerInitializationReporter {
    */
   public async trackInitialization<T>(
     stepName: string,
-    operation: () => Promise<T>
+    operation: () => Promise<T>,
   ): Promise<T> {
     try {
       this.reportStepProgress(stepName, 0);

@@ -1,16 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { DialogStepper } from './DialogStepper';
 import { Box } from '@mui/material';
-import {
-  Info,
-  LocationOn,
-  Settings,
-  Check,
-  Folder,
-  AccountCircle,
-  Payment,
-  Security,
-} from '@mui/icons-material';
+import { AccountCircle, Check, Folder, Info, LocationOn, Payment, Security, Settings } from '@mui/icons-material';
 import { useState } from 'react';
 import type { DialogStep } from '../types/MultiStepDialog.types';
 
@@ -50,7 +41,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// サンプルステップ定義
 const basicSteps: DialogStep[] = [
   {
     id: 'info',
@@ -181,7 +171,6 @@ export const NonLinearNavigation: Story = {
 
     const handleStepClick = async (stepIndex: number) => {
       setActiveStep(stepIndex);
-      // 完了したステップとして追加
       setCompletedSteps((prev) => new Set([...prev, activeStep]));
     };
 
@@ -226,7 +215,6 @@ export const Interactive: Story = {
     const [completedSteps, setCompletedSteps] = useState(new Set<number>());
 
     const handleStepClick = async (stepIndex: number) => {
-      // 前のステップを完了扱いにする
       if (activeStep < stepIndex) {
         setCompletedSteps((prev) => {
           const newSet = new Set(prev);
@@ -292,7 +280,7 @@ export const CompactMode: Story = {
 
 export const WithOptionalSteps: Story = {
   args: {
-    steps: folderSteps, // 権限設定がoptional: true
+    steps: folderSteps, //  optional: true
     activeStep: 1,
     completedSteps: new Set([0]),
     alternativeLabel: true,
@@ -308,16 +296,14 @@ export const ErrorState: Story = {
   render: () => {
     const [activeStep, setActiveStep] = useState(1);
     const [completedSteps] = useState(new Set([0]));
-    useState(new Set([1])); // エラー状態のステップ
-
+    useState(new Set([1]));
     return (
       <DialogStepper
         steps={basicSteps}
         activeStep={activeStep}
         completedSteps={completedSteps}
         onStepClick={setActiveStep}
-        currentData={{ hasErrors: true }} // エラー状態を示すデータ
-      />
+        currentData={{ hasErrors: true }} />
     );
   },
 };

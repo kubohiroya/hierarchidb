@@ -3,13 +3,7 @@
  */
 
 import React from 'react';
-import {
-  Stepper,
-  Step,
-  StepButton,
-  StepLabel,
-  Typography,
-} from '@mui/material';
+import { Step, StepButton, StepLabel, Stepper, Typography } from '@mui/material';
 // import { useLocation, Link } from 'react-router-dom';
 import type { StepperProps } from '../types/MultiStepDialog.types';
 
@@ -20,17 +14,17 @@ export const DialogStepper: React.FC<StepperProps & {
   currentData?: any;
   // baseUrl?: string;
 }> = ({
-  steps,
-  activeStep,
-  completedSteps,
-  onStepClick,
-  nonLinear = false,
-  alternativeLabel = false,
-  currentData = {},
-  // baseUrl,
-}) => {
+        steps,
+        activeStep,
+        completedSteps,
+        onStepClick,
+        nonLinear = false,
+        alternativeLabel = false,
+        currentData = {},
+        // baseUrl,
+      }) => {
   // const location = useLocation();
-  
+
   // Build URL for each step (currently unused)
   // const getStepUrl = useMemo(() => {
   //   if (!baseUrl) return () => null;
@@ -47,12 +41,12 @@ export const DialogStepper: React.FC<StepperProps & {
   const canNavigateToStep = (stepIndex: number) => {
     const step = steps[stepIndex];
     if (!step) return false;
-    
+
     // If step has capabilities, check canNavigateTo
     if (step.capabilities?.canNavigateTo) {
       return step.capabilities.canNavigateTo(activeStep, currentData);
     }
-    
+
     // Default behavior: can navigate to completed steps or next step
     return completedSteps.has(stepIndex) || stepIndex === activeStep + 1;
   };

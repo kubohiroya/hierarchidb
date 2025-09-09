@@ -4,13 +4,11 @@
  * doesn't expose setAuthToken().
  */
 
-// Lazy import to avoid hard dependency in non-app contexts
+// Optional dependency injection for app-provided Worker API getter
 let getWorkerAPI: (() => any) | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('@hierarchidb/app/src/hooks/useWorkerAPIClient');
-  getWorkerAPI = mod?.getWorkerAPIClient ?? mod?.useWorkerAPIClient; // support either export shape
-} catch {}
+export function injectWorkerAPIGetter(getter: () => any) {
+  getWorkerAPI = getter;
+}
 
 export async function setShapeAuthToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): Promise<void> {
   if (!getWorkerAPI) return; // Not running within app environment
@@ -23,4 +21,3 @@ export async function setShapeAuthToken(token: string, type: 'Bearer' | 'Basic' 
     await (ext as any).setAuthToken(token, type, expiresAt);
   }
 }
-

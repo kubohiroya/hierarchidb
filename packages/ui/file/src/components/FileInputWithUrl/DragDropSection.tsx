@@ -21,22 +21,22 @@ interface DragDropSectionProps {
 }
 
 export const DragDropSection: React.FC<DragDropSectionProps> = ({
-  isDragging,
-  disabled,
-  loading,
-  isDownloading,
-  buttonLabel,
-  fileInputRef,
-  accept,
-  hoveredSection,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onFileSelect,
-  onMouseEnter,
-  onMouseLeave,
-  compact = false,
-}) => {
+                                                                  isDragging,
+                                                                  disabled,
+                                                                  loading,
+                                                                  isDownloading,
+                                                                  buttonLabel,
+                                                                  fileInputRef,
+                                                                  accept,
+                                                                  hoveredSection,
+                                                                  onDragOver,
+                                                                  onDragLeave,
+                                                                  onDrop,
+                                                                  onFileSelect,
+                                                                  onMouseEnter,
+                                                                  onMouseLeave,
+                                                                  compact = false,
+                                                                }) => {
   return (
     <Paper
       variant="outlined"

@@ -1,6 +1,6 @@
-import { HelpOutline, InfoOutlined } from "@mui/icons-material";
-import { Box, Button, Link, Stack, Typography } from "@mui/material";
-import type { ReactNode } from "react";
+import { HelpOutline, InfoOutlined } from '@mui/icons-material';
+import { Box, Button, Link, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 
 export interface LandingPageProps {
   logo?: ReactNode;
@@ -45,30 +45,30 @@ export function LandingPage(props: LandingPageProps) {
   const shouldShowHelp = showHelpButton ?? Boolean(onHelp);
 
   return (
-    <Box sx={{ position: "relative", width: "100%", height: "100vh" }}>
+    <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
       {/* Top overlay slots */}
-      <Box sx={{ position: "absolute", top: 12, left: 12, zIndex: 10 }}>
+      <Box sx={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
         {topLeft}
       </Box>
-      <Box sx={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
+      <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
         {topRight}
       </Box>
 
       {/* Centered content */}
       <Stack
         sx={{
-          height: "100%",
-          width: "100%",
+          height: '100%',
+          width: '100%',
           maxWidth: 600,
-          margin: "0 auto",
+          margin: '0 auto',
           px: 2,
         }}
-        alignItems={"center"}
-        justifyContent={"center"}
+        alignItems={'center'}
+        justifyContent={'center'}
         spacing={2}
       >
         {(logo || heading) && (
-          <Stack spacing={1} alignItems={"center"}>
+          <Stack spacing={1} alignItems={'center'}>
             {logo}
             {heading && (
               <Typography
@@ -84,18 +84,18 @@ export function LandingPage(props: LandingPageProps) {
         )}
 
         {description && (
-          <Typography color={"Grey"} textAlign={"center"} sx={{ mb: 2 }}>
+          <Typography color={'Grey'} textAlign={'center'} sx={{ mb: 2 }}>
             {description}
           </Typography>
         )}
 
         {githubUrl && (
-          <Typography variant="body2" color={"lightGrey"}>
+          <Typography variant="body2" color={'lightGrey'}>
             <Link
               href={githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              sx={{ color: "primary.main" }}
+              sx={{ color: 'primary.main' }}
             >
               available on GitHub
             </Link>
@@ -104,20 +104,20 @@ export function LandingPage(props: LandingPageProps) {
 
         {(shouldShowInfo || shouldShowHelp) && (
           <Box
-            sx={{ mt: 3, display: "flex", justifyContent: "center", gap: 1 }}
+            sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 1 }}
           >
             {shouldShowInfo && (infoPath || onInfoClick) && (
               <Button
-                component={onInfoClick ? "button" : "a"}
+                component={onInfoClick ? 'button' : 'a'}
                 href={onInfoClick ? undefined : infoPath}
                 onClick={onInfoClick}
                 variant="outlined"
                 startIcon={<InfoOutlined />}
                 aria-label="View documentation and information"
                 sx={{
-                  textTransform: "none",
-                  color: "grey",
-                  borderColor: "grey",
+                  textTransform: 'none',
+                  color: 'grey',
+                  borderColor: 'grey',
                   borderRadius: 2,
                 }}
               >
@@ -131,9 +131,9 @@ export function LandingPage(props: LandingPageProps) {
                 startIcon={<HelpOutline />}
                 aria-label="Start guided tour"
                 sx={{
-                  textTransform: "none",
-                  color: "grey",
-                  borderColor: "grey",
+                  textTransform: 'none',
+                  color: 'grey',
+                  borderColor: 'grey',
                   borderRadius: 2,
                 }}
               >

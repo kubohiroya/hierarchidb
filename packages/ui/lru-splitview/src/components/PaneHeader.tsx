@@ -4,12 +4,12 @@
  */
 
 import React from 'react';
-import { Box, Typography, IconButton, Stack, Chip, useTheme } from '@mui/material';
+import { Box, Chip, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 
 import type { PaneHeaderProps } from '../types/LRUSplitView';
@@ -34,15 +34,15 @@ export interface PaneHeaderComponentProps extends PaneHeaderProps {
  * - Support for header actions
  */
 export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
-  pane,
-  state,
-  progress,
-  onToggle,
-  clickable = true,
-  vertical = false,
-  showProgress = true,
-  onClick,
-}) => {
+                                                                 pane,
+                                                                 state,
+                                                                 progress,
+                                                                 onToggle,
+                                                                 clickable = true,
+                                                                 vertical = false,
+                                                                 showProgress = true,
+                                                                 onClick,
+                                                               }) => {
   const theme = useTheme();
 
   const handleClick = () => {
@@ -79,8 +79,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         transition: 'background-color 0.2s ease-in-out',
         '&:hover': clickable
           ? {
-              backgroundColor: theme.palette.action.hover,
-            }
+            backgroundColor: theme.palette.action.hover,
+          }
           : {},
       }}
       onClick={handleClick}

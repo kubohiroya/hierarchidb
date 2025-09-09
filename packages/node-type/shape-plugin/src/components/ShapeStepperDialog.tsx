@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Stack } from '@mui/material';
-import { PlayArrow as PlayArrowIcon, Category as CategoryIcon } from '@mui/icons-material';
+import { Category as CategoryIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { StepperDialog, useWorkingCopy } from '@hierarchidb/runtime-base-dialog';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ShapeDialogProps, ShapeWorkingCopy, ProcessingConfig } from '~/shared';
+import type { ProcessingConfig, ShapeDialogProps, ShapeWorkingCopy } from '~/shared';
 import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
 import { mockShapeService } from '~/services/MockShapeService';
 import { generateUrlMetadata } from '~/mock/data';
@@ -35,12 +35,12 @@ const getInitialShapeData = (): ShapeWorkingCopy => ({
 });
 
 export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
-  mode = 'create',
-  nodeId,
-  parentId,
-  open = true,
-  onClose,
-}) => {
+                                                                 mode = 'create',
+                                                                 nodeId,
+                                                                 parentId,
+                                                                 open = true,
+                                                                 onClose,
+                                                               }) => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
 
   // Working Copy management using ui-base-dialog hook
@@ -94,7 +94,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
     const urlMetadata = generateUrlMetadata(
       workingCopy.selectedCountries || [],
       workingCopy.adminLevels || [],
-      workingCopy.dataSourceName
+      workingCopy.dataSourceName,
     );
 
     // Update working copy with URL metadata
@@ -170,13 +170,13 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
         nonLinear={mode === 'edit'}
         // Custom footer with Start Batch button
         customFooterContent={({
-          currentStep,
-          isFirstStep,
-          isLastStep,
-          canGoNext,
-          onBack,
-          onNext,
-        }) => (
+                                currentStep,
+                                isFirstStep,
+                                isLastStep,
+                                canGoNext,
+                                onBack,
+                                onNext,
+                              }) => (
           <CustomStepperFooter
             currentStep={currentStep}
             isFirstStep={isFirstStep}
@@ -225,17 +225,17 @@ interface CustomStepperFooterProps {
 }
 
 const CustomStepperFooter: React.FC<CustomStepperFooterProps> = ({
-  currentStep,
-  isFirstStep,
-  isLastStep,
-  canGoNext,
-  canStartBatch,
-  showStartBatch,
-  onBack,
-  onNext,
-  onCancel,
-  onStartBatch,
-}) => {
+                                                                   currentStep,
+                                                                   isFirstStep,
+                                                                   isLastStep,
+                                                                   canGoNext,
+                                                                   canStartBatch,
+                                                                   showStartBatch,
+                                                                   onBack,
+                                                                   onNext,
+                                                                   onCancel,
+                                                                   onStartBatch,
+                                                                 }) => {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
       {/* Left side button */}

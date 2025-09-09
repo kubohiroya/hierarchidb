@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-type';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-type';
 
 const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
   id: id as NodeId,
@@ -18,8 +18,10 @@ describe('TreeMutationService bulk paths', () => {
   it('pasteNodes uses bulkCreateNodes for multiple nodes', async () => {
     const core: any = {
       listChildren: vi.fn(async (_p: NodeId) => []),
-      createNode: vi.fn(async (_n: TreeNode) => {}),
-      bulkCreateNodes: vi.fn(async (_nodes: TreeNode[]) => {}),
+      createNode: vi.fn(async (_n: TreeNode) => {
+      }),
+      bulkCreateNodes: vi.fn(async (_nodes: TreeNode[]) => {
+      }),
     };
     const { TreeMutationService } = await import('~/services/TreeMutationService');
     const svc = new TreeMutationService(core as any, { processCommand: vi.fn() } as any);

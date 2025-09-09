@@ -1,24 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Typography,
-  Paper,
-  IconButton,
   Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { Add, Delete, Save, Cancel } from '@mui/icons-material';
+import { Add, Cancel, Delete, Save } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { StylerEntity, StylerColorRule, StylerStyle } from '~/entities/StylerEntity';
+import type { StylerColorRule, StylerEntity, StylerStyle } from '~/entities/StylerEntity';
 
 export interface StylerSimpleDialogProps {
   open: boolean;
@@ -37,11 +37,11 @@ export interface StylerCreateConfig {
 }
 
 export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
-  open,
-  onClose,
-  onSave,
-  existingEntity,
-}) => {
+                                                                        open,
+                                                                        onClose,
+                                                                        onSave,
+                                                                        existingEntity,
+                                                                      }) => {
   const [keyColumn, setKeyColumn] = useState('');
   const [colorRules, setColorRules] = useState<StylerColorRule[]>([]);
   const [defaultStyle, setDefaultStyle] = useState<StylerStyle>({
@@ -165,8 +165,8 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                   label="Color"
                   type="color"
                   value={rule.style.backgroundColor || '#ffffff'}
-                  onChange={(e) => handleUpdateColorRule(index, { 
-                    style: { ...rule.style, backgroundColor: e.target.value }
+                  onChange={(e) => handleUpdateColorRule(index, {
+                    style: { ...rule.style, backgroundColor: e.target.value },
                   })}
                   size="small"
                   sx={{ width: 80 }}

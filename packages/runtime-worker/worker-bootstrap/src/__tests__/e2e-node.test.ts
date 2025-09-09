@@ -3,12 +3,11 @@
  * Using Node.js worker_threads for real Worker testing
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Worker } from 'worker_threads';
 import * as path from 'path';
 import * as fs from 'fs';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
-import type { WorkerInitMessage } from '../types';
 
 // Create a test worker script file for ESM
 const createTestWorkerFile = (): string => {
@@ -145,10 +144,10 @@ console.log('[TestWorker] Worker started');
   if (!fs.existsSync(tmpDir)) {
     fs.mkdirSync(tmpDir, { recursive: true });
   }
-  
+
   const workerPath = path.join(tmpDir, `test-worker-${Date.now()}.mjs`);
   fs.writeFileSync(workerPath, workerCode);
-  
+
   return workerPath;
 };
 
@@ -157,48 +156,48 @@ class WorkerAdapter {
   private worker: Worker;
   private listeners: Map<string, Set<(event: any) => void>> = new Map();
   public terminated = false;
-  
+
   constructor(filename: string) {
     console.log('[Adapter] Creating worker with file:', filename);
-    this.worker = new Worker(filename, { 
-      execArgv: ['--experimental-modules']
+    this.worker = new Worker(filename, {
+      execArgv: ['--experimental-modules'],
     });
-    
+
     // Forward messages
     this.worker.on('message', (data) => {
       console.log('[Adapter] Received from worker:', data);
       const event = { data };
       this.listeners.get('message')?.forEach(listener => listener(event));
     });
-    
+
     this.worker.on('error', (error) => {
       console.error('[Adapter] Worker error:', error);
     });
-    
+
     this.worker.on('exit', (code) => {
       console.log('[Adapter] Worker exited with code:', code);
       this.terminated = true;
     });
   }
-  
+
   addEventListener(type: string, listener: (event: any) => void): void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
     this.listeners.get(type)!.add(listener);
   }
-  
+
   removeEventListener(type: string, listener: (event: any) => void): void {
     this.listeners.get(type)?.delete(listener);
   }
-  
+
   postMessage(data: any): void {
     if (!this.terminated) {
       console.log('[Adapter] Sending to worker:', data);
       this.worker.postMessage(data);
     }
   }
-  
+
   terminate(): void {
     if (!this.terminated) {
       this.terminated = true;
@@ -211,13 +210,13 @@ describe('Worker Initialization Node.js E2E Tests', () => {
   let workerPath: string;
   let worker: WorkerAdapter;
   let channel: WorkerInitializationChannel;
-  
+
   beforeEach(() => {
     workerPath = createTestWorkerFile();
     worker = new WorkerAdapter(workerPath);
     channel = new WorkerInitializationChannel();
   });
-  
+
   afterEach(async () => {
     channel.dispose();
     if (worker && !worker.terminated) {
@@ -240,39 +239,39 @@ describe('Worker Initialization Node.js E2E Tests', () => {
       }
     }
   });
-  
+
   describe('Full Initialization Flow', () => {
     it('should complete initialization with progress updates', async () => {
       const progressUpdates: number[] = [];
-      
+
       // Capture progress
       worker.addEventListener('message', (event) => {
         if (event.data.type === 'INIT_PROGRESS') {
           progressUpdates.push(event.data.payload?.progress || 0);
         }
       });
-      
+
       // Wait for worker to be ready
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Start initialization
       const result = await channel.waitForInitialization({
         worker: worker as unknown as globalThis.Worker,
         timeout: 5000,
         debug: true,
       });
-      
+
       // Verify result
       expect(result.success).toBe(true);
       expect(result.duration).toBeGreaterThan(0);
       expect(result.error).toBeUndefined();
-      
+
       // Verify progress sequence
       expect(progressUpdates.length).toBeGreaterThan(0);
       expect(progressUpdates).toContain(0);
       expect(progressUpdates).toContain(100);
     }, 10000);
-    
+
     it('should handle initialization timeout', async () => {
       // Create a worker that never responds
       const silentWorkerCode = `
@@ -280,18 +279,18 @@ import { parentPort } from 'worker_threads';
 // Do nothing - simulate unresponsive worker
 console.log('[SilentWorker] Started but not responding');
 `;
-      
+
       const silentPath = path.join(__dirname, '.tmp', `silent-worker-${Date.now()}.mjs`);
       fs.writeFileSync(silentPath, silentWorkerCode);
       const silentWorker = new WorkerAdapter(silentPath);
-      
+
       try {
         await channel.waitForInitialization({
           worker: silentWorker as unknown as globalThis.Worker,
           timeout: 500,
           debug: false,
         });
-        
+
         expect.fail('Should have timed out');
       } catch (result: any) {
         expect(result.success).toBe(false);
@@ -304,11 +303,11 @@ console.log('[SilentWorker] Started but not responding');
         }
       }
     });
-    
+
     it('should handle worker errors', async () => {
       // Wait for worker to be ready
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Setup to send error message immediately after INIT_REQUEST
       worker.addEventListener('message', (event) => {
         if (event.data.type === 'INIT_PROGRESS' && event.data.payload?.progress === 0) {
@@ -318,13 +317,13 @@ console.log('[SilentWorker] Started but not responding');
           }, 10);
         }
       });
-      
+
       const initPromise = channel.waitForInitialization({
         worker: worker as unknown as globalThis.Worker,
         timeout: 2000,
         debug: false,
       });
-      
+
       try {
         await initPromise;
         // If we get here, first init completed, which is also OK
@@ -336,45 +335,45 @@ console.log('[SilentWorker] Started but not responding');
       }
     });
   });
-  
+
   describe('Ping Functionality', () => {
     it('should respond to ping after initialization', async () => {
       // Wait for worker to be ready
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       // Initialize first
       await channel.waitForInitialization({
         worker: worker as unknown as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });
-      
+
       // Test ping
       const pingResult = await channel.ping();
       expect(pingResult).toBe(true);
     }, 10000);
   });
-  
+
   describe('Concurrent Initialization', () => {
     it('should handle concurrent initialization requests', async () => {
       // Wait for worker to be ready
       await new Promise(resolve => setTimeout(resolve, 200));
-      
+
       const promise1 = channel.waitForInitialization({
         worker: worker as unknown as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });
-      
+
       const promise2 = channel.waitForInitialization({
         worker: worker as unknown as globalThis.Worker,
         timeout: 5000,
         debug: false,
       });
-      
+
       // Should be the same promise
       expect(promise1).toBe(promise2);
-      
+
       const [result1, result2] = await Promise.all([promise1, promise2]);
       expect(result1).toEqual(result2);
       expect(result1.success).toBe(true);

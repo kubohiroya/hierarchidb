@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 import { FolderEntityManager } from '../handlers/FolderEntityManager';
 import { FolderDefinition } from '../definitions/FolderDefinition';
@@ -21,7 +21,7 @@ describe('Folder Plugin Integration', () => {
       // 1. Create folder-plugin
       const folder = await manager.createFolder(testNodeId, {
         name: 'Project Folder',
-        description: 'Main project folder-plugin'
+        description: 'Main project folder-plugin',
       });
 
       expect(folder.name).toBe('Project Folder');
@@ -36,7 +36,7 @@ describe('Folder Plugin Integration', () => {
         version: 1,
         nodeId: testNodeId,
         groupId: 'bookmark-group-1',
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
 
       const bookmark2 = await manager.addBookmark(testNodeId, {
@@ -47,7 +47,7 @@ describe('Folder Plugin Integration', () => {
         version: 1,
         nodeId: testNodeId,
         groupId: 'bookmark-group-2',
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
 
       const bookmarks = await manager.getBookmarks(testNodeId);
@@ -61,15 +61,15 @@ describe('Folder Plugin Integration', () => {
           children: [
             { name: 'src', type: 'folder' },
             { name: 'docs', type: 'folder' },
-            { name: 'tests', type: 'folder' }
-          ]
+            { name: 'tests', type: 'folder' },
+          ],
         },
         description: 'Standard project structure',
         type: 'group',
         version: 1,
         nodeId: testNodeId,
         groupId: 'template-group-1',
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
 
       const templates = await manager.getTemplates(testNodeId);
@@ -81,7 +81,7 @@ describe('Folder Plugin Integration', () => {
 
       const updatedWorkingCopy = await manager.updateWorkingCopy(workingCopy.id, {
         name: 'Final Project Folder',
-        description: 'Updated description'
+        description: 'Updated description',
       });
 
       expect(updatedWorkingCopy.name).toBe('Final Project Folder');
@@ -100,7 +100,7 @@ describe('Folder Plugin Integration', () => {
       // 7. Cleanup
       await manager.removeBookmark(bookmark1.id);
       await manager.removeTemplate(template.id);
-      
+
       const finalBookmarks = await manager.getBookmarks(testNodeId);
       expect(finalBookmarks).toHaveLength(1);
       expect(finalBookmarks[0]?.id).toBe(bookmark2.id);
@@ -113,7 +113,7 @@ describe('Folder Plugin Integration', () => {
       // Create original folder-plugin
       const originalFolder = await manager.createFolder(testNodeId, {
         name: 'Original Folder',
-        description: 'Original description'
+        description: 'Original description',
       });
 
       // Create working copy from existing folder-plugin
@@ -122,11 +122,11 @@ describe('Folder Plugin Integration', () => {
       // Update working copy
       const updatedWorkingCopy = await manager.updateWorkingCopy(workingCopy.id, {
         name: 'First Update',
-        description: 'Second update description'
+        description: 'Second update description',
       });
       await manager.commitWorkingCopy(testNodeId, updatedWorkingCopy);
       const finalFolder = await manager.getFolder(testNodeId);
-      
+
       expect(finalFolder?.id).toBe(originalFolder.id); // Same entity, updated
       expect(finalFolder?.name).toBe('First Update');
       expect(finalFolder?.description).toBe('Second update description');
@@ -148,12 +148,12 @@ describe('Folder Plugin Integration', () => {
   describe('Error Handling', () => {
     it('should handle non-existent entity operations gracefully', async () => {
       const nonExistentId = 'non-existent-id' as any;
-      
+
       await expect(manager.getFolder(nonExistentId)).resolves.toBeUndefined();
-      
+
       await expect(manager.updateFolder(nonExistentId, { name: 'Test' }))
         .rejects.toThrow('not found');
-      
+
       // commitWorkingCopy requires a working copy object, not just an ID
       const dummyWorkingCopy = { id: nonExistentId, nodeId: nonExistentId } as any;
       await expect(manager.commitWorkingCopy(nonExistentId, dummyWorkingCopy))

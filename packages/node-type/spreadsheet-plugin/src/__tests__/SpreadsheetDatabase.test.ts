@@ -3,24 +3,21 @@
  * @description TDD Red Phase - Failing tests for SpreadsheetDatabase
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
-import type {
-  SpreadsheetEntity
-} from '../types';
+import type { SpreadsheetEntity } from '../types';
 // RawFileMetadata and RowChunk are used in commented out helper functions
 
 describe('SpreadsheetDatabase', () => {
   let db: SpreadsheetDatabase;
   let testNodeId: NodeId;
-  // let testEntityId: EntityId; // Removed - unused
 
   beforeEach(async () => {
     db = new SpreadsheetDatabase('TestSpreadsheetDB');
     testNodeId = 'test-node-123' as NodeId;
-    // testEntityId = 'test-entity-456' as EntityId;
+    // Note: EntityId removed; NodeId-only IDs
     await db.open();
   });
 
@@ -31,8 +28,8 @@ describe('SpreadsheetDatabase', () => {
 
   describe('RawFileMetadata Operations', () => {
     it('should create RawFileMetadata with proper timestamps and versioning', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange
       const metadataInput = {
         fileName: 'test.csv',
@@ -68,7 +65,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should find existing RawFileMetadata by content hash', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create metadata
       const metadata = await db.createRawFileMetadata({
         fileName: 'original.csv',
@@ -101,8 +98,8 @@ describe('SpreadsheetDatabase', () => {
     });
 
     it('should return undefined for non-existent hash', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Act
       const notFound = await db.findRawFileMetadataByHash('non-existent-hash');
 
@@ -112,7 +109,7 @@ describe('SpreadsheetDatabase', () => {
   });
 
   describe('RowChunk Operations', () => {
-    let testMetadataId: EntityId;
+    let testMetadataId: NodeId;
 
     beforeEach(async () => {
       // Create test metadata
@@ -140,7 +137,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should create multiple RowChunks with proper indexing', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create 3 chunks
       const chunksInput = [
         {
@@ -188,7 +185,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should retrieve chunks by metadata ID in correct order', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create chunks in random order
       const chunksInput = [
         {
@@ -237,7 +234,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should retrieve chunks within specified range', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create chunks
       const chunksInput = [
         {
@@ -287,7 +284,7 @@ describe('SpreadsheetDatabase', () => {
   describe('SpreadsheetEntity Operations', () => {
     it('should create SpreadsheetEntity with proper initial state', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange
       const entityInput = {
         nodeId: testNodeId,
@@ -345,7 +342,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should retrieve SpreadsheetEntity by NodeId', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create entity
       const entityInput = {
         nodeId: testNodeId,
@@ -401,7 +398,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should update SpreadsheetEntity with version increment', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create entity
       const created = await db.createSpreadsheetEntity({
         nodeId: testNodeId,
@@ -460,7 +457,7 @@ describe('SpreadsheetDatabase', () => {
   });
 
   describe('Filtered Rows Operations', () => {
-    let testSpreadsheetEntityId: EntityId;
+    let testSpreadsheetEntityId: NodeId;
 
     beforeEach(async () => {
       // Create test spreadsheet-plugin entity
@@ -509,7 +506,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should create multiple filtered rows with proper indexing', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create filtered rows
       const rowsInput = Array.from({ length: 100 }, (_, i) => ({
         spreadsheetEntityId: testSpreadsheetEntityId,
@@ -532,7 +529,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should retrieve filtered rows with pagination', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create 250 filtered rows
       const rowsInput = Array.from({ length: 250 }, (_, i) => ({
         spreadsheetEntityId: testSpreadsheetEntityId,
@@ -556,7 +553,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should clear all filtered rows for an entity', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create filtered rows
       const rowsInput = Array.from({ length: 50 }, (_, i) => ({
         spreadsheetEntityId: testSpreadsheetEntityId,
@@ -583,7 +580,7 @@ describe('SpreadsheetDatabase', () => {
 
     it('should update column selection across multiple rows efficiently', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create rows with 5 columns
       const rowsInput = Array.from({ length: 100 }, (_, i) => ({
         spreadsheetEntityId: testSpreadsheetEntityId,
@@ -602,11 +599,11 @@ describe('SpreadsheetDatabase', () => {
 
       // Assert: Check that rows were updated correctly
       const updatedRows = await db.getFilteredRowsByEntityId(testSpreadsheetEntityId, 10, 0);
-      
+
       expect(updatedRows[0]?.cellValues).toHaveLength(3);
       expect(updatedRows[0]?.cellValues).toEqual(['col1_0', 'col3_0', 'col4_0']);
       expect(updatedRows[0]?.columnMapping).toEqual([1, 3, 4]);
-      
+
       expect(updatedRows[5]?.cellValues).toEqual(['col1_5', 'col3_5', 'col4_5']);
     });
   });
@@ -614,7 +611,7 @@ describe('SpreadsheetDatabase', () => {
   describe('Database Cleanup and Maintenance', () => {
     it('should identify and clean up orphaned chunks', async () => {
       // 🔴 RED: This test should fail initially
-      
+
       // Arrange: Create metadata and chunks, then delete metadata
       const metadata = await db.createRawFileMetadata({
         fileName: 'orphan-test.csv',
@@ -672,13 +669,13 @@ describe('SpreadsheetDatabase', () => {
     });
 
     it('should clean up expired working copies', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Create working copy with old timestamp
       const expiredTime = Date.now() - (25 * 60 * 60 * 1000); // 25 hours ago
-      
+
       const workingCopyInput: SpreadsheetEntity = {
-        id: 'test-entity-123' as EntityId,
+        id: 'test-entity-123' as unknown as NodeId,
         nodeId: testNodeId,
         name: 'Expired Working Copy',
         createdAt: Date.now(),
@@ -723,7 +720,7 @@ describe('SpreadsheetDatabase', () => {
       };
 
       const workingCopy = await db.createWorkingCopy(workingCopyInput);
-      
+
       // Manually update the copiedAt timestamp to be expired
       await db.workingCopies.update(workingCopy.id, { copiedAt: expiredTime });
 
@@ -735,8 +732,8 @@ describe('SpreadsheetDatabase', () => {
     });
 
     it('should provide accurate database statistics', async () => {
-      // 🔴 RED: This test should fail initially
-      
+      //  RED: This test should fail initially
+
       // Arrange: Create test data
       const metadata1 = await db.createRawFileMetadata({
         fileName: 'stats1.csv',

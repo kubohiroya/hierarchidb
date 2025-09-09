@@ -1,9 +1,9 @@
 /**
- * @file ShapeEntityHandler.ts
- * @description ERIA-Cartograph移植: ShapeEntityHandler実装
- */
+  * @file ShapeEntityHandler.ts
+ * @description ERIA-Cartograph: ShapeEntityHandler
+  */
 
-import type { NodeId, EntityId } from '@hierarchidb/core';
+import type { NodeId } from '@hierarchidb/core';
 import { createEntityId } from '@hierarchidb/core';
 import type { ShapeEntity, ShapeWorkingCopy } from '../types/ShapeEntity';
 import type { BatchConfig } from '../types/BatchConfig';
@@ -22,7 +22,7 @@ export class ShapeEntityHandler {
   async createEntity(nodeId: NodeId, data: Partial<ShapeEntity>): Promise<ShapeEntity> {
     const entityId = createEntityId();
     const now = Date.now();
-    
+
     const entity: ShapeEntity = {
       id: entityId,
       nodeId,
@@ -35,7 +35,7 @@ export class ShapeEntityHandler {
       updatedAt: now,
       version: 1,
     };
-    
+
     this.entities.set(nodeId, entity);
     return entity;
   }
@@ -106,7 +106,7 @@ export class ShapeEntityHandler {
    */
   async modifyWorkingCopy(
     workingCopy: ShapeWorkingCopy,
-    changes: Partial<Omit<ShapeEntity, 'id' | 'nodeId' | 'createdAt' | 'version'>>
+    changes: Partial<Omit<ShapeEntity, 'id' | 'nodeId' | 'createdAt' | 'version'>>,
   ): Promise<ShapeWorkingCopy> {
     const modified: ShapeWorkingCopy = {
       ...workingCopy,

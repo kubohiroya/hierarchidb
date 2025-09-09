@@ -2,16 +2,17 @@
 
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Button,
   ButtonProps,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import { useLinkButton } from './useLinkButton';
+
 // Toast configuration type (placeholder)
 export interface ToastConfig {
   type?: 'success' | 'error' | 'warning' | 'info';

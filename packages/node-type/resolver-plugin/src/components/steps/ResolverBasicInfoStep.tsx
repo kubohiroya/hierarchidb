@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, FormHelperText } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, FormHelperText, Typography } from '@mui/material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 import type { ResolverWorkingCopyEntity } from '~/types';
 
@@ -10,10 +10,10 @@ interface ResolverBasicInfoStepProps {
 }
 
 export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
-  data,
-  onUpdate,
-  onValidationChange,
-}) => {
+                                                                              data,
+                                                                              onUpdate,
+                                                                              onValidationChange,
+                                                                            }) => {
   const [nameError, setNameError] = useState<string>('');
   const [descriptionError, setDescriptionError] = useState<string>('');
 
@@ -74,11 +74,11 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
         <BasicInfoFields
           value={{ name: data.name, description: data.description }}
           onChange={handleBasicChange}
-          nameLabel={"Name"}
-          nameRequiredText={"Name is required"}
-          nameHelperText={"Enter a descriptive name for this property resolver"}
-          descriptionLabel={"Description"}
-          descriptionHelperText={"Optional detailed description"}
+          nameLabel={'Name'}
+          nameRequiredText={'Name is required'}
+          nameHelperText={'Enter a descriptive name for this property resolver'}
+          descriptionLabel={'Description'}
+          descriptionHelperText={'Optional detailed description'}
         />
         {(nameError || descriptionError) && (
           <FormHelperText error>{nameError || descriptionError}</FormHelperText>

@@ -8,11 +8,16 @@ import { APP_VERSION, BUILD_TIME } from './version';
 
 try {
   const localBuildTime = (() => {
-    try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+    try {
+      return new Date(BUILD_TIME).toLocaleString();
+    } catch {
+      return String(BUILD_TIME);
+    }
   })();
   // eslint-disable-next-line no-console
   console.log(`[Worker] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
-} catch {}
+} catch {
+}
 
 const reporter = new WorkerInitializationReporter([
   { name: 'Load Comlink', weight: 5 },
@@ -70,7 +75,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         try {
           const { FolderDefinition } = await import(
             '@hierarchidb/folder-plugin'
-          );
+            );
           manualDefs.push(FolderDefinition);
           console.log('✅ Fallback loaded: folder plugin');
         } catch (err) {
@@ -80,7 +85,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         try {
           const { BaseMapPluginDefinition } = await import(
             '@hierarchidb/basemap-plugin'
-          );
+            );
           manualDefs.push(BaseMapPluginDefinition);
           console.log('✅ Fallback loaded: basemap plugin');
         } catch (err) {
@@ -90,7 +95,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         try {
           const { ShapePluginDefinition } = await import(
             '@hierarchidb/shape-plugin'
-          );
+            );
           manualDefs.push(ShapePluginDefinition);
           console.log('✅ Fallback loaded: shape plugin');
         } catch (err) {
@@ -100,7 +105,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         try {
           const { StylerExtension } = await import(
             '@hierarchidb/styler-plugin'
-          );
+            );
           manualDefs.push(StylerExtension);
           console.log('✅ Fallback loaded: styler plugin');
         } catch (err) {
@@ -166,9 +171,15 @@ reporter.reportStepProgress('Load Comlink', 0);
       removeNodes: (nodeIds: any[]) => mutation.removeNodes(nodeIds as any),
       moveNodes: (nodeIds: any[], toParentId: any, onNameConflict?: 'error' | 'auto-rename') =>
         mutation.moveNodes({ nodeIds: nodeIds as any, toParentId, onNameConflict }),
-      duplicateNodes: (nodeIds: any[], toParentId?: any) => mutation.duplicateNodes({ nodeIds: nodeIds as any, toParentId }),
+      duplicateNodes: (nodeIds: any[], toParentId?: any) => mutation.duplicateNodes({
+        nodeIds: nodeIds as any,
+        toParentId,
+      }),
       moveNodesToTrash: (nodeIds: any[]) => mutation.moveNodesToTrash(nodeIds as any),
-      recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => mutation.recoverNodesFromTrash({ nodeIds: nodeIds as any, toParentId }),
+      recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => mutation.recoverNodesFromTrash({
+        nodeIds: nodeIds as any,
+        toParentId,
+      }),
     };
 
     const subscriptionFacade = {

@@ -7,12 +7,12 @@ export function pluginLogger(): Plugin {
       console.log('\n' + '='.repeat(60));
       console.log('🔌 VITE PLUGINS LOADED:');
       console.log('='.repeat(60));
-      
+
       config.plugins.forEach((plugin, index) => {
         const pluginName = plugin.name || `Unknown Plugin ${index + 1}`;
         console.log(`  ${(index + 1).toString().padStart(2, '0')}. ${pluginName}`);
       });
-      
+
       console.log('='.repeat(60));
       console.log('📁 Configuration:');
       console.log(`  • Base Path: ${config.base}`);
@@ -20,6 +20,6 @@ export function pluginLogger(): Plugin {
       console.log(`  • Build Command: ${config.command}`);
       console.log(`  • Dev Server Port: ${config.server?.port || 'default'}`);
       console.log('='.repeat(60) + '\n');
-    }
+    },
   };
 }

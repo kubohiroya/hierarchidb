@@ -5,22 +5,21 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import { useState, useMemo } from 'react';
-import { SpeedDial, SpeedDialAction, SpeedDialIcon, Box } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import {
   Add as AddIcon,
   CreateNewFolder as FolderIcon,
-  Note as NoteIcon,
+  Extension as ExtensionIcon,
   Map as MapIcon,
+  Note as NoteIcon,
   Palette as PaletteIcon,
   Public as PublicIcon,
-  Extension as ExtensionIcon,
 } from '@mui/icons-material';
 import { usePluginsForTree } from '~/hooks/usePluginsForTree';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
 import type { TreeContext } from '~/plugins/menu-builders';
-import { WorkerAPIClient } from '../WorkerAPIClient';
-import type { TreeId, PluginDefinition } from '@hierarchidb/common-type';
+import type { PluginDefinition, TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
@@ -40,12 +39,12 @@ interface DynamicSpeedDialProps {
 function getIconComponent(plugin: PluginDefinition) {
   const iconName = plugin.icon?.muiIconName;
   const emoji = plugin.icon?.emoji;
-  
+
   // First, try to use emoji if available
   if (emoji) {
     return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
   }
-  
+
   // Then, try to match MUI icon names
   switch (iconName) {
     case 'Folder':
@@ -70,13 +69,13 @@ function getIconComponent(plugin: PluginDefinition) {
 }
 
 export function DynamicSpeedDial({
-  treeId,
-  workerClient,
-  onCreateAction,
-  position = { bottom: 16, right: 16 },
-  hidden = false,
-  menuContext,
-}: DynamicSpeedDialProps) {
+                                   treeId,
+                                   workerClient,
+                                   onCreateAction,
+                                   position = { bottom: 16, right: 16 },
+                                   hidden = false,
+                                   menuContext,
+                                 }: DynamicSpeedDialProps) {
   const [open, setOpen] = useState(false);
 
   // If menuContext is provided, build items from virtual module definitions (VM-based path)
@@ -94,16 +93,16 @@ export function DynamicSpeedDial({
       const bGroup = b.category?.menuGroup || 'basic';
       const aOrder = a.category?.createOrder || 999;
       const bOrder = b.category?.createOrder || 999;
-      
+
       // Define group priority
       const groupPriority: Record<string, number> = { basic: 1, container: 2, document: 3, advanced: 4 };
       const aPriority = groupPriority[aGroup] || 999;
       const bPriority = groupPriority[bGroup] || 999;
-      
+
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
       }
-      
+
       return aOrder - bOrder;
     });
   }, [plugins]);
@@ -185,17 +184,39 @@ export function DynamicSpeedDial({
       >
         {useVM
           ? vmItems.map((item) => (
+            <SpeedDialAction
+              key={item.key}
+              icon={item.icon?.emoji ? (
+                <span style={{ fontSize: '1.5rem' }}>{item.icon.emoji}</span>
+              ) : (
+                <AddIcon />
+              )}
+              tooltipTitle={item.label}
+              onClick={() => handleVMActionClick(item.nodeType)}
+              sx={{
+                color: item.icon?.color || 'inherit',
+                '& .MuiTooltip-tooltip': {
+                  maxWidth: 300,
+                  fontSize: '0.875rem',
+                },
+              }}
+              FabProps={{ size: 'medium', color: 'default' }}
+              tooltipPlacement="left"
+              data-testid={`create-${item.nodeType}-action`}
+            />
+          ))
+          : sortedPlugins.map((plugin) => {
+            const displayName = plugin.displayName || plugin.name;
+            const icon = getIconComponent(plugin);
+            const tooltipTitle = displayName;
+            return (
               <SpeedDialAction
-                key={item.key}
-                icon={item.icon?.emoji ? (
-                  <span style={{ fontSize: '1.5rem' }}>{item.icon.emoji}</span>
-                ) : (
-                  <AddIcon />
-                )}
-                tooltipTitle={item.label}
-                onClick={() => handleVMActionClick(item.nodeType)}
+                key={plugin.nodeType}
+                icon={icon}
+                tooltipTitle={tooltipTitle}
+                onClick={() => handleActionClick(plugin)}
                 sx={{
-                  color: item.icon?.color || 'inherit',
+                  color: plugin.icon?.color || 'inherit',
                   '& .MuiTooltip-tooltip': {
                     maxWidth: 300,
                     fontSize: '0.875rem',
@@ -203,32 +224,10 @@ export function DynamicSpeedDial({
                 }}
                 FabProps={{ size: 'medium', color: 'default' }}
                 tooltipPlacement="left"
-                data-testid={`create-${item.nodeType}-action`}
+                data-testid={`create-${plugin.nodeType}-action`}
               />
-            ))
-          : sortedPlugins.map((plugin) => {
-              const displayName = plugin.displayName || plugin.name;
-              const icon = getIconComponent(plugin);
-              const tooltipTitle = displayName;
-              return (
-                <SpeedDialAction
-                  key={plugin.nodeType}
-                  icon={icon}
-                  tooltipTitle={tooltipTitle}
-                  onClick={() => handleActionClick(plugin)}
-                  sx={{
-                    color: plugin.icon?.color || 'inherit',
-                    '& .MuiTooltip-tooltip': {
-                      maxWidth: 300,
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                  FabProps={{ size: 'medium', color: 'default' }}
-                  tooltipPlacement="left"
-                  data-testid={`create-${plugin.nodeType}-action`}
-                />
-              );
-            })}
+            );
+          })}
       </SpeedDial>
     </Box>
   );

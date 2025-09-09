@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
-import { storeRegistry } from '~/entity/store-registry';
-import type { PeerStore } from '~/entity/store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager';
+import { storeRegistry } from '../store-registry';
+import type { PeerStore } from '../store';
 
 function makeCoreStub() {
   const nodeMap = new Map<string, any>();
@@ -33,9 +33,15 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
     // Register a peer store for 'folder'
     const storeMap = new Map<string, any>();
     const store: PeerStore<any> = {
-      async get(id: NodeId) { return storeMap.get(id as unknown as string); },
-      async put(e: any) { storeMap.set(e.nodeId as unknown as string, e); },
-      async delete(id: NodeId) { storeMap.delete(id as unknown as string); },
+      async get(id: NodeId) {
+        return storeMap.get(id as unknown as string);
+      },
+      async put(e: any) {
+        storeMap.set(e.nodeId as unknown as string, e);
+      },
+      async delete(id: NodeId) {
+        storeMap.delete(id as unknown as string);
+      },
     };
     storeRegistry.registerPeer('folder', store);
 

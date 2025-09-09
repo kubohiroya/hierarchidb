@@ -12,11 +12,11 @@ const simpleAPI = {
     console.log('[Simple Worker] ping called');
     return { message: 'pong', timestamp: Date.now() };
   },
-  
+
   test: () => {
     console.log('[Simple Worker] test called');
     return 'test-success';
-  }
+  },
 };
 
 console.log('[Simple Worker] Exposing simple API...');

@@ -1,6 +1,9 @@
 import React from 'react';
 
-export interface CategorySelectorOption { value: string; label: string }
+export interface CategorySelectorOption {
+  value: string;
+  label: string;
+}
 
 export interface CategorySelectorProps {
   value?: string;
@@ -13,11 +16,11 @@ export interface CategorySelectorProps {
  * Minimal CategorySelector implementation for plugin consumers.
  */
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
-  value,
-  options = [],
-  onChange,
-  placeholder = 'Select category',
-}) => {
+                                                                    value,
+                                                                    options = [],
+                                                                    onChange,
+                                                                    placeholder = 'Select category',
+                                                                  }) => {
   return (
     <div data-ui-core="CategorySelector" style={{ border: '1px solid #ddd', padding: 8, borderRadius: 4 }}>
       <div style={{ fontWeight: 600, marginBottom: 4 }}>Category</div>

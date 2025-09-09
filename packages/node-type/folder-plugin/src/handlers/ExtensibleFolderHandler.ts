@@ -16,7 +16,7 @@ export class ExtensibleFolderHandler extends FolderEntityHandler {
    */
   async createEntity(
     nodeId: NodeId,
-    data?: Partial<FolderEntity>
+    data?: Partial<FolderEntity>,
   ): Promise<FolderEntity> {
     // Apply extension transformations before save
     const transformedData = await folderExtensionRegistry.beforeSaveEntity(data || {});
@@ -44,7 +44,7 @@ export class ExtensibleFolderHandler extends FolderEntityHandler {
    */
   async updateEntity(
     nodeId: NodeId,
-    changes: Partial<FolderEntity>
+    changes: Partial<FolderEntity>,
   ): Promise<void> {
     // Get current entity
     const currentEntity = await this.getEntity(nodeId);
@@ -77,7 +77,7 @@ export class ExtensibleFolderHandler extends FolderEntityHandler {
    */
   async getEntity(nodeId: NodeId): Promise<FolderEntity | undefined> {
     const entity = await super.getEntity(nodeId);
-    
+
     if (!entity) {
       return undefined;
     }
@@ -135,7 +135,7 @@ export class ExtensibleFolderHandler extends FolderEntityHandler {
    */
   async saveExtendedData(
     entity: FolderEntity,
-    extendedData: Record<string, any>
+    extendedData: Record<string, any>,
   ): Promise<void> {
     // Let each extension save its data
     const extensions = folderExtensionRegistry.getAllExtensions();

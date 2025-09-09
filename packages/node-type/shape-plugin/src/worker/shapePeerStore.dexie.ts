@@ -5,12 +5,16 @@ import type { ShapePeerData } from '../types/entities';
 
 export function createShapePeerStoreDexie(db: ShapeEntitiesDB): PeerStore<ShapePeerData> {
   return {
-    async get(nodeId: NodeId) { return (await db.peerEntities.get(nodeId)) as any; },
+    async get(nodeId: NodeId) {
+      return (await db.peerEntities.get(nodeId)) as any;
+    },
     async put(e: PeerEntity<ShapePeerData>) {
       const data = normalizeV1(e.data);
       await db.peerEntities.put({ ...e, data, updatedAt: Date.now() } as ShapePeerRow);
     },
-    async delete(nodeId: NodeId) { await db.peerEntities.delete(nodeId); },
+    async delete(nodeId: NodeId) {
+      await db.peerEntities.delete(nodeId);
+    },
     async bulkUpsert(entities: PeerEntity<ShapePeerData>[]) {
       const rows = entities.map((e) => ({ ...e, data: normalizeV1(e.data), updatedAt: Date.now() })) as ShapePeerRow[];
       await db.peerEntities.bulkPut(rows);

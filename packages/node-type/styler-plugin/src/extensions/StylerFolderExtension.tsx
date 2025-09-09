@@ -1,21 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import {
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
   Box,
-  Typography,
+  Chip,
+  FormControl,
   FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
+import type { FolderEntity } from '@hierarchidb/folder-plugin';
 import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
-import type {
-  FolderEntity,
-  FolderNodeDefinition,
-} from '@hierarchidb/folder-plugin';
 
 /**
  * Styler extension data
@@ -44,21 +41,21 @@ const StylerConfigStep: React.FC<{
     (e: any) => {
       onChange({ ...data, styleType: e.target.value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleDataSourceChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange({ ...data, dataSource: e.target.value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleColorSchemeChange = useCallback(
     (e: any) => {
       onChange({ ...data, colorScheme: e.target.value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleMinValueChange = useCallback(
@@ -66,7 +63,7 @@ const StylerConfigStep: React.FC<{
       const value = parseFloat(e.target.value);
       onChange({ ...data, minValue: isNaN(value) ? undefined : value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleMaxValueChange = useCallback(
@@ -74,7 +71,7 @@ const StylerConfigStep: React.FC<{
       const value = parseFloat(e.target.value);
       onChange({ ...data, maxValue: isNaN(value) ? undefined : value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleOpacityChange = useCallback(
@@ -82,7 +79,7 @@ const StylerConfigStep: React.FC<{
       const value = parseFloat(e.target.value);
       onChange({ ...data, opacity: isNaN(value) ? undefined : value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const styleTypeError = errors?.find(e => e.includes('style type'));
@@ -222,7 +219,7 @@ const CategoryMappingStep: React.FC<{
       const newCategories = (data.categories || []).filter((_, i) => i !== index);
       onChange({ ...data, categories: newCategories });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleKeyPress = useCallback(
@@ -232,7 +229,7 @@ const CategoryMappingStep: React.FC<{
         handleAddCategory();
       }
     },
-    [handleAddCategory]
+    [handleAddCategory],
   );
 
   return (

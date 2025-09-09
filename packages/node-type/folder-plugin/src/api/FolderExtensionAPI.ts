@@ -1,12 +1,12 @@
 // Import types from correct common-type package
-import type { TreeNode } from '@hierarchidb/common-type';
-import type { FolderEntity } from '../entities/FolderEntity';
 import type {
-  DialogStepDefinition,
-  ValidationExtension,
   BaseEntityExtension,
+  DialogStepDefinition,
   ExtendingNodeTypeDefinition,
+  TreeNode,
+  ValidationExtension,
 } from '@hierarchidb/common-type';
+import type { FolderEntity } from '../entities/FolderEntity';
 
 /**
  * Extension point for folder-plugin dialogs
@@ -106,7 +106,7 @@ export interface FolderExtension {
     beforeUpdate?: (
       node: TreeNode,
       entity: FolderEntity,
-      changes: Partial<FolderEntity>
+      changes: Partial<FolderEntity>,
     ) => Promise<void>;
     afterUpdate?: (node: TreeNode, entity: FolderEntity) => Promise<void>;
     beforeDelete?: (node: TreeNode, entity: FolderEntity) => Promise<void>;
@@ -170,7 +170,7 @@ export class FolderExtensionRegistry {
     const dependents = this.getDependents(extensionId);
     if (dependents.length > 0) {
       throw new Error(
-        `Cannot unregister ${extensionId}, the following extensions depend on it: ${dependents.join(', ')}`
+        `Cannot unregister ${extensionId}, the following extensions depend on it: ${dependents.join(', ')}`,
       );
     }
 
@@ -341,7 +341,7 @@ export class FolderExtensionRegistry {
   async executeBeforeUpdate(
     node: TreeNode,
     entity: FolderEntity,
-    changes: Partial<FolderEntity>
+    changes: Partial<FolderEntity>,
   ): Promise<void> {
     const extensions = this.getExtensionsInOrder();
 
@@ -433,7 +433,7 @@ export class FolderExtensionRegistry {
    * Create an ExtendingNodeTypeDefinition from the base folder-plugin definition and extensions
    */
   createExtendableDefinition(
-    baseDefinition: ExtendingNodeTypeDefinition
+    baseDefinition: ExtendingNodeTypeDefinition,
   ): ExtendingNodeTypeDefinition {
     const config = this.buildExtensionConfig();
     const extensions = this.getExtensionsInOrder();

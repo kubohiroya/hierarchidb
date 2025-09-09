@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { RouteBatchManager, type RouteBatchTask, type RouteBatchConfig } from '../../src/services/RouteBatchManager';
+import { describe, expect, it } from 'vitest';
+import { type RouteBatchConfig, RouteBatchManager, type RouteBatchTask } from '../../src/services/RouteBatchManager';
 
 // Minimal subclass to expose internal processing with fake work per lane
 class TestManager extends RouteBatchManager {
   public records: Array<{ id: string; t: number; type: string }> = [];
+
   protected async generateRoute(task: RouteBatchTask, _config: RouteBatchConfig): Promise<void> {
     // Simulate workload per method with small delay
     const method = task.routeData?.method ?? 'direct';
@@ -28,7 +29,15 @@ function makeTasks(sessionId: string, count: number, method: string): RouteBatch
 describe('RouteBatchManager lane gating', () => {
   it('limits osrm lane to concurrency=1 even with high maxConcurrent', async () => {
     const mgr = new TestManager();
-    const session = await (mgr as any).startBatchSession('n1', { routeGeneration: { method: 'osm_route', parallel: true, maxConcurrent: 8, retryOnFailure: false, maxRetries: 0 } } as any, [], []);
+    const session = await (mgr as any).startBatchSession('n1', {
+      routeGeneration: {
+        method: 'osm_route',
+        parallel: true,
+        maxConcurrent: 8,
+        retryOnFailure: false,
+        maxRetries: 0,
+      },
+    } as any, [], []);
     const tasks = [
       ...makeTasks(session, 4, 'osm_route'),
       ...makeTasks(session, 3, 'direct'),

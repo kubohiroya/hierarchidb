@@ -1,14 +1,12 @@
 /**
- * 手動テスト実行スクリプト
- * vitestの設定問題を回避して、データソース戦略の基本動作をテスト
- */
+   * vitest
+  */
 
 import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy';
 import { BaseDataSourceStrategy, FetchOptions, ProcessOptions } from '../DataSourceStrategy';
 import { ShapeEntity } from '../../../types/ShapeEntity';
 
-// テスト結果記録
 interface TestResult {
   name: string;
   passed: boolean;
@@ -79,31 +77,30 @@ class TestRunner {
         if (actual.length !== expected) {
           throw new Error(`Expected length ${expected}, but got ${actual.length}`);
         }
-      }
+      },
     };
   }
 
   summary() {
     const passed = this.results.filter(r => r.passed).length;
     const failed = this.results.filter(r => !r.passed).length;
-    
+
     console.log('\n=== Test Summary ===');
     console.log(`Total: ${this.results.length}`);
     console.log(`Passed: ${passed}`);
     console.log(`Failed: ${failed}`);
-    
+
     if (failed > 0) {
       console.log('\nFailed tests:');
       this.results
         .filter(r => !r.passed)
         .forEach(r => console.log(`- ${r.name}: ${r.error}`));
     }
-    
+
     return failed === 0;
   }
 }
 
-// テスト用のモック戦略
 class MockStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
   readonly id = 'mock-strategy';
   readonly name = 'Mock Strategy';
@@ -113,12 +110,12 @@ class MockStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
     version: '1.0.0',
     access: {
       method: 'REST' as const,
-      authentication: { type: 'none' as const }
+      authentication: { type: 'none' as const },
     },
     processing: {
       inputFormat: 'json' as const,
-      outputFormat: 'geojson' as const
-    }
+      outputFormat: 'geojson' as const,
+    },
   };
 
   async fetchData(options?: FetchOptions): Promise<any> {
@@ -128,9 +125,9 @@ class MockStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
         {
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [139.0, 35.0] },
-          properties: { name: 'Test Feature', test: true }
-        }
-      ]
+          properties: { name: 'Test Feature', test: true },
+        },
+      ],
     };
   }
 
@@ -143,17 +140,16 @@ class MockStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
       properties: { test: true },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      version: 1
+      version: 1,
     } as ShapeEntity];
   }
 }
 
 async function runTests() {
   const runner = new TestRunner();
-  
+
   console.log('=== Data Source Strategy Tests ===\n');
 
-  // ファクトリーテスト
   runner.test('Factory should be created', () => {
     const factory = new DataSourceStrategyFactory();
     runner.expect(factory).toBeDefined();
@@ -162,7 +158,7 @@ async function runTests() {
   runner.test('Factory should have default strategies', () => {
     const factory = new DataSourceStrategyFactory();
     const strategies = factory.getAvailableStrategies();
-    
+
     runner.expect(strategies).toContain('natural-earth-shapes');
     runner.expect(strategies).toContain('gadm-administrative-areas');
     runner.expect(strategies).toContain('openstreetmap-overpass');
@@ -171,7 +167,7 @@ async function runTests() {
 
   runner.test('Factory should create strategy instances', () => {
     const factory = new DataSourceStrategyFactory();
-    
+
     const neStrategy = factory.create('natural-earth-shapes');
     runner.expect(neStrategy.id).toBe('natural-earth-shapes');
     runner.expect(neStrategy.name).toBe('Natural Earth Vector Data');
@@ -179,7 +175,7 @@ async function runTests() {
 
   runner.test('Factory should provide strategy information', () => {
     const factory = new DataSourceStrategyFactory();
-    
+
     const info = factory.getStrategyInfo('natural-earth-shapes');
     runner.expect(info?.name).toBe('Natural Earth');
     runner.expect(info?.category).toBe('general');
@@ -188,7 +184,7 @@ async function runTests() {
 
   runner.test('Factory should filter by category', () => {
     const factory = new DataSourceStrategyFactory();
-    
+
     const adminStrategies = factory.getStrategiesByCategory('administrative');
     runner.expect(adminStrategies).toContain('gadm-administrative-areas');
     runner.expect(adminStrategies).toContain('geoboundaries-admin-areas');
@@ -196,10 +192,10 @@ async function runTests() {
 
   runner.test('Factory should provide recommendations', () => {
     const factory = new DataSourceStrategyFactory();
-    
+
     const naturalRec = factory.getRecommendedStrategy('natural');
     runner.expect(naturalRec).toBe('natural-earth-shapes');
-    
+
     const realtimeRec = factory.getRecommendedStrategy('realtime');
     runner.expect(realtimeRec).toBe('openstreetmap-overpass');
   });
@@ -207,22 +203,22 @@ async function runTests() {
   runner.test('Factory should provide statistics', () => {
     const factory = new DataSourceStrategyFactory();
     const stats = factory.getStatistics();
-    
+
     runner.expect(stats.total).toBe(4);
     runner.expect(stats.supported).toBe(4);
     runner.expect(stats.byCategory.general).toBe(2);
     runner.expect(stats.byCategory.administrative).toBe(2);
   });
 
-  // OSM戦略テスト
+  //  OSM
   runner.test('OSM strategy should build queries', () => {
     const osmStrategy = new OpenStreetMapStrategy();
     const presets = osmStrategy.getAvailablePresets();
-    
+
     runner.expect(presets.administrative).toBeDefined();
     runner.expect(presets.countries).toBeDefined();
     runner.expect(presets.cities).toBeDefined();
-    
+
     const query = osmStrategy.buildPresetQuery('countries');
     runner.expect(query).toContain('admin_level=2');
     runner.expect(query).toContain('boundary=administrative');
@@ -232,15 +228,14 @@ async function runTests() {
     const osmStrategy = new OpenStreetMapStrategy();
     const bbox = { minLat: 35.0, maxLat: 36.0, minLng: 139.0, maxLng: 140.0 };
     const query = osmStrategy.buildPresetQuery('countries', bbox);
-    
+
     runner.expect(query).toContain('(35,139,36,140)');
   });
 
-  // カスタム戦略テスト
   runner.test('Custom strategy should be registerable', () => {
     const factory = new DataSourceStrategyFactory();
     const mockStrategy = new MockStrategy();
-    
+
     factory.register('mock-strategy' as any, () => mockStrategy, {
       id: 'mock-strategy' as any,
       name: 'Mock Strategy',
@@ -251,54 +246,47 @@ async function runTests() {
       updateFrequency: 'irregular',
       license: 'MIT',
       attribution: 'Test',
-      supported: true
+      supported: true,
     });
-    
+
     runner.expect(factory.hasStrategy('mock-strategy' as any)).toBe(true);
     const created = factory.create('mock-strategy' as any);
     runner.expect(created).toBeInstanceOf(MockStrategy);
   });
 
-  // データ処理フローテスト
   await runner.test('Mock strategy should process data flow', async () => {
     const mockStrategy = new MockStrategy();
-    
-    // データ取得
+
     const rawData = await mockStrategy.fetchData({
-      bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 }
+      bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
     });
     runner.expect(rawData).toBeDefined();
     runner.expect(rawData.type).toBe('FeatureCollection');
-    
-    // データ処理
+
     const processedData = await mockStrategy.processData(rawData);
     runner.expect(processedData).toHaveLength(1);
     runner.expect(processedData[0].id).toBe('mock-entity-1');
-    
-    // バリデーション
+
     const validation = await mockStrategy.validateData(processedData);
     runner.expect(validation.isValid).toBe(true);
     runner.expect(validation.errors).toHaveLength(0);
-    
-    // 保存
+
     const saveResult = await mockStrategy.saveData(processedData, { type: 'hierarchidb' });
     runner.expect(saveResult.success).toBe(true);
   });
 
-  // ヘルスチェックテスト
   await runner.test('Default factory should perform health checks', async () => {
     const healthResults = await defaultDataSourceFactory.healthCheckAll();
     runner.expect(healthResults.size).toBeGreaterThan(0);
-    
-    // 各戦略の結果が boolean であることを確認
+
+    //  boolean
     for (const [strategyId, isHealthy] of healthResults.entries()) {
       runner.expect(typeof isHealthy).toBe('boolean');
     }
   });
 
-  // 結果の表示
   const success = runner.summary();
-  
+
   if (success) {
     console.log('\n🎉 All tests passed! Data source strategies are working correctly.');
     console.log('\n=== Verification Summary ===');
@@ -317,7 +305,6 @@ async function runTests() {
   }
 }
 
-// スクリプトとして直接実行
 if (import.meta.url === `file://${process.argv[1]}`) {
   runTests().catch(console.error);
 }

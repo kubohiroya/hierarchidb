@@ -9,10 +9,15 @@ export interface TaskSpec<I = any, O = any> {
 
 export interface TaskHandle<O = any> {
   id: string;
+
   status(): TaskStatus;
+
   cancel(): void;
+
   onProgress(cb: (p: number) => void): () => void;
+
   onStatus(cb: (s: TaskStatus) => void): () => void;
+
   result(): Promise<O>;
 }
 

@@ -38,8 +38,8 @@ const DragHandleBox = styled(Box)`
 `;
 
 const DragHandle = ({
-  onMouseDown,
-}: {
+                      onMouseDown,
+                    }: {
   onMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void;
 }) => (
   <DragHandleBox onMouseDown={onMouseDown}>
@@ -48,11 +48,11 @@ const DragHandle = ({
 );
 
 export const ResizableSidebar = ({
-  children,
-  sidebarOpen,
-  setSidebarOpen,
-  //sidebarInert,
-}: {
+                                   children,
+                                   sidebarOpen,
+                                   setSidebarOpen,
+                                   //sidebarInert,
+                                 }: {
   children: ReactNode;
   sidebarOpen: boolean;
   setSidebarOpen: (value: boolean) => void;
@@ -87,7 +87,7 @@ export const ResizableSidebar = ({
         setDrawerWidth(newWidth);
       }
     },
-    [minDrawerWidth, maxDrawerWidth]
+    [minDrawerWidth, maxDrawerWidth],
   );
 
   const onClose = useCallback(() => setSidebarOpen(false), [setSidebarOpen]);

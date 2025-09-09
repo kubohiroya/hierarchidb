@@ -1,9 +1,9 @@
-import type { FileLike, ParseOptions, TabularParseResult, DetectionResult, TabularSchema } from './types';
-import { registerParser, parseWithBest, detectFormat } from './registry';
+import type { DetectionResult, FileLike, ParseOptions, TabularParseResult, TabularSchema } from './types';
+import { detectFormat, parseWithBest, registerParser } from './registry';
 import { createCsvLikeParser } from './parsers/csvLike';
 import { jsonlParser } from './parsers/jsonl';
-import type { TabularStorePort, TabularIngestResult } from './store';
-import type { TabularProcessor, TabularContext } from './processor';
+import type { TabularIngestResult, TabularStorePort } from './store';
+import type { TabularContext, TabularProcessor } from './processor';
 
 // Register built-in parsers by default
 registerParser(createCsvLikeParser('csv', ','));
@@ -22,7 +22,12 @@ export class TabularService {
   async ingest<TMeta = any>(
     input: FileLike,
     store: TabularStorePort<TMeta>,
-    options?: ParseOptions & { filename?: string; sizeBytes?: number; processors?: TabularProcessor[]; context?: TabularContext }
+    options?: ParseOptions & {
+      filename?: string;
+      sizeBytes?: number;
+      processors?: TabularProcessor[];
+      context?: TabularContext
+    },
   ): Promise<TabularIngestResult<TMeta>> {
     const parsed = await this.parse(input, options);
     // Processor: mapSchema
@@ -50,10 +55,16 @@ export class TabularService {
         for (const row of chunk.rows) {
           let r: any | null = row;
           for (const p of processors) {
-            if (p.transformRow) { r = await p.transformRow(r, ctx); if (r === null) break; }
+            if (p.transformRow) {
+              r = await p.transformRow(r, ctx);
+              if (r === null) break;
+            }
             if (p.validateRow) {
               const errs = await p.validateRow(r!, ctx);
-              if (errs?.length) { r = null; break; }
+              if (errs?.length) {
+                r = null;
+                break;
+              }
             }
           }
           if (r) transformed.push(r);

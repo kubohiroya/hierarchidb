@@ -1,24 +1,24 @@
 /**
- * Plugin UI Demo Page
- * プラグインUIのモックデータによる表示確認用ページ
- */
+  * Plugin UI Demo Page
+ * UI
+  */
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
+  Alert,
   Box,
-  Container,
-  Typography,
   Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Paper,
   Stack,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-} from "@mui/material";
-import { type NodeId } from "@hierarchidb/common-type";
+  Typography,
+} from '@mui/material';
+import { type NodeId } from '@hierarchidb/common-type';
 
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead
@@ -78,17 +78,17 @@ const MockDialog = ({ title, open, onClose, data, onSave }: MockDialogProps) => 
 export default function PluginDemo() {
   const [openBaseMap, setOpenBaseMap] = useState(false);
   const [openStyler, setOpenStyler] = useState(false);
-  const [lastAction, setLastAction] = useState<string>("");
+  const [lastAction, setLastAction] = useState<string>('');
 
-  // モックのノードID生成
+  //  ID
   const mockNodeId = crypto.randomUUID() as NodeId;
 
-  // BaseMapのモックデータ
+  //  BaseMap
   const mockBaseMapEntity = {
     nodeId: mockNodeId,
-    name: "Sample BaseMap",
-    description: "This is a demo basemap configuration",
-    mapStyle: "streets-v11",
+    name: 'Sample BaseMap',
+    description: 'This is a demo basemap configuration',
+    mapStyle: 'streets-v11',
     center: [139.6917, 35.6895], // Tokyo coordinates
     zoom: 10,
     bearing: 0,
@@ -97,27 +97,27 @@ export default function PluginDemo() {
     updatedAt: Date.now(),
   };
 
-  // Stylerのモックデータ
+  //  Styler
   const mockStylerEntity = {
     nodeId: mockNodeId,
-    name: "Sample Styler",
-    description: "This is a demo styler-plugin configuration",
+    name: 'Sample Styler',
+    description: 'This is a demo styler-plugin configuration',
     filterRules: [],
-    selectedKeyColumn: "category",
-    selectedValueColumns: ["value1", "value2"],
+    selectedKeyColumn: 'category',
+    selectedValueColumns: ['value1', 'value2'],
     keyValueMappings: [
-      { key: "A", value: "Category A" },
-      { key: "B", value: "Category B" },
+      { key: 'A', value: 'Category A' },
+      { key: 'B', value: 'Category B' },
     ],
     stylerConfig: {
       defaultColors: {
-        text: "#000000",
-        background: "#ffffff",
-        border: "#cccccc",
+        text: '#000000',
+        background: '#ffffff',
+        border: '#cccccc',
       },
       colorRules: [
-        { key: "A", color: "#ff0000" },
-        { key: "B", color: "#00ff00" },
+        { key: 'A', color: '#ff0000' },
+        { key: 'B', color: '#00ff00' },
       ],
     },
     createdAt: Date.now(),
@@ -125,13 +125,13 @@ export default function PluginDemo() {
   };
 
   const handleBaseMapSave = async (data: Record<string, unknown>) => {
-    console.log("BaseMap saved:", data);
+    console.log('BaseMap saved:', data);
     setLastAction(`BaseMap saved: ${JSON.stringify(data, null, 2)}`);
     setOpenBaseMap(false);
   };
 
   const handleStylerSave = async (data: Record<string, unknown>) => {
-    console.log("Styler saved:", data);
+    console.log('Styler saved:', data);
     setLastAction(`Styler saved: ${JSON.stringify(data, null, 2)}`);
     setOpenStyler(false);
   };
@@ -141,7 +141,7 @@ export default function PluginDemo() {
       <Typography variant="h3" component="h1" gutterBottom>
         Plugin UI Demo
       </Typography>
-      
+
       <Typography variant="body1" color="text.secondary" paragraph>
         このページでは、HierarchiDBのプラグインUIコンポーネントをモックデータで確認できます。
       </Typography>
@@ -155,7 +155,7 @@ export default function PluginDemo() {
           <Typography variant="body2" color="text.secondary" paragraph>
             地図ベースレイヤーの設定を管理するプラグイン
           </Typography>
-          
+
           <Stack direction="row" spacing={2}>
             <Button
               variant="contained"
@@ -167,13 +167,13 @@ export default function PluginDemo() {
           </Stack>
 
           <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" component="pre" sx={{ 
+            <Typography variant="caption" component="pre" sx={{
               display: 'block',
               p: 1,
               bgcolor: 'grey.100',
               borderRadius: 1,
               overflow: 'auto',
-              maxHeight: 200
+              maxHeight: 200,
             }}>
               {JSON.stringify(mockBaseMapEntity, null, 2)}
             </Typography>
@@ -188,7 +188,7 @@ export default function PluginDemo() {
           <Typography variant="body2" color="text.secondary" paragraph>
             データの視覚的スタイルマッピングを設定するプラグイン
           </Typography>
-          
+
           <Stack direction="row" spacing={2}>
             <Button
               variant="contained"
@@ -200,13 +200,13 @@ export default function PluginDemo() {
           </Stack>
 
           <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" component="pre" sx={{ 
+            <Typography variant="caption" component="pre" sx={{
               display: 'block',
               p: 1,
               bgcolor: 'grey.100',
               borderRadius: 1,
               overflow: 'auto',
-              maxHeight: 200
+              maxHeight: 200,
             }}>
               {JSON.stringify(mockStylerEntity, null, 2)}
             </Typography>
@@ -215,7 +215,7 @@ export default function PluginDemo() {
 
         {/* Action Log */}
         {lastAction && (
-          <Alert severity="success" onClose={() => setLastAction("")}>
+          <Alert severity="success" onClose={() => setLastAction('')}>
             <Typography variant="caption" component="pre">
               {lastAction}
             </Typography>

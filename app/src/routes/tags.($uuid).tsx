@@ -1,24 +1,24 @@
-import React, { useMemo } from 'react';
-import { useParams, Link as RouterLink } from 'react-router';
+import React from 'react';
+import { Link as RouterLink, useParams } from 'react-router';
 import {
-  Container,
-  Typography,
   Box,
-  Paper,
+  Breadcrumbs,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Grid,
+  Link,
   List,
   ListItem,
   ListItemText,
-  Chip,
-  Link,
-  Card,
-  CardContent,
-  Grid,
-  Breadcrumbs,
+  Paper,
+  Typography,
 } from '@mui/material';
-import { LocalOffer as TagIcon, FolderOpen as NodeIcon } from '@mui/icons-material';
+import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import { useQuery } from '~/hooks/useQuery';
 import { useWorkerClient } from '~/contexts/WorkerProvider';
-import type { TagEntity, NodeTagAssociation, TreeNode, NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeTagAssociation, TagEntity, TreeId, TreeNode, TagId } from '@hierarchidb/common-type';
 
 interface TaggedNode {
   node: TreeNode;
@@ -30,7 +30,7 @@ export default function TagsPage() {
   const { uuid } = useParams<{ uuid?: string }>();
   const { client: workerClient, isConnected } = useWorkerClient();
 
-  // タグ一覧を取得（uuid未指定時）
+  //  uuid
   const { data: allTags, isLoading: isLoadingTags } = useQuery({
     queryKey: ['tags', 'all'],
     queryFn: async () => {
@@ -40,41 +40,39 @@ export default function TagsPage() {
     enabled: !uuid && isConnected,
   });
 
-  // 特定のタグを取得（uuid指定時）
+  //  uuid
   const { data: specificTag, isLoading: isLoadingTag } = useQuery({
     queryKey: ['tag', uuid],
     queryFn: async () => {
       if (!uuid) return null;
       const tagAPI = await workerClient.getTagAPI();
-      return await tagAPI.getTag(uuid as TagEntity['id']);
+      return await tagAPI.getTag(uuid as unknown as TagId);
     },
     enabled: !!uuid && isConnected,
   });
 
-  // タグに関連するノードを取得（uuid指定時）
+  //  uuid
   const { data: taggedNodes, isLoading: isLoadingNodes } = useQuery({
     queryKey: ['tag', uuid, 'nodes'],
     queryFn: async (): Promise<TaggedNode[]> => {
       if (!uuid) return [];
 
       const tagAPI = await workerClient.getTagAPI();
-      const associations = await tagAPI.getNodesByTag(uuid as TagEntity['id']);
+      const associations = await tagAPI.getNodesByTag(uuid as unknown as TagId);
 
       const taggedNodesData: TaggedNode[] = [];
 
       for (const association of associations) {
         try {
-          // ノード情報を取得
           const queryAPI = await workerClient.getQueryAPI();
           const node = await queryAPI.getNode(association.nodeId);
 
           if (node) {
-            // ツリーIDを取得（ノードからツリーIDを特定）
+            //  IDID
             const trees = await queryAPI.listTrees();
             let nodeTreeId: TreeId | undefined;
 
             for (const tree of trees) {
-              // 簡単な実装：ツリーが存在すればそのツリーに属すると仮定
               nodeTreeId = tree.id;
               break;
             }
@@ -238,7 +236,6 @@ export default function TagsPage() {
       </Breadcrumbs>
 
       {uuid ? (
-        // 特定タグの詳細表示
         <Box>
           {specificTag && (
             <Paper sx={{ p: 3, mb: 3 }}>
@@ -270,7 +267,6 @@ export default function TagsPage() {
           {renderTaggedNodes()}
         </Box>
       ) : (
-        // タグ一覧表示
         <Box>
           <Typography variant="h4" gutterBottom>
             タグ一覧

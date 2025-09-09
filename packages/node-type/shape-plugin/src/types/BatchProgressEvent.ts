@@ -1,7 +1,7 @@
 /**
- * @file BatchProgressEvent.ts
- * @description ERIA-Cartograph移植: バッチ進捗イベント型定義
- */
+  * @file BatchProgressEvent.ts
+ * @description ERIA-Cartograph:
+  */
 
 import type { TreeNodeId } from '@hierarchidb/core';
 import type { BatchStage, BatchTaskStatus } from './BatchTaskLike';
@@ -21,9 +21,12 @@ export interface BatchProgressEvent {
   completedTasks: number;
   totalTasks: number;
   currentTask: string;
+  /** Optional human-readable message for UI */
+  message?: string;
+  /** Error message for error events */
   error?: string;
   timestamp: number;
-  
+
   /** Authentication context for auth-related events */
   authContext?: {
     /** Request ID for tracking authentication requests */
@@ -41,7 +44,7 @@ export interface BatchProgressEvent {
     /** Reason for authentication cancellation */
     reason?: string;
   };
-  
-  /** Event type for enhanced UI handling */
-  type?: 'progress' | 'auth-required' | 'resumed' | 'cancelled';
+
+  /** Event type for enhanced UI handling (union includes UI hook expectations) */
+  type?: 'progress' | 'auth-required' | 'resumed' | 'cancelled' | 'stage-change' | 'complete' | 'error';
 }

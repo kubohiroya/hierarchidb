@@ -1,20 +1,23 @@
 /**
- * @file ShapeErrorHandler.ts
- * @description ERIA-Cartograph移植: Shape エラーハンドラー実装
- */
+  * @file ShapeErrorHandler.ts
+ * @description ERIA-Cartograph: Shape
+  */
 
 import type { ShapeError, ShapeErrorType } from '../types/ShapeError';
 import type { BatchConfig } from '../types/BatchConfig';
-import { ShapeErrorFactory } from '../types/ShapeErrorHierarchy';
 import type { BaseShapeError } from '../types/ShapeErrorHierarchy';
+import { ShapeErrorFactory } from '../types/ShapeErrorHierarchy';
 import { ErrorAggregationManager } from './ErrorAggregationManager';
-import type { WorkerErrorMessage } from './ErrorAggregationManager';
-import { RecoveryStrategyManager } from './RecoveryStrategy';
-import type { RecoveryContext, RecoveryResult as StrategyRecoveryResult } from './RecoveryStrategy';
-import { ExponentialBackoffRetryStrategy, CheckpointResumeStrategy, ReduceDataSizeStrategy, FallbackStrategy } from './RecoveryStrategy';
+import type { RecoveryContext } from './RecoveryStrategy';
+import {
+  CheckpointResumeStrategy,
+  ExponentialBackoffRetryStrategy,
+  FallbackStrategy,
+  RecoveryStrategyManager,
+  ReduceDataSizeStrategy,
+} from './RecoveryStrategy';
 import { ErrorPersistenceManager } from './ErrorPersistenceStrategy';
-import { ErrorStateManager } from './ErrorStateManager';
-import { CircuitBreaker } from './ErrorStateManager';
+import { CircuitBreaker, ErrorStateManager } from './ErrorStateManager';
 
 export interface ErrorState {
   sessionId: string;
@@ -77,7 +80,7 @@ export class ShapeErrorHandler {
     this.recoveryStrategyManager = new RecoveryStrategyManager();
     this.errorPersistenceManager = new ErrorPersistenceManager();
     this.errorStateManager = new ErrorStateManager(this.errorPersistenceManager);
-    
+
     // Initialize recovery strategies
     this.initializeRecoveryStrategies();
   }
@@ -95,11 +98,11 @@ export class ShapeErrorHandler {
    */
   async handleWorkerError(error: Error, workerId?: string): Promise<ShapeError> {
     const errorType = this.determineWorkerErrorType(error);
-    
+
     const shapeError = ShapeErrorFactory.createWorkerError(
       errorType,
       error.message,
-      { workerId }
+      { workerId },
     );
 
     // Send to aggregation manager for hierarchical processing
@@ -115,7 +118,7 @@ export class ShapeErrorHandler {
     if (breaker.getState() === 'open') {
       throw ShapeErrorFactory.createSystemError(
         'CIRCUIT_BREAKER_OPEN',
-        `Service ${workerId} is temporarily unavailable`
+        `Service ${workerId} is temporarily unavailable`,
       );
     }
 
@@ -124,7 +127,7 @@ export class ShapeErrorHandler {
 
   private determineWorkerErrorType(error: Error): string {
     const message = error.message.toLowerCase();
-    
+
     if (message.includes('connection lost')) {
       return 'WORKER_DISCONNECTED';
     } else if (message.includes('timeout')) {
@@ -142,7 +145,7 @@ export class ShapeErrorHandler {
     const shapeError = ShapeErrorFactory.createNetworkError(
       'DATA_SOURCE_ERROR',
       error.message,
-      { source, statusCode: 0 }
+      { source, statusCode: 0 },
     );
 
     // Select and execute recovery strategy
@@ -169,11 +172,11 @@ export class ShapeErrorHandler {
   async handleDataFormatError(error: Error | any, format?: string): Promise<ShapeError> {
     const errorType = error.type || 'INVALID_DATA_FORMAT';
     const message = error.message || 'Invalid data format';
-    
+
     return ShapeErrorFactory.createDataError(
       errorType,
       message,
-      { format, ...error.context }
+      { format, ...error.context },
     );
   }
 
@@ -184,18 +187,18 @@ export class ShapeErrorHandler {
     // Handle both Error objects and error data objects
     const errorType = error.type || 'NETWORK_ERROR';
     const message = error.message || 'Network error occurred';
-    
+
     const shapeError = ShapeErrorFactory.createNetworkError(
       errorType,
       message,
-      { url, ...error.context }
+      { url, ...error.context },
     );
 
     // Check circuit breaker for the URL domain
     if (url) {
       const domain = new URL(url).hostname;
       const breaker = this.getOrCreateCircuitBreaker(domain);
-      
+
       await breaker.executeWithBreaker(async () => {
         throw shapeError; // Will be caught by breaker
       });
@@ -211,7 +214,7 @@ export class ShapeErrorHandler {
     return ShapeErrorFactory.createNetworkError(
       'CORS_ERROR',
       error.message,
-      { origin }
+      { origin },
     );
   }
 
@@ -224,7 +227,7 @@ export class ShapeErrorHandler {
     const shapeError = ShapeErrorFactory.createNetworkError(
       'RATE_LIMIT_ERROR',
       error.message,
-      { retryAfter }
+      { retryAfter },
     );
 
     // Apply exponential backoff strategy
@@ -245,14 +248,14 @@ export class ShapeErrorHandler {
    */
   toUserFriendlyError(error: Error | ShapeError): UserFriendlyError {
     const isShapeError = 'category' in error;
-    
+
     let title = '処理エラーが発生しました';
     let message = error.message;
     let actions: string[] = [];
 
     if (isShapeError) {
       const shapeError = error as ShapeError;
-      
+
       switch (shapeError.category) {
         case 'worker':
           title = 'ワーカーエラー';
@@ -299,7 +302,11 @@ export class ShapeErrorHandler {
   /**
    * Get recovery options for error
    */
-  getRecoveryOptions(error: ShapeError | { type: string; retryable?: boolean; recoverable?: boolean }): RecoveryOptions {
+  getRecoveryOptions(error: ShapeError | {
+    type: string;
+    retryable?: boolean;
+    recoverable?: boolean
+  }): RecoveryOptions {
     const options: string[] = [];
 
     if ('category' in error) {
@@ -347,7 +354,7 @@ export class ShapeErrorHandler {
 
     // Convert to BaseShapeError format for persistence
     const baseError = this.convertToBaseShapeError(error, sessionId);
-    
+
     // Persist error state
     await this.errorStateManager.recordError(sessionId, baseError);
     await this.errorPersistenceManager.persistSessionError(sessionId, errorState);
@@ -386,12 +393,11 @@ export class ShapeErrorHandler {
       // Already a BaseShapeError-like object
       return error as BaseShapeError;
     }
-    
+
     // Convert regular Error to BaseShapeError with proper type detection
     const message = error.message || '';
     let errorType = 'WORKER_ERROR';
-    
-    // メッセージに基づいてエラータイプを判定
+
     if (message.includes('Worker connection lost') || message.includes('connection lost')) {
       errorType = 'WORKER_DISCONNECTED';
     } else if (message.includes('ran out of memory') || message.includes('memory') || message.includes('Memory error')) {
@@ -399,18 +405,17 @@ export class ShapeErrorHandler {
     } else if (message.includes('timeout')) {
       errorType = 'WORKER_TIMEOUT';
     } else if (message.includes('RangeError: Invalid array length')) {
-      // 配列長エラーはメモリ関連エラーとして分類
       errorType = 'WORKER_MEMORY_ERROR';
     }
-    
+
     return ShapeErrorFactory.createWorkerError(
       errorType,
       message.startsWith('Worker failed: ') ? message : `Worker failed: ${message}`,
       {
         sessionId,
         originalError: error.name,
-        stack: error.stack
-      }
+        stack: error.stack,
+      },
     );
   }
 
@@ -427,7 +432,7 @@ export class ShapeErrorHandler {
   async resumeBatchProcessing(
     sessionId: string,
     errorState: ErrorState,
-    config: BatchConfig
+    config: BatchConfig,
   ): Promise<RecoveryResult> {
     const newSessionId = `recovered-${sessionId}-${Date.now()}`;
 
@@ -470,7 +475,7 @@ export class ShapeErrorHandler {
    */
   async getErrorStatistics(): Promise<ErrorStatistics> {
     const stats = await this.errorAggregationManager.getAggregatedErrors();
-    
+
     const byType: Record<string, number> = {};
     let total = 0;
     let mostCommon = '';
@@ -480,7 +485,7 @@ export class ShapeErrorHandler {
       const type = taskError.error.type;
       byType[type] = (byType[type] || 0) + 1;
       total++;
-      
+
       if (byType[type] > maxCount) {
         maxCount = byType[type];
         mostCommon = type;
@@ -499,17 +504,17 @@ export class ShapeErrorHandler {
    */
   async analyzeErrorPatterns(errors: Array<{ type: string; timestamp: number }>): Promise<ErrorAnalysis> {
     const patterns = await this.errorAggregationManager.detectPatterns(errors);
-    
+
     const recommendations: string[] = [];
-    
+
     if (patterns.cyclical) {
       recommendations.push('check_network_stability', 'increase_worker_timeout');
     }
-    
+
     if (patterns.memoryIncreasing) {
       recommendations.push('reduce_batch_size', 'increase_worker_memory');
     }
-    
+
     if (patterns.networkSpikes) {
       recommendations.push('implement_rate_limiting', 'use_connection_pooling');
     }
@@ -521,24 +526,24 @@ export class ShapeErrorHandler {
   }
 
   private getOrCreateCircuitBreaker(key: string): CircuitBreaker {
-    // 3層アプローチに従って簡素化 - 複雑なCircuitBreakerを除去
+    //  3 - CircuitBreaker
     if (!this.circuitBreakers.has(key)) {
-      // シンプルなモックCircuitBreakerを作成
+      //  CircuitBreaker
       const mockCircuitBreaker = {
         callAsync: async <T>(fn: () => Promise<T>): Promise<T> => {
           try {
             return await fn();
           } catch (error) {
-            throw error; // そのまま再投げ
+            throw error;
           }
         },
         getState: () => 'closed' as const,
         isOpen: false,
         isHalfOpen: false,
         isClosed: true,
-        state: 'closed' as const
+        state: 'closed' as const,
       };
-      
+
       this.circuitBreakers.set(key, mockCircuitBreaker as any);
     }
     return this.circuitBreakers.get(key)!;

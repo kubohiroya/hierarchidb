@@ -1,11 +1,9 @@
 /**
- * Plugin System Types for TreeTable
- *
- * このファイルはTreeTableのプラグインシステムで使用される
- * 基本的な型定義を提供します。
- */
+  * Plugin System Types for TreeTable
+  * TreeTable
+   */
 
-import type { ReactElement, MouseEvent, KeyboardEvent } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { CellContext } from '@tanstack/react-table';
 import type { TreeNodeInUI } from '../types';
 
@@ -14,34 +12,40 @@ import type { TreeNodeInUI } from '../types';
 // =============================================================================
 
 /**
- * TreeTableプラグインの基本インターフェース
- */
+  * TreeTable
+  */
 export interface TreeTablePlugin {
-  /** プラグインの一意な名前 */
+  /**
+      */
   name: string;
-  /** プラグインのバージョン */
+  /**
+      */
   version: string;
-  /** プラグインが提供するフック関数 */
+  /**
+      */
   hooks: TreeTableHooks;
-  /** プラグインが提供するコンポーネントのオーバーライド */
+  /**
+      */
   components?: TreeTableComponentOverrides;
-  /** プラグインの依存関係 */
+  /**
+      */
   dependencies?: string[];
-  /** プラグインの設定 */
+  /**
+      */
   config?: Record<string, any>;
 }
 
 /**
- * TreeTableで使用可能なライフサイクルフック
- */
+  * TreeTable
+  */
 export interface TreeTableHooks {
   // Cell rendering extensions
   onBeforeCellRender?: (
-    cell: CellContext<TreeNodeInUI, unknown>
+    cell: CellContext<TreeNodeInUI, unknown>,
   ) => CellContext<TreeNodeInUI, unknown>;
   onAfterCellRender?: (
     element: ReactElement,
-    cell: CellContext<TreeNodeInUI, unknown>
+    cell: CellContext<TreeNodeInUI, unknown>,
   ) => ReactElement;
 
   // Row interaction extensions
@@ -62,14 +66,14 @@ export interface TreeTableHooks {
   // Toolbar extensions
   onToolbarRender?: (
     toolbar: ToolbarContext,
-    context: TreeTableContext
+    context: TreeTableContext,
   ) => Promise<{ toolbar: ToolbarContext; context: TreeTableContext }>;
 
   // Context menu extensions
   onContextMenu?: (
     node: TreeNodeInUI,
     event: MouseEvent,
-    context: TreeTableContext
+    context: TreeTableContext,
   ) => Promise<void>;
 
   // Plugin lifecycle
@@ -78,8 +82,7 @@ export interface TreeTableHooks {
 }
 
 /**
- * プラグインが提供できるコンポーネントのオーバーライド
- */
+    */
 export interface TreeTableComponentOverrides {
   CellEditor?: React.ComponentType<CellEditorProps>;
   RowDecorator?: React.ComponentType<RowDecoratorProps>;
@@ -165,6 +168,7 @@ export interface TreeTableContext {
   };
   showNotification?: (type: 'success' | 'error' | 'warning' | 'info', message: string) => void;
   contextMenuItems?: ContextMenuItem[];
+
   [key: string]: any; // Allow for plugin-specific context data
 }
 
@@ -206,10 +210,15 @@ export interface PluginContext {
 
 export interface PluginRegistry {
   register(plugin: TreeTablePlugin): void;
+
   unregister(pluginName: string): void;
+
   getPlugin(name: string): TreeTablePlugin | undefined;
+
   getPlugins(): TreeTablePlugin[];
+
   hasPlugin(name: string): boolean;
+
   executeHook<T extends keyof TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<TreeTableHooks[T]>>
@@ -221,20 +230,26 @@ export interface PluginRegistry {
 // =============================================================================
 
 export interface PluginConfig {
-  /** プラグインを有効にするかどうか */
+  /**
+      */
   enabled: boolean;
-  /** プラグイン固有の設定 */
+  /**
+      */
   settings?: Record<string, any>;
 }
 
 export interface TreeTablePluginConfig {
-  /** 各プラグインの設定 */
+  /**
+      */
   plugins: Record<string, PluginConfig>;
-  /** グローバル設定 */
+  /**
+      */
   global?: {
-    /** プラグインの読み込み順序を制御 */
+    /**
+          */
     loadOrder?: string[];
-    /** デバッグモードを有効にする */
+    /**
+          */
     debug?: boolean;
   };
 }
@@ -263,8 +278,7 @@ export interface HookExecutionResult<T = any> {
 // =============================================================================
 
 /**
- * プラグインのライフサイクル状態
- */
+    */
 export type PluginLifecycleState =
   | 'unregistered'
   | 'registered'
@@ -274,17 +288,11 @@ export type PluginLifecycleState =
   | 'destroyed';
 
 /**
- * フックの実行モード
- */
+    */
 export type HookExecutionMode =
-  | 'sequential' // 順次実行
-  | 'parallel' // 並列実行
-  | 'first-match' // 最初の結果のみ使用
-  | 'accumulate'; // 結果を蓄積
-
+  | 'sequential' | 'parallel' | 'first-match' | 'accumulate';
 /**
- * プラグインの優先度
- */
+    */
 export type PluginPriority = 'high' | 'normal' | 'low';
 
 // =============================================================================
@@ -295,7 +303,7 @@ export class PluginError extends Error {
   constructor(
     message: string,
     public pluginName: string,
-    public hookName?: string
+    public hookName?: string,
   ) {
     super(`[Plugin: ${pluginName}] ${message}`);
     this.name = 'PluginError';

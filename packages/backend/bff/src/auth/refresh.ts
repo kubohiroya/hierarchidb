@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { Env } from '../types.js';
-import { extractBearerToken, createSessionToken } from '../utils/jwt.js';
+import { createSessionToken, extractBearerToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
 
 /**
@@ -11,7 +11,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
     const authHeader = c.req.header('Authorization');
     const token = extractBearerToken(authHeader);
 
-    // リフレッシュトークンIDをボディから取得（オプション）
+    //  ID
     const body = await c.req.json().catch(() => ({}));
     const { refresh_token_id } = body;
 
@@ -44,7 +44,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       },
       env.JWT_SECRET,
       sessionDuration,
-      env.JWT_ISSUER
+      env.JWT_ISSUER,
     );
 
     // Refresh with new token and rotation
@@ -52,18 +52,17 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       token,
       newSessionToken,
       sessionDuration,
-      refresh_token_id
+      refresh_token_id,
     );
 
     if (!result.success) {
-      // セキュリティ違反の場合は詳細なエラーを返す
       if (result.error === 'Token reuse detected - all sessions revoked') {
         return c.json(
           {
             error: 'security_violation',
             error_description: result.error,
           },
-          403
+          403,
         );
       }
       return c.json(
@@ -71,7 +70,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
           error: 'invalid_grant',
           error_description: result.error || 'Invalid or expired refresh token',
         },
-        401
+        401,
       );
     }
 
@@ -80,7 +79,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       token_type: 'Bearer',
       expires_in: sessionDuration * 3600,
       id_token: newSessionToken,
-      refresh_token_id: result.newRefreshTokenId, // 新しいリフレッシュトークンID
+      refresh_token_id: result.newRefreshTokenId, //  ID
       scope: 'openid profile email',
       userinfo: {
         sub: userData.userId,
@@ -96,7 +95,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
         error: 'server_error',
         error_description: 'Failed to refresh token',
       },
-      500
+      500,
     );
   }
 }
@@ -135,7 +134,7 @@ export async function revokeToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNam
         error: 'server_error',
         error_description: 'Failed to revoke token',
       },
-      500
+      500,
     );
   }
 }

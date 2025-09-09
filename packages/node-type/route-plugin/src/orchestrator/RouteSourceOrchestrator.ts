@@ -1,15 +1,22 @@
-import type { DataSourceSpec, RouteBatchSpec, StrategyContext, TaskPlan, OdPair } from './types';
+import type { DataSourceSpec, OdPair, RouteBatchSpec, StrategyContext, TaskPlan } from './types';
 import { createRouteDownloadService } from '../services/download/factory';
 import { CsvStrategy } from './strategies/CsvStrategy';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy';
 
-export interface NetworkPortLike { get(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }> }
+export interface NetworkPortLike {
+  get(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
+}
 
-export interface OrchestratorDeps { net: NetworkPortLike }
+export interface OrchestratorDeps {
+  net: NetworkPortLike;
+}
 
 export class RouteSourceOrchestrator {
   private strategies = [new CsvStrategy(), new GeoJsonStrategy()];
-  constructor(private deps: OrchestratorDeps) { void this.deps; }
+
+  constructor(private deps: OrchestratorDeps) {
+    void this.deps;
+  }
 
   async plan(spec: RouteBatchSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
@@ -42,7 +49,8 @@ export class RouteSourceOrchestrator {
             const g: any = globalThis as any;
             const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
             reg?.onAuthRequired?.({ resource: f.url, provider: 'datasource', hint: 'Authentication required' });
-          } catch {}
+          } catch {
+          }
         }
         throw e;
       }
@@ -67,6 +75,7 @@ export class RouteSourceOrchestrator {
     if (!s) throw new Error(`No strategy for ${spec.type}`);
     return s;
   }
+
   private strategyForParse(source: string) {
     const s = this.strategies.find((st) => (st as any).supports({ type: source } as any));
     if (!s) throw new Error(`No parse strategy for ${source}`);

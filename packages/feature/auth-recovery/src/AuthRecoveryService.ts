@@ -1,7 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
-import type { AuthHeadersProvider, AuthContext, AuthPluginType } from './ports';
-import { AuthNotificationRegistry, AuthNotificationFactory, AUTH_CONSTANTS } from '@hierarchidb/common-auth';
+import type { AuthContext, AuthHeadersProvider, AuthPluginType } from './ports';
 import type { PluginType } from '@hierarchidb/common-auth';
+import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
 
 type Pending = {
   resolve: (r: Response) => void;
@@ -22,7 +22,8 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   constructor() {
     // Listen for success/cancel notifications from UI
     this.registry.register('feature-auth-recovery', {
-      onAuthRequired: async (_n: any) => {},
+      onAuthRequired: async (_n: any) => {
+      },
       onAuthSuccess: async (n: any) => this.onAuthSuccess(n.context.requestId, n.context.newToken, n.context.tokenType || 'Bearer', n.context.expiresAt),
       onAuthCancelled: async (n: any) => this.onAuthCancelled(n.context.requestId, n.context.reason),
     });
@@ -84,7 +85,8 @@ export class AuthRecoveryService implements AuthHeadersProvider {
         reject(new Error('Authentication timeout'));
       }, AUTH_CONSTANTS.DEFAULT_TIMEOUT);
       this.pending.set(requestId, { resolve, reject, timeout, context: { requestId, url, init, ctx } });
-      this.registry.dispatch(notification).catch(() => {});
+      this.registry.dispatch(notification).catch(() => {
+      });
     });
   }
 

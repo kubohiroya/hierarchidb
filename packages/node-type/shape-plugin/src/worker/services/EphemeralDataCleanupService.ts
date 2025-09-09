@@ -3,7 +3,7 @@
  * Manages automatic cleanup of expired WorkingCopies and batch processing data
  */
 
-import { NodeId, BatchSession, ShapeWorkingCopy } from '../../shared';
+import { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;
@@ -67,7 +67,7 @@ export class EphemeralDataCleanupService {
       processedResultsDeleted: 0,
       totalSizeReclaimed: 0,
       startTime,
-      endTime: 0
+      endTime: 0,
     };
 
     try {
@@ -79,19 +79,26 @@ export class EphemeralDataCleanupService {
     }
 
     stats.endTime = Date.now();
-    
+
     console.log(`Cleanup completed in ${stats.endTime - stats.startTime}ms:`, {
       workingCopiesDeleted: stats.workingCopiesDeleted,
       batchSessionsDeleted: stats.batchSessionsDeleted,
       batchTasksDeleted: stats.batchTasksDeleted,
-      totalSizeReclaimed: this.formatBytes(stats.totalSizeReclaimed)
+      totalSizeReclaimed: this.formatBytes(stats.totalSizeReclaimed),
     });
 
     return stats;
   }
 
   // === Backward-compat shims for older tests ===
-  async getCleanupStats(): Promise<{ totalWorkingCopies: number; expiredWorkingCopies: number; totalBatchSessions: number; expiredBatchSessions: number; estimatedSpaceUsed: number; lastCleanupAt?: number; }> {
+  async getCleanupStats(): Promise<{
+    totalWorkingCopies: number;
+    expiredWorkingCopies: number;
+    totalBatchSessions: number;
+    expiredBatchSessions: number;
+    estimatedSpaceUsed: number;
+    lastCleanupAt?: number;
+  }> {
     const preview = await this.getCleanupPreview();
     return {
       totalWorkingCopies: preview.expiredWorkingCopies, // approximation in mock
@@ -116,11 +123,11 @@ export class EphemeralDataCleanupService {
    */
   async cleanupWorkingCopy(workingCopyId: NodeId): Promise<void> {
     console.log(`Cleaning up working copy: ${workingCopyId}`);
-    
+
     try {
       // Mock implementation - would perform actual cleanup
       await this.mockCleanupWorkingCopyTransaction(workingCopyId);
-      
+
       console.log(`Working copy ${workingCopyId} and related data cleaned up successfully`);
     } catch (error) {
       console.error(`Failed to cleanup working copy ${workingCopyId}:`, error);
@@ -133,11 +140,11 @@ export class EphemeralDataCleanupService {
    */
   async cleanupBatchSession(sessionId: string): Promise<void> {
     console.log(`Cleaning up batch session: ${sessionId}`);
-    
+
     try {
       // Mock implementation - would perform actual cleanup
       await this.mockCleanupBatchSessionTransaction(sessionId);
-      
+
       console.log(`Batch session ${sessionId} and related data cleaned up successfully`);
     } catch (error) {
       console.error(`Failed to cleanup batch session ${sessionId}:`, error);
@@ -154,12 +161,12 @@ export class EphemeralDataCleanupService {
     estimatedSizeToReclaim: number;
   }> {
     const expiredThreshold = Date.now() - this.EXPIRY_THRESHOLD_MS;
-    
+
     // Mock implementation - would query actual databases
     return {
       expiredWorkingCopies: 5,
       expiredBatchSessions: 3,
-      estimatedSizeToReclaim: 1024 * 1024 * 50 // 50MB
+      estimatedSizeToReclaim: 1024 * 1024 * 50, // 50MB
     };
   }
 
@@ -168,7 +175,7 @@ export class EphemeralDataCleanupService {
    */
   async forceCleanupAll(): Promise<CleanupStatistics> {
     console.warn('FORCE CLEANUP: Removing all ephemeral data regardless of age');
-    
+
     const startTime = Date.now();
     const stats: CleanupStatistics = {
       workingCopiesDeleted: 0,
@@ -177,7 +184,7 @@ export class EphemeralDataCleanupService {
       processedResultsDeleted: 0,
       totalSizeReclaimed: 0,
       startTime,
-      endTime: 0
+      endTime: 0,
     };
 
     try {
@@ -189,9 +196,9 @@ export class EphemeralDataCleanupService {
     }
 
     stats.endTime = Date.now();
-    
+
     console.warn(`Force cleanup completed in ${stats.endTime - stats.startTime}ms:`, stats);
-    
+
     return stats;
   }
 
@@ -202,53 +209,53 @@ export class EphemeralDataCleanupService {
   private async mockCleanupTransaction(expiredThreshold: number, stats: CleanupStatistics): Promise<void> {
     // Simulate database transaction
     console.log('Mock: Starting cleanup transaction');
-    
+
     // Mock working copies cleanup
     const expiredWorkingCopies = this.mockFindExpiredWorkingCopies(expiredThreshold);
     stats.workingCopiesDeleted = expiredWorkingCopies.length;
-    
+
     // Mock batch sessions cleanup
     const expiredBatchSessions = this.mockFindExpiredBatchSessions(expiredThreshold);
     stats.batchSessionsDeleted = expiredBatchSessions.length;
-    
+
     // Mock batch tasks cleanup
     stats.batchTasksDeleted = expiredBatchSessions.length * 5; // Average 5 tasks per session
-    
+
     // Mock processed results cleanup
     stats.processedResultsDeleted = expiredWorkingCopies.length * 2; // Average 2 results per working copy
-    
+
     // Mock size calculation
     stats.totalSizeReclaimed = (stats.workingCopiesDeleted * 1024 * 1024) + // 1MB per working copy
-                              (stats.batchTasksDeleted * 512 * 1024); // 512KB per task
-    
+      (stats.batchTasksDeleted * 512 * 1024); // 512KB per task
+
     // Simulate cleanup delay
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     console.log('Mock: Cleanup transaction completed');
   }
 
   private async mockCleanupWorkingCopyTransaction(workingCopyId: NodeId): Promise<void> {
     console.log(`Mock: Cleaning up working copy ${workingCopyId} and related data`);
-    
+
     // Simulate removal of:
     // - Working copy record
     // - Associated batch sessions
     // - Batch tasks
     // - Processed results
     // - Cached data
-    
+
     await new Promise(resolve => setTimeout(resolve, 50));
   }
 
   private async mockCleanupBatchSessionTransaction(sessionId: string): Promise<void> {
     console.log(`Mock: Cleaning up batch session ${sessionId} and related data`);
-    
+
     // Simulate removal of:
     // - Batch session record
     // - Associated batch tasks
     // - Temporary processed data
     // - Download cache entries
-    
+
     await new Promise(resolve => setTimeout(resolve, 50));
   }
 
@@ -259,7 +266,7 @@ export class EphemeralDataCleanupService {
     stats.batchTasksDeleted = 75;
     stats.processedResultsDeleted = 50;
     stats.totalSizeReclaimed = 100 * 1024 * 1024; // 100MB
-    
+
     await new Promise(resolve => setTimeout(resolve, 200));
   }
 
@@ -280,11 +287,11 @@ export class EphemeralDataCleanupService {
 
   private formatBytes(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

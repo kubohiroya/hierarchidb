@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { GoogleOAuthProvider, useGoogleLogin, googleLogout } from '@react-oauth/google';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { googleLogout, GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
+
 // import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
 
 interface GoogleUser {
@@ -125,7 +126,7 @@ function GoogleAuthProviderInner({ children, homeUrl }: GoogleAuthProviderInnerP
 
       googleLogin();
     },
-    [googleLogin]
+    [googleLogin],
   );
 
   const signOut = useCallback(() => {

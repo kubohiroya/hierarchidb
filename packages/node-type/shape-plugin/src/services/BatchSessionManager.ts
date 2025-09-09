@@ -1,13 +1,13 @@
 /**
- * @file BatchSessionManager.ts
- * @description ERIA-Cartograph移植: バッチセッション管理実装
- */
+  * @file BatchSessionManager.ts
+ * @description ERIA-Cartograph:
+  */
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BatchConfig } from '../types/BatchConfig';
-import type { BatchTaskLike, BatchStage } from '../types/BatchTaskLike';
+import type { BatchStage, BatchTaskLike } from '../types/BatchTaskLike';
 import type { BatchProgressEvent } from '../types/BatchProgressEvent';
-import { getEphemeralShapeDB, type EphemeralShapeDB } from './database/EphemeralShapeDB';
+import { type EphemeralShapeDB, getEphemeralShapeDB } from './database/EphemeralShapeDB';
 import { ShapeBatchOrchestrator } from './ShapeBatchOrchestrator';
 import type { AuthNotification, AuthRequiredNotification, AuthSuccessNotification } from '@hierarchidb/common-auth';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
@@ -77,7 +77,7 @@ export class BatchSessionManager {
     config: BatchConfig,
     countries: string[],
     adminLevels: number[],
-    progressCallback?: (event: BatchProgressEvent) => void
+    progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string> {
     if (countries.length === 0) {
       throw new Error('No tasks to process');
@@ -131,7 +131,7 @@ export class BatchSessionManager {
 
     this.sessions.set(sessionId, sessionStatus);
     this.tasks.set(sessionId, batchTasks);
-    
+
     // Save session metadata to EphemeralDB
     await this.ephemeralDB.sessions.put({
       id: sessionId,
@@ -143,7 +143,7 @@ export class BatchSessionManager {
       completedTasks: 0,
       failedTasks: 0,
       startTime: Date.now(),
-      config: config as any
+      config: config as any,
     });
 
     if (progressCallback) {
@@ -152,9 +152,6 @@ export class BatchSessionManager {
 
     return sessionId;
   }
-
-
-
 
 
   /**
@@ -167,7 +164,7 @@ export class BatchSessionManager {
     }
 
     const startTime = Date.now();
-    
+
     try {
       const tasks = this.tasks.get(sessionId) || [];
       const downloadTasks = tasks.filter((t) => t.stage === 'download');
@@ -176,7 +173,7 @@ export class BatchSessionManager {
         sessionId,
         status.nodeId,
         downloadTasks,
-        (e) => this.emitProgressEvent(sessionId, e)
+        (e) => this.emitProgressEvent(sessionId, e),
       );
 
       // Update session status
@@ -195,6 +192,7 @@ export class BatchSessionManager {
         completedTasks: exec.processed,
         totalTasks: downloadTasks.length,
         currentTask: `Download completed: ${exec.totalFeatures} features, ${this.formatBytes(exec.totalDownloadSize)}`,
+        message: 'Download stage completed',
         timestamp: Date.now(),
       });
 
@@ -203,7 +201,7 @@ export class BatchSessionManager {
         processedTasks: exec.processed,
         failedTasks: exec.failed,
       };
-      
+
     } catch (error) {
       console.error('Download stage failed:', error);
       return {
@@ -222,17 +220,17 @@ export class BatchSessionManager {
       case 'gadm':
         // GADM 4.1 format
         return `https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_${country}_${adminLevel}.json`;
-      
+
       case 'naturalearth':
         // Natural Earth format
         const scale = adminLevel === 0 ? '10m' : adminLevel === 1 ? '50m' : '110m';
         return `https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/${scale}/cultural/ne_${scale}_admin_${adminLevel}_countries.geojson`;
-      
+
       case 'geoboundaries':
         // GeoBoundaries format
         const levels = ['ADM0', 'ADM1', 'ADM2', 'ADM3', 'ADM4'];
         return `https://www.geoboundaries.org/api/current/gbOpen/${country}/${levels[adminLevel]}/`;
-      
+
       default:
         // Default to GADM
         return `https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_${country}_${adminLevel}.json`;
@@ -244,20 +242,20 @@ export class BatchSessionManager {
    */
   private calculateBbox(features: any[]): [number, number, number, number] {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
+
     for (const feature of features) {
       if (feature.geometry && feature.geometry.coordinates) {
-        this.updateBoundsFromCoordinates(feature.geometry.coordinates, 
+        this.updateBoundsFromCoordinates(feature.geometry.coordinates,
           (x, y) => {
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
             maxY = Math.max(maxY, y);
-          }
+          },
         );
       }
     }
-    
+
     return [minX, minY, maxX, maxY];
   }
 
@@ -298,7 +296,7 @@ export class BatchSessionManager {
       const tasks = this.tasks.get(sessionId) || [];
       // Process all tasks regardless of stage (they were processed in download stage)
       const simplifyTasks = tasks;
-      
+
       let processedFeatures = 0;
       let filteredFeatures = 0;
       let processedTasks = 0;
@@ -309,28 +307,28 @@ export class BatchSessionManager {
           // Get simplification tolerance based on admin level
           const tolerance = this.getSimplificationTolerance(task.config?.adminLevel || 0);
           const minArea = this.getMinimumArea(task.config?.adminLevel || 0);
-          
+
           // In a real implementation, we would:
           // 1. Load features from EphemeralDB
           // 2. Apply Douglas-Peucker simplification
           // 3. Filter by minimum area
           // 4. Store simplified features back to EphemeralDB
-          
+
           // For now, simulate processing with realistic metrics
           const estimatedFeatures = 1000 * (task.config?.adminLevel || 1);
           const simplifiedCount = Math.floor(estimatedFeatures * 0.7); // 30% reduction
           const filteredCount = Math.floor(estimatedFeatures * 0.1); // 10% filtered
-          
+
           processedFeatures += simplifiedCount;
           filteredFeatures += filteredCount;
           processedTasks++;
-          
+
           // Update progress (25% to 50% range)
           const progressOffset = 25;
           const progressRange = 25;
           const currentProgress = progressOffset + Math.round((processedTasks / simplifyTasks.length) * progressRange);
           status.progress = currentProgress;
-          
+
           // Emit progress event
           this.emitProgressEvent(sessionId, {
             sessionId,
@@ -342,9 +340,9 @@ export class BatchSessionManager {
             currentTask: `Simplified features for ${task.config?.country}_L${task.config?.adminLevel} (tolerance: ${tolerance})`,
             timestamp: Date.now(),
           });
-          
+
           console.log(`Simplify1: Processed ${simplifiedCount} features, filtered ${filteredCount} (tolerance: ${tolerance}, minArea: ${minArea})`);
-          
+
         } catch (error) {
           console.error(`Simplify1 task failed:`, error);
         }
@@ -371,7 +369,7 @@ export class BatchSessionManager {
         processedFeatures,
         filteredFeatures,
       };
-      
+
     } catch (error) {
       console.error('Simplify1 stage failed:', error);
       return {
@@ -422,7 +420,7 @@ export class BatchSessionManager {
     try {
       const tasks = this.tasks.get(sessionId) || [];
       const r = await this.orchestrator.executeSimplify2(sessionId, status.nodeId, tasks, (e) => this.emitProgressEvent(sessionId, e));
-      status.stage = 'vectorTiles';
+      status.stage = 'simplify2';
       status.progress = 75;
       this.emitProgressEvent(sessionId, {
         sessionId,
@@ -460,20 +458,20 @@ export class BatchSessionManager {
    */
   private calculateTileCount(bbox: number[], minZoom: number, maxZoom: number): number {
     let totalTiles = 0;
-    
+
     for (let z = minZoom; z <= maxZoom; z++) {
       const tilesPerAxis = Math.pow(2, z);
-      
+
       // Convert bbox to tile coordinates
       const minX = Math.floor((bbox[0] + 180) / 360 * tilesPerAxis);
       const maxX = Math.floor((bbox[2] + 180) / 360 * tilesPerAxis);
       const minY = Math.floor((90 - bbox[3]) / 180 * tilesPerAxis);
       const maxY = Math.floor((90 - bbox[1]) / 180 * tilesPerAxis);
-      
+
       const tilesAtZoom = (maxX - minX + 1) * (maxY - minY + 1);
       totalTiles += tilesAtZoom;
     }
-    
+
     return totalTiles;
   }
 
@@ -503,7 +501,7 @@ export class BatchSessionManager {
       this.emitProgressEvent(sessionId, {
         sessionId,
         treeNodeId: status.nodeId,
-        stage: 'vectorTiles',
+        stage: 'vectortile',
         progress: 100,
         completedTasks: r.processedTasks,
         totalTasks: tasks.length,
@@ -522,15 +520,15 @@ export class BatchSessionManager {
    */
   private generateTilesForZoom(bbox: number[], zoom: number): number {
     const tilesPerAxis = Math.pow(2, zoom);
-    
+
     // Convert bbox to tile coordinates
     const minX = Math.floor((bbox[0] + 180) / 360 * tilesPerAxis);
     const maxX = Math.floor((bbox[2] + 180) / 360 * tilesPerAxis);
     const minY = Math.floor((90 - bbox[3]) / 180 * tilesPerAxis);
     const maxY = Math.floor((90 - bbox[1]) / 180 * tilesPerAxis);
-    
+
     const tilesCount = (maxX - minX + 1) * (maxY - minY + 1);
-    
+
     // In production, we would actually generate each tile here
     // For now, we just return the count
     return Math.min(tilesCount, 100); // Cap at 100 tiles per zoom for demo
@@ -676,10 +674,10 @@ export class BatchSessionManager {
 
     status.isAborted = true;
     status.isCompleted = false;
-    
+
     // Clean up EphemeralDB data for this session
     await this.ephemeralDB.clearSession(sessionId);
-    
+
     console.log(`Session ${sessionId} aborted and cleaned up`);
   }
 
@@ -720,7 +718,7 @@ export class BatchSessionManager {
    */
   private async handleAuthNotification(notification: AuthNotification): Promise<void> {
     console.log(`🔐 BatchSessionManager received auth notification:`, notification.type);
-    
+
     switch (notification.type) {
       case 'AUTH_REQUIRED':
         await this.handleAuthRequired(notification);
@@ -739,7 +737,7 @@ export class BatchSessionManager {
    */
   private async handleAuthRequired(notification: AuthRequiredNotification): Promise<void> {
     const { sessionId } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth required notification');
       return;
@@ -755,6 +753,7 @@ export class BatchSessionManager {
       const session = this.sessions.get(sessionId);
       if (session) {
         this.emitProgressEvent(sessionId, {
+          type: 'auth-required',
           sessionId,
           treeNodeId: session.nodeId,
           stage: 'auth-required' as BatchStage,
@@ -762,6 +761,7 @@ export class BatchSessionManager {
           completedTasks: session.completedTasks,
           totalTasks: session.totalTasks,
           currentTask: `Authentication required: ${notification.context.errorMessage}`,
+          message: 'Authentication required to continue processing',
           timestamp: Date.now(),
           authContext: {
             requestId: notification.context.requestId,
@@ -781,7 +781,7 @@ export class BatchSessionManager {
    */
   private async handleAuthSuccess(notification: AuthSuccessNotification): Promise<void> {
     const { sessionId } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth success notification');
       return;
@@ -797,6 +797,7 @@ export class BatchSessionManager {
       const session = this.sessions.get(sessionId);
       if (session) {
         this.emitProgressEvent(sessionId, {
+          type: 'resumed',
           sessionId,
           treeNodeId: session.nodeId,
           stage: session.stage,
@@ -804,6 +805,7 @@ export class BatchSessionManager {
           completedTasks: session.completedTasks,
           totalTasks: session.totalTasks,
           currentTask: 'Authentication successful - resuming processing',
+          message: 'Processing resumed after authentication',
           timestamp: Date.now(),
           authContext: {
             requestId: notification.context.requestId,
@@ -822,7 +824,7 @@ export class BatchSessionManager {
    */
   private async handleAuthCancelled(notification: AuthCancelledNotification): Promise<void> {
     const { sessionId, reason } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth cancelled notification');
       return;
@@ -838,6 +840,7 @@ export class BatchSessionManager {
       const session = this.sessions.get(sessionId);
       if (session) {
         this.emitProgressEvent(sessionId, {
+          type: 'cancelled',
           sessionId,
           treeNodeId: session.nodeId,
           stage: 'cancelled' as BatchStage,
@@ -845,6 +848,7 @@ export class BatchSessionManager {
           completedTasks: session.completedTasks,
           totalTasks: session.totalTasks,
           currentTask: `Authentication cancelled: ${reason}`,
+          message: `Processing cancelled: ${reason}`,
           timestamp: Date.now(),
           authContext: {
             reason,
@@ -862,7 +866,7 @@ export class BatchSessionManager {
    */
   private async pauseForAuth(notification: AuthRequiredNotification): Promise<void> {
     const { sessionId, requestId } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth required notification');
       return;
@@ -913,7 +917,7 @@ export class BatchSessionManager {
    */
   private async resumeAfterAuth(notification: AuthSuccessNotification): Promise<void> {
     const { sessionId, requestId } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth success notification');
       return;
@@ -963,7 +967,7 @@ export class BatchSessionManager {
    */
   private async cancelForAuth(notification: { context: { sessionId?: string; reason: string } }): Promise<void> {
     const { sessionId, reason } = notification.context;
-    
+
     if (!sessionId) {
       console.warn('⚠️ No session ID in auth cancelled notification');
       return;
@@ -1009,7 +1013,10 @@ export class BatchSessionManager {
    * Get authentication handler for external use
    */
   // get auth service (for testing/introspection)
-  async getAuthService(): Promise<AuthRecoveryService> { if (!this.auth) this.auth = await AuthRecoveryService.getSingleton(); return this.auth; }
+  async getAuthService(): Promise<AuthRecoveryService> {
+    if (!this.auth) this.auth = await AuthRecoveryService.getSingleton();
+    return this.auth;
+  }
 
   /**
    * Clean up inactive subscriptions

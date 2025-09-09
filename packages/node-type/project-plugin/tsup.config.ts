@@ -20,7 +20,7 @@ export default defineConfig({
     '@deck.gl/mesh-layers',
     '@deck.gl/extensions',
     '@deck.gl/mapbox',
-    'dexie'
+    'dexie',
   ],
   esbuildOptions(options) {
     options.banner = {

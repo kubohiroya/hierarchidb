@@ -1,4 +1,8 @@
-import type { ErrorCode as CoreErrorCode, CommandResult as CoreCommandResult, Timestamp } from '@hierarchidb/common-type';
+import type {
+  CommandResult as CoreCommandResult,
+  ErrorCode as CoreErrorCode,
+  Timestamp,
+} from '@hierarchidb/common-type';
 
 /**
  * Worker-specific command envelope

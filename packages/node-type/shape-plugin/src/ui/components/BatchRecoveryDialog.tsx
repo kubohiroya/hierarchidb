@@ -3,26 +3,22 @@
  * Displays pending batch sessions that can be resumed from direct link access
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
+  Box,
   Button,
   Card,
   CardContent,
-  Typography,
-  Box,
-  LinearProgress,
   Chip,
-  Alert
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Typography,
 } from '@mui/material';
-import {
-  PlayArrow as PlayArrowIcon,
-  Delete as DeleteIcon,
-  Schedule as ScheduleIcon
-} from '@mui/icons-material';
+import { Delete as DeleteIcon, PlayArrow as PlayArrowIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
 import { BatchSession, formatDuration } from '../../shared';
 
 export interface BatchRecoveryDialogProps {
@@ -35,13 +31,13 @@ export interface BatchRecoveryDialogProps {
 }
 
 export function BatchRecoveryDialog({
-  open,
-  sessions,
-  onResume,
-  onDiscard,
-  onClose,
-  loading = false
-}: BatchRecoveryDialogProps) {
+                                      open,
+                                      sessions,
+                                      onResume,
+                                      onDiscard,
+                                      onClose,
+                                      loading = false,
+                                    }: BatchRecoveryDialogProps) {
   const [processingSessionId, setProcessingSessionId] = useState<string | null>(null);
 
   const handleResume = useCallback((session: BatchSession) => {
@@ -61,10 +57,14 @@ export function BatchRecoveryDialog({
 
   const getStatusColor = (status: BatchSession['status']) => {
     switch (status) {
-      case 'paused': return 'warning';
-      case 'failed': return 'error';
-      case 'completed': return 'success';
-      default: return 'default';
+      case 'paused':
+        return 'warning';
+      case 'failed':
+        return 'error';
+      case 'completed':
+        return 'success';
+      default:
+        return 'default';
     }
   };
 
@@ -73,10 +73,10 @@ export function BatchRecoveryDialog({
   }
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
-      maxWidth="md" 
+      maxWidth="md"
       fullWidth
       disableEscapeKeyDown={loading}
     >
@@ -86,25 +86,25 @@ export function BatchRecoveryDialog({
           中断されたバッチ処理が見つかりました
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Alert severity="info" sx={{ mb: 2 }}>
           以下のバッチ処理が中断された状態で残っています。続行するか削除を選択してください。
           データは24時間後に自動削除されます。
         </Alert>
-        
+
         <Box display="flex" flexDirection="column" gap={2}>
           {sessions.map((session) => {
             const isExpired = session.expiresAt <= Date.now();
             const isProcessing = processingSessionId === session.sessionId;
-            
+
             return (
-              <Card 
+              <Card
                 key={session.sessionId}
                 variant="outlined"
-                sx={{ 
+                sx={{
                   opacity: isExpired ? 0.6 : 1,
-                  border: isExpired ? '1px solid #f44336' : undefined
+                  border: isExpired ? '1px solid #f44336' : undefined,
                 }}
               >
                 <CardContent>
@@ -120,9 +120,9 @@ export function BatchRecoveryDialog({
                         開始時刻: {new Date(session.startedAt).toLocaleString()}
                       </Typography>
                     </Box>
-                    
+
                     <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-                      <Chip 
+                      <Chip
                         label={session.status}
                         color={getStatusColor(session.status)}
                         size="small"
@@ -143,13 +143,13 @@ export function BatchRecoveryDialog({
                         {session.progress.percentage.toFixed(1)}%
                       </Typography>
                     </Box>
-                    
-                    <LinearProgress 
-                      variant="determinate" 
+
+                    <LinearProgress
+                      variant="determinate"
                       value={session.progress.percentage}
                       sx={{ mb: 1 }}
                     />
-                    
+
                     <Typography variant="caption" color="text.secondary">
                       完了: {session.progress.completed} / 総数: {session.progress.total}
                       {session.progress.failed > 0 && `, 失敗: ${session.progress.failed}`}
@@ -175,7 +175,7 @@ export function BatchRecoveryDialog({
                     >
                       削除
                     </Button>
-                    
+
                     <Button
                       variant="contained"
                       size="small"
@@ -186,7 +186,7 @@ export function BatchRecoveryDialog({
                       続行
                     </Button>
                   </Box>
-                  
+
                   {isExpired && (
                     <Alert severity="error" sx={{ mt: 2 }}>
                       このセッションは有効期限が切れています
@@ -200,14 +200,14 @@ export function BatchRecoveryDialog({
       </DialogContent>
 
       <DialogActions>
-        <Button 
-          onClick={onClose} 
+        <Button
+          onClick={onClose}
           disabled={loading}
           variant="outlined"
         >
           後で決める
         </Button>
-        
+
         <Button
           onClick={() => {
             // Discard all sessions

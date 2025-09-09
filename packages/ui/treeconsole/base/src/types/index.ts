@@ -1,22 +1,21 @@
 /**
- * TreeConsole 型定義
- *
- * 既存コードから抽出した型定義を新しいAPIに適応させたもの。
- */
+  * TreeConsole
+  * API
+  */
 
-import type { NodeId, TreeNode, NodeType } from '@hierarchidb/common-type';
+// Observable/Subscription types
+import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
 
 /**
- * 選択モード定義（既存コードから移植）
- */
+    */
 export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
 
 /**
- * TreeTableConsolePanel のメインProps
- */
+  * TreeTableConsolePanel Props
+  */
 export interface TreeTableConsolePanelProps {
   rootNodeId: NodeId;
   nodeId: NodeId;
@@ -37,8 +36,8 @@ export interface TreeTableConsolePanelProps {
 }
 
 /**
- * TreeConsole サブコンポーネントのProps型定義
- */
+  * TreeConsole Props
+  */
 export interface TreeConsoleHeaderProps {
   title: string;
   baseTitle: string;
@@ -58,19 +57,26 @@ export interface TreeConsoleHeaderProps {
 }
 
 /**
- * 新設計のTreeConsoleBreadcrumbProps - 軽量で依存関係を最小化
- */
+  * TreeConsoleBreadcrumbProps -
+  */
 export interface TreeConsoleBreadcrumbProps {
-  /** ノードパス配列 - 表示するパンくずの階層データ */
+  /**
+   * -
+   */
   nodePath: TreeNodeWithChildren[];
 
-  /** 現在のノードID - ハイライト用 */
+  /**
+   * ID -
+   */
   currentNodeId?: NodeId;
 
-  /** 階層の深度オフセット（表示調整用） */
+  /**
+      */
   depthOffset?: number;
 
-  /** コンテキスト情報 - 表示スタイル調整 */
+  /**
+   * -
+   */
   context?: {
     isTrashPage?: boolean;
     isProjectsPage?: boolean;
@@ -78,17 +84,20 @@ export interface TreeConsoleBreadcrumbProps {
     mode?: 'restore' | 'dispose' | 'normal';
   };
 
-  /** ノードクリック時のハンドラー */
+  /**
+      */
   onNodeClick?: (nodeId: NodeId, node: TreeNodeWithChildren) => void;
 
-  /** ノードアクション（右クリックメニュー等） */
+  /**
+      */
   onNodeAction?: {
     onEdit?: (nodeId: NodeId) => void;
     onDelete?: (nodeId: NodeId) => void;
     onCreate?: (parentId: NodeId) => void;
   };
 
-  /** 表示設定 */
+  /**
+      */
   variant?: 'default' | 'compact' | 'minimal';
   maxWidth?: number;
   showIcons?: boolean;
@@ -117,7 +126,7 @@ export interface TreeConsoleContentProps {
   currentNodeInfo?: NodeInfo | null;
   onDragStateChange?: (
     draggingNodeId: NodeId | undefined,
-    descendantIdSet: Set<NodeId> | undefined
+    descendantIdSet: Set<NodeId> | undefined,
   ) => void;
   canPreviewNode?: boolean;
   mode?: 'restore' | 'dispose';
@@ -155,8 +164,7 @@ export interface TreeConsoleActionsProps {
 }
 
 /**
- * ノード情報表示用の型
- */
+    */
 export interface NodeInfo {
   id: string;
   name: string;
@@ -165,16 +173,16 @@ export interface NodeInfo {
 }
 
 /**
- * TreeNodeWithChildren - UI層用の拡張型（再帰的な子ノード構造）
- * NOTE: core の TreeNodeWithChildren とは異なり、children が再帰的
- */
+  * TreeNodeWithChildren - UI
+ * NOTE: core TreeNodeWithChildren children
+  */
 export interface TreeNodeWithChildren extends TreeNode {
   children?: TreeNodeWithChildren[];
 }
 
 /**
- * SpeedDial アクション型（既存コードから移植）
- */
+  * SpeedDial
+  */
 export interface SpeedDialActionType {
   name: string;
   icon: ReactNode;
@@ -183,8 +191,8 @@ export interface SpeedDialActionType {
 }
 
 /**
- * Undo/Redo関連の型定義
- */
+  * Undo/Redo
+  */
 export interface UndoRedoCommand {
   id: string;
   type: string;
@@ -204,42 +212,37 @@ export interface UndoRedoResult {
 }
 
 /**
- * TreeViewController インターフェース（useTreeViewController の戻り値型）
- */
+  * TreeViewController useTreeViewController
+  */
 export interface TreeViewController {
-  // 基本状態
   currentNode: TreeNode | null;
   selectedNodes: NodeId[];
   expandedNodes: NodeId[];
   isLoading: boolean;
 
-  // 検索関連
   searchText?: string;
   handleSearchTextChange?: (searchText: string) => void;
   filteredItemCount?: number;
   totalItemCount?: number;
 
-  // 選択関連
   selectionMode: SelectionMode;
   rowSelection?: RowSelectionState;
   setSelectionMode?: (mode: SelectionMode) => void;
 
-  // テーブル状態（TanStack Table関連）
-  data?: TreeNode[]; // テーブルデータ
-  expandedRowIds?: Set<NodeId>; // 展開状態
-
-  // 基本操作
+  //  TanStack Table
+  data?: TreeNode[];
+  expandedRowIds?: Set<NodeId>;
   selectNode: (nodeId: NodeId) => void;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
   expandNode: (nodeId: NodeId) => void;
   collapseNode: (nodeId: NodeId) => void;
 
-  // CRUD操作 - 新しいWorkerAPI経由で実装
+  //  CRUD - WorkerAPI
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
   deleteNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
-  // Working Copy操作
+  //  Working Copy
   startEdit: (nodeId: NodeId) => Promise<void>;
   startCreate: (parentId: NodeId, name: string) => Promise<void>;
 
@@ -254,10 +257,9 @@ export interface TreeViewController {
   onRemove?: (nodeIds: NodeId[]) => void;
   createNode?: (nodeType: string) => void;
 
-  // 状態プロパティ
   rootNodeId?: NodeId;
 
-  // Undo/Redo操作 - TDD Red Phase用の追加インターフェース
+  //  Undo/Redo - TDD Red Phase
   undo: () => Promise<UndoRedoResult>;
   redo: () => Promise<UndoRedoResult>;
   canUndo: boolean;
@@ -267,18 +269,17 @@ export interface TreeViewController {
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
 }
 
-// 後方互換性のための再エクスポート
 export type { SpeedDialActionType as SpeedDialAction };
 
-// TreeNodeData - UI用のノードデータ型
-// TreeNodeInUIと互換性を持たせるため、プロパティを調整
+//  TreeNodeData - UI
+//  TreeNodeInUI
 export interface TreeNodeData extends TreeNode {
   // TreeNode already has these properties:
   // id: NodeId;
   // nodeType: NodeType;
   // name: string;
   // depth: number;
-  
+
   children?: TreeNodeData[];
   // UI specific properties  
   hasChildren?: boolean;
@@ -286,7 +287,7 @@ export interface TreeNodeData extends TreeNode {
   type?: string; // backward compatibility - UI uses string
 }
 
-// 追加のUI状態型
+//  UI
 export interface SelectionState {
   selectedIds: NodeId[];
   mode: SelectionMode;
@@ -332,7 +333,7 @@ export interface ErrorState {
   errorMessage?: string;
 }
 
-// Adapter関連の型（一時的な定義）
+//  Adapter
 export interface CommandAdapterOptions {
   timeout?: number;
   retries?: number;
@@ -343,7 +344,7 @@ export class TreeConsoleAdapterError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public context?: unknown
+    public context?: unknown,
   ) {
     super(message);
     this.name = 'TreeConsoleAdapterError';
@@ -363,13 +364,12 @@ export type LegacyUnsubscribe = () => void;
 export type LegacyExpandedStateChanges = unknown;
 export type LegacySubTreeChanges = unknown;
 
-// Observable/Subscription types
-import type { TreeChangeEvent } from '@hierarchidb/common-type';
 export type { TreeChangeEvent };
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
 export type UnsubscribeFunction = () => void;
 export type ExpandedStateChange = unknown; // TODO: Define proper type
 export type SubTreeChange = unknown; // TODO: Define proper type
 
-// 基本Props型（後方互換性）
-export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {}
+//  Props
+export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
+}

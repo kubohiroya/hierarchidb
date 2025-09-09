@@ -1,12 +1,10 @@
 /**
- * @file ErrorPersistenceStrategy.ts
- * @description HierarchiDBのデータベース戦略に基づくエラー永続化
- *
- * 永続化戦略：
- * - EphemeralDB: セッション中の詳細なエラー情報とリカバリ状態
- * - CoreDB: 長期分析用の要約情報のみ
- * - メモリ: リアルタイムアクセスが必要な情報
- */
+  * @file ErrorPersistenceStrategy.ts
+ * @description HierarchiDB
+   * - EphemeralDB:
+ * - CoreDB:
+ * - :
+  */
 
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
@@ -14,89 +12,73 @@ import type { NodeId } from '@hierarchidb/common-type';
 import { BaseShapeError, ErrorCategory, ErrorSeverity } from '../types/ShapeErrorHierarchy';
 
 // ========================================
-// データベース分離戦略
 // ========================================
 
 /**
- * エラー情報の保存先を決定
- */
+    */
 export enum StorageTarget {
-  MEMORY = 'MEMORY', // 一時的、高速アクセス
-  EPHEMERAL = 'EPHEMERAL', // セッション期間中
-  CORE = 'CORE', // 長期保存
-  HYBRID = 'HYBRID', // 複数のストレージに分散
+  MEMORY = 'MEMORY', EPHEMERAL = 'EPHEMERAL', CORE = 'CORE', HYBRID = 'HYBRID',
 }
 
 /**
- * エラー情報の保存戦略
- */
+    */
 export interface PersistenceStrategy {
-  // 基本情報
   errorSummary: StorageTarget.CORE;
 
-  // 詳細情報
   errorDetails: StorageTarget.EPHEMERAL;
   stackTrace: StorageTarget.EPHEMERAL;
   technicalContext: StorageTarget.EPHEMERAL;
 
-  // リカバリ情報
   recoveryAttempts: StorageTarget.EPHEMERAL;
   checkpoints: StorageTarget.EPHEMERAL;
 
-  // 統計情報
   realtimeStats: StorageTarget.MEMORY;
   aggregatedStats: StorageTarget.CORE;
 
-  // タスク情報
   taskErrors: StorageTarget.EPHEMERAL;
   taskDependencies: StorageTarget.MEMORY;
 }
 
 // ========================================
-// CoreDB用エンティティ（最小限）
+//  CoreDB
 // ========================================
 
 /**
- * CoreDBに保存するエラーサマリー
- */
+  * CoreDB
+  */
 export interface CoreErrorSummary {
   id: string;
   nodeId: NodeId;
   treeNodeId: NodeId;
   sessionId: string;
 
-  // エラーの基本情報のみ
   errorType: string;
   errorCode: string;
   category: ErrorCategory;
   severity: ErrorSeverity;
 
-  // タイムスタンプ
   occurredAt: number;
   resolvedAt?: number;
 
-  // 結果
   wasResolved: boolean;
   resolutionType?: 'auto' | 'manual' | 'skipped';
 
-  // 統計用の集計情報
   retryCount: number;
   recoveryDuration?: number;
   dataLossOccurred: boolean;
 }
 
 // ========================================
-// EphemeralDB用エンティティ（詳細）
+//  EphemeralDB
 // ========================================
 
 /**
- * EphemeralDBに保存する詳細エラー情報
- */
+  * EphemeralDB
+  */
 export interface EphemeralErrorDetails {
   sessionId: string;
   treeNodeId: string;
 
-  // 基本エラー情報のみ（プリミティブ値のみ）
   fullError: {
     type: string;
     category: string;
@@ -107,31 +89,25 @@ export interface EphemeralErrorDetails {
     retryable: boolean;
   };
 
-  // 基本コンテキスト（プリミティブ値のみ）
   context: {
     timestamp: number;
     errorCount: number;
   };
 
-  // デバッグ情報（空オブジェクト）
   debug: {};
 
-  // リカバリ状態（空オブジェクト）
   recovery: {
     attempts: [];
     checkpoints: [];
   };
 
-  // タスクレベルエラー（空オブジェクト）
   taskErrors: {};
 
-  // 有効期限
   expiresAt: number;
 }
 
 /**
- * チェックポイントデータ
- */
+    */
 export interface CheckpointData {
   id: string;
   timestamp: number;
@@ -143,8 +119,7 @@ export interface CheckpointData {
 }
 
 /**
- * タスクエラーマップ
- */
+    */
 export interface TaskErrorMap {
   [taskId: string]: {
     error: BaseShapeError;
@@ -156,20 +131,15 @@ export interface TaskErrorMap {
 }
 
 // ========================================
-// メモリキャッシュ（高速アクセス）
 // ========================================
 
 /**
- * メモリ内で管理するランタイム情報
- */
+    */
 export class RuntimeErrorCache {
-  // アクティブなエラー
   private activeErrors = new Map<string, BaseShapeError>();
 
-  // タスクの依存関係グラフ
   private taskDependencies = new Map<string, Set<string>>();
 
-  // セッションエラーの履歴
   public sessionErrors = new Map<
     string,
     Array<{
@@ -179,7 +149,6 @@ export class RuntimeErrorCache {
     }>
   >();
 
-  // リアルタイム統計
   private stats = {
     totalErrors: 0,
     errorsByType: new Map<string, number>(),
@@ -188,7 +157,7 @@ export class RuntimeErrorCache {
     recoverySuccessRate: 0,
   };
 
-  // Circuit Breaker状態
+  //  Circuit Breaker
   private circuitBreakers = new Map<
     string,
     {
@@ -200,8 +169,7 @@ export class RuntimeErrorCache {
   >();
 
   /**
-   * エラーを追加
-   */
+            */
   addError(sessionId: string, error: BaseShapeError): void {
     this.activeErrors.set(sessionId, error);
     this.updateStatistics(error);
@@ -209,15 +177,13 @@ export class RuntimeErrorCache {
   }
 
   /**
-   * タスク依存関係を更新
-   */
+            */
   updateDependencies(taskId: string, dependencies: string[]): void {
     this.taskDependencies.set(taskId, new Set(dependencies));
   }
 
   /**
-   * 影響を受けるタスクを取得
-   */
+            */
   getAffectedTasks(failedTaskId: string): string[] {
     const affected: string[] = [];
 
@@ -231,14 +197,13 @@ export class RuntimeErrorCache {
   }
 
   /**
-   * Circuit Breakerの状態を確認
-   */
+      * Circuit Breaker
+      */
   shouldCircuitBreak(serviceId: string): boolean {
     const breaker = this.circuitBreakers.get(serviceId);
     if (!breaker) return false;
 
     if (breaker.state === 'open') {
-      // 再試行時間をチェック
       if (Date.now() >= breaker.nextRetry) {
         breaker.state = 'half-open';
         return false;
@@ -269,10 +234,10 @@ export class RuntimeErrorCache {
     breaker.failures++;
     breaker.lastFailure = Date.now();
 
-    // 5回失敗したらCircuit Open
+    //  5Circuit Open
     if (breaker.failures >= 5) {
       breaker.state = 'open';
-      breaker.nextRetry = Date.now() + 30000; // 30秒後に再試行
+      breaker.nextRetry = Date.now() + 30000; //  30
     }
 
     this.circuitBreakers.set(serviceId, breaker);
@@ -280,12 +245,11 @@ export class RuntimeErrorCache {
 }
 
 // ========================================
-// 統合永続化マネージャー
 // ========================================
 
 /**
- * EphemeralDB（セッション用）
- */
+  * EphemeralDB
+  */
 class ShapeEphemeralDB extends Dexie {
   errorDetails!: Table<EphemeralErrorDetails>;
   checkpoints!: Table<CheckpointData>;
@@ -298,9 +262,8 @@ class ShapeEphemeralDB extends Dexie {
       checkpoints: 'id, sessionId, timestamp, isValid',
     });
 
-    // 期限切れデータの自動削除
     this.on('ready', () => {
-      setInterval(() => this.cleanupExpired(), 60000); // 1分ごと
+      setInterval(() => this.cleanupExpired(), 60000); //  1
     });
   }
 
@@ -311,12 +274,11 @@ class ShapeEphemeralDB extends Dexie {
 }
 
 /**
- * エラー永続化の統合マネージャー
- */
+    */
 export class ErrorPersistenceManager {
   private ephemeralDB: ShapeEphemeralDB;
   private memoryCache: RuntimeErrorCache;
-  private sessionLifetime = 24 * 60 * 60 * 1000; // 24時間
+  private sessionLifetime = 24 * 60 * 60 * 1000; //  24
 
   constructor() {
     this.ephemeralDB = new ShapeEphemeralDB();
@@ -324,24 +286,23 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * エラーを保存（自動的に適切な場所に分散）
-   */
+            */
   async saveError(
     sessionId: string,
     treeNodeId: NodeId,
     error: BaseShapeError,
-    context?: any
+    context?: any,
   ): Promise<void> {
-    // 3層アプローチに従って簡素化 - 複雑なオブジェクトは保存しない
+    //  3 -
 
-    // 1. メモリキャッシュに追加（即座にアクセス可能）
+    //  1.
     this.memoryCache.addError(sessionId, error);
 
-    // 2. EphemeralDB に基本情報のみ保存（完全プリミティブ化・undefined対策）
+    //  2. EphemeralDB undefined
     const ephemeralDetails: EphemeralErrorDetails = {
-      sessionId: sessionId || `session-${Date.now()}`, // undefined対策
-      treeNodeId: String(treeNodeId || 'unknown'), // TreeNodeIdを文字列に変換・undefined対策
-      // fullError は保存せず、基本プロパティのみ保存
+      sessionId: sessionId || `session-${Date.now()}`, //  undefined
+      treeNodeId: String(treeNodeId || 'unknown'), //  TreeNodeIdundefined
+      //  fullError
       fullError: {
         type: error.type,
         category: error.category,
@@ -350,14 +311,14 @@ export class ErrorPersistenceManager {
         timestamp: error.timestamp || Date.now(),
         recoverable: error.recoverable || false,
         retryable: error.retryable || false,
-        // cause や metadata など複雑な構造は除外
+        //  cause metadata
       } as BaseShapeError,
       context: {
         timestamp: context?.timestamp || Date.now(),
         errorCount: typeof context?.errorCount === 'number' ? context.errorCount : 1,
       },
       debug: {
-        // stackTrace も文字列が長すぎる可能性があるので除外
+        //  stackTrace
         stackTrace: undefined,
         workerState: undefined,
       },
@@ -369,7 +330,7 @@ export class ErrorPersistenceManager {
       expiresAt: Date.now() + this.sessionLifetime,
     };
 
-    // 3層アプローチにより簡素化されたデータを永続化
+    //  3
     console.log('[EphemeralDB] Attempting to save:', JSON.stringify(ephemeralDetails, null, 2));
 
     try {
@@ -381,10 +342,10 @@ export class ErrorPersistenceManager {
       throw error;
     }
 
-    // 3. CoreDB にサマリーを保存（長期分析用）
+    //  3. CoreDB
     await this.saveToCoreDB({
       id: `${sessionId}-${Date.now()}`,
-      nodeId: treeNodeId as NodeId, // TreeNodeIdをNodeIdとして使用
+      nodeId: treeNodeId as NodeId, //  TreeNodeIdNodeId
       treeNodeId,
       sessionId,
       errorType: error.type,
@@ -399,18 +360,18 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * エラー詳細を取得（EphemeralDBから）
-   */
+      * EphemeralDB
+      */
   async getErrorDetails(sessionId: string): Promise<EphemeralErrorDetails | undefined> {
     return await this.ephemeralDB.errorDetails.get(sessionId);
   }
 
   /**
-   * チェックポイントを保存（EphemeralDBのみ）
-   */
+      * EphemeralDB
+      */
   async saveCheckpoint(
     sessionId: string,
-    checkpoint: Omit<CheckpointData, 'id' | 'timestamp'>
+    checkpoint: Omit<CheckpointData, 'id' | 'timestamp'>,
   ): Promise<void> {
     const data: CheckpointData = {
       ...checkpoint,
@@ -422,29 +383,26 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * アクティブなエラーを取得（メモリから高速）
-   */
+            */
   getActiveErrors(): Map<string, BaseShapeError> {
     return this.memoryCache['activeErrors'];
   }
 
   /**
-   * Circuit Breaker状態を確認
-   */
+      * Circuit Breaker
+      */
   shouldCircuitBreak(serviceId: string): boolean {
     return this.memoryCache.shouldCircuitBreak(serviceId);
   }
 
   /**
-   * セッションの最新チェックポイントを取得
-   */
+            */
   async getLastCheckpoint(sessionId: string): Promise<{ taskIndex: number } | null> {
     const sessionErrors = this.memoryCache.sessionErrors.get(sessionId);
     if (!sessionErrors || sessionErrors.length === 0) {
       return null;
     }
 
-    // 最新のエラー状態から復旧ポイントを算出
     const lastError = sessionErrors[sessionErrors.length - 1];
     return {
       taskIndex: lastError?.metadata?.lastSuccessfulTask || 0,
@@ -452,8 +410,7 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * セッションエラー状態を取得
-   */
+            */
   async getSessionErrorState(sessionId: string): Promise<any> {
     const sessionErrors = this.memoryCache.sessionErrors.get(sessionId);
     if (!sessionErrors || sessionErrors.length === 0) {
@@ -471,10 +428,8 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * セッションエラーを永続化
-   */
+            */
   async persistSessionError(sessionId: string, errorState: any): Promise<void> {
-    // メモリキャッシュに保存
     const errors = this.memoryCache.sessionErrors.get(sessionId) || [];
     errors.push({
       timestamp: Date.now(),
@@ -488,38 +443,33 @@ export class ErrorPersistenceManager {
   }
 
   /**
-   * 影響を受けるタスクを特定
-   */
+            */
   getAffectedTasks(failedTaskId: string): string[] {
     return this.memoryCache.getAffectedTasks(failedTaskId);
   }
 
   /**
-   * セッションクリーンアップ
-   */
+            */
   async cleanupSession(sessionId: string): Promise<void> {
-    // EphemeralDBから削除
+    //  EphemeralDB
     await this.ephemeralDB.errorDetails.where('sessionId').equals(sessionId).delete();
     await this.ephemeralDB.checkpoints.where('sessionId').equals(sessionId).delete();
 
-    // メモリキャッシュクリア
-    // ※ 実装簡略化のため詳細は省略
   }
 
   /**
-   * CoreDBへの保存（Worker経由で実行される想定）
-   */
+      * CoreDBWorker
+      */
   private async saveToCoreDB(summary: CoreErrorSummary): Promise<void> {
     try {
-      // WorkerAPI経由でCoreDBにエラーサマリーを保存
-      // 実装時は適切なWorkerAPIメソッドを呼び出す
+      //  WorkerAPICoreDB
+      //  WorkerAPI
       await this.coreDB.transaction('rw', this.coreDB.errorSummaries, async () => {
         await this.coreDB.errorSummaries.add(summary);
       });
       console.log('Successfully saved error summary to CoreDB:', summary.id);
     } catch (error) {
       console.error('Failed to save error summary to CoreDB:', error);
-      // エラー保存の失敗はシステムログに記録するが、元のエラー処理は継続
     }
   }
 }

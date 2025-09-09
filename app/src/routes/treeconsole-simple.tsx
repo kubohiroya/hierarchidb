@@ -3,19 +3,9 @@
  * Tests TreeConsole with WorkerAPIClient.getSingleton()
  */
 
-import { useState } from "react";
-import {
-  Container,
-  Typography,
-  Alert,
-  CircularProgress,
-  Box,
-} from "@mui/material";
-import {
-  TreeConsolePanel,
-  type TreeNodeData,
-} from "@hierarchidb/ui-treeconsole-base";
-import { useWorkerAPIClient } from "~/hooks/useWorkerAPIClient";
+import { Alert, Box, CircularProgress, Container, Typography } from '@mui/material';
+import { TreeConsolePanel, type TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient';
 
 export default function TreeConsoleSimple() {
   // Get the Worker API client
@@ -23,17 +13,17 @@ export default function TreeConsoleSimple() {
   const workerClient = workerClientWrapper?.getAPI();
 
   const handleNodeClick = (node: TreeNodeData) => {
-    console.log("Node clicked:", node);
+    console.log('Node clicked:', node);
   };
 
   if (!workerClient) {
     return (
       <Container
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
         }}
       >
         <CircularProgress />
@@ -52,15 +42,15 @@ export default function TreeConsoleSimple() {
   }
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h5">TreeConsole Simple Demo</Typography>
         <Typography variant="body2" color="text.secondary">
           Testing TreeConsole with WorkerAPIClient.getSingleton()
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflow: "hidden" }}>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <TreeConsolePanel
           data={[]}
           columns={[]}
@@ -74,19 +64,32 @@ export default function TreeConsoleSimple() {
           canEdit={false}
           canDelete={false}
           onNodeClick={handleNodeClick}
-          onSearchChange={() => {}}
-          onSearchClear={() => {}}
-          onCreate={() => {}}
-          onEdit={() => {}}
-          onDelete={() => {}}
-          onRefresh={() => {}}
-          onExpandAll={() => {}}
-          onCollapseAll={() => {}}
-          onSort={() => {}}
-          onFilterChange={() => {}}
-          onViewModeChange={() => {}}
-          onBreadcrumbNavigate={() => {}}
-          onContextMenuAction={() => {}}
+          onSearchChange={() => {
+          }}
+          onSearchClear={() => {
+          }}
+          onCreate={() => {
+          }}
+          onEdit={() => {
+          }}
+          onDelete={() => {
+          }}
+          onRefresh={() => {
+          }}
+          onExpandAll={() => {
+          }}
+          onCollapseAll={() => {
+          }}
+          onSort={() => {
+          }}
+          onFilterChange={() => {
+          }}
+          onViewModeChange={() => {
+          }}
+          onBreadcrumbNavigate={() => {
+          }}
+          onContextMenuAction={() => {
+          }}
         />
       </Box>
     </Box>

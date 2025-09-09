@@ -12,16 +12,16 @@
 import * as turf from '@turf/turf';
 import { toGeoJSONFeature } from '../../utils/featureConverter';
 import type {
-  SimplifyWorker2API,
-  Simplify2Task,
   Simplify2Result,
+  Simplify2Task,
+  SimplifyWorker2API,
   TileSimplifyConfig,
-  TopoJSONResult,
-  TopologyValidationResult,
-  TopoJSONTopology,
   TopoJSONObject,
+  TopoJSONResult,
+  TopoJSONTopology,
+  TopologyValidationResult,
 } from '../types';
-import type { Feature } from '../../types';
+import type { Feature } from '../types';
 
 /**
  * SimplifyWorker2 - Tile-level geometry simplification
@@ -44,6 +44,7 @@ interface TileGrid {
 
 export class SimplifyWorker2 implements SimplifyWorker2API {
   private tileCache = new Map<string, any>();
+
   //private topologyCache = new Map<string, TopoJSONResult>();
 
   constructor() {
@@ -99,7 +100,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
         } catch (error) {
           console.warn(
             `SimplifyWorker2: Failed to process tile ${tile.z}/${tile.x}/${tile.y}:`,
-            error
+            error,
           );
           topologyPreserved = false;
         }
@@ -116,7 +117,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
       const processingTime = Date.now() - startTime;
       console.log(`SimplifyWorker2: Completed task ${task.taskId} in ${processingTime}ms`);
       console.log(
-        `Generated ${totalTilesGenerated} tiles, topology preserved: ${topologyPreserved}`
+        `Generated ${totalTilesGenerated} tiles, topology preserved: ${topologyPreserved}`,
       );
 
       return result;
@@ -229,7 +230,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    */
   private async generateTileGrid(
     features: Feature[],
-    config: TileSimplifyConfig
+    config: TileSimplifyConfig,
   ): Promise<TileGrid[]> {
     // Calculate overall bounds
     const bounds = this.calculateBounds(features);
@@ -270,7 +271,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   private async processTile(
     tile: TileGrid,
     config: TileSimplifyConfig,
-    taskId: string
+    taskId: string,
   ): Promise<{ bufferId: string | null; topologyValid: boolean }> {
     try {
       // 1. Clip features to tile bounds
@@ -316,7 +317,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    */
   private async clipFeaturesToTile(
     features: Feature[],
-    tileBbox: [number, number, number, number]
+    tileBbox: [number, number, number, number],
   ): Promise<Feature[]> {
     const clippedFeatures: Feature[] = [];
     const clipPolygon = turf.bboxPolygon(tileBbox);
@@ -376,7 +377,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    */
   private async simplifyForZoomLevel(
     features: Feature[],
-    config: TileSimplifyConfig
+    config: TileSimplifyConfig,
   ): Promise<Feature[]> {
     const tolerance = this.calculateToleranceForZoom(config.zoomLevel, config.tolerance);
     const simplified: Feature[] = [];
@@ -518,7 +519,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
    */
   private generateTopoJSONObjects(
     features: Feature[],
-    _topology: TopoJSONTopology
+    _topology: TopoJSONTopology,
   ): Record<string, TopoJSONObject> {
     const objects: Record<string, any> = {};
 
@@ -634,7 +635,7 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
   }
 
   private async checkSharedBoundaries(
-    _features: Feature[]
+    _features: Feature[],
   ): Promise<{ preserved: boolean; errors: string[] }> {
     // Simplified boundary checking
     const errors: string[] = [];

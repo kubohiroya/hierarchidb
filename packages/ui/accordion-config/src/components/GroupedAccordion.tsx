@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Divider, SxProps, Theme } from '@mui/material';
+import { Box, Divider, SxProps, Theme, Typography } from '@mui/material';
 import { BaseAccordion, BaseAccordionProps } from './BaseAccordion';
 
 export interface AccordionGroupItem extends Omit<BaseAccordionProps, 'children'> {
@@ -36,25 +36,25 @@ export interface GroupedAccordionProps {
  * A group of related accordions with optional exclusive expansion
  */
 export const GroupedAccordion: React.FC<GroupedAccordionProps> = ({
-  title,
-  description,
-  items,
-  exclusive = false,
-  defaultExpanded = [],
-  onExpansionChange,
-  sx,
-  headerSx,
-  showDividers = false,
-  spacing = 2,
-}) => {
+                                                                    title,
+                                                                    description,
+                                                                    items,
+                                                                    exclusive = false,
+                                                                    defaultExpanded = [],
+                                                                    onExpansionChange,
+                                                                    sx,
+                                                                    headerSx,
+                                                                    showDividers = false,
+                                                                    spacing = 2,
+                                                                  }) => {
   const [expandedKeys, setExpandedKeys] = React.useState<Set<string>>(
-    new Set(defaultExpanded)
+    new Set(defaultExpanded),
   );
 
   const handleAccordionChange = (key: string, expanded: boolean) => {
     setExpandedKeys(prev => {
       const newSet = new Set(prev);
-      
+
       if (exclusive && expanded) {
         // Clear all other expansions if exclusive mode
         newSet.clear();
@@ -64,7 +64,7 @@ export const GroupedAccordion: React.FC<GroupedAccordionProps> = ({
       } else {
         newSet.delete(key);
       }
-      
+
       const keysArray = Array.from(newSet);
       onExpansionChange?.(keysArray);
       return newSet;
@@ -87,7 +87,7 @@ export const GroupedAccordion: React.FC<GroupedAccordionProps> = ({
           )}
         </Box>
       )}
-      
+
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing }}>
         {items.map((item, index) => (
           <React.Fragment key={item.key}>

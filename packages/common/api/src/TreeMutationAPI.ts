@@ -1,19 +1,18 @@
-import type { TreeId, NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+
 /**
- * データ変更API
- * ノードの作成、更新、削除、移動機能を提供
- */
+  * API
+   */
 export interface TreeMutationAPI {
   /**
-   * 新しいノードを作成
-   * @param params - 作成パラメータ
-   * @param params.nodeType - ノードタイプ
-   * @param params.treeId - 作成先ツリーのID
-   * @param params.parentId - 親ノードのID
-   * @param params.name - ノード名
-   * @param params.description - ノードの説明（オプション）
-   * @returns 成功時は作成されたノードID、失敗時はエラー情報
-   */
+         * @param params -
+   * @param params.nodeType -
+   * @param params.treeId - ID
+   * @param params.parentId - ID
+   * @param params.name -
+   * @param params.description -
+   * @returns ID
+      */
   createNode(params: {
     nodeType: NodeType;
     treeId: TreeId;
@@ -23,13 +22,12 @@ export interface TreeMutationAPI {
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }>;
 
   /**
-   * 既存ノードの情報を更新
-   * @param params - 更新パラメータ
-   * @param params.nodeId - 更新対象ノードのID
-   * @param params.name - 新しいノード名（オプション）
-   * @param params.description - 新しい説明（オプション）
-   * @returns 成功・失敗の結果
-   */
+         * @param params -
+   * @param params.nodeId - ID
+   * @param params.name -
+   * @param params.description -
+   * @returns
+      */
   updateNode(params: {
     nodeId: NodeId;
     name?: string;
@@ -37,13 +35,12 @@ export interface TreeMutationAPI {
   }): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * ノードを別の親に移動
-   * @param params - 移動パラメータ
-   * @param params.nodeIds - 移動対象ノードIDの配列
-   * @param params.toParentId - 移動先親ノードのID
-   * @param params.onNameConflict - 名前衝突時の対処法（デフォルト: 'error'）
-   * @returns 成功・失敗の結果
-   */
+         * @param params -
+   * @param params.nodeIds - ID
+   * @param params.toParentId - ID
+   * @param params.onNameConflict - : 'error'
+   * @returns
+      */
   moveNodes(params: {
     nodeIds: NodeId[];
     toParentId: NodeId;
@@ -51,38 +48,34 @@ export interface TreeMutationAPI {
   }): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * ノードを複製
-   * @param params - 複製パラメータ
-   * @param params.nodeIds - 複製対象ノードIDの配列
-   * @param params.toParentId - 複製先親ノードのID（省略時は元の親）
-   * @returns 成功時は複製されたノードIDの配列、失敗時はエラー情報
-   */
+         * @param params -
+   * @param params.nodeIds - ID
+   * @param params.toParentId - ID
+   * @returns ID
+      */
   duplicateNodes(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: true; nodeIds: NodeId[] } | { success: false; error: string }>;
 
   /**
-   * ノードを完全削除
-   * @param nodeIds - 削除対象ノードIDの配列
-   * @returns 成功・失敗の結果
-   */
+         * @param nodeIds - ID
+   * @returns
+      */
   removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * ノードをゴミ箱に移動
-   * @param nodeIds - ゴミ箱移動対象ノードIDの配列
-   * @returns 成功・失敗の結果
-   */
+         * @param nodeIds - ID
+   * @returns
+      */
   moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * ノードをゴミ箱から復元
-   * @param params - 復元パラメータ
-   * @param params.nodeIds - 復元対象ノードIDの配列
-   * @param params.toParentId - 復元先親ノードのID（省略時は元の親）
-   * @returns 成功・失敗の結果
-   */
+         * @param params -
+   * @param params.nodeIds - ID
+   * @param params.toParentId - ID
+   * @returns
+      */
   recoverNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;

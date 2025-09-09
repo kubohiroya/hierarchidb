@@ -6,9 +6,6 @@
     },
     {
       "path": "./app"
-    },
-    {
-      "path": "./packages/common/core"
     }
   ],
   "compilerOptions": {

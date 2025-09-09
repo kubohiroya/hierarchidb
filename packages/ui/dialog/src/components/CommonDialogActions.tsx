@@ -16,14 +16,14 @@ export interface CommonDialogActionsProps {
 }
 
 export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
-  mode,
-  isValid = true,
-  isSubmitting = false,
-  onSubmit,
-  onCancel,
-  additionalActions,
-  isFullscreen = false,
-}) => {
+                                                                          mode,
+                                                                          isValid = true,
+                                                                          isSubmitting = false,
+                                                                          onSubmit,
+                                                                          onCancel,
+                                                                          additionalActions,
+                                                                          isFullscreen = false,
+                                                                        }) => {
   if (!isFullscreen) {
     return null;
   }

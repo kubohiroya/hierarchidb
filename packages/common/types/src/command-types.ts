@@ -36,24 +36,24 @@ export type ErrorCode =
 
 export type CommandResult =
   | {
-      success: true;
-      seq: Seq;
-      nodeId?: NodeId;
-      newNodeIds?: NodeId[];
-      clipboardData?: {
-        type: 'nodes-copy';
-        timestamp: number;
-        nodes: Record<string, TreeNode>;
-        rootIds: NodeId[];
-        nodeCount?: number;
-      };
-    }
+  success: true;
+  seq: Seq;
+  nodeId?: NodeId;
+  newNodeIds?: NodeId[];
+  clipboardData?: {
+    type: 'nodes-copy';
+    timestamp: number;
+    nodes: Record<string, TreeNode>;
+    rootIds: NodeId[];
+    nodeCount?: number;
+  };
+}
   | {
-      success: false;
-      error: string;
-      code: ErrorCode;
-      seq?: Seq; // 失敗時もseqは採番される場合がある
-    };
+  success: false;
+  error: string;
+  code: ErrorCode;
+  seq?: Seq; //  seq
+};
 
 export interface CreateWorkingCopyForCreatePayload {
   workingCopyOf: NodeId;

@@ -3,17 +3,17 @@
  * @description BaseMap entity handler built on HierarchicalEntityHandler
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import type { Table, Collection } from 'dexie';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { Collection, Table } from 'dexie';
 import { HierarchicalEntityHandler } from '@hierarchidb/base-plugin';
 import type {
   BaseMapEntity,
+  BaseMapSearchCriteria,
   BaseMapWorkingCopy,
   CreateBaseMapData,
-  BaseMapSearchCriteria,
+  DisplayOptions,
   MapStyle,
   MapViewport,
-  DisplayOptions,
 } from '../types';
 import { BaseMapDatabase } from '../database/BaseMapDatabase';
 
@@ -39,34 +39,33 @@ const DEFAULT_DISPLAY_OPTIONS: DisplayOptions = {
   showLabels: true,
 };
 
-export interface BaseMapExtendedSearchCriteria extends BaseMapSearchCriteria {}
+export interface BaseMapExtendedSearchCriteria extends BaseMapSearchCriteria {
+}
 
 /**
  * BaseMap Entity Handler (typed to BaseMapEntity)
  */
 export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntity> {
   public baseMapDB: BaseMapDatabase;
-  protected table: Table<BaseMapEntity, EntityId>;
-  protected workingCopyTable: Table<BaseMapWorkingCopy, EntityId>;
+  protected table: Table<BaseMapEntity, NodeId>;
+  protected workingCopyTable: Table<BaseMapWorkingCopy, NodeId>;
 
   constructor() {
     super();
     this.baseMapDB = new BaseMapDatabase();
-    this.table = this.baseMapDB.baseMaps as unknown as Table<BaseMapEntity, EntityId>;
-    this.workingCopyTable = this.baseMapDB.workingCopies as unknown as Table<BaseMapWorkingCopy, EntityId>;
+    this.table = this.baseMapDB.baseMaps as unknown as Table<BaseMapEntity, NodeId>;
+    this.workingCopyTable = this.baseMapDB.workingCopies as unknown as Table<BaseMapWorkingCopy, NodeId>;
   }
 
   // Temporary brand helper: until all packages converge on NodeId as primary key
   // This avoids scattering 'unknown as' across call sites.
-  private toEntityId(id: NodeId): EntityId {
-    return id as unknown as EntityId;
-  }
+  // NodeId is the sole ID type
 
   /** Build BaseMap entity */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: Partial<BaseMapEntity>
+    entityId: NodeId,
+    data: Partial<BaseMapEntity>,
   ): BaseMapEntity {
     const now = Date.now();
     return {
@@ -97,13 +96,14 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
     } as BaseMapEntity;
   }
 
-  protected async cleanupEntityData(_entity: BaseMapEntity): Promise<void> {}
+  protected async cleanupEntityData(_entity: BaseMapEntity): Promise<void> {
+  }
 
   /** Create BaseMap entity */
   async createEntity(nodeId: NodeId, data?: CreateBaseMapData): Promise<BaseMapEntity> {
     const now = Date.now();
     const entity: BaseMapEntity = {
-      id: this.toEntityId(nodeId),
+      id: nodeId,
       nodeId,
       name: data?.name || 'New BaseMap',
       description: data?.description || '',
@@ -130,7 +130,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy> {
     const entity = await this.getEntityByNodeId(nodeId);
     const now = Date.now();
-    const workingCopyId = crypto.randomUUID() as EntityId;
+    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
 
     if (entity) {
       const workingCopy: BaseMapWorkingCopy = {
@@ -180,7 +180,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   async commitWorkingCopy(_nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<BaseMapEntity> {
     // If original exists, update it; otherwise create a new entity for provided nodeId
     if (workingCopy.originalId) {
-      return await this.updateEntity(workingCopy.originalId as EntityId, {
+      return await this.updateEntity(workingCopy.originalId as NodeId, {
         name: workingCopy.name,
         mapStyle: workingCopy.mapStyle,
         viewport: workingCopy.viewport,
@@ -204,7 +204,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
     // Remove any working copy associated with the node
     const wc = await this.workingCopyTable.where('nodeId').equals(nodeId as unknown as string).first();
-    if (wc) await this.workingCopyTable.delete(wc.id as EntityId);
+    if (wc) await this.workingCopyTable.delete(wc.id as NodeId);
   }
 
   async updateMapStyle(nodeId: NodeId, mapStyle: MapStyle): Promise<BaseMapEntity> {
@@ -221,7 +221,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
 
   async updateDisplayOptions(
     nodeId: NodeId,
-    displayOptions: DisplayOptions
+    displayOptions: DisplayOptions,
   ): Promise<BaseMapEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) throw new Error(`BaseMap entity for node ${nodeId} not found`);
@@ -268,7 +268,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
     if (config.viewport) {
       const { center, zoom, bearing, pitch } = config.viewport;
       if (!Array.isArray(center) || center.length !== 2 ||
-          typeof center[0] !== 'number' || typeof center[1] !== 'number') {
+        typeof center[0] !== 'number' || typeof center[1] !== 'number') {
         errors.push('Valid center coordinates are required');
       } else {
         const [lng, lat] = center;
@@ -289,7 +289,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
 
   protected applyAdditionalSearchCriteria(
     collection: Collection<BaseMapEntity>,
-    criteria: BaseMapExtendedSearchCriteria & { tags?: string[] }
+    criteria: BaseMapExtendedSearchCriteria & { tags?: string[] },
   ): Collection<BaseMapEntity, any> {
     collection = super.applyAdditionalSearchCriteria(collection, criteria as any);
 
@@ -336,7 +336,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
 
   async importConfiguration(
     nodeId: NodeId,
-    config: { mapStyle: MapStyle; viewport: MapViewport; displayOptions: DisplayOptions }
+    config: { mapStyle: MapStyle; viewport: MapViewport; displayOptions: DisplayOptions },
   ): Promise<BaseMapEntity> {
     const validation = await this.validateConfiguration(config);
     if (!validation.isValid) throw new Error(`Invalid configuration: ${validation.errors.join(', ')}`);
@@ -349,7 +349,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   }
 
   // Override getEntity to return undefined when not found (some tests expect undefined)
-  async getEntity(entityId: EntityId): Promise<BaseMapEntity | null> {
+  async getEntity(entityId: NodeId): Promise<BaseMapEntity | null> {
     const res = await super.getEntity(entityId);
     // Some tests expect undefined; coerce without using any
     return (res ?? (undefined as unknown as BaseMapEntity | null));

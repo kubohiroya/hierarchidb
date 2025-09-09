@@ -1,10 +1,10 @@
 /**
- * @file utils/index.ts
- * @description ユーティリティ関数の統一エクスポート
+  * @file utils/index.ts
+ * @description
  * Re-exports all utility functions for easy imports in test and implementation files
- */
+  */
 
-// 【バイナリシリアライゼーション関数】: テストで参照される主要関数群 🟢
+//  :
 export {
   serializeRowsToArrayBuffer,
   deserializeRowsFromArrayBuffer,
@@ -13,7 +13,7 @@ export {
   measureSerializationPerformance,
 } from './binarySerializer';
 
-// 【ハッシュ計算関数】: ファイル整合性チェック 🟢
+//  :
 export {
   calculateFileHash,
   calculateTextHash,
@@ -23,10 +23,10 @@ export {
   getShortHash,
 } from './hashUtils';
 
-// 【CSVパース関数】: CSV解析と型検出 🟢
+//  CSV: CSV
 export { parseCSVContent, detectColumnTypes } from './csvParser';
 
-// 【ファイル処理関数】: Excel/ZIP処理 🟡
+//  : Excel/ZIP
 export {
   processExcelFile,
   processZipFile,
@@ -36,5 +36,5 @@ export {
   detectCSVDelimiter,
 } from './fileProcessingUtils';
 
-// 【フィルタ関数】: CSVフィルタ適用 🟢
+//  : CSV
 export { applyCsvFilters, validateFilterRules, getFilterStatistics } from './filterUtils';

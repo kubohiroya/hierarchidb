@@ -2,19 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { MultiStepDialog } from './MultiStepDialog';
 import { MultiStepDialogEnhanced } from './MultiStepDialogEnhanced';
 import {
+  Alert,
   Box,
+  Chip,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Stack,
   TextField,
   Typography,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Chip,
-  Stack,
-  Alert,
 } from '@mui/material';
-import { LocationOn, Folder, Settings, Check } from '@mui/icons-material';
+import { Check, Folder, LocationOn, Settings } from '@mui/icons-material';
 import React, { useState } from 'react';
 import type { DialogStep } from '../types/MultiStepDialog.types';
 
@@ -62,7 +62,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// サンプルステップコンポーネント
 const BasicInfoStep = ({ data, onDataChange }: any) => (
   <Box sx={{ p: 2 }}>
     <Typography variant="h6" gutterBottom>
@@ -206,7 +205,6 @@ const ReviewStep = ({ data }: any) => (
   </Box>
 );
 
-// フォルダー作成のステップ定義
 const folderSteps: DialogStep[] = [
   {
     id: 'basic',
@@ -231,7 +229,6 @@ const folderSteps: DialogStep[] = [
   },
 ];
 
-// ロケーション作成のステップ定義
 const locationSteps: DialogStep[] = [
   {
     id: 'basic',
@@ -271,8 +268,10 @@ export const BasicFolderCreation: Story = {
     activeStep: 0,
     maxWidth: 'sm',
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: (args) => {
     const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
@@ -306,8 +305,10 @@ export const LocationCreation: Story = {
     activeStep: 0,
     maxWidth: 'md',
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: (args) => {
     const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
@@ -342,13 +343,14 @@ export const NonLinearNavigation: Story = {
     nonLinear: true,
     maxWidth: 'sm',
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: (args) => {
     const [currentStep, setCurrentStep] = useState(args.activeStep || 0);
-    const [data, setData] = useState({ name: '事前入力済み' }); // 事前データで全ステップ移動可能
-
+    const [data, setData] = useState({ name: '事前入力済み' });
     const stepsWithData = folderSteps.map((step) => ({
       ...step,
       component: React.cloneElement(step.component as React.ReactElement, {
@@ -369,7 +371,7 @@ export const NonLinearNavigation: Story = {
   },
 };
 
-// Enhanced版のストーリー
+//  Enhanced
 export const EnhancedDialog: Story = {
   args: {
     open: true,
@@ -377,8 +379,10 @@ export const EnhancedDialog: Story = {
     steps: folderSteps,
     activeStep: 0,
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: () => {
     const [open, setOpen] = useState(true);
@@ -423,8 +427,10 @@ export const FullscreenMode: Story = {
     steps: locationSteps,
     activeStep: 0,
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: () => {
     const [open, setOpen] = useState(true);
@@ -469,8 +475,10 @@ export const BatchProcessingMode: Story = {
     steps: folderSteps,
     activeStep: 0,
     mode: 'create' as const,
-    onSubmit: async () => {},
-    onCancel: () => {},
+    onSubmit: async () => {
+    },
+    onCancel: () => {
+    },
   },
   render: () => {
     const [open, setOpen] = useState(true);

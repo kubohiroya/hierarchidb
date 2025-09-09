@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProgressEvent } from '@hierarchidb/common-type';
 import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService';
-import { useBatchProgress } from '@hierarchidb/ui-core/src/hooks/useBatchProgress';
-import { createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core/src/hooks/progressAdapters';
+import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 
 export interface UseLocationProgressOptions {
@@ -22,7 +21,7 @@ export interface UseLocationProgressState {
 export function useLocationProgress(
   service: LocationVectorTileService,
   sessionId: string | null,
-  options: UseLocationProgressOptions = {}
+  options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
 
@@ -36,7 +35,7 @@ export function useLocationProgress(
 
   // Unified adapter for shared hook
   const adapter = sessionId
-    ? createAdapterFromProgressSubscribe((cb) => service.onProgress(sessionId, cb))
+    ? createAdapterFromProgressSubscribe((cb: (e: ProgressEvent) => void) => service.onProgress(sessionId, cb))
     : null;
   const shared = useBatchProgress(adapter, { autoSubscribe });
 
@@ -103,14 +102,24 @@ export function useLocationProgress(
       },
     });
     unsubscribeAuthRef.current = () => reg.unregister?.(id);
-    return () => { unsubscribeAuthRef.current?.(); };
+    return () => {
+      unsubscribeAuthRef.current?.();
+    };
   }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;
     if (autoSubscribe) subscribe();
-    return () => { unsubscribe(); };
+    return () => {
+      unsubscribe();
+    };
   }, [sessionId, autoSubscribe, subscribe, unsubscribe]);
 
-  return { progress: (shared.progress as unknown as ProgressEvent | null) ?? progress, isSubscribed, error, subscribe, unsubscribe };
+  return {
+    progress: (shared.progress as unknown as ProgressEvent | null) ?? progress,
+    isSubscribed,
+    error,
+    subscribe,
+    unsubscribe,
+  };
 }

@@ -11,17 +11,17 @@ const minimalAPI = {
     console.log('[Minimal Worker] ping() called');
     return { message: 'pong', timestamp: Date.now() };
   },
-  
+
   add: (a: number, b: number) => {
     console.log('[Minimal Worker] add() called:', a, b);
     return a + b;
   },
-  
+
   asyncTest: async () => {
     console.log('[Minimal Worker] asyncTest() called');
     await new Promise(resolve => setTimeout(resolve, 100));
     return { result: 'async-success' };
-  }
+  },
 };
 
 console.log('[Minimal Worker] Exposing minimal API via Comlink...');

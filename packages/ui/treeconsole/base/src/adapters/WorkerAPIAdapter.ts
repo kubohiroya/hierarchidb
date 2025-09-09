@@ -1,25 +1,17 @@
 /**
- * WorkerAPIAdapter
- *
- * TreeConsole用のメインアダプタークラス。
- * 新しいWorkerAPIを既存のTreeConsoleコードが期待する形式に変換します。
- * すべての個別アダプターを統合し、統一されたインターフェースを提供します。
- */
+  * WorkerAPIAdapter
+  * TreeConsole
+ * WorkerAPITreeConsole
+   */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands';
 import { WorkingCopyCommandsAdapter, WorkingCopyEditSession } from './commands/WorkingCopyCommands';
 import { SubscriptionManager } from './subscriptions/SubscriptionManager';
 import { createAdapterGroupId } from './utils';
-import type {
-  WorkerAPIAdapterConfig,
-  AdapterContext,
-  CommandAdapterOptions,
-  UnsubscribeFunction,
-} from './types';
-import type { TreeNodeEvent } from '@hierarchidb/common-type';
+import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 
@@ -47,11 +39,9 @@ export class WorkerAPIAdapter {
   }
 
   /**
-   * デフォルトのアダプターコンテキストを作成
-   *
-   * @param overrides 上書きしたい設定
+            * @param overrides
    * @returns AdapterContext
-   */
+      */
   private createDefaultContext(overrides?: Partial<AdapterContext>): AdapterContext {
     return {
       viewId: this.viewId,
@@ -62,11 +52,9 @@ export class WorkerAPIAdapter {
   }
 
   /**
-   * デフォルトのコマンドオプションを作成
-   *
-   * @param contextOverrides コンテキストの上書き設定
+            * @param contextOverrides
    * @returns CommandAdapterOptions
-   */
+      */
   private createDefaultOptions(contextOverrides?: Partial<AdapterContext>): CommandAdapterOptions {
     return {
       context: this.createDefaultContext(contextOverrides),
@@ -78,12 +66,12 @@ export class WorkerAPIAdapter {
   // =====================
 
   /**
-   * 部分木の変更を監視（既存のsubscribeSubTreeに相当）
-   */
+      * subscribeSubTree
+      */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -92,12 +80,11 @@ export class WorkerAPIAdapter {
   }
 
   /**
-   * 単一ノードの変更を監視
-   */
+            */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -106,12 +93,11 @@ export class WorkerAPIAdapter {
   }
 
   /**
-   * 子ノードリストの変更を監視
-   */
+            */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<UnsubscribeFunction> {
     const context = this.createDefaultContext(contextOverrides);
     return this.subscriptionManager
@@ -124,63 +110,58 @@ export class WorkerAPIAdapter {
   // =====================
 
   /**
-   * ノードを移動（既存のmoveNodesに相当）
-   */
+      * moveNodes
+      */
   async moveNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.moveNodes(nodeIds, targetParentId, options);
   }
 
   /**
-   * ノードを削除（ゴミ箱に移動）
-   */
+            */
   async deleteNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.deleteNodes(nodeIds, options);
   }
 
   /**
-   * ノードを複製
-   */
+            */
   async duplicateNodes(
     nodeIds: NodeId[],
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.duplicateNodes(nodeIds, targetParentId, options);
   }
 
   /**
-   * ノードを貼り付け
-   */
+            */
   async pasteNodes(
     targetParentId: NodeId,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.pasteNodes(targetParentId, options);
   }
 
   /**
-   * ノードを削除
-   */
+            */
   async removeNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.removeNodes(nodeIds, options);
   }
 
   /**
-   * ゴミ箱からノードを復元
-   */
+            */
   async recoverFromTrash(
     nodeIds: NodeId[],
     targetParentId?: NodeId,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.recoverFromTrash(nodeIds, targetParentId, options);
@@ -191,58 +172,56 @@ export class WorkerAPIAdapter {
   // =====================
 
   /**
-   * 既存ノードの編集を開始
-   */
+            */
   async startNodeEdit(
     sourceNodeId: NodeId,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<WorkingCopyEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.workingCopyAdapter.startNodeEdit(sourceNodeId, options);
   }
 
   /**
-   * 新規ノードの作成を開始
-   */
+            */
   async startNodeCreate(
     parentId: NodeId,
     name: string,
     description?: string,
     nodeType: string = 'folder',
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<WorkingCopyEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.workingCopyAdapter.startNodeCreate(parentId, name, description, nodeType, options);
   }
 
   /**
-   * Working Copyの変更を保存（既存ノード編集）
-   */
+      * Working Copy
+      */
   async commitNodeEdit(
     editSession: WorkingCopyEditSession,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.workingCopyAdapter.commitNodeEdit(editSession, options);
   }
 
   /**
-   * Working Copyの変更を保存（新規ノード作成）
-   */
+      * Working Copy
+      */
   async commitNodeCreate(
     editSession: WorkingCopyEditSession,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.workingCopyAdapter.commitNodeCreate(editSession, options);
   }
 
   /**
-   * Working Copyの変更を破棄
-   */
+      * Working Copy
+      */
   async discardWorkingCopy(
     editSession: WorkingCopyEditSession,
-    contextOverrides?: Partial<AdapterContext>
+    contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.workingCopyAdapter.discardWorkingCopy(editSession, options);
@@ -253,23 +232,20 @@ export class WorkerAPIAdapter {
   // =====================
 
   /**
-   * すべてのサブスクリプションをクリーンアップ
-   * コンポーネントのunmount時に呼び出す
-   */
+         * unmount
+      */
   cleanup(): void {
     this.subscriptionManager.cleanupAll();
   }
 
   /**
-   * 指定されたノードに関連するすべてのサブスクリプションを解除
-   */
+            */
   cleanupNodeSubscriptions(nodeId: NodeId): void {
     this.subscriptionManager.unsubscribeByNodeId(nodeId);
   }
 
   /**
-   * アダプターの設定情報を取得（デバッグ用）
-   */
+            */
   getAdapterInfo(): {
     viewId: string;
     defaultOnNameConflict: (name: string) => string;
@@ -283,8 +259,8 @@ export class WorkerAPIAdapter {
   }
 
   /**
-   * viewIdを更新（通常は不要だが、動的に変更する場合用）
-   */
+      * viewId
+      */
   updateViewId(newViewId: string): void {
     this.viewId = newViewId;
   }

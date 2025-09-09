@@ -11,7 +11,7 @@ import { ShapeEntityHandler } from '../handlers/ShapeEntityHandler';
 export const ShapePluginDefinition = {
   // Node type identifier
   nodeType: 'shape',
-  
+
   // Entity handler for CRUD operations
   entityHandler: new ShapeEntityHandler(),
 

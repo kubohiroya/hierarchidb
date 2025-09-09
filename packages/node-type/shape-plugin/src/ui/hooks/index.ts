@@ -3,3 +3,4 @@
  */
 
 export * from './useShapeAPI';
+export * from './workerClientProvider';

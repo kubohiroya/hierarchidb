@@ -1,13 +1,13 @@
 /**
  * ShapesService Integration Tests
- * 
+ *
  * Tests for the main service layer that orchestrates Workers and database operations
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NodeId } from '@hierarchidb/common-type';
 import { ShapesService } from '../ShapesService';
-import type { BatchProcessConfig, BatchSession, DataSourceInfo } from '../types';
+import type { BatchProcessConfig, BatchSession } from '../types';
 
 describe('ShapesService', () => {
   let service: ShapesService;
@@ -19,7 +19,7 @@ describe('ShapesService', () => {
       getWorkerAPI: vi.fn().mockReturnValue({
         executeCommand: vi.fn(),
         query: vi.fn(),
-        subscribe: vi.fn()
+        subscribe: vi.fn(),
       }),
       getDatabase: vi.fn().mockReturnValue({
         shapes: {
@@ -28,8 +28,8 @@ describe('ShapesService', () => {
           delete: vi.fn(),
           update: vi.fn(),
           where: vi.fn().mockReturnValue({
-            toArray: vi.fn().mockResolvedValue([])
-          })
+            toArray: vi.fn().mockResolvedValue([]),
+          }),
         },
         batchTasks: {
           add: vi.fn(),
@@ -37,8 +37,8 @@ describe('ShapesService', () => {
           delete: vi.fn(),
           update: vi.fn(),
           where: vi.fn().mockReturnValue({
-            toArray: vi.fn().mockResolvedValue([])
-          })
+            toArray: vi.fn().mockResolvedValue([]),
+          }),
         },
         batchSessions: {
           add: vi.fn(),
@@ -46,13 +46,13 @@ describe('ShapesService', () => {
           delete: vi.fn(),
           update: vi.fn(),
           where: vi.fn().mockReturnValue({
-            first: vi.fn().mockResolvedValue(null)
-          })
-        }
+            first: vi.fn().mockResolvedValue(null),
+          }),
+        },
       }),
       createWorkingCopy: vi.fn(),
       commitWorkingCopy: vi.fn(),
-      discardWorkingCopy: vi.fn()
+      discardWorkingCopy: vi.fn(),
     };
 
     service = new ShapesService(mockPluginAPI);
@@ -74,8 +74,8 @@ describe('ShapesService', () => {
           enableCache: true,
           ttl: 3600,
           maxSize: 100 * 1024 * 1024,
-          compressionLevel: 6
-        }
+          compressionLevel: 6,
+        },
       };
 
       const mockSession: BatchSession = {
@@ -90,8 +90,8 @@ describe('ShapesService', () => {
           completed: 0,
           failed: 0,
           skipped: 0,
-          percentage: 0
-        }
+          percentage: 0,
+        },
       };
 
       mockPluginAPI.getDatabase().batchSessions.add.mockResolvedValue(mockSession);
@@ -114,7 +114,7 @@ describe('ShapesService', () => {
       const config: BatchProcessConfig = {
         dataSource: 'GADM',
         countryCode: 'JP',
-        adminLevels: [1]
+        adminLevels: [1],
       };
 
       // Mock existing active session
@@ -125,11 +125,11 @@ describe('ShapesService', () => {
         config,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 }
+        progress: { total: 0, completed: 0, failed: 0, skipped: 0, percentage: 0 },
       };
 
       mockPluginAPI.getDatabase().batchSessions.where.mockReturnValue({
-        first: vi.fn().mockResolvedValue(existingSession)
+        first: vi.fn().mockResolvedValue(existingSession),
       });
 
       // Act & Assert
@@ -147,7 +147,7 @@ describe('ShapesService', () => {
         config: { dataSource: 'GADM', countryCode: 'JP', adminLevels: [1] },
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        progress: { total: 100, completed: 50, failed: 0, skipped: 0, percentage: 50 }
+        progress: { total: 100, completed: 50, failed: 0, skipped: 0, percentage: 50 },
       };
 
       mockPluginAPI.getDatabase().batchSessions.get.mockResolvedValue(mockSession);
@@ -160,11 +160,11 @@ describe('ShapesService', () => {
       // Assert
       expect(mockPluginAPI.getDatabase().batchSessions.update).toHaveBeenCalledWith(
         sessionId,
-        expect.objectContaining({ status: 'paused' })
+        expect.objectContaining({ status: 'paused' }),
       );
       expect(mockPluginAPI.getDatabase().batchSessions.update).toHaveBeenCalledWith(
         sessionId,
-        expect.objectContaining({ status: 'running' })
+        expect.objectContaining({ status: 'running' }),
       );
     });
 
@@ -172,7 +172,7 @@ describe('ShapesService', () => {
       // Arrange
       const sessionId = 'session-123';
       const nodeId: NodeId = 'node-123' as NodeId;
-      
+
       const mockSession: BatchSession = {
         sessionId,
         nodeId,
@@ -180,17 +180,17 @@ describe('ShapesService', () => {
         config: { dataSource: 'GADM', countryCode: 'JP', adminLevels: [1] },
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        progress: { total: 100, completed: 25, failed: 0, skipped: 0, percentage: 25 }
+        progress: { total: 100, completed: 25, failed: 0, skipped: 0, percentage: 25 },
       };
 
       const mockTasks = [
         { taskId: 'task-1', sessionId, status: 'running', type: 'download' },
-        { taskId: 'task-2', sessionId, status: 'pending', type: 'simplify1' }
+        { taskId: 'task-2', sessionId, status: 'pending', type: 'simplify1' },
       ];
 
       mockPluginAPI.getDatabase().batchSessions.get.mockResolvedValue(mockSession);
       mockPluginAPI.getDatabase().batchTasks.where.mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockTasks)
+        toArray: vi.fn().mockResolvedValue(mockTasks),
       });
 
       // Act
@@ -199,9 +199,9 @@ describe('ShapesService', () => {
       // Assert
       expect(mockPluginAPI.getDatabase().batchSessions.update).toHaveBeenCalledWith(
         sessionId,
-        expect.objectContaining({ status: 'cancelled' })
+        expect.objectContaining({ status: 'cancelled' }),
       );
-      
+
       // Should update all tasks to cancelled
       expect(mockPluginAPI.getDatabase().batchTasks.update).toHaveBeenCalledTimes(2);
     });
@@ -215,7 +215,7 @@ describe('ShapesService', () => {
       // Assert
       expect(dataSources).toBeInstanceOf(Array);
       expect(dataSources.length).toBeGreaterThan(0);
-      
+
       const gadm = dataSources.find(ds => ds.name === 'GADM');
       expect(gadm).toBeDefined();
       expect(gadm?.displayName).toBe('GADM Administrative Areas');
@@ -227,7 +227,7 @@ describe('ShapesService', () => {
       const validConfig = {
         countryCode: 'JP',
         adminLevels: [1, 2],
-        bbox: [130, 30, 140, 40]
+        bbox: [130, 30, 140, 40],
       };
 
       // Act
@@ -244,7 +244,7 @@ describe('ShapesService', () => {
       // Arrange
       const invalidConfig = {
         countryCode: 'INVALID',
-        adminLevels: [999] // Invalid admin level
+        adminLevels: [999], // Invalid admin level
       };
 
       // Act
@@ -263,7 +263,7 @@ describe('ShapesService', () => {
       // Assert
       expect(metadata).toBeInstanceOf(Array);
       expect(metadata.length).toBeGreaterThan(0);
-      
+
       const japan = metadata[0];
       expect(japan.countryCode).toBe('JP');
       expect(japan.countryName).toBe('Japan');
@@ -283,18 +283,18 @@ describe('ShapesService', () => {
           nodeId,
           properties: { name: 'Tokyo', admin_level: 1, population: 13960000 },
           geometry: { type: 'Polygon', coordinates: [] },
-          bbox: [139.69, 35.68, 139.70, 35.69]
-        }
+          bbox: [139.69, 35.68, 139.70, 35.69],
+        },
       ];
 
       mockPluginAPI.getDatabase().shapes.where.mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockFeatures)
+        toArray: vi.fn().mockResolvedValue(mockFeatures),
       });
 
       // Act
       const features = await service.searchFeatures(nodeId, 'Tokyo', {
         limit: 10,
-        adminLevel: 1
+        adminLevel: 1,
       });
 
       // Assert
@@ -307,25 +307,25 @@ describe('ShapesService', () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
       const bbox: [number, number, number, number] = [139, 35, 140, 36];
-      
+
       const mockFeatures = [
         {
           id: 1,
           nodeId,
           properties: { name: 'Tokyo', admin_level: 1 },
           geometry: { type: 'Polygon', coordinates: [] },
-          bbox: [139.69, 35.68, 139.70, 35.69]
-        }
+          bbox: [139.69, 35.68, 139.70, 35.69],
+        },
       ];
 
       mockPluginAPI.getDatabase().shapes.where.mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockFeatures)
+        toArray: vi.fn().mockResolvedValue(mockFeatures),
       });
 
       // Act
       const features = await service.getFeaturesByBbox(nodeId, bbox, {
         adminLevel: 1,
-        includeProperties: true
+        includeProperties: true,
       });
 
       // Assert
@@ -337,13 +337,13 @@ describe('ShapesService', () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
       const featureId = 1;
-      
+
       const mockFeature = {
         id: featureId,
         nodeId,
         properties: { name: 'Tokyo', admin_level: 1 },
         geometry: { type: 'Polygon', coordinates: [] },
-        bbox: [139.69, 35.68, 139.70, 35.69]
+        bbox: [139.69, 35.68, 139.70, 35.69],
       };
 
       mockPluginAPI.getDatabase().shapes.get.mockResolvedValue(mockFeature);
@@ -418,7 +418,7 @@ describe('ShapesService', () => {
       expect(tileData).toEqual(mockTileData);
       expect(mockPluginAPI.getWorkerAPI().query).toHaveBeenCalledWith(
         'getVectorTile',
-        { nodeId, z: 10, x: 512, y: 256 }
+        { nodeId, z: 10, x: 512, y: 256 },
       );
     });
 
@@ -435,11 +435,11 @@ describe('ShapesService', () => {
         size: 15000,
         features: 150,
         layers: [
-          { name: 'admin_1', featureCount: 47, minZoom: 0, maxZoom: 18, fields: ['name', 'code'] }
+          { name: 'admin_1', featureCount: 47, minZoom: 0, maxZoom: 18, fields: ['name', 'code'] },
         ],
         generatedAt: Date.now(),
         contentHash: 'abc123',
-        version: 1
+        version: 1,
       };
 
       mockPluginAPI.getWorkerAPI().query.mockResolvedValue(mockMetadata);
@@ -463,7 +463,7 @@ describe('ShapesService', () => {
       // Assert
       expect(mockPluginAPI.getWorkerAPI().executeCommand).toHaveBeenCalledWith(
         'clearTileCache',
-        { nodeId }
+        { nodeId },
       );
     });
   });
@@ -485,7 +485,7 @@ describe('ShapesService', () => {
       const config: BatchProcessConfig = {
         dataSource: 'GADM',
         countryCode: 'JP',
-        adminLevels: [1]
+        adminLevels: [1],
       };
 
       mockPluginAPI.getDatabase().batchSessions.add.mockRejectedValue(new Error('Database error'));

@@ -38,14 +38,14 @@ const borderRadiusValues = {
  * Styled accordion with predefined visual variants
  */
 export const StyledAccordion: React.FC<StyledAccordionProps> = ({
-  variant = 'default',
-  colorScheme = 'default',
-  customColor,
-  gradient = false,
-  borderRadius = 'medium',
-  padding = 'medium',
-  ...baseProps
-}) => {
+                                                                  variant = 'default',
+                                                                  colorScheme = 'default',
+                                                                  customColor,
+                                                                  gradient = false,
+                                                                  borderRadius = 'medium',
+                                                                  padding = 'medium',
+                                                                  ...baseProps
+                                                                }) => {
   const theme = useTheme();
 
   // Determine colors based on variant and color scheme
@@ -66,7 +66,7 @@ export const StyledAccordion: React.FC<StyledAccordionProps> = ({
           textColor: theme.palette.text.primary,
           border: `1px solid ${theme.palette.divider}`,
         };
-      
+
       case 'filled':
         const schemeColors = {
           default: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
@@ -79,21 +79,21 @@ export const StyledAccordion: React.FC<StyledAccordionProps> = ({
         };
         const bgColor = schemeColors[colorScheme];
         return {
-          backgroundColor: gradient 
+          backgroundColor: gradient
             ? `linear-gradient(135deg, ${bgColor}, ${theme.palette.augmentColor({ color: { main: bgColor } }).dark})`
             : bgColor,
-          textColor: colorScheme === 'default' 
-            ? theme.palette.text.primary 
+          textColor: colorScheme === 'default'
+            ? theme.palette.text.primary
             : theme.palette.getContrastText(bgColor),
         };
-      
+
       case 'elevated':
         return {
           backgroundColor: theme.palette.background.paper,
           textColor: theme.palette.text.primary,
           elevation: 3,
         };
-      
+
       default:
         return {
           backgroundColor: theme.palette.background.default,

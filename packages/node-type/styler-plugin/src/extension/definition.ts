@@ -1,10 +1,10 @@
 /**
- * @file definition.ts
+  * @file definition.ts
  * @description Styler plugin extension definition
- * 【機能概要】: Stylerプラグインの拡張定義
- * 【実装方針】: spreadsheetプラグインを継承し、Step5-6を追加
- * 🟢 信頼性レベル: ExtendingNodeTypeDefinition仕様準拠
- */
+ * : Styler
+ * : spreadsheetStep5-6
+ * : ExtendingNodeTypeDefinition
+  */
 
 // import type { ExtendedPluginDefinition } from '@hierarchidb/common-type';
 
@@ -21,21 +21,21 @@ interface SpreadsheetEntity {
   updatedAt: number;
   version: number;
 }
+
 import type { StylerConfig } from '../types/stylerTypes';
 import { StylerStep5Definition } from '../components/steps/StylerStep5';
 import { StylerStep6Definition } from '../components/steps/StylerStep6';
 
 /**
- * 【型定義】: StylerEntityの拡張フィールド型
- * 🟢 信頼性レベル: SpreadsheetEntityを継承
- */
+  * : StylerEntity
+ * : SpreadsheetEntity
+  */
 interface StylerExtendedFields {
-  // Styler固有のフィールド
+  //  Styler
   stylerConfig: StylerConfig;
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
 
-  // 生成されたスタイル情報（オプション）
   generatedStyle?: {
     maplibreStyleSpec: any;
     colorMapping: Record<string, string>;
@@ -44,21 +44,21 @@ interface StylerExtendedFields {
 }
 
 /**
- * 【型定義】: StylerEntityの完全な型定義
- * 🟢 信頼性レベル: SpreadsheetEntityを継承してスタイル情報を追加
- */
+  * : StylerEntity
+ * : SpreadsheetEntity
+  */
 export interface StylerEntity extends SpreadsheetEntity, StylerExtendedFields {
-  // SpreadsheetEntityから継承:
+  //  SpreadsheetEntity:
   // - FolderEntity fields (id, nodeId, name, description, etc.)
   // - spreadsheetMetadataId, dataSource, filters
-  // StylerExtendedFieldsから追加:
+  //  StylerExtendedFields:
   // - stylerConfig, selectedKeyColumn, selectedValueColumn, generatedStyle
 }
 
 /**
- * 【型定義】: StylerWorkingCopyの型定義
- * 🟢 信頼性レベル: Working Copyパターン準拠
- */
+  * : StylerWorkingCopy
+ * : Working Copy
+  */
 export interface StylerWorkingCopy extends StylerEntity {
   isDraft: boolean;
   originalId?: string;
@@ -66,21 +66,21 @@ export interface StylerWorkingCopy extends StylerEntity {
 }
 
 /**
- * 【拡張定義】: Stylerプラグインの拡張定義オブジェクト
- * 【実装方針】: ExtendingNodeTypeDefinition型に完全準拠
- * 【継承関係】: spreadsheet-plugin -> folder-plugin -> base の3段階継承
- * 🟢 信頼性レベル: プラグイン拡張仕様に完全準拠
- */
+  * : Styler
+ * : ExtendingNodeTypeDefinition
+ * : spreadsheet-plugin -> folder-plugin -> base 3
+ * :
+  */
 // Export as a simple object, not as ExtendedPluginDefinition
 export const StylerExtension = {
   extends: 'spreadsheet',
-  // 【メタデータ定義】: プラグインの基本情報
+  //  :
   nodeType: 'styler',
   name: 'Styler',
   displayName: 'スタイルマップ',
 
-  // 【拡張ステップ定義】: Step 5とStep 6を追加
-  // spreadsheetのStep 1-4の後に続く
+  //  : Step 5Step 6
+  //  spreadsheetStep 1-4
   extendedSteps: [
     {
       stepNumber: 5,
@@ -96,7 +96,7 @@ export const StylerExtension = {
     },
   ],
 
-  // 【拡張フィールド定義】: Styler固有フィールド
+  //  : Styler
   extendedFields: [
     {
       name: 'stylerConfig',
@@ -128,10 +128,9 @@ export const StylerExtension = {
     },
   ],
 
-  // 【拡張バリデーション】: Styler固有のバリデーション
+  //  : Styler
   extendedValidation: {
     extendedRules: {
-      // スタイル設定の必須チェック
       styleConfigRule: {
         validate: (data: any) => {
           const config = data.stylerConfig;
@@ -140,7 +139,6 @@ export const StylerExtension = {
         message: 'スタイルマッピング設定が必要です',
       },
 
-      // 値列の必須チェック
       valueColumnRule: {
         validate: (data: any) => {
           return !!data.selectedValueColumn;
@@ -148,11 +146,10 @@ export const StylerExtension = {
         message: '値列の選択が必要です',
       },
 
-      // マッピング範囲の妥当性チェック
       mappingRangeRule: {
         validate: (data: any) => {
           const mapping = data.stylerConfig?.mapping;
-          if (!mapping) return true; // 他のルールでチェック
+          if (!mapping) return true;
           return mapping.min < mapping.max;
         },
         message: '最大値は最小値より大きい値を設定してください',
@@ -164,6 +161,6 @@ export const StylerExtension = {
 };
 
 /**
- * 【エクスポート】: メイン拡張定義
- */
+  * :
+  */
 export default StylerExtension;

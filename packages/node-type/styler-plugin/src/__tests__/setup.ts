@@ -1,13 +1,13 @@
 // Test setup file
-import { expect, test, describe, it, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, test } from 'vitest';
 
 // Make vitest globals available
-globalThis.expect = expect
-globalThis.test = test
-globalThis.describe = describe
-globalThis.it = it
-globalThis.beforeEach = beforeEach
-globalThis.afterEach = afterEach
+globalThis.expect = expect;
+globalThis.test = test;
+globalThis.describe = describe;
+globalThis.it = it;
+globalThis.beforeEach = beforeEach;
+globalThis.afterEach = afterEach;
 
 // File API polyfill for Vitest environment
 if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {

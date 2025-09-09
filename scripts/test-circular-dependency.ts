@@ -3,7 +3,6 @@ import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
 
 console.log('=== 循環依存の動作テスト ===\n');
 
-// 循環依存のあるプラグイン定義
 const circularDefinitions = new Map<NodeType, PluginDefinition>([
   ['a' as NodeType, {
     nodeType: 'a' as NodeType,
@@ -18,13 +17,12 @@ const circularDefinitions = new Map<NodeType, PluginDefinition>([
   ['c' as NodeType, {
     nodeType: 'c' as NodeType,
     pluginLabel: 'Plugin C',
-    dependencies: ['a']  // ここで循環
-  }]
+    dependencies: ['a']    }]
 ]);
 
 const resolver = new PluginDependencyResolver();
 
-// パターン1: checkCircularDependencies()を使用
+//  1: checkCircularDependencies()
 console.log('パターン1: checkCircularDependencies()メソッドの場合');
 console.log('----------------------------------------');
 const errors = resolver.checkCircularDependencies(circularDefinitions);
@@ -36,7 +34,7 @@ if (errors.length > 0) {
   console.log('✗ 循環依存が検出されませんでした\n');
 }
 
-// パターン2: resolveLoadOrder()を直接実行
+//  2: resolveLoadOrder()
 console.log('パターン2: resolveLoadOrder()メソッドの場合');
 console.log('----------------------------------------');
 try {
@@ -48,7 +46,6 @@ try {
   console.log('→ プログラムが停止（catch句でキャッチしない限り）\n');
 }
 
-// 推奨される使用方法
 console.log('推奨される使用方法:');
 console.log('----------------------------------------');
 console.log('1. まずcheckCircularDependencies()で事前チェック');

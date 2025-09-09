@@ -41,3 +41,8 @@ class FooBatchSession extends AbstractBatchSession<Config, Task, void> {
   protected onProgressUpdate() { const p = this.getProgress(); this.sink?.({ sessionId: this['sessionId'] as any, stage: p.currentStage||'processing', total: p.total, completed: p.completed, failed: p.failed, percentage: Math.round(p.percentage), currentTask: p.currentTask||'' }); }
 }
 ```
+## Task Management
+- Tasks are managed with mrtask (this is the single source of truth).
+- Do not edit PLAN.md or TASKS.md; use `mrtask add|done|cancel|list` instead.
+- Preferred flow: one task = one branch = one git worktree created by `mrtask add`.
+- Bulk import: provide `TASKS.csv` with headers `branch,slug,description,dir1,dir2,...` and use `mrtask add -t TASKS.csv:<lineNo>`.

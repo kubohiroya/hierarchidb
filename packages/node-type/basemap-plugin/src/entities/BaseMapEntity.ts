@@ -3,31 +3,31 @@
  * @description BaseMap entity definition following standard structure
  */
 
-import type { PeerEntity, EntityId, NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 
-export interface BaseMapEntity extends PeerEntity {
-  id: EntityId;
+export interface BaseMapEntity {
+  id: NodeId;
   nodeId: NodeId;
-  
+
   // Core baseMap properties
   styleUrl: string;
   stylePreset: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
-  
+
   // Viewport configuration
   center: [number, number]; // [longitude, latitude]
   zoom: number;
   bearing: number;
   pitch: number;
-  
+
   // Display options
   showAttribution: boolean;
   showNavigation: boolean;
   enableInteraction: boolean;
-  
+
   // Metadata
   name: string;
   description?: string;
-  
+
   // Standard entity fields
   createdAt: number;
   updatedAt: number;

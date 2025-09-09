@@ -30,5 +30,9 @@
   "exclude": [
     "node_modules",
     "dist"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
 import { useMapHighlight } from '../hooks/useMapHighlightJotai.js';
@@ -28,14 +28,13 @@ interface MapHighlightProviderProps {
 }
 
 /**
- * 地図ハイライト機能を提供するコンテキストプロバイダー
- */
+    */
 export const MapHighlightProvider: React.FC<MapHighlightProviderProps> = ({
-  children,
-  mapInstance,
-  initialStyles,
-  onStateChange,
-}) => {
+                                                                            children,
+                                                                            mapInstance,
+                                                                            initialStyles,
+                                                                            onStateChange,
+                                                                          }) => {
   const mapHighlight = useMapHighlight({
     mapInstance,
     initialStyles,
@@ -48,8 +47,7 @@ export const MapHighlightProvider: React.FC<MapHighlightProviderProps> = ({
 };
 
 /**
- * 地図ハイライト機能を使用するフック
- */
+    */
 export const useMapHighlightContext = (): MapHighlightContextValue => {
   const context = useContext(MapHighlightContext);
   if (!context) {

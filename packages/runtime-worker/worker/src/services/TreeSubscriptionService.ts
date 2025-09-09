@@ -1,30 +1,20 @@
 import type {
   CommandEnvelope,
-  SubscribeChildrenPayload,
+  NodeId,
   ObserveNodePayload,
   ObserveSubtreePayload,
   ObserveWorkingCopiesPayload,
+  SubscribeChildrenPayload,
   SubscriptionFilter,
+  SubscriptionId,
+  SubscriptionOptions,
   Timestamp,
   TreeChangeEvent,
-  TreeNode,
-  NodeId,
   TreeId,
-  SubscriptionId,
+  TreeNode,
   TreeNodeEvent,
-  SubscriptionOptions,
 } from '@hierarchidb/common-type';
-import {
-  map,
-  type Observable,
-  filter as rxFilter,
-  Subject,
-  share,
-  from,
-  concat,
-  bufferTime,
-  mergeMap,
-} from 'rxjs';
+import { bufferTime, concat, filter as rxFilter, from, map, mergeMap, type Observable, share, Subject } from 'rxjs';
 import type { CoreDB } from './CoreDB';
 import { TreeQueryService } from './TreeQueryService';
 import { SingletonMixin } from '@hierarchidb/util';
@@ -67,7 +57,7 @@ export class TreeSubscriptionService {
   private eventCount = 0;
 
   constructor(private coreDB: CoreDB) {
-    // CoreDBのchangeSubjectを購読してグローバルな変更イベントを中継
+    //  CoreDBchangeSubject
     this.coreDB.changeSubject.subscribe({
       next: (event) => {
         this.globalChangeSubject.next(event);
@@ -79,7 +69,7 @@ export class TreeSubscriptionService {
   }
 
   subscribeNodeCommand(
-    cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload>
+    cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload>,
   ): Observable<TreeChangeEvent> {
     const { nodeId: nodeId, includeInitialValue = false } = cmd.payload;
 
@@ -102,7 +92,7 @@ export class TreeSubscriptionService {
     const nodeObservable = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForNodeObservation(event, nodeId)),
       map((event) => this.transformEventForSubscription(event)),
-      share()
+      share(),
     );
 
     // Subscribe to global changes and forward relevant ones
@@ -124,7 +114,7 @@ export class TreeSubscriptionService {
     // Clean up subscription when unsubscribed
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     const customSubscribe = (
-      observer?: Parameters<Observable<TreeChangeEvent>['subscribe']>[0]
+      observer?: Parameters<Observable<TreeChangeEvent>['subscribe']>[0],
     ) => {
       const sub = originalSubscribe({ next: observer as any });
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
@@ -147,7 +137,7 @@ export class TreeSubscriptionService {
   }
 
   subscribeChildrenCommand(
-    cmd: CommandEnvelope<'subscribeChildren', SubscribeChildrenPayload>
+    cmd: CommandEnvelope<'subscribeChildren', SubscribeChildrenPayload>,
   ): Observable<TreeChangeEvent> {
     const { parentId, filter, includeInitialSnapshot = false } = cmd.payload;
 
@@ -199,7 +189,7 @@ export class TreeSubscriptionService {
         return events;
       }),
       mergeMap((events) => from(events)),
-      share()
+      share(),
     );
 
     // Subscribe to global changes and forward relevant ones
@@ -235,7 +225,7 @@ export class TreeSubscriptionService {
   }
 
   subscribeSubtreeCommand(
-    cmd: CommandEnvelope<'subscribeSubtree', ObserveSubtreePayload>
+    cmd: CommandEnvelope<'subscribeSubtree', ObserveSubtreePayload>,
   ): Observable<TreeChangeEvent> {
     const { rootId, maxDepth, filter, includeInitialSnapshot = false } = cmd.payload;
 
@@ -257,7 +247,7 @@ export class TreeSubscriptionService {
     // Create observable that filters global changes for subtree
     const subtreeObservable = this.globalChangeSubject.pipe(
       rxFilter((event) =>
-        this.isEventRelevantForSubtreeObservation(event, rootId, maxDepth, filter)
+        this.isEventRelevantForSubtreeObservation(event, rootId, maxDepth, filter),
       ),
       // Progressive batching: on bursts, recompute current BFS snapshot and emit per-parent chunks
       bufferTime(30),
@@ -270,7 +260,7 @@ export class TreeSubscriptionService {
         return events;
       }),
       mergeMap((events) => from(events)),
-      share()
+      share(),
     );
 
     // Subscribe to global changes and forward relevant ones
@@ -306,7 +296,7 @@ export class TreeSubscriptionService {
   }
 
   subscribeWorkingCopies(
-    cmd: CommandEnvelope<'subscribeWorkingCopies', ObserveWorkingCopiesPayload>
+    cmd: CommandEnvelope<'subscribeWorkingCopies', ObserveWorkingCopiesPayload>,
   ): Observable<TreeChangeEvent> {
     const { nodeId, includeAllDrafts = false } = cmd.payload;
 
@@ -330,7 +320,7 @@ export class TreeSubscriptionService {
     const workingCopyObservable = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForWorkingCopies(event, nodeId)),
       map((event) => this.transformEventForSubscription(event)),
-      share()
+      share(),
     );
 
     // Subscribe to global changes and forward relevant ones
@@ -360,7 +350,7 @@ export class TreeSubscriptionService {
 
   getActiveSubscriptions(): Promise<number> {
     return Promise.resolve(
-      Array.from(this.subscriptions.values()).filter((sub) => sub.isActive).length
+      Array.from(this.subscriptions.values()).filter((sub) => sub.isActive).length,
     );
   }
 
@@ -404,7 +394,7 @@ export class TreeSubscriptionService {
   private isEventRelevantForNodeObservation(
     event: TreeChangeEvent,
     targetNodeId: NodeId,
-    filter?: SubscriptionFilter
+    filter?: SubscriptionFilter,
   ): boolean {
     // Must be about the specific node we're observing
     if (event.nodeId !== targetNodeId) {
@@ -424,7 +414,7 @@ export class TreeSubscriptionService {
   private isEventRelevantForChildNodesObservation(
     event: TreeChangeEvent,
     parentId: NodeId,
-    filter?: SubscriptionFilter
+    filter?: SubscriptionFilter,
   ): boolean {
     // Check if this event is about a childNode of our target parentNode
     const isDirectChild = event.parentId === parentId || event.previousParentId === parentId;
@@ -454,7 +444,7 @@ export class TreeSubscriptionService {
     event: TreeChangeEvent,
     rootNodeId: NodeId,
     maxDepthOrOptions?: number | SubscriptionOptions,
-    filter?: SubscriptionFilter
+    filter?: SubscriptionFilter,
   ): boolean {
     // Handle overloaded parameters
     let maxDepth: number | undefined;
@@ -549,10 +539,10 @@ export class TreeSubscriptionService {
     };
   }
 
-  private async *createInitialChildNodesEvents(
+  private async* createInitialChildNodesEvents(
     parentId: NodeId,
     filter?: SubscriptionFilter,
-    chunkSize: number = 200
+    chunkSize: number = 200,
   ): AsyncGenerator<TreeChangeEvent> {
     let childNodes = await this.coreDB.listChildren(parentId);
     if (filter?.nodeTypes?.length) {
@@ -578,11 +568,11 @@ export class TreeSubscriptionService {
     }
   }
 
-  private async *createInitialSubtreeEvents(
+  private async* createInitialSubtreeEvents(
     rootId: NodeId,
     filter?: SubscriptionFilter,
     _maxDepth?: number,
-    chunkSize: number = 200
+    chunkSize: number = 200,
   ): AsyncGenerator<TreeChangeEvent> {
     // Minimal progressive snapshot: emit root's direct children in chunks
     // Future: walk BFS up to maxDepth and emit per-level chunks
@@ -624,14 +614,14 @@ export class TreeSubscriptionService {
       () => {
         this.cleanupInactiveSubscriptions();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
   }
 
   private isDescendantNodeByNode(
     node: TreeNode,
     ancestorNodeId: NodeId,
-    maxDepth?: number
+    maxDepth?: number,
   ): boolean {
     // Handle the case where node is the ancestor itself
     if (node.id === ancestorNodeId) {
@@ -699,7 +689,7 @@ export class TreeSubscriptionService {
       maxDepth: number; // Deprecated: kept for backward compatibility
       maxVisited?: number;
       maxResults?: number; // New: maximum number of search results to return
-    }
+    },
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
@@ -739,7 +729,7 @@ export class TreeSubscriptionService {
       maxResults?: number;
       caseSensitive?: boolean;
       searchInDescription?: boolean;
-    }
+    },
   ): Promise<TreeNode[]> {
     try {
       // Use TreeQueryService for actual search implementation
@@ -871,14 +861,14 @@ export class TreeSubscriptionService {
   async subscribeNode(
     nodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId> {
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
     // Set up the observable stream
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForNodeObservation(event, nodeId)),
-      map((event) => this.convertToTreeNodeEvent(event))
+      map((event) => this.convertToTreeNodeEvent(event)),
     );
 
     // Subscribe to the stream and store the subscription for cleanup
@@ -921,7 +911,7 @@ export class TreeSubscriptionService {
   async subscribeSubtree(
     rootNodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId> {
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
@@ -941,7 +931,7 @@ export class TreeSubscriptionService {
     // Set up the observable stream
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForSubtreeObservation(event, rootNodeId, options)),
-      map((event) => this.convertToTreeNodeEvent(event))
+      map((event) => this.convertToTreeNodeEvent(event)),
     );
 
     const subscription = stream.subscribe(callback);
@@ -958,7 +948,7 @@ export class TreeSubscriptionService {
   async subscribeTree(
     treeId: TreeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ): Promise<SubscriptionId> {
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
@@ -978,7 +968,7 @@ export class TreeSubscriptionService {
     // Set up the observable stream for entire tree
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForTreeObservation(event, treeId)),
-      map((event) => this.convertToTreeNodeEvent(event))
+      map((event) => this.convertToTreeNodeEvent(event)),
     );
 
     const subscription = stream.subscribe(callback);
@@ -1071,7 +1061,7 @@ export class TreeSubscriptionService {
    */
   async listActiveSubscriptions(): Promise<SubscriptionId[]> {
     return Array.from(this.subscriptions.keys()).filter(
-      (id) => this.subscriptions.get(id)?.isActive
+      (id) => this.subscriptions.get(id)?.isActive,
     );
   }
 
@@ -1122,7 +1112,7 @@ export class TreeSubscriptionService {
   async getEventHistory(
     startTime: number,
     endTime: number,
-    nodeId?: NodeId
+    nodeId?: NodeId,
   ): Promise<TreeNodeEvent[]> {
     return this.eventHistory.filter((event) => {
       const inTimeRange = event.timestamp >= startTime && event.timestamp <= endTime;
@@ -1159,7 +1149,7 @@ export class TreeSubscriptionService {
    */
   private createTreeNodeEvent(
     type: 'created' | 'updated' | 'deleted',
-    node: TreeNode
+    node: TreeNode,
   ): TreeNodeEvent {
     const event: TreeNodeEvent = {
       nodeId: node.id,
@@ -1190,9 +1180,8 @@ export class TreeSubscriptionService {
    * Check if event is relevant for tree observation
    */
   private isEventRelevantForTreeObservation(_event: TreeChangeEvent, _treeId: TreeId): boolean {
-    // TreeChangeEventにはtreeIdがないため、nodeIdからTreeIdを取得する必要がある
-    // 現在の実装では、全てのイベントを関連性があるとみなす
-    // TODO: nodeIdからTreeIdを取得してtreeIdと比較する実装を追加
+    //  TreeChangeEventtreeIdnodeIdTreeId
+    //  TODO: nodeIdTreeIdtreeId
     return true;
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, TextField, Typography, Stack } from '@mui/material';
+import { Box, Stack, TextField, Typography } from '@mui/material';
 import type { StepProps } from '~/shared';
 
 /**
@@ -15,7 +15,7 @@ export const Step1BasicInfo: React.FC<StepProps> = ({ workingCopy, onUpdate, dis
       <Typography variant="body2" color="text.secondary" paragraph>
         Provide basic information for this geographic data configuration.
       </Typography>
-      
+
       <Stack spacing={3}>
         <TextField
           label="Name"
@@ -26,13 +26,13 @@ export const Step1BasicInfo: React.FC<StepProps> = ({ workingCopy, onUpdate, dis
           disabled={disabled}
           error={!workingCopy.name}
           helperText={
-            !workingCopy.name 
-              ? 'Name is required' 
+            !workingCopy.name
+              ? 'Name is required'
               : 'Enter a descriptive name for this configuration'
           }
           inputProps={{ maxLength: 100 }}
         />
-        
+
         <TextField
           label="Description"
           value={workingCopy.description || ''}

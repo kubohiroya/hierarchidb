@@ -3,9 +3,9 @@
  * @description Integration tests for BaseMap plugin extension
  */
 
-import { describe, it, expect } from 'vitest';
-import { BaseMapExtension } from '../extension/definition';
+import { describe, expect, it } from 'vitest';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../extension/definition';
+import { BaseMapExtension } from '../extension/definition';
 
 describe('BaseMap Plugin Integration', () => {
   describe('Extension Definition', () => {
@@ -18,7 +18,7 @@ describe('BaseMap Plugin Integration', () => {
 
     it('should define required extended steps', () => {
       expect(BaseMapExtension.extendedSteps).toHaveLength(3);
-      
+
       const steps = BaseMapExtension.extendedSteps!;
       expect(steps[0]!.stepNumber).toBe(2);
       expect(steps[0]!.title).toBe('Map Style');
@@ -31,7 +31,7 @@ describe('BaseMap Plugin Integration', () => {
     it('should define extended fields', () => {
       const fields = BaseMapExtension.extendedFields;
       expect(fields).toHaveLength(4);
-      
+
       const fieldNames = fields.map(f => f.name);
       expect(fieldNames).toContain('baseMapMetadataId');
       expect(fieldNames).toContain('mapStyle');
@@ -50,10 +50,10 @@ describe('BaseMap Plugin Integration', () => {
   describe('Step Validation', () => {
     it('should validate map style step', async () => {
       const step = BaseMapExtension.extendedSteps?.[0]!;
-      
+
       // Valid data
       const validData = {
-        mapStyle: { style: 'streets' }
+        mapStyle: { style: 'streets' },
       };
       const validResult = await step.validation!.validate(validData);
       expect(validResult.isValid).toBe(true);
@@ -66,7 +66,7 @@ describe('BaseMap Plugin Integration', () => {
 
       // Invalid data - custom style without URL
       const customStyleData = {
-        mapStyle: { style: 'custom' }
+        mapStyle: { style: 'custom' },
       };
       const customStyleResult = await step.validation!.validate(customStyleData);
       expect(customStyleResult.isValid).toBe(false);
@@ -74,14 +74,14 @@ describe('BaseMap Plugin Integration', () => {
     });
 
     it('should validate viewport step', async () => {
-      const step = BaseMapExtension.extendedSteps?.[1]!
-      
+      const step = BaseMapExtension.extendedSteps?.[1]!;
+
       // Valid data
       const validData = {
         viewport: {
           center: [139.6917, 35.6895],
-          zoom: 10
-        }
+          zoom: 10,
+        },
       };
       const validResult = await step.validation!.validate(validData);
       expect(validResult.isValid).toBe(true);
@@ -96,8 +96,8 @@ describe('BaseMap Plugin Integration', () => {
       const invalidCoordsData = {
         viewport: {
           center: ['not', 'numbers'],
-          zoom: 10
-        }
+          zoom: 10,
+        },
       };
       const invalidCoordsResult = await step.validation!.validate(invalidCoordsData);
       expect(invalidCoordsResult.isValid).toBe(false);
@@ -107,8 +107,8 @@ describe('BaseMap Plugin Integration', () => {
       const invalidZoomData = {
         viewport: {
           center: [139.6917, 35.6895],
-          zoom: 25 // Over limit
-        }
+          zoom: 25, // Over limit
+        },
       };
       const invalidZoomResult = await step.validation!.validate(invalidZoomData);
       expect(invalidZoomResult.isValid).toBe(false);
@@ -116,8 +116,8 @@ describe('BaseMap Plugin Integration', () => {
     });
 
     it('should validate display options step', async () => {
-      const step = BaseMapExtension.extendedSteps?.[2]!
-      
+      const step = BaseMapExtension.extendedSteps?.[2]!;
+
       // Display options are optional, so should always pass
       const emptyData = {};
       const result = await step.validation!.validate(emptyData);
@@ -128,20 +128,20 @@ describe('BaseMap Plugin Integration', () => {
   describe('Extended Validation Rules', () => {
     it('should validate coordinate range', () => {
       const rule = BaseMapExtension.extendedValidation.extendedRules.coordinateRangeRule;
-      
+
       // Valid coordinates
       expect(rule.validate({
-        viewport: { center: [139.6917, 35.6895] }
+        viewport: { center: [139.6917, 35.6895] },
       })).toBe(true);
 
       // Invalid longitude
       expect(rule.validate({
-        viewport: { center: [200, 35.6895] }
+        viewport: { center: [200, 35.6895] },
       })).toBe(false);
 
       // Invalid latitude
       expect(rule.validate({
-        viewport: { center: [139.6917, 95] }
+        viewport: { center: [139.6917, 95] },
       })).toBe(false);
 
       // Missing viewport
@@ -150,35 +150,35 @@ describe('BaseMap Plugin Integration', () => {
 
     it('should validate custom style URL', () => {
       const rule = BaseMapExtension.extendedValidation.extendedRules.customStyleUrlRule;
-      
+
       // Valid URL for custom style
       expect(rule.validate({
         mapStyle: {
           style: 'custom',
-          customStyleUrl: 'https://example.com/style.json'
-        }
+          customStyleUrl: 'https://example.com/style.json',
+        },
       })).toBe(true);
 
       // Invalid URL for custom style
       expect(rule.validate({
         mapStyle: {
           style: 'custom',
-          customStyleUrl: 'not-a-url'
-        }
+          customStyleUrl: 'not-a-url',
+        },
       })).toBe(false);
 
       // Missing URL for custom style
       expect(rule.validate({
         mapStyle: {
-          style: 'custom'
-        }
+          style: 'custom',
+        },
       })).toBe(false);
 
       // Non-custom style (should pass regardless of URL)
       expect(rule.validate({
         mapStyle: {
-          style: 'streets'
-        }
+          style: 'streets',
+        },
       })).toBe(true);
     });
   });
@@ -194,26 +194,26 @@ describe('BaseMap Plugin Integration', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
-        
+
         // BaseMap-specific fields
         mapStyle: {
-          style: 'streets'
+          style: 'streets',
         },
         viewport: {
           center: [139.6917, 35.6895],
           zoom: 10,
           bearing: 0,
-          pitch: 0
+          pitch: 0,
         },
         displayOptions: {
           show3dBuildings: false,
           showTraffic: false,
           showTransit: false,
           showTerrain: false,
-          showLabels: true
-        }
+          showLabels: true,
+        },
       };
-      
+
       expect(entity.name).toBe('Test BaseMap');
       expect(entity.mapStyle.style).toBe('streets');
       expect(entity.viewport.center).toEqual([139.6917, 35.6895]);
@@ -228,31 +228,31 @@ describe('BaseMap Plugin Integration', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
-        
+
         // BaseMap-specific fields
         mapStyle: {
-          style: 'streets'
+          style: 'streets',
         },
         viewport: {
           center: [139.6917, 35.6895],
           zoom: 10,
           bearing: 0,
-          pitch: 0
+          pitch: 0,
         },
         displayOptions: {
           show3dBuildings: false,
           showTraffic: false,
           showTransit: false,
           showTerrain: false,
-          showLabels: true
+          showLabels: true,
         },
-        
+
         // Working copy fields
         isDraft: true,
         originalId: 'original-123',
-        copiedAt: Date.now()
+        copiedAt: Date.now(),
       };
-      
+
       expect(workingCopy.isDraft).toBe(true);
       expect(workingCopy.originalId).toBe('original-123');
     });

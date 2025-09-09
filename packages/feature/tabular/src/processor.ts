@@ -19,4 +19,7 @@ const registry: TabularProcessor[] = [];
 export function registerProcessor(p: TabularProcessor): void {
   if (!registry.find((x) => x.id === p.id)) registry.push(p);
 }
-export function listProcessors(): ReadonlyArray<TabularProcessor> { return registry; }
+
+export function listProcessors(): ReadonlyArray<TabularProcessor> {
+  return registry;
+}

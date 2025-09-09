@@ -4,11 +4,13 @@
  */
 
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
-// @ts-ignore - provider-router not available in ui-core
-const useNavigate = () => (_path: string, _options?: any) => {}; // Placeholder until moved to proper package
+// Placeholder until moved to proper package
 // import { AttachmentIcon, MapIcon } from '~/icons';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
+// @ts-ignore - provider-router not available in ui-core
+const useNavigate = () => (_path: string, _options?: any) => {
+};
 
 export type ResourceProjectType = 'resources' | 'projects';
 export type ButtonGroupOrientation = 'horizontal' | 'vertical';
@@ -41,16 +43,16 @@ function getPageButtonColor(pageType: ResourceProjectType): 'primary' | 'seconda
 }
 
 export function ResourceProjectPreviewGroup({
-  selected,
-  currentPageNodeId,
-  appPrefix: _appPrefix,
-  getSavedPageNodeId,
-  savePageNodeId,
-  previewEnabled: _previewEnabled = false,
-  onPreviewClick: _onPreviewClick,
-  orientation = 'horizontal',
-  size = 'medium',
-}: ResourceProjectPreviewGroupProps): JSX.Element {
+                                              selected,
+                                              currentPageNodeId,
+                                              appPrefix: _appPrefix,
+                                              getSavedPageNodeId,
+                                              savePageNodeId,
+                                              previewEnabled: _previewEnabled = false,
+                                              onPreviewClick: _onPreviewClick,
+                                              orientation = 'horizontal',
+                                              size = 'medium',
+                                            }: ResourceProjectPreviewGroupProps): JSX.Element {
   const navigate = useNavigate();
 
   const handleToggle = (targetType: ResourceProjectType) => {
@@ -78,12 +80,12 @@ export function ResourceProjectPreviewGroup({
       sx={{
         ...(orientation === 'vertical'
           ? {
-              '& .MuiButton-root': {
-                justifyContent: 'flex-start',
-                textTransform: 'none',
-                width: '100%',
-              },
-            }
+            '& .MuiButton-root': {
+              justifyContent: 'flex-start',
+              textTransform: 'none',
+              width: '100%',
+            },
+          }
           : undefined),
         // Apply rounded corners
         '& .MuiButtonGroup-grouped': {

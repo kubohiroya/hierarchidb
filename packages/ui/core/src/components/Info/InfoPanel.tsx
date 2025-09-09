@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Button } from '@mui/material';
-import { Info as InfoIcon, HelpOutline } from '@mui/icons-material';
+import { HelpOutline, Info as InfoIcon } from '@mui/icons-material';
 
 export interface InfoPanelAction {
   /**
@@ -73,20 +73,20 @@ export interface InfoPanelProps {
  * A panel component that displays information content with optional action buttons
  */
 export const InfoPanel = ({
-  children,
-  showActions = false,
-  actions = [],
-  onInfoClick,
-  onHelpClick,
-  infoButtonLabel = 'Info',
-  helpButtonLabel = 'Help',
-  buttonStyle = {
-    textTransform: 'none',
-    color: 'grey',
-    borderColor: 'grey',
-    borderRadius: 2,
-  },
-}: InfoPanelProps) => {
+                            children,
+                            showActions = false,
+                            actions = [],
+                            onInfoClick,
+                            onHelpClick,
+                            infoButtonLabel = 'Info',
+                            helpButtonLabel = 'Help',
+                            buttonStyle = {
+                              textTransform: 'none',
+                              color: 'grey',
+                              borderColor: 'grey',
+                              borderRadius: 2,
+                            },
+                          }: InfoPanelProps) => {
   // Build default actions if callbacks are provided
   const defaultActions: InfoPanelAction[] = [];
 

@@ -9,12 +9,19 @@ export class TabularWriter {
   private rowsBuffered: any[] = [];
   private readonly chunkSize: number;
   private readonly manager: SimpleTableMetadataManager;
-  constructor(private readonly pluginId: string, opts?: { chunkSize?: number; metadataDbName?: string; indexColumns?: string[] }) {
+
+  constructor(private readonly pluginId: string, opts?: {
+    chunkSize?: number;
+    metadataDbName?: string;
+    indexColumns?: string[]
+  }) {
     this.chunkSize = opts?.chunkSize ?? 2000;
     this.manager = new SimpleTableMetadataManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata-db`));
     this.indexColumns = opts?.indexColumns ?? [];
   }
+
   private indexColumns: string[];
+
   async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
     const id = crypto.randomUUID();
     // Local shape compatible with SimpleTableMetadataManager.create()
@@ -41,6 +48,7 @@ export class TabularWriter {
     this.tableId = created.id;
     return created.id;
   }
+
   async writeRows(rows: any[]): Promise<void> {
     if (!this.tableId) throw new Error('begin() not called');
     const db = getRowStoreDB();
@@ -50,9 +58,15 @@ export class TabularWriter {
         const payload = JSON.stringify(this.rowsBuffered);
         const buf = new TextEncoder().encode(payload).buffer;
         await db.table('rowChunks').add({
-          id: crypto.randomUUID(), pluginId: this.pluginId, tableId: this.tableId,
-          chunkIndex: this.chunkIndex++, startRowIndex: this.rowCursor, endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
-          binaryData: buf, createdAt: Date.now(), updatedAt: Date.now()
+          id: crypto.randomUUID(),
+          pluginId: this.pluginId,
+          tableId: this.tableId,
+          chunkIndex: this.chunkIndex++,
+          startRowIndex: this.rowCursor,
+          endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
+          binaryData: buf,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         } as any);
         // Optional: update inverted index for configured columns
         if (this.indexColumns.length > 0) {
@@ -72,6 +86,7 @@ export class TabularWriter {
       }
     }
   }
+
   async flush(): Promise<void> {
     if (!this.tableId) return;
     if (this.rowsBuffered.length === 0) return;
@@ -79,13 +94,20 @@ export class TabularWriter {
     const payload = JSON.stringify(this.rowsBuffered);
     const buf = new TextEncoder().encode(payload).buffer;
     await db.table('rowChunks').add({
-      id: crypto.randomUUID(), pluginId: this.pluginId, tableId: this.tableId,
-      chunkIndex: this.chunkIndex++, startRowIndex: this.rowCursor, endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
-      binaryData: buf, createdAt: Date.now(), updatedAt: Date.now()
+      id: crypto.randomUUID(),
+      pluginId: this.pluginId,
+      tableId: this.tableId,
+      chunkIndex: this.chunkIndex++,
+      startRowIndex: this.rowCursor,
+      endRowIndex: this.rowCursor + this.rowsBuffered.length - 1,
+      binaryData: buf,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     } as any);
     this.rowCursor += this.rowsBuffered.length;
     this.rowsBuffered = [];
   }
+
   async commit(): Promise<{ tableId: string; totalRows: number; chunkCount: number }> {
     if (!this.tableId) throw new Error('begin() not called');
     await this.flush();

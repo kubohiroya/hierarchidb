@@ -8,8 +8,8 @@
 
 import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
 
-// 【型定義】: テストで期待される結果型の定義
-// 🟡 信頼性レベル: テスト仕様から推測した型構造
+//  :
+//  :
 export interface PluginRegistrationResult {
   success: boolean;
   pluginId?: string;
@@ -158,66 +158,66 @@ export interface PluginLifecycleAPI {
   // ==================
 
   /**
-   * 【機能概要】: 新しいプラグインをシステムに登録する
-   * 【テスト対応】: register()の成功/失敗/重複ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param definition - 登録するプラグインの定義
-   * @returns 登録結果とプラグインID
-   */
+      * :
+   * : register()//
+   * :
+   * @param definition -
+   * @returns ID
+      */
   register(definition: PluginDefinition): Promise<PluginRegistrationResult>;
 
   /**
-   * 【機能概要】: 登録済みプラグインをシステムから削除する
-   * 【テスト対応】: unregister()の成功/失敗/警告ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param nodeType - 削除するプラグインのノードタイプ
-   * @returns 削除結果と警告情報
-   */
+      * :
+   * : unregister()//
+   * :
+   * @param nodeType -
+   * @returns
+      */
   unregister(nodeType: NodeType): Promise<UnregistrationResult>;
 
   /**
-   * 【機能概要】: プラグイン定義の妥当性を検証する
-   * 【テスト対応】: validatePlugin()の有効/無効定義ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param definition - 検証するプラグイン定義
-   * @returns 検証結果と詳細エラー情報
-   */
+      * :
+   * : validatePlugin()/
+   * :
+   * @param definition -
+   * @returns
+      */
   validatePlugin(definition: PluginDefinition): Promise<PluginValidationResult>;
 
   /**
-   * 【機能概要】: プラグインの動作状況とパフォーマンスを監視する
-   * 【テスト対応】: checkHealth()の健全/問題/未登録ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param nodeType - 監視するプラグインのノードタイプ
-   * @returns ヘルス状況とパフォーマンス指標
-   */
+      * :
+   * : checkHealth()//
+   * :
+   * @param nodeType -
+   * @returns
+      */
   checkHealth(nodeType: NodeType): Promise<PluginHealthStatus>;
 
   /**
-   * 【機能概要】: 登録済みプラグインの一覧を取得する
-   * 【テスト対応】: listRegistered()の全取得/フィルター取得ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param options - フィルター条件（オプション）
-   * @returns 登録プラグイン情報の配列
-   */
+      * :
+   * : listRegistered()/
+   * :
+   * @param options -
+   * @returns
+      */
   listRegistered(options?: PluginListOptions): Promise<PluginRegistrationInfo[]>;
 
   /**
-   * 【機能概要】: プラグインの依存関係を分析する
-   * 【テスト対応】: getDependencies()の依存関係/循環依存ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param nodeType - 分析するプラグインのノードタイプ
-   * @returns 依存関係情報と循環依存警告
-   */
+      * :
+   * : getDependencies()/
+   * :
+   * @param nodeType -
+   * @returns
+      */
   getDependencies(nodeType: NodeType): Promise<PluginDependencyInfo>;
 
   /**
-   * 【機能概要】: 複数プラグインの一括操作を実行する
-   * 【テスト対応】: bulkOperation()の一括登録/削除/部分失敗ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param options - 一括操作の設定
-   * @returns 操作結果とサマリー情報
-   */
+      * :
+   * : bulkOperation()//
+   * :
+   * @param options -
+   * @returns
+      */
   bulkOperation(options: BulkOperationOptions): Promise<BulkOperationResult>;
 
   // ==================
@@ -225,38 +225,38 @@ export interface PluginLifecycleAPI {
   // ==================
 
   /**
-   * 【機能概要】: プラグインに関連するエンティティをリセットする
-   * 【動作仕様】:
-   *   - individual mode: GroupEntity, RelationalEntityのみ削除（TreeNode, PeerEntity保持）
-   *   - folder-plugin mode: すべてのエンティティを削除（完全リセット）
-   *   - system mode: すべてのプラグインの全データを削除
-   * 【テスト対応】: resetPlugin()の各モード/バックアップケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param options - リセット設定（モード、バックアップ）
-   * @returns リセット結果と削除数
-   */
+      * :
+   * :
+   * - individual mode: GroupEntity, RelationalEntityTreeNode, PeerEntity
+   * - folder-plugin mode:
+   * - system mode:
+   * : resetPlugin()/
+   * :
+   * @param options -
+   * @returns
+      */
   resetPlugin(options: PluginResetOptions): Promise<PluginResetResult>;
 
   /**
-   * 【機能概要】: プラグインを完全に削除する
-   * 【制約条件】:
-   *   - folderプラグインは削除不可（コアプラグイン）
-   *   - 依存されているプラグインの削除時は警告
-   * 【テスト対応】: deletePlugin()の成功/制約/警告ケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param nodeType - 削除するプラグインのノードタイプ
-   * @returns 削除結果と警告情報
-   */
+      * :
+   * :
+   * - folder
+   * -
+   * : deletePlugin()//
+   * :
+   * @param nodeType -
+   * @returns
+      */
   deletePlugin(nodeType: NodeType): Promise<PluginDeleteResult>;
 
   /**
-   * 【機能概要】: システム全体をリセットする
-   * 【動作仕様】: すべてのプラグインの全データを削除
-   * 【テスト対応】: resetSystem()の完全リセットケースをテスト
-   * 🟢 信頼性レベル: テスト仕様に基づく確実な実装
-   * @param createBackup - バックアップ作成フラグ
-   * @returns システムリセット結果
-   */
+      * :
+   * :
+   * : resetSystem()
+   * :
+   * @param createBackup -
+   * @returns
+      */
   resetSystem(createBackup?: boolean): Promise<PluginResetResult>;
 }
 

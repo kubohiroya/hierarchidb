@@ -26,6 +26,7 @@ cp scripts/debug-index.html build/client/debug-index.html
 ```
 
 テストURL:
+
 - http://localhost:8080/hierarchidb/debug-index.html (正常ケース)
 - http://localhost:8080/hierarchidb/debug-404.html (404リダイレクトケース)
 - http://localhost:8080/hierarchidb/some/path/debug-404.html (深いパス)
@@ -33,6 +34,7 @@ cp scripts/debug-index.html build/client/debug-index.html
 ### 3. 問題の切り分けチェックリスト
 
 #### ✅ 基本設定の確認
+
 - [ ] リポジトリ名は `hierarchidb` か？
 - [ ] VITE_APP_NAME は `hierarchidb` に設定されているか？
 - [ ] ビルド時に production モードか？
@@ -40,11 +42,13 @@ cp scripts/debug-index.html build/client/debug-index.html
 - [ ] 404.html と index.html の内容が異なるか？
 
 #### ✅ リダイレクトスクリプトの動作確認
+
 - [ ] 404.html の pathSegmentsToKeep は 1 か？
 - [ ] index.html のリダイレクト処理スクリプトが存在するか？
 - [ ] ブラウザのコンソールにエラーが出ていないか？
 
 #### ✅ GitHub Pages側の設定
+
 - [ ] GitHub Pages のソースは正しく設定されているか？
 - [ ] カスタムドメインを使用していないか？
 - [ ] リポジトリ設定で base path が正しいか？
@@ -52,6 +56,7 @@ cp scripts/debug-index.html build/client/debug-index.html
 ### 4. よくある原因と解決策
 
 #### 原因1: pathSegmentsToKeep の値が間違っている
+
 ```javascript
 // 正しい値の計算方法
 // URL: https://username.github.io/hierarchidb/some/path
@@ -60,6 +65,7 @@ var pathSegmentsToKeep = 1;
 ```
 
 #### 原因2: basename と実際のパスの不一致
+
 ```javascript
 // React Router の basename
 basename: "/hierarchidb/"
@@ -71,6 +77,7 @@ https://username.github.io/hierarchi-services/ // ✗ 名前の違い
 ```
 
 #### 原因3: リダイレクトループ
+
 ```javascript
 // 404.html がリダイレクト → index.html
 // index.html が再度リダイレクト → 無限ループ
@@ -86,6 +93,7 @@ if (l.search[1] === '/') {
 ### 5. 代替ソリューション
 
 #### オプション1: HashRouter を使用
+
 ```javascript
 // React Router を HashRouter に変更
 // URL例: https://username.github.io/hierarchidb/#/some/path
@@ -93,6 +101,7 @@ if (l.search[1] === '/') {
 ```
 
 #### オプション2: GitHub Actions でのカスタムビルド
+
 ```yaml
 # .github/workflows/deploy.yml
 - name: Build and Deploy
@@ -102,6 +111,7 @@ if (l.search[1] === '/') {
 ```
 
 #### オプション3: 静的ファイル生成
+
 ```javascript
 // すべてのルートを事前生成
 // React Router の prerender オプションを使用
@@ -110,6 +120,7 @@ if (l.search[1] === '/') {
 ### 6. デバッグ情報の収集
 
 ブラウザのコンソールで以下を実行:
+
 ```javascript
 console.log({
   href: window.location.href,

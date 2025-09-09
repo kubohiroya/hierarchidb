@@ -1,21 +1,26 @@
 /**
- * Route Basic Info Step Component
- * ルート基本情報入力ステップ
- */
+  * Route Basic Info Step Component
+   */
 
 import React, { useEffect } from 'react';
-import { Box, TextField, Typography, Stack, Divider, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, SelectChangeEvent } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  SelectChangeEvent,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Route as RouteIcon } from '@mui/icons-material';
-import { 
-  RouteType, 
-  TransportMode, 
-} from '../types';
-import type { 
-  RouteWorkingCopy, 
-  RouteCategory, 
-  TagId 
-} from '../types';
+import type { RouteCategory, RouteWorkingCopy, TagId } from '../types';
+import { RouteType, TransportMode } from '../types';
 import { useTranslation } from '../i18n';
 
 export interface RouteBasicInfoStepProps {
@@ -26,56 +31,55 @@ export interface RouteBasicInfoStepProps {
 }
 
 /**
- * ルート基本情報入力コンポーネント
- */
+    */
 export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
-  workingCopy,
-  onUpdate,
-  onValidationChange,
-  disabled = false
-}) => {
+                                                                        workingCopy,
+                                                                        onUpdate,
+                                                                        onValidationChange,
+                                                                        disabled = false,
+                                                                      }) => {
   const { translations } = useTranslation();
 
   // Validation logic
   useEffect(() => {
-    const isValid = 
-      workingCopy.name.trim() !== '' && 
-      workingCopy.routeType && 
-      workingCopy.transportModes && 
+    const isValid =
+      workingCopy.name.trim() !== '' &&
+      workingCopy.routeType &&
+      workingCopy.transportModes &&
       workingCopy.transportModes.length > 0;
-    
+
     onValidationChange(isValid);
   }, [workingCopy.name, workingCopy.routeType, workingCopy.transportModes, onValidationChange]);
 
   const handleTagChange = (tags: TagId[]) => {
-    onUpdate({ 
+    onUpdate({
       tags,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleCategoryChange = (category: RouteCategory) => {
-    onUpdate({ 
+    onUpdate({
       category,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleNameChange = (name: string) => {
-    onUpdate({ 
+    onUpdate({
       name,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleDescriptionChange = (description: string) => {
-    onUpdate({ 
+    onUpdate({
       description,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
@@ -84,29 +88,30 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
       routeType,
       routeTypes: [routeType],
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   const handleTransportModesChange = (event: SelectChangeEvent<TransportMode[]>) => {
     const value = event.target.value;
     const transportModes = typeof value === 'string' ? value.split(',') as TransportMode[] : value as TransportMode[];
-    
+
     onUpdate({
       transportModes,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1
+      version: workingCopy.version + 1,
     });
   };
 
   return (
     <Box sx={{ p: 3, maxWidth: 700, margin: '0 auto' }}>
-      {/* セクションヘッダー */}
+      {/*
+*/}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <RouteIcon color="primary" />
         <Typography variant="h6">{translations.basicInfo.title}</Typography>
       </Box>
-      
+
       <Typography variant="body2" color="text.secondary" paragraph>
         {translations.basicInfo.subtitle}
       </Typography>
@@ -128,7 +133,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
 
         <Divider />
 
-        {/* ルートタイプ選択 */}
+        {/*
+*/}
         <TextField
           select
           label={translations.basicInfo.routeTypeLabel}
@@ -147,7 +153,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           ))}
         </TextField>
 
-        {/* 交通手段選択 */}
+        {/*
+*/}
         <FormControl required fullWidth disabled={disabled}>
           <InputLabel>{translations.basicInfo.transportModesLabel}</InputLabel>
           <Select
@@ -178,7 +185,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           </Typography>
         </FormControl>
 
-        {/* カテゴリ選択 */}
+        {/*
+*/}
         <TextField
           select
           label={translations.basicInfo.categoryLabel}
@@ -197,7 +205,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           <option value="emergency">{translations.categories.emergency}</option>
         </TextField>
 
-        {/* タグ入力 */}
+        {/*
+*/}
         <TextField
           label={translations.basicInfo.tagsLabel}
           value={(workingCopy.tags || []).join(', ')}
@@ -212,7 +221,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
         />
       </Stack>
 
-      {/* ヒント表示 */}
+      {/*
+*/}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           {translations.basicInfo.hint}

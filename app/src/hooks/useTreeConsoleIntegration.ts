@@ -5,9 +5,9 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { showCommandError } from '~/shared/command-errors';
-import type { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
@@ -77,11 +77,11 @@ export interface TreeConsoleActions {
 }
 
 export function useTreeConsoleIntegration({
-  client,
-  treeId,
-  pageNodeId,
-  pageTreeNode,
-}: UseTreeConsoleIntegrationParams) {
+                                            client,
+                                            treeId,
+                                            pageNodeId,
+                                            pageTreeNode,
+                                          }: UseTreeConsoleIntegrationParams) {
   // TreeTypes data state
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
@@ -222,7 +222,7 @@ export function useTreeConsoleIntegration({
           let displayNodes: TreeNode[] = children;
           if (shouldFlattenTrash) {
             const grandChildrenBatches = await Promise.all(
-              children.map((holder) => queryAPI.listChildren(holder.id as NodeId))
+              children.map((holder) => queryAPI.listChildren(holder.id as NodeId)),
             );
             displayNodes = grandChildrenBatches.flat();
           }
@@ -436,7 +436,7 @@ export function useTreeConsoleIntegration({
         }
       },
     }),
-    [client, treeId, pageNodeId, selectedIds, treeData, importExport]
+    [client, treeId, pageNodeId, selectedIds, treeData, importExport],
   );
 
   // Load tree data when client is ready
@@ -446,7 +446,7 @@ export function useTreeConsoleIntegration({
         '[useTreeConsoleIntegration] Skipping load - client:',
         !!client,
         'pageNodeId:',
-        pageNodeId
+        pageNodeId,
       );
       return;
     }
@@ -466,7 +466,7 @@ export function useTreeConsoleIntegration({
         let displayNodes: TreeNode[] = children;
         if (shouldFlattenTrash) {
           const grandChildrenBatches = await Promise.all(
-            children.map((holder) => queryAPI.listChildren(holder.id as NodeId))
+            children.map((holder) => queryAPI.listChildren(holder.id as NodeId)),
           );
           displayNodes = grandChildrenBatches.flat();
         }

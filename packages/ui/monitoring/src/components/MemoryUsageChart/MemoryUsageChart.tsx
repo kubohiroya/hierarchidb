@@ -1,22 +1,34 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Box, Typography, Tooltip, Paper, useTheme } from '@mui/material';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/util';
 
 interface MemoryUsageChartProps {
-  /** 幅 (例: '300px', '100%') */
+  /**
+   * (: '300px', '100%')
+   */
   width?: string | number;
-  /** 高さ (例: '100px') */
+  /**
+   * (: '100px')
+   */
   height?: string | number;
-  /** 更新間隔（ミリ秒） */
+  /**
+      */
   updateInterval?: number;
-  /** 使用量の警告しきい値（0-1） */
+  /**
+   * 0-1
+   */
   warningThreshold?: number;
-  /** 使用量の危険しきい値（0-1） */
+  /**
+   * 0-1
+   */
   criticalThreshold?: number;
-  /** データポイントの最大数 */
+  /**
+      */
   maxDataPoints?: number;
-  /** 最大メモリサイズ（バイト）- 自動検出できない場合のフォールバック */
+  /**
+   * -
+   */
   maxMemory?: number;
 }
 
@@ -42,17 +54,16 @@ const formatTime = (timestamp: number): string => {
 };
 
 /**
- * メモリ使用量を折れ線グラフで表示するコンポーネント
- */
+    */
 export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
-  width = '100%',
-  height = 80,
-  updateInterval = 10000,
-  warningThreshold = 0.7,
-  criticalThreshold = 0.9,
-  maxDataPoints = 30,
-  maxMemory = 4 * 1024 * 1024 * 1024, // デフォルト4GB
-}) => {
+                                                                    width = '100%',
+                                                                    height = 80,
+                                                                    updateInterval = 10000,
+                                                                    warningThreshold = 0.7,
+                                                                    criticalThreshold = 0.9,
+                                                                    maxDataPoints = 30,
+                                                                    maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
+                                                                  }) => {
   const theme = useTheme();
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
   const [currentMemory, setCurrentMemory] = useState({ used: 0, total: maxMemory, percentage: 0 });
@@ -73,7 +84,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         ).measureUserAgentSpecificMemory();
         used = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0
+          0,
         );
 
         if ('memory' in performance) {

@@ -20,7 +20,7 @@
 
 ```typescript
 interface FolderEntity {
-  id: EntityId;           // エンティティの一意識別子
+  id: NodeId;             // エンティティの一意識別子（NodeIdに統一）
   nodeId: NodeId;         // 関連するツリーノードID
   name: string;           // フォルダ名
   description: string;    // フォルダの説明
@@ -57,7 +57,7 @@ class FolderEntityHandler {
   async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy>;
   async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityWorkingCopy): Promise<void>;
   async discardWorkingCopy(nodeId: NodeId): Promise<void>;
-  async updateWorkingCopy(workingCopyId: EntityId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy>;
+  async updateWorkingCopy(workingCopyId: NodeId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy>;
   
   // 追加機能
   async cleanup(nodeId: NodeId): Promise<void>;
@@ -292,13 +292,13 @@ function mergeSettings(
 }
 ```
 
-### generateEntityId
+### generateNodeId
 
-エンティティID生成。
+ノード/エンティティID生成。
 
 ```typescript
-function generateEntityId(): EntityId {
-  return crypto.randomUUID() as EntityId;
+function generateNodeId(): NodeId {
+  return crypto.randomUUID() as unknown as NodeId;
 }
 ```
 

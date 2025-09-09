@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor';
 
 const coreDBStub: any = {};
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { BasicInfoFields } from './BasicInfoFields';
 
 describe('BasicInfoFields', () => {
@@ -10,7 +10,7 @@ describe('BasicInfoFields', () => {
       <BasicInfoFields
         value={{ name: '', description: '' }}
         onChange={onChange}
-      />
+      />,
     );
 
     // Default labels
@@ -24,7 +24,7 @@ describe('BasicInfoFields', () => {
       <BasicInfoFields
         value={{ name: '', description: '' }}
         onChange={onChange}
-      />
+      />,
     );
 
     expect(screen.getByText('Name is required')).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe('BasicInfoFields', () => {
       <BasicInfoFields
         value={{ name: '', description: '' }}
         onChange={onChange}
-      />
+      />,
     );
 
     const nameInput = screen.getByLabelText(/Name/) as HTMLInputElement;

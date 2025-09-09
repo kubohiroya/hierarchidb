@@ -5,11 +5,11 @@
  * Basic integration tests focusing on plugin definition and core functionality
  */
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 
 // Core types
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 
 // Plugin components
 import { ShapePluginDefinition } from '~/definitions/ShapePluginDefinition';
@@ -18,7 +18,8 @@ import { ShapeEntityHandler } from '~/handlers/ShapeEntityHandler';
 // Mock external dependencies
 vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   BaseEntityHandler: class MockBaseEntityHandler {
-    constructor() {}
+    constructor() {
+    }
   },
   NodeTypeRegistry: {
     getInstance: () => ({
@@ -128,7 +129,7 @@ describe('Shape Plugin Integration', () => {
     });
 
     it('should handle null entity retrieval', async () => {
-      const nonExistentId = 'non-existent-entity' as EntityId;
+      const nonExistentId = 'non-existent-entity' as NodeId;
       const retrieved = await entityHandler.getEntity(nonExistentId);
       expect(retrieved).toBeNull();
     });
@@ -137,7 +138,7 @@ describe('Shape Plugin Integration', () => {
   describe('Type Safety and Validation', () => {
     it('should enforce branded ID types', () => {
       const nodeId: NodeId = 'test-node-123' as NodeId;
-      const entityId: EntityId = 'test-entity-456' as EntityId;
+      const entityId = 'test-entity-456' as unknown as NodeId;
 
       // Runtime types should still be strings
       expect(typeof nodeId).toBe('string');
@@ -198,7 +199,7 @@ describe('Shape Plugin Integration', () => {
     });
 
     it('should handle missing entity operations gracefully', async () => {
-      const nonExistentId = 'non-existent-entity' as EntityId;
+      const nonExistentId = 'non-existent-entity' as NodeId;
 
       // These should not throw, but return null or reject appropriately
       const retrieved = await entityHandler.getEntity(nonExistentId);
@@ -206,18 +207,18 @@ describe('Shape Plugin Integration', () => {
     });
 
     it('should handle invalid entity updates', async () => {
-      const nonExistentId = 'non-existent-entity' as EntityId;
+      const nonExistentId = 'non-existent-entity' as NodeId;
 
       await expect(entityHandler.updateEntity(nonExistentId, {})).rejects.toThrow(
-        'Shape entity not found'
+        'Shape entity not found',
       );
     });
 
     it('should handle invalid entity deletion', async () => {
-      const nonExistentId = 'non-existent-entity' as EntityId;
+      const nonExistentId = 'non-existent-entity' as NodeId;
 
       await expect(entityHandler.deleteEntity(nonExistentId)).rejects.toThrow(
-        'Shape entity not found'
+        'Shape entity not found',
       );
     });
   });

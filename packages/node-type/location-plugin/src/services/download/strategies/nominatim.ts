@@ -1,8 +1,9 @@
 import type { ILocationDownloadStrategy } from '../types';
-import type { LocationSearchConfig, LocationEntity } from '../../../entities/LocationEntity';
+import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';
+
   supports(config: LocationSearchConfig): boolean {
     return config.dataSource === 'openstreetmap';
   }

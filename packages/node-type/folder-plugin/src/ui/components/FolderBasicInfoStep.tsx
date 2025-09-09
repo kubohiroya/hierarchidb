@@ -1,17 +1,17 @@
 /**
- * FolderBasicInfoStep Component
- * フォルダの基本情報入力ステップ（Step1）
- */
+  * FolderBasicInfoStep Component
+ * Step1
+  */
 
 import React from 'react';
-import { Box, Typography, Stack, Divider } from '@mui/material';
+import { Box, Divider, Stack, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import type { EntityId } from '@hierarchidb/common-type';
+import type { TagId } from '../../types';
 import { TagInput } from './TagInput';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 
-type TagId = EntityId;
+// TagId is a local branded string type
 
 export interface FolderBasicInfoStepProps {
   workingCopy: { name?: string; description?: string; tags?: TagId[] };
@@ -20,17 +20,14 @@ export interface FolderBasicInfoStepProps {
 }
 
 /**
- * フォルダの基本情報入力コンポーネント
- * 名前、説明、タグの入力フォームを提供
- */
+     */
 export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
-  workingCopy,
-  onUpdate,
-  disabled = false,
-}) => {
+                                                                          workingCopy,
+                                                                          onUpdate,
+                                                                          disabled = false,
+                                                                        }) => {
   const { t } = useTranslation('folderPlugin');
 
-  // タグ変更ハンドラー
 
   const handleTagChange = (tags: TagId[]) => {
     onUpdate({ tags });
@@ -38,7 +35,8 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
 
   return (
     <Box sx={{ p: 3, maxWidth: 600, margin: '0 auto' }}>
-      {/* セクションヘッダー */}
+      {/*
+*/}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <FolderIcon color="primary" />
         <Typography variant="h6">{t('basicInfo.title', 'Basic Information')}</Typography>
@@ -47,7 +45,7 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
       <Typography variant="body2" color="text.secondary" paragraph>
         {t(
           'basicInfo.description',
-          'Enter basic folder information. Use tags to categorize and make folders easy to search.'
+          'Enter basic folder information. Use tags to categorize and make folders easy to search.',
         )}
       </Typography>
 
@@ -63,14 +61,15 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
           descriptionLabel={t('basicInfo.description.label', 'Description')}
           descriptionHelperText={t(
             'basicInfo.description.helper',
-            'Describe the purpose or contents of this folder (optional)'
+            'Describe the purpose or contents of this folder (optional)',
           )}
           descriptionPlaceholder={t('basicInfo.description.placeholder', 'Enter description (optional)')}
         />
 
         <Divider />
 
-        {/* タグ入力セクション */}
+        {/*
+*/}
         <Box>
           <TagInput
             value={workingCopy.tags || []}
@@ -85,13 +84,14 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
         </Box>
       </Stack>
 
-      {/* フォーム下部の情報表示 */}
+      {/*
+*/}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           💡 <strong>{t('basicInfo.hint.title', 'Tip:')}</strong>{' '}
           {t(
             'basicInfo.hint.content',
-            'Using tags makes it easy to search and organize folders. Examples: "Project", "Important", "Archive", etc.'
+            'Using tags makes it easy to search and organize folders. Examples: "Project", "Important", "Archive", etc.',
           )}
         </Typography>
       </Box>

@@ -1,11 +1,11 @@
 /**
- * @file index.ts
+  * @file index.ts
  * @description Styler plugin services export
- * 【統合方針】: SpreadsheetCSVApiDriverを共通実装として使用
- */
+ * : SpreadsheetCSVApiDriver
+  */
 
-// NOTE: SpreadsheetCSVApiDriverは直接@hierarchidb/spreadsheet-pluginからインポートしてください
+//  NOTE: SpreadsheetCSVApiDriver@hierarchidb/spreadsheet-plugin
 
-// Styler固有のサービス
+//  Styler
 export { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
 export { StylerDataService } from './StylerDataService';

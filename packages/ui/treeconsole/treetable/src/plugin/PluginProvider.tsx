@@ -1,26 +1,16 @@
 /**
- * Plugin Provider Component
- * 
- * TreeTableプラグインシステムのReactコンテキストプロバイダー。
- * プラグインレジストリを管理し、子コンポーネントにプラグイン機能を提供します。
- */
+  * Plugin Provider Component
+  * TreeTableReact
+   */
 
-import { 
-  createContext, 
-  useContext, 
-  useMemo, 
-  useEffect, 
-  useState,
-  useCallback,
-  ReactNode 
-} from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { PluginRegistry } from './PluginRegistry';
-import type { 
-  TreeTablePlugin, 
+import type {
   PluginContext as IPluginContext,
-  TreeTablePluginConfig,
   PluginEvent,
-  PluginRegistry as IPluginRegistry
+  PluginRegistry as IPluginRegistry,
+  TreeTablePlugin,
+  TreeTablePluginConfig,
 } from './types';
 
 // =============================================================================
@@ -34,15 +24,20 @@ export const PluginContext = createContext<IPluginContext | null>(null);
 // =============================================================================
 
 export interface PluginProviderProps {
-  /** 子コンポーネント */
+  /**
+      */
   children: ReactNode;
-  /** 登録するプラグインのリスト */
+  /**
+      */
   plugins?: TreeTablePlugin[];
-  /** プラグインの設定 */
+  /**
+      */
   config?: TreeTablePluginConfig;
-  /** デバッグモードを有効にする */
+  /**
+      */
   debugMode?: boolean;
-  /** プラグインイベントのリスナー */
+  /**
+      */
   onPluginEvent?: (event: PluginEvent) => void;
 }
 
@@ -51,16 +46,15 @@ export interface PluginProviderProps {
 // =============================================================================
 
 /**
- * プラグインシステムのコンテキストプロバイダー
- */
-export function PluginProvider({ 
-  children, 
-  plugins = [],
-  config,
-  debugMode = false,
-  onPluginEvent,
-}: PluginProviderProps) {
-  // Plugin Registry の初期化
+    */
+export function PluginProvider({
+                                 children,
+                                 plugins = [],
+                                 config,
+                                 debugMode = false,
+                                 onPluginEvent,
+                               }: PluginProviderProps) {
+  //  Plugin Registry
   const registry = useMemo(() => {
     return new PluginRegistry({
       debugMode,
@@ -69,14 +63,11 @@ export function PluginProvider({
     });
   }, [debugMode, config?.global]);
 
-  // プラグインのイベント追跡
   const [events, setEvents] = useState<PluginEvent[]>([]);
   const [pluginStates, setPluginStates] = useState<Record<string, any>>({});
 
-  // プラグインの登録
   useEffect(() => {
     const registerPlugins = async () => {
-      // 既存のプラグインをクリア（開発時のホットリロード対応）
       // Avoid direct `process` in browser builds; prefer Vite-style DEV flag when available.
       const isDev = (() => {
         try {
@@ -95,23 +86,20 @@ export function PluginProvider({
         }
       }
 
-      // プラグインの依存関係順に登録
       const sortedPlugins = sortPluginsByDependencies(plugins);
-      
+
       for (const plugin of sortedPlugins) {
         try {
-          // 設定チェック
           const pluginConfig = config?.plugins[plugin.name];
           if (pluginConfig && !pluginConfig.enabled) {
-            continue; // 無効なプラグインはスキップ
+            continue;
           }
 
           registry.register(plugin);
-          
+
         } catch (error) {
           console.error(`Failed to register plugin ${plugin.name}:`, error);
-          
-          // エラーをイベントとして発火
+
           const errorEvent: PluginEvent = {
             type: 'plugin:registration-error',
             plugin: plugin.name,
@@ -126,7 +114,6 @@ export function PluginProvider({
     registerPlugins();
   }, [plugins, config, registry, onPluginEvent]);
 
-  // プラグインイベントのリスニング
   useEffect(() => {
     const handlePluginEvent = (event: any) => {
       const pluginEvent: PluginEvent = {
@@ -136,11 +123,10 @@ export function PluginProvider({
         data: event,
       };
 
-      setEvents(prev => [...prev.slice(-99), pluginEvent]); // 最新100件を保持
+      setEvents(prev => [...prev.slice(-99), pluginEvent]); //  100
       onPluginEvent?.(pluginEvent);
     };
 
-    // 各種プラグインイベントをリスニング
     registry.on('plugin:registered', handlePluginEvent);
     registry.on('plugin:unregistered', handlePluginEvent);
     registry.on('plugin:error', handlePluginEvent);
@@ -154,7 +140,6 @@ export function PluginProvider({
     };
   }, [registry, onPluginEvent]);
 
-  // フック実行の便利メソッド
   const executeHook = useCallback(<T extends keyof import('./types').TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<import('./types').TreeTableHooks[T]>>
@@ -162,7 +147,6 @@ export function PluginProvider({
     return registry.executeHook(hookName, ...args);
   }, [registry]);
 
-  // プラグイン状態の更新
   useEffect(() => {
     const updatePluginStates = () => {
       const states: Record<string, any> = {};
@@ -172,10 +156,8 @@ export function PluginProvider({
       setPluginStates(states);
     };
 
-    // 初期状態を設定
     updatePluginStates();
 
-    // 定期的に状態を更新（デバッグモードのみ）
     let interval: NodeJS.Timeout | undefined;
     if (debugMode) {
       interval = setInterval(updatePluginStates, 1000);
@@ -188,7 +170,6 @@ export function PluginProvider({
     };
   }, [registry, debugMode]);
 
-  // コンテキスト値
   const contextValue = useMemo<IPluginContext>(() => ({
     registry,
     executeHook,
@@ -198,7 +179,7 @@ export function PluginProvider({
     <PluginContext.Provider value={contextValue}>
       {children}
       {debugMode && (
-        <PluginDebugPanel 
+        <PluginDebugPanel
           events={events}
           pluginStates={pluginStates}
         />
@@ -212,8 +193,7 @@ export function PluginProvider({
 // =============================================================================
 
 /**
- * プラグインコンテキストを使用するフック
- */
+    */
 export function usePluginContext(): IPluginContext {
   const context = useContext(PluginContext);
   if (!context) {
@@ -223,32 +203,28 @@ export function usePluginContext(): IPluginContext {
 }
 
 /**
- * プラグインレジストリを使用するフック
- */
+    */
 export function usePluginRegistry(): IPluginRegistry {
   const { registry } = usePluginContext();
   return registry;
 }
 
 /**
- * 特定のプラグインを使用するフック
- */
+    */
 export function usePlugin(pluginName: string): TreeTablePlugin | undefined {
   const registry = usePluginRegistry();
   return registry.getPlugin(pluginName);
 }
 
 /**
- * フック実行を行うフック
- */
+    */
 export function usePluginHooks() {
   const { executeHook } = usePluginContext();
   return executeHook;
 }
 
 /**
- * プラグインの有効性をチェックするフック
- */
+    */
 export function usePluginEnabled(pluginName: string): boolean {
   const registry = usePluginRegistry();
   return registry.hasPlugin(pluginName);
@@ -259,8 +235,7 @@ export function usePluginEnabled(pluginName: string): boolean {
 // =============================================================================
 
 /**
- * プラグインを依存関係の順序でソートする
- */
+    */
 function sortPluginsByDependencies(plugins: TreeTablePlugin[]): TreeTablePlugin[] {
   const sorted: TreeTablePlugin[] = [];
   const visited = new Set<string>();
@@ -277,7 +252,6 @@ function sortPluginsByDependencies(plugins: TreeTablePlugin[]): TreeTablePlugin[
 
     visiting.add(plugin.name);
 
-    // 依存関係を先に処理
     if (plugin.dependencies) {
       for (const depName of plugin.dependencies) {
         const depPlugin = plugins.find(p => p.name === depName);
@@ -313,7 +287,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
 
   if (!isExpanded) {
     return (
-      <div 
+      <div
         style={{
           position: 'fixed',
           top: 10,
@@ -334,7 +308,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
   }
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 10,
@@ -349,7 +323,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
         overflow: 'auto',
       }}
     >
-      <div 
+      <div
         style={{
           padding: '10px',
           borderBottom: '1px solid #555',
@@ -359,7 +333,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
         }}
       >
         <strong>Plugin Debug Panel</strong>
-        <button 
+        <button
           onClick={() => setIsExpanded(false)}
           style={{
             background: 'none',
@@ -410,17 +384,17 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
 // =============================================================================
 
 /**
- * プラグイン機能を追加するHOC
- */
+  * HOC
+  */
 export function withPlugins<P extends object>(
   Component: React.ComponentType<P>,
-  defaultPlugins: TreeTablePlugin[] = []
+  defaultPlugins: TreeTablePlugin[] = [],
 ) {
   return function PluginEnhancedComponent(
-    props: P & { plugins?: TreeTablePlugin[] }
+    props: P & { plugins?: TreeTablePlugin[] },
   ) {
     const { plugins = defaultPlugins, ...restProps } = props;
-    
+
     return (
       <PluginProvider plugins={plugins}>
         <Component {...(restProps as P)} />

@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from 'react-oidc-context';
+// import { devError } from "@/shared/utils/logger";
+// const devError = (msg: string, error?: any) => console.error(msg, error);
+import { AuthContextType } from '../types/AuthContextType';
+import { AuthUser } from '../types/AuthUser';
 // import { getSecureConfig } from "@/config/secureConfig";
 const getSecureConfig = () => ({
   oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY || '',
@@ -11,11 +15,6 @@ const notify = {
   error: (msg: string) => console.error(msg),
   success: (msg: string) => console.log(msg),
 };
-
-// import { devError } from "@/shared/utils/logger";
-// const devError = (msg: string, error?: any) => console.error(msg, error);
-import { AuthContextType } from '../types/AuthContextType';
-import { AuthUser } from '../types/AuthUser';
 
 const OIDCAuthContext = createContext<AuthContextType | null>(null);
 
@@ -88,7 +87,7 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
 
       auth.signinRedirect();
     },
-    [auth]
+    [auth],
   );
 
   const signOut = useCallback(async () => {
@@ -154,6 +153,7 @@ interface OIDCAuthProviderProps {
   fallbackPath: string; // "/eria-cartograph"
   children: React.ReactNode;
 }
+
 export function OIDCAuthProvider({ fallbackPath, children }: OIDCAuthProviderProps) {
   const secureConfig = getSecureConfig();
 

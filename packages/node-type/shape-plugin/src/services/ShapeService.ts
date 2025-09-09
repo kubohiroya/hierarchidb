@@ -1,42 +1,40 @@
 /**
  * ShapeService - Main service orchestrating Workers and database operations
- * 
+ *
  * This service coordinates batch processing, data source management,
  * feature queries, cache operations, and vector tile generation.
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
 import { shapeDB } from './database/ShapeDB';
-import { BatchSessionManager } from './batch/BatchSessionManager';
+import { createShapeBatchManager } from './batch/UnifiedShapeBatchManager';
+import type { IBatchSessionManager, BatchSessionStatus } from '@hierarchidb/runtime-shared-batch-processor';
 import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
 import { VectorTileService } from './tiles/VectorTileService';
 import type {
   BatchProcessConfig,
   BatchStatus,
-  DataSourceInfo,
-  CountryMetadata,
-  ValidationResult,
-  Feature,
-  SearchOptions,
   BboxQueryOptions,
   CacheStatistics,
   CacheType,
+  CountryMetadata,
+  DataSourceInfo,
+  Feature,
   OptimizationResult,
-  TileMetadata
+  SearchOptions,
+  TileMetadata,
+  ValidationResult,
 } from './types';
-import type {
-  UrlMetadata,
-  ProcessingConfig
-} from '../types';
+import type { ProcessingConfig, UrlMetadata } from '../types';
 
 export class ShapeService {
-  private batchManager: BatchSessionManager;
+  private batchManager: IBatchSessionManager;
   private dataSourceManager: DataSourceManager;
   private vectorTileService: VectorTileService;
   private initialized = false;
 
   constructor() {
-    this.batchManager = new BatchSessionManager();
+    this.batchManager = createShapeBatchManager();
     this.dataSourceManager = new DataSourceManager();
     this.vectorTileService = new VectorTileService();
   }
@@ -48,13 +46,12 @@ export class ShapeService {
     try {
       // Initialize database
       await shapeDB.open();
-      
-      // Initialize batch manager
-      await this.batchManager.initialize();
-      
+
+    // Unified manager requires no explicit initialize
+
       // Cleanup any expired cache entries
       await shapeDB.cleanupExpiredCache();
-      
+
       this.initialized = true;
       console.log('ShapeService initialized successfully');
     } catch (error) {
@@ -81,36 +78,55 @@ export class ShapeService {
   async startBatchProcessing(
     nodeId: NodeId,
     config: BatchProcessConfig,
-    urlMetadata: UrlMetadata[]
+    urlMetadata: UrlMetadata[],
   ): Promise<{ batchId: string; sessionId: string }> {
     this.ensureInitialized();
 
-    const session = await this.batchManager.createSession(nodeId, config, urlMetadata);
-    
-    return {
-      batchId: session.sessionId,
-      sessionId: session.sessionId
-    };
+    const sessionId = await this.batchManager.startBatchSession(nodeId, {
+      maxConcurrentTasks: config.workerPoolSize,
+    } as any, { urlMetadata } as any);
+
+    return { batchId: sessionId, sessionId };
   }
 
   async pauseBatchProcessing(batchId: string): Promise<void> {
     this.ensureInitialized();
-    await this.batchManager.pauseSession(batchId);
+    await this.batchManager.pauseBatchSession(batchId);
   }
 
   async resumeBatchProcessing(batchId: string): Promise<void> {
     this.ensureInitialized();
-    await this.batchManager.resumeSession(batchId);
+    await this.batchManager.resumeBatchSession(batchId);
   }
 
   async cancelBatchProcessing(batchId: string): Promise<void> {
     this.ensureInitialized();
-    await this.batchManager.cancelSession(batchId);
+    await this.batchManager.cancelBatchSession(batchId);
   }
 
   async getBatchStatus(batchId: string): Promise<BatchStatus> {
     this.ensureInitialized();
-    return await this.batchManager.getSessionStatus(batchId);
+    const status: BatchSessionStatus = await this.batchManager.getBatchSessionStatus(batchId);
+    // Minimal adapter back to existing type
+    return {
+      session: {
+        sessionId: status.sessionId,
+        nodeId: status.nodeId as any,
+        status: status.status as any,
+        config, // preserve incoming config (unified status does not echo it)
+        startedAt: status.startedAt ?? Date.now(),
+        updatedAt: status.lastActivity ?? Date.now(),
+        completedAt: status.completedAt,
+        progress: status.progress as any,
+        stages: {} as any,
+      },
+      currentTasks: [],
+      queuedTasks: 0,
+      errors: [],
+      warnings: [],
+      estimatedTimeRemaining: undefined,
+      throughput: undefined,
+    } as any;
   }
 
   async getBatchTasks(batchId: string): Promise<any[]> {
@@ -120,7 +136,7 @@ export class ShapeService {
 
   // Progress Monitoring
   onBatchProgress(batchId: string, callback: (progress: any) => void): void {
-    this.batchManager.onProgress(batchId, callback);
+    this.batchManager.onBatchProgress(batchId, (e) => callback(e));
   }
 
   // Data Source Management
@@ -131,36 +147,36 @@ export class ShapeService {
 
   async getCountryMetadata(dataSource: string, countryCode: string): Promise<CountryMetadata[]> {
     this.ensureInitialized();
-    
+
     const metadata = await this.dataSourceManager.getCountryMetadata(
       dataSource as any,
-      countryCode
+      countryCode,
     );
-    
+
     return [metadata];
   }
 
   async validateDataSource(
     dataSource: string,
-    config: { countryCode: string; adminLevels: number[] }
+    config: { countryCode: string; adminLevels: number[] },
   ): Promise<ValidationResult> {
     this.ensureInitialized();
-    
+
     // Validate each admin level
     const results = await Promise.all(
       config.adminLevels.map(level =>
         this.dataSourceManager.validateDataSource(
           dataSource as any,
           config.countryCode,
-          level
-        )
-      )
+          level,
+        ),
+      ),
     );
 
     // Combine results
     const allErrors = results.flatMap(r => r.errors);
     const allWarnings = results.flatMap(r => r.warnings);
-    
+
     return {
       isValid: allErrors.length === 0,
       errors: allErrors,
@@ -169,13 +185,13 @@ export class ShapeService {
         totalAdminLevels: config.adminLevels.length,
         estimatedTotalFeatures: results.reduce(
           (sum, r) => sum + (Number(r.metadata?.estimatedFeatures) || 0),
-          0
+          0,
         ),
         estimatedTotalSize: results.reduce(
           (sum, r) => sum + (Number(r.metadata?.estimatedSizeMB) || 0),
-          0
-        )
-      }
+          0,
+        ),
+      },
     };
   }
 
@@ -207,7 +223,7 @@ export class ShapeService {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -215,20 +231,20 @@ export class ShapeService {
   async searchFeatures(
     nodeId: NodeId,
     query: string,
-    options: SearchOptions = {}
+    options: SearchOptions = {},
   ): Promise<Feature[]> {
     this.ensureInitialized();
-    
+
     const limit = options.limit || 50;
     const features = await shapeDB.searchFeatures(nodeId, query, limit);
-    
+
     // Apply additional filters
     let filteredFeatures = features;
-    
+
     if (options.adminLevel !== undefined) {
       filteredFeatures = filteredFeatures.filter(f => f.adminLevel === options.adminLevel);
     }
-    
+
     if (options.countryCode) {
       filteredFeatures = filteredFeatures.filter(f => f.countryCode === options.countryCode);
     }
@@ -238,7 +254,7 @@ export class ShapeService {
       filteredFeatures.sort((a, b) => {
         const aVal = this.getFeatureSortValue(a, options.sortBy!);
         const bVal = this.getFeatureSortValue(b, options.sortBy!);
-        
+
         if (options.sortOrder === 'desc') {
           return bVal - aVal;
         }
@@ -264,19 +280,19 @@ export class ShapeService {
   async getFeaturesByBbox(
     nodeId: NodeId,
     bbox: [number, number, number, number],
-    options: BboxQueryOptions = {}
+    options: BboxQueryOptions = {},
   ): Promise<Feature[]> {
     this.ensureInitialized();
-    
+
     const features = await shapeDB.getFeaturesInBbox(nodeId, bbox, options.adminLevel);
-    
+
     let result = features;
-    
+
     // Apply additional filters
     if (options.simplificationLevel !== undefined) {
-      result = result.filter(f => 
-        f.simplificationLevel === undefined || 
-        f.simplificationLevel >= options.simplificationLevel!
+      result = result.filter(f =>
+        f.simplificationLevel === undefined ||
+        f.simplificationLevel >= options.simplificationLevel!,
       );
     }
 
@@ -284,7 +300,7 @@ export class ShapeService {
     if (options.offset) {
       result = result.slice(options.offset);
     }
-    
+
     if (options.limit) {
       result = result.slice(0, options.limit);
     }
@@ -316,19 +332,19 @@ export class ShapeService {
   // Cache Management
   async getCacheStatistics(nodeId?: NodeId): Promise<CacheStatistics> {
     this.ensureInitialized();
-    
+
     if (nodeId) {
       // Get node-specific cache statistics
       return await this.getNodeCacheStatistics(nodeId);
     }
-    
+
     // Get global cache statistics
     return await shapeDB.getCacheStatistics();
   }
 
   async clearCache(nodeId: NodeId, cacheType: CacheType = 'all'): Promise<void> {
     this.ensureInitialized();
-    
+
     switch (cacheType) {
       case 'features':
         await shapeDB.clearCache(nodeId, 'features');
@@ -348,7 +364,7 @@ export class ShapeService {
 
   async optimizeStorage(nodeId: NodeId): Promise<OptimizationResult> {
     this.ensureInitialized();
-    
+
     const startTime = Date.now();
     let freedSpace = 0;
     let removedItems = 0;
@@ -364,11 +380,11 @@ export class ShapeService {
 
       // Get storage usage before optimization
       const beforeUsage = await shapeDB.getStorageUsage();
-      
+
       // Remove duplicate features (if any)
       const features = await shapeDB.features.where('nodeId').equals(nodeId).toArray();
       const uniqueFeatures = new Map();
-      
+
       for (const feature of features) {
         const key = `${feature.geometry.type}-${JSON.stringify(feature.properties)}`;
         if (!uniqueFeatures.has(key)) {
@@ -383,13 +399,13 @@ export class ShapeService {
       // Compact tile cache - remove old unused tiles
       const tileStats = await this.vectorTileService.getTileCacheStatistics(nodeId);
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      
+
       const oldTiles = await shapeDB.vectorTiles
         .where('nodeId')
         .equals(nodeId)
         .filter((tile: any) => (tile.lastAccessed || tile.generatedAt) < thirtyDaysAgo)
         .toArray();
-      
+
       for (const tile of oldTiles) {
         await shapeDB.vectorTiles.delete(tile.tileId);
         removedItems++;
@@ -400,7 +416,7 @@ export class ShapeService {
       if (tileStats.totalTiles > 1000) {
         suggestions.push('Consider reducing maximum zoom level to decrease tile cache size');
       }
-      
+
       if (beforeUsage.breakdown?.features && beforeUsage.breakdown.features > 100 * 1024 * 1024) {
         suggestions.push('Large feature dataset - consider increasing simplification levels');
       }
@@ -417,14 +433,14 @@ export class ShapeService {
       compactedItems,
       duration: Date.now() - startTime,
       errors,
-      suggestions
+      suggestions,
     };
   }
 
   // Data Export
   async exportData(nodeId: NodeId, format: 'geojson' | 'mvt' | 'pmtiles'): Promise<Blob> {
     this.ensureInitialized();
-    
+
     switch (format) {
       case 'geojson':
         return await this.exportAsGeoJSON(nodeId);
@@ -465,9 +481,9 @@ export class ShapeService {
       .where('nodeId')
       .equals(nodeId)
       .toArray();
-    
+
     const tileStats = await this.vectorTileService.getTileCacheStatistics(nodeId);
-    
+
     const totalSize = cacheEntries.reduce((sum: number, entry: any) => sum + entry.size, 0) + tileStats.totalSize;
     const totalItems = cacheEntries.length + tileStats.totalTiles;
     const totalHits = cacheEntries.reduce((sum: number, entry: any) => sum + entry.hits, 0);
@@ -482,7 +498,7 @@ export class ShapeService {
           hits: cacheEntries.filter((e: any) => e.cacheType === 'features').reduce((s: number, e: any) => s + e.hits, 0),
           misses: 0,
           evictions: 0,
-          averageSize: 0
+          averageSize: 0,
         },
         tiles: {
           size: tileStats.totalSize,
@@ -490,7 +506,7 @@ export class ShapeService {
           hits: 0,
           misses: 0,
           evictions: 0,
-          averageSize: tileStats.totalTiles > 0 ? tileStats.totalSize / tileStats.totalTiles : 0
+          averageSize: tileStats.totalTiles > 0 ? tileStats.totalSize / tileStats.totalTiles : 0,
         },
         buffers: {
           size: cacheEntries.filter((e: any) => e.cacheType === 'buffers').reduce((s: number, e: any) => s + e.size, 0),
@@ -498,7 +514,7 @@ export class ShapeService {
           hits: cacheEntries.filter((e: any) => e.cacheType === 'buffers').reduce((s: number, e: any) => s + e.hits, 0),
           misses: 0,
           evictions: 0,
-          averageSize: 0
+          averageSize: 0,
         },
         all: {
           size: totalSize,
@@ -506,32 +522,32 @@ export class ShapeService {
           hits: totalHits,
           misses: 0,
           evictions: 0,
-          averageSize: totalItems > 0 ? totalSize / totalItems : 0
-        }
+          averageSize: totalItems > 0 ? totalSize / totalItems : 0,
+        },
       },
       hitRate: totalHits > 0 ? 0.95 : 0,
       missRate: totalHits > 0 ? 0.05 : 0,
       evictionCount: 0,
       oldestItem: cacheEntries.length > 0 ? Math.min(...cacheEntries.map((e: any) => e.createdAt)) : Date.now(),
-      newestItem: cacheEntries.length > 0 ? Math.max(...cacheEntries.map((e: any) => e.createdAt)) : Date.now()
+      newestItem: cacheEntries.length > 0 ? Math.max(...cacheEntries.map((e: any) => e.createdAt)) : Date.now(),
     };
   }
 
   private async exportAsGeoJSON(nodeId: NodeId): Promise<Blob> {
     const features = await shapeDB.features.where('nodeId').equals(nodeId).toArray();
-    
+
     const geojson = {
       type: 'FeatureCollection',
       features: features.map((feature: any) => ({
         type: 'Feature',
         id: feature.id,
         geometry: feature.geometry,
-        properties: feature.properties
-      }))
+        properties: feature.properties,
+      })),
     };
 
     return new Blob([JSON.stringify(geojson, null, 2)], {
-      type: 'application/json'
+      type: 'application/json',
     });
   }
 
@@ -539,7 +555,7 @@ export class ShapeService {
     // This would generate a complete MVT tileset
     // For now, return a placeholder
     return new Blob(['MVT export not yet implemented'], {
-      type: 'application/octet-stream'
+      type: 'application/octet-stream',
     });
   }
 
@@ -547,7 +563,7 @@ export class ShapeService {
     // This would generate PMTiles format
     // For now, return a placeholder
     return new Blob(['PMTiles export not yet implemented'], {
-      type: 'application/octet-stream'
+      type: 'application/octet-stream',
     });
   }
 }

@@ -1,60 +1,48 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { MapLibreMap, MapWithDeckGL, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
-import { MaplibreExportControl, PageOrientation, Format } from '@watergis/maplibre-gl-export';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type MapLibreMapInstance, type MapViewState, MapWithDeckGL } from '@hierarchidb/ui-map';
+import { Format, MaplibreExportControl, PageOrientation } from '@watergis/maplibre-gl-export';
 //import { Deck } from '@deck.gl/core';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import {
-  GeoJsonLayer,
-  ScatterplotLayer,
-  PathLayer,
-  PolygonLayer,
-  IconLayer,
-} from '@deck.gl/layers';
+import { GeoJsonLayer, IconLayer, PathLayer, PolygonLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { DataFilterExtension } from '@deck.gl/extensions';
 import {
   Box,
-  Paper,
-  IconButton,
-  Tooltip,
-  Slider,
-  Typography,
-  Stack,
+  Button,
+  Chip,
+  Divider,
   Drawer,
+  FormControl,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
-  ListItemText,
   ListItemSecondaryAction,
-  Divider,
-  Chip,
-  Button,
+  ListItemText,
   MenuItem,
-  FormControl,
+  Paper,
   Select,
+  Slider,
+  Stack,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import {
-  Layers as LayersIcon,
-  //Map,
-  ZoomIn as ZoomInIcon,
-  ZoomOut as ZoomOutIcon,
-  MyLocation as MyLocationIcon,
   Fullscreen as FullscreenIcon,
-  ThreeDRotation as ThreeDIcon,
-  //Timeline,
-  //Analytics,
-  //Download,
-  //Share,
-  //Settings,
-  Print as PrintIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  PlayArrow as PlayIcon,
+  Layers as LayersIcon,
+  MyLocation as MyLocationIcon,
   Pause as PauseIcon,
+  PlayArrow as PlayIcon,
+  Print as PrintIcon,
   SkipNext as SkipNextIcon,
   SkipPrevious as SkipPreviousIcon,
+  ThreeDRotation as ThreeDIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
 } from '@mui/icons-material';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
-import type { ProjectEntity, ProjectLayer, ColorRamp /*, SpatialAnalysis*/ } from '~/types/project-types';
+import type { ColorRamp, ProjectEntity, ProjectLayer } from '~/types/project-types';
 
 interface ProjectMapViewProps {
   project: ProjectEntity;
@@ -73,10 +61,10 @@ interface DeckLayer {
 }
 
 export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
-  project,
-  //onLayerUpdate,
-  //onAnalysisRun,
-}) => {
+                                                                project,
+                                                                //onLayerUpdate,
+                                                                //onAnalysisRun,
+                                                              }) => {
   const map = useRef<MapLibreMapInstance | null>(null);
   //const deck = useRef<Deck | null>(null);
   const overlay = useRef<MapboxOverlay | null>(null);
@@ -337,12 +325,12 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
     return `
       <div>
         ${entries
-          .map(
-            ([key, value]) => `
+      .map(
+        ([key, value]) => `
           <div><strong>${key}:</strong> ${value}</div>
-        `
-          )
-          .join('')}
+        `,
+      )
+      .join('')}
       </div>
     `;
   };
@@ -457,7 +445,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   const handlePrint = () => {
     // Trigger the export control programmatically
     const printButton = document.querySelector(
-      '.maplibregl-ctrl-export button'
+      '.maplibregl-ctrl-export button',
     ) as HTMLButtonElement;
     if (printButton) {
       printButton.click();
@@ -467,7 +455,7 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   const handleLayerToggle = (layerId: string) => {
     setLayers((prev) => {
       const updated = prev.map((layer) =>
-        layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
+        layer.id === layerId ? { ...layer, visible: !layer.visible } : layer,
       );
 
       if (overlay.current) {
@@ -687,43 +675,43 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
       {/* Timeline Control */}
       {
         /*timelineVisible*/ true && (
-          <Paper
-            sx={{
-              position: 'absolute',
-              bottom: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              p: 2,
-              width: '80%',
-              maxWidth: 600,
-              zIndex: 1000,
-            }}
-          >
-            <Stack spacing={2}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconButton size="small">
-                  <SkipPreviousIcon />
-                </IconButton>
-                <IconButton onClick={() => setIsPlaying(!isPlaying)}>
-                  {isPlaying ? <PauseIcon /> : <PlayIcon />}
-                </IconButton>
-                <IconButton size="small">
-                  <SkipNextIcon />
-                </IconButton>
-                <Slider
-                  value={currentTime}
-                  onChange={(_, value) => setCurrentTime(value as number)}
-                  min={0}
-                  max={100}
-                  sx={{ flex: 1 }}
-                />
-                <Typography variant="caption">
-                  {new Date(currentTime * 1000).toISOString().substr(11, 8)}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-        )
+        <Paper
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            p: 2,
+            width: '80%',
+            maxWidth: 600,
+            zIndex: 1000,
+          }}
+        >
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton size="small">
+                <SkipPreviousIcon />
+              </IconButton>
+              <IconButton onClick={() => setIsPlaying(!isPlaying)}>
+                {isPlaying ? <PauseIcon /> : <PlayIcon />}
+              </IconButton>
+              <IconButton size="small">
+                <SkipNextIcon />
+              </IconButton>
+              <Slider
+                value={currentTime}
+                onChange={(_, value) => setCurrentTime(value as number)}
+                min={0}
+                max={100}
+                sx={{ flex: 1 }}
+              />
+              <Typography variant="caption">
+                {new Date(currentTime * 1000).toISOString().substr(11, 8)}
+              </Typography>
+            </Box>
+          </Stack>
+        </Paper>
+      )
       }
 
       {/* Selected Feature Info */}

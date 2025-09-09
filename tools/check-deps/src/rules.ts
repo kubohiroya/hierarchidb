@@ -34,21 +34,21 @@ export function runRules(ctx: RuleContext): Finding[] {
   const tsconfig = readTsconfig(ctx.pkgDir);
   const paths = (tsconfig.compilerOptions && tsconfig.compilerOptions.paths) || {};
 
-  // 1) peer ⊆ external
+  //  1) peer external
   const missingExternal = [...peers].filter((p) => !externals.has(p));
   if (missingExternal.length) push(f, ctx, 'peer-in-external', 'WARN', `peer not in tsup.external:\n- ${missingExternal.join('\n- ')}`);
 
-  // 2) external ∩ dependencies（peer でない）
+  //  2) external dependenciespeer
   const extInDepsNotPeers = [...externals].filter((e) => deps.has(e) && !peers.has(e));
   if (extInDepsNotPeers.length) push(f, ctx, 'external-in-deps', 'WARN', `external also in dependencies (consider peer):\n- ${extInDepsNotPeers.join('\n- ')}`);
 
-  // 3) UI系: dependencies に置かない
+  //  3) UI: dependencies
   const uiInDeps = UI_PEERS.filter((u) => deps.has(u));
   if (uiInDeps.length) push(f, ctx, 'ui-in-deps', 'ERROR', `UI libs should be peerDependencies (not dependencies):\n- ${uiInDeps.join('\n- ')}`);
   const uiMissingPeer = UI_PEERS.filter((u) => (deps.has(u) || devs.has(u)) && !peers.has(u));
   if (uiMissingPeer.length) push(f, ctx, 'ui-missing-peer', 'WARN', `UI libs installed but missing in peerDependencies:\n- ${uiMissingPeer.join('\n- ')}`);
 
-  // 4) tsconfig.paths 直参照 ../xxx/src
+  //  4) tsconfig.paths ../xxx/src
   const badPaths = Object.entries(paths)
     .flatMap(([k, arr]) => (arr as string[] || []).map((p) => ({ key: k, val: p })))
     .filter((e) => /\.\.\/.+\/src(\/|$)/.test(e.val));
@@ -57,14 +57,14 @@ export function runRules(ctx: RuleContext): Finding[] {
     `tsconfig paths direct src reference:\n- ${badPaths.map((e) => `${e.key} -> ${e.val}`).join('\n- ')}`
   );
 
-  // 5) ローカル shim 検出
+  //  5) shim
   const shimDir = path.join(ctx.pkgDir, 'src', 'types');
   if (fs.existsSync(shimDir)) {
     const shims = fs.readdirSync(shimDir).filter((fn) => fn.endsWith('.d.ts'));
     if (shims.length) push(f, ctx, 'local-shims', 'WARN', `local type shims present (document policy):\n- ${shims.join('\n- ')}`);
   }
 
-  // 6) skipLibCheck ポリシング
+  //  6) skipLibCheck
   const skip = !!(tsconfig.compilerOptions && tsconfig.compilerOptions.skipLibCheck);
   const allowInTs = !!(tsconfig.checkDeps && tsconfig.checkDeps.allowSkipLibCheck);
   if (skip) {
@@ -80,7 +80,7 @@ export function runRules(ctx: RuleContext): Finding[] {
   const ext = tsconfig.extends || '';
   if (!ext.includes('tsconfig.base.json')) push(f, ctx, 'tsconfig-no-base', 'WARN', `tsconfig does not extend repo base (tsconfig.base.json): ${ext || '(missing)'} `);
 
-  // 8) tsx があるなら jsx: react-jsx
+  //  8) tsx jsx: react-jsx
   let hasTsx = false;
   const src = path.join(ctx.pkgDir, 'src');
   const stack = [src];

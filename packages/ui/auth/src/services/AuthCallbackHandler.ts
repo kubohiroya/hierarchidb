@@ -1,4 +1,7 @@
 import { AuthProviderType } from '../types/AuthProviderType';
+// import { devError } from "@/shared/utils/logger";
+// const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
+import { AuthUser } from '../types/AuthUser';
 // Temporary implementation for secureConfig
 const getSecureConfig = () => ({
   microsoftClientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
@@ -6,10 +9,6 @@ const getSecureConfig = () => ({
   githubClientId: import.meta.env.VITE_GITHUB_CLIENT_ID || '',
   githubClientSecret: import.meta.env.VITE_GITHUB_CLIENT_SECRET || '',
 });
-
-// import { devError } from "@/shared/utils/logger";
-// const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
-import { AuthUser } from '../types/AuthUser';
 
 const STORAGE_KEY = 'multi-auth-user';
 const PROVIDER_KEY = 'multi-auth-provider';
@@ -113,7 +112,7 @@ export class AuthCallbackHandler {
 
   private static async exchangeCodeForToken(
     code: string,
-    provider: AuthProviderType
+    provider: AuthProviderType,
   ): Promise<TokenResponse> {
     const secureConfig = getSecureConfig();
     const redirectUri = window.location.origin + window.location.pathname;
@@ -169,7 +168,7 @@ export class AuthCallbackHandler {
 
   private static async fetchUserInfo(
     accessToken: string,
-    provider: AuthProviderType
+    provider: AuthProviderType,
   ): Promise<Omit<AuthUser, 'access_token' | 'id_token' | 'expires_at' | 'provider'>> {
     let userInfoUrl: string;
     const headers: HeadersInit = {

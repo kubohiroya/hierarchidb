@@ -5,7 +5,7 @@
  * Reduces boilerplate code for form management across base-dialog containers.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAsyncOperation } from './useAsyncOperation';
 
 // Utility function to omit keys from an object that maintains proper type safety
@@ -152,7 +152,7 @@ export interface UseFormStateResult<T> {
  * ```
  */
 export function useFormState<T extends Record<string, any>>(
-  options: UseFormStateOptions<T>
+  options: UseFormStateOptions<T>,
 ): UseFormStateResult<T> {
   const { initialData, validate, validateOnChange = false, validateOnBlur = true } = options;
 
@@ -186,7 +186,7 @@ export function useFormState<T extends Record<string, any>>(
         }
       }
     },
-    [formData, validate, validateOnChange]
+    [formData, validate, validateOnChange],
   );
 
   // Update multiple fields
@@ -200,7 +200,7 @@ export function useFormState<T extends Record<string, any>>(
         setErrors(validationErrors || {});
       }
     },
-    [formData, validate, validateOnChange]
+    [formData, validate, validateOnChange],
   );
 
   // Touch a field
@@ -220,7 +220,7 @@ export function useFormState<T extends Record<string, any>>(
         }
       }
     },
-    [formData, validate, validateOnBlur]
+    [formData, validate, validateOnBlur],
   );
 
   // Validate a single field
@@ -240,7 +240,7 @@ export function useFormState<T extends Record<string, any>>(
         return true;
       }
     },
-    [formData, validate]
+    [formData, validate],
   );
 
   // Validate entire form
@@ -277,7 +277,7 @@ export function useFormState<T extends Record<string, any>>(
         setErrors(validationErrors || {});
       }
     },
-    [validate, validateOnChange]
+    [validate, validateOnChange],
   );
 
   // Execute async operation
@@ -289,7 +289,7 @@ export function useFormState<T extends Record<string, any>>(
 
       return executeAsync(() => operation(formData));
     },
-    [formData, validateForm, executeAsync]
+    [formData, validateForm, executeAsync],
   );
 
   // Set field error

@@ -1,21 +1,12 @@
 import React from 'react';
+import { Alert, Card, CardContent, Chip, IconButton, LinearProgress, Stack, Typography } from '@mui/material';
 import {
-  Card,
-  CardContent,
-  Stack,
-  Typography,
-  LinearProgress,
-  IconButton,
-  Alert,
-  Chip,
-} from '@mui/material';
-import {
-  PlayArrow as PlayArrowIcon,
-  Pause as PauseIcon,
+  Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Cancel as CancelIcon,
   HourglassEmpty as WaitIcon,
+  Pause as PauseIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
 import type { BatchTask, BatchTaskStage } from '~/shared';
 
@@ -26,10 +17,10 @@ interface TaskMonitorProps {
 }
 
 export const TaskMonitor: React.FC<TaskMonitorProps> = ({
-  tasks,
-  onCancelTask,
-  onResumeTask,
-}) => {
+                                                          tasks,
+                                                          onCancelTask,
+                                                          onResumeTask,
+                                                        }) => {
   const getTaskTitle = (task: BatchTask): string => {
     if ('countryCode' in task && 'adminLevel' in task) {
       return `${task.countryCode} - Level ${task.adminLevel}`;
@@ -68,7 +59,7 @@ export const TaskMonitor: React.FC<TaskMonitorProps> = ({
       pause: { label: 'Paused', color: 'warning' as const },
       cancel: { label: 'Cancelled', color: 'default' as const },
     };
-    
+
     const config = configs[stage] || { label: stage, color: 'default' as const };
     return <Chip label={config.label} size="small" color={config.color} />;
   };
@@ -93,23 +84,23 @@ export const TaskMonitor: React.FC<TaskMonitorProps> = ({
                   {getTaskTitle(task)}
                 </Typography>
               </Stack>
-              
+
               <Stack direction="row" spacing={1} alignItems="center">
                 {getStageChip(task.stage)}
-                
+
                 {task.stage === 'process' && (
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => onCancelTask(task.taskId)}
                     title="Pause task"
                   >
                     <PauseIcon fontSize="small" />
                   </IconButton>
                 )}
-                
+
                 {task.stage === 'pause' && (
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => onResumeTask(task.taskId)}
                     title="Resume task"
                   >
@@ -118,21 +109,21 @@ export const TaskMonitor: React.FC<TaskMonitorProps> = ({
                 )}
               </Stack>
             </Stack>
-            
+
             {task.stage === 'process' && task.progress !== undefined && (
-              <LinearProgress 
-                variant="determinate" 
-                value={task.progress} 
+              <LinearProgress
+                variant="determinate"
+                value={task.progress}
                 sx={{ mt: 1 }}
               />
             )}
-            
+
             {task.error && (
               <Alert severity="error" sx={{ mt: 1, py: 0.5 }}>
                 <Typography variant="caption">{task.error}</Typography>
               </Alert>
             )}
-            
+
             {task.metadata && (
               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                 {Object.entries(task.metadata).map(([key, value]) => (

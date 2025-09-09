@@ -14,7 +14,9 @@ export interface Country {
   continent: ContinentCode;
   /** Population (optional) */
   population?: number;
-  /** Area in km² (optional) */
+  /**
+   * Area in km (optional)
+   */
   area?: number;
   /** Capital city (optional) */
   capital?: string;

@@ -1,15 +1,13 @@
 /**
- * TreeConsoleHeader テストファイル
- *
- * 基本的なレンダリングと props の動作を確認
- */
+  * TreeConsoleHeader
+  * props
+  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TreeConsoleHeader } from '../TreeConsoleHeader';
 import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
 
-// モックデータ
 const mockController: TreeViewController = {
   currentNode: null,
   selectedNodes: [],
@@ -18,15 +16,24 @@ const mockController: TreeViewController = {
   selectionMode: 'checkbox' as const,
   data: [],
   expandedRowIds: new Set(),
-  selectNode: () => {},
-  selectMultipleNodes: () => {},
-  expandNode: () => {},
-  collapseNode: () => {},
-  moveNodes: async () => {},
-  deleteNodes: async () => {},
-  duplicateNodes: async () => {},
-  startEdit: async () => {},
-  startCreate: async () => {},
+  selectNode: () => {
+  },
+  selectMultipleNodes: () => {
+  },
+  expandNode: () => {
+  },
+  collapseNode: () => {
+  },
+  moveNodes: async () => {
+  },
+  deleteNodes: async () => {
+  },
+  duplicateNodes: async () => {
+  },
+  startEdit: async () => {
+  },
+  startCreate: async () => {
+  },
   undo: async () => ({ success: true }),
   redo: async () => ({ success: true }),
   canUndo: false,
@@ -112,7 +119,7 @@ describe('TreeConsoleHeader', () => {
     ] as any;
 
     render(
-      <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />
+      <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />,
     );
 
     expect(screen.getByText(/Path: Root > Parent/)).toBeInTheDocument();

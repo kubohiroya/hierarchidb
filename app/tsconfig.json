@@ -1,20 +1,17 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "lib": [
       "ES2022",
       "DOM",
-      "DOM.Iterable",
-      
+      "DOM.Iterable"
     ],
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/common-auth": ["../packages/common/auth/src/index.ts"],
-      "@hierarchidb/ui-dialog": ["../packages/ui/dialog/src/index.ts"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/src/index.ts"],
-      "@hierarchidb/ui-theme": ["../packages/ui/theme/src/index.ts"]
+      "~/*": [
+        "src/*"
+      ]
     },
     "composite": false,
     "incremental": false,
@@ -29,7 +26,7 @@
     "esModuleInterop": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "rootDir": "."
+    
   },
   "include": [
     "src/**/*.ts",

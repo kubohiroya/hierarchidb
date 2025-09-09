@@ -1,19 +1,17 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { TextField, Grid } from '@mui/material';
+import { Grid, TextField } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import { MultiStepDialog, type DialogStep } from '@hierarchidb/ui-dialog';
+import { type DialogStep, MultiStepDialog } from '@hierarchidb/ui-dialog';
 import { useDialogUrlSync } from '@hierarchidb/runtime-ui-plugin-dialog';
-import type { DialogStepDefinition, ValidationResult } from '@hierarchidb/common-type';
-import type { StepValidation } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, StepValidation, ValidationResult } from '@hierarchidb/common-type';
+import { NodeId } from '@hierarchidb/common-type';
+import type { FolderCreateData, FolderDisplayData, FolderEditData } from '../types';
 
 // IconGroupSettings is exported by deprecated components; import type via that module if needed
 export type IconGroupSettings = {
   normalMode: 'hidden' | 'always' | 'hover';
   fullscreenMode: 'hidden' | 'always' | 'hover';
 };
-
-import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types';
-import { NodeId } from '@hierarchidb/common-type';
 
 /**
  * Base step data for folder-plugin dialogs
@@ -125,14 +123,14 @@ const FolderBaseStep: React.FC<{
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange({ ...data, name: e.target.value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange({ ...data, description: e.target.value });
     },
-    [data, onChange]
+    [data, onChange],
   );
 
   const nameError = errors?.find((e) => e.includes('name'));
@@ -177,23 +175,32 @@ const FolderBaseStep: React.FC<{
  * Extensible folder-plugin base-dialog that supports additional steps from plugins
  */
 export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
-  mode,
-  parentId: _parentId,
-  nodeId,
-  currentData,
-  onSubmit,
-  onCancel,
-  open = true,
-  additionalSteps = [],
-  icon = <FolderIcon />,
-  title,
-  iconGroupSettings,
-}) => {
+                                                                                mode,
+                                                                                parentId: _parentId,
+                                                                                nodeId,
+                                                                                currentData,
+                                                                                onSubmit,
+                                                                                onCancel,
+                                                                                open = true,
+                                                                                additionalSteps = [],
+                                                                                icon = <FolderIcon />,
+                                                                                title,
+                                                                                iconGroupSettings,
+                                                                              }) => {
   // URL-synced dialog state
-  const { step: activeStep, setStep: setActiveStep, mode: urlMode, setMode, map, setMap, clearParams } = useDialogUrlSync({
+  const {
+    step: activeStep,
+    setStep: setActiveStep,
+    mode: urlMode,
+    setMode,
+    map,
+    setMap,
+    clearParams,
+  } = useDialogUrlSync({
     defaults: { step: 0, mode: 'normal' },
-    debounce: { map: 400 },
-    history: { step: 'push' },
+    // Tests are sensitive to async updates; keep sync to avoid act() warnings
+    debounce: { map: 0 },
+    history: { step: 'replace' },
   });
   // Build the base step definition
   const baseStep = useMemo<DialogStepDefinition>(
@@ -205,7 +212,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         validate: (data: any) => new FolderStepValidation().validate(data),
       },
     }),
-    []
+    [],
   );
 
   // Combine base step with additional steps
@@ -241,7 +248,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
       // Extract extension fields (exclude base keys)
       const extensionData = Object.fromEntries(
-        Object.entries(finalData).filter(([k]) => k !== 'name' && k !== 'description')
+        Object.entries(finalData).filter(([k]) => k !== 'name' && k !== 'description'),
       );
 
       // In edit mode, only send changed fields
@@ -271,7 +278,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
       // no-op: URL params removed
     },
-    [mode, currentData, onSubmit]
+    [mode, currentData, onSubmit],
   );
 
   // Determine base-dialog title
@@ -293,7 +300,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   const [formErrors, setFormErrors] = useState<string[] | undefined>(undefined);
 
   // Ensure we start at step 0 when the dialog opens (avoid leaking URL state across tests/routes)
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (open) {
       clearParams();
       setActiveStep(0);
@@ -305,7 +312,7 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     (params: { zoom: number; lng: number; lat: number } | undefined) => {
       if (params) setMap({ lng: params.lng, lat: params.lat, zoom: params.zoom });
     },
-    [setMap]
+    [setMap],
   );
 
   // Convert DialogStepDefinition[] -> DialogStep[] for ui-dialog
@@ -321,18 +328,18 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       }),
       validate: s.validation
         ? async () => {
-            try {
-              const res = await s.validation!.validate(formData as any);
-              if (res && typeof res === 'object' && 'valid' in res) {
-                setFormErrors(res.valid ? [] : (res as any).message ? [(res as any).message] : ['Validation failed']);
-                return (res as any).valid as boolean;
-              }
-              return !!res;
-            } catch {
-              setFormErrors(['Validation failed']);
-              return false;
+          try {
+            const res = await s.validation!.validate(formData as any);
+            if (res && typeof res === 'object' && 'valid' in res) {
+              setFormErrors(res.valid ? [] : (res as any).message ? [(res as any).message] : ['Validation failed']);
+              return (res as any).valid as boolean;
             }
+            return !!res;
+          } catch {
+            setFormErrors(['Validation failed']);
+            return false;
           }
+        }
         : undefined,
     }));
   }, [allSteps, formData, formErrors]);

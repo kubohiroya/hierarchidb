@@ -3,6 +3,10 @@ export interface NetworkPortLike {
 }
 
 export interface RoutingEngine {
-  route(points: [number, number][], options?: any): Promise<{ line: [number, number][], distance_m: number, duration_s?: number }>;
+  route(points: [number, number][], options?: any): Promise<{
+    line: [number, number][],
+    distance_m: number,
+    duration_s?: number
+  }>;
 }
 

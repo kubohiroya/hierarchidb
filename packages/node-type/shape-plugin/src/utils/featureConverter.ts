@@ -3,9 +3,9 @@
  * Handles conversion between internal Feature type and GeoJSON standard Feature
  */
 
-import type { Feature as GeoJSONFeature, Geometry } from "geojson";
-import type { NodeId } from "@hierarchidb/common-type";
-import type { Feature } from "../types";
+import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { Feature } from '../types';
 
 /**
  * Convert internal Feature to GeoJSON standard Feature
@@ -60,9 +60,9 @@ export function fromGeoJSONFeature(
   const internalId = geojson.properties?._internalId;
 
   return {
-    type: "Feature",
+    type: 'Feature',
     // Internal ID: use existing internal ID or 0 (will be auto-output by Dexie)
-    id: typeof internalId === "number" ? internalId : 0,
+    id: typeof internalId === 'number' ? internalId : 0,
     // Preserve original GeoJSON id
     originalId: geojson.id,
     nodeId,
@@ -91,13 +91,13 @@ export function hasValidGeometry(feature: Feature): boolean {
   if (!feature.geometry) return false;
 
   const validTypes = [
-    "Point",
-    "LineString",
-    "Polygon",
-    "MultiPoint",
-    "MultiLineString",
-    "MultiPolygon",
-    "GeometryCollection",
+    'Point',
+    'LineString',
+    'Polygon',
+    'MultiPoint',
+    'MultiLineString',
+    'MultiPolygon',
+    'GeometryCollection',
   ];
 
   return validTypes.includes(feature.geometry.type);
@@ -111,7 +111,7 @@ export function createFeatureFromGeometry(
   properties: Record<string, any> = {},
 ): GeoJSONFeature {
   return {
-    type: "Feature",
+    type: 'Feature',
     geometry,
     properties,
   };

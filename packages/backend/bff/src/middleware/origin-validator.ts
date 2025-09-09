@@ -6,20 +6,19 @@ import { Context, Next } from 'hono';
 import { parseAllowedOrigins } from '../utils/cors.js';
 
 /**
- * Originを検証するミドルウェア
- * 開発環境：localhostのみ許可
- * 本番環境：ALLOWED_ORIGINSのみ許可
- */
+  * Origin
+ * localhost
+ * ALLOWED_ORIGINS
+  */
 export async function validateOrigin(c: Context, next: Next) {
   const origin = c.req.header('Origin');
   const env = c.env as any;
 
-  // Originヘッダーがない場合（同一オリジンリクエストなど）は通す
+  //  Origin
   if (!origin) {
     return next();
   }
 
-  // プロダクション環境
   if (env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production') {
     const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
 
@@ -30,12 +29,10 @@ export async function validateOrigin(c: Context, next: Next) {
           error: 'Forbidden',
           message: 'Origin not allowed',
         },
-        403
+        403,
       );
     }
-  }
-  // 開発環境
-  else {
+  } else {
     const isLocalhost =
       origin.startsWith('http://localhost:') ||
       origin.startsWith('http://127.0.0.1:') ||
@@ -49,23 +46,21 @@ export async function validateOrigin(c: Context, next: Next) {
           error: 'Forbidden',
           message: 'Only localhost origins are allowed in development mode',
         },
-        403
+        403,
       );
     }
   }
 
-  // 検証をパスした場合は次の処理へ
   return next();
 }
 
 /**
- * 特定のパスにOrigin検証を適用するヘルパー関数
- */
+  * Origin
+  */
 export function requireValidOrigin(paths: string[]) {
   return async (c: Context, next: Next) => {
     const path = new URL(c.req.url).pathname;
 
-    // 指定されたパスの場合のみ検証
     if (paths.some((p) => path.startsWith(p))) {
       return validateOrigin(c, next);
     }

@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
-import { loadEnv } from 'vite';
 
 export default defineConfig({
   esbuild: {
@@ -11,12 +10,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    pool: 'forks',
-    maxWorkers: 1,
-    minWorkers: 1,
+    // Use threads pool to avoid child-process kill errors in sandboxed CI
+    pool: 'threads',
+    maxThreads: 1,
+    minThreads: 1,
     include: [
       'src/**/*.test.ts',
-      'src/**/*.test.tsx'
+      'src/**/*.test.tsx',
     ],
 
     exclude: [
@@ -26,7 +26,7 @@ export default defineConfig({
       'src/services/**/__tests__/**',
       'src/worker/**/__tests__/**',
       '**/node_modules/**',
-      '**/dist/**'
+      '**/dist/**',
     ],
     testTimeout: 3000, // 3 seconds for faster feedback
     coverage: {
@@ -35,19 +35,20 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**']
-    }
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
   },
   resolve: {
     alias: {
-      '@hierarchidb/core': path.resolve(__dirname, '../../common/core/src'),
-      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/src'),
-      '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
-      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/src'),
-      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/src'),
-      '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/src'),
+      // Map legacy core imports to public dist builds for tests
+      '@hierarchidb/core': path.resolve(__dirname, '../../common/types/dist/index.js'),
+      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/dist/index.js'),
+      '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist/index.js'),
+      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/dist/index.js'),
+      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.js'),
+      '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.js'),
       '~': path.resolve(__dirname, './src'),
-      '@hierarchidb/app/src/hooks/useWorkerAPIClient': path.resolve(__dirname, './src/ui/__tests__/mocks/useWorkerAPIClient.ts'),
+      // App client hook is now injected via registerWorkerClientHook in tests
     },
   },
 });

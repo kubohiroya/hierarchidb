@@ -1,10 +1,10 @@
 /**
- * @file index.ts
+  * @file index.ts
  * @description Styler plugin main entry point
- * 【機能概要】: Stylerプラグインのメインエクスポート
- * 【実装方針】: プラグイン拡張パターンに準拠したエクスポート構造
- * 🟢 信頼性レベル: HierarchiDBプラグインアーキテクチャ準拠
- */
+ * : Styler
+ * :
+ * : HierarchiDB
+  */
 
 // Import classes and services for internal use
 import { StylerDataService } from './services/StylerDataService';
@@ -75,10 +75,10 @@ export {
 // import from '@hierarchidb/styler-plugin/ui' when needed
 
 /**
- * 【プラグイン情報】: HierarchiDBプラグインシステム用の情報
- * 【実装方針】: package.jsonのhierarchidb.plugin設定と連携
- * 🟢 信頼性レベル: プラグインシステム準拠
- */
+  * : HierarchiDB
+ * : package.jsonhierarchidb.plugin
+ * :
+  */
 export const PLUGIN_INFO = {
   nodeType: 'styler',
   name: 'Styler Plugin',
@@ -98,10 +98,10 @@ export const PLUGIN_INFO = {
 } as const;
 
 /**
- * 【プラグイン初期化】: プラグインの初期化関数
- * 【実装方針】: HierarchiDBのプラグインローダーから呼び出される
- * 🟡 信頼性レベル: プラグインシステム仕様に依存
- */
+  * :
+ * : HierarchiDB
+ * :
+  */
 export async function initializeStylerPlugin(context: {
   spreadsheetPlugin: any;
   csvApiDriver: any;
@@ -110,13 +110,12 @@ export async function initializeStylerPlugin(context: {
   try {
     const { spreadsheetPlugin, csvApiDriver, nodeTypeRegistry } = context;
 
-    // StylerDataServiceを初期化
+    //  StylerDataService
     const dataService = new StylerDataService(csvApiDriver);
 
-    // StylerEntityHandlerを初期化
+    //  StylerEntityHandler
     const entityHandler = new StylerEntityHandler(spreadsheetPlugin.entityHandler, dataService);
 
-    // プラグインをレジストリに登録
     nodeTypeRegistry.registerExtension({
       definition: StylerExtension,
       handler: entityHandler,

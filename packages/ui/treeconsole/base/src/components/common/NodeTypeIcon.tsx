@@ -1,17 +1,15 @@
 /**
- * NodeTypeIcon - ノードタイプに応じたアイコン表示コンポーネント
- *
- * クリック可能で、コンテキストメニューを表示できる
- */
+  * NodeTypeIcon -
+    */
 
 import { MouseEvent } from 'react';
-import { IconButton, Box } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import {
-  Folder as FolderIcon,
-  Description as FileIcon,
-  Note as NoteIcon,
-  Home as HomeIcon,
   Delete as TrashIcon,
+  Description as FileIcon,
+  Folder as FolderIcon,
+  Home as HomeIcon,
+  Note as NoteIcon,
 } from '@mui/icons-material';
 
 interface NodeTypeIconProps {
@@ -24,8 +22,7 @@ interface NodeTypeIconProps {
 }
 
 /**
- * ノードタイプに応じたアイコンを返す
- */
+    */
 function getIconByType(nodeType: string) {
   switch (nodeType) {
     case 'ProjectFolder':
@@ -48,16 +45,16 @@ function getIconByType(nodeType: string) {
 }
 
 /**
- * NodeTypeIcon コンポーネント
- */
+  * NodeTypeIcon
+  */
 export function NodeTypeIcon({
-  nodeType,
-  size = 'small',
-  clickable = false,
-  onClick,
-  disabled = false,
-  color = 'inherit',
-}: NodeTypeIconProps) {
+                               nodeType,
+                               size = 'small',
+                               clickable = false,
+                               onClick,
+                               disabled = false,
+                               color = 'inherit',
+                             }: NodeTypeIconProps) {
   const Icon = getIconByType(nodeType);
   const fontSize = size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium';
 

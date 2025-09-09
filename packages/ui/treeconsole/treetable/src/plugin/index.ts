@@ -1,24 +1,23 @@
 /**
- * Plugin System Exports
- * 
- * TreeTableプラグインシステムの公開API
- */
+  * Plugin System Exports
+  * TreeTableAPI
+  */
 
 // Core plugin system
 export { PluginRegistry } from './PluginRegistry';
-export { 
-  PluginProvider, 
-  usePluginContext, 
-  usePluginRegistry, 
+export {
+  PluginProvider,
+  usePluginContext,
+  usePluginRegistry,
   usePlugin,
   usePluginHooks,
   usePluginEnabled,
-  withPlugins 
+  withPlugins,
 } from './PluginProvider';
-export { 
+export {
   useOptionalPluginContext,
   usePluginsEnabled,
-  useSafePluginHook
+  useSafePluginHook,
 } from './useOptionalPluginContext';
 
 // Type definitions
@@ -46,7 +45,7 @@ export type {
   HookExecutionError,
 } from './types';
 
-// Plugin-enhanced components (新しい統合版から)
+//  Plugin-enhanced components ()
 export {
   InlineEditableTreeTable,
   KeyboardNavigableTreeTable,
@@ -62,7 +61,7 @@ export function createPlugin(
     components?: import('./types').TreeTableComponentOverrides;
     dependencies?: string[];
     config?: Record<string, any>;
-  }
+  },
 ): import('./types').TreeTablePlugin {
   return {
     name,
@@ -75,30 +74,26 @@ export function createPlugin(
 }
 
 /**
- * プラグイン開発用のヘルパー関数
- */
+    */
 export const PluginHelpers = {
   /**
-   * 簡単なプラグインを作成
-   */
+            */
   createSimplePlugin: createPlugin,
 
   /**
-   * フック関数の作成ヘルパー
-   */
+            */
   createHook<T extends keyof import('./types').TreeTableHooks>(
     hookName: T,
-    implementation: NonNullable<import('./types').TreeTableHooks[T]>
+    implementation: NonNullable<import('./types').TreeTableHooks[T]>,
   ) {
     return { [hookName]: implementation } as Pick<import('./types').TreeTableHooks, T>;
   },
 
   /**
-   * プラグインの依存関係チェック
-   */
+            */
   validateDependencies(
     plugin: import('./types').TreeTablePlugin,
-    availablePlugins: string[]
+    availablePlugins: string[],
   ): { isValid: boolean; missingDependencies: string[] } {
     const missing = plugin.dependencies?.filter(dep => !availablePlugins.includes(dep)) || [];
     return {
@@ -108,14 +103,12 @@ export const PluginHelpers = {
   },
 
   /**
-   * プラグインの互換性チェック
-   */
+            */
   checkCompatibility(
     plugin: import('./types').TreeTablePlugin,
-    targetVersion: string
+    targetVersion: string,
   ): boolean {
-    // 簡単なバージョン互換性チェック
-    // 実際の実装では、semverライブラリを使用することを推奨
+    //  semver
     const [major] = plugin.version.split('.');
     const [targetMajor] = targetVersion.split('.');
     return major === targetMajor;

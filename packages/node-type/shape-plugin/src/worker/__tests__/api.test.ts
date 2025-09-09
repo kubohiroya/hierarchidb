@@ -2,9 +2,9 @@
  * Worker API implementation tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shapePluginAPI } from '../api';
-import type { EntityId, NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { CreateShapeData, UpdateShapeData } from '../../shared';
 
 // Mock ShapeEntityHandler
@@ -184,7 +184,7 @@ describe('Shape Plugin API', () => {
       const sessionId = await shapePluginAPI.startBatchProcessing(
         workingCopyId,
         config,
-        urlMetadata
+        urlMetadata,
       );
       expect(typeof sessionId).toBe('string');
       expect(sessionId).toMatch(/^session-/);
@@ -278,7 +278,7 @@ describe('Shape Plugin API', () => {
       };
 
       await expect(shapePluginAPI.updateEntity(nodeId, updateData)).rejects.toThrow(
-        'Shape entity not found for node'
+        'Shape entity not found for node',
       );
     });
 
@@ -286,7 +286,7 @@ describe('Shape Plugin API', () => {
       const nodeId = 'node-123' as NodeId;
 
       await expect(shapePluginAPI.deleteEntity(nodeId)).rejects.toThrow(
-        'Shape entity not found for node'
+        'Shape entity not found for node',
       );
     });
   });
@@ -414,7 +414,7 @@ describe('updateEntity', () => {
     };
 
     await expect(shapePluginAPI.updateEntity(nodeId, updateData)).rejects.toThrow(
-      'Shape entity not found for node'
+      'Shape entity not found for node',
     );
   });
 });
@@ -424,7 +424,7 @@ describe('deleteEntity', () => {
     const nodeId = 'node-123' as NodeId;
 
     await expect(shapePluginAPI.deleteEntity(nodeId)).rejects.toThrow(
-      'Shape entity not found for node'
+      'Shape entity not found for node',
     );
   });
 });
@@ -497,7 +497,7 @@ describe('validateSelection', () => {
     const result = await shapePluginAPI.validateSelection(manyCountries, [0], 'naturalearth');
 
     expect(result.warnings).toContain(
-      'Large country selection may require significant processing time'
+      'Large country selection may require significant processing time',
     );
   });
 });
@@ -515,7 +515,7 @@ describe('startBatchProcessing', () => {
         concurrentProcesses: 2,
         maxZoomLevel: 12,
       },
-      []
+      [],
     );
 
     expect(typeof sessionId).toBe('string');
@@ -525,7 +525,7 @@ describe('startBatchProcessing', () => {
   it('should reject invalid processing config', async () => {
     await expect(
       shapePluginAPI.startBatchProcessing(
-        'node-123' as EntityId,
+        'node-123' as NodeId,
         {
           concurrentDownloads: 20, // Invalid - exceeds limit
           corsProxyBaseURL: '',
@@ -535,8 +535,8 @@ describe('startBatchProcessing', () => {
           concurrentProcesses: 2,
           maxZoomLevel: 12,
         },
-        []
-      )
+        [],
+      ),
     ).rejects.toThrow('Invalid processing config');
   });
 });

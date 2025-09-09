@@ -1,7 +1,7 @@
 /**
  * @file AuthNotificationSystem.ts
  * @description Common authentication notification system for Worker-to-UI communication
- * 
+ *
  * This system handles authentication errors that occur during batch processing
  * in Worker threads and coordinates with the UI layer for authentication flows.
  */
@@ -66,9 +66,9 @@ export interface AuthCancelledNotification {
 /**
  * Union type for all authentication notifications
  */
-export type AuthNotification = 
-  | AuthRequiredNotification 
-  | AuthSuccessNotification 
+export type AuthNotification =
+  | AuthRequiredNotification
+  | AuthSuccessNotification
   | AuthCancelledNotification;
 
 /**
@@ -79,12 +79,12 @@ export interface AuthNotificationHandler {
    * Handle authentication required notification
    */
   onAuthRequired(notification: AuthRequiredNotification): Promise<void>;
-  
+
   /**
    * Handle authentication success notification
    */
   onAuthSuccess(notification: AuthSuccessNotification): Promise<void>;
-  
+
   /**
    * Handle authentication cancelled notification
    */
@@ -98,28 +98,28 @@ export class AuthNotificationRegistry {
   private static instance: AuthNotificationRegistry;
   private handlers = new Map<string, AuthNotificationHandler>();
   private pendingRequests = new Map<string, AuthRequiredNotification>();
-  
+
   static getInstance(): AuthNotificationRegistry {
     if (!AuthNotificationRegistry.instance) {
       AuthNotificationRegistry.instance = new AuthNotificationRegistry();
     }
     return AuthNotificationRegistry.instance;
   }
-  
+
   /**
    * Register an authentication notification handler
    */
   register(handlerId: string, handler: AuthNotificationHandler): void {
     this.handlers.set(handlerId, handler);
   }
-  
+
   /**
    * Unregister an authentication notification handler
    */
   unregister(handlerId: string): void {
     this.handlers.delete(handlerId);
   }
-  
+
   /**
    * Dispatch an authentication notification to all registered handlers
    */
@@ -130,7 +130,7 @@ export class AuthNotificationRegistry {
     } else {
       this.pendingRequests.delete(notification.context.requestId);
     }
-    
+
     // Dispatch to all handlers
     const promises = Array.from(this.handlers.values()).map(handler => {
       switch (notification.type) {
@@ -142,24 +142,24 @@ export class AuthNotificationRegistry {
           return handler.onAuthCancelled(notification);
       }
     });
-    
+
     await Promise.allSettled(promises);
   }
-  
+
   /**
    * Get pending authentication requests
    */
   getPendingRequests(): AuthRequiredNotification[] {
     return Array.from(this.pendingRequests.values());
   }
-  
+
   /**
    * Check if a request is pending
    */
   isPending(requestId: string): boolean {
     return this.pendingRequests.has(requestId);
   }
-  
+
   /**
    * Clear all pending requests
    */
@@ -202,7 +202,7 @@ export const AuthNotificationFactory = {
       timestamp: Date.now(),
     };
   },
-  
+
   /**
    * Create an authentication success notification
    */
@@ -232,7 +232,7 @@ export const AuthNotificationFactory = {
       timestamp: Date.now(),
     };
   },
-  
+
   /**
    * Create an authentication cancelled notification
    */
@@ -265,7 +265,7 @@ export function generateRequestId(): string {
  */
 export function detectAuthSource(response: Response): AuthSource {
   const url = response.url;
-  
+
   if (url.includes('cors-proxy')) {
     return 'cors-proxy';
   } else if (url.includes('bff') || url.includes('/auth/')) {
@@ -284,11 +284,11 @@ export const AuthNotificationGuards = {
   isAuthRequired(notification: AuthNotification): notification is AuthRequiredNotification {
     return notification.type === 'AUTH_REQUIRED';
   },
-  
+
   isAuthSuccess(notification: AuthNotification): notification is AuthSuccessNotification {
     return notification.type === 'AUTH_SUCCESS';
   },
-  
+
   isAuthCancelled(notification: AuthNotification): notification is AuthCancelledNotification {
     return notification.type === 'AUTH_CANCELLED';
   },

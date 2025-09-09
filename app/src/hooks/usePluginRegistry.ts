@@ -10,15 +10,15 @@ import type { NodeType } from '@hierarchidb/common-type';
 
 /**
  * Hook for accessing plugin registry information
- * 
+ *
  * @example
  * ```tsx
  * function PluginList() {
  *   const { plugins, loading, error } = usePluginRegistry();
- *   
+ *
  *   if (loading) return <div>Loading plugins...</div>;
  *   if (error) return <div>Error: {error}</div>;
- *   
+ *
  *   return (
  *     <ul>
  *       {plugins.map(plugin => (
@@ -42,7 +42,7 @@ export function usePluginRegistry() {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Plugin registry is migrating; return empty list as safe default in Phase 2
         const pluginList: PluginInfo[] = [];
         setPlugins(pluginList);
@@ -62,18 +62,18 @@ export function usePluginRegistry() {
 
 /**
  * Hook for accessing information about a specific plugin
- * 
+ *
  * @param nodeType - The node type of the plugin to query
- * 
+ *
  * @example
  * ```tsx
  * function PluginDetails({ nodeType }: { nodeType: NodeType }) {
  *   const { plugin, loading, error } = usePluginInfo(nodeType);
- *   
+ *
  *   if (loading) return <div>Loading...</div>;
  *   if (error) return <div>Error: {error}</div>;
  *   if (!plugin) return <div>Plugin not found</div>;
- *   
+ *
  *   return (
  *     <div>
  *       <h2>{plugin.displayName}</h2>
@@ -95,7 +95,7 @@ export function usePluginInfo(nodeType: NodeType) {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Phase 2 fallback: no registry, return null
         const info = null;
         setPlugin(info);
@@ -115,16 +115,16 @@ export function usePluginInfo(nodeType: NodeType) {
 
 /**
  * Hook for checking plugin dependencies
- * 
+ *
  * @param nodeType - The node type of the plugin to check dependencies for
- * 
+ *
  * @example
  * ```tsx
  * function PluginDependencies({ nodeType }: { nodeType: NodeType }) {
  *   const { dependencies, loading } = usePluginDependencies(nodeType);
- *   
+ *
  *   if (loading) return <div>Loading...</div>;
- *   
+ *
  *   return (
  *     <div>
  *       <h3>Dependencies:</h3>
@@ -170,14 +170,14 @@ export function usePluginDependencies(nodeType: NodeType) {
 
 /**
  * Hook for getting the plugin load order
- * 
+ *
  * @example
  * ```tsx
  * function PluginLoadOrder() {
  *   const { loadOrder, loading } = usePluginLoadOrder();
- *   
+ *
  *   if (loading) return <div>Loading...</div>;
- *   
+ *
  *   return (
  *     <ol>
  *       {loadOrder.map((nodeType, index) => (

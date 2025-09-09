@@ -5,7 +5,6 @@
     "module": "ESNext",
     "baseUrl": ".",
     "skipLibCheck": true,
-
     "paths": {
       "~/*": [
         "./src/*"
@@ -31,6 +30,7 @@
       "DOM.Iterable"
     ]
   },
+  "checkDeps": { "allowSkipLibCheck": true, "reason": "UI transitive types; reduce when upstream types stabilize." },
   "include": [
     "src/**/*"
   ],

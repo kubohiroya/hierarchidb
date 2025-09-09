@@ -1,16 +1,16 @@
-import React, { type MouseEvent } from 'react';
-import { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import {
+  Add as AddIcon,
   AssignmentTurnedIn,
   ChevronRight,
-  PlayArrow as PlayArrowIcon,
-  Add as AddIcon,
   Clear as ClearIcon,
   ContentCopy as ContentCopyIcon,
   Edit as EditIcon,
   Folder as FolderIcon,
+  PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
+
 // import { TreeNodeType } from "~/types"; // Unused
 
 export interface RowContextMenuProps {
@@ -329,7 +329,7 @@ export const RowContextMenu = memo(
                     <FolderIcon />
                   </ListItemIcon>
                   <ListItemText>{type}</ListItemText>
-                </MenuItem>
+                </MenuItem>,
               );
 
               return items;
@@ -352,5 +352,5 @@ export const RowContextMenu = memo(
       prevProps.addMenuNodeTypes.length === nextProps.addMenuNodeTypes.length &&
       prevProps.addMenuNodeTypes.every((type, index) => type === nextProps.addMenuNodeTypes[index])
     );
-  }
+  },
 );

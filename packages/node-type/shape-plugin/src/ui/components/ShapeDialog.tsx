@@ -3,29 +3,23 @@
  * Main base-dialog for creating and editing Shape entities
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box,
   Button,
-  Stepper,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Step,
   StepLabel,
-  Box,
+  Stepper,
   Typography,
-  CircularProgress,
 } from '@mui/material';
-import { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '../../shared/types';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
-import {
-  ShapeEntity,
-  ShapeWorkingCopy,
-  CreateShapeData,
-  UpdateShapeData,
-  UI_CONSTANTS,
-} from '../../shared';
+import { CreateShapeData, ShapeEntity, ShapeWorkingCopy, UI_CONSTANTS, UpdateShapeData } from '../../shared';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';
@@ -38,14 +32,14 @@ export interface ShapeDialogProps {
 }
 
 export function ShapeDialog({
-  mode,
-  nodeId,
-  parentId,
-  open,
-  onClose,
-  onSuccess,
-  onError,
-}: ShapeDialogProps) {
+                              mode,
+                              nodeId,
+                              parentId,
+                              open,
+                              onClose,
+                              onSuccess,
+                              onError,
+                            }: ShapeDialogProps) {
   const getShapeAPI = useShapeAPIGetter();
 
   // State management
@@ -54,11 +48,14 @@ export function ShapeDialog({
   const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy | null>(null);
   const [initializing, setInitializing] = useState(false);
 
-  // ✅ For Step 1, use temporary state (no WorkingCopyTypes yet)
+  //  For Step 1, use temporary state (no WorkingCopyTypes yet)
   const initializeTempState = useCallback(() => {
-    const tempState: ShapeWorkingCopy = {
+    const tempState: any = {
       id: 'temp-id' as any,
       nodeId: nodeId || (parentId as any),
+      parentId: parentId || (nodeId as any) || 'root',
+      nodeType: 'shape',
+      depth: 0,
       name: '',
       description: '',
       dataSourceName: 'naturalearth',
@@ -77,11 +74,12 @@ export function ShapeDialog({
       adminLevels: [],
       urlMetadata: [],
       isDraft: true,
+      copiedAt: Date.now(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
     };
-    setWorkingCopy(tempState);
+    setWorkingCopy(tempState as ShapeWorkingCopy);
   }, [nodeId, parentId]);
 
   // Initialize temp state for Step 1 only
@@ -91,7 +89,7 @@ export function ShapeDialog({
     }
   }, [open, activeStep, workingCopy, initializing, initializeTempState]);
 
-  // ✅ Step-based initialization - Only create WorkingCopyTypes at Step 2
+  //  Step-based initialization - Only create WorkingCopyTypes at Step 2
   const initializeWorkingCopyForStep2 = useCallback(async () => {
     if (initializing || workingCopy) return;
 
@@ -100,14 +98,14 @@ export function ShapeDialog({
       const api = await getShapeAPI();
 
       if (mode === 'edit' && nodeId) {
-        // ✅ CopyOnWrite: Create working copy from existing entity
+        //  CopyOnWrite: Create working copy from existing entity
         const workingCopyId = await api.createWorkingCopy(nodeId);
         const workingCopyData = await api.getWorkingCopy(workingCopyId);
         if (workingCopyData) {
           setWorkingCopy(workingCopyData as ShapeWorkingCopy);
         }
       } else if (mode === 'create' && parentId) {
-        // ✅ New draft: Create working copy for new entity
+        //  New draft: Create working copy for new entity
         const workingCopyId = await api.createNewDraftWorkingCopy(parentId);
         const workingCopyData = await api.getWorkingCopy(workingCopyId);
         if (workingCopyData) {
@@ -123,7 +121,7 @@ export function ShapeDialog({
   }, [mode, nodeId, parentId, getShapeAPI, onError, initializing, workingCopy]);
 
   const handleNext = useCallback(async () => {
-    // ✅ Step 1 → Step 2: Create actual WorkingCopyTypes (CopyOnWrite)
+    //  Step 1 Step 2: Create actual WorkingCopyTypes (CopyOnWrite)
     if (activeStep === 1 && !initializing && workingCopy?.id === 'temp-id') {
       await initializeWorkingCopyForStep2();
     }
@@ -210,7 +208,7 @@ export function ShapeDialog({
           return false;
       }
     },
-    [workingCopy]
+    [workingCopy],
   );
 
   const canProceed = isStepComplete(activeStep);

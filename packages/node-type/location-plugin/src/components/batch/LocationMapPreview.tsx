@@ -1,46 +1,43 @@
 /**
- * Location Map Preview Component
- * 地点データのマップ表示とインタラクティブプレビュー
- */
+  * Location Map Preview Component
+   */
 
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Fab,
+  Grid2,
+  Menu,
+  MenuItem,
+  MenuList,
   Paper,
-  Typography,
+  Slider,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Chip,
-  Slider,
-  Grid2,
   Tooltip,
-  Fab,
-  Menu,
-  MenuList,
-  MenuItem,
-
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Button,
-  TextField
+  Typography,
 } from '@mui/material';
 import {
-  LocationOn,
+  CenterFocusStrong,
   GroupWork,
+  Info,
+  Layers,
+  LocationOn,
+  MyLocation,
+  Search,
+  Settings,
   Whatshot,
   ZoomIn,
   ZoomOut,
-  CenterFocusStrong,
-  Settings,
-  Search,
-  MyLocation,
-  Layers,
-  Info
 } from '@mui/icons-material';
-import type { NodeId, LocationType } from '../../types';
+import type { LocationType, NodeId } from '../../types';
 
-// 地点データの型定義
 export interface LocationPoint {
   id: string;
   name: string;
@@ -56,10 +53,8 @@ export interface LocationPoint {
   };
 }
 
-// 表示モード
 export type DisplayMode = 'points' | 'clusters' | 'heatmap';
 
-// マップ統計
 export interface MapStatistics {
   totalPoints: number;
   visiblePoints: number;
@@ -82,7 +77,7 @@ export interface LocationMapPreviewProps {
   onLocationSelect?: (location: LocationPoint) => void;
 }
 
-// サンプルデータ（実際はpropsから受け取る）
+//  props
 const SAMPLE_LOCATIONS: LocationPoint[] = [
   {
     id: '1',
@@ -91,7 +86,7 @@ const SAMPLE_LOCATIONS: LocationPoint[] = [
     type: 'airport' as LocationType,
     countryCode: 'JPN',
     coordinates: [140.3862, 35.7653],
-    properties: { capacity: 30000000 }
+    properties: { capacity: 30000000 },
   },
   {
     id: '2',
@@ -100,7 +95,7 @@ const SAMPLE_LOCATIONS: LocationPoint[] = [
     type: 'railway_station' as LocationType,
     countryCode: 'JPN',
     coordinates: [139.7673, 35.6812],
-    properties: { elevation: 6 }
+    properties: { elevation: 6 },
   },
   {
     id: '3',
@@ -109,16 +104,15 @@ const SAMPLE_LOCATIONS: LocationPoint[] = [
     type: 'port' as LocationType,
     countryCode: 'JPN',
     coordinates: [139.6425, 35.4437],
-    properties: { capacity: 45000000 }
-  }
+    properties: { capacity: 45000000 },
+  },
 ];
 
-// 地点タイプの表示設定
-const TYPE_SETTINGS: Record<LocationType, { 
-  color: string; 
-  icon: string; 
+const TYPE_SETTINGS: Record<LocationType, {
+  color: string;
+  icon: string;
   name: string;
-  defaultVisible: boolean; 
+  defaultVisible: boolean;
 }> = {
   airport: { color: '#2196F3', icon: '✈️', name: '空港', defaultVisible: true },
   railway_station: { color: '#4CAF50', icon: '🚂', name: '駅', defaultVisible: true },
@@ -139,18 +133,18 @@ const TYPE_SETTINGS: Record<LocationType, {
   fire_station: { color: '#F44336', icon: '🚒', name: '消防署', defaultVisible: true },
   police: { color: '#3F51B5', icon: '👮', name: '警察', defaultVisible: true },
   government: { color: '#607D8B', icon: '🏛️', name: '行政', defaultVisible: true },
-  religious: { color: '#795548', icon: '⛪', name: '宗教施設', defaultVisible: false }
+  religious: { color: '#795548', icon: '⛪', name: '宗教施設', defaultVisible: false },
 };
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
-  locations = SAMPLE_LOCATIONS
-}) => {
+                                                                        locations = SAMPLE_LOCATIONS,
+                                                                      }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
-    Object.keys(TYPE_SETTINGS).filter(type => 
-      TYPE_SETTINGS[type as LocationType].defaultVisible
-    ) as LocationType[]
+    Object.keys(TYPE_SETTINGS).filter(type =>
+      TYPE_SETTINGS[type as LocationType].defaultVisible,
+    ) as LocationType[],
   );
   const [zoom, setZoom] = useState(10);
   const [center, setCenter] = useState<[number, number]>([139.7, 35.7]); // Tokyo
@@ -158,122 +152,110 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsAnchor, setSettingsAnchor] = useState<null | HTMLElement>(null);
-  
-  // ヒートマップ設定
+
   const [heatmapIntensity, setHeatmapIntensity] = useState(1.0);
   const [heatmapRadius, setHeatmapRadius] = useState(20);
-  
-  // クラスタリング設定
+
   const [clusterRadius, setClusterRadius] = useState(50);
   const [maxZoom, setMaxZoom] = useState(15);
-  
-  // フィルタされた地点データ
+
   const filteredLocations = React.useMemo(() => {
     return locations.filter(location => {
-      // タイプフィルタ
       if (!visibleTypes.includes(location.type)) {
         return false;
       }
-      
-      // 検索クエリフィルタ
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesName = location.name.toLowerCase().includes(query) ||
-                           location.nameEn?.toLowerCase().includes(query);
+          location.nameEn?.toLowerCase().includes(query);
         const matchesCountry = location.countryCode.toLowerCase().includes(query);
         const matchesType = TYPE_SETTINGS[location.type].name.includes(query);
-        
+
         if (!matchesName && !matchesCountry && !matchesType) {
           return false;
         }
       }
-      
+
       return true;
     });
   }, [locations, visibleTypes, searchQuery]);
-  
-  // 統計計算
+
   const statistics: MapStatistics = React.useMemo(() => {
     const byType: Record<string, number> = {};
     const byCountry: Record<string, number> = {};
-    
+
     filteredLocations.forEach(location => {
       byType[location.type] = (byType[location.type] || 0) + 1;
       byCountry[location.countryCode] = (byCountry[location.countryCode] || 0) + 1;
     });
-    
+
     return {
       totalPoints: locations.length,
       visiblePoints: filteredLocations.length,
       clusters: displayMode === 'clusters' ? Math.ceil(filteredLocations.length / 10) : 0,
-      density: filteredLocations.length / 100, // 簡易計算
-      viewport: {
+      density: filteredLocations.length / 100, viewport: {
         bounds: [[-180, -90], [180, 90]],
         zoom,
-        center
+        center,
       },
       distribution: {
         byType: byType as Record<LocationType, number>,
-        byCountry
-      }
+        byCountry,
+      },
     };
   }, [filteredLocations, locations.length, displayMode, zoom, center]);
-  
-  // 表示モード変更
+
   const handleDisplayModeChange = (
     _: React.MouseEvent<HTMLElement>,
-    newMode: DisplayMode | null
+    newMode: DisplayMode | null,
   ) => {
     if (newMode !== null) {
       setDisplayMode(newMode);
     }
   };
-  
-  // タイプ表示切り替え
+
   const handleTypeToggle = (type: LocationType) => {
-    setVisibleTypes(prev => 
+    setVisibleTypes(prev =>
       prev.includes(type)
         ? prev.filter(t => t !== type)
-        : [...prev, type]
+        : [...prev, type],
     );
   };
-  
-  // 地点クリックハンドラー
 
-  
-  // ズーム変更
+
   const handleZoomChange = (newZoom: number) => {
     setZoom(Math.max(1, Math.min(20, newZoom)));
   };
-  
-  // 現在位置への移動
+
   const handleMoveToCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
       setCenter([position.coords.longitude, position.coords.latitude]);
       setZoom(15);
     });
   };
-  
-  // 全地点表示
+
   const handleFitToData = () => {
     if (filteredLocations.length === 0) return;
-    
+
     const lngs = filteredLocations.map(l => l.coordinates[0]);
     const lats = filteredLocations.map(l => l.coordinates[1]);
-    
+
     const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
     const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-    
+
     setCenter([centerLng, centerLat]);
-    setZoom(8); // 適切なズームレベル計算は実装で調整
+    setZoom(8);
   };
-  
+
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* 地図コントロールバー */}
+      {/*
+*/}
       <Paper elevation={1} sx={{ p: 2, mb: 1 }}>
         <Grid2 container spacing={2} alignItems="center">
-          {/* 表示モード切り替え */}
+          {/*
+*/}
           <Grid2 size={{ xs: 12, md: 4 }}>
             <ToggleButtonGroup
               value={displayMode}
@@ -295,8 +277,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </ToggleButton>
             </ToggleButtonGroup>
           </Grid2>
-          
-          {/* 検索 */}
+
+          {/*
+*/}
           <Grid2 size={{ xs: 12, md: 4 }}>
             <TextField
               size="small"
@@ -305,12 +288,13 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
-                startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />
+                startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
               }}
             />
           </Grid2>
-          
-          {/* 統計表示 */}
+
+          {/*
+*/}
           <Grid2 size={{ xs: 12, md: 4 }}>
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
@@ -328,46 +312,50 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             </Box>
           </Grid2>
         </Grid2>
-        
-        {/* タイプフィルター */}
+
+        {/*
+*/}
         <Box mt={2} display="flex" gap={1} flexWrap="wrap">
           {Object.entries(TYPE_SETTINGS).map(([type, config]) => {
             const count = statistics.distribution.byType[type as LocationType] || 0;
             const isVisible = visibleTypes.includes(type as LocationType);
-            
+
             return (
               <Chip
                 key={type}
                 label={`${config.icon} ${config.name} (${count})`}
-                variant={isVisible ? "filled" : "outlined"}
-                color={isVisible ? "primary" : "default"}
+                variant={isVisible ? 'filled' : 'outlined'}
+                color={isVisible ? 'primary' : 'default'}
                 onClick={() => handleTypeToggle(type as LocationType)}
-                sx={{ 
+                sx={{
                   backgroundColor: isVisible ? config.color : 'transparent',
                   '&:hover': {
-                    backgroundColor: isVisible ? config.color : 'action.hover'
-                  }
+                    backgroundColor: isVisible ? config.color : 'action.hover',
+                  },
                 }}
               />
             );
           })}
         </Box>
       </Paper>
-      
-      {/* 地図エリア */}
+
+      {/*
+*/}
       <Box sx={{ flex: 1, position: 'relative', bgcolor: 'grey.100', borderRadius: 1 }}>
-        <div 
-          ref={mapRef} 
-          style={{ 
-            width: '100%', 
+        <div
+          ref={mapRef}
+          style={{
+            width: '100%',
             height: '100%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'text.secondary'
+            color: 'text.secondary',
           }}
         >
-          {/* 仮の地図表示（実際はMapLibre GLなどを使用） */}
+          {/*
+ MapLibre GL
+*/}
           <Box textAlign="center">
             <Typography variant="h6" gutterBottom>
               地図プレビュー
@@ -383,45 +371,46 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             </Typography>
           </Box>
         </div>
-        
-        {/* マップコントロール */}
+
+        {/*
+*/}
         <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
           <Box display="flex" flexDirection="column" gap={1}>
             <Tooltip title="ズームイン">
-              <Fab 
-                size="small" 
+              <Fab
+                size="small"
                 onClick={() => handleZoomChange(zoom + 1)}
                 disabled={zoom >= 20}
               >
                 <ZoomIn />
               </Fab>
             </Tooltip>
-            
+
             <Tooltip title="ズームアウト">
-              <Fab 
-                size="small" 
+              <Fab
+                size="small"
                 onClick={() => handleZoomChange(zoom - 1)}
                 disabled={zoom <= 1}
               >
                 <ZoomOut />
               </Fab>
             </Tooltip>
-            
+
             <Tooltip title="データ範囲に合わせる">
               <Fab size="small" onClick={handleFitToData}>
                 <CenterFocusStrong />
               </Fab>
             </Tooltip>
-            
+
             <Tooltip title="現在位置">
               <Fab size="small" onClick={handleMoveToCurrentLocation}>
                 <MyLocation />
               </Fab>
             </Tooltip>
-            
+
             <Tooltip title="設定">
-              <Fab 
-                size="small" 
+              <Fab
+                size="small"
                 onClick={(e) => setSettingsAnchor(e.currentTarget)}
               >
                 <Settings />
@@ -429,8 +418,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             </Tooltip>
           </Box>
         </Box>
-        
-        {/* ズームレベル表示 */}
+
+        {/*
+*/}
         <Box sx={{ position: 'absolute', bottom: 16, left: 16 }}>
           <Chip
             label={`Zoom: ${zoom}`}
@@ -440,8 +430,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           />
         </Box>
       </Box>
-      
-      {/* 設定メニュー */}
+
+      {/*
+*/}
       <Menu
         anchorEl={settingsAnchor}
         open={Boolean(settingsAnchor)}
@@ -458,10 +449,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           </MenuItem>
         </MenuList>
       </Menu>
-      
-      {/* 詳細設定ダイアログ */}
-      <Dialog 
-        open={showSettings} 
+
+      {/*
+*/}
+      <Dialog
+        open={showSettings}
         onClose={() => setShowSettings(false)}
         maxWidth="sm"
         fullWidth
@@ -469,7 +461,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         <DialogTitle>マップ表示設定</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            {/* ヒートマップ設定 */}
+            {/*
+*/}
             {displayMode === 'heatmap' && (
               <Box mb={3}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -486,7 +479,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                     marks={[
                       { value: 0.5, label: '0.5' },
                       { value: 1.0, label: '1.0' },
-                      { value: 1.5, label: '1.5' }
+                      { value: 1.5, label: '1.5' },
                     ]}
                   />
                 </Box>
@@ -501,14 +494,15 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                     marks={[
                       { value: 20, label: '20px' },
                       { value: 30, label: '30px' },
-                      { value: 40, label: '40px' }
+                      { value: 40, label: '40px' },
                     ]}
                   />
                 </Box>
               </Box>
             )}
-            
-            {/* クラスタリング設定 */}
+
+            {/*
+*/}
             {displayMode === 'clusters' && (
               <Box mb={3}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -525,7 +519,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                     marks={[
                       { value: 30, label: '30px' },
                       { value: 50, label: '50px' },
-                      { value: 80, label: '80px' }
+                      { value: 80, label: '80px' },
                     ]}
                   />
                 </Box>
@@ -540,7 +534,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                     marks={[
                       { value: 12, label: '12' },
                       { value: 15, label: '15' },
-                      { value: 18, label: '18' }
+                      { value: 18, label: '18' },
                     ]}
                   />
                 </Box>
@@ -554,8 +548,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           </Button>
         </DialogContent>
       </Dialog>
-      
-      {/* 選択された地点の詳細 */}
+
+      {/*
+*/}
       {selectedLocation && (
         <Dialog
           open={!!selectedLocation}

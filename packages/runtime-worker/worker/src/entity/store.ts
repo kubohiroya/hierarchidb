@@ -22,8 +22,11 @@ export interface PeerEntity<TData = unknown> {
 
 export interface PeerStore<TData = unknown> {
   get(nodeId: NodeId): Promise<PeerEntity<TData> | undefined>;
+
   put(entity: PeerEntity<TData>): Promise<void>;
+
   delete(nodeId: NodeId): Promise<void>;
+
   // Optional fast-path for bulk upsert
   bulkUpsert?(entities: PeerEntity<TData>[]): Promise<void>;
 }
@@ -38,7 +41,9 @@ export interface GroupItemBase<TItemData = unknown> {
 export interface GroupStore<TItem extends GroupItemBase = GroupItemBase> {
   // Read items under a node (needed for duplication/import)
   list(nodeId: NodeId): Promise<TItem[]>;
+
   bulkUpsert(nodeId: NodeId, items: TItem[]): Promise<void>;
+
   bulkDelete(nodeId: NodeId, itemIds: string[]): Promise<void>;
 }
 
@@ -54,6 +59,8 @@ export interface RelationBase<TRelMeta = unknown> {
 export interface RelationStore<TRel extends RelationBase = RelationBase> {
   // Read relations originating from a node (srcNodeId)
   listByNode(nodeId: NodeId): Promise<TRel[]>;
+
   bulkUpsert(rels: TRel[]): Promise<void>;
+
   bulkDelete(rels: TRel[]): Promise<void>;
 }

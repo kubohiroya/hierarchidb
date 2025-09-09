@@ -13,6 +13,7 @@ declare module 'virtual:plugin-definitions' {
     plugin?: any;
     config?: any;
   }
+
   const pluginDefinitions: VMPluginDefinition[];
   export default pluginDefinitions;
 }
@@ -22,7 +23,7 @@ declare module 'virtual:plugin-map' {
   export default pluginMap;
 }
 
-// Removed: UI and worker package shims — replaced by real package types
+//  Removed: UI and worker package shims replaced by real package types
 
 // Provide minimal types for runtime-worker-bootstrap if TS cannot resolve declarations
 declare module '@hierarchidb/runtime-worker-bootstrap' {
@@ -46,19 +47,28 @@ declare module '@hierarchidb/runtime-worker-bootstrap' {
     error?: Error;
   }
 
-  export interface InitializationStep { name: string; weight: number }
+  export interface InitializationStep {
+    name: string;
+    weight: number;
+  }
 
   export class WorkerInitializationReporter {
     constructor(steps?: InitializationStep[], debug?: boolean);
+
     reportStepProgress(message: string, progress: number): void;
+
     reportComplete(): void;
+
     reportError(message: string): void;
   }
 
   export class WorkerInitializationChannel {
     constructor();
+
     waitForInitialization(config: WorkerInitConfig): Promise<InitializationResult>;
+
     ping(): Promise<boolean>;
+
     dispose(): void;
   }
 }

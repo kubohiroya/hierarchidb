@@ -3,31 +3,30 @@
  * @description Filter rule creation and preview for CSV data
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
-  IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,13 +35,7 @@ import {
   FilterList as FilterListIcon,
   Preview as PreviewIcon,
 } from '@mui/icons-material';
-import type { 
-  CSVTableMetadata, 
-  CSVFilterRule, 
-  CSVDataResult,
-  CSVFilterOperator,
-  CSVColumnType 
-} from '../types';
+import type { CSVColumnType, CSVDataResult, CSVFilterOperator, CSVFilterRule, CSVTableMetadata } from '../types';
 import { useCSVFilter } from '../hooks/useCSVFilter';
 
 export interface CSVFilterStepProps {
@@ -70,12 +63,12 @@ const FILTER_OPERATORS: { value: CSVFilterOperator; label: string; types: CSVCol
 ];
 
 export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
-  tableMetadata,
-  onFiltersChanged,
-  onPreviewData,
-  pluginId,
-  maxPreviewRows = 100,
-}) => {
+                                                              tableMetadata,
+                                                              onFiltersChanged,
+                                                              onPreviewData,
+                                                              pluginId,
+                                                              maxPreviewRows = 100,
+                                                            }) => {
   const [filters, setFilters] = useState<CSVFilterRule[]>([]);
   const [newFilter, setNewFilter] = useState<Partial<CSVFilterRule>>({
     column: '',
@@ -111,7 +104,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
   const getAvailableOperators = (columnName: string) => {
     const column = tableMetadata.columns.find(col => col.name === columnName);
     if (!column) return FILTER_OPERATORS;
-    
+
     return FILTER_OPERATORS.filter(op => op.types.includes(column.type));
   };
 
@@ -147,18 +140,18 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
   };
 
   const handleToggleFilter = (filterId: string) => {
-    setFilters(prev => 
-      prev.map(f => 
-        f.id === filterId ? { ...f, enabled: !f.enabled } : f
-      )
+    setFilters(prev =>
+      prev.map(f =>
+        f.id === filterId ? { ...f, enabled: !f.enabled } : f,
+      ),
     );
   };
 
   const handleUpdateFilterValue = (filterId: string, value: string) => {
     setFilters(prev =>
       prev.map(f =>
-        f.id === filterId ? { ...f, value } : f
-      )
+        f.id === filterId ? { ...f, value } : f,
+      ),
     );
   };
 
@@ -173,7 +166,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
     }
 
     const column = tableMetadata.columns.find(col => col.name === filter.column);
-    
+
     if (column?.type === 'boolean') {
       return (
         <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -304,10 +297,10 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
 
           <Box sx={{ p: 2 }}>
             {filters.map((filter, index) => (
-              <Box key={filter.id} sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 2, 
+              <Box key={filter.id} sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
                 mb: index < filters.length - 1 ? 2 : 0,
                 p: 1.5,
                 bgcolor: filter.enabled ? 'background.default' : 'action.disabled',

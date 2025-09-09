@@ -6,39 +6,39 @@
  * and needs user intervention to continue.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  Alert,
   Accordion,
-  AccordionSummary,
   AccordionDetails,
+  AccordionSummary,
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   LinearProgress,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  IconButton,
+  Typography,
 } from '@mui/material';
 import {
-  Lock as LockIcon,
-  ExpandMore as ExpandMoreIcon,
-  Close as CloseIcon,
-  Google as GoogleIcon,
-  GitHub as GitHubIcon,
-  Microsoft as MicrosoftIcon,
-  Info as InfoIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
   CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
+  Error as ErrorIcon,
+  ExpandMore as ExpandMoreIcon,
+  GitHub as GitHubIcon,
+  Google as GoogleIcon,
+  Info as InfoIcon,
+  Lock as LockIcon,
+  Microsoft as MicrosoftIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { AuthProviderType } from '../types/AuthProviderType';
@@ -109,15 +109,15 @@ const AUTH_PROVIDERS: Record<AuthProvider, AuthProviderInfo> = {
 };
 
 export function AuthRequiredDialog({
-  open,
-  title = 'Authentication Required',
-  message,
-  notification,
-  onSuccess,
-  onCancel,
-  onRetry,
-  showSessionDetails = true,
-}: AuthRequiredDialogProps) {
+                                     open,
+                                     title = 'Authentication Required',
+                                     message,
+                                     notification,
+                                     onSuccess,
+                                     onCancel,
+                                     onRetry,
+                                     showSessionDetails = true,
+                                   }: AuthRequiredDialogProps) {
   const { signIn, user, isAuthenticated } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -170,14 +170,14 @@ export function AuthRequiredDialog({
       } catch (error) {
         console.error(`❌ Authentication failed with ${provider}:`, error);
         setAuthError(
-          error instanceof Error ? error.message : 'Authentication failed. Please try again.'
+          error instanceof Error ? error.message : 'Authentication failed. Please try again.',
         );
       } finally {
         setIsAuthenticating(false);
         setSelectedProvider(null);
       }
     },
-    [signIn, onSuccess, sessionId, pluginType, context.requestId]
+    [signIn, onSuccess, sessionId, pluginType, context.requestId],
   );
 
   const handleUseCurrentSession = useCallback(() => {

@@ -1,53 +1,44 @@
 /**
- * @file ShapeEntityHandlerMigration.test.ts
- * @description ERIA-Cartograph移植に向けたShapeEntityHandler実装テスト (TDD Red Phase)
- * 
- * テスト目的：
- * - HierarchiDBのEntityHandlerパターンに適合したShapeEntityHandlerの動作検証
- * - Working Copy Patternを使用した安全な編集機能の確認
- * - BatchConfig管理機能の実装検証
- * 
- * 前提条件：
- * - ShapeEntityHandlerがBaseEntityHandlerを継承して実装済み
- * - ShapeEntityがHierarchiDBのEntity仕様に準拠
- * - Working Copy PatternでのEphemeralDB連携が実装済み
- */
+  * @file ShapeEntityHandlerMigration.test.ts
+ * @description ERIA-CartographShapeEntityHandler (TDD Red Phase)
+   * - HierarchiDBEntityHandlerShapeEntityHandler
+ * - Working Copy Pattern
+ * - BatchConfig
+   * - ShapeEntityHandlerBaseEntityHandler
+ * - ShapeEntityHierarchiDBEntity
+ * - Working Copy PatternEphemeralDB
+  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { NodeId, EntityId, TreeNodeId } from '@hierarchidb/core';
-import { createNodeId, createEntityId } from '@hierarchidb/core';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { NodeId } from '@hierarchidb/common-type';
 import { ShapeEntityHandler } from '../../services/ShapeEntityHandler';
-import type { ShapeEntity, ShapeWorkingCopy } from '../../types/ShapeEntity';
+import type { ShapeWorkingCopy } from '../../types/ShapeEntity';
 import type { BatchConfig } from '../../types/BatchConfig';
 
 describe('ShapeEntityHandler Migration Tests', () => {
   let entityHandler: ShapeEntityHandler;
   let mockNodeId: NodeId;
-  let mockEntityId: EntityId;
-  let mockTreeNodeId: TreeNodeId;
 
   beforeEach(() => {
-    // Given: テスト用のIDとEntityHandlerを準備
-    mockNodeId = createNodeId('test-node-123');
-    mockEntityId = createEntityId(); // Generate a valid UUID
-    mockTreeNodeId = 'tree-node-789' as TreeNodeId;
+    // Given
+    mockNodeId = 'test-node-123' as NodeId;
     entityHandler = new ShapeEntityHandler();
   });
 
   describe('EntityHandler基本機能テスト', () => {
     it('新しいShapeエンティティが正常に作成される', async () => {
-      // Given: Shape作成に必要なデータ
+      //  Given: Shape
       const shapeData = {
         dataSourceName: 'naturalearth' as const,
         selectedCountries: ['JPN', 'USA'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       };
-      
-      // When: 新しいShapeエンティティを作成
+
+      //  When: Shape
       const createdEntity = await entityHandler.createEntity(mockNodeId, shapeData);
-      
-      // Then: HierarchiDBのEntity仕様に準拠したエンティティが作成される
+
+      //  Then: HierarchiDBEntity
       expect(createdEntity).toBeDefined();
       expect(createdEntity.id).toBeDefined();
       expect(createdEntity.nodeId).toBe(mockNodeId);
@@ -61,41 +52,41 @@ describe('ShapeEntityHandler Migration Tests', () => {
     });
 
     it('既存のShapeエンティティが正常に取得される', async () => {
-      // Given: 既存のShapeエンティティを作成
+      //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'gadm',
         selectedCountries: ['DEU'],
         selectedAdminLevels: [0, 1, 2],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
-      // When: エンティティを取得
+
+      //  When:
       const retrievedEntity = await entityHandler.getEntity(mockNodeId);
-      
-      // Then: 正しいエンティティが取得される
+
+      //  Then:
       expect(retrievedEntity).toBeDefined();
       expect(retrievedEntity?.nodeId).toBe(mockNodeId);
       expect(retrievedEntity?.dataSourceName).toBe('gadm');
     });
 
     it('Shapeエンティティが正常に更新される', async () => {
-      // Given: 既存のShapeエンティティを作成
+      //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['USA'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
+
       const updateData = {
         selectedCountries: ['JPN', 'KOR', 'CHN'],
-        selectedAdminLevels: [0, 1, 2, 3]
+        selectedAdminLevels: [0, 1, 2, 3],
       };
-      
-      // When: エンティティを更新
+
+      //  When:
       const updatedEntity = await entityHandler.updateEntity(mockNodeId, updateData);
-      
-      // Then: 更新が正常に反映される
+
+      //  Then:
       expect(updatedEntity).toBeDefined();
       expect(updatedEntity.selectedCountries).toEqual(['JPN', 'KOR', 'CHN']);
       expect(updatedEntity.selectedAdminLevels).toEqual([0, 1, 2, 3]);
@@ -104,18 +95,18 @@ describe('ShapeEntityHandler Migration Tests', () => {
     });
 
     it('Shapeエンティティが正常に削除される', async () => {
-      // Given: 削除対象のShapeエンティティを作成
+      //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['USA'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
-      // When: エンティティを削除
+
+      //  When:
       await entityHandler.deleteEntity(mockNodeId);
-      
-      // Then: エンティティが削除される
+
+      //  Then:
       const deletedEntity = await entityHandler.getEntity(mockNodeId);
       expect(deletedEntity).toBeUndefined();
     });
@@ -123,18 +114,18 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
   describe('Working Copy Pattern実装テスト', () => {
     it('Working Copyが正常に作成される', async () => {
-      // Given: 既存のShapeエンティティを作成
+      //  Given: Shape
       const baseEntity = await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['JPN'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
-      // When: Working Copyを作成
+
+      //  When: Working Copy
       const workingCopy = await entityHandler.createWorkingCopy(mockNodeId);
-      
-      // Then: Working Copyが正常に作成される
+
+      //  Then: Working Copy
       expect(workingCopy).toBeDefined();
       expect(workingCopy.nodeId).toBe(mockNodeId);
       expect(workingCopy.baseVersion).toBe(baseEntity.version);
@@ -147,66 +138,66 @@ describe('ShapeEntityHandler Migration Tests', () => {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: false,
-        changes: {}
+        changes: {},
       };
-      
-      // When: Working Copyを変更
+
+      //  When: Working Copy
       const modifiedWorkingCopy = await entityHandler.modifyWorkingCopy(workingCopy, {
         selectedCountries: ['USA', 'CAN'],
-        selectedAdminLevels: [0, 1, 2]
+        selectedAdminLevels: [0, 1, 2],
       });
-      
-      // Then: 変更が正常に追跡される
+
+      //  Then:
       expect(modifiedWorkingCopy.isModified).toBe(true);
       expect(modifiedWorkingCopy.changes.selectedCountries).toEqual(['USA', 'CAN']);
       expect(modifiedWorkingCopy.changes.selectedAdminLevels).toEqual([0, 1, 2]);
     });
 
     it('Working Copyのコミットが正常に動作する', async () => {
-      // Given: ベースエンティティを作成
+      //  Given:
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['JPN'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
-      // 変更されたWorking Copy
+
+      //  Working Copy
       const modifiedWorkingCopy: ShapeWorkingCopy = {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: true,
         changes: {
           selectedCountries: ['FRA', 'DEU', 'ITA'],
-          dataSourceName: 'geoboundaries'
-        }
+          dataSourceName: 'geoboundaries',
+        },
       };
-      
-      // When: Working Copyをコミット
+
+      //  When: Working Copy
       const committedEntity = await entityHandler.commitWorkingCopy(modifiedWorkingCopy);
-      
-      // Then: 変更がCoreDBに反映される
+
+      //  Then: CoreDB
       expect(committedEntity).toBeDefined();
       expect(committedEntity.selectedCountries).toEqual(['FRA', 'DEU', 'ITA']);
       expect(committedEntity.dataSourceName).toBe('geoboundaries');
-      expect(committedEntity.version).toBe(2); // バージョンが増加
+      expect(committedEntity.version).toBe(2);
     });
 
     it('Working Copyの破棄が正常に動作する', async () => {
-      // Given: 変更されたWorking Copy
+      //  Given: Working Copy
       const workingCopyToDiscard: ShapeWorkingCopy = {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: true,
         changes: {
-          selectedCountries: ['INVALID']
-        }
+          selectedCountries: ['INVALID'],
+        },
       };
-      
-      // When: Working Copyを破棄
+
+      //  When: Working Copy
       await entityHandler.discardWorkingCopy(workingCopyToDiscard);
-      
-      // Then: 変更が破棄され、元のエンティティが保持される
+
+      //  Then:
       const originalEntity = await entityHandler.getEntity(mockNodeId);
       expect(originalEntity?.selectedCountries).not.toEqual(['INVALID']);
     });
@@ -214,20 +205,20 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
   describe('BatchConfig管理機能テスト', () => {
     it('BatchConfigが正常に設定される', async () => {
-      // Given: エンティティを作成してからBatchConfig設定データ
+      //  Given: BatchConfig
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['JPN'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
+
       const batchConfig: BatchConfig = {
         corsProxyBaseURL: 'https://proxy.example.com',
         dataSource: 'naturalearth',
         download: {
           concurrentDownloads: 3,
-          deleteOnComplete: false
+          deleteOnComplete: false,
         },
         simplify1: {
           concurrentProcesses: 4,
@@ -236,7 +227,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
           minVertexCountForAreaFilter: 50,
           aspectRatioThreshold: 10,
           featureFilterMethod: 'hybrid',
-          deleteOnComplete: false
+          deleteOnComplete: false,
         },
         simplify2: {
           concurrentProcesses: 4,
@@ -244,19 +235,19 @@ describe('ShapeEntityHandler Migration Tests', () => {
           simplify: 0.01,
           tolerance: 0.1,
           enablePerFeatureSimplification: true,
-          deleteOnComplete: false
+          deleteOnComplete: false,
         },
         vectorTiles: {
           concurrentProcesses: 4,
           maxZoom: 8,
-          tileCountThresholdForZoomStop: 10000
-        }
+          tileCountThresholdForZoomStop: 10000,
+        },
       };
-      
-      // When: BatchConfigを設定
+
+      //  When: BatchConfig
       await entityHandler.setBatchConfig(mockNodeId, batchConfig);
-      
-      // Then: BatchConfigが正常に設定される
+
+      //  Then: BatchConfig
       const entity = await entityHandler.getEntity(mockNodeId);
       expect(entity?.batchConfig).toBeDefined();
       expect(entity?.batchConfig?.dataSource).toBe('naturalearth');
@@ -264,48 +255,48 @@ describe('ShapeEntityHandler Migration Tests', () => {
     });
 
     it('BatchConfigが正常に取得される', async () => {
-      // Given: BatchConfigを持つShapeエンティティを作成
+      //  Given: BatchConfigShape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
         selectedCountries: ['JPN'],
         selectedAdminLevels: [0, 1],
-        licenseAgreement: true
+        licenseAgreement: true,
       });
-      
+
       const batchConfig: BatchConfig = {
         corsProxyBaseURL: 'https://proxy.example.com',
         dataSource: 'naturalearth',
         download: { concurrentDownloads: 3, deleteOnComplete: false },
-        simplify1: { 
-          concurrentProcesses: 4, 
-          enableFeatureFiltering: true, 
-          featureAreaThreshold: 0.1, 
-          minVertexCountForAreaFilter: 50, 
-          aspectRatioThreshold: 10, 
-          featureFilterMethod: 'hybrid', 
-          deleteOnComplete: false 
+        simplify1: {
+          concurrentProcesses: 4,
+          enableFeatureFiltering: true,
+          featureAreaThreshold: 0.1,
+          minVertexCountForAreaFilter: 50,
+          aspectRatioThreshold: 10,
+          featureFilterMethod: 'hybrid',
+          deleteOnComplete: false,
         },
-        simplify2: { 
-          concurrentProcesses: 4, 
-          quantize: 1e4, 
-          simplify: 0.01, 
-          tolerance: 0.1, 
-          enablePerFeatureSimplification: true, 
-          deleteOnComplete: false 
+        simplify2: {
+          concurrentProcesses: 4,
+          quantize: 1e4,
+          simplify: 0.01,
+          tolerance: 0.1,
+          enablePerFeatureSimplification: true,
+          deleteOnComplete: false,
         },
-        vectorTiles: { 
-          concurrentProcesses: 4, 
-          maxZoom: 8, 
-          tileCountThresholdForZoomStop: 10000 
-        }
+        vectorTiles: {
+          concurrentProcesses: 4,
+          maxZoom: 8,
+          tileCountThresholdForZoomStop: 10000,
+        },
       };
-      
+
       await entityHandler.setBatchConfig(mockNodeId, batchConfig);
-      
-      // When: BatchConfigを取得
+
+      //  When: BatchConfig
       const retrievedBatchConfig = await entityHandler.getBatchConfig(mockNodeId);
-      
-      // Then: 正しいBatchConfigが取得される
+
+      //  Then: BatchConfig
       expect(retrievedBatchConfig).toBeDefined();
       expect(retrievedBatchConfig?.corsProxyBaseURL).toBeDefined();
       expect(retrievedBatchConfig?.download).toBeDefined();

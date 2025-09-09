@@ -1,17 +1,15 @@
 /**
- * DragDropOrchestrator
- *
- * ドラッグ&ドロップに関するユーザーストーリーの管理
- * - ドラッグ開始/終了
- * - ドロップ可能判定
- * - 循環参照防止
- */
+  * DragDropOrchestrator
+  * &
+ * - /
+ * -
+ * -
+  */
 
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeViewController } from '../../../types/index';
-import type { TreeNode } from '@hierarchidb/common-type';
 import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state';
 
 export interface DragDropOrchestratorResult {
@@ -29,11 +27,11 @@ export interface DragDropOrchestratorResult {
 }
 
 /**
- * ドラッグ&ドロップ操作のオーケストレーター
- */
+  * &
+  */
 export function useDragDropOrchestrator(
   controller: TreeViewController | null,
-  tableData: TreeNode[]
+  tableData: TreeNode[],
 ): DragDropOrchestratorResult {
   // State atoms
   const [draggingNodeId, setDraggingNodeId] = useAtom(draggingNodeIdAtom);
@@ -44,8 +42,7 @@ export function useDragDropOrchestrator(
   const descendantsRef = useRef<Set<string>>(new Set());
 
   /**
-   * ノードの全子孫を取得
-   */
+            */
   const getDescendants = useCallback(
     (nodeId: string): Set<string> => {
       const descendants = new Set<string>();
@@ -55,7 +52,6 @@ export function useDragDropOrchestrator(
         const currentId = stack.pop()!;
         descendants.add(currentId);
 
-        // 子ノードを追加
         const children = tableData.filter((n) => n.parentId === currentId);
         children.forEach((child) => {
           if (child.id && !descendants.has(child.id)) {
@@ -66,53 +62,46 @@ export function useDragDropOrchestrator(
 
       return descendants;
     },
-    [tableData]
+    [tableData],
   );
 
   /**
-   * ドロップ可能かチェック
-   */
+            */
   const canDrop = useCallback(
     (targetNodeId: string): boolean => {
       if (!draggingNodeId) return false;
 
-      // 自分自身へのドロップは禁止
       if (targetNodeId === draggingNodeId) return false;
 
-      // 子孫へのドロップは禁止（循環参照防止）
       if (forbiddenTargets.has(targetNodeId)) return false;
 
-      // 現在の親へのドロップは禁止（移動の意味がない）
       const draggingNode = tableData.find((n) => n.id === draggingNodeId);
       if (draggingNode?.parentId === targetNodeId) return false;
 
       return true;
     },
-    [draggingNodeId, forbiddenTargets, tableData]
+    [draggingNodeId, forbiddenTargets, tableData],
   );
 
   /**
-   * ドラッグ開始
-   */
+            */
   const startDrag = useCallback(
     (nodeId: string) => {
       setDraggingNodeId(nodeId);
 
-      // 子孫ノードを禁止ターゲットに設定
       const descendants = getDescendants(nodeId);
       descendantsRef.current = descendants;
       setForbiddenTargets(descendants);
 
-      // Controllerに通知
+      //  Controller
       // Drag state is managed locally
       setDraggingNodeId(nodeId);
     },
-    [setDraggingNodeId, setForbiddenTargets, getDescendants, controller]
+    [setDraggingNodeId, setForbiddenTargets, getDescendants, controller],
   );
 
   /**
-   * ドロップターゲット更新
-   */
+            */
   const updateDropTarget = useCallback(
     (targetNodeId: string | null) => {
       if (targetNodeId && !canDrop(targetNodeId)) {
@@ -122,26 +111,24 @@ export function useDragDropOrchestrator(
 
       setDropTargetNodeId(targetNodeId);
     },
-    [canDrop, setDropTargetNodeId]
+    [canDrop, setDropTargetNodeId],
   );
 
   /**
-   * ドラッグ終了
-   */
+            */
   const endDrag = useCallback(() => {
     setDraggingNodeId(null);
     setDropTargetNodeId(null);
     setForbiddenTargets(new Set());
     descendantsRef.current = new Set();
 
-    // Controllerに通知
+    //  Controller
     // Clear drag state locally
     setDraggingNodeId(null);
   }, [setDraggingNodeId, setDropTargetNodeId, setForbiddenTargets, controller]);
 
   /**
-   * ドロップ処理
-   */
+            */
   const handleDrop = useCallback(
     async (targetNodeId: string) => {
       if (!draggingNodeId || !canDrop(targetNodeId)) {
@@ -150,17 +137,16 @@ export function useDragDropOrchestrator(
       }
 
       try {
-        // Controllerを通じて移動を実行
+        //  Controller
         await controller?.moveNodes?.([draggingNodeId as NodeId], targetNodeId as NodeId);
 
-        // 成功したらクリア
         endDrag();
       } catch (error) {
         console.error('Failed to move node:', error);
         endDrag();
       }
     },
-    [draggingNodeId, canDrop, endDrag, controller]
+    [draggingNodeId, canDrop, endDrag, controller],
   );
 
   return {

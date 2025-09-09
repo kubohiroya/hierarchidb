@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector } from './DataSourceSelector';
-import { DataSourceName, DataSourceCategory } from '../types/DataSource';
+import { DataSourceCategory, DataSourceName } from '../types/DataSource';
 
 export interface DataSourceSelectionStepProps {
   selectedDataSource?: DataSourceName;
@@ -12,12 +12,12 @@ export interface DataSourceSelectionStepProps {
 }
 
 export const DataSourceSelectionStep: React.FC<DataSourceSelectionStepProps> = ({
-  selectedDataSource,
-  onDataSourceChange,
-  filterByCategory,
-  showDescription = true,
-  gridColumns = 2,
-}) => {
+                                                                                  selectedDataSource,
+                                                                                  onDataSourceChange,
+                                                                                  filterByCategory,
+                                                                                  showDescription = true,
+                                                                                  gridColumns = 2,
+                                                                                }) => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -29,7 +29,7 @@ export const DataSourceSelectionStep: React.FC<DataSourceSelectionStepProps> = (
           licensing terms, coverage areas, and data quality characteristics.
         </Typography>
       )}
-      
+
       <DataSourceSelector
         selectedDataSource={selectedDataSource}
         onDataSourceChange={onDataSourceChange}

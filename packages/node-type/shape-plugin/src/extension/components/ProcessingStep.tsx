@@ -18,11 +18,11 @@ export interface ProcessingStepProps {
 }
 
 export const ProcessingStep: React.FC<ProcessingStepProps> = ({
-  data,
-  onNext,
-  onPrevious,
-  errors,
-}) => {
+                                                                data,
+                                                                onNext,
+                                                                onPrevious,
+                                                                errors,
+                                                              }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>

@@ -1,9 +1,9 @@
 /**
- * @file ShapeError.ts
- * @description ERIA-Cartograph移植: Shape エラー型定義
- */
+  * @file ShapeError.ts
+ * @description ERIA-Cartograph: Shape
+  */
 
-export type ShapeErrorType = 
+export type ShapeErrorType =
   | 'WORKER_DISCONNECTED'
   | 'WORKER_TIMEOUT'
   | 'WORKER_MEMORY_ERROR'

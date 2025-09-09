@@ -1,15 +1,16 @@
 import type {
-  TabularStorePort,
+  TabularChunk,
+  TabularIngestResult,
   TabularIngestSession,
   TabularIngestSummary,
-  TabularIngestResult,
   TabularSchema,
-  TabularChunk,
+  TabularStorePort,
 } from '@hierarchidb/tabular';
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
 import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';
-import type { CSVTableMetadataLike } from '@hierarchidb/table-metadata/src/table/SimpleTableMetadataManager';
+import type { SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/table-metadata';
+type CSVTableMetadataLike = Parameters<TableMetadataManagerPublic['create']>[0];
 import { calculateFileHash, calculateTextHash } from '../utils/hashUtils';
 import { getDBName } from '@hierarchidb/util';
 
@@ -32,7 +33,11 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     this.db = new SpreadsheetDatabase(getDBName('spreadsheet-db'));
   }
 
-  async beginIngest(schema: TabularSchema, ctx: { filename?: string; sizeBytes?: number; source?: any }): Promise<TabularIngestSession> {
+  async beginIngest(schema: TabularSchema, ctx: {
+    filename?: string;
+    sizeBytes?: number;
+    source?: any
+  }): Promise<TabularIngestSession> {
     const filename = ctx.filename || 'unknown.csv';
     const size = ctx.sizeBytes || 0;
     let hash = 'na';
@@ -42,19 +47,33 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
       } else if (typeof ctx.source === 'string') {
         hash = await calculateTextHash(ctx.source);
       }
-    } catch {}
+    } catch {
+    }
 
     // Create RawFileMetadata
     const rawMeta = await (this.db as any).createRawFileMetadata?.({
       filename,
       contentHash: hash,
       fileSizeBytes: size,
-      columns: (schema.columns as Array<{ name: string }>).map((c: { name: string }, i: number) => ({ name: c.name, index: i, type: 'string', uniqueValues: 0, hasNullValues: false, sampleValues: [] } as CSVColumnInfo)),
+      columns: (schema.columns as Array<{ name: string }>).map((c: { name: string }, i: number) => ({
+        name: c.name,
+        index: i,
+        type: 'string',
+        uniqueValues: 0,
+        hasNullValues: false,
+        sampleValues: [],
+      } as CSVColumnInfo)),
       totalRows: 0,
     });
 
     const id = rawMeta?.id || crypto.randomUUID();
-    this.sessions.set(id, { rawFileMetadataId: id, filename, contentHash: hash, fileSizeBytes: size, startRowIndex: 0 });
+    this.sessions.set(id, {
+      rawFileMetadataId: id,
+      filename,
+      contentHash: hash,
+      fileSizeBytes: size,
+      startRowIndex: 0,
+    });
     return { id };
   }
 

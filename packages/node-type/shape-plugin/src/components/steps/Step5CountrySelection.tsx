@@ -1,52 +1,52 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback, useMemo } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
+  Button,
+  Checkbox,
+  Chip,
+  CircularProgress,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Checkbox,
-  Chip,
-  Stack,
-  Button,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import { Check as CheckIcon } from "@mui/icons-material";
-import { useSnackbar } from "notistack";
-import type { StepProps } from "~/shared";
-import { useCountryMetadata } from "~/hooks/useCountryMetadata";
+  Typography,
+} from '@mui/material';
+import { Check as CheckIcon } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
+import type { StepProps } from '~/shared';
+import { useCountryMetadata } from '~/hooks/useCountryMetadata';
 import {
+  calculateEstimatedFeatures,
+  calculateEstimatedProcessingTime,
+  calculateEstimatedSize,
   DATA_SOURCE_CONFIGS,
   formatBytes,
   formatNumber,
-  calculateEstimatedSize,
-  calculateEstimatedFeatures,
-  calculateEstimatedProcessingTime,
-} from "~/mock/data";
+} from '~/mock/data';
 
 /**
  * Step 5: Country & Admin Level Selection
  * Uses real country metadata from @hierarchidb/fetch-metadata
  */
 export const Step5CountrySelection: React.FC<StepProps> = ({
-  workingCopy,
-  onUpdate,
-  disabled,
-}) => {
+                                                             workingCopy,
+                                                             onUpdate,
+                                                             disabled,
+                                                           }) => {
   const { enqueueSnackbar } = useSnackbar();
-  
+
   // Load country metadata from 02-fetch-metadata
-  const { 
-    metadata: countries, 
-    loading, 
+  const {
+    metadata: countries,
+    loading,
     error,
     getCountryName,
-    getCountryByCode 
+    getCountryByCode,
   } = useCountryMetadata({
     dataSource: workingCopy.dataSourceName || 'GADM',
   });
@@ -114,7 +114,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   const handleValidateSelection = useCallback(() => {
     enqueueSnackbar(
       `${stats.totalSelected} selections validated. Est. size: ${formatBytes(stats.estimatedSize)}, processing time: ${stats.estimatedTime}`,
-      { variant: "success" },
+      { variant: 'success' },
     );
   }, [stats, enqueueSnackbar]);
 
@@ -141,7 +141,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   // Show loading state
   if (loading) {
     return (
-      <Box sx={{ height: "70vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
         <Typography sx={{ ml: 2 }}>Loading country metadata...</Typography>
       </Box>
@@ -151,7 +151,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   // Show error state
   if (error) {
     return (
-      <Box sx={{ height: "70vh", display: "flex", flexDirection: "column" }}>
+      <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
         <Alert severity="error">
           Failed to load country metadata: {error.message}
         </Alert>
@@ -160,7 +160,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   }
 
   return (
-    <Box sx={{ height: "70vh", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Select Countries & Administrative Levels
       </Typography>
@@ -170,7 +170,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
       </Typography>
 
       {/* Statistics Panel */}
-      <Paper sx={{ p: 2, mb: 2, backgroundColor: "grey.50" }}>
+      <Paper sx={{ p: 2, mb: 2, backgroundColor: 'grey.50' }}>
         <Stack direction="row" spacing={4} alignItems="center">
           <Stack direction="row" spacing={1} alignItems="center">
             <Chip
@@ -201,7 +201,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
             )}
           </Stack>
 
-          <Stack direction="row" spacing={2} sx={{ ml: "auto" }}>
+          <Stack direction="row" spacing={2} sx={{ ml: 'auto' }}>
             <Typography variant="caption" color="text.secondary">
               Est. Size: {formatBytes(stats.estimatedSize)}
             </Typography>
@@ -223,7 +223,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
       </Paper>
 
       {/* Simplified Matrix Table (without virtualization for now) */}
-      <TableContainer component={Paper} sx={{ flex: 1, overflow: "auto" }}>
+      <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto' }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>

@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Typography,
+  Chip,
+  CircularProgress,
+  InputAdornment,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
-  Alert,
-  Chip,
-  Stack,
   TextField,
-  InputAdornment,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Typography,
 } from '@mui/material';
 import type { ChipProps } from '@mui/material/Chip';
 import SearchIcon from '@mui/icons-material/Search';
@@ -56,7 +56,7 @@ const LICENSE_CATEGORIES: Record<string, { color: ChipProps['color']; label: str
 
 function categorizeLicense(license: string): keyof typeof LICENSE_CATEGORIES {
   const upperLicense = license.toUpperCase();
-  
+
   if (upperLicense.includes('MIT')) return 'MIT';
   if (upperLicense.includes('APACHE-2')) return 'Apache-2.0';
   if (upperLicense.includes('BSD-3')) return 'BSD-3-Clause';
@@ -68,7 +68,7 @@ function categorizeLicense(license: string): keyof typeof LICENSE_CATEGORIES {
   if (upperLicense.includes('GPL-3')) return 'GPL-3.0';
   if (upperLicense.includes('LGPL')) return 'LGPL';
   if (upperLicense.includes('GPL')) return 'GPL';
-  
+
   return 'UNKNOWN';
 }
 
@@ -97,7 +97,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
       const basePath = import.meta.env.BASE_URL || '/';
       const licensePath = `${basePath}licenses.json`.replace(/\/+/g, '/');
       const response = await fetch(licensePath).catch(() => null);
-      
+
       if (response && response.ok) {
         const data = await response.json();
         setPackages(data);
@@ -115,18 +115,18 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
 
   // Filter packages based on search query
   const filteredPackages = Object.entries(packages).filter(([name]) =>
-    name.toLowerCase().includes(searchQuery.toLowerCase())
+    name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Group packages by license type
   const groupedPackages = filteredPackages.reduce((acc, [name, info]) => {
     const license = info.licenses || 'UNKNOWN';
     const category = categorizeLicense(license);
-    
+
     if (!acc[category]) {
       acc[category] = [];
     }
-    
+
     acc[category].push({ name, ...info });
     return acc;
   }, {} as Record<string, Array<{ name: string } & LicenseData[string]>>);
@@ -160,7 +160,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
       <Typography variant="h6" gutterBottom>
         Open Source Licenses
       </Typography>
-      
+
       <Typography variant="body2" color="text.secondary" paragraph>
         This application uses {totalPackages} open source packages with the following licenses:
       </Typography>
@@ -190,7 +190,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
             label: category,
           };
           const count = groupedPackages[category]?.length || 0;
-          
+
           return (
             <Chip
               key={category}
@@ -210,7 +210,7 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
           label: category,
         };
         const categoryPackages = groupedPackages[category];
-        
+
         return (
           <Accordion
             key={category}

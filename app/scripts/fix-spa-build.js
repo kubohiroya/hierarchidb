@@ -8,8 +8,8 @@
  * This script creates a proper SPA index.html with the required initialization.
  */
 
-import { readFile, writeFile, copyFile, readdir, unlink } from 'fs/promises';
-import { join, dirname } from 'path';
+import { readdir, readFile, unlink, writeFile } from 'fs/promises';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,7 +50,7 @@ async function fixSpaBuild() {
     manifestFile || assetFiles.find((f) => f.startsWith('index-') && f.endsWith('.js'));
 
   console.log(
-    `Using asset files: manifest=${manifestFile || 'none'}, main=${mainFile}, entry=${entryFile}, root=${rootFile}`
+    `Using asset files: manifest=${manifestFile || 'none'}, main=${mainFile}, entry=${entryFile}, root=${rootFile}`,
   );
 
   try {

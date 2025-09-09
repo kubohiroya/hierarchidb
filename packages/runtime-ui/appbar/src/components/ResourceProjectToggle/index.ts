@@ -2,5 +2,5 @@ export { ResourceProjectToggle } from './ResourceProjectToggle';
 export type {
   ResourceProjectType,
   ResourceProjectToggleOrientation,
-  ResourceProjectToggleSize
+  ResourceProjectToggleSize,
 } from './ResourceProjectToggle';

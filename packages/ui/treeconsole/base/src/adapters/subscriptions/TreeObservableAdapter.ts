@@ -1,72 +1,90 @@
 /**
- * TreeObservableAdapter
- *
- * 新しいObservable形式のWorkerAPIを既存のコールバック形式に変換します。
- * 既存TreeConsoleコードのサブスクリプションパターンを新APIに対応させます。
- */
+  * TreeObservableAdapter
+  * ObservableWorkerAPI
+ * TreeConsoleAPI
+  */
 
 // import { Observable } from 'rxjs'; // TODO: will be used when implementing actual Observable subscriptions
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
-import type { UnsubscribeFunction, AdapterContext } from '../../types/index';
+import type { AdapterContext, UnsubscribeFunction } from '../../types/index';
+import { TreeConsoleAdapterError } from '../../types/index';
+import { createCommand } from '../utils';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
-import { TreeConsoleAdapterError } from '../../types/index';
 
 export class TreeObservableAdapter {
   private subscriptions = new Map<string, () => void>();
 
-  constructor(private workerAPI: WorkerAPI) {}
+  constructor(private workerAPI: WorkerAPI) {
+  }
 
   /**
-   * 部分木の変更監視（既存のsubscribeSubTreeに相当）
-   *
-   * @param nodeId 監視するルートノードID
-   * @param expandedChangesCallback 展開状態変更時のコールバック
-   * @param subtreeChangesCallback 部分木変更時のコールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプション解除関数
-   */
+      * subscribeSubTree
+      * @param nodeId ID
+   * @param expandedChangesCallback
+   * @param subtreeChangesCallback
+   * @param context
+   * @returns
+      */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<UnsubscribeFunction> {
     try {
-      const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
-
-      const subscriptionId = await subscriptionAPI.subscribeSubtree(nodeId, callback);
+      // Prefer legacy observable-style API if present (for tests)
+      const maybeObserve = (this.workerAPI as any).observeSubtree as
+        | ((envelope: any) => Promise<{ subscribe: (cb: (e: TreeNodeEvent) => void) => { unsubscribe: () => void } }>)
+        | undefined;
 
       const internalSubscriptionId = `subtree_${nodeId}_${context.viewId}`;
+
+      if (typeof maybeObserve === 'function') {
+        const envelope = createCommand('observeSubtree', {
+          rootNodeId: nodeId,
+          includeInitialSnapshot: true,
+        }, { groupId: context.groupId, sourceViewId: context.viewId });
+
+        const observable: any = await maybeObserve(envelope);
+        const sub = observable.subscribe((event: TreeNodeEvent) => setTimeout(() => callback(event), 0));
+
+        const wrappedUnsubscribe = () => {
+          try { sub.unsubscribe?.(); } finally { this.subscriptions.delete(internalSubscriptionId); }
+        };
+        this.subscriptions.set(internalSubscriptionId, wrappedUnsubscribe);
+        return wrappedUnsubscribe;
+      }
+
+      // Fallback to current subscription API
+      const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
+      const subscriptionId = await subscriptionAPI.subscribeSubtree(nodeId, callback);
+
       const wrappedUnsubscribe = async () => {
         await subscriptionAPI.unsubscribe(subscriptionId);
         this.subscriptions.delete(internalSubscriptionId);
       };
-
       this.subscriptions.set(internalSubscriptionId, wrappedUnsubscribe);
-
       return wrappedUnsubscribe;
     } catch (error) {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to subtree for node ${nodeId}`,
         'SUBTREE_SUBSCRIPTION_INIT_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * 単一ノードの変更監視
-   *
-   * @param nodeId 監視するノードID
-   * @param callback ノード変更時のコールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプション解除関数
-   */
+            * @param nodeId ID
+   * @param callback
+   * @param context
+   * @returns
+      */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
@@ -86,23 +104,21 @@ export class TreeObservableAdapter {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to node ${nodeId}`,
         'NODE_SUBSCRIPTION_INIT_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * 子ノード一覧の変更監視
-   *
-   * @param parentId 親ノードID
-   * @param callback 子ノード変更時のコールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプション解除関数
-   */
+            * @param parentId ID
+   * @param callback
+   * @param context
+   * @returns
+      */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<UnsubscribeFunction> {
     try {
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
@@ -123,14 +139,13 @@ export class TreeObservableAdapter {
       throw new TreeConsoleAdapterError(
         `Failed to subscribe to children of node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_INIT_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * すべてのサブスクリプションを解除
-   */
+            */
   cleanupAllSubscriptions(): void {
     this.subscriptions.forEach((unsubscribe) => {
       try {
@@ -143,8 +158,7 @@ export class TreeObservableAdapter {
   }
 
   /**
-   * アクティブなサブスクリプション数を取得
-   */
+            */
   getActiveSubscriptionCount(): number {
     return this.subscriptions.size;
   }

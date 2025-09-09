@@ -10,21 +10,12 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { shapeDB, type BatchSessionRecord, type BatchTaskRecord } from '../database/ShapeDB';
+import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB';
 import { SessionController } from './SessionController';
 import { ShapeBatchSession } from './ShapeBatchSession';
-import type {
-  BatchSession,
-  BatchStatus,
-  //TaskStatus,
-  ProcessingStage,
-  ProgressInfo,
-  StageStatus,
-  //ErrorInfo,
-  //ResourceUsage,
-} from '../types';
+import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../types';
 import type { BatchProcessConfig } from './types';
-import type { UrlMetadata } from '../../types';
+import type { UrlMetadata } from '../../shared/types';
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
@@ -48,7 +39,7 @@ export class BatchSessionManager {
 
   async shutdown(): Promise<void> {
     // Cancel all active sessions
-    for (const [sessionId] of this.activeSessions) {
+    for (const [sessionId] of this.sharedSessions) {
       await this.cancelSession(sessionId);
     }
     // WorkerPools are now managed by individual SessionControllers
@@ -59,7 +50,7 @@ export class BatchSessionManager {
     nodeId: NodeId,
     config: BatchProcessConfig,
     urlMetadata: UrlMetadata[],
-    options: BatchSessionOptions = {}
+    options: BatchSessionOptions = {},
   ): Promise<BatchSession> {
     // Check for existing active sessions
     const existingSessions = await shapeDB.getActiveBatchSessions(nodeId);
@@ -100,15 +91,26 @@ export class BatchSessionManager {
       nodeId,
       urlMetadata,
       config,
-      options
+      options,
     );
 
-    // Start processing（共有セッションで実行）
+    //  Start processing
     const shared = new ShapeBatchSession(session.sessionId, nodeId, { concurrency: options.maxConcurrentTasks }, controller, (ev) => {
-      try { this.progressCallbacks.get(session.sessionId)?.({ total: ev.total, completed: ev.completed, failed: ev.failed, skipped: 0, percentage: ev.percentage, currentStage: ev.stage as any, currentTask: ev.currentTask }); } catch {}
+      try {
+        this.progressCallbacks.get(session.sessionId)?.({
+          total: ev.total,
+          completed: ev.completed,
+          failed: ev.failed,
+          skipped: 0,
+          percentage: ev.percentage,
+          currentStage: ev.stage as any,
+          currentTask: ev.currentTask,
+        });
+      } catch {
+      }
     });
     this.sharedSessions.set(session.sessionId, shared);
-    // Run withoutブロッキング
+    //  Run without
     shared.initialize().then(() => shared.start()).catch((e) => console.error('Shape shared session failed', e));
 
 
@@ -231,19 +233,6 @@ export class BatchSessionManager {
     return stageStatus;
   }
 
-  private async startSessionProcessing(controller: SessionController): Promise<void> {
-    try {
-      await controller.start();
-    } catch (error) {
-      console.error(`Session ${controller.sessionId} failed:`, error);
-      await shapeDB.updateBatchSession(controller.sessionId, {
-        status: 'failed',
-        completedAt: Date.now(),
-      });
-      this.activeSessions.delete(controller.sessionId);
-    }
-  }
-
   private async resumeIncompleteSessions(): Promise<void> {
     const incompleteSessions = await shapeDB.batchSessions
       .where('status')
@@ -261,15 +250,11 @@ export class BatchSessionManager {
     }
   }
 
-  private async reconstructUrlMetadata(_session: BatchSessionRecord): Promise<UrlMetadata[]> {
-    // This would reconstruct URL metadata from session config
-    // For now, return empty array
-    return [];
-  }
+  // (removed unused helpers to satisfy dts build rules)
 
   private calculateTimeRemaining(
     session: BatchSessionRecord,
-    tasks: BatchTaskRecord[]
+    tasks: BatchTaskRecord[],
   ): number | undefined {
     const completedTasks = tasks.filter((t: any) => t.status === 'completed');
     if (completedTasks.length === 0) return undefined;
@@ -287,10 +272,10 @@ export class BatchSessionManager {
   }
 
   private calculateThroughput(
-    tasks: BatchTaskRecord[]
+    tasks: BatchTaskRecord[],
   ): { tasksPerSecond: number; bytesPerSecond: number } | undefined {
     const recentTasks = tasks.filter(
-      (t: any) => t.status === 'completed' && t.completedAt && t.completedAt > Date.now() - 60000 // Last minute
+      (t: any) => t.status === 'completed' && t.completedAt && t.completedAt > Date.now() - 60000, // Last minute
     );
 
     if (recentTasks.length === 0) {

@@ -1,24 +1,21 @@
 /**
- * TreeConsoleContent.test.tsx
- *
- * TreeConsoleContentコンポーネントの基本テスト
- */
+  * TreeConsoleContent.test.tsx
+  * TreeConsoleContent
+  */
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { vi } from 'vitest';
 import { TreeConsoleContent } from '../TreeConsoleContent';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
 import type { NodeId } from '@hierarchidb/common-type';
 
-// テーマプロバイダーでラップ
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = createTheme();
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 };
 
-// モックコントローラー
 const createMockController = (overrides?: Partial<TreeViewController>): TreeViewController => ({
   currentNode: null,
   selectedNodes: [],
@@ -46,7 +43,6 @@ const createMockController = (overrides?: Partial<TreeViewController>): TreeView
   ...overrides,
 });
 
-// デフォルトプロパティ
 const defaultProps: TreeConsoleContentProps = {
   controller: createMockController(),
   isProjectsPage: false,
@@ -67,7 +63,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={loadingController} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('読み込み中...')).toBeInTheDocument();
@@ -83,11 +79,11 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(
-      screen.getByText('リソースがありません。新しいリソースを作成してください。')
+      screen.getByText('リソースがありません。新しいリソースを作成してください。'),
     ).toBeInTheDocument();
   });
 
@@ -105,11 +101,11 @@ describe('TreeConsoleContent', () => {
           isProjectsPage={true}
           isResourcesPage={false}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(
-      screen.getByText('プロジェクトがありません。新しいプロジェクトを作成してください。')
+      screen.getByText('プロジェクトがありません。新しいプロジェクトを作成してください。'),
     ).toBeInTheDocument();
   });
 
@@ -122,7 +118,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} mode="restore" />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('ゴミ箱に復元可能なアイテムはありません。')).toBeInTheDocument();
@@ -137,7 +133,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={emptyController} mode="dispose" />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('完全削除可能なアイテムはありません。')).toBeInTheDocument();
@@ -153,7 +149,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={dataController} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('TreeTable (placeholder)')).toBeInTheDocument();
@@ -175,7 +171,7 @@ describe('TreeConsoleContent', () => {
           rootNodeId={'test-root' as NodeId}
           mode="restore"
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('TreeTypes Root: test-root')).toBeInTheDocument();
@@ -187,7 +183,7 @@ describe('TreeConsoleContent', () => {
     render(
       <TestWrapper>
         <TreeConsoleContent {...defaultProps} controller={null} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     expect(screen.getByText('読み込み中...')).toBeInTheDocument();

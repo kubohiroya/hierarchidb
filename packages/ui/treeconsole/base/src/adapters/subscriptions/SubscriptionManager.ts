@@ -1,18 +1,15 @@
 /**
- * SubscriptionManager
- *
- * TreeConsoleコンポーネント内のすべてのサブスクリプションを一元管理します。
- * コンポーネントのライフサイクルに合わせた適切なクリーンアップを提供します。
- */
+  * SubscriptionManager
+  * TreeConsole
+   */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
 import { TreeObservableAdapter } from './TreeObservableAdapter';
 import type { AdapterContext, UnsubscribeFunction } from '../../types/index';
-import type { TreeNodeEvent } from '@hierarchidb/common-type';
+import { TreeConsoleAdapterError } from '../../types/index';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
-import { TreeConsoleAdapterError } from '../../types/index';
 
 interface SubscriptionEntry {
   id: string;
@@ -25,6 +22,7 @@ interface SubscriptionEntry {
 export class SubscriptionManager {
   private adapter: TreeObservableAdapter;
   private subscriptions = new Map<string, SubscriptionEntry>();
+
   // private _viewId: string; // Currently unused
 
   constructor(workerAPI: WorkerAPI, _viewId: string) {
@@ -33,18 +31,16 @@ export class SubscriptionManager {
   }
 
   /**
-   * 部分木サブスクリプションを作成
-   *
-   * @param nodeId 監視対象のルートノードID
-   * @param expandedChangesCallback 展開状態変更コールバック
-   * @param subtreeChangesCallback 部分木変更コールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプションID
-   */
+            * @param nodeId ID
+   * @param expandedChangesCallback
+   * @param subtreeChangesCallback
+   * @param context
+   * @returns ID
+      */
   async subscribeToSubtree(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<string> {
     try {
       const subscriptionId = `subtree_${nodeId}_${Date.now()}`;
@@ -65,23 +61,21 @@ export class SubscriptionManager {
       throw new TreeConsoleAdapterError(
         `Failed to create subtree subscription for node ${nodeId}`,
         'SUBTREE_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * 単一ノードサブスクリプションを作成
-   *
-   * @param nodeId 監視対象のノードID
-   * @param callback ノード変更コールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプションID
-   */
+            * @param nodeId ID
+   * @param callback
+   * @param context
+   * @returns ID
+      */
   async subscribeToNode(
     nodeId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<string> {
     try {
       const subscriptionId = `node_${nodeId}_${Date.now()}`;
@@ -102,23 +96,21 @@ export class SubscriptionManager {
       throw new TreeConsoleAdapterError(
         `Failed to create node subscription for node ${nodeId}`,
         'NODE_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * 子ノードサブスクリプションを作成
-   *
-   * @param parentId 親ノードID
-   * @param callback 子ノード変更コールバック
-   * @param context アダプター実行コンテキスト
-   * @returns サブスクリプションID
-   */
+            * @param parentId ID
+   * @param callback
+   * @param context
+   * @returns ID
+      */
   async subscribeToChildren(
     parentId: NodeId,
     callback: TreeNodeEventCallback,
-    context: AdapterContext
+    context: AdapterContext,
   ): Promise<string> {
     try {
       const subscriptionId = `children_${parentId}_${Date.now()}`;
@@ -139,16 +131,14 @@ export class SubscriptionManager {
       throw new TreeConsoleAdapterError(
         `Failed to create children subscription for node ${parentId}`,
         'CHILDREN_SUBSCRIPTION_MANAGER_ERROR',
-        error as Error
+        error as Error,
       );
     }
   }
 
   /**
-   * 特定のサブスクリプションを解除
-   *
-   * @param subscriptionId サブスクリプションID
-   */
+            * @param subscriptionId ID
+      */
   unsubscribe(subscriptionId: string): void {
     const entry = this.subscriptions.get(subscriptionId);
     if (entry) {
@@ -162,10 +152,8 @@ export class SubscriptionManager {
   }
 
   /**
-   * 指定されたノードに関連するすべてのサブスクリプションを解除
-   *
-   * @param nodeId ノードID
-   */
+            * @param nodeId ID
+      */
   unsubscribeByNodeId(nodeId: NodeId): void {
     const toRemove: string[] = [];
 
@@ -179,10 +167,8 @@ export class SubscriptionManager {
   }
 
   /**
-   * 指定された種類のすべてのサブスクリプションを解除
-   *
-   * @param type サブスクリプション種別
-   */
+            * @param type
+      */
   unsubscribeByType(type: 'subtree' | 'node' | 'children'): void {
     const toRemove: string[] = [];
 
@@ -196,8 +182,7 @@ export class SubscriptionManager {
   }
 
   /**
-   * すべてのサブスクリプションを解除
-   */
+            */
   cleanupAll(): void {
     this.subscriptions.forEach((entry, subscriptionId) => {
       try {
@@ -212,10 +197,8 @@ export class SubscriptionManager {
   }
 
   /**
-   * 古いサブスクリプション（指定時間以上前に作成）をクリーンアップ
-   *
-   * @param maxAgeMs 最大保持時間（ミリ秒）、デフォルト1時間
-   */
+            * @param maxAgeMs 1
+      */
   cleanupOldSubscriptions(maxAgeMs: number = 3600000): void {
     const now = Date.now();
     const toRemove: string[] = [];
@@ -230,8 +213,7 @@ export class SubscriptionManager {
   }
 
   /**
-   * 現在のサブスクリプション状態を取得（デバッグ用）
-   */
+            */
   getSubscriptionStats(): {
     total: number;
     byType: Record<string, number>;

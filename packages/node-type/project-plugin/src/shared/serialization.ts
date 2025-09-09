@@ -56,7 +56,7 @@ export class ProjectEntitySerializer {
     obj: any,
     binaryData: Map<string, Uint8Array>,
     binaryFilenames: Map<string, string>,
-    path: string[] = []
+    path: string[] = [],
   ): any {
     if (obj == null || typeof obj !== 'object') return obj;
     if (obj instanceof Uint8Array) {

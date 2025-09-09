@@ -1,4 +1,4 @@
-import type { NodeId, EntityId, PeerEntity } from '@hierarchidb/common-type';
+import type { NodeId, PeerEntity } from '@hierarchidb/common-type';
 
 /**
  * Resolver entity represents a property mapping configuration
@@ -78,8 +78,8 @@ export interface PreviewConfig {
  */
 export interface ResolverWorkingCopyEntity extends ResolverEntity {
   /** Working copy specific fields from WorkingCopy interface */
-  workingCopyId?: EntityId;
-  originalId: EntityId;
+  workingCopyId?: NodeId;
+  originalId: NodeId;
   isDirty: boolean;
 
   /** Fields that have been modified */

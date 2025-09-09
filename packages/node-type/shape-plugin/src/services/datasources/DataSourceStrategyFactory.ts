@@ -1,7 +1,6 @@
 /**
- * データソース戦略ファクトリー
- * DATA_SOURCE_STRATEGY_DESIGN.mdに基づく実装
- */
+   * DATA_SOURCE_STRATEGY_DESIGN.md
+  */
 
 import { DataSourceStrategy } from './DataSourceStrategy';
 import { NaturalEarthStrategy } from './NaturalEarthStrategy';
@@ -9,15 +8,14 @@ import { GADMStrategy } from './GADMStrategy';
 import { OpenStreetMapStrategy } from './OpenStreetMapStrategy';
 import { GeoBoundariesStrategy } from './GeoBoundariesStrategy';
 
-export type DataSourceStrategyId = 
+export type DataSourceStrategyId =
   | 'natural-earth-shapes'
   | 'gadm-administrative-areas'
   | 'openstreetmap-overpass'
   | 'geoboundaries-admin-areas';
 
 /**
- * データソース戦略の情報
- */
+    */
 export interface DataSourceInfo {
   id: DataSourceStrategyId;
   name: string;
@@ -32,8 +30,7 @@ export interface DataSourceInfo {
 }
 
 /**
- * データソース戦略ファクトリー
- */
+    */
 export class DataSourceStrategyFactory {
   private strategies = new Map<DataSourceStrategyId, () => DataSourceStrategy>();
   private strategyInfo = new Map<DataSourceStrategyId, DataSourceInfo>();
@@ -43,10 +40,9 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * デフォルトの戦略を登録
-   */
+            */
   private registerDefaultStrategies(): void {
-    // Natural Earth戦略
+    //  Natural Earth
     this.register(
       'natural-earth-shapes',
       () => new NaturalEarthStrategy(),
@@ -60,13 +56,13 @@ export class DataSourceStrategyFactory {
         updateFrequency: 'yearly',
         license: 'Public Domain',
         attribution: 'Natural Earth',
-        supported: true
-      }
+        supported: true,
+      },
     );
 
-    // GADM戦略
+    //  GADM
     this.register(
-      'gadm-administrative-areas', 
+      'gadm-administrative-areas',
       () => new GADMStrategy(),
       {
         id: 'gadm-administrative-areas',
@@ -78,11 +74,11 @@ export class DataSourceStrategyFactory {
         updateFrequency: 'yearly',
         license: 'Free for non-commercial use',
         attribution: 'GADM',
-        supported: true
-      }
+        supported: true,
+      },
     );
 
-    // OpenStreetMap戦略
+    //  OpenStreetMap
     this.register(
       'openstreetmap-overpass',
       () => new OpenStreetMapStrategy(),
@@ -96,11 +92,11 @@ export class DataSourceStrategyFactory {
         updateFrequency: 'realtime',
         license: 'Open Database License (ODbL)',
         attribution: 'OpenStreetMap contributors',
-        supported: true
-      }
+        supported: true,
+      },
     );
 
-    // GeoBoundaries戦略
+    //  GeoBoundaries
     this.register(
       'geoboundaries-admin-areas',
       () => new GeoBoundariesStrategy(),
@@ -114,34 +110,31 @@ export class DataSourceStrategyFactory {
         updateFrequency: 'yearly',
         license: 'Various open licenses',
         attribution: 'GeoBoundaries',
-        supported: true
-      }
+        supported: true,
+      },
     );
   }
 
   /**
-   * 戦略を登録
-   */
+            */
   register(
     id: DataSourceStrategyId,
     factory: () => DataSourceStrategy,
-    info: DataSourceInfo
+    info: DataSourceInfo,
   ): void {
     this.strategies.set(id, factory);
     this.strategyInfo.set(id, info);
   }
 
   /**
-   * 戦略の登録を解除
-   */
+            */
   unregister(id: DataSourceStrategyId): void {
     this.strategies.delete(id);
     this.strategyInfo.delete(id);
   }
 
   /**
-   * 戦略を作成
-   */
+            */
   create(id: DataSourceStrategyId): DataSourceStrategy {
     const factory = this.strategies.get(id);
     if (!factory) {
@@ -151,15 +144,15 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * 利用可能な戦略IDを取得
-   */
+      * ID
+      */
   getAvailableStrategies(): DataSourceStrategyId[] {
     return Array.from(this.strategies.keys());
   }
 
   /**
-   * サポートされている戦略IDを取得
-   */
+      * ID
+      */
   getSupportedStrategies(): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.supported)
@@ -167,22 +160,19 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * 戦略情報を取得
-   */
+            */
   getStrategyInfo(id: DataSourceStrategyId): DataSourceInfo | undefined {
     return this.strategyInfo.get(id);
   }
 
   /**
-   * すべての戦略情報を取得
-   */
+            */
   getAllStrategyInfo(): DataSourceInfo[] {
     return Array.from(this.strategyInfo.values());
   }
 
   /**
-   * カテゴリ別に戦略を取得
-   */
+            */
   getStrategiesByCategory(category: DataSourceInfo['category']): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.category === category && info.supported)
@@ -190,8 +180,7 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * カバレッジレベル別に戦略を取得
-   */
+            */
   getStrategiesByCoverageLevel(level: DataSourceInfo['coverageLevel']): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
       .filter(([_, info]) => info.coverageLevel === level && info.supported)
@@ -199,36 +188,32 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * データタイプ別に戦略を検索
-   */
+            */
   findStrategiesByDataType(dataType: string): DataSourceStrategyId[] {
     return Array.from(this.strategyInfo.entries())
-      .filter(([_, info]) => 
-        info.supported && info.dataTypes.some(type => 
-          type.toLowerCase().includes(dataType.toLowerCase())
-        )
+      .filter(([_, info]) =>
+          info.supported && info.dataTypes.some(type =>
+            type.toLowerCase().includes(dataType.toLowerCase()),
+          ),
       )
       .map(([id, _]) => id);
   }
 
   /**
-   * 戦略が存在するかチェック
-   */
+            */
   hasStrategy(id: DataSourceStrategyId): boolean {
     return this.strategies.has(id);
   }
 
   /**
-   * 戦略がサポートされているかチェック
-   */
+            */
   isStrategySupported(id: DataSourceStrategyId): boolean {
     const info = this.strategyInfo.get(id);
     return info?.supported || false;
   }
 
   /**
-   * 戦略のヘルスチェック
-   */
+            */
   async healthCheck(id: DataSourceStrategyId): Promise<boolean> {
     try {
       const strategy = this.create(id);
@@ -243,8 +228,7 @@ export class DataSourceStrategyFactory {
   }
 
   /**
-   * 全戦略のヘルスチェック
-   */
+            */
   async healthCheckAll(): Promise<Map<DataSourceStrategyId, boolean>> {
     const results = new Map<DataSourceStrategyId, boolean>();
     const strategies = this.getSupportedStrategies();
@@ -253,15 +237,14 @@ export class DataSourceStrategyFactory {
       strategies.map(async (id) => {
         const isHealthy = await this.healthCheck(id);
         results.set(id, isHealthy);
-      })
+      }),
     );
 
     return results;
   }
 
   /**
-   * 統計情報を取得
-   */
+            */
   getStatistics(): {
     total: number;
     supported: number;
@@ -283,33 +266,32 @@ export class DataSourceStrategyFactory {
       total: allInfo.length,
       supported: supported.length,
       byCategory,
-      byCoverageLevel
+      byCoverageLevel,
     };
   }
 
   /**
-   * 推奨戦略を取得（用途に応じて）
-   */
+            */
   getRecommendedStrategy(purpose: 'administrative' | 'natural' | 'realtime' | 'research'): DataSourceStrategyId | null {
     const strategies = this.getSupportedStrategies();
 
     switch (purpose) {
       case 'administrative':
-        // 行政区域データには精度の高いGADMまたはGeoBoundariesを推奨
+        //  GADMGeoBoundaries
         return strategies.find(id => ['gadm-administrative-areas', 'geoboundaries-admin-areas'].includes(id)) || null;
-      
+
       case 'natural':
-        // 自然地理データにはNatural Earthを推奨
+        //  Natural Earth
         return strategies.find(id => id === 'natural-earth-shapes') || null;
-      
+
       case 'realtime':
-        // リアルタイムデータにはOpenStreetMapを推奨
+        //  OpenStreetMap
         return strategies.find(id => id === 'openstreetmap-overpass') || null;
-      
+
       case 'research':
-        // 研究用途にはGeoBoundariesを推奨
+        //  GeoBoundaries
         return strategies.find(id => id === 'geoboundaries-admin-areas') || null;
-      
+
       default:
         return strategies[0] || null;
     }
@@ -317,6 +299,5 @@ export class DataSourceStrategyFactory {
 }
 
 /**
- * デフォルトファクトリーインスタンス
- */
+    */
 export const defaultDataSourceFactory = new DataSourceStrategyFactory();

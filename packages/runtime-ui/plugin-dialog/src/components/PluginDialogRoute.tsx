@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialog } from './PluginDialog';
 import { PluginStepRegistry } from '../registry/PluginStepRegistry';
@@ -32,11 +32,11 @@ export const PluginDialogRoute: React.FC = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const stepParam = searchParams.get('step');
   const currentStep = stepParam ? parseInt(stepParam, 10) - 1 : 0; // Convert to 0-based index
-  
+
   // Determine mode based on action
   // Action can be 'create', 'edit', or 'trash'
   const mode = action === 'create' ? 'create' : 'edit';
-  
+
   // targetNodeId is the working copy ID (UUID) for both create and edit
   const workingCopyId = targetNodeId;
   const parentId = pageNodeId;
@@ -50,7 +50,7 @@ export const PluginDialogRoute: React.FC = () => {
     async function checkAccess() {
       const canAccess = await registry.validateAccess(nodeType, targetNodeId as string);
       setHasAccess(canAccess);
-      
+
       if (!canAccess) {
         console.error(`Access denied for nodeType: ${nodeType}`);
         navigate(-1);
@@ -65,7 +65,7 @@ export const PluginDialogRoute: React.FC = () => {
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
-    
+
     // Navigate back to parent node or tree
     if (parentId) {
       navigate(`/t/${treeId}/${parentId}`);
@@ -82,7 +82,7 @@ export const PluginDialogRoute: React.FC = () => {
 
   // Check if node type is registered
   const isRegistered = registry.getRegisteredNodeTypes().includes(nodeType);
-  
+
   if (!isRegistered) {
     return (
       <div>

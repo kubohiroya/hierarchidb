@@ -5,8 +5,7 @@ import { useAuth } from 'react-oidc-context';
 //import { APP_PREFIX } from "@/config/appDescription";
 //`/${APP_PREFIX}/`
 /**
- * 認証エラーイベントをリッスンして、再認証画面へのリダイレクトを行うコンポーネント
- */
+    */
 export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -14,20 +13,16 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
   useEffect(() => {
     const handleAuthErrorEvent = (_event: CustomEvent) => {
       // if (import.meta.env.DEV) {
-      console.log("認証エラーを検出しました:", _event.detail?.message);
+      console.log('認証エラーを検出しました:', _event.detail?.message);
       // }
 
-      // 現在のパスをセッションストレージに保存
       sessionStorage.setItem('oidc.redirect', window.location.pathname);
 
-      // トップページへリダイレクト
       navigate(fallbackTo, { replace: true });
     };
 
-    // イベントリスナーを追加
     window.addEventListener('Auth-error', handleAuthErrorEvent as EventListener);
 
-    // クリーンアップ
     return () => {
       window.removeEventListener('Auth-error', handleAuthErrorEvent as EventListener);
     };

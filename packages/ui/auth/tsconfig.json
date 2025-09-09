@@ -1,7 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    
     "lib": [
       "ES2020",
       "DOM",
@@ -21,11 +20,14 @@
         "../../common/auth/src/index.ts"
       ]
     },
-    
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",
@@ -34,5 +36,9 @@
     "**/*.spec.*",
     "src/__tests__/**",
     "src/vite-env.d.ts"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

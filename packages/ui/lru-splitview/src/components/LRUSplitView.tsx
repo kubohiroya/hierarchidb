@@ -15,7 +15,7 @@ import type { LRUSplitViewConfig } from '../types/LRUSplitView';
 export interface LRUSplitViewProps extends LRUSplitViewConfig {
   /** Component height */
   height?: string | number;
-  /** Component width */  
+  /** Component width */
   width?: string | number;
   /** Additional CSS styles */
   sx?: any;
@@ -23,7 +23,7 @@ export interface LRUSplitViewProps extends LRUSplitViewConfig {
 
 /**
  * LRUSplitView - Intelligent split view with LRU pane management
- * 
+ *
  * Features:
  * - LRU (Least Recently Used) pane expansion management
  * - Configurable maximum expanded panes
@@ -33,18 +33,18 @@ export interface LRUSplitViewProps extends LRUSplitViewConfig {
  * - Smooth animations and transitions
  */
 export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
-  panes,
-  maxExpandedPanes = 2,
-  defaultCollapsedSize = 60,
-  vertical = false,
-  autoExpand,
-  progress = [],
-  onPaneToggle,
-  onPaneReorder,
-  height = '100%',
-  width = '100%',
-  sx,
-}) => {
+                                                            panes,
+                                                            maxExpandedPanes = 2,
+                                                            defaultCollapsedSize = 60,
+                                                            vertical = false,
+                                                            autoExpand,
+                                                            progress = [],
+                                                            onPaneToggle,
+                                                            onPaneReorder,
+                                                            height = '100%',
+                                                            width = '100%',
+                                                            sx,
+                                                          }) => {
   const {
     paneStates,
     togglePane,
@@ -73,37 +73,37 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
   return (
     <Box sx={{ height, width, ...sx }}>
       {React.createElement(Allotment as any, {
-        key: paneStates
-          .filter((p) => p.isExpanded)
-          .map((p) => p.id)
-          .join('-'),
-        vertical: vertical,
-        proportionalLayout: false,
-        defaultSizes: sizes,
-        onDragEnd: (_newSizes: number[]) => {
-          // Optional: Handle pane resize completion
-          if (onPaneReorder) {
-            const expandedPanes = paneStates.filter(p => p.isExpanded);
-            onPaneReorder(expandedPanes.map(p => p.id));
-          }
+          key: paneStates
+            .filter((p) => p.isExpanded)
+            .map((p) => p.id)
+            .join('-'),
+          vertical: vertical,
+          proportionalLayout: false,
+          defaultSizes: sizes,
+          onDragEnd: (_newSizes: number[]) => {
+            // Optional: Handle pane resize completion
+            if (onPaneReorder) {
+              const expandedPanes = paneStates.filter(p => p.isExpanded);
+              onPaneReorder(expandedPanes.map(p => p.id));
+            }
+          },
         },
-      },
         paneStates.map((state, index) => {
           const config = getPaneConfig(state.id);
           const progressInfo = getProgressForPane(state.id);
-          
+
           if (!config) return null;
 
           return React.createElement((Allotment as any).Pane, {
-            key: state.id,
-            minSize: state.collapsedSize || defaultCollapsedSize,
-            preferredSize: sizes[index],
-          },
+              key: state.id,
+              minSize: state.collapsedSize || defaultCollapsedSize,
+              preferredSize: sizes[index],
+            },
             <Box
-              sx={{ 
-                height: '100%', 
+              sx={{
+                height: '100%',
                 width: '100%',
-                display: 'flex', 
+                display: 'flex',
                 flexDirection: 'column',
               }}
             >
@@ -116,12 +116,12 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
                   onToggle={togglePane}
                 />
               )}
-              
+
               {/* Pane content - only render when expanded or always visible */}
               {(state.isExpanded || !config.content) && (
-                <Box 
-                  sx={{ 
-                    flex: 1, 
+                <Box
+                  sx={{
+                    flex: 1,
                     overflow: 'auto',
                     display: state.isExpanded ? 'block' : 'none',
                   }}
@@ -129,9 +129,9 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
                   {config.content}
                 </Box>
               )}
-            </Box>
+            </Box>,
           );
-        })
+        }),
       )}
     </Box>
   );

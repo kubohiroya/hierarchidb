@@ -3,11 +3,11 @@
  * @description Folder entity handler using common base classes
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
 import {
-  HierarchicalEntityHandler,
   type HierarchicalEntity,
+  HierarchicalEntityHandler,
   type HierarchicalSearchCriteria,
 } from '@hierarchidb/base-plugin';
 
@@ -17,7 +17,8 @@ import { FolderDatabase } from '../database/FolderDatabase';
 /**
  * Combined entity type with hierarchical support
  */
-export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity {}
+export interface FolderEntityExtended extends FolderEntity, HierarchicalEntity {
+}
 
 /**
  * Combined search criteria
@@ -31,7 +32,7 @@ export interface FolderSearchCriteria extends HierarchicalSearchCriteria {
  */
 export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityExtended> {
   public folderDB: FolderDatabase;
-  protected table: Table<FolderEntityExtended, EntityId>;
+  protected table: Table<FolderEntityExtended, NodeId>;
 
   constructor() {
     super();
@@ -44,8 +45,8 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: Partial<FolderEntity>
+    entityId: NodeId,
+    data: Partial<FolderEntity>,
   ): FolderEntityExtended {
     const now = Date.now();
 
@@ -74,7 +75,8 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
   /**
    * Clean up folder-specific data
    */
-  protected async cleanupEntityData(_entity: FolderEntityExtended): Promise<void> {}
+  protected async cleanupEntityData(_entity: FolderEntityExtended): Promise<void> {
+  }
 
   // ========== Folder-specific methods ==========
   /**
@@ -135,21 +137,19 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     return this.folderDB.folders
       .toCollection()
       .filter((f: any) =>
-        (f.name || '').toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q)
+        (f.name || '').toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q),
       )
       .toArray();
   }
 
   // ==================
-  // 多段階ダイアログサポート
   // ==================
 
   /**
-   * フォルダー作成の多段階ダイアログのステップ能力を評価
-   */
+            */
   async getStepCapabilities(
     data: any,
-    step: number
+    step: number,
   ): Promise<{
     canNavigateTo: boolean;
     canStartBatch: boolean;
@@ -157,39 +157,33 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
     canProceedToNext: boolean;
     canBackToPrevious: boolean;
   }> {
-    // フォルダーは3段階のステップを持つ
-    // Step 0: 基本情報 (名前、説明)
-    // Step 1: 権限設定
-    // Step 2: 追加設定
+    //  3
+    //  Step 0: ()
+    //  Step 1:
+    //  Step 2:
 
     switch (step) {
-      case 0: // 基本情報ステップ
+      case 0:
         return {
           canNavigateTo: true,
-          canStartBatch: false, // 基本情報が必要なので初期ステップではバッチ処理不可
-          canSave: false, // 最低限の情報が必要
-          canProceedToNext: !!(data.name && data.name.trim().length > 0),
-          canBackToPrevious: false, // 最初のステップ
+          canStartBatch: false, canSave: false, canProceedToNext: !!(data.name && data.name.trim().length > 0),
+          canBackToPrevious: false,
         };
 
-      case 1: // 権限設定ステップ
+      case 1:
         const hasBasicInfo = !!(data.name && data.name.trim().length > 0);
         return {
           canNavigateTo: hasBasicInfo,
-          canStartBatch: hasBasicInfo, // 基本情報があればバッチ処理可能
-          canSave: hasBasicInfo, // 基本情報があれば保存可能
-          canProceedToNext: true, // 権限設定はオプション
-          canBackToPrevious: true,
+          canStartBatch: hasBasicInfo, canSave: hasBasicInfo, canProceedToNext: true, canBackToPrevious: true,
         };
 
-      case 2: // 最終設定ステップ
+      case 2:
         const canNavigateToFinal = !!(data.name && data.name.trim().length > 0);
         return {
           canNavigateTo: canNavigateToFinal,
           canStartBatch: canNavigateToFinal,
           canSave: canNavigateToFinal,
-          canProceedToNext: false, // 最終ステップ
-          canBackToPrevious: true,
+          canProceedToNext: false, canBackToPrevious: true,
         };
 
       default:
@@ -204,20 +198,17 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<FolderEntityE
   }
 
   /**
-   * フォルダーデータのバリデーション
-   */
+            */
   async validate(data: any): Promise<{ valid: boolean; errors: string[]; warnings?: string[] }> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // 必須フィールドのチェック
     if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
       errors.push('フォルダー名は必須です');
     } else if (data.name.trim().length > 255) {
       errors.push('フォルダー名は255文字以下である必要があります');
     }
 
-    // 名前の形式チェック
     if (data.name && typeof data.name === 'string') {
       const invalidChars = /[<>:"/\\|?*]/;
       if (invalidChars.test(data.name)) {

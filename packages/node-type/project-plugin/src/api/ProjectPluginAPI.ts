@@ -59,7 +59,7 @@ class ProjectPluginAPIClass {
       lastCheck: Date.now(),
       databaseConnected: true,
       analysisEngineReady: true,
-      tileServiceAvailable: true
+      tileServiceAvailable: true,
     };
   }
 
@@ -69,19 +69,19 @@ class ProjectPluginAPIClass {
   async startAnalysis(
     nodeId: NodeId,
     analysisId: string,
-    config: SpatialAnalysis | TemporalAnalysis
+    config: SpatialAnalysis | TemporalAnalysis,
   ): Promise<string> {
     if (!this.initialized) {
       await this.initialize();
     }
 
     const sessionId = `analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const session: AnalysisSession = {
       sessionId,
       status: 'pending',
       progress: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
 
     this.activeSessions.set(sessionId, session);
@@ -144,17 +144,17 @@ class ProjectPluginAPIClass {
       maxZoom: number;
       bounds?: [number, number, number, number];
       layers: string[];
-    }
+    },
   ): Promise<string> {
     if (!this.initialized) {
       await this.initialize();
     }
 
     const sessionId = `tiles-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log(`Started tile generation for node ${nodeId}, session: ${sessionId}`);
     console.log(`Config: zoom ${config.minZoom}-${config.maxZoom}, layers: ${config.layers.join(', ')}`);
-    
+
     // In production, this would trigger actual tile generation
     return sessionId;
   }
@@ -169,7 +169,7 @@ class ProjectPluginAPIClass {
       layers: string[];
       includeStyle: boolean;
       includeMetadata: boolean;
-    }
+    },
   ): Promise<Blob> {
     if (!this.initialized) {
       await this.initialize();
@@ -177,7 +177,7 @@ class ProjectPluginAPIClass {
 
     console.log(`Exporting project ${nodeId} as ${format}`);
     console.log(`Options: layers=${options.layers.join(',')}, style=${options.includeStyle}, metadata=${options.includeMetadata}`);
-    
+
     // In production, this would generate actual export
     // For now, return a mock blob
     return new Blob(['mock export data'], { type: 'application/octet-stream' });
@@ -189,7 +189,7 @@ class ProjectPluginAPIClass {
   async generateReport(
     nodeId: NodeId,
     format: 'pdf' | 'html' | 'docx',
-    sections: any[]
+    sections: any[],
   ): Promise<Blob> {
     if (!this.initialized) {
       await this.initialize();
@@ -197,15 +197,15 @@ class ProjectPluginAPIClass {
 
     console.log(`Generating ${format} report for project ${nodeId}`);
     console.log(`Sections: ${sections.length}`);
-    
+
     // In production, this would generate actual report
     // For now, return a mock blob
     const mimeTypes = {
       pdf: 'application/pdf',
       html: 'text/html',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     };
-    
+
     return new Blob(['mock report data'], { type: mimeTypes[format] });
   }
 
@@ -215,17 +215,17 @@ class ProjectPluginAPIClass {
   async createSnapshot(
     nodeId: NodeId,
     name: string,
-    _description: string
+    _description: string,
   ): Promise<string> {
     if (!this.initialized) {
       await this.initialize();
     }
 
     const snapshotId = `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log(`Created snapshot "${name}" for project ${nodeId}`);
     console.log(`Snapshot ID: ${snapshotId}`);
-    
+
     return snapshotId;
   }
 
@@ -234,14 +234,14 @@ class ProjectPluginAPIClass {
    */
   async restoreSnapshot(
     nodeId: NodeId,
-    snapshotId: string
+    snapshotId: string,
   ): Promise<void> {
     if (!this.initialized) {
       await this.initialize();
     }
 
     console.log(`Restoring project ${nodeId} from snapshot ${snapshotId}`);
-    
+
     // In production, this would perform actual restoration
   }
 
@@ -258,7 +258,7 @@ class ProjectPluginAPIClass {
     let progress = 0;
     const interval = setInterval(() => {
       progress += 10;
-      
+
       const currentSession = this.activeSessions.get(sessionId);
       if (!currentSession || currentSession.status !== 'running') {
         clearInterval(interval);
@@ -273,7 +273,7 @@ class ProjectPluginAPIClass {
         currentSession.result = {
           type: 'mock',
           featureCount: Math.floor(Math.random() * 1000),
-          executionTime: currentSession.endTime - currentSession.startTime
+          executionTime: currentSession.endTime - currentSession.startTime,
         };
         clearInterval(interval);
         console.log(`Analysis session ${sessionId} completed`);

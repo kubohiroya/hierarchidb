@@ -1,8 +1,7 @@
 /**
- * Inline Edit Plugin
- * 
- * TreeTableにインライン編集機能を追加するプラグイン
- */
+  * Inline Edit Plugin
+  * TreeTable
+  */
 
 import type { TreeTablePlugin } from '../plugin/types';
 import type { TreeNodeInUI } from '../types';
@@ -10,43 +9,39 @@ import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import { KeyboardEvent } from 'react';
 
 /**
- * インライン編集プラグインの設定
- */
+    */
 export interface InlineEditPluginConfig {
   /**
-   * 編集モードの開始キー（デフォルト: F2）
-   */
+      * : F2
+      */
   editStartKey?: string;
-  
+
   /**
-   * 編集の確定キー（デフォルト: Enter）
-   */
+      * : Enter
+      */
   confirmKey?: string;
-  
+
   /**
-   * 編集のキャンセルキー（デフォルト: Escape）
-   */
+      * : Escape
+      */
   cancelKey?: string;
-  
+
   /**
-   * ダブルクリックで編集モード開始するか（デフォルト: true）
-   */
+      * : true
+      */
   enableDoubleClickEdit?: boolean;
-  
+
   /**
-   * 編集前の検証関数
-   */
+            */
   validateBeforeEdit?: (node: TreeNodeInUI) => boolean | Promise<boolean>;
-  
+
   /**
-   * 保存前の検証関数
-   */
+            */
   validateBeforeSave?: (node: TreeNodeInUI, newValue: string) => boolean | Promise<boolean>;
 }
 
 /**
- * インライン編集プラグインを作成
- */
+    */
 export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTablePlugin {
   const {
     editStartKey = 'F2',
@@ -56,26 +51,24 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
     validateBeforeEdit,
     validateBeforeSave,
   } = config || {};
-  
+
   return {
     name: 'inline-edit',
     version: '1.0.0',
-    
+
     hooks: {
-      // キーボードハンドラー
       onKeyDown: (event: KeyboardEvent, context) => {
-        // F2キーで編集開始
+        //  F2
         if (event.key === editStartKey) {
           const selectedNodes = context.selectedNodes;
           if (selectedNodes.length === 1) {
             event.preventDefault();
-            // 編集開始ロジックをここに実装
             console.log(`Starting inline edit for node: ${selectedNodes[0]}`);
-            return true; // イベントを処理したことを示す
+            return true;
           }
         }
-        
-        // Enter/Escapeキーで編集終了
+
+        //  Enter/Escape
         if (context.editingNodeId) {
           if (event.key === confirmKey) {
             event.preventDefault();
@@ -87,15 +80,13 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
             return true;
           }
         }
-        
+
         return false;
       },
-      
-      // ダブルクリックハンドラー
+
       onRowDoubleClick: (node, _event) => {
         if (!enableDoubleClickEdit) return false;
-        
-        // 編集可能かチェック
+
         if (validateBeforeEdit) {
           const canEdit = validateBeforeEdit(node);
           if (canEdit instanceof Promise) {
@@ -110,19 +101,16 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
         } else {
           console.log(`Starting inline edit via double-click: ${node.id}`);
         }
-        
-        return true; // デフォルトのダブルクリック動作を防ぐ
+
+        return true;
       },
-      
-      // 編集状態変更ハンドラー
+
       onEditingStateChange: (editingNodeId) => {
         console.log(`Editing state changed: ${editingNodeId || 'none'}`);
       },
-      
-      // ノード更新前の検証
+
       onBeforeNodeUpdate: async (nodeId, newData) => {
         if (validateBeforeSave && newData.name) {
-          // 型変換のための仮の実装
           // Create a minimal TreeNodeInUI object for validation
           const node: TreeNodeInUI = {
             id: nodeId as NodeId,
@@ -133,30 +121,27 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
             depth: 0,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            version: 1
+            version: 1,
           };
           const isValid = await validateBeforeSave(node, newData.name);
           return isValid;
         }
         return true;
       },
-      
-      // ノード更新後の処理
+
       onAfterNodeUpdate: async (nodeId, newData) => {
         console.log(`Node ${nodeId} updated:`, newData);
       },
-      
-      // プラグイン初期化
+
       onPluginInit: () => {
         console.log('InlineEditPlugin initialized');
       },
-      
-      // プラグイン破棄
+
       onPluginDestroy: () => {
         console.log('InlineEditPlugin destroyed');
       },
     },
-    
+
     config: {
       editStartKey,
       confirmKey,
@@ -166,5 +151,4 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
   };
 }
 
-// デフォルトのインライン編集プラグインインスタンス
 export const inlineEditPlugin = createInlineEditPlugin();

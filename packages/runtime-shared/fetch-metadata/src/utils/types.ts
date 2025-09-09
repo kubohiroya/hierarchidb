@@ -21,7 +21,7 @@ export interface RegionMetadata {
  */
 export type DataSourceFetcher = (
   outputDirName: string,
-  outputFileName: string
+  outputFileName: string,
 ) => Promise<void>;
 
 /**

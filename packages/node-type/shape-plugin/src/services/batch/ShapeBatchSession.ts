@@ -1,27 +1,59 @@
-import { AbstractBatchSession, type StandardProgressEvent, type BaseBatchConfig } from '@hierarchidb/runtime-shared-batch-processor';
+import {
+  AbstractBatchSession,
+  type BaseBatchConfig,
+  type StandardProgressEvent,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import type { ProgressInfo } from '../types';
 import { SessionController } from './SessionController';
 
-export interface ShapeBatchConfig extends BaseBatchConfig { concurrency?: number }
-export interface ShapeBatchTask { taskId: string; stage: string; }
+export interface ShapeBatchConfig extends BaseBatchConfig {
+  concurrency?: number;
+}
+
+export interface ShapeBatchTask {
+  taskId: string;
+  stage: string;
+}
 
 export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, ShapeBatchTask, void> {
-  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) { super(sessionId, nodeId, config); }
-  protected async onInitialize(): Promise<void> {}
-  protected async onStart(): Promise<void> {}
+  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) {
+    super(sessionId, nodeId, config);
+  }
+
+  protected async onInitialize(): Promise<void> {
+  }
+
+  protected async onStart(): Promise<void> {
+  }
+
   protected async processBatch(): Promise<void> {
     // Bridge controller progress into shared session progress
     this.controller.setProgressCallback((p: ProgressInfo) => {
-      this.updateProgress({ total: p.total, completed: p.completed, failed: p.failed, currentStage: (p.currentStage as any) || 'processing', currentTask: p.currentTask });
+      this.updateProgress({
+        total: p.total,
+        completed: p.completed,
+        failed: p.failed,
+        currentStage: (p.currentStage as any) || 'processing',
+        currentTask: p.currentTask,
+      });
     });
     await this.controller.initialize();
     await this.controller.start();
   }
-  protected async onPause(): Promise<void> {}
-  protected async onResume(): Promise<void> {}
-  protected async onCancel(): Promise<void> {}
-  protected async onComplete(): Promise<void> {}
+
+  protected async onPause(): Promise<void> {
+  }
+
+  protected async onResume(): Promise<void> {
+  }
+
+  protected async onCancel(): Promise<void> {
+  }
+
+  protected async onComplete(): Promise<void> {
+  }
+
   protected onProgressUpdate(): void {
     const p = this.getProgress();
     const event: StandardProgressEvent = {

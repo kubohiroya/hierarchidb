@@ -1,20 +1,12 @@
 /**
- * TreeTable State Management (Simplified)
- *
- * Jotai atomsを使用したTreeTableの状態管理
- * パッケージ分離のため、簡化されたversion
- */
+  * TreeTable State Management (Simplified)
+  * Jotai atomsTreeTable
+ * version
+  */
 
 import { TreeNode } from '@hierarchidb/common-type';
 import { atom } from 'jotai';
-import type {
-  // TreeNode,
-  SelectionState,
-  ExpansionState,
-  EditingState,
-  DragDropState,
-  SearchState,
-} from '../types';
+import type { DragDropState, EditingState, ExpansionState, SearchState, SelectionState } from '../types';
 
 // === Core Data Atoms ===
 

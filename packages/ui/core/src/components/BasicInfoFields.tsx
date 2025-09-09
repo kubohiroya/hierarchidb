@@ -31,22 +31,22 @@ export interface BasicInfoFieldsProps {
 }
 
 export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
-  value,
-  onChange,
-  disabled = false,
-  nameMaxLength = 100,
-  descriptionMaxLength = 500,
-  // text overrides (fallback to common i18n > English literals)
-  nameLabel,
-  nameHelperText,
-  nameRequiredText,
-  namePlaceholder,
-  descriptionLabel,
-  descriptionHelperText,
-  descriptionPlaceholder,
-  title,
-  subtitle,
-}) => {
+                                                                  value,
+                                                                  onChange,
+                                                                  disabled = false,
+                                                                  nameMaxLength = 100,
+                                                                  descriptionMaxLength = 500,
+                                                                  // text overrides (fallback to common i18n > English literals)
+                                                                  nameLabel,
+                                                                  nameHelperText,
+                                                                  nameRequiredText,
+                                                                  namePlaceholder,
+                                                                  descriptionLabel,
+                                                                  descriptionHelperText,
+                                                                  descriptionPlaceholder,
+                                                                  title,
+                                                                  subtitle,
+                                                                }) => {
   const texts = useMemo(() => ({
     title: title ?? 'Basic Information',
     subtitle: subtitle ?? 'Enter a name and optional description.',

@@ -135,12 +135,12 @@ export function useUrlDownload({
       // Create final file
       const finalFile = file;
       /*
-            if (downloadInfo?.deduplicationInfo?.wasDeduped) {
-              devLog(
-                `✓ Content deduplication saved ${downloadInfo.deduplicationInfo.savedBytes} bytes`,
-              );
-            }
-            */
+ if (downloadInfo?.deduplicationInfo?.wasDeduped) {
+ devLog(
+ ` Content deduplication saved ${downloadInfo.deduplicationInfo.savedBytes} bytes`,
+ );
+ }
+*/
       // Process the file with the original URL
       await handleFileSelect(finalFile, validatedUrl);
       setDownloadSuccess(true);

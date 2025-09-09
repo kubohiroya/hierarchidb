@@ -30,7 +30,7 @@ export interface LocationDataSourceBase {
 /**
  * Location types supported by data sources
  */
-export type LocationType = 
+export type LocationType =
   | 'all'           // All types
   | 'administrative' // Administrative centers
   | 'airport'       // Airports
@@ -51,16 +51,16 @@ export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
   updateFrequency: 'realtime',
   supportedTypes: ['all'],
   availableAttributes: [
-    'name', 'name:en', 'name:ja', 'lat', 'lon', 
-    'amenity', 'aeroway', 'railway', 'highway', 'place'
+    'name', 'name:en', 'name:ja', 'lat', 'lon',
+    'amenity', 'aeroway', 'railway', 'highway', 'place',
   ],
   endpoints: {
-    interpreter: 'https://overpass-api.de/api/interpreter'
+    interpreter: 'https://overpass-api.de/api/interpreter',
   },
   defaultOptions: {
     format: 'json',
-    timeout: 25
-  }
+    timeout: 25,
+  },
 };
 
 /**
@@ -75,16 +75,16 @@ export const OpenStreetMapNominatimDataSource: LocationDataSourceBase = {
   supportedTypes: ['all'],
   availableAttributes: [
     'display_name', 'lat', 'lon', 'place_id', 'osm_type', 'osm_id',
-    'class', 'type', 'importance', 'boundingbox'
+    'class', 'type', 'importance', 'boundingbox',
   ],
   endpoints: {
-    search: 'https://nominatim.openstreetmap.org/search'
+    search: 'https://nominatim.openstreetmap.org/search',
   },
   defaultOptions: {
     format: 'json',
     limit: 50,
-    addressdetails: 1
-  }
+    addressdetails: 1,
+  },
 };
 
 /**
@@ -100,16 +100,16 @@ export const GeoNamesDataSource: LocationDataSourceBase = {
   availableAttributes: [
     'name', 'asciiname', 'alternatenames', 'latitude', 'longitude',
     'feature_class', 'feature_code', 'country_code', 'admin1_code',
-    'population', 'elevation'
+    'population', 'elevation',
   ],
   endpoints: {
     api: 'http://api.geonames.org/',
-    search: 'http://api.geonames.org/searchJSON'
+    search: 'http://api.geonames.org/searchJSON',
   },
   defaultOptions: {
     maxRows: 100,
-    style: 'full'
-  }
+    style: 'full',
+  },
 };
 
 /**
@@ -124,11 +124,11 @@ export const NaturalEarthDataSource: LocationDataSourceBase = {
   supportedTypes: ['administrative', 'airport', 'port'],
   availableAttributes: [
     'name', 'nameascii', 'latitude', 'longitude', 'scalerank',
-    'featurecla', 'adm0name', 'adm1name'
+    'featurecla', 'adm0name', 'adm1name',
   ],
   endpoints: {
-    download: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/'
-  }
+    download: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/',
+  },
 };
 
 /**
@@ -143,11 +143,11 @@ export const OurAirportsDataSource: LocationDataSourceBase = {
   supportedTypes: ['airport'],
   availableAttributes: [
     'ident', 'name', 'latitude_deg', 'longitude_deg', 'elevation_ft',
-    'type', 'municipality', 'iso_country', 'iso_region'
+    'type', 'municipality', 'iso_country', 'iso_region',
   ],
   endpoints: {
-    airports: 'https://davidmegginson.github.io/ourairports-data/airports.csv'
-  }
+    airports: 'https://davidmegginson.github.io/ourairports-data/airports.csv',
+  },
 };
 
 /**
@@ -162,11 +162,11 @@ export const OpenFlightsDataSource: LocationDataSourceBase = {
   supportedTypes: ['airport', 'station'],
   availableAttributes: [
     'name', 'city', 'country', 'IATA', 'ICAO', 'latitude',
-    'longitude', 'altitude', 'timezone', 'DST'
+    'longitude', 'altitude', 'timezone', 'DST',
   ],
   endpoints: {
-    airports: 'https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat'
-  }
+    airports: 'https://raw.githubusercontent.com/jpatokal/openflights/master/data/airports.dat',
+  },
 };
 
 /**
@@ -181,8 +181,8 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
   supportedTypes: ['port'],
   availableAttributes: [
     'port_name', 'country', 'latitude', 'longitude', 'harbor_size',
-    'harbor_type', 'shelter', 'tide_range'
-  ]
+    'harbor_type', 'shelter', 'tide_range',
+  ],
 };
 
 /**
@@ -195,7 +195,7 @@ export const LocationDataSources: Record<string, LocationDataSourceBase> = {
   'natural-earth': NaturalEarthDataSource,
   'ourairports': OurAirportsDataSource,
   'openflights': OpenFlightsDataSource,
-  'world-port-index': WorldPortIndexDataSource
+  'world-port-index': WorldPortIndexDataSource,
 };
 
 /**
@@ -209,8 +209,8 @@ export function getLocationDataSource(id: string): LocationDataSourceBase | unde
  * Get data sources by supported location type
  */
 export function getLocationDataSourcesByType(locationType: LocationType): LocationDataSourceBase[] {
-  return Object.values(LocationDataSources).filter(source => 
-    source.supportedTypes.includes('all') || source.supportedTypes.includes(locationType)
+  return Object.values(LocationDataSources).filter(source =>
+    source.supportedTypes.includes('all') || source.supportedTypes.includes(locationType),
   );
 }
 
@@ -218,7 +218,7 @@ export function getLocationDataSourcesByType(locationType: LocationType): Locati
  * Get data sources by license type
  */
 export function getLocationDataSourcesByLicense(license: string): LocationDataSourceBase[] {
-  return Object.values(LocationDataSources).filter(source => 
-    source.license === license
+  return Object.values(LocationDataSources).filter(source =>
+    source.license === license,
   );
 }

@@ -1,8 +1,9 @@
 import type { ILocationDownloadStrategy } from '../types';
-import type { LocationSearchConfig, LocationEntity } from '../../../entities/LocationEntity';
+import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';
+
   supports(config: LocationSearchConfig): boolean {
     return config.dataSource === 'overpass';
   }
@@ -16,7 +17,11 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
     }
     try {
       const { authFetch } = await import('../../utils/authFetch');
-      const res = await authFetch(endpoint, { method: 'POST', body: query, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      const res = await authFetch(endpoint, {
+        method: 'POST',
+        body: query,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
       const data = await res.json();
       if (!data?.elements) return [];
       return (data.elements as any[]).map((item) => this.fromOverpass(item)).filter(Boolean) as LocationEntity[];

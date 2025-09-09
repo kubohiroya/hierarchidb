@@ -8,7 +8,8 @@ import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
 // import { SvgIconComponent } from '@mui/icons-material';
 
 // @ts-ignore - provider-router not available in ui-core
-const useNavigate = () => (_path: string, _options?: any) => {}; // Placeholder until moved to proper package
+const useNavigate = () => (_path: string, _options?: any) => {
+}; // Placeholder until moved to proper package
 // @ts-ignore - provider-router not available in ui-core
 const useLoaderData = () => ({}); // Placeholder until moved to proper package
 
@@ -69,19 +70,19 @@ export interface TreeToggleButtonGroupProps {
  * Flexible tree toggle button group component
  */
 export function TreeToggleButtonGroup({
-  trees,
-  selectedTreeId,
-  currentPageNodeId,
-  appPrefix: _appPrefix = '',
-  getSavedPageNodeId,
-  savePageNodeId,
-  getNodeTreeId,
-  orientation = 'horizontal',
-  size = 'medium',
-  showLabelsOnSmallScreens = false,
-  sx,
-  onTreeSelect,
-}: TreeToggleButtonGroupProps): JSX.Element | null {
+                                        trees,
+                                        selectedTreeId,
+                                        currentPageNodeId,
+                                        appPrefix: _appPrefix = '',
+                                        getSavedPageNodeId,
+                                        savePageNodeId,
+                                        getNodeTreeId,
+                                        orientation = 'horizontal',
+                                        size = 'medium',
+                                        showLabelsOnSmallScreens = false,
+                                        sx,
+                                        onTreeSelect,
+                                      }: TreeToggleButtonGroupProps): JSX.Element | null {
   const navigate = useNavigate();
 
   // Safe handling of loader data that might not be available
@@ -133,14 +134,14 @@ export function TreeToggleButtonGroup({
   const buttonSx = showLabelsOnSmallScreens
     ? {}
     : {
-        '& .MuiButton-startIcon': {
-          marginRight: { xs: 0, sm: 0, md: 0, lg: '8px' },
-        },
-        minWidth: { xs: 'auto', sm: 'auto', md: 'auto', lg: '64px' },
-        '& .button-text': {
-          display: { xs: 'none', sm: 'none', md: 'none', lg: 'inline' },
-        },
-      };
+      '& .MuiButton-startIcon': {
+        marginRight: { xs: 0, sm: 0, md: 0, lg: '8px' },
+      },
+      minWidth: { xs: 'auto', sm: 'auto', md: 'auto', lg: '64px' },
+      '& .button-text': {
+        display: { xs: 'none', sm: 'none', md: 'none', lg: 'inline' },
+      },
+    };
 
   return (
     <ButtonGroup
@@ -151,12 +152,12 @@ export function TreeToggleButtonGroup({
       sx={{
         ...(orientation === 'vertical'
           ? {
-              '& .MuiButton-root': {
-                justifyContent: 'flex-start',
-                textTransform: 'none',
-                width: '100%',
-              },
-            }
+            '& .MuiButton-root': {
+              justifyContent: 'flex-start',
+              textTransform: 'none',
+              width: '100%',
+            },
+          }
           : {}),
         // Apply rounded corners
         '& .MuiButtonGroup-grouped': {
@@ -210,7 +211,7 @@ export function TreeToggleButtonGroup({
  */
 export function createResourcesTreeConfig(
   icon: React.ComponentType<any>,
-  overrides?: Partial<TreeConfig>
+  overrides?: Partial<TreeConfig>,
 ): TreeConfig {
   return {
     id: 'resources',
@@ -227,7 +228,7 @@ export function createResourcesTreeConfig(
  */
 export function createProjectsTreeConfig(
   icon: React.ComponentType<any>,
-  overrides?: Partial<TreeConfig>
+  overrides?: Partial<TreeConfig>,
 ): TreeConfig {
   return {
     id: 'projects',

@@ -3,22 +3,22 @@
  * Synchronizes Jotai atoms with Worker state
  */
 
-import { useEffect, useCallback, useRef } from 'react';
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useCallback, useEffect, useRef } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { NodeId } from '@hierarchidb/common-type';
 import {
-  workingCopyAtom,
   dialogStateAtom,
-  setValidationResultAtom,
-  setStepCapabilitiesAtom,
-  workerConnectionAtom,
   dialogStepsAtom,
+  setStepCapabilitiesAtom,
+  setValidationResultAtom,
   updateWorkingCopyAtom,
+  workerConnectionAtom,
+  workingCopyAtom,
 } from '../atoms/workingCopyAtoms';
-import { 
-  getWorkerBridge, 
-  type ValidationRequest,
+import {
   type CapabilitiesRequest,
+  getWorkerBridge,
+  type ValidationRequest,
   type WorkerNotification,
 } from '../services/WorkerBridge';
 
@@ -31,11 +31,11 @@ interface UseWorkerSyncOptions {
 /**
  * Hook to sync with Worker
  */
-export function useWorkerSync({ 
-  nodeId, 
-  nodeType, 
-  enabled = true 
-}: UseWorkerSyncOptions) {
+export function useWorkerSync({
+                                nodeId,
+                                nodeType,
+                                enabled = true,
+                              }: UseWorkerSyncOptions) {
   const [workerConnection, setWorkerConnection] = useAtom(workerConnectionAtom);
   const [workingCopy, setWorkingCopy] = useAtom(workingCopyAtom);
   const dialogState = useAtomValue(dialogStateAtom);
@@ -43,7 +43,7 @@ export function useWorkerSync({
   const setValidationResult = useSetAtom(setValidationResultAtom);
   const setStepCapabilities = useSetAtom(setStepCapabilitiesAtom);
   const updateWorkingCopy = useSetAtom(updateWorkingCopyAtom);
-  
+
   const workerBridge = useRef(getWorkerBridge());
   const lastValidationRequest = useRef<string>('');
   const lastCapabilitiesRequest = useRef<string>('');
@@ -103,14 +103,14 @@ export function useWorkerSync({
                 isValid: notification.result.isValid,
                 errors: notification.result.errors,
                 warnings: notification.result.warnings,
-              }
+              },
             );
             break;
 
           case 'capabilities':
             setStepCapabilities(
               notification.stepIndex,
-              notification.capabilities
+              notification.capabilities,
             );
             break;
 
@@ -122,7 +122,7 @@ export function useWorkerSync({
             console.error('Worker error:', notification.error);
             break;
         }
-      }
+      },
     );
 
     return unsubscribe;
@@ -143,7 +143,7 @@ export function useWorkerSync({
 
     // Create request key to detect changes
     const requestKey = `${currentStep.id}-${JSON.stringify(workingCopy.data)}`;
-    
+
     // Skip if same as last request
     if (requestKey === lastValidationRequest.current) return;
     lastValidationRequest.current = requestKey;
@@ -174,7 +174,7 @@ export function useWorkerSync({
 
     // Create request key to detect changes
     const requestKey = `${dialogState.currentStep}-${JSON.stringify(workingCopy.data)}`;
-    
+
     // Skip if same as last request
     if (requestKey === lastCapabilitiesRequest.current) return;
     lastCapabilitiesRequest.current = requestKey;
@@ -227,7 +227,7 @@ export function useWorkerSync({
       const savedId = await workerBridge.current.saveWorkingCopy(
         nodeId,
         workingCopy,
-        asDraft
+        asDraft,
       );
       return savedId;
     } catch (error) {
@@ -247,7 +247,7 @@ export function useWorkerSync({
     try {
       // Update local state immediately
       updateWorkingCopy(updates);
-      
+
       // Sync with Worker
       await workerBridge.current.updateWorkingCopy(nodeId, updates);
     } catch (error) {
@@ -290,7 +290,7 @@ export function useWorkerSync({
     isConnected: workerConnection.isConnected,
     isLoading: workerConnection.isLoading,
     connectionError: workerConnection.error,
-    
+
     // Actions
     loadWorkingCopy,
     saveWorkingCopy,

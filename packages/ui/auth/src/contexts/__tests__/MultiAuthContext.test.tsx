@@ -3,8 +3,8 @@
  * @description Test suite for MultiAuthContext with multiple OAuth providers
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext';
 
 import type { AuthUser } from '../../types/AuthUser';
@@ -32,39 +32,39 @@ vi.mock('~/config/env', () => ({
 // Test component that uses the auth context
 const TestComponent = () => {
   const auth = useMultiAuth();
-  
+
   return (
     <div>
       <div data-testid="loading">{auth.isLoading ? 'loading' : 'loaded'}</div>
       <div data-testid="authenticated">{auth.isAuthenticated ? 'yes' : 'no'}</div>
       <div data-testid="user-name">{auth.user?.name || 'none'}</div>
       <div data-testid="provider">{auth.currentProvider || 'none'}</div>
-      
-      <button 
-        data-testid="sign-in-google" 
+
+      <button
+        data-testid="sign-in-google"
         onClick={() => auth.signIn({ provider: 'google' })}
       >
         Sign in with Google
       </button>
-      
-      <button 
-        data-testid="sign-in-microsoft" 
+
+      <button
+        data-testid="sign-in-microsoft"
         onClick={() => auth.signIn({ provider: 'microsoft' })}
       >
         Sign in with Microsoft
       </button>
-      
-      <button 
-        data-testid="sign-in-github" 
+
+      <button
+        data-testid="sign-in-github"
         onClick={() => auth.signIn({ provider: 'github' })}
       >
         Sign in with GitHub
       </button>
-      
+
       <button data-testid="sign-out" onClick={() => auth.signOut()}>
         Sign out
       </button>
-      
+
       <div data-testid="access-token">{auth.getAccessToken() || 'none'}</div>
       <div data-testid="id-token">{auth.getIdToken() || 'none'}</div>
     </div>
@@ -153,7 +153,7 @@ describe('MultiAuthProvider', () => {
       };
 
       expect(() => render(<TestComponentOutside />)).toThrow(
-        'useMultiAuth must be used within MultiAuthProvider'
+        'useMultiAuth must be used within MultiAuthProvider',
       );
     });
 
@@ -161,7 +161,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       expect(screen.getByTestId('loaded')).toHaveTextContent('loaded');
@@ -173,7 +173,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -193,7 +193,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -213,7 +213,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -230,12 +230,13 @@ describe('MultiAuthProvider', () => {
         return null;
       });
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      });
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -253,7 +254,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       expect(mockUseGoogleLogin).toHaveBeenCalledWith({
@@ -267,7 +268,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       fireEvent.click(screen.getByTestId('sign-in-google'));
@@ -293,7 +294,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       // Get the onSuccess callback
@@ -301,7 +302,7 @@ describe('MultiAuthProvider', () => {
       if (!googleConfig) {
         throw new Error('mockUseGoogleLogin not called');
       }
-      
+
       await act(async () => {
         await googleConfig.onSuccess({
           access_token: 'test-access-token',
@@ -315,22 +316,23 @@ describe('MultiAuthProvider', () => {
           headers: {
             Authorization: 'Bearer test-access-token',
           },
-        }
+        },
       );
 
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
         'multi-auth-user',
-        expect.stringContaining('"provider":"google"')
+        expect.stringContaining('"provider":"google"'),
       );
     });
 
     it('should handle Google authentication error', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      });
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];
@@ -350,19 +352,20 @@ describe('MultiAuthProvider', () => {
         status: 401,
       });
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      });
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];
       if (!googleConfig) {
         throw new Error('mockUseGoogleLogin not called');
       }
-      
+
       await act(async () => {
         await googleConfig.onSuccess({
           access_token: 'test-access-token',
@@ -386,7 +389,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
@@ -401,7 +404,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       fireEvent.click(screen.getByTestId('sign-in-github'));
@@ -417,18 +420,19 @@ describe('MultiAuthProvider', () => {
         VITE_MICROSOFT_CLIENT_ID: '',
       }));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      });
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        'Microsoft Client ID is not configured. Please check your environment variables.'
+        'Microsoft Client ID is not configured. Please check your environment variables.',
       );
 
       consoleSpy.mockRestore();
@@ -438,13 +442,13 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider homeUrl="/custom/">
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
 
       expect(globalThis.window.location.href).toContain(
-        encodeURIComponent('https://app.example.com/custom/redirect')
+        encodeURIComponent('https://app.example.com/custom/redirect'),
       );
     });
   });
@@ -462,7 +466,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       // Wait for user to be loaded
@@ -482,7 +486,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider homeUrl="/custom/">
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -508,7 +512,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -527,7 +531,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -540,7 +544,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -559,7 +563,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       await waitFor(() => {
@@ -573,7 +577,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       // Simulate sign in with custom return URL
@@ -591,7 +595,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <CustomButton />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       const customButton = screen.getByText('Custom Sign In');
@@ -620,14 +624,14 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>
+        </MultiAuthProvider>,
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];
       if (!googleConfig) {
         throw new Error('mockUseGoogleLogin not called');
       }
-      
+
       await act(async () => {
         await googleConfig.onSuccess({
           access_token: 'test-access-token',

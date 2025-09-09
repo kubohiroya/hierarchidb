@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
+import { Outlet } from 'react-router';
 import { loadWorkerAPIClient } from '~/loader';
 
 export async function clientLoader(_args: LoaderFunctionArgs) {

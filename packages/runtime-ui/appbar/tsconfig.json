@@ -8,7 +8,9 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": [
+        "./src/*"
+      ]
     },
     "lib": [
       "ES2022",
@@ -27,5 +29,9 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

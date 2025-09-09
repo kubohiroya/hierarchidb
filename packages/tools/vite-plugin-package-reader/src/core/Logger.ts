@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import type { LogLevel, LoggerOptions } from '../types';
+import type { LoggerOptions, LogLevel } from '../types';
 
 export class Logger {
   private level: LogLevel;
@@ -28,7 +28,7 @@ export class Logger {
     const timestamp = new Date().toISOString().split('T')[1]?.split('.')[0] || '';
     const prefix = this.colors && pc.gray ? pc.gray(this.prefix) : this.prefix;
     const time = this.colors && pc.gray ? pc.gray(timestamp) : timestamp;
-    
+
     let levelTag: string;
     if (this.colors) {
       switch (level) {

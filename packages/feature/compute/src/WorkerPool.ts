@@ -18,7 +18,12 @@ export interface WorkerPoolOptions {
 }
 
 export class WorkerPool {
-  private queue: Array<{ spec: TaskSpec; resolve: (v: any) => void; reject: (e: any) => void; handle: InternalHandle<any> }>
+  private queue: Array<{
+    spec: TaskSpec;
+    resolve: (v: any) => void;
+    reject: (e: any) => void;
+    handle: InternalHandle<any>
+  }>
     = [];
   private running = 0;
   private readonly max: number;
@@ -81,18 +86,47 @@ class InternalHandle<O> implements TaskHandle<O> {
   private resultPromise!: Promise<O>;
   private controller?: AbortController;
 
-  constructor(public readonly id: string) {}
+  constructor(public readonly id: string) {
+  }
 
-  attachResult(p: Promise<O>) { this.resultPromise = p; }
-  attachAbort(c: AbortController) { this.controller = c; }
-  emitProgress(p: number) { this.progressListeners.forEach((f) => f(p)); }
-  setStatus(s: TaskStatus) { this._status = s; this.statusListeners.forEach((f) => f(s)); }
+  attachResult(p: Promise<O>) {
+    this.resultPromise = p;
+  }
 
-  status(): TaskStatus { return this._status; }
-  cancel(): void { this.controller?.abort(new DOMException('Aborted', 'AbortError')); }
-  onProgress(cb: (p: number) => void): () => void { this.progressListeners.add(cb); return () => this.progressListeners.delete(cb); }
-  onStatus(cb: (s: TaskStatus) => void): () => void { this.statusListeners.add(cb); return () => this.statusListeners.delete(cb); }
-  result(): Promise<O> { return this.resultPromise; }
+  attachAbort(c: AbortController) {
+    this.controller = c;
+  }
+
+  emitProgress(p: number) {
+    this.progressListeners.forEach((f) => f(p));
+  }
+
+  setStatus(s: TaskStatus) {
+    this._status = s;
+    this.statusListeners.forEach((f) => f(s));
+  }
+
+  status(): TaskStatus {
+    return this._status;
+  }
+
+  cancel(): void {
+    this.controller?.abort(new DOMException('Aborted', 'AbortError'));
+  }
+
+  onProgress(cb: (p: number) => void): () => void {
+    this.progressListeners.add(cb);
+    return () => this.progressListeners.delete(cb);
+  }
+
+  onStatus(cb: (s: TaskStatus) => void): () => void {
+    this.statusListeners.add(cb);
+    return () => this.statusListeners.delete(cb);
+  }
+
+  result(): Promise<O> {
+    return this.resultPromise;
+  }
 }
 
 const defaultClock: ClockPort = {

@@ -1,36 +1,34 @@
 /**
- * Location Selection Step
- * 地点タイプと地域選択ステップ
- */
+  * Location Selection Step
+   */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  Tabs,
-  Tab,
   Alert,
+  Box,
   FormControl,
   FormControlLabel,
-  Slider,
-  TextField,
-  Switch,
-  Select,
-  MenuItem,
+  Grid2,
   InputLabel,
-  Grid2
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
-import type { LocationWorkingCopy, LocationType } from '../../types';
-import { SelectionMatrix, type Country, type LocationTypeConfig, type SelectionState } from '../ui/SelectionMatrix';
+import type { LocationType, LocationWorkingCopy } from '../../types';
+import { type Country, type LocationTypeConfig, SelectionMatrix, type SelectionState } from '../ui/SelectionMatrix';
 
 interface LocationSelectionStepProps {
   workingCopy: LocationWorkingCopy;
   onUpdate: (updates: Partial<LocationWorkingCopy>) => Promise<void>;
 }
 
-// サンプル国データ（実際は外部ソースから取得）
 const SAMPLE_COUNTRIES: Country[] = [
   { code: 'INTL', name: 'その他 (International/Maritime)', continent: 'International' },
   { code: 'JPN', name: 'Japan', localName: '日本', continent: 'Asia' },
@@ -46,10 +44,9 @@ const SAMPLE_COUNTRIES: Country[] = [
   { code: 'AUS', name: 'Australia', continent: 'Oceania' },
   { code: 'BRA', name: 'Brazil', localName: 'Brasil', continent: 'South America' },
   { code: 'IND', name: 'India', localName: 'भारत', continent: 'Asia' },
-  { code: 'RUS', name: 'Russia', localName: 'Россия', continent: 'Europe' }
+  { code: 'RUS', name: 'Russia', localName: 'Россия', continent: 'Europe' },
 ];
 
-// 地点タイプ設定
 const LOCATION_TYPES: LocationTypeConfig[] = [
   {
     id: 'airport' as LocationType,
@@ -57,7 +54,7 @@ const LOCATION_TYPES: LocationTypeConfig[] = [
     icon: '✈️',
     color: '#2196F3',
     description: '民間・軍用空港、飛行場',
-    estimatedCount: 28000
+    estimatedCount: 28000,
   },
   {
     id: 'railway_station' as LocationType,
@@ -65,7 +62,7 @@ const LOCATION_TYPES: LocationTypeConfig[] = [
     icon: '🚂',
     color: '#4CAF50',
     description: '鉄道駅、地下鉄駅',
-    estimatedCount: 45000
+    estimatedCount: 45000,
   },
   {
     id: 'port' as LocationType,
@@ -73,7 +70,7 @@ const LOCATION_TYPES: LocationTypeConfig[] = [
     icon: '🚢',
     color: '#FF9800',
     description: '商港、漁港、マリーナ',
-    estimatedCount: 12000
+    estimatedCount: 12000,
   },
   {
     id: 'government' as LocationType,
@@ -81,7 +78,7 @@ const LOCATION_TYPES: LocationTypeConfig[] = [
     icon: '🏛️',
     color: '#9C27B0',
     description: '首都、県庁所在地、市役所',
-    estimatedCount: 8000
+    estimatedCount: 8000,
   },
   {
     id: 'government' as LocationType,
@@ -89,11 +86,10 @@ const LOCATION_TYPES: LocationTypeConfig[] = [
     icon: '🛣️',
     color: '#607D8B',
     description: 'インターチェンジ、ジャンクション',
-    estimatedCount: 15000
-  }
+    estimatedCount: 15000,
+  },
 ];
 
-// 地点タイプ別詳細設定
 interface LocationTypeDetailConfig {
   airport: {
     includeHeliports: boolean;
@@ -126,42 +122,41 @@ const DEFAULT_TYPE_CONFIG: LocationTypeDetailConfig = {
     includeHeliports: false,
     minRunwayLength: 500,
     activeOnly: true,
-    commercialOnly: false
+    commercialOnly: false,
   },
   railway_station: {
     includeMetro: true,
     includeAbandoned: false,
     minPlatforms: 1,
-    intercityOnly: false
+    intercityOnly: false,
   },
   port: {
     includeMarinas: false,
     cargoOnly: false,
     minDepth: 5,
-    activeOnly: true
+    activeOnly: true,
   },
   government: {
     adminLevels: [2, 4, 6],
     populationMin: 1000,
     capitalOnly: false,
-    includeHistorical: false
-  }
+    includeHistorical: false,
+  },
 };
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
-  workingCopy,
-  onUpdate
-}) => {
+                                                                              workingCopy,
+                                                                              onUpdate,
+                                                                            }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [typeConfig, setTypeConfig] = useState<LocationTypeDetailConfig>(DEFAULT_TYPE_CONFIG);
-  
-  // 選択マトリックスの初期化
+
   const selectionMatrix = useMemo(() => {
     // Convert checkboxState to boolean matrix format
-    const matrix: boolean[][] = Array(SAMPLE_COUNTRIES.length).fill(null).map(() => 
-      Array(LOCATION_TYPES.length).fill(false)
+    const matrix: boolean[][] = Array(SAMPLE_COUNTRIES.length).fill(null).map(() =>
+      Array(LOCATION_TYPES.length).fill(false),
     );
-    
+
     // Fill matrix based on checkboxState
     Object.entries(workingCopy.checkboxState ?? {}).forEach(([countryCode, typeState]) => {
       const countryIndex = SAMPLE_COUNTRIES.findIndex(c => c.code === countryCode);
@@ -174,51 +169,47 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         });
       }
     });
-    
+
     return matrix;
   }, [workingCopy.checkboxState]);
-  
-  // マトリックス変更ハンドラー
+
   const handleMatrixChange = useCallback(async () => {
     // Convert matrix to checkboxState format
     const checkboxState: Record<string, Record<LocationType, boolean>> = {};
     // TODO: Implement proper conversion logic
     await onUpdate({
-      checkboxState
+      checkboxState,
     });
   }, [onUpdate]);
-  
-  // 選択状態変更ハンドラー
+
   const handleSelectionChange = useCallback(async (state: SelectionState) => {
     await onUpdate({
       selectedCountries: state.selectedCountries,
-      locationTypes: state.selectedTypes
+      locationTypes: state.selectedTypes,
     });
   }, [onUpdate]);
-  
-  // タイプ設定変更ハンドラー
+
   const handleTypeConfigChange = (type: keyof LocationTypeDetailConfig, config: any) => {
     setTypeConfig(prev => ({
       ...prev,
-      [type]: { ...prev[type], ...config }
+      [type]: { ...prev[type], ...config },
     }));
   };
-  
-  // タブ変更ハンドラー
+
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
-  
-  // アクティブタイプの取得
+
   const activeType = LOCATION_TYPES[activeTab];
-  
+
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
         取得する地点データを選択してください。国と地点タイプの組み合わせでデータを指定できます。
       </Alert>
-      
-      {/* 選択マトリックス */}
+
+      {/*
+*/}
       <Box mb={3}>
         <SelectionMatrix
           countries={SAMPLE_COUNTRIES}
@@ -228,23 +219,24 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           onSelectionChange={handleSelectionChange}
         />
       </Box>
-      
-      {/* 地点タイプ別詳細設定 */}
+
+      {/*
+*/}
       <Paper elevation={1} sx={{ p: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <Settings color="primary" />
           <Typography variant="h6">地点タイプ別詳細設定</Typography>
         </Box>
-        
-        <Tabs 
-          value={activeTab} 
+
+        <Tabs
+          value={activeTab}
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
           sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
         >
           {LOCATION_TYPES.map((type) => (
-            <Tab 
+            <Tab
               key={type.id}
               label={
                 <Box display="flex" alignItems="center" gap={1}>
@@ -255,8 +247,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             />
           ))}
         </Tabs>
-        
-        {/* タイプ別設定パネル */}
+
+        {/*
+*/}
         {activeType && (
           <Box>
             <Typography variant="subtitle1" gutterBottom>
@@ -265,8 +258,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {activeType.description}
             </Typography>
-            
-            {/* 空港設定 */}
+
+            {/*
+*/}
             {activeType.id === 'airport' && (
               <Grid2 container spacing={3}>
                 <Grid2 size={{ xs: 12, md: 6 }}>
@@ -314,15 +308,16 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                       marks={[
                         { value: 500, label: '500m' },
                         { value: 1500, label: '1.5km' },
-                        { value: 3000, label: '3km' }
+                        { value: 3000, label: '3km' },
                       ]}
                     />
                   </Box>
                 </Grid2>
               </Grid2>
             )}
-            
-            {/* 鉄道駅設定 */}
+
+            {/*
+*/}
             {activeType.id === 'railway_station' && (
               <Grid2 container spacing={3}>
                 <Grid2 size={{ xs: 12, md: 6 }}>
@@ -370,8 +365,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                 </Grid2>
               </Grid2>
             )}
-            
-            {/* 港設定 */}
+
+            {/*
+*/}
             {activeType.id === 'port' && (
               <Grid2 container spacing={3}>
                 <Grid2 size={{ xs: 12, md: 6 }}>
@@ -419,8 +415,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                 </Grid2>
               </Grid2>
             )}
-            
-            {/* 行政センター設定 */}
+
+            {/*
+*/}
             {activeType.id === 'government' && (
               <Grid2 container spacing={3}>
                 <Grid2 size={{ xs: 12, md: 6 }}>
@@ -429,8 +426,8 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                     <Select
                       multiple
                       value={typeConfig.government.adminLevels}
-                      onChange={(e) => handleTypeConfigChange('government', { 
-                        adminLevels: Array.isArray(e.target.value) ? e.target.value : []
+                      onChange={(e) => handleTypeConfigChange('government', {
+                        adminLevels: Array.isArray(e.target.value) ? e.target.value : [],
                       })}
                       label="行政レベル"
                     >
@@ -475,8 +472,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                 </Grid2>
               </Grid2>
             )}
-            
-            {/* インターチェンジ設定 */}
+
+            {/*
+*/}
             {activeType.id === 'government' && (
               <Grid2 container spacing={3}>
                 <Grid2 size={{ xs: 12, md: 4 }}>

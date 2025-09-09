@@ -9,9 +9,9 @@ import {
   Switch,
   Tooltip,
   Typography,
-} from "@mui/material";
-import { Delete as DeleteIcon, Info } from "@mui/icons-material";
-import { useState } from "react";
+} from '@mui/material';
+import { Delete as DeleteIcon, Info } from '@mui/icons-material';
+import { useState } from 'react';
 
 export interface CacheStats {
   itemCount: number;
@@ -40,13 +40,13 @@ interface CacheSectionProps {
 }
 
 export function CacheSection({
-  nodeId,
-  deleteOnComplete,
-  onDeleteOnCompleteChange,
-  config,
-  sx = {},
-  severity = 'warning',
-}: CacheSectionProps) {
+                               nodeId,
+                               deleteOnComplete,
+                               onDeleteOnCompleteChange,
+                               config,
+                               sx = {},
+                               severity = 'warning',
+                             }: CacheSectionProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{
     success: boolean;
@@ -74,7 +74,7 @@ export function CacheSection({
       console.error(`Failed to delete cache:`, error);
       setDeleteResult({
         success: false,
-        message: "Failed to delete cache",
+        message: 'Failed to delete cache',
       });
     } finally {
       setIsDeleting(false);
@@ -85,7 +85,7 @@ export function CacheSection({
     <Box sx={sx}>
       <Alert severity={severity} sx={{ p: 2 }}>
         <Stack spacing={2}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" fontWeight="bold">
               {config.title}
             </Typography>
@@ -128,7 +128,7 @@ export function CacheSection({
 
           {deleteResult && (
             <Alert
-              severity={deleteResult.success ? "success" : "error"}
+              severity={deleteResult.success ? 'success' : 'error'}
               sx={{ mt: 1 }}
             >
               {deleteResult.message}

@@ -1,22 +1,22 @@
 /**
- * @file colorUtils.test.ts
+  * @file colorUtils.test.ts
  * @description Color utilities unit tests
- * 【機能概要】: 色変換・計算ユーティリティのテスト
- * 【実装方針】: 各色変換関数の正確性を検証
- * 🟢 信頼性レベル: 数学的計算の正確性検証
- */
+ * :
+ * :
+ * :
+  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  hsvToRgb,
-  rgbToHsv,
-  rgbToHex,
-  hexToRgb,
+  adjustBrightness,
   calculateLinearColor,
   generateColorGradient,
-  valueToColor,
-  adjustBrightness,
   getContrastRatio,
+  hexToRgb,
+  hsvToRgb,
+  rgbToHex,
+  rgbToHsv,
+  valueToColor,
 } from '../utils/colorUtils';
 import { StylerConfigDefault } from '../types/stylerTypes';
 
@@ -25,13 +25,13 @@ describe('Color Utils', () => {
     it('should convert HSV to RGB correctly', () => {
       // Red: H=0, S=1, V=1 -> RGB(255, 0, 0)
       expect(hsvToRgb(0, 1, 1)).toEqual([255, 0, 0]);
-      
+
       // Green: H=120, S=1, V=1 -> RGB(0, 255, 0)
       expect(hsvToRgb(120, 1, 1)).toEqual([0, 255, 0]);
-      
+
       // Blue: H=240, S=1, V=1 -> RGB(0, 0, 255)
       expect(hsvToRgb(240, 1, 1)).toEqual([0, 0, 255]);
-      
+
       // Gray: H=0, S=0, V=0.5 -> RGB(128, 128, 128)
       expect(hsvToRgb(0, 0, 0.5)).toEqual([128, 128, 128]);
     });
@@ -42,13 +42,13 @@ describe('Color Utils', () => {
       expect(h1).toBeCloseTo(0, 1);
       expect(s1).toBeCloseTo(1, 2);
       expect(v1).toBeCloseTo(1, 2);
-      
+
       // Green: RGB(0, 255, 0) -> HSV(120, 1, 1)
       const [h2, s2, v2] = rgbToHsv(0, 255, 0);
       expect(h2).toBeCloseTo(120, 1);
       expect(s2).toBeCloseTo(1, 2);
       expect(v2).toBeCloseTo(1, 2);
-      
+
       // Gray: RGB(128, 128, 128) -> HSV(0, 0, 0.5)
       const [h3, s3, v3] = rgbToHsv(128, 128, 128);
       expect(s3).toBeCloseTo(0, 2);
@@ -67,7 +67,7 @@ describe('Color Utils', () => {
       testCases.forEach(([h, s, v]) => {
         const [r, g, b] = hsvToRgb(h, s, v);
         const [h2, s2, v2] = rgbToHsv(r, g, b);
-        
+
         expect(h2).toBeCloseTo(h, 1);
         expect(s2).toBeCloseTo(s, 2);
         expect(v2).toBeCloseTo(v, 2);
@@ -113,7 +113,7 @@ describe('Color Utils', () => {
       testCases.forEach(([r, g, b]) => {
         const hex = rgbToHex(r, g, b);
         const [r2, g2, b2] = hexToRgb(hex);
-        
+
         expect(r2).toBe(r);
         expect(g2).toBe(g);
         expect(b2).toBe(b);
@@ -139,15 +139,15 @@ describe('Color Utils', () => {
       // Min value should be red-ish
       const minResult = calculateLinearColor(0, config);
       expect(minResult.color).toMatch(/^#[a-f0-9]{6}$/i);
-      
+
       // Max value should be green-ish
       const maxResult = calculateLinearColor(100, config);
       expect(maxResult.color).toMatch(/^#[a-f0-9]{6}$/i);
-      
+
       // Mid value should be yellow-ish
       const midResult = calculateLinearColor(50, config);
       expect(midResult.color).toMatch(/^#[a-f0-9]{6}$/i);
-      
+
       // Colors should be different
       expect(minResult.color).not.toBe(maxResult.color);
       expect(minResult.color).not.toBe(midResult.color);
@@ -173,12 +173,12 @@ describe('Color Utils', () => {
       const minResult = calculateLinearColor(0, config);
       const maxResult = calculateLinearColor(100, config);
       const midResult = calculateLinearColor(50, config);
-      
+
       // Should return valid hex colors
       expect(minResult.color).toMatch(/^#[a-f0-9]{6}$/i);
       expect(maxResult.color).toMatch(/^#[a-f0-9]{6}$/i);
       expect(midResult.color).toMatch(/^#[a-f0-9]{6}$/i);
-      
+
       // Should have RGB metadata
       expect(minResult.metadata?.r).toBeDefined();
       expect(minResult.metadata?.g).toBeDefined();
@@ -201,11 +201,11 @@ describe('Color Utils', () => {
       // Same min/max should not crash
       const result = calculateLinearColor(10, config);
       expect(result.color).toMatch(/^#[a-f0-9]{6}$/i);
-      
+
       // Out-of-range values should be clamped
       const belowResult = calculateLinearColor(-10, config);
       const aboveResult = calculateLinearColor(50, config);
-      
+
       expect(belowResult.color).toMatch(/^#[a-f0-9]{6}$/i);
       expect(aboveResult.color).toMatch(/^#[a-f0-9]{6}$/i);
     });
@@ -214,10 +214,10 @@ describe('Color Utils', () => {
   describe('Value to Color', () => {
     it('should handle null/undefined values', () => {
       const config = StylerConfigDefault;
-      
+
       const nullResult = valueToColor(null, config);
       const undefinedResult = valueToColor(undefined, config);
-      
+
       expect(nullResult.color).toBe('#cccccc');
       expect(nullResult.opacity).toBe(0.5);
       expect(undefinedResult.color).toBe('#cccccc');
@@ -229,7 +229,7 @@ describe('Color Utils', () => {
         ...StylerConfigDefault,
         algorithm: 'linear' as const,
       };
-      
+
       const result = valueToColor(50, config);
       expect(result.color).toMatch(/^#[a-f0-9]{6}$/i);
       expect(result.opacity).toBeDefined();
@@ -240,9 +240,9 @@ describe('Color Utils', () => {
     it('should generate valid CSS gradient string', () => {
       const config = StylerConfigDefault;
       const gradient = generateColorGradient(config, 5);
-      
+
       expect(gradient).toMatch(/^linear-gradient\(to right, #[a-f0-9]{6}(, #[a-f0-9]{6})*\)$/i);
-      
+
       // Should contain 5 colors
       const matches = gradient.match(/#[a-f0-9]{6}/gi);
       expect(matches).toHaveLength(5);
@@ -260,10 +260,10 @@ describe('Color Utils', () => {
           brightness: 1,
         },
       };
-      
+
       const gradient = generateColorGradient(config, 10);
       const colors = gradient.match(/#[a-f0-9]{6}/gi) || [];
-      
+
       expect(colors).toHaveLength(10);
       // First and last colors should be different
       expect(colors[0]).not.toBe(colors[9]);
@@ -273,15 +273,15 @@ describe('Color Utils', () => {
   describe('Brightness Adjustment', () => {
     it('should adjust brightness correctly', () => {
       const originalColor = '#808080'; // Gray
-      
+
       const brighter = adjustBrightness(originalColor, 1.5);
       const darker = adjustBrightness(originalColor, 0.5);
       const unchanged = adjustBrightness(originalColor, 1.0);
-      
+
       expect(brighter).toMatch(/^#[a-f0-9]{6}$/i);
       expect(darker).toMatch(/^#[a-f0-9]{6}$/i);
       expect(unchanged).toBe('#808080');
-      
+
       // Brighter should be different from original
       expect(brighter).not.toBe(originalColor);
       expect(darker).not.toBe(originalColor);
@@ -290,11 +290,11 @@ describe('Color Utils', () => {
     it('should clamp brightness values', () => {
       const white = '#ffffff';
       const black = '#000000';
-      
+
       // Should not crash with extreme values
       const extremeBright = adjustBrightness(white, 10);
       const extremeDark = adjustBrightness(black, 0.01);
-      
+
       expect(extremeBright).toMatch(/^#[a-f0-9]{6}$/i);
       expect(extremeDark).toMatch(/^#[a-f0-9]{6}$/i);
     });
@@ -305,11 +305,11 @@ describe('Color Utils', () => {
       // Black vs White should have maximum contrast
       const blackWhite = getContrastRatio('#000000', '#ffffff');
       expect(blackWhite).toBeCloseTo(21, 0); // WCAG max contrast ratio
-      
+
       // Same colors should have minimum contrast
       const sameColor = getContrastRatio('#808080', '#808080');
       expect(sameColor).toBeCloseTo(1, 0);
-      
+
       // Red vs Green should have some contrast
       const redGreen = getContrastRatio('#ff0000', '#00ff00');
       expect(redGreen).toBeGreaterThan(1);
@@ -319,10 +319,10 @@ describe('Color Utils', () => {
     it('should be symmetric', () => {
       const color1 = '#ff0000';
       const color2 = '#0000ff';
-      
+
       const ratio1 = getContrastRatio(color1, color2);
       const ratio2 = getContrastRatio(color2, color1);
-      
+
       expect(ratio1).toBeCloseTo(ratio2, 2);
     });
   });

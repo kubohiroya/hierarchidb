@@ -13,11 +13,7 @@ import {
 } from './microsoft.js';
 import { createSessionToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
-import {
-  getAppCallbackUrlFromState,
-  getDynamicRedirectUri,
-  validateRedirectUri,
-} from '../utils/redirect-uri.js';
+import { getAppCallbackUrlFromState, getDynamicRedirectUri, validateRedirectUri } from '../utils/redirect-uri.js';
 import { StateManager } from '../utils/state-manager.js';
 
 /**
@@ -31,14 +27,14 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
 
-    // State検証（CSRF対策）
+    //  StateCSRF
     if (state) {
       const env = c.env as any;
       const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
       const stateData = await stateManager.validateState(state);
 
       if (!stateData) {
-        // 無効なstateの場合はエラーを返す
+        //  state
         const appBaseUrl = getAppCallbackUrlFromState(c, state);
         const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
         appCallbackUrl.searchParams.set('error', 'invalid_state');
@@ -97,7 +93,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
  * This is a POST endpoint that completes the OAuth2 flow
  */
 export async function exchangeCodeForToken(
-  c: Context<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>
+  c: Context<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>,
 ) {
   try {
     const body = await c.req.json();
@@ -107,7 +103,7 @@ export async function exchangeCodeForToken(
       return c.json({ error: 'Missing authorization code' }, 400);
     }
 
-    // redirect_uriの検証
+    //  redirect_uri
     if (redirect_uri && !validateRedirectUri(redirect_uri, c)) {
       console.error(`Invalid redirect_uri received: ${redirect_uri}`);
       return c.json(
@@ -115,7 +111,7 @@ export async function exchangeCodeForToken(
           error: 'invalid_request',
           error_description: 'Invalid redirect_uri parameter',
         },
-        400
+        400,
       );
     }
 
@@ -201,7 +197,7 @@ export async function exchangeCodeForToken(
       },
       env.JWT_SECRET,
       sessionDuration,
-      env.JWT_ISSUER
+      env.JWT_ISSUER,
     );
 
     // Store in KV if available
@@ -240,7 +236,7 @@ export async function exchangeCodeForToken(
         error: 'server_error',
         error_description: 'Failed to exchange token',
       },
-      500
+      500,
     );
   }
 }

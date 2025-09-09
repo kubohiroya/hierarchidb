@@ -5,5 +5,6 @@ export * from './ports.spatial';
 export * from './adapters/FeatureCollectionGridIndex';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/map-source', provides: ['map-source'] },
-  init() {},
+  init() {
+  },
 };

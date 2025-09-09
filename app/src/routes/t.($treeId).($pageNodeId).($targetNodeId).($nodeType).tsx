@@ -1,36 +1,32 @@
-import { useParams, useNavigate, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
-import { useState, useCallback, useMemo } from 'react';
+import { useLoaderData, useNavigate, useParams } from 'react-router';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Button,
-  Box,
-  Typography,
   Alert,
-  LinearProgress,
+  Box,
+  Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  LinearProgress,
+  Typography,
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  RestoreFromTrash as RestoreIcon,
-  Clear as RemoveIcon,
-} from '@mui/icons-material';
+import { Clear as RemoveIcon, Close as CloseIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
+import type { LoadTargetNodeReturn } from '~/loader';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { NodeId, TreeNode } from '@hierarchidb/common-type';
-import type { LoadTargetNodeReturn } from '~/loader';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '~/utils/treeNodeConverter';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadTargetNodeArgs & { nodeType: string };
 
-  // pageNodeIdが省略された場合、デフォルトのルートノードIDを設定
+  //  pageNodeIdID
   const pageNodeId = params.pageNodeId || (`${params.treeId}Root` as NodeId);
   const actualPageNodeId =
     pageNodeId === 'undefined' ? (`${params.treeId}Root` as NodeId) : pageNodeId;
@@ -205,7 +201,7 @@ export default function TrashDialog() {
     (node: TreeNodeData) => {
       navigate(`/t/${treeId}/${pageNodeId}/${node.id}/${mode}`);
     },
-    [navigate, treeId, pageNodeId, mode]
+    [navigate, treeId, pageNodeId, mode],
   );
 
   // Handle breadcrumb navigation
@@ -219,7 +215,7 @@ export default function TrashDialog() {
         navigate(`/t/${treeId}/${pageNodeId}/${nodeId}/${mode}`);
       }
     },
-    [navigate, treeId, pageNodeId, mode, data.trashRootId]
+    [navigate, treeId, pageNodeId, mode, data.trashRootId],
   );
 
   // Handle back navigation (go up one level)
@@ -427,21 +423,29 @@ export default function TrashDialog() {
           onNodeExpand={handleNodeExpand}
           onSearchChange={setSearchTerm}
           onSearchClear={() => setSearchTerm('')}
-          onCreate={() => {}}
-          onEdit={() => {}}
-          onDelete={() => {}}
+          onCreate={() => {
+          }}
+          onEdit={() => {
+          }}
+          onDelete={() => {
+          }}
           onRefresh={() => window.location.reload()}
           onExpandAll={() => setExpandedIds(treeData.map((d) => d.id))}
           onCollapseAll={() => setExpandedIds([])}
-          onSort={() => {}}
-          onFilterChange={() => {}}
-          onViewModeChange={() => {}}
+          onSort={() => {
+          }}
+          onFilterChange={() => {
+          }}
+          onViewModeChange={() => {
+          }}
           onBreadcrumbNavigate={handleBreadcrumbNavigate}
           onNavigateBack={handleNavigateBack}
-          onNavigateForward={() => {}}
+          onNavigateForward={() => {
+          }}
           canGoBack={targetNodeId !== 'trash' && targetNodeId !== data.trashRootId}
           canGoForward={false}
-          onContextMenuAction={() => {}}
+          onContextMenuAction={() => {
+          }}
         />
       </DialogContent>
 

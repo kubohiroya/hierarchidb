@@ -1,18 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import type {
-  EntityId,
-  NodeId,
-  NodeTagAssociation,
-  TagEntity,
-  TagSuggestion,
-  Timestamp,
-} from '@hierarchidb/common-type';
-import type {
-  CreateTagRequest,
-  UpdateTagRequest,
-  TagAssociationRequest,
-  TagAPI,
-} from '@hierarchidb/common-api';
+import type { TagId, NodeId, NodeTagAssociation, NodeTagAssociationId, TagEntity, TagSuggestion, Timestamp } from '@hierarchidb/common-type';
+import type { CreateTagRequest, TagAPI, TagAssociationRequest, UpdateTagRequest } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { TagDBPort } from './ports';
 
@@ -25,7 +13,8 @@ export class TagService implements TagAPI {
     return SingletonMixin.getSingleton(TagService.name, async () => new TagService(db));
   }
 
-  constructor(private db: TagDBPort) {}
+  constructor(private db: TagDBPort) {
+  }
 
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
     const now = Date.now();
@@ -48,11 +37,11 @@ export class TagService implements TagAPI {
     return tag;
   }
 
-  async getTag(tagId: EntityId): Promise<TagEntity | undefined> {
+  async getTag(tagId: TagId): Promise<TagEntity | undefined> {
     return await this.db.getTag(tagId);
   }
 
-  async updateTag(tagId: EntityId, updates: UpdateTagRequest): Promise<TagEntity | undefined> {
+  async updateTag(tagId: TagId, updates: UpdateTagRequest): Promise<TagEntity | undefined> {
     const existing = await this.getTag(tagId);
     if (!existing) throw new Error(`Tag ${tagId} not found`);
 
@@ -67,7 +56,7 @@ export class TagService implements TagAPI {
     return updated;
   }
 
-  async deleteTag(tagId: EntityId): Promise<boolean> {
+  async deleteTag(tagId: TagId): Promise<boolean> {
     const tag = await this.getTag(tagId);
     if (!tag) return false;
     await this.db.removeAllTagAssociations(tagId);
@@ -101,7 +90,7 @@ export class TagService implements TagAPI {
     if (existing) return existing;
 
     const association: NodeTagAssociation = {
-      id: `${request.nodeId}_${request.tagId}` as EntityId,
+      id: `${request.nodeId}_${request.tagId}` as NodeTagAssociationId,
       nodeId: request.nodeId,
       tagId: request.tagId,
       assignedAt: Date.now() as Timestamp,
@@ -131,7 +120,7 @@ export class TagService implements TagAPI {
     return tags;
   }
 
-  async getNodesByTag(tagId: EntityId): Promise<NodeTagAssociation[]> {
+  async getNodesByTag(tagId: TagId): Promise<NodeTagAssociation[]> {
     return await this.db.getTagAssociationsForTag(tagId);
   }
 
@@ -156,8 +145,7 @@ export class TagService implements TagAPI {
     return { totalTags: all.length, totalAssociations, mostUsedTags, recentTags };
   }
 
-  generateTagId(): EntityId {
-    return `tag_${uuidv4()}` as EntityId;
+  generateTagId(): TagId {
+    return `tag_${uuidv4()}` as unknown as TagId;
   }
 }
-

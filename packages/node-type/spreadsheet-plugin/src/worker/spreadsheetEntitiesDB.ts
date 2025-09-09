@@ -1,11 +1,17 @@
 import Dexie, { type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { SpreadsheetPeerData, SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities';
+import type { SpreadsheetGroupItemData, SpreadsheetPeerData, SpreadsheetRelationMeta } from '../types/entities';
 
 export type SheetPeerRow = { nodeId: NodeId; data?: SpreadsheetPeerData; updatedAt?: number };
 export type SheetGroupRow = { nodeId: NodeId; id: string; data?: SpreadsheetGroupItemData; updatedAt?: number };
-export type SheetRelationRow = { srcNodeId: NodeId; dstNodeId: NodeId; type: string; meta?: SpreadsheetRelationMeta; updatedAt?: number };
+export type SheetRelationRow = {
+  srcNodeId: NodeId;
+  dstNodeId: NodeId;
+  type: string;
+  meta?: SpreadsheetRelationMeta;
+  updatedAt?: number
+};
 
 export class SpreadsheetEntitiesDB extends Dexie {
   peerEntities!: Table<SheetPeerRow, NodeId>;

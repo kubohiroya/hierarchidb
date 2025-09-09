@@ -23,18 +23,18 @@ export interface NotificationProviderProps {
 
 /**
  * NotificationProvider - Provides snackbar notification context to child components
- * 
+ *
  * This component wraps the notistack SnackbarProvider with sensible defaults
  * for the HierarchiDB dialog system.
  */
-export function NotificationProvider({ 
-  children,
-  maxSnack = 3,
-  anchorOrigin = { vertical: 'bottom', horizontal: 'left' },
-  autoHideDuration = 6000,
-}: NotificationProviderProps) {
+export function NotificationProvider({
+                                       children,
+                                       maxSnack = 3,
+                                       anchorOrigin = { vertical: 'bottom', horizontal: 'left' },
+                                       autoHideDuration = 6000,
+                                     }: NotificationProviderProps) {
   return (
-    <TypedSnackbarProvider 
+    <TypedSnackbarProvider
       maxSnack={maxSnack}
       anchorOrigin={anchorOrigin}
       autoHideDuration={autoHideDuration}

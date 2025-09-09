@@ -8,10 +8,11 @@ import {
 } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { useRouteLoaderData } from 'react-router';
-import { loadAppConfig } from '~/loadAppConfig';
+import { useRouteLoaderData } from 'react-router-dom';
 import type { LoadAppConfigReturn } from '~/loadAppConfig';
+import { loadAppConfig } from '~/loadAppConfig';
 import { normalizeNodeType } from '~/utils/nodeTypeNormalize';
+
 export type { LoadAppConfigReturn };
 
 export type LoadWorkerAPIClientReturn = {
@@ -71,42 +72,41 @@ export type LoadNodeActionReturn = {
 async function retryComlinkCall<T>(
   operation: () => Promise<T>,
   operationName: string,
-  retryDelays: number[] = [1000, 2000, 3000]
+  retryDelays: number[] = [1000, 2000, 3000],
 ): Promise<T> {
   for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
     try {
 
-      
-      const result = await operation();
-      
 
-      
+      const result = await operation();
+
+
       return result;
-      
+
     } catch (error) {
       console.error(`[${operationName}] Attempt ${attempt + 1} failed:`, error);
-      
+
       // Check if this looks like a Comlink communication error
-      const isComlinkError = error instanceof Error && 
+      const isComlinkError = error instanceof Error &&
         (error.message.includes('Cannot read properties of undefined') ||
-         error.message.includes('apply') ||
-         error.message.includes('Comlink'));
-      
+          error.message.includes('apply') ||
+          error.message.includes('Comlink'));
+
       if (!isComlinkError) {
         // Non-Comlink error, don't retry
         console.error(`[${operationName}] Non-Comlink error detected, not retrying`);
         throw error;
       }
-      
+
       // If this is the last attempt, throw the error
       if (attempt >= retryDelays.length) {
         console.error(`[${operationName}] All retry attempts failed`);
         throw error;
       }
-      
+
       // For Comlink errors, try to recreate the worker connection
       console.warn(`[${operationName}] Comlink error detected, recreating worker connection...`);
-      
+
       try {
         const { WorkerAPIClient } = await import('./WorkerAPIClient');
         WorkerAPIClient.reset(); // Reset the client state
@@ -115,14 +115,14 @@ async function retryComlinkCall<T>(
       } catch (recreationError) {
         console.error(`[${operationName}] Failed to recreate worker connection:`, recreationError);
       }
-      
+
       // Wait before retry
       const delay = retryDelays[attempt];
       console.log(`[${operationName}] Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw new Error(`[${operationName}] Maximum retry attempts exceeded`);
 }
 
@@ -130,17 +130,16 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
   const appConfig = loadAppConfig();
 
   try {
-    // WorkerAPIClientを取得（WorkerProviderで既に初期化済み）
+    //  WorkerAPIClientWorkerProvider
     const { WorkerAPIClient } = await import('./WorkerAPIClient');
 
-    // WorkerProviderで初期化されていない場合のフォールバック
-    // （開発中やテスト環境での直接アクセス用）
+    //  WorkerProvider
     if (!WorkerAPIClient.isReady()) {
       console.warn('[loadWorkerAPIClient] Worker not initialized by provider, initializing now...');
       await WorkerAPIClient.initialize();
     }
 
-    // 同期的に取得 - WorkerAPIClientは既にworkerインスタンスを返す
+    //  - WorkerAPIClientworker
     const client = WorkerAPIClient.getSingleton();
 
 
@@ -150,7 +149,6 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     };
   } catch (error) {
     console.error('[loadWorkerAPIClient] Failed to get Worker client:', error);
-    // エラーを詳細に記録
     if (error instanceof Error) {
       console.error('[loadWorkerAPIClient] Error message:', error.message);
       console.error('[loadWorkerAPIClient] Error stack:', error.stack);
@@ -161,7 +159,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
 
-  
+
   if (!treeId) {
     throw new Error('treeId is required');
   }
@@ -171,14 +169,13 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
       // Get fresh client each time to handle reconnections
       const workerAPIClientReturn = await loadWorkerAPIClient();
       const client = workerAPIClientReturn.client;
-      
+
       // Use facade API instead of deprecated direct method
       const queryAPI = await client.getQueryAPI();
       return queryAPI.getTree(treeId as TreeId);
     },
-    'loadTree.getTree'
+    'loadTree.getTree',
   );
-  
 
 
   // Get final client state for return
@@ -190,9 +187,9 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
 }
 
 export async function loadPageNode({
-  treeId,
-  nodeId,
-}: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
+                                     treeId,
+                                     nodeId,
+                                   }: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
   const loadTreeReturn = await loadTree({ treeId });
   const resolvedPageId = (nodeId || `${treeId}Root`) as NodeId;
 
@@ -203,7 +200,7 @@ export async function loadPageNode({
       const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
       return queryAPI.getNode(resolvedPageId);
     },
-    'loadPageNode.getNode'
+    'loadPageNode.getNode',
   );
 
   return {
@@ -214,10 +211,10 @@ export async function loadPageNode({
 }
 
 export async function loadTargetNode({
-  treeId,
-  pageNodeId,
-  targetNodeId,
-}: LoadTargetNodeArgs): Promise<LoadTargetNodeReturn> {
+                                       treeId,
+                                       pageNodeId,
+                                       targetNodeId,
+                                     }: LoadTargetNodeArgs): Promise<LoadTargetNodeReturn> {
   const loadPageNodeReturn = await loadPageNode({
     treeId,
     nodeId: pageNodeId,
@@ -230,7 +227,7 @@ export async function loadTargetNode({
       const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
       return queryAPI.getNode((targetNodeId || pageNodeId || `${treeId}Root`) as NodeId);
     },
-    'loadTargetNode.getNode'
+    'loadTargetNode.getNode',
   );
 
   return {
@@ -240,11 +237,11 @@ export async function loadTargetNode({
 }
 
 export async function loadNodeType({
-  treeId,
-  pageNodeId,
-  targetNodeId,
-  nodeType,
-}: LoadNodeTypeArgs): Promise<LoadNodeTypeReturn> {
+                                     treeId,
+                                     pageNodeId,
+                                     targetNodeId,
+                                     nodeType,
+                                   }: LoadNodeTypeArgs): Promise<LoadNodeTypeReturn> {
   const loadTargetNodeReturn = await loadTargetNode({
     treeId,
     pageNodeId,
@@ -257,12 +254,12 @@ export async function loadNodeType({
 }
 
 export async function loadNodeAction({
-  treeId,
-  pageNodeId,
-  targetNodeId,
-  nodeType,
-  action,
-}: LoadNodeActionArgs): Promise<LoadNodeActionReturn> {
+                                       treeId,
+                                       pageNodeId,
+                                       targetNodeId,
+                                       nodeType,
+                                       action,
+                                     }: LoadNodeActionArgs): Promise<LoadNodeActionReturn> {
   const loadNodeTypeReturn = await loadNodeType({
     treeId,
     pageNodeId,

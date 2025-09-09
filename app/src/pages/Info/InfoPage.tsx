@@ -1,4 +1,4 @@
-import { Box, Typography, Link, Divider } from '@mui/material';
+import { Box, Divider, Link, Typography } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import { useNavigate } from 'react-router';
 import { LoadAppConfigReturn } from '~/loader';

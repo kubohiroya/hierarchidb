@@ -3,11 +3,10 @@
  * @description Test suite for UserAvatarMenu component with authentication integration
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ThemeProvider } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
-import { UserProfile, UserAvatarMenu } from '../UserAvatarMenu';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu';
 import type { AuthContextProps } from 'react-oidc-context';
 
 // Mock dependencies
@@ -48,7 +47,7 @@ vi.mock('@hierarchidb/ui-core', () => ({
             </button>
           ) : (
             <hr key={index} data-testid={`dropdown-separator-${index}`} />
-          )
+          ),
         )}
       </div>
     </div>
@@ -341,7 +340,7 @@ describe('UserProfile', () => {
       await waitFor(() => {
         expect(devError).toHaveBeenCalledWith('Failed to clear cache:', expect.any(Error));
         expect(globalThis.window.alert).toHaveBeenCalledWith(
-          'Failed to clear some cache data. Please try again.'
+          'Failed to clear some cache data. Please try again.',
         );
       });
     });

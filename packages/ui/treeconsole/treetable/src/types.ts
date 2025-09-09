@@ -2,7 +2,7 @@
  * Types for TreeTable package
  */
 
-import type { ReactNode, MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { TreeTablePlugin } from './plugin/types';
 import { TreeNode } from '@hierarchidb/common-type';
@@ -79,7 +79,7 @@ export interface TreeTableCoreProps {
   onDragStateChange?: (
     draggingNodeId: string | undefined,
     descendantIdSet: Set<string> | undefined,
-    dragPreviewElement: HTMLElement | null
+    dragPreviewElement: HTMLElement | null,
   ) => void;
 
   /**

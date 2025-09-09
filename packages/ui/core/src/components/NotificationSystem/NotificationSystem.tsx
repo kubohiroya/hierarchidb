@@ -49,7 +49,7 @@ export function showNotification(
       label: string;
       onClick: () => void;
     };
-  }
+  },
 ) {
   if (globalState) {
     globalState.addNotification({

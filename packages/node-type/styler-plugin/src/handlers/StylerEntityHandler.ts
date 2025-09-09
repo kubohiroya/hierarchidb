@@ -13,8 +13,11 @@ import { StylerDataService } from '../services/StylerDataService';
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 interface BaseEntityHandler {
   createEntity(nodeId: NodeId, data: any): Promise<any>;
+
   getEntity(nodeId: NodeId): Promise<any>;
+
   updateEntity(nodeId: NodeId, data: any): Promise<any>;
+
   deleteEntity(nodeId: NodeId): Promise<any>;
 }
 
@@ -85,7 +88,7 @@ export class StylerEntityHandler {
       try {
         const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
           data.spreadsheetMetadataId,
-          entity
+          entity,
         );
         entity.generatedStyle = {
           maplibreStyleSpec: styleSpec,
@@ -106,7 +109,10 @@ export class StylerEntityHandler {
     const baseEntity = existing && 'data' in (existing as any) ? (existing as any).data : existing;
     const tableId = (baseEntity as any)?.spreadsheetMetadataId;
     if (tableId) {
-      try { await this.dataService.removeTableReference(tableId); } catch { /* ignore */ }
+      try {
+        await this.dataService.removeTableReference(tableId);
+      } catch { /* ignore */
+      }
     }
     await this.spreadsheetHandler.deleteEntity(nodeId);
     return { success: true };

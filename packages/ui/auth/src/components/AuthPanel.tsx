@@ -1,8 +1,8 @@
 // utils/App.jsx
-import { Button, Snackbar } from "@mui/material";
+import { Button, Snackbar } from '@mui/material';
 
-import Gravatar from "react-gravatar";
-import { useAuth } from "react-oidc-context";
+import Gravatar from 'react-gravatar';
+import { useAuth } from 'react-oidc-context';
 // import { useAuthLib as useAuthLib } from "@/shared/auth/hooks/useAuthLib.ts";
 const useAuthLib = () => ({
   signIn: () => Promise.resolve(),
@@ -14,9 +14,9 @@ function AuthPanel() {
   const { signIn, signOut } = useAuthLib();
 
   switch (auth.activeNavigator) {
-    case "signinSilent":
+    case 'signinSilent':
       return <Snackbar message="Signing you in..." />;
-    case "signoutRedirect":
+    case 'signoutRedirect':
       return <Snackbar message="Signing you out..." />;
   }
 
@@ -36,7 +36,7 @@ function AuthPanel() {
     return (
       <Gravatar
         email={auth.user?.profile.email}
-        style={{ borderRadius: "50%" }}
+        style={{ borderRadius: '50%' }}
       >
         <Button onClick={() => signOut()}>Log out</Button>
       </Gravatar>
@@ -44,7 +44,7 @@ function AuthPanel() {
   }
 
   return (
-    <Button variant={"outlined"} onClick={() => signIn()}>
+    <Button variant={'outlined'} onClick={() => signIn()}>
       Log in
     </Button>
   );

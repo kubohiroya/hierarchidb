@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/provider';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 const theme = createTheme({

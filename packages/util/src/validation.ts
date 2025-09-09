@@ -8,7 +8,7 @@
  * @returns Validation result with sanitized URL if valid
  */
 export function validateExternalURL(
-  url: string
+  url: string,
 ): { isValid: boolean; valid?: boolean; error?: string; url?: string } {
   try {
     // Remove leading/trailing whitespace

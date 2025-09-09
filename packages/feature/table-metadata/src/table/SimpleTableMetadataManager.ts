@@ -19,6 +19,7 @@ export type CSVTableMetadataLike = {
 
 class CSVMetadataDB extends Dexie {
   csvMetadata!: Table<CSVTableMetadataLike, string>;
+
   constructor(name: string) {
     super(name);
     this.version(1).stores({

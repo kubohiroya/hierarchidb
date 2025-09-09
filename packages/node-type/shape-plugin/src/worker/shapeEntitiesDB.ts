@@ -4,7 +4,13 @@ import type { NodeId } from '@hierarchidb/common-type';
 
 export type ShapePeerRow = { nodeId: NodeId; data?: unknown; updatedAt?: number };
 export type ShapeGroupRow = { nodeId: NodeId; id: string; data?: unknown; updatedAt?: number };
-export type ShapeRelationRow = { srcNodeId: NodeId; dstNodeId: NodeId; type: string; meta?: unknown; updatedAt?: number };
+export type ShapeRelationRow = {
+  srcNodeId: NodeId;
+  dstNodeId: NodeId;
+  type: string;
+  meta?: unknown;
+  updatedAt?: number
+};
 
 export class ShapeEntitiesDB extends Dexie {
   peerEntities!: Table<ShapePeerRow, NodeId>;

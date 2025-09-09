@@ -1,11 +1,4 @@
-import {
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  SpeedDialIcon,
-} from '@mui/material';
+import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, SpeedDialIcon } from '@mui/material';
 import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -16,9 +9,9 @@ export type MenuItemLinkType = {
 };
 
 export const MenuListItemLinkButton = ({
-  id,
-  items,
-}: {
+                                         id,
+                                         items,
+                                       }: {
   id: string;
   items: Array<MenuItemLinkType | null>;
 }) => {
@@ -71,7 +64,7 @@ export const MenuListItemLinkButton = ({
             </MenuItem>
           ) : (
             <MenuItem key={index} divider />
-          )
+          ),
         )}
       </Menu>
     </>

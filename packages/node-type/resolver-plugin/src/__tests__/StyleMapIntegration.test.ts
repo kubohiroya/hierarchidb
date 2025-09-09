@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { ResolverEntity } from '../types';
 import { MappingCompiler } from '../services/SimpleMappingCompiler';
 
@@ -112,7 +112,7 @@ describe('Styler Integration with Resolver', () => {
 
       // Compile mapping rules
       const compiledFunction = compiler.compile(resolverEntity.mappingRules || []);
-      
+
       // Apply transformation
       const transformedData = compiledFunction(sourceData);
 
@@ -253,7 +253,7 @@ describe('Styler Integration with Resolver', () => {
 
       // Validate data
       const errors: string[] = [];
-      
+
       if (sourceData.population < 0) {
         errors.push(validationRules[0].errorMessage);
       }
@@ -306,7 +306,7 @@ describe('Styler Integration with Resolver', () => {
 
       expect(results[0]).toEqual({ x: 0, y: 10 });
       expect(results[100]).toEqual({ x: 200, y: 210 });
-      
+
       // Compiled function should be fast
       const processingTime = endTime - startTime;
       expect(processingTime).toBeLessThan(100); // Should process 10000 items in less than 100ms

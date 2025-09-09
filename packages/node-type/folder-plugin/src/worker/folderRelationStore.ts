@@ -6,7 +6,7 @@ import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 type Rel = RelationBase<{ weight?: number }>;
 
 // key: composite `${src}\t${type}\t${dst}`
-const SEP = "\t";
+const SEP = '\t';
 const mem = new Map<string, Rel>();
 
 function key(r: Rel) {

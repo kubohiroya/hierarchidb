@@ -1,33 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
-  Grid,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  ToggleButtonGroup,
-  ToggleButton,
-  Switch,
-  FormControlLabel,
-  Slider,
-  Paper,
   Button,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
   Stack,
+  Switch,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import {
-  CropFree as BboxIcon,
-  Pentagon as PolygonIcon,
   AccountBalance as AdminIcon,
-  MyLocation as CustomIcon,
+  CropFree as BboxIcon,
   Map as MapIcon,
-  Terrain as TerrainIcon,
+  MyLocation as CustomIcon,
+  Pentagon as PolygonIcon,
   Satellite as SatelliteIcon,
+  Terrain as TerrainIcon,
 } from '@mui/icons-material';
 import { MapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
-import type { ProjectEntity, ProjectRegion, BoundingBox } from '~/types/project-types';
+import type { BoundingBox, ProjectEntity, ProjectRegion } from '~/types/project-types';
 
 interface RegionConfigStepProps {
   data: Partial<ProjectEntity>;
@@ -35,9 +35,9 @@ interface RegionConfigStepProps {
 }
 
 export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
-  data,
-  onComplete: _onComplete,
-}) => {
+                                                                    data,
+                                                                    onComplete: _onComplete,
+                                                                  }) => {
   const map = useRef<MapLibreMapInstance | null>(null);
 
   const [formData, setFormData] = useState<ProjectRegion>({
@@ -152,7 +152,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
         [bbox.minLon, bbox.minLat],
         [bbox.maxLon, bbox.maxLat],
       ],
-      { padding: 50 }
+      { padding: 50 },
     );
   };
 
@@ -535,11 +535,20 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
                 width="100%"
                 height="100%"
                 controls={{ navigation: true, scale: true }}
-                onLoad={(m) => { map.current = m; }}
+                onLoad={(m) => {
+                  map.current = m;
+                }}
                 onViewStateChange={(vs) => {
                   setFormData((prev) => ({
                     ...prev,
-                    mapConfig: { ...prev.mapConfig, defaultView: { center: [vs.longitude, vs.latitude], zoom: vs.zoom, bearing: vs.bearing || 0, pitch: vs.pitch || 0 } },
+                    mapConfig: { ...prev.mapConfig,
+                      defaultView: {
+                        center: [vs.longitude, vs.latitude],
+                        zoom: vs.zoom,
+                        bearing: vs.bearing || 0,
+                        pitch: vs.pitch || 0,
+                      },
+                    },
                   }));
                 }}
               />

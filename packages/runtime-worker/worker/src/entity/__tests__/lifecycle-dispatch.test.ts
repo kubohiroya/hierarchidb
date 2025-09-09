@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { CommandEnvelope } from '~/services/command-types';
-import { EntityLifecycleManager } from '~/entity/EntityLifecycleManager';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CommandEnvelope } from '../../services/command-types';
+import { EntityLifecycleManager } from '../EntityLifecycleManager';
 
 describe('EntityLifecycleManager dispatch', () => {
   beforeEach(() => {
@@ -46,4 +46,3 @@ describe('EntityLifecycleManager dispatch', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 });
-

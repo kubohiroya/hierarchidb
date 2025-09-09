@@ -2,10 +2,9 @@
  * E2E Test for Worker Initialization Notification System
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter';
-import type { InitializationStep, WorkerInitMessage } from '../types';
+import type { WorkerInitMessage } from '../types';
 
 // Create a real Worker script as a Blob
 const createTestWorkerScript = () => {
@@ -146,7 +145,7 @@ describe('Worker Initialization E2E Tests', () => {
 
   it('should complete full initialization flow with progress updates', async () => {
     const progressUpdates: WorkerInitMessage[] = [];
-    
+
     // Intercept progress messages
     worker.addEventListener('message', (event) => {
       if (event.data.type === 'INIT_PROGRESS') {
@@ -175,7 +174,7 @@ describe('Worker Initialization E2E Tests', () => {
 
     // Verify we received progress updates
     expect(progressUpdates.length).toBeGreaterThan(0);
-    
+
     // Verify progress values are increasing
     const progressValues = progressUpdates.map(u => u.payload?.progress || 0);
     for (let i = 1; i < progressValues.length; i++) {
@@ -227,7 +226,7 @@ describe('Worker Initialization E2E Tests', () => {
         timeout: 2000,
         debug: false,
       });
-      
+
       // Should not reach here
       expect(result.success).toBe(false);
     } catch (error: any) {
@@ -242,7 +241,7 @@ describe('Worker Initialization E2E Tests', () => {
   it('should support ping functionality after initialization', async () => {
     // Initialize worker first
     worker.postMessage({ type: 'START_INIT' });
-    
+
     await channel.waitForInitialization({
       worker,
       timeout: 5000,
@@ -292,13 +291,13 @@ describe('Worker Initialization E2E Tests', () => {
 
     // Worker should still be functional
     worker.postMessage({ type: 'PING' });
-    
+
     // Create a new channel
     const newChannel = new WorkerInitializationChannel();
-    
+
     // Should be able to initialize with new channel
     worker.postMessage({ type: 'START_INIT' });
-    
+
     const result = await newChannel.waitForInitialization({
       worker,
       timeout: 5000,
@@ -306,7 +305,7 @@ describe('Worker Initialization E2E Tests', () => {
     });
 
     expect(result.success).toBe(true);
-    
+
     newChannel.dispose();
   });
 });

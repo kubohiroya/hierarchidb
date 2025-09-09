@@ -1,19 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
-  DownloadTask,
-  SimplifyTask,
-  VectorTileTask,
-  ProcessingConfig,
-  UrlMetadata,
   BatchTaskStage,
+  DownloadTask,
+  ProcessingConfig,
+  SimplifyTask,
+  UrlMetadata,
+  VectorTileTask,
 } from '~/shared';
 import { mockShapeService } from '~/services/MockShapeService';
-import {
-  generateMockDownloadTasks,
-  generateMockSimplifyTasks,
-  generateMockVectorTileTasks,
-} from '~/mock/data';
+import { generateMockDownloadTasks, generateMockSimplifyTasks, generateMockVectorTileTasks } from '~/mock/data';
 
 // Union type for all task types
 type AnyTask = DownloadTask | SimplifyTask | VectorTileTask;
@@ -41,11 +37,11 @@ interface UseBatchWorkerConsoleReturn {
 }
 
 export const useBatchWorkerConsole = ({
-  id,
-  config,
-  urlMetadata,
-  onError,
-}: UseBatchWorkerConsoleProps): UseBatchWorkerConsoleReturn => {
+                                        id,
+                                        config,
+                                        urlMetadata,
+                                        onError,
+                                      }: UseBatchWorkerConsoleProps): UseBatchWorkerConsoleReturn => {
   const [_batchId, setBatchId] = useState<string | null>(null);
   const [downloadTasks, setDownloadTasks] = useState<DownloadTask[]>([]);
   const [simplify1Tasks, setSimplify1Tasks] = useState<SimplifyTask[]>([]);
@@ -65,7 +61,7 @@ export const useBatchWorkerConsole = ({
           ...task,
           taskId: task.taskId.replace('simplify1', 'simplify2'),
           taskType: 'simplify2' as const,
-        }))
+        })),
       );
       setVectorTileTasks(generateMockVectorTileTasks(countries, levels));
     }
@@ -95,7 +91,7 @@ export const useBatchWorkerConsole = ({
             return { ...task, progress: newProgress };
           }
           return task;
-        })
+        }),
       );
 
       // Update simplify1 tasks
@@ -121,7 +117,7 @@ export const useBatchWorkerConsole = ({
             return { ...task, progress: newProgress };
           }
           return task;
-        })
+        }),
       );
 
       // Similar updates for simplify2 and vectorTile tasks...
@@ -135,16 +131,16 @@ export const useBatchWorkerConsole = ({
   const hasFinished =
     downloadTasks.length > 0 &&
     downloadTasks.every(
-      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel',
     ) &&
     simplify1Tasks.every(
-      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel',
     ) &&
     simplify2Tasks.every(
-      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel',
     ) &&
     vectorTileTasks.every(
-      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel'
+      (t) => t.stage === 'success' || t.stage === 'error' || t.stage === 'cancel',
     );
 
   const handleStart = useCallback(async () => {
@@ -164,8 +160,8 @@ export const useBatchWorkerConsole = ({
         prev.map((task) =>
           task.taskId === taskId && task.stage === 'process'
             ? { ...task, stage: 'pause' as BatchTaskStage }
-            : task
-        )
+            : task,
+        ),
       );
     };
 
@@ -182,8 +178,8 @@ export const useBatchWorkerConsole = ({
         prev.map((task) =>
           task.taskId === taskId && task.stage === 'pause'
             ? { ...task, stage: 'process' as BatchTaskStage }
-            : task
-        )
+            : task,
+        ),
       );
     };
 
@@ -199,8 +195,8 @@ export const useBatchWorkerConsole = ({
         prev.map((task) =>
           task.stage === 'process' || task.stage === 'wait'
             ? { ...task, stage: 'cancel' as BatchTaskStage }
-            : task
-        )
+            : task,
+        ),
       );
     };
 

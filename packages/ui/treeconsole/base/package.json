@@ -4,10 +4,10 @@
   "description": "Base Tree Console UI orchestrator components for HierarchiDB - migrated from eria-cartograph/app0",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }

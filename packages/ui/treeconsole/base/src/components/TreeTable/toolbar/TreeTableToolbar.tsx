@@ -1,33 +1,33 @@
 import { memo } from 'react';
 import {
-  Toolbar,
-  Typography,
-  IconButton,
-  Button,
   Box,
+  Button,
   Chip,
-  TextField,
-  InputAdornment,
-  Select,
-  MenuItem,
   FormControl,
+  IconButton,
+  InputAdornment,
   InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Toolbar,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  ViewList as ViewListIcon,
-  ViewComfy as ViewComfyIcon,
-  FilterList as FilterListIcon,
-  Sort as SortIcon,
-  MoreVert as MoreVertIcon,
   Add as AddIcon,
+  Clear as ClearIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
+  MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
+  Search as SearchIcon,
+  Sort as SortIcon,
+  ViewComfy as ViewComfyIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 
 export interface TreeTableToolbarProps {
@@ -178,7 +178,7 @@ export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableT
             onClick={() =>
               props.onSortChange(
                 props.sortBy || 'name',
-                props.sortDirection === 'asc' ? 'desc' : 'asc'
+                props.sortDirection === 'asc' ? 'desc' : 'asc',
               )
             }
             aria-label="Sort"

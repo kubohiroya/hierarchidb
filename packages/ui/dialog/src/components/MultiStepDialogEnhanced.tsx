@@ -2,34 +2,31 @@
  * Enhanced Multi-step dialog with auto-hide functionality
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Box,
-  IconButton,
-  Typography,
   Button,
-  Stack,
   CircularProgress,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Fade,
+  IconButton,
+  Stack,
+  Typography,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
-  KeyboardArrowUp as CollapseIcon,
   KeyboardArrowDown as ExpandIcon,
+  KeyboardArrowUp as CollapseIcon,
 } from '@mui/icons-material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { DialogStepper } from './DialogStepper';
-import type {
-  MultiStepDialogProps,
-  FooterRenderProps,
-} from '../types/MultiStepDialog.types';
+import type { FooterRenderProps, MultiStepDialogProps } from '../types/MultiStepDialog.types';
 
 /**
  * Enhanced Multi-step dialog component with auto-hide
@@ -41,38 +38,38 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
   currentData?: any;
   onDataChange?: (data: any) => void;
 }> = ({
-  open,
-  mode,
-  title,
-  subtitle,
-  icon,
-  steps,
-  activeStep: controlledActiveStep,
-  onStepChange,
-  nonLinear = false,
-  maxWidth = 'lg',
-  fullScreen: initialFullScreen = false,
-  showFullscreenToggle = true,
-  hasUnsavedChanges = false,
-  supportsDraft = false,
-  onSubmit,
-  onSaveDraft,
-  onCancel,
-  onClose,
-  renderFooter,
-  headerActions,
-  onStepTransition,
-  loading = false,
-  submitText = mode === 'create' ? 'Create' : 'Save',
-  cancelText = 'Cancel',
-  backText = 'Back',
-  nextText = 'Next',
-  autoHideHeader = true,
-  autoHideFooter = true,
-  autoHideDelay = 3000,
-  currentData = {},
-  // onDataChange,
-}) => {
+        open,
+        mode,
+        title,
+        subtitle,
+        icon,
+        steps,
+        activeStep: controlledActiveStep,
+        onStepChange,
+        nonLinear = false,
+        maxWidth = 'lg',
+        fullScreen: initialFullScreen = false,
+        showFullscreenToggle = true,
+        hasUnsavedChanges = false,
+        supportsDraft = false,
+        onSubmit,
+        onSaveDraft,
+        onCancel,
+        onClose,
+        renderFooter,
+        headerActions,
+        onStepTransition,
+        loading = false,
+        submitText = mode === 'create' ? 'Create' : 'Save',
+        cancelText = 'Cancel',
+        backText = 'Back',
+        nextText = 'Next',
+        autoHideHeader = true,
+        autoHideFooter = true,
+        autoHideDelay = 3000,
+        currentData = {},
+        // onDataChange,
+      }) => {
   // State
   const [internalActiveStep, setInternalActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -80,7 +77,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepErrors, setStepErrors] = useState<Map<number, string>>(new Map());
-  
+
   // Auto-hide states
   const [headerVisible, setHeaderVisible] = useState(true);
   const [footerVisible, setFooterVisible] = useState(true);
@@ -94,7 +91,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
   // Filter out skipped steps
   const visibleSteps = useMemo(
     () => steps.filter(step => !step.skip?.()),
-    [steps]
+    [steps],
   );
 
   // Get current step config
@@ -141,7 +138,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
   // Validation
   const validateCurrentStep = useCallback(async () => {
     if (!currentStepConfig?.validate) return true;
-    
+
     try {
       const isValid = await currentStepConfig.validate();
       if (!isValid) {
@@ -164,37 +161,37 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
   // Check capabilities using plugin-provided functions
   const canGoNext = useMemo(() => {
     if (loading || stepErrors.has(currentStep)) return false;
-    
+
     // Check plugin-provided capability
     if (currentStepConfig?.capabilities?.canProceedToNext) {
       const result = currentStepConfig.capabilities.canProceedToNext(currentData);
       return result instanceof Promise ? false : result;
     }
-    
+
     return true;
   }, [currentStep, stepErrors, loading, currentStepConfig, currentData]);
 
   const canGoPrevious = useMemo(() => {
     if (currentStep === 0 || loading) return false;
-    
+
     // Check plugin-provided capability for going back
     if (currentStepConfig?.capabilities?.canBackToPrevious) {
       const result = currentStepConfig.capabilities.canBackToPrevious(currentData);
       return result instanceof Promise ? false : result;
     }
-    
+
     return true;
   }, [currentStep, loading, currentStepConfig, currentData]);
 
   const canSave = useMemo(() => {
     if (loading) return false;
-    
+
     // Check plugin-provided capability for saving
     if (currentStepConfig?.capabilities?.canSave) {
       const result = currentStepConfig.capabilities.canSave(currentData);
       return result instanceof Promise ? false : result;
     }
-    
+
     // Default: can save if all required steps are completed
     return visibleSteps.every((step, index) => {
       if (step.optional) return true;
@@ -205,20 +202,20 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
 
   const canStartBatch = useMemo(() => {
     if (loading) return false;
-    
+
     // Check plugin-provided capability for batch
     if (currentStepConfig?.capabilities?.canStartBatch) {
       const result = currentStepConfig.capabilities.canStartBatch(currentData);
       return result instanceof Promise ? false : result;
     }
-    
+
     return false;
   }, [loading, currentStepConfig, currentData]);
 
   // Handle step change
   const handleStepChange = useCallback(async (newStep: number) => {
     handleActivity();
-    
+
     if (onStepTransition) {
       const canTransition = await onStepTransition(currentStep, newStep);
       if (!canTransition) return;
@@ -254,10 +251,10 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
 
   const handleStepClick = useCallback(async (stepIndex: number) => {
     if (!nonLinear) return;
-    
-    const canNavigate = completedSteps.has(stepIndex) || 
-                       stepIndex === currentStep + 1;
-    
+
+    const canNavigate = completedSteps.has(stepIndex) ||
+      stepIndex === currentStep + 1;
+
     if (canNavigate && stepIndex !== currentStep) {
       if (stepIndex > currentStep) {
         const isValid = await validateCurrentStep();
@@ -284,7 +281,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
 
   const handleSaveDraft = useCallback(async () => {
     if (!onSaveDraft) return;
-    
+
     try {
       setIsSubmitting(true);
       await onSaveDraft();
@@ -343,16 +340,16 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
 
   // Check if this is a batch dialog
   const isBatchDialog = visibleSteps.some(step => step.id?.includes('batch'));
-  
+
   // Special button text for batch operations
   const getSubmitButtonText = () => {
     if (isSubmitting) return <CircularProgress size={20} />;
-    
+
     // Show "Start Batch" for batch dialogs
     if (isBatchDialog) {
       return 'Start Batch';
     }
-    
+
     return submitText;
   };
 
@@ -369,7 +366,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
       >
         {/* Header with auto-hide */}
         <Collapse in={!isFullscreen || headerVisible} timeout={300}>
-          <DialogTitle 
+          <DialogTitle
             sx={{ pb: 1 }}
             onMouseEnter={() => setMouseInHeader(true)}
             onMouseLeave={() => setMouseInHeader(false)}
@@ -420,10 +417,10 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
         </Collapse>
 
         {/* Content */}
-        <DialogContent 
-          dividers 
-          sx={{ 
-            position: 'relative', 
+        <DialogContent
+          dividers
+          sx={{
+            position: 'relative',
             minHeight: 200,
             pt: isFullscreen && !headerVisible ? 4 : undefined,
             pb: isFullscreen && !footerVisible ? 4 : undefined,
@@ -444,11 +441,11 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
               <CircularProgress />
             </Box>
           )}
-          
+
           <Box sx={{ opacity: loading ? 0.5 : 1 }}>
             {currentStepConfig?.component}
           </Box>
-          
+
           {stepErrors.has(currentStep) && (
             <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
               {stepErrors.get(currentStep)}
@@ -480,7 +477,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
                       {footerVisible ? <CollapseIcon /> : <ExpandIcon />}
                     </IconButton>
                   )}
-                  
+
                   {/* For batch dialogs, show both Next and Start Batch buttons */}
                   {isBatchDialog ? (
                     <>
@@ -512,7 +509,7 @@ export const MultiStepDialogEnhanced: React.FC<MultiStepDialogProps & {
                           {nextText}
                         </Button>
                       )}
-                      
+
                       {isLastStep && (
                         <Button
                           onClick={handleSubmit}

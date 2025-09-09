@@ -28,18 +28,18 @@ export const BASEMAP_CONSTANTS = {
     center: [139.6917, 35.6895] as [number, number], // Tokyo
     zoom: 10,
     bearing: 0,
-    pitch: 0
+    pitch: 0,
   },
-  
+
   MAP_STYLE_PRESETS: {
     streets: 'Standard street map view',
     satellite: 'Satellite imagery view',
     terrain: 'Topographical terrain view',
     dark: 'Dark theme for low-light viewing',
     light: 'Clean light theme',
-    custom: 'Custom MapLibre style URL'
+    custom: 'Custom MapLibre style URL',
   },
-  
+
   VALIDATION_LIMITS: {
     LONGITUDE_MIN: -180,
     LONGITUDE_MAX: 180,
@@ -50,8 +50,8 @@ export const BASEMAP_CONSTANTS = {
     BEARING_MIN: 0,
     BEARING_MAX: 360,
     PITCH_MIN: 0,
-    PITCH_MAX: 60
-  }
+    PITCH_MAX: 60,
+  },
 } as const;
 
 // Plugin information

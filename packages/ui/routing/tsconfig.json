@@ -13,7 +13,9 @@
     "rootDir": "./src",
     "moduleResolution": "node",
     "noEmit": false,
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
@@ -37,5 +39,9 @@
     {
       "path": "../core"
     }
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

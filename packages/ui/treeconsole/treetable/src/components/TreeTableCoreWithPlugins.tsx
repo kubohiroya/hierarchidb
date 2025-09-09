@@ -1,49 +1,41 @@
 /**
- * TreeTableCore with Optional Plugin Support
- *
- * TreeTableCoreにオプショナルなプラグインサポートを追加したバージョン。
- * 後方互換性を維持しながら、段階的にプラグイン機能を導入できます。
- */
+  * TreeTableCore with Optional Plugin Support
+  * TreeTableCore
+   */
 
 import { TreeTableCore as TreeTableCoreOriginal } from './TreeTableCore';
 import { PluginProvider } from '../plugin/PluginProvider';
 import type { TreeTableCoreProps } from '../types';
-import type { TreeTablePlugin, TreeTablePluginConfig, PluginEvent } from '../plugin/types';
+import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '../plugin/types';
 
-// 拡張されたプロパティインターフェース
 export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
   /**
-   * プラグインの配列（オプショナル）
-   */
+            */
   plugins?: TreeTablePlugin[];
-  
+
   /**
-   * プラグインの設定（オプショナル）
-   */
+            */
   pluginConfig?: TreeTablePluginConfig;
-  
+
   /**
-   * プラグインイベントのリスナー（オプショナル）
-   */
+            */
   onPluginEvent?: (event: PluginEvent) => void;
-  
+
   /**
-   * プラグインを有効にするかどうか（デフォルト: false）
-   */
+      * : false
+      */
   enablePlugins?: boolean;
-  
+
   /**
-   * プラグインのデバッグモードを有効にする（オプショナル）
-   */
+            */
   debugPlugins?: boolean;
 }
 
 /**
- * TreeTableCore メインコンポーネント（プラグインサポート付き）
- * 
- * プラグインが有効な場合はProviderでラップし、
- * 無効な場合は従来通りのTreeTableCoreを直接レンダリングします。
- */
+  * TreeTableCore
+  * Provider
+ * TreeTableCore
+  */
 export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins) {
   const {
     plugins,
@@ -53,8 +45,8 @@ export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins) {
     debugPlugins = false,
     ...coreProps
   } = props;
-  
-  // プラグインが有効かつ存在する場合はProviderでラップ
+
+  //  Provider
   if (enablePlugins && plugins && plugins.length > 0) {
     return (
       <PluginProvider
@@ -67,36 +59,26 @@ export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins) {
       </PluginProvider>
     );
   }
-  
-  // プラグインが無効または存在しない場合は直接レンダリング
+
   return <TreeTableCoreOriginal {...coreProps} />;
 }
 
 /**
- * プラグインコンテキストを使用するTreeTableCore
- * プラグインフックの実行をサポートします
- */
+  * TreeTableCore
+   */
 function TreeTableCoreWithPluginContext(props: TreeTableCoreProps) {
-  // TODO: プラグインフックの統合を実装
-  // 1. usePluginContextを使用してプラグインコンテキストを取得
-  // 2. イベントハンドラーにプラグインフックを統合
-  // 3. プラグインによるコンポーネントオーバーライドをサポート
-  
-  // 現時点では通常のTreeTableCoreをレンダリング
-  // 実装が完了したら、ここでプラグインフックをpropsに注入
   return <TreeTableCoreOriginal {...props} />;
 }
 
 // =============================================================================
-// Convenience Components (移行された旧TreeTableWithPluginsから)
+//  Convenience Components (TreeTableWithPlugins)
 // =============================================================================
 
 /**
- * インライン編集機能付きTreeTable
- * @deprecated 代わりにTreeTableCoreWithPluginsとinlineEditPluginを使用してください
- */
+  * TreeTable
+ * @deprecated TreeTableCoreWithPluginsinlineEditPlugin
+  */
 export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins) {
-  // インライン編集プラグインをデフォルトで有効化
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins
@@ -108,11 +90,10 @@ export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins) {
 }
 
 /**
- * 高度なキーボードナビゲーション付きTreeTable
- * @deprecated 代わりにTreeTableCoreWithPluginsとkeyboardNavigationPluginを使用してください
- */
+  * TreeTable
+ * @deprecated TreeTableCoreWithPluginskeyboardNavigationPlugin
+  */
 export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins) {
-  // キーボードナビゲーションプラグインをデフォルトで有効化
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins
@@ -124,11 +105,10 @@ export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins)
 }
 
 /**
- * 全機能付きTreeTable
- * @deprecated 代わりにTreeTableCoreWithPluginsとfullFeaturedPluginsを使用してください
- */
+  * TreeTable
+ * @deprecated TreeTableCoreWithPluginsfullFeaturedPlugins
+  */
 export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins) {
-  // すべてのプラグインを有効化
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins
@@ -140,5 +120,4 @@ export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins) {
   );
 }
 
-// デフォルトエクスポート
 export default TreeTableCoreWithPlugins;

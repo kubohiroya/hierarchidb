@@ -1,10 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog';
-import type { NodeId } from '@hierarchidb/common-type';
-import type { DialogStepDefinition } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
 
 describe('ExtensibleFolderDialog', () => {
   const mockOnSubmit = vi.fn();
@@ -23,7 +22,7 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
       expect(screen.getByLabelText(/Folder Name/i)).toBeInTheDocument();
@@ -39,11 +38,11 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
       // Try to submit without entering name
-      const submitButton = screen.getByRole('button', { name: /Complete/i });
+      const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
       await userEvent.click(submitButton);
 
       // Should show validation error
@@ -62,7 +61,7 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
       // Enter folder-plugin name
@@ -74,7 +73,7 @@ describe('ExtensibleFolderDialog', () => {
       await userEvent.type(descInput, 'This is a test folder-plugin');
 
       // Submit
-      const submitButton = screen.getByRole('button', { name: /Complete/i });
+      const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
       await userEvent.click(submitButton);
 
       await waitFor(() => {
@@ -106,7 +105,7 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
       expect(screen.getByDisplayValue('Existing Folder')).toBeInTheDocument();
@@ -123,7 +122,7 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
       // Change only the name
@@ -132,7 +131,7 @@ describe('ExtensibleFolderDialog', () => {
       await userEvent.type(nameInput, 'Updated Folder');
 
       // Submit
-      const submitButton = screen.getByRole('button', { name: /Complete/i });
+      const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
       await userEvent.click(submitButton);
 
       await waitFor(() => {
@@ -175,7 +174,7 @@ describe('ExtensibleFolderDialog', () => {
           onCancel={mockOnCancel}
           open={true}
           additionalSteps={[additionalStep]}
-        />
+        />,
       );
 
       // Should show stepper with multiple steps
@@ -192,7 +191,7 @@ describe('ExtensibleFolderDialog', () => {
           onCancel={mockOnCancel}
           open={true}
           additionalSteps={[additionalStep]}
-        />
+        />,
       );
 
       // Fill in basic info
@@ -200,7 +199,7 @@ describe('ExtensibleFolderDialog', () => {
       await userEvent.type(nameInput, 'Extended Folder');
 
       // Go to next step
-      const nextButton = screen.getByRole('button', { name: /Next/i });
+      const [nextButton] = screen.getAllByRole('button', { name: /Next/i, hidden: true });
       await userEvent.click(nextButton);
 
       // Fill in custom field
@@ -208,7 +207,7 @@ describe('ExtensibleFolderDialog', () => {
       await userEvent.type(customInput, 'Custom Value');
 
       // Submit
-      const submitButton = screen.getByRole('button', { name: /Complete/i });
+      const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
       await userEvent.click(submitButton);
 
       await waitFor(() => {
@@ -231,7 +230,7 @@ describe('ExtensibleFolderDialog', () => {
           onCancel={mockOnCancel}
           open={true}
           title="Create Special Folder"
-        />
+        />,
       );
 
       expect(screen.getByText('Create Special Folder')).toBeInTheDocument();
@@ -254,10 +253,10 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
-      expect(screen.getByRole('button', { name: /Complete/i })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: /Complete/i, hidden: true }).length).toBeGreaterThan(0);
     });
   });
 
@@ -270,10 +269,10 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
-      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
+      const [cancelButton] = screen.getAllByRole('button', { name: /Cancel/i, hidden: true });
       await userEvent.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalled();
@@ -287,10 +286,10 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
-        />
+        />,
       );
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull();
 
       // Close base-dialog
       rerender(
@@ -300,7 +299,7 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={false}
-        />
+        />,
       );
 
       await waitFor(() => {

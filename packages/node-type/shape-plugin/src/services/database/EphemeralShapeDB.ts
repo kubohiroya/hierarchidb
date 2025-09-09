@@ -105,7 +105,7 @@ export class EphemeralShapeDB extends Dexie {
       simplifiedBuffers: '&id, sessionId, nodeId, stage, timestamp',
       vectorTiles: '&id, sessionId, nodeId, [z+x+y], hash, timestamp',
       sessions: '&id, nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl'
+      cache: '&key, type, lastAccessed, ttl',
     });
   }
 
@@ -113,7 +113,7 @@ export class EphemeralShapeDB extends Dexie {
    * Clear all data for a session
    */
   async clearSession(sessionId: string): Promise<void> {
-    await this.transaction('rw', 
+    await this.transaction('rw',
       this.rawBuffers,
       this.simplifiedBuffers,
       this.vectorTiles,
@@ -124,15 +124,15 @@ export class EphemeralShapeDB extends Dexie {
         await this.simplifiedBuffers.where('sessionId').equals(sessionId).delete();
         await this.vectorTiles.where('sessionId').equals(sessionId).delete();
         await this.sessions.where('id').equals(sessionId).delete();
-        
+
         // Clear cache entries related to session
         const cacheKeys = await this.cache
           .filter(entry => entry.key.includes(sessionId))
           .primaryKeys();
         await this.cache.bulkDelete(cacheKeys);
-      }
+      },
     );
-    
+
     console.log(`Cleared all data for session ${sessionId}`);
   }
 
@@ -144,12 +144,12 @@ export class EphemeralShapeDB extends Dexie {
     const expired = await this.cache
       .filter(entry => entry.lastAccessed + entry.ttl < now)
       .toArray();
-    
+
     if (expired.length > 0) {
       await this.cache.bulkDelete(expired.map(e => e.key));
       console.log(`Cleared ${expired.length} expired cache entries`);
     }
-    
+
     return expired.length;
   }
 
@@ -169,18 +169,18 @@ export class EphemeralShapeDB extends Dexie {
       this.simplifiedBuffers.count(),
       this.vectorTiles.count(),
       this.sessions.count(),
-      this.cache.count()
+      this.cache.count(),
     ]);
 
     // Calculate approximate total size
     let totalSize = 0;
-    
+
     const rawBuffers = await this.rawBuffers.toArray();
     totalSize += rawBuffers.reduce((sum, b) => sum + (b.size || 0), 0);
-    
+
     const tiles = await this.vectorTiles.toArray();
     totalSize += tiles.reduce((sum, t) => sum + t.size, 0);
-    
+
     const cacheEntries = await this.cache.toArray();
     totalSize += cacheEntries.reduce((sum, c) => sum + c.size, 0);
 
@@ -190,7 +190,7 @@ export class EphemeralShapeDB extends Dexie {
       vectorTiles: tileCount,
       sessions: sessionCount,
       cacheEntries: cacheCount,
-      totalSize
+      totalSize,
     };
   }
 
@@ -210,11 +210,11 @@ export class EphemeralShapeDB extends Dexie {
           this.simplifiedBuffers.clear(),
           this.vectorTiles.clear(),
           this.sessions.clear(),
-          this.cache.clear()
+          this.cache.clear(),
         ]);
-      }
+      },
     );
-    
+
     console.log('Cleared all EphemeralShapeDB data');
   }
 }

@@ -1,7 +1,7 @@
 /**
- * UI Components Exports
- * folder-pluginで使用するUIコンポーネント
- */
+  * UI Components Exports
+ * folder-pluginUI
+  */
 
 export { TagInput } from './TagInput';
 export type { TagInputProps } from './TagInput';

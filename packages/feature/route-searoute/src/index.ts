@@ -13,6 +13,7 @@ export class SeaRouteService {
 
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/route-searoute', provides: ['route-searoute'] },
-  init() {},
+  init() {
+  },
 };
 

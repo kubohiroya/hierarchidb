@@ -29,7 +29,7 @@ export const BatchStatusChip: React.FC<BatchStatusChipProps> = ({ status }) => {
   };
 
   const props = getChipProps();
-  
+
   return (
     <Chip
       {...props}

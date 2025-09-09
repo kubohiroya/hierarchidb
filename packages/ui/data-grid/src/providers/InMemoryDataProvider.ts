@@ -6,12 +6,12 @@
  */
 
 import type {
-  DataProvider,
+  DataChangeEvent,
   DataItem,
+  DataProvider,
+  FilterParams,
   QueryParams,
   QueryResult,
-  FilterParams,
-  DataChangeEvent,
 } from '../types/DataProvider';
 
 export class InMemoryDataProvider<T extends DataItem = DataItem> implements DataProvider<T> {
@@ -29,7 +29,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
     if (params.search) {
       const searchLower = params.search.toLowerCase();
       result = result.filter((item) =>
-        Object.values(item).some((value) => String(value).toLowerCase().includes(searchLower))
+        Object.values(item).some((value) => String(value).toLowerCase().includes(searchLower)),
       );
     }
 
@@ -237,7 +237,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
             ? `"${stringValue.replace(/"/g, '""')}"`
             : stringValue;
         })
-        .join(',')
+        .join(','),
     );
 
     return [headers.join(','), ...rows].join('\n');

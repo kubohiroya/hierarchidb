@@ -10,32 +10,32 @@ export const PLUGIN_METADATA = {
   description: 'BaseMap visualization plugin extending folder functionality',
   extends: 'folder',
   architecture: 'extension',
-  
+
   // Extension metadata
   extensionInfo: {
     basePlugin: 'folder',
     extensionType: 'visualization',
     stepsAdded: 4,
-    fieldsAdded: 9
+    fieldsAdded: 9,
   },
-  
+
   // Capabilities
   capabilities: {
     mapVisualization: true,
     styleCustomization: true,
     viewportControl: true,
-    interactionControl: true
+    interactionControl: true,
   },
-  
+
   // Requirements
   requirements: {
     browser: {
       webgl: true,
-      canvas: true
+      canvas: true,
     },
     dependencies: [
       '@hierarchidb/folder-plugin',
-      '@hierarchidb/ui-map'
-    ]
-  }
+      '@hierarchidb/ui-map',
+    ],
+  },
 } as const;

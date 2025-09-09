@@ -2,7 +2,7 @@
  * Form validation hook for folder-plugin operations
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { validateFolderData, validateFolderName } from '../../shared/utils';
 import type { CreateFolderData, UpdateFolderData } from '../../shared/types';
 
@@ -23,7 +23,7 @@ export interface UseFormValidationOptions {
  */
 export function useFormValidation(
   data: Partial<CreateFolderData | UpdateFolderData>,
-  options: UseFormValidationOptions = {}
+  options: UseFormValidationOptions = {},
 ) {
   const { validateOnChange = true, validateOnBlur = true } = options;
 
@@ -150,7 +150,7 @@ export function useFormValidation(
         validateField(fieldName, value);
       }
     },
-    [validateOnChange, validateField, touched]
+    [validateOnChange, validateField, touched],
   );
 
   // Handle field blur
@@ -162,7 +162,7 @@ export function useFormValidation(
         validateField(fieldName, value);
       }
     },
-    [validateOnBlur, validateField]
+    [validateOnBlur, validateField],
   );
 
   // Get error for specific field
@@ -170,7 +170,7 @@ export function useFormValidation(
     (fieldName: string) => {
       return touched[fieldName] ? validationState.fieldErrors[fieldName] : '';
     },
-    [touched, validationState.fieldErrors]
+    [touched, validationState.fieldErrors],
   );
 
   // Check if field has error
@@ -178,7 +178,7 @@ export function useFormValidation(
     (fieldName: string) => {
       return touched[fieldName] && Boolean(validationState.fieldErrors[fieldName]);
     },
-    [touched, validationState.fieldErrors]
+    [touched, validationState.fieldErrors],
   );
 
   // Current validation result

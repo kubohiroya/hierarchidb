@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { NodeId, NodeType } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
-import { NodeLifecycleManager } from '~/services/NodeLifecycleManager';
+import { CoreDB } from '../CoreDB';
+import { NodeLifecycleManager } from '../NodeLifecycleManager';
 
 describe('NodeLifecycleManager reference counting port', () => {
   it('invokes increment/decrement when registry provided', async () => {
@@ -11,7 +11,7 @@ describe('NodeLifecycleManager reference counting port', () => {
     let inc = 0;
     let dec = 0;
     nlm.setReferenceCountingRegistry({
-      'folder' as unknown as string: {
+      'folder': {
         async incrementReferenceCount(_nodeId: NodeId) {
           inc++;
         },
@@ -28,4 +28,3 @@ describe('NodeLifecycleManager reference counting port', () => {
     expect(dec).toBe(1);
   });
 });
-

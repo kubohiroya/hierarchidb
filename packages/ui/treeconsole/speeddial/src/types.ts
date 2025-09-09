@@ -5,8 +5,8 @@
 import type { ReactNode } from 'react';
 
 /**
- * SpeedDial アクション型
- */
+  * SpeedDial
+  */
 export interface SpeedDialActionType {
   name: string;
   icon: ReactNode;
@@ -15,8 +15,8 @@ export interface SpeedDialActionType {
 }
 
 /**
- * TreeConsoleActions/SpeedDial の Props
- */
+  * TreeConsoleActions/SpeedDial Props
+  */
 export interface TreeConsoleActionsProps {
   /**
    * Page context flags

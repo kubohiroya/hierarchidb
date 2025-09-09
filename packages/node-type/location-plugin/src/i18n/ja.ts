@@ -1,12 +1,10 @@
 /**
- * Japanese translations for Location Plugin
- * ロケーションプラグイン日本語翻訳
- */
+  * Japanese translations for Location Plugin
+   */
 
 import type { LocationPluginTranslations } from './types';
 
 export const ja: LocationPluginTranslations = {
-  // 共通
   common: {
     name: '名前',
     description: '説明',
@@ -23,7 +21,6 @@ export const ja: LocationPluginTranslations = {
     warning: '警告',
   },
 
-  // 基本情報ステップ
   basicInfo: {
     title: '基本情報',
     subtitle: '地点情報の基本的な設定を行います。タグとカテゴリを使用して地点を分類・検索しやすくできます。',
@@ -40,7 +37,6 @@ export const ja: LocationPluginTranslations = {
     hint: '💡 ヒント：適切な名前とタグを設定することで、後でデータを見つけやすくなります',
   },
 
-  // 選択ステップ
   selection: {
     title: '地点選択',
     subtitle: '取得する地点データを選択してください。国と地点タイプの組み合わせでデータを指定できます。',
@@ -56,7 +52,6 @@ export const ja: LocationPluginTranslations = {
     estimatedSize: '推定データサイズ',
   },
 
-  // バッチ処理
   batch: {
     progressTitle: '進捗状況',
     logsTitle: 'ログ',
@@ -75,7 +70,6 @@ export const ja: LocationPluginTranslations = {
     },
   },
 
-  // 地点タイプ
   locationTypes: {
     airport: '空港',
     railway_station: '駅',
@@ -99,14 +93,12 @@ export const ja: LocationPluginTranslations = {
     religious: '宗教施設',
   },
 
-  // カテゴリ
   categories: {
     transportation: '交通機関',
     administrative: '行政機関',
     infrastructure: 'インフラ',
   },
 
-  // エラーメッセージ
   errors: {
     nameRequired: '名前は必須です',
     invalidSelection: '選択が無効です',

@@ -22,5 +22,7 @@ try {
     } catch {
       // ignore
     }
-  }).catch(() => {});
-} catch {}
+  }).catch(() => {
+  });
+} catch {
+}

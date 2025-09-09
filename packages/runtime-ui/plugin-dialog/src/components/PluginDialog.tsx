@@ -3,9 +3,9 @@
  * Integrates plugin-provided steps with MultiStepDialog
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MultiStepDialog, DialogStep } from '@hierarchidb/ui-dialog';
+import { DialogStep, MultiStepDialog } from '@hierarchidb/ui-dialog';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginStepRegistry } from '../registry/PluginStepRegistry';
 import { useWorkingCopy } from '../hooks/useWorkingCopy';
@@ -14,28 +14,28 @@ import { BasicInfoStep } from './steps/BasicInfoStep';
 export interface PluginDialogProps {
   /** Dialog mode */
   mode: 'create' | 'edit';
-  
+
   /** Node type */
   nodeType: string;
-  
+
   /** Node ID (working copy ID) */
   nodeId?: NodeId;
-  
+
   /** Parent node ID (for create mode) */
   parentId?: NodeId;
-  
+
   /** Tree ID */
   treeId: TreeId;
-  
+
   /** Dialog open state */
   open: boolean;
-  
+
   /** Initial step to display */
   initialStep?: number;
-  
+
   /** Close handler */
   onClose: () => void;
-  
+
   /** Success handler */
   onSuccess?: (nodeId: NodeId) => void;
 }
@@ -44,19 +44,19 @@ export interface PluginDialogProps {
  * Plugin Dialog Component
  */
 export const PluginDialog: React.FC<PluginDialogProps> = ({
-  mode,
-  nodeType,
-  nodeId,
-  parentId,
-  treeId,
-  open,
-  initialStep = 0,
-  onClose,
-  onSuccess,
-}) => {
+                                                            mode,
+                                                            nodeType,
+                                                            nodeId,
+                                                            parentId,
+                                                            treeId,
+                                                            open,
+                                                            initialStep = 0,
+                                                            onClose,
+                                                            onSuccess,
+                                                          }) => {
   const navigate = useNavigate();
   const registry = PluginStepRegistry.getInstance();
-  
+
   // Working copy management
   const {
     workingCopy,
@@ -143,17 +143,17 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
 
       // Save the working copy
       const savedNodeId = await saveWorkingCopy(finalData);
-      
+
       // Navigate to the new/updated node
       if (savedNodeId) {
         onSuccess?.(savedNodeId);
-        
+
         // Update URL to reflect the saved node
         if (mode === 'create') {
           navigate(`/t/${treeId}/${parentId}/${savedNodeId}`);
         }
       }
-      
+
       onClose();
     } catch (error) {
       console.error('Failed to save:', error);
@@ -170,7 +170,7 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
         description: basicInfo.description,
         isDraft: true,
       };
-      
+
       await saveDraft(draftData);
       onClose();
     } catch (error) {
@@ -191,11 +191,11 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
   // Handle step change
   const handleStepChange = useCallback((step: number) => {
     setActiveStep(step);
-    
+
     // Update URL to reflect current step
     const stepId = steps[step]?.id;
     if (stepId) {
-      const basePath = mode === 'create' 
+      const basePath = mode === 'create'
         ? `/t/${treeId}/${parentId}/new/${nodeType}`
         : `/t/${treeId}/${parentId}/${nodeId}/${nodeType}`;
       navigate(`${basePath}/${stepId}`, { replace: true });

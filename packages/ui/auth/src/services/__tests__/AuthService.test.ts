@@ -3,7 +3,7 @@
  * @description Test suite for AuthService with popup-based authentication flow
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../AuthService';
 
 // Mock global objects
@@ -134,7 +134,7 @@ describe('AuthService', () => {
 
     it('should log attempt to change auth method but remain popup', () => {
       const service = AuthService.getInstance();
-      
+
       service.setAuthMethod('redirect' as AuthMethod);
 
       expect(service.getAuthMethod()).toBe('popup');
@@ -157,7 +157,7 @@ describe('AuthService', () => {
       expect(mockOpen).toHaveBeenCalledWith(
         expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth'),
         'auth-popup',
-        'width=500,height=600,left=710,top=240,toolbar=no,menubar=no,scrollbars=yes'
+        'width=500,height=600,left=710,top=240,toolbar=no,menubar=no,scrollbars=yes',
       );
 
       // Simulate popup being closed to prevent hanging promise
@@ -212,7 +212,7 @@ describe('AuthService', () => {
       const mockAddEventListener = vi.mocked(globalThis.window.addEventListener);
 
       const authPromise = service.authenticate();
-      
+
       // Wait for next tick to ensure event listener is set up
       await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -257,13 +257,13 @@ describe('AuthService', () => {
       // Trigger the popup check interval to detect closure
       const mockSetInterval = vi.mocked(globalThis.window.setInterval);
       const intervalCallback = mockSetInterval.mock.calls[0]?.[0];
-      
+
       // Simulate popup closure
       mockPopup.closed = true;
       if (intervalCallback && typeof intervalCallback === 'function') {
         intervalCallback();
       }
-      
+
       await expect(authPromise).rejects.toThrow('Authentication cancelled by user');
     });
 
@@ -272,7 +272,7 @@ describe('AuthService', () => {
       const mockSetTimeout = vi.mocked(globalThis.window.setTimeout);
 
       const authPromise = service.authenticate();
-      
+
       // Wait for next tick to ensure timeout is set up
       await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -322,7 +322,7 @@ describe('AuthService', () => {
           expiresIn: 3600,
           tokenType: 'Bearer',
         },
-        'https://app.example.com'
+        'https://app.example.com',
       );
     });
 
@@ -350,7 +350,7 @@ describe('AuthService', () => {
           error: 'access_denied',
           errorDescription: 'The user denied the request',
         },
-        'https://app.example.com'
+        'https://app.example.com',
       );
     });
 
@@ -376,10 +376,10 @@ describe('AuthService', () => {
 
     it('should build auth URL with all required parameters', async () => {
       const service = AuthService.getInstance();
-      
+
       // Start authentication to trigger URL building
       const authPromise = service.authenticate();
-      
+
       const mockOpen = vi.mocked(globalThis.window.open);
       const authUrl = mockOpen.mock.calls[0]?.[0] as string;
 
@@ -404,9 +404,10 @@ describe('AuthService', () => {
     it('should generate unique state values', () => {
       // Test state generation by checking if crypto.getRandomValues is called
       const service = AuthService.getInstance();
-      
-      service.authenticate().catch(() => {}); // Ignore promise rejection
-      
+
+      service.authenticate().catch(() => {
+      }); // Ignore promise rejection
+
       expect(mockCrypto.getRandomValues).toHaveBeenCalledWith(expect.any(Uint8Array));
     });
   });
@@ -425,7 +426,7 @@ describe('AuthService', () => {
 
       // Verify interval is set up
       expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 500);
-      
+
       // Simulate popup being closed
       const intervalCallback = mockSetInterval.mock.calls.find(call => call[1] === 500)?.[0];
       if (intervalCallback) {
@@ -444,7 +445,7 @@ describe('AuthService', () => {
       const mockClearInterval = vi.mocked(globalThis.window.clearInterval);
 
       const authPromise = service.authenticate();
-      
+
       // Wait for next tick to ensure event listener is set up
       await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -463,12 +464,12 @@ describe('AuthService', () => {
       if (messageHandler && typeof messageHandler === 'function') {
         messageHandler(successEvent);
       }
-      
+
       await authPromise;
-      
+
       // Wait for cleanup to complete
       await new Promise(resolve => setTimeout(resolve, 0));
-      
+
       expect(mockRemoveEventListener).toHaveBeenCalledWith('message', expect.any(Function));
       expect(mockClearInterval).toHaveBeenCalled();
       expect(mockPopup.close).toHaveBeenCalled();
@@ -481,21 +482,13 @@ describe('AuthService', () => {
     });
 
     it('複数プロバイダーの同時認証を防ぐ', async () => {
-      // 【テスト目的】: 複数のプロバイダーで同時に認証を開始できないことを確認
-      // 【テスト内容】: 認証プロセス中に別の認証を開始しようとした場合のエラー処理
-      // 【期待される動作】: 既に認証中の場合はエラーを返す
-      // 🟡 信頼性レベル: 参考実装から推測した妥当な機能
-
       const service = AuthService.getInstance();
-      
-      // 最初の認証を開始（完了を待たない）
+
       const firstAuth = service.authenticate();
-      
-      // 2回目の認証を開始
+
       const secondAuth = service.authenticate();
 
-      // 【結果検証】: 2回目の認証がエラーになることを確認
-      await expect(secondAuth).rejects.toThrow('Authentication already in progress'); // 【確認内容】: 同時認証防止 🟡
+      await expect(secondAuth).rejects.toThrow('Authentication already in progress'); //  :
 
       // Cleanup
       mockPopup.closed = true;
@@ -503,11 +496,6 @@ describe('AuthService', () => {
     });
 
     it('プロバイダー固有の設定を適用できる', () => {
-      // 【テスト目的】: 異なるプロバイダー用の設定を切り替えられることを確認
-      // 【テスト内容】: Google以外のプロバイダー設定をサポート
-      // 【期待される動作】: プロバイダーごとに異なるエンドポイントやパラメータを使用
-      // 🟡 信頼性レベル: 参考実装を基に推測
-
       const microsoftConfig: AuthConfig = {
         authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
         authOrigin: 'https://login.microsoftonline.com',
@@ -522,13 +510,14 @@ describe('AuthService', () => {
       AuthService.initialize(microsoftConfig);
       const service = AuthService.getInstance();
 
-      service.authenticate().catch(() => {});
+      service.authenticate().catch(() => {
+      });
 
       const mockOpen = vi.mocked(globalThis.window.open);
       const authUrl = mockOpen.mock.calls[0]?.[0] as string;
 
-      // 【結果検証】: Microsoft固有のURLが使用されていることを確認
-      expect(authUrl).toContain('login.microsoftonline.com'); // 【確認内容】: プロバイダー固有URL 🟡
+      //  : MicrosoftURL
+      expect(authUrl).toContain('login.microsoftonline.com'); //  : URL
     });
   });
 
@@ -538,34 +527,21 @@ describe('AuthService', () => {
     });
 
     it('認証状態を追跡できる', () => {
-      // 【テスト目的】: サービスが現在の認証状態を正しく管理できることを確認
-      // 【テスト内容】: 認証中、認証済み、未認証の状態遷移
-      // 【期待される動作】: 各状態で適切なステータスを返す
-      // 🔴 信頼性レベル: 元の資料にない推測
-
       const service = AuthService.getInstance();
 
-      // 【結果検証】: 初期状態は未認証
-      expect(service.isAuthenticating()).toBe(false); // 【確認内容】: 認証中でない 🔴
-      expect(service.isAuthenticated()).toBe(false); // 【確認内容】: 未認証 🔴
+      expect(service.isAuthenticating()).toBe(false); //  :
+      expect(service.isAuthenticated()).toBe(false); //  :
 
-      // 認証を開始
-      service.authenticate().catch(() => {});
+      service.authenticate().catch(() => {
+      });
 
-      // 【結果検証】: 認証中の状態
-      expect(service.isAuthenticating()).toBe(true); // 【確認内容】: 認証中 🔴
+      expect(service.isAuthenticating()).toBe(true); //  :
 
-      // Cleanup
       mockPopup.closed = true;
     });
 
     it('トークンの有効期限を管理できる', async () => {
       vi.useFakeTimers();
-      // 【テスト目的】: アクセストークンの有効期限管理機能を確認
-      // 【テスト内容】: トークン取得後の有効期限チェックとリフレッシュ機能
-      // 【期待される動作】: 有効期限切れを検知してトークンをリフレッシュ
-      // 🟡 信頼性レベル: OAuth2標準から推測
-
       const service = AuthService.getInstance();
       const mockAddEventListener = vi.mocked(globalThis.window.addEventListener);
 
@@ -578,7 +554,7 @@ describe('AuthService', () => {
           type: 'auth-success',
           accessToken: 'short-lived-token',
           refreshToken: 'refresh-token',
-          expiresIn: 60, // 60秒で期限切れ（30秒バッファ考慮で実質30秒）
+          expiresIn: 60, //  603030
           tokenType: 'Bearer',
         },
       } as MessageEvent;
@@ -586,14 +562,12 @@ describe('AuthService', () => {
       messageHandler(shortExpiryEvent);
       await authPromise;
 
-      // 【結果検証】: トークンの有効性チェック
-      expect(service.isTokenValid()).toBe(true); // 【確認内容】: バッファ考慮で有効（60-30=30秒の有効期限）
+      expect(service.isTokenValid()).toBe(true); //  : 60-30=30
 
-      // 31秒待って期限切れ状態を作る（30秒バッファを超える）
       vi.advanceTimersByTime(31000);
 
-      expect(service.isTokenValid()).toBe(false); // 【確認内容】: バッファ超過で無効 🟡
-      
+      expect(service.isTokenValid()).toBe(false); //  :
+
       vi.useRealTimers();
     });
   });
@@ -604,10 +578,10 @@ describe('AuthService', () => {
     });
 
     it('PKCE (Proof Key for Code Exchange) をサポートする', async () => {
-      // 【テスト目的】: OAuth 2.0 PKCEフローのサポートを確認
-      // 【テスト内容】: code_verifierとcode_challengeの生成と検証
-      // 【期待される動作】: セキュアなPKCEパラメータが生成される
-      // 🟢 信頼性レベル: OAuth2.0標準仕様に基づく
+      //  : OAuth 2.0 PKCE
+      //  : code_verifiercode_challenge
+      //  : PKCE
+      //  : OAuth2.0
 
       const pkceConfig: AuthConfig = {
         ...mockConfig,
@@ -623,10 +597,10 @@ describe('AuthService', () => {
       const mockOpen = vi.mocked(globalThis.window.open);
       const authUrl = mockOpen.mock.calls[0]?.[0] as string;
 
-      // 【結果検証】: PKCEパラメータの存在確認
-      expect(authUrl).toContain('code_challenge='); // 【確認内容】: code_challenge存在 🟢
-      expect(authUrl).toContain('code_challenge_method=S256'); // 【確認内容】: SHA256メソッド 🟢
-      expect(service.getStoredCodeVerifier()).toBeDefined(); // 【確認内容】: verifier保存 🟡
+      //  : PKCE
+      expect(authUrl).toContain('code_challenge='); //  : code_challenge
+      expect(authUrl).toContain('code_challenge_method=S256'); //  : SHA256
+      expect(service.getStoredCodeVerifier()).toBeDefined(); //  : verifier
 
       // Cleanup
       mockPopup.closed = true;
@@ -634,14 +608,14 @@ describe('AuthService', () => {
     });
 
     it('nonce パラメータでリプレイ攻撃を防ぐ', async () => {
-      // 【テスト目的】: OpenID Connect のnonce パラメータによるセキュリティ強化を確認
-      // 【テスト内容】: 一意のnonceが生成され、レスポンス検証に使用される
-      // 【期待される動作】: 各認証リクエストで異なるnonceが生成される
-      // 🟢 信頼性レベル: OIDC標準仕様に基づく
+      //  : OpenID Connect nonce
+      //  : nonce
+      //  : nonce
+      //  : OIDC
 
       const service = AuthService.getInstance();
 
-      // 最初の認証でnonceを取得
+      //  nonce
       const firstAuthPromise = service.authenticate();
       const mockOpen = vi.mocked(globalThis.window.open);
       const firstUrl = mockOpen.mock.calls[0]?.[0] as string;
@@ -652,27 +626,26 @@ describe('AuthService', () => {
       const intervalCallback = mockSetInterval.mock.calls[0]?.[0];
       mockPopup.closed = true;
       if (intervalCallback) intervalCallback();
-      
+
       await expect(firstAuthPromise).rejects.toThrow('Authentication cancelled by user');
-      
+
       // Reset for second auth
       mockPopup.closed = false;
       mockOpen.mockClear();
-      
-      // 2回目の認証でnonceを取得
+
+      //  2nonce
       const secondAuthPromise = service.authenticate();
       const secondUrl = mockOpen.mock.calls[0]?.[0] as string;
       const secondNonce = new URLSearchParams(secondUrl.split('?')[1]).get('nonce');
-      
+
       // Cancel second auth to clean up
       mockPopup.closed = true;
       if (intervalCallback) intervalCallback();
       await expect(secondAuthPromise).rejects.toThrow();
 
-      // 【結果検証】: nonceの一意性確認
-      expect(firstNonce).toBeDefined(); // 【確認内容】: 最初のnonce生成 🟢
-      expect(secondNonce).toBeDefined(); // 【確認内容】: 2回目のnonce生成 🟢
-      expect(firstNonce).not.toBe(secondNonce); // 【確認内容】: nonceの一意性 🟢
+      expect(firstNonce).toBeDefined();
+      expect(secondNonce).toBeDefined();
+      expect(firstNonce).not.toBe(secondNonce);
 
       // Cleanup
       mockPopup.closed = true;
@@ -685,49 +658,38 @@ describe('AuthService', () => {
     });
 
     it('ネットワークエラー時に自動リトライする', async () => {
-      // 【テスト目的】: ネットワークエラー時の自動リトライ機能を確認
-      // 【テスト内容】: 一時的なネットワークエラー後の再試行
-      // 【期待される動作】: 設定された回数まで自動的に再試行する
-      // 🟡 信頼性レベル: 一般的なベストプラクティスから推測
 
       const service = AuthService.getInstance();
       service.setMaxRetries(3);
 
-      // ネットワークエラーをシミュレート
       let attemptCount = 0;
       (globalThis.window.open as any) = vi.fn().mockImplementation(() => {
         attemptCount++;
         if (attemptCount < 3) {
-          return null; // 最初の2回は失敗
+          return null;
         }
-        return mockPopup; // 3回目で成功
+        return mockPopup;
       });
 
       const authPromise = service.authenticateWithRetry();
 
-      // 【結果検証】: 3回目で成功することを確認
-      await expect(authPromise).resolves.toBeDefined(); // 【確認内容】: リトライ後成功 🟡
-      expect(attemptCount).toBe(3); // 【確認内容】: 3回試行 🟡
+      await expect(authPromise).resolves.toBeDefined(); //  :
+      expect(attemptCount).toBe(3); //  : 3
     });
 
     it('エラー後に状態を正しくクリーンアップする', async () => {
-      // 【テスト目的】: エラー発生後のリソースクリーンアップを確認
-      // 【テスト内容】: 認証エラー後にメモリリークやリソースの残留がないこと
-      // 【期待される動作】: イベントリスナーやタイマーが適切に削除される
-      // 🟢 信頼性レベル: 既存のテストコードから確認済み
 
       const service = AuthService.getInstance();
       const mockClearInterval = vi.mocked(globalThis.window.clearInterval);
       const mockRemoveEventListener = vi.mocked(globalThis.window.removeEventListener);
 
-      // エラーを発生させる
       (globalThis.window.open as any) = vi.fn().mockReturnValue(null);
 
       await expect(service.authenticate()).rejects.toThrow('Popup blocked');
 
-      // 【結果検証】: クリーンアップが実行されたことを確認
-      expect(mockClearInterval).toHaveBeenCalled(); // 【確認内容】: タイマークリア 🟢
-      expect(mockRemoveEventListener).toHaveBeenCalled(); // 【確認内容】: リスナー削除 🟢
+      //  :
+      expect(mockClearInterval).toHaveBeenCalled(); //  :
+      expect(mockRemoveEventListener).toHaveBeenCalled(); //  :
     });
   });
 });

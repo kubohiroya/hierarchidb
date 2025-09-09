@@ -16,6 +16,7 @@ export interface ExpandedStateChanges {
   changes: true | Record<NodeId, boolean | null>;
   version: number;
 }
+
 export enum SortOrder {
   Asc = 'asc',
   Desc = 'desc',

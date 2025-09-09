@@ -3,13 +3,13 @@
 import { handleAuthError } from './handleAuthError';
 
 /**
- * fetchリクエストのラッパー関数。401エラーを検出して適切に処理する
- * @param input fetch APIのinputパラメータ
- * @param init fetch APIのinitパラメータ
- */
+  * fetch401
+ * @param input fetch APIinput
+ * @param init fetch APIinit
+  */
 export async function fetchWithAuthErrorHandling(
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<Response> {
   try {
     const response = await fetch(input, init);

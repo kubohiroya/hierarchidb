@@ -3,12 +3,20 @@
  * @description Route entity handler using common base classes
  */
 
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
-import { 
-  BaseEntityHandler,
-  type BaseSearchCriteria
-} from '@hierarchidb/base-plugin';
+import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/base-plugin';
+import type {
+  RouteEntity,
+  RouteGenerationConfig,
+  RouteGenerationMethod,
+  RoutePoint,
+  RouteStatistics,
+  TransportMode,
+} from './RouteEntity';
+import { RouteDatabase } from '../database/RouteDatabase';
+import { RouteGenerator } from '../services/RouteGenerator';
+import { LocationResolver } from '../services/LocationResolver';
 
 /**
  * Metadata search criteria
@@ -16,18 +24,6 @@ import {
 export interface MetadataSearchCriteria {
   metadata?: Record<string, any>;
 }
-
-import type { 
-  RouteEntity,
-  RouteGenerationConfig,
-  RoutePoint,
-  TransportMode,
-  RouteGenerationMethod,
-  RouteStatistics
-} from './RouteEntity';
-import { RouteDatabase } from '../database/RouteDatabase';
-import { RouteGenerator } from '../services/RouteGenerator';
-import { LocationResolver } from '../services/LocationResolver';
 
 /**
  * Extended search criteria for routes
@@ -50,16 +46,15 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
   private routeDB: RouteDatabase;
   private routeGenerator: RouteGenerator;
   private locationResolver: LocationResolver;
-  
 
 
   constructor() {
     super();
     this.routeDB = new RouteDatabase();
-    this.table = this.routeDB.routes as unknown as Table<RouteEntity, EntityId>;
+    this.table = this.routeDB.routes as unknown as Table<RouteEntity, NodeId>;
     this.routeGenerator = new RouteGenerator();
     this.locationResolver = new LocationResolver();
-    
+
     // Initialize metadata handler
 
   }
@@ -69,11 +64,11 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
   protected buildEntity(
     nodeId: NodeId,
-    entityId: EntityId,
-    data: Partial<RouteEntity>
+    entityId: NodeId,
+    data: Partial<RouteEntity>,
   ): RouteEntity {
     const now = Date.now();
-    
+
     return {
       id: entityId,
       nodeId,
@@ -81,51 +76,51 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       description: data.description,
       category: data.category || { primary: 'road' },
       // Tags are managed by Folder plugin
-      
+
       // Location references
       startLocationId: data.startLocationId,
       endLocationId: data.endLocationId,
       waypointLocationIds: data.waypointLocationIds || [],
-      
+
       // Direct points
       startPoint: data.startPoint,
       endPoint: data.endPoint,
       waypoints: data.waypoints || [],
-      
+
       // Route geometry (will be generated)
       lineGeometry: data.lineGeometry || [],
       generationMethod: data.generationMethod || 'direct',
       distance: data.distance,
       duration: data.duration,
-      
+
       // Transport metadata
       transportMode: data.transportMode || 'road',
       operator: data.operator,
       routeNumber: data.routeNumber,
       frequency: data.frequency,
-      
+
       // Data source
       dataSourceId: data.dataSourceId,
       dataSourceName: data.dataSourceName,
       originalData: data.originalData,
-      
+
       // Processing
       processedAt: data.processedAt,
       processingStatus: data.processingStatus || 'pending',
       processingError: data.processingError,
-      
+
       // Visualization
       style: data.style,
-      
+
       // Relations
       parentRouteId: data.parentRouteId,
       childRouteIds: data.childRouteIds || [],
       relatedShapeId: data.relatedShapeId,
-      
+
       // Metadata
       metadata: data.metadata || {},
       customFields: data.customFields || {},
-      
+
       // Timestamps
       createdAt: data.createdAt || now,
       updatedAt: data.updatedAt || now,
@@ -142,7 +137,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       const resolved = await this.resolveLocations(data);
       data = { ...data, ...resolved };
     }
-    
+
     // Generate route geometry if not provided
     if (!data.lineGeometry || data.lineGeometry.length === 0) {
       const geometry = await this.generateRoute(data);
@@ -151,22 +146,22 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       data.duration = geometry.duration;
       data.processingStatus = 'completed';
     }
-    
+
     return super.createEntity(nodeId, data);
   }
 
   /**
    * Update route with geometry regeneration if needed
    */
-  async updateEntity(entityId: EntityId, updates: Partial<RouteEntity>): Promise<RouteEntity> {
+  async updateEntity(entityId: NodeId, updates: Partial<RouteEntity>): Promise<RouteEntity> {
     const existing = await this.table.get(entityId);
     if (!existing) {
       throw new Error(`Route not found: ${entityId}`);
     }
-    
+
     // Check if route needs regeneration
     const needsRegeneration = this.needsRouteRegeneration(existing, updates);
-    
+
     if (needsRegeneration) {
       const merged = { ...existing, ...updates };
       const geometry = await this.generateRoute(merged);
@@ -176,7 +171,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       updates.processedAt = Date.now();
       updates.processingStatus = 'completed';
     }
-    
+
     return super.updateEntity(entityId, updates);
   }
 
@@ -185,7 +180,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
   private async resolveLocations(data: Partial<RouteEntity>): Promise<Partial<RouteEntity>> {
     const resolved: Partial<RouteEntity> = {};
-    
+
     if (data.startLocationId && !data.startPoint) {
       const location = await this.locationResolver.getLocation(data.startLocationId);
       if (location) {
@@ -197,7 +192,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
         };
       }
     }
-    
+
     if (data.endLocationId && !data.endPoint) {
       const location = await this.locationResolver.getLocation(data.endLocationId);
       if (location) {
@@ -209,7 +204,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
         };
       }
     }
-    
+
     if (data.waypointLocationIds && data.waypointLocationIds.length > 0) {
       const waypoints: RoutePoint[] = [];
       for (const locationId of data.waypointLocationIds) {
@@ -227,7 +222,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
         resolved.waypoints = waypoints;
       }
     }
-    
+
     return resolved;
   }
 
@@ -243,7 +238,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       method: data.generationMethod || 'direct',
       options: {},
     };
-    
+
     // Extract points
     const points: [number, number][] = [];
     if (data.startPoint) {
@@ -255,11 +250,11 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
     if (data.endPoint) {
       points.push(data.endPoint.coordinates);
     }
-    
+
     if (points.length < 2) {
       return { lineGeometry: [] };
     }
-    
+
     return await this.routeGenerator.generate(points, config);
   }
 
@@ -268,7 +263,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
   private needsRouteRegeneration(
     existing: RouteEntity,
-    updates: Partial<RouteEntity>
+    updates: Partial<RouteEntity>,
   ): boolean {
     // Check if any location-related field has changed
     const locationFields: (keyof RouteEntity)[] = [
@@ -280,10 +275,10 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       'waypoints',
       'generationMethod',
     ];
-    
-    return locationFields.some(field => 
-      updates[field] !== undefined && 
-      JSON.stringify(updates[field]) !== JSON.stringify(existing[field])
+
+    return locationFields.some(field =>
+      updates[field] !== undefined &&
+      JSON.stringify(updates[field]) !== JSON.stringify(existing[field]),
     );
   }
 
@@ -302,12 +297,12 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
   async getRoutesBetweenLocations(
     startLocationId: NodeId,
-    endLocationId: NodeId
+    endLocationId: NodeId,
   ): Promise<RouteEntity[]> {
     return await this.table
-      .filter((route: RouteEntity) => 
+      .filter((route: RouteEntity) =>
         route.startLocationId === startLocationId &&
-        route.endLocationId === endLocationId
+        route.endLocationId === endLocationId,
       )
       .toArray();
   }
@@ -321,13 +316,13 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
     passing: RouteEntity[];
   }> {
     const allRoutes = await this.table.toArray();
-    
+
     const outgoing = allRoutes.filter((r: RouteEntity) => r.startLocationId === locationId);
     const incoming = allRoutes.filter((r: RouteEntity) => r.endLocationId === locationId);
-    const passing = allRoutes.filter((r: RouteEntity) => 
-      r.waypointLocationIds?.includes(locationId) || false
+    const passing = allRoutes.filter((r: RouteEntity) =>
+      r.waypointLocationIds?.includes(locationId) || false,
     );
-    
+
     return { outgoing, incoming, passing };
   }
 
@@ -336,7 +331,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
   async getStatistics(): Promise<RouteStatistics> {
     const routes = (await this.table.toArray()) as RouteEntity[];
-    
+
     const stats: RouteStatistics = {
       totalRoutes: routes.length,
       byTransportMode: {} as Record<TransportMode, number>,
@@ -352,36 +347,36 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       },
     };
     const connected = new Set<NodeId>();
-    
+
     for (const route of routes) {
       // Transport mode stats
-      stats.byTransportMode[route.transportMode] = 
+      stats.byTransportMode[route.transportMode] =
         (stats.byTransportMode[route.transportMode] || 0) + 1;
-      
+
       // Generation method stats
-      stats.byGenerationMethod[route.generationMethod] = 
+      stats.byGenerationMethod[route.generationMethod] =
         (stats.byGenerationMethod[route.generationMethod] || 0) + 1;
-      
+
       // Distance stats
       if (route.distance) {
         stats.totalDistance += route.distance;
       }
-      
+
       // Connected locations
       if (route.startLocationId) connected.add(route.startLocationId);
       if (route.endLocationId) connected.add(route.endLocationId);
-      
+
       // Processing stats
       const status = route.processingStatus as keyof typeof stats.processingStats | undefined;
       if (status) stats.processingStats[status]!++;
     }
-    
-    stats.averageDistance = routes.length > 0 
-      ? stats.totalDistance / routes.filter((r: RouteEntity) => r.distance).length 
+
+    stats.averageDistance = routes.length > 0
+      ? stats.totalDistance / routes.filter((r: RouteEntity) => r.distance).length
       : 0;
-    
+
     stats.connectedLocations = connected.size;
-    
+
     return stats;
   }
 
@@ -392,10 +387,10 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
     routeConfigs: Array<{
       nodeId: NodeId;
       data: Partial<RouteEntity>;
-    }>
+    }>,
   ): Promise<RouteEntity[]> {
     const routes: RouteEntity[] = [];
-    
+
     for (const config of routeConfigs) {
       try {
         const route = await this.createEntity(config.nodeId, config.data);
@@ -405,13 +400,14 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
         // Continue with other routes
       }
     }
-    
+
     return routes;
   }
 
   /**
    * Apply additional search criteria
    */
+
   // Note: uses base search (name/createdAt/updatedAt). Route-specific criteria can be added later.
 
   /**

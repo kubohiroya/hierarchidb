@@ -5,12 +5,12 @@ interface TitleLogoProps {
   progressText?: string;
 }
 
-export function TitleLogo({ 
-  title = 'HierarchiDB',
-  description = 'High-performance tree-structured data management framework',
-  showProgress = false,
-  progressText = 'Initializing application...'
-}: TitleLogoProps) {
+export function TitleLogo({
+                            title = 'HierarchiDB',
+                            description = 'High-performance tree-structured data management framework',
+                            showProgress = false,
+                            progressText = 'Initializing application...',
+                          }: TitleLogoProps) {
   return (
     <div style={{
       display: 'flex',
@@ -30,10 +30,10 @@ export function TitleLogo({
         justifyContent: 'center',
         marginBottom: '24px',
       }}>
-        <svg 
-          width="80" 
-          height="80" 
-          viewBox="0 0 80 80" 
+        <svg
+          width="80"
+          height="80"
+          viewBox="0 0 80 80"
           fill="none"
           style={{
             display: 'block',  // Prevent inline spacing issues
@@ -42,21 +42,21 @@ export function TitleLogo({
           {/* TreeTypes structure with nodes and connections */}
           {/* Top node */}
           <circle cx="40" cy="15" r="8" fill="#1976d2" />
-          
+
           {/* Connection lines from top to middle */}
           <line x1="40" y1="23" x2="25" y2="32" stroke="#1976d2" strokeWidth="2" />
           <line x1="40" y1="23" x2="55" y2="32" stroke="#1976d2" strokeWidth="2" />
-          
+
           {/* Middle nodes */}
           <circle cx="25" cy="40" r="8" fill="#42a5f5" />
           <circle cx="55" cy="40" r="8" fill="#42a5f5" />
-          
+
           {/* Connection lines from middle to bottom */}
           <line x1="25" y1="48" x2="15" y2="57" stroke="#42a5f5" strokeWidth="2" />
           <line x1="25" y1="48" x2="32" y2="57" stroke="#42a5f5" strokeWidth="2" />
           <line x1="55" y1="48" x2="48" y2="57" stroke="#42a5f5" strokeWidth="2" />
           <line x1="55" y1="48" x2="65" y2="57" stroke="#42a5f5" strokeWidth="2" />
-          
+
           {/* Bottom nodes */}
           <circle cx="15" cy="65" r="6" fill="#90caf9" />
           <circle cx="32" cy="65" r="6" fill="#90caf9" />
@@ -64,7 +64,7 @@ export function TitleLogo({
           <circle cx="65" cy="65" r="6" fill="#90caf9" />
         </svg>
       </div>
-      
+
       {/* Title */}
       <h1 style={{
         fontSize: '48px',
@@ -77,7 +77,7 @@ export function TitleLogo({
       }}>
         {title}
       </h1>
-      
+
       {/* Description area - fixed height whether shown or not */}
       <div style={{
         height: '24px',  // Fixed height for description area
@@ -100,7 +100,7 @@ export function TitleLogo({
           </p>
         )}
       </div>
-      
+
       {/* Bottom area - same total height for both modes */}
       <div style={{
         height: '66px',  // Fixed height for bottom area
@@ -125,9 +125,9 @@ export function TitleLogo({
                 height: '100%',
                 backgroundColor: '#1976d2',
                 animation: 'progress 2s ease-in-out infinite',
-              }}/>
+              }} />
             </div>
-            
+
             {/* Loading text */}
             <p style={{
               fontSize: '14px',
@@ -144,9 +144,10 @@ export function TitleLogo({
           <div style={{ height: '100%' }} />
         )}
       </div>
-      
+
       {/* Inline styles for progress animation only */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes progress {
           0% {
             transform: translateX(-100%);
@@ -158,7 +159,8 @@ export function TitleLogo({
             transform: translateX(100%);
           }
         }
-      `}} />
+      `,
+      }} />
     </div>
   );
 }

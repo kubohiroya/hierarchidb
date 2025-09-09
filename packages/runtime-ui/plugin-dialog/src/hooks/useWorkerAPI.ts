@@ -4,9 +4,9 @@
  */
 
 import { useEffect, useState } from 'react';
+import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { Remote } from 'comlink';
 
 let workerInstance: Worker | null = null;
 let workerAPI: Remote<WorkerAPI> | null = null;
@@ -20,15 +20,15 @@ async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   // Create Worker instance
   workerInstance = new Worker(
     new URL('../../../worker/src/index.ts', import.meta.url),
-    { type: 'module' }
+    { type: 'module' },
   );
 
   // Wrap with Comlink
   const api = Comlink.wrap<WorkerAPI>(workerInstance);
-  
+
   // Initialize the Worker
   await api.initialize();
-  
+
   workerAPI = api;
   return api;
 }

@@ -15,3 +15,4 @@ export * from './validation';
 export { SingletonMixin } from './SingletonMixin';
 export { generateId } from './generateId';
 export * from './db-name';
+export * from './dexie-helpers';

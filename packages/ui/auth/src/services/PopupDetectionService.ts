@@ -82,7 +82,7 @@ export class PopupDetectionService {
         const popup = window.open(
           testUrl,
           'popup-test',
-          'width=100,height=100,left=-1000,top=-1000'
+          'width=100,height=100,left=-1000,top=-1000',
         );
 
         if (!popup) {

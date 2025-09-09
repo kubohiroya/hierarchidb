@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export interface AccordionState {
   /** Set of expanded accordion keys */
@@ -44,7 +44,7 @@ export function useAccordionState(options: UseAccordionStateOptions = {}): Accor
   } = options;
 
   const [expanded, setExpandedInternal] = useState<Set<string>>(
-    new Set(defaultExpanded)
+    new Set(defaultExpanded),
   );
 
   const updateExpanded = useCallback((newExpanded: Set<string>) => {
@@ -58,7 +58,7 @@ export function useAccordionState(options: UseAccordionStateOptions = {}): Accor
 
   const toggle = useCallback((key: string) => {
     const newExpanded = new Set(expanded);
-    
+
     if (newExpanded.has(key)) {
       newExpanded.delete(key);
     } else {
@@ -67,18 +67,18 @@ export function useAccordionState(options: UseAccordionStateOptions = {}): Accor
       }
       newExpanded.add(key);
     }
-    
+
     updateExpanded(newExpanded);
   }, [expanded, exclusive, updateExpanded]);
 
   const expand = useCallback((key: string) => {
     const newExpanded = new Set(expanded);
-    
+
     if (exclusive) {
       newExpanded.clear();
     }
     newExpanded.add(key);
-    
+
     updateExpanded(newExpanded);
   }, [expanded, exclusive, updateExpanded]);
 

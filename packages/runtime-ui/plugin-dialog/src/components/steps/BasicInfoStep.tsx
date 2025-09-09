@@ -4,13 +4,7 @@
  */
 
 import React, { useCallback } from 'react';
-import {
-  Box,
-  TextField,
-  Typography,
-  FormControl,
-  FormHelperText,
-} from '@mui/material';
+import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 
 export interface BasicInfoData {
   name: string;
@@ -20,16 +14,16 @@ export interface BasicInfoData {
 export interface BasicInfoStepProps {
   /** Current name value */
   name: string;
-  
+
   /** Current description value */
   description: string;
-  
+
   /** Change handler */
   onChange: (data: BasicInfoData) => void;
-  
+
   /** Dialog mode */
   mode: 'create' | 'edit';
-  
+
   /** Optional custom validation */
   validate?: (data: BasicInfoData) => string | null;
 }
@@ -38,12 +32,12 @@ export interface BasicInfoStepProps {
  * Basic Information Step Component
  */
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
-  name,
-  description,
-  onChange,
-  mode,
-  validate,
-}) => {
+                                                              name,
+                                                              description,
+                                                              onChange,
+                                                              mode,
+                                                              validate,
+                                                            }) => {
   // Handle name change
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     onChange({
@@ -67,7 +61,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="body2" color="text.secondary">
-        {mode === 'create' 
+        {mode === 'create'
           ? 'Enter basic information for the new node.'
           : 'Update the basic information for this node.'}
       </Typography>

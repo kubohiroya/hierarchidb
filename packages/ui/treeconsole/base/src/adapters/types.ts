@@ -1,50 +1,46 @@
 /**
- * TreeConsole APIアダプター 型定義
- *
- * 新旧API変換に特化した型定義を提供します。
- * 既存TreeConsole実装のコールバック形式と新しいObservable形式の橋渡しを行います。
- */
+  * TreeConsole API
+  * API
+ * TreeConsoleObservable
+  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type {
-  NodeId,
-  TreeNode,
-  TreeChangeEvent,
-  TreeChangeEventType,
-  // OnNameConflict, // Removed - using local function type instead
-  // Timestamp // Removed - unused
-} from '@hierarchidb/common-type';
+import type { NodeId, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/common-type';
 
 /**
- * WorkerAPIベースのコールバック形式
- */
+  * WorkerAPI
+  */
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
 
 /**
- * サブスクリプション解除関数
- */
+    */
 export type UnsubscribeFunction = () => void;
 
 /**
- * アダプターの実行コンテキスト
- * 各API呼び出しで共有される設定情報
- */
+   * API
+  */
 export interface AdapterContext {
-  /** 呼び出し元のビューID（TreeConsoleコンポーネントのインスタンス識別） */
+  /**
+   * IDTreeConsole
+   */
   viewId: string;
-  /** コマンドグループID（関連する操作をグループ化） */
+  /**
+   * ID
+   */
   groupId: string;
-  /** 名前衝突時の処理方針 */
+  /**
+      */
   onNameConflict?: (name: string) => string;
 }
 
 /**
- * コマンド実行時のオプション
- */
+    */
 export interface CommandAdapterOptions {
-  /** 実行コンテキスト */
+  /**
+      */
   context: AdapterContext;
-  /** リトライ設定（将来的な拡張用） */
+  /**
+      */
   retryConfig?: {
     maxAttempts: number;
     delayMs: number;
@@ -52,20 +48,24 @@ export interface CommandAdapterOptions {
 }
 
 /**
- * アダプター初期化用の設定
- */
+    */
 export interface WorkerAPIAdapterConfig {
-  /** WorkerAPI インスタンス */
+  /**
+   * WorkerAPI
+   */
   workerAPI: WorkerAPI;
-  /** デフォルトのビューID */
+  /**
+   * ID
+   */
   defaultViewId: string;
-  /** デフォルトの名前衝突処理 */
+  /**
+      */
   defaultOnNameConflict?: (name: string) => string;
 }
 
 /**
- * 展開状態変更イベント（新しいWorkerAPIベース）
- */
+  * WorkerAPI
+  */
 export interface ExpandedStateChange {
   nodeId: NodeId;
   expanded: boolean;
@@ -73,8 +73,8 @@ export interface ExpandedStateChange {
 }
 
 /**
- * サブツリー変更イベント（新しいWorkerAPIベース）
- */
+  * WorkerAPI
+  */
 export interface SubTreeChange {
   type: TreeChangeEventType;
   nodeId: NodeId;
@@ -84,13 +84,12 @@ export interface SubTreeChange {
 }
 
 /**
- * エラーハンドリング用の型
- */
+    */
 export class TreeConsoleAdapterError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly originalError?: Error
+    public readonly originalError?: Error,
   ) {
     super(message);
     this.name = 'TreeConsoleAdapterError';

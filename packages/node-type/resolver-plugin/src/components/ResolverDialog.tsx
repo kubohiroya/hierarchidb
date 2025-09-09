@@ -1,26 +1,21 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Alert,
+  Box,
   Button,
-  Stepper,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   Step,
   StepLabel,
-  Box,
-  IconButton,
+  Stepper,
   Typography,
-  Alert,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { 
-  ResolverEntity,
-  ResolverWorkingCopyEntity,
-  SchemaInfo,
-  MappingValidationResult
-} from '~/types';
+import type { MappingValidationResult, ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
 // Step components
 import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep';
@@ -41,11 +36,11 @@ interface ResolverDialogProps {
 
 const STEPS = [
   'Basic Information',
-  'Schema Selection', 
+  'Schema Selection',
   'Property Mapping',
   'Validation Rules',
   'Duplicate Resolution',
-  'Preview & Test'
+  'Preview & Test',
 ];
 
 interface StepValidation {
@@ -53,13 +48,13 @@ interface StepValidation {
 }
 
 export const ResolverDialog: React.FC<ResolverDialogProps> = ({
-  open,
-  nodeId,
-  entity,
-  onClose,
-  onSave,
-  onCancel,
-}) => {
+                                                                open,
+                                                                nodeId,
+                                                                entity,
+                                                                onClose,
+                                                                onSave,
+                                                                onCancel,
+                                                              }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [workingCopy, setWorkingCopy] = useState<Partial<ResolverWorkingCopyEntity>>({});
   const [stepValidation, setStepValidation] = useState<StepValidation>({});
@@ -82,8 +77,8 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
           sampleSize: 100,
           refreshInterval: 1000,
           highlightMappings: true,
-          showValidationErrors: true
-        }
+          showValidationErrors: true,
+        },
       });
     } else {
       // Initialize for new entity
@@ -101,8 +96,8 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
           sampleSize: 100,
           refreshInterval: 1000,
           highlightMappings: true,
-          showValidationErrors: true
-        }
+          showValidationErrors: true,
+        },
       });
     }
   }, [entity, nodeId]);
@@ -111,7 +106,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     (updates: Partial<ResolverWorkingCopyEntity>) => {
       setWorkingCopy(prev => ({ ...prev, ...updates }));
     },
-    []
+    [],
   );
 
   const handleStepValidation = useCallback((step: number, isValid: boolean) => {
@@ -142,7 +137,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    
+
     setIsSaving(true);
     try {
       await onSave(workingCopy);
@@ -244,7 +239,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       maxWidth="lg"
       fullWidth
       PaperProps={{
-        sx: { minHeight: '70vh', maxHeight: '90vh' }
+        sx: { minHeight: '70vh', maxHeight: '90vh' },
       }}
     >
       <DialogTitle>
@@ -264,28 +259,28 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
       <DialogContent sx={{ pb: 1 }}>
         <Box sx={{ mb: 3 }}>
-          <Stepper 
-            activeStep={activeStep} 
+          <Stepper
+            activeStep={activeStep}
             alternativeLabel
             sx={{ mb: 2 }}
           >
             {STEPS.map((label, index) => (
-              <Step 
-                key={label} 
+              <Step
+                key={label}
                 completed={isStepComplete(index)}
                 sx={{
                   cursor: hasCompletedOnce || index <= activeStep ? 'pointer' : 'default',
                   '& .MuiStepLabel-root': {
                     cursor: hasCompletedOnce || index <= activeStep ? 'pointer' : 'default',
-                  }
+                  },
                 }}
               >
-                <StepLabel 
+                <StepLabel
                   onClick={() => handleStepClick(index)}
                   sx={{
                     '&:hover': {
                       opacity: hasCompletedOnce || index <= activeStep ? 0.7 : 1,
-                    }
+                    },
                   }}
                 >
                   {label}
@@ -313,9 +308,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         >
           Cancel
         </Button>
-        
+
         <Box sx={{ flexGrow: 1 }} />
-        
+
         {activeStep > 0 && (
           <Button
             onClick={handleBack}
@@ -324,7 +319,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
             Back
           </Button>
         )}
-        
+
         {!isLastStep ? (
           <Button
             onClick={handleNext}

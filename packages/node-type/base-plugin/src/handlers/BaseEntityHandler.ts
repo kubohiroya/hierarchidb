@@ -3,14 +3,9 @@
  * @description Base entity handler class for all HierarchiDB plugins
  */
 
-import type { Table, Collection, IndexableType } from 'dexie';
-import type { NodeId, EntityId, BaseEntity } from '@hierarchidb/common-type';
-import type {
-  BaseSearchCriteria,
-  EntityLifecycleHooks,
-  PaginatedResult,
-  OperationResult,
-} from '../types';
+import type { Collection, IndexableType, Table } from 'dexie';
+import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
+import type { BaseSearchCriteria, EntityLifecycleHooks, OperationResult, PaginatedResult } from '../types';
 
 /**
  * Abstract base class for entity handlers
@@ -21,7 +16,7 @@ export abstract class BaseEntityHandler<
   TCreateData extends Partial<TEntity> = Partial<TEntity>,
   TSearchCriteria extends BaseSearchCriteria = BaseSearchCriteria,
 > {
-  protected abstract table: Table<TEntity, EntityId, TEntity>;
+  protected abstract table: Table<TEntity, NodeId, TEntity>;
   protected lifecycleHooks: EntityLifecycleHooks<TEntity> = {};
 
   /**
@@ -41,7 +36,7 @@ export abstract class BaseEntityHandler<
         await this.lifecycleHooks.beforeCreate(data);
       }
 
-      const entityId = crypto.randomUUID() as EntityId;
+      const entityId = crypto.randomUUID() as unknown as NodeId;
       const entity = this.buildEntity(nodeId, entityId, data);
 
       await this.table.add(entity);
@@ -61,7 +56,7 @@ export abstract class BaseEntityHandler<
   /**
    * Update an existing entity
    */
-  async updateEntity(entityId: EntityId, updates: Partial<TEntity>): Promise<TEntity> {
+  async updateEntity(entityId: NodeId, updates: Partial<TEntity>): Promise<TEntity> {
     try {
       const existing = await this.table.get(entityId);
       if (!existing) {
@@ -97,7 +92,7 @@ export abstract class BaseEntityHandler<
   /**
    * Delete an entity
    */
-  async deleteEntity(entityId: EntityId): Promise<void> {
+  async deleteEntity(entityId: NodeId): Promise<void> {
     try {
       const entity = await this.table.get(entityId);
       if (!entity) {
@@ -128,7 +123,7 @@ export abstract class BaseEntityHandler<
   /**
    * Get entity by ID
    */
-  async getEntity(entityId: EntityId): Promise<TEntity | null> {
+  async getEntity(entityId: NodeId): Promise<TEntity | null> {
     try {
       const entity = await this.table.get(entityId);
       return entity || null;
@@ -179,7 +174,7 @@ export abstract class BaseEntityHandler<
   async getPaginatedEntities(
     page: number = 1,
     pageSize: number = 20,
-    orderBy: string = 'updatedAt'
+    orderBy: string = 'updatedAt',
   ): Promise<PaginatedResult<TEntity>> {
     try {
       const offset = (page - 1) * pageSize;
@@ -215,7 +210,7 @@ export abstract class BaseEntityHandler<
       // Apply base search criteria
       if (criteria.name) {
         query = query.filter((entity: any) =>
-          entity.name?.toLowerCase().includes(criteria.name!.toLowerCase())
+          entity.name?.toLowerCase().includes(criteria.name!.toLowerCase()),
         );
       }
 
@@ -248,7 +243,7 @@ export abstract class BaseEntityHandler<
   /**
    * Check if entity exists
    */
-  async entityExists(entityId: EntityId): Promise<boolean> {
+  async entityExists(entityId: NodeId): Promise<boolean> {
     try {
       const count = await this.table.where('id').equals(entityId).count();
       return count > 0;
@@ -279,13 +274,13 @@ export abstract class BaseEntityHandler<
    * Batch create entities
    */
   async batchCreateEntities(
-    items: Array<{ nodeId: NodeId; data: TCreateData }>
+    items: Array<{ nodeId: NodeId; data: TCreateData }>,
   ): Promise<TEntity[]> {
     try {
       const entities: TEntity[] = [];
 
       for (const item of items) {
-        const entityId = crypto.randomUUID() as EntityId;
+        const entityId = crypto.randomUUID() as unknown as NodeId;
         const entity = this.buildEntity(item.nodeId, entityId, item.data);
         entities.push(entity);
       }
@@ -302,7 +297,7 @@ export abstract class BaseEntityHandler<
    * Batch update entities
    */
   async batchUpdateEntities(
-    updates: Array<{ entityId: EntityId; updates: Partial<TEntity> }>
+    updates: Array<{ entityId: NodeId; updates: Partial<TEntity> }>,
   ): Promise<OperationResult<TEntity[]>> {
     try {
       const updatedEntities: TEntity[] = [];
@@ -332,7 +327,7 @@ export abstract class BaseEntityHandler<
   /**
    * Batch delete entities
    */
-  async batchDeleteEntities(entityIds: EntityId[]): Promise<OperationResult> {
+  async batchDeleteEntities(entityIds: NodeId[]): Promise<OperationResult> {
     try {
       const errors: Error[] = [];
 
@@ -359,7 +354,7 @@ export abstract class BaseEntityHandler<
    * Abstract method to build entity from data
    * Must be implemented by derived classes
    */
-  protected abstract buildEntity(nodeId: NodeId, entityId: EntityId, data: TCreateData): TEntity;
+  protected abstract buildEntity(nodeId: NodeId, entityId: NodeId, data: TCreateData): TEntity;
 
   /**
    * Optional method to cleanup related data when entity is deleted
@@ -376,7 +371,7 @@ export abstract class BaseEntityHandler<
    */
   protected applyAdditionalSearchCriteria(
     query: Collection<TEntity, IndexableType, TEntity>,
-    _criteria: TSearchCriteria
+    _criteria: TSearchCriteria,
   ): Collection<TEntity, any, TEntity> {
     // Default implementation returns query unchanged
     // Override in derived classes for additional filtering

@@ -3,10 +3,10 @@
  * @description TDD tests for TreeViewController hook
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useTreeViewController } from './useTreeViewController';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { TreeViewControllerProps } from './useTreeViewController';
+import { useTreeViewController } from './useTreeViewController';
 import type { NodeId } from '@hierarchidb/common-type';
 
 // Mock dependencies
@@ -134,7 +134,7 @@ describe('useTreeViewController', () => {
       expect(mockOnStateChange).toHaveBeenCalledWith(
         expect.objectContaining({
           selectedNodeIds: ['node-1'],
-        })
+        }),
       );
     });
   });
@@ -176,7 +176,8 @@ describe('useTreeViewController', () => {
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      });
 
       await act(async () => {
         await result.current.moveNode('$1' as NodeId, '$2' as NodeId, 0);
@@ -201,7 +202,7 @@ describe('useTreeViewController', () => {
       expect(mockOnStateChange).toHaveBeenCalledWith(
         expect.objectContaining({
           expandedNodeIds: expect.arrayContaining(['parent']),
-        })
+        }),
       );
     });
   });
@@ -433,18 +434,17 @@ describe('useTreeViewController', () => {
   });
 
   // ================================================================
-  // Copy/Paste 機能のTDD失敗テスト
-  // これらのテストは現在の実装では失敗するはずです
+  //  Copy/Paste TDD
   // ================================================================
   describe('Copy/Paste functionality (TDD Red Phase)', () => {
-    // 【テスト目的】: Copy/Paste機能の基本的な動作を検証
-    // 【テスト内容】: コピー、カット、ペースト操作とクリップボード管理
-    // 【期待される動作】: ノードのコピー/カット/ペーストが正しく動作すること
-    // 🟢 信頼性レベル: 基本的な仕様に基づく標準的な実装
+    //  : Copy/Paste
+    //  :
+    //  : //
+    //  :
 
     beforeEach(() => {
-      // 【テスト前準備】: Copy/Paste用のstateManagerメソッドをモック
-      // 【環境初期化】: クリップボード関連の機能をクリーンな状態に初期化
+      //  : Copy/PastestateManager
+      //  :
       mockStateManager.copyNodes = vi.fn();
       mockStateManager.cutNodes = vi.fn();
       mockStateManager.pasteNodes = vi.fn();
@@ -455,24 +455,24 @@ describe('useTreeViewController', () => {
 
     describe('copy operation', () => {
       it('should have copy method available', () => {
-        // 【テスト目的】: copyメソッドが実装されているか確認
-        // 【テスト内容】: TreeViewControllerインターフェースにcopyメソッドが存在すること
-        // 【期待される動作】: copyメソッドが定義され、関数であること
-        // 🟢 信頼性レベル: インターフェース定義に基づく
+        //  : copy
+        //  : TreeViewControllercopy
+        //  : copy
+        //  :
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【結果検証】: copyメソッドの存在確認
-        // 【期待値確認】: copyが定義され、関数型であること
-        expect(result.current.copyNodes).toBeDefined(); // 【確認内容】: copyNodesメソッドが存在すること 🟢
-        expect(typeof result.current.copyNodes).toBe('function'); // 【確認内容】: copyNodesが関数であること 🟢
+        //  : copy
+        //  : copy
+        expect(result.current.copyNodes).toBeDefined(); //  : copyNodes
+        expect(typeof result.current.copyNodes).toBe('function'); //  : copyNodes
       });
 
       it('should copy selected nodes to clipboard', async () => {
-        // 【テスト目的】: 選択したノードをクリップボードにコピーできること
-        // 【テスト内容】: copyNodes実行後、クリップボードにデータが保存されること
-        // 【期待される動作】: コピー操作が成功し、クリップボードの状態が更新される
-        // 🟢 信頼性レベル: 標準的なクリップボード操作
+        //  :
+        //  : copyNodes
+        //  :
+        //  :
 
         mockStateManager.copyNodes = vi.fn().mockResolvedValue({
           success: true,
@@ -486,45 +486,45 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【テストデータ準備】: コピー対象のノードを選択
-        // 【初期条件設定】: 複数ノードを選択状態にする
+        //  :
+        //  :
         act(() => {
           result.current.selectNode('node-1' as NodeId);
           result.current.selectNode('node-2' as NodeId, { ctrlKey: true });
         });
 
-        // 【実際の処理実行】: copyNodesメソッドを呼び出し
-        // 【処理内容】: 選択されたノードをクリップボードにコピー
+        //  : copyNodes
+        //  :
         const copyResult = await act(async () => {
           return await result.current.copyNodes(['$1', '$2'] as NodeId[]);
         });
 
-        // 【結果検証】: コピー操作の成功確認
-        // 【期待値確認】: 成功フラグとコピーされたノード情報
-        expect(copyResult.success).toBe(true); // 【確認内容】: コピー操作が成功したこと 🟢
-        expect(copyResult.copiedNodes).toEqual(['$1', '$2'] as NodeId[]); // 【確認内容】: 正しいノードがコピーされたこと 🟢
-        expect(result.current.clipboardData).toBeDefined(); // 【確認内容】: クリップボードデータが存在すること 🟡
+        //  :
+        //  :
+        expect(copyResult.success).toBe(true); //  :
+        expect(copyResult.copiedNodes).toEqual(['$1', '$2'] as NodeId[]); //  :
+        expect(result.current.clipboardData).toBeDefined(); //  :
       });
     });
 
     describe('cut operation', () => {
       it('should have cut method available', () => {
-        // 【テスト目的】: cutメソッドが実装されているか確認
-        // 【テスト内容】: TreeViewControllerインターフェースにcutメソッドが存在すること
-        // 【期待される動作】: cutメソッドが定義され、関数であること
-        // 🟢 信頼性レベル: インターフェース定義に基づく
+        //  : cut
+        //  : TreeViewControllercut
+        //  : cut
+        //  :
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        expect(result.current.cutNodes).toBeDefined(); // 【確認内容】: cutNodesメソッドが存在すること 🟢
-        expect(typeof result.current.cutNodes).toBe('function'); // 【確認内容】: cutNodesが関数であること 🟢
+        expect(result.current.cutNodes).toBeDefined(); //  : cutNodes
+        expect(typeof result.current.cutNodes).toBe('function'); //  : cutNodes
       });
 
       it('should cut selected nodes and mark them visually', async () => {
-        // 【テスト目的】: カット操作でノードが視覚的にマークされること
-        // 【テスト内容】: cutNodes実行後、ノードがカット状態として表示されること
-        // 【期待される動作】: カット操作が成功し、UIで識別可能になる
-        // 🟡 信頼性レベル: 一般的なUIパターンに基づく推測
+        //  :
+        //  : cutNodes
+        //  : UI
+        //  : UI
 
         mockStateManager.cutNodes = vi.fn().mockResolvedValue({
           success: true,
@@ -538,37 +538,37 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【実際の処理実行】: cutNodesメソッドを呼び出し
-        // 【処理内容】: 選択されたノードをカット状態にする
+        //  : cutNodes
+        //  :
         const cutResult = await act(async () => {
           return await result.current.cutNodes(['$1'] as NodeId[]);
         });
 
-        // 【結果検証】: カット操作の成功とマーキング確認
-        // 【期待値確認】: カット状態が正しく設定されること
-        expect(cutResult.success).toBe(true); // 【確認内容】: カット操作が成功したこと 🟢
-        expect(result.current.cutNodeIds).toContain('$1' as NodeId); // 【確認内容】: カットされたノードがマークされていること 🟡
+        //  :
+        //  :
+        expect(cutResult.success).toBe(true); //  :
+        expect(result.current.cutNodeIds).toContain('$1' as NodeId); //  :
       });
     });
 
     describe('paste operation', () => {
       it('should have paste method available', () => {
-        // 【テスト目的】: pasteメソッドが実装されているか確認
-        // 【テスト内容】: TreeViewControllerインターフェースにpasteメソッドが存在すること
-        // 【期待される動作】: pasteメソッドが定義され、関数であること
-        // 🟢 信頼性レベル: インターフェース定義に基づく
+        //  : paste
+        //  : TreeViewControllerpaste
+        //  : paste
+        //  :
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        expect(result.current.pasteNodes).toBeDefined(); // 【確認内容】: pasteNodesメソッドが存在すること 🟢
-        expect(typeof result.current.pasteNodes).toBe('function'); // 【確認内容】: pasteNodesが関数であること 🟢
+        expect(result.current.pasteNodes).toBeDefined(); //  : pasteNodes
+        expect(typeof result.current.pasteNodes).toBe('function'); //  : pasteNodes
       });
 
       it('should paste nodes from clipboard to target', async () => {
-        // 【テスト目的】: クリップボードからノードをペーストできること
-        // 【テスト内容】: pasteNodes実行で、コピーされたノードが目標位置に配置される
-        // 【期待される動作】: ペースト操作が成功し、新しいノードが作成される
-        // 🟢 信頼性レベル: 標準的なペースト操作
+        //  :
+        //  : pasteNodes
+        //  :
+        //  :
 
         mockStateManager.pasteNodes = vi.fn().mockResolvedValue({
           success: true,
@@ -578,41 +578,41 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【実際の処理実行】: pasteNodesメソッドを呼び出し
-        // 【処理内容】: クリップボードの内容を指定位置にペースト
+        //  : pasteNodes
+        //  :
         const pasteResult = await act(async () => {
           return await result.current.pasteNodes('$1' as NodeId);
         });
 
-        // 【結果検証】: ペースト操作の成功確認
-        // 【期待値確認】: 新しいノードが作成されたこと
-        expect(pasteResult.success).toBe(true); // 【確認内容】: ペースト操作が成功したこと 🟢
-        expect(pasteResult.pastedNodes).toHaveLength(1); // 【確認内容】: ペーストされたノード数が正しいこと 🟢
-        expect(pasteResult.pastedNodes?.[0]?.parentId).toBe('$1' as NodeId); // 【確認内容】: 正しい親ノードに配置されたこと 🟢
+        //  :
+        //  :
+        expect(pasteResult.success).toBe(true); //  :
+        expect(pasteResult.pastedNodes).toHaveLength(1); //  :
+        expect(pasteResult.pastedNodes?.[0]?.parentId).toBe('$1' as NodeId); //  :
       });
 
       it('should check if paste is allowed before operation', () => {
-        // 【テスト目的】: ペースト可能性を事前チェックできること
-        // 【テスト内容】: canPasteメソッドでペースト可能かを判定
-        // 【期待される動作】: クリップボード状態と対象位置に基づいて可否を判定
-        // 🟡 信頼性レベル: 一般的な実装パターンに基づく
+        //  :
+        //  : canPaste
+        //  :
+        //  :
 
         mockStateManager.canPaste = vi.fn().mockReturnValue(false);
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【結果検証】: ペースト可能性の判定
-        // 【期待値確認】: クリップボードが空の場合はペースト不可
-        expect(result.current.canPaste).toBe(false); // 【確認内容】: ペースト不可能状態が正しく判定されること 🟡
+        //  :
+        //  :
+        expect(result.current.canPaste).toBe(false); //  :
       });
     });
 
     describe('clipboard management', () => {
       it('should clear clipboard after cut and paste', async () => {
-        // 【テスト目的】: カット&ペースト後にクリップボードがクリアされること
-        // 【テスト内容】: カット操作後のペーストでクリップボードが自動クリアされる
-        // 【期待される動作】: 移動操作完了後、クリップボードが空になる
-        // 🟢 信頼性レベル: 標準的なカット&ペースト動作
+        //  : &
+        //  :
+        //  :
+        //  : &
 
         mockStateManager.cutNodes = vi.fn().mockResolvedValue({
           success: true,
@@ -626,29 +626,29 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【テストデータ準備】: カット操作を実行
-        // 【初期条件設定】: ノードをカット状態にする
+        //  :
+        //  :
         await act(async () => {
           await result.current.cutNodes(['$1'] as NodeId[]);
         });
 
-        // 【実際の処理実行】: ペースト操作を実行
-        // 【処理内容】: カットされたノードをペースト
+        //  :
+        //  :
         await act(async () => {
           await result.current.pasteNodes('$1' as NodeId);
         });
 
-        // 【結果検証】: クリップボードがクリアされたこと
-        // 【期待値確認】: カット&ペースト完了後、クリップボードが空
-        expect(result.current.clipboardData).toBeNull(); // 【確認内容】: クリップボードが空になったこと 🟢
-        expect(result.current.cutNodeIds).toEqual([]); // 【確認内容】: カット状態のノードがクリアされたこと 🟡
+        //  :
+        //  : &
+        expect(result.current.clipboardData).toBeNull(); //  :
+        expect(result.current.cutNodeIds).toEqual([]); //  :
       });
 
       it('should handle multiple copy operations correctly', async () => {
-        // 【テスト目的】: 複数回のコピー操作が正しく処理されること
-        // 【テスト内容】: 新しいコピー操作が前のクリップボード内容を上書きする
-        // 【期待される動作】: 最後のコピー内容のみがクリップボードに保持される
-        // 🟢 信頼性レベル: 標準的なクリップボード動作
+        //  :
+        //  :
+        //  :
+        //  :
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
@@ -665,8 +665,8 @@ describe('useTreeViewController', () => {
             clipboard: { nodes: ['node-2', 'node-3'] },
           });
 
-        // 【実際の処理実行】: 複数回のコピー操作
-        // 【処理内容】: 異なるノードを連続してコピー
+        //  :
+        //  :
         await act(async () => {
           await result.current.copyNodes(['node-1'] as NodeId[]);
         });
@@ -675,18 +675,18 @@ describe('useTreeViewController', () => {
           await result.current.copyNodes(['node-2', 'node-3'] as NodeId[]);
         });
 
-        // 【結果検証】: 最後のコピー内容のみ保持
-        // 【期待値確認】: クリップボードに最新のコピー内容がある
-        expect(result.current.clipboardData?.nodes).toEqual(['node-2', 'node-3'] as NodeId[]); // 【確認内容】: 最新のコピー内容が保持されていること 🟡
+        //  :
+        //  :
+        expect(result.current.clipboardData?.nodes).toEqual(['node-2', 'node-3'] as NodeId[]); //  :
       });
     });
 
     describe('copy/paste with different node types', () => {
       it('should handle copying nodes with different types', async () => {
-        // 【テスト目的】: 異なるノードタイプのコピーが正しく処理されること
-        // 【テスト内容】: フォルダ、ファイル、その他のノードタイプを混在してコピー
-        // 【期待される動作】: 全てのノードタイプが正しくコピーされる
-        // 🔴 信頼性レベル: 具体的な仕様が不明なため推測
+        //  :
+        //  :
+        //  :
+        //  :
 
         mockStateManager.copyNodes = vi.fn().mockResolvedValue({
           success: true,
@@ -699,8 +699,8 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【実際の処理実行】: 異なるタイプのノードをコピー
-        // 【処理内容】: 複数タイプのノードを一括コピー
+        //  :
+        //  :
         const copyResult = await act(async () => {
           return await result.current.copyNodes([
             'folder-plugin-1',
@@ -709,29 +709,28 @@ describe('useTreeViewController', () => {
           ] as NodeId[]);
         });
 
-        // 【結果検証】: 全てのノードタイプがコピーされたこと
-        // 【期待値確認】: タイプ情報が保持されていること
-        expect(copyResult.success).toBe(true); // 【確認内容】: コピー操作が成功したこと 🟢
-        expect(copyResult.copiedNodes).toHaveLength(3); // 【確認内容】: 全てのノードがコピーされたこと 🔴
+        //  :
+        //  :
+        expect(copyResult.success).toBe(true); //  :
+        expect(copyResult.copiedNodes).toHaveLength(3); //  :
       });
 
       it('should validate paste compatibility with target', async () => {
-        // 【テスト目的】: ペースト先との互換性をチェックできること
-        // 【テスト内容】: 特定のノードタイプは特定の親にのみペースト可能
-        // 【期待される動作】: 互換性がない場合はペーストを拒否
-        // 🔴 信頼性レベル: ビジネスルールに依存する推測
+        //  :
+        //  :
+        //  :
+        //  :
 
         mockStateManager.canPaste = vi.fn((targetId) => {
-          // ファイルはフォルダにのみペースト可能という仮定
           return targetId === 'folder-plugin-node';
         });
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 【結果検証】: ペースト互換性の判定
-        // 【期待値確認】: 互換性に基づいてペースト可否を判定
-        expect(result.current.canPasteToTarget('$1' as NodeId)).toBe(true); // 【確認内容】: フォルダへのペーストが可能 🔴
-        expect(result.current.canPasteToTarget('$1' as NodeId)).toBe(false); // 【確認内容】: ファイルへのペーストが不可 🔴
+        //  :
+        //  :
+        expect(result.current.canPasteToTarget('$1' as NodeId)).toBe(true); //  :
+        expect(result.current.canPasteToTarget('$1' as NodeId)).toBe(false); //  :
       });
     });
   });
@@ -771,18 +770,17 @@ describe('useTreeViewController', () => {
           selectedNodeIds: expect.any(Array),
           expandedNodeIds: expect.any(Array),
           currentNode: expect.anything(),
-        })
+        }),
       );
     });
   });
 
   // ================================================================
-  // Undo/Redo 機能のTDD失敗テスト
-  // これらのテストは現在の実装では失敗するはずです
+  //  Undo/Redo TDD
   // ================================================================
   describe('Undo/Redo functionality (TDD Red Phase)', () => {
     beforeEach(() => {
-      // Undo/Redo用のstateManagerメソッドをモック
+      //  Undo/RedostateManager
       mockStateManager.undo = vi.fn();
       mockStateManager.redo = vi.fn();
       mockStateManager.canUndo = vi.fn();
@@ -796,7 +794,7 @@ describe('useTreeViewController', () => {
       it('should have undo method available', () => {
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // TreeViewControllerにundo機能が実装されているかテスト
+        //  TreeViewControllerundo
         expect(result.current.undo).toBeDefined();
         expect(typeof result.current.undo).toBe('function');
       });
@@ -822,7 +820,7 @@ describe('useTreeViewController', () => {
               type: 'deleteNode',
               nodeId: 'node-1',
             }),
-          })
+          }),
         );
         expect(mockStateManager.undo).toHaveBeenCalledTimes(1);
       });
@@ -844,7 +842,7 @@ describe('useTreeViewController', () => {
           expect.objectContaining({
             success: false,
             error: 'No operations to undo',
-          })
+          }),
         );
       });
 
@@ -869,14 +867,14 @@ describe('useTreeViewController', () => {
           await result.current.undo();
         });
 
-        // Undo後の状態変更通知を確認
+        //  Undo
         expect(mockOnStateChange).toHaveBeenCalledWith(
           expect.objectContaining({
             lastUndoResult: expect.objectContaining({
               success: true,
               restoredNode: undoneNode,
             }),
-          })
+          }),
         );
       });
     });
@@ -885,7 +883,7 @@ describe('useTreeViewController', () => {
       it('should have redo method available', () => {
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // TreeViewControllerにredo機能が実装されているかテスト
+        //  TreeViewControllerredo
         expect(result.current.redo).toBeDefined();
         expect(typeof result.current.redo).toBe('function');
       });
@@ -911,7 +909,7 @@ describe('useTreeViewController', () => {
               type: 'deleteNode',
               nodeId: 'node-1',
             }),
-          })
+          }),
         );
         expect(mockStateManager.redo).toHaveBeenCalledTimes(1);
       });
@@ -933,7 +931,7 @@ describe('useTreeViewController', () => {
           expect.objectContaining({
             success: false,
             error: 'No operations to redo',
-          })
+          }),
         );
       });
     });
@@ -994,31 +992,26 @@ describe('useTreeViewController', () => {
       });
 
       it('should update undo/redo states after operations', async () => {
-        // 初期状態設定
         mockStateManager.canUndo = vi
           .fn()
-          .mockReturnValueOnce(false) // 初期状態
-          .mockReturnValueOnce(true); // undo後の状態
+          .mockReturnValueOnce(false).mockReturnValueOnce(true); //  undo
 
         mockStateManager.canRedo = vi
           .fn()
-          .mockReturnValueOnce(false) // 初期状態
-          .mockReturnValueOnce(false) // undo後の状態（まだredoはない）
-          .mockReturnValueOnce(true); // undoした後の状態
+          .mockReturnValueOnce(false).mockReturnValueOnce(false) //  undoredo
+          .mockReturnValueOnce(true); //  undo
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // 初期状態確認
         expect(result.current.canUndo).toBe(false);
         expect(result.current.canRedo).toBe(false);
 
-        // 何かしら操作を実行（例：ノード削除）
         mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
         await act(async () => {
           await result.current.deleteNode('$1' as NodeId);
         });
 
-        // 削除後はundoできるはず
+        //  undo
         expect(result.current.canUndo).toBe(true);
         expect(result.current.canRedo).toBe(false);
       });
@@ -1043,16 +1036,16 @@ describe('useTreeViewController', () => {
           await result.current.deleteNode('$1' as NodeId);
         });
 
-        // 操作後はundoが可能になっているはず
+        //  undo
         expect(result.current.canUndo).toBe(true);
       });
 
       it('should clear redo stack when new operation is performed', async () => {
-        // シナリオ: undo→新しい操作→redoスタックがクリアされる
+        //  : undoredo
         mockStateManager.canRedo = vi
           .fn()
-          .mockReturnValueOnce(true) // undo後、redoが可能
-          .mockReturnValueOnce(false); // 新しい操作後、redoスタックがクリア
+          .mockReturnValueOnce(true) //  undoredo
+          .mockReturnValueOnce(false); //  redo
 
         mockStateManager.createNode = vi.fn().mockResolvedValue({
           success: true,
@@ -1061,15 +1054,14 @@ describe('useTreeViewController', () => {
 
         const { result } = renderHook(() => useTreeViewController(mockProps));
 
-        // redo可能な状態から開始
+        //  redo
         expect(result.current.canRedo).toBe(true);
 
-        // 新しい操作を実行
         await act(async () => {
           await result.current.startCreate('parent-1' as NodeId, 'New Node');
         });
 
-        // 新しい操作後はredoできなくなる
+        //  redo
         expect(result.current.canRedo).toBe(false);
       });
     });

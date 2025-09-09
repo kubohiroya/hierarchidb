@@ -94,21 +94,26 @@ export class FolderEntityManager {
     this.bookmarks.set(id, b);
     return b;
   }
+
   async getBookmarks(nodeId: NodeId) {
     return [...this.bookmarks.values()].filter((b) => b.nodeId === nodeId);
   }
+
   async removeBookmark(id: string) {
     this.bookmarks.delete(id);
   }
+
   async addTemplate(nodeId: NodeId, payload: any) {
     const id = `tpl-${Math.random().toString(36).slice(2)}`;
     const t = { id, nodeId, ...payload };
     this.templates.set(id, t);
     return t;
   }
+
   async getTemplates(nodeId: NodeId) {
     return [...this.templates.values()].filter((t) => t.nodeId === nodeId);
   }
+
   async removeTemplate(id: string) {
     this.templates.delete(id);
   }

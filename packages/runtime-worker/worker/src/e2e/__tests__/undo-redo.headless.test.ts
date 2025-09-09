@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
 
 describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', () => {
   const rTree = 'r' as TreeId;
@@ -38,7 +38,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
         treeId: rTree,
         parentId: 'r:root' as NodeId,
         name: 'A',
-      })
+      }),
     );
     expect(cRes.success).toBe(true);
     const aId = (cRes as any).nodeId as NodeId;
@@ -71,4 +71,3 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
     expect(qa?.parentId).toBe(p2);
   });
 });
-

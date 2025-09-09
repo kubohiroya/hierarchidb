@@ -1,6 +1,7 @@
 // Main plugin system exports
 export { UIPluginRegistry, getUIPluginRegistry } from './registry/UIPluginRegistry';
 import { getUIPluginRegistry } from './registry/UIPluginRegistry';
+
 export { NodeDataAdapter } from './adapters/NodeDataAdapter';
 export { UnifiedNodeOperations } from './operations/UnifiedNodeOperations';
 
@@ -53,7 +54,7 @@ export type {
 // Plugin registration helper
 export function registerAllUIPlugins(): void {
   const registry = getUIPluginRegistry();
-  
+
 
   // Register Shape plugin (check if not already registered)
   if (!registry.isRegistered('shape')) {
@@ -63,7 +64,7 @@ export function registerAllUIPlugins(): void {
         nodeType: 'shape',
         displayName: 'Geographic Shapes',
         description: 'Manage geographic shape-plugin data with batch processing capabilities',
-        
+
         components: {
           icon: () => null, // Will be replaced with actual icon
           createDialog: () => null,
@@ -71,13 +72,13 @@ export function registerAllUIPlugins(): void {
           panel: () => null,
           form: () => null,
         },
-        
+
         dataSource: {
           requiresEntity: true,
           entityType: 'shape',
           workingCopyEnabled: true,
         },
-        
+
         capabilities: {
           canCreate: true,
           canRead: true,
@@ -90,22 +91,22 @@ export function registerAllUIPlugins(): void {
           supportsExport: true,
           supportsBulkOperations: true,
         },
-        
+
         menu: {
           group: 'advanced' as const,
           createOrder: 25,
           contextMenuItems: [],
         },
-        
+
         hooks: {},
-        
+
         style: {
           iconColor: '#4CAF50',
           backgroundColor: '#E8F5E9',
           borderColor: '#4CAF50',
         },
       };
-      
+
       registry.register(ShapeUIPlugin as any);
 
     } catch (error) {

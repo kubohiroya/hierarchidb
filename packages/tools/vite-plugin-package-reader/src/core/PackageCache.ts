@@ -89,8 +89,7 @@ export class PackageCache {
   }
 
   /**
-   * 期限切れのエントリをクリーンアップ
-   */
+            */
   cleanup(): number {
     let removed = 0;
     for (const [key, entry] of this.cache) {
@@ -103,8 +102,7 @@ export class PackageCache {
   }
 
   /**
-   * キャッシュの統計情報を取得
-   */
+            */
   getStats(): {
     size: number;
     expired: number;

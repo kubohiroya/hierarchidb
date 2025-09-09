@@ -13,7 +13,7 @@ export function progressEventToUnified(p: ProgressEvent): UnifiedProgressInfo {
 }
 
 export function createAdapterFromProgressSubscribe(
-  subscribeToProgress: (cb: (e: ProgressEvent) => void) => (() => void) | Promise<() => void>
+  subscribeToProgress: (cb: (e: ProgressEvent) => void) => (() => void) | Promise<() => void>,
 ): BatchProgressAdapter {
   return {
     subscribe: (cb: (u: UnifiedProgressInfo) => void) => {

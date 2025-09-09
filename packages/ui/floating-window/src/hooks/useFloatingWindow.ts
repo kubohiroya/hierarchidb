@@ -3,8 +3,8 @@
  * @description Custom hook for managing floating window state
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import type { WindowState, Position, Size } from '../types/WindowState';
+import { useCallback, useEffect, useState } from 'react';
+import type { Position, Size, WindowState } from '../types/WindowState';
 
 export interface UseFloatingWindowOptions {
   initialPosition?: Position;
@@ -38,7 +38,7 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
   // Load persisted state if available
   const loadPersistedState = useCallback((): Partial<WindowState> | null => {
     if (!persistKey) return null;
-    
+
     try {
       const saved = localStorage.getItem(persistKey);
       if (saved) {

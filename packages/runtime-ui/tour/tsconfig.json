@@ -38,5 +38,9 @@
     "src/__tests__/**",
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

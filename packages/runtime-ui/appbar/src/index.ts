@@ -8,5 +8,5 @@ export {
   ResourceProjectToggle,
   type ResourceProjectType,
   type ResourceProjectToggleOrientation,
-  type ResourceProjectToggleSize
+  type ResourceProjectToggleSize,
 } from './components/ResourceProjectToggle';

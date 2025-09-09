@@ -18,13 +18,13 @@ const createSimplePNG = () => {
   // PNG magic number and headers for a 16x16 RGBA image
   const width = 16;
   const height = 16;
-  
+
   // Create a simple blue database icon pattern
   const pixels = [];
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       // Create database shape-plugin (simplified)
-      const isDatabase = 
+      const isDatabase =
         // Top ellipse
         (y === 3 && x >= 4 && x <= 11) ||
         (y === 4 && x >= 3 && x <= 12) ||
@@ -32,7 +32,7 @@ const createSimplePNG = () => {
         (y >= 5 && y <= 12 && x >= 3 && x <= 12) ||
         // Bottom
         (y === 13 && x >= 4 && x <= 11);
-      
+
       if (isDatabase) {
         // Blue color (#1976d2)
         pixels.push(0x19, 0x76, 0xd2, 0xff);
@@ -42,7 +42,7 @@ const createSimplePNG = () => {
       }
     }
   }
-  
+
   return Buffer.from(pixels);
 };
 

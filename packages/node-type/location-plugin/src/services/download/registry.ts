@@ -5,7 +5,11 @@ import { OverpassStrategy } from './strategies/overpass';
 
 class InMemoryStrategyRegistry implements StrategyRegistry {
   private strategies: ILocationDownloadStrategy[] = [];
-  register(strategy: ILocationDownloadStrategy): void { this.strategies.push(strategy); }
+
+  register(strategy: ILocationDownloadStrategy): void {
+    this.strategies.push(strategy);
+  }
+
   resolve(config: LocationSearchConfig): ILocationDownloadStrategy | null {
     return this.strategies.find((s) => s.supports(config)) ?? null;
   }
@@ -20,7 +24,7 @@ export function getLocationStrategy(config: LocationSearchConfig): ILocationDown
   // Feature flag gate (env or global FEATURE_FLAGS)
   const enabled =
     (typeof process !== 'undefined' && process?.env?.LOCATION_DOWNLOAD_STRATEGY === '1') ||
-    (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.LOCATION_DOWNLOAD_STRATEGY === true;
+    (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.LOCATION_DOWNLOAD_STRATEGY === true);
   if (!enabled) return null;
   return defaultRegistry.resolve(config);
 }

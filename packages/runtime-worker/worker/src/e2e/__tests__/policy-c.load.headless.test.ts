@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import { encodeWorkingCopyHolderName } from '~/services/utils/holder-encoding';
+import { CoreDB } from '../../services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
+import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encoding';
 
 describe('Headless: Policy C load (moderate subtree)', () => {
   beforeEach(() => {
@@ -86,7 +86,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
     // Measure
     const start = performance.now();
     const res = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId })
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId }),
     );
     const dur = performance.now() - start;
     expect(res.success).toBe(false);
@@ -94,4 +94,3 @@ describe('Headless: Policy C load (moderate subtree)', () => {
     expect(dur).toBeLessThan(300);
   });
 });
-

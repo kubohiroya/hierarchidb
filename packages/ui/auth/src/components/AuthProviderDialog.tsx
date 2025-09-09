@@ -23,10 +23,10 @@ interface AuthProviderDialogProps {
  * Dialog version of auth provider selection
  */
 export const AuthProviderDialog: React.FC<AuthProviderDialogProps> = ({
-  open,
-  onClose,
-  onSelectProvider,
-}) => {
+                                                                        open,
+                                                                        onClose,
+                                                                        onSelectProvider,
+                                                                      }) => {
   const handleProviderSelect = (provider: AuthProviderType) => {
     onSelectProvider(provider);
     onClose();

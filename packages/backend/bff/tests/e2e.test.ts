@@ -3,7 +3,7 @@
  * Run these tests against your deployed service
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 // Production/staging URLs - set via environment variables
 const DEPLOYED_BFF_URL = process.env.DEPLOYED_BFF_URL;
@@ -57,10 +57,10 @@ describe.skipIf(skipE2E)('BFF E2E Tests (Deployed)', () => {
     it('should support PKCE flow', async () => {
       const response = await fetch(
         `${DEPLOYED_BFF_URL}/auth/google/authorize?` +
-          'code_challenge=test123&code_challenge_method=S256',
+        'code_challenge=test123&code_challenge_method=S256',
         {
           redirect: 'manual',
-        }
+        },
       );
 
       expect(response.status).toBe(302);

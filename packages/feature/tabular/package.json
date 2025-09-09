@@ -5,22 +5,30 @@
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "types": ["dist/types.d.ts"],
+      "ports": ["dist/ports.d.ts"],
+      "registry": ["dist/registry.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./types": {
-      "types": "./src/types.ts",
+      "types": "./dist/types.d.ts",
       "import": "./dist/types.js"
     },
     "./ports": {
-      "types": "./src/ports.ts",
+      "types": "./dist/ports.d.ts",
       "import": "./dist/ports.js"
     },
     "./registry": {
-      "types": "./src/registry.ts",
+      "types": "./dist/registry.d.ts",
       "import": "./dist/registry.js"
     }
   },

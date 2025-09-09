@@ -1,12 +1,10 @@
 /**
- * Japanese translations for Route Plugin
- * ルートプラグイン日本語翻訳
- */
+  * Japanese translations for Route Plugin
+   */
 
 import type { RoutePluginTranslations } from './types';
 
 export const ja: RoutePluginTranslations = {
-  // 共通
   common: {
     name: '名前',
     description: '説明',
@@ -23,7 +21,6 @@ export const ja: RoutePluginTranslations = {
     warning: '警告',
   },
 
-  // 基本情報
   basicInfo: {
     title: 'ルート基本情報',
     subtitle: 'ルート情報の基本的な設定を行います。ルートタイプや交通手段を指定してルートを分類できます。',
@@ -44,7 +41,6 @@ export const ja: RoutePluginTranslations = {
     hint: '💡 ヒント：適切なルートタイプと交通手段を設定することで、ユーザーが目的に合ったルートを見つけやすくなります',
   },
 
-  // ルート選択
   routeSelection: {
     title: 'ルート選択・設定',
     subtitle: '取得・生成するルートの条件を設定してください。地域やルートタイプ、交通手段の組み合わせでルートを指定できます。',
@@ -60,7 +56,6 @@ export const ja: RoutePluginTranslations = {
     accessibility: 'アクセシビリティ',
   },
 
-  // バッチ処理
   batch: {
     progressTitle: '進捗状況',
     logsTitle: 'ログ',
@@ -79,7 +74,6 @@ export const ja: RoutePluginTranslations = {
     },
   },
 
-  // ルートタイプ
   routeTypes: {
     road: '道路',
     railway: '鉄道',
@@ -93,7 +87,6 @@ export const ja: RoutePluginTranslations = {
     powerline: '送電線',
   },
 
-  // 交通モード
   transportModes: {
     car: '自動車',
     truck: 'トラック',
@@ -108,7 +101,6 @@ export const ja: RoutePluginTranslations = {
     motorcycle: 'オートバイ',
   },
 
-  // カテゴリ
   categories: {
     transportation: '交通',
     recreation: 'レクリエーション',
@@ -116,7 +108,6 @@ export const ja: RoutePluginTranslations = {
     emergency: '緊急',
   },
 
-  // 表面タイプ
   surfaceTypes: {
     paved: '舗装',
     unpaved: '未舗装',
@@ -128,7 +119,6 @@ export const ja: RoutePluginTranslations = {
     asphalt: 'アスファルト',
   },
 
-  // 難易度レベル
   difficultyLevels: {
     easy: '初級',
     moderate: '中級',
@@ -136,7 +126,6 @@ export const ja: RoutePluginTranslations = {
     expert: 'エキスパート',
   },
 
-  // アクセシビリティ機能
   accessibilityFeatures: {
     wheelchair_accessible: '車椅子対応',
     elevator_access: 'エレベーターアクセス',
@@ -145,7 +134,6 @@ export const ja: RoutePluginTranslations = {
     low_slope: '低勾配',
   },
 
-  // エラーメッセージ
   errors: {
     nameRequired: 'ルート名は必須です',
     routeTypeRequired: 'ルートタイプは必須です',

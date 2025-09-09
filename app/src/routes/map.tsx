@@ -13,12 +13,11 @@
  * - Maintain browser history for navigation
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import useGeolocation from 'react-hook-geolocation';
+import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-map';
 import { MapLibreMap } from '@hierarchidb/ui-map';
-import type { MapViewState } from '@hierarchidb/ui-map';
-import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { Box } from '@mui/material';
 
 // Default initial position (world view)
@@ -61,7 +60,7 @@ function formatZxyParam(viewState: MapViewState): string {
 export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const geolocation = useGeolocation();
-  
+
   const [initialViewState, setInitialViewState] = useState<MapViewState>(() => {
     // Get initial position from URL first
     const zxy = searchParams.get('zxy');
@@ -108,12 +107,12 @@ export default function MapPage() {
           // Update URL without triggering navigation
           setSearchParams(
             { zxy: newZxy },
-            { replace: true } // Replace history entry instead of adding new one
+            { replace: true }, // Replace history entry instead of adding new one
           );
         }
       }, 500);
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   // Handle URL parameter changes (e.g., browser back/forward)
@@ -173,7 +172,7 @@ export default function MapPage() {
         >
           Drag, zoom, or rotate the map. URL updates automatically.
         </Box>
-        
+
         {/* Geolocation status */}
         {geolocation.latitude === undefined && geolocation.longitude === undefined && !geolocation.error && (
           <Box

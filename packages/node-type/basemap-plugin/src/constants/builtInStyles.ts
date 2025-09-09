@@ -27,9 +27,9 @@ export const BUILT_IN_STYLES = {
     thumbnailUrl: 'https://carto.com/help/images/building-maps/basemaps/voyager.png',
     attribution: '© CARTO © OpenStreetMap contributors',
     free: true,
-    requiresApiKey: false
+    requiresApiKey: false,
   },
-  
+
   satellite: {
     id: 'satellite',
     name: 'Satellite',
@@ -38,9 +38,9 @@ export const BUILT_IN_STYLES = {
     url: 'https://demotiles.maplibre.org/style.json',
     attribution: '© MapLibre © OpenStreetMap contributors',
     free: false,
-    requiresApiKey: true
+    requiresApiKey: true,
   },
-  
+
   terrain: {
     id: 'terrain',
     name: 'Terrain',
@@ -48,9 +48,9 @@ export const BUILT_IN_STYLES = {
     url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
     attribution: '© CARTO © OpenStreetMap contributors',
     free: true,
-    requiresApiKey: false
+    requiresApiKey: false,
   },
-  
+
   dark: {
     id: 'dark',
     name: 'Dark',
@@ -59,9 +59,9 @@ export const BUILT_IN_STYLES = {
     thumbnailUrl: 'https://carto.com/help/images/building-maps/basemaps/dark-matter.png',
     attribution: '© CARTO © OpenStreetMap contributors',
     free: true,
-    requiresApiKey: false
+    requiresApiKey: false,
   },
-  
+
   light: {
     id: 'light',
     name: 'Light',
@@ -70,8 +70,8 @@ export const BUILT_IN_STYLES = {
     thumbnailUrl: 'https://carto.com/help/images/building-maps/basemaps/positron.png',
     attribution: '© CARTO © OpenStreetMap contributors',
     free: true,
-    requiresApiKey: false
-  }
+    requiresApiKey: false,
+  },
 } as const satisfies Record<string, BuiltInStyle>;
 
 /**
@@ -85,35 +85,35 @@ export const PREMIUM_STYLES = {
     description: 'High-quality street map (requires Mapbox API key)',
     url: 'mapbox://styles/mapbox/streets-v12',
     requiresApiKey: true,
-    apiKeyProvider: 'mapbox'
+    apiKeyProvider: 'mapbox',
   },
-  
+
   mapbox_satellite: {
     id: 'mapbox_satellite',
     name: 'Mapbox Satellite',
     description: 'High-resolution satellite imagery (requires Mapbox API key)',
     url: 'mapbox://styles/mapbox/satellite-streets-v12',
     requiresApiKey: true,
-    apiKeyProvider: 'mapbox'
+    apiKeyProvider: 'mapbox',
   },
-  
+
   maptiler_basic: {
     id: 'maptiler_basic',
     name: 'MapTiler Basic',
     description: 'Clean basic map (requires MapTiler API key)',
     url: 'https://api.maptiler.com/maps/basic-v2/style.json?key={key}',
     requiresApiKey: true,
-    apiKeyProvider: 'maptiler'
+    apiKeyProvider: 'maptiler',
   },
-  
+
   maptiler_topo: {
     id: 'maptiler_topo',
     name: 'MapTiler Topo',
     description: 'Topographic map with contours (requires MapTiler API key)',
     url: 'https://api.maptiler.com/maps/topo-v2/style.json?key={key}',
     requiresApiKey: true,
-    apiKeyProvider: 'maptiler'
-  }
+    apiKeyProvider: 'maptiler',
+  },
 };
 
 /**
@@ -121,13 +121,13 @@ export const PREMIUM_STYLES = {
  * Falls back to streets style if not found
  */
 export function getBuiltInStyleUrl(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
 ): string {
   if (styleType === 'custom') {
     // Custom style should provide its own URL
     return BUILT_IN_STYLES.streets.url;
   }
-  
+
   const style = BUILT_IN_STYLES[styleType as keyof typeof BUILT_IN_STYLES];
   return style?.url || BUILT_IN_STYLES.streets.url;
 }
@@ -136,12 +136,12 @@ export function getBuiltInStyleUrl(
  * Get attribution text for a style
  */
 export function getStyleAttribution(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
 ): string {
   if (styleType === 'custom') {
     return '© Map data contributors';
   }
-  
+
   const style = BUILT_IN_STYLES[styleType as keyof typeof BUILT_IN_STYLES];
   return style?.attribution || BUILT_IN_STYLES.streets.attribution;
 }
@@ -150,12 +150,12 @@ export function getStyleAttribution(
  * Check if a style requires an API key
  */
 export function styleRequiresApiKey(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
 ): boolean {
   if (styleType === 'custom') {
     return false; // Depends on the custom URL
   }
-  
+
   const style = BUILT_IN_STYLES[styleType as keyof typeof BUILT_IN_STYLES];
   return style?.requiresApiKey || false;
 }
@@ -172,8 +172,8 @@ export const CUSTOM_STYLE_EXAMPLES = {
         type: 'raster',
         tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         tileSize: 256,
-        attribution: '© OpenStreetMap contributors'
-      }
+        attribution: '© OpenStreetMap contributors',
+      },
     },
     layers: [
       {
@@ -181,11 +181,11 @@ export const CUSTOM_STYLE_EXAMPLES = {
         type: 'raster',
         source: 'osm-tiles',
         minzoom: 0,
-        maxzoom: 19
-      }
-    ]
+        maxzoom: 19,
+      },
+    ],
   },
-  
+
   watercolor: {
     version: 8,
     name: 'Watercolor',
@@ -194,15 +194,15 @@ export const CUSTOM_STYLE_EXAMPLES = {
         type: 'raster',
         tiles: ['https://watercolormaps.collection.cooperhewitt.org/tile/watercolor/{z}/{x}/{y}.jpg'],
         tileSize: 256,
-        attribution: '© Stamen Design'
-      }
+        attribution: '© Stamen Design',
+      },
     },
     layers: [
       {
         id: 'watercolor',
         type: 'raster',
-        source: 'stamen'
-      }
-    ]
-  }
+        source: 'stamen',
+      },
+    ],
+  },
 };

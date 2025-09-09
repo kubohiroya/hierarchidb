@@ -1,27 +1,26 @@
 /**
- * SpeedDialMenu - MUI SpeedDialを使用したフローティングアクションボタン
- *
- * 元のSpeedDialMenuの見た目を再現
- */
+  * SpeedDialMenu - MUI SpeedDial
+  * SpeedDialMenu
+  */
 
 import { useState } from 'react';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
-import type {SpeedDialActionType, SpeedDialMenuProps} from '../types';
+import type { SpeedDialActionType, SpeedDialMenuProps } from '../types';
 
 /**
- * SpeedDialMenuコンポーネント
- * 元のSpeedDialMenuの見た目を再現
- */
+  * SpeedDialMenu
+ * SpeedDialMenu
+  */
 export function SpeedDialMenu({
-  actions,
-  icon,
-  tooltipTitle,
-  color = 'primary',
-  position = { bottom: 10, right: 10 },
-  direction = 'up',
-  zIndex = 1000,
-  hidden = false,
-}: SpeedDialMenuProps) {
+                                actions,
+                                icon,
+                                tooltipTitle,
+                                color = 'primary',
+                                position = { bottom: 10, right: 10 },
+                                direction = 'up',
+                                zIndex = 1000,
+                                hidden = false,
+                              }: SpeedDialMenuProps) {
   const [open, setOpen] = useState(false);
 
   const handleClose = () => setOpen(false);
@@ -43,7 +42,7 @@ export function SpeedDialMenu({
       ariaLabel={tooltipTitle || 'Speed Dial'}
       aria-haspopup="menu"
       aria-expanded={open}
-      data-testid={open ? "speed-dial-menu" : "speed-dial-fab"}
+      data-testid={open ? 'speed-dial-menu' : 'speed-dial-fab'}
       sx={{
         position: 'absolute',
         ...position,
@@ -71,9 +70,9 @@ export function SpeedDialMenu({
           sx={action.color ? { color: action.color } : {}}
           data-testid={
             action.name === 'Create Folder' ? 'create-folder-plugin-action' :
-            action.name === 'Create Note' ? 'create-note-action' :
-            action.name === 'Create File' ? 'create-file-action' :
-            `speed-dial-action-${index}`
+              action.name === 'Create Note' ? 'create-note-action' :
+                action.name === 'Create File' ? 'create-file-action' :
+                  `speed-dial-action-${index}`
           }
         />
       ))}

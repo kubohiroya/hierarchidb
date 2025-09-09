@@ -4,56 +4,42 @@
  */
 
 import React, { useCallback } from 'react';
+import { Alert, AlertTitle, Box, Button, Chip, Link, Stack, Typography } from '@mui/material';
 import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Typography,
-  Stack,
-  Link,
-  Chip,
-} from '@mui/material';
-import {
-  OpenInNew as OpenInNewIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
   Info as InfoIcon,
+  OpenInNew as OpenInNewIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
-import { 
-  DataSourceName, 
-  DataSourceConfig, 
-  DataSourceConfigs,
-  getLicenseColor 
-} from '../types/DataSource';
+import { DataSourceConfig, DataSourceConfigs, DataSourceName, getLicenseColor } from '../types/DataSource';
 
 export interface DataSourceLicenseAgreementProps {
   /**
    * Data source for license agreement
    */
   dataSourceName: DataSourceName;
-  
+
   /**
    * Whether license has been agreed to
    */
   licenseAgreement: boolean;
-  
+
   /**
    * Timestamp when license was agreed to (optional)
    */
   licenseAgreedAt?: string;
-  
+
   /**
    * Callback when license agreement status changes
    */
   onLicenseAgreementChange: (agreed: boolean, timestamp?: string) => void;
-  
+
   /**
    * Custom agreement text (optional)
    */
   agreementText?: string;
-  
+
   /**
    * Show additional license details
    */
@@ -69,17 +55,17 @@ export interface DataSourceLicenseAgreementProps {
  * Used in Shape, Location, and Route plugins
  */
 export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProps> = ({
-  dataSourceName,
-  licenseAgreement,
-  licenseAgreedAt,
-  onLicenseAgreementChange,
-  agreementText,
-  showDetails = {
-    attribution: true,
-    limitations: true,
-    website: true,
-  },
-}) => {
+                                                                                        dataSourceName,
+                                                                                        licenseAgreement,
+                                                                                        licenseAgreedAt,
+                                                                                        onLicenseAgreementChange,
+                                                                                        agreementText,
+                                                                                        showDetails = {
+                                                                                          attribution: true,
+                                                                                          limitations: true,
+                                                                                          website: true,
+                                                                                        },
+                                                                                      }) => {
   const dataSource = DataSourceConfigs[dataSourceName];
 
   const handleLicenseAgreement = useCallback(() => {
@@ -103,9 +89,9 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
   }
 
   const licenseColor = getLicenseColor(dataSource.licenseType);
-  const alertSeverity = licenseAgreement ? 'success' : 
+  const alertSeverity = licenseAgreement ? 'success' :
     dataSource.licenseType === 'academic' ? 'warning' :
-    dataSource.licenseType === 'commercial' ? 'error' : 'info';
+      dataSource.licenseType === 'commercial' ? 'error' : 'info';
 
   return (
     <Box sx={{ p: 2 }}>
@@ -120,20 +106,20 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
         <AlertTitle>
           <Stack direction="row" spacing={2} alignItems="center">
             {dataSource.displayName}
-            <Chip 
-              label={dataSource.license} 
-              size="small" 
+            <Chip
+              label={dataSource.license}
+              size="small"
               color={licenseColor}
               variant="outlined"
             />
           </Stack>
         </AlertTitle>
-        
+
         <Stack spacing={2}>
           <Typography variant="body2">
             {dataSource.description}
           </Typography>
-          
+
           {showDetails.attribution && (
             <Box>
               <Typography variant="body2">
@@ -156,22 +142,22 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
           )}
 
           <Typography variant="body2" color="text.secondary">
-            {dataSource.licenseType === 'public' 
+            {dataSource.licenseType === 'public'
               ? 'This data is in the public domain and free to use.'
               : 'By clicking the button below, you acknowledge that you have read and agree to comply with the licensing requirements.'
             }
           </Typography>
 
           <Button
-            variant={licenseAgreement ? "outlined" : "contained"}
-            color={licenseAgreement ? "success" : licenseColor === 'error' ? 'error' : 'primary'}
+            variant={licenseAgreement ? 'outlined' : 'contained'}
+            color={licenseAgreement ? 'success' : licenseColor === 'error' ? 'error' : 'primary'}
             size="large"
             startIcon={licenseAgreement ? <CheckCircleIcon /> : <OpenInNewIcon />}
             onClick={handleOpenLicensePage}
             fullWidth
             sx={{ mt: 2 }}
           >
-            {licenseAgreement 
+            {licenseAgreement
               ? `License Agreed - View ${dataSource.displayName} License`
               : `View ${dataSource.displayName} License Terms & Agree`
             }
@@ -218,7 +204,7 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
                 Academic Use Only
               </Typography>
               <Typography variant="body2">
-                This data source is restricted to academic and research purposes. 
+                This data source is restricted to academic and research purposes.
                 Commercial use requires separate permission from the data provider.
               </Typography>
             </Box>
@@ -235,7 +221,7 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
                 Commercial License Required
               </Typography>
               <Typography variant="body2">
-                This data source requires a commercial license for use. 
+                This data source requires a commercial license for use.
                 Please contact the data provider for licensing terms.
               </Typography>
             </Box>
@@ -252,7 +238,7 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
                 Variable Licensing
               </Typography>
               <Typography variant="body2">
-                This data source aggregates data from multiple providers with different license terms. 
+                This data source aggregates data from multiple providers with different license terms.
                 Please review the specific license for each dataset you intend to use.
               </Typography>
             </Box>
@@ -266,7 +252,7 @@ export const DataSourceLicenseAgreement: React.FC<DataSourceLicenseAgreementProp
 // Helper function to get limitations specific to data source
 function getLicenseLimitationsForDataSource(dataSource: DataSourceConfig): string[] {
   const baseLimitations = getLicenseLimitationsFromType(dataSource.licenseType);
-  
+
   // Add data source specific limitations
   const specificLimitations: Record<string, string[]> = {
     [dataSource.name]: [],
@@ -276,7 +262,7 @@ function getLicenseLimitationsForDataSource(dataSource: DataSourceConfig): strin
   if (dataSource.name.includes('gadm')) {
     specificLimitations[dataSource.name] = [
       'No redistribution allowed',
-      'Must cite GADM in publications'
+      'Must cite GADM in publications',
     ];
   }
 
@@ -285,13 +271,21 @@ function getLicenseLimitationsForDataSource(dataSource: DataSourceConfig): strin
 
 function getLicenseLimitationsFromType(licenseType: DataSourceConfig['licenseType']): string[] {
   switch (licenseType) {
-    case 'public': return [];
-    case 'cc': return ['Attribution required', 'Free for commercial use'];
-    case 'academic': return ['Academic use only', 'Commercial use requires permission'];
-    case 'odbl': return ['Attribution required', 'Share-alike license'];
-    case 'mit': return ['Attribution required'];
-    case 'commercial': return ['Commercial license required'];
-    case 'varies': return ['License varies by data provider'];
-    default: return ['Please check specific license terms'];
+    case 'public':
+      return [];
+    case 'cc':
+      return ['Attribution required', 'Free for commercial use'];
+    case 'academic':
+      return ['Academic use only', 'Commercial use requires permission'];
+    case 'odbl':
+      return ['Attribution required', 'Share-alike license'];
+    case 'mit':
+      return ['Attribution required'];
+    case 'commercial':
+      return ['Commercial license required'];
+    case 'varies':
+      return ['License varies by data provider'];
+    default:
+      return ['Please check specific license terms'];
   }
 }

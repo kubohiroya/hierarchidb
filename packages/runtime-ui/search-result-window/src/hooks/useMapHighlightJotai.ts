@@ -1,31 +1,27 @@
 /**
- * Map Highlight Hook with Jotai
- * 
- * jotaiベースの地図ハイライト機能フック
- */
+  * Map Highlight Hook with Jotai
+  * jotai
+  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
 import {
-  searchMatchedNodeIdsAtom,
-  highlightedNodeIdsAtom,
-  focusedNodeIdAtom,
-  highlightStylesAtom,
-  mapInstanceAtom,
-  mapHighlightStateAtom,
-  setSearchMatchedNodesAtom,
-  setHighlightedNodesAtom,
-  addSearchMatchedNodeAtom,
   addHighlightedNodeAtom,
-  removeSearchMatchedNodeAtom,
-  removeHighlightedNodeAtom,
-  setFocusedNodeAtom,
-  updateHighlightStylesAtom,
+  addSearchMatchedNodeAtom,
   clearAllHighlightsAtom,
-  clearSearchMatchedAtom,
   clearHighlightedAtom,
+  clearSearchMatchedAtom,
+  highlightStylesAtom,
+  mapHighlightStateAtom,
+  mapInstanceAtom,
+  removeHighlightedNodeAtom,
+  removeSearchMatchedNodeAtom,
+  setFocusedNodeAtom,
+  setHighlightedNodesAtom,
+  setSearchMatchedNodesAtom,
+  updateHighlightStylesAtom,
 } from '../state/index.js';
 
 interface UseMapHighlightProps {
@@ -50,15 +46,15 @@ interface UseMapHighlightReturn {
 }
 
 export const useMapHighlight = ({
-  mapInstance,
-  initialStyles,
-  onStateChange,
-}: UseMapHighlightProps): UseMapHighlightReturn => {
+                                  mapInstance,
+                                  initialStyles,
+                                  onStateChange,
+                                }: UseMapHighlightProps): UseMapHighlightReturn => {
   // Atoms
   const [, setMapInstance] = useAtom(mapInstanceAtom);
   const [, setStyles] = useAtom(highlightStylesAtom);
   const highlightState = useAtomValue(mapHighlightStateAtom);
-  
+
   // Actions
   const setSearchMatchedNodes = useSetAtom(setSearchMatchedNodesAtom);
   const setHighlightedNodes = useSetAtom(setHighlightedNodesAtom);
@@ -72,28 +68,24 @@ export const useMapHighlight = ({
   const clearSearchMatched = useSetAtom(clearSearchMatchedAtom);
   const clearHighlighted = useSetAtom(clearHighlightedAtom);
 
-  // マップインスタンスの設定
   useEffect(() => {
     if (mapInstance) {
       setMapInstance(mapInstance);
     }
   }, [mapInstance, setMapInstance]);
 
-  // 初期スタイルの設定
   useEffect(() => {
     if (initialStyles) {
       setStyles((current: any) => ({ ...current, ...initialStyles }));
     }
-  }, []); // 初回のみ実行
-
-  // 状態変更の通知
+  }, []);
   useEffect(() => {
     if (onStateChange) {
       onStateChange(highlightState);
     }
   }, [highlightState, onStateChange]);
 
-  // APIメソッド
+  //  API
   const setSearchMatched = useCallback((nodeIds: NodeId[]) => {
     setSearchMatchedNodes(nodeIds);
   }, [setSearchMatchedNodes]);

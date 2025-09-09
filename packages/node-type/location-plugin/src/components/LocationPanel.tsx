@@ -1,28 +1,11 @@
 /**
- * Location Panel Component
- * 地点情報ノードの詳細表示パネル
- */
+  * Location Panel Component
+   */
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Chip,
-  Grid2,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import {
-  LocationOn,
-  Edit,
-  Refresh
-} from '@mui/icons-material';
-import type { NodeId } from '../types';
-import type { LocationEntity } from '../types';
+import { Box, Chip, Grid2, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
+import { Edit, LocationOn, Refresh } from '@mui/icons-material';
+import type { LocationEntity, NodeId } from '../types';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -41,12 +24,12 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
       concurrentDownloads: 2,
       enableLocationFiltering: false,
       enableClustering: false,
-      enableGeocoding: false
+      enableGeocoding: false,
     },
     processingStatus: 'idle',
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    version: 1
+    version: 1,
   });
 
   return (
@@ -62,8 +45,8 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
               size="small"
               color={
                 entity.processingStatus === 'completed' ? 'success' :
-                entity.processingStatus === 'processing' ? 'primary' :
-                entity.processingStatus === 'failed' ? 'error' : 'default'
+                  entity.processingStatus === 'processing' ? 'primary' :
+                    entity.processingStatus === 'failed' ? 'error' : 'default'
               }
             />
           </Box>
@@ -82,14 +65,14 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
             )}
           </Box>
         </Box>
-        
+
         {entity.description && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {entity.description}
           </Typography>
         )}
       </Paper>
-      
+
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
         <Grid2 container spacing={3}>
@@ -127,7 +110,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
               </List>
             </Paper>
           </Grid2>
-          
+
           {/* Processing Config */}
           <Grid2 size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>

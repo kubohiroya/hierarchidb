@@ -1,29 +1,29 @@
 import React from 'react';
 import {
-  Box,
-  Typography,
   Accordion,
-  AccordionSummary,
   AccordionDetails,
-  Grid,
-  Slider,
-  TextField,
-  Stack,
+  AccordionSummary,
+  Box,
   Chip,
-  FormControlLabel,
-  Switch,
   FormControl,
+  FormControlLabel,
   FormLabel,
-  RadioGroup,
+  Grid,
   Radio,
+  RadioGroup,
+  Slider,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   CloudDownload as CloudDownloadIcon,
+  ExpandMore as ExpandMoreIcon,
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import type { StepProps, FeatureFilterMethod } from '~/shared';
+import type { FeatureFilterMethod, StepProps } from '~/shared';
 
 /**
  * Step 4: Processing Configuration
@@ -37,16 +37,16 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
       <Typography variant="h6" sx={{ mb: 2 }}>
         Configure Processing Parameters
       </Typography>
-      
+
       {/* Download Configuration */}
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={2} alignItems="center">
             <CloudDownloadIcon color="primary" />
             <Typography variant="subtitle1">Download Configuration</Typography>
-            <Chip 
+            <Chip
               label={`${config?.concurrentDownloads || 2} concurrent`}
-              size="small" 
+              size="small"
               variant="outlined"
             />
           </Stack>
@@ -60,11 +60,11 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 onChange={(_, value) => onUpdate({
                   processingConfig: {
                     ...config,
-                    concurrentDownloads: value as number
-                  }
+                    concurrentDownloads: value as number,
+                  },
                 })}
-                min={1} 
-                max={8} 
+                min={1}
+                max={8}
                 step={1}
                 marks={[
                   { value: 1, label: '1' },
@@ -75,7 +75,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 disabled={disabled}
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 label="CORS Proxy Base URL"
@@ -83,8 +83,8 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 onChange={(e) => onUpdate({
                   processingConfig: {
                     ...config,
-                    corsProxyBaseURL: e.target.value
-                  }
+                    corsProxyBaseURL: e.target.value,
+                  },
                 })}
                 fullWidth
                 disabled={disabled}
@@ -95,14 +95,14 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
           </Grid>
         </AccordionDetails>
       </Accordion>
-      
+
       {/* Feature Processing Configuration */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={2} alignItems="center">
             <FilterAltIcon color="secondary" />
             <Typography variant="subtitle1">Feature Processing (Stage 1)</Typography>
-            <Chip 
+            <Chip
               label={config?.enableFeatureFiltering ? 'Filtering ON' : 'Filtering OFF'}
               size="small"
               color={config?.enableFeatureFiltering ? 'success' : 'default'}
@@ -119,15 +119,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                   onChange={(e) => onUpdate({
                     processingConfig: {
                       ...config,
-                      enableFeatureFiltering: e.target.checked
-                    }
+                      enableFeatureFiltering: e.target.checked,
+                    },
                   })}
                   disabled={disabled}
                 />
               }
               label="Enable Feature Filtering"
             />
-            
+
             {config?.enableFeatureFiltering && (
               <>
                 <FormControl component="fieldset">
@@ -137,31 +137,31 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     onChange={(e) => onUpdate({
                       processingConfig: {
                         ...config,
-                        featureFilterMethod: e.target.value as FeatureFilterMethod
-                      }
+                        featureFilterMethod: e.target.value as FeatureFilterMethod,
+                      },
                     })}
                   >
-                    <FormControlLabel 
-                      value="bbox_only" 
-                      control={<Radio />} 
-                      label="Bounding Box Only (Fastest)" 
+                    <FormControlLabel
+                      value="bbox_only"
+                      control={<Radio />}
+                      label="Bounding Box Only (Fastest)"
                       disabled={disabled}
                     />
-                    <FormControlLabel 
-                      value="polygon_only" 
-                      control={<Radio />} 
-                      label="Polygon Area Only (Most Accurate)" 
+                    <FormControlLabel
+                      value="polygon_only"
+                      control={<Radio />}
+                      label="Polygon Area Only (Most Accurate)"
                       disabled={disabled}
                     />
-                    <FormControlLabel 
-                      value="hybrid" 
-                      control={<Radio />} 
-                      label="Hybrid Method (Balanced)" 
+                    <FormControlLabel
+                      value="hybrid"
+                      control={<Radio />}
+                      label="Hybrid Method (Balanced)"
                       disabled={disabled}
                     />
                   </RadioGroup>
                 </FormControl>
-                
+
                 <Box>
                   <Typography gutterBottom>Feature Area Threshold (%)</Typography>
                   <Slider
@@ -169,11 +169,11 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     onChange={(_, value) => onUpdate({
                       processingConfig: {
                         ...config,
-                        featureAreaThreshold: value as number
-                      }
+                        featureAreaThreshold: value as number,
+                      },
                     })}
-                    min={0.001} 
-                    max={10} 
+                    min={0.001}
+                    max={10}
                     step={0.001}
                     valueLabelFormat={(value) => `${value}%`}
                     valueLabelDisplay="auto"
@@ -185,16 +185,16 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
           </Stack>
         </AccordionDetails>
       </Accordion>
-      
+
       {/* Vector Tile Configuration */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={2} alignItems="center">
             <LayersIcon color="success" />
             <Typography variant="subtitle1">Vector Tile Generation</Typography>
-            <Chip 
+            <Chip
               label={`${config?.concurrentProcesses || 2} concurrent`}
-              size="small" 
+              size="small"
               variant="outlined"
             />
           </Stack>
@@ -209,8 +209,8 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 onChange={(e) => onUpdate({
                   processingConfig: {
                     ...config,
-                    concurrentProcesses: parseInt(e.target.value) || 2
-                  }
+                    concurrentProcesses: parseInt(e.target.value) || 2,
+                  },
                 })}
                 inputProps={{ min: 1, max: 8 }}
                 fullWidth
@@ -218,7 +218,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 helperText="Number of simultaneous tile processors (1-8)"
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Max Zoom Level"
@@ -227,8 +227,8 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 onChange={(e) => onUpdate({
                   processingConfig: {
                     ...config,
-                    maxZoomLevel: parseInt(e.target.value) || 12
-                  }
+                    maxZoomLevel: parseInt(e.target.value) || 12,
+                  },
                 })}
                 inputProps={{ min: 8, max: 18 }}
                 fullWidth

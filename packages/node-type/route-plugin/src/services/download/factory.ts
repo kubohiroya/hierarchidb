@@ -1,4 +1,4 @@
-import { DownloadService, FetchNetworkPort, DexieChunkStoragePort } from '@hierarchidb/download';
+import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 /**

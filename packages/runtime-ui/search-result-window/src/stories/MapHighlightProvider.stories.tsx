@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Provider } from 'jotai';
 import { useState } from 'react';
-import { Button, Stack, Typography, Box, Paper, Chip } from '@mui/material';
+import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import { MapHighlightProvider, useMapHighlightContext } from '../components/MapHighlightProvider.js';
 import type { NodeId } from '@hierarchidb/common-type';
 
@@ -23,7 +23,6 @@ const meta: Meta<typeof MapHighlightProvider> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// デモ用の制御コンポーネント
 function MapHighlightDemo() {
   const {
     highlightState,
@@ -42,7 +41,7 @@ function MapHighlightDemo() {
 
   const sampleNodeIds: NodeId[] = [
     'node-tokyo-station' as NodeId,
-    'node-shibuya-crossing' as NodeId, 
+    'node-shibuya-crossing' as NodeId,
     'node-mount-fuji' as NodeId,
     'node-osaka-castle' as NodeId,
     'node-fushimi-inari' as NodeId,
@@ -87,14 +86,15 @@ function MapHighlightDemo() {
       <Typography variant="h5" gutterBottom>
         Map Highlight State Demo
       </Typography>
-      
+
       <Stack spacing={3}>
-        {/* 現在の状態表示 */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Current State
           </Typography>
-          
+
           <Stack spacing={1}>
             <Box>
               <Typography variant="subtitle2">
@@ -112,7 +112,7 @@ function MapHighlightDemo() {
                 ))}
               </Box>
             </Box>
-            
+
             <Box>
               <Typography variant="subtitle2">
                 Selected ({highlightState.selected.size})
@@ -129,7 +129,7 @@ function MapHighlightDemo() {
                 ))}
               </Box>
             </Box>
-            
+
             <Box>
               <Typography variant="subtitle2">Focused</Typography>
               {highlightState.focused ? (
@@ -148,12 +148,13 @@ function MapHighlightDemo() {
           </Stack>
         </Paper>
 
-        {/* 操作ボタン */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Actions
           </Typography>
-          
+
           <Stack spacing={2}>
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <Button
@@ -178,7 +179,7 @@ function MapHighlightDemo() {
                 Set Focused
               </Button>
             </Stack>
-            
+
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <Button
                 variant="outlined"
@@ -199,7 +200,7 @@ function MapHighlightDemo() {
                 Update Styles
               </Button>
             </Stack>
-            
+
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <Button
                 variant="outlined"
@@ -226,7 +227,8 @@ function MapHighlightDemo() {
           </Stack>
         </Paper>
 
-        {/* スタイル情報 */}
+        {/*
+*/}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             Styles
@@ -268,7 +270,6 @@ export const WithInitialData: Story = {
   ),
 };
 
-// 状態変化のコールバックをテストするためのコンポーネント
 function CallbackDemo() {
   const [stateChanges, setStateChanges] = useState<any[]>([]);
 
@@ -277,13 +278,13 @@ function CallbackDemo() {
       onStateChange={(state) => {
         setStateChanges(prev => [
           { timestamp: Date.now(), state: { ...state } },
-          ...prev.slice(0, 9) // 最新10件のみ保持
+          ...prev.slice(0, 9), //  10
         ]);
       }}
     >
       <Stack spacing={2}>
         <MapHighlightDemo />
-        
+
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
             State Change Log

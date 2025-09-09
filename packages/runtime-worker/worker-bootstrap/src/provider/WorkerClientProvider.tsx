@@ -1,11 +1,11 @@
 /**
  * WorkerClientProvider - Second layer that wraps Worker with Comlink
- * 
+ *
  * This provider takes an initialized Worker and wraps it with Comlink,
  * providing the wrapped client to child components.
  */
 
-import React, { useEffect, useState, ReactNode, useContext } from 'react';
+import React, { ReactNode, useContext, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
 
 export interface WorkerClientProviderProps<T> {
@@ -37,14 +37,15 @@ export function createWorkerClientProvider<T>() {
   const ClientContext = React.createContext<ClientState<T> | null>(null);
 
   const WorkerClientProvider: React.FC<WorkerClientProviderProps<T>> = ({
-    worker,
-    wrapWorker,
-    children,
-    loadingComponent = <div>Preparing Worker client...</div>,
-    debug = false,
-    healthCheckInterval = 30000,
-    onClientReady,
-  }) => {
+                                                                          worker,
+                                                                          wrapWorker,
+                                                                          children,
+                                                                          loadingComponent = <div>Preparing Worker
+                                                                            client...</div>,
+                                                                          debug = false,
+                                                                          healthCheckInterval = 30000,
+                                                                          onClientReady,
+                                                                        }) => {
     const [state, setState] = useState<ClientState<T>>({
       client: null,
       isReady: false,
@@ -60,14 +61,14 @@ export function createWorkerClientProvider<T>() {
         try {
           // Wrap Worker with Comlink
           const wrappedClient = await wrapWorker(worker);
-          
+
           if (!mounted) return;
 
           // Verify connection (assuming the Worker has a ping method)
           if ('ping' in wrappedClient && typeof wrappedClient.ping === 'function') {
             try {
               await (wrappedClient.ping as any)();
-              
+
               if (debug) {
                 console.log('[WorkerClientProvider] Comlink connection verified');
               }
@@ -91,10 +92,10 @@ export function createWorkerClientProvider<T>() {
           if (healthCheckInterval > 0 && 'ping' in wrappedClient) {
             healthCheckTimer = window.setInterval(async () => {
               if (!mounted) return;
-              
+
               try {
                 await (wrappedClient.ping as any)();
-                
+
                 setState(prev => {
                   if (!prev.isConnected) {
                     if (debug) {
@@ -119,16 +120,16 @@ export function createWorkerClientProvider<T>() {
           }
         } catch (error) {
           if (!mounted) return;
-          
+
           const err = error instanceof Error ? error : new Error(String(error));
-          
+
           setState({
             client: null,
             isReady: false,
             isConnected: false,
             error: err,
           });
-          
+
           if (debug) {
             console.error('[WorkerClientProvider] Failed to wrap Worker:', err);
           }
@@ -139,11 +140,11 @@ export function createWorkerClientProvider<T>() {
 
       return () => {
         mounted = false;
-        
+
         if (healthCheckTimer) {
           clearInterval(healthCheckTimer);
         }
-        
+
         // Note: We don't terminate the Worker here as it's managed by WorkerSingletonProvider
       };
     }, [worker, wrapWorker, debug, healthCheckInterval, onClientReady]);
@@ -173,8 +174,8 @@ export function createWorkerClientProvider<T>() {
   /**
    * Hook to access the Worker client from context
    */
-  const useWorkerClient = (): { 
-    client: Remote<T>; 
+  const useWorkerClient = (): {
+    client: Remote<T>;
     isConnected: boolean;
   } => {
     const state = useContext(ClientContext);

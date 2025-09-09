@@ -1,4 +1,4 @@
-import { generateCodeVerifier, generateCodeChallenge, generateState } from '../utils/pkce.js';
+import { generateCodeChallenge, generateCodeVerifier, generateState } from '../utils/pkce.js';
 
 export interface GoogleOAuth2Config {
   clientId: string;
@@ -37,7 +37,7 @@ export async function initiateGoogleAuth(config: GoogleOAuth2Config) {
 export async function exchangeCodeForTokens(
   code: string,
   config: GoogleOAuth2Config,
-  codeVerifier?: string
+  codeVerifier?: string,
 ): Promise<{ access_token: string; id_token?: string; refresh_token?: string }> {
   const params: Record<string, string> = {
     code,

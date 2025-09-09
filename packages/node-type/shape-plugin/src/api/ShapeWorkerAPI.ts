@@ -130,7 +130,7 @@ export class ShapeWorkerAPI {
   async getFeaturesByBbox(
     nodeId: NodeId,
     bbox: [number, number, number, number],
-    options?: any
+    options?: any,
   ): Promise<any[]> {
     this.ensureInitialized();
     return this.pluginAPI.getFeaturesByBbox(nodeId, bbox, options);

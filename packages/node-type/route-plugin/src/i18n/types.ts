@@ -1,12 +1,11 @@
 /**
- * i18n Types for Route Plugin
- * ルートプラグインのi18n型定義
- */
+  * i18n Types for Route Plugin
+ * i18n
+  */
 
 export type SupportedLocale = 'ja' | 'en';
 
 export interface RoutePluginTranslations {
-  // 共通
   common: {
     name: string;
     description: string;
@@ -23,7 +22,6 @@ export interface RoutePluginTranslations {
     warning: string;
   };
 
-  // 基本情報
   basicInfo: {
     title: string;
     subtitle: string;
@@ -44,7 +42,6 @@ export interface RoutePluginTranslations {
     hint: string;
   };
 
-  // ルート選択
   routeSelection: {
     title: string;
     subtitle: string;
@@ -60,7 +57,6 @@ export interface RoutePluginTranslations {
     accessibility: string;
   };
 
-  // バッチ処理
   batch: {
     progressTitle: string;
     logsTitle: string;
@@ -79,7 +75,6 @@ export interface RoutePluginTranslations {
     };
   };
 
-  // ルートタイプ
   routeTypes: {
     road: string;
     railway: string;
@@ -93,7 +88,6 @@ export interface RoutePluginTranslations {
     powerline: string;
   };
 
-  // 交通モード
   transportModes: {
     car: string;
     truck: string;
@@ -108,7 +102,6 @@ export interface RoutePluginTranslations {
     motorcycle: string;
   };
 
-  // カテゴリ
   categories: {
     transportation: string;
     recreation: string;
@@ -116,7 +109,6 @@ export interface RoutePluginTranslations {
     emergency: string;
   };
 
-  // 表面タイプ
   surfaceTypes: {
     paved: string;
     unpaved: string;
@@ -128,7 +120,6 @@ export interface RoutePluginTranslations {
     asphalt: string;
   };
 
-  // 難易度レベル
   difficultyLevels: {
     easy: string;
     moderate: string;
@@ -136,7 +127,6 @@ export interface RoutePluginTranslations {
     expert: string;
   };
 
-  // アクセシビリティ機能
   accessibilityFeatures: {
     wheelchair_accessible: string;
     elevator_access: string;
@@ -145,7 +135,6 @@ export interface RoutePluginTranslations {
     low_slope: string;
   };
 
-  // エラーメッセージ
   errors: {
     nameRequired: string;
     routeTypeRequired: string;

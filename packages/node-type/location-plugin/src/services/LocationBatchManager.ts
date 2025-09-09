@@ -5,11 +5,11 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
+  LocationBatchConfig,
+  LocationCategory,
   LocationEntity,
   LocationSearchConfig,
   LocationType,
-  LocationBatchConfig,
-  LocationCategory,
 } from '../entities/LocationEntity';
 
 /**
@@ -80,7 +80,7 @@ export class LocationBatchManager {
   async startLocationBatchSession(
     nodeId: NodeId,
     config: LocationBatchConfig,
-    progressCallback?: (event: LocationBatchProgressEvent) => void
+    progressCallback?: (event: LocationBatchProgressEvent) => void,
   ): Promise<string> {
     const sessionId = `location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const totalTasks = config.searchConfigs.length;
@@ -166,7 +166,7 @@ export class LocationBatchManager {
    */
   private async processLocationTask(
     task: LocationBatchTask,
-    session: LocationBatchSession
+    session: LocationBatchSession,
   ): Promise<void> {
     try {
       task.status = 'searching';
@@ -215,7 +215,7 @@ export class LocationBatchManager {
       task.status = 'validating';
       const validatedResults = await this.validateAndFilterLocations(
         task.results!,
-        session.config.filterCriteria
+        session.config.filterCriteria,
       );
       task.metrics.totalFiltered = task.results!.length - validatedResults.length;
       task.results = validatedResults;
@@ -253,7 +253,7 @@ export class LocationBatchManager {
       task.status = 'failed';
       task.error = error instanceof Error ? error.message : 'Unknown error';
       session.failedTasks++;
-      
+
       console.error(`Location task ${task.taskId} failed:`, error);
     }
   }
@@ -271,7 +271,8 @@ export class LocationBatchManager {
         if (config.limit && list.length > (config.limit || 0)) return list.slice(0, config.limit);
         return list;
       }
-    } catch {}
+    } catch {
+    }
 
     const locations: LocationEntity[] = [];
 
@@ -396,8 +397,8 @@ export class LocationBatchManager {
    * Build Overpass query
    */
   private buildOverpassQuery(config: LocationSearchConfig): string {
-    const bbox = config.boundingBox ? 
-      `(${config.boundingBox[1]},${config.boundingBox[0]},${config.boundingBox[3]},${config.boundingBox[2]})` : 
+    const bbox = config.boundingBox ?
+      `(${config.boundingBox[1]},${config.boundingBox[0]},${config.boundingBox[3]},${config.boundingBox[2]})` :
       '';
 
     let query = '[out:json];(';
@@ -486,7 +487,7 @@ export class LocationBatchManager {
    */
   private createLocationFromOSM(osmData: any): LocationEntity {
     const now = Date.now();
-    
+
     return {
       id: `osm-${osmData.osm_id}` as any,
       nodeId: `osm-node-${osmData.osm_id}` as any,
@@ -499,8 +500,8 @@ export class LocationBatchManager {
         source: 'openstreetmap',
         timestamp: now,
       },
-      boundingBox: osmData.boundingbox ? 
-        osmData.boundingbox.map((v: string) => parseFloat(v)) as [number, number, number, number] : 
+      boundingBox: osmData.boundingbox ?
+        osmData.boundingbox.map((v: string) => parseFloat(v)) as [number, number, number, number] :
         undefined,
       address: osmData.address ? {
         street: osmData.address.road,
@@ -540,7 +541,7 @@ export class LocationBatchManager {
   private createLocationFromOverpass(overpassData: any): LocationEntity {
     const now = Date.now();
     const tags = overpassData.tags || {};
-    
+
     return {
       id: `overpass-${overpassData.id}` as any,
       nodeId: `overpass-node-${overpassData.id}` as any,
@@ -669,7 +670,7 @@ export class LocationBatchManager {
     if (tags.natural === 'peak') return 'mountain';
     if (tags.natural === 'water') return 'lake';
     if (tags.waterway === 'river') return 'river';
-    
+
     return 'airport'; // Default
   }
 
@@ -687,7 +688,7 @@ export class LocationBatchManager {
    */
   private async validateAndFilterLocations(
     locations: LocationEntity[],
-    criteria?: any
+    criteria?: any,
   ): Promise<LocationEntity[]> {
     if (!criteria) return locations;
 

@@ -14,14 +14,9 @@
 import * as turf from '@turf/turf';
 import { shapeDB, type VectorTileRecord } from '../database/ShapeDB';
 import type { NodeId } from '@hierarchidb/common-type';
-import type {
-  TileMetadata,
-  //LayerInfo,
-  Feature,
-  BoundingBox,
-  //VectorTileTaskConfig,
-  LayerConfig,
-} from '../types';
+import type { BoundingBox, TileMetadata } from '../../shared';
+import type { Feature } from '../../shared/types';
+import type { LayerConfig } from '../types';
 import { Geometry } from 'geojson';
 
 export interface TileRequest {
@@ -91,7 +86,7 @@ export class VectorTileService {
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number
+    y: number,
   ): Promise<TileMetadata | null> {
     const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
     if (!tile) {
@@ -234,7 +229,7 @@ export class VectorTileService {
   private async getFeaturesInTile(
     nodeId: NodeId,
     bbox: BoundingBox,
-    zoom: number
+    zoom: number,
   ): Promise<Feature[]> {
     // Get features that intersect with tile bounds
     const features = await shapeDB.getFeaturesInBbox(nodeId, bbox);
@@ -242,7 +237,7 @@ export class VectorTileService {
     // Filter by zoom-appropriate admin level
     const adminLevel = this.getAdminLevelForZoom(zoom);
     const filteredFeatures = features.filter(
-      (feature: any) => !feature.adminLevel || feature.adminLevel <= adminLevel
+      (feature: any) => !feature.adminLevel || feature.adminLevel <= adminLevel,
     );
 
     // Simplify geometries based on zoom level
@@ -272,7 +267,7 @@ export class VectorTileService {
       }
 
       const layerFeatures = features.filter((feature) =>
-        this.featureMatchesLayer(feature, layerConfig)
+        this.featureMatchesLayer(feature, layerConfig),
       );
 
       if (layerFeatures.length === 0) {
@@ -352,7 +347,7 @@ export class VectorTileService {
   private latToTileY(lat: number, zoom: number): number {
     return (
       ((1 -
-        Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
+          Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
         2) *
       Math.pow(2, zoom)
     );
@@ -391,7 +386,7 @@ export class VectorTileService {
     _tileY: number,
     _zoom: number,
     _extent: number,
-    _buffer: number
+    _buffer: number,
   ): Geometry {
     throw new Error('Method not implemented.');
     // Transform geographic coordinates to tile coordinates
@@ -401,7 +396,7 @@ export class VectorTileService {
 
   private filterProperties(
     properties: Record<string, any>,
-    allowedProperties: string[]
+    allowedProperties: string[],
   ): Record<string, any> {
     const filtered: Record<string, any> = {};
 
@@ -427,7 +422,7 @@ export class VectorTileService {
     z: number,
     x: number,
     y: number,
-    data: Uint8Array
+    data: Uint8Array,
   ): Promise<void> {
     const tileId = `${nodeId}-${z}-${x}-${y}`;
     const contentHash = await this.calculateHash(data);

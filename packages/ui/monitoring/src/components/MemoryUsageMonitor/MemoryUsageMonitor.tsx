@@ -16,10 +16,7 @@ interface ChartDimensions {
 }
 
 /**
- * 開発環境でメモリ使用量を表示するコンポーネント
- * ドラッグ操作により自由に位置を移動できます
- * ダブルクリックでバー表示とチャート表示を切り替えます
- */
+      */
 export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -111,7 +108,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
       setIsDragging(true);
       e.preventDefault();
     },
-    [chartDimensions]
+    [chartDimensions],
   );
 
   const handleMouseMove = useCallback(
@@ -141,7 +138,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
 
       setPosition({ x: clampedX, y: clampedY });
     },
-    [isDragging, isResizing]
+    [isDragging, isResizing],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -283,7 +280,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
               height={dimensions.height}
               compact={true}
               showValues={true}
-              updateInterval={10000} // 10秒ごとに更新
+              updateInterval={10000} //  10
               warningThreshold={0.7}
               criticalThreshold={0.9}
             />
@@ -292,7 +289,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
               <MemoryUsageChart
                 width="100%"
                 height={dimensions.height}
-                updateInterval={10000} // 10秒ごとに更新
+                updateInterval={10000} //  10
                 warningThreshold={0.7}
                 criticalThreshold={0.9}
                 maxDataPoints={30}

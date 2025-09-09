@@ -1,4 +1,4 @@
-import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
+import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
 
 export const ResolverDefinition: Partial<PluginDefinition> = {
   nodeType: 'resolver' as NodeType,
@@ -14,7 +14,7 @@ export const ResolverDefinition: Partial<PluginDefinition> = {
   database: {
     dbName: 'resolver-db',
     schema: {
-      '&id': 'EntityId',
+      '&id': 'NodeId',
       nodeId: 'NodeId',
       name: '',
       sourceSchema: '',

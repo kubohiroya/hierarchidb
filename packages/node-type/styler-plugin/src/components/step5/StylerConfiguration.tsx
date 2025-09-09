@@ -1,69 +1,53 @@
 /**
- * @file StylerConfiguration.tsx
+  * @file StylerConfiguration.tsx
  * @description Styler configuration UI component (Step 5)
- * 【機能概要】: スタイルマッピング設定UI
- * 【実装方針】: eria-cartographから移植、HierarchiDB UIシステムに適応
- * 🟢 信頼性レベル: MUI準拠のUI実装
- */
+ * : UI
+ * : eria-cartographHierarchiDB UI
+ * : MUIUI
+  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Slider,
-  Typography,
-  Paper,
-  Stack,
-  TextField,
-  FormHelperText,
-  ToggleButtonGroup,
-  ToggleButton,
   Alert,
   AlertTitle,
+  Box,
   Button,
   Chip,
   CircularProgress,
   Collapse,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import {
-  Palette as PaletteIcon,
-  Gradient as GradientIcon,
   AutoFixHigh as AutoFixHighIcon,
-  ShowChart as ShowChartIcon,
   BarChart as BarChartIcon,
-  ViewColumn as ViewColumnIcon,
-  Insights as InsightsIcon,
+  Gradient as GradientIcon,
   Info as InfoIcon,
+  Insights as InsightsIcon,
+  Palette as PaletteIcon,
+  ShowChart as ShowChartIcon,
+  ViewColumn as ViewColumnIcon,
 } from '@mui/icons-material';
 
-import type {
-  StylerConfig,
-  MapLibreStyleProperty,
-  ColorAlgorithm,
-  ColorSpace,
-} from '../../types/stylerTypes';
-import {
-  StylerConfigDefault,
-  MAPLIBRE_PROPERTY_METADATA,
-  MAPLIBRE_PROPERTY_GROUPS,
-} from '../../types/stylerTypes';
-import {
-  generateColorGradient,
-} from '../../utils/colorUtils';
-import {
-  analyzeData,
-  extractNumericValues,
-  type DataAnalysisResult,
-  type AlgorithmRecommendation,
-} from '../../utils/dataAnalysis';
+import type { ColorAlgorithm, ColorSpace, MapLibreStyleProperty, StylerConfig } from '../../types/stylerTypes';
+import { MAPLIBRE_PROPERTY_GROUPS, MAPLIBRE_PROPERTY_METADATA, StylerConfigDefault } from '../../types/stylerTypes';
+import { generateColorGradient } from '../../utils/colorUtils';
+import { analyzeData, type DataAnalysisResult, extractNumericValues } from '../../utils/dataAnalysis';
 
 /**
- * 【型定義】: StylerConfigurationのプロパティ
- */
+  * : StylerConfiguration
+  */
 export interface StylerConfigurationProps {
   config?: StylerConfig;
   onChange: (config: StylerConfig) => void;
@@ -72,25 +56,25 @@ export interface StylerConfigurationProps {
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   onColumnSelect?: (column: string, type: 'key' | 'value') => void;
-  csvData?: Array<Record<string, any>>; // CSVデータ全体（分析用）
+  csvData?: Array<Record<string, any>>; //  CSV
 }
 
 /**
- * 【機能概要】: Styler設定UIコンポーネント
- * 【実装方針】: eria-cartographの機能をHierarchiDBのMUIテーマで再実装
- * 【テスト対応】: 設定変更の即時反映、プレビュー機能
- * 🟢 信頼性レベル: 完全なUI実装
- */
+  * : StylerUI
+ * : eria-cartographHierarchiDBMUI
+ * :
+ * : UI
+  */
 export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
-  config = StylerConfigDefault,
-  onChange,
-  values = [],
-  columns = [],
-  selectedKeyColumn,
-  selectedValueColumn,
-  onColumnSelect,
-  csvData = [],
-}) => {
+                                                                          config = StylerConfigDefault,
+                                                                          onChange,
+                                                                          values = [],
+                                                                          columns = [],
+                                                                          selectedKeyColumn,
+                                                                          selectedValueColumn,
+                                                                          onColumnSelect,
+                                                                          csvData = [],
+                                                                        }) => {
   const [localConfig, setLocalConfig] = useState<StylerConfig>(() => {
     // Initialize with sample values if available
     if (values.length > 0) {
@@ -112,22 +96,18 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     return config;
   });
 
-  // 【自動推奨機能の状態管理】
   const [dataAnalysis, setDataAnalysis] = useState<DataAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showRecommendation, setShowRecommendation] = useState(true);
 
-  // 【データ分析の実行】
   useEffect(() => {
     if (selectedValueColumn && csvData.length > 0) {
       setIsAnalyzing(true);
-      
-      // 非同期でデータ分析を実行
+
       const analyzeAsync = async () => {
         try {
-          // 少し遅延を入れて非同期感を演出
           await new Promise(resolve => setTimeout(resolve, 300));
-          
+
           const numericValues = extractNumericValues(csvData, selectedValueColumn);
           if (numericValues.length > 0) {
             const analysis = analyzeData(numericValues, selectedValueColumn);
@@ -137,12 +117,11 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
           setIsAnalyzing(false);
         }
       };
-      
+
       analyzeAsync();
     }
   }, [selectedValueColumn, csvData]);
 
-  // 【推奨アルゴリズムの適用】
   const applyRecommendation = useCallback(() => {
     if (dataAnalysis?.recommendation) {
       const newConfig = {
@@ -155,10 +134,9 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     }
   }, [dataAnalysis, localConfig, onChange]);
 
-  // 【アルゴリズム変更】
   const handleAlgorithmChange = useCallback((
     _event: React.MouseEvent<HTMLElement>,
-    newAlgorithm: ColorAlgorithm | null
+    newAlgorithm: ColorAlgorithm | null,
   ) => {
     if (newAlgorithm) {
       const newConfig = { ...localConfig, algorithm: newAlgorithm };
@@ -167,10 +145,9 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     }
   }, [localConfig, onChange]);
 
-  // 【カラースペース変更】
   const handleColorSpaceChange = useCallback((
     _event: React.MouseEvent<HTMLElement>,
-    newColorSpace: ColorSpace | null
+    newColorSpace: ColorSpace | null,
   ) => {
     if (newColorSpace) {
       const newConfig = { ...localConfig, colorSpace: newColorSpace };
@@ -179,10 +156,9 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     }
   }, [localConfig, onChange]);
 
-  // 【マッピング値変更】
   const handleMappingChange = useCallback((
     field: keyof StylerConfig['mapping'],
-    value: number | number[]
+    value: number | number[],
   ) => {
     const numValue = Array.isArray(value) ? value[0] : value;
     const newConfig = {
@@ -196,9 +172,8 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     onChange(newConfig);
   }, [localConfig, onChange]);
 
-  // 【ターゲットプロパティ変更】
   const handleTargetPropertyChange = useCallback((
-    event: any
+    event: any,
   ) => {
     const targetProperty = event.target.value as MapLibreStyleProperty;
     const newConfig = { ...localConfig, targetProperty };
@@ -206,7 +181,6 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     onChange(newConfig);
   }, [localConfig, onChange]);
 
-  // 【カラムセレクト】
   const handleKeyColumnChange = useCallback((event: any) => {
     const column = event.target.value;
     if (onColumnSelect) {
@@ -221,12 +195,10 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     }
   }, [onColumnSelect]);
 
-  // 【カラーグラデーションプレビュー】
   const gradientPreview = useMemo(() => {
     return generateColorGradient(localConfig);
   }, [localConfig]);
 
-  // 【プロパティメタデータ取得】
   const targetMetadata = localConfig.targetProperty
     ? MAPLIBRE_PROPERTY_METADATA[localConfig.targetProperty]
     : null;
@@ -325,7 +297,8 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
       {/* Color Configuration */}
       {localConfig.targetProperty && targetMetadata?.type === 'color' && (
         <>
-          {/* 自動推奨アラート（新規追加） */}
+          {/*
+*/}
           {dataAnalysis && showRecommendation && (
             <Collapse in={showRecommendation}>
               <Paper sx={{ p: 2, bgcolor: 'info.lighter', border: 1, borderColor: 'info.main' }}>
@@ -336,13 +309,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                       アルゴリズム自動推奨
                     </Typography>
                   </Stack>
-                  
-                  <Alert 
+
+                  <Alert
                     severity="info"
                     onClose={() => setShowRecommendation(false)}
                     action={
-                      <Button 
-                        size="small" 
+                      <Button
+                        size="small"
                         variant="contained"
                         onClick={applyRecommendation}
                         disabled={isAnalyzing}
@@ -354,9 +327,9 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                   >
                     <AlertTitle>
                       「{dataAnalysis.recommendation.algorithm === 'linear' ? '線形' :
-                        dataAnalysis.recommendation.algorithm === 'quantile' ? '分位数' :
+                      dataAnalysis.recommendation.algorithm === 'quantile' ? '分位数' :
                         dataAnalysis.recommendation.algorithm === 'jenks' ? '自然分類（Jenks）' :
-                        '等間隔'}」を推奨
+                          '等間隔'}」を推奨
                     </AlertTitle>
                     {dataAnalysis.recommendation.reasoning}
                     <Typography variant="caption" display="block" sx={{ mt: 1 }}>
@@ -368,7 +341,9 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
             </Collapse>
           )}
 
-          {/* Algorithm Selection（改良版） */}
+          {/*
+ Algorithm Selection
+*/}
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
               色分類アルゴリズム
@@ -385,67 +360,68 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                   <ShowChartIcon fontSize="small" />
                   <Typography variant="caption">線形</Typography>
                   {dataAnalysis && (
-                    <Chip 
+                    <Chip
                       label={`${dataAnalysis.recommendation.suitability.linear}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.linear > 70 ? 'success' : 
-                             dataAnalysis.recommendation.suitability.linear > 40 ? 'default' : 'error'}
+                      color={dataAnalysis.recommendation.suitability.linear > 70 ? 'success' :
+                        dataAnalysis.recommendation.suitability.linear > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
                 </Stack>
               </ToggleButton>
-              
+
               <ToggleButton value="quantile">
                 <Stack alignItems="center" spacing={0.5}>
                   <BarChartIcon fontSize="small" />
                   <Typography variant="caption">分位数</Typography>
                   {dataAnalysis && (
-                    <Chip 
+                    <Chip
                       label={`${dataAnalysis.recommendation.suitability.quantile}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.quantile > 70 ? 'success' : 
-                             dataAnalysis.recommendation.suitability.quantile > 40 ? 'default' : 'error'}
+                      color={dataAnalysis.recommendation.suitability.quantile > 70 ? 'success' :
+                        dataAnalysis.recommendation.suitability.quantile > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
                 </Stack>
               </ToggleButton>
-              
+
               <ToggleButton value="jenks">
                 <Stack alignItems="center" spacing={0.5}>
                   <InsightsIcon fontSize="small" />
                   <Typography variant="caption">自然分類</Typography>
                   {dataAnalysis && (
-                    <Chip 
+                    <Chip
                       label={`${dataAnalysis.recommendation.suitability.jenks}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.jenks > 70 ? 'success' : 
-                             dataAnalysis.recommendation.suitability.jenks > 40 ? 'default' : 'error'}
+                      color={dataAnalysis.recommendation.suitability.jenks > 70 ? 'success' :
+                        dataAnalysis.recommendation.suitability.jenks > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
                 </Stack>
               </ToggleButton>
-              
+
               <ToggleButton value="equal">
                 <Stack alignItems="center" spacing={0.5}>
                   <ViewColumnIcon fontSize="small" />
                   <Typography variant="caption">等間隔</Typography>
                   {dataAnalysis && (
-                    <Chip 
+                    <Chip
                       label={`${dataAnalysis.recommendation.suitability.equal}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.equal > 70 ? 'success' : 
-                             dataAnalysis.recommendation.suitability.equal > 40 ? 'default' : 'error'}
+                      color={dataAnalysis.recommendation.suitability.equal > 70 ? 'success' :
+                        dataAnalysis.recommendation.suitability.equal > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
                 </Stack>
               </ToggleButton>
             </ToggleButtonGroup>
-            
-            {/* アルゴリズム説明（充実版） */}
+
+            {/*
+*/}
             <Box sx={{ mt: 2, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <InfoIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
@@ -457,26 +433,27 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                     {localConfig.algorithm === 'equal' && '等間隔分類'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" component="div">
-                    {localConfig.algorithm === 'linear' && 
+                    {localConfig.algorithm === 'linear' &&
                       '最小値から最大値まで連続的に色を変化させます。データが均等に分布している場合や、連続的な変化を表現したい場合に適しています。'}
-                    {localConfig.algorithm === 'quantile' && 
+                    {localConfig.algorithm === 'quantile' &&
                       '各クラスに同じ数の要素が入るように分類します。データに偏りがある場合でも、バランスの取れた視覚表現が可能です。外れ値の影響を受けにくい特徴があります。'}
-                    {localConfig.algorithm === 'jenks' && 
+                    {localConfig.algorithm === 'jenks' &&
                       'データの自然な区切りを見つけて分類します。クラス内の分散を最小化し、クラス間の分散を最大化することで、データの持つ自然なグループを発見します。計算コストは高いですが、最も意味のある分類が可能です。'}
-                    {localConfig.algorithm === 'equal' && 
+                    {localConfig.algorithm === 'equal' &&
                       '値の範囲を等間隔に分割します。温度や標高など、連続的で線形な分布のデータに適しています。計算が高速で、理解しやすい分類方法です。'}
                   </Typography>
-                  
-                  {/* データ特性に基づく適性表示 */}
+
+                  {/*
+*/}
                   {dataAnalysis && (
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="caption" color="primary">
                         あなたのデータでの適合度: {
-                          localConfig.algorithm === 'linear' ? dataAnalysis.recommendation.suitability.linear :
+                        localConfig.algorithm === 'linear' ? dataAnalysis.recommendation.suitability.linear :
                           localConfig.algorithm === 'quantile' ? dataAnalysis.recommendation.suitability.quantile :
-                          localConfig.algorithm === 'jenks' ? dataAnalysis.recommendation.suitability.jenks :
-                          dataAnalysis.recommendation.suitability.equal
-                        }%
+                            localConfig.algorithm === 'jenks' ? dataAnalysis.recommendation.suitability.jenks :
+                              dataAnalysis.recommendation.suitability.equal
+                      }%
                       </Typography>
                     </Box>
                   )}
@@ -547,7 +524,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <Typography variant="subtitle2" gutterBottom>
                 HSV Color Configuration
               </Typography>
-              
+
               {/* Hue Range */}
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2">Hue Range</Typography>

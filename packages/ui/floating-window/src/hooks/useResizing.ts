@@ -3,7 +3,7 @@
  * @description Low-level hook for resize operations
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Size } from '../types/WindowState';
 
 export interface UseResizingOptions {
@@ -47,14 +47,14 @@ export function useResizing(options: UseResizingOptions = {}): UseResizingResult
 
     elementRef.current = element;
     const rect = element.getBoundingClientRect();
-    
+
     initialSize.current = { width: rect.width, height: rect.height };
     initialMousePos.current = { x: e.clientX, y: e.clientY };
-    
+
     setIsResizing(true);
     setResizeDirection(direction);
     onResizeStart?.();
-    
+
     e.preventDefault();
     e.stopPropagation();
   }, [onResizeStart]);
@@ -65,7 +65,7 @@ export function useResizing(options: UseResizingOptions = {}): UseResizingResult
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - initialMousePos.current.x;
       const deltaY = e.clientY - initialMousePos.current.y;
-      
+
       let newWidth = initialSize.current.width;
       let newHeight = initialSize.current.height;
 
@@ -94,7 +94,7 @@ export function useResizing(options: UseResizingOptions = {}): UseResizingResult
     const handleMouseUp = (e: MouseEvent) => {
       const deltaX = e.clientX - initialMousePos.current.x;
       const deltaY = e.clientY - initialMousePos.current.y;
-      
+
       let finalWidth = initialSize.current.width;
       let finalHeight = initialSize.current.height;
 

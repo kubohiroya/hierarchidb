@@ -1,6 +1,6 @@
 /**
- * Shared types for Folder plugin - UI-Worker共通型定義
- */
+  * Shared types for Folder plugin - UI-Worker
+  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../entities/FolderEntity';
@@ -150,7 +150,7 @@ export class FolderError extends Error {
   constructor(
     public type: FolderErrorType,
     message: string,
-    public details?: Record<string, any>
+    public details?: Record<string, any>,
   ) {
     super(message);
     this.name = 'FolderError';

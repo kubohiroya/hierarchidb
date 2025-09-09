@@ -11,7 +11,7 @@ export function createRequiredColumnsValidator(id: string, required: string[]): 
         if (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) missing.push(k);
       }
       return missing.map(k => `Missing required column: ${k}`);
-    }
+    },
   };
 }
 

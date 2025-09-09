@@ -1,14 +1,11 @@
 /**
- * i18n Types for Location Plugin
- * ロケーションプラグインのi18n型定義
- */
+  * i18n Types for Location Plugin
+ * i18n
+  */
 
-// 対応言語
 export type SupportedLocale = 'ja' | 'en';
 
-// 翻訳キー
 export interface LocationPluginTranslations {
-  // 共通
   common: {
     name: string;
     description: string;
@@ -25,7 +22,6 @@ export interface LocationPluginTranslations {
     warning: string;
   };
 
-  // 基本情報ステップ
   basicInfo: {
     title: string;
     subtitle: string;
@@ -42,7 +38,6 @@ export interface LocationPluginTranslations {
     hint: string;
   };
 
-  // 選択ステップ
   selection: {
     title: string;
     subtitle: string;
@@ -58,7 +53,6 @@ export interface LocationPluginTranslations {
     estimatedSize: string;
   };
 
-  // バッチ処理
   batch: {
     progressTitle: string;
     logsTitle: string;
@@ -77,7 +71,6 @@ export interface LocationPluginTranslations {
     };
   };
 
-  // 地点タイプ
   locationTypes: {
     airport: string;
     railway_station: string;
@@ -101,14 +94,12 @@ export interface LocationPluginTranslations {
     religious: string;
   };
 
-  // カテゴリ
   categories: {
     transportation: string;
     administrative: string;
     infrastructure: string;
   };
 
-  // エラーメッセージ
   errors: {
     nameRequired: string;
     invalidSelection: string;

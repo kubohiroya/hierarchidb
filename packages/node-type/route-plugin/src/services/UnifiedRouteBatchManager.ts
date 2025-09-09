@@ -4,9 +4,16 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { IBatchSessionManager, BatchSessionStatus, BatchProgressCallback } from '@hierarchidb/runtime-shared-batch-processor';
-import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { ProgressEmitter, MemoryProgressStore } from '@hierarchidb/runtime-shared-batch-processor';
+import type {
+  BatchProgressCallback,
+  BatchSessionStatus,
+  IBatchSessionManager,
+} from '@hierarchidb/runtime-shared-batch-processor';
+import {
+  isBatchControlAPIV2Enabled,
+  MemoryProgressStore,
+  ProgressEmitter,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import { RouteBatchManager } from './RouteBatchManager';
 import type { RouteBatchConfig } from './RouteBatchSession';
 import type { RouteGenerationConfig } from '../entities/RouteEntity';
@@ -23,7 +30,7 @@ export class UnifiedRouteBatchManager implements IBatchSessionManager {
     // Create shared progress infrastructure
     this.emitter = new ProgressEmitter(10); // 10 Hz
     this.store = new MemoryProgressStore();
-    
+
     // Initialize route manager with progress dependencies
     this.manager = new RouteBatchManager({
       emitter: this.emitter,
@@ -84,7 +91,7 @@ export class UnifiedRouteBatchManager implements IBatchSessionManager {
 
   async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
     const progress = await this.manager.getRouteBatchProgress(sessionId);
-    
+
     // Convert route-specific progress to standard format
     return {
       sessionId,
@@ -138,16 +145,16 @@ export interface RouteBatchConfigUnified {
     retryOnFailure?: boolean;
     maxRetries?: number;
   };
-  locationResolution?: { 
-    batchSize?: number; 
-    cacheResults?: boolean; 
-    fallbackToCoordinates?: boolean; 
+  locationResolution?: {
+    batchSize?: number;
+    cacheResults?: boolean;
+    fallbackToCoordinates?: boolean;
   };
-  validation?: { 
-    checkLocationExists?: boolean; 
-    checkDuplicateRoutes?: boolean; 
-    validateDistance?: boolean; 
-    maxDistanceKm?: number; 
+  validation?: {
+    checkLocationExists?: boolean;
+    checkDuplicateRoutes?: boolean;
+    validateDistance?: boolean;
+    maxDistanceKm?: number;
   };
   laneCaps?: Partial<Record<'osm_route' | 'searoute' | 'direct' | 'great_circle' | 'custom', number>>;
 }

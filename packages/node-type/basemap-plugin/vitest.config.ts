@@ -6,6 +6,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    pool: 'threads',
+    maxThreads: 1,
+    minThreads: 1,
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -17,15 +20,14 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**']
-    }
+      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
   },
   resolve: {
     alias: {
-      '~': 'src/*', //path.resolve(__dirname, './src')
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
-      // Resolve workspace package to source during tests to avoid prebuild requirement
-      '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
+      '~': 'src/*',
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
+      '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/dist/index.js'),
     },
   },
 });

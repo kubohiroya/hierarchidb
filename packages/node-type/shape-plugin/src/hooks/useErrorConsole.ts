@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface ErrorLogEntry {
   id: string;
@@ -29,14 +29,14 @@ export const useErrorConsole = (): UseErrorConsoleReturn => {
   const [errors, setErrors] = useState<ErrorLogEntry[]>([]);
 
   const addError = useCallback((
-    message: string, 
+    message: string,
     options: {
       level?: ErrorLogEntry['level'];
       phase?: string;
       details?: string;
       rowNumber?: number;
       columnName?: string;
-    } = {}
+    } = {},
   ) => {
     const newError: ErrorLogEntry = {
       id: crypto.randomUUID(),
@@ -48,7 +48,7 @@ export const useErrorConsole = (): UseErrorConsoleReturn => {
       rowNumber: options.rowNumber,
       columnName: options.columnName,
     };
-    
+
     setErrors(prev => [...prev, newError]);
   }, []);
 

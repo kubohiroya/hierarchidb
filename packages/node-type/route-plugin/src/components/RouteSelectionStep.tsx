@@ -5,22 +5,22 @@
 
 import React, { useState } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
+  Button,
+  Chip,
+  CircularProgress,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
   Switch,
   TextField,
-  Chip,
-  Button,
-  Stack,
-  Alert,
-  CircularProgress,
+  Typography,
 } from '@mui/material';
-import { Add, Remove, MyLocation } from '@mui/icons-material';
+import { Add, MyLocation, Remove } from '@mui/icons-material';
 import type { RouteWorkingCopy } from '../types';
 import { useTranslation } from '../i18n';
 
@@ -38,10 +38,10 @@ interface Waypoint {
 }
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
-  workingCopy,
-  onUpdate,
-  onValidationChange,
-}) => {
+                                                                        workingCopy,
+                                                                        onUpdate,
+                                                                        onValidationChange,
+                                                                      }) => {
   const { t } = useTranslation();
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
     { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
@@ -50,7 +50,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [avoidHighways, setAvoidHighways] = useState(false);
   const [routeAlgorithm, setRouteAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>(
-    'fastest'
+    'fastest',
   );
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -75,7 +75,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 
   const handleWaypointChange = (waypointId: string, field: keyof Waypoint, value: string) => {
     const newWaypoints = waypoints.map((wp) =>
-      wp.id === waypointId ? { ...wp, [field]: value } : wp
+      wp.id === waypointId ? { ...wp, [field]: value } : wp,
     );
     setWaypoints(newWaypoints);
 
@@ -98,14 +98,14 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
         const newWaypoints = waypoints.map((wp) =>
           wp.id === waypointId
             ? { ...wp, coordinates: [longitude, latitude] as [number, number] }
-            : wp
+            : wp,
         );
         setWaypoints(newWaypoints);
       },
       (error) => {
         console.error('Geolocation error:', error);
         alert(t('errors.geolocationError', 'Failed to get current location'));
-      }
+      },
     );
   };
 
@@ -170,9 +170,9 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                     : index === waypoints.length - 1
                       ? t('base-dialog.routeSelection.endPlaceholder', 'Enter destination')
                       : t(
-                          'base-dialog.routeSelection.waypointPlaceholder',
-                          'Enter waypoint location'
-                        )
+                        'base-dialog.routeSelection.waypointPlaceholder',
+                        'Enter waypoint location',
+                      )
                 }
               />
 

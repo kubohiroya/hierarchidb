@@ -1,26 +1,40 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Box, Typography, Tooltip, Paper } from '@mui/material';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Box, Paper, Tooltip, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/util';
 
 export interface MemoryUsageBarProps {
-  /** 幅 (例: '300px', '100%') */
+  /**
+   * (: '300px', '100%')
+   */
   width?: string | number;
-  /** 高さ (例: '40px') */
+  /**
+   * (: '40px')
+   */
   height?: string | number;
-  /** 更新間隔（ミリ秒） */
+  /**
+      */
   updateInterval?: number;
-  /** 使用量の警告しきい値（0-1） */
+  /**
+   * 0-1
+   */
   warningThreshold?: number;
-  /** 使用量の危険しきい値（0-1） */
+  /**
+   * 0-1
+   */
   criticalThreshold?: number;
-  /** ラベルを表示するか */
+  /**
+      */
   showLabel?: boolean;
-  /** 数値を表示するか */
+  /**
+      */
   showValues?: boolean;
-  /** コンパクトモード */
+  /**
+      */
   compact?: boolean;
-  /** 最大メモリサイズ（バイト）- 自動検出できない場合のフォールバック */
+  /**
+   * -
+   */
   maxMemory?: number;
 }
 
@@ -56,28 +70,25 @@ const BarFill = styled(Box)<{ percentage: number; severity: 'normal' | 'warning'
         : severity === 'warning'
           ? theme.palette.warning.main
           : theme.palette.success.main,
-  })
+  }),
 );
 
 // formatBytes now imported from @hierarchidb/core
 
 /**
- * メモリ使用量を帯グラフで表示するコンポーネント
- *
- * performance.measureUserAgentSpecificMemory() APIを使用して
- * より詳細なメモリ使用状況を監視し、視覚的に表示します。
- */
+    * performance.measureUserAgentSpecificMemory() API
+   */
 export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
-  width = '100%',
-  height = 32,
-  updateInterval = 10000, // measureUserAgentSpecificMemory は頻繁に呼べないため最小10秒
-  warningThreshold = 0.7,
-  criticalThreshold = 0.9,
-  showLabel = true,
-  showValues = true,
-  compact = false,
-  maxMemory = 4 * 1024 * 1024 * 1024, // デフォルト4GB
-}) => {
+                                                                width = '100%',
+                                                                height = 32,
+                                                                updateInterval = 10000, //  measureUserAgentSpecificMemory 10
+                                                                warningThreshold = 0.7,
+                                                                criticalThreshold = 0.9,
+                                                                showLabel = true,
+                                                                showValues = true,
+                                                                compact = false,
+                                                                maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
+                                                              }) => {
   const [memoryInfo, setMemoryInfo] = useState<MemoryInfo>({
     used: 0,
     total: maxMemory,
@@ -88,7 +99,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
 
   const updateMemoryInfo = useCallback(async () => {
     try {
-      // 新しいAPIをチェック
+      //  API
       if ('measureUserAgentSpecificMemory' in performance) {
         const result = await (
           performance as unknown as {
@@ -96,13 +107,12 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
           }
         ).measureUserAgentSpecificMemory();
 
-        // 総使用量を計算
         const totalUsed = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0
+          0,
         );
 
-        // performance.memory からヒープサイズ制限を取得（利用可能な場合）
+        //  performance.memory
         let totalMemory = maxMemory;
         if ('memory' in performance) {
           const memory = (performance as unknown as { memory: { jsHeapSizeLimit?: number } })
@@ -121,7 +131,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
           breakdown: result.breakdown,
         });
       } else if ('memory' in performance) {
-        // フォールバック: 古いperformance.memory APIを使用
+        //  : performance.memory API
         const memory = (
           performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
         ).memory;
@@ -144,7 +154,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
 
       }
 
-      // エラー時は古いAPIにフォールバック
+      //  API
       if ('memory' in performance) {
         const memory = (
           performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit?: number } }
@@ -163,16 +173,13 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
   }, [maxMemory]);
 
   useEffect(() => {
-    // 初回更新
     updateMemoryInfo();
 
-    // 最小間隔を10秒に制限（measureUserAgentSpecificMemoryの制約）
+    //  10measureUserAgentSpecificMemory
     const safeInterval = Math.max(updateInterval, 10000);
 
-    // 定期更新を開始
     intervalRef.current = setInterval(updateMemoryInfo, safeInterval);
 
-    // クリーンアップ
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

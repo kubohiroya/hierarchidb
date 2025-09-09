@@ -1,9 +1,9 @@
 /**
- * Shape Plugin - Main entry point
- * 3層アーキテクチャ統合エクスポート
- */
+  * Shape Plugin - Main entry point
+ * 3
+  */
 
-// Shared layer - 共通で使用される型・定数・メタデータ
+//  Shared layer -
 export * from './shared';
 
 // UI layer is internal to app; not exported in package API
@@ -13,7 +13,7 @@ export * from './shared';
 // Extension exports (for plugin extension system)
 // Extension (UI) exports omitted from public API for now
 
-// Backward compatibility - 既存コードとの互換性
+//  Backward compatibility -
 export { ShapeMetadata } from './shared/metadata';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types';
 export type { ShapeAPI } from './shared/api';

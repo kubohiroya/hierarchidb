@@ -1,22 +1,11 @@
 /**
- * データソース戦略のデモスクリプト
- * 各戦略の基本的な使用方法を示す
- */
+     */
 
-import { 
-  defaultDataSourceFactory,
-  DataSourceStrategyFactory,
-  NaturalEarthStrategy,
-  GADMStrategy,
-  OpenStreetMapStrategy,
-  GeoBoundariesStrategy,
-  FetchOptions
-} from '../index';
+import { defaultDataSourceFactory, FetchOptions, OpenStreetMapStrategy } from '../index';
 
 async function main() {
   console.log('=== Data Source Strategy Demo ===\n');
 
-  // ファクトリーの情報を表示
   console.log('Available strategies:');
   const strategies = defaultDataSourceFactory.getAllStrategyInfo();
   strategies.forEach(info => {
@@ -28,7 +17,6 @@ async function main() {
     console.log('');
   });
 
-  // 統計情報
   const stats = defaultDataSourceFactory.getStatistics();
   console.log('Factory Statistics:');
   console.log(`- Total strategies: ${stats.total}`);
@@ -37,7 +25,6 @@ async function main() {
   console.log('- By coverage level:', stats.byCoverageLevel);
   console.log('');
 
-  // 推奨戦略
   console.log('Recommended strategies:');
   console.log(`- Administrative: ${defaultDataSourceFactory.getRecommendedStrategy('administrative')}`);
   console.log(`- Natural: ${defaultDataSourceFactory.getRecommendedStrategy('natural')}`);
@@ -45,7 +32,6 @@ async function main() {
   console.log(`- Research: ${defaultDataSourceFactory.getRecommendedStrategy('research')}`);
   console.log('');
 
-  // 各戦略の設定を表示
   console.log('=== Strategy Configurations ===\n');
 
   // Natural Earth
@@ -80,85 +66,83 @@ async function main() {
   console.log(`- Cache TTL: ${gbStrategy.config.cache?.ttl}ms`);
   console.log('');
 
-  // OSMクエリ生成のデモ
+  //  OSM
   console.log('=== OSM Query Generation Demo ===\n');
   try {
     const bbox = { minLat: 35.0, maxLat: 36.0, minLng: 139.0, maxLng: 140.0 };
-    
+
     console.log('Generated Overpass queries:');
     console.log('\n1. Countries query:');
     const countriesQuery = osmStrategy.buildPresetQuery('countries', bbox);
     console.log(countriesQuery.substring(0, 200) + '...\n');
-    
+
     console.log('2. Administrative boundaries query:');
     const adminQuery = osmStrategy.buildPresetQuery('administrative', bbox);
     console.log(adminQuery.substring(0, 200) + '...\n');
-    
+
     console.log('3. Cities query:');
     const citiesQuery = osmStrategy.buildPresetQuery('cities', bbox);
     console.log(citiesQuery.substring(0, 200) + '...\n');
-    
+
   } catch (error) {
     console.error('Query generation error:', error);
   }
 
-  // ヘルスチェックのデモ
   console.log('=== Health Check Demo ===\n');
   try {
     console.log('Performing health checks...');
     const healthResults = await defaultDataSourceFactory.healthCheckAll();
-    
+
     for (const [strategyId, isHealthy] of healthResults.entries()) {
       const status = isHealthy ? '✓ OK' : '✗ FAILED';
       console.log(`${strategyId}: ${status}`);
     }
     console.log('');
-    
+
   } catch (error) {
     console.error('Health check error:', error);
   }
 
-  // データ取得フローの例（モックデータを使用）
   console.log('=== Data Processing Flow Demo ===\n');
   try {
     console.log('Simulating data processing flow...');
-    
-    // Natural Earthでの例
+
+    //  Natural Earth
     console.log('\n1. Natural Earth - Countries data:');
     const neOptions: FetchOptions = {
       endpoint: 'countries-50m',
-      bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 }
+      bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
     };
-    
+
     console.log('Fetch options:', neOptions);
     console.log('Expected processing: Shapefile → GeoJSON conversion');
     console.log('Validation: Geometry and properties checks');
     console.log('');
-    
-    // GADMでの例
+
+    //  GADM
     console.log('2. GADM - Japan administrative areas:');
     const gadmOptions: FetchOptions = {
       country: 'JPN',
-      adminLevel: 1
+      adminLevel: 1,
     };
-    
+
     console.log('Fetch options:', gadmOptions);
     console.log('Expected processing: GeoPackage → GeoJSON conversion');
     console.log('Validation: Administrative level and country checks');
     console.log('');
-    
-    // GeoBoundariesでの例
+
+    //  GeoBoundaries
     console.log('3. GeoBoundaries - USA state boundaries:');
     const gbOptions: FetchOptions = {
       country: 'USA',
-      adminLevel: 1
+      adminLevel: 1,
     };
-    
+
     console.log('Fetch options:', gbOptions);
     console.log('Expected processing: Direct GeoJSON processing');
     console.log('Validation: Shape name and metadata checks');
     console.log('');
-    
+
   } catch (error) {
     console.error('Flow demo error:', error);
   }
@@ -166,7 +150,7 @@ async function main() {
   console.log('=== Demo Complete ===');
 }
 
-// スクリプトとして直接実行された場合のみmainを実行
+//  main
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }

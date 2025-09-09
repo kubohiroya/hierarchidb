@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Box,
-  Typography,
-  SxProps,
-  Theme,
-} from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, SxProps, Theme, Typography } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
 export interface BaseAccordionProps {
@@ -54,25 +46,25 @@ export interface BaseAccordionProps {
  * Can be used directly or extended by more specific accordion components
  */
 export const BaseAccordion: React.FC<BaseAccordionProps> = ({
-  id,
-  icon,
-  title,
-  subtitle,
-  defaultExpanded = false,
-  disabled = false,
-  onExpansionChange,
-  sx,
-  headerSx,
-  contentSx,
-  headerBackgroundColor,
-  headerTextColor,
-  expandIcon = <ExpandMore />,
-  expandIconPosition = 'end',
-  children,
-  headerActions,
-  showDivider = false,
-  elevation = 1,
-}) => {
+                                                              id,
+                                                              icon,
+                                                              title,
+                                                              subtitle,
+                                                              defaultExpanded = false,
+                                                              disabled = false,
+                                                              onExpansionChange,
+                                                              sx,
+                                                              headerSx,
+                                                              contentSx,
+                                                              headerBackgroundColor,
+                                                              headerTextColor,
+                                                              expandIcon = <ExpandMore />,
+                                                              expandIconPosition = 'end',
+                                                              children,
+                                                              headerActions,
+                                                              showDivider = false,
+                                                              elevation = 1,
+                                                            }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
 
   const handleChange = (_event: React.SyntheticEvent, isExpanded: boolean) => {

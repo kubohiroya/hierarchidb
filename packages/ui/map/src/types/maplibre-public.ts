@@ -25,18 +25,31 @@ export interface MapLibreStyle {
 
 export interface MapLibreMapInstance {
   getStyle(): MapLibreStyle;
+
   getLayer(id: string): MapLibreLayer | undefined;
+
   setLayoutProperty(layerId: string, name: string, value: unknown): void;
+
   getTerrain(): unknown | null;
+
   setTerrain(options: { source: string; exaggeration?: number } | null): void;
+
   once(event: 'styledata', cb: () => void): void;
+
   on(event: string, cb: (...args: unknown[]) => void): void;
+
   getContainer(): HTMLElement;
+
   addLayer(layer: Record<string, unknown>, beforeId?: string): void;
+
   getSource(id: string): unknown;
+
   addSource(id: string, source: Record<string, unknown>): void;
+
   removeSource(id: string): void;
+
   removeLayer(id: string): void;
+
   addControl(control: unknown, position?: string): void;
 }
 

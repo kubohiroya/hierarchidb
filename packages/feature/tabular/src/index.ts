@@ -10,5 +10,6 @@ export * from './processors/NumberCoerceProcessor';
 export * from './processors/RequiredColumnsValidator';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/tabular', provides: ['tabular'] },
-  init() {},
+  init() {
+  },
 };

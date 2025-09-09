@@ -14,20 +14,20 @@ import * as Comlink from 'comlink';
 //import { NodeId } from '@hierarchidb/common-type';
 //import { WorkerPool } from './WorkerPool';
 import type {
+  DownloadResult,
+  DownloadTask,
   DownloadWorkerAPI,
+  ProcessingStage,
+  Simplify1Result,
+  Simplify1Task,
+  Simplify2Result,
+  Simplify2Task,
   SimplifyWorker1API,
   SimplifyWorker2API,
-  VectorTileWorkerAPI,
-  DownloadTask,
-  DownloadResult,
-  Simplify1Task,
-  Simplify1Result,
-  Simplify2Task,
-  Simplify2Result,
-  VectorTileTask,
-  VectorTileResult,
-  ProcessingStage,
   TaskInfo,
+  VectorTileResult,
+  VectorTileTask,
+  VectorTileWorkerAPI,
   WorkerPoolConfig,
 } from '../types';
 
@@ -46,6 +46,7 @@ export class WorkerPoolManager {
     { resolve: Function; reject: Function; timeout: NodeJS.Timeout }
   > = new Map();
   private config: WorkerPoolConfig;
+
   //private isShuttingDown = false;
 
   constructor(config: WorkerPoolConfig) {
@@ -77,7 +78,7 @@ export class WorkerPoolManager {
 
   private async initializeDownloadWorkers(): Promise<void> {
     for (let i = 0; i < this.config.downloadWorkers; i++) {
-      const worker = new Worker(new URL('./DownloadWorker.ts', import.meta.url), {
+      const worker = new Worker(new URL('@hierarchidb/shape-plugin/workers/DownloadWorker', import.meta.url), {
         type: 'module',
       });
       Comlink.wrap<DownloadWorkerAPI>(worker);
@@ -93,7 +94,7 @@ export class WorkerPoolManager {
 
   private async initializeSimplify1Workers(): Promise<void> {
     for (let i = 0; i < this.config.simplify1Workers; i++) {
-      const worker = new Worker(new URL('./SimplifyWorker1.ts', import.meta.url), {
+      const worker = new Worker(new URL('@hierarchidb/shape-plugin/workers/SimplifyWorker1', import.meta.url), {
         type: 'module',
       });
       Comlink.wrap<SimplifyWorker1API>(worker);
@@ -108,7 +109,7 @@ export class WorkerPoolManager {
 
   private async initializeSimplify2Workers(): Promise<void> {
     for (let i = 0; i < this.config.simplify2Workers; i++) {
-      const worker = new Worker(new URL('./SimplifyWorker2.ts', import.meta.url), {
+      const worker = new Worker(new URL('@hierarchidb/shape-plugin/workers/SimplifyWorker2', import.meta.url), {
         type: 'module',
       });
       Comlink.wrap<SimplifyWorker2API>(worker);
@@ -123,7 +124,7 @@ export class WorkerPoolManager {
 
   private async initializeVectorTileWorkers(): Promise<void> {
     for (let i = 0; i < this.config.vectorTileWorkers; i++) {
-      const worker = new Worker(new URL('./VectorTileWorker.ts', import.meta.url), {
+      const worker = new Worker(new URL('@hierarchidb/shape-plugin/workers/VectorTileWorker', import.meta.url), {
         type: 'module',
       });
       Comlink.wrap<VectorTileWorkerAPI>(worker);
@@ -195,7 +196,7 @@ export class WorkerPoolManager {
     if (this.downloadWorkers.includes(worker)) {
       const index = this.downloadWorkers.indexOf(worker);
       this.downloadWorkers.splice(index, 1);
-      const newWorker = new Worker(new URL('./DownloadWorker.ts', import.meta.url), {
+      const newWorker = new Worker(new URL('@hierarchidb/shape-plugin/workers/DownloadWorker', import.meta.url), {
         type: 'module',
       });
       this.downloadWorkers.push(newWorker);
@@ -204,7 +205,7 @@ export class WorkerPoolManager {
     } else if (this.simplify1Workers.includes(worker)) {
       const index = this.simplify1Workers.indexOf(worker);
       this.simplify1Workers.splice(index, 1);
-      const newWorker = new Worker(new URL('./SimplifyWorker1.ts', import.meta.url), {
+      const newWorker = new Worker(new URL('@hierarchidb/shape-plugin/workers/SimplifyWorker1', import.meta.url), {
         type: 'module',
       });
       this.simplify1Workers.push(newWorker);
@@ -213,7 +214,7 @@ export class WorkerPoolManager {
     } else if (this.simplify2Workers.includes(worker)) {
       const index = this.simplify2Workers.indexOf(worker);
       this.simplify2Workers.splice(index, 1);
-      const newWorker = new Worker(new URL('./SimplifyWorker2.ts', import.meta.url), {
+      const newWorker = new Worker(new URL('@hierarchidb/shape-plugin/workers/SimplifyWorker2', import.meta.url), {
         type: 'module',
       });
       this.simplify2Workers.push(newWorker);
@@ -222,7 +223,7 @@ export class WorkerPoolManager {
     } else if (this.vectorTileWorkers.includes(worker)) {
       const index = this.vectorTileWorkers.indexOf(worker);
       this.vectorTileWorkers.splice(index, 1);
-      const newWorker = new Worker(new URL('./VectorTileWorker.ts', import.meta.url), {
+      const newWorker = new Worker(new URL('@hierarchidb/shape-plugin/workers/VectorTileWorker', import.meta.url), {
         type: 'module',
       });
       this.vectorTileWorkers.push(newWorker);
@@ -356,7 +357,7 @@ export class WorkerPoolManager {
 
   private async executeSimplify1Task(
     worker: Worker,
-    task: Simplify1Task
+    task: Simplify1Task,
   ): Promise<Simplify1Result> {
     this.workerStatus.set(worker, 'busy');
 
@@ -376,7 +377,7 @@ export class WorkerPoolManager {
 
   private async executeSimplify2Task(
     worker: Worker,
-    task: Simplify2Task
+    task: Simplify2Task,
   ): Promise<Simplify2Result> {
     this.workerStatus.set(worker, 'busy');
 
@@ -396,7 +397,7 @@ export class WorkerPoolManager {
 
   private async executeVectorTileTask(
     worker: Worker,
-    task: VectorTileTask
+    task: VectorTileTask,
   ): Promise<VectorTileResult> {
     this.workerStatus.set(worker, 'busy');
 
@@ -512,7 +513,7 @@ export class WorkerPoolManager {
           worker.terminate();
           resolve();
         });
-      })
+      }),
     );
 
     // Clear arrays

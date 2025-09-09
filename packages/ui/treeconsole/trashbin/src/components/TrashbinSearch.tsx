@@ -1,23 +1,21 @@
 /**
- * TrashbinSearch - ゴミ箱内のアイテム検索
- *
- * ゴミ箱内のアイテムをフィルタリングするための検索入力
- */
+  * TrashbinSearch -
+    */
 
-import { TextField, InputAdornment } from '@mui/material';
+import { InputAdornment, TextField } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import type { TrashbinSearchProps } from '../types';
 
 /**
- * TrashbinSearch コンポーネント
- */
+  * TrashbinSearch
+  */
 export function TrashbinSearch({
-  searchText = '',
-  onSearchChange,
-  placeholder = 'Search trash items...',
-  variant = 'outlined',
-  size = 'small',
-}: TrashbinSearchProps) {
+                                 searchText = '',
+                                 onSearchChange,
+                                 placeholder = 'Search trash items...',
+                                 variant = 'outlined',
+                                 size = 'small',
+                               }: TrashbinSearchProps) {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange?.(event.target.value);
   };

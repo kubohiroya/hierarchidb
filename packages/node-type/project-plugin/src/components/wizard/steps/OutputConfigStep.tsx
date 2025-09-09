@@ -1,53 +1,54 @@
 import React, { useState } from 'react';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
-  Grid,
-  Typography,
-  Paper,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  FormControlLabel,
-  Switch,
-  Checkbox,
   Button,
+  Checkbox,
+  Chip,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputLabel,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
-  IconButton,
-  Stack,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  ToggleButtonGroup,
-  ToggleButton,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
   Slider,
+  Stack,
+  Switch,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
-  PictureAsPdf as PdfIcon,
-  Html as HtmlIcon,
-  Description as DocxIcon,
-  Cloud as CloudIcon,
-  Storage as LocalIcon,
-  Share as ShareIcon,
-  QrCode as QrCodeIcon,
-  Download as DownloadIcon,
-  Print as PrintIcon,
-  Edit as EditIcon,
   Add as AddIcon,
+  Cloud as CloudIcon,
   Delete as DeleteIcon,
+  Description as DocxIcon,
+  Download as DownloadIcon,
+  Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  Html as HtmlIcon,
+  PictureAsPdf as PdfIcon,
+  Print as PrintIcon,
+  QrCode as QrCodeIcon,
+  Share as ShareIcon,
+  Storage as LocalIcon,
 } from '@mui/icons-material';
-import type { ProjectEntity, ExportFormat } from '~/types/project-types';
+import type { ExportFormat, ProjectEntity } from '~/types/project-types';
 
 interface OutputConfigStepProps {
   data: Partial<ProjectEntity>;
   onComplete: (data: Partial<ProjectEntity>) => void;
 }
+
 type ReportType = 'title' | 'summary' | 'map' | 'chart' | 'table' | 'text';
 export const OutputConfigStep: React.FC<OutputConfigStepProps> = ({ data, onComplete }) => {
   const [reportEnabled, setReportEnabled] = useState(false);

@@ -1,6 +1,6 @@
 import { BatchService } from '@hierarchidb/batch';
 import { ComputeService } from '@hierarchidb/compute';
-import { DownloadService, type NetworkPort, type StoragePort, type IntegrityPort } from '@hierarchidb/download';
+import { DownloadService, type IntegrityPort, type NetworkPort, type StoragePort } from '@hierarchidb/download';
 
 class FetchNetworkPort implements NetworkPort {
   async head(url: string, init?: RequestInit) {
@@ -8,17 +8,20 @@ class FetchNetworkPort implements NetworkPort {
     const r = await authFetch(url, { method: 'HEAD', ...init });
     return wrap(r);
   }
+
   async get(url: string, init?: RequestInit) {
     const { authFetch } = await import('./utils/authFetch');
     const r = await authFetch(url, { method: 'GET', ...init });
     return wrap(r);
   }
+
   async getRange(url: string, start: number, end: number, init?: RequestInit) {
     const { authFetch } = await import('./utils/authFetch');
     const r = await authFetch(url, { method: 'GET', headers: { Range: `bytes=${start}-${end}` }, ...init });
     return wrap(r);
   }
 }
+
 function wrap(r: Response) {
   return {
     ok: r.ok,
@@ -30,17 +33,22 @@ function wrap(r: Response) {
 
 class MemoryStoragePort implements StoragePort {
   private data = new Map<string, { chunks: Map<number, ArrayBuffer>; meta?: Record<string, any> }>();
+
   async putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void> {
     const entry = this.data.get(fileId) || { chunks: new Map() };
     entry.chunks.set(index, data);
     this.data.set(fileId, entry);
   }
+
   async commit(fileId: string, metadata: Record<string, any>): Promise<void> {
     const entry = this.data.get(fileId) || { chunks: new Map() };
     entry.meta = metadata;
     this.data.set(fileId, entry);
   }
-  async getResumeInfo(_fileId: string): Promise<{ nextIndex: number } | undefined> { return undefined; }
+
+  async getResumeInfo(_fileId: string): Promise<{ nextIndex: number } | undefined> {
+    return undefined;
+  }
 }
 
 class WebCryptoIntegrityPort implements IntegrityPort {

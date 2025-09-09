@@ -1,11 +1,11 @@
 import type {
   CSVColumnInfo,
+  CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
+  CSVSelectionConfig,
   CSVTableListResult,
   CSVTableMetadata,
-  CSVSelectionConfig,
-  CSVDataResult,
 } from '@hierarchidb/ui-csv-extract';
 import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
 import * as XLSX from 'xlsx';
@@ -68,7 +68,9 @@ function detectTypes(headers: string[], rows: any[]): CSVColumnInfo[] {
 
 export class SpreadsheetCSVApiDriver {
   private static tableData: Map<string, { rows: any[]; columns: CSVColumnInfo[] }> = new Map();
-  constructor(private manager: SimpleTableMetadataManager) {}
+
+  constructor(private manager: SimpleTableMetadataManager) {
+  }
 
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
     const name = file.name.toLowerCase();
@@ -137,12 +139,14 @@ export class SpreadsheetCSVApiDriver {
       let zipLoader: any = undefined;
       try {
         if (typeof mod.loadAsync === 'function') zipLoader = mod.loadAsync;
-      } catch {}
+      } catch {
+      }
       if (!zipLoader) {
         try {
           const def = (mod as any).default;
           if (def && typeof def.loadAsync === 'function') zipLoader = def.loadAsync;
-        } catch {}
+        } catch {
+        }
       }
       let text: string | undefined;
       let csvName: string | undefined;
@@ -203,7 +207,9 @@ export class SpreadsheetCSVApiDriver {
     return { tables: filtered.slice(offset, offset + limit), total: filtered.length - offset };
   }
 
-  async deleteTable(id: string): Promise<void> { await this.manager.delete(id); }
+  async deleteTable(id: string): Promise<void> {
+    await this.manager.delete(id);
+  }
 
   private applyFilters(rows: any[], filters: CSVFilterRule[]): any[] {
     const active = filters.filter((f) => f.enabled !== false);
@@ -212,16 +218,24 @@ export class SpreadsheetCSVApiDriver {
         if (!(f.column in row)) return true; // ignore invalid column filters
         const v = row[f.column];
         switch (f.operator) {
-          case 'equals': return String(v) === String(f.value);
-          case 'not_equals': return String(v) !== String(f.value);
-          case 'contains': return String(v).toLowerCase().includes(String(f.value).toLowerCase());
-          case 'greater_than': return Number(v) > Number(f.value);
-          case 'less_than': return Number(v) < Number(f.value);
-          case 'is_null': return v === '' || v == null;
-          case 'is_not_null': return !(v === '' || v == null);
-          default: return true;
+          case 'equals':
+            return String(v) === String(f.value);
+          case 'not_equals':
+            return String(v) !== String(f.value);
+          case 'contains':
+            return String(v).toLowerCase().includes(String(f.value).toLowerCase());
+          case 'greater_than':
+            return Number(v) > Number(f.value);
+          case 'less_than':
+            return Number(v) < Number(f.value);
+          case 'is_null':
+            return v === '' || v == null;
+          case 'is_not_null':
+            return !(v === '' || v == null);
+          default:
+            return true;
         }
-      })
+      }),
     );
   }
 
@@ -276,6 +290,7 @@ export class SpreadsheetCSVApiDriver {
   async addTableReference(tableId: string, pluginId: string): Promise<void> {
     await this.manager.addReference(tableId, pluginId);
   }
+
   async removeTableReference(tableId: string, pluginId: string): Promise<void> {
     await this.manager.removeReference(tableId, pluginId);
   }

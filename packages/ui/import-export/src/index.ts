@@ -1,6 +1,6 @@
 /**
  * @hierarchidb/ui-import-export
- * 
+ *
  * UI components and hooks for import/export functionality
  */
 

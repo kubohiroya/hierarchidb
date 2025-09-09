@@ -1,13 +1,13 @@
 /**
  * SimplifyWorker1 Unit Tests
- * 
+ *
  * Tests for Douglas-Peucker feature-level simplification
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { GeoJSON } from 'geojson';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { SimplifyWorker1 } from '../SimplifyWorker1';
-import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types';
+import type { FeatureData, Simplify1Task } from '../../types';
+import { Feature } from 'geojson';
 
 (process.env.ENABLE_SHAPE_DEEP_TESTS ? describe : describe.skip)('SimplifyWorker1', () => {
   let worker: SimplifyWorker1;
@@ -33,8 +33,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
           tolerance: 0.01,
           preserveTopology: true,
           minimumArea: 1000,
-          maxVertices: 1000
-        }
+          maxVertices: 1000,
+        },
       };
 
       // Act
@@ -66,8 +66,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
         config: {
           algorithm: 'douglas-peucker',
           tolerance: 0.01,
-          preserveTopology: true
-        }
+          preserveTopology: true,
+        },
       };
 
       // Act
@@ -92,8 +92,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
         config: {
           algorithm: 'douglas-peucker',
           tolerance: 0.001, // Very low tolerance
-          preserveTopology: true
-        }
+          preserveTopology: true,
+        },
       };
 
       const highToleranceTask: Simplify1Task = {
@@ -108,8 +108,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
         config: {
           algorithm: 'douglas-peucker',
           tolerance: 0.1, // High tolerance
-          preserveTopology: true
-        }
+          preserveTopology: true,
+        },
       };
 
       // Act
@@ -129,12 +129,12 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
       // Arrange
       const validPoint: GeoJSON.Point = {
         type: 'Point',
-        coordinates: [0, 0]
+        coordinates: [0, 0],
       };
 
       const validPolygon: GeoJSON.Polygon = {
         type: 'Polygon',
-        coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+        coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
       };
 
       // Act & Assert
@@ -156,7 +156,7 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
       // Arrange
       const unsupportedGeometry = {
         type: 'UnsupportedType',
-        coordinates: [0, 0]
+        coordinates: [0, 0],
       } as any;
 
       // Act & Assert
@@ -169,17 +169,17 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
       // Arrange
       const simplePoint: GeoJSON.Point = {
         type: 'Point',
-        coordinates: [0, 0]
+        coordinates: [0, 0],
       };
 
       const simpleLineString: GeoJSON.LineString = {
         type: 'LineString',
-        coordinates: [[0, 0], [1, 1], [2, 2]]
+        coordinates: [[0, 0], [1, 1], [2, 2]],
       };
 
       const polygon: GeoJSON.Polygon = {
         type: 'Polygon',
-        coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+        coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
       };
 
       // Act
@@ -215,8 +215,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
           downloadedAt: Date.now(),
           simplificationLevel: 0,
           qualityScore: 1,
-          bbox: [0, 0, 0, 0]
-        }
+          bbox: [0, 0, 0, 0],
+        },
       };
 
       const feature2: FeatureData = {
@@ -229,8 +229,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
           downloadedAt: Date.now(),
           simplificationLevel: 0,
           qualityScore: 1,
-          bbox: [1, 1, 1, 1]
-        }
+          bbox: [1, 1, 1, 1],
+        },
       };
 
       const duplicateFeature1: FeatureData = { ...feature1 }; // Same ID
@@ -238,7 +238,7 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
       const features = [feature1, feature2, duplicateFeature1];
 
       // Act
-      const optimized = await worker.optimizeFeatures(features);
+      const optimized = await worker.optimizeFeatures(features as unknown as Feature[]);
 
       // Assert
       expect(optimized).toHaveLength(2); // Duplicate should be removed
@@ -257,8 +257,8 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
           downloadedAt: Date.now(),
           simplificationLevel: 0,
           qualityScore: 1,
-          bbox: [0, 0, 0, 0]
-        }
+          bbox: [0, 0, 0, 0],
+        },
       };
 
       const invalidFeature: FeatureData = {
@@ -271,17 +271,18 @@ import type { Simplify1Task, SimplifyTaskConfig, FeatureData } from '../../types
           downloadedAt: Date.now(),
           simplificationLevel: 0,
           qualityScore: 1,
-          bbox: [0, 0, 0, 0]
-        }
+          bbox: [0, 0, 0, 0],
+        },
       };
 
       const features = [validFeature, invalidFeature];
 
       // Act
-      const optimized = await worker.optimizeFeatures(features);
+      const optimized = await worker.optimizeFeatures(features as unknown as Feature[]);
 
       // Assert
       expect(optimized).toHaveLength(1);
-      expect(optimized[0].id).toBe('valid-feature');
+      expect(optimized[0]?.id).toBe('valid-feature');
     });
+  });
 });

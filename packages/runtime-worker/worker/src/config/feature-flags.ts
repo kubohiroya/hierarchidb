@@ -1,29 +1,20 @@
 // Centralized feature flag reading for runtime-worker
-// Note: Flags are fixed at startup. Default is OFF for safety.
+// Make flags dynamic via getters so tests can mutate process.env between imports.
+
+const envOn = (k: string) => (typeof process !== 'undefined' && (process as any)?.env?.[k]) === '1';
 
 export const FEATURE_FLAGS = {
-  WORKER_USE_CMDPROC_CREATE_UPDATE:
-    (typeof process !== 'undefined' && process?.env?.WORKER_USE_CMDPROC_CREATE_UPDATE) === '1',
-  WORKER_USE_CMDPROC_MOVE_REMOVE:
-    (typeof process !== 'undefined' && process?.env?.WORKER_USE_CMDPROC_MOVE_REMOVE) === '1',
-  WORKER_WC_COMMIT_V2:
-    (typeof process !== 'undefined' && process?.env?.WORKER_WC_COMMIT_V2) === '1',
-  WORKER_TRASH_USE_HOLDER:
-    (typeof process !== 'undefined' && process?.env?.WORKER_TRASH_USE_HOLDER) === '1',
-  WORKER_METRICS_ENABLED:
-    (typeof process !== 'undefined' && process?.env?.WORKER_METRICS_ENABLED) === '1',
-  WORKER_POLICY_C:
-    (typeof process !== 'undefined' && process?.env?.WORKER_POLICY_C) === '1',
-  WORKER_TX_ENABLED:
-    (typeof process !== 'undefined' && process?.env?.WORKER_TX_ENABLED) === '1',
-  WORKER_ENTITY_UNIFIED:
-    (typeof process !== 'undefined' && process?.env?.WORKER_ENTITY_UNIFIED) === '1',
+  get WORKER_USE_CMDPROC_CREATE_UPDATE() { return envOn('WORKER_USE_CMDPROC_CREATE_UPDATE'); },
+  get WORKER_USE_CMDPROC_MOVE_REMOVE() { return envOn('WORKER_USE_CMDPROC_MOVE_REMOVE'); },
+  get WORKER_WC_COMMIT_V2() { return envOn('WORKER_WC_COMMIT_V2'); },
+  get WORKER_TRASH_USE_HOLDER() { return envOn('WORKER_TRASH_USE_HOLDER'); },
+  get WORKER_METRICS_ENABLED() { return envOn('WORKER_METRICS_ENABLED'); },
+  get WORKER_POLICY_C() { return envOn('WORKER_POLICY_C'); },
+  get WORKER_TX_ENABLED() { return envOn('WORKER_TX_ENABLED'); },
+  get WORKER_ENTITY_UNIFIED() { return envOn('WORKER_ENTITY_UNIFIED'); },
   // Common progress type adoption across plugins (UI-independent)
-  WORKER_PROGRESS_COMMON_TYPES:
-    (typeof process !== 'undefined' && process?.env?.WORKER_PROGRESS_COMMON_TYPES) === '1',
+  get WORKER_PROGRESS_COMMON_TYPES() { return envOn('WORKER_PROGRESS_COMMON_TYPES'); },
   // Download strategy adoption (DI) for plugins
-  LOCATION_DOWNLOAD_STRATEGY:
-    (typeof process !== 'undefined' && process?.env?.LOCATION_DOWNLOAD_STRATEGY) === '1',
-  SHAPE_DOWNLOAD_STRATEGY:
-    (typeof process !== 'undefined' && process?.env?.SHAPE_DOWNLOAD_STRATEGY) === '1',
+  get LOCATION_DOWNLOAD_STRATEGY() { return envOn('LOCATION_DOWNLOAD_STRATEGY'); },
+  get SHAPE_DOWNLOAD_STRATEGY() { return envOn('SHAPE_DOWNLOAD_STRATEGY'); },
 } as const;

@@ -4,7 +4,7 @@
  * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
-import type { CSVProcessingConfig, CSVColumnType } from '@hierarchidb/ui-csv-extract';
+import type { CSVColumnType, CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
 
 interface ParsedCSV {
   rows: Array<Record<string, string | number | null>>;
@@ -17,14 +17,14 @@ interface TypedColumn {
 }
 
 /**
- * 【機能概要】: CSV文字列のパース処理
- * 【実装方針】: RFC4180準拠のCSVパース、設定可能な区切り文字対応
- * 【テスト対応】: 各種区切り文字、クォート文字、エスケープ文字の組み合わせテスト
- * 🟢 信頼性レベル: RFC準拠パース＋セキュリティサニタイズ
- */
+  * : CSV
+ * : RFC4180CSV
+ * :
+ * : RFC
+  */
 export async function parseCSVContent(
   content: string,
-  config: CSVProcessingConfig = {}
+  config: CSVProcessingConfig = {},
 ): Promise<ParsedCSV> {
   const {
     delimiter = ',',
@@ -115,7 +115,7 @@ export async function parseCSVContent(
 export function detectColumnTypes(
   columnNames: string[],
   rows: Array<Record<string, any>>,
-  sampleSize: number = 1000
+  sampleSize: number = 1000,
 ): TypedColumn[] {
   // 【サンプリング】: パフォーマンス向上のためサンプル抽出
   const sampleRows = rows.length > sampleSize ? rows.slice(0, sampleSize) : rows;
@@ -225,7 +225,7 @@ function parseCSVLine(
   line: string,
   delimiter: string,
   quoteChar: string,
-  escapeChar: string
+  escapeChar: string,
 ): string[] {
   const fields: string[] = [];
   let currentField = '';
@@ -311,6 +311,6 @@ function isDateValue(value: string): boolean {
 function isBooleanValue(value: string): boolean {
   const lowerValue = value.toLowerCase();
   return ['true', 'false', 'yes', 'no', '1', '0', 'on', 'off', 'enabled', 'disabled'].includes(
-    lowerValue
+    lowerValue,
   );
 }

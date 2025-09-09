@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BatchSessionState, BatchProgress } from './AbstractBatchSession';
+import type { BatchProgress, BatchSessionState } from './AbstractBatchSession';
 
 /**
  * Common interface for batch session management across all plugins
@@ -128,12 +128,12 @@ export function isBatchControlAPIV2Enabled(): boolean {
   if (typeof process !== 'undefined' && process.env) {
     return process.env.BATCH_CONTROL_API_V2 === 'true' || process.env.BATCH_CONTROL_API_V2 === '1';
   }
-  
+
   // Check global feature flags
   if (typeof globalThis !== 'undefined' && (globalThis as any).FEATURE_FLAGS) {
     return (globalThis as any).FEATURE_FLAGS.BATCH_CONTROL_API_V2 === true;
   }
-  
+
   return false;
 }
 
@@ -142,6 +142,8 @@ export function isBatchControlAPIV2Enabled(): boolean {
  */
 export interface BatchManagerFactory<TConfig = any, TData = any> {
   createManager(deps?: any): IBatchSessionManager;
+
   validateConfig(config: TConfig): boolean;
+
   validateData(data: TData): boolean;
 }

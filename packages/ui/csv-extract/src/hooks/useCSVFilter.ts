@@ -3,9 +3,9 @@
  * @description Hook for managing CSV filtering and preview
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useCSVApi } from '~/context/CSVContext';
-import type { CSVFilterRule, CSVDataResult, CSVSelectionConfig } from '~/types';
+import type { CSVDataResult, CSVFilterRule, CSVSelectionConfig } from '~/types';
 
 /**
  * Options for useCSVFilter hook
@@ -87,9 +87,9 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
 
   /**
    * Get enabled filter rules
-  const enabledRules = useMemo(() => {
-    return filterRules.filter(rule => rule.enabled);
-  }, [filterRules]);
+   const enabledRules = useMemo(() => {
+   return filterRules.filter(rule => rule.enabled);
+   }, [filterRules]);
    */
 
   /**
@@ -106,7 +106,7 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
         const data = await csvApi.getFilteredPreview(
           tableId,
           rules.filter((rule) => rule.enabled),
-          maxPreviewRows
+          maxPreviewRows,
         );
 
         setPreviewData(data);
@@ -118,7 +118,7 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
         setIsLoading(false);
       }
     },
-    [csvApi, tableId, maxPreviewRows]
+    [csvApi, tableId, maxPreviewRows],
   );
 
   /**
@@ -128,7 +128,7 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
     async (rules: CSVFilterRule[]) => {
       await fetchPreview(rules);
     },
-    [fetchPreview]
+    [fetchPreview],
   );
 
   /**
@@ -210,10 +210,10 @@ export const useCSVFilter = (options: UseCSVFilterOptions): UseCSVFilterResult =
     (id: string) => {
       updateRule(id, { enabled: undefined }); // Will be inverted by the update logic
       setFilterRules((prev) =>
-        prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule))
+        prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule)),
       );
     },
-    [updateRule]
+    [updateRule],
   );
 
   /**
@@ -330,7 +330,7 @@ export const useCSVSelection = (options: UseCSVSelectionOptions): UseCSVSelectio
       const data = await csvApi.getFilteredPreview(
         tableMetadataId,
         filterRules.filter((rule) => rule.enabled),
-        previewRowCount
+        previewRowCount,
       );
 
       setPreviewData(data);

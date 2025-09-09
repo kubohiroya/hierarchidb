@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TreeMutationService } from '~/services/TreeMutationService';
-import { CommandProcessor } from '~/services/CommandProcessor';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TreeMutationService } from '../TreeMutationService';
+import { CommandProcessor } from '../CommandProcessor';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 
 describe('Feature flag: WORKER_USE_CMDPROC_CREATE_UPDATE', () => {
@@ -16,7 +16,8 @@ describe('Feature flag: WORKER_USE_CMDPROC_CREATE_UPDATE', () => {
       updatedAt: Date.now(),
       version: 1,
     } satisfies Partial<TreeNode> as TreeNode)),
-    updateNode: vi.fn(async (_node: Partial<TreeNode>) => {}),
+    updateNode: vi.fn(async (_node: Partial<TreeNode>) => {
+    }),
     listChildren: vi.fn(async (_id: NodeId) => []),
   };
 
@@ -96,9 +97,11 @@ describe('Feature flag: WORKER_USE_CMDPROC_MOVE_REMOVE', () => {
       updatedAt: Date.now(),
       version: 1,
     } as TreeNode)),
-    updateNode: vi.fn(async (_node: Partial<TreeNode>) => {}),
+    updateNode: vi.fn(async (_node: Partial<TreeNode>) => {
+    }),
     listChildren: vi.fn(async (_id: NodeId) => []),
-    deleteNode: vi.fn(async (_id: NodeId) => {}),
+    deleteNode: vi.fn(async (_id: NodeId) => {
+    }),
   };
 
   beforeEach(() => {

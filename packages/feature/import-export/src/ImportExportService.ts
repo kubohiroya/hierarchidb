@@ -1,12 +1,12 @@
-import type { NodeId, TreeNode, NodeType, ValidationErrors, ValidationResult } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode, ValidationErrors, ValidationResult } from '@hierarchidb/common-type';
 import type {
+  ExportNodesParams,
+  ExportResult,
   ImportExportAPI,
   ImportNodesParams,
   ImportResult,
-  ExportNodesParams,
-  ExportResult,
-  ValidateImportParams,
   OperationStatus,
+  ValidateImportParams,
 } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import crypto from 'crypto';
@@ -20,7 +20,8 @@ export class ImportExportService implements ImportExportAPI {
     return SingletonMixin.getSingleton(ImportExportService.name, () => new ImportExportService(db));
   }
 
-  constructor(private db: ImportExportDBPort) {}
+  constructor(private db: ImportExportDBPort) {
+  }
 
   async importNodes(params: ImportNodesParams): Promise<ImportResult> {
     const operationId = this.generateOperationId();
@@ -107,7 +108,11 @@ export class ImportExportService implements ImportExportAPI {
             data: { ...params.data, nodes: entry.children },
             validateFirst: false,
           });
+          // Aggregate child results into the parent operation
           skippedCount += childResult.skippedCount;
+          if (childResult.importedNodeIds?.length) {
+            importedNodeIds.push(...childResult.importedNodeIds);
+          }
         }
       }
 
@@ -286,7 +291,11 @@ export class ImportExportService implements ImportExportAPI {
       version: '1.0',
       exportDate: new Date().toISOString(),
       nodeCount: nodes.length,
-      nodes: nodes.map((node) => ({ name: node.name, nodeType: node.nodeType, description: (node as any).description })),
+      nodes: nodes.map((node) => ({
+        name: node.name,
+        nodeType: node.nodeType,
+        description: (node as any).description,
+      })),
     };
     return JSON.stringify(exportData, null, 2);
   }
@@ -306,7 +315,7 @@ export class ImportExportService implements ImportExportAPI {
           }
           return String(value);
         })
-        .join(',')
+        .join(','),
     );
     return [headers, ...rows].join('\n');
   }

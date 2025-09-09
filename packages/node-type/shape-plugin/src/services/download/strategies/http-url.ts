@@ -1,10 +1,14 @@
 import type { IShapeDownloadStrategy } from '../strategy';
 import type { BatchTaskLike } from '../../../types/BatchTaskLike';
-import { DownloadService, DexieChunkStoragePort, FetchNetworkPort } from '@hierarchidb/download';
+import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
 export class HttpUrlStrategy implements IShapeDownloadStrategy {
   readonly id = 'http-url-default';
-  supports(_task: BatchTaskLike): boolean { return true; }
+
+  supports(_task: BatchTaskLike): boolean {
+    return true;
+  }
+
   async download(task: BatchTaskLike): Promise<{ text: string; sizeBytes?: number; featureCount?: number }> {
     const url = this.buildUrl(task);
     const net = new FetchNetworkPort({ perHostConcurrency: 4, retries: 3 });

@@ -1,10 +1,5 @@
-import { useState, useEffect } from 'react';
-import type {
-  NodeId,
-  CreateMenuItem,
-  CreateMenuItemOrDivider,
-  IconComponent,
-} from '@hierarchidb/common-type';
+import { useEffect, useState } from 'react';
+import type { CreateMenuItem, CreateMenuItemOrDivider, IconComponent, NodeId } from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
 import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
 
@@ -19,7 +14,7 @@ import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
  */
 export function useDynamicCreateMenu(
   parentId: NodeId,
-  nodeAdapter: NodeDataAdapter
+  nodeAdapter: NodeDataAdapter,
 ): {
   readonly menuItems: readonly CreateMenuItemOrDivider[];
   readonly loading: boolean;
@@ -59,12 +54,12 @@ export function useDynamicCreateMenu(
         // Get allowed child types from Worker layer
         const allowedChildTypes = await getWorkerAllowedChildTypes(
           nodeAdapter,
-          parentNode.nodeType
+          parentNode.nodeType,
         );
 
         // Filter plugins by allowed types
         const allowedPlugins = creatablePlugins.filter((plugin) =>
-          allowedChildTypes.includes(plugin.nodeType)
+          allowedChildTypes.includes(plugin.nodeType),
         );
 
         // Check permissions for each plugin
@@ -119,7 +114,7 @@ export function useDynamicCreateMenu(
  */
 async function getWorkerAllowedChildTypes(
   nodeAdapter: NodeDataAdapter,
-  parentNodeType: string
+  parentNodeType: string,
 ): Promise<readonly string[]> {
   try {
     // Try to get from Worker API if method exists
@@ -143,7 +138,7 @@ async function getWorkerAllowedChildTypes(
  */
 async function checkPluginPermissions(
   plugins: readonly any[],
-  parentId: NodeId
+  parentId: NodeId,
 ): Promise<readonly any[]> {
   const allowedPlugins: any[] = [];
 
@@ -211,7 +206,7 @@ function groupMenuItems(items: readonly CreateMenuItem[]): readonly CreateMenuIt
  */
 export function useCreateMenuItem(
   _nodeAdapter: NodeDataAdapter,
-  unifiedOperations: any // TODO: Type this properly
+  unifiedOperations: any, // TODO: Type this properly
 ) {
   return function createMenuItemWithHandler(parentId: NodeId, nodeType: string): CreateMenuItem {
     const plugin = getUIPluginRegistry().get(nodeType);

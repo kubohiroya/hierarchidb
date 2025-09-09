@@ -4,24 +4,12 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Alert,
-  Stack,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material';
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack, Typography } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 
 import { CountryMatrixSelector } from './CountryMatrixSelector';
 import type { Country, CountryFilter } from '../types/Country';
-import type { MatrixConfig, MatrixSelection, ColumnSet } from '../types/MatrixColumn';
+import type { ColumnSet, MatrixConfig, MatrixSelection } from '../types/MatrixColumn';
 
 export interface CountryMatrixStepProps {
   /** Step title */
@@ -50,23 +38,23 @@ export interface CountryMatrixStepProps {
 
 /**
  * CountryMatrixStep - Ready-to-use step component for multi-step dialogs
- * 
+ *
  * This component wraps CountryMatrixSelector with additional UI elements
  * suitable for use in multi-step workflows like StepperDialog.
  */
 export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
-  title = 'Select Countries and Options',
-  description,
-  countries,
-  matrixConfig: rawMatrixConfig,
-  selections,
-  onSelectionsChange,
-  initialFilter,
-  height = 500,
-  showValidationInfo = true,
-  minSelections = 1,
-  showConfiguration = false,
-}) => {
+                                                                      title = 'Select Countries and Options',
+                                                                      description,
+                                                                      countries,
+                                                                      matrixConfig: rawMatrixConfig,
+                                                                      selections,
+                                                                      onSelectionsChange,
+                                                                      initialFilter,
+                                                                      height = 500,
+                                                                      showValidationInfo = true,
+                                                                      minSelections = 1,
+                                                                      showConfiguration = false,
+                                                                    }) => {
   // Convert ColumnSet to MatrixConfig if needed
   const matrixConfig: MatrixConfig = useMemo(() => {
     if ('type' in rawMatrixConfig) {
@@ -120,7 +108,7 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
-        
+
         {description && (
           <Typography variant="body2" color="text.secondary" gutterBottom>
             {description}
@@ -162,7 +150,7 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
                   />
                 ))}
               </Stack>
-              
+
               {columnSetInfo && (
                 <>
                   <Typography variant="body2">

@@ -29,7 +29,7 @@ sequenceDiagram
     participant App as App Component
     participant WP as WorkerSingletonProvider
     participant WAC as WorkerAPIClient
-    participant IW as initWorkerClient.ts
+    participant IW as client.ts
     participant W as Worker Thread
 
     %% 初期化の流れ
@@ -182,7 +182,7 @@ class WorkerAPIClient {
 - 詳細なログ出力
 
 ### 5.3 initWorker の簡素化
-**ファイル**: `app/src/initWorkerClient.ts`
+**ファイル**: `app/src/client.ts`
 
 #### 主要変更：
 - ComlinkWorkerの削除（標準的なComlink.wrapのみ使用）

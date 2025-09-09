@@ -1,15 +1,15 @@
 /**
- * @file stylerTypes.ts
+  * @file stylerTypes.ts
  * @description Styler plugin type definitions
- * 【機能概要】: Styler設定に関する型定義
- * 【実装方針】: eria-cartographの型定義をHierarchiDBに適応
- * 🟢 信頼性レベル: 型定義により型安全性を確保
- */
+ * : Styler
+ * : eria-cartographHierarchiDB
+ * :
+  */
 
 /**
- * 【型定義】: MapLibre style propertyの種類
- * 🟢 信頼性レベル: MapLibre GL JS仕様に準拠
- */
+  * : MapLibre style property
+ * : MapLibre GL JS
+  */
 export type MapLibreStyleProperty =
   | 'fill-color'
   | 'fill-opacity'
@@ -23,68 +23,61 @@ export type MapLibreStyleProperty =
   | 'text-halo-width';
 
 /**
- * 【型定義】: カラーアルゴリズムの種類
- * 🟢 信頼性レベル: 2種類の標準的なカラースペース
- */
+  * :
+ * : 2
+  */
 export type ColorAlgorithm = 'linear' | 'quantile' | 'jenks' | 'equal';
 
 /**
- * 【型定義】: カラースペースの種類
- * 🟢 信頼性レベル: HSVとRGB両対応
- */
+  * :
+ * : HSVRGB
+  */
 export type ColorSpace = 'hsv' | 'rgb' | 'lab';
 
 /**
- * 【型定義】: Stylerのマッピング設定
- * 🟢 信頼性レベル: 数値範囲とカラー範囲のマッピング
- */
+  * : Styler
+ * :
+  */
 export interface StylerMapping {
-  // 数値範囲
   min: number;
   max: number;
 
-  // HSVカラースペース設定
+  //  HSV
   hueStart: number; // 0-360
   hueEnd: number; // 0-360
   saturation: number; // 0-1
   brightness: number; // 0-1
 
-  // RGBカラースペース設定（オプション）
+  //  RGB
   startColor?: string; // hex color
   endColor?: string; // hex color
 }
 
 /**
- * 【型定義】: Styler設定全体
- * 🟢 信頼性レベル: 完全な設定構造
- */
+  * : Styler
+ * :
+  */
 export interface StylerConfig {
-  // 対象となるスタイルプロパティ
   targetProperty: MapLibreStyleProperty | null;
 
-  // カラーアルゴリズム
   algorithm: ColorAlgorithm;
 
-  // カラースペース
   colorSpace: ColorSpace;
 
-  // マッピング設定
   mapping: StylerMapping;
 
-  // 選択されたカラム情報
   keyColumn?: string;
   valueColumn?: string;
 
-  // その他のオプション
   invertColors?: boolean;
   opacity?: number;
   enabled?: boolean;
 }
 
 /**
- * 【型定義】: MapLibreプロパティのメタデータ
- * 🟢 信頼性レベル: プロパティごとの設定情報
- */
+  * : MapLibre
+ * :
+  */
 export interface MapLibrePropertyMetadata {
   name: string;
   displayName: string;
@@ -97,9 +90,9 @@ export interface MapLibrePropertyMetadata {
 }
 
 /**
- * 【型定義】: プロパティグループ
- * 🟢 信頼性レベル: UIでのグループ表示用
- */
+  * :
+ * : UI
+  */
 export interface PropertyGroup {
   name: string;
   displayName: string;
@@ -107,9 +100,9 @@ export interface PropertyGroup {
 }
 
 /**
- * 【型定義】: テーブルプレビュー用プロパティ
- * 🟢 信頼性レベル: データプレビューUI用
- */
+  * :
+ * : UI
+  */
 export interface TablePreviewProps {
   data: Array<Record<string, any>>;
   selectedKeyColumn?: string;
@@ -119,11 +112,11 @@ export interface TablePreviewProps {
 }
 
 /**
- * 【型定義】: 色計算結果
- * 🟢 信頼性レベル: 色計算のレスポンス型
- */
+  * :
+ * :
+  */
 export interface ColorCalculationResult {
-  color: string; // RGB/HSV/Hex形式
+  color: string; //  RGB/HSV/Hex
   opacity?: number;
   metadata?: {
     hue?: number;
@@ -136,9 +129,9 @@ export interface ColorCalculationResult {
 }
 
 /**
- * 【定数】: Stylerのデフォルト設定
- * 🟢 信頼性レベル: 標準的なデフォルト値
- */
+  * : Styler
+ * :
+  */
 export const StylerConfigDefault: StylerConfig = {
   targetProperty: null,
   algorithm: 'linear',
@@ -157,9 +150,9 @@ export const StylerConfigDefault: StylerConfig = {
 };
 
 /**
- * 【定数】: MapLibreプロパティのメタデータ定義
- * 🟢 信頼性レベル: MapLibre仕様に基づく
- */
+  * : MapLibre
+ * : MapLibre
+  */
 export const MAPLIBRE_PROPERTY_METADATA: Record<MapLibreStyleProperty, MapLibrePropertyMetadata> = {
   'fill-color': {
     name: 'fill-color',
@@ -249,9 +242,9 @@ export const MAPLIBRE_PROPERTY_METADATA: Record<MapLibreStyleProperty, MapLibreP
 };
 
 /**
- * 【定数】: プロパティグループ定義
- * 🟢 信頼性レベル: UI表示用のグループ化
- */
+  * :
+ * : UI
+  */
 export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
   {
     name: 'fill',

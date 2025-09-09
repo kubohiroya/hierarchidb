@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { RouteGenerator } from '../../src/services/RouteGenerator';
 
 describe('RouteGenerator engine delegation', () => {
   it('delegates osm_route to provided engine and maps distance/duration', async () => {
-    const points: [number, number][] = [[139.7,35.6],[135.5,34.7]];
+    const points: [number, number][] = [[139.7, 35.6], [135.5, 34.7]];
     const fakeEngine = {
       route: async (_pts: any, _opts: any) => ({
-        line: [[139.7,35.6],[137.0,35.2],[135.5,34.7]],
+        line: [[139.7, 35.6], [137.0, 35.2], [135.5, 34.7]],
         distance_m: 480000,
         duration_s: 18000,
       }),

@@ -1,45 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
   Grid,
-  Typography,
-  Paper,
+  IconButton,
+  InputLabel,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
   ListItemSecondaryAction,
-  IconButton,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
+  ListItemText,
   MenuItem,
-  FormControl,
-  InputLabel,
+  Paper,
+  Select,
   Slider,
-  Switch,
-  FormControlLabel,
-  Chip,
   Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
+  Description as PropertyIcon,
   DragIndicator as DragIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
+  Edit as EditIcon,
+  GridOn as ShapeIcon,
   Layers as LayersIcon,
   Place as LocationIcon,
   Timeline as RouteIcon,
-  GridOn as ShapeIcon,
-  Description as PropertyIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ProjectEntity, ProjectLayer } from '~/types/project-types';
 
@@ -116,7 +116,7 @@ const LayerEditDialog: React.FC<LayerEditDialogProps> = ({ open, layer, onClose,
           fields: [],
         },
       },
-    }
+    },
   );
 
   const handleSave = () => {
@@ -526,8 +526,8 @@ export const LayerConfigStep: React.FC<LayerConfigStepProps> = ({ data, onComple
   const handleToggleVisibility = (layerId: string) => {
     setLayers(
       layers.map((l) =>
-        l.id === layerId ? { ...l, config: { ...l.config, enabled: !l.config.enabled } } : l
-      )
+        l.id === layerId ? { ...l, config: { ...l.config, enabled: !l.config.enabled } } : l,
+      ),
     );
   };
 

@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
-import { CoreDB } from '~/services/CoreDB';
-import { CommandProcessor } from '~/services/CommandProcessor';
-import { encodeWorkingCopyHolderName } from '~/services/utils/holder-encoding';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import { CoreDB } from '../../services/CoreDB';
+import { CommandProcessor } from '../../services/CommandProcessor';
+import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encoding';
 
 describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   beforeEach(() => {
@@ -70,7 +70,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     } as any);
 
     const move = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId })
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId }),
     );
     expect(move.success).toBe(false);
 
@@ -121,7 +121,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
 
     // No WC yet: moving A should be allowed
     const okMove = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p3 as NodeId })
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p3 as NodeId }),
     );
     expect(okMove.success).toBe(true);
 
@@ -154,7 +154,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
 
     // Now moving A should be blocked because B (descendant) has WC
     const blocked = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p3 as NodeId })
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p3 as NodeId }),
     );
     expect(blocked.success).toBe(false);
   });
@@ -200,10 +200,28 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       updatedAt: Date.now(),
       version: 1,
     } as any);
-    await core.createNode({ id: ('wcC3-' + Date.now()) as NodeId, parentId: holderId, nodeType: 'folder' as NodeType, name: 'Draft3', depth: 1, createdAt: Date.now(), updatedAt: Date.now(), version: 1 } as any);
+    await core.createNode({
+      id: ('wcC3-' + Date.now()) as NodeId,
+      parentId: holderId,
+      nodeType: 'folder' as NodeType,
+      name: 'Draft3',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    } as any);
 
     // Move PX within Projects should be allowed
-    const p2 = await core.createNode({ id: ('p2-' + Date.now()) as NodeId, parentId: 'p:root' as NodeId, nodeType: 'folder' as NodeType, name: 'P2', depth: 1, createdAt: Date.now(), updatedAt: Date.now(), version: 1 } as any);
+    const p2 = await core.createNode({
+      id: ('p2-' + Date.now()) as NodeId,
+      parentId: 'p:root' as NodeId,
+      nodeType: 'folder' as NodeType,
+      name: 'P2',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    } as any);
     const ok = await cp.processCommand(cp.createEnvelope('moveNodes', { nodeIds: [px], toParentId: p2 as NodeId }));
     expect(ok.success).toBe(true);
   });

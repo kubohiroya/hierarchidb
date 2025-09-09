@@ -2,7 +2,7 @@
  * KV Storage utilities with optimized transaction support
  */
 
-import { deriveKey, encrypt, decrypt, generateSecureToken } from './encryption.js';
+import { decrypt, deriveKey, encrypt, generateSecureToken } from './encryption.js';
 
 /**
  * Combined data structure to reduce KV operations
@@ -45,8 +45,9 @@ export class KVStorageManager {
 
   constructor(
     private kv: KVNamespace,
-    private encryptionSecret: string
-  ) {}
+    private encryptionSecret: string,
+  ) {
+  }
 
   /**
    * Stores user authentication data with a single KV operation
@@ -64,7 +65,7 @@ export class KVStorageManager {
       sessionToken: string;
       sessionDuration: number; // in hours
       deviceInfo?: string;
-    }
+    },
   ): Promise<string> {
     const refreshTokenId = generateSecureToken(32);
     const key = await deriveKey(this.encryptionSecret);
@@ -117,7 +118,7 @@ export class KVStorageManager {
     oldSessionToken: string,
     newSessionToken: string,
     sessionDuration: number,
-    refreshTokenId?: string
+    refreshTokenId?: string,
   ): Promise<{ success: boolean; newRefreshTokenId?: string; error?: string }> {
     const userId = await this.kv.get(`${KVStorageManager.SESSION_INDEX_PREFIX}${oldSessionToken}`);
     if (!userId) {
@@ -140,17 +141,15 @@ export class KVStorageManager {
       return { success: false, error: 'Refresh token expired' };
     }
 
-    // リフレッシュトークンIDの検証（提供された場合）
+    //  ID
     if (refreshTokenId) {
-      // トークン再利用の検出
       if (userAuthData.usedTokens?.includes(refreshTokenId)) {
         console.error(`Refresh token reuse detected for user ${userId}`);
-        // セキュリティ違反: 全セッションを無効化
+        //  :
         await this.revokeUser(userId);
         return { success: false, error: 'Token reuse detected - all sessions revoked' };
       }
 
-      // 現在のトークンまたは前のトークン（グレースピリオド）でない場合は拒否
       if (
         refreshTokenId !== userAuthData.refreshToken.id &&
         refreshTokenId !== userAuthData.refreshToken.previousTokenId
@@ -159,22 +158,20 @@ export class KVStorageManager {
       }
     }
 
-    // 新しいリフレッシュトークンIDを生成（ローテーション）
+    //  ID
     const newRefreshTokenId = generateSecureToken(32);
 
-    // 使用済みトークンリストを更新（最大100件保持）
+    //  100
     const usedTokens = userAuthData.usedTokens || [];
     if (userAuthData.refreshToken.id) {
       usedTokens.push(userAuthData.refreshToken.id);
     }
     userAuthData.usedTokens = usedTokens.slice(-100);
 
-    // リフレッシュトークンをローテーション
     userAuthData.refreshToken = {
       ...userAuthData.refreshToken,
       id: newRefreshTokenId,
-      previousTokenId: userAuthData.refreshToken.id, // グレースピリオド用
-      lastUsedAt: now,
+      previousTokenId: userAuthData.refreshToken.id, lastUsedAt: now,
       rotationCount: (userAuthData.refreshToken.rotationCount || 0) + 1,
     };
 
@@ -244,7 +241,7 @@ export class KVStorageManager {
     // Delete all session indices
     await Promise.all([
       ...Object.keys(userAuthData.sessions).map((sessionToken) =>
-        this.kv.delete(`${KVStorageManager.SESSION_INDEX_PREFIX}${sessionToken}`)
+        this.kv.delete(`${KVStorageManager.SESSION_INDEX_PREFIX}${sessionToken}`),
       ),
       this.kv.delete(`${KVStorageManager.USER_AUTH_PREFIX}${userId}`),
     ]);

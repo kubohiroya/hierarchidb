@@ -75,20 +75,20 @@ export interface FileInputWithUrlProps {
 }
 
 export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
-  onFileSelect,
-  accept = '*',
-  buttonLabel = 'Select File',
-  loading = false,
-  error = undefined,
-  showUrlDownload = true,
-  instructions: _instructions,
-  disabled = false,
-  sx,
-  onUrlDownload,
-  defaultDownloadUrl,
-  onDownloadProgress,
-  layout = 'vertical',
-}) => {
+                                                                    onFileSelect,
+                                                                    accept = '*',
+                                                                    buttonLabel = 'Select File',
+                                                                    loading = false,
+                                                                    error = undefined,
+                                                                    showUrlDownload = true,
+                                                                    instructions: _instructions,
+                                                                    disabled = false,
+                                                                    sx,
+                                                                    onUrlDownload,
+                                                                    defaultDownloadUrl,
+                                                                    onDownloadProgress,
+                                                                    layout = 'vertical',
+                                                                  }) => {
   const [hoveredSection, setHoveredSection] = useState<'drag' | 'url' | undefined>();
 
   // Use custom hooks for logic separation

@@ -1,8 +1,8 @@
 "use strict";
 /**
  * @file MultiStepDialog.tsx
- * @description マルチステップダイアログコンポーネント
- */
+ * @description
+*/
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -66,17 +66,14 @@ var material_1 = require("@mui/material");
 var icons_material_1 = require("@mui/icons-material");
 var StepWizardContext_1 = require("./StepWizardContext");
 // ============================================================================
-// トランジション
 // ============================================================================
 var SlideTransition = (function Transition(props, ref) {
     return <material_1.Slide direction="up" ref={ref} {...props}/>;
 });
 // ============================================================================
-// 内部コンポーネント
 // ============================================================================
 /**
- * ステップコンテンツレンダラー
- */
+*/
 function StepContentRenderer() {
     var _a = (0, StepWizardContext_1.useWizard)(), state = _a.state, actions = _a.actions, stepDefinitions = _a.stepDefinitions;
     var currentStepDef = stepDefinitions.find(function (s) { return s.stepNumber === state.currentStep; });
@@ -119,8 +116,7 @@ function StepContentRenderer() {
     </material_1.Box>);
 }
 /**
- * ステップナビゲーション
- */
+*/
 function StepNavigation(_a) {
     var _b = _a.allowStepNavigation, allowStepNavigation = _b === void 0 ? false : _b;
     var _c = (0, StepWizardContext_1.useWizard)(), state = _c.state, actions = _c.actions, helpers = _c.helpers, stepDefinitions = _c.stepDefinitions;
@@ -146,8 +142,7 @@ function StepNavigation(_a) {
     </material_1.Stepper>);
 }
 /**
- * ダイアログアクション
- */
+*/
 function DialogActionsContent(_a) {
     var _this = this;
     var onComplete = _a.onComplete, onClose = _a.onClose;
@@ -178,8 +173,7 @@ function DialogActionsContent(_a) {
                 case 2:
                     actions.completeStep(state.currentStep);
                     if (!isLastStep) return [3 /*break*/, 8];
-                    // 最後のステップの場合は完了処理
-                    setIsSubmitting(true);
+                                        setIsSubmitting(true);
                     setSubmitError(null);
                     _a.label = 3;
                 case 3:
@@ -227,33 +221,30 @@ function DialogActionsContent(_a) {
 }
 //import { useDialogMode } from '../hooks/useDialogMode.ts.bak';
 // ============================================================================
-// メインコンポーネント
 // ============================================================================
 /**
- * マルチステップダイアログコンポーネント
- */
+*/
 function MultiStepDialog(_a) {
     var _this = this;
     var open = _a.open, onClose = _a.onClose, onComplete = _a.onComplete, steps = _a.steps, _b = _a.title, title = _b === void 0 ? 'Multi-Step Dialog' : _b, _c = _a.initialData, initialData = _c === void 0 ? {} : _c, _d = _a.maxWidth, maxWidth = _d === void 0 ? 'md' : _d, _e = _a.fullWidth, fullWidth = _e === void 0 ? true : _e, _f = _a.allowStepNavigation, allowStepNavigation = _f === void 0 ? false : _f, _g = _a.transition, transition = _g === void 0 ? 'fade' : _g, nodeId = _a.nodeId, nodeType = _a.nodeType, initialIconGroupSettings = _a.iconGroupSettings, initialStepFromUrl = _a.initialStepFromUrl, initialFullscreenFromUrl = _a.initialFullscreenFromUrl, initialMapParamsFromUrl = _a.initialMapParamsFromUrl, onStepChange = _a.onStepChange, onFullscreenChange = _a.onFullscreenChange, onMapParamsChange = _a.onMapParamsChange;
     if (steps.length === 0) {
         return null;
     }
-    // PeerEntityベースのダイアログモード管理
+    //  PeerEntity
     var _h = useDialogMode(nodeId, nodeType, 'normal'), savedDialogMode = _h.dialogMode, saveDialogMode = _h.setDialogMode, savedResumeStep = _h.resumeStep, setResumeStep = _h.setResumeStep, clearResumeStep = _h.clearResumeStep, savedMapParams = _h.mapParams, setMapParams = _h.setMapParams;
     var defaultIconGroupSettings = initialIconGroupSettings !== null && initialIconGroupSettings !== void 0 ? initialIconGroupSettings : {
         normalMode: 'always',
         fullscreenMode: 'hover',
     };
-    // URL パラメータの優先順位: URL > PeerEntity > デフォルト
+    //  URL : URL > PeerEntity >
     var initialFullscreen = initialFullscreenFromUrl !== undefined
         ? initialFullscreenFromUrl
         : savedDialogMode === 'full';
-    // 初期ステップの優先順位: URL > PeerEntity > デフォルト
+    //  : URL > PeerEntity >
     var initialStep = initialStepFromUrl || savedResumeStep || 1;
-    // 初期地図パラメータの優先順位: URL > PeerEntity
+    //  : URL > PeerEntity
     var initialMapParams = initialMapParamsFromUrl || savedMapParams;
-    // 状態管理
-    var _j = (0, react_1.useState)(initialFullscreen), isFullscreen = _j[0], setIsFullscreen = _j[1];
+        var _j = (0, react_1.useState)(initialFullscreen), isFullscreen = _j[0], setIsFullscreen = _j[1];
     var iconGroupSettings = (0, react_1.useState)(initialIconGroupSettings !== null && initialIconGroupSettings !== void 0 ? initialIconGroupSettings : defaultIconGroupSettings)[0];
     var _k = (0, react_1.useState)(false), isHovering = _k[0], setIsHovering = _k[1];
     var _l = (0, react_1.useState)(!initialFullscreen), isHeaderVisible = _l[0], setIsHeaderVisible = _l[1];
@@ -263,12 +254,10 @@ function MultiStepDialog(_a) {
     var hoverTimeoutRef = (0, react_1.useRef)();
     var headerTimeoutRef = (0, react_1.useRef)();
     var footerTimeoutRef = (0, react_1.useRef)();
-    // 全画面切り替え
-    var toggleFullscreen = (0, react_1.useCallback)(function () {
+        var toggleFullscreen = (0, react_1.useCallback)(function () {
         var newFullscreen = !isFullscreen;
         setIsFullscreen(newFullscreen);
-        // フルスクリーン切り替え時にヘッダー・フッターの表示状態を調整
-        if (newFullscreen) {
+                if (newFullscreen) {
             setIsHeaderVisible(false);
             setIsFooterVisible(false);
         }
@@ -276,17 +265,15 @@ function MultiStepDialog(_a) {
             setIsHeaderVisible(true);
             setIsFooterVisible(true);
         }
-        // PeerEntityに保存
+        //  PeerEntity
         if (nodeId && nodeType) {
             saveDialogMode(newFullscreen ? 'full' : 'normal');
         }
-        // コールバックを呼び出し
-        if (onFullscreenChange) {
+                if (onFullscreenChange) {
             onFullscreenChange(newFullscreen);
         }
     }, [isFullscreen, nodeId, nodeType, saveDialogMode, onFullscreenChange]);
-    // アイコングループの表示判定
-    var shouldShowIconGroup = (0, react_1.useMemo)(function () {
+        var shouldShowIconGroup = (0, react_1.useMemo)(function () {
         var currentMode = isFullscreen ? iconGroupSettings.fullscreenMode : iconGroupSettings.normalMode;
         switch (currentMode) {
             case 'hidden':
@@ -299,48 +286,39 @@ function MultiStepDialog(_a) {
                 return true;
         }
     }, [isFullscreen, iconGroupSettings, isHovering]);
-    // ホバー処理（全画面時のみ）
-    var handleMouseMove = (0, react_1.useCallback)(function (e) {
+        var handleMouseMove = (0, react_1.useCallback)(function (e) {
         if (!isFullscreen) {
             return;
         }
-        var headerThreshold = 60; // ヘッダー表示の閾値
-        var footerThreshold = 60; // フッター表示の閾値
-        var windowHeight = window.innerHeight;
-        // ヘッダー領域のホバー判定
-        if (e.clientY < headerThreshold) {
+        var headerThreshold = 60;         var footerThreshold = 60;         var windowHeight = window.innerHeight;
+                if (e.clientY < headerThreshold) {
             if (!isHeaderVisible) {
                 setIsHeaderVisible(true);
-                setIsHovering(true); // アイコングループも表示
-            }
-            // タイムアウトをリセット
-            if (headerTimeoutRef.current) {
+                setIsHovering(true);             }
+                        if (headerTimeoutRef.current) {
                 clearTimeout(headerTimeoutRef.current);
             }
-            // 3秒後に自動的に非表示
+            //  3
             headerTimeoutRef.current = setTimeout(function () {
                 setIsHeaderVisible(false);
                 setIsHovering(false);
             }, 3000);
         }
-        // フッター領域のホバー判定
-        if (e.clientY > windowHeight - footerThreshold) {
+                if (e.clientY > windowHeight - footerThreshold) {
             if (!isFooterVisible) {
                 setIsFooterVisible(true);
             }
-            // タイムアウトをリセット
-            if (footerTimeoutRef.current) {
+                        if (footerTimeoutRef.current) {
                 clearTimeout(footerTimeoutRef.current);
             }
-            // 3秒後に自動的に非表示
+            //  3
             footerTimeoutRef.current = setTimeout(function () {
                 setIsFooterVisible(false);
             }, 3000);
         }
     }, [isFullscreen, isHeaderVisible, isFooterVisible]);
     var handleMouseLeave = (0, react_1.useCallback)(function () {
-        // 各タイムアウトをクリア
-        if (hoverTimeoutRef.current) {
+                if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
         }
         if (headerTimeoutRef.current) {
@@ -349,15 +327,13 @@ function MultiStepDialog(_a) {
         if (footerTimeoutRef.current) {
             clearTimeout(footerTimeoutRef.current);
         }
-        // フルスクリーン時は即座に隠す
-        if (isFullscreen) {
+                if (isFullscreen) {
             setIsHovering(false);
             setIsHeaderVisible(false);
             setIsFooterVisible(false);
         }
     }, [isFullscreen]);
-    // クリーンアップ
-    (0, react_1.useEffect)(function () {
+        (0, react_1.useEffect)(function () {
         return function () {
             if (hoverTimeoutRef.current) {
                 clearTimeout(hoverTimeoutRef.current);
@@ -370,21 +346,21 @@ function MultiStepDialog(_a) {
             }
         };
     }, []);
-    // ステップ変更時にresumeStepを保存
+    //  resumeStep
     (0, react_1.useEffect)(function () {
         if (nodeId && nodeType && currentStep !== savedResumeStep) {
             setResumeStep(currentStep);
         }
     }, [currentStep, nodeId, nodeType, savedResumeStep, setResumeStep]);
-    // ダイアログが閉じられる時にresumeStepを保存
+    //  resumeStep
     var handleDialogClose = (0, react_1.useCallback)(function () {
-        // 現在のステップをresumeStepとして保存
+        //  resumeStep
         if (nodeId && nodeType) {
             setResumeStep(currentStep);
         }
         onClose();
     }, [currentStep, nodeId, nodeType, setResumeStep, onClose]);
-    // ダイアログが完了した時にresumeStepをクリア
+    //  resumeStep
     var handleDialogComplete = (0, react_1.useCallback)(function (data) { return __awaiter(_this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -404,14 +380,12 @@ function MultiStepDialog(_a) {
             }
         });
     }); }, [nodeId, nodeType, clearResumeStep, setMapParams, onComplete]);
-    // 地図パラメータ変更の処理
-    var handleMapParamsChange = (0, react_1.useCallback)(function (params) {
-        // PeerEntityに保存
+        var handleMapParamsChange = (0, react_1.useCallback)(function (params) {
+        //  PeerEntity
         if (nodeId && nodeType) {
             setMapParams(params);
         }
-        // コールバックを呼び出し
-        if (onMapParamsChange) {
+                if (onMapParamsChange) {
             onMapParamsChange(params);
         }
     }, [nodeId, nodeType, setMapParams, onMapParamsChange]);
@@ -431,7 +405,8 @@ function MultiStepDialog(_a) {
           <material_1.Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <material_1.Typography variant="h6">{title}</material_1.Typography>
             
-            {/* アイコンボタングループ */}
+            {/*
+*/}
             <material_1.Fade in={shouldShowIconGroup}>
               <material_1.Stack direction="row" spacing={1} sx={{
             position: isFullscreen && iconGroupSettings.fullscreenMode === 'hover' ? 'absolute' : 'relative',
@@ -458,13 +433,13 @@ function MultiStepDialog(_a) {
         </material_1.DialogTitle>
         
         <material_1.DialogContent sx={{
-            // フルスクリーン時はヘッダー・フッターのスペースを考慮
-            paddingTop: isFullscreen ? '80px' : undefined,
+                        paddingTop: isFullscreen ? '80px' : undefined,
             paddingBottom: isFullscreen ? '80px' : undefined,
             height: isFullscreen ? '100vh' : 'auto',
             overflow: 'auto',
         }}>
-          {/* ステッパーもヘッダーと一緒に隠す */}
+          {/*
+*/}
           <material_1.Box sx={{
             opacity: isFullscreen ? (isHeaderVisible ? 1 : 0) : 1,
             transition: 'opacity 0.3s ease-in-out',

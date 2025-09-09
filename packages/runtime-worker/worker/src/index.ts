@@ -4,8 +4,8 @@ import {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  WorkingCopyAPI,
   WorkerAPI,
+  WorkingCopyAPI,
 } from '@hierarchidb/common-api';
 import { CoreDB } from './services/CoreDB';
 import { EphemeralDB } from './services/EphemeralDB';
@@ -18,9 +18,8 @@ import { TreeMutationService } from './services/TreeMutationService';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService';
 import { TagService } from '@hierarchidb/tag';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter';
-import { enableAllImporters, enableAllExporters } from '@hierarchidb/import-export';
+import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
 import { bootstrapFeatures } from './services/FeatureBootstrap';
-import { ImportExportService } from '@hierarchidb/import-export';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService';
@@ -61,18 +60,18 @@ export class WorkerService implements WorkerAPI {
       const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
       const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
         coreDB,
-        commandProcessor
+        commandProcessor,
       );
       const treeSubscriptionService: TreeSubscriptionAPI =
         await TreeSubscriptionService.getSingleton(coreDB);
 
       const pluginMap: { [key: string]: PluginDefinition } = Object.fromEntries(
-        plugins.map((plugin) => [plugin.name, plugin])
+        plugins.map((plugin) => [plugin.name, plugin]),
       );
 
       const nodeLifecycleManager: NodeLifecycleManager = await NodeLifecycleManager.getSingleton(
         coreDB,
-        pluginMap
+        pluginMap,
       );
 
       // Import/Export services
@@ -83,7 +82,7 @@ export class WorkerService implements WorkerAPI {
       const workingCopyService: WorkingCopyAPI = new WorkingCopyService(
         coreDB,
         ephemeralDB,
-        commandProcessor
+        commandProcessor,
       );
 
       return new WorkerService(
@@ -96,7 +95,7 @@ export class WorkerService implements WorkerAPI {
         workingCopyService,
         tagService,
         nodeLifecycleManager,
-        commandProcessor
+        commandProcessor,
       );
     });
   }
@@ -111,8 +110,9 @@ export class WorkerService implements WorkerAPI {
     private workingCopyService: WorkingCopyAPI,
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
-    private commandProcessor: CommandProcessor
-  ) {}
+    private commandProcessor: CommandProcessor,
+  ) {
+  }
 
   ping(): { response: 'pong'; timestamp: number } {
     console.log('[WorkerAPIImpl] ping() called');

@@ -38,7 +38,7 @@ describe('LinkButton Component', () => {
       render(
         <BrowserRouter>
           <LinkButton>Click Me</LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
       expect(screen.getByText('Click Me')).toBeInTheDocument();
     });
@@ -54,7 +54,7 @@ describe('LinkButton Component', () => {
           >
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -69,7 +69,7 @@ describe('LinkButton Component', () => {
       render(
         <BrowserRouter>
           <LinkButton to="/next">Next</LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -89,7 +89,7 @@ describe('LinkButton Component', () => {
           <LinkButton to="/next" replace>
             Next
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -114,7 +114,7 @@ describe('LinkButton Component', () => {
           <LinkButton validate={validate} onSave={onSave}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -135,7 +135,7 @@ describe('LinkButton Component', () => {
           <LinkButton validate={validate} onSave={onSave}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -163,7 +163,7 @@ describe('LinkButton Component', () => {
           >
             Delete
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -173,7 +173,7 @@ describe('LinkButton Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
         expect(screen.getByText('Are you sure?')).toBeInTheDocument();
         expect(
-          screen.getByRole('button', { name: 'cancel-confirmation-base-dialog' })
+          screen.getByRole('button', { name: 'cancel-confirmation-base-dialog' }),
         ).toBeInTheDocument();
       });
     });
@@ -192,7 +192,7 @@ describe('LinkButton Component', () => {
           >
             Delete
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -222,7 +222,7 @@ describe('LinkButton Component', () => {
           >
             Delete
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -249,7 +249,7 @@ describe('LinkButton Component', () => {
       render(
         <BrowserRouter>
           <LinkButton steps={[{ execute: step1 }, { execute: step2 }]}>Execute</LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -285,7 +285,7 @@ describe('LinkButton Component', () => {
           >
             Execute
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -317,7 +317,7 @@ describe('LinkButton Component', () => {
           >
             Execute
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -337,7 +337,7 @@ describe('LinkButton Component', () => {
       render(
         <BrowserRouter>
           <LinkButton onSave={onSave}>Save</LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -357,7 +357,7 @@ describe('LinkButton Component', () => {
           <LinkButton onSave={onSave} onCleanup={onCleanup}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -387,7 +387,7 @@ describe('LinkButton Component', () => {
           <LinkButton onBeforeAction={onBeforeAction} onSave={onSave}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -408,7 +408,7 @@ describe('LinkButton Component', () => {
           <LinkButton onSave={onSave} onSuccess={onSuccess}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -430,7 +430,7 @@ describe('LinkButton Component', () => {
           <LinkButton onSave={onSave} onError={onError}>
             Save
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -451,7 +451,7 @@ describe('LinkButton Component', () => {
       render(
         <BrowserRouter>
           <LinkButton onSave={onSave}>Save</LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -473,7 +473,7 @@ describe('LinkButton Component', () => {
           <LinkButton to="/next" onBeforeNavigate={onBeforeNavigate}>
             Next
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -493,7 +493,7 @@ describe('LinkButton Component', () => {
           <LinkButton to="/next" onSuccessNavigate={onSuccessNavigate}>
             Next
           </LinkButton>
-        </BrowserRouter>
+        </BrowserRouter>,
       );
 
       const button = screen.getByRole('button');
@@ -553,7 +553,7 @@ describe('useLinkButton Hook', () => {
         to: '/success',
         steps: [{ execute: step1 }, { execute: step2 }],
         onSuccess,
-      })
+      }),
     );
 
     await act(async () => {

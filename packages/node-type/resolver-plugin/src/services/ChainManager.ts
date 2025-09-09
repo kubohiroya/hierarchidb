@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/common-type';
 /**
  * Chain execution strategies
  */
-export type ChainStrategy = 
+export type ChainStrategy =
   | 'sequential'     // Execute resolvers one after another
   | 'parallel'       // Execute resolvers in parallel and merge results
   | 'conditional'    // Execute based on conditions
@@ -13,7 +13,7 @@ export type ChainStrategy =
 /**
  * Conflict resolution strategies when merging results
  */
-export type ConflictResolution = 
+export type ConflictResolution =
   | 'last-wins'      // Use the last value
   | 'first-wins'     // Keep the first value
   | 'merge'          // Merge values
@@ -77,6 +77,7 @@ export interface ChainExecutionResult {
  */
 export class ChainManager {
   private chains: Map<string, ResolverChain> = new Map();
+
   // private resolverCache: Map<NodeId, ResolverEntity> = new Map();
 
   /**
@@ -101,13 +102,13 @@ export class ChainManager {
    * Execute a resolver chain
    */
   async executeChain(
-    chainId: string, 
+    chainId: string,
     data: any,
     _options?: {
       timeout?: number;
       parallel?: boolean;
       cache?: boolean;
-    }
+    },
   ): Promise<ChainExecutionResult> {
     const chain = this.chains.get(chainId);
     if (!chain) {
@@ -159,13 +160,13 @@ export class ChainManager {
       });
     } finally {
       result.statistics.executionTime = performance.now() - startTime;
-      
+
       // Update chain metadata
       chain.metadata.lastExecutedAt = Date.now();
       chain.metadata.executionCount++;
-      chain.metadata.averageExecutionTime = 
-        ((chain.metadata.averageExecutionTime || 0) * (chain.metadata.executionCount - 1) + 
-         result.statistics.executionTime) / chain.metadata.executionCount;
+      chain.metadata.averageExecutionTime =
+        ((chain.metadata.averageExecutionTime || 0) * (chain.metadata.executionCount - 1) +
+          result.statistics.executionTime) / chain.metadata.executionCount;
     }
 
     return result;
@@ -177,10 +178,10 @@ export class ChainManager {
   private async executeSequential(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult
+    result: ChainExecutionResult,
   ): Promise<any> {
     let currentData = data;
-    
+
     const sortedResolvers = [...chain.resolvers]
       .filter(r => r.enabled)
       .sort((a, b) => a.order - b.order);
@@ -196,7 +197,7 @@ export class ChainManager {
           resolverId: resolver.resolverId,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        
+
         // In sequential mode, stop on error
         throw error;
       }
@@ -211,10 +212,10 @@ export class ChainManager {
   private async executeParallel(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult
+    result: ChainExecutionResult,
   ): Promise<any> {
     const enabledResolvers = chain.resolvers.filter(r => r.enabled);
-    
+
     const promises = enabledResolvers.map(async (resolver) => {
       try {
         const resolvedData = await this.executeResolver(resolver.resolverId, data);
@@ -232,7 +233,7 @@ export class ChainManager {
     });
 
     const results = (await Promise.all(promises)).filter(r => r !== null);
-    
+
     // Merge results based on conflict resolution strategy
     return this.mergeResults(results as any[], chain.conflictResolution);
   }
@@ -243,11 +244,11 @@ export class ChainManager {
   private async executeConditional(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult
+    result: ChainExecutionResult,
   ): Promise<any> {
     for (const resolver of chain.resolvers) {
       if (!resolver.enabled) continue;
-      
+
       // Evaluate condition
       if (resolver.condition) {
         try {
@@ -284,7 +285,7 @@ export class ChainManager {
   private async executeFallback(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult
+    result: ChainExecutionResult,
   ): Promise<any> {
     const sortedResolvers = [...chain.resolvers]
       .filter(r => r.enabled)
@@ -315,7 +316,7 @@ export class ChainManager {
   private async executeWeighted(
     chain: ResolverChain,
     data: any,
-    result: ChainExecutionResult
+    result: ChainExecutionResult,
   ): Promise<any> {
     // Similar to parallel, but with weighted merging
     return this.executeParallel(chain, data, result);
@@ -331,7 +332,7 @@ export class ChainManager {
     // 3. Apply validations
     // 4. Handle duplicates
     // 5. Return transformed data
-    
+
     // Mock implementation
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -345,7 +346,7 @@ export class ChainManager {
    */
   private mergeResults(
     results: Array<{ resolverId: NodeId; data: any; weight: number }>,
-    strategy: ConflictResolution
+    strategy: ConflictResolution,
   ): any {
     if (results.length === 0) return null;
     if (results.length === 1) return results[0]?.data;
@@ -353,21 +354,21 @@ export class ChainManager {
     switch (strategy) {
       case 'last-wins':
         return results[results.length - 1]?.data;
-      
+
       case 'first-wins':
         return results[0]?.data;
-      
+
       case 'merge':
         // Deep merge all results
         return results.reduce((acc, r) => this.deepMerge(acc, r?.data), {});
-      
+
       case 'error':
         throw new Error('Conflict detected in parallel execution');
-      
+
       case 'custom':
         // Would use custom resolver function
         return results[0]?.data;
-      
+
       default:
         return results[0]?.data;
     }
@@ -379,9 +380,9 @@ export class ChainManager {
   private deepMerge(target: any, source: any): any {
     if (!source) return target;
     if (!target) return source;
-    
+
     const result = { ...target };
-    
+
     for (const key in source) {
       if (Object.hasOwn(source, key)) {
         if (typeof source[key] === 'object' && !Array.isArray(source[key]) && source[key] !== null) {
@@ -391,7 +392,7 @@ export class ChainManager {
         }
       }
     }
-    
+
     return result;
   }
 

@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
+import { Outlet } from 'react-router';
 import { loadTree, LoadTreeArgs } from '~/loader';
 
 export async function clientLoader(args: LoaderFunctionArgs) {

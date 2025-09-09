@@ -2,27 +2,35 @@
   "name": "@hierarchidb/folder-plugin",
   "version": "1.0.0",
   "description": "Basic folder plugin for HierarchiDB UI layer",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "ui": ["dist/ui/index.d.ts"],
+      "shared": ["dist/shared/index.d.ts"],
+      "worker": ["dist/worker/index.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "main": "dist/index.js",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./shared": {
-      "types": "./src/shared/index.ts",
-      "import": "./src/shared/index.ts",
+      "types": "./dist/shared/index.d.ts",
+      "import": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
     },
     "./ui": {
-      "types": "./src/ui/index.ts",
-      "import": "./src/ui/index.ts",
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js",
       "default": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
     }
   },
@@ -48,7 +56,6 @@
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
-    
     "i18next": "22.5.0",
     "react-hook-form": "^7.62.0",
     "react-i18next": "12.3.1",
@@ -64,7 +71,6 @@
     "react": ">=18.0.0",
     "dexie": "^4.2.0"
   },
-  
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",

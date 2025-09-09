@@ -4,28 +4,25 @@
  */
 
 import React from 'react';
-import { TextField, Box, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import type { 
-  PluginStepProvider, 
-  StepComponentProps,
-} from '../registry/PluginStepRegistry';
+import type { PluginStepProvider, StepComponentProps } from '../registry/PluginStepRegistry';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 /**
  * Sample configuration step component
  */
 const ConfigurationStep: React.FC<StepComponentProps> = ({
-  data,
-  onChange,
-  setValid,
-}) => {
+                                                           data,
+                                                           onChange,
+                                                           setValid,
+                                                         }) => {
   const handleChange = (field: string, value: any) => {
     onChange({
       ...data,
       [field]: value,
     });
-    
+
     // Simple validation
     const isValid = value && value.toString().trim().length > 0;
     setValid(isValid);
@@ -65,7 +62,7 @@ const ReviewStep: React.FC<StepComponentProps> = ({ data }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h6">Review Configuration</Typography>
-      
+
       <Typography variant="body2" color="text.secondary">
         Please review your configuration before saving.
       </Typography>
@@ -99,9 +96,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ConfigurationStep
             mode="create"
             data={{}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         validate: () => true,
@@ -125,8 +125,8 @@ export class SamplePluginProvider implements PluginStepProvider {
           canStartBatch: (data) => {
             // Batch is not available from configuration step
             return false;
-          }
-        }
+          },
+        },
       },
       {
         id: 'batch-config',
@@ -135,9 +135,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ConfigurationStep
             mode="create"
             data={{}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         optional: true,
@@ -161,8 +164,8 @@ export class SamplePluginProvider implements PluginStepProvider {
           canStartBatch: (data) => {
             // Can start batch if batch configuration is valid
             return !!(data?.batchSize && data?.batchSize > 0 && data?.batchSize <= 1000);
-          }
-        }
+          },
+        },
       },
       {
         id: 'review',
@@ -171,9 +174,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ReviewStep
             mode="create"
             data={{}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         optional: true,
@@ -194,8 +200,8 @@ export class SamplePluginProvider implements PluginStepProvider {
           canStartBatch: (data) => {
             // Can start batch from review if batch is configured
             return !!(data?.batchSize && data?.batchSize > 0 && data?.batchSize <= 1000);
-          }
-        }
+          },
+        },
       },
     ];
   }
@@ -211,9 +217,12 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         validate: () => true,
@@ -227,7 +236,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             return !!(data?.setting1 && data?.setting1.trim());
           },
           canStartBatch: () => false,
-        }
+        },
       },
       {
         id: 'batch-config',
@@ -237,9 +246,12 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         optional: true,
@@ -254,12 +266,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           canSave: () => true,
           canStartBatch: (data) => {
             // Batch update is available when batch is properly configured
-            return !!(data?.batchSize && 
-                     data?.batchSize > 0 && 
-                     data?.batchSize <= 1000 &&
-                     data?.targetNodes?.length > 0);
-          }
-        }
+            return !!(data?.batchSize &&
+              data?.batchSize > 0 &&
+              data?.batchSize <= 1000 &&
+              data?.targetNodes?.length > 0);
+          },
+        },
       },
       {
         id: 'review',
@@ -269,9 +281,12 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {}}
-            setValid={() => {}}
-            setError={() => {}}
+            onChange={() => {
+            }}
+            setValid={() => {
+            }}
+            setError={() => {
+            }}
           />
         ),
         optional: true,
@@ -283,12 +298,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           canBackToPrevious: () => true,
           canSave: () => true,
           canStartBatch: (data) => {
-            return !!(data?.batchSize && 
-                     data?.batchSize > 0 && 
-                     data?.batchSize <= 1000 &&
-                     data?.targetNodes?.length > 0);
-          }
-        }
+            return !!(data?.batchSize &&
+              data?.batchSize > 0 &&
+              data?.batchSize <= 1000 &&
+              data?.targetNodes?.length > 0);
+          },
+        },
       },
     ];
   }
@@ -296,7 +311,7 @@ export class SamplePluginProvider implements PluginStepProvider {
   async validateAccess(nodeId?: string): Promise<boolean> {
     // Example: Check if user has access to this node
     console.log('Validating access for node:', nodeId);
-    
+
     // In a real implementation, this would check permissions
     // For example, check if the user owns the node or has edit permissions
     return true;

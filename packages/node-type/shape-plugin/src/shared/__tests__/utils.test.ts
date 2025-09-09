@@ -2,18 +2,18 @@
  * Shared layer utility functions tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  validateShapeName,
-  validateProcessingConfig,
   calculateSelectionStats,
-  generateUrlMetadata,
   formatBytes,
   formatDuration,
+  generateUrlMetadata,
   parseCheckboxState,
-  serializeCheckboxState
+  serializeCheckboxState,
+  validateProcessingConfig,
+  validateShapeName,
 } from '../utils';
-import type { ProcessingConfig, UrlMetadata, CountryMetadata } from '../types';
+import type { CountryMetadata, ProcessingConfig, UrlMetadata } from '../types';
 
 describe('validateShapeName', () => {
   it('should validate correct names', () => {
@@ -48,18 +48,18 @@ describe('validateProcessingConfig', () => {
       concurrentDownloads: 4,
       concurrentProcesses: 2,
       maxZoomLevel: 12,
-      featureAreaThreshold: 0.5
+      featureAreaThreshold: 0.5,
     };
-    
+
     const result = validateProcessingConfig(config);
     expect(result.isValid).toBe(true);
   });
 
   it('should reject invalid concurrent downloads', () => {
     const config: Partial<ProcessingConfig> = {
-      concurrentDownloads: 15
+      concurrentDownloads: 15,
     };
-    
+
     const result = validateProcessingConfig(config);
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Concurrent downloads must be between 1 and 10');
@@ -67,9 +67,9 @@ describe('validateProcessingConfig', () => {
 
   it('should warn about high zoom levels', () => {
     const config: Partial<ProcessingConfig> = {
-      maxZoomLevel: 16
+      maxZoomLevel: 16,
     };
-    
+
     const result = validateProcessingConfig(config);
     expect(result.isValid).toBe(true);
     expect(result.warnings).toContain('High zoom levels may require significant storage and processing time');
@@ -91,22 +91,22 @@ describe('calculateSelectionStats', () => {
         countryCode: 'US',
         adminLevel: 0,
         continent: 'North America',
-        estimatedSize: 1000000
+        estimatedSize: 1000000,
       },
       {
         url: 'http://example.com/us-1.zip',
         countryCode: 'US',
         adminLevel: 1,
         continent: 'North America',
-        estimatedSize: 2000000
-      }
+        estimatedSize: 2000000,
+      },
     ];
 
     const stats = calculateSelectionStats(metadata);
     expect(stats.totalSelected).toBe(2);
     expect(stats.countriesWithSelection).toBe(1);
     expect(stats.estimatedSize).toBe(3000000);
-    expect(stats.estimatedFeatures).toBe(3000); // 1MB ≈ 1000 features
+    expect(stats.estimatedFeatures).toBe(3000); //  1MB 1000 features
     expect(stats.estimatedProcessingTime).toBe(13); // 3 + 10 seconds base
   });
 });
@@ -118,15 +118,15 @@ describe('generateUrlMetadata', () => {
       countryName: 'United States',
       continent: 'North America',
       availableAdminLevels: [0, 1, 2],
-      population: 331000000
+      population: 331000000,
     },
     {
       countryCode: 'JP',
       countryName: 'Japan',
       continent: 'Asia',
       availableAdminLevels: [0, 1],
-      population: 125800000
-    }
+      population: 125800000,
+    },
   ];
 
   it('should generate URL metadata for valid selections', () => {
@@ -134,10 +134,10 @@ describe('generateUrlMetadata', () => {
       'naturalearth',
       ['US', 'JP'],
       [0, 1],
-      mockCountryMetadata
+      mockCountryMetadata,
     );
 
-    // US: levels 0,1; JP: levels 0,1 → total 4
+    //  US: levels 0,1; JP: levels 0,1 total 4
     expect(urlMetadata).toHaveLength(4);
     expect(urlMetadata.every(meta => meta.url.includes('naturalearth'))).toBe(true);
   });
@@ -147,7 +147,7 @@ describe('generateUrlMetadata', () => {
       'naturalearth',
       ['JP'],
       [0, 1, 2],
-      mockCountryMetadata
+      mockCountryMetadata,
     );
 
     // JP only has levels 0,1 - level 2 should be filtered out
@@ -184,7 +184,7 @@ describe('checkbox state serialization', () => {
     const state = [[true, false], [false, true]];
     const serialized = serializeCheckboxState(state);
     const parsed = parseCheckboxState(serialized);
-    
+
     expect(parsed).toEqual(state);
   });
 

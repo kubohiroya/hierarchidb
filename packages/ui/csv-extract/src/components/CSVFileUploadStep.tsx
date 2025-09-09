@@ -3,30 +3,23 @@
  * @description File upload/URL download interface for CSV processing
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
+  Box,
+  Button,
   CircularProgress,
   Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  CloudUpload,
-  Download,
-  InsertDriveFile,
-} from '@mui/icons-material';
-import type { 
-  CSVProcessingConfig, 
-  CSVTableMetadata
-} from '../types';
+import { CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
+import type { CSVProcessingConfig, CSVTableMetadata } from '../types';
 import { useCSVData } from '../hooks/useCSVData';
 
 export interface CSVFileUploadStepProps {
@@ -39,13 +32,13 @@ export interface CSVFileUploadStepProps {
 }
 
 export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
-  onFileUploaded,
-  onError,
-  disabled = false,
-  acceptedFileTypes = ['.csv', '.tsv', '.txt'],
-  maxFileSize = 50 * 1024 * 1024, // 50MB default
-  pluginId,
-}) => {
+                                                                      onFileUploaded,
+                                                                      onError,
+                                                                      disabled = false,
+                                                                      acceptedFileTypes = ['.csv', '.tsv', '.txt'],
+                                                                      maxFileSize = 50 * 1024 * 1024, // 50MB default
+                                                                      pluginId,
+                                                                    }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState('');
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
@@ -63,7 +56,7 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
     downloadCSVFromUrl,
     isUploading,
     uploadError,
-  } = useCSVData({ 
+  } = useCSVData({
     pluginId,
     onUploadSuccess: onFileUploaded,
     onUploadError: onError,
@@ -112,7 +105,7 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
       <Typography variant="h6" gutterBottom>
         Upload CSV Data
       </Typography>
-      
+
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Choose a CSV file to upload or provide a URL to download the data from.
       </Typography>
@@ -143,10 +136,10 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
 
       {/* File Upload Section */}
       {uploadMethod === 'file' && (
-        <Paper 
-          variant="outlined" 
-          sx={{ 
-            p: 3, 
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 3,
             mb: 3,
             border: '2px dashed',
             borderColor: 'divider',
@@ -167,13 +160,13 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
             style={{ display: 'none' }}
             disabled={disabled || isUploading}
           />
-          
+
           <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          
+
           <Typography variant="h6" gutterBottom>
             {isUploading ? 'Processing...' : 'Click to select a file'}
           </Typography>
-          
+
           <Typography variant="body2" color="text.secondary">
             Supported formats: {acceptedFileTypes.join(', ')}
             <br />
@@ -200,7 +193,7 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
             disabled={disabled || isUploading}
             sx={{ mb: 2 }}
           />
-          
+
           <Button
             variant="contained"
             startIcon={isUploading ? <CircularProgress size={16} /> : <Download />}
@@ -218,7 +211,7 @@ export const CSVFileUploadStep: React.FC<CSVFileUploadStepProps> = ({
       <Typography variant="subtitle1" gutterBottom>
         CSV Processing Options
       </Typography>
-      
+
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 3 }}>
         <FormControl>
           <InputLabel>Delimiter</InputLabel>

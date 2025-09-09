@@ -1,6 +1,6 @@
 /**
- * UI layer exports - UI環境専用
- */
+  * UI layer exports - UI
+  */
 
 // Components
 export * from './components';

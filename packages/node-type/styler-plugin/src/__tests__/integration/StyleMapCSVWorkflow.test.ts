@@ -4,14 +4,9 @@
  */
 
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
-import type {
-  CSVTableMetadata,
-  CSVPreviewData,
-  CSVColumnInfo,
-} from '@hierarchidb/ui-csv-extract';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
@@ -29,17 +24,17 @@ vi.mock('xlsx', () => {
     read: vi.fn().mockReturnValue({
       SheetNames: ['Countries'],
       Sheets: {
-        Countries: {}
-      }
+        Countries: {},
+      },
     }),
     utils: {
       sheet_to_json: vi.fn().mockReturnValue([
         ['country', 'population', 'continent'],
         ['United States', '331900000', 'North America'],
         ['China', '1439323776', 'Asia'],
-        ['Japan', '125800000', 'Asia']
-      ])
-    }
+        ['Japan', '125800000', 'Asia'],
+      ]),
+    },
   };
 });
 
@@ -53,9 +48,9 @@ vi.mock('jszip', () => {
 United States,331900000,North America
 China,1439323776,Asia
 Japan,125800000,Asia`),
-        _data: { uncompressedSize: 100 }
-      }
-    }
+        _data: { uncompressedSize: 100 },
+      },
+    },
   }));
   MockJSZip.loadAsync = vi.fn().mockResolvedValue(new MockJSZip());
   return { default: MockJSZip };
@@ -98,10 +93,10 @@ Australia,25690000,51812,Oceania,2021`;
     expect(tableMetadata.filename).toBe('world_data.csv');
     expect(tableMetadata.totalRows).toBe(10);
     expect(tableMetadata.columns).toHaveLength(5);
-    
+
     const columnNames = tableMetadata.columns.map(c => c.name);
     expect(columnNames).toEqual(['country', 'population', 'gdp_per_capita', 'continent', 'year']);
-    
+
     // Check column types detection
     expect(tableMetadata.columns[1].type).toBe('number'); // population
     expect(tableMetadata.columns[2].type).toBe('number'); // gdp_per_capita
@@ -278,7 +273,7 @@ West,90000,18000`;
 
     // Plugin 1: Styler for sales visualization
     await csvApi.addTableReference(tableMetadata.id, 'styler-plugin-sales');
-    
+
     const salesData = await csvApi.getFilteredData(tableMetadata.id, {
       keyColumn: 'region',
       valueColumns: ['sales'],
@@ -287,7 +282,7 @@ West,90000,18000`;
 
     // Plugin 2: Styler for profit visualization
     await csvApi.addTableReference(tableMetadata.id, 'styler-plugin-profit');
-    
+
     const profitData = await csvApi.getFilteredData(tableMetadata.id, {
       keyColumn: 'region',
       valueColumns: ['profit'],
@@ -330,19 +325,19 @@ West,90000,18000`;
     // Test malformed CSV
     const malformedFile = new File(['name,age\nJohn,30,ExtraColumn\nJane'], 'malformed.csv', { type: 'text/csv' });
     const result = await csvApi.uploadCSVFile(malformedFile);
-    
+
     // Should handle malformed data gracefully
     expect(result.totalRows).toBe(2); // Both rows parsed (malformed data handled gracefully)
 
     // Test invalid table ID
     await expect(
-      csvApi.getFilteredPreview('invalid-table-id', [], 10)
+      csvApi.getFilteredPreview('invalid-table-id', [], 10),
     ).rejects.toThrow('Table not found');
 
     // Test filter with non-existent column
     const validFile = new File(['name,age\nJohn,30'], 'valid.csv', { type: 'text/csv' });
     const validTable = await csvApi.uploadCSVFile(validFile);
-    
+
     const invalidFilters: CSVFilterRule[] = [
       {
         id: '1',
@@ -372,10 +367,10 @@ West,90000,18000`;
     // Test data consistency across different filter operations
     const noFilter = await csvApi.getFilteredPreview(tableMetadata.id, [], 100);
     const category1Filter = await csvApi.getFilteredPreview(tableMetadata.id, [
-      { id: '1', column: 'category', operator: 'equals', value: 'Category 1', enabled: true }
+      { id: '1', column: 'category', operator: 'equals', value: 'Category 1', enabled: true },
     ], 100);
     const valueFilter = await csvApi.getFilteredPreview(tableMetadata.id, [
-      { id: '2', column: 'value', operator: 'greater_than', value: 200, enabled: true }
+      { id: '2', column: 'value', operator: 'greater_than', value: 200, enabled: true },
     ], 100);
 
     // Verify data consistency
@@ -386,7 +381,7 @@ West,90000,18000`;
     // Verify that the same data appears in different queries
     const itemA = noFilter.rows.find(row => row.name === 'Item A');
     const itemAFiltered = category1Filter.rows.find(row => row.name === 'Item A');
-    
+
     expect(itemA).toEqual(itemAFiltered);
 
     // Test data consistency with multiple simultaneous access
@@ -404,7 +399,7 @@ West,90000,18000`;
     // Create mock Excel file
     const excelBuffer = new ArrayBuffer(1024);
     const file = new File([excelBuffer], 'countries.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 
     // Upload Excel file
@@ -415,7 +410,7 @@ West,90000,18000`;
     expect(tableMetadata.filename).toContain('EXCEL (Excel file processed)');
     expect(tableMetadata.totalRows).toBe(3); // From mock data
     expect(tableMetadata.columns).toHaveLength(3);
-    
+
     const columnNames = tableMetadata.columns.map(c => c.name);
     expect(columnNames).toEqual(['country', 'population', 'continent']);
 
@@ -431,7 +426,7 @@ West,90000,18000`;
     ];
 
     const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
-    
+
     // Verify filtering works on Excel-derived data
     expect(filteredData.totalRows).toBe(2); // China and Japan
     expect(filteredData.rows.every(row => row.continent === 'Asia')).toBe(true);
@@ -454,7 +449,7 @@ West,90000,18000`;
     // Create mock ZIP file
     const zipBuffer = new ArrayBuffer(512);
     const file = new File([zipBuffer], 'data.zip', {
-      type: 'application/zip'
+      type: 'application/zip',
     });
 
     // Upload ZIP file
@@ -479,7 +474,7 @@ West,90000,18000`;
     ];
 
     const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
-    
+
     // Verify filtering works on ZIP-derived data
     expect(filteredData.totalRows).toBe(1); // Only United States (North America)
     expect(filteredData.rows[0].continent).toBe('North America');
@@ -520,7 +515,7 @@ Product C\t150\tElectronics`;
     // Test duplicate file handling across formats
     const csvEquivalent = tsvContent.replace(/\t/g, ',');
     const csvFile = new File([csvEquivalent], 'products.csv', { type: 'text/csv' });
-    
+
     // Should create a new entry since content hash is different (due to delimiters)
     const csvTable = await csvApi.uploadCSVFile(csvFile);
     expect(csvTable.id).not.toBe(tsvTable.id);

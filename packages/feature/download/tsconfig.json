@@ -10,5 +10,9 @@
   },
   "include": [
     "src/**/*"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

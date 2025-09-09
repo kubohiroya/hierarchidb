@@ -6,7 +6,9 @@
  * plugin runtime operations, including creation, editing, and management
  * of plugin-based entities.
  */
-export function dummy() {}
+export function dummy() {
+}
+
 /**
  * Runtime Plugin Dialog
  * Provides plugin dialog system with React Router integration
@@ -14,7 +16,7 @@ export function dummy() {}
 
 // Registry
 export { PluginStepRegistry } from './registry/PluginStepRegistry';
-export type { 
+export type {
   PluginStepProvider,
   PluginStepConfig,
   StepComponentProps,
@@ -31,7 +33,7 @@ export type { BasicInfoStepProps, BasicInfoData } from './components/steps/Basic
 
 // Hooks
 export { useWorkingCopy } from './hooks/useWorkingCopy';
-export type { 
+export type {
   UseWorkingCopyOptions,
   UseWorkingCopyResult,
   WorkingCopyData,

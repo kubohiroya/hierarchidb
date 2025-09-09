@@ -1,7 +1,7 @@
 /**
- * @file ShapePlugin.ts
- * @description ERIA-Cartograph移植: Shape Plugin メインクラス
- */
+  * @file ShapePlugin.ts
+ * @description ERIA-Cartograph: Shape Plugin
+  */
 
 import type { TreeNodeId } from '@hierarchidb/core';
 import { BatchSessionManager } from './services/BatchSessionManager';
@@ -21,11 +21,11 @@ export class ShapePlugin {
     treeNodeId: TreeNodeId,
     config: BatchConfig,
     countries: string[],
-    adminLevels: number[]
+    adminLevels: number[],
   ): Promise<string> {
     // Validate country codes
-    const invalidCountries = countries.filter(country => 
-      !country || country.length !== 3 || country.includes('INVALID')
+    const invalidCountries = countries.filter(country =>
+      !country || country.length !== 3 || country.includes('INVALID'),
     );
 
     if (invalidCountries.length > 0) {
@@ -41,7 +41,7 @@ export class ShapePlugin {
       treeNodeId,
       config,
       countries,
-      adminLevels
+      adminLevels,
     );
   }
 }

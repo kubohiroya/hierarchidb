@@ -18,11 +18,11 @@ export interface DataSourceStepProps {
 }
 
 export const DataSourceStep: React.FC<DataSourceStepProps> = ({
-  data,
-  onNext,
-  onPrevious,
-  errors,
-}) => {
+                                                                data,
+                                                                onNext,
+                                                                onPrevious,
+                                                                errors,
+                                                              }) => {
   /*
   const handleDataSourceChange = (dataSourceName: string) => {
     const updatedData = { ...data, dataSourceName };

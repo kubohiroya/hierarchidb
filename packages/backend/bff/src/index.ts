@@ -1,17 +1,17 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { Hono, Context } from 'hono';
+import { Context, Hono } from 'hono';
 import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
-import { extractBearerToken, verifySessionToken, createSessionToken } from './utils/jwt.js';
+import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
 import {
-  initiateGoogleAuth,
   exchangeCodeForTokens,
   getGoogleUserInfo,
   type GoogleOAuth2Config,
+  initiateGoogleAuth,
 } from './auth/google.js';
-import { initiateGitHubAuth, type GitHubOAuth2Config } from './auth/github.js';
+import { type GitHubOAuth2Config, initiateGitHubAuth } from './auth/github.js';
 import { initiateMicrosoftAuth, type MicrosoftOAuth2Config } from './auth/microsoft.js';
-import { handleOAuth2Callback, exchangeCodeForToken } from './auth/callback.js';
+import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
 import { refreshToken, revokeToken } from './auth/refresh.js';
 import { mapEnvironmentVariables, MappedEnv } from './env-mapper.js';
 import { getDynamicRedirectUri } from './utils/redirect-uri.js';
@@ -69,7 +69,7 @@ app.get('/', (c) => {
 // ============================================================================
 
 // Step 1: Initiate OAuth2 flow (GET request as per standard OAuth2)
-// Turnstile検証を追加（ボット対策）
+//  Turnstile
 app.get('/auth/google/authorize', requireTurnstile, async (c) => {
   try {
     // Use dynamic redirect URI based on request origin
@@ -81,7 +81,7 @@ app.get('/auth/google/authorize', requireTurnstile, async (c) => {
       redirectUri,
     };
 
-    // StateManagerを使用してHMAC署名付きstateを生成
+    //  StateManagerHMACstate
     const env = c.env as any;
     const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
     const state = await stateManager.createState(c);
@@ -99,7 +99,7 @@ app.get('/auth/google/authorize', requireTurnstile, async (c) => {
     googleAuthUrl.searchParams.set('response_type', 'code');
     googleAuthUrl.searchParams.set(
       'scope',
-      url.searchParams.get('scope') || 'openid profile email'
+      url.searchParams.get('scope') || 'openid profile email',
     );
     googleAuthUrl.searchParams.set('state', state);
 
@@ -185,7 +185,7 @@ app.post('/auth/google/callback', async (c) => {
       },
       c.env.JWT_SECRET,
       sessionDuration,
-      c.env.JWT_ISSUER
+      c.env.JWT_ISSUER,
     );
 
     return c.json({
@@ -315,7 +315,7 @@ app.get('/auth/microsoft/authorize', async (c) => {
 
     // Build Microsoft OAuth URL with PKCE parameters
     const microsoftAuthUrl = new URL(
-      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
     );
     microsoftAuthUrl.searchParams.set('client_id', config.clientId);
     microsoftAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
@@ -446,7 +446,7 @@ app.post('/auth/logout', async (c) => {
       if (token) {
         const kvManager = new (await import('./utils/kv-storage')).KVStorageManager(
           c.env.AUTH_KV,
-          c.env.JWT_SECRET
+          c.env.JWT_SECRET,
         );
 
         const userData = await kvManager.getUserAuthBySession(token);

@@ -1,5 +1,4 @@
-import type { NodeId, NodeType, PluginIntegrated, PluginRoutingConfig } from '@hierarchidb/common-type';
-import type { EntityHandler } from '@hierarchidb/common-type';
+import type { EntityHandler, NodeId, NodeType, PluginIntegrated, PluginRoutingConfig } from '@hierarchidb/common-type';
 import type { FolderEntity } from '../types/index';
 import { FolderEntityHandler } from '../handlers/FolderEntityHandler';
 import { FolderValidation } from '../shared/metadata';

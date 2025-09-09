@@ -12,18 +12,27 @@ declare module '@hierarchidb/ui-map' {
   export interface MapLibreStyle {
     layers?: Array<{ id: string; type?: string; layout?: Record<string, unknown> }>;
     sources?: Record<string, unknown>;
+
     [k: string]: unknown;
   }
 
   export interface MapLibreMapInstance {
     getStyle(): MapLibreStyle;
+
     addLayer(layer: Record<string, unknown>, beforeId?: string): void;
+
     getLayer(id: string): any;
+
     removeLayer(id: string): void;
+
     getSource(id: string): any;
+
     addSource(id: string, source: Record<string, unknown>): void;
+
     removeSource(id: string): void;
+
     setLayoutProperty(layerId: string, name: string, value: unknown): void;
+
     fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;
   }
 

@@ -1,4 +1,4 @@
-import type { TreeNode, NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 /**
  * Lifecycle hooks for node operations

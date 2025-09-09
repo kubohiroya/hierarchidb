@@ -1,24 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
+  Badge,
   Box,
-  Container,
-  Typography,
-  Chip,
+  Button,
   Card,
   CardContent,
+  Chip,
+  Container,
+  Divider,
   Grid,
   IconButton,
-  Tooltip,
-  TextField,
   InputAdornment,
   Paper,
-  Stack,
-  Button,
-  Badge,
-  Divider,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { ArrowBack, Search, Edit, LocalOffer, Sort, FilterList } from '@mui/icons-material';
+import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 import { useWorkerClient } from '../contexts/WorkerProvider';
 import type { TagEntity } from '@hierarchidb/common-type';
 
@@ -88,7 +86,7 @@ export default function TagsPage() {
       acc[category].push(tag);
       return acc;
     },
-    {} as Record<string, TagEntity[]>
+    {} as Record<string, TagEntity[]>,
   );
 
   // Toggle sort order

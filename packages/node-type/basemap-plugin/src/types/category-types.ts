@@ -4,14 +4,11 @@
  */
 
 /**
- * ベースマップのカテゴリ型
- * ブランド型として定義することで型安全性を確保
- */
+     */
 export type BasemapCategory = 'satellite' | 'street' | 'terrain' | 'dark' | 'light' | 'custom';
 
 /**
- * カテゴリ表示用の設定
- */
+    */
 export interface BasemapCategoryConfig {
   value: BasemapCategory;
   label: string;
@@ -20,8 +17,7 @@ export interface BasemapCategoryConfig {
 }
 
 /**
- * 事前定義されたカテゴリ設定
- */
+    */
 export const BASEMAP_CATEGORIES: BasemapCategoryConfig[] = [
   {
     value: 'satellite',

@@ -13,13 +13,12 @@
 import * as turf from '@turf/turf';
 import * as geohash from 'geohash';
 import type {
-  DownloadWorkerAPI,
-  DownloadTask,
   DownloadResult,
+  DownloadTask,
   DownloadTaskConfig,
-  ValidationResult,
+  DownloadWorkerAPI,
   FeatureIndex,
-  //DataSourceName
+  ValidationResult,
 } from '../types';
 import { createShapeDownloadService } from '../download/factory';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
@@ -29,6 +28,7 @@ import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
  */
 export class DownloadWorker implements DownloadWorkerAPI {
   private cache = new Map<string, ArrayBuffer>();
+
   //private readonly maxCacheSize = 100 * 1024 * 1024; // 100MB cache limit
 
   constructor() {
@@ -75,7 +75,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
       const validationResult = await this.validateData(rawData);
       if (!validationResult.isValid) {
         throw new Error(
-          `Invalid data: ${validationResult.errors.map((e) => e.message).join(', ')}`
+          `Invalid data: ${validationResult.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
@@ -101,7 +101,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
       };
 
       console.log(
-        `DownloadWorker: Completed task ${task.taskId} in ${downloadTime}ms (${fromCache ? 'from cache' : 'downloaded'})`
+        `DownloadWorker: Completed task ${task.taskId} in ${downloadTime}ms (${fromCache ? 'from cache' : 'downloaded'})`,
       );
       return result;
     } catch (error) {
@@ -304,7 +304,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
         const geohashCode = geohash.encode(
           centroid.geometry.coordinates[1],
           centroid.geometry.coordinates[0],
-          12
+          12,
         );
         const complexity = this.calculateComplexity(feature.geometry);
 

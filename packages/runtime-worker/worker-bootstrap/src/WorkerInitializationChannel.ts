@@ -1,55 +1,50 @@
 /**
  * WorkerInitializationChannel - Handles Worker initialization detection via MessageChannel
- * 
+ *
  * This provides a Comlink-independent way to detect when the Worker has completed
  * its internal initialization, using native browser messaging APIs.
  */
 
-import type {
-  WorkerInitConfig,
-  WorkerInitMessage,
-  WorkerInitRequest,
-  InitializationResult,
-} from './types';
+import type { InitializationResult, WorkerInitConfig, WorkerInitMessage, WorkerInitRequest } from './types';
 
 export class WorkerInitializationChannel {
   private worker: Worker | null = null;
   private initPromise: Promise<InitializationResult> | null = null;
   private messageHandler: ((event: MessageEvent) => void) | null = null;
   private debug: boolean = false;
-  
+
   /**
    * Attach to a Worker and wait for initialization
    */
   public waitForInitialization(config: WorkerInitConfig): Promise<InitializationResult> {
     const { worker, timeout = 30000, debug = false } = config;
-    
+
     if (this.initPromise) {
       return this.initPromise;
     }
-    
+
     this.worker = worker;
     this.debug = debug;
     const startTime = Date.now();
-    
+
     this.initPromise = new Promise<InitializationResult>((resolve, reject) => {
       let timeoutId: number | null = null;
-      
+
       // Set up timeout
       timeoutId = window.setTimeout(() => {
         this.cleanup();
         const error = new Error(`Worker initialization timeout after ${timeout}ms`);
         reject({ success: false, error, duration: Date.now() - startTime });
       }, timeout);
-      
+
       // Set up message handler
       this.messageHandler = (event: MessageEvent) => {
         const message = event.data as WorkerInitMessage;
-        
+
         if (this.debug) {
           console.log('[WorkerInitChannel] Received message:', message);
         }
-        
+
         switch (message.type) {
           case 'INIT_COMPLETE':
             if (timeoutId) {
@@ -61,7 +56,7 @@ export class WorkerInitializationChannel {
               duration: Date.now() - startTime,
             });
             break;
-            
+
           case 'INIT_ERROR':
             if (timeoutId) {
               clearTimeout(timeoutId);
@@ -74,15 +69,15 @@ export class WorkerInitializationChannel {
               duration: Date.now() - startTime,
             });
             break;
-            
+
           case 'INIT_PROGRESS':
             if (this.debug) {
               console.log(
-                `[WorkerInitChannel] Progress: ${message.payload?.progress}% - ${message.payload?.message}`
+                `[WorkerInitChannel] Progress: ${message.payload?.progress}% - ${message.payload?.message}`,
               );
             }
             break;
-            
+
           case 'PING_RESPONSE':
             if (this.debug) {
               console.log('[WorkerInitChannel] Ping response received');
@@ -90,28 +85,28 @@ export class WorkerInitializationChannel {
             break;
         }
       };
-      
+
       // Attach the message handler
       if (!this.worker) {
         throw new Error('Worker is not initialized');
       }
       this.worker.addEventListener('message', this.messageHandler);
-      
+
       // Send initialization request
-      const request: WorkerInitRequest = { 
+      const request: WorkerInitRequest = {
         type: 'INIT_REQUEST',
         timestamp: Date.now(),
       };
       this.worker.postMessage(request);
-      
+
       if (this.debug) {
         console.log('[WorkerInitChannel] Sent initialization request');
       }
     });
-    
+
     return this.initPromise;
   }
-  
+
   /**
    * Send a ping to check if Worker is responsive
    */
@@ -119,12 +114,12 @@ export class WorkerInitializationChannel {
     if (!this.worker) {
       return false;
     }
-    
+
     return new Promise<boolean>((resolve) => {
       const timeout = setTimeout(() => {
         resolve(false);
       }, 1000);
-      
+
       const handler = (event: MessageEvent) => {
         if (event.data.type === 'PING_RESPONSE') {
           clearTimeout(timeout);
@@ -132,7 +127,7 @@ export class WorkerInitializationChannel {
           resolve(true);
         }
       };
-      
+
       if (this.worker) {
         this.worker.addEventListener('message', handler);
         const request: WorkerInitRequest = { type: 'PING' };
@@ -142,7 +137,7 @@ export class WorkerInitializationChannel {
       }
     });
   }
-  
+
   /**
    * Clean up event listeners
    */
@@ -153,7 +148,7 @@ export class WorkerInitializationChannel {
     this.messageHandler = null;
     this.initPromise = null;
   }
-  
+
   /**
    * Dispose of the channel
    */

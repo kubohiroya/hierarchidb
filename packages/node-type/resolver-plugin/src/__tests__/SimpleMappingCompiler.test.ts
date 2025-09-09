@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { MappingCompiler } from '../services/SimpleMappingCompiler';
 
 describe('SimpleMappingCompiler', () => {
   it('should handle basic transformations', () => {
     const compiler = new MappingCompiler();
-    
+
     const rules = [
       {
         id: 'rule1',
@@ -15,17 +15,17 @@ describe('SimpleMappingCompiler', () => {
         defaultValue: 'other',
       },
     ];
-    
+
     const compiledFn = compiler.compile(rules);
-    
+
     const data1 = { placeType: 'metropolis' };
     const result1 = compiledFn(data1);
     expect(result1.category).toBe('city');
-    
+
     const data2 = { placeType: 'town' };
     const result2 = compiledFn(data2);
     expect(result2.category).toBe('town');
-    
+
     const data3 = { placeType: 'village' };
     const result3 = compiledFn(data3);
     expect(result3.category).toBe('other');
@@ -33,7 +33,7 @@ describe('SimpleMappingCompiler', () => {
 
   it('should handle nested paths', () => {
     const compiler = new MappingCompiler();
-    
+
     const rules = [
       {
         id: 'rule1',
@@ -44,9 +44,9 @@ describe('SimpleMappingCompiler', () => {
         defaultValue: 'unknown',
       },
     ];
-    
+
     const compiledFn = compiler.compile(rules);
-    
+
     const data = {
       metrics: {
         economic: {
@@ -54,14 +54,14 @@ describe('SimpleMappingCompiler', () => {
         },
       },
     };
-    
+
     const result = compiledFn(data);
     expect(result.gdpLevel).toBe('high');
   });
 
   it('should handle array transformations', () => {
     const compiler = new MappingCompiler();
-    
+
     const rules = [
       {
         id: 'rule1',
@@ -72,16 +72,16 @@ describe('SimpleMappingCompiler', () => {
         defaultValue: undefined,
       },
     ];
-    
+
     const compiledFn = compiler.compile(rules);
-    
+
     const data = {
       location: {
         lat: 35.6895,
         lon: 139.6917,
       },
     };
-    
+
     const result = compiledFn(data);
     expect(result.coordinates).toEqual([139.6917, 35.6895]);
   });

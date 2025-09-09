@@ -5,21 +5,21 @@
 
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { EntityId, NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type {
   RawFileMetadata,
   RowChunk,
   SpreadsheetEntity,
-  SpreadsheetRow,
   SpreadsheetEntityWorkingCopy,
+  SpreadsheetRow,
 } from '../types';
 
 /**
- * 【機能概要】: Spreadsheetプラグインの全データベーステーブル管理
- * 【実装方針】: PersistentRelationalEntity + PersistentPeerEntityの統合管理
- * 【テスト対応】: 各テーブル間のリレーション整合性テスト
- * 🟢 信頼性レベル: Dexieベースの実証済み設計
- */
+  * : Spreadsheet
+ * : PersistentRelationalEntity + PersistentPeerEntity
+ * :
+ * : Dexie
+  */
 export class SpreadsheetDatabase extends Dexie {
   // PersistentRelationalEntity Tables
   rawFileMetadata!: Table<RawFileMetadata>;
@@ -34,35 +34,35 @@ export class SpreadsheetDatabase extends Dexie {
     super(dbName);
 
     this.version(1).stores({
-      // 【RawFileMetadataテーブル】: 元ファイル情報
+      //  RawFileMetadata:
       rawFileMetadata:
         '&id, fileName, contentHash, uploadedAt, parsedAt, createdAt, updatedAt, totalRows',
 
-      // 【RowChunksテーブル】: チャンク化された行データ
+      //  RowChunks:
       rowChunks:
         '&id, rawFileMetadataId, chunkIndex, startRowIndex, endRowIndex, createdAt, updatedAt',
 
-      // 【SpreadsheetRowsテーブル】: フィルタ済み行データ
+      //  SpreadsheetRows:
       spreadsheetRows:
         '&id, spreadsheetEntityId, originalRowIndex, filterScore, createdAt, updatedAt',
 
-      // 【SpreadsheetEntitiesテーブル】: メインEntity（TreeNodeと紐づき）
+      //  SpreadsheetEntities: EntityTreeNode
       spreadsheetEntities: '&id, nodeId, rawFileMetadataId, createdAt, updatedAt',
 
-      // 【WorkingCopiesテーブル】: 編集中のワーキングコピー
+      //  WorkingCopies:
       workingCopies: '&id, nodeId, originalNodeId, copiedAt, updatedAt',
     });
   }
 
   /**
-   * 【機能概要】: RawFileMetadataの作成
-   * 【実装方針】: タイムスタンプとバージョン管理を自動付与
-   * 【テスト対応】: メタデータ作成の基本テストケース
-   * 🟢 信頼性レベル: 基本的なCRUD操作
-   */
+      * : RawFileMetadata
+   * :
+   * :
+   * : CRUD
+      */
   async createRawFileMetadata(input: Partial<RawFileMetadata>): Promise<RawFileMetadata> {
     const now = Date.now();
-    const entityId = crypto.randomUUID() as EntityId;
+    const entityId = crypto.randomUUID() as unknown as NodeId;
     const metadata: RawFileMetadata = {
       id: entityId,
       fileName: input.fileName || 'untitled.csv',
@@ -110,7 +110,7 @@ export class SpreadsheetDatabase extends Dexie {
    */
   async createRowChunk(input: Partial<RowChunk>): Promise<RowChunk> {
     const now = Date.now();
-    const entityId = crypto.randomUUID() as EntityId;
+    const entityId = crypto.randomUUID() as unknown as NodeId;
     const chunk: RowChunk = {
       id: entityId,
       rawFileMetadataId: input.rawFileMetadataId!,
@@ -136,7 +136,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 【テスト対応】: チャンク統合テスト
    * 🟢 信頼性レベル: リレーション検索
    */
-  async getRowChunksByFileId(rawFileMetadataId: EntityId): Promise<RowChunk[]> {
+  async getRowChunksByFileId(rawFileMetadataId: NodeId): Promise<RowChunk[]> {
     return await this.rowChunks
       .where('rawFileMetadataId')
       .equals(rawFileMetadataId)
@@ -151,7 +151,7 @@ export class SpreadsheetDatabase extends Dexie {
    */
   async createSpreadsheetEntity(input: Partial<SpreadsheetEntity>): Promise<SpreadsheetEntity> {
     const now = Date.now();
-    const entityId = crypto.randomUUID() as EntityId;
+    const entityId = crypto.randomUUID() as unknown as NodeId;
     const entity: SpreadsheetEntity = {
       id: entityId,
       nodeId: input.nodeId!,
@@ -221,8 +221,8 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: 楽観的ロック付き更新
    */
   async updateSpreadsheetEntity(
-    id: EntityId,
-    updates: Partial<SpreadsheetEntity>
+    id: NodeId,
+    updates: Partial<SpreadsheetEntity>,
   ): Promise<SpreadsheetEntity> {
     const entity = await this.spreadsheetEntities.get(id);
     if (!entity) {
@@ -250,7 +250,7 @@ export class SpreadsheetDatabase extends Dexie {
    */
   async createSpreadsheetRow(input: Partial<SpreadsheetRow>): Promise<SpreadsheetRow> {
     const now = Date.now();
-    const entityId = crypto.randomUUID() as EntityId;
+    const entityId = crypto.randomUUID() as unknown as NodeId;
     const row: SpreadsheetRow = {
       id: entityId,
       spreadsheetEntityId: input.spreadsheetEntityId!,
@@ -275,8 +275,8 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟡 信頼性レベル: フィルタ結果取得
    */
   async getSpreadsheetRowsByEntityId(
-    spreadsheetEntityId: EntityId,
-    limit?: number
+    spreadsheetEntityId: NodeId,
+    limit?: number,
   ): Promise<SpreadsheetRow[]> {
     let query = this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId);
 
@@ -297,10 +297,10 @@ export class SpreadsheetDatabase extends Dexie {
    */
   async createWorkingCopy(
     entity: SpreadsheetEntity,
-    originalNodeId?: NodeId
+    originalNodeId?: NodeId,
   ): Promise<SpreadsheetEntityWorkingCopy> {
     const now = Date.now();
-    const workingCopyId = crypto.randomUUID() as EntityId;
+    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
     const workingCopy: SpreadsheetEntityWorkingCopy = {
       ...entity,
       id: workingCopyId,
@@ -354,7 +354,7 @@ export class SpreadsheetDatabase extends Dexie {
 
     await this.transaction('rw', this.rowChunks, async () => {
       for (const chunk of chunks) {
-        const entityId = crypto.randomUUID() as EntityId;
+        const entityId = crypto.randomUUID() as unknown as NodeId;
         const rowChunk: RowChunk = {
           id: entityId,
           rawFileMetadataId: chunk.rawFileMetadataId!,
@@ -384,9 +384,9 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟡 信頼性レベル: 範囲検索
    */
   async getRowChunksByRange(
-    rawFileMetadataId: EntityId,
+    rawFileMetadataId: NodeId,
     startRow: number,
-    endRow: number
+    endRow: number,
   ): Promise<RowChunk[]> {
     return await this.rowChunks
       .where('rawFileMetadataId')
@@ -407,7 +407,7 @@ export class SpreadsheetDatabase extends Dexie {
 
     await this.transaction('rw', this.spreadsheetRows, async () => {
       for (const row of rows) {
-        const entityId = crypto.randomUUID() as EntityId;
+        const entityId = crypto.randomUUID() as unknown as NodeId;
         const spreadsheetRow: SpreadsheetRow = {
           id: entityId,
           spreadsheetEntityId: row.spreadsheetEntityId!,
@@ -434,7 +434,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 【テスト対応】: 行削除テスト
    * 🟡 信頼性レベル: 一括削除
    */
-  async clearFilteredRows(spreadsheetEntityId: EntityId): Promise<void> {
+  async clearFilteredRows(spreadsheetEntityId: NodeId): Promise<void> {
     await this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId).delete();
   }
 
@@ -445,8 +445,8 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟡 信頼性レベル: バッチ更新
    */
   async updateColumnSelection(
-    spreadsheetEntityId: EntityId,
-    newColumnMapping: number[]
+    spreadsheetEntityId: NodeId,
+    newColumnMapping: number[],
   ): Promise<void> {
     const rows = await this.spreadsheetRows
       .where('spreadsheetEntityId')
@@ -613,7 +613,7 @@ export class SpreadsheetDatabase extends Dexie {
         deletedWorkingCopies = oldWorkingCopies.length;
 
         await this.workingCopies.where('copiedAt').below(cutoffTime).delete();
-      }
+      },
     );
 
     return {
@@ -661,9 +661,9 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: 既存メソッドへのエイリアス
    */
   async getRowChunksInRange(
-    rawFileMetadataId: EntityId,
+    rawFileMetadataId: NodeId,
     startRow: number,
-    endRow: number
+    endRow: number,
   ): Promise<RowChunk[]> {
     return await this.getRowChunksByRange(rawFileMetadataId, startRow, endRow);
   }
@@ -675,8 +675,8 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: 既存メソッドへのエイリアス
    */
   async updateRowsColumnSelection(
-    spreadsheetEntityId: EntityId,
-    newColumnMapping: number[]
+    spreadsheetEntityId: NodeId,
+    newColumnMapping: number[],
   ): Promise<void> {
     return await this.updateColumnSelection(spreadsheetEntityId, newColumnMapping);
   }
@@ -687,7 +687,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 【テスト対応】: チャンクの順序保証テスト
    * 🟢 信頼性レベル: 順序保証実装
    */
-  async getRowChunksByMetadataId(metadataId: EntityId): Promise<RowChunk[]> {
+  async getRowChunksByMetadataId(metadataId: NodeId): Promise<RowChunk[]> {
     return await this.rowChunks.where('rawFileMetadataId').equals(metadataId).sortBy('chunkIndex');
   }
 
@@ -700,9 +700,9 @@ export class SpreadsheetDatabase extends Dexie {
    * 🟢 信頼性レベル: ページネーション実装（順序保証強化）
    */
   async getFilteredRowsByEntityId(
-    entityId: EntityId,
+    entityId: NodeId,
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<SpreadsheetRow[]> {
     // 【順序保証】: originalRowIndexでソートしてページネーションの一貫性を保証 🟢
     // 【実装詳細】: Dexieのorderbyを使用して安定した順序を実現

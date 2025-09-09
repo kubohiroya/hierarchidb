@@ -1,8 +1,6 @@
 /**
- * TrashbinActions - ゴミ箱操作用のアクションボタン群
- *
- * 復元・完全削除・空にするなどのアクション
- */
+  * TrashbinActions -
+    */
 
 import { useState } from 'react';
 import {
@@ -17,26 +15,26 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  Restore as RestoreIcon,
-  DeleteForever as DeleteForeverIcon,
   Delete as EmptyTrashIcon,
+  DeleteForever as DeleteForeverIcon,
+  Restore as RestoreIcon,
 } from '@mui/icons-material';
 import type { TrashbinActionsProps } from '../types';
 
 /**
- * TrashbinActions コンポーネント
- */
+  * TrashbinActions
+  */
 export function TrashbinActions({
-  controller,
-  selectedItemIds = new Set(),
-  onRestore,
-  onPermanentDelete,
-  onEmptyTrash,
-  disableRestore = false,
-  disableDelete = false,
-  disableEmptyTrash = false,
-  showConfirmations = true,
-}: TrashbinActionsProps) {
+                                  controller,
+                                  selectedItemIds = new Set(),
+                                  onRestore,
+                                  onPermanentDelete,
+                                  onEmptyTrash,
+                                  disableRestore = false,
+                                  disableDelete = false,
+                                  disableEmptyTrash = false,
+                                  showConfirmations = true,
+                                }: TrashbinActionsProps) {
   // Dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -49,7 +47,8 @@ export function TrashbinActions({
     type: 'restore',
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => {
+    },
   });
 
   const selectedCount = selectedItemIds.size;

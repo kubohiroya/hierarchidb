@@ -1,12 +1,4 @@
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
-  Box,
-  Stack,
-  useTheme,
-} from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Stack, Typography, useTheme } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 
 export interface ConfigAccordionProps {
@@ -33,25 +25,25 @@ export interface ConfigAccordionProps {
 }
 
 export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
-  id,
-  icon,
-  title,
-  description,
-  defaultExpanded = true,
-  disabled = false,
-  headerColor,
-  sx = {},
-  children,
-  onExpansionChange,
-}) => {
+                                                                  id,
+                                                                  icon,
+                                                                  title,
+                                                                  description,
+                                                                  defaultExpanded = true,
+                                                                  disabled = false,
+                                                                  headerColor,
+                                                                  sx = {},
+                                                                  children,
+                                                                  onExpansionChange,
+                                                                }) => {
   const theme = useTheme();
 
   const getHeaderBackgroundColor = () => {
     if (headerColor) return headerColor;
-    
+
     // Default theme-aware background
-    return theme.palette.mode === 'dark' 
-      ? 'rgba(255, 255, 255, 0.05)' 
+    return theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.05)'
       : theme.palette.grey[50];
   };
 
@@ -60,16 +52,16 @@ export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
   };
 
   return (
-    <Accordion 
+    <Accordion
       id={id}
       defaultExpanded={defaultExpanded}
       disabled={disabled}
       onChange={handleExpansionChange}
       sx={sx}
     >
-      <AccordionSummary 
+      <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
-        sx={{ 
+        sx={{
           backgroundColor: getHeaderBackgroundColor(),
           px: 3,
           py: 1,
@@ -79,13 +71,13 @@ export const ConfigAccordion: React.FC<ConfigAccordionProps> = ({
           },
           '&.Mui-disabled': {
             backgroundColor: theme.palette.action.disabledBackground,
-          }
+          },
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, width: '100%' }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, width: '100%' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {icon && (
-              <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {typeof icon === 'string' ? (
                   <Typography component="span" sx={{ fontSize: '1.2em' }}>{icon}</Typography>
                 ) : (

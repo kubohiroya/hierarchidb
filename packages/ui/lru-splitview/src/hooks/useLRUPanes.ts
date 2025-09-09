@@ -3,13 +3,9 @@
  * @module @hierarchidb/ui-lru-splitview/hooks
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import type { 
-  PaneState, 
-  LRUSplitViewConfig,
-  UseLRUPanesResult 
-} from '../types/LRUSplitView';
+import type { LRUSplitViewConfig, PaneState, UseLRUPanesResult } from '../types/LRUSplitView';
 
 const DEFAULT_MAX_EXPANDED = 2;
 const DEFAULT_COLLAPSED_SIZE = 60;
@@ -18,34 +14,34 @@ const DEFAULT_COLLAPSED_SIZE = 60;
  * Hook for managing LRU pane expansion with intelligent auto-expand behavior
  */
 export function useLRUPanes({
-  panes,
-  maxExpandedPanes = DEFAULT_MAX_EXPANDED,
-  defaultCollapsedSize = DEFAULT_COLLAPSED_SIZE,
-  autoExpand,
-  progress = [],
-  onPaneToggle,
-}: Pick<LRUSplitViewConfig, 'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'>): UseLRUPanesResult {
+                              panes,
+                              maxExpandedPanes = DEFAULT_MAX_EXPANDED,
+                              defaultCollapsedSize = DEFAULT_COLLAPSED_SIZE,
+                              autoExpand,
+                              progress = [],
+                              onPaneToggle,
+                            }: Pick<LRUSplitViewConfig, 'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'>): UseLRUPanesResult {
   const theme = useTheme();
 
   // Generate default colors based on theme
   const generateDefaultColor = useCallback((index: number) => {
-    const colors = theme.palette.mode === 'dark' 
+    const colors = theme.palette.mode === 'dark'
       ? [
-          'rgba(245, 245, 245, 0.08)', // Light gray
-          'rgba(63, 81, 181, 0.08)',   // Indigo
-          'rgba(156, 39, 176, 0.08)',  // Purple
-          'rgba(76, 175, 80, 0.08)',   // Green
-          'rgba(255, 152, 0, 0.08)',   // Orange
-          'rgba(244, 67, 54, 0.08)',   // Red
-        ]
+        'rgba(245, 245, 245, 0.08)', // Light gray
+        'rgba(63, 81, 181, 0.08)',   // Indigo
+        'rgba(156, 39, 176, 0.08)',  // Purple
+        'rgba(76, 175, 80, 0.08)',   // Green
+        'rgba(255, 152, 0, 0.08)',   // Orange
+        'rgba(244, 67, 54, 0.08)',   // Red
+      ]
       : [
-          '#f5f5f5', // Light gray
-          '#efefff', // Light indigo
-          '#fff0ff', // Light purple
-          '#efffef', // Light green
-          '#fff8e1', // Light orange
-          '#ffebee', // Light red
-        ];
+        '#f5f5f5', // Light gray
+        '#efefff', // Light indigo
+        '#fff0ff', // Light purple
+        '#efffef', // Light green
+        '#fff8e1', // Light orange
+        '#ffebee', // Light red
+      ];
     return colors[index % colors.length];
   }, [theme.palette.mode]);
 
@@ -123,7 +119,7 @@ export function useLRUPanes({
 
       // Notify callback
       onPaneToggle?.(paneId, newIsExpanded);
-      
+
       return newStates;
     });
   }, [expandPaneLRU, onPaneToggle]);
@@ -150,7 +146,7 @@ export function useLRUPanes({
         ...p,
         isExpanded: p.id === paneId ? false : p.isExpanded,
       }));
-      
+
       onPaneToggle?.(paneId, false);
       return newStates;
     });
@@ -160,25 +156,25 @@ export function useLRUPanes({
   const expandPanes = useCallback((paneIds: string[]) => {
     setPaneStates((prev) => {
       let newStates = [...prev];
-      
+
       paneIds.forEach(paneId => {
         const pane = newStates.find(p => p.id === paneId);
         if (pane && !pane.isExpanded) {
           newStates = expandPaneLRU(newStates, paneId);
         }
       });
-      
+
       return newStates;
     });
   }, [expandPaneLRU]);
 
   // Collapse all panes
   const collapseAll = useCallback(() => {
-    setPaneStates((prev) => 
+    setPaneStates((prev) =>
       prev.map((pane) => ({
         ...pane,
         isExpanded: false,
-      }))
+      })),
     );
   }, []);
 
@@ -208,10 +204,10 @@ export function useLRUPanes({
     } else {
       // Multiple expanded panes share space equally
       const spacePerExpanded = 1000 / expandedCount;
-      return paneStates.map((pane) => 
-        pane.isExpanded 
-          ? spacePerExpanded 
-          : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE
+      return paneStates.map((pane) =>
+        pane.isExpanded
+          ? spacePerExpanded
+          : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
       );
     }
   }, [paneStates]);

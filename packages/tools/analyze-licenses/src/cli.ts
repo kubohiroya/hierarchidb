@@ -5,7 +5,7 @@ const require = createRequire(import.meta.url);
 
 type LicenseCheckerInit = (
   opts: Record<string, any>,
-  cb: (err: Error | null, packages: Record<string, any>) => void
+  cb: (err: Error | null, packages: Record<string, any>) => void,
 ) => void;
 
 async function main() {

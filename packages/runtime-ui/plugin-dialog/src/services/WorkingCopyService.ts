@@ -93,17 +93,17 @@ export class WorkingCopyService {
       // Call Worker API to load working copy
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
       const response = await workingCopyAPI.getWorkingCopy(nodeId);
-      
+
       if (!response) {
         throw new Error(`Working copy not found: ${nodeId}`);
       }
 
       // Evaluate capabilities
       const state = this.evaluateCapabilities(nodeId, response);
-      
+
       // Cache the state
       this.stateCache.set(nodeId, state);
-      
+
       return state;
     } catch (error) {
       console.error('Failed to load working copy:', error);
@@ -116,7 +116,7 @@ export class WorkingCopyService {
    */
   async updateWorkingCopy(
     nodeId: NodeId,
-    updates: Partial<WorkingCopyState>
+    updates: Partial<WorkingCopyState>,
   ): Promise<WorkingCopyState> {
     try {
       // Call Worker API to update
@@ -168,7 +168,7 @@ export class WorkingCopyService {
   async evaluateStepCapabilities(
     _nodeId: NodeId,
     _stepIndex: number,
-    _data: any
+    _data: any,
   ): Promise<StepCapabilitiesState> {
     try {
       // Call Worker API to evaluate capabilities (method doesn't exist, return mock)
@@ -202,13 +202,13 @@ export class WorkingCopyService {
     try {
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
       const result = await workingCopyAPI.commitWorkingCopy(nodeId);
-      
+
       // Clear cache after save
       if (!asDraft && result.success) {
         this.stateCache.delete(nodeId);
         this.subscribers.delete(nodeId as string);
       }
-      
+
       if (result.success) return nodeId;
       throw new Error(result.error || 'Save failed');
     } catch (error) {
@@ -224,7 +224,7 @@ export class WorkingCopyService {
     try {
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
       await workingCopyAPI.discardWorkingCopy(nodeId);
-      
+
       // Clear cache
       this.stateCache.delete(nodeId);
       this.subscribers.delete(nodeId as string);

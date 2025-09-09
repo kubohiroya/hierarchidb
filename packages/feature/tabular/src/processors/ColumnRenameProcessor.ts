@@ -1,6 +1,9 @@
 import type { TabularProcessor } from '../processor';
 
-export interface ColumnRenameRule { from: string; to: string }
+export interface ColumnRenameRule {
+  from: string;
+  to: string;
+}
 
 export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[]): TabularProcessor {
   const map = new Map(rules.map(r => [r.from, r.to]));
@@ -8,7 +11,7 @@ export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[
     id,
     mapSchema(schema) {
       return {
-        columns: schema.columns.map(c => ({ name: map.get(c.name) || c.name, type: c.type }))
+        columns: schema.columns.map(c => ({ name: map.get(c.name) || c.name, type: c.type })),
       };
     },
     transformRow(row: Record<string, any>): Record<string, any> {
@@ -17,6 +20,6 @@ export function createColumnRenameProcessor(id: string, rules: ColumnRenameRule[
         out[map.get(k) || k] = v;
       }
       return out;
-    }
+    },
   };
 }

@@ -1,17 +1,13 @@
 import type { FolderEntity } from '../entities/FolderEntity';
-import type {
-  FolderExtension,
-  FolderDialogExtension,
-  FolderEntityExtension,
-} from '../api/FolderExtensionAPI';
+import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
 import type {
   DialogStepDefinition,
-  ValidationExtension,
-  StepValidation,
-  ValidationResult,
   NodeId,
   NodeType,
+  StepValidation,
+  ValidationExtension,
+  ValidationResult,
 } from '@hierarchidb/common-type';
 import type React from 'react';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
@@ -142,7 +138,8 @@ export abstract class BaseFolderPlugin {
     const validateEntity = this.validateEntity?.bind(this);
     const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({}));
     const saveExtendedData =
-      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, any>) => {});
+      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, any>) => {
+      });
 
     if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity) {
       return undefined;
@@ -241,7 +238,7 @@ export abstract class BaseFolderPlugin {
   protected async beforeUpdate?(
     _node: any,
     _entity: FolderEntity,
-    _changes: Partial<FolderEntity>
+    _changes: Partial<FolderEntity>,
   ): Promise<void> {
     // Default implementation does nothing
   }
@@ -296,13 +293,13 @@ export abstract class BaseFolderPlugin {
       component: config.component as any,
       validation: (config.validation
         ? ({
-            validate: async (data: any): Promise<ValidationResult> => {
-              const result = await config.validation!.validate(data as T);
-              return result.isValid
-                ? { valid: true }
-                : { valid: false, message: (result.errors || []).join(', ') };
-            },
-          } as StepValidation<unknown>)
+          validate: async (data: any): Promise<ValidationResult> => {
+            const result = await config.validation!.validate(data as T);
+            return result.isValid
+              ? { valid: true }
+              : { valid: false, message: (result.errors || []).join(', ') };
+          },
+        } as StepValidation<unknown>)
         : undefined),
       //dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
     };

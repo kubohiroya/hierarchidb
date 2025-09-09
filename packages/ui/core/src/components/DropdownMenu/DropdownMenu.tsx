@@ -30,12 +30,12 @@ export interface DropdownMenuProps {
 }
 
 export const DropdownMenu = ({
-  id,
-  items,
-  disabled,
-  color,
-  children,
-}: DropdownMenuProps): JSX.Element => {
+                               id,
+                               items,
+                               disabled,
+                               color,
+                               children,
+                             }: DropdownMenuProps): JSX.Element => {
   const [anchorElem, setAnchorElem] = useState<null | HTMLElement>(null);
   const handleMenuOpenButtonClick = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -43,7 +43,7 @@ export const DropdownMenu = ({
         setAnchorElem(event.currentTarget);
       }
     },
-    [disabled]
+    [disabled],
   );
   const handleMenuItemClick = useCallback((onClick: (() => void) | undefined) => {
     if (onClick) {
@@ -82,7 +82,7 @@ export const DropdownMenu = ({
             </MenuItem>
           ) : (
             <MenuItem key={index} divider />
-          )
+          ),
         )}
       </Menu>
     </>

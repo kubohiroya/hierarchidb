@@ -51,54 +51,49 @@ export interface PluginDefinition {
 }
 
 /*
-// ノード型定義（Core層専用、UI非依存）
-export interface NodeTypeDefinition<
-  TEntity extends PeerEntity = PeerEntity,
-  TGroupEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
-> {
-  // 基本情報
-  readonly nodeType: NodeType;
-  readonly name: string;
-  readonly displayName: string;
-  readonly icon?: string;
-  readonly color?: string;
-
-  // データベース設定
-  readonly database: {
-    entityStore: string;
-    groupEntityStores?: string[];
-    schema: DatabaseSchema;
-    version: number;
-  };
-
-  // エンティティハンドラー
-  readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
-
-  // ライフサイクルフック
-  readonly lifecycle: NodeLifecycleHooks<TEntity>;
-
-  // API拡張
-  readonly api?: {
-    workerExtensions?: WorkerAPIExtensions;
-    clientExtensions?: ClientAPIExtensions;
-  };
-
-  // バリデーション
-  readonly validation?: {
-    namePattern?: RegExp;
-    maxChildren?: number;
-    allowedChildTypes?: NodeType[];
-    customValidators?: ValidationRule<TEntity>[];
-  };
-}
- */
+ // CoreUI
+ export interface NodeTypeDefinition<
+ TEntity extends PeerEntity = PeerEntity,
+ TGroupEntity extends GroupEntity = GroupEntity,
+ TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
+ > {
+ //
+ readonly nodeType: NodeType;
+ readonly name: string;
+ readonly displayName: string;
+ readonly icon?: string;
+ readonly color?: string;
+ //
+ readonly database: {
+ entityStore: string;
+ groupEntityStores?: string[];
+ schema: DatabaseSchema;
+ version: number;
+ };
+ //
+ readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
+ //
+ readonly lifecycle: NodeLifecycleHooks<TEntity>;
+ // API
+ readonly api?: {
+ workerExtensions?: WorkerAPIExtensions;
+ clientExtensions?: ClientAPIExtensions;
+ };
+ //
+ readonly validation?: {
+ namePattern?: RegExp;
+ maxChildren?: number;
+ allowedChildTypes?: NodeType[];
+ customValidators?: ValidationRule<TEntity>[];
+ };
+ }
+*/
 
 export interface NodeTypeIconDefinition {
   // MUI icon name (e.g., 'Folder', 'Description', 'Map')
   muiIconName?: string;
 
-  // Unicode emoji (e.g., '📁', '🗺️', '📍')
+  //  Unicode emoji (e.g., '', '', '')
   emoji?: string;
 
   // SVG as string or React component path
@@ -227,7 +222,6 @@ export interface PluginI18nConfig {
   };
 }
 
-// データベーススキーマ定義
 export interface DatabaseSchema {
   [storeName: string]: string; // Dexie schema string
 }

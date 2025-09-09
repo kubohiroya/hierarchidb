@@ -9,7 +9,6 @@
     "declarationMap": true,
     "composite": false,
     "incremental": false,
-    
     "module": "ESNext",
     "target": "ES2020",
     "lib": [
@@ -29,5 +28,9 @@
     "dist",
     "tests"
   ],
-  "files": []
+  "files": [],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

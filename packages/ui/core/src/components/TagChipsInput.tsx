@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent } from 'react';
+import React, { KeyboardEvent, useState } from 'react';
 
 export interface TagChipsInputProps {
   value?: string[];
@@ -14,17 +14,17 @@ export interface TagChipsInputProps {
 }
 
 export const TagChipsInput: React.FC<TagChipsInputProps> = ({
-  value = [],
-  onChange,
-  placeholder = 'Enter tag and press Enter',
-  label = 'Tags',
-  maxTags = 20,
-  disabled = false,
-  helperText,
-  error = false,
-  required = false,
-  suggestions = [],
-}) => {
+                                                              value = [],
+                                                              onChange,
+                                                              placeholder = 'Enter tag and press Enter',
+                                                              label = 'Tags',
+                                                              maxTags = 20,
+                                                              disabled = false,
+                                                              helperText,
+                                                              error = false,
+                                                              required = false,
+                                                              suggestions = [],
+                                                            }) => {
   const [input, setInput] = useState('');
 
   const addTag = (tag: string) => {
@@ -54,9 +54,17 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {value.map((t) => (
-          <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eee', borderRadius: 16, padding: '2px 8px' }}>
+          <span key={t} style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: '#eee',
+            borderRadius: 16,
+            padding: '2px 8px',
+          }}>
             <span>{t}</span>
-            <button type="button" disabled={disabled} aria-label={`Remove ${t}`} onClick={() => removeTag(t)} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>×</button>
+            <button type="button" disabled={disabled} aria-label={`Remove ${t}`} onClick={() => removeTag(t)}
+                    style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>×</button>
           </span>
         ))}
       </div>

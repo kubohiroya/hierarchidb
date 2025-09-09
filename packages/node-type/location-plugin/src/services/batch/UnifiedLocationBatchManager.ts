@@ -4,9 +4,12 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { IBatchSessionManager, BatchSessionStatus, BatchProgressCallback } from '@hierarchidb/runtime-shared-batch-processor';
+import type {
+  BatchProgressCallback,
+  BatchSessionStatus,
+  IBatchSessionManager,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { createUnifiedBatchManagerFacade } from '@hierarchidb/runtime-shared-batch-processor';
 import { LocationBatchSessionManager } from './BatchSessionManager';
 import type { LocationPointInput, LocationTileSettings } from './SessionController';
 
@@ -15,22 +18,19 @@ import type { LocationPointInput, LocationTileSettings } from './SessionControll
  */
 export class UnifiedLocationBatchManager implements IBatchSessionManager {
   private manager: LocationBatchSessionManager;
-  private facade: IBatchSessionManager;
+  // facade is currently unused in this minimal implementation; keep for future
+  // compatibility with unified manager factory without exporting in dts.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Use underscore to mark intentionally unused until unified facade is required by API
+  // removed facade to satisfy dts build; can be reintroduced when unified API is wired
 
   constructor() {
     this.manager = new LocationBatchSessionManager();
-    
-    // Create facade using the factory function
-    this.facade = createUnifiedBatchManagerFacade(this.manager, {
-      startMethod: 'createSession',
-      pauseMethod: 'pause',
-      resumeMethod: 'resume',
-      cancelMethod: 'cancel',
-      progressMethod: 'onProgress',
-    });
+
+    // Facade creation skipped to avoid unused symbol during dts build
   }
 
-  async startBatchSession(nodeId: NodeId, config: LocationBatchConfig, data?: LocationBatchData): Promise<string> {
+  async startBatchSession(nodeId: NodeId, _config: LocationBatchConfig, data?: LocationBatchData): Promise<string> {
     if (!data || !data.points || !data.settings) {
       throw new Error('Location batch session requires points and settings data');
     }

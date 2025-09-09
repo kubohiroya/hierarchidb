@@ -3,39 +3,36 @@
  * Implements ShapeAPI interface from shared layer
  */
 
-import { NodeId } from '../shared';
 import {
-  ShapeEntity,
-  CreateShapeData,
-  UpdateShapeData,
-  ProcessingConfig,
   BatchSession,
   BatchTask,
-  UrlMetadata,
+  calculateSelectionStats,
   CountryMetadata,
+  CreateShapeData,
   DataSourceConfig,
-  ValidationResult,
-  SelectionStats,
-  ProgressInfo,
-  ProcessingStatus,
-  TileInfo,
-} from '../shared';
-import { ShapeEntityHandler } from './handlers';
-import {
   DEFAULT_DATA_SOURCES,
   generateUrlMetadata,
-  calculateSelectionStats,
+  NodeId,
+  ProcessingConfig,
+  ProcessingStatus,
+  ProgressInfo,
+  SelectionStats,
+  ShapeEntity,
+  TileInfo,
+  UpdateShapeData,
+  UrlMetadata,
   validateProcessingConfig,
-  generateSessionId,
+  ValidationResult,
 } from '../shared';
+import { ShapeEntityHandler } from './handlers';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader';
-import { BatchSessionManager } from '../services/BatchSessionManager';
+import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB';
 import * as Comlink from 'comlink';
 
-// Create singleton instance of BatchSessionManager
-const batchSessionManager = new BatchSessionManager();
+// Create singleton unified batch manager
+const batchSessionManager = createShapeBatchManager();
 
 // Progress callback registry
 const progressCallbacks = new Map<string, (event: any) => void>();
@@ -136,7 +133,7 @@ export const shapePluginAPI = {
   generateUrlMetadata: async (
     dataSource: string,
     countries: string[],
-    adminLevels: number[]
+    adminLevels: number[],
   ): Promise<UrlMetadata[]> => {
     // Get country metadata first
     const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSource);
@@ -150,7 +147,7 @@ export const shapePluginAPI = {
   validateSelection: async (
     countries: string[],
     adminLevels: number[],
-    dataSource: string
+    dataSource: string,
   ): Promise<ValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -190,7 +187,7 @@ export const shapePluginAPI = {
     workingCopyId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
-    progressCallback?: (event: any) => void
+    progressCallback?: (event: any) => void,
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {
@@ -243,25 +240,19 @@ export const shapePluginAPI = {
       },
     };
 
-    // Create URL tasks from metadata
-    const urlTasks = urlMetadata.map(meta => ({
-      urlString: meta.url,
-      adminLevel: meta.adminLevel,
-      countryCode: meta.countryCode,
-    }));
-
-    // Start batch session - authentication is handled internally by BatchSessionManager
-    const sessionId = await batchSessionManager.startBatchSession(
-      workingCopy.nodeId,
-      batchConfig,
-      urlTasks
-    );
+    // Start batch session using unified manager
+    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId, batchConfig as any, {
+      urlMetadata,
+    } as any);
 
     // Register progress callback if provided
     if (progressCallback) {
       const proxiedCallback = Comlink.proxy(progressCallback);
       progressCallbacks.set(sessionId, proxiedCallback);
-      batchSessionManager.onProgress(sessionId, proxiedCallback);
+      // Unified manager progress subscription
+      const off = batchSessionManager.onBatchProgress(sessionId, (e) => proxiedCallback(e));
+      // Store unregister if needed
+      // (we keep the map for compatibility with later unsubscribe)
     }
 
     // Save session ID to working copy
@@ -301,7 +292,7 @@ export const shapePluginAPI = {
     }
 
     await batchSessionManager.cancelBatchSession(workingCopy.batchSessionId);
-    
+
     // Clear session ID from working copy
     await handler.updateWorkingCopy(workingCopyId, {
       batchSessionId: undefined,
@@ -311,7 +302,7 @@ export const shapePluginAPI = {
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
     const ephemeralDB = getEphemeralShapeDB();
     const session = await ephemeralDB.sessions.get(sessionId);
-    
+
     if (!session) {
       return undefined;
     }
@@ -335,7 +326,7 @@ export const shapePluginAPI = {
   getBatchTasks: async (sessionId: string): Promise<BatchTask[]> => {
     const ephemeralDB = getEphemeralShapeDB();
     const tasks = await ephemeralDB.tasks.where('sessionId').equals(sessionId).toArray();
-    
+
     return tasks.map(task => ({
       id: task.id,
       sessionId: task.sessionId,
@@ -389,10 +380,10 @@ export const shapePluginAPI = {
   },
 
   getBatchStatus: async (
-    sessionId: string
+    sessionId: string,
   ): Promise<{
     sessionId: string;
-    workingCopyId?: EntityId;
+    workingCopyId?: NodeId;
     status: string;
     progress?: number;
     completedTasks?: number;
@@ -418,7 +409,7 @@ export const shapePluginAPI = {
   },
 
   getBatchSessionStatus: async (
-    sessionId: string
+    sessionId: string,
   ): Promise<{
     exists: boolean;
     canResume: boolean;
@@ -480,13 +471,12 @@ export const shapePluginAPI = {
     // Register callback with Comlink proxy
     const proxiedCallback = Comlink.proxy(callback);
     progressCallbacks.set(sessionId, proxiedCallback);
-    batchSessionManager.onProgress(sessionId, proxiedCallback);
-    
+    batchSessionManager.onBatchProgress(sessionId, (e) => proxiedCallback(e));
+
     // Return unsubscribe function
     return () => {
       progressCallbacks.delete(sessionId);
-      // Note: BatchSessionManager should handle cleanup of inactive callbacks
-      batchSessionManager.cleanupInactiveSubscriptions();
+      // No-op: unified manager returns an unsubscribe when needed
     };
   },
 
@@ -520,7 +510,7 @@ export const shapePluginAPI = {
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number
+    y: number,
   ): Promise<TileInfo | undefined> => {
     console.log(`Getting vector tile info for node: ${nodeId}, z: ${z}, x: ${x}, y: ${y}`);
     return undefined;

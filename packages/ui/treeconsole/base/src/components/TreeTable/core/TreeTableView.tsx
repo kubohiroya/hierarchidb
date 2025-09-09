@@ -1,8 +1,11 @@
-import React from 'react';
-import { memo } from 'react';
+import React, { memo } from 'react';
 import type { TreeNode } from '@hierarchidb/common-type';
 import {
   Box,
+  Checkbox,
+  IconButton,
+  Paper,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -10,15 +13,11 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Checkbox,
-  IconButton,
-  Paper,
-  Skeleton,
   Typography,
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   ChevronRight as ChevronRightIcon,
+  ExpandMore as ExpandMoreIcon,
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
@@ -206,7 +205,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             </TableCell>
           );
         })}
-      </TableRow>
+      </TableRow>,
     );
 
     // Child rows (if expanded)
@@ -248,7 +247,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             <TableRow>
               {/* Selection header */}
               {showCheckboxes && (
-                <TableCell 
+                <TableCell
                   padding="checkbox"
                   style={{
                     borderRight: columns.length > 0 ? '1px solid rgba(224, 224, 224, 1)' : 'none',

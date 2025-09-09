@@ -1,9 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { LocationVectorTileService } from './LocationVectorTileService';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService';
-import { getEphemeralLocationDB, closeEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import { LocationVectorTileService } from './LocationVectorTileService';
+import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB';
 
-function long2tile(lon: number, z: number) { return Math.floor(((lon + 180) / 360) * Math.pow(2, z)); }
+function long2tile(lon: number, z: number) {
+  return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
+}
+
 function lat2tile(lat: number, z: number) {
   const rad = (lat * Math.PI) / 180;
   return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, z));
@@ -67,7 +70,10 @@ describe('LocationVectorTileService', () => {
     const { sessionId } = await svc.startSession('node-2' as any, points, settings);
 
     let sawTilegen = false;
-    const p = await waitForCompleted((cb) => svc.onProgress(sessionId, (e) => { if (e.stage === 'tilegen') sawTilegen = true; cb(e); }));
+    const p = await waitForCompleted((cb) => svc.onProgress(sessionId, (e) => {
+      if (e.stage === 'tilegen') sawTilegen = true;
+      cb(e);
+    }));
     expect(sawTilegen).toBe(true);
     expect(p.percentage).toBeGreaterThanOrEqual(100);
 

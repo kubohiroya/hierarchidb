@@ -42,7 +42,7 @@ export class StylerExtensionHandler {
 
       // Store in database (would use actual database implementation)
       console.log('Storing Styler configuration:', config);
-      
+
       // 3. Initialize any necessary data structures
       await this.initializeStylerData(nodeId, config);
     } catch (error) {

@@ -37,13 +37,13 @@ export class AuthErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     //if (import.meta.env.DEV) {
-    console.error("Auth Error Boundary caught:", error, errorInfo);
+    console.error('Auth Error Boundary caught:', error, errorInfo);
     //}
 
     // During development, if it's an HMR-related error, try to recover
     if ((import.meta as any).hot && error.message.includes('SimpleBFFAuthProvider')) {
       // if (import.meta.env.DEV) {
-      console.log("HMR-related auth error detected, attempting recovery...");
+      console.log('HMR-related auth error detected, attempting recovery...');
       // }
       // Give HMR time to update
       setTimeout(() => {

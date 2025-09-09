@@ -1,14 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, TextField, IconButton, Chip, Tooltip, Checkbox, ListItemText, OutlinedInput } from '@mui/material';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import {
+  Box,
+  Checkbox,
+  Chip,
+  FormControl,
+  IconButton,
+  InputLabel,
+  ListItemText,
+  MenuItem,
+  OutlinedInput,
+  Paper,
+  Select,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
-import { TabularQueryService, type ColumnFilter } from '@hierarchidb/tabular-store';
+import { type ColumnFilter, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 
 type Op = ColumnFilter['op'];
 
-export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | 'shape' | 'route'; tableId?: string | null }) {
+export function TabularPreview({ pluginId, tableId }: {
+  pluginId: 'location' | 'shape' | 'route';
+  tableId?: string | null
+}): ReactElement {
   const [columns, setColumns] = useState<string[]>([]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,15 +45,23 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!tableId) { setColumns([]); setRows([]); return; }
-      setLoading(true); setError(undefined);
+      if (!tableId) {
+        setColumns([]);
+        setRows([]);
+        return;
+      }
+      setLoading(true);
+      setError(undefined);
       try {
         const manager = new SimpleTableMetadataManager(getDBName(`${pluginId}-metadata-db`));
         const meta = await manager.get(tableId);
         const cols = Array.isArray(meta?.columns) && meta!.columns!.length > 0
           ? (meta!.columns as any[]).map((c: any) => typeof c === 'string' ? c : (c.name || c.id || String(c)))
           : [];
-        if (!cancelled) { setColumns(cols); if (!visibleCols) setVisibleCols(cols); }
+        if (!cancelled) {
+          setColumns(cols);
+          if (!visibleCols) setVisibleCols(cols);
+        }
         const svc = new TabularQueryService(pluginId);
         const data = await svc.query(tableId, filters as ColumnFilter[], 1000);
         if (!cancelled) setRows(data);
@@ -45,7 +71,9 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pluginId, tableId, JSON.stringify(filters), JSON.stringify(visibleCols)]);
 
   const addFilter = () => setFilters((fs) => [...fs, { column: '', op: 'contains', value: '' }]);
@@ -61,7 +89,8 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel id="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />表示列</InputLabel>
           <Select multiple labelId="tp-cols-label" input={<OutlinedInput label="表示列" />} value={visibleCols || []}
-                  onChange={(e) => setVisibleCols(e.target.value as string[])} renderValue={(sel) => (sel as string[]).slice(0,3).join(', ') + (((sel as string[]).length>3)?'…':'')}>
+                  onChange={(e) => setVisibleCols(e.target.value as string[])}
+                  renderValue={(sel) => (sel as string[]).slice(0, 3).join(', ') + (((sel as string[]).length > 3) ? '…' : '')}>
             {columns.map((name) => (
               <MenuItem key={name} value={name}>
                 <Checkbox checked={(visibleCols || []).indexOf(name) > -1} />
@@ -80,19 +109,24 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
           <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel id={`col-${i}`}>列</InputLabel>
-              <Select labelId={`col-${i}`} label="列" value={f.column} onChange={(e) => updateFilter(i, { column: String(e.target.value) })}>
+              <Select labelId={`col-${i}`} label="列" value={f.column}
+                      onChange={(e) => updateFilter(i, { column: String(e.target.value) })}>
                 <MenuItem value=""><em>選択</em></MenuItem>
                 {columns.map((c) => (<MenuItem key={c} value={c}>{c}</MenuItem>))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel id={`op-${i}`}>条件</InputLabel>
-              <Select labelId={`op-${i}`} label="条件" value={f.op} onChange={(e) => updateFilter(i, { op: e.target.value as Op })}>
-                {(['eq','contains','gt','gte','lt','lte','neq'] as Op[]).map((op) => (<MenuItem key={op} value={op}>{op}</MenuItem>))}
+              <Select labelId={`op-${i}`} label="条件" value={f.op}
+                      onChange={(e) => updateFilter(i, { op: e.target.value as Op })}>
+                {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as Op[]).map((op) => (
+                  <MenuItem key={op} value={op}>{op}</MenuItem>))}
               </Select>
             </FormControl>
-            <TextField size="small" label="値" value={f.value} onChange={(e) => updateFilter(i, { value: e.target.value })} />
-            <Tooltip title="削除"><IconButton size="small" onClick={() => removeFilter(i)}><Delete fontSize="small" /></IconButton></Tooltip>
+            <TextField size="small" label="値" value={f.value}
+                       onChange={(e) => updateFilter(i, { value: e.target.value })} />
+            <Tooltip title="削除"><IconButton size="small" onClick={() => removeFilter(i)}><Delete
+              fontSize="small" /></IconButton></Tooltip>
           </Box>
         ))}
       </Box>
@@ -107,7 +141,7 @@ export function TabularPreview({ pluginId, tableId }: { pluginId: 'location' | '
           rows={rows}
           loading={loading}
           error={error}
-          maxHeight={"100%"}
+          maxHeight={'100%'}
           rowsPerPage={50}
           stickyHeader
           hover

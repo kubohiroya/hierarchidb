@@ -40,8 +40,13 @@ export default defineConfig({
       '~': path.resolve(__dirname, './packages/ui/core/src'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src'),
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src'),
-      '@hierarchidb/common-core': path.resolve(__dirname, './packages/common/core/src'),
-      '@hierarchidb/worker': path.resolve(__dirname, './packages/runtime/worker/src'),
+      // Note: common-core package has been removed. Use common-type/common-api.
+      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, './packages/runtime-worker/worker/src'),
+      // For integration tests, point WorkerAPIImpl to mock implementation
+      '@hierarchidb/runtime-worker-worker/WorkerAPIImpl': path.resolve(
+        __dirname,
+        './packages/runtime-ui/plugin-dialog/src/tests/mocks/WorkerAPIImpl.ts',
+      ),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
     },
   },

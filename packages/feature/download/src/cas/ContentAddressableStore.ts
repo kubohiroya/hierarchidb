@@ -20,13 +20,14 @@ export class ContentAddressableStore {
     private net: NetworkPort,
     private cache: CachePort,
     private index: ContentIndexPort,
-    private hash: HashPort
-  ) {}
+    private hash: HashPort,
+  ) {
+  }
 
   async fetchToCas(opts: FetchToCasOptions): Promise<CasResult> {
     const algo: HashAlgorithm = opts.algo || 'sha3-256';
 
-    // 1) URL map hit → inc ref and return
+    //  1) URL map hit inc ref and return
     const mapped = await this.index.getHashByUrl(opts.url);
     if (mapped) {
       const meta = await this.index.getMeta(mapped.hash, mapped.algo);
@@ -45,11 +46,18 @@ export class ContentAddressableStore {
     // 3) Hash (SHA3-256 default)
     const hashHex = await this.hash.digest(buf, algo);
 
-    // 4) Meta exists? → map URL + inc ref, else cache + put meta + map URL
+    //  4) Meta exists? map URL + inc ref, else cache + put meta + map URL
     const existing = await this.index.getMeta(hashHex, algo);
     if (!existing) {
       await this.cache.put(hashHex, algo, buf, ct);
-      await this.index.putMeta({ hash: hashHex, algo, size: buf.byteLength, contentType: ct, createdAt: Date.now(), refCount: 0 });
+      await this.index.putMeta({
+        hash: hashHex,
+        algo,
+        size: buf.byteLength,
+        contentType: ct,
+        createdAt: Date.now(),
+        refCount: 0,
+      });
     }
 
     await this.index.mapUrl(opts.url, hashHex, algo);
@@ -65,7 +73,7 @@ export class ContentAddressableStore {
   async release(hash: string, algo: HashAlgorithm, by: number = 1): Promise<void> {
     const count = await this.index.decRef(hash, algo, by);
     if (count <= 0) {
-      // Last reference removed → delete from cache and index
+      //  Last reference removed delete from cache and index
       await this.cache.delete(hash, algo);
       // Minimal cleanup: leave URL maps as tombstones or remove separately if tracked.
     }

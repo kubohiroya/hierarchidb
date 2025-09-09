@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
-import { ResolverEntityHandler, type CreateResolverData } from '../handlers/ResolverEntityHandler';
+import type { NodeId } from '@hierarchidb/common-type';
+import { type CreateResolverData, ResolverEntityHandler } from '../handlers/ResolverEntityHandler';
 import { resolverDB } from '../database/ResolverDatabase';
 
 describe('ResolverEntityHandler', () => {
@@ -77,10 +77,10 @@ describe('ResolverEntityHandler', () => {
     });
 
     it('should throw error when updating non-existent entity', async () => {
-      const nonExistentId = 'non-existent' as EntityId;
+      const nonExistentId = 'non-existent' as NodeId;
 
       await expect(
-        handler.updateEntity(nonExistentId, { name: 'New Name' })
+        handler.updateEntity(nonExistentId, { name: 'New Name' }),
       ).rejects.toThrow('Entity not found');
     });
   });

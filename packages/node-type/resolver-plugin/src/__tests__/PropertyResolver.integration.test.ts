@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-type';
 import { ResolverEntityHandler } from '../handlers/ResolverEntityHandler';
@@ -21,7 +21,7 @@ describe('Resolver Integration Tests', () => {
   describe('Entity Creation', () => {
     it('should create a Resolver entity with default values', async () => {
       const entity = await handler.createEntity(testNodeId, {
-        name: 'New Resolver'
+        name: 'New Resolver',
       });
 
       expect(entity).toBeDefined();
@@ -83,7 +83,7 @@ describe('Resolver Integration Tests', () => {
       });
 
       const workingCopy = await handler.createWorkingCopy(testNodeId);
-      
+
       await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
         name: 'Updated Resolver',
       });

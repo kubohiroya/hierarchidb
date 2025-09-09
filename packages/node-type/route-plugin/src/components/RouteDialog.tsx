@@ -1,24 +1,23 @@
 /**
- * Route Dialog Component
- * ルート作成・編集ダイアログ
- */
+  * Route Dialog Component
+   */
 
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box,
   Button,
-  Stepper,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
   Step,
   StepLabel,
-  Box,
-  IconButton,
+  Stepper,
   Typography,
-  Divider,
 } from '@mui/material';
-import { Close, ArrowBack, ArrowForward, Save } from '@mui/icons-material';
+import { ArrowBack, ArrowForward, Close, Save } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteWorkingCopy } from '../types';
 import { useTranslation } from '../i18n';
@@ -36,13 +35,13 @@ export interface RouteDialogProps {
 }
 
 export const RouteDialog: React.FC<RouteDialogProps> = ({
-  open,
-  onClose,
-  nodeId: _nodeId,
-  workingCopy,
-  onSave,
-  onCancel,
-}) => {
+                                                          open,
+                                                          onClose,
+                                                          nodeId: _nodeId,
+                                                          workingCopy,
+                                                          onSave,
+                                                          onCancel,
+                                                        }) => {
   const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
   const [stepValidation, setStepValidation] = useState<boolean[]>([false, false, false]);

@@ -10,32 +10,22 @@
 
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId, EntityId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type {
-  // Core entity types
-  ShapeEntity,
-  DataSourceName,
-
-  // Batch processing types
   BatchSession,
-  // BatchTask,
-  TaskStatus,
-  ProcessingStage,
-
-  // Feature storage types
+  CacheStatistics,
+  DataSourceName,
   Feature,
   FeatureIndex,
-
-  // Tile storage types
+  ProcessingStage,
+  ShapeEntity,
+  TaskStatus,
   VectorTileEntity,
-
-  // Cache types
-  CacheStatistics,
 } from '../../types';
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
   name: string;
   description?: string;
@@ -163,7 +153,7 @@ export interface CacheEntryRecord {
 
 export class ShapeDB extends Dexie {
   // Core entity tables
-  shapeEntities!: Table<ShapeEntityRecord, EntityId>;
+  shapeEntities!: Table<ShapeEntityRecord, NodeId>;
 
   // Batch processing tables
   batchSessions!: Table<BatchSessionRecord, string>;
@@ -212,7 +202,7 @@ export class ShapeDB extends Dexie {
 
   // Batch Session Management
   async createBatchSession(
-    session: Omit<BatchSessionRecord, 'sessionId'>
+    session: Omit<BatchSessionRecord, 'sessionId'>,
   ): Promise<BatchSessionRecord> {
     const sessionId = crypto.randomUUID();
     const fullSession: BatchSessionRecord = {
@@ -284,7 +274,7 @@ export class ShapeDB extends Dexie {
           ...feature,
           createdAt: now,
           updatedAt: now,
-        }) as FeatureRecord
+        }) as FeatureRecord,
     );
 
     return await this.features.bulkAdd(featuresWithTimestamps, { allKeys: true });
@@ -293,7 +283,7 @@ export class ShapeDB extends Dexie {
   async getFeaturesInBbox(
     nodeId: NodeId,
     bbox: [number, number, number, number],
-    adminLevel?: number
+    adminLevel?: number,
   ): Promise<FeatureRecord[]> {
     let query = this.features.where('nodeId').equals(nodeId);
 
@@ -315,7 +305,7 @@ export class ShapeDB extends Dexie {
   async searchFeatures(
     nodeId: NodeId,
     query: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<FeatureRecord[]> {
     const searchTerm = query.toLowerCase();
 
@@ -327,8 +317,8 @@ export class ShapeDB extends Dexie {
           feature.name?.toLowerCase().includes(searchTerm) ||
           feature.nameEn?.toLowerCase().includes(searchTerm) ||
           Object.values(feature.properties).some(
-            (value) => typeof value === 'string' && value.toLowerCase().includes(searchTerm)
-          )
+            (value) => typeof value === 'string' && value.toLowerCase().includes(searchTerm),
+          ),
       )
       .limit(limit)
       .toArray();
@@ -356,7 +346,7 @@ export class ShapeDB extends Dexie {
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number
+    y: number,
   ): Promise<VectorTileRecord | undefined> {
     const tile = await this.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).first();
 
@@ -373,7 +363,7 @@ export class ShapeDB extends Dexie {
   async getTilesInZoomRange(
     nodeId: NodeId,
     minZ: number,
-    maxZ: number
+    maxZ: number,
   ): Promise<VectorTileRecord[]> {
     return await this.vectorTiles
       .where('nodeId')
@@ -474,7 +464,7 @@ export class ShapeDB extends Dexie {
         this.features
           .toArray()
           .then((items: any[]) =>
-            items.reduce((sum: number, f: any) => sum + JSON.stringify(f).length, 0)
+            items.reduce((sum: number, f: any) => sum + JSON.stringify(f).length, 0),
           ),
         this.featureBuffers
           .toArray()

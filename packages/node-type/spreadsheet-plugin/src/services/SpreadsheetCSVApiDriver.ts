@@ -5,21 +5,21 @@
  */
 
 import type {
-  ICSVDataApi,
-  CSVTableMetadata,
   CSVColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   CSVSelectionConfig,
-  PaginationOptions,
   CSVTableListResult,
+  CSVTableMetadata,
+  ICSVDataApi,
+  PaginationOptions,
 } from '@hierarchidb/ui-csv-extract';
 
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
 import { calculateFileHash } from '../utils/hashUtils';
-import { parseCSVContent, detectColumnTypes } from '../utils/csvParser';
+import { detectColumnTypes, parseCSVContent } from '../utils/csvParser';
 import { processExcelFile, processZipFile } from '../utils/fileProcessingUtils';
 import { applyCsvFilters } from '../utils/filterUtils';
 
@@ -49,21 +49,21 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   };
 
   /**
-   * 【機能概要】: 両プラグイン対応のコンストラクタ
-   * 【統合方針】: SpreadsheetとStyler両方をサポート
-   * 🟢 信頼性レベル: 後方互換性を保った統合実装
-   */
+      * :
+   * : SpreadsheetStyler
+   * :
+      */
   constructor(pluginIdOrTableManager: string | SimpleTableMetadataManager = 'spreadsheet') {
     if (typeof pluginIdOrTableManager === 'string') {
-      // Spreadsheet mode: 従来の実装（チャンク処理対応）
+      //  Spreadsheet mode:
       this.pluginId = pluginIdOrTableManager;
       this.tableManager = new SimpleTableMetadataManager();
       this.spreadsheetDB = new SpreadsheetDatabase();
     } else {
-      // Styler mode: 互換性のためのモード
+      //  Styler mode:
       this.pluginId = 'styler';
       this.tableManager = pluginIdOrTableManager;
-      this.spreadsheetDB = null; // StylerモードではSpreadsheetDBを使わない
+      this.spreadsheetDB = null; //  StylerSpreadsheetDB
     }
 
     // Ensure private helpers are treated as used for strict noUnused* settings
@@ -73,11 +73,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: CSVファイルのアップロード処理（チャンク対応）
-   * 【実装方針】: Stylerから移植、大容量ファイルのチャンク分割追加
-   * 【テスト対応】: 大容量CSV（100K行）のメモリ効率テスト
-   * 🟢 信頼性レベル: チャンク分割による大容量対応
-   */
+      * : CSV
+   * : Styler
+   * : CSV100K
+   * :
+      */
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
     try {
       // Validate and hash
@@ -130,19 +130,19 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: URL指定によるCSVダウンロード（チャンク対応）
-   * 【実装方針】: Stylerから移植、SSRF攻撃対策保持
-   * 【テスト対応】: 外部URL検証とチャンク処理
-   * 🟢 信頼性レベル: セキュリティ検証＋チャンク対応
-   */
+      * : URLCSV
+   * : StylerSSRF
+   * : URL
+   * :
+      */
   async downloadCSVFromUrl(
     url: string,
-    config: CSVProcessingConfig = {}
+    config: CSVProcessingConfig = {},
   ): Promise<CSVTableMetadata> {
     try {
-      // 【セキュリティ検証】: URL検証（SSRF攻撃対策）
+      //  : URLSSRF
 
-      // 【ダウンロード実行】: fetch APIでのダウンロード
+      //  : fetch API
       const { authFetch } = await import('./utils/authFetch');
       const response = await authFetch(url, {
         method: 'GET',
@@ -155,56 +155,56 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // 【ファイル形式検出】: Content-Typeとファイル名から形式検出
+      //  : Content-Type
       const contentType = response.headers.get('content-type') || '';
       const filename = url.split('/').pop() || 'downloaded.csv';
 
-      // 【データ取得】: ArrayBufferでの取得
+      //  : ArrayBuffer
       const arrayBuffer = await response.arrayBuffer();
       const file = new File([arrayBuffer], filename, { type: contentType });
 
-      // 【アップロード処理委譲】: uploadCSVFileを再利用
+      //  : uploadCSVFile
       return await this.uploadCSVFile(file, config);
     } catch (error) {
       throw new Error(
-        `CSV download failed: ${error instanceof Error ? error.message : String(error)}`
+        `CSV download failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
 
   /**
-   * 【機能概要】: フィルタ適用プレビューデータ取得（チャンク対応）
-   * 【実装方針】: 必要チャンクのみロードして効率化
-   * 【テスト対応】: 大容量データでのメモリ使用量テスト
-   * 🟢 信頼性レベル: チャンク単位での効率的なフィルタ処理
-   */
+      * :
+   * :
+   * :
+   * :
+      */
   async getFilteredPreview(
     tableId: string,
     filters: CSVFilterRule[],
     rowCount: number,
-    startRow: number = 0
+    startRow: number = 0,
   ): Promise<CSVDataResult> {
-    // 【メタデータ取得】: テーブル存在確認
+    //  :
     const metadata = await this.tableManager.get(tableId);
     if (!metadata) {
       throw new Error('Table not found');
     }
 
-    // 【チャンクデータ取得】: 保存されたチャンク化データを取得
+    //  :
     const chunkedData = this.getStoredChunkedData(tableId);
     if (!chunkedData) {
       throw new Error('CSV data not found for table');
     }
 
-    // 【効率的フィルタ処理】: 必要チャンクのみ処理
+    //  :
     const { filteredRows, totalFilteredRows } = await this.processChunksWithFilter(
       chunkedData,
       filters,
       rowCount,
-      startRow
+      startRow,
     );
 
-    // 【結果構築】: CSVDataResult形式での返却
+    //  : CSVDataResult
     return {
       columns: this.ensureColumnsFromMetadata(metadata, []),
       rows: filteredRows,
@@ -214,34 +214,33 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       chunkInfo: metadata.isChunked ? {
         currentChunk: Math.floor(startRow / 10000) + 1,
         totalChunks: metadata.chunkCount || 1,
-        chunkSize: 10000
+        chunkSize: 10000,
       } : undefined,
     };
   }
 
   /**
-   * 【機能概要】: フィルタ適用データ取得（全件）
-   * 【実装方針】: getFilteredPreviewのラッパー実装
-   * 【テスト対応】: CSVSelectionConfigによるフィルタ処理
-   * 🟢 信頼性レベル: 既存実装の再利用
-   */
+      * :
+   * : getFilteredPreview
+   * : CSVSelectionConfig
+   * :
+      */
   async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
-    // selectionのfilterRulesを使用してgetFilteredPreviewを呼び出し
+    //  selectionfilterRulesgetFilteredPreview
     const filters = selection.filterRules || [];
 
-    // 全データを取得するため、大きな値を指定
     return await this.getFilteredPreview(tableId, filters, Number.MAX_SAFE_INTEGER, 0);
   }
 
   /**
-   * 【機能概要】: テーブルメタデータ一覧取得
-   * 【実装方針】: SimpleTableMetadataManagerを利用
-   * 【テスト対応】: フィルタとソート機能のテスト
-   * 🟢 信頼性レベル: 既存実装の再利用
-   */
+      * :
+   * : SimpleTableMetadataManager
+   * :
+   * :
+      */
   async listTables(
     _pluginId?: string,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
   ): Promise<CSVTableListResult> {
     const tables = await this.tableManager.list();
 
@@ -258,23 +257,23 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: テーブル削除
-   * 【実装方針】: 参照カウント管理による安全な削除
-   * 【テスト対応】: 参照カウントが0になった時の削除確認
-   * 🟢 信頼性レベル: 参照カウント管理
-   */
+      * :
+   * :
+   * : 0
+   * :
+      */
   async deleteTable(tableId: string): Promise<void> {
-    // 【参照削除】: このプラグインからの参照を削除
+    //  :
     const shouldDelete =
       'removeReference' in this.tableManager
         ? await this.tableManager.removeReference(tableId, this.pluginId)
-        : false; // Stylerの場合は直接削除
+        : false; //  Styler
 
     if (shouldDelete || !('removeReference' in this.tableManager)) {
-      // 【データクリーンアップ】: メモリ上のチャンクデータ削除
+      //  :
       this.csvDataStorage.delete(tableId);
 
-      // Stylerモードの場合は直接削除
+      //  Styler
       if (!('removeReference' in this.tableManager)) {
         // Type cast to ensure TypeScript knows forceDelete exists
         await (this.tableManager as SimpleTableMetadataManager).forceDelete(tableId);
@@ -283,30 +282,30 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: SpreadsheetDB統計情報取得
-   * 【実装方針】: テストで要求される統計メソッド
-   * 【テスト対応】: Hash-based Data Reuseテスト用
-   * 🟡 信頼性レベル: テストケース対応の簡易実装
-   */
+      * : SpreadsheetDB
+   * :
+   * : Hash-based Data Reuse
+   * :
+      */
   async getStatistics(): Promise<
     | {
-        totalFiles: number;
-        totalChunks: number;
-        totalEntities: number;
-        totalDataSize: number;
-        averageRowsPerFile: number;
-      }
+    totalFiles: number;
+    totalChunks: number;
+    totalEntities: number;
+    totalDataSize: number;
+    averageRowsPerFile: number;
+  }
     | undefined
   > {
     if (!this.spreadsheetDB) {
       return undefined;
     }
 
-    // SpreadsheetDatabaseから統計情報を取得（旧/新フィールド名の差異を吸収）
+    //  SpreadsheetDatabase/
     const raw = await this.spreadsheetDB.getStatistics?.();
     if (!raw) return undefined;
 
-    // 正規化: テストが期待するフィールドへ変換
+    //  :
     const totalFiles = (raw as any).totalFiles ?? (raw as any).totalRawFiles ?? 0;
     const totalChunks = (raw as any).totalChunks ?? (raw as any).rawChunkCount ?? 0;
     const totalEntities = (raw as any).totalEntities ?? 0;
@@ -317,11 +316,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: テーブル参照の追加
-   * 【実装方針】: Styler互換性のためのラッパーメソッド
-   * 【テスト対応】: 参照管理テストケース対応
-   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
-   */
+      * :
+   * : Styler
+   * :
+   * : Styler
+      */
   async addTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('addReference' in this.tableManager) {
       await this.tableManager.addReference(tableId, pluginId);
@@ -331,11 +330,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: テーブル参照の削除
-   * 【実装方針】: Styler互換性のためのラッパーメソッド
-   * 【テスト対応】: 参照管理テストケース対応
-   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
-   */
+      * :
+   * : Styler
+   * :
+   * : Styler
+      */
   async removeTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('removeReference' in this.tableManager) {
       await this.tableManager.removeReference(tableId, pluginId);
@@ -345,11 +344,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: テーブルメタデータ取得
-   * 【実装方針】: Styler互換性のためのラッパーメソッド
-   * 【テスト対応】: メタデータ取得テストケース対応
-   * 🟢 信頼性レベル: Styler統合のためのブリッジメソッド
-   */
+      * :
+   * : Styler
+   * :
+   * : Styler
+      */
   async getTableMetadata(tableId: string): Promise<CSVTableMetadata | null> {
     const metadata = await this.tableManager.get(tableId);
     return metadata ? this.ensureFullMetadata(metadata) : null;
@@ -374,22 +373,22 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: CSVコンテンツのチャンク分割パース
-   * 【実装方針】: メモリ効率を考慮したストリーム処理
-   * 【テスト対応】: 大容量ファイルでのメモリ使用量監視
-   * 🟡 信頼性レベル: 新規実装、要テスト検証
-   */
+      * : CSV
+   * :
+   * :
+   * :
+      */
   private async parseCSVWithChunking(
     content: string,
-    config: CSVProcessingConfig
+    config: CSVProcessingConfig,
   ): Promise<{ chunkedData: ChunkedData; columns: CSVColumnInfo[] }> {
-    // 【基本パース】: 既存のCSVパーサーを利用
+    //  : CSV
     const { rows, columns } = await parseCSVContent(content, config);
 
-    // 【型検出】: 列の型を検出
+    //  :
     const typedColumns = detectColumnTypes(
       columns.map((c) => c.name),
-      rows
+      rows,
     );
     const columnInfo: CSVColumnInfo[] = typedColumns.map((col, index) => {
       const columnValues = rows.map((row) => row[col.name]).filter((v) => v != null);
@@ -409,11 +408,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       };
     });
 
-    // 【チャンク分割判定】: 行数とメモリ使用量による判定
+    //  :
     const shouldChunk = this.shouldUseChunking(rows.length, content.length);
 
     if (!shouldChunk) {
-      // 【小容量データ】: 単一チャンクとして保存
+      //  :
       return {
         chunkedData: {
           chunks: [rows],
@@ -424,7 +423,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       };
     }
 
-    // 【チャンク分割実行】: 指定サイズでの分割
+    //  :
     const chunks: Array<Array<Record<string, string | number | null>>> = [];
     const chunkSize = this.chunkConfig.maxRowsPerChunk;
 
@@ -444,14 +443,14 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: ファイル形式別の処理
-   * 【実装方針】: Stylerの既存実装を再利用
-   * 【テスト対応】: 各形式での正常処理確認
-   * 🟢 信頼性レベル: 実証済み実装の移植
-   */
+      * :
+   * : Styler
+   * :
+   * :
+      */
   private async processFile(
     file: File,
-    config: CSVProcessingConfig
+    config: CSVProcessingConfig,
   ): Promise<{ content: string; detectedConfig: Partial<CSVProcessingConfig> }> {
     const fileExtension = file.name.includes('.')
       ? '.' + file.name.split('.').pop()!.toLowerCase()
@@ -469,10 +468,10 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       case '.tsv':
       case '.txt':
       default:
-        // 【テキスト読み込み】: 指定エンコーディングでの読み込み
+        //  :
         const content = await file.text();
 
-        // 【区切り文字自動検出】: TSVファイルの場合はタブ区切り
+        //  : TSV
         const detectedDelimiter = fileExtension === '.tsv' ? '\t' : config.delimiter || ',';
 
         return {
@@ -485,27 +484,27 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: チャンク化データの保存
-   * 【実装方針】: メモリ効率を考慮した保存
-   * 🟡 信頼性レベル: 新規実装、メモリ管理要検証
-   */
+      * :
+   * :
+   * :
+      */
   private storeChunkedData(tableId: string, chunkedData: ChunkedData): void {
     this.csvDataStorage.set(tableId, chunkedData);
   }
 
   /**
-   * 【機能概要】: チャンク化データの取得
-   * 🟡 信頼性レベル: 新規実装
-   */
+      * :
+   * :
+      */
   private getStoredChunkedData(tableId: string): ChunkedData | undefined {
     return this.csvDataStorage.get(tableId);
   }
 
   /**
-   * 【機能概要】: チャンク使用判定
-   * 【実装方針】: 行数とメモリ使用量による判定
-   * 🟡 信頼性レベル: 新規実装、閾値調整要検証
-   */
+      * :
+   * :
+   * :
+      */
   private shouldUseChunking(rowCount: number, contentSize: number): boolean {
     return (
       rowCount > this.chunkConfig.maxRowsPerChunk || contentSize > this.chunkConfig.maxMemoryUsage
@@ -513,26 +512,26 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: チャンク単位でのフィルタ処理
-   * 【実装方針】: 必要チャンクのみ処理してメモリ効率化
-   * 🟡 信頼性レベル: 新規実装、パフォーマンス要検証
-   */
+      * :
+   * :
+   * :
+      */
   private async processChunksWithFilter(
     chunkedData: ChunkedData,
     filters: CSVFilterRule[],
     rowCount: number,
-    startRow: number
+    startRow: number,
   ): Promise<{ filteredRows: Array<Record<string, any>>; totalFilteredRows: number }> {
     let filteredRows: Array<Record<string, any>> = [];
     let totalFilteredRows = 0;
     let currentRow = 0;
 
-    // 【チャンク順次処理】: 必要な範囲のチャンクのみ処理
+    //  :
     for (const chunk of chunkedData.chunks) {
-      // 【フィルタ適用】: チャンク単位でのフィルタ処理
+      //  :
       const filteredChunk = applyCsvFilters(chunk || [], filters);
 
-      // 【範囲判定】: 要求された範囲に含まれるかチェック
+      //  :
       for (const row of filteredChunk) {
         if (currentRow >= startRow && filteredRows.length < rowCount) {
           filteredRows.push(row);
@@ -540,15 +539,15 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         currentRow++;
         totalFilteredRows++;
 
-        // 【早期終了】: 必要行数に達した場合は処理終了
+        //  :
         if (filteredRows.length >= rowCount) {
           break;
         }
       }
 
-      // 【メモリ最適化】: 必要行数に達した場合は残りチャンクを処理しない
+      //  :
       if (filteredRows.length >= rowCount) {
-        // ただし、totalFilteredRowsは正確に計算するため続行
+        //  totalFilteredRows
         for (let i = chunkedData.chunks.indexOf(chunk) + 1; i < chunkedData.chunks.length; i++) {
           const remainingFilteredChunk = applyCsvFilters(chunkedData.chunks[i] || [], filters);
           totalFilteredRows += remainingFilteredChunk.length;
@@ -561,17 +560,17 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: RawFileMetadataから列情報の復元
-   * 【実装方針】: メタデータからCSVColumnInfoの再構築
-   * 🟡 信頼性レベル: メタデータ依存の復元処理
-   */
+      * : RawFileMetadata
+   * : CSVColumnInfo
+   * :
+      */
   private reconstructColumnsFromMetadata(metadata: any): CSVColumnInfo[] {
-    // 簡易実装: 基本的なカラム情報の復元
+    //  :
     if (metadata.columns) {
       return metadata.columns;
     }
 
-    // フォールバック: 列数からデフォルトカラム生成
+    //  :
     const columnCount = metadata.totalColumns || 0;
     const columns: CSVColumnInfo[] = [];
 
@@ -600,20 +599,20 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: ファイル検証
-   * 【実装方針】: Stylerの検証ロジックを再利用
-   * 🟢 信頼性レベル: 実証済みセキュリティ検証
-   */
+      * :
+   * : Styler
+   * :
+      */
   private async validateFile(file: File): Promise<void> {
-    // 【ファイルサイズ制限】: デフォルト100MB上限
+    //  : 100MB
     const maxSize = 100 * 1024 * 1024; // 100MB
     if (file.size > maxSize) {
       throw new Error(
-        `File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds maximum allowed size (${Math.round(maxSize / 1024 / 1024)}MB)`
+        `File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds maximum allowed size (${Math.round(maxSize / 1024 / 1024)}MB)`,
       );
     }
 
-    // 【拡張子検証】: サポートされているファイル形式のみ許可
+    //  :
     const supportedExtensions = ['.csv', '.tsv', '.txt', '.xlsx', '.xls', '.zip'];
     const fileExtension = file.name.includes('.')
       ? '.' + file.name.split('.').pop()!.toLowerCase()
@@ -625,19 +624,19 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   }
 
   /**
-   * 【機能概要】: SpreadsheetDatabaseへのデータ永続化
-   * 【実装方針】: RawFileMetadata + RowChunksの保存でテスト通過
-   * 【テスト対応】: SpreadsheetCSVApiDriverテストのDexieキーエラー解決
-   * 🟢 信頼性レベル: 適切なEntityIDキャストによるDexie互換性確保
-   */
+      * : SpreadsheetDatabase
+   * : RawFileMetadata + RowChunks
+   * : SpreadsheetCSVApiDriverDexie
+   * : EntityIDDexie
+      */
   private async saveToSpreadsheetDB(
     file: File,
     contentHash: string,
     chunkedData: ChunkedData,
     config: CSVProcessingConfig,
-    detectedConfig: CSVProcessingConfig
+    detectedConfig: CSVProcessingConfig,
   ): Promise<void> {
-    // 【RawFileMetadata作成】: ファイル基本情報の保存 🟢
+    //  RawFileMetadata:
     const rawFileMetadata = await this.spreadsheetDB!.createRawFileMetadata({
       fileName: file.name,
       fileSize: file.size,

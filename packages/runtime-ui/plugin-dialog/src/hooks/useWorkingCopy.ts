@@ -3,7 +3,7 @@
  * Manages working copy lifecycle for dialog editing with Worker communication
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 
 export interface WorkingCopyData {
@@ -37,12 +37,12 @@ export interface UseWorkingCopyResult {
  * Working Copy Hook
  */
 export function useWorkingCopy({
-  mode,
-  nodeType,
-  nodeId,
-  parentId,
-  treeId,
-}: UseWorkingCopyOptions): UseWorkingCopyResult {
+                                 mode,
+                                 nodeType,
+                                 nodeId,
+                                 parentId,
+                                 treeId,
+                               }: UseWorkingCopyOptions): UseWorkingCopyResult {
   const [workingCopy, setWorkingCopy] = useState<WorkingCopyData | null>(null);
   const [originalCopy, setOriginalCopy] = useState<WorkingCopyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,27 +59,27 @@ export function useWorkingCopy({
           // Load existing node data
           // TODO: Call Worker API to get node data
           const nodeData = await loadNodeData(nodeId, treeId);
-          
+
           const copy: WorkingCopyData = {
             treeNodeId: nodeId,
             name: nodeData.name || '',
             description: nodeData.description || '',
             data: nodeData.data || {},
           };
-          
+
           setWorkingCopy(copy);
           setOriginalCopy(copy);
         } else if (mode === 'create') {
           // Create new working copy
           const newNodeId = generateNodeId() as NodeId;
-          
+
           const copy: WorkingCopyData = {
             treeNodeId: newNodeId,
             name: '',
             description: '',
             data: {},
           };
-          
+
           setWorkingCopy(copy);
           setOriginalCopy(copy);
         }
@@ -115,10 +115,10 @@ export function useWorkingCopy({
     }
 
     const finalData = data ? { ...workingCopy, ...data } : workingCopy;
-    
+
     try {
       setLoading(true);
-      
+
       // TODO: Call Worker API to save
       const savedNodeId = await saveNodeToDatabase({
         mode,
@@ -127,10 +127,10 @@ export function useWorkingCopy({
         treeId,
         data: finalData,
       });
-      
+
       // Update original copy
       setOriginalCopy(finalData);
-      
+
       return savedNodeId;
     } catch (err) {
       console.error('Failed to save working copy:', err);
@@ -152,13 +152,13 @@ export function useWorkingCopy({
   // Discard working copy
   const discardWorkingCopy = useCallback(async () => {
     if (!workingCopy) return;
-    
+
     try {
       setLoading(true);
-      
+
       // TODO: Call Worker API to delete working copy
       await deleteWorkingCopy(workingCopy.treeNodeId);
-      
+
       setWorkingCopy(null);
       setOriginalCopy(null);
     } catch (err) {

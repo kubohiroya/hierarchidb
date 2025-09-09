@@ -2,24 +2,24 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider as JotaiProvider } from 'jotai';
+import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { MultiStepDialogEnhanced } from '@hierarchidb/ui-dialog';
 import {
+  Alert,
+  Autocomplete,
   Box,
+  Chip,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Stack,
+  Switch,
   TextField,
   Typography,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Stack,
-  Alert,
-  Switch,
-  Chip,
-  Autocomplete,
 } from '@mui/material';
-import { Folder, Settings, Check, Tag } from '@mui/icons-material';
-import type { DialogStep } from '@hierarchidb/ui-dialog';
+import { Check, Folder, Settings, Tag } from '@mui/icons-material';
 
 const meta = {
   title: 'Plugin Dialog/Sample Plugin Dialogs',
@@ -37,7 +37,6 @@ const meta = {
 
 export default meta;
 
-// フォルダープラグインのステップコンポーネント
 const FolderBasicInfoStep = ({ data, onDataChange }: any) => (
   <Box sx={{ p: 3 }}>
     <Typography variant="h6" gutterBottom>
@@ -343,7 +342,6 @@ const FolderReviewStep = ({ data }: any) => (
   </Box>
 );
 
-// フォルダー作成のステップ定義
 const folderCreationSteps: DialogStep[] = [
   {
     id: 'basic',
@@ -375,7 +373,6 @@ const folderCreationSteps: DialogStep[] = [
   },
 ];
 
-// ストーリー定義
 export const FolderCreationDialog: StoryObj = {
   render: () => {
     const [open, setOpen] = useState(true);
@@ -495,7 +492,6 @@ export const FolderCreationFullscreen: StoryObj = {
   },
 };
 
-// ルーターベースのプレビュー（参考用）
 export const RouterBasedDialog: StoryObj = {
   render: () => (
     <JotaiProvider>

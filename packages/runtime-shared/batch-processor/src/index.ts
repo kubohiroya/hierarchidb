@@ -15,13 +15,14 @@ export class BatchProcessor<T> {
     this.options = {
       batchSize: options.batchSize ?? 100,
       concurrency: options.concurrency ?? 1,
-      onProgress: options.onProgress ?? (() => {}),
+      onProgress: options.onProgress ?? (() => {
+      }),
     };
   }
 
   async processBatch<R>(
     items: T[],
-    processor: (item: T) => Promise<R>
+    processor: (item: T) => Promise<R>,
   ): Promise<R[]> {
     const results: R[] = [];
     const { batchSize, onProgress } = this.options;

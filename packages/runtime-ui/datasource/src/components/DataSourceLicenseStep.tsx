@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import { DataSourceLicenseAgreement } from './DataSourceLicenseAgreement';
-import { getDataSourceConfig, DataSourceName } from '../types/DataSource';
+import { DataSourceName, getDataSourceConfig } from '../types/DataSource';
 
 export interface DataSourceLicenseStepProps {
   selectedDataSource: DataSourceName;
@@ -10,10 +10,10 @@ export interface DataSourceLicenseStepProps {
 }
 
 export const DataSourceLicenseStep: React.FC<DataSourceLicenseStepProps> = ({
-  selectedDataSource,
-  onLicenseAgreed,
-  licenseAgreed = false,
-}) => {
+                                                                              selectedDataSource,
+                                                                              onLicenseAgreed,
+                                                                              licenseAgreed = false,
+                                                                            }) => {
   const [hasOpenedLicense, setHasOpenedLicense] = useState(licenseAgreed);
   const dataSourceConfig = getDataSourceConfig(selectedDataSource);
 
@@ -37,7 +37,7 @@ export const DataSourceLicenseStep: React.FC<DataSourceLicenseStepProps> = ({
       <Typography variant="h6" gutterBottom>
         License Agreement
       </Typography>
-      
+
       <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
         Before using <strong>{dataSourceConfig.displayName}</strong> data, please review and agree to the license terms.
       </Typography>
@@ -53,7 +53,7 @@ export const DataSourceLicenseStep: React.FC<DataSourceLicenseStepProps> = ({
           <strong>Category:</strong> {dataSourceConfig.category}
         </Typography>
       </Alert>
-      
+
       <DataSourceLicenseAgreement
         dataSourceName={selectedDataSource}
         licenseAgreement={hasOpenedLicense}

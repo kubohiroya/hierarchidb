@@ -24,7 +24,6 @@ const meta: Meta<typeof SearchResultTable> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// モックデータ
 const mockResults: SearchResult[] = [
   {
     nodeId: 'node-1' as NodeId,
@@ -170,7 +169,7 @@ export const LargeDataset: Story = {
       nodeType: 'location',
       matchedProperty: 'name',
       matchedValue: `Location ${i + 1}`,
-      confidence: Math.random() * 0.4 + 0.6, // 0.6-1.0の範囲
+      confidence: Math.random() * 0.4 + 0.6, //  0.6-1.0
       parentPath: ['Japan', 'Prefecture', 'City'],
       stylerNodeId: `style-node-${i + 1}` as NodeId,
       stylerNodeName: `Style Map ${i + 1}`,

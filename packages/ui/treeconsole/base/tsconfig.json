@@ -3,9 +3,9 @@
   "compilerOptions": {
     "lib": [
       "ES2022",
-    "DOM",
-    "DOM.Iterable"
-  ],
+      "DOM",
+      "DOM.Iterable"
+    ],
     "types": [
       "node"
     ],
@@ -33,5 +33,9 @@
     "**/*.test.*",
     "**/*.spec.*",
     "src/__tests__/**"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

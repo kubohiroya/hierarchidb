@@ -1,64 +1,61 @@
 /**
- * TreeConsoleToolbar - 元のデザインの忠実な再現
- *
- * 元のeria-cartographのTreeConsoleToolbarのUIを正確に再現したコンポーネント。
- * 見た目は完全に元のデザインに従い、カスタマイズ可能なハンドラーを使用。
- */
+  * TreeConsoleToolbar -
+  * eria-cartographTreeConsoleToolbarUI
+   */
 
-import { useState, type MouseEvent } from 'react';
+import { type MouseEvent, useState } from 'react';
 import {
   Box,
   Button,
   ButtonGroup,
-  Menu,
-  MenuItem,
+  ClickAwayListener,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Popper,
+  Menu,
+  MenuItem,
   Paper,
-  ClickAwayListener,
-  Typography,
+  Popper,
+  Radio,
+  RadioGroup,
   TextField,
-  InputAdornment,
+  Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
-// Icons - 元のデザインと同じアイコンを使用
+//  Icons -
 import {
-  Undo as UndoIcon,
-  Redo as RedoIcon,
+  CheckBox,
+  ChevronRight,
+  Clear as ClearIcon,
+  Clear as RemoveIcon,
   ContentCopy as ContentCopyIcon,
   ContentPaste as ContentPasteIcon,
-  FileCopy as DuplicateIcon,
-  Clear as ClearIcon,
   Delete as TrashIcon,
-  RestoreFromTrash as RecyclingIcon,
-  Clear as RemoveIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  SnippetFolder as SnippetFolderIcon,
-  FileUpload as FileUploadIcon,
-  FileDownload as FileDownloadIcon,
-  Settings as SettingsIcon,
-  Search as SearchIcon,
-  CheckBox,
   Edit,
-  ChevronRight,
+  FileCopy as DuplicateIcon,
+  FileDownload as FileDownloadIcon,
+  FileUpload as FileUploadIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Redo as RedoIcon,
+  RestoreFromTrash as RecyclingIcon,
+  Search as SearchIcon,
+  Settings as SettingsIcon,
+  SnippetFolder as SnippetFolderIcon,
+  Undo as UndoIcon,
 } from '@mui/icons-material';
 
-import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams } from '../types';
+import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types';
 
 /**
- * 検索専用ツールバー
- * 元のSearchOnlyToolbarの見た目を再現
- */
+   * SearchOnlyToolbar
+  */
 function SearchOnlyToolbar({
-  searchText,
-  onSearchTextChange,
-}: {
+                             searchText,
+                             onSearchTextChange,
+                           }: {
   searchText: string;
   onSearchTextChange: (value: string) => void;
 }) {
@@ -92,22 +89,21 @@ function SearchOnlyToolbar({
 }
 
 /**
- * メインツールバーコンテンツ
- * 元のTreeConsoleToolbarContentの見た目を再現
- */
+   * TreeConsoleToolbarContent
+  */
 function TreeConsoleToolbarContent({
-  controller,
-  hasTrashItems,
-  onAction,
-  rowClickAction = 'Select',
-  onRowClickActionChange,
-  canUndo = false,
-  canRedo = false,
-  canCopy = false,
-  canPaste = false,
-  canDuplicate = false,
-  canRemove = false,
-}: {
+                                     controller,
+                                     hasTrashItems,
+                                     onAction,
+                                     rowClickAction = 'Select',
+                                     onRowClickActionChange,
+                                     canUndo = false,
+                                     canRedo = false,
+                                     canCopy = false,
+                                     canPaste = false,
+                                     canDuplicate = false,
+                                     canRemove = false,
+                                   }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
   onAction?: TreeConsoleToolbarProps['onAction'];
@@ -384,9 +380,9 @@ function TreeConsoleToolbarContent({
 }
 
 /**
- * TreeConsoleToolbar メインコンポーネント
- * 元のTreeConsoleToolbarの構造を完全に再現
- */
+  * TreeConsoleToolbar
+ * TreeConsoleToolbar
+  */
 export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.Element | null {
   const {
     hideConsole = false,
@@ -418,7 +414,8 @@ export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.El
     return (
       <SearchOnlyToolbar
         searchText={controller?.searchText || ''}
-        onSearchTextChange={controller?.handleSearchTextChange || (() => {})}
+        onSearchTextChange={controller?.handleSearchTextChange || (() => {
+        })}
       />
     );
   }

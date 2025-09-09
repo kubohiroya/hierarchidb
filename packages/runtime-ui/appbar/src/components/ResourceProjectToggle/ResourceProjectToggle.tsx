@@ -33,15 +33,15 @@ interface ResourceProjectToggleProps {
 }
 
 export function ResourceProjectToggle({
-  selected = 'none',
-  currentPageNodeId,
-  appPrefix: _appPrefix,
-  getSavedPageNodeId,
-  savePageNodeId,
-  getNodeContext,
-  orientation = 'horizontal',
-  size = 'medium',
-}: ResourceProjectToggleProps) {
+                                        selected = 'none',
+                                        currentPageNodeId,
+                                        appPrefix: _appPrefix,
+                                        getSavedPageNodeId,
+                                        savePageNodeId,
+                                        getNodeContext,
+                                        orientation = 'horizontal',
+                                        size = 'medium',
+                                      }: ResourceProjectToggleProps) {
   const navigate = useNavigate();
   const loaderData = useLoaderData() as { pageNodeId?: string };
   const pageNodeId = loaderData?.pageNodeId;
@@ -84,12 +84,12 @@ export function ResourceProjectToggle({
       sx={{
         ...(orientation === 'vertical'
           ? {
-              '& .MuiButton-root': {
-                justifyContent: 'flex-start',
-                textTransform: 'none',
-                width: '100%',
-              },
-            }
+            '& .MuiButton-root': {
+              justifyContent: 'flex-start',
+              textTransform: 'none',
+              width: '100%',
+            },
+          }
           : undefined),
         // Apply rounded corners to match PreviewStep button style
         '& .MuiButtonGroup-grouped': {

@@ -1,4 +1,5 @@
 export * from './MockShapeService';
-export * from './BatchSessionManager';
+// Prefer unified, shared batch manager API
+export * from './batch/UnifiedShapeBatchManager';
 export * from './RecoveryStrategy';
 export * from './ComputeBatchDownloadDemo';

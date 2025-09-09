@@ -32,7 +32,7 @@ export async function initiateGitHubAuth(config: GitHubOAuth2Config) {
 
 export async function exchangeCodeForTokens(
   code: string,
-  config: GitHubOAuth2Config
+  config: GitHubOAuth2Config,
 ): Promise<{ access_token: string }> {
   const response = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',

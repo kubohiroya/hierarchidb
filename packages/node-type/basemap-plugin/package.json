@@ -5,14 +5,20 @@
   "description": "BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "ui": ["dist/ui/index.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./ui": {
-      "types": "./src/ui/index.ts",
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
     }
   },

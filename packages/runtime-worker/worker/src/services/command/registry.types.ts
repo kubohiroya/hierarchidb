@@ -16,15 +16,15 @@ import type {
   ImportNodesPayload,
   MoveNodesPayload,
   MoveToTrashPayload,
+  NodeId,
+  NodeType,
   PasteNodesPayload,
   RecoverFromTrashPayload,
   RedoPayload,
-  UndoPayload,
-  NodeId,
-  NodeType,
+  Timestamp,
   TreeId,
+  UndoPayload,
 } from '@hierarchidb/common-type';
-import type { Timestamp } from '@hierarchidb/common-type';
 
 // CommandMap covers the core mutation commands first. Additional commands can be
 // extended incrementally without breaking existing usages.

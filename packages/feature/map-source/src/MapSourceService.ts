@@ -1,7 +1,8 @@
 import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from './ports';
 
 export class MapSourceService {
-  constructor(private source: MapSourcePort) {}
+  constructor(private source: MapSourcePort) {
+  }
 
   async getFeaturesInBBox(bbox: BBox, zoom?: number, filters?: Record<string, any>): Promise<FeatureCollection> {
     return await this.source.queryByBBox(bbox, zoom, filters);

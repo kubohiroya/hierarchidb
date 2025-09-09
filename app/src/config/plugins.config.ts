@@ -1,11 +1,12 @@
 /**
  * Application Plugin Configuration
- * 
+ *
  * Defines which plugins the application wants to use.
  * The system will automatically resolve dependencies and load in correct order.
  */
 
 import type { NodeType } from '@hierarchidb/common-type';
+
 const NT = (s: string) => s as NodeType;
 
 /**
@@ -14,27 +15,27 @@ const NT = (s: string) => s as NodeType;
 export interface PluginConfig {
   // Plugins explicitly requested by the application
   requested: NodeType[];
-  
+
   // Plugins to exclude even if they are dependencies
   excluded?: NodeType[];
-  
+
   // Enable auto-discovery of available plugins
   autoDiscovery?: boolean;
-  
+
   // Load all discovered plugins
   loadAll?: boolean;
-  
+
   // Plugin loading options
   options?: {
     // Fail if a requested plugin cannot be loaded
     failOnMissing?: boolean;
-    
+
     // Log detailed loading information
     verbose?: boolean;
-    
+
     // Enable lazy loading
     lazyLoad?: boolean;
-    
+
     // Timeout for plugin loading (ms)
     loadTimeout?: number;
   };
@@ -52,16 +53,16 @@ export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
     NT('styler'),      // Styling
     NT('spreadsheet'), // Tabular data
   ],
-  
+
   // No exclusions by default
   excluded: [],
-  
+
   // Enable auto-discovery to find all available plugins
   autoDiscovery: true,
-  
+
   // Don't load all discovered plugins, only requested + dependencies
   loadAll: false,
-  
+
   options: {
     failOnMissing: false,  // Continue even if some plugins fail
     verbose: true,          // Log details in development
@@ -84,7 +85,7 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
       failOnMissing: false,
     },
   },
-  
+
   // Production: Only load what's needed
   production: {
     ...DEFAULT_PLUGIN_CONFIG,
@@ -96,7 +97,7 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
       lazyLoad: true,  // Enable lazy loading in production
     },
   },
-  
+
   // Testing: Minimal set for tests
   test: {
     requested: [NT('folder')],  // Only the base plugin
@@ -123,13 +124,13 @@ export function getPluginConfig(): PluginConfig {
 export const PLUGIN_FEATURES = {
   // Geographic features
   enableGeographic: true,  // Enables basemap, shape-plugin plugins
-  
+
   // Data processing features
   enableDataProcessing: true,  // Enables spreadsheet-plugin plugin
-  
+
   // Styling features
   enableStyling: true,  // Enables styler-plugin plugin
-  
+
   // Experimental features
   enableExperimental: false,  // Enables experimental plugins
 } as const;
@@ -140,24 +141,24 @@ export const PLUGIN_FEATURES = {
 export function getRequestedPlugins(): NodeType[] {
   const config = getPluginConfig();
   let requested = [...config.requested];
-  
+
   // Filter based on feature flags
   if (!PLUGIN_FEATURES.enableGeographic) {
     requested = requested.filter(p => ![NT('basemap'), NT('shape')].includes(p));
   }
-  
+
   if (!PLUGIN_FEATURES.enableDataProcessing) {
     requested = requested.filter(p => p !== NT('spreadsheet'));
   }
-  
+
   if (!PLUGIN_FEATURES.enableStyling) {
     requested = requested.filter(p => p !== NT('styler'));
   }
-  
+
   // Remove excluded plugins
   if (config.excluded && config.excluded.length > 0) {
     requested = requested.filter(p => !config.excluded!.includes(p));
   }
-  
+
   return requested;
 }

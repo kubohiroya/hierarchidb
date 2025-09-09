@@ -7,11 +7,11 @@ export function useWorkerAPIClient() {
           return {
             async getExtension() {
               return {};
-            }
+            },
           };
-        }
+        },
       };
-    }
+    },
   } as any;
 }
 

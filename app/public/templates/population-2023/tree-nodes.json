@@ -78,7 +78,9 @@
     "population-styler-2023",
     "population-table-2023"
   ],
-  "rootNodeIds": ["population-folder-2023"],
+  "rootNodeIds": [
+    "population-folder-2023"
+  ],
   "metadata": {
     "totalCount": 4,
     "treeDepth": 2

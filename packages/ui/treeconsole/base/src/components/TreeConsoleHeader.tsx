@@ -1,14 +1,9 @@
 /**
- * TreeConsoleHeader
- *
- * コンソールのヘッダーコンポーネント。
- * タイトル、パンくずリスト、アクションボタンを表示。
- *
- * 移植戦略：
- * 1. 基本レイアウトとプロパティ受け渡し
- * 2. 既存スタイリングの再現
- * 3. 段階的に高度機能を追加
- */
+  * TreeConsoleHeader
+      * 1.
+ * 2.
+ * 3.
+  */
 
 // import React from 'provider'; // Not needed with new JSX transform
 import { Box, Typography } from '@mui/material';
@@ -16,10 +11,8 @@ import { Box, Typography } from '@mui/material';
 import type { TreeConsoleHeaderProps } from '../types/index';
 
 /**
- * TreeConsoleHeader コンポーネント
- *
- * 現在は最小限の実装。実際の移植時に既存コードから段階的に機能を追加。
- */
+  * TreeConsoleHeader
+    */
 export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Element {
   const {
     title,
@@ -39,7 +32,6 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
     depthOffset: _depthOffset = 0,
   } = props;
 
-  // ページタイプ判定
   const pageType = isTrashPage
     ? 'trash'
     : isProjectsPage
@@ -48,7 +40,6 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         ? 'resources'
         : 'default';
 
-  // ページカラー
   const pageColor = isTrashPage
     ? '#d32f2f'
     : isProjectsPage
@@ -69,13 +60,17 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         backgroundColor: 'background.paper',
       }}
     >
-      {/* 左側：タイトル・パンくずリスト */}
+      {/*
+*/}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        {/* メインタイトル */}
+        {/*
+*/}
         <Typography variant="h6" component="h1" noWrap>
           {title}
         </Typography>
-        {/* パンくずリスト - 一時的にコメントアウト */}
+        {/*
+ -
+*/}
         {/*
         {previousNodePath.length > 0 && (
           <TreeConsoleBreadcrumb
@@ -93,7 +88,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           />
         )}
         */}
-        {/* 現在のノード情報 */}
+        {/*
+*/}
         {currentNodeInfo && (
           <Box sx={{ mt: 0.5 }}>
             <Typography variant="caption" color="text.secondary">
@@ -104,9 +100,11 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
         )}
       </Box>
 
-      {/* 右側：アクションボタン群 */}
+      {/*
+*/}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        {/* ページタイプ表示 */}
+        {/*
+*/}
         <Typography
           variant="caption"
           sx={{
@@ -122,7 +120,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           {pageType}
         </Typography>
 
-        {/* トラッシュページ表示 */}
+        {/*
+*/}
         {isTrashPage && (
           <Typography
             variant="caption"
@@ -139,7 +138,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           </Typography>
         )}
 
-        {/* プレビューボタン（プレースホルダー） */}
+        {/*
+*/}
         {canPreviewNode && currentNodeId && (
           <button
             onClick={() => console.log('PreviewStep:', currentNodeId)}
@@ -157,7 +157,8 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
           </button>
         )}
 
-        {/* 閉じるボタン */}
+        {/*
+*/}
         {onClose && (
           <button
             onClick={onClose}

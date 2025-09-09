@@ -1,18 +1,26 @@
-import { useLoaderData, useSearchParams, useNavigate, useParams } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
-import { useState, useEffect } from 'react';
-import { Box, CircularProgress, AppBar, Toolbar, Typography, Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useState } from 'react';
 import {
-  ArrowBack as BackIcon,
-  RestoreFromTrash as RestoreIcon,
-  DeleteForever as EmptyTrashIcon,
-} from '@mui/icons-material';
-import { loadTree, type LoadTreeArgs } from '~/loader';
+  AppBar,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Toolbar,
+  Typography,
+} from '@mui/material';
+import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
 import type { LoadTreeReturn } from '~/loader';
+import { loadTree, type LoadTreeArgs } from '~/loader';
 import { WorkerAPIClient } from '../../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TreeConsolePanel, type TreeNodeData, type TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeNode, NodeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
 // This loader will be used by the route that renders the dialog
 export async function clientLoader(args: LoaderFunctionArgs) {
@@ -85,7 +93,7 @@ export default function TrashDialog() {
   const handleEmptyTrash = async () => {
     if (
       !confirm(
-        'Are you sure you want to permanently delete all items in the trash? This action cannot be undone.'
+        'Are you sure you want to permanently delete all items in the trash? This action cannot be undone.',
       )
     ) {
       return;
@@ -212,24 +220,35 @@ export default function TrashDialog() {
                 }
               });
             }}
-            onNodeExpand={() => {}}
+            onNodeExpand={() => {
+            }}
             availableFilters={[]}
-            onSearchChange={() => {}}
-            onSearchClear={() => {}}
-            onCreate={() => {}}
-            onEdit={() => {}}
+            onSearchChange={() => {
+            }}
+            onSearchClear={() => {
+            }}
+            onCreate={() => {
+            }}
+            onEdit={() => {
+            }}
             onDelete={() => {
               if (mode === 'empty') {
                 handleEmptyTrash();
               }
             }}
             onRefresh={() => window.location.reload()}
-            onExpandAll={() => {}}
-            onCollapseAll={() => {}}
-            onSort={() => {}}
-            onFilterChange={() => {}}
-            onViewModeChange={() => {}}
-            onBreadcrumbNavigate={() => {}}
+            onExpandAll={() => {
+            }}
+            onCollapseAll={() => {
+            }}
+            onSort={() => {
+            }}
+            onFilterChange={() => {
+            }}
+            onViewModeChange={() => {
+            }}
+            onBreadcrumbNavigate={() => {
+            }}
             onContextMenuAction={(action: string, node: TreeNodeData) => {
               console.log('Context menu action:', action, 'for node:', node);
               if (action === 'restore' && mode === 'restore') {

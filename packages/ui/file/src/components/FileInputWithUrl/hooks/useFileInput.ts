@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface UseFileInputProps {
   onFileSelect: (file: File, downloadUrl?: string) => void | Promise<void>;
@@ -32,7 +32,7 @@ export function useFileInput({ onFileSelect }: UseFileInputProps): UseFileInputR
         fileInputRef.current.value = '';
       }
     },
-    [onFileSelect]
+    [onFileSelect],
   );
 
   const setDownloadError = useCallback(() => {

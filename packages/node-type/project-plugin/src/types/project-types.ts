@@ -1,8 +1,7 @@
-import type { EntityId, NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import type * as GeoJSON from 'geojson';
-import type { NodeType } from '@hierarchidb/common-type';
 
-// ==================== 基本設定 ====================
+//  ==================== ====================
 
 export interface ProjectBasicInfo {
   name: string;
@@ -23,7 +22,7 @@ export interface ProjectBasicInfo {
   collaborators?: Collaborator[];
 }
 
-export type ProjectCategory = 
+export type ProjectCategory =
   | 'urban-planning'
   | 'disaster-management'
   | 'tourism'
@@ -42,7 +41,7 @@ export interface Collaborator {
   role: 'viewer' | 'editor' | 'admin';
 }
 
-// ==================== 地理的範囲 ====================
+//  ==================== ====================
 
 export interface ProjectRegion {
   coverage: {
@@ -90,7 +89,7 @@ export interface MapConfiguration {
   terrainExaggeration?: number;
 }
 
-// ==================== レイヤー構成 ====================
+//  ==================== ====================
 
 export interface DataLayerConfig {
   layers: ProjectLayer[];
@@ -207,7 +206,7 @@ export interface LayerGroup {
   exclusive?: boolean;
 }
 
-// ==================== 空間解析 ====================
+//  ==================== ====================
 
 export interface SpatialAnalysisConfig {
   analyses: SpatialAnalysis[];
@@ -232,7 +231,7 @@ export interface SpatialAnalysis {
   execution: AnalysisExecution;
 }
 
-export type SpatialAnalysisType = 
+export type SpatialAnalysisType =
   | 'buffer'
   | 'intersection'
   | 'union'
@@ -304,7 +303,7 @@ export interface AnalysisExecution {
   dependsOn?: string[];
 }
 
-// ==================== 時系列分析 ====================
+//  ==================== ====================
 
 export interface TemporalAnalysisConfig {
   temporal: {
@@ -393,7 +392,7 @@ export interface TimelineEvent {
   color: string;
 }
 
-// ==================== 出力設定 ====================
+//  ==================== ====================
 
 export interface ProjectOutputConfig {
   report: ReportConfig;
@@ -484,45 +483,37 @@ export interface SharingConfig {
   };
 }
 
-// ==================== エンティティ ====================
+//  ==================== ====================
 
 export interface ProjectEntity {
-  id: EntityId;
+  id: NodeId;
   nodeId: NodeId;
   type: string; // Required for GroupEntity
-  
-  // 基本情報
+
   name: string;
   description: string;
   category: ProjectCategory;
   tags: string[];
-  
-  // 期間
+
   startDate: Date;
   endDate?: Date;
   milestones: Milestone[];
-  
-  // 地理的範囲
+
   coverage: ProjectRegion['coverage'];
   mapConfig: MapConfiguration;
-  
-  // データレイヤー
+
   layers: ProjectLayer[];
   layerGroups: LayerGroup[];
-  
-  // 解析設定
+
   spatialAnalyses: SpatialAnalysis[];
   temporalAnalyses: TemporalAnalysis[];
-  
-  // 出力設定
+
   outputConfig: ProjectOutputConfig;
-  
-  // 共有設定
+
   visibility: string;
   permissions: Permission[];
   collaborators: Collaborator[];
-  
-  // メタデータ
+
   createdAt: number;
   createdBy: string;
   updatedAt: number;
@@ -536,13 +527,13 @@ export interface Permission {
 }
 
 export interface ProjectSnapshot {
-  id: EntityId;
-  projectEntityId: EntityId;
-  
+  id: NodeId;
+  projectEntityId: NodeId;
+
   name: string;
   description: string;
   timestamp: number;
-  
+
   mapState: {
     center: [number, number];
     zoom: number;
@@ -550,7 +541,7 @@ export interface ProjectSnapshot {
     pitch: number;
     visibleLayers: string[];
   };
-  
+
   dataState: {
     layers: Array<{
       layerId: string;
@@ -558,28 +549,28 @@ export interface ProjectSnapshot {
       featureCount: number;
     }>;
   };
-  
+
   analysisState: {
     results: string[];
     parameters: any;
   };
-  
+
   createdBy: string;
   size: number;
   isBaseline: boolean;
 }
 
 export interface AnalysisResult {
-  id: EntityId;
-  projectEntityId: EntityId;
-  
+  id: NodeId;
+  projectEntityId: NodeId;
+
   analysisId: string;
   analysisType: string;
   name: string;
-  
+
   inputLayers: string[];
   parameters: Record<string, any>;
-  
+
   result: {
     type: 'features' | 'raster' | 'statistics' | 'network';
     data: any;
@@ -589,13 +580,13 @@ export interface AnalysisResult {
       metadata?: any;
     };
   };
-  
+
   executedAt: number;
   executionTime: number;
   status: 'success' | 'partial' | 'failed';
   errors?: string[];
   warnings?: string[];
-  
+
   outputLayerId?: string;
   cached: boolean;
   expiresAt?: number;
@@ -603,16 +594,16 @@ export interface AnalysisResult {
 
 export interface ProjectTile {
   id: string;
-  projectEntityId: EntityId;
-  
+  projectEntityId: NodeId;
+
   zoom: number;
   x: number;
   y: number;
-  
+
   tileData: ArrayBuffer;
   format: 'mvt' | 'png' | 'jpeg' | 'webp';
   layers: string[];
-  
+
   features: number;
   size: number;
   generatedAt: number;
@@ -632,17 +623,17 @@ export interface ProjectWorkingCopy extends Omit<ProjectEntity, 'id'> {
   nodeId: NodeId;
   name: string;
   depth: number;
-  
+
   // WorkingCopyProperties
   originalNodeId?: NodeId;
   copiedAt: number;
   hasEntityCopy?: boolean;
-  entityWorkingCopyId?: EntityId;
+  entityWorkingCopyId?: NodeId;
   originalVersion?: number;
   hasGroupEntityCopy?: Record<string, boolean>;
-  
+
   // Project-specific working copy properties
   isWorkingCopy: boolean;
-  originalId: EntityId;
+  originalId: NodeId;
   isDirty: boolean;
 }

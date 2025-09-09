@@ -9,12 +9,12 @@ export interface SearchResult {
   matchedValue: string;
   confidence: number;
   parentPath: string[];
-  // Stylerデータ関連
-  stylerNodeId?: NodeId; // マッチしたStylerノードのID
-  stylerNodeName?: string; // Stylerノード名
-  rowIndex?: number; // マッチした行のインデックス（0ベース）
-  rowData?: Record<string, any>; // その行の元データ
-  displayColumns?: string[]; // 簡易表示用の主要カラム名
+  //  Styler
+  stylerNodeId?: NodeId; //  StylerID
+  stylerNodeName?: string; //  Styler
+  rowIndex?: number; //  0
+  rowData?: Record<string, any>;
+  displayColumns?: string[];
 }
 
 export interface SearchResultWindowState extends WindowState {
@@ -27,10 +27,10 @@ export interface SearchResultWindowProps {
   treeId: TreeId;
   results: SearchResult[];
   isLoading?: boolean;
-  selectedResults?: Set<NodeId>; // 選択された結果のNodeId集合
+  selectedResults?: Set<NodeId>; //  NodeId
   onResultSelect?: (result: SearchResult, isMultiSelect: boolean) => void;
-  onResultsMultiSelect?: (results: SearchResult[]) => void; // 複数選択時
-  onMapFocus?: (result: SearchResult) => void; // 地図フォーカス
+  onResultsMultiSelect?: (results: SearchResult[]) => void;
+  onMapFocus?: (result: SearchResult) => void;
   onClose?: () => void;
   onRefresh?: () => void;
 }
@@ -50,10 +50,10 @@ export interface SearchResultRowProps {
 }
 
 export interface MapHighlightState {
-  searchMatched: Set<NodeId>; // 検索マッチした要素（塗りつぶし色強調）
-  selected: Set<NodeId>; // 選択された要素（線色・幅強調）
-  focused: NodeId | null; // フォーカスされた要素
-  styles: MapHighlightStyles; // スタイル設定
+  searchMatched: Set<NodeId>;
+  selected: Set<NodeId>;
+  focused: NodeId | null;
+  styles: MapHighlightStyles;
 }
 
 export interface MapHighlightStyles {
@@ -76,6 +76,8 @@ export interface SearchResultItemProps {
 
 export interface WindowPersistenceService {
   saveWindowState(treeId: TreeId, state: SearchResultWindowState): Promise<void>;
+
   loadWindowState(treeId: TreeId): Promise<SearchResultWindowState | null>;
+
   deleteWindowState(treeId: TreeId): Promise<void>;
 }

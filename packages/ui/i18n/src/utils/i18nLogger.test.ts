@@ -3,7 +3,7 @@
  * @description Tests for i18n logging utilities
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as i18nLogger from './i18nLogger';
 
 // Mock i18next

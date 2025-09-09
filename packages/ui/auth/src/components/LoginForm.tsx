@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Typography, Alert } from '@mui/material';
+import { Alert, Box, Button, Typography } from '@mui/material';
 import { AuthProviderType } from '../types/AuthProviderType';
 
 interface LoginFormProps {
@@ -9,21 +9,21 @@ interface LoginFormProps {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
-  onLogin,
-  title = 'Sign In',
-  subtitle = 'Choose your authentication provider'
-}) => {
+                                                      onLogin,
+                                                      title = 'Sign In',
+                                                      subtitle = 'Choose your authentication provider',
+                                                    }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleProviderClick = async (provider: AuthProviderType) => {
     setError(null);
     setLoading(true);
-    
+
     try {
       // For now, we'll use a dummy token since Turnstile integration may not be complete
       const turnstileToken = 'dummy-token';
-      
+
       if (onLogin) {
         await onLogin(provider, turnstileToken);
       }
@@ -42,7 +42,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         {subtitle}
       </Typography>
-      
+
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Button
           variant="contained"
@@ -53,7 +53,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         >
           Sign in with Google
         </Button>
-        
+
         <Button
           variant="contained"
           fullWidth
@@ -63,7 +63,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         >
           Sign in with GitHub
         </Button>
-        
+
         <Button
           variant="contained"
           fullWidth
@@ -74,7 +74,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           Sign in with Microsoft
         </Button>
       </Box>
-      
+
       {error && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {error}

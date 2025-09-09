@@ -6,10 +6,9 @@
  * functionality while inheriting basic folder-plugin operations.
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
-import { FolderEntityHandler } from '@hierarchidb/folder-plugin';
-import type { BaseEntityExtension } from '@hierarchidb/common-type';
+import type { BaseEntityExtension, NodeId } from '@hierarchidb/common-type';
 import type { FolderEntity } from '@hierarchidb/folder-plugin';
+import { FolderEntityHandler } from '@hierarchidb/folder-plugin';
 import type { DataSourceName, ShapeEntity } from '../types';
 import { ShapeEntityHandler as OriginalShapeEntityHandler } from '../worker/handlers/ShapeEntityHandler';
 
@@ -19,8 +18,7 @@ import { ShapeEntityHandler as OriginalShapeEntityHandler } from '../worker/hand
  */
 export class ShapeExtensionHandler
   extends FolderEntityHandler
-  implements BaseEntityExtension<FolderEntity, ShapeEntity>
-{
+  implements BaseEntityExtension<FolderEntity, ShapeEntity> {
   private originalHandler: OriginalShapeEntityHandler;
 
   constructor() {

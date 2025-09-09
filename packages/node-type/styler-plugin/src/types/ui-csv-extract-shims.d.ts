@@ -25,10 +25,15 @@ declare module '@hierarchidb/ui-csv-extract' {
 
   export interface ICSVDataApi {
     uploadCSVFile(file: File, config?: CSVProcessingConfig): Promise<CSVTableMetadata>;
+
     downloadCSVFromUrl(url: string, config?: CSVProcessingConfig): Promise<CSVTableMetadata>;
+
     getFilteredPreview(tableId: string, filters?: CSVFilterRule[], rowCount?: number): Promise<CSVDataResult>;
+
     addTableReference(tableId: string, pluginId: string): Promise<void>;
+
     removeTableReference(tableId: string, pluginId: string): Promise<void>;
+
     listTables(): Promise<{ tables: CSVTableMetadata[] }>;
   }
 }

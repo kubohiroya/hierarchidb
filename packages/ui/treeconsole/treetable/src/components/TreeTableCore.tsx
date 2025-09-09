@@ -1,48 +1,46 @@
 /**
- * TreeTableCore - 元のTreeTableCoreの整理された再実装
- *
- * 技術的負債を解消しながら、元の機能を段階的に実装。
- * Phase 1: 基本的なテーブル表示
- * Phase 2: 展開/折りたたみ
- * Phase 3: 選択機能
- * Phase 4: ドラッグ&ドロップ
- * Phase 5: 仮想スクロール
- */
+  * TreeTableCore - TreeTableCore
+   * Phase 1:
+ * Phase 2: /
+ * Phase 3:
+ * Phase 4: &
+ * Phase 5:
+  */
 
-import { useMemo, useState, MouseEvent, useRef } from 'react';
+import { MouseEvent, useMemo, useRef, useState } from 'react';
 import {
-  useReactTable,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
   ColumnDef,
   flexRender,
+  getCoreRowModel,
+  getExpandedRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
   SortingState,
+  useReactTable,
 } from '@tanstack/react-table';
 import {
   Box,
+  Checkbox,
+  IconButton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  IconButton,
-  TextField,
-  Checkbox,
   TableSortLabel,
+  TextField,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
-  ExpandMore as ExpandMoreIcon,
   ChevronRight as ChevronRightIcon,
   DragIndicator as DragIndicatorIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import type { TreeTableCoreProps } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeNode } from '@hierarchidb/common-type';
 
-// スタイル定義（元のTreeTable.cssを再現）
+//  TreeTable.css
 const StyledTableContainer = styled(Box)`
   width: 100%;
   height: 100%;
@@ -50,6 +48,7 @@ const StyledTableContainer = styled(Box)`
   position: relative;
 
   /* Custom scrollbar styling - 元のデザインを再現 */
+
   &::-webkit-scrollbar {
     width: 12px;
     height: 12px;
@@ -125,7 +124,6 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
     `
     background-color: rgba(25, 118, 210, 0.08) !important;
   `}
-
   & .MuiTableCell-root {
     padding: 8px 12px;
     border-right: 1px solid ${({ theme }) => theme.palette.divider};
@@ -150,25 +148,24 @@ const IndentSpace = styled(Box)<{ depth: number }>`
 `;
 
 /**
- * TreeTableCore メインコンポーネント
- */
+  * TreeTableCore
+  */
 export function TreeTableCore({
-  controller,
-  viewHeight,
-  viewWidth: _viewWidth,
-  useTrashColumns = false,
-  depthOffset = 0,
-  disableDragAndDrop = false,
-  hideDragHandler = false,
-  rowClickAction = 'Select',
-  selectionMode = 'multiple',
-  NodeTypeIcon: CustomNodeTypeIcon,
-  NodeContextMenu: CustomNodeContextMenu,
-  onRowClick,
-  onRowDoubleClick,
-  onRowContextMenu,
-}: TreeTableCoreProps) {
-  // コンポーネントの選択
+                                controller,
+                                viewHeight,
+                                viewWidth: _viewWidth,
+                                useTrashColumns = false,
+                                depthOffset = 0,
+                                disableDragAndDrop = false,
+                                hideDragHandler = false,
+                                rowClickAction = 'Select',
+                                selectionMode = 'multiple',
+                                NodeTypeIcon: CustomNodeTypeIcon,
+                                NodeContextMenu: CustomNodeContextMenu,
+                                onRowClick,
+                                onRowDoubleClick,
+                                onRowContextMenu,
+                              }: TreeTableCoreProps) {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
@@ -549,7 +546,7 @@ export function TreeTableCore({
                         {isSelectionColumn ? (
                           (flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           ) as React.ReactNode)
                         ) : canSort ? (
                           <TableSortLabel

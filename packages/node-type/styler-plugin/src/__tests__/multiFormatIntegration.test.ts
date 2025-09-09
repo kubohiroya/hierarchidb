@@ -4,7 +4,7 @@
  */
 
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager';
 import { detectFileType } from '../utils/fileProcessingUtils';
@@ -29,16 +29,16 @@ vi.mock('xlsx', () => ({
   read: vi.fn().mockReturnValue({
     SheetNames: ['Sheet1'],
     Sheets: {
-      Sheet1: {}
-    }
+      Sheet1: {},
+    },
   }),
   utils: {
     sheet_to_json: vi.fn().mockReturnValue([
       ['Product', 'Price', 'Category'],
       ['Laptop', '1000', 'Electronics'],
-      ['Mouse', '25', 'Accessories']
-    ])
-  }
+      ['Mouse', '25', 'Accessories'],
+    ]),
+  },
 }));
 
 // Mock jszip library for ZIP tests
@@ -48,15 +48,15 @@ vi.mock('jszip', () => ({
       'data.csv': {
         dir: false,
         async: vi.fn().mockResolvedValue('Name,Value\nItem1,100\nItem2,200'),
-        _data: { uncompressedSize: 50 }
+        _data: { uncompressedSize: 50 },
       },
       'folder/': {
-        dir: true
-      }
+        dir: true,
+      },
     };
     static loadAsync = vi.fn().mockImplementation(() => Promise.resolve(new JSZip()));
     loadAsync = vi.fn().mockImplementation(() => Promise.resolve(this));
-  }
+  },
 }));
 
 describe('Multi-format File Processing Integration', () => {
@@ -123,9 +123,9 @@ Jane\t25\tLos Angeles`;
     it('should process Excel .xlsx files', async () => {
       const buffer = new ArrayBuffer(100);
       const file = new File([buffer], 'test.xlsx', {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
-      
+
       // Add arrayBuffer method to File object for test
       file.arrayBuffer = vi.fn().mockResolvedValue(buffer);
 
@@ -140,7 +140,7 @@ Jane\t25\tLos Angeles`;
     it('should handle Excel file size limits', async () => {
       const largeBuffer = new ArrayBuffer(60 * 1024 * 1024); // 60MB
       const file = new File([largeBuffer], 'large.xlsx', {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
       await expect(csvApi.uploadCSVFile(file))
@@ -153,7 +153,7 @@ Jane\t25\tLos Angeles`;
     it('should process ZIP files containing CSV', async () => {
       const buffer = new ArrayBuffer(100);
       const file = new File([buffer], 'test.zip', { type: 'application/zip' });
-      
+
       // Add arrayBuffer method to File object for test
       file.arrayBuffer = vi.fn().mockResolvedValue(buffer);
 

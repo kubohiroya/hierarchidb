@@ -1,10 +1,10 @@
-import type { 
-  CountryMetadata, 
-  DataSourceConfig, 
-  DownloadTask, 
-  SimplifyTask, 
+import type {
+  CountryMetadata,
+  DataSourceConfig,
+  DownloadTask,
+  SimplifyTask,
+  UrlMetadata,
   VectorTileTask,
-  UrlMetadata 
 } from '~/shared';
 import { BatchTaskStage } from '~/shared';
 
@@ -101,7 +101,7 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
     area: 100210,
     dataQuality: 'high',
   },
-  
+
   // Europe
   {
     countryCode: 'DEU',
@@ -139,7 +139,7 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
     area: 301340,
     dataQuality: 'high',
   },
-  
+
   // Americas
   {
     countryCode: 'USA',
@@ -186,7 +186,7 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
     area: 2780400,
     dataQuality: 'medium',
   },
-  
+
   // Africa
   {
     countryCode: 'NGA',
@@ -215,7 +215,7 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
     area: 1001450,
     dataQuality: 'medium',
   },
-  
+
   // Oceania
   {
     countryCode: 'AUS',
@@ -244,14 +244,14 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
 export function generateUrlMetadata(
   countries: string[],
   adminLevels: number[],
-  dataSource: string
+  dataSource: string,
 ): UrlMetadata[] {
   const metadata: UrlMetadata[] = [];
-  
+
   countries.forEach(countryCode => {
     const country = SAMPLE_COUNTRIES.find(c => c.countryCode === countryCode);
     if (!country) return;
-    
+
     adminLevels.forEach(level => {
       if (level <= (country.availableAdminLevels?.slice(-1)[0] || 0)) {
         metadata.push({
@@ -265,7 +265,7 @@ export function generateUrlMetadata(
       }
     });
   });
-  
+
   return metadata;
 }
 
@@ -279,7 +279,7 @@ export function generateMockDownloadTasks(urlMetadata: UrlMetadata[]): DownloadT
   return urlMetadata.slice(0, 5).map(meta => {
     const stages = [BatchTaskStage.SUCCESS, BatchTaskStage.PROCESS, BatchTaskStage.WAIT];
     const stage = stages[Math.floor(Math.random() * 3)] as BatchTaskStage;
-    
+
     return {
       taskId: `download-${taskIdCounter++}`,
       taskType: 'download' as const,
@@ -297,7 +297,7 @@ export function generateMockDownloadTasks(urlMetadata: UrlMetadata[]): DownloadT
 
 export function generateMockSimplifyTasks(countries: string[], adminLevels: number[]): SimplifyTask[] {
   const tasks: SimplifyTask[] = [];
-  
+
   countries.slice(0, 3).forEach(countryCode => {
     adminLevels.slice(0, 2).forEach(level => {
       tasks.push({
@@ -311,13 +311,13 @@ export function generateMockSimplifyTasks(countries: string[], adminLevels: numb
       });
     });
   });
-  
+
   return tasks;
 }
 
 export function generateMockVectorTileTasks(countries: string[], adminLevels: number[]): VectorTileTask[] {
   const tasks: VectorTileTask[] = [];
-  
+
   countries.slice(0, 2).forEach(countryCode => {
     adminLevels.slice(0, 1).forEach(level => {
       for (let zoom = 8; zoom <= 12; zoom++) {
@@ -334,7 +334,7 @@ export function generateMockVectorTileTasks(countries: string[], adminLevels: nu
       }
     });
   });
-  
+
   return tasks;
 }
 
@@ -344,10 +344,10 @@ export function generateMockVectorTileTasks(countries: string[], adminLevels: nu
 
 export function generateSampleCheckboxMatrix(
   countryCount: number,
-  maxAdminLevel: number
+  maxAdminLevel: number,
 ): boolean[][] {
   const matrix: boolean[][] = [];
-  
+
   for (let i = 0; i < countryCount; i++) {
     const row: boolean[] = [];
     for (let j = 0; j <= maxAdminLevel; j++) {
@@ -356,7 +356,7 @@ export function generateSampleCheckboxMatrix(
     }
     matrix.push(row);
   }
-  
+
   return matrix;
 }
 
@@ -383,7 +383,7 @@ export function calculateEstimatedSize(totalSelections: number): number {
 
 export function calculateEstimatedFeatures(
   totalSelections: number,
-  countries: CountryMetadata[]
+  countries: CountryMetadata[],
 ): number {
   // Rough estimate based on population density
   const avgPopulation = countries.reduce((sum, c) => sum + (c.population || 0), 0) / countries.length;
@@ -396,7 +396,7 @@ export function calculateEstimatedProcessingTime(totalSelections: number): strin
   const seconds = totalSelections * 30;
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   }

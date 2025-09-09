@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
@@ -74,7 +74,10 @@ describe('CommandProcessor bulk operations', () => {
     };
     const { CommandProcessor } = await import('~/services/CommandProcessor');
     const cp = new CommandProcessor(core);
-    const env = cp.createEnvelope('recoverFromTrash', { nodeIds: ['t1' as NodeId, 't2' as NodeId], toParentId: 'root' as NodeId });
+    const env = cp.createEnvelope('recoverFromTrash', {
+      nodeIds: ['t1' as NodeId, 't2' as NodeId],
+      toParentId: 'root' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
     expect(core.bulkUpdateNodes).toHaveBeenCalledTimes(1);

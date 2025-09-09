@@ -1,5 +1,5 @@
-import type { RegionMetadata } from "../utils/types";
-import { saveMetadata } from "../utils/utils";
+import type { RegionMetadata } from '../utils/types';
+import { saveMetadata } from '../utils/utils';
 
 interface NaturalEarthProperties {
   NAME?: string;
@@ -29,7 +29,7 @@ export async function fetchNaturalEarth(
   outputDirName: string,
   outputFileName: string,
 ): Promise<void> {
-  console.log("🌍 Fetching Natural Earth metadata...");
+  console.log('🌍 Fetching Natural Earth metadata...');
 
   const metadata: RegionMetadata[] = [];
 
@@ -38,17 +38,17 @@ export async function fetchNaturalEarth(
     // Using GitHub repository for consistent access
     const urls = {
       countries_10m:
-        "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson",
+        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson',
       countries_50m:
-        "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+        'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson',
     };
 
-    console.log("Fetching Natural Earth countries data (10m resolution)...");
+    console.log('Fetching Natural Earth countries data (10m resolution)...');
     const response = await fetch(urls.countries_10m);
 
     if (!response.ok) {
       // Fallback to 50m resolution if 10m fails
-      console.log("10m resolution failed, trying 50m resolution...");
+      console.log('10m resolution failed, trying 50m resolution...');
       const response50m = await fetch(urls.countries_50m);
       if (!response50m.ok) {
         throw new Error(
@@ -69,7 +69,7 @@ export async function fetchNaturalEarth(
 
     await saveMetadata(metadata, outputDirName, outputFileName);
   } catch (error) {
-    console.error("Error fetching Natural Earth data:", error);
+    console.error('Error fetching Natural Earth data:', error);
     throw error;
   }
 }
@@ -97,12 +97,12 @@ function parseNaturalEarthFeature(
     return null;
   }
 
-  const name = props.NAME || props.NAME_EN || props.ADMIN || "";
-  const iso2 = props.ISO_A2 || "";
-  const iso3 = props.ISO_A3 || "";
+  const name = props.NAME || props.NAME_EN || props.ADMIN || '';
+  const iso2 = props.ISO_A2 || '';
+  const iso3 = props.ISO_A3 || '';
 
   // Skip invalid entries
-  if (!name || iso2 === "-99" || iso3 === "-99") {
+  if (!name || iso2 === '-99' || iso3 === '-99') {
     return null;
   }
 
@@ -119,9 +119,9 @@ function parseNaturalEarthFeature(
     countryCode: iso2,
     iso2: iso2,
     iso3: iso3,
-    continent: props.CONTINENT || "",
-    region: props.REGION_UN || "",
-    subregion: props.SUBREGION || "",
+    continent: props.CONTINENT || '',
+    region: props.REGION_UN || '',
+    subregion: props.SUBREGION || '',
     adminLevels: [0, 1], // Natural Earth primarily provides country-level data
     numAdminLevels: 2,
     bbox: bbox,
@@ -139,7 +139,7 @@ function calculateBoundingBox(geometry: any): [number, number, number, number] {
 
   const processCoordinates = (coords: any): void => {
     if (Array.isArray(coords)) {
-      if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+      if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
         // This is a coordinate pair [lon, lat]
         minLon = Math.min(minLon, coords[0]);
         maxLon = Math.max(maxLon, coords[0]);
@@ -171,7 +171,7 @@ function validateNaturalEarthCountry(country: RegionMetadata): boolean {
   return (
     country.name.length > 0 &&
     (country.iso2.length === 2 || country.iso3.length === 3) &&
-    country.iso2 !== "-99" &&
-    country.iso3 !== "-99"
+    country.iso2 !== '-99' &&
+    country.iso3 !== '-99'
   );
 }

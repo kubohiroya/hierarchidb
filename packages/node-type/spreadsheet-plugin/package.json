@@ -4,10 +4,10 @@
   "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.js"
     }

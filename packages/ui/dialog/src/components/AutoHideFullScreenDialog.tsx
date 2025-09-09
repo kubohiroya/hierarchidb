@@ -1,13 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Typography,
-  Box,
-} from '@mui/material';
+import React, { useCallback, useRef, useState } from 'react';
+import { Box, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
 export interface AutoHideFullScreenDialogProps {
@@ -61,18 +53,18 @@ export interface AutoHideFullScreenDialogProps {
  * Full-screen dialog with auto-hiding header and footer
  */
 export function AutoHideFullScreenDialog({
-  title,
-  open,
-  onClose,
-  children,
-  subtitle,
-  icon,
-  titleActions,
-  footerActions,
-  autoHide = true,
-  autoHideDelay = 300,
-  hoverZoneHeight = 40,
-}: AutoHideFullScreenDialogProps) {
+                                           title,
+                                           open,
+                                           onClose,
+                                           children,
+                                           subtitle,
+                                           icon,
+                                           titleActions,
+                                           footerActions,
+                                           autoHide = true,
+                                           autoHideDelay = 300,
+                                           hoverZoneHeight = 40,
+                                         }: AutoHideFullScreenDialogProps): React.ReactElement {
   const [headerVisible, setHeaderVisible] = useState(!autoHide);
   const [footerVisible, setFooterVisible] = useState(!autoHide);
   const headerTimeoutRef = useRef<NodeJS.Timeout>();

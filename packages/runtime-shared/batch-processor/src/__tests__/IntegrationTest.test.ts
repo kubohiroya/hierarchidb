@@ -3,7 +3,7 @@
  * Tests that all plugin managers implement the same interface correctly
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 
 // Set feature flag globally for testing
@@ -21,14 +21,14 @@ describe('Unified Batch Manager Integration', () => {
     expect(() => {
       // These imports will validate that the interfaces are correctly defined
       const { createLocationBatchManager } = require('@hierarchidb/location-plugin');
-      const { createShapeBatchManager } = require('@hierarchidb/shape-plugin');  
+      const { createShapeBatchManager } = require('@hierarchidb/shape-plugin');
       const { createRouteBatchManager } = require('@hierarchidb/route-plugin');
-      
+
       // Check that factory functions exist
       expect(typeof createLocationBatchManager).toBe('function');
       expect(typeof createShapeBatchManager).toBe('function');
       expect(typeof createRouteBatchManager).toBe('function');
-      
+
     }).not.toThrow();
   });
 
@@ -37,21 +37,21 @@ describe('Unified Batch Manager Integration', () => {
     const { createLocationBatchManager } = await import('@hierarchidb/location-plugin');
     const { createShapeBatchManager } = await import('@hierarchidb/shape-plugin');
     const { createRouteBatchManager } = await import('@hierarchidb/route-plugin');
-    
+
     const locationManager = createLocationBatchManager();
     const shapeManager = createShapeBatchManager();
     const routeManager = createRouteBatchManager();
-    
+
     // Check that all managers have the same interface methods
     const requiredMethods = [
       'startBatchSession',
-      'pauseBatchSession', 
+      'pauseBatchSession',
       'resumeBatchSession',
       'cancelBatchSession',
       'getBatchSessionStatus',
-      'onBatchProgress'
+      'onBatchProgress',
     ];
-    
+
     for (const method of requiredMethods) {
       expect(typeof (locationManager as any)[method]).toBe('function');
       expect(typeof (shapeManager as any)[method]).toBe('function');
@@ -65,7 +65,7 @@ describe('Feature Flag Integration', () => {
     const { isLocationBatchAPIV2Enabled } = await import('@hierarchidb/location-plugin');
     const { isShapeBatchAPIV2Enabled } = await import('@hierarchidb/shape-plugin');
     const { isRouteBatchAPIV2Enabled } = await import('@hierarchidb/route-plugin');
-    
+
     expect(isLocationBatchAPIV2Enabled()).toBe(true);
     expect(isShapeBatchAPIV2Enabled()).toBe(true);
     expect(isRouteBatchAPIV2Enabled()).toBe(true);

@@ -39,7 +39,7 @@ export function clampPercentage(percentage: number): number {
 export function getMemorySeverity(
   percentage: number,
   warningThreshold = 70,
-  criticalThreshold = 90
+  criticalThreshold = 90,
 ): 'normal' | 'warning' | 'critical' {
   if (percentage >= criticalThreshold) return 'critical';
   if (percentage >= warningThreshold) return 'warning';

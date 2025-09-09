@@ -5,14 +5,20 @@
   "description": "Common authentication notification system for HierarchiDB",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "AuthNotificationSystem": ["dist/AuthNotificationSystem.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./AuthNotificationSystem": {
-      "types": "./src/AuthNotificationSystem.ts",
+      "types": "./dist/AuthNotificationSystem.d.ts",
       "import": "./dist/index.js"
     }
   },

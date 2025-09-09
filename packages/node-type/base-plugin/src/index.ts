@@ -24,6 +24,6 @@ export const BasePluginDefinition = {
   description: 'Base plugin for inheritance only - not displayed in UI',
   visibility: {
     showInCreateMenu: false,  // Not shown in create menu
-    showInPluginList: false   // Not shown in plugin list
-  }
+    showInPluginList: false,   // Not shown in plugin list
+  },
 };

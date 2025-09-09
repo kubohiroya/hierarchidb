@@ -15,8 +15,9 @@ export class UnifiedNodeOperations {
     private readonly notificationService: NotificationService,
     private readonly navigationService: NavigationService,
     private readonly dataRefreshService: DataRefreshService,
-    private readonly dialogService: DialogService
-  ) {}
+    private readonly dialogService: DialogService,
+  ) {
+  }
 
   /**
    * Create a new node
@@ -102,7 +103,7 @@ export class UnifiedNodeOperations {
         const beforeResult = await this.executeBeforeDelete(plugin, nodes);
         if (!beforeResult?.proceed) {
           this.notificationService.showWarning(
-            `Cannot delete ${plugin.displayName}(s): ${beforeResult?.confirmMessage || 'Operation not allowed'}`
+            `Cannot delete ${plugin.displayName}(s): ${beforeResult?.confirmMessage || 'Operation not allowed'}`,
           );
           return;
         }
@@ -146,7 +147,7 @@ export class UnifiedNodeOperations {
   async getContextMenuItems(
     nodeId: NodeId,
     nodeType: string,
-    mousePosition: { x: number; y: number }
+    mousePosition: { x: number; y: number },
   ): Promise<readonly any[]> {
     const plugin = getUIPluginRegistry().get(nodeType);
     if (!plugin || !plugin.hooks.onContextMenu) {
@@ -214,7 +215,7 @@ export class UnifiedNodeOperations {
   private async executeBeforeShowCreateDialog(
     plugin: UIPluginDefinition,
     parentId: NodeId,
-    nodeType: string
+    nodeType: string,
   ) {
     if (!plugin.hooks.beforeShowCreateDialog) {
       return { proceed: true };
@@ -230,7 +231,7 @@ export class UnifiedNodeOperations {
   private async showCreateDialog(
     plugin: UIPluginDefinition,
     parentId: NodeId,
-    nodeType: string
+    nodeType: string,
   ): Promise<void> {
     if (plugin.hooks.onShowCreateDialog) {
       await plugin.hooks.onShowCreateDialog({
@@ -252,7 +253,7 @@ export class UnifiedNodeOperations {
     plugin: UIPluginDefinition,
     parentId: NodeId,
     nodeType: string,
-    data: any
+    data: any,
   ): Promise<void> {
     // Validate form data
     if (plugin.hooks.onValidateCreateForm) {
@@ -304,7 +305,7 @@ export class UnifiedNodeOperations {
   private async executeBeforeStartEdit(
     plugin: UIPluginDefinition,
     nodeId: NodeId,
-    currentData: any
+    currentData: any,
   ) {
     if (!plugin.hooks.beforeStartEdit) {
       return { proceed: true };
@@ -320,7 +321,7 @@ export class UnifiedNodeOperations {
   private async showEditDialog(
     plugin: UIPluginDefinition,
     nodeId: NodeId,
-    currentData: any
+    currentData: any,
   ): Promise<void> {
     if (plugin.hooks.onShowEditDialog) {
       await plugin.hooks.onShowEditDialog({
@@ -341,7 +342,7 @@ export class UnifiedNodeOperations {
   private async executeUpdate(
     plugin: UIPluginDefinition,
     nodeId: NodeId,
-    changes: any
+    changes: any,
   ): Promise<void> {
     // Update the node
     await this.nodeAdapter.updateNode(nodeId, plugin.nodeType, changes);
@@ -472,7 +473,7 @@ export class UnifiedNodeOperations {
   private async showDefaultCreateDialog(
     _plugin: UIPluginDefinition,
     _parentId: NodeId,
-    _nodeType: string
+    _nodeType: string,
   ): Promise<void> {
     // TODO: Implement default create base-dialog
     // Show default create base-dialog
@@ -481,7 +482,7 @@ export class UnifiedNodeOperations {
   private async showDefaultEditDialog(
     _plugin: UIPluginDefinition,
     nodeId: NodeId,
-    _currentData: any
+    _currentData: any,
   ): Promise<void> {
     // TODO: Implement default edit base-dialog
     console.log(`Show default edit dialog for ${nodeId}`);
@@ -491,18 +492,23 @@ export class UnifiedNodeOperations {
 // Service interfaces (placeholders - should match actual implementations)
 interface NotificationService {
   showSuccess(message: string): void;
+
   showError(message: string): void;
+
   showWarning(message: string): void;
+
   showInfo(message: string): void;
 }
 
 interface NavigationService {
   navigateTo(nodeId: NodeId): void;
+
   getCurrentPath(): readonly NodeId[];
 }
 
 interface DataRefreshService {
   refresh(nodeIds: readonly NodeId[]): void;
+
   refreshAll(): void;
 }
 

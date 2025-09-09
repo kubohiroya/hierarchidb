@@ -1,11 +1,11 @@
-import { StrictMode, startTransition } from "react";
-import { createRoot } from "react-dom/client";
-import { createHashRouter, RouterProvider } from "react-router-dom";
-import type { RouteObject } from "react-router-dom";
-import routes from "./routes";
+import { startTransition, StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { RouteObject } from 'react-router-dom';
+import { createHashRouter, RouterProvider } from 'react-router-dom';
+import routes from './routes';
 
-// HashRouter用のエントリーポイント
-// GitHub Pages等の静的ホスティング環境用
+//  HashRouter
+//  GitHub Pages
 
 async function createApp() {
   const resolvedRoutes = await routes;
@@ -15,8 +15,8 @@ async function createApp() {
 
 createApp().then((router) => {
   startTransition(() => {
-    const root = document.getElementById("root");
-    if (!root) throw new Error("Root element not found");
+    const root = document.getElementById('root');
+    if (!root) throw new Error('Root element not found');
 
     createRoot(root).render(
       <StrictMode>

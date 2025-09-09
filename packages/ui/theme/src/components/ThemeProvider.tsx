@@ -1,8 +1,8 @@
 import { ReactNode, useEffect, useState } from 'react';
 
 import { ThemeContext } from './ThemeContext';
-import { ThemeMode, ThemeContextType } from '../types';
-import { getStoredThemeMode, storeThemeMode, getSystemTheme } from '../utils/storage';
+import { ThemeContextType, ThemeMode } from '../types';
+import { getStoredThemeMode, getSystemTheme, storeThemeMode } from '../utils/storage';
 
 export interface ThemeProviderProps {
   children: ReactNode;
@@ -11,7 +11,7 @@ export interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children, defaultMode = 'system' }: ThemeProviderProps) => {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    () => getStoredThemeMode() || defaultMode
+    () => getStoredThemeMode() || defaultMode,
   );
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(getSystemTheme);
 

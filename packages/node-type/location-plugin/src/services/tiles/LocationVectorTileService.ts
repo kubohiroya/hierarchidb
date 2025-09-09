@@ -1,16 +1,20 @@
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
 import { LocationBatchSessionManager } from '../batch/BatchSessionManager';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/SessionController';
+import type { LocationPointInput, LocationTileSettings, SessionSummary, ProgressInfo } from '../batch/SessionController';
 
 export class LocationVectorTileService {
   private manager = new LocationBatchSessionManager();
 
-  async startSession(nodeId: NodeId, points: LocationPointInput[], settings: LocationTileSettings): Promise<{ sessionId: string } & SessionSummary> {
+  async startSession(nodeId: NodeId, points: LocationPointInput[], settings: LocationTileSettings): Promise<{
+    sessionId: string
+  } & SessionSummary> {
     return this.manager.createSession(nodeId, points, settings);
   }
 
-  onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void { return this.manager.onProgress(sessionId, cb as any); }
+  onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void {
+    return this.manager.onProgress(sessionId, cb as any);
+  }
 
   async getVectorTile(sessionId: string, nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
     const db = getEphemeralLocationDB();
@@ -20,10 +24,17 @@ export class LocationVectorTileService {
     return new Uint8Array(rec.data);
   }
 
-  async getSessionSummary(sessionId: string): Promise<{ exists: boolean; layers: string[]; zoomRange?: [number, number]; tiles: number; sizeBytes: number; bbox?: [number, number, number, number]; }>{
+  async getSessionSummary(sessionId: string): Promise<{
+    exists: boolean;
+    layers: string[];
+    zoomRange?: [number, number];
+    tiles: number;
+    sizeBytes: number;
+    bbox?: [number, number, number, number];
+  }> {
     const db = getEphemeralLocationDB();
     const list = await db.vectorTiles.where('sessionId').equals(sessionId).toArray();
-    if (list.length === 0) return { exists: false, layers: [] , tiles: 0, sizeBytes: 0 };
+    if (list.length === 0) return { exists: false, layers: [], tiles: 0, sizeBytes: 0 };
     const zmin = Math.min(...list.map(r => r.z));
     const zmax = Math.max(...list.map(r => r.z));
     const size = list.reduce((s, r) => s + r.size, 0);
@@ -40,7 +51,14 @@ export class LocationVectorTileService {
       if (north > maxLat) maxLat = north;
     }
     const bbox: [number, number, number, number] = [minLon, minLat, maxLon, maxLat];
-    return { exists: true, layers: ['location_points'], zoomRange: [zmin, zmax], tiles: list.length, sizeBytes: size, bbox };
+    return {
+      exists: true,
+      layers: ['location_points'],
+      zoomRange: [zmin, zmax],
+      tiles: list.length,
+      sizeBytes: size,
+      bbox,
+    };
   }
 
   getInitialSummary(sessionId: string) {
@@ -55,16 +73,29 @@ export class LocationVectorTileService {
 }
 
 export class LocationVectorTileControl {
-  constructor(private readonly mgr: LocationBatchSessionManager) {}
-  pause(sessionId: string) { this.mgr.pause(sessionId); }
-  resume(sessionId: string) { this.mgr.resume(sessionId); }
-  cancel(sessionId: string) { this.mgr.cancel(sessionId); }
+  constructor(private readonly mgr: LocationBatchSessionManager) {
+  }
+
+  pause(sessionId: string) {
+    this.mgr.pause(sessionId);
+  }
+
+  resume(sessionId: string) {
+    this.mgr.resume(sessionId);
+  }
+
+  cancel(sessionId: string) {
+    this.mgr.cancel(sessionId);
+  }
 }
 
-function tile2lon(x: number, z: number): number { return (x / Math.pow(2, z)) * 360 - 180; }
+function tile2lon(x: number, z: number): number {
+  return (x / Math.pow(2, z)) * 360 - 180;
+}
+
 function tile2lat(y: number, z: number): number {
   const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 }
 
-export type { LocationPointInput, LocationTileSettings };
+export type { LocationPointInput, LocationTileSettings, ProgressInfo };

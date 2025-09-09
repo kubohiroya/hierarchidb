@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { WorkerAPIClient, NotInitializedError } from '../WorkerAPIClient';
+import { NotInitializedError, WorkerAPIClient } from '../WorkerAPIClient';
 
 export function useWorkerAPIClient() {
   const [client, setClient] = useState<any>(null);
@@ -12,21 +12,18 @@ export function useWorkerAPIClient() {
 
   useEffect(() => {
     try {
-      // 同期的に取得を試みる
       const workerClient = WorkerAPIClient.getSingleton();
-      
-      // 既存のコードがclient.getAPI()を呼び出すことを想定
+
       setClient({
-        getAPI: () => workerClient
+        getAPI: () => workerClient,
       });
     } catch (err) {
       if (err instanceof NotInitializedError) {
-        // 初期化されていない場合は、初期化を待つ
         WorkerAPIClient.initialize()
           .then(() => {
             const workerClient = WorkerAPIClient.getSingleton();
             setClient({
-              getAPI: () => workerClient
+              getAPI: () => workerClient,
             });
           })
           .catch(setError);
@@ -36,10 +33,10 @@ export function useWorkerAPIClient() {
     }
   }, []);
 
-  // エラーまたは未初期化の場合はnullを返す
+  //  null
   if (error || !client) {
     return null;
   }
-  
+
   return client;
 }

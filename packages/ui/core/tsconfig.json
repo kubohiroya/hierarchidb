@@ -7,13 +7,23 @@
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/ui-data-grid": ["./packages/ui/data-grid/src/index.ts"],
-      "@hierarchidb/table-metadata": ["./packages/feature/table-metadata/src/index.ts"],
-      "@hierarchidb/tabular-store": ["./packages/feature/tabular-store/src/index.ts"]
+      "~/*": [
+        "./src/*"
+      ],
+      "@hierarchidb/ui-data-grid": [
+        "../data-grid/src/index.ts"
+      ],
+      "@hierarchidb/table-metadata": [
+        "../../feature/table-metadata/src/index.ts"
+      ],
+      "@hierarchidb/tabular-store": [
+        "../../feature/tabular-store/src/index.ts"
+      ]
     },
     "jsx": "react-jsx",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "lib": [
       "ES2022",
       "DOM",
@@ -33,5 +43,9 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/vite-env.d.ts"
-  ]
+  ],
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Temporary: upstream/transitive types; scheduled to remove."
+  }
 }

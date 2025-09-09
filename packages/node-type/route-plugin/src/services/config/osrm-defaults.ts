@@ -1,6 +1,6 @@
 import type { ThrottleOptions } from '../net/ThrottledPort';
 
-export function getOsrmEngineDefaults(): { osrmBaseUrl?: string; osmProfile?: 'car'|'bike'|'foot'|'truck' } {
+export function getOsrmEngineDefaults(): { osrmBaseUrl?: string; osmProfile?: 'car' | 'bike' | 'foot' | 'truck' } {
   const g: any = (globalThis as any);
   const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
   const osrmBaseUrl = g.HIDB_OSRM_BASE_URL || env.HIDB_OSRM_BASE_URL || undefined;

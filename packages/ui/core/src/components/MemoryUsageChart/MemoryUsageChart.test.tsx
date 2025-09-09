@@ -1,7 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { MemoryUsageChart } from './MemoryUsageChart';
+import { useMemoryData } from './hooks/useMemoryData';
 
 // Mock hook to control data and interactions
 vi.mock('./hooks/useMemoryData', () => {
@@ -22,7 +23,6 @@ vi.mock('./services/CanvasRenderer', () => {
   };
 });
 
-import { useMemoryData } from './hooks/useMemoryData';
 const useMemoryDataMock = useMemoryData as unknown as vi.Mock;
 
 const renderWithTheme = (ui: React.ReactElement) => {
@@ -47,7 +47,7 @@ describe('MemoryUsageChart', () => {
 
     renderWithTheme(<MemoryUsageChart />);
     expect(
-      screen.getByText('Memory monitoring not available in this browser')
+      screen.getByText('Memory monitoring not available in this browser'),
     ).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe('MemoryUsageChart', () => {
 
     // Canvas accessible label reflects percentage
     expect(
-      screen.getByLabelText(/Memory usage chart showing 25.0% usage/i)
+      screen.getByLabelText(/Memory usage chart showing 25.0% usage/i),
     ).toBeInTheDocument();
   });
 

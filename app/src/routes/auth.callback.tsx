@@ -1,11 +1,10 @@
 /**
- * 認証コールバックページ
- * OAuth2/OIDCプロバイダーからのリダイレクトを処理
- */
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import { Box, CircularProgress, Typography, Alert } from "@mui/material";
-import { BFFAuthService } from "@hierarchidb/ui-auth";
+   * OAuth2/OIDC
+  */
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { BFFAuthService } from '@hierarchidb/ui-auth';
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
@@ -16,43 +15,39 @@ export default function AuthCallbackRoute() {
   useEffect(() => {
     async function processCallback() {
       try {
-        // URLパラメータから認証情報を取得
-        const code = searchParams.get("code");
+        //  URL
+        const code = searchParams.get('code');
         //const state = searchParams.get('state');
-        const error = searchParams.get("error");
+        const error = searchParams.get('error');
 
         if (error) {
           throw new Error(`Authentication error: ${error}`);
         }
 
         if (!code) {
-          throw new Error("No authorization code received");
+          throw new Error('No authorization code received');
         }
 
-        // 認証処理を実行
         const authService = BFFAuthService.getInstance();
         await authService.handleCallback(searchParams);
 
-        // 元のページまたはホームへリダイレクト
-        const returnUrl = localStorage.getItem("auth_return_url") || "/";
-        localStorage.removeItem("auth_return_url");
+        const returnUrl = localStorage.getItem('auth_return_url') || '/';
+        localStorage.removeItem('auth_return_url');
         navigate(returnUrl, { replace: true });
       } catch (err) {
-        console.error("Auth callback error:", err);
-        setError(err instanceof Error ? err.message : "Authentication failed");
+        console.error('Auth callback error:', err);
+        setError(err instanceof Error ? err.message : 'Authentication failed');
       }
     }
 
     processCallback();
   }, [searchParams, navigate]);
 
-  // ポップアップモードの処理
   useEffect(() => {
     if (window.opener) {
-      // ポップアップから親ウィンドウに認証情報を送信
       const params = Object.fromEntries(searchParams.entries());
       window.opener.postMessage(
-        { type: "auth-callback", params },
+        { type: 'auth-callback', params },
         window.location.origin,
       );
       window.close();
@@ -63,11 +58,11 @@ export default function AuthCallbackRoute() {
     return (
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
           p: 3,
         }}
       >
@@ -84,11 +79,11 @@ export default function AuthCallbackRoute() {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
       }}
     >
       <CircularProgress size={60} />
