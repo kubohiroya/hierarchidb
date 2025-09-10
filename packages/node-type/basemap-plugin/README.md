@@ -1,5 +1,12 @@
 # @hierarchidb/plugin-basemap
 
+実装サマリ（2025-09-09）
+- nodeType: `basemap`
+- DB: Dexie(`basemap-db`) — stores: `baseMaps`, `workingCopies`
+- UI: `BaseMapDialog`/`BaseMapView`/`BaseMapEditor`/`BaseMapAnalytics`
+- 機能: スタイル検証・最適化、空間解析、画像/PDF/GeoJSON エクスポート
+- 依存: MapLibre（ピア依存）、共通型 `@hierarchidb/common-type`
+
 A comprehensive basemap management plugin for HierarchiDB that provides interactive map visualization, spatial analysis, and advanced mapping capabilities.
 
 ## Overview

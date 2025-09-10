@@ -16,7 +16,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     const url = String(input);
     // Natural Earth downloads a ZIP; return a tiny valid zip buffer
     if (url.includes('naturalearthdata.com')) {
-      const JSZip = (await import('jszip')).default;
+      const JSZip = (await import('jszip'));
       const zip = new JSZip();
       zip.file('dummy.txt', 'hello');
       const buf = await zip.generateAsync({ type: 'arraybuffer' });
@@ -335,7 +335,7 @@ describe('DataSourceStrategyFactory', () => {
     const results = await factory.healthCheckAll();
     expect(results.size).toBeGreaterThan(0);
 
-    for (const [strategyId, isHealthy] of results.entries()) {
+    for (const [_strategyId, isHealthy] of Object.entries(results)) {
       expect(typeof isHealthy).toBe('boolean');
     }
   });

@@ -15,4 +15,4 @@ export * from './validation';
 export { SingletonMixin } from './SingletonMixin';
 export { generateId } from './generateId';
 export * from './db-name';
-export * from './dexie-helpers';
+// Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

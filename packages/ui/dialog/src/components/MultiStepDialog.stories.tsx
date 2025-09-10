@@ -291,6 +291,7 @@ export const BasicFolderCreation: Story = {
         steps={stepsWithData}
         activeStep={currentStep}
         onStepChange={setCurrentStep}
+        enableA11yTestControls
 
       />
     );
@@ -328,6 +329,7 @@ export const LocationCreation: Story = {
         steps={stepsWithData}
         activeStep={currentStep}
         onStepChange={setCurrentStep}
+        enableA11yTestControls
 
       />
     );
@@ -365,6 +367,7 @@ export const NonLinearNavigation: Story = {
         steps={stepsWithData}
         activeStep={currentStep}
         onStepChange={setCurrentStep}
+        enableA11yTestControls
 
       />
     );

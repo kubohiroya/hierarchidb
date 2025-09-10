@@ -16,6 +16,9 @@ export * from './components/batch/LocationMapPreview';
 // Unified Batch Control API (API v2)
 export * from './services/batch/UnifiedLocationBatchManager';
 export { LocationBatchSessionManager } from './services/batch/BatchSessionManager';
+export { registerLocationRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker';
+export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults, registerLocationAuthNotifier } from './services/download/registry';
+export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService';
 
 // Import and re-export the plugin definition
 export { LocationPluginDefinition } from './definitions/LocationDefinition';

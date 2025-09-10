@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Box, Button } from '@mui/material';
 import { HelpOutline, Info as InfoIcon } from '@mui/icons-material';
 
@@ -86,7 +86,7 @@ export const InfoPanel = ({
                               borderColor: 'grey',
                               borderRadius: 2,
                             },
-                          }: InfoPanelProps) => {
+                          }: InfoPanelProps): React.ReactElement => {
   // Build default actions if callbacks are provided
   const defaultActions: InfoPanelAction[] = [];
 

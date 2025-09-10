@@ -1,0 +1,44 @@
+name: DTS Check
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+concurrency:
+  group: dts-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dts:
+    name: Quick DTS Build (key packages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --force
+
+      - name: DTS quick check
+        run: pnpm dts:quick
+
+      - name: Sanity typecheck
+        run: |
+          pnpm --filter @hierarchidb/runtime-worker typecheck
+          pnpm --filter @hierarchidb/shape-plugin typecheck
+

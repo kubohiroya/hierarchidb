@@ -6,6 +6,8 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 import { LocationDialog } from '../components/LocationDialog';
 import { LocationPanel } from '../components/LocationPanel';
+import { LocationEntityHandler } from '../entities/LocationEntityHandler';
+import { createLocationBatchManager } from '../services/batch/UnifiedLocationBatchManager';
 
 /**
  * Location plugin definition extending Shape plugin capabilities
@@ -48,26 +50,26 @@ export const LocationPluginDefinition: any = {
     version: 2,
   },
 
-  // Entity handler with metadata support
-  entityHandler: null as any, // Will be instantiated with database table
+  // Entity handler with metadata support（起動時に初期化）
+  entityHandler: null as any,
 
-  // Batch processing manager
-  batchManager: null as any, // Will be instantiated on demand
+  // Batch processing manager（起動時に初期化）
+  batchManager: null as any,
 
   // Lifecycle hooks
   lifecycle: {
-    async onCreate(nodeId: NodeId, _context: any): Promise<void> {
+    async onCreate(nodeId: NodeId, context: any): Promise<void> {
       console.log(`[LocationPlugin] Creating location node: ${nodeId}`);
 
-      // Initialize entity handler with database table
-      // if (!this.entityHandler) {
-      //   this.entityHandler = new LocationEntityHandler(context.database.locations);
-      // }
+      // Initialize entity handler with Dexie table from plugin database
+      if (!LocationPluginDefinition.entityHandler && context?.database?.locations) {
+        LocationPluginDefinition.entityHandler = new LocationEntityHandler(context.database.locations);
+      }
 
-      // Initialize batch manager if needed
-      // if (!this.batchManager) {
-      //   this.batchManager = new LocationBatchManager();
-      // }
+      // Initialize unified batch manager (v2 API)
+      if (!LocationPluginDefinition.batchManager) {
+        LocationPluginDefinition.batchManager = createLocationBatchManager();
+      }
     },
 
     async afterCreate(node: TreeNode, _context: any): Promise<void> {

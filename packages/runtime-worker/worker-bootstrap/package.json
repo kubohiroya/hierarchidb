@@ -23,7 +23,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
@@ -46,8 +46,7 @@
     "@types/react-dom": "^18.2.18",
     "@vitest/ui": "^3.2.4",
     "comlink": "^4.4.1",
-    "eslint": "^8.56.0",
-    "eslint-plugin-deprecation": "^3.0.0",
+    
     "fake-indexeddb": "^5.0.2",
     "prettier": "^3.2.4",
     "react": "^18.3.1",

@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Check, ContentCopy, ReportProblem } from '@mui/icons-material';
 import { IconButton, Typography } from '@mui/material';
 
 // import { devError } from "@/shared/utils/logger";
-export const TextCopyComponent = ({ createText }: { createText: () => string }) => {
+export const TextCopyComponent = ({ createText }: { createText: () => string }): React.ReactElement => {
   const [copyResult, setCopyResult] = useState<boolean | null>(null);
   const copyTextToClipboard = useCallback(async () => {
     try {

@@ -30,6 +30,10 @@
   "devDependencies": {
     "@types/node": "^22.1.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2"
+   "typescript": "^5.9.2",
+    "dexie": "4.2.0"
+  },
+  "peerDependencies": {
+    "dexie": "4.2.0"
   }
 }

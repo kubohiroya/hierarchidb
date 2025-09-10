@@ -5,7 +5,6 @@ import { StepperDialog, useWorkingCopy } from '@hierarchidb/runtime-base-dialog'
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ProcessingConfig, ShapeDialogProps, ShapeWorkingCopy } from '~/shared';
 import { DEFAULT_PROCESSING_CONFIG } from '~/shared';
-import { mockShapeService } from '~/services/MockShapeService';
 import { generateUrlMetadata } from '~/mock/data';
 
 // Import step components
@@ -59,14 +58,27 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
     initialData: getInitialShapeData(),
     onCommit: async (data) => {
       // In production, this would save to the actual database
-      await mockShapeService.commitWorkingCopy(nodeId as NodeId);
-    },
+      // Simulate commit; real commit handled by worker side in production
+      void nodeId;
+      },
   });
 
   // Validation functions
-  const validateProcessingConfig = (config: ProcessingConfig): boolean => {
-    const result = mockShapeService.validateProcessingConfig(config);
-    return result.isValid;
+  const validateProcessingConfig = (cfg: ProcessingConfig): boolean => {
+    const errors: string[] = [];
+    if (cfg.workerPoolSize && (cfg.workerPoolSize < 1 || cfg.workerPoolSize > 8)) {
+      errors.push('Worker pool size must be between 1 and 8');
+    }
+    if (cfg.simplificationLevels) {
+      for (const level of cfg.simplificationLevels) {
+        if (level < 0 || level > 1) errors.push('Simplification levels must be between 0 and 1');
+      }
+    }
+    if (cfg.tileZoomRange) {
+      const [minZoom, maxZoom] = cfg.tileZoomRange;
+      if (minZoom < 0 || maxZoom > 18 || minZoom >= maxZoom) errors.push('Invalid tile zoom range');
+    }
+    return errors.length === 0;
   };
 
   const hasSelectedCountries = (wc: ShapeWorkingCopy): boolean => {
@@ -86,7 +98,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
       validateProcessingConfig(workingCopy.processingConfig) &&
       hasSelectedCountries(workingCopy)
     );
-  }, [workingCopy]);
+  }, [workingCopy, workingCopy.dataSourceName, workingCopy.licenseAgreement, workingCopy.processingConfig]);
 
   // Start batch processing
   const handleStartBatch = useCallback(() => {
@@ -102,7 +114,7 @@ export const ShapeStepperDialog: React.FC<ShapeDialogProps> = ({
 
     // Open batch base-dialog
     setBatchDialogOpen(true);
-  }, [workingCopy, updateWorkingCopy]);
+  }, [updateWorkingCopy, workingCopy.selectedCountries, workingCopy.adminLevels, workingCopy.dataSourceName]);
 
   // Handle batch base-dialog close
   const handleBatchDialogClose = useCallback(() => {

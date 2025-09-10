@@ -3,7 +3,7 @@
  * Reusable checkbox matrix for multi-dimensional selection
  */
 
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Box,
   Checkbox,
@@ -63,7 +63,7 @@ export function SelectionMatrix<T = any>({
                                            maxHeight = 400,
                                            stickyHeader = true,
                                            dense = false,
-                                         }: SelectionMatrixProps<T>) {
+                                         }: SelectionMatrixProps<T>): React.ReactElement {
   // Calculate selection counts
   const columnCounts = useMemo(() => {
     return columns.map((_, colIndex) =>

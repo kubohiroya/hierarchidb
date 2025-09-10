@@ -55,6 +55,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   cancelText = 'Cancel',
                                                                   backText = 'Back',
                                                                   nextText = 'Next',
+                                                                  enableA11yTestControls = false,
                                                                 }) => {
   // State
   const [internalActiveStep, setInternalActiveStep] = useState(0);
@@ -101,7 +102,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       setStepErrors(prev => new Map(prev).set(currentStep, 'Validation failed'));
       return false;
     }
-  }, [currentStepConfig, currentStep]);
+  }, []);
 
   // Check if can navigate
   const canGoNext = useMemo(() => {
@@ -118,7 +119,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       if (index === currentStep) return !stepErrors.has(index);
       return completedSteps.has(index);
     }) && !loading;
-  }, [visibleSteps, currentStep, completedSteps, stepErrors, loading]);
+  }, [visibleSteps, completedSteps, stepErrors, loading]);
 
   // Handle step change
   const handleStepChange = useCallback(async (newStep: number) => {
@@ -141,7 +142,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     // Call onEnter for new step
     const newStepConfig = visibleSteps[newStep];
     await newStepConfig?.onEnter?.();
-  }, [currentStep, currentStepConfig, onStepTransition, onStepChange, visibleSteps]);
+  }, [onStepTransition, onStepChange, visibleSteps]);
 
   // Navigation handlers
   const handleNext = useCallback(async () => {
@@ -152,12 +153,12 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
 
     setCompletedSteps(prev => new Set(prev).add(currentStep));
     await handleStepChange(currentStep + 1);
-  }, [canGoNext, isLastStep, validateCurrentStep, currentStep, handleStepChange]);
+  }, [canGoNext, validateCurrentStep, handleStepChange]);
 
   const handleBack = useCallback(async () => {
     if (!canGoPrevious) return;
     await handleStepChange(currentStep - 1);
-  }, [canGoPrevious, currentStep, handleStepChange]);
+  }, [handleStepChange]);
 
   const handleStepClick = useCallback(async (stepIndex: number) => {
     if (!nonLinear) return;
@@ -174,7 +175,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       }
       await handleStepChange(stepIndex);
     }
-  }, [nonLinear, completedSteps, currentStep, validateCurrentStep, handleStepChange]);
+  }, [nonLinear, completedSteps, validateCurrentStep, handleStepChange]);
 
   // Close handlers
   const handleClose = useCallback(() => {
@@ -230,7 +231,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, validateCurrentStep, canSubmit, onSubmit]);
+  }, [isSubmitting, validateCurrentStep, onSubmit, visibleSteps, completedSteps]);
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -382,8 +383,8 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                   </Button>
                 )}
               </Stack>
-              {/* Testing-only fallback controls to ensure accessibility queries work reliably */}
-              {typeof process !== 'undefined' && ((process as any).env?.NODE_ENV === 'test' || (process as any).env?.VITEST) && (
+              {/* Testing-only fallback controls: opt-in via prop to avoid env coupling */}
+              {enableA11yTestControls && (
                 (() => {
                   const srOnly: React.CSSProperties = {
                     position: 'absolute',

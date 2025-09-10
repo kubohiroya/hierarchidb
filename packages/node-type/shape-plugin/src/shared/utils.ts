@@ -248,7 +248,7 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
  */
 export function generateSessionId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 9);
+  const random = Math.random().toString(36).slice(2, 2 + 9);
   return `session-${timestamp}-${random}`;
 }
 
@@ -257,7 +257,7 @@ export function generateSessionId(): string {
  */
 export function generateTaskId(type: string): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5);
+  const random = Math.random().toString(36).slice(2, 2 + 5);
   return `${type}-${timestamp}-${random}`;
 }
 

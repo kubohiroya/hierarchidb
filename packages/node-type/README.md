@@ -1,6 +1,6 @@
 # HierarchiDB Node Type Plugin System
 
-最終更新: 2025-09-06 00:00 UTC
+最終更新: 2025-09-09 00:00 UTC
 
 HierarchiDBの拡張可能なノードタイププラグインシステムです。地理情報処理、データ管理、階層構造管理など、様々なドメインに特化したノードタイプを提供し、アプリケーションの機能を拡張します。
 
@@ -136,18 +136,18 @@ graph TB
 
 ### 比較表（概要）
 
-| プラグイン | nodeType（実装値・将来方針） | 継承元 | データベース名（kebab-case, 接頭辞付与） | バッチ | ベクトルタイル | Mapプレビュー | ネットワーク要件 | 備考 |
-|---|---|---|---|---|---|---|---|---|
-| base-plugin | base | - | - | - | - | - | なし | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
-| folder-plugin | folder | - | Dexie('folder-db'), Dexie('folder-entities-db') | - | - | - | なし | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | Dexie('spreadsheet-db'), Dexie('spreadsheet-entities-db') | - | - | - | なし（ローカル取り込み想定） | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | Dexie('styler-metadata-db') | - | - | - | なし | CSVメタDB |
-| basemap-plugin | basemap | folder | Dexie('basemap-db') | - | - | supported | タイルサーバ利用時は運用時に必要 | MapLibre 統合 |
-| shape-plugin | shape | folder（に統一予定） | Dexie('shape-db'), Dexie('shape-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | 高負荷処理/バッチ |
-| location-plugin | location | folder | Dexie('location-entities-db') | Yes | create | supported | 作成・編集時はネット必須（運用中は不要） | Shape 連携可 |
-| route-plugin | route | folder（に統一予定） | Dexie('route-db') | Yes | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
-| resolver-plugin | resolver | folder | Dexie('resolver-db') | - | - | - | なし | Schema 検出/前処理 |
-| project-plugin | project | folder | Dexie('project-db') | - | - | supported | プレビューが basemap に依存する場合あり | 領域/設定 |
+| プラグイン | nodeType | 継承元 | データベース名（接頭辞付与） | データソース選択・読み込み | バッチ処理 | 表データ管理 |ベクトルタイル生成 | Mapプレビュー                         | ネットワーク要件 | 備考 |
+|---|---|---|------------|---------------|--------|---|-----|----------------------------------|---|---|
+| base-plugin | base | - | -          | -             | - | -      | -   | - | なし                               | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
+| folder-plugin | folder | - | folder-db, folder-entities-db | -             | -                | -      | -         | - | なし                               | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | spreadsheet-db, spreadsheet-entities-db | -             | -                | あり     | -      | - | なし（ローカル取り込み想定）                   | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | styler-metadata-db | -             | -                | あり     | -         | - | なし                               | CSVメタDB |
+| basemap-plugin | basemap | folder | basemap-db | -             | -       | -      | -      | supported | タイルサーバ利用時は運用時に必要                 | MapLibre 統合 |
+| shape-plugin | shape | folder | shape-db, shape-entities-db | あり            | Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | 高負荷処理/バッチ |
+| location-plugin | location | folder | location-entities-db | あり| Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | Shape 連携可 |
+| route-plugin | route | folder | route-db   | あり| Yes           | あり     | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
+| resolver-plugin | resolver | folder | resolver-db | - | -             | -      | -      | - | なし                               | Schema 検出/前処理 |
+| project-plugin | project | folder | project-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定 |
 
 注記:
 - データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
@@ -156,7 +156,6 @@ graph TB
 - バッチは非同期一括処理の仕組み（セッション/レーン/タスク管理等）が実装されている場合に「Yes」。route は `RouteBatchManager/RouteBatchSession` に基づくバッチが実装済みです。
 - ベクトルタイルは当該プラグインがベクトルタイルを生成（create）できるものを示します。
 - Mapプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
-- nodeType の命名方針: ユーザーに露出しうる識別子のため、`-plugin` サフィックスを廃止し、`folder`/`basemap`/`location`/`project`/`resolver` などに統一します（既存実装は順次移行）。
 
 
 ## 🔎 Tabular Preview（Location/Shape/Route 共通）
@@ -176,17 +175,15 @@ location / shape / route の各プラグインは、バッチ処理で正規化�
 
 ### base-plugin の責務（役割）
 
-base-plugin は UI に表示されない「共通基盤」です。プラグイン実装から再利用される抽象と補助型を提供します。親子継承の「親」ではなく、ライブラリ層と捉えてください。
+base-plugin は UI に表示されない「共通基盤」です。プラグイン実装から再利用される抽象と補助型を提供します。
 
 - 提供クラス/抽象
-  - `BaseEntityHandler<TEntity, TCreate, TSearch>`: CRUD とライフサイクルフック（before/after create/update/delete）を備えた共通ハンドラ基底。
-  - `HierarchicalEntityHandler<...>`: 階層型（親子関係）エンティティ用の派生基底。
+  - `BaseEntityHandler<TEntity, TCreate, TSearch>`: CRUD、検索、ページング、ライフサイクルフック、バッチ更新/削除に対応。
+  - `HierarchicalEntityHandler<...>`: 祖先/子孫/兄弟/ルート/サブツリー/移動/削除など階層ユーティリティを追加。
 - 提供型
-  - `BaseSearchCriteria`: 検索条件の基底（ページング/ソート拡張の前提）。
-  - `PaginatedResult<T>`, `OperationResult<T>`: 結果表現の共通フォーマット。
-  - `EntityLifecycleHooks<TEntity>`: ライフサイクルフックの型定義。
+  - `BaseSearchCriteria`, `PaginatedResult<T>`, `OperationResult<T>`, `EntityLifecycleHooks<T>` など。
 - 定義
-  - `BasePluginDefinition`: 継承用のダミー定義（UI 非表示）。
+  - `BasePluginDefinition`: 継承用の内部定義（UI 非表示）。
 
 これらは `@hierarchidb/base-plugin` から提供され、各プラグイン（folder/shape/route 等）が自前のハンドラ実装で再利用します。
 
@@ -197,7 +194,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 | プラグイン | P-Peer | P-Group | P-Relational | E-Peer | E-Group | E-Relational |
 |---|---|---|---|---|---|---|
 | base-plugin | - | - | - | - | - | - |
-| folder-plugin | folders, workingCopies | groupEntities | relations | - | - | - |
+| folder-plugin | folders | groupEntities | relations | - | - | - |
 | spreadsheet-plugin | spreadsheetEntities, workingCopies | groupEntities | relations | - | - | - |
 | styler-plugin | - | - | csvMetadata | - | - | - |
 | basemap-plugin | baseMaps, workingCopies | - | - | - | - | - |
@@ -208,22 +205,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 | project-plugin | projects | - | - | - | - | - |
 
 
-## 🔎 Tabular Preview（Location/Shape/Route 共通）
-
-location / shape / route の各プラグインは、バッチ処理で正規化した“表データ”を保存してUIでプレビューできます（デフォルトOFF）。
-
-- 有効化フラグ（環境変数 or `globalThis.FEATURE_FLAGS`）
-  - `LOCATION_TABULAR=1`
-  - `SHAPE_TABULAR=1`
-  - `ROUTE_TABULAR=1`
-- UI 機能
-  - 複数条件フィルタ（AND: `eq`/`neq`/`contains`/`gt`/`gte`/`lt`/`lte`）
-  - 表示列の切替（列セレクタ）
-  - `eq` 条件は遅延作成される倒立インデックスで高速化
-- 注意: 表プレビューは検索・検証用途です。ノード群の統合シリアライズ/デシリアライズは従来どおり Import/Export 機能をお使いください。
-
-
-
+ 
 ## 🧩 プラグイン定義（現行API）
 
 プラグインの定義は `@hierarchidb/common-type` の `PluginDefinition` を用います。従来バージョンの

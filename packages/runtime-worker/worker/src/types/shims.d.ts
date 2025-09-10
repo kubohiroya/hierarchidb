@@ -43,9 +43,6 @@ declare module '@hierarchidb/compute' {
 declare module '@hierarchidb/batch' {
   export const featureDefinition: any;
 }
-declare module '@hierarchidb/download' {
-  export const featureDefinition: any;
-}
 declare module '@hierarchidb/map-source' {
   export const featureDefinition: any;
 }
@@ -64,4 +61,13 @@ declare module '@hierarchidb/auth-recovery' {
 
     fetchWithAuth(url: string, init?: RequestInit, ctx?: any): Promise<Response>;
   }
+}
+declare module 'comlink';
+declare module 'geojson-vt' {
+  const mod: any;
+  export default mod;
+}
+declare module '@maplibre/vt-pbf' {
+  const mod: any;
+  export default mod;
 }

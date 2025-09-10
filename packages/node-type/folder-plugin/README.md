@@ -1,16 +1,25 @@
 # @hierarchidb/plugin-folder
 
+実装サマリ（2025-09-09）
+- nodeType: `folder`
+- EntityHandler: `FolderEntityHandler`（`HierarchicalEntityHandler` 継承）
+- DB: Dexie(`folder-db`) に `folders` ストア（`&id, nodeId, name, description, createdAt, updatedAt, version`）
+- Working Copy: `createWorkingCopy/commitWorkingCopy/discardWorkingCopy` を備えた簡易ワーキングコピー対応
+- 機能: ツリー移動・兄弟/子孫/祖先取得・パス/深さ計算・名前/説明バリデーション
+- UI: Create/Edit ダイアログ、アイコン、ウィザード（基本情報ステップほか）
+
 Basic folder plugin for HierarchiDB UI layer that provides container functionality for organizing files and other items in a hierarchical structure.
 
 ## Overview
 
-This plugin implements the folder node type in the unified UI plugin system. Folders are container nodes that don't require entity data - they use only TreeNode information from the worker layer.
+This plugin implements the folder node type in the unified UI plugin system.
+Folders are container nodes backed by a persisted entity (Dexie store) and hierarchical utilities from `@hierarchidb/base-plugin`.
 
 ## Features
 
 - **Folder Creation**: Create new folders with validation
 - **Folder Editing**: Rename folders and update descriptions
-- **Hierarchical Organization**: Folders can contain other folders and items
+- **Hierarchical Organization**: Folders can contain other folders and items (move, siblings, descendants, ancestors)
 - **Validation**: Comprehensive input validation for names and descriptions
 - **Context Menus**: Rich context menu support
 - **Bulk Operations**: Support for batch operations on multiple folders
@@ -58,7 +67,7 @@ import { FolderEditDialog } from '@hierarchidb/plugin-folder-plugin';
 The folder plugin is configured as follows:
 
 - **Node Type**: `folder`
-- **Data Source**: TreeNode only (no entity required)
+- **Data Source**: TreeNode + Folder entity (`folders` store on Dexie)
 - **Capabilities**: Full CRUD, hierarchical, bulk operations
 - **Menu Group**: `basic`
 - **Create Order**: 1 (appears first in create menus)
@@ -170,7 +179,7 @@ Once registered, folders will automatically appear in:
 
 This plugin is part of HierarchiDB's unified UI plugin system:
 
-- **Worker Layer**: Uses existing TreeNode management (no changes required)
+- **Worker Layer**: Uses `FolderEntityHandler` and Dexie stores (`folders`), built on `HierarchicalEntityHandler`
 - **UI Layer**: Unified plugin interface for consistent UX
 - **Data Adapter**: Bridges Worker API with UI plugin system
 - **Component Library**: Reusable UI components with Material-UI

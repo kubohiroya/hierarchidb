@@ -167,6 +167,13 @@ export interface MultiStepDialogProps {
    * Useful for syncing URL or external state.
    */
   onFullscreenChange?: (isFullscreen: boolean) => void;
+
+  /**
+   * Enable hidden a11y test controls (Cancel/Next/Complete buttons rendered off-screen).
+   * Tests can set this true to drive the dialog via aria-labels without relying on focus.
+   * Defaults to false and should never be enabled in production UI.
+   */
+  enableA11yTestControls?: boolean;
 }
 
 /**

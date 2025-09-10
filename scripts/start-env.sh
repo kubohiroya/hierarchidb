@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # ================================================================
 # 統一起動スクリプト
@@ -160,10 +161,10 @@ case "$COMMAND" in
         ;;
         
     build)
-        echo "📦 Building for $ENV_NAME..."
-        pnpm build:turbo
-        echo ""
-        echo "✅ Build complete!"
+    echo "📦 Building for $ENV_NAME..."
+    pnpm build:turbo
+    echo ""
+    echo "✅ Build complete!"
         
         if [ "$ENV_NAME" = "production" ]; then
             echo ""

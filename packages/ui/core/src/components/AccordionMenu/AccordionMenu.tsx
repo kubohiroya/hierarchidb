@@ -1,22 +1,22 @@
-import { MouseEvent, ReactNode, useCallback } from 'react';
+import React, { MouseEvent, ReactNode, useCallback } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-export const AccordionMenu = ({
-                                id,
-                                expanded,
-                                toggleExpanded,
-                                onClick,
-                                accordionDetails,
-                                children,
-                              }: {
+export const AccordionMenu: React.FC<{
   id: string;
   expanded: boolean;
   toggleExpanded: () => void;
   onClick: (ev: MouseEvent) => void;
   accordionDetails: ReactNode;
   children: ReactNode;
-}) => {
+}> = ({
+                                id,
+                                expanded,
+                                toggleExpanded,
+                                onClick,
+                                accordionDetails,
+                                children,
+                              }) => {
   const handleAccordionChange = useCallback(() => {
     // Prevent default accordion behavior - expansion is controlled by the ExpandMoreIcon click
     // This allows the summary content to be clickable without toggling expansion

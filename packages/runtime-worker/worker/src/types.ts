@@ -51,3 +51,35 @@ export interface LifecycleEvent {
   success: boolean;
   error?: string;
 }
+
+// Stage worker APIs (draft contracts for shape-plugin processing)
+
+export interface DownloadWorkerAPI {
+  download(url: string, fileId: string, opts?: { expectedHash?: string }): Promise<{
+    fileId: string;
+    sizeBytes?: number;
+    hash?: string;
+  }>;
+}
+
+export interface SimplifyWorkerAPI {
+  simplifyStage1(inputBufferId: string, config: {
+    tolerance: number;
+    minArea: number;
+  }): Promise<{ outputBufferId: string }>;
+
+  simplifyStage2(inputBufferId: string, config: {
+    zoomLevels: number[];
+    tileSize: number;
+  }): Promise<{ outputBufferId: string }>;
+}
+
+export interface VectorTileWorkerAPI {
+  generateTiles(inputBufferId: string, config: {
+    format: 'mvt';
+    compression?: 'gzip' | 'none';
+  }): Promise<{ tilesGenerated: number; totalBytes?: number }>;
+  getTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
+  listTiles(sessionId: string): Promise<Array<{ z: number; x: number; y: number; size: number; timestamp: number }>>;
+  getSummary(sessionId: string): Promise<{ tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number }>;
+}

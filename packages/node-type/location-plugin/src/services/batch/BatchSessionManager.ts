@@ -20,6 +20,7 @@ export class LocationBatchSessionManager {
     nodeId: NodeId,
     points: LocationPointInput[],
     settings: LocationTileSettings,
+    options?: { concurrency?: number },
   ): Promise<SessionSummary> {
     const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const controller = new SessionController(sessionId, nodeId, points, settings);
@@ -58,7 +59,7 @@ export class LocationBatchSessionManager {
     } catch {
     }
     //  Fire and forget
-    const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: 4 }, controller, (ev) => {
+    const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: options?.concurrency ?? 4 }, controller, (ev) => {
       const set2 = this.progress.get(sessionId);
       if (!set2) return;
       for (const cb of set2) cb(ev);

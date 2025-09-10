@@ -139,6 +139,56 @@ reporter.reportStepProgress('Load Comlink', 0);
 
     // Step 4: Bootstrap services
     reporter.reportStepProgress('Bootstrap services', 10);
+
+    // Register shared download/auth + optional runtime workers for plugins (flagged, safe to ignore on failure)
+    try {
+      const isFlagEnabled = (name: string, fallback = false) => {
+        const g: any = (globalThis as any);
+        const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
+        const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
+        const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
+        if (v == null) return fallback;
+        const s = String(v).toLowerCase();
+        return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
+      };
+
+      // Location plugin wiring (download DI + auth notifier always; runtime worker behind flag)
+      try {
+        const loc = await import('@hierarchidb/location-plugin');
+        // Download service shared registration (opt-in defaults)
+        const locPhc = Number((globalThis as any)['LOCATION_PER_HOST_CONCURRENCY'] || (typeof localStorage !== 'undefined' && localStorage.getItem('LOCATION_PER_HOST_CONCURRENCY')) || (typeof process !== 'undefined' && (process as any).env?.LOCATION_PER_HOST_CONCURRENCY) || 4);
+        loc.registerLocationSharedDownloadService({ perHostConcurrency: isFinite(locPhc) ? locPhc : 4 });
+        // Auth notifier (bridge to global registry if present)
+        loc.registerLocationAuthNotifier?.((info: any) => {
+          try {
+            const g: any = globalThis as any;
+            const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+            reg?.onAuthRequired?.(info);
+          } catch { /* noop */ }
+        });
+        // Runtime worker adapters (flag LOCATION_RUNTIME_WORKER)
+        if (isFlagEnabled('LOCATION_RUNTIME_WORKER', false)) {
+          await loc.registerLocationRuntimeWorkerAdapters?.();
+        }
+      } catch { /* location wiring optional */ }
+
+      // Route plugin wiring
+      try {
+        const route = await import('@hierarchidb/route-plugin');
+        const rPhc = Number((globalThis as any)['ROUTE_PER_HOST_CONCURRENCY'] || (typeof localStorage !== 'undefined' && localStorage.getItem('ROUTE_PER_HOST_CONCURRENCY')) || (typeof process !== 'undefined' && (process as any).env?.ROUTE_PER_HOST_CONCURRENCY) || 4);
+        route.registerRouteSharedDownloadService({ perHostConcurrency: isFinite(rPhc) ? rPhc : 4 });
+        route.registerRouteAuthNotifier?.((info: any) => {
+          try {
+            const g: any = globalThis as any;
+            const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+            reg?.onAuthRequired?.(info);
+          } catch { /* noop */ }
+        });
+        if (isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) {
+          await route.registerRouteRuntimeWorkerAdapters?.();
+        }
+      } catch { /* route wiring optional */ }
+    } catch { /* wiring block ignored on failure */ }
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
     reporter.reportStepProgress('Bootstrap services', 100);

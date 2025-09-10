@@ -395,6 +395,24 @@ Mapbox: [************]
 [ネットワークログ]
 [パフォーマンスプロファイラ]
 ━━━━━━━━━━━━━━━━━━━━━━━━
+
+#### プラグインのランタイムフラグ（簡易）
+
+開発中にプラグインの実行パスを切り替えるための小さなフラグがあります（再ビルド不要）。
+
+- `LOCATION_RUNTIME_WORKER` / `ROUTE_RUNTIME_WORKER`: `0|1`（既定OFF）
+- `LOCATION_PER_HOST_CONCURRENCY` / `ROUTE_PER_HOST_CONCURRENCY`: 数値（既定4）
+
+クイック設定（DevTools コンソール）例:
+
+```
+localStorage.setItem('LOCATION_RUNTIME_WORKER','1')
+localStorage.setItem('ROUTE_RUNTIME_WORKER','1')
+localStorage.setItem('LOCATION_PER_HOST_CONCURRENCY','8')
+localStorage.setItem('ROUTE_PER_HOST_CONCURRENCY','8')
+```
+
+より詳しくは「[15. ランタイムフラグ（プラグイン）](15-runtime-flags.md)」を参照してください。
 ```
 
 ### API設定

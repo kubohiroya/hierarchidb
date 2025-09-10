@@ -19,7 +19,6 @@ registry.register(new HttpUrlStrategy());
 
 export function resolveShapeDownloadStrategy(task: BatchTaskLike): IShapeDownloadStrategy | null {
   const enabled =
-    (typeof process !== 'undefined' && process?.env?.SHAPE_DOWNLOAD_STRATEGY === '1') ||
     (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.SHAPE_DOWNLOAD_STRATEGY === true);
   if (!enabled) return null;
   return registry.resolve(task);

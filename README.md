@@ -7,47 +7,31 @@ High-performance tree-structured data management framework for browser environme
 ## 概要
 
 **HierarchiDB** は、ツリー構造をもつデータをブラウザ環境で効率的かつ一貫性を保ちながら管理・操作するための **高汎用性フレームワーク** です。アプリケーションの UI 層と Worker 層を明確に分離し、Dexie を用いた IndexedDB 永続化と Comlink 経由の非同期通信を組み合わせることで、堅牢かつ拡張性の高い構造を実現しています。
+ツリー上で作成可能なオブジェクトのタイプごとの機能をプラグイン機構によって実現するしくみであるため、高度な拡張性を備えています。
 
 本フレームワークは特定ドメインに依存しない汎用コアを提供し、地理情報システム（GIS）、プロジェクト管理、データカタログなど、階層型リソース管理を必要とするあらゆる分野に適用可能です。
 
 ## 主な特徴
 
-- 🚀 **高パフォーマンス**: Worker層での並列処理により UI のブロッキングを防止
-- 🔌 **プラグインシステム**: ノードタイプごとの拡張可能なアーキテクチャ
-- 💾 **デュアルデータベース**: CoreDB（永続化）と EphemeralDB（一時データ）の分離
+- 🚀 **高パフォーマンス**: Comlink/Worker層での非同期並列処理により UI のブロッキングを防止
 - ↩️ **Undo/Redo サポート**: リングバッファによる効率的な履歴管理
-- 🔐 **エンタープライズ認証**: OAuth2/OIDC、BFF パターン、自動トークンリフレッシュ
-- 🌍 **国際化対応**: 多言語サポート（i18n）
+- 💾 **永続化**: Dexie.js/IndexedDBを用いた永続化
+- 🔐 **認証**: OAuth2/OIDC、BFF パターン、自動トークンリフレッシュ
+- 🌍 **国際化**: 多言語サポート（i18n）
 - ♿ **アクセシビリティ**: WCAG 2.1 準拠
+- 🔌 **プラグインシステム**: 拡張可能なアーキテクチャ
 
-### Tabular Preview（Location/Shape/Route）
-- 3つのノードタイプで正規化済みの“表”を保存（フラグON時）し、UIでプレビューできます。
-- 機能:
-  - 複数条件フィルタ（AND: eq/neq/contains/gt/gte/lt/lte）
-  - 表示列の切り替え（可視列セレクタ）
-  - eq 条件はインデックス（遅延作成）を用いて高速化
-- 既定はOFF（既存挙動を変更しません）。必要に応じて以下の環境変数で有効化してください。
-  - `LOCATION_TABULAR=1`
-  - `SHAPE_TABULAR=1`
-  - `ROUTE_TABULAR=1`
-※ ノードの統合的なシリアライズ/デシリアライズは従来どおり Import/Export を利用してください。
-
-### Sea Routing（searoute-js 統合）
-- ルートプラグインの `searoute` モードで海上経路を計算できます（既定OFF）。
-- 有効化手順:
-  - 依存追加: `pnpm add searoute`（または互換の `searoute-js`）
-  - フラグON: `WORKER_FEATURE_ROUTE_SEAROUTE=1`（または `globalThis.FEATURE_FLAGS.ROUTE_SEAROUTE = true`）
-- 実装は動的 import でライブラリ不在時は自動フォールバック（大圏/直線）。
 
 ## 技術スタック
 
-- **Frontend**: React 18, React Router v7, Material-UI v6
+- **Frontend**: React 18, React Router v7, Material-UI v6, Tanstack Table
 - **State Management**: Dexie (IndexedDB), Comlink (Worker通信)
-- **Build Tools**: Vite 6, Turborepo, TypeScript 5.7
+- **Build Tools**: Vite 6, Turborepo, TypeScript 4.9
 - **Package Manager**: pnpm 10
 - **Backend Services**: Cloudflare Workers (BFF, CORS Proxy)
 - **Testing**: Vitest, Playwright
-- **Code Quality**: ESLint, Prettier, Husky
+- **Code Quality**: ESLint, Prettier, Husky, dep-fence
+- **Task Management**: mrtask
 
 ## プロジェクト構造
 

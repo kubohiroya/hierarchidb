@@ -10,7 +10,7 @@
 import type { BaseShapeError } from '../types/ShapeErrorHierarchy';
 import { ErrorCategory } from '../types/ShapeErrorHierarchy';
 import type { BatchConfig } from '../types/BatchConfig';
-import type { TreeNodeId } from '@hierarchidb/core';
+import type { NodeId } from '@hierarchidb/common-type';
 
 // ========================================
 // ========================================
@@ -20,7 +20,7 @@ import type { TreeNodeId } from '@hierarchidb/core';
 export interface RecoveryContext {
   error: BaseShapeError;
   sessionId: string;
-  treeNodeId: TreeNodeId;
+  treeNodeId: NodeId;
   config: BatchConfig;
   attemptNumber: number;
   previousAttempts: RecoveryAttempt[];

@@ -1,5 +1,14 @@
 # Location Plugin
 
+実装サマリ（2025-09-09）
+- nodeType: `location`
+- 定義: `LocationPluginDefinition`（Shape 連携メタ含む）
+- DB: Dexie — `locations`, `locationWorkingCopies`, `locationBatchSessions`, `locationBatchTasks`
+- UI: `LocationDialog` / `LocationPanel` / `SelectionMatrix` / バッチ進捗/プレビュー
+- バッチ: `UnifiedLocationBatchManager` / `LocationBatchSessionManager`
+- 機能: 検索・高度フィルタ・近接検索・ジオコーディング・クラスタ/ヒートマップ表示
+- ランタイムワーカー: `registerLocationRuntimeWorkerAdapters()`（フラグ `LOCATION_RUNTIME_WORKER=1` で有効）
+
 ## 依存管理とインポート規約（重要）
 共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
 - peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie

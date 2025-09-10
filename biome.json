@@ -7,8 +7,8 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
-    "experimentalScannerIgnores": [
+    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
+    "ignore": [
       "node_modules",
       "dist",
       "build",
@@ -63,8 +63,7 @@
         "useImportType": "warn",
         "useNodejsImportProtocol": "off",
         "noNonNullAssertion": "warn",
-        "useTemplate": "warn",
-        "noRestrictedImports": "off"
+        "useTemplate": "warn"
       },
       "complexity": {
         "noBannedTypes": "warn",
@@ -74,7 +73,7 @@
         "noExplicitAny": "error",
         "noImplicitAnyLet": "error",
         "noConfusingVoidType": "warn",
-        "useAwait": "warn"
+        "useAwait": "off"
       }
     }
   },

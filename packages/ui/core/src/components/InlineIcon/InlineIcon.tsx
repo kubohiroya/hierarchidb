@@ -1,6 +1,6 @@
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
-export const InlineIcon = (props: { children: ReactNode }) => {
+export const InlineIcon = (props: { children: ReactNode }): React.ReactElement => {
   return (
     <span
       style={{

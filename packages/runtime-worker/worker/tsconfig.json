@@ -18,16 +18,19 @@
     "strictNullChecks": false,
     "strict": true,
     "noImplicitAny": false,
-    "baseUrl": ".",
+    "baseUrl": "../../../",
     "paths": {
       "~/*": [
-        "src/*"
+        "packages/runtime-worker/worker/src/*"
       ],
       "@hierarchidb/tabular": [
-        "../../feature/tabular/src/index.ts"
+        "packages/feature/tabular/src/index.ts"
       ],
-      "@hierarchidb/tabular/*": [
-        "../../feature/tabular/src/*"
+      "@hierarchidb/download": [
+        "packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "packages/runtime-shared/batch-processor/src/index.ts"
       ]
     },
     "jsx": "react-jsx"

@@ -29,6 +29,9 @@ export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabu
 // Unified Batch Control API (API v2)
 export * from './services/UnifiedRouteBatchManager';
 export { RouteBatchManager } from './services/RouteBatchManager';
+export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker';
+export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier } from './services/download/registry';
+export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService';
 
 // UI Hooks/Components (minimal)
 export * from './ui/hooks/useRouteBatchProgress';
@@ -37,49 +40,5 @@ export * from './ui/components/RouteBatchProgressBar';
 /**
  * Route Plugin Definition
  */
-// Plugin Definition (commented out - will be implemented when integrated with main app)
-/*
- export const RoutePluginDefinition: PluginDefinition<RouteEntity, RouteWorkingCopy> = {
- nodeType: 'route',
- displayName: 'Route',
- description: 'Transportation routes and networks',
- icon: '',
- color: '#FF9800',
- // Database configuration
- database: {
- entityStore: 'routes',
- workingCopyStore: 'routeWorkingCopies',
- schema: {
- routes: '&id, nodeId, [nodeId+name], createdAt, updatedAt',
- routeWorkingCopies: '&id, nodeId, isDraft, createdAt, updatedAt',
- },
- version: 1,
- },
- // Entity handler
- entityHandler: RouteEntityHandler,
- // UI components
- ui: {
- dialogComponent: RouteDialog,
- panelComponent: RoutePanel,
- },
- // Lifecycle hooks
- lifecycle: {
- afterCreate: async (node: any, context: any) => {
- console.log('Route node created:', node.id);
- },
- beforeDelete: async (node: any, context: any) => {
- // Cleanup any associated data
- console.log('Route node will be deleted:', node.id);
- },
- },
- // Capabilities
- capabilities: {
- supportsWorkingCopy: true,
- supportsBatchProcessing: true,
- supportsExport: true,
- supportsImport: true,
- supportsVersioning: true,
- },
- };
- export default RoutePluginDefinition;
-*/
+export { RoutePluginDefinition } from './definitions/RoutePluginDefinition';
+export { default } from './definitions/RoutePluginDefinition';

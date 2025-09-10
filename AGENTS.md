@@ -1,48 +1,39 @@
 # Repository Guidelines
 
-- ユーザとの会話やドキュメント作成は日本語で行い、コードやテスト内のコメントは英語で行なうこと。
-
 ## Project Structure & Module Organization
-- app: React front-end (routes, components, public assets).
-- packages: Workspace modules by domain: common, node-type (plugins), runtime-*, ui/*, util, backend.
-- e2e: Playwright end-to-end tests; reports in e2e-results/.
-- docs: Project documentation; Storybook and migration notes.
-- scripts: Helpers (start-env.sh, analysis, license checks).
+- Monorepo managed by pnpm/turbo. Key roots:
+  - `app/` runtime UI app
+  - `packages/` feature, UI, worker, and node-type plugins
+  - `packages/runtime-worker/worker/` worker-side platform
+  - `packages/node-type/*-plugin/` plugin packages (e.g., shape, route, location)
+  - `e2e/`, `docs/`, `.turbo/`, and config files at repo root
+- Source lives in `src/`; compiled output goes to `dist/` (tsup). Tests sit alongside code as `*.test.ts(x)`.
 
 ## Build, Test, and Development Commands
-- `pnpm dev`: Start development app via `scripts/start-env.sh` (http://localhost:4200).
-- `pnpm build`: Production build across the monorepo (Turbo).
-- `pnpm build:app`: Build only `@hierarchidb/app`.
-- `pnpm test`: Run unit tests (Vitest) in parallel across packages.
-- `pnpm e2e`: Run Playwright tests (spins up dev server automatically).
-- `pnpm lint` / `pnpm format` / `pnpm typecheck`: ESLint, Prettier/Biome formatting, and TS checks.
-- `pnpm storybook`: Launch Storybook for UI packages.
-
-## Task Management (mrtask as SSOT)
-- SSOT: Tasks are managed with mrtask (YAML/CSV). Do not edit PLAN.md/TASKS.md.
-- Create: `mrtask add <branch> <slug> -d "desc" <dir1> [dir2 ...]` (runs `git worktree add`).
-- Complete/Cancel: `mrtask done|cancel <task.yml|branch>` (runs `git worktree remove`).
-- CSV import: prepare `TASKS.csv` with headers `branch,slug,description,dir1,dir2,...`, then `mrtask add -t TASKS.csv:<lineNo>`.
-- Worktrees: One task = one branch = one worktree. Use full package paths (no aliases).
-- Naming: Use full package names and stable task IDs in mrtask; avoid ad‑hoc abbreviations.
+- Install: `pnpm i`
+- Build all: `pnpm -w build` (tsup per package)
+- Typecheck all: `pnpm -w typecheck` (tsc, dist-only imports enforced)
+- Test (root, coverage): `pnpm -w vitest run --coverage`
+- Test a single package (recommended): `pnpm -C packages/node-type/shape-plugin test:run`
+- Storybook (if applicable): `pnpm -C app storybook`
 
 ## Coding Style & Naming Conventions
-- Language: TypeScript, 2-space indent, 100-col width, single quotes, semicolons (Prettier, Biome).
-- Imports: Do not use relative paths; use aliases (`~`, `@hierarchidb/*`).
-- Exports: Prefer explicit named exports (avoid `export *`).
-- Files: Components `PascalCase.tsx`; utilities `kebab-case.ts`; tests `*.test.ts[x]`.
+- Language: TypeScript (strict). Prefer explicit types.
+- Formatting/Lint: Prettier config at root; ESLint present; keep imports ordered. Indent 2 spaces.
+- Import policy: use public entrypoints (dist-only). Avoid deep imports like `@…/pkg/src/*`. Example: `import { useBatchProgress } from '@hierarchidb/ui-core'` (✅) not `@hierarchidb/ui-core/src/*` (❌).
+- DB naming: use `getDBName('kebab-suffix')`; do not hardcode database names.
+- Filenames: kebab-case for files, PascalCase for React components.
 
 ## Testing Guidelines
-- Unit: Vitest with jsdom; setup files at `vitest.setup.ts`. Place tests alongside source or in `__tests__` using `*.test.ts[x]`.
-- E2E: Playwright specs in `e2e/*.spec.ts`. Base URL `http://localhost:4200`, desktop and mobile projects configured. Run with `pnpm e2e`.
-- Aim for meaningful coverage of core logic and plugin behavior; include rendering tests via `@testing-library/react` when applicable.
+- Framework: Vitest (+ jsdom). Many packages pin `pool: 'threads', max/minThreads: 1` to avoid sandbox issues—run tests per package when possible.
+- Test names: `*.test.ts` or `*.test.tsx`; colocate near source.
+- Coverage: collected via root vitest config; no hard threshold enforced unless specified in package.
 
 ## Commit & Pull Request Guidelines
-- Conventional Commits: `feat|fix|refactor|chore|docs` with optional scope.
-  - Example: `feat(runtime-worker): add subscription batching`
-- PRs: Clear description, scope, and rationale; link issues; include screenshots/GIFs for UI; update docs if behavior changes; ensure `pnpm test`, `pnpm e2e`, `pnpm lint` pass. Run `pnpm analyze:licenses` when adding deps.
+- Commits: short, imperative subject; include scope when helpful (e.g., `shape-plugin: fix unified batch adapter`). Reference issues like `#123`.
+- PRs: clear description, rationale, screenshots/logs for UI/worker changes, and checklists for build, typecheck, tests. Link related issues and note any migration or config impacts.
 
-## Security & Configuration Tips
-- Env: Use `app/.env.secrets` for local secrets (never commit). See `.env.example` for defaults.
-- Engines: Node >= 20, pnpm >= 9 (preinstall enforces pnpm).
-- Use `scripts/start-env.sh <development|production> [dev|build|test]` for consistent environments.
+## Architecture & Agent Tips
+- Batch orchestration uses “adapters” to prefer runtime-worker; avoid adding new direct WorkerPool usages.
+- When adding paths or aliases, keep dist-only resolution in `tsconfig.base.json` and per-package tsconfig/vitest configs.
+- Prefer adding new shared logic under `packages/runtime-shared/*` or `packages/util/` over duplicating code in plugins.

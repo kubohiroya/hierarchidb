@@ -1,5 +1,12 @@
 # Spreadsheet Plugin
 
+実装サマリ（2025-09-09）
+- nodeType: `spreadsheet`
+- 継承: フォルダ拡張（コンテナ機能 + スプレッドシート処理）
+- DB: RawFileMetadata / RowChunk / SpreadsheetRow 等のリレーショナルストア
+- UI: アップロード/プレビュー/フィルタ/巨大データ仮想表示
+- 機能: CSV/TSV/Excel/ZIP 読み込み、チャンク/圧縮、列マッピング
+
 ## 依存管理とインポート規約（重要）
 共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
 - peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （必要時）react-i18next, i18next

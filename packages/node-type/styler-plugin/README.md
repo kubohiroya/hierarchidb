@@ -1,5 +1,12 @@
 # @hierarchidb/plugin-styler
 
+Implementation Summary (2025-09-09)
+- nodeType: `styler`
+- Role: Data-driven styling and visualization across datasets
+- DB: CSV メタ等の永続ストア（スタイル/メタの保存）
+- UI: ルールエディタ、プレビュー、検証、エクスポート
+- Features: 条件付きスタイル、パフォーマンス最適化、複数フォーマット入出力
+
 A powerful data styling and visualization plugin for HierarchiDB that enables advanced data analysis, style generation, and map visualization with sophisticated filtering and rendering capabilities.
 
 ## Overview

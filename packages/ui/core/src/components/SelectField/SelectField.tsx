@@ -17,6 +17,7 @@
  * - React: SelectChangeEvent type for event handling
  */
 
+import React from 'react';
 import {
   FormControl,
   FormHelperText,
@@ -46,7 +47,7 @@ export const SelectField = ({
   items: { name: string; value?: string }[];
   formLabelProps: Omit<FormLabelProps, 'labelBackground'>;
   disabled?: boolean;
-}) => {
+}): React.ReactElement => {
   const handleSelectedValue = (event: SelectChangeEvent) => {
     handleChange(event.target.value);
   };

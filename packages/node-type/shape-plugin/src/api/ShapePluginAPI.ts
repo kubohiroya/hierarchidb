@@ -1,5 +1,8 @@
 /**
  * Shape Plugin API for HierarchiDB integration
+ *
+ * @deprecated Legacy main-thread API kept for reference only. The V2 runtime
+ *             uses worker-based APIs (services/ShapesPluginAPI.ts and worker/api.ts).
  */
 
 import { NodeId } from '@hierarchidb/common-type';
@@ -23,7 +26,6 @@ import type {
 } from '~/services/types';
 
 import { ShapeService } from '~/services/ShapeService';
-import { WorkerPoolManager } from '~/services/workers/WorkerPoolManager';
 // Note: These imports would be used in full implementation
 // import { BatchSessionManager } from '~/services/batch/BatchSessionManager';
 // import { DataSourceManager } from '~/services/datasource/DataSourceManager';
@@ -33,9 +35,10 @@ import { ShapeDB } from '~/services/database/ShapeDB';
 /**
  * Main Plugin API implementation that integrates with HierarchiDB Worker system
  */
+/** @deprecated Use the worker-based ShapesPluginAPI (services/ShapesPluginAPI.ts). */
 export class ShapePluginAPI implements ShapesAPIMethods {
   private shapeService: ShapeService;
-  private workerPoolManager: WorkerPoolManager;
+  private workerPoolManager: any | null = null;
   // Note: These would be used in full implementation
   // private batchSessionManager: BatchSessionManager;
   // private dataSourceManager: DataSourceManager;
@@ -52,19 +55,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
     this.vectorTileService = new VectorTileService();
     // this.batchSessionManager = new BatchSessionManager();
 
-    // Initialize worker pool with default configuration
-    this.workerPoolManager = new WorkerPoolManager({
-      downloadWorkers: 2,
-      simplify1Workers: 2,
-      simplify2Workers: 1,
-      vectorTileWorkers: 1,
-      workerOptions: {
-        timeout: 300000, // 5 minutes
-        retries: 3,
-        maxMemoryPerWorker: 512 * 1024 * 1024, // 512MB
-        restartThreshold: 5,
-      },
-    });
+    // Deprecated WorkerPoolManager is not constructed here; lazy/flagged in initialize()
 
     // Initialize main service
     this.shapeService = new ShapeService();
@@ -82,8 +73,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
       // Initialize database
       await this.database.open();
 
-      // Initialize worker pool
-      await this.workerPoolManager.initialize();
+      // Legacy WorkerPool fallback removed; runtime-worker is required
 
       // Initialize services
       await this.shapeService.initialize();
@@ -105,7 +95,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
     }
 
     try {
-      await this.workerPoolManager.shutdown();
+      // no-op: legacy worker pool removed
       await this.database.close();
       this.isInitialized = false;
       console.log('ShapePluginAPI shutdown complete');
@@ -243,13 +233,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
 
   // === Additional Plugin API Methods ===
 
-  /**
-   * Get worker pool statistics for monitoring
-   */
-  getWorkerPoolStatistics() {
-    this.ensureInitialized();
-    return this.workerPoolManager.getPoolStatistics();
-  }
+  // (legacy worker pool statistics removed)
 
   /**
    * Get all active batch sessions
@@ -280,19 +264,18 @@ export class ShapePluginAPI implements ShapesAPIMethods {
     this.ensureInitialized();
 
     try {
-      const [activeSessions, workerStats, cacheStats] = await Promise.all([
-        Promise.resolve([]), // Mock active sessions
-        this.workerPoolManager.getPoolStatistics(),
+      const [activeSessions, cacheStats] = await Promise.all([
+        Promise.resolve([]),
         this.shapeService.getCacheStatistics(),
       ]);
 
-      const totalQueuedTasks = Object.values(workerStats.queuedTasks).reduce((sum: number, count: number) => sum + count, 0);
+      const totalQueuedTasks = 0;
 
       return {
         status: 'healthy',
         services: {
           database: this.database.isOpen(),
-          workerPool: true,
+          workerPool: false,
           batchManager: true,
         },
         statistics: {
@@ -329,4 +312,5 @@ export class ShapePluginAPI implements ShapesAPIMethods {
 }
 
 // Export singleton instance
+/** @deprecated Legacy instance; avoid using in new code. */
 export const shapePluginAPI = new ShapePluginAPI();

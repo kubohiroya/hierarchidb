@@ -79,6 +79,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Legacy provider alias used by some plugins
         { find: 'provider-i18next', replacement: 'react-i18next' },
+        // Link workspace UI dialog package without relying on app-local install
+        { find: '@hierarchidb/ui-dialog', replacement: path.resolve(__dirname, '../packages/ui/dialog/dist/index.js') },
+        // Ensure direct plugin imports resolve in worker fallback wiring
+        { find: '@hierarchidb/location-plugin', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/dist/index.js') },
+        { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/dist/index.mjs') },
         // Known broken package: route to a harmless stub until implemented
         {
           find: '@hierarchidb/spreadsheet-plugin',

@@ -1,6 +1,13 @@
 @hierarchidb/shape-plugin
 =========================
 
+実装サマリ（2025-09-09）
+- nodeType: `shape`
+- 定義/ハンドラ: `ShapePluginDefinition` / `ShapeEntityHandler`
+- バッチ: download → simplify1 → simplify2 → vectorTiles（統一バッチ API）
+- DB: `shape-entities-db`（entities）+ エフェメラル `rawBuffers`/`simplifiedBuffers`/`vectorTiles`/`sessions`/`cache`
+- UI: バッチダイアログ、タブラー（`SHAPE_TABULAR=1`）、マップ統合
+
 Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 全体像（段階）

@@ -1,9 +1,10 @@
-import { createSharedDownloadService, postJson } from '@hierarchidb/runtime-shared-batch-processor';
+import { postJson } from '@hierarchidb/runtime-shared-batch-processor';
+import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry';
 
-let cached: Promise<ReturnType<typeof createSharedDownloadService>> | undefined;
+let cached: Promise<Awaited<ReturnType<typeof getLocationDownloadService>>> | undefined;
 
 async function ensure() {
-  if (!cached) cached = createSharedDownloadService();
+  if (!cached) cached = getLocationDownloadService();
   return cached;
 }
 
@@ -11,12 +12,7 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   const { net } = await ensure();
   const res = await net.get(url, init);
   if (res.status === 401 || res.status === 403) {
-    try {
-      const g: any = globalThis as any;
-      const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-      reg?.onAuthRequired?.({ resource: url, provider: 'location', hint: 'Authentication required' });
-    } catch {
-    }
+    try { notifyLocationAuthRequired({ resource: url, provider: 'location', hint: 'Authentication required', status: res.status }); } catch {}
     throw new Error(`Auth required: ${res.status}`);
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

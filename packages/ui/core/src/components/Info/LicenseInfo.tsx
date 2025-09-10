@@ -100,7 +100,7 @@ const defaultGetLicenseColor = (license: string): 'success' | 'info' | 'warning'
  * A generic component for displaying open source license information
  * in a sortable, searchable table format.
  */
-export const LicenseInfo = memo(function LicenseInfo({
+const LicenseInfoImpl = function LicenseInfo({
                                                        licenseData,
                                                        title = 'Open Source Licenses',
                                                        description = 'This application is built using various open-source libraries and containers. Please review the license information below for details on the licenses of the included libraries.',
@@ -110,7 +110,7 @@ export const LicenseInfo = memo(function LicenseInfo({
                                                        showCount = true,
                                                        initialOrderBy = 'name',
                                                        initialOrderDirection = 'asc',
-                                                     }: LicenseInfoProps) {
+                                                     }: LicenseInfoProps): React.ReactElement {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [orderBy, setOrderBy] = useState<OrderBy>(initialOrderBy);
@@ -336,4 +336,6 @@ export const LicenseInfo = memo(function LicenseInfo({
       </TableContainer>
     </Box>
   );
-});
+};
+
+export const LicenseInfo: React.FC<LicenseInfoProps> = memo(LicenseInfoImpl) as unknown as React.FC<LicenseInfoProps>;

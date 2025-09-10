@@ -8,7 +8,6 @@ import type {
   UrlMetadata,
   VectorTileTask,
 } from '~/shared';
-import { mockShapeService } from '~/services/MockShapeService';
 import { generateMockDownloadTasks, generateMockSimplifyTasks, generateMockVectorTileTasks } from '~/mock/data';
 
 // Union type for all task types
@@ -145,13 +144,14 @@ export const useBatchWorkerConsole = ({
 
   const handleStart = useCallback(async () => {
     try {
-      const result = await mockShapeService.startBatchProcessing(id, config, urlMetadata);
-      setBatchId(result.batchId);
+      // Simulate starting a batch session without backend
+      const fakeId = `batch-${Date.now()}`;
+      setBatchId(fakeId);
       setHasStarted(true);
     } catch (error) {
       onError?.(`Failed to start batch: ${error}`);
     }
-  }, [id, config, urlMetadata, onError]);
+  }, [setBatchId, setHasStarted, onError]);
 
   const handleCancelTask = useCallback((taskId: string) => {
     // Update task state to pause

@@ -26,3 +26,4 @@ export { BatchSessionManager as ShapeBatchSessionManager } from './services/batc
 // Export plugin definition for worker fallback loading
 export { ShapePluginDefinition } from './definitions/ShapePluginDefinition';
 export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabular-store';
+export * from './services/tiles/RuntimeTileClient';

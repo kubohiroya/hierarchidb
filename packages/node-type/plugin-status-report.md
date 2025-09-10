@@ -1,46 +1,44 @@
 # プラグイン ビルド・型チェック状況レポート
-生成日: 2025-09-06
+生成日: 2025-09-09
 
 ## 概要
-ローカル環境で `pnpm --filter @hierarchidb/*-plugin typecheck` を実行し、各プラグインの TypeScript エラー状況を集計しました（数値は型チェック出力に基づく、概数を含む）。
+`plugin-test-results.json` と `plugin-test-inventory.json` を基に、各プラグインの型チェック/テスト結果とおおよそのテスト資産規模を集計しました。
 
 ## 状況サマリー（最新）
 
-| プラグイン | TypeScriptエラー数 | 状態 | 主な問題 |
-|-----------|-------------------|------|---------|
-| base-plugin | 0 | ✅ 良好 | なし |
-| basemap-plugin | 0 | ✅ 良好 | なし |
-| folder-plugin | 約64 | ❌ 要修正 | tsconfig の `rootDir/include` 不整合。クロスパッケージのソース参照に起因（`TS6059`）。 |
-| location-plugin | 0 | ✅ 良好 | なし |
-| project-plugin | 0 | ✅ 良好 | なし |
-| resolver-plugin | 0 | ✅ 良好 | なし |
-| route-plugin | 1 | ⚠️ 軽微 | 未使用変数（`TS6133`、`ThrottledPort.ts`）。 |
-| shape-plugin | 0 | ✅ 良好 | なし |
-| spreadsheet-plugin | 0 | ✅ 良好 | なし |
-| styler-plugin | 0 | ✅ 良好 | なし |
+すべてのプラグインで型チェック/テストが成功（ok）しています。
+
+| パッケージ | 型チェック | テスト | 備考（テスト資産/概数） |
+|---|---|---|---|
+| @hierarchidb/base-plugin | ok | ok | src: 4 / tests: 2 |
+| @hierarchidb/basemap-plugin | ok | ok | src: 28 / tests: 3 |
+| @hierarchidb/folder-plugin | ok | ok | src: 42 / tests: 7 |
+| @hierarchidb/location-plugin | ok | ok | src: 41 / tests: 2 |
+| @hierarchidb/project-plugin | ok | ok | src: 20 / tests: 1 |
+| @hierarchidb/resolver-plugin | ok | ok | src: 17 / tests: 5 |
+| @hierarchidb/route-plugin | ok | ok | src: 40 / tests: 7 |
+| @hierarchidb/shape-plugin | ok | ok | src: 125 / tests: 27 |
+| @hierarchidb/spreadsheet-plugin | ok | ok | src: 33 / tests: 4 |
+| @hierarchidb/styler-plugin | ok | ok | src: 33 / tests: 8 |
 
 補足:
-- 計測コマンドは 2025-09-06 にローカルで実行。`folder-plugin` のエラー数は TypeScript のエラーメッセージ行数からの概算です。
-- 以前のレポート（2024-08-31）から大幅に改善し、多くのプラグインがグリーンになっています。
+- 出典ファイル: ルート `plugin-test-results.json` / `plugin-test-inventory.json`。
+- 以前の暫定レポート（2025-09-06）で指摘していた `folder-plugin` の TS6059 および `route-plugin` の未使用変数は、現状の結果セットでは再現していません。
 
-## 主要な気付き（2025-09-06）
+## 主要な気付き（2025-09-09）
 
-- folder-plugin の `TS6059` は「他パッケージのソースファイルが `rootDir` の外にある」ことが原因。`paths`/相対参照を避け、発行物（パッケージ名 import）に統一する必要があります。
-- route-plugin は未使用ローカル変数のみ。`noUnusedLocals` 遵守の観点で削除可能。
+- `shape-plugin` が最も大きなテスト資産（tests: 27, services/worker/ui を横断）。
+- `folder-plugin` は階層/DB/ワーキングコピー/ウィザード等の統合テストが整備（tests: 7）。
+- `route-plugin` も UI/サービスを跨いだテストが整備（tests: 7）。
 
 ## 推奨アクション（短期）
 
-1) folder-plugin の tsconfig 是正（最優先）
-- `compilerOptions.rootDir` をパッケージ配下に限定し、`include`/`exclude` を適正化。
-- 他パッケージの `src` を直接参照している箇所があれば、必ずパッケージ名 import（`@hierarchidb/common-type` 等）へ切替。
-
-2) route-plugin の軽微修正
-- `src/services/net/ThrottledPort.ts` の未使用変数を削除。
+- 継続的実行: ルートで `pnpm -w typecheck && pnpm -w vitest run` を定期ジョブ化（差分検知とレポート更新の自動化）。
+- カバレッジ測定: 主要パッケージ（shape/folder/route）から段階導入し、回帰検知を強化。
 
 ## ロールバック指針
-- いずれの変更も非破壊であり、動作に影響が出た場合は対象パッケージの差分のみリバートで即時復旧可能です。
+- 本レポートはドキュメントのみの更新です。ビルドや設定の変更は含みません。
 
 ## 実行ログ（抜粋）
-- base/basemap/location/project/resolver/shape/spreadsheet/styler: Found 0 errors
-- route: `error TS6133: 'timer' is declared but its value is never read.`
-- folder: `error TS6059: File '.../packages/common/types/src/...ts' is not under 'rootDir' '.../packages/node-type/folder-plugin'.`
+- 全プラグイン: typecheck ok / test ok（`plugin-test-results.json` より）
+- 規模感（`plugin-test-inventory.json` より）: shape が最大、続いて folder/route/styler。

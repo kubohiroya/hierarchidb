@@ -16,12 +16,14 @@
  * - CSS: Hover animations defined in global styles
  */
 
+import React from 'react';
+
 interface GitHubCornerProps {
   url: string;
   visible?: boolean;
 }
 
-const GitHubCorner = ({ url, visible = false }: GitHubCornerProps) => {
+const GitHubCorner = ({ url, visible = false }: GitHubCornerProps): React.ReactElement | null => {
   if (!visible) {
     return null;
   }

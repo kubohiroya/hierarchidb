@@ -102,6 +102,11 @@ export interface ShapeAPI {
   getProcessingStatus(nodeId: NodeId): Promise<ProcessingStatus>;
 
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
+
+  // Vector tile access by session
+  listGeneratedTiles(sessionId: string): Promise<Array<{ z: number; x: number; y: number; size: number; timestamp: number }>>;
+  getGeneratedTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
+  getGeneratedTileSummary(sessionId: string): Promise<{ tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number }>;
 }
 
 /**

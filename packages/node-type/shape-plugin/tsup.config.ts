@@ -16,10 +16,6 @@ export default createTsupConfig({
     'shared/index': 'src/shared/index.ts',
     'ui/index': 'src/ui/index.ts',
     'worker/index': 'src/worker/index.ts',
-    'workers/DownloadWorker': 'src/services/workers/DownloadWorker.ts',
-    'workers/SimplifyWorker1': 'src/services/workers/SimplifyWorker1.ts',
-    'workers/SimplifyWorker2': 'src/services/workers/SimplifyWorker2.ts',
-    'workers/VectorTileWorker': 'src/services/workers/VectorTileWorker.ts',
   },
   external: [
     'provider',

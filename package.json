@@ -35,6 +35,10 @@
     "coverage": "turbo run coverage --parallel",
     "e2e": "turbo run e2e",
     "lint": "turbo run lint",
+    "biome:check": "biome check --reporter summary",
+    "biome:fix": "biome check --write",
+    "biome:check:core": "biome check --reporter summary packages/runtime-worker/worker packages/node-type/shape-plugin",
+    "eslint:deprecations": "eslint -f stylish --max-warnings=0 packages/runtime-worker/worker packages/node-type/shape-plugin",
     "format": "turbo run format",
     "clean": "npx turbo run clean",
     "storybook": "storybook dev -p 6006",
@@ -49,6 +53,7 @@
     "docs:serve": "npx http-server docs/pdf -p 8080",
     "validate:exports": "node scripts/validate-package-exports.cjs",
     "fix:exports": "node scripts/fix-all-package-exports.cjs",
+    "dts:quick": "pnpm -r --workspace-concurrency 1 --filter @hierarchidb/common-auth --filter @hierarchidb/auth-recovery --filter @hierarchidb/batch --filter @hierarchidb/compute --filter @hierarchidb/download --filter @hierarchidb/feature-registry --filter @hierarchidb/import-export --filter @hierarchidb/map-source --filter @hierarchidb/map-view --filter @hierarchidb/route-resolver --filter @hierarchidb/route-searoute --filter @hierarchidb/table-metadata --filter @hierarchidb/tabular --filter @hierarchidb/tabular-xlsx --filter @hierarchidb/tag --filter @hierarchidb/project-plugin --filter @hierarchidb/runtime-worker --filter @hierarchidb/shape-plugin --filter @hierarchidb/analyze-licenses --filter @hierarchidb/tools-vite-plugin-package-reader build",
     "count:lines": "tsx scripts/count-lines.ts",
     "analyze:ui": "node scripts/analyze-ui-duplication.js",
     "policy:ban-tsconfig-paths-dist-dts": "node scripts/policy/ban-tsconfig-paths-dist-dts.mjs",
@@ -73,7 +78,7 @@
     "ci:all:local": "pnpm ci:clean && pnpm ci:install && pnpm ci:versions && pnpm ci:typecheck:local"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.2.0",
     "@eslint/js": "^9.34.0",
     "@mui/material": "^7.3.1",
     "@playwright/test": "^1.55.0",
@@ -99,6 +104,7 @@
     "change-case": "^5.4.4",
     "dep-fence": "^0.2.0",
     "eslint": "^9.34.0",
+    "eslint-plugin-deprecation": "^2.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -137,6 +143,7 @@
   "packageManager": "pnpm@9.14.4",
   "pnpm": {
     "overrides": {
+      "@biomejs/biome": "2.2.0",
       "ast-types": "0.16.1",
       "dexie": "4.2.0",
       "vite": "5.4.19",

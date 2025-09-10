@@ -7,9 +7,9 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
-      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
-      "@hierarchidb/base-plugin": ["../../node-type/base-plugin/dist/index.d.ts"],
-      "@hierarchidb/ui-map": ["../../ui/map/dist/index.d.ts"]
+      "@hierarchidb/common-type": ["../../common/types/src/index.ts"],
+      "@hierarchidb/base-plugin": ["../../node-type/base-plugin/src/index.ts"],
+      "@hierarchidb/ui-map": ["../../ui/map/src/index.ts"]
     },
     "types": ["vite/client", "node"],
     "esModuleInterop": true,

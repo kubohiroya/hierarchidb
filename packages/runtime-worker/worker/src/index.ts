@@ -240,6 +240,10 @@ export class WorkerService implements WorkerAPI {
   }
 }
 
+// Re-export stage worker API contracts for clients (adapters)
+export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types';
+export { getStageProcessingClient, createStageWorkerClient } from './services/StageProcessingService';
+
 // Public re-exports for plugin-side stores and registry
 export type {
   PeerEntity,

@@ -153,12 +153,7 @@ export class ShapeWorkerAPI {
     return this.pluginAPI.optimizeStorage(nodeId);
   }
 
-  // === Monitoring API ===
-
-  async getWorkerPoolStatistics(): Promise<any> {
-    this.ensureInitialized();
-    return this.pluginAPI.getWorkerPoolStatistics();
-  }
+  // (legacy worker pool statistics removed)
 
   async getActiveBatchSessions(): Promise<any[]> {
     this.ensureInitialized();

@@ -124,16 +124,11 @@ export interface IBatchControlCommands {
  * Configuration flag for enabling new batch control API
  */
 export function isBatchControlAPIV2Enabled(): boolean {
-  // Check environment variable or feature flag
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env.BATCH_CONTROL_API_V2 === 'true' || process.env.BATCH_CONTROL_API_V2 === '1';
-  }
-
-  // Check global feature flags
+  // Read from global feature flags only; browser code must not rely on process.env
   if (typeof globalThis !== 'undefined' && (globalThis as any).FEATURE_FLAGS) {
-    return (globalThis as any).FEATURE_FLAGS.BATCH_CONTROL_API_V2 === true;
+    const v = (globalThis as any).FEATURE_FLAGS.BATCH_CONTROL_API_V2;
+    return v === true || v === '1' || v === 'true' || v === 'on' || v === 'enabled';
   }
-
   return false;
 }
 

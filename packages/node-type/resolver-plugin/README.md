@@ -1,5 +1,12 @@
 # PropertyResolver Plugin
 
+実装サマリ（2025-09-09）
+- nodeType: `resolver`
+- 役割: 異スキーマ間のプロパティマッピング（Styler/Project 連携）
+- DB: Dexie(`resolver-db`)（定義/ワーキングコピーを保持）
+- UI: ルールエディタ、プレビュー、統計、エラーハイライト
+- 機能: 自動スキーマ検出、差分適用、チャンク処理
+
 ## 依存管理とインポート規約（重要）
 共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
 - peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie

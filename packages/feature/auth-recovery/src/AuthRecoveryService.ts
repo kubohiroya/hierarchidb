@@ -1,7 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { AuthContext, AuthHeadersProvider, AuthPluginType } from './ports';
-import type { PluginType } from '@hierarchidb/common-auth';
-import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import type { PluginType } from '@hierarchidb/common-auth/AuthNotificationSystem';
+import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
 
 type Pending = {
   resolve: (r: Response) => void;

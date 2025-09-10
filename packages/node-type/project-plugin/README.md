@@ -1,5 +1,12 @@
 # Project Plugin
 
+実装サマリ（2025-09-09）
+- nodeType: `project`
+- DB: Dexie(`project-db`)（プロジェクト設定、レイヤー構成、解析結果）
+- UI: プロジェクトウィザード（Basic/Region/Layer/Spatial/Temporal/Output）、地図ビュー
+- サービス: `SpatialAnalysisEngine`、シリアライズ/エクスポート
+- 連携: shape/location/route/resolver/styler を統合
+
 複数の地理データ（Shape、Location、Route、PropertyResolver結果）を統合し、包括的な地理空間プロジェクトとして管理・分析・可視化するHierarchiDBプラグインです。
 マルチレイヤー地図表示、空間解析、時系列分析、レポート生成等の高度な機能を提供します。
 

@@ -15,6 +15,12 @@
       ],
       "@hierarchidb/ui-dialog": [
         "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/route-plugin": [
+        "../packages/node-type/route-plugin/dist/index.d.mts"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../packages/runtime-worker/worker/dist/index.d.ts"
       ]
     },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"

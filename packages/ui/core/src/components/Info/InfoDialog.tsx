@@ -1,4 +1,4 @@
-import { ReactNode, useCallback } from 'react';
+import React, { ReactNode, useCallback } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 
@@ -65,7 +65,7 @@ export const InfoDialog = ({
                              //closeButtonText = 'Close',
                              actions,
                              disableTransition = false,
-                           }: InfoDialogProps) => {
+                           }: InfoDialogProps): React.ReactElement => {
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);

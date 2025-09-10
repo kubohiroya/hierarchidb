@@ -9,8 +9,15 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { WorkerPoolManager } from '../workers/WorkerPoolManager';
-import type { Simplify1Task, Simplify2Task, VectorTileTask, WorkerPoolConfig } from '../types';
+import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter';
+import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter';
+import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../types';
+import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter';
+import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter';
+import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter';
+import { RuntimeWorkerSimplify1Adapter, RuntimeWorkerSimplify2Adapter } from './adapters/RuntimeWorkerSimplifyAdapters';
+import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter';
+import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient';
 import type { BatchProcessConfig } from './types';
 import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../shared';
 import type { DownloadTask } from '../../shared/types';
@@ -25,7 +32,8 @@ export interface BatchSessionOptions {
 export class SessionController {
   public readonly sessionId: string;
   private nodeId: NodeId;
-  private workerPool: WorkerPoolManager | null = null;
+  private workerPool: any | null = null;
+  private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
   private urlMetadata: UrlMetadata[];
   private config: BatchProcessConfig;
   private options: BatchSessionOptions;
@@ -33,6 +41,9 @@ export class SessionController {
   private isPaused = false;
   private isAborted = false;
   private progressCallback?: (progress: ProgressInfo) => void;
+  private simplify1Adapter?: Simplify1StageAdapter;
+  private simplify2Adapter?: Simplify2StageAdapter;
+  private vectorTileAdapter?: VectorTileStageAdapter;
 
   constructor(
     sessionId: string,
@@ -56,25 +67,16 @@ export class SessionController {
       throw new Error(`Session ${this.sessionId} already initialized`);
     }
 
-    // Create WorkerPool configuration based on batch config
-    const poolConfig: WorkerPoolConfig = {
-      downloadWorkers: this.config.downloadWorkers || 2,
-      simplify1Workers: this.config.simplify1Workers || 2,
-      simplify2Workers: this.config.simplify2Workers || 1,
-      vectorTileWorkers: this.config.vectorTileWorkers || 1,
-      workerOptions: {
-        timeout: this.config.workerTimeout || 300000,
-        retries: this.config.workerRetries || 3,
-        maxMemoryPerWorker: this.config.maxMemoryPerWorker || 512 * 1024 * 1024,
-        restartThreshold: 5,
-      },
-    };
-
-    // Create and initialize WorkerPool for this session
-    console.log(`[Session ${this.sessionId}] Creating WorkerPool with config:`, poolConfig);
-    this.workerPool = new WorkerPoolManager(poolConfig);
-    await this.workerPool.initialize();
-    console.log(`[Session ${this.sessionId}] WorkerPool initialized successfully`);
+    // Prefer runtime-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
+    const client = await getShapeRuntimeWorkerClient();
+    if (client) {
+      this.simplify1Adapter = new RuntimeWorkerSimplify1Adapter();
+      this.simplify2Adapter = new RuntimeWorkerSimplify2Adapter();
+      this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
+    } else {
+      // No runtime-worker: raise explicit guidance (fallback path removed)
+      throw new Error('Shape runtime worker unavailable. Legacy WorkerPool fallback has been removed.');
+    }
   }
 
   /**
@@ -166,10 +168,6 @@ export class SessionController {
    * Process download stage
    */
   private async processDownloadStage(): Promise<void> {
-    if (!this.workerPool) {
-      throw new Error('WorkerPool not initialized');
-    }
-
     this.currentStage = 'download';
     console.log(`[Session ${this.sessionId}] Processing download stage`);
 
@@ -181,38 +179,15 @@ export class SessionController {
       adminLevel: metadata.adminLevel,
       expectedFormat: 'geojson',
     }));
-
-    // Process download tasks via shared BatchService
-    const { BatchService } = await import('@hierarchidb/batch');
-    const batch = new BatchService();
-    let completed = 0;
-    let failed = 0;
-    await batch.mapChunks(tasks, async (task) => {
-      try {
-        await this.workerPool!.processDownloadTask(task);
-        completed++;
-      } catch {
-        failed++;
-      }
-      this.progressCallback?.({
-        total: tasks.length,
-        completed,
-        failed,
-        skipped: 0,
-        percentage: (completed / tasks.length) * 100,
-        currentStage: 'download',
-        currentTask: task.taskId,
-      });
-    }, { concurrency: this.config.downloadWorkers || 2 });
-
-    console.log(`[Session ${this.sessionId}] Download stage completed: ${completed} successful, ${failed} failed`);
-
+    const res = await this.downloadAdapter.process(this.sessionId, this.nodeId, tasks, (p) => this.progressCallback?.(p));
+    console.log(`[Session ${this.sessionId}] Download stage completed: ${res.processed} successful, ${res.failed} failed`);
+    const percentage = (res.processed / tasks.length) * 100;
     this.progressCallback?.({
       total: tasks.length,
-      completed,
-      failed,
+      completed: res.processed,
+      failed: res.failed,
       skipped: 0,
-      percentage: (completed / tasks.length) * 100,
+      percentage,
       currentStage: 'download',
       currentTask: 'Download completed',
     });
@@ -222,10 +197,6 @@ export class SessionController {
    * Process simplify1 stage
    */
   private async processSimplify1Stage(): Promise<void> {
-    if (!this.workerPool) {
-      throw new Error('WorkerPool not initialized');
-    }
-
     this.currentStage = 'simplify1';
     console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
 
@@ -236,38 +207,14 @@ export class SessionController {
       minArea: this.config.minArea || 100,
     }));
 
-    const { BatchService } = await import('@hierarchidb/batch');
-    const batch = new BatchService();
-    let completed = 0;
-    let failed = 0;
-    await batch.mapChunks(tasks, async (task) => {
-      try {
-        await this.workerPool!.processSimplify1Task(task);
-        completed++;
-      } catch {
-        failed++;
-      }
-      this.progressCallback?.({
-        total: tasks.length,
-        completed,
-        failed,
-        skipped: 0,
-        percentage: (completed / tasks.length) * 100,
-        currentStage: 'simplify1',
-        currentTask: task.taskId,
-      });
-    }, { concurrency: this.config.simplify1Workers || 2 });
-    console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${completed}/${tasks.length} successful`);
+    const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p));
+    console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
   /**
    * Process simplify2 stage
    */
   private async processSimplify2Stage(): Promise<void> {
-    if (!this.workerPool) {
-      throw new Error('WorkerPool not initialized');
-    }
-
     this.currentStage = 'simplify2';
     console.log(`[Session ${this.sessionId}] Processing simplify2 stage`);
 
@@ -278,38 +225,14 @@ export class SessionController {
       tileSize: this.config.tileSize || 512,
     }));
 
-    const { BatchService } = await import('@hierarchidb/batch');
-    const batch = new BatchService();
-    let completed = 0;
-    let failed = 0;
-    await batch.mapChunks(tasks, async (task) => {
-      try {
-        await this.workerPool!.processSimplify2Task(task);
-        completed++;
-      } catch {
-        failed++;
-      }
-      this.progressCallback?.({
-        total: tasks.length,
-        completed,
-        failed,
-        skipped: 0,
-        percentage: (completed / tasks.length) * 100,
-        currentStage: 'simplify2',
-        currentTask: task.taskId,
-      });
-    }, { concurrency: this.config.simplify2Workers || 1 });
-    console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${completed}/${tasks.length} successful`);
+    const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p));
+    console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
   /**
    * Process vector tile generation stage
    */
   private async processVectorTileStage(): Promise<void> {
-    if (!this.workerPool) {
-      throw new Error('WorkerPool not initialized');
-    }
-
     this.currentStage = 'vectortile';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
 
@@ -320,28 +243,8 @@ export class SessionController {
       compression: 'gzip',
     }));
 
-    const { BatchService } = await import('@hierarchidb/batch');
-    const batch = new BatchService();
-    let completed = 0;
-    let failed = 0;
-    await batch.mapChunks(tasks, async (task) => {
-      try {
-        await this.workerPool!.processVectorTileTask(task);
-        completed++;
-      } catch {
-        failed++;
-      }
-      this.progressCallback?.({
-        total: tasks.length,
-        completed,
-        failed,
-        skipped: 0,
-        percentage: (completed / tasks.length) * 100,
-        currentStage: 'vectortile',
-        currentTask: task.taskId,
-      });
-    }, { concurrency: this.config.vectorTileWorkers || 1 });
-    console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${completed}/${tasks.length} successful`);
+    const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p));
+    console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
   /**

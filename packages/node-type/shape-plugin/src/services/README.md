@@ -24,35 +24,13 @@ packages/plugins/shape/src/services/
 │   ├── BatchProgressTracker.ts      # 進捗追跡
 │   └── openstreetmap-type.ts
 │
-├── workers/                           # Web Worker実装
-│   ├── pool/
-│   │   ├── WorkerPool.ts            # Workerプール基底クラス
-│   │   ├── WorkerPoolFactory.ts     # プール生成ファクトリ
-│   │   └── openstreetmap-type.ts
-│   │
-│   ├── download/
-│   │   ├── DownloadWorker.ts        # ダウンロードWorker
-│   │   ├── DownloadWorkerAPI.ts     # Worker API定義
-│   │   └── openstreetmap-type.ts
-│   │
-│   ├── simplify/
-│   │   ├── SimplifyWorker1.ts       # フィーチャー単位簡略化
-│   │   ├── SimplifyWorker2.ts       # タイル単位簡略化
-│   │   ├── SimplifyWorkerAPI.ts     # 共通API定義
-│   │   └── openstreetmap-type.ts
-│   │
-│   ├── tiles/
-│   │   ├── VectorTileWorker.ts      # ベクタータイル生成
-│   │   ├── VectorTileWorkerAPI.ts   # Worker API定義
-│   │   └── openstreetmap-type.ts
-│   │
-│   └── strategies/                   # データソース戦略
-│       ├── DataSourceStrategy.ts     # 基底戦略インターフェース
-│       ├── NaturalEarthStrategy.ts   # Natural Earth実装
-│       ├── GeoBoundariesStrategy.ts  # GeoBoundaries実装
-│       ├── GADMStrategy.ts           # GADM実装
-│       ├── OpenStreetMapStrategy.ts  # OSM実装
-│       └── openstreetmap-type.ts
+├── strategies/                        # データソース戦略
+│   ├── DataSourceStrategy.ts          # 基底戦略インターフェース
+│   ├── NaturalEarthStrategy.ts        # Natural Earth実装
+│   ├── GeoBoundariesStrategy.ts       # GeoBoundaries実装
+│   ├── GADMStrategy.ts                # GADM実装
+│   ├── OpenStreetMapStrategy.ts       # OSM実装
+│   └── openstreetmap-type.ts
 │
 ├── database/                          # データベース層
 │   ├── ShapesDB.ts                  # メインDB（Dexie）
@@ -205,7 +183,7 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
 }
 ```
 
-### 2. Worker層の統合
+### 2. Worker層の統合（runtime-worker）
 
 ```typescript
 // api/ShapesWorkerExtensions.ts
@@ -226,8 +204,7 @@ export class ShapesWorkerExtensions implements WorkerAPIExtension {
     // データベース初期化
     await this.service.initialize();
     
-    // Workerプール初期化
-    await this.service.initializeWorkerPools();
+    // runtime-worker を用いた統合。従来の WorkerPool 初期化は廃止済み。
   }
   
   getPluginAPI(): ShapesPluginAPI {
@@ -317,25 +294,8 @@ export function useShapesAPI() {
    - ShapesService基本実装
    - EntityHandler実装
 
-### Phase 2: Worker実装
-1. **WorkerPool基盤** (`workers/pool/`)
-   - WorkerPool基底クラス
-   - WorkerPoolFactory
-
-2. **DownloadWorker** (`workers/download/`)
-   - 基本ダウンロード機能
-   - データソース戦略実装
-
-### Phase 3: 簡略化処理
-1. **SimplifyWorker1** (`workers/simplify/`)
-   - フィーチャー単位簡略化
-
-2. **SimplifyWorker2** (`workers/simplify/`)
-   - タイル単位簡略化
-
-### Phase 4: タイル生成
-1. **VectorTileWorker** (`workers/tiles/`)
-   - MVTタイル生成
+### Phase 2〜4: runtime-worker への移行
+- 旧 WorkerPool/ローカルWorker 実装は削除済み。Download/Simplify/VectorTile は `@hierarchidb/runtime-worker` に委譲します。
 
 ### Phase 5: バッチ処理統合
 1. **BatchSessionManager** (`batch/`)

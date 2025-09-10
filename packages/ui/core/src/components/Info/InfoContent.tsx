@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Box, Link, Typography } from '@mui/material';
 
 export interface InfoContentProps {
@@ -64,7 +64,7 @@ export const InfoContent = ({
                               titleColor = 'grey',
                               descriptionColor = 'grey',
                               detailsColor = 'lightGrey',
-                            }: InfoContentProps) => {
+                            }: InfoContentProps): React.ReactElement => {
   return (
     <Box sx={{ textAlign: 'center', py: 2 }}>
       <Typography variant={titleVariant} component="h1" color={titleColor} textAlign="center">

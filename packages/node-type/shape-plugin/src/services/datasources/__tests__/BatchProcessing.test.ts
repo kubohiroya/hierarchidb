@@ -12,7 +12,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     const url = String(input);
     // Natural Earth ZIP
     if (url.includes('naturalearthdata.com')) {
-      const JSZip = (await import('jszip')).default;
+      const JSZip = (await import('jszip'));
       const zip = new JSZip();
       zip.file('dummy.txt', 'hello');
       const buf = await zip.generateAsync({ type: 'arraybuffer' });
@@ -20,7 +20,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     }
     // GADM ZIP with .gpkg
     if (url.includes('geodata.ucdavis.edu/gadm')) {
-      const JSZip = (await import('jszip')).default;
+      const JSZip = (await import('jszip'));
       const zip = new JSZip();
       zip.file('gadm41_JPN.gpkg', 'dummy');
       const buf = await zip.generateAsync({ type: 'arraybuffer' });
@@ -248,7 +248,7 @@ export class DataSourceBatchProcessor {
   }
 
   clearCompletedJobs(): void {
-    for (const [jobId, job] of this.jobQueue.entries()) {
+    for (const [jobId, job] of Object.entries(this.jobQueue)) {
       if (job.status === 'completed' || job.status === 'failed') {
         this.jobQueue.delete(jobId);
       }

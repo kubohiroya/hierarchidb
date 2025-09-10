@@ -1,6 +1,15 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@hierarchidb/batch': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
+      '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
+      '@maplibre/vt-pbf': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
+      'geojson-vt': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
@@ -18,4 +27,3 @@ export default defineConfig({
     ],
   },
 });
-

@@ -1,5 +1,13 @@
 # Route Plugin
 
+実装サマリ（2025-09-09）
+- nodeType: `route`
+- DB: Dexie(`route-db`) — ルートエンティティ/ワーキングコピー
+- バッチ: 統一バッチ API 準拠（生成・検証・ベクトル化）
+- UI: 設定ウィザード、データテーブル（`ROUTE_TABULAR=1`）、マッププレビュー
+- 機能: 多様なルートソース、距離/接続性分析、スタイル連携
+- ランタイムワーカー: `registerRouteRuntimeWorkerAdapters()`（フラグ `ROUTE_RUNTIME_WORKER=1` で有効）
+
 ## 依存管理とインポート規約（重要）
 共通方針は packages/node-type/CONTRIBUTING.md を参照。要点:
 - peerDependencies: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie

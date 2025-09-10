@@ -1,5 +1,5 @@
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, SpeedDialIcon } from '@mui/material';
-import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
+import React, { MouseEvent, type ReactNode, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export type MenuItemLinkType = {
@@ -14,7 +14,7 @@ export const MenuListItemLinkButton = ({
                                        }: {
   id: string;
   items: Array<MenuItemLinkType | null>;
-}) => {
+}): React.ReactElement => {
   const location = useLocation();
   const [anchorElem, setAnchorElem] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorElem);

@@ -161,6 +161,27 @@
     - start: 2025-09-06 方針転換を決定（旧 `*-plugin` は入口でのみ受理）。
     - updated: 2025-09-07 20:00 影響範囲をレビュー（location/resolver/project の3件中心、その他出現箇所は検索済）。
 
+- chore/eslint/flat-config-migration（ESLint v9 フラット設定移行＋非推奨検出の基盤整備）
+  - ブランチ: `chore/eslint/flat-config-migration`
+  - 依存: ESLint v9 / turbo / @typescript-eslint パーサ
+  - スコープ:
+    - ルートに `eslint.config.js` 追加（フラット設定）。
+    - パッケージの `lint` スクリプトから `--ext` を撤廃（ESLint v9 非対応のため）。
+    - `packages/runtime-worker/worker` と `packages/node-type/shape-plugin` に型解決付きの deprecation チェックを設定（ただし現状プラグイン互換性により無効化）。
+    - 代替として `scripts/report-deprecations.mjs` を追加し、TS/TSX における `@deprecated` 出現を横断集計。
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm lint` が monorepo 全体で実行可能（設定ファイル未検出エラーが解消）。
+    - [x] `--ext` を使っていたパッケージの `lint` が成功する（CLI 互換）。
+    - [x] `node scripts/report-deprecations.mjs` がサマリを出力（総数/ファイル数/パッケージ別/上位ファイル）。
+    - [ ] `eslint-plugin-deprecation` を ESLint v9 互換版へ更新し、ルールが落ちずに走る（後続対応）。
+  - ロールバック手順:
+    - ルートの `eslint.config.js` を削除し、必要であれば旧 `.eslintrc.cjs` を復帰。
+    - 変更した各 `package.json` の `lint` スクリプトに `--ext .ts,.tsx` を戻す。
+  - 運用ログ:
+    - start: 2025-09-10 10:05 ルートに `eslint.config.js` 追加、`--ext` 依存スクリプトの修正。
+    - blocked: 2025-09-10 10:20 `eslint-plugin-deprecation` が ESLint v9 で `context.getAncestors` 不在によりクラッシュ（互換版待ち）。
+    - done: 2025-09-10 10:25 代替レポート `scripts/report-deprecations.mjs` で集計完了（TS/TSX 合計 109 件、33 ファイル）。
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/node-type/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -179,6 +200,49 @@
 11) feat/location/auth-registry-integration（認証連携）
 12) fix/resolver/error-notify（エラー通知）
 13) test/base-plugin/minimal-unit（最小ユニット）
+
+— shape-plugin「完成版」アーキテクチャの横展開（epic） —
+
+- epic/node-type/shape-design-parity（shape の設計/機構を location/route に導入）
+  - 方針: 既定OFFフラグで段階導入（非破壊）。小粒PRを積み上げ。
+  - フラグ: `LOCATION_PLUGIN_V2=0` / `ROUTE_PLUGIN_V2=0` / `LOCATION_RUNTIME_WORKER=0` / `ROUTE_RUNTIME_WORKER=0`
+  - 依存: `@hierarchidb/runtime-shared-batch-processor`, `@hierarchidb/download`, `@hierarchidb/auth-recovery`
+
+- feat/location/plugin-definition-align（Location 定義の完成版化）
+  - ブランチ: `feat/location/plugin-definition-align`
+  - 依存: なし（ローカル）
+  - 受け入れ基準（DoD）:
+    - [ ] `LocationPluginDefinition` が起動時に `entityHandler` と `batchManager` を初期化（Dexie table から `LocationEntityHandler` を構築、`createLocationBatchManager()` を使用）
+    - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck` グリーン
+    - [ ] README 反映（既に更新済みならチェック）
+  - ロールバック: 定義の初期化行をリバート（フラグ不要）。
+
+- feat/route/plugin-definition-align（Route 定義の完成版化）
+  - ブランチ: `feat/route/plugin-definition-align`
+  - 依存: なし（ローカル）
+  - 受け入れ基準（DoD）:
+    - [ ] `RoutePluginDefinition` を追加し、`index.ts` から再エクスポート（UI/Worker で参照可能）
+    - [ ] `entityHandler=new RouteEntityHandler()` / `batchManager=createRouteBatchManager()` を定義
+    - [ ] `pnpm --filter @hierarchidb/route-plugin typecheck` グリーン
+  - ロールバック: 定義ファイルを削除し、`index.ts` のエクスポートを元に戻す。
+
+- feat/location/runtime-worker-scaffold（Location ランタイムワーカー足場）
+  - ブランチ: `feat/location/runtime-worker-scaffold`
+  - 依存: runtime-worker 登録ユーティリティ（shape の `registerRuntimeWorker` を参照）
+  - 受け入れ基準（DoD）:
+    - [ ] `registerRuntimeWorker` 相当のファイルを location に追加（API は no-op 実装、フラグ `LOCATION_RUNTIME_WORKER=1` で有効）
+    - [ ] UI/Batch から呼び出し箇所を配置（デッドコードにならないよう最小限に）
+    - [ ] フラグOFFで挙動不変
+  - ロールバック: フラグを OFF に戻すだけで切り戻し可能。
+
+- feat/route/download-adapter-registry（Route ダウンロード/エンジン登録の統一）
+  - ブランチ: `feat/route/download-adapter-registry`
+  - 依存: `@hierarchidb/download`, `@hierarchidb/auth-recovery`
+  - 受け入れ基準（DoD）:
+    - [ ] `services/download/factory.ts` を shape の戦略登録方式に合わせ整理
+    - [ ] 認証復帰（401）時の再試行ハンドラを DI で注入可能に
+    - [ ] 既存テストグリーン
+  - ロールバック: factory.ts のみリバートで復旧可。
 
 — UI-DESIGN.md 反映タスク（最小復旧プランの実装） —
 
@@ -1844,6 +1908,12 @@ P2:
   - changed: packages/tools/vite-plugin-package-reader/tsup.config.ts, packages/tools/vite-plugin-package-reader/tsconfig.json
   - result: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build が成功（TS6307 消失）
   - rollback: 上記 2 ファイルの差分をリバート
+
+2025-09-10
+- done: @hierarchidb/app:build での未使用型インポート警告を解消（AdminLevelInfo）
+  - scope: packages/node-type/shape-plugin/src/services/types.ts（`AdminLevelInfo` をローカル import せず、`export type { AdminLevelInfo } from '@hierarchidb/runtime-ui-datasource'` に変更）
+  - result (DoD): `pnpm -C app prebuild` が成功し、当該警告は再現せず
+  - rollback: 当該ファイルの差分をリバートすれば即復旧（挙動非変更）
 9) 日付系UIのラッパ化（安定化）
 - ブランチ: `refactor/ui-date/wrap-and-migrate`
 - 目的: `@mui/x-date-pickers` 依存の型/Adapter/ロケール差分を `@hierarchidb/ui-date` に封じ込め、各プラグインからの直接利用を禁止。
@@ -1886,3 +1956,37 @@ ToDo（Phase 2/3: any の完全撤去）
   - ブランチ: `feat/i18n/language-selector`
   - 内容: ツールバーに `LanguageSelector` を追加し、manifest に基づく言語選択を提供（現状はソフトリロード、後続で i18n.changeLanguage に連携）。
   - 受け入れ基準: dev 起動でセレクタ表示・選択が反映される（localStorage に記録）。
+— M1（実装中）: Progress語彙統一・セッション永続・レーン導入 —
+
+- feat/location/progress-vocabulary-adapter（進捗語彙の標準化）
+  - ブランチ: `feat/location/progress-vocabulary-adapter`
+  - 受け入れ基準（DoD）:
+    - [x] `toStandardProgressEvent` 実装（download/filter/cluster/index → download/simplify1/simplify2/vectortile）
+    - [x] `UnifiedLocationBatchManager.onBatchProgress` で適用
+    - [x] typecheck グリーン
+  - ロールバック: adapter の呼び出しを削除
+
+- feat/location/session-persistence-min（最小セッション永続化）
+  - ブランチ: `feat/location/session-persistence-min`
+  - 受け入れ基準（DoD）:
+    - [x] セッション作成時に `sessions` へ put（既存 EphemeralLocationDB を使用）
+    - [x] 進捗で `progress/updatedAt/status` を update（ベストエフォート）
+    - [x] typecheck グリーン
+  - ロールバック: 更新処理部分を try/catch 毎に削除
+
+- feat/location/lane-concurrency-config（レーン相当の並列数設定）
+  - ブランチ: `feat/location/lane-concurrency-config`
+  - 受け入れ基準（DoD）:
+    - [x] `LocationBatchConfig.concurrency` を受け取り、`LocationBatchSession` に伝播
+    - [x] 既定は 4（変更なし）、設定で上書き可
+    - [x] typecheck グリーン
+  - ロールバック: `BatchSessionManager` の引数を元に戻す＆呼び出し側の `config` 参照を削除
+— shape-plugin fallback 即時封じ込め —
+
+- fix/shape/workerpool-dep-safeguard（WorkerPoolManager 静的参照の除去・lazy化）
+  - ブランチ: `fix/shape/workerpool-dep-safeguard`
+  - 受け入れ基準（DoD）:
+    - [x] `SessionController` が runtime-worker 不在時のみ、かつ `SHAPE_FALLBACK_WORKERPOOL=1` で動的 import により WorkerPoolManager を生成
+    - [x] `ShapesPluginAPI.ts` / `api/ShapePluginAPI.ts` から静的 import を除去（lazy + flag + browser 判定）
+    - [x] Node/テスト環境で deprecated 実装が import されず型チェックグリーン
+  - ロールバック: 変更箇所の revert（フォールバックは flag ON で復帰可能）
