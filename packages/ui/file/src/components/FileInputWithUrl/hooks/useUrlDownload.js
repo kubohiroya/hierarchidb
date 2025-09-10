@@ -113,7 +113,15 @@ export function useUrlDownload({
       }
       const validatedUrl = validationResult.url || trimmedUrl;
       const needsCorsProxy = !validatedUrl.startsWith(window.location.origin || '');
-      const corsProxyBaseURL = process.env.VITE_CORS_PROXY_BASE_URL;
+      let corsProxyBaseURL = '';
+      try {
+        // Vite-style env where available
+        // eslint-disable-next-line no-undef
+        corsProxyBaseURL = (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
+      } catch {}
+      if (!corsProxyBaseURL && typeof globalThis !== 'undefined') {
+        corsProxyBaseURL = (globalThis.ENV && globalThis.ENV.VITE_CORS_PROXY_BASE_URL) || '';
+      }
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
         throw new Error(

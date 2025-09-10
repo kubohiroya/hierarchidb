@@ -375,9 +375,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                 {isLastStep && (
                   <Button
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    variant="contained"
-                    aria-label={submitText}
+                    disabled={!canSubmit||isSubmitting}
                   >
                     {isSubmitting ? <CircularProgress size={20} /> : submitText}
                   </Button>
