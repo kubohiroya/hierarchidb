@@ -12,6 +12,7 @@ import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { TitleLogo } from '../components/TitleLogo';
+import { useBootProgress } from './BootProgressProvider';
 
 // ===========================
 // ===========================
@@ -28,6 +29,7 @@ interface WorkerProviderProps {
   children: React.ReactNode;
   timeout?: number;
   debug?: boolean;
+  renderOverlay?: boolean; // if false, do not render local initializing/error overlays
 }
 
 // ===========================
@@ -192,10 +194,14 @@ const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
   * Worker
   */
 export const WorkerProvider: React.FC<WorkerProviderProps> = ({
-                                                                children,
-                                                                timeout = 30000,
-                                                                debug = false,
-                                                              }) => {
+  children,
+  timeout = 30000,
+  debug = false,
+  renderOverlay = true,
+}) => {
+  // Bridge progress to BootProgress
+  let bootProgress: { setStepProgress: (n: any, p: number, m?: string) => void; markStepDone: (n: any, m?: string) => void } | null = null;
+  try { bootProgress = useBootProgress(); } catch { /* outside of provider in some tests */ }
   const [state, setState] = useState<WorkerContextValue>({
     client: null,
     isInitialized: false,
@@ -209,6 +215,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   // Helper to finalize initialization and hide the banner
   const finalizeInitialized = async () => {
     try {
+      // eslint-disable-next-line no-console
+      console.log('[HDB-BOOT] WorkerProvider finalize start');
       const client = await WorkerAPIClient.getSingleton();
       setState({
         client,
@@ -217,6 +225,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         initMessage: 'Worker初期化完了',
         error: null,
       });
+      // eslint-disable-next-line no-console
+      console.log('[HDB-BOOT] WorkerProvider finalized isInitialized=true');
     } catch (e) {
       console.warn('[WorkerProvider] finalizeInitialized failed, will rely on channel', e);
     }
@@ -227,14 +237,14 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       */
   const initializeWorker = async () => {
     // eslint-disable-next-line no-console
-    console.log('[WorkerProvider] initializeWorker invoked');
+    console.log('[HDB-BOOT] WorkerProvider initialize() begin');
     try {
       setState(prev => ({ ...prev, error: null }));
 
       //  WorkerAPIClientWorker
       await WorkerAPIClient.initialize();
       // eslint-disable-next-line no-console
-      console.log('[WorkerProvider] WorkerAPIClient.initialize resolved');
+      console.log('[HDB-BOOT] WorkerProvider initialize resolved');
       // Fast-path if already ready
       try {
         if (WorkerAPIClient.isReady()) {
@@ -262,6 +272,11 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
             initProgress: typeof data.payload?.progress === 'number' ? data.payload!.progress! : prev.initProgress,
             initMessage: data.payload?.message || prev.initMessage,
           }));
+          try { bootProgress?.setStepProgress('Worker', Number(data?.payload?.progress ?? 0), data?.payload?.message || ''); } catch {}
+          try {
+            // eslint-disable-next-line no-console
+            console.log('[HDB-BOOT] WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? '');
+          } catch {}
         }
       };
       try {
@@ -285,6 +300,9 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
+        // eslint-disable-next-line no-console
+        console.log('[HDB-BOOT] WorkerProvider channel INIT_COMPLETE');
+        try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
         await finalizeInitialized();
       } else {
         throw new Error(result.error?.message || 'Worker initialization failed');
@@ -302,13 +320,14 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   //  + event listener for INIT_COMPLETE
   useEffect(() => {
     // eslint-disable-next-line no-console
-    console.log('[WorkerProvider] mount');
+    console.log('[HDB-BOOT] WorkerProvider mount');
     // In dev, add a short fallback to finalize if WorkerAPIClient becomes ready but the channel hasn't resolved (StrictMode races)
     let devFallbackTimer: number | undefined;
     const onInitComplete = async () => {
       // eslint-disable-next-line no-console
-      console.log('[WorkerProvider] window event: hierarchidb-worker-init-complete');
+      console.log('[HDB-BOOT] WorkerProvider event INIT_COMPLETE');
       __WORKER_INIT_COMPLETED__ = true;
+      try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
       try {
         await WorkerAPIClient.initialize();
         const client = await WorkerAPIClient.getSingleton();
@@ -318,9 +337,12 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       }
     };
     try {
-      window.addEventListener('hierarchidb-worker-init-complete', onInitComplete);
-    } catch {
-    }
+      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+      if (!g.__HDB_WORKER_EVT_BOUND__) {
+        g.__HDB_WORKER_EVT_BOUND__ = true;
+        window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
+      }
+    } catch {}
 
     if (!__WORKER_INIT_STARTED__) {
       __WORKER_INIT_STARTED__ = true;
@@ -335,6 +357,29 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       } catch {
       }
     }
+
+    // Stronger fallback: poll global flag/isReady briefly to avoid missing the event in SSR/hydration races
+    let pollTimer: number | undefined;
+    const start = Date.now();
+    const poll = async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+        if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) {
+          try {
+            const client = await WorkerAPIClient.getOrInit();
+            setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+            if (pollTimer) window.clearInterval(pollTimer);
+            return;
+          } catch {}
+        }
+        if (Date.now() - start > 5000 && pollTimer) {
+          window.clearInterval(pollTimer);
+        }
+      } catch {}
+    };
+    // @ts-ignore setInterval returns number in browsers
+    pollTimer = window.setInterval(poll, 100);
 
     if (import.meta.env.DEV) {
       // eslint-disable-next-line no-console
@@ -353,25 +398,29 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     }
 
     return () => {
-      if (!import.meta.env.DEV) {
-        initChannel?.dispose();
-        try {
-          window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
-        } catch {
-        }
-      }
+      initChannel?.dispose();
+      try {
+        window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
+        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+        g.__HDB_WORKER_EVT_BOUND__ = false;
+      } catch {}
       if (devFallbackTimer) {
         window.clearTimeout(devFallbackTimer);
       }
+      // clear poll
+      try { if (pollTimer) window.clearInterval(pollTimer); } catch {}
     };
   }, []);
 
-  if (state.error) {
-    return <ErrorView error={state.error} onRetry={initializeWorker} />;
-  }
-
-  if (!state.isInitialized) {
-    return <InitializingView progress={state.initProgress} message={state.initMessage} />;
+  // When renderOverlay=false, always render children and expose state via context,
+  // letting an outer BootProgress overlay handle UX and gating.
+  if (renderOverlay) {
+    if (state.error) {
+      return <ErrorView error={state.error} onRetry={initializeWorker} />;
+    }
+    if (!state.isInitialized) {
+      return <InitializingView progress={state.initProgress} message={state.initMessage} />;
+    }
   }
 
   return (
@@ -403,10 +452,6 @@ export const useWorker = (): WorkerContextValue => {
   */
 export const useWorkerClient = () => {
   const { client, isInitialized } = useWorker();
-
-  if (!client) {
-    throw new Error('Worker client is not initialized');
-  }
 
   return {
     client,

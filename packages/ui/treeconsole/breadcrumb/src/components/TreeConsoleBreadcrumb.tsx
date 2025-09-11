@@ -17,7 +17,7 @@ import {
   Link,
   Typography,
 } from '@mui/material';
-import styled from '@emotion/styled';
+import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { MoreVert as MoreVertIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types';

@@ -10,3 +10,6 @@ export * from './entities/FolderEntity';
 
 // Export plugin definition for worker consumption
 export { FolderDefinition } from './definitions/FolderDefinition';
+
+// Optional runtime wiring (no-op for folder plugin)
+export const runtimeWiring = {} as const;

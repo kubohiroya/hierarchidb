@@ -53,6 +53,8 @@ const TreeConsoleIntegrationInner: React.FC<
     treeId,
     pageNodeId,
     pageTreeNode,
+    pushPath: (to: string | number) => navigate(to as any),
+    locationSearch: location.search,
   });
 
   // Check for trash items when worker client is available

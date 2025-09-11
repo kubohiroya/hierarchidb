@@ -2,14 +2,14 @@
   "name": "@hierarchidb/spreadsheet-plugin",
   "version": "0.0.1",
   "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
-  "main": "dist/index.js",
+  "main": "dist/index.mjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
-      "default": "./dist/index.js"
+      "default": "./dist/index.mjs"
     }
   },
   "scripts": {
@@ -24,6 +24,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
@@ -96,7 +97,9 @@
     "react": "^18.3.1",
     "dexie": "^4.2.0",
     "react-i18next": "12.3.1",
-    "i18next": "22.5.0"
+    "i18next": "22.5.0",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
   },
   
   "tsup": {

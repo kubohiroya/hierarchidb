@@ -9,7 +9,14 @@ import {
   Map as GeographicIcon,
   Terrain as EnvironmentalIcon,
 } from '@mui/icons-material';
-import type { CategoryOption } from '@hierarchidb/folder-plugin/ui';
+// Local definition to decouple from folder-plugin/ui
+export interface CategoryOption<T = string> {
+  value: T;
+  label: string;
+  description?: string;
+  icon?: React.ReactNode;
+  color?: string;
+}
 
 /**
   * ShapeCategory -

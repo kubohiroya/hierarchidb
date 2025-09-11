@@ -40,7 +40,7 @@ export function useStepCapabilities({
     canStartBatch: false,
   });
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const evaluationTimeoutRef = useRef<NodeJS.Timeout>();
+  const evaluationTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   /**
    * Evaluate capabilities for current state

@@ -49,3 +49,6 @@ export const ResolverPlugin: PluginDefinition = {
 
 // Default export for convenient plugin registration
 export default ResolverPlugin;
+
+// Optional runtime wiring (no-op)
+export const runtimeWiring = {} as const;

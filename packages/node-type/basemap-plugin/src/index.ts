@@ -62,3 +62,6 @@ export const PLUGIN_INFO = {
   extends: 'folder',
   architecture: 'extension',
 } as const;
+
+// Optional runtime wiring (no-op)
+export const runtimeWiring = {} as const;

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { createContext, ReactNode, useContext } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';

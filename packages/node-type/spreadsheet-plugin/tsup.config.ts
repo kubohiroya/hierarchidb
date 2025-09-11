@@ -7,12 +7,12 @@ export default createTsupConfig({
     'provider-i18next',
     'react-i18next',
     'i18next',
+    'react',
+    'dexie',
     '@mui/material',
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    '@hierarchidb/tabular',
-    '@hierarchidb/auth-recovery',
-    'dexie',
+    // bundle internal workspace deps and non-UI libs
   ],
 });

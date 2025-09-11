@@ -555,7 +555,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
             {(virtual
                 ? virtualizer.getVirtualItems()
                 : data.map((_item, index) => ({ index }))
-            ).map((virtualRow) => {
+            ).map((virtualRow: { index: number }) => {
               const item = data[virtualRow.index];
               if (!item) return null;
 

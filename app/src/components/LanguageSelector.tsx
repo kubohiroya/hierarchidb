@@ -44,6 +44,25 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
       : [{ code: 'en', name: 'English', nativeName: 'English', direction: 'ltr' as const }]
   ), [langs]);
 
+  // If current value is not in options yet (e.g., 'ja' before manifest loads),
+  // normalize it to the first available option to avoid MUI out-of-range warnings.
+  const normalizedValue = useMemo(() => {
+    if (options.some(o => o.code === value)) return value;
+    return options[0]?.code ?? '';
+  }, [options, value]);
+
+  // Keep local state and persisted storage consistent when normalization occurs
+  useEffect(() => {
+    if (normalizedValue !== value) {
+      setValue(normalizedValue);
+      try {
+        localStorage.setItem('preferred-language', normalizedValue);
+        localStorage.setItem('i18nextLng', normalizedValue);
+        if (typeof document !== 'undefined') document.documentElement.lang = normalizedValue;
+      } catch {}
+    }
+  }, [normalizedValue, value]);
+
   const labelFor = (entry: { code: string; name?: string; nativeName?: string }) => {
     const display = entry.nativeName || entry.name || entry.code.toUpperCase();
     return `${display} (${entry.code.toUpperCase()})`;
@@ -81,7 +100,7 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
   return (
     <FormControl size={size} sx={{ minWidth: 120 }}>
       <InputLabel id="lang-select-label">Lang</InputLabel>
-      <Select labelId="lang-select-label" label="Lang" value={value} onChange={onChange}>
+      <Select labelId="lang-select-label" label="Lang" value={normalizedValue} onChange={onChange}>
         {options.map((entry) => (
           <MenuItem key={entry.code} value={entry.code}>{labelFor(entry)}</MenuItem>
         ))}

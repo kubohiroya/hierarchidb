@@ -504,12 +504,12 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
           deck={{
             interleaved: true,
             layers: layers.filter((l) => l.visible).map((l) => l.layer),
-            getTooltip: ({ object }) =>
+            getTooltip: ({ object }: { object: any }) =>
               object && {
                 html: renderTooltip(object),
                 style: { backgroundColor: 'rgba(0, 0, 0, 0.8)', color: 'white', padding: '8px', borderRadius: '4px' },
               },
-            onClick: ({ object }) => setSelectedFeature(object),
+            onClick: ({ object }: { object: any }) => setSelectedFeature(object),
           }}
         />
       </Box>

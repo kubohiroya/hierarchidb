@@ -13,9 +13,7 @@
       "~/*": [
         "src/*"
       ],
-      "@hierarchidb/ui-dialog": [
-        "../packages/ui/dialog/src/index.ts"
-      ]
+      "@hierarchidb/ui-dialog": ["@hierarchidb/ui-dialog"]
     },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },

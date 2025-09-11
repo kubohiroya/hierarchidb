@@ -19,3 +19,9 @@ export type TagId = string & { readonly __brand: 'TagId' };
  * Type identifier for tree nodes (e.g., 'folder-plugin', 'document', 'styler-plugin', etc.)
  */
 export type NodeType = string & { readonly __brand: 'NodeType' };
+
+// Optional branded ID used by some plugins for entity records (alias of NodeId)
+export type EntityId = NodeId;
+
+// Branded ID for tree nodes when explicitly distinguished from NodeId in some modules
+export type TreeNodeId = string & { readonly __brand: 'TreeNodeId' };

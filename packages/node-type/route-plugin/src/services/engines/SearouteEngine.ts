@@ -13,6 +13,8 @@ export class SearouteEngine implements RoutingEngine {
     const end = points[points.length - 1]!;
 
     const featureEnabled =
+      // Vite client-side env: must use import.meta.env with VITE_ prefix
+      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORKER_FEATURE_ROUTE_SEAROUTE === '1') ||
       (typeof process !== 'undefined' && (process as any)?.env?.WORKER_FEATURE_ROUTE_SEAROUTE === '1') ||
       (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.ROUTE_SEAROUTE === true);
 
@@ -60,23 +62,35 @@ export class SearouteEngine implements RoutingEngine {
   private async loadLib(): Promise<SeaRouteLike | undefined> {
     if (!this.libPromise) {
       this.libPromise = (async () => {
-        try {
-          // Prefer npm package name "searoute"; fall back to "searoute-js" if present in env
-          // Both are handled dynamically; types are treated as any.
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const mod = await import('searoute');
-          return mod as any;
-        } catch (_) {
+        // Avoid bundler resolution: compute module names at runtime and use @vite-ignore
+        const tryLoad = async (name: string) => {
           try {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            const mod2 = await import('searoute-js');
-            return mod2 as any;
+            const mod = await import(/* @vite-ignore */ name);
+            return mod as any;
           } catch {
             return undefined;
           }
+        };
+
+        // Prefer explicit override via env/flag
+        const forced =
+          (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ROUTE_SEAROUTE_PKG) ||
+          (typeof process !== 'undefined' && (process as any)?.env?.ROUTE_SEAROUTE_PKG) ||
+          (typeof globalThis !== 'undefined' && (globalThis as any)?.ROUTE_SEAROUTE_PKG) ||
+          undefined;
+
+        if (forced) {
+          const m = await tryLoad(String(forced));
+          if (m) return m;
         }
+
+        // Try well-known names in order
+        const names = ['searoute', 'searoute-js'];
+        for (const n of names) {
+          const m = await tryLoad(n);
+          if (m) return m;
+        }
+        return undefined;
       })();
     }
     return this.libPromise;

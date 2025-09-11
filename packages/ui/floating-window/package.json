@@ -2,14 +2,14 @@
   "name": "@hierarchidb/ui-floating-window",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -24,10 +24,7 @@
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
-  "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
@@ -42,7 +39,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.6",
-    "@mui/icons-material": "^6.1.6"
+    "@mui/icons-material": "^6.1.6",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0"
   },
   "tsup": {
     "external": [

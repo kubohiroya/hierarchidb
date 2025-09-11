@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Metadata structure for geographical regions
  */
@@ -19,6 +20,7 @@ export interface RegionMetadata {
 /**
  * Data source fetcher function type
  */
+// eslint-disable-next-line no-unused-vars
 export type DataSourceFetcher = (
   outputDirName: string,
   outputFileName: string,

@@ -6,7 +6,8 @@
     "skipLibCheck": true
   },
   "include": [
-    "src/types/**/*"
+    "src/types/**/*",
+    "src/types/**/*.d.ts"
   ],
   "exclude": [
     "src/__tests__/**",

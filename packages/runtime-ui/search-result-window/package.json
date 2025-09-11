@@ -2,14 +2,14 @@
   "name": "@hierarchidb/runtime-ui-search-result-window",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -29,8 +29,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
     "jotai": "^2.13.1"
   },
   "devDependencies": {
@@ -50,10 +48,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.6",
-    "@mui/icons-material": "^6.1.6"
+    "@mui/icons-material": "^6.1.6",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0"
   },
   "tsup": {
     "external": [
+      "@emotion/react",
+      "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
       "react",

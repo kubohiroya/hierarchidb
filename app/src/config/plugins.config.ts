@@ -114,8 +114,8 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
  * Get plugin configuration for current environment
  */
 export function getPluginConfig(): PluginConfig {
-  const env = process.env.NODE_ENV || 'development';
-  return PLUGIN_CONFIGS[env] || DEFAULT_PLUGIN_CONFIG;
+  const mode = (import.meta as any)?.env?.MODE || 'development';
+  return PLUGIN_CONFIGS[mode] || DEFAULT_PLUGIN_CONFIG;
 }
 
 /**

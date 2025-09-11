@@ -19,7 +19,6 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
@@ -28,7 +27,8 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1"
+    "@mui/icons-material": "^7.3.1",
+    "@emotion/react": "^11.14.0"
   },
   "devDependencies": {
     "react": "^18.3.1",
@@ -37,6 +37,7 @@
   },
   "tsup": {
     "external": [
+      "@emotion/react",
       "@mui/icons-material",
       "@mui/material",
       "react"

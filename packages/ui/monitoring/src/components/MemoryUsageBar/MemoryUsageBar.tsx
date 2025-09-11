@@ -95,7 +95,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
     percentage: 0,
   });
   const [isSupported, setIsSupported] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateMemoryInfo = useCallback(async () => {
     try {

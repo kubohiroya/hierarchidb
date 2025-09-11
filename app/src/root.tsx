@@ -12,8 +12,10 @@ import { InitInspector } from './dev/InitInspector';
 import { NotificationSystem, registerAllUIPlugins } from '@hierarchidb/ui-core';
 import { APP_VERSION, BUILD_TIME } from './version';
 // Bridge: provide app's Worker client hook to shape-plugin UI hooks
-import { registerWorkerClientHook } from '@hierarchidb/shape-plugin/ui';
+import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
+import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
+import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
 
 // Log version and build time at startup (local time)
 try {
@@ -58,15 +60,19 @@ if (typeof window !== 'undefined') {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
 
-  // Opportunistically warm-load menu builders; cache to global for sync access in hooks
-  import('./plugins/menu-builders')
-    .then((mod) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__HDB_MENU_BUILDERS__ = mod;
-    })
-    .catch((err) => {
-      console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
-    });
+  // Opportunistically warm-load menu builders only in non-dev to avoid spurious TS parse noise in dev toolchain
+  try {
+    if (!(import.meta as any)?.env?.DEV) {
+      import('./plugins/menu-builders')
+        .then((mod) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).__HDB_MENU_BUILDERS__ = mod;
+        })
+        .catch((err) => {
+          console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
+        });
+    }
+  } catch {}
 }
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
@@ -246,6 +252,7 @@ export function ErrorBoundary() {
 }
 
 function AppContent() {
+  try { console.log('[HDB-BOOT] AppContent mount'); } catch {}
   return (
     <StrictMode>
       <Outlet />
@@ -259,27 +266,46 @@ function AppContent() {
 
 export default function App() {
   // Create theme inside component with useMemo to avoid hydration mismatch
-  // Using a stable theme creation to prevent SSR/hydration mismatches
   const theme = useMemo(() => createAppTheme('light'), []);
 
   return (
-    <AppConfigProvider>
-      <SimpleBFFAuthProvider>
-        <LanguageProvider>
-          <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={theme}>
-              <CustomThemeProvider>
-                <CssBaseline />
-                {/* Global notifications */}
-                <NotificationSystem />
-                <WorkerProvider>
-                  <AppContent />
-                </WorkerProvider>
-              </CustomThemeProvider>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </LanguageProvider>
-      </SimpleBFFAuthProvider>
-    </AppConfigProvider>
+    <BootProgressProvider>
+      <AppConfigProvider>
+        {/* Config step becomes done as soon as provider mounts */}
+        <ConfigReadyReporter />
+
+        <SimpleBFFAuthProvider>
+          {/* Auth step marks done when initial load finishes */}
+          <AuthReadyReporter />
+
+          <LanguageProvider>
+            {/* I18n readiness */}
+            <I18nReadyReporter />
+
+            <StyledEngineProvider injectFirst>
+              <ThemeProvider theme={theme}>
+                <CustomThemeProvider>
+                  {/* Theme step can be considered ready now */}
+                  <ThemeReadyReporter />
+
+                  <CssBaseline />
+                  {/* Global notifications */}
+                  <NotificationSystem />
+                  {/* UI plugins were registered at module load, confirm step */}
+                  <UIReadyReporter />
+
+                  {/* Mount WorkerProvider early, but suppress its own overlay. */}
+                  <WorkerProvider renderOverlay={false}>
+                    <WorkerProgressReporter />
+                    {/* Render app content; gating is handled by BootOverlay removal on Worker done */}
+                    <AppContent />
+                  </WorkerProvider>
+                </CustomThemeProvider>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </LanguageProvider>
+        </SimpleBFFAuthProvider>
+      </AppConfigProvider>
+    </BootProgressProvider>
   );
 }

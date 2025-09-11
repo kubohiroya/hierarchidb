@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useShapeAPI, useShapeAPIGetter } from '../../hooks/useShapeAPI';
-import { registerWorkerClientHook } from '../../hooks/workerClientProvider';
+import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import type { ShapeAPI } from '../../../shared';
 
 // Mock @hierarchidb/runtime-shared-client

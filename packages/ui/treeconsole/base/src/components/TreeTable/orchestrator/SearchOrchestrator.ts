@@ -33,7 +33,7 @@ export function useSearchOrchestrator(
   const [_tableData] = useAtom(tableDataAtom);
 
   // Refs for debouncing
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSearchingRef = useRef(false);
 
   /**

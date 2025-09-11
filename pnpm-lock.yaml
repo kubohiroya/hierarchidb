@@ -28,6 +28,12 @@ importers:
       '@biomejs/biome':
         specifier: 2.2.0
         version: 2.2.0
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.14.1
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@eslint/js':
         specifier: ^9.34.0
         version: 9.34.0
@@ -98,8 +104,8 @@ importers:
         specifier: ^5.4.4
         version: 5.4.4
       dep-fence:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.5.1
+        version: 0.5.1
       eslint:
         specifier: ^9.34.0
         version: 9.34.0(jiti@1.21.7)
@@ -226,6 +232,12 @@ importers:
       '@hierarchidb/location-plugin':
         specifier: workspace:*
         version: link:../packages/node-type/location-plugin
+      '@hierarchidb/project-plugin':
+        specifier: workspace:*
+        version: link:../packages/node-type/project-plugin
+      '@hierarchidb/resolver-plugin':
+        specifier: workspace:*
+        version: link:../packages/node-type/resolver-plugin
       '@hierarchidb/route-plugin':
         specifier: workspace:*
         version: link:../packages/node-type/route-plugin
@@ -247,6 +259,9 @@ importers:
       '@hierarchidb/shape-plugin':
         specifier: workspace:*
         version: link:../packages/node-type/shape-plugin
+      '@hierarchidb/spreadsheet-plugin':
+        specifier: workspace:*
+        version: link:../packages/node-type/spreadsheet-plugin
       '@hierarchidb/styler-plugin':
         specifier: workspace:*
         version: link:../packages/node-type/styler-plugin
@@ -543,6 +558,25 @@ importers:
         specifier: 4.9.5
         version: 4.9.5
 
+  packages/feature/map-adapter:
+    dependencies:
+      '@hierarchidb/map-source':
+        specifier: workspace:*
+        version: link:../map-source
+    devDependencies:
+      deck.gl:
+        specifier: ^9.0.0
+        version: 9.1.14(@arcgis/core@4.33.12)(@luma.gl/shadertools@9.1.9(@luma.gl/core@9.1.9))(@luma.gl/webgl@9.1.9(@luma.gl/core@9.1.9))(react-dom@18.3.1(react@19.0.0))(react@19.0.0)
+      maplibre-gl:
+        specifier: ^3.6.0
+        version: 3.6.2
+      tsup:
+        specifier: ^8.0.1
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
+      typescript:
+        specifier: 4.9.5
+        version: 4.9.5
+
   packages/feature/map-source:
     dependencies:
       '@hierarchidb/util':
@@ -551,25 +585,6 @@ importers:
       dexie:
         specifier: 4.2.0
         version: 4.2.0
-    devDependencies:
-      tsup:
-        specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
-      typescript:
-        specifier: 4.9.5
-        version: 4.9.5
-
-  packages/feature/map-view:
-    dependencies:
-      '@hierarchidb/map-source':
-        specifier: workspace:*
-        version: link:../map-source
-      deck.gl:
-        specifier: ^9
-        version: 9.1.14(@arcgis/core@4.33.12)(@luma.gl/shadertools@9.1.9(@luma.gl/core@9.1.9))(@luma.gl/webgl@9.1.9(@luma.gl/core@9.1.9))(react-dom@18.3.1(react@19.0.0))(react@19.0.0)
-      maplibre-gl:
-        specifier: ^3
-        version: 3.6.2
     devDependencies:
       tsup:
         specifier: ^8.0.1
@@ -793,6 +808,9 @@ importers:
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../feature/tag
@@ -875,6 +893,9 @@ importers:
       '@hierarchidb/base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/batch':
+        specifier: workspace:*
+        version: link:../../feature/batch
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -1182,6 +1203,9 @@ importers:
       '@hierarchidb/base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/batch':
+        specifier: workspace:*
+        version: link:../../feature/batch
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -1191,6 +1215,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../../feature/download
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
@@ -1242,9 +1269,6 @@ importers:
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
-      geohash:
-        specifier: ^0.0.1
-        version: 0.0.1
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -1264,6 +1288,9 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
     devDependencies:
+      '@hierarchidb/runtime-worker-bootstrap':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker-bootstrap
       '@mui/icons-material':
         specifier: ^5.16.7 || ^6.0.0
         version: 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -1339,6 +1366,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata
@@ -1757,12 +1787,12 @@ importers:
       '@hierarchidb/import-export':
         specifier: workspace:*
         version: link:../../feature/import-export
+      '@hierarchidb/map-adapter':
+        specifier: workspace:*
+        version: link:../../feature/map-adapter
       '@hierarchidb/map-source':
         specifier: workspace:*
         version: link:../../feature/map-source
-      '@hierarchidb/map-view':
-        specifier: workspace:*
-        version: link:../../feature/map-view
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
@@ -1813,6 +1843,9 @@ importers:
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
+      '@types/vt-pbf':
+        specifier: ^3.1.0
+        version: 3.1.0
       fake-indexeddb:
         specifier: ^6.2.2
         version: 6.2.2
@@ -1822,6 +1855,9 @@ importers:
 
   packages/runtime-worker/worker-bootstrap:
     dependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
@@ -1871,6 +1907,9 @@ importers:
       license-checker:
         specifier: ^25.0.1
         version: 25.0.1
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
 
   packages/tools/vite-plugin-package-reader:
     dependencies:
@@ -1888,7 +1927,7 @@ importers:
         specifier: 18.19.123
         version: 18.19.123
       tsup:
-        specifier: ^8.0.0
+        specifier: ^8.5.0
         version: 8.5.0(@microsoft/api-extractor@7.52.11(@types/node@18.19.123))(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@4.9.5)(yaml@2.8.1)
       typescript:
         specifier: 4.9.5
@@ -1917,12 +1956,6 @@ importers:
 
   packages/ui/auth:
     dependencies:
-      '@emotion/react':
-        specifier: ^11.14.0
-        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
-      '@emotion/styled':
-        specifier: ^11.14.1
-        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@hierarchidb/common-auth':
         specifier: workspace:*
         version: link:../../common/auth
@@ -1951,6 +1984,12 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.14.1
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@mui/icons-material':
         specifier: ^7.3.1
         version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -2088,17 +2127,16 @@ importers:
         version: 18.3.1(react@18.3.1)
 
   packages/ui/data-grid:
-    dependencies:
-      '@tanstack/react-virtual':
-        specifier: ^3.10.8
-        version: 3.13.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
-        specifier: ^5.16.11
-        version: 5.18.0(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+        specifier: ^7.3.1
+        version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@mui/material':
         specifier: ^7.3.1
         version: 7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-virtual':
+        specifier: ^3.10.8
+        version: 3.13.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: ^18.3.24
         version: 18.3.24
@@ -2332,6 +2370,9 @@ importers:
       '@emotion/styled':
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@hierarchidb/common-type':
+        specifier: workspace:*
+        version: link:../../common/types
       '@vis.gl/react-maplibre':
         specifier: ^8.0.4
         version: 8.0.4(maplibre-gl@4.7.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2590,14 +2631,13 @@ importers:
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
 
   packages/ui/treeconsole/breadcrumb:
-    dependencies:
+    devDependencies:
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
       '@emotion/styled':
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
-    devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.1
         version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -2764,12 +2804,6 @@ importers:
 
   packages/ui/usermenu:
     dependencies:
-      '@emotion/react':
-        specifier: ^11.14.0
-        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
-      '@emotion/styled':
-        specifier: ^11.14.1
-        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@hierarchidb/common-auth':
         specifier: workspace:*
         version: link:../../common/auth
@@ -2789,6 +2823,12 @@ importers:
         specifier: workspace:*
         version: link:../theme
     devDependencies:
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: ^11.14.1
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
       '@mui/icons-material':
         specifier: ^7.3.1
         version: 7.3.1(@mui/material@7.3.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -6309,6 +6349,9 @@ packages:
   '@types/uuid@9.0.8':
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
 
+  '@types/vt-pbf@3.1.0':
+    resolution: {integrity: sha512-9I6dyk1rro7kNIJMDq8gog4dCWdTCl4nEmXlds79RLhmWlWu7/vcO72WYJ809FCy3CZ5ramkX0NsP+jr9ybf2A==}
+
   '@types/whatwg-mimetype@3.0.2':
     resolution: {integrity: sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA==}
 
@@ -7342,13 +7385,13 @@ packages:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
 
-  dep-fence@0.2.0:
-    resolution: {integrity: sha512-Qs/Xwr7y8/ev82cJV+daw+br+JBwAx3dz5MOUDGraLxV3iNoIk47HNbkv3kLeIdDBeb20m66yghR89GE7RRf3A==}
+  dep-fence@0.3.0:
+    resolution: {integrity: sha512-OivjXNRne/h0dUfbz68qOSI3vg43iFLZPLcFTjF8su2WM4zxtIb54VY1jMLTzsPWtGrE3BaNjW3oHwfwA+N36g==}
     engines: {node: '>=18'}
     hasBin: true
 
-  dep-fence@0.3.0:
-    resolution: {integrity: sha512-OivjXNRne/h0dUfbz68qOSI3vg43iFLZPLcFTjF8su2WM4zxtIb54VY1jMLTzsPWtGrE3BaNjW3oHwfwA+N36g==}
+  dep-fence@0.5.1:
+    resolution: {integrity: sha512-ij8yp/DhsYUs3Ld2EnzLX/O3v5TrO1cD6Z2oPZR4RhPDEaphfba+wKQ2W/ndGzYCjstV87IqciZOKRXuRxTmTA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -7818,9 +7861,6 @@ packages:
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
-
-  geohash@0.0.1:
-    resolution: {integrity: sha512-aQXMw2KthhNoegMx7KUxSr8CWkoa+Q5JkKfipjByQm7H1f90XEMSwisrHxjFRV9vHScwBXR3IFTSdNk5b/+2eA==}
 
   geojson-equality-ts@1.0.2:
     resolution: {integrity: sha512-h3Ryq+0mCSN/7yLs0eDgrZhvc9af23o/QuC4aTiuuzP/MRCtd6mf5rLsLRY44jX0RPUfM8c4GqERQmlUxPGPoQ==}
@@ -9490,8 +9530,8 @@ packages:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
     engines: {node: '>= 0.4'}
 
-  regenerate-unicode-properties@10.2.0:
-    resolution: {integrity: sha512-DqHn3DwbmmPVzeKj9woBadqmXxLvQoQIwu7nopMc72ztvxVmVk2SBhSnx67zuye5TP+lJsb/TBQsjLKhnDf3MA==}
+  regenerate-unicode-properties@10.2.2:
+    resolution: {integrity: sha512-m03P+zhBeQd1RGnYxrGyDAPpWX/epKirLrp8e3qevZdVkKtnCrjjWczIbYc8+xd6vcTStVlqfycTx1KR4LOr0g==}
     engines: {node: '>=4'}
 
   regenerate@1.4.2:
@@ -9504,8 +9544,8 @@ packages:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
 
-  regexpu-core@6.2.0:
-    resolution: {integrity: sha512-H66BPQMrv+V16t8xtmq+UC0CBpiTBA60V8ibS1QVReIp8T1z8hwFxqcGzm9K6lgsN7sB5edVH8a+ze6Fqm4weA==}
+  regexpu-core@6.3.0:
+    resolution: {integrity: sha512-ulzJYRb0qgR4t8eTgHeL7nnKL/4ul2yjnuTBEDIpYG7cSs8CcADE1q18RFFChXLP8WwRgPrHThGbYplvASdujw==}
     engines: {node: '>=4'}
 
   regjsgen@0.8.0:
@@ -10299,8 +10339,8 @@ packages:
     resolution: {integrity: sha512-5kaZCrbp5mmbz5ulBkDkbY0SsPOjKqVS35VpL9ulMPfSl0J0Xsm+9Evphv9CoIZFwre7aJoa94AY6seMKGVN5Q==}
     engines: {node: '>=4'}
 
-  unicode-match-property-value-ecmascript@2.2.0:
-    resolution: {integrity: sha512-4IehN3V/+kkr5YeSSDDQG8QLqO26XpL2XP3GQtqwlT/QYSECAwFztxVHjlbh0+gjJ3XmNLS0zDsbgs9jWKExLg==}
+  unicode-match-property-value-ecmascript@2.2.1:
+    resolution: {integrity: sha512-JQ84qTuMg4nVkx8ga4A16a1epI9H6uTXAknqxkGF/aFfRLw1xC/Bp24HNLaZhHSkWd3+84t8iXnp1J0kYcZHhg==}
     engines: {node: '>=4'}
 
   unicode-property-aliases-ecmascript@2.1.0:
@@ -10951,7 +10991,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.28.3
       '@babel/helper-annotate-as-pure': 7.27.3
-      regexpu-core: 6.2.0
+      regexpu-core: 6.3.0
       semver: 6.3.1
     optional: true
 
@@ -15328,6 +15368,11 @@ snapshots:
 
   '@types/uuid@9.0.8': {}
 
+  '@types/vt-pbf@3.1.0':
+    dependencies:
+      '@types/geojson': 7946.0.16
+      '@types/geojson-vt': 3.2.5
+
   '@types/whatwg-mimetype@3.0.2': {}
 
   '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5))(eslint@9.34.0(jiti@1.21.7))(typescript@4.9.5)':
@@ -15770,7 +15815,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)(terser@5.43.1)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -16581,9 +16626,11 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
-  dep-fence@0.2.0: {}
-
   dep-fence@0.3.0: {}
+
+  dep-fence@0.5.1:
+    dependencies:
+      yaml: 2.8.1
 
   detect-libc@2.0.4: {}
 
@@ -17211,8 +17258,6 @@ snapshots:
   functions-have-names@1.2.3: {}
 
   gensync@1.0.0-beta.2: {}
-
-  geohash@0.0.1: {}
 
   geojson-equality-ts@1.0.2:
     dependencies:
@@ -19079,7 +19124,7 @@ snapshots:
       get-proto: 1.0.1
       which-builtin-type: 1.2.1
 
-  regenerate-unicode-properties@10.2.0:
+  regenerate-unicode-properties@10.2.2:
     dependencies:
       regenerate: 1.4.2
     optional: true
@@ -19099,14 +19144,14 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
-  regexpu-core@6.2.0:
+  regexpu-core@6.3.0:
     dependencies:
       regenerate: 1.4.2
-      regenerate-unicode-properties: 10.2.0
+      regenerate-unicode-properties: 10.2.2
       regjsgen: 0.8.0
       regjsparser: 0.12.0
       unicode-match-property-ecmascript: 2.0.0
-      unicode-match-property-value-ecmascript: 2.2.0
+      unicode-match-property-value-ecmascript: 2.2.1
     optional: true
 
   regjsgen@0.8.0:
@@ -20024,7 +20069,7 @@ snapshots:
       unicode-property-aliases-ecmascript: 2.1.0
     optional: true
 
-  unicode-match-property-value-ecmascript@2.2.0:
+  unicode-match-property-value-ecmascript@2.2.1:
     optional: true
 
   unicode-property-aliases-ecmascript@2.1.0:

@@ -221,34 +221,13 @@ export function vitePluginPackageReader<T = any>(
       return modules;
     },
 
-    async transform(code, id) {
-      //  Virtual module
-      if (options.virtualModules && (id.endsWith('.ts') || id.endsWith('.tsx'))) {
-        const hasVirtualImport = options.virtualModules.some(vm =>
-          code.includes(`'virtual:${vm.moduleId}'`) ||
-          code.includes(`"virtual:${vm.moduleId}"`),
-        );
-
-        if (hasVirtualImport) {
-          if (server) {
-            let typeDefs = '';
-            for (const vm of options.virtualModules) {
-              const types = virtualManager.getTypes(vm.moduleId);
-              if (types) {
-                typeDefs += `\ndeclare module 'virtual:${vm.moduleId}' {\n${types}\n}\n`;
-              }
-            }
-
-            if (typeDefs) {
-              return {
-                code: typeDefs + '\n' + code,
-                map: null,
-              };
-            }
-          }
-        }
-      }
-
+    async transform(_code: string, _id: string) {
+      // mark parameters as intentionally unused to satisfy noUnusedParameters
+      void _code; void _id;
+      // Note: We no longer inject TypeScript ambient declarations into source files.
+      // The app/projects are expected to provide their own .d.ts shims for virtual modules.
+      // This avoids surfacing `declare module` in environments where the TS transform
+      // ordering differs (e.g., react-router/dev), which could lead to runtime SyntaxError.
       return null;
     },
   };

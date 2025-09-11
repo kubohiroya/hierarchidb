@@ -410,9 +410,9 @@ export function MultiStepDialog({
   const [isFooterVisible, setIsFooterVisible] = useState(!initialFullscreen);
   const [currentStep, setCurrentStep] = useState(initialStep);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout>();
-  const headerTimeoutRef = useRef<NodeJS.Timeout>();
-  const footerTimeoutRef = useRef<NodeJS.Timeout>();
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const headerTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const footerTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const toggleFullscreen = useCallback(() => {
     const newFullscreen = !isFullscreen;

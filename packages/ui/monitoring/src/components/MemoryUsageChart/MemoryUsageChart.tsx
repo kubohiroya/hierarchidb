@@ -68,7 +68,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
   const [currentMemory, setCurrentMemory] = useState({ used: 0, total: maxMemory, percentage: 0 });
   const [isSupported, setIsSupported] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const updateMemoryInfo = useCallback(async () => {

@@ -76,7 +76,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
   const theme = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [dataPoints, setDataPoints] = useState<MemoryDataPoint[]>([]);
   const [isPaused, setIsPaused] = useState(false);

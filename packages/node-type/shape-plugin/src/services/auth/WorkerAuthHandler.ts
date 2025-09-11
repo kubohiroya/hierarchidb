@@ -40,7 +40,7 @@ export class WorkerAuthHandler {
   private authCallbacks = new Map<string, {
     resolve: (response: Response) => void;
     reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
+    timeout: ReturnType<typeof setTimeout>;
     requestInfo: AuthRequestInfo;
   }>();
 

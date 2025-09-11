@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '~/types/index.js';
 
@@ -213,3 +214,4 @@ export class MapHighlightService {
     }
   }
 }
+/* eslint-disable no-unused-vars */

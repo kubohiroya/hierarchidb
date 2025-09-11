@@ -28,6 +28,9 @@ export interface WindowConstraints {
   maxHeight?: number;
 }
 
+/* eslint-disable no-unused-vars */
+import type React from 'react';
+
 export interface FloatingWindowProps {
   title: string;
   children: React.ReactNode;

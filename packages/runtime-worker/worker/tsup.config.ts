@@ -7,14 +7,7 @@ const cfg = createTsupConfig({
   external: [
     'provider',
     'provider-dom',
-    '@mui/material',
-    '@mui/icons-material',
-    '@emotion/provider',
-    '@emotion/styled',
-    'dexie',
-    '@hierarchidb/runtime-shared-batch-processor',
-    'geojson-vt',
-    '@maplibre/vt-pbf',
+    // UI libs are already in base externals; internal/workers deps should bundle
   ],
 });
 

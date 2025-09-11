@@ -22,7 +22,8 @@ export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
   if (!isFlagEnabled('LOCATION_RUNTIME_WORKER', false)) return;
   try {
     // Lazy import to avoid bundling when flag is off
-    const mod: any = await import('@hierarchidb/runtime-worker');
+    const name = '@' + 'hierarchidb/runtime-worker';
+    const mod: any = await import(/* @vite-ignore */ (name as string));
     if (typeof mod?.createStageWorkerClient === 'function') {
       // Create client instance once (caller can store if needed)
       await mod.createStageWorkerClient();
@@ -31,4 +32,3 @@ export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
     // Silently ignore when runtime-worker is not available (dev/offline)
   }
 }
-

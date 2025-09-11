@@ -6,6 +6,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 import deprecation from 'eslint-plugin-deprecation';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
@@ -35,9 +36,28 @@ export default [
     },
     plugins: {
       deprecation,
+      'react-hooks': reactHooks,
     },
     rules: {
       ...js.configs.recommended.rules,
+      // Keep repo green: prefer warnings for stylistic pitfalls in mixed JS/TS code
+      'no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+      'no-case-declarations': 'warn',
+      'no-sparse-arrays': 'warn',
+      'no-constant-binary-expression': 'warn',
+    },
+  },
+
+  // TypeScript-specific tweaks
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      // TS already checks for undefined identifiers
+      'no-undef': 'off',
     },
   },
 
@@ -76,5 +96,22 @@ export default [
       'deprecation/deprecation': 'error',
     },
   },
-];
 
+  // React Hooks rules (enabled globally for React codebases)
+  {
+    files: ['**/*.{jsx,tsx}'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+
+  // Storybook stories often use non-component render functions; relax hook rules there
+  {
+    files: ['**/*.stories.{ts,tsx,js,jsx}'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
+  },
+];

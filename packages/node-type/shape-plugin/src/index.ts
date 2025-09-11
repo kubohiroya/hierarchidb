@@ -27,3 +27,13 @@ export { BatchSessionManager as ShapeBatchSessionManager } from './services/batc
 export { ShapePluginDefinition } from './definitions/ShapePluginDefinition';
 export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabular-store';
 export * from './services/tiles/RuntimeTileClient';
+
+// Optional runtime wiring for shared bootstrap (no shared imports)
+export const runtimeWiring = {
+  registerRuntimeWorkerAdapters: async () => {
+    try {
+      const mod = await import('./services/batch/adapters/registerRuntimeWorker');
+      await mod.registerShapeRuntimeWorkerAdapters();
+    } catch { /* noop */ }
+  },
+} as const;

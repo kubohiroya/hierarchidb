@@ -33,7 +33,7 @@ export function useRouteBatchProgress(jobId: string, deps?: { emitter?: Progress
 
   // Unify with ui-core batch progress for UI consumers
   const adapter = useMemo(
-    () => createAdapterFromProgressSubscribe((cb) => emitter.on((s) => cb({
+    () => createAdapterFromProgressSubscribe((cb) => emitter.on((s: ProgressSnapshot) => cb({
       stage: s.phase,
       total: 100,
       completed: s.progress,
@@ -45,7 +45,7 @@ export function useRouteBatchProgress(jobId: string, deps?: { emitter?: Progress
   );
   const { progress } = useBatchProgress(adapter, {
     poll: store
-      ? () => store.get(jobId).then((s) => (s ? ({
+      ? () => store.get(jobId).then((s: ProgressSnapshot | undefined) => (s ? ({
         stage: s.phase,
         total: 100,
         completed: s.progress,

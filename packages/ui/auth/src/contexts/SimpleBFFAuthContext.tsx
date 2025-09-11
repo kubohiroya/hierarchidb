@@ -770,8 +770,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     };
 
     // Enhanced monitoring for auth completion
-    let checkInterval: NodeJS.Timeout;
-    let timeoutHandle: NodeJS.Timeout;
+    let checkInterval: ReturnType<typeof setInterval>;
+    let timeoutHandle: ReturnType<typeof setTimeout>;
 
     const startAuthMonitoring = () => {
       let monitoringCount = 0;

@@ -128,7 +128,7 @@ Consumers should import as follows:
 Notes:
 
 - UI/Worker do not import app internals. The app provides the Worker client via:
-  `import { registerWorkerClientHook } from '@hierarchidb/shape-plugin/ui'`
+  `import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap'`
   and `registerWorkerClientHook(useWorkerAPIClient)` at startup.
 - The app should reference `@hierarchidb/shape-plugin` entries via dist (avoid src deep imports).
 - `exports` in package.json are configured accordingly; TS type resolution points to `dist/*.d.ts`.

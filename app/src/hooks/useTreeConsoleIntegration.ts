@@ -20,6 +20,10 @@ export interface UseTreeConsoleIntegrationParams {
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
+  // Optional router navigation bridge to keep URL in sync
+  pushPath?: (to: string | number) => void;
+  // Current location.search for initial sync and change detection
+  locationSearch?: string;
 }
 
 export interface TreeConsoleState {
@@ -81,9 +85,12 @@ export function useTreeConsoleIntegration({
                                             treeId,
                                             pageNodeId,
                                             pageTreeNode,
+                                            pushPath,
+                                            locationSearch,
                                           }: UseTreeConsoleIntegrationParams) {
   // TreeTypes data state
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
+  const [rawNodes, setRawNodes] = useState<TreeNode[]>([]);
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [expandedIds, setExpandedIds] = useState<NodeId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,13 +130,62 @@ export function useTreeConsoleIntegration({
   // Import/Export functionality
   const importExport = useImportExport(client, !!client);
 
+  // Helper: apply sort/filter/search to raw nodes
+  const applySortFilterSearch = (nodes: TreeNode[]): TreeNodeData[] => {
+    const sortBy = state.sortBy || 'name';
+    const sortDir = state.sortDirection || 'asc';
+    const filterBy = state.filterBy || '';
+    const term = searchTerm?.trim();
+    let arr = [...nodes];
+    if (filterBy) arr = arr.filter((n) => n.nodeType === (filterBy as unknown as NodeType));
+    if (term) {
+      const t = term.toLowerCase();
+      arr = arr.filter((n) => (n.name || '').toLowerCase().includes(t));
+    }
+    arr.sort((a, b) => {
+      const va = (a as any)[sortBy] ?? '';
+      const vb = (b as any)[sortBy] ?? '';
+      const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr.map(convertTreeNodeToTreeNodeData);
+  };
+
+  // Helper: load children of a node and refresh view
+  const loadChildrenOf = async (parentId: NodeId) => {
+    if (!client) return;
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const queryAPI = await client.getQueryAPI();
+      const children = await queryAPI.listChildren(parentId);
+      const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash' && parentId === (pageNodeId as NodeId);
+      let displayNodes: TreeNode[] = children;
+      if (shouldFlattenTrash) {
+        const batches = await Promise.all(children.map((h) => queryAPI.listChildren(h.id as NodeId)));
+        displayNodes = batches.flat();
+      }
+      setRawNodes(displayNodes);
+      setTreeData(applySortFilterSearch(displayNodes));
+    } catch (err) {
+      console.error('Failed to load children:', err);
+      setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));
+    } finally {
+      setState((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   // Actions implementation
   const actions = useMemo<TreeConsoleActions>(
     () => ({
       handleNodeClick: (node: TreeNodeData) => {
-        console.log('Node clicked:', node);
-        // TODO: Navigate to node or perform action based on node type
-        // Avoiding Orchestrated APIs as requested
+        const targetId = node.id as NodeId;
+        try {
+          if (pushPath && treeId) {
+            const isRootLike = pageTreeNode && pageTreeNode.id === targetId;
+            const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
+            pushPath(isRootLike ? `/t/${treeId}${qs}` : `/t/${treeId}/${targetId}${qs}`);
+          }
+        } catch {}
       },
 
       handleNodeSelect: (nodeId: string, selected: boolean) => {
@@ -178,65 +234,91 @@ export function useTreeConsoleIntegration({
         }
       },
 
-      handleSearchChange: (term: string) => {
+      handleSearchChange: async (term: string) => {
         setSearchTerm(term);
-        // TODO: Implement search functionality using Worker API
-        // Avoiding Orchestrated APIs as requested
+        if (!client) return;
+        const root = pageNodeId as NodeId;
+        if (!term.trim()) {
+          loadChildrenOf(root);
+          return;
+        }
+        try {
+          const queryAPI = await client.getQueryAPI();
+          const results = await queryAPI.searchNodes({ rootNodeId: root, query: term, mode: 'partial', maxResults: 200 });
+          setRawNodes(results);
+          setTreeData(applySortFilterSearch(results));
+        } catch (e) {
+          console.error('Search failed:', e);
+        }
       },
 
       handleSearchClear: () => {
         setSearchTerm('');
       },
 
-      handleCreate: () => {
-        console.log('Create action triggered');
-        // Simple folder-plugin creation implementation for E2E testing
-        const folderName = prompt('Enter folder-plugin name:');
-        if (folderName && folderName.trim()) {
-          console.log('Creating folder-plugin:', folderName.trim());
-          // For E2E testing purposes, we'll use a simple prompt
-          // In a real implementation, this would open a proper base-dialog
+      handleCreate: async () => {
+        if (!client) return;
+        const name = prompt('Enter new item name (default: New Item)')?.trim() || 'New Item';
+        const parentId = pageNodeId as NodeId;
+        const nodeType: NodeType = 'folder' as NodeType;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.createNode({ nodeType, treeId: (treeId as TreeId) || ('default-tree' as TreeId), parentId, name });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Create failed');
+            return;
+          }
+          await loadChildrenOf(parentId);
+        } catch (e) {
+          console.error('Create failed:', e);
+          showCommandError('UNKNOWN_ERROR');
         }
       },
 
-      handleEdit: () => {
-        console.log('Edit action triggered for:', selectedIds);
-        // TODO: Implement edit functionality
-        // Avoiding Orchestrated APIs as requested
+      handleEdit: async () => {
+        if (!client || selectedIds.length !== 1) return;
+        const nodeId = selectedIds[0] as NodeId;
+        const newName = prompt('Enter new name')?.trim();
+        if (!newName) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.updateNode({ nodeId, name: newName });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+            return;
+          }
+          const parent = pageNodeId as NodeId;
+          await loadChildrenOf(parent);
+        } catch (e) {
+          console.error('Update failed:', e);
+          showCommandError('UNKNOWN_ERROR');
+        }
       },
 
-      handleDelete: () => {
-        console.log('Delete action triggered for:', selectedIds);
-        // TODO: Implement delete functionality
-        // Avoiding Orchestrated APIs as requested
+      handleDelete: async () => {
+        if (!client || selectedIds.length === 0) return;
+        const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
+        if (!ok) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
+            return;
+          }
+          const parent = pageNodeId as NodeId;
+          await loadChildrenOf(parent);
+          setSelectedIds([]);
+        } catch (e) {
+          console.error('Remove failed:', e);
+          showCommandError('UNKNOWN_ERROR');
+        }
       },
 
       handleRefresh: async () => {
-        if (!client || !pageNodeId) return;
-
-        setState((prev) => ({ ...prev, loading: true }));
-        try {
-          const queryAPI = await client.getQueryAPI();
-          const children = await queryAPI.listChildren(pageNodeId as NodeId);
-          const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash';
-          let displayNodes: TreeNode[] = children;
-          if (shouldFlattenTrash) {
-            const grandChildrenBatches = await Promise.all(
-              children.map((holder) => queryAPI.listChildren(holder.id as NodeId)),
-            );
-            displayNodes = grandChildrenBatches.flat();
-          }
-          const treeNodeData = displayNodes.map(convertTreeNodeToTreeNodeData);
-          setTreeData(treeNodeData);
-        } catch (err) {
-          console.error('Failed to refresh tree data:', err);
-          setState((prev) => ({
-            ...prev,
-            error: err instanceof Error ? err.message : String(err),
-          }));
-        } finally {
-          setState((prev) => ({ ...prev, loading: false }));
-        }
+        const root = pageNodeId as NodeId;
+        if (!client || !root) return;
+        await loadChildrenOf(root);
       },
 
       handleExpandAll: () => {
@@ -254,29 +336,40 @@ export function useTreeConsoleIntegration({
           sortBy: columnId,
           sortDirection: prev.sortBy === columnId && prev.sortDirection === 'asc' ? 'desc' : 'asc',
         }));
+        setTreeData(applySortFilterSearch(rawNodes));
       },
 
       handleFilterChange: (filter: string) => {
         setState((prev) => ({ ...prev, filterBy: filter }));
+        setTreeData(applySortFilterSearch(rawNodes));
       },
 
       handleViewModeChange: (mode: ViewMode) => {
         setViewMode(mode);
       },
 
-      handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => {
-        console.log('Breadcrumb navigate to:', nodeId, node);
-        // TODO: Implement navigation
+      handleBreadcrumbNavigate: (nodeId: string) => {
+        const target = nodeId as NodeId;
+        if (!target) return;
+        try {
+          if (pushPath && treeId) {
+            // If navigating to the tree root, prefer the short form `/t/:treeId`
+            const isRootLike = pageTreeNode && pageTreeNode.id === target;
+            pushPath(isRootLike ? `/t/${treeId}` : `/t/${treeId}/${target}`);
+          }
+        } catch {}
       },
 
       handleNavigateBack: () => {
-        console.log('Navigate back');
-        // TODO: Implement back navigation
+        try {
+          if (pushPath) pushPath(-1);
+        } catch {}
       },
 
       handleNavigateForward: () => {
-        console.log('Navigate forward');
-        // TODO: Implement forward navigation
+        try {
+          if (pushPath) pushPath(1);
+        } catch {}
       },
 
       handleContextMenuAction: async (action: string, node: TreeNodeData) => {
@@ -338,29 +431,68 @@ export function useTreeConsoleIntegration({
         // Avoiding Orchestrated APIs as requested
       },
 
-      handleUndo: () => {
-        console.log('Undo action triggered');
-        // TODO: Implement undo functionality using Worker API
+      handleUndo: async () => {
+        if (!client) return;
+        try {
+          const cp = await (client as any).getCommandProcessor();
+          await cp.undo();
+          const root = pageNodeId as NodeId;
+          await loadChildrenOf(root);
+        } catch (e) {
+          console.error('Undo failed:', e);
+        }
       },
 
-      handleRedo: () => {
-        console.log('Redo action triggered');
-        // TODO: Implement redo functionality using Worker API
+      handleRedo: async () => {
+        if (!client) return;
+        try {
+          const cp = await (client as any).getCommandProcessor();
+          await cp.redo();
+          const root = pageNodeId as NodeId;
+          await loadChildrenOf(root);
+        } catch (e) {
+          console.error('Redo failed:', e);
+        }
       },
 
       handleCopy: () => {
-        console.log('Copy action triggered for:', selectedIds);
-        // TODO: Implement copy functionality using Worker API
+        (globalThis as any).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds] };
+        setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
       },
 
-      handlePaste: () => {
-        console.log('Paste action triggered');
-        // TODO: Implement paste functionality using Worker API
+      handlePaste: async () => {
+        if (!client) return;
+        const clip = (globalThis as any).__HDB_CLIPBOARD__ as { nodeIds: NodeId[] } | undefined;
+        const ids = clip?.nodeIds || [];
+        if (ids.length === 0) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const toParentId = pageNodeId as NodeId;
+          const res = await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
+          if (!('success' in res) || !res.success) {
+            showCommandError('INVALID_OPERATION', (res as any)?.error || 'Paste failed');
+            return;
+          }
+          await loadChildrenOf(toParentId);
+        } catch (e) {
+          console.error('Paste failed:', e);
+        }
       },
 
-      handleDuplicate: () => {
-        console.log('Duplicate action triggered for:', selectedIds);
-        // TODO: Implement duplicate functionality using Worker API
+      handleDuplicate: async () => {
+        if (!client || selectedIds.length === 0) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const toParentId = pageNodeId as NodeId;
+          const res = await mutationAPI.duplicateNodes({ nodeIds: selectedIds as NodeId[], toParentId });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Duplicate failed');
+            return;
+          }
+          await loadChildrenOf(toParentId);
+        } catch (e) {
+          console.error('Duplicate failed:', e);
+        }
       },
 
       handleImport: async () => {
@@ -456,27 +588,26 @@ export function useTreeConsoleIntegration({
 
       try {
         console.log('[useTreeConsoleIntegration] Loading tree data for node:', pageNodeId);
+        // Initialize from query params if provided
+        try {
+          if (locationSearch) {
+            const params = new URLSearchParams(locationSearch);
+            const q = params.get('q') || '';
+            if (q) setSearchTerm(q);
+            const root = pageNodeId as NodeId;
+            if (q) {
+              const queryAPI = await client.getQueryAPI();
+              const results = await queryAPI.searchNodes({ rootNodeId: root, query: q, mode: 'partial', maxResults: 200 });
+              setRawNodes(results);
+              setTreeData(applySortFilterSearch(results));
+              setState((prev) => ({ ...prev, loading: false }));
+              return;
+            }
+          }
+        } catch {}
 
-        // Get children of the current node using facade API
-        const queryAPI = await client.getQueryAPI();
-        const children = await queryAPI.listChildren(pageNodeId as NodeId);
-
-        // If current page is trash root, flatten one level to hide holder nodes
-        const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash';
-        let displayNodes: TreeNode[] = children;
-        if (shouldFlattenTrash) {
-          const grandChildrenBatches = await Promise.all(
-            children.map((holder) => queryAPI.listChildren(holder.id as NodeId)),
-          );
-          displayNodes = grandChildrenBatches.flat();
-        }
-
-        console.log('[useTreeConsoleIntegration] Loaded children:', children);
-
-        // Convert TreeNode[] to TreeNodeData[]
-        const treeNodeData = displayNodes.map(convertTreeNodeToTreeNodeData);
-        setTreeData(treeNodeData);
-
+        const rootToLoad = pageNodeId as NodeId;
+        await loadChildrenOf(rootToLoad);
         setState((prev) => ({ ...prev, loading: false }));
       } catch (err) {
         console.error('[useTreeConsoleIntegration] Failed to load tree data:', err);
@@ -489,7 +620,34 @@ export function useTreeConsoleIntegration({
     };
 
     loadTreeData();
-  }, [client, pageNodeId]);
+  }, [client, pageNodeId, locationSearch]);
+
+  // Sync search (q) only to URL query parameters
+  useEffect(() => {
+    if (!pushPath || !treeId) return;
+    const root = pageNodeId as NodeId;
+    if (!root) return;
+    const params = new URLSearchParams();
+    if (searchTerm?.trim()) params.set('q', searchTerm.trim());
+    const qs = params.toString();
+    // Do not append the rootId segment when the current URL is already the short form `/t/:treeId`
+    let pathBase = `/t/${treeId}`;
+    try {
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+      let isDeep = pathname.startsWith(`${pathBase}/`);
+      // If the current page node is the tree root, prefer the short form even when URL was deep
+      if (pageTreeNode && pageTreeNode.id === root) {
+        isDeep = false;
+      }
+      const path = `${pathBase}${isDeep ? `/${root}` : ''}${qs ? `?${qs}` : ''}`;
+      pushPath(path);
+    } catch {
+      // Fallback: never include the rootId segment
+      const path = `${pathBase}${qs ? `?${qs}` : ''}`;
+      try { pushPath(path); } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, pageNodeId]);
 
   // Permission checks (simplified for now, avoiding Orchestrated APIs)
   const canCreate = true;

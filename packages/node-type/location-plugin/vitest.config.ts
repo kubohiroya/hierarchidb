@@ -6,8 +6,7 @@ export default defineConfig({
     alias: {
       '@hierarchidb/batch': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
       '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
-      '@maplibre/vt-pbf': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
-      'geojson-vt': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
+      // vt-pbf/geojson-vt are no longer imported in this package
     },
   },
   test: {

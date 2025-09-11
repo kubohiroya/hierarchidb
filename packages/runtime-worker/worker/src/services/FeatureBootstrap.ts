@@ -9,12 +9,19 @@ import { featureDefinition as compute } from '@hierarchidb/compute';
 import { featureDefinition as batch } from '@hierarchidb/batch';
 import { featureDefinition as download } from '@hierarchidb/download';
 import { featureDefinition as mapSource } from '@hierarchidb/map-source';
-import { featureDefinition as mapView } from '@hierarchidb/map-view';
 import { featureDefinition as authRecovery } from '@hierarchidb/auth-recovery';
 
 export async function bootstrapFeatures(): Promise<FeatureRegistry> {
   const registry = new FeatureRegistry();
-  [tag, ie, tabular, compute, batch, download, mapSource, mapView, authRecovery].forEach((f) => registry.register(f));
+  [tag, ie, tabular, compute, batch, download, mapSource, authRecovery].forEach((f) => registry.register(f));
+  // Optional: map-adapter (UI adapter only)
+  try {
+    const name = '@' + 'hierarchidb/map-adapter';
+    const mod: any = await import(/* @vite-ignore */ (name as string));
+    if (mod?.featureDefinition) registry.register(mod.featureDefinition);
+  } catch {
+    // optional, ignore
+  }
   // Optional feature: tabular-xlsx
   try {
     const mod: any = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');

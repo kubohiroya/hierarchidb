@@ -16,6 +16,13 @@ export { WorkerInitializationReporter } from './WorkerInitializationReporter';
 // React components
 export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider';
 
+// UI: App-provided Worker client hook registration (shared for plugins)
+export { registerWorkerClientHook, getWorkerClientHook } from './ui/workerClientHook';
+export type { WorkerClientHook } from './ui/workerClientHook';
+
+// Wiring utilities (plugin capability bootstrap)
+export { wirePluginsFromModules } from './wiring/wirePlugins';
+
 
 // Re-export types for convenience
 export type {

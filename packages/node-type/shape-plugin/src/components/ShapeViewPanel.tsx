@@ -131,7 +131,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
   useEffect(() => {
     fetchBatchStatus();
 
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (entity.batchSessionId && entity.processingStatus === 'processing') {
       interval = setInterval(fetchBatchStatus, 5000); // Refresh every 5 seconds
     }

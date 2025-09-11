@@ -35,6 +35,18 @@ OpenStreetMapやGeoNames等のオープンデータソースから、空港、�
 
 ## 利用可能なオープンデータソース
 
+### オープンデータ提供元まとめ（概要）
+
+| データソース名 | 提供データ内容 | データ量（件数・サイズ：概算） | 利用ライセンス |
+| - | - | - | - |
+| OpenStreetMap (Overpass API) | OSM要素（行政界/道路/鉄道/自然地物 等） | クエリ依存（数千〜数十万件、数MB〜） | ODbL 1.0 |
+| OpenStreetMap (Nominatim) | ジオコーディング結果（名称/緯度経度/境界） | 1リクエスト最大50件（既定） | ODbL 1.0 |
+| GeoNames | 地名辞書（名称/座標/国コード/分類 等） | 全体で約1,100万件（配布1–2GB目安）／APIは最大100件/Req（既定） | CC BY 4.0 |
+| Natural Earth | 行政界/都市/海岸線/河川/湖（ベクター） | レイヤ毎ZIP 5–50MB、都市点約7k件 | Public Domain |
+| OurAirports | 空港一覧（ICAO/IATA/位置/標高 等） | 約70k行、CSV 6–10MB | Public Domain |
+| OpenFlights | 空港データ（名称/都市/国/コード/位置 等） | 約7k空港、~0.6–1MB | ODbL 1.0 |
+| World Port Index | 港湾一覧（名称/国/位置/港規模 等） | 約3.5–4.5k港、5–15MB | Public Domain |
+
 ### 主要データソース一覧
 
 | データソース | URL | ライセンス | 地点タイプ | データ項目 | 更新頻度 |

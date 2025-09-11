@@ -104,19 +104,27 @@ async function retryComlinkCall<T>(
         throw error;
       }
 
-      // For Comlink errors, try to recreate the worker connection
-      console.warn(`[${operationName}] Comlink error detected, recreating worker connection...`);
-
+      // Avoid recreating the Worker while it is still booting to prevent races
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
         const { WorkerAPIClient } = await import('./WorkerAPIClient');
-        WorkerAPIClient.reset(); // Reset the client state
-        await WorkerAPIClient.initialize(); // Reinitialize
-        console.log(`[${operationName}] Worker connection recreated`);
-      } catch (recreationError) {
-        console.error(`[${operationName}] Failed to recreate worker connection:`, recreationError);
-      }
+        const initComplete = Boolean(g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
-      // Wait before retry
+        if (!initComplete) {
+          console.warn(`[${operationName}] Comlink error during boot; will wait instead of recreating worker.`);
+        } else {
+          console.warn(`[${operationName}] Comlink error post-boot; recreating worker connection...`);
+          try {
+            WorkerAPIClient.reset();
+            await WorkerAPIClient.initialize();
+            console.log(`[${operationName}] Worker connection recreated`);
+          } catch (recreationError) {
+            console.error(`[${operationName}] Failed to recreate worker connection:`, recreationError);
+          }
+        }
+      } catch {}
+
       const delay = retryDelays[attempt];
       console.log(`[${operationName}] Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -127,20 +135,83 @@ async function retryComlinkCall<T>(
 }
 
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
+  // Coordinate concurrent loader calls during hard-refresh/direct-access
+  // by sharing a single wait promise for INIT_COMPLETE across the app runtime.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g: any = typeof window !== 'undefined' ? (window as any) : {};
+  if (!g.__HDB_INIT_WAIT__) g.__HDB_INIT_WAIT__ = null as Promise<void> | null;
   const appConfig = loadAppConfig();
+  try { console.log('[HDB-BOOT] Loader start'); } catch {}
 
   try {
-    //  WorkerAPIClientWorkerProvider
+    //  WorkerAPIClient
     const { WorkerAPIClient } = await import('./WorkerAPIClient');
 
-    //  WorkerProvider
+    // Fast path: if global INIT_COMPLETE already observed, return immediately
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+      if (g.__HDB_INIT_COMPLETE__) {
+        try {
+          const client = WorkerAPIClient.getSingleton();
+          console.log('[HDB-BOOT] Loader fast-return via global INIT_COMPLETE (getSingleton)');
+          return { ...appConfig, client };
+        } catch {
+          const client = await WorkerAPIClient.getOrInit();
+          console.log('[HDB-BOOT] Loader fast-return via global INIT_COMPLETE (getOrInit)');
+          return { ...appConfig, client };
+        }
+      }
+    } catch {}
+
+    // Ensure initialization kicked off (does not block rendering)
     if (!WorkerAPIClient.isReady()) {
       console.warn('[loadWorkerAPIClient] Worker not initialized by provider, initializing now...');
-      await WorkerAPIClient.initialize();
+      try { console.log('[HDB-BOOT] Loader initializing WorkerAPIClient'); } catch {}
+      // Kick off initialization without awaiting to avoid race; event barrier will resolve readiness
+      WorkerAPIClient.initialize().catch(() => {});
     }
 
-    //  - WorkerAPIClientworker
+    // Wait for INIT_COMPLETE with a stricter gate to avoid early Comlink calls.
+    // Resolve when either (a) window event fires, or (b) WorkerAPIClient.isReady() becomes true,
+    // or (c) an overall timeout elapses.
+    const ensureInitComplete = async (timeoutMs = 20000) => {
+      try { console.log('[HDB-BOOT] Loader ensureInit start'); } catch {}
+      try { if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return; } catch {}
+      if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
+      if (!g.__HDB_INIT_WAIT__) {
+        g.__HDB_INIT_WAIT__ = new Promise<void>((resolve) => {
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          const checkReady = () => {
+            try { if (WorkerAPIClient.isReady()) finish(); } catch {}
+          };
+          try {
+            const handler = () => {
+              try { window.removeEventListener('hierarchidb-worker-init-complete', handler); } catch {}
+              g.__HDB_INIT_COMPLETE__ = true;
+              try { console.log('[HDB-BOOT] Loader ensureInit via event'); } catch {}
+              finish();
+            };
+            window.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
+          } catch {}
+          const poll = window.setInterval(checkReady, 100);
+          window.setTimeout(() => {
+            try { window.clearInterval(poll); } catch {}
+            try { console.log('[HDB-BOOT] Loader ensureInit timeout used'); } catch {}
+            finish();
+          }, timeoutMs);
+        });
+      }
+      await g.__HDB_INIT_WAIT__;
+      g.__HDB_INIT_WAIT__ = null;
+    };
+
+    await ensureInitComplete();
+
+    // Obtain the instance
     const client = WorkerAPIClient.getSingleton();
+    try { console.log('[HDB-BOOT] Loader getSingleton ok'); } catch {}
 
 
     return {
@@ -176,7 +247,6 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
     },
     'loadTree.getTree',
   );
-
 
   // Get final client state for return
   const workerAPIClientReturn = await loadWorkerAPIClient();

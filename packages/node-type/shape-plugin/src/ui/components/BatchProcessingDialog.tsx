@@ -65,7 +65,7 @@ export function BatchProcessingDialog({
 
   const [isPaused, setIsPaused] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [completionTimer, setCompletionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [completionTimer, setCompletionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [tab, setTab] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
 

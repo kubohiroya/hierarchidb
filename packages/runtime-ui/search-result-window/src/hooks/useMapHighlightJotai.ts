@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
   * Map Highlight Hook with Jotai
   * jotai
@@ -137,3 +138,4 @@ export const useMapHighlight = ({
     setFocused,
   };
 };
+/* eslint-disable no-unused-vars */

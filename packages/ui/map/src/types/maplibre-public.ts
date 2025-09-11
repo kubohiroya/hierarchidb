@@ -51,6 +51,14 @@ export interface MapLibreMapInstance {
   removeLayer(id: string): void;
 
   addControl(control: unknown, position?: string): void;
+
+  // Commonly used convenience methods (subset of MapLibre Map API)
+  zoomIn(): void;
+  zoomOut(): void;
+  flyTo(opts: { center?: [number, number]; zoom?: number; bearing?: number; pitch?: number; speed?: number }): void;
+  setPitch(pitch: number): void;
+  setStyle(style: string | MapLibreStyle): void;
+  fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;
 }
 
 // Minimal filter type to avoid leaking upstream types

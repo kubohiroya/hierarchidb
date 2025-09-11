@@ -1,16 +1,8 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "@hierarchidb/common-type": ["packages/common/types/src/index.ts"],
-      "@hierarchidb/common-api": ["packages/common/api/src/index.ts"],
-      "@hierarchidb/base-plugin": ["packages/node-type/base-plugin/src/index.ts"],
-      "@hierarchidb/runtime-shared-batch-processor": ["packages/runtime-shared/batch-processor/src/index.ts"],
-      "@hierarchidb/tabular-store": ["packages/feature/tabular-store/src/index.ts"],
-      "@hierarchidb/batch": ["packages/feature/batch/src/index.ts"],
-      "@hierarchidb/ui-core": ["packages/ui/core/src/index.ts"],
-      "@hierarchidb/auth-recovery": ["packages/feature/auth-recovery/src/index.ts"]
-    },
+    "baseUrl": ".",
+    "paths": { "~/*": ["src/*"] },
     "outDir": "dist",
     "types": ["node"],
     "jsx": "react-jsx"

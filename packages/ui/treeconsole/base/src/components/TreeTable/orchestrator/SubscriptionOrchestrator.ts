@@ -66,7 +66,7 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
   const [tableData, setTableData] = useAtom(tableDataAtom);
 
   // Refs for batching
-  const updateBatchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const updateBatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const subscriptionRef = useRef<any>(null);
 
   /**

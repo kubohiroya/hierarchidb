@@ -18,6 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "license-checker": "^25.0.1"
+    "license-checker": "^25.0.1",
+    "tsup": "^8.5.0"
   }
 }

@@ -27,3 +27,6 @@ export const BasePluginDefinition = {
     showInPluginList: false,   // Not shown in plugin list
   },
 };
+
+// Optional runtime wiring (no-op for base plugin)
+export const runtimeWiring = {} as const;

@@ -8,8 +8,10 @@ export default createTsupConfig({
   external: [
     'provider',
     'provider-dom',
+    'react',
     '@mui/material',
     '@mui/icons-material',
+    '@emotion/react',
     '@emotion/provider',
     '@emotion/styled',
     'dexie',

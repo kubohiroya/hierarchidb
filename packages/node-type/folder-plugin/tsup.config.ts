@@ -9,6 +9,13 @@ export default createTsupConfig({
   },
   splitting: false,
   external: [
-    '@hierarchidb/util',
+    // UI peers
+    'react',
+    '@mui/material',
+    '@mui/icons-material',
+    '@emotion/react',
+    '@emotion/styled',
+    // runtime peers
+    'dexie',
   ],
 });

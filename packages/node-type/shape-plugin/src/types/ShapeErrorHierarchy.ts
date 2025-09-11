@@ -7,7 +7,7 @@
  * 4.
   */
 
-import type { TreeNodeId } from '@hierarchidb/core';
+import type { TreeNodeId } from '@hierarchidb/common-type';
 
 // ========================================
 // ========================================

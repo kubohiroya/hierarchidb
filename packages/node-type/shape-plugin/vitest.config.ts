@@ -44,6 +44,7 @@ export default defineConfig({
       '@hierarchidb/core': path.resolve(__dirname, '../../common/types/dist/index.js'),
       '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/dist/index.js'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist/index.js'),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/dist/index.js'),
       '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/dist/index.js'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.js'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.js'),

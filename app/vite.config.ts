@@ -53,37 +53,65 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     }),
   ];
 
+  // beacon values captured in closure
+  const buildTime = new Date().toISOString();
+  let appVersion = '0.0.0-dev';
+  try {
+    const pkgPath = path.resolve(__dirname, 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
+    if (pkg?.version) appVersion = pkg.version;
+  } catch {}
+
+  const buildBeaconPlugin = {
+    name: 'hdb-build-beacon',
+    configureServer(server: any) {
+      const startedAt = new Date().toISOString();
+      server.middlewares.use('/__hdb_build.json', (_req: any, res: any) => {
+        const payload = {
+          appVersion,
+          buildTime,
+          serverStartedAt: startedAt,
+          pid: process.pid,
+          cwd: process.cwd(),
+        };
+        res.setHeader('content-type', 'application/json');
+        res.end(JSON.stringify(payload));
+      });
+    },
+  } as any;
+
   return {
     base,
     define: (() => {
       // Inject version and build time for logging
-      let appVersion = '0.0.0-dev';
-      try {
-        const pkgPath = path.resolve(__dirname, 'package.json');
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
-        if (pkg?.version) appVersion = pkg.version;
-      } catch {
-      }
-      const buildTime = new Date().toISOString();
       return {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),
       } as Record<string, string>;
     })(),
-    plugins,
+    plugins: [buildBeaconPlugin, ...plugins],
     resolve: {
-      dedupe: ['@emotion/react', '@emotion/styled', 'provider', 'provider-dom'],
+      // Avoid multiple React copies by always resolving to the app's React
+      dedupe: ['react', 'react-dom', '@emotion/react', '@emotion/styled', 'provider', 'provider-dom'],
       alias: [
         { find: '~', replacement: path.resolve(__dirname, './src') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
+        // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
+        // Stub it for browser builds to avoid __vite-browser-external resolution errors.
+        { find: 'child_process', replacement: path.resolve(__dirname, './src/virtual/child-process-shim.ts') },
         // Legacy provider alias used by some plugins
         { find: 'provider-i18next', replacement: 'react-i18next' },
-        // Link workspace UI dialog package without relying on app-local install
-        { find: '@hierarchidb/ui-dialog', replacement: path.resolve(__dirname, '../packages/ui/dialog/dist/index.js') },
-        // Ensure direct plugin imports resolve in worker fallback wiring
-        { find: '@hierarchidb/location-plugin', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/dist/index.js') },
-        { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/dist/index.mjs') },
+        // Ensure worker bundle can resolve @hierarchidb/runtime-worker from plugin dist
+        // We point to the built dist to let Vite trace its internal worker entry (stageWorker.entry.js)
+        {
+          find: '@hierarchidb/runtime-worker',
+          replacement: path.resolve(__dirname, '../packages/runtime-worker/worker/dist/index.js'),
+        },
+        // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugins
+        // Rationale: location-plugin bundles it as external; alias points to built dist
+        // Temporary aliases removed after dynamic imports hardened
+        // Note: do not alias workspace packages; rely on declared deps and workspace linking
         // Known broken package: route to a harmless stub until implemented
         {
           find: '@hierarchidb/spreadsheet-plugin',
@@ -112,7 +140,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       format: 'es',
       // Apply both comlink and package-reader to worker bundle so virtual modules
       // are available inside the worker context as well.
-      plugins: () => [
+      plugins: [
         // Run package-reader first so virtual modules are available early
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
@@ -126,14 +154,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
               packages.delete('@hierarchidb/spreadsheet-plugin');
               return packages;
             },
-            // Worker context: include only plugins that provide a worker entry
-            afterTransform: (defs) => {
-              try {
-                return (defs as any[]).filter((d) => d?.resolvedWorkerImport);
-              } catch {
-                return defs;
-              }
-            },
+            // Do not auto-import plugin-specific worker bundles here.
+            // Runtime wiring now handles worker adapters centrally via @hierarchidb/runtime-worker.
           },
         }),
         comlink(),

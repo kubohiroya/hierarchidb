@@ -11,32 +11,64 @@ export function useWorkerAPIClient() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    try {
-      const workerClient = WorkerAPIClient.getSingleton();
-
-      setClient({
-        getAPI: () => workerClient,
-      });
-    } catch (err) {
-      if (err instanceof NotInitializedError) {
-        WorkerAPIClient.initialize()
-          .then(() => {
-            const workerClient = WorkerAPIClient.getSingleton();
-            setClient({
-              getAPI: () => workerClient,
-            });
-          })
-          .catch(setError);
-      } else {
-        setError(err as Error);
+    let cancelled = false;
+    const trySet = (api: any) => {
+      if (!cancelled) setClient({ getAPI: () => api });
+    };
+    const init = async () => {
+      try {
+        // Fast path: already ready
+        if (WorkerAPIClient.isReady()) {
+          trySet(WorkerAPIClient.getSingleton());
+          return;
+        }
+        // Kick initialization and then getOrInit regardless of event ordering
+        await WorkerAPIClient.initialize().catch(() => {});
+        const api = await WorkerAPIClient.getOrInit();
+        trySet(api);
+      } catch (e) {
+        // Fallback to event
+        const onEvt = async () => {
+          try {
+            const api = await WorkerAPIClient.getOrInit();
+            trySet(api);
+          } catch (err) {
+            if (!cancelled) setError(err as Error);
+          }
+        };
+        try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {}
+        // Also poll briefly
+        const start = Date.now();
+        const t = window.setInterval(async () => {
+          if (WorkerAPIClient.isReady()) {
+            try {
+              const api = await WorkerAPIClient.getOrInit();
+              trySet(api);
+            } catch (err) {
+              if (!cancelled) setError(err as Error);
+            } finally {
+              window.clearInterval(t);
+            }
+          } else if (Date.now() - start > 5000) {
+            window.clearInterval(t);
+          }
+        }, 100);
       }
+    };
+    // Global flag immediate path
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__HDB_INIT_COMPLETE__) {
+        WorkerAPIClient.getOrInit().then(trySet).catch(setError);
+      } else {
+        init().catch(setError);
+      }
+    } catch {
+      init().catch(setError);
     }
+    return () => { cancelled = true; };
   }, []);
 
-  //  null
-  if (error || !client) {
-    return null;
-  }
-
+  if (error) return null;
   return client;
 }

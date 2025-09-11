@@ -1,19 +1,12 @@
 {
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "node",
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/common-type": ["../../common/types/src/index.ts"],
-      "@hierarchidb/base-plugin": ["../../node-type/base-plugin/src/index.ts"],
-      "@hierarchidb/ui-map": ["../../ui/map/src/index.ts"]
+      "~/*": ["src/*"]
     },
     "types": ["vite/client", "node"],
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "jsx": "react-jsx"
   },
@@ -21,6 +14,6 @@
     "allowSkipLibCheck": true,
     "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/shims/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

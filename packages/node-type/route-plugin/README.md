@@ -34,6 +34,17 @@ OpenStreetMapやNatural Earth等のオープンデータソースから、航路
 
 ## 利用可能なオープンデータソース
 
+### オープンデータ提供元まとめ（概要）
+
+| データソース名 | 提供データ内容 | データ量（件数・サイズ：概算） | 利用ライセンス |
+| - | - | - | - |
+| OpenStreetMap（Overpass 等） | ルート抽出元のOSMデータ（道路/鉄道/フェリー 等） | クエリ依存（数千〜数十万件） | ODbL 1.0 |
+| Natural Earth | 主要道路・鉄道（中縮尺ベクター） | レイヤ毎ZIP 5–30MB | Public Domain |
+| OpenFlights | 航空路ネットワーク（airline/src/dst/stops 等） | routes.dat 約60–70k経路、~5–8MB | ODbL 1.0 |
+| OpenSeaMap | シーマーク等（航路補助、OSM派生） | 地域依存（数千〜数十万フィーチャ） | ODbL 1.0 |
+| GTFS Static（各事業者） | 公共交通（路線/停留所/時刻/shape） | 事業者ごとに数MB〜200MB超 | 事業者規約（多くはCC系/独自） |
+| OpenRailwayMap | 鉄道ネットワーク（OSM派生の鉄道属性） | 国単位で数万〜数十万線分 | ODbL 1.0 |
+
 ### 主要データソース一覧
 
 | データソース | URL | ライセンス | ルートタイプ | データ項目 | 更新頻度 |

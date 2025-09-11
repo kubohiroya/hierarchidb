@@ -12,7 +12,7 @@ import type { WorkerInitMessage } from '../types';
 class MockWorker implements Partial<Worker> {
   private listeners: Map<string, Set<EventListener>> = new Map();
   private reporter: WorkerInitializationReporter | null = null;
-  private initTimeout: NodeJS.Timeout | null = null;
+  private initTimeout: ReturnType<typeof setTimeout> | null = null;
   public terminated = false;
 
   constructor() {

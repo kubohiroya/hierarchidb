@@ -134,3 +134,6 @@ export async function initializeStylerPlugin(context: {
     throw error;
   }
 }
+
+// Optional runtime wiring (no-op)
+export const runtimeWiring = {} as const;

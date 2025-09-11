@@ -21,7 +21,7 @@ export interface CleanupStatistics {
 export class EphemeralDataCleanupService {
   private readonly EXPIRY_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
   private readonly CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-  private intervalId: NodeJS.Timeout | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Start automatic cleanup process

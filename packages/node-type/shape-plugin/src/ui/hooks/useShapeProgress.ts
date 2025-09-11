@@ -64,7 +64,7 @@ export function useShapeProgress(
 
   // Refs for cleanup
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isRealTimeActiveRef = useRef(false);
 
   // Handle progress events

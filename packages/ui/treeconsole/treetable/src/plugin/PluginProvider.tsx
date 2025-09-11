@@ -158,7 +158,7 @@ export function PluginProvider({
 
     updatePluginStates();
 
-    let interval: NodeJS.Timeout | undefined;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (debugMode) {
       interval = setInterval(updatePluginStates, 1000);
     }

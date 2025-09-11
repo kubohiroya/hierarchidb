@@ -34,6 +34,7 @@ export default function TagsPage() {
   const { data: allTags, isLoading: isLoadingTags } = useQuery({
     queryKey: ['tags', 'all'],
     queryFn: async () => {
+      if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
       return await tagAPI.getAllTags();
     },
@@ -45,6 +46,7 @@ export default function TagsPage() {
     queryKey: ['tag', uuid],
     queryFn: async () => {
       if (!uuid) return null;
+      if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
       return await tagAPI.getTag(uuid as unknown as TagId);
     },
@@ -56,7 +58,7 @@ export default function TagsPage() {
     queryKey: ['tag', uuid, 'nodes'],
     queryFn: async (): Promise<TaggedNode[]> => {
       if (!uuid) return [];
-
+      if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
       const associations = await tagAPI.getNodesByTag(uuid as unknown as TagId);
 
@@ -64,6 +66,7 @@ export default function TagsPage() {
 
       for (const association of associations) {
         try {
+          if (!workerClient) throw new Error('Worker not connected');
           const queryAPI = await workerClient.getQueryAPI();
           const node = await queryAPI.getNode(association.nodeId);
 

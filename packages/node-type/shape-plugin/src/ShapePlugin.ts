@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph: Shape Plugin
   */
 
-import type { TreeNodeId } from '@hierarchidb/core';
+import type { TreeNodeId } from '@hierarchidb/common-type';
 import { BatchSessionManager } from './services/BatchSessionManager';
 import type { BatchConfig } from './types/BatchConfig';
 

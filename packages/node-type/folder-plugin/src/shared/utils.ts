@@ -332,7 +332,7 @@ export function sortFolders(
  * Performance utilities
  */
 export function debounce<T extends (...args: any[]) => any>(func: T, delay: number): T {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return ((...args: any[]) => {
     clearTimeout(timeoutId);

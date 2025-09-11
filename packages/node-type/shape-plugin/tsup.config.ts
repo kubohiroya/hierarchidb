@@ -20,13 +20,15 @@ export default createTsupConfig({
   external: [
     'provider',
     'provider-dom',
+    // UI peers must be externals
+    'react',
+    'react-dom',
     '@mui/material',
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    '@hierarchidb/batch',
-    '@hierarchidb/runtime-worker',
-    '@hierarchidb/runtime-shared-batch-processor',
+    // workspace deps (keep external when not bundled by host)
+    '@hierarchidb/runtime-worker-bootstrap',
     '@hierarchidb/download',
     'dexie',
   ],

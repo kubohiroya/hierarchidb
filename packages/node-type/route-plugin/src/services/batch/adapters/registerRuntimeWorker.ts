@@ -21,7 +21,8 @@ function isFlagEnabled(name: string, fallback = false): boolean {
 export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
   if (!isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) return;
   try {
-    const mod: any = await import('@hierarchidb/runtime-worker');
+    const name = '@' + 'hierarchidb/runtime-worker';
+    const mod: any = await import(/* @vite-ignore */ (name as string));
     if (typeof mod?.createStageWorkerClient === 'function') {
       await mod.createStageWorkerClient();
     }
@@ -29,4 +30,3 @@ export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
     // Silently ignore when runtime-worker is not available (dev/offline)
   }
 }
-

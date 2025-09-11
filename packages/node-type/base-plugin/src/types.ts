@@ -3,6 +3,7 @@
  * @description Base types for base-plugin
  */
 
+/* eslint-disable no-unused-vars */
 import type { NodeId } from '@hierarchidb/common-type';
 
 /**

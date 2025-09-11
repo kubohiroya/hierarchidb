@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@vis.gl/react-maplibre": "^8.0.4",
-    "maplibre-gl": "^4.0.0"
+    "maplibre-gl": "^4.0.0",
+    "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

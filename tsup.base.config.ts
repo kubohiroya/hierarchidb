@@ -11,6 +11,8 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    'react-router',
+    'react-router-dom',
     'maplibre-gl',
     'dexie',
     'react-i18next',

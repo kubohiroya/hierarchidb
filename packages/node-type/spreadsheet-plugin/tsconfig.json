@@ -7,13 +7,7 @@
     "jsx": "react-jsx",
     
     "baseUrl": ".",
-    "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/ui-core": ["../../ui/core/src/index.ts"],
-      "@hierarchidb/ui-data-grid": ["../../ui/data-grid/src/index.ts"],
-      "@hierarchidb/table-metadata": ["../../feature/table-metadata/src/index.ts"],
-      "@hierarchidb/tabular-store": ["../../feature/tabular-store/src/index.ts"]
-    },
+    "paths": { "~/*": ["./src/*"] },
     "lib": [
       "ES2022",
       "DOM",

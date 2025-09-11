@@ -1,13 +1,12 @@
 /**
  * Location SessionController - minimal point -> MVT pipeline
  */
-import { BatchService } from '@hierarchidb/batch';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
-import vtpbf from '@maplibre/vt-pbf';
-import geojsonvt from 'geojson-vt';
+import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import { getStageProcessingClient } from '@hierarchidb/runtime-worker';
 
 export interface LocationPointInput {
   lon: number;
@@ -49,7 +48,6 @@ export class SessionController {
   ) {
   }
 
-  private batch = new BatchService();
   private progressCb?: (p: ProgressInfo) => void;
   private paused = false;
   private cancelled = false;
@@ -69,6 +67,7 @@ export class SessionController {
     // Optional: persist tabular rows for column-wise search
     try {
       const enabled =
+        (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LOCATION_TABULAR === '1') ||
         (typeof process !== 'undefined' && (process as any)?.env?.LOCATION_TABULAR === '1') ||
         (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.LOCATION_TABULAR === true);
       if (enabled) {
@@ -117,65 +116,56 @@ export class SessionController {
     bbox: [number, number, number, number]
   }) {
     const db = getEphemeralLocationDB();
-    const zmin = this.settings.zoomMinGenerate;
-    const zmax = this.settings.zoomMaxGenerate;
-    const extent = this.settings.extent ?? 4096;
-    const tileLimit = this.settings.tileFeatureLimit ?? 10000;
-
-    // Build tile index once
-    const index = geojsonvt(fc as any, {
-      maxZoom: zmax,
-      indexMaxZoom: Math.min(14, zmax),
-      indexMaxPoints: 100000,
-      tolerance: 0, // no simplification for points
-      extent,
-      buffer: 64,
-      lineMetrics: false,
-      promoteId: 'id',
-      maxPointsPerTile: tileLimit,
-    } as any);
-
-    let total = 0;
-    let done = 0;
-    // Estimate tiles to process from bbox ranges
-    const ranges = enumerateTilesForBbox(fc.bbox, zmin, zmax);
-    total = ranges.reduce((s, r) => s + (r.x2 - r.x1 + 1) * (r.y2 - r.y1 + 1), 0);
-
-    const tasks = ranges.flatMap(r => {
-      const list: Array<{ z: number, x: number, y: number }> = [];
-      for (let z = r.z; z <= r.z; z++) {
-        for (let x = r.x1; x <= r.x2; x++) {
-          for (let y = r.y1; y <= r.y2; y++) list.push({ z, x, y });
-        }
+    // 1) Persist normalized GeoJSON into shared chunk store so worker can read it
+    const json = JSON.stringify(fc);
+    const bytes = new TextEncoder().encode(json).buffer;
+    const fileId = this.sessionId; // worker uses this as sessionId
+    try {
+      const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
+      const storage: any = (service as any)?.store;
+      if (storage?.putChunk && storage?.commit) {
+        await storage.putChunk(fileId, 0, bytes);
+        await storage.commit(fileId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
+      } else {
+        console.warn('[Location][Session] Shared storage not available; skipping tilegen');
+        return;
       }
-      return list;
-    });
+    } catch (e) {
+      console.error('[Location][Session] Failed to write input buffer for worker:', e);
+      return;
+    }
 
-    await this.batch.mapChunks(tasks, async ({ z, x, y }: { z: number; x: number; y: number }) => {
-      if (this.cancelled) return;
+    // 2) Delegate tile generation to runtime-worker
+    const client = await getStageProcessingClient();
+    await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' as any });
+
+    // 3) Import generated tiles back into location DB for compatibility
+    const list = await client.vectortile.listTiles(fileId);
+    const total = list.length;
+    let completed = 0;
+    for (const t of list) {
+      if (this.cancelled) break;
       while (this.paused) await new Promise(r => setTimeout(r, 100));
-      const tile = index.getTile(z, x, y);
-      done++;
-      this.emit('tilegen', total, done, 0, `Tile ${z}/${x}/${y}`);
-      if (!tile || !tile.features || tile.features.length === 0) return;
-
-      const pbf = vtpbf.fromGeojsonVt({ location_points: tile }, { version: 2 });
-      const data = (pbf as Uint8Array).buffer.slice(0);
-      const id = `loc-mvt-${this.sessionId}-${z}-${x}-${y}`;
+      const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
+      if (!u8) continue;
+      const data = (u8 as Uint8Array).buffer.slice(0);
+      const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
       const hash = await sha256Hex(new Uint8Array(data));
       await db.vectorTiles.put({
         id,
         sessionId: this.sessionId,
         nodeId: this.nodeId,
-        z, x, y,
+        z: t.z, x: t.x, y: t.y,
         data,
         hash,
         size: data.byteLength,
-        featureCount: tile.features.length,
-        timestamp: Date.now(),
+        featureCount: 0,
+        timestamp: t.timestamp ?? Date.now(),
         contentType: 'application/vnd.mapbox-vector-tile',
       });
-    }, { concurrency: 4, progress: (c: number) => this.emit('tilegen', total, c, 0, 'Generating tiles') });
+      completed++;
+      this.emit('tilegen', total, completed, 0, `Imported tile ${t.z}/${t.x}/${t.y}`);
+    }
   }
 
   private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {
@@ -223,27 +213,7 @@ function computeBbox(pts: LocationPointInput[]): [number, number, number, number
   return [minLon, minLat, maxLon, maxLat];
 }
 
-function enumerateTilesForBbox(bbox: [number, number, number, number], zmin: number, zmax: number) {
-  const [minLon, minLat, maxLon, maxLat] = bbox;
-  const ranges: Array<{ z: number; x1: number; y1: number; x2: number; y2: number }> = [];
-  for (let z = zmin; z <= zmax; z++) {
-    const x1 = long2tile(minLon, z);
-    const x2 = long2tile(maxLon, z);
-    const y1 = lat2tile(maxLat, z); // note: TMS convention
-    const y2 = lat2tile(minLat, z);
-    ranges.push({ z, x1, y1, x2, y2 });
-  }
-  return ranges;
-}
-
-function long2tile(lon: number, z: number) {
-  return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
-}
-
-function lat2tile(lat: number, z: number) {
-  const rad = (lat * Math.PI) / 180;
-  return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, z));
-}
+// Note: tile range enumeration and vt encoding moved to runtime-worker side.
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   if (typeof crypto !== 'undefined' && 'subtle' in crypto) {

@@ -11,6 +11,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./worker": {
+      "import": "./src/worker/index.ts"
     }
   },
   "scripts": {
@@ -23,13 +26,6 @@
   },
   "dependencies": {
     "@hierarchidb/base-plugin": "workspace:*",
-    "@deck.gl/aggregation-layers": "^9.0.0",
-    "@deck.gl/core": "^9.0.0",
-    "@deck.gl/extensions": "^9.0.0",
-    "@deck.gl/geo-layers": "^9.0.0",
-    "@deck.gl/layers": "^9.0.0",
-    "@deck.gl/mapbox": "^9.0.0",
-    "@deck.gl/mesh-layers": "^9.0.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
@@ -38,8 +34,6 @@
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-date": "workspace:*",
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
     "@turf/turf": "^7.0.0",
     "@watergis/maplibre-gl-export": "^4.0.1",
     "d3-scale": "^4.0.0",
@@ -54,7 +48,16 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.8",
-    "@mui/icons-material": "^6.1.8"
+    "@mui/icons-material": "^6.1.8",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@deck.gl/core": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
+    "@deck.gl/extensions": "^9.0.0",
+    "@deck.gl/aggregation-layers": "^9.0.0",
+    "@deck.gl/geo-layers": "^9.0.0",
+    "@deck.gl/mapbox": "^9.0.0",
+    "@deck.gl/mesh-layers": "^9.0.0"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
@@ -72,6 +75,8 @@
   "license": "MIT",
   "tsup": {
     "external": [
+      "@emotion/react",
+      "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
       "react",

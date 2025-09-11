@@ -59,3 +59,6 @@ export const ProjectPluginModule = {
 
 // Default export
 export default ProjectPluginModule;
+
+// Optional runtime wiring (no-op)
+export const runtimeWiring = {} as const;

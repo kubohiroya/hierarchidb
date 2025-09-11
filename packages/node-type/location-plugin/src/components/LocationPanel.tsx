@@ -3,7 +3,8 @@
    */
 
 import React, { useState } from 'react';
-import { Box, Chip, Grid2, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
+import Grid2 from '@mui/material/Grid2';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types';
 

@@ -7,24 +7,7 @@
       "~/*": [
         "./src/*"
       ],
-      "@hierarchidb/runtime-shared-batch-processor": [
-        "../../runtime-shared/batch-processor/src/index.ts"
-      ],
-      "@hierarchidb/download": [
-        "../../feature/download/src/index.ts"
-      ],
-      "@hierarchidb/auth-recovery": [
-        "../../feature/auth-recovery/src/index.ts"
-      ],
-      "@hierarchidb/table-metadata": [
-        "../../feature/table-metadata/src/index.ts"
-      ],
-      "@hierarchidb/tabular-store": [
-        "../../feature/tabular-store/src/index.ts"
-      ],
-      "@hierarchidb/ui-data-grid": [
-        "../../ui/data-grid/src/index.ts"
-      ]
+      
     },
     "jsx": "react-jsx"
   },

@@ -83,7 +83,7 @@ export function useAuth(homeUrl = '/') {
   const popupDetection = PopupDetectionService.getInstance();
 
   // Track refresh timer
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isRefreshing] = useState(false);
 
   /**

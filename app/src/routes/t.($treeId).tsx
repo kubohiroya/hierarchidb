@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
+import AppLogoIcon from '~/components/AppLogoIcon';
 import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
@@ -114,10 +115,7 @@ export default function TLayout() {
             aria-label="Go to HierarchiDB home"
             sx={{ mr: 2 }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M2 20h20v-4H2m18-2h2v-4h-2m-2 0v4h-2v-4h-2v4h-2v-4h-2v4H10v-4H8v4H6v-4H4v4H2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v4h2V6h2v8z" />
-            </svg>
+            <AppLogoIcon size={28} />
           </IconButton>
 
           {/* TreeTypes Title */}

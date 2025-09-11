@@ -3,7 +3,7 @@
  * Avoid static imports so we can report precise failures to UI.
  */
 
-import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerInitializationReporter, wirePluginsFromModules } from '@hierarchidb/runtime-worker-bootstrap';
 import { APP_VERSION, BUILD_TIME } from './version';
 
 try {
@@ -19,6 +19,14 @@ try {
 } catch {
 }
 
+// Minimal shims for Node-centric plugins to run inside Web Worker
+try {
+  // Provide a global alias so packages using `global` don't crash
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g: any = globalThis as any;
+  if (typeof g.global === 'undefined') g.global = g;
+} catch {
+}
 const reporter = new WorkerInitializationReporter([
   { name: 'Load Comlink', weight: 5 },
   { name: 'Load plugin loaders', weight: 10 },
@@ -38,100 +46,61 @@ reporter.reportStepProgress('Load Comlink', 0);
     const Comlink: typeof import('comlink') = await import('comlink');
     reporter.reportStepProgress('Load Comlink', 100);
 
-    // Step 2: Load plugin loader virtual modules
-    reporter.reportStepProgress('Load plugin loaders', 10);
-    try {
-      // Resolve plugin definitions and loader map from virtual modules
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const defsMod = await import('virtual:plugin-definitions');
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const { pluginMap } = await import('virtual:plugin-map');
-
-      const defs = (defsMod?.default as any[]) || [];
-      const loadOrder = defs.map((d) => d.nodeType);
-
-      for (const [idx, nodeType] of loadOrder.entries()) {
-        const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
-        if (typeof loader === 'function') {
-          console.log(`⏳ Loading plugin: ${nodeType}`);
-          await loader();
-          console.log(`✅ Loaded plugin: ${nodeType}`);
-          // Update progress within the Load plugins step
-          const stepProgress = Math.round(((idx + 1) / loadOrder.length) * 100);
-          reporter.reportStepProgress('Load plugins', stepProgress);
-        }
-      }
-      reporter.reportStepProgress('Load plugin loaders', 100);
-    } catch (e) {
-      console.warn('[Worker] Plugin virtual modules unavailable; attempting manual fallback');
-
-      // Manual fallback for environments without Vite virtual modules (e.g., Angular dev server)
+    // Step 2: Load plugin loader virtual modules (skip in dev to avoid virtual: dependency races)
+    const isDev = (import.meta as any)?.env?.DEV;
+    reporter.reportStepProgress('Load plugin loaders', isDev ? 100 : 10);
+    if (!isDev) {
       try {
-        const manualDefs: any[] = [];
+        // Resolve plugin definitions and loader map from virtual modules (or local fallbacks)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const defsMod = await import('virtual:plugin-definitions').catch(async () =>
+          // Local fallback to empty list when package-reader virtuals are unavailable
+          await import('./virtual/plugin-definitions')
+        );
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const modAny: any = await import('virtual:plugin-map').catch(async () => ({}));
+        const pluginMap: Record<string, () => Promise<unknown>> =
+          (modAny?.pluginMapWorker as any) || {};
 
-        // Import plugin definitions directly from packages (source paths resolve in monorepo)
-        try {
-          const { FolderDefinition } = await import(
-            '@hierarchidb/folder-plugin'
-            );
-          manualDefs.push(FolderDefinition);
-          console.log('✅ Fallback loaded: folder plugin');
-        } catch (err) {
-          console.warn('⚠️ Fallback failed: folder plugin not available', err);
+        const defs = (defsMod?.default as any[]) || [];
+        const loadOrder = defs.map((d) => d.nodeType);
+
+        for (const [idx, nodeType] of loadOrder.entries()) {
+          const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
+          if (typeof loader === 'function') {
+            console.log(`⏳ Loading plugin: ${nodeType}`);
+            await loader();
+            console.log(`✅ Loaded plugin: ${nodeType}`);
+            // Update progress within the Load plugins step
+            const stepProgress = Math.round(((idx + 1) / loadOrder.length) * 100);
+            reporter.reportStepProgress('Load plugins', stepProgress);
+          }
         }
-
-        try {
-          const { BaseMapPluginDefinition } = await import(
-            '@hierarchidb/basemap-plugin'
-            );
-          manualDefs.push(BaseMapPluginDefinition);
-          console.log('✅ Fallback loaded: basemap plugin');
-        } catch (err) {
-          console.warn('⚠️ Fallback failed: basemap plugin not available', err);
+        reporter.reportStepProgress('Load plugin loaders', 100);
+      } catch (e) {
+        if (!isDev) {
+          console.warn('[Worker] Plugin loaders unavailable; skipping plugin loading phase');
         }
-
-        try {
-          const { ShapePluginDefinition } = await import(
-            '@hierarchidb/shape-plugin'
-            );
-          manualDefs.push(ShapePluginDefinition);
-          console.log('✅ Fallback loaded: shape plugin');
-        } catch (err) {
-          console.warn('⚠️ Fallback failed: shape plugin not available', err);
-        }
-
-        try {
-          const { StylerExtension } = await import(
-            '@hierarchidb/styler-plugin'
-            );
-          manualDefs.push(StylerExtension);
-          console.log('✅ Fallback loaded: styler plugin');
-        } catch (err) {
-          console.warn('⚠️ Fallback failed: styler plugin not available', err);
-        }
-
-        // Note: store registration side-effects are optional and environment-specific.
-        // Skipping direct import of subpath exports here to avoid bundler resolution issues.
-
-        // Hold the manual definitions for later bootstrap
-        ;(self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ = manualDefs;
-      } catch (fallbackErr) {
-        console.warn('[Worker] Manual plugin fallback failed:', fallbackErr);
+        reporter.reportStepProgress('Load plugin loaders', 100);
       }
     }
 
     // After package-reader runs, resolve plugin defs (or fallback)
     let pluginDefinitions: any[] = [];
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const mod = await import('virtual:plugin-definitions');
-      pluginDefinitions = (mod?.default as any[]) || [];
-    } catch {
-      // Try manual fallback collected above
-      pluginDefinitions = (self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ || [];
+    if (!((import.meta as any)?.env?.DEV)) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const mod = await import('virtual:plugin-definitions').catch(async () =>
+          await import('./virtual/plugin-definitions')
+        );
+        pluginDefinitions = (mod?.default as any[]) || [];
+      } catch {
+        // As a last resort, check any manual defs that might have been set (legacy)
+        pluginDefinitions = (self as any).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__ || [];
+      }
     }
 
     // Step 3: Load plugins (100% reached in loops above)
@@ -140,55 +109,76 @@ reporter.reportStepProgress('Load Comlink', 0);
     // Step 4: Bootstrap services
     reporter.reportStepProgress('Bootstrap services', 10);
 
-    // Register shared download/auth + optional runtime workers for plugins (flagged, safe to ignore on failure)
+    // Runtime wiring (shared, reflection-based): scan plugin packages and invoke optional hooks
     try {
-      const isFlagEnabled = (name: string, fallback = false) => {
-        const g: any = (globalThis as any);
-        const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
-        const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-        const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
-        if (v == null) return fallback;
-        const s = String(v).toLowerCase();
-        return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
-      };
-
-      // Location plugin wiring (download DI + auth notifier always; runtime worker behind flag)
-      try {
-        const loc = await import('@hierarchidb/location-plugin');
-        // Download service shared registration (opt-in defaults)
-        const locPhc = Number((globalThis as any)['LOCATION_PER_HOST_CONCURRENCY'] || (typeof localStorage !== 'undefined' && localStorage.getItem('LOCATION_PER_HOST_CONCURRENCY')) || (typeof process !== 'undefined' && (process as any).env?.LOCATION_PER_HOST_CONCURRENCY) || 4);
-        loc.registerLocationSharedDownloadService({ perHostConcurrency: isFinite(locPhc) ? locPhc : 4 });
-        // Auth notifier (bridge to global registry if present)
-        loc.registerLocationAuthNotifier?.((info: any) => {
+      const defs = (pluginDefinitions as any[]) || [];
+      if (defs.length === 0 || ((import.meta as any)?.env?.DEV)) {
+        if (defs.length === 0) console.warn('[Worker] No plugin definitions available; skipping plugin wiring');
+        if (((import.meta as any)?.env?.DEV)) console.log('[Worker] Dev mode: skipping plugin wiring');
+      } else {
+        // Use the generated pluginMap so Vite can statically analyze imports
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        // Prefer the worker map export from the unified virtual module, but be tolerant
+        // of environments that only provide `pluginMap` or the legacy `virtual:plugin-map-worker`.
+        let pluginMap: Record<string, () => Promise<unknown>> | undefined;
+        try {
+          const mod: any = await import('virtual:plugin-map');
+          pluginMap = mod?.pluginMapWorker; // Worker専用のみ採用
+        } catch {}
+        if (!pluginMap) {
+          // fallback to local stub only; do NOT attempt legacy virtual module to avoid CORS noise
           try {
-            const g: any = globalThis as any;
-            const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-            reg?.onAuthRequired?.(info);
-          } catch { /* noop */ }
-        });
-        // Runtime worker adapters (flag LOCATION_RUNTIME_WORKER)
-        if (isFlagEnabled('LOCATION_RUNTIME_WORKER', false)) {
-          await loc.registerLocationRuntimeWorkerAdapters?.();
+            const local = await import('./virtual/plugin-map');
+            pluginMap = (local as any)?.pluginMap || {};
+          } catch {
+            pluginMap = {} as any;
+          }
         }
-      } catch { /* location wiring optional */ }
+        if (!pluginMap) pluginMap = {} as any;
 
-      // Route plugin wiring
-      try {
-        const route = await import('@hierarchidb/route-plugin');
-        const rPhc = Number((globalThis as any)['ROUTE_PER_HOST_CONCURRENCY'] || (typeof localStorage !== 'undefined' && localStorage.getItem('ROUTE_PER_HOST_CONCURRENCY')) || (typeof process !== 'undefined' && (process as any).env?.ROUTE_PER_HOST_CONCURRENCY) || 4);
-        route.registerRouteSharedDownloadService({ perHostConcurrency: isFinite(rPhc) ? rPhc : 4 });
-        route.registerRouteAuthNotifier?.((info: any) => {
-          try {
-            const g: any = globalThis as any;
-            const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-            reg?.onAuthRequired?.(info);
-          } catch { /* noop */ }
-        });
-        if (isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) {
-          await route.registerRouteRuntimeWorkerAdapters?.();
+        // Worker overrides: force worker-safe entries for known plugins
+        const workerOverrides: Record<string, () => Promise<unknown>> = {
+          // Use package subpath exports to avoid importing TS sources directly
+          location: async () => import('@hierarchidb/location-plugin/worker'),
+          project: async () => import('@hierarchidb/project-plugin/worker'),
+        };
+        pluginMap = { ...pluginMap, ...workerOverrides } as any;
+
+        const denyEnv = (typeof (import.meta as any)?.env?.VITE_HDB_WORKER_PLUGIN_DENY === 'string')
+          ? String((import.meta as any).env.VITE_HDB_WORKER_PLUGIN_DENY)
+          : '';
+        // Allowlist overrides above; keep env-based deny for local experimentation
+        const deny = new Set([...denyEnv.split(',').map(s => s.trim()).filter(Boolean)]);
+
+        const modList: unknown[] = [];
+        for (const d of defs) {
+          const nodeType = d?.nodeType as string;
+          if (deny.has(nodeType)) {
+            console.log(`[Worker] wiring: denylisted plugin skipped: ${nodeType}`);
+            continue;
+          }
+          const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
+          if (typeof loader === 'function') {
+            try {
+              const mod = await loader();
+              modList.push(mod);
+            } catch (e: unknown) {
+              const msg = (e as any)?.message ?? String(e);
+              const soft = /document is not defined|Grid2|does not provide an export/i.test(msg);
+              if ((import.meta as any)?.env?.DEV || soft) {
+                console.log(`[Worker] wiring: skip module for ${nodeType}:`, msg);
+              } else {
+                console.warn(`[Worker] wiring: failed to load module for ${nodeType}:`, msg);
+              }
+            }
+          }
         }
-      } catch { /* route wiring optional */ }
-    } catch { /* wiring block ignored on failure */ }
+        await wirePluginsFromModules(modList);
+      }
+    } catch (e) {
+      console.warn('[Worker] wiring failed:', e);
+    }
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
     reporter.reportStepProgress('Bootstrap services', 100);

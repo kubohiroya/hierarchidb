@@ -1,3 +1,4 @@
+/// <reference path='../../types/shims-runtime-worker-bootstrap.d.ts' />
 /**
   * Shape API hook - PluginRegistryAPIAPI
  * WorkerAPIClient
@@ -6,7 +7,7 @@
 
 import { useMemo } from 'react';
 import type { ShapeAPI } from '../../shared';
-import { getWorkerClientHook } from './workerClientProvider';
+import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 
 /**
   * Shape APIhook

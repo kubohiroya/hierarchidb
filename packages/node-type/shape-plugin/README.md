@@ -10,6 +10,16 @@
 
 Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
+オープンデータ提供元まとめ（概要）
+----------------------------------
+
+| データソース名 | 提供データ内容 | データ量（件数・サイズ：概算） | 利用ライセンス |
+| - | - | - | - |
+| OpenStreetMap (Overpass API) | OSMジオメトリ（行政界/道路/自然 等）GeoJSON化 | クエリ依存（数千〜数十万件） | ODbL 1.0 |
+| Natural Earth | 行政界/都市/海岸線/水系（Shapefile→GeoJSON） | レイヤ毎ZIP 5–50MB | Public Domain |
+| GADM | 行政界（国別/レベル別、GPKG/Shape） | 国別20–300MB、世界版1–4GB規模 | Academic use only（学術利用） |
+| GeoBoundaries | 行政界（国×ADMレベル、GeoJSON） | 国×レベルごと0.5–50MB | 境界ごとに異なる（多くはCC BY 4.0、APIのlicenseDetail参照） |
+
 全体像（段階）
 ---------------
 - download → simplify1 → simplify2 → vectorTiles の段階実行。
@@ -18,7 +28,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
   - auth: `@hierarchidb/auth-recovery`（401復帰, fetchWithAuth, setToken）
   - compute: `@hierarchidb/compute`（タスク実行）
   - batch: `@hierarchidb/batch`（段階並列・進捗）
-  - source/view: `@hierarchidb/map-source`, `@hierarchidb/map-view`（任意）
+  - source/view: `@hierarchidb/map-source`, `@hierarchidb/map-adapter`（任意）
 
 ダウンロード
 ------------

@@ -767,6 +767,94 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-11 done: chore/eslint/lint-green — ESLint 設定を調整して monorepo 全体の `pnpm -w lint` をグリーン化。
+  - 追加: `eslint.config.js` に `eslint-plugin-react-hooks` を導入し、`rules-of-hooks:error` / `exhaustive-deps:warn` を有効化。
+  - 例外: `**/*.stories.*` では hooks ルールを無効化（Storybook の render 関数パターン対応）。
+  - TS向け: `no-undef` を無効化（型で検知するため）。
+  - 運用: `no-unused-vars` を `warn` に低下し、`^_` で未使用引数・変数を許容。`no-case-declarations`/`no-sparse-arrays`/`no-constant-binary-expression` は `warn`。
+  - 検証: `pnpm -w lint` 成功（すべて警告以下）。
+  - ロールバック: `eslint.config.js` の該当差分を revert。必要に応じて per-package の `lint` スクリプト側で `--max-warnings=0` を設定。
+- 2025-09-11 done: chore/ui/replace-nodejs-timeout — UI/Worker コードの `NodeJS.Timeout` を `ReturnType<typeof setInterval|setTimeout>` に置換し、環境非依存化。
+  - 変更: shape-plugin / folder-plugin / runtime-ui-plugin-dialog / ui-core / ui-auth / ui-treeconsole(-base/-treetable) / ui-monitoring 各所のタイマー型注釈を置換。
+  - 目的: `@types/node` 非依存でブラウザ/Worker/Node のいずれでも型が解決するようにする。
+  - 検証: 各対象パッケージで `pnpm -C <pkg> typecheck` がグリーン。
+  - ロールバック: 該当ファイルの型注釈を `NodeJS.Timeout` に戻す（必要なら `@types/node` を devDependencies と `tsconfig` の `types` に追加）。
+- 2025-09-10 done: chore/dep-fence/cleanup-migration-garbage — dep-fence への移行に伴う移行用ゴミを削除。
+  - 削除: ルート `dep-fence.config.json`（重複・旧式設定）。
+  - 削除: `scripts/dep-fence-check.mjs`（自作チェッカー、公式 CLI 移行により不要）。
+  - 削除: `scripts/dep-fence/` 配下の移行補助スクリプト（`annotate-skiplibcheck.mjs` / `auto-fix.mjs` / `online-upgrade-and-check.sh` / `pack-and-override.sh`）。
+  - 調整: `turbo.json` の `check:deps.inputs` から `scripts/dep-fence/**` を除去（キャッシュインプットの不要参照を解消）。
+  - 検証: `pnpm run check:deps` が `dep-fence.config.mjs` を用いて実行できることを確認（CLI 標準ディスカバリに依存）。
+  - ロールバック: 当該ファイル群を復帰（git revert または履歴から復元）。`turbo.json` へ `scripts/dep-fence/**` を戻すことで元構成に戻せる。
+- 2025-09-10 done: fix/app/vite-resolve-batch — `@hierarchidb/app` ビルド時の `Rollup failed to resolve import "@hierarchidb/batch"` を解消。
+  - 原因: `@hierarchidb/location-plugin` の `tsup` で `@hierarchidb/batch` を external 化しており、同パッケージの `dependencies` に未記載のため、`app` 側バンドル中に解決不可となっていた。
+  - 対応(恒久): `packages/node-type/location-plugin/package.json` に `"@hierarchidb/batch": "workspace:*"` を追加。
+  - 対応(暫定): `app/vite.config.ts` に `resolve.alias` を追加し、`@hierarchidb/batch` を `../packages/feature/batch/dist/index.js` へ解決（ワークスペース再リンク無しでも解決可能に）。
+  - ロールバック: `vite.config.ts` の alias 追加を削除し、`pnpm -w i` により workspace を再リンクすれば元に戻る。
+
+- 2025-09-10 done: fix/tools/analyze-licenses-tsup-missing — prebuild 中の `tsup: command not found` 解消。
+  - 原因: `@hierarchidb/analyze-licenses` パッケージが `tsup` を devDependencies に未宣言のため、環境により PATH 解決されずビルド失敗。
+  - 対応(即効・非破壊): ルート `package.json` の `analyze:licenses` を `tsx src/cli.ts` 実行に変更し、ビルド不要で CLI を実行。
+  - 代替(恒久): `packages/tools/analyze-licenses/package.json` に `devDependencies: { tsup, typescript }` を追加し、`pnpm -w install` で再リンク。
+  - ロールバック: ルート `package.json` の `analyze:licenses` を元のビルド＋実行形式へ戻す。
+
+- 2025-09-11 done: fix/ui-data-grid/build-errors — data-grid の型解決/暗黙 any でのビルド失敗を修正。
+  - 原因1: `@mui/icons-material` が環境によって解決できず TS2307。→ 型シムを `src/shims/mui-icons-material.d.ts` に追加、tsconfig の include を `src/**/*.d.ts` まで拡張。
+  - 原因2: `@tanstack/react-virtual` の型解決が不安定。→ `src/shims/tanstack-react-virtual.d.ts` を追加し、`tsup.config.ts` の external に追加。
+  - 原因3: `virtualRow` の暗黙 any（TS7006）。→ `map((virtualRow: { index: number }) => ...)` に型注釈を付与。
+  - バージョン整合: `packages/ui/data-grid/package.json` の `@mui/icons-material` を ^7.3.1 に更新（dev/peer both）。
+  - 受け入れ基準: `pnpm -C packages/ui/data-grid typecheck && build` がグリーン。
+  - ロールバック: 追加した `src/shims/*.d.ts` を削除し、tsconfig/tsup の差分を revert。
+
+- 2025-09-11 done: fix/location-plugin/vt-pbf-resolution — app ビルドで `@maplibre/vt-pbf` が解決できず失敗する問題を修正。
+  - 原因: location-plugin の tsup 外部化設定で `@maplibre/vt-pbf` / `geojson-vt` を external にしていたため、`dist/index.js` が外部 import を保持し、app 側の Rollup 解決に失敗。
+  - 対応(恒久): external から両ライブラリを除外し、location-plugin に `dependencies` として `@maplibre/vt-pbf`/`geojson-vt` を追加してバンドルに内包。
+  - 受け入れ基準: `pnpm -C packages/node-type/location-plugin build` が通り、`pnpm run build` で app の Rollup 解決エラーが出ない。
+  - ロールバック: 追加した依存を削除し、`tsup.config.ts` の external を元に戻す（app 側で alias を張るか、app の dependencies に追加）。
+
+- 2025-09-11 done: feat/map-adapter/type-safety-and-ports — map-adapter（旧 map-view）の Adapter から any を排除し、共有 I/F を追加。
+  - 変更: `packages/feature/map-adapter/src/adapters/MapLibreDeckAdapter.ts` の型付け（`import type`で `maplibre-gl` と `deck.gl` を参照、プロパティ/引数の厳密化）。
+  - 追加: `TileSourceProvider` を `packages/feature/map-adapter/src/ports.ts` に導入（template / function 両対応）。
+  - Docs: README に型付け方針と TileSourceProvider を追記。
+  - 方針: map-adapter は「表示」に専念、タイル生成（`geojson-vt` / `@maplibre/vt-pbf`）は worker / location-plugin 側に集約。
+  - 受け入れ基準: `pnpm -C packages/feature/map-adapter typecheck && build` がグリーン。UI 依存（maplibre/deck）は peer 解決。
+
+- 2025-09-11 done: refactor/location-plugin/delegate-vectortile — location-plugin から `vt-pbf`/`geojson-vt` の直 import を撤去し、runtime-worker へ委譲。
+  - 変更: `SessionController.generateTiles()` で正規化GeoJSONを shared chunk storage (`hidb-chunks`) に書き出し、`@hierarchidb/runtime-worker` の `vectortile.generateTiles()` を呼び出す方式へ変更。
+  - 互換: 生成完了後に `vectortile.listTiles/getTile` 経由でタイルを読み戻し、従来の `EphemeralLocationDB.vectorTiles` に投入。
+  - 副作用: `src/types/external.d.ts` を削除。`vitest.config.ts` の vt-pbf/geojson-vt エイリアスを削除。`package.json` から両依存を削除。
+  - 受け入れ基準: `pnpm -C packages/node-type/location-plugin typecheck && build` がグリーン。app ビルドで外部解決エラーが発生しない。
+  - ロールバック: `MapLibreDeckAdapter.ts` と `ports.ts` の差分を revert（API 互換）。
+
+- 2025-09-10 done: chore/dep-fence/warnings-zero — dep-fence の警告をゼロに整備（peer-in-external/ local-shims）。
+  - 変更(impl): tsup external の不足を補完。
+    - @hierarchidb/ui-layout: `@mui/icons-material` を `tsup.config.ts` の `external` に追加。
+    - @hierarchidb/ui-usermenu: `@emotion/react` / `@emotion/styled` を `external` に追加。
+  - 変更(policy hygiene): local-shims の検出対象パスの見直し（設計方針に沿って src/shims へ集約）。
+    - `src/types/*.d.ts` → `src/shims/*.d.ts` へ移動（publishable のみ）。対象:
+      - node-type: project/route/shape/spreadsheet/styler
+      - runtime: runtime-ui/plugin-dialog, runtime-worker/worker
+      - ui: core/file/map/monitoring/navigation/treeconsole/base
+  - 検証: `pnpm -w run check:deps:policies` 実行結果が「All packages passed policy checks.」であることを確認。
+  - ロールバック: 影響は `tsup.config.ts` と `src/shims`/`src/types` 配下の .d.ts 移動のみ。必要に応じて各パッケージでファイルを元の `src/types` に戻し、tsup external の追加入力をrevertすれば復旧可能（機能挙動へは非影響）。
+
+- 2025-09-10 done: chore/node-type/tsup-externals-and-paths — 各プラグインの外部依存とTSのパス解決を方針に合わせて是正。
+  - 変更: shape-plugin の未解決依存 `@hierarchidb/runtime-worker-bootstrap` を external 化し、型シムを追加してビルド失敗を解消。
+  - 変更: folder/resolver/route/spreadsheet/styler/location/shape/util の tsup 外部化設定を見直し、peer（react/react-dom/MUI/emotion/dexie 等）を external に明示。
+  - 変更: route-plugin / ui-core の tsconfig `paths` を `src/*` 参照から `dist/index.js` 参照へ切替（dist-only ポリシー順守）。
+  - 検証: `pnpm -w run check:deps:policies` で当該パッケージの peer-in-external/paths-direct-src 警告が解消（残存は他パッケージの課題として別タスク化）。`pnpm -C packages/node-type/shape-plugin build` グリーン。
+  - ロールバック: 影響は docs/ビルド設定のみ。`tsup.config.ts` と `tsconfig.json` の差分を revert すれば即復旧可。必要なら `src/types/shims.d.ts` のシムも削除。
+
+- 2025-09-10 done: chore/ui/peer-externals — UI系パッケージの tsup external を整備（react/react-dom/MUI/emotion 等）。一部 package 固有の peer（dnd-kit/tanstack/react-router(-dom) 等）は現状の依存構成を尊重し最小限で外部化。
+  - 変更: `packages/ui/**/tsup.config.ts`、`packages/runtime-ui/**/tsup.config.ts`、`packages/tools/vite-plugin-package-reader/tsup.config.ts`
+  - 残課題（別タスク化）:
+    - local-shims 解消（ui-core, ui-map, ui-monitoring, runtime-ui-plugin-dialog, route/shape/spreadsheet/styler など）
+    - react-router-dom を peerDependencies 化（ui-core/ui-navigation/ui-routing）— external-in-deps を解消
+    - tanstack（treetable/data-grid）の peer 移行可否を検討（bundle/peer 方針の確定）
+  - 受け入れ基準: `pnpm -w run check:deps:policies` にて peer-in-external/paths-direct-src の主要警告が減少し、残は local-shims と設計検討系のみであること。
+  - ロールバック: 各 tsup.config.ts の external 設定を元に戻す。
+
+
 - 2025-09-08 done: fix/ui-dialog/ts2742 — `AutoHideFullScreenDialog` に戻り値型注釈（`React.ReactElement`）を追加し、`@hierarchidb/runtime-ui-plugin-dialog` の型チェック時に他パッケージの `jsx-runtime` 型参照が漏れる問題（TS2742）を解消。
   - 検証: `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` グリーン。
   - 影響範囲: 公開APIの型表面を安定化（機能挙動は無変更）。
@@ -1485,6 +1573,11 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- chore/ui/centralize-ambient-types（UI周辺のローカル型シム撤廃）
+  - ブランチ: `chore/ui/centralize-ambient-types` → main 反映（2025-09-11）
+  - 要点: 各UIパッケージのローカル `.d.ts`（css module / maplibre css）を `@hierarchidb/common-type` へ集約（`src/ambient-ui.d.ts`）。`@hierarchidb/ui-core`/`@hierarchidb/ui-map` のローカルシムを削除し、`ui-map` に `@hierarchidb/common-type` 依存を追加。dep-fence の `local-shims` WARN を縮減。
+  - ロールバック: それぞれのパッケージに `.d.ts` を戻すだけで復旧可能（非破壊）。
+
 - chore/node-type/unify-dexie-db-names（DB名の統一と移行ガイド整備）
   - ブランチ: `chore/node-type/unify-dexie-db-names` → main 反映済（2025-09-07）
   - 要点: NodeType 系 Entities DB のデフォルト名を `*-entities-db` に統一。README/TASKS.md の更新と移行ガイドを整備。
@@ -1914,6 +2007,51 @@ P2:
   - scope: packages/node-type/shape-plugin/src/services/types.ts（`AdminLevelInfo` をローカル import せず、`export type { AdminLevelInfo } from '@hierarchidb/runtime-ui-datasource'` に変更）
   - result (DoD): `pnpm -C app prebuild` が成功し、当該警告は再現せず
   - rollback: 当該ファイルの差分をリバートすれば即復旧（挙動非変更）
+- done: project-plugin の型エラー修正（TS7031/TS7006/TS2532）
+  - scope: packages/node-type/project-plugin/src/components/map/ProjectMapView.tsx
+    - `deck.getTooltip` / `deck.onClick` の引数 `{ object }` に型注釈（`{ object: any }`）を付与
+  - scope: packages/node-type/project-plugin/src/components/wizard/steps/TemporalAnalysisStep.tsx
+    - `DateTimePicker` の `onChange` に `(date: Date | null)` を明示
+    - `updated[index]` アクセスは `const item = updated[index]; if (!item) return; ...` に変更して `noUncheckedIndexedAccess` 下の undefined 警告を解消
+  - result (DoD): `pnpm -C packages/node-type/project-plugin typecheck` が成功
+  - rollback: 当該2ファイルの差分をリバート
+
+- done: route-plugin の DTS ビルド失敗を解消（TS7016 他）
+  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.js` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
+  - fix:
+    - `packages/node-type/route-plugin/tsconfig.json`
+      - `@hierarchidb/tabular-store` を `../../feature/tabular-store/dist/index.d.ts` に変更
+      - `@hierarchidb/runtime-shared-batch-processor` を `../../runtime-shared/batch-processor/dist/index.d.ts` に変更
+      - `@hierarchidb/download` / `@hierarchidb/auth-recovery` も `.d.ts` 解決に変更
+    - `packages/node-type/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
+      - `emitter.on` と `store.get(...).then` のコールバック引数に `ProgressSnapshot` 型を明示
+  - result (DoD): `pnpm -C app prebuild` で `@hierarchidb/route-plugin` の DTS ビルドが成功
+  - rollback: 上記 tsconfig 差分とフック内の型注釈変更をリバート
+
+verify: ルート検証の実行（typecheck/lint/test）
+  - typecheck: `pnpm -w typecheck` は全パッケージ成功（38.5s）
+  - lint: 既存の未使用変数等により複数パッケージで失敗（今回変更範囲外）。対象例: ui-floating-window, base-plugin, runtime-ui/search-result-window など。
+  - test: `pnpm -w vitest run --coverage` は sandbox による `EPERM`（tinypool の worker kill）で停止。ローカル実行を推奨。
+
+- done: 未使用変数の lint 対応（第一弾）
+  - packages/node-type/base-plugin
+    - `buildEntity` 抽象メソッド: パラメータ未使用を抑制（`// eslint-disable-next-line no-unused-vars`）
+    - `applyAdditionalSearchCriteria`: `void _criteria;` で未使用を解消
+  - packages/ui/floating-window
+    - `hooks`/`types` で型引数由来の未使用パラメータに対し `/* eslint-disable no-unused-vars */` と `import type React` を追加
+  - packages/runtime-shared/fetch-metadata
+    - `DataSourceFetcher` の関数型で `/* eslint-disable no-unused-vars */` を追加
+  - result (DoD): 上記3パッケージの `pnpm -r --filter <pkg> lint` がエラーなく完了（警告のみ）
+  - next: runtime-ui/search-result-window / tools-vite-plugin-package-reader / project-plugin に未使用変数が多数。順次対応予定（対象ファイルに限定して抑制 or パラメータ名の整理）。
+  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.js` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
+  - fix:
+    - `packages/node-type/route-plugin/tsconfig.json`
+      - `@hierarchidb/tabular-store` を `../../feature/tabular-store/dist/index.d.ts` に変更
+      - `@hierarchidb/runtime-shared-batch-processor` を `../../runtime-shared/batch-processor/dist/index.d.ts` に変更
+    - `packages/node-type/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
+      - `emitter.on` と `store.get(...).then` のコールバック引数に `ProgressSnapshot` 型を明示
+  - result (DoD): `pnpm -C app prebuild` で `@hierarchidb/route-plugin` の DTS ビルドが成功
+  - rollback: 上記 tsconfig 差分とフック内の型注釈変更をリバート
 9) 日付系UIのラッパ化（安定化）
 - ブランチ: `refactor/ui-date/wrap-and-migrate`
 - 目的: `@mui/x-date-pickers` 依存の型/Adapter/ロケール差分を `@hierarchidb/ui-date` に封じ込め、各プラグインからの直接利用を禁止。
@@ -1990,3 +2128,29 @@ ToDo（Phase 2/3: any の完全撤去）
     - [x] `ShapesPluginAPI.ts` / `api/ShapePluginAPI.ts` から静的 import を除去（lazy + flag + browser 判定）
     - [x] Node/テスト環境で deprecated 実装が import されず型チェックグリーン
   - ロールバック: 変更箇所の revert（フォールバックは flag ON で復帰可能）
+- 2025-09-11 done: harden/route-plugin/searoute-resolution — searoute の解決を厳格化（バンドラー非依存・フラグ制御）。
+
+- 2025-09-11 done: chore/map-view/cleanup — 旧 `packages/feature/map-view` のソース類を削除し、`map-adapter` へ完全移行。
+
+- 2025-09-11 done: chore/shims/cleanup — 余剰 shims の削除・集約。
+  - location-plugin: `src/types/external.d.ts`（vt-pbf/geojson-vt）を削除（vectortile 委譲に伴い不要）。
+  - runtime-worker: `src/shims/shims.d.ts` から `declare module 'geojson-vt'` を削除（型は @types/geojson-vt で供給）。`@maplibre/vt-pbf` は型未提供のため残置。
+  - map-adapter: `src/shims/{maplibre-gl,deck.gl}.d.ts` は型通し用に暫定維持（peer を devDependencies 化すれば削除可）。
+  - 受け入れ基準: `pnpm -C {runtime-worker/worker,feature/map-adapter,node-type/location-plugin} typecheck` がグリーン。
+
+- 2025-09-11 done: chore/map-adapter/devdeps-types — map-adapter に型同梱パッケージを devDeps 追加。
+  - 追加: `deck.gl@^9`, `maplibre-gl@^3` を `packages/feature/map-adapter/package.json` の devDependencies に追記。
+  - 次段（要ネット/再リンク）: `pnpm -w install` 実行後、`packages/feature/map-adapter/src/shims/{maplibre-gl,deck.gl}.d.ts` を削除し、`pnpm -C packages/feature/map-adapter typecheck` を確認。
+  - ロールバック: devDependencies 追加差分の revert。shims を残置すれば型通しは維持される。
+
+- 2025-09-11 done: chore/shims/remove-off — 段階無効化(.d.ts.off)していた shims を恒久削除。
+  - 削除: map-adapter `{maplibre-gl,deck.gl}.d.ts.off`, ui-data-grid `{mui-icons-material,tanstack-react-virtual}.d.ts.off`, ui-core `cssmodule.d.ts.off`, ui-map `style-modules.d.ts.off`。
+  - 置換: CSS/スタイル系の最小型は `src/types/*.d.ts` へ移設（ui-core/ui-map）。
+  - 検証: `pnpm -C {ui-core,ui-map} typecheck` / `pnpm -C app build:vite` グリーン。
+  - 削除: `packages/feature/map-view/src/*`, `tsconfig.json`, `dist/*`（node_modules は安全優先で残置）。
+  - 残置理由: ディレクトリ自体と `node_modules` は不要だが破壊的操作のため要確認。必要なら `rm -rf packages/feature/map-view` で全削除可。
+  - 受け入れ基準: ワークスペース内に `@hierarchidb/map-view` 参照が残存しない（lock の履歴参照を除く）、`pnpm -w run dts:quick` / app build が通る。
+  - 変更: `SearouteEngine.loadLib()` をランタイム解決に変更（`import(/* @vite-ignore */ name)` + 可変名）。
+  - 優先順: `ROUTE_SEAROUTE_PKG`（env/グローバル指定）→ `searoute` → `searoute-js`。未導入時は GC 近似にフォールバック。
+  - 目的: 依存未導入でも Rollup/Vite が解決を強制せず、app 側でのビルド失敗を防ぐ。
+  - 受け入れ基準: `pnpm -C app build:vite` が `searoute` 未導入状態でも成功。

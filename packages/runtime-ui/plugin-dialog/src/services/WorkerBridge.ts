@@ -49,7 +49,7 @@ export class WorkerBridge {
   private subscribers = new Set<(notification: WorkerNotification) => void>();
   private validationQueue = new Map<string, ValidationRequest>();
   private capabilitiesQueue = new Map<number, CapabilitiesRequest>();
-  private processingTimeout: NodeJS.Timeout | null = null;
+  private processingTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Initialize Worker connection

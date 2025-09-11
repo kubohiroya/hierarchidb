@@ -28,7 +28,7 @@ const getAppConfig = (): AppConfig => ({
     import.meta.env.VITE_APP_DETAILS ||
     'A powerful framework for managing hierarchical data in browser environments',
   appHomepage:
-    import.meta.env.APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
+    import.meta.env.VITE_APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
   appLogo: import.meta.env.VITE_APP_LOGO || 'logo.png',
   appFavicon: import.meta.env.VITE_APP_FAVICON || 'favicon.svg',
   appTheme: import.meta.env.VITE_APP_THEME || 'light',

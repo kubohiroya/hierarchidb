@@ -12,6 +12,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     console.log(`[client:initWorker] attempt ${attempt + 1}/${RETRY_DELAYS.length + 1}`);
+    try { console.log('[HDB-BOOT] client:initWorker attempt=%d', attempt + 1); } catch {}
     try {
       if (workerInstance) {
         try { rawWorkerInstance?.terminate(); } catch {}
@@ -32,9 +33,11 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
           const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
           console.log('[client:initWorker] msg:', t);
+          try { console.log('[HDB-BOOT] client:recv %s', t); } catch {}
           if ((e as any)?.data?.type === 'INIT_COMPLETE') {
             workerInitCompleted = true;
             try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
+            try { console.log('[HDB-BOOT] client:set __HDB_INIT_COMPLETE__=true'); } catch {}
             try { window.dispatchEvent(new Event('hierarchidb-worker-init-complete')); } catch {}
           }
         });
@@ -65,4 +68,3 @@ export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
 
 export function getRawWorkerInstance(): Worker | null { return rawWorkerInstance; }
 export function isWorkerInitCompleted(): boolean { return workerInitCompleted; }
-

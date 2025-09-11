@@ -53,7 +53,7 @@ export function useWorkingCopy<T = any>({
   const enqueueSnackbar = (message: string, options?: { variant?: string }) => {
     console.log(`[${options?.variant || 'info'}] ${message}`);
   };
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Update working copy
   const updateWorkingCopy = useCallback(

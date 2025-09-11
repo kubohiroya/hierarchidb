@@ -11,13 +11,13 @@
         "./src/*"
       ],
       "@hierarchidb/ui-data-grid": [
-        "../data-grid/src/index.ts"
+        "../data-grid/dist/index.js"
       ],
       "@hierarchidb/table-metadata": [
-        "../../feature/table-metadata/src/index.ts"
+        "../../feature/table-metadata/dist/index.js"
       ],
       "@hierarchidb/tabular-store": [
-        "../../feature/tabular-store/src/index.ts"
+        "../../feature/tabular-store/dist/index.js"
       ]
     },
     "jsx": "react-jsx",
@@ -33,7 +33,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
   ],
   "exclude": [
     "dist",

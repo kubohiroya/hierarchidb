@@ -57,6 +57,9 @@ export type {
 export type { PluginExtensionAPI } from './PluginExtensionAPI';
 export { PluginExtensionRegistry } from './PluginExtensionAPI';
 
+// Runtime wiring interfaces for plugin bootstrap (optional capabilities)
+export type { PluginRuntimeWiring } from './RuntimeWiring';
+
 // Plugin Registry API
 export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
 export * from './TagAPI';

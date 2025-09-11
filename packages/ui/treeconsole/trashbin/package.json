@@ -18,9 +18,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
@@ -30,12 +36,7 @@
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1"
   },
-  "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1"
-  },
+  
   "files": [
     "dist",
     "src"
@@ -47,6 +48,8 @@
   "type": "module",
   "tsup": {
     "external": [
+      "@emotion/react",
+      "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
       "react",

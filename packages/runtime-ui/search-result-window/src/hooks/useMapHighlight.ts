@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
@@ -118,3 +119,4 @@ export const useMapHighlight = ({
     service: serviceRef.current,
   };
 };
+/* eslint-disable no-unused-vars */

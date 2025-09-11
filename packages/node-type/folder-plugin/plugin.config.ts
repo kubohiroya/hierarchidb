@@ -3,10 +3,10 @@ export default {
   version: '1.0.0',
   description: 'Hierarchical folder-plugin management plugin',
   author: 'HierarchiDB Team',
-  dependencies: ['@hierarchidb/common-type', '@hierarchidb/runtime-worker-worker', 'dexie'],
+  dependencies: ['@hierarchidb/common-type', '@hierarchidb/runtime-worker', 'dexie'],
   peerDependencies: {
     '@hierarchidb/common-type': '^1.0.0',
-    '@hierarchidb/runtime-worker-worker': '^1.0.0',
+    '@hierarchidb/runtime-worker': '^1.0.0',
   },
   lifecycle: {
     onLoad: () => console.log('Folder plugin loaded'),

@@ -265,13 +265,40 @@ export function hierarchiDBMultiModulePreset(
   const pluginMapModule: VirtualModuleGenerator<PluginDefinition[]> = {
     moduleId: 'plugin-map',
     generate: (definitions) => {
-      // Prefer worker entry when available; fall back to generic dist or package name
-      const entries = definitions.map(d => {
-        const target = d.resolvedWorkerImport || d.resolvedImport || d.packageName;
+      const uiEntries = definitions.map(d => {
+        const target = d.packageName;
+        return `  '${d.nodeType}': () => import('${target}')`;
+      });
+      const workerEntries = definitions.map(d => {
+        const target = d.resolvedWorkerImport || d.packageName;
         return `  '${d.nodeType}': () => import('${target}')`;
       });
 
-      return `// Auto-generated plugin map
+      return `// Auto-generated plugin maps (UI + Worker)
+export const pluginMap = {
+${uiEntries.join(',\n')}
+};
+
+export const pluginMapWorker = {
+${workerEntries.join(',\n')}
+};
+
+export default pluginMap;
+`;
+    },
+  };
+
+  // Worker-targeted plugin map: prefer worker entry if available
+  // Note: keep a dedicated worker module for backward compatibility if some code imports it directly
+  const pluginMapWorkerModule: VirtualModuleGenerator<PluginDefinition[]> = {
+    moduleId: 'plugin-map-worker',
+    generate: (definitions) => {
+      const entries = definitions.map(d => {
+        const target = d.resolvedWorkerImport || d.packageName;
+        return `  '${d.nodeType}': () => import('${target}')`;
+      });
+
+      return `// Auto-generated worker plugin map (compat)
 export const pluginMap = {
 ${entries.join(',\n')}
 };
@@ -301,6 +328,7 @@ export type NodeType = keyof typeof NodeTypes;
     virtualModules: [
       createPluginVirtualModule(),
       pluginMapModule,
+      pluginMapWorkerModule,
       pluginTypesModule,
     ],
   };

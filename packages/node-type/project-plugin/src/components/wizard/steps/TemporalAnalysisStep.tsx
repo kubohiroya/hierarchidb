@@ -177,7 +177,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                   <DateTimePicker
                     label="Start Date"
                     value={timeRange.start}
-                    onChange={(date) => date && setTimeRange((prev) => ({ ...prev, start: date }))}
+                    onChange={(date: Date | null) => date && setTimeRange((prev) => ({ ...prev, start: date }))}
                     slotProps={{ textField: { fullWidth: true, size: 'small' } }}
                   />
                 </Grid>
@@ -185,7 +185,7 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                   <DateTimePicker
                     label="End Date"
                     value={timeRange.end}
-                    onChange={(date) => date && setTimeRange((prev) => ({ ...prev, end: date }))}
+                    onChange={(date: Date | null) => date && setTimeRange((prev) => ({ ...prev, end: date }))}
                     slotProps={{ textField: { fullWidth: true, size: 'small' } }}
                   />
                 </Grid>
@@ -258,10 +258,10 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                               value={field.layerId}
                               onChange={(e) => {
                                 const updated = [...timeFields];
-                                if (updated[index]) {
-                                  updated[index].layerId = e.target.value;
-                                  setTimeFields(updated);
-                                }
+                                const item = updated[index];
+                                if (!item) return;
+                                item.layerId = e.target.value as string;
+                                setTimeFields(updated);
                               }}
                               label="Layer"
                             >
@@ -281,10 +281,10 @@ export const TemporalAnalysisStep: React.FC<TemporalAnalysisStepProps> = ({ data
                             value={field.field}
                             onChange={(e) => {
                               const updated = [...timeFields];
-                              if (updated[index]) {
-                                updated[index].field = e.target.value;
-                                setTimeFields(updated);
-                              }
+                              const item = updated[index];
+                              if (!item) return;
+                              item.field = e.target.value;
+                              setTimeFields(updated);
                             }}
                           />
                         </Grid>

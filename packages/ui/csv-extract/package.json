@@ -24,8 +24,6 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*"
   },
@@ -33,7 +31,9 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1"
+    "@mui/icons-material": "^7.3.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1"
   },
   "devDependencies": {
     "react": ">=18.0.0",

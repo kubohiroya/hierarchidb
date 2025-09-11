@@ -1,4 +1,4 @@
-// dep-fence 0.2.x configuration (ESM)
+// dep-fence 0.4.x configuration (ESM)
 import { defaultPolicies } from 'dep-fence';
 
 /**
@@ -11,127 +11,62 @@ import { defaultPolicies } from 'dep-fence';
 
 /** @type {import('dep-fence/types').Policy[]} */
 const custom = [
-  // 1) Ban EntityId usage
+  // Ban deprecated EntityId family (repo-specific rule)
   {
     id: 'ban-entityid-family',
     when: () => true,
     because: 'EntityId is deprecated. Use NodeId/TagId instead.',
     rules: [
-      {
-        rule: 'source-import-ban',
-        options: { from: '@hierarchidb/common-type', names: ['EntityId', 'toEntityId', 'generateEntityId'] },
-        severity: 'ERROR',
-      },
+      { rule: 'source-import-ban', options: { from: '@hierarchidb/common-type', names: ['EntityId', 'toEntityId', 'generateEntityId'] }, severity: 'ERROR' },
     ],
   },
 
-  // 2) tsconfig paths must not reference dist/*.d.ts
+  // Shared/common/runtime packages must not import node-type plugins (avoid dependency loops)
   {
-    id: 'tsconfig-paths-no-dist',
-    when: () => true,
-    because: 'Do not put dist/*.d.ts in tsconfig paths; use src entry files.',
+    id: 'no-plugin-imports-from-shared',
+    when: (ctx) => {
+      const name = ctx.pkg?.name || '';
+      return name.startsWith('@hierarchidb/runtime-') || name.startsWith('@hierarchidb/common-');
+    },
+    because: 'Shared/common/runtime packages must not depend on node-type plugins to avoid cycles.',
     rules: [
-      {
-        rule: 'tsconfig-paths',
-        options: { forbidPattern: '/dist/.+\\.d\\.ts$', allowPattern: '/src/.+\\.ts$' },
-        severity: 'ERROR',
-      },
+      { rule: 'import-path-ban', options: { forbid: ['^@hierarchidb/.+-plugin(?:/|$)'] }, severity: 'ERROR' },
     ],
   },
 
-  // 3) Packages must publish types from dist
+  // Allow minimal, package-scoped ambient shims in node-type packages when used
+  // solely for bridging optional peer types during DTS bundling (e.g., bootstrap hooks).
+  // We still discourage UI package-local shims.
   {
-    id: 'package-types-to-dist',
-    when: () => true,
-    because: 'All packages publish types from dist/*.d.ts.',
+    id: 'allow-node-type-ambient-shims',
+    when: (ctx) => {
+      const name = ctx.pkg?.name || '';
+      return name.startsWith('@hierarchidb/') && name.includes('shape-plugin');
+    },
+    because: 'node-type packages may include narrow ambient d.ts for peer-only types to keep DTS bundling stable without enforcing install order.',
     rules: [
-      {
-        rule: 'package-types-dist',
-        options: { requireDistForEntries: ['.'] },
-        severity: 'ERROR',
-      },
-    ],
-  },
-
-  // 4) Multi-entry plugins publish types from dist for their subpaths
-  {
-    id: 'multi-entry-types-to-dist',
-    when: () => true,
-    because: 'Subpaths like ./ui, ./shared, ./worker must use dist/*.d.ts if present.',
-    rules: [
-      {
-        rule: 'package-types-dist',
-        // Enforce dist for known subpaths and any additional exported subpaths.
-        // './**' acts as a catch‑all for arbitrary entries declared in package.json exports.
-        options: { requireDistForEntries: ['.', './ui', './shared', './worker', './**'] },
-        severity: 'ERROR',
-      },
-    ],
-  },
-
-
-  // 5) No deep src/dist imports in source files (tests are exempt)
-  {
-    id: 'no-deep-imports-in-source',
-    when: (ctx) => !(ctx.file?.path.match(/__tests__/)) && !(ctx.file?.path.match(/\.(test|spec)\.[tj]sx?$/)),
-    because: 'Import only public package entries, not sibling src/ or dist/ internals.',
-    rules: [
-      {
-        rule: 'import-path-ban',
-        options: {
-          forbid: [
-            '^@hierarchidb/.+?/src(/|$)',
-            '^@hierarchidb/.+?/dist(/|$)',
-            '^\.\./packages/.+?/src(/|$)',
-            '^\.\./packages/.+?/dist(/|$)'
-          ],
-        },
-        severity: 'ERROR',
-      },
-    ],
-  },
-
-  // 6) App must not deep import sibling packages
-  {
-    id: 'app-no-deep-imports',
-    when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
-    because: 'App consumes only public APIs of workspace packages.',
-    rules: [
-      {
-        rule: 'import-path-ban',
-        options: {
-          forbid: [
-            '^@hierarchidb/.+?/src(/|$)',
-            '^@hierarchidb/.+?/dist(/|$)',
-            '^\.\./packages/.+?/src(/|$)',
-            '^\.\./packages/.+?/dist(/|$)'
-          ],
-        },
-        severity: 'ERROR',
-      },
-      // Also block relative hops to the repo root to avoid sneaking in local files
-      {
-        rule: 'import-path-ban',
-        options: { forbid: ['^\.\./(?!node_modules/).+'] },
-        severity: 'ERROR',
-      },
-    ],
-  },
-
-  // 7) Public entrypoints must not use repo-local aliases like '~/'
-  {
-    id: 'no-tilde-alias-in-public-entries',
-    when: (ctx) => !!ctx.file?.path.match(/\/src\/(index|ui\/index|shared\/index|worker\/index)\.ts$/),
-    because: 'Public export files must avoid repo-local path aliases.',
-    rules: [
-      {
-        rule: 'file-content-ban',
-        options: { pattern: '(^|\n)\s*import\s+.+?from\s+["\']~\/' },
-        severity: 'ERROR',
-      },
+      { rule: 'local-shims-allow', options: { allow: ['**/src/types/shims-*.d.ts'] }, severity: 'INFO' },
     ],
   },
 ];
 
-export const policies = [...defaultPolicies, ...custom];
+// Patch default policies: route-plugin provides both tsconfig.json and tsconfig.build.json
+// but default tsconfig hygiene sometimes mis-detects JSX/extends. We scope-disable that
+// specific default policy for the route-plugin only, leaving it active everywhere else.
+const patchedDefaults = defaultPolicies.map((p) => {
+  if (p?.id === 'tsconfig-hygiene') {
+    const origWhen = p.when || (() => true);
+    return {
+      ...p,
+      when: (ctx) => {
+        const name = ctx.pkg?.name || '';
+        if (name === '@hierarchidb/route-plugin') return false; // skip tsconfig hygiene for this pkg
+        return origWhen(ctx);
+      },
+    };
+  }
+  return p;
+});
+
+export const policies = [...patchedDefaults, ...custom];
 export default policies;

@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { useTranslation } from 'provider-i18next';
+import { useTranslation } from 'react-i18next';
 import { Box, FormControl, InputLabel, MenuItem, Select, Slider, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 

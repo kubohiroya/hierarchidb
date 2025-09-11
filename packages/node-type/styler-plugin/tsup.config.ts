@@ -9,12 +9,15 @@ export default createTsupConfig({
   external: [
     'provider',
     'provider-dom',
-    'provider-i18next',
+    // 'provider-i18next' is obsolete; use react-i18next
+    'react-i18next',
+    'i18next',
+    'react',
+    'react-dom',
     '@mui/material',
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    '@hierarchidb/ui-core',
     'dexie',
   ],
 });

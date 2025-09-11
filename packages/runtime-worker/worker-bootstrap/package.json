@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Worker initialization notification system for reliable Worker-UI communication",
   "type": "module",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -13,7 +13,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
@@ -38,7 +38,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

@@ -2,7 +2,7 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import { getWorkerClient } from './client';
+import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -91,15 +91,7 @@ export class WorkerAPIClient {
 
       // Test the connection (best-effort). Skip if we already saw INIT_COMPLETE.
       try {
-        let initComplete = false;
-        try {
-          const mod = await import('./client');
-          if (typeof (mod as any)?.isWorkerInitCompleted === 'function') {
-            initComplete = Boolean((mod as any).isWorkerInitCompleted());
-          }
-        } catch {
-        }
-
+        const initComplete = Boolean(isWorkerInitCompleted?.());
         if (!initComplete) {
           const pingResult = await remoteWorker.ping();
           // eslint-disable-next-line no-console
@@ -137,17 +129,18 @@ export class WorkerAPIClient {
    * Get singleton Worker instance directly
    */
   static getSingleton(): WorkerInterface {
-
-    if (this.state !== 'initialized' || !this.workerInstance) {
-      console.error('[WorkerAPIClient.getSingleton] Not initialized', {
+    if (!this.workerInstance) {
+      console.error('[WorkerAPIClient.getSingleton] No instance available', {
         state: this.state,
         hasInstance: !!this.workerInstance,
         lastError: this.lastError,
       });
       throw new NotInitializedError();
     }
-
-
+    if (this.state !== 'initialized') {
+      // eslint-disable-next-line no-console
+      console.warn('[WorkerAPIClient.getSingleton] Returning instance while state=', this.state);
+    }
     return this.workerInstance;
   }
 
@@ -220,10 +213,7 @@ export class WorkerAPIClient {
    * Get raw Worker instance for initialization detection
    */
   static getRawWorkerInstance(): Worker | null {
-    // Import the function from initWorkerClient
-    // @ts-ignore - dynamic import
-    const { getRawWorkerInstance } = require('./client');
-    return getRawWorkerInstance();
+    return getRawWorkerInstance?.() ?? null;
   }
 
 

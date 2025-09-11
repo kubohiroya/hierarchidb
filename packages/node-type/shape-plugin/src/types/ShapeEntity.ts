@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph: Shape Entity
   */
 
-import type { NodeId } from '@hierarchidb/core';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 import type { BatchConfig } from './BatchConfig';
 
