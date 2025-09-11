@@ -1,18 +1,16 @@
 // Re-export the comprehensive folder-plugin entity definitions from entities
 export type {
   FolderEntity,
-  FolderWorkingCopy,
   FolderOperationResult,
   FolderSearchQuery,
   FolderStatsSummary,
   FolderStructureNode,
-  FolderSettings,
 } from '../entities/FolderEntity';
 
 // Import tag-related types
 export type { TagId } from '@hierarchidb/common-type';
 // Keep existing simple types for backward compatibility if needed
-import type { FolderSettings as ImportedFolderSettings } from '../entities/FolderEntity';
+import type { FolderSettings as ImportedFolderSettings } from '../shared/types';
 
 export type { TagSuggestion } from '@hierarchidb/common-type';
 

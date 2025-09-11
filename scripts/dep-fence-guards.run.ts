@@ -2,7 +2,7 @@
 // Usage:
 //  pnpm run guards:pre-commit
 //  pnpm run guards:pre-push
-//  pnpm run guards:config -- --config .mrtask/dep-fense.guards.ts
+//  pnpm run guards:config -- --config .mrtask/dep-fence.guards.ts
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { GuardMode, Rule } from 'dep-fence/guards';
@@ -12,7 +12,7 @@ const mode = (process.argv.includes('--mode')
   : 'pre-commit') as GuardMode;
 
 const argIdx = process.argv.indexOf('--config');
-const cfgRel = (argIdx > -1 ? process.argv[argIdx + 1] : process.env.DEP_FENSE_GUARDS) || '.mrtask/dep-fense.guards.ts';
+const cfgRel = (argIdx > -1 ? process.argv[argIdx + 1] : process.env.DEP_FENSE_GUARDS) || '.mrtask/dep-fence.guards.ts';
 const cfgPath = path.resolve(process.cwd(), cfgRel);
 
 const { default: rules } = await import(pathToFileURL(cfgPath).toString());

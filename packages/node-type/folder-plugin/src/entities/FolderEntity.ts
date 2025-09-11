@@ -1,36 +1,17 @@
 /**
-  * Folder Entity Definitions
- * 6
-  * FolderTreeNode
-   */
+ * Folder types (TreeNode alias)
+ *
+ * This file used to define a separate FolderEntity for a plugin-local DB.
+ * As of 2025-09-11, folders are represented directly by Core TreeNode.
+ * The types below alias to TreeNode and keep auxiliary types for UI/API.
+ */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode, Timestamp } from '@hierarchidb/common-type';
 
-/**
-  * FolderEntity - PeerEntity
- * TreeNode1:1
-  */
-export interface FolderSettings {
-  allowNestedFolders: boolean;
-  maxDepth: number;
-  sortOrder: 'name' | 'date' | 'size';
-}
+// Primary entity alias: treat Folder as Core TreeNode
+export type FolderEntity = TreeNode;
 
-export interface FolderEntity {
-  id: NodeId;
-  nodeId: NodeId;
-  name?: string;
-  description?: string;
-  category?: string;
-  settings?: FolderSettings;
-  tags?: string[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: number;
-}
-
-/**
-    */
+// Operation result used by some UI/APIs
 export interface FolderOperationResult {
   success: boolean;
   folderId?: NodeId;
@@ -39,8 +20,7 @@ export interface FolderOperationResult {
   affectedCount?: number;
 }
 
-/**
-    */
+// Search query shape for folder UIs
 export interface FolderSearchQuery {
   name?: string;
   parentId?: NodeId;
@@ -54,9 +34,6 @@ export interface FolderSearchQuery {
   limit?: number;
   offset?: number;
 }
-
-// Additional types re-exported by types/index.ts
-export type FolderWorkingCopy = FolderEntity & { workingCopyId: NodeId };
 
 export interface FolderStatsSummary {
   totalFolders: number;

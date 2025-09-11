@@ -9,26 +9,7 @@ import type {
   ValidationExtension,
   ValidationResult,
 } from '@hierarchidb/common-type';
-import type React from 'react';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-
-// Temporary type definitions for missing types
-// Use DialogStepDefinition from common types
-
-// Use ValidationExtension from common types
-
-/*
-interface PluginExtensionConfig {
-  id: string;
-  name: string;
-  version: string;
-}
-
-interface ExtendableNodeTypeDefinition {
-  nodeType: string;
-  extensions: any[];
-}
- */
 
 /**
  * Base class for plugins that extend the folder-plugin plugin

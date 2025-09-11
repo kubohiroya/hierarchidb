@@ -155,8 +155,8 @@ importers:
         specifier: ^1.2.8
         version: 1.2.8
       mrtask:
-        specifier: github:kubohiroya/mrtask
-        version: https://codeload.github.com/kubohiroya/mrtask/tar.gz/047539bb3cf60eb397d26cd12f5307c96376a7ae
+        specifier: ^0.7.1
+        version: 0.7.1
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -4475,6 +4475,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.30':
     resolution: {integrity: sha512-GQ7Nw5G2lTu/BtHTKfXhKHok2WGetd4XYcVKGx00SjAk8GMwgJM3zr6zORiPGuOE+/vkc90KtTosSSvaCjKb2Q==}
+
+  '@jridgewell/trace-mapping@0.3.31':
+    resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
@@ -8801,9 +8804,8 @@ packages:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
 
-  mrtask@https://codeload.github.com/kubohiroya/mrtask/tar.gz/047539bb3cf60eb397d26cd12f5307c96376a7ae:
-    resolution: {tarball: https://codeload.github.com/kubohiroya/mrtask/tar.gz/047539bb3cf60eb397d26cd12f5307c96376a7ae}
-    version: 0.7.0
+  mrtask@0.7.1:
+    resolution: {integrity: sha512-hA8thA6b5aZUB+SpAEwopOwhfcMjxlONvE7v8Q5z7mrIULhKmiImaGRRDHr64kxrkiggDC7U9mb5+nW5woAQVQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -9544,8 +9546,8 @@ packages:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}
     engines: {node: '>= 0.4'}
 
-  regexpu-core@6.3.0:
-    resolution: {integrity: sha512-ulzJYRb0qgR4t8eTgHeL7nnKL/4ul2yjnuTBEDIpYG7cSs8CcADE1q18RFFChXLP8WwRgPrHThGbYplvASdujw==}
+  regexpu-core@6.3.1:
+    resolution: {integrity: sha512-DzcswPr252wEr7Qz8AyAVbfyBDKLoYp6eRA1We2Fa9qirRFSdtkP5sHr3yglDKy2BbA0fd2T+j/CUSKes3FeVQ==}
     engines: {node: '>=4'}
 
   regjsgen@0.8.0:
@@ -10991,7 +10993,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.28.3
       '@babel/helper-annotate-as-pure': 7.27.3
-      regexpu-core: 6.3.0
+      regexpu-core: 6.3.1
       semver: 6.3.1
     optional: true
 
@@ -12595,7 +12597,7 @@ snapshots:
   '@jridgewell/source-map@0.3.11':
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.30
+      '@jridgewell/trace-mapping': 0.3.31
     optional: true
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
@@ -12604,6 +12606,12 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@jridgewell/trace-mapping@0.3.31':
+    dependencies:
+      '@jridgewell/resolve-uri': 3.1.2
+      '@jridgewell/sourcemap-codec': 1.5.5
+    optional: true
 
   '@jridgewell/trace-mapping@0.3.9':
     dependencies:
@@ -15815,7 +15823,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(terser@5.43.1)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)(terser@5.43.1)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -18366,7 +18374,7 @@ snapshots:
 
   mrmime@2.0.1: {}
 
-  mrtask@https://codeload.github.com/kubohiroya/mrtask/tar.gz/047539bb3cf60eb397d26cd12f5307c96376a7ae:
+  mrtask@0.7.1:
     dependencies:
       commander: 12.1.0
       dep-fence: 0.3.0
@@ -19144,7 +19152,7 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
-  regexpu-core@6.3.0:
+  regexpu-core@6.3.1:
     dependencies:
       regenerate: 1.4.2
       regenerate-unicode-properties: 10.2.2

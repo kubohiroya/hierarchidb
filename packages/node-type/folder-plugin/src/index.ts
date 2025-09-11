@@ -1,5 +1,4 @@
-export { FolderEntityHandler } from './handlers/FolderEntityHandler';
-export { FolderDatabase } from './database/FolderDatabase';
+// No DB/handler exports; CoreDB.nodes is the source of truth.
 
 // Basic components
 // UI components moved to subpath export to keep root worker-safe

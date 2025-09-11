@@ -7,7 +7,6 @@
     "*": {
       "ui": ["dist/ui/index.d.ts"],
       "shared": ["dist/shared/index.d.ts"],
-      "worker": ["dist/worker/index.d.ts"],
       "*": ["dist/index.d.ts"]
     }
   },
@@ -28,11 +27,7 @@
       "import": "./dist/ui/index.js",
       "default": "./dist/ui/index.js"
     },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
-    }
+    
   },
   "scripts": {
     "build": "tsup",
@@ -105,7 +100,6 @@
       "dependencies": [],
       "exports": {
         "definition": "FolderDefinition",
-        "handler": "FolderEntityHandler",
         "components": [
           "FolderDialog",
           "FolderPanel"

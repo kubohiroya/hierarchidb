@@ -12,8 +12,8 @@
     "deps:fix": "npx syncpack fix-mismatches && npx syncpack format",
     "pkg:publint": "pnpm -r --filter \"...[[private=false]]\" exec npx publint .",
     "pkg:attw": "pnpm -r --filter \"...[[private=false]]\" exec npx attw .",
-    "guards:pre-commit": "tsx scripts/dep-fence-guards.run.ts --mode pre-commit --config .mrtask/dep-fense.guards.ts",
-    "guards:pre-push": "tsx scripts/dep-fence-guards.run.ts --mode pre-push --config .mrtask/dep-fense.guards.ts",
+    "guards:pre-commit": "tsx scripts/dep-fence-guards.run.ts --mode pre-commit --config .mrtask/dep-fence.guards.ts",
+    "guards:pre-push": "tsx scripts/dep-fence-guards.run.ts --mode pre-push --config .mrtask/dep-fence.guards.ts",
     "check:deps:policies": "pnpm exec dep-fence",
     "preinstall": "npx only-allow pnpm",
     "dev": "./scripts/start-env.sh development",
@@ -78,7 +78,12 @@
     "ci:install": "pnpm install --no-frozen-lockfile --force",
     "ci:typecheck:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm -r --workspace-concurrency 1 typecheck",
     "ci:build:local": "CI=true NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm -r --workspace-concurrency 1 build",
-    "ci:all:local": "pnpm ci:clean && pnpm ci:install && pnpm ci:versions && pnpm ci:typecheck:local"
+    "ci:all:local": "pnpm ci:clean && pnpm ci:install && pnpm ci:versions && pnpm ci:typecheck:local",
+    "task:add": "npx mrtask add",
+    "task:list": "npx mrtask list",
+    "task:pr": "npx mrtask pr",
+    "task:done": "npx mrtask done",
+    "task:cancel": "npx mrtask cancel"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
@@ -124,7 +129,7 @@
     "jscodeshift": "^17.3.0",
     "license-checker": "^25.0.1",
     "minimist": "^1.2.8",
-    "mrtask": "github:kubohiroya/mrtask",
+    "mrtask": "^0.7.1",
     "prettier": "^3.6.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

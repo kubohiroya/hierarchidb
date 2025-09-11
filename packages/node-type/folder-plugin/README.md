@@ -1,14 +1,20 @@
 # @hierarchidb/plugin-folder
 
-実装サマリ（2025-09-09）
+実装サマリ（2025-09-11）
 - nodeType: `folder`
-- EntityHandler: `FolderEntityHandler`（`HierarchicalEntityHandler` 継承）
 - DB: Dexie(`folder-db`) に `folders` ストア（`&id, nodeId, name, description, createdAt, updatedAt, version`）
-- Working Copy: `createWorkingCopy/commitWorkingCopy/discardWorkingCopy` を備えた簡易ワーキングコピー対応
+  - Working Copy: `createWorkingCopy/commitWorkingCopy/discardWorkingCopy` を備えた簡易ワーキングコピー対応
 - 機能: ツリー移動・兄弟/子孫/祖先取得・パス/深さ計算・名前/説明バリデーション
 - UI: Create/Edit ダイアログ、アイコン、ウィザード（基本情報ステップほか）
 
 Basic folder plugin for HierarchiDB UI layer that provides container functionality for organizing files and other items in a hierarchical structure.
+
+> 重要（設計方針のアップデート）
+>
+> かつて「TreeNode 実装をフォルダプラグイン側へ抽出する」試行のために、フォルダ専用のエンティティ/DB 実装（FolderEntity/FolderDatabase）が追加されました。
+> しかし現在の本体実装では、フォルダは CoreDB.nodes（TreeNode）を唯一の永続先として扱います。
+> folder-plugin 内の `FolderDatabase`/`FolderEntityHandler`/`FolderEntityManager` はプロトタイプの遺物であり、今後削除予定（Deprecated）です。
+> 既存テスト保持のため当面は残置しますが、新規コードは CoreDB.nodes を前提にしてください。
 
 ## Overview
 
@@ -179,7 +185,7 @@ Once registered, folders will automatically appear in:
 
 This plugin is part of HierarchiDB's unified UI plugin system:
 
-- **Worker Layer**: Uses `FolderEntityHandler` and Dexie stores (`folders`), built on `HierarchicalEntityHandler`
+- **Worker Layer**: Not required. Folder nodes are CoreDB.nodes (TreeNode) only.
 - **UI Layer**: Unified plugin interface for consistent UX
 - **Data Adapter**: Bridges Worker API with UI plugin system
 - **Component Library**: Reusable UI components with Material-UI
