@@ -15,6 +15,7 @@ import {
   InputAdornment,
   ListItemIcon,
   ListItemText,
+  Divider,
   Menu,
   MenuItem,
   Paper,
@@ -44,6 +45,10 @@ import {
   RestoreFromTrash as RecyclingIcon,
   Search as SearchIcon,
   Settings as SettingsIcon,
+  Translate as TranslateIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  SettingsBrightness as SystemThemeIcon,
   SnippetFolder as SnippetFolderIcon,
   Undo as UndoIcon,
 } from '@mui/icons-material';
@@ -103,10 +108,21 @@ function TreeConsoleToolbarContent({
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
   const [importExportAnchorEl, setImportExportAnchorEl] = useState<null | HTMLElement>(null);
   const [trashAnchorEl, setTrashAnchorEl] = useState<null | HTMLElement>(null);
+  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
+  const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
+
+  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() =>
+    (typeof localStorage !== 'undefined' && (localStorage.getItem('app.theme') as any)) || 'system',
+  );
+  const [language, setLanguage] = useState<string>(
+    () => (typeof localStorage !== 'undefined' && localStorage.getItem('app.lang')) || 'system',
+  );
 
   const settingsOpen = Boolean(settingsAnchorEl);
   const importExportOpen = Boolean(importExportAnchorEl);
   const trashOpen = Boolean(trashAnchorEl);
+  const themeOpen = Boolean(themeAnchorEl);
+  const languageOpen = Boolean(languageAnchorEl);
 
   const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
     setSettingsAnchorEl(settingsAnchorEl ? null : event.currentTarget);
@@ -130,6 +146,26 @@ function TreeConsoleToolbarContent({
 
   const handleTrashClose = () => {
     setTrashAnchorEl(null);
+  };
+
+  // Theme submenu handlers
+  const openThemeMenu = (event: MouseEvent<HTMLElement>) => setThemeAnchorEl(event.currentTarget);
+  const closeThemeMenu = () => setThemeAnchorEl(null);
+  const selectTheme = (mode: 'system' | 'light' | 'dark') => {
+    setThemeMode(mode);
+    try { localStorage.setItem('app.theme', mode); } catch {}
+    try { window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } })); } catch {}
+    closeThemeMenu();
+  };
+
+  // Language submenu handlers
+  const openLanguageMenu = (event: MouseEvent<HTMLElement>) => setLanguageAnchorEl(event.currentTarget);
+  const closeLanguageMenu = () => setLanguageAnchorEl(null);
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    try { localStorage.setItem('app.lang', lang); } catch {}
+    try { window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } })); } catch {}
+    closeLanguageMenu();
   };
 
   // Dummy handlers for now - will be connected to controller
@@ -316,9 +352,15 @@ function TreeConsoleToolbarContent({
         <IconButton size="small" onClick={handleSettingsClick} aria-label="Settings">
           <SettingsIcon fontSize="small" />
         </IconButton>
-        <Popper open={settingsOpen} anchorEl={settingsAnchorEl} placement="bottom-end">
+        <Popper
+          open={settingsOpen}
+          anchorEl={settingsAnchorEl}
+          placement="bottom-end"
+          disablePortal={false}
+          sx={{ zIndex: (theme) => Math.max(theme.zIndex.modal + 100, 2000) }}
+        >
           <ClickAwayListener onClickAway={handleSettingsClose}>
-            <Paper sx={{ p: 2, minWidth: 250 }}>
+            <Paper sx={{ p: 2, minWidth: 280, zIndex: (theme) => Math.max(theme.zIndex.modal + 101, 2001) }}>
               <Typography variant="subtitle2" gutterBottom>
                 Row Click Action
               </Typography>
@@ -357,9 +399,68 @@ function TreeConsoleToolbarContent({
                   }
                 />
               </RadioGroup>
+
+              <Divider sx={{ my: 1 }} />
+
+              {/* Theme selection opener */}
+              <MenuItem onClick={openThemeMenu} aria-haspopup="menu">
+                <ListItemIcon>
+                  {themeMode === 'dark' ? (
+                    <DarkModeIcon fontSize="small" />
+                  ) : themeMode === 'light' ? (
+                    <LightModeIcon fontSize="small" />
+                  ) : (
+                    <SystemThemeIcon fontSize="small" />
+                  )}
+                </ListItemIcon>
+                <ListItemText primary="Theme" secondary={themeMode} />
+              </MenuItem>
+
+              {/* Language selection opener */}
+              <MenuItem onClick={openLanguageMenu} aria-haspopup="menu">
+                <ListItemIcon>
+                  <TranslateIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Language" secondary={language} />
+              </MenuItem>
             </Paper>
           </ClickAwayListener>
         </Popper>
+
+        {/* Theme submenu */}
+        <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu}>
+          <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
+            <ListItemIcon>
+              <SystemThemeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="System" />
+          </MenuItem>
+          <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
+            <ListItemIcon>
+              <LightModeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Light" />
+          </MenuItem>
+          <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
+            <ListItemIcon>
+              <DarkModeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Dark" />
+          </MenuItem>
+        </Menu>
+
+        {/* Language submenu */}
+        <Menu anchorEl={languageAnchorEl} open={languageOpen} onClose={closeLanguageMenu}>
+          <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
+            <ListItemText primary="System Default" />
+          </MenuItem>
+          <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
+            <ListItemText primary="English" />
+          </MenuItem>
+          <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
+            <ListItemText primary="日本語" />
+          </MenuItem>
+        </Menu>
       </Box>
     </Box>
   );

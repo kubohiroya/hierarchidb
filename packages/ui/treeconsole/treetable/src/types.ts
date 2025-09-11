@@ -45,6 +45,8 @@ export interface TreeTableController {
   onCreate?: (parentId: string, type: string) => void;
   onDuplicate?: (nodeId: string) => void;
   onRemove?: (nodeIds: string[]) => void;
+  // Move nodes to a new parent
+  onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
 }
 
 // TreeTable core props

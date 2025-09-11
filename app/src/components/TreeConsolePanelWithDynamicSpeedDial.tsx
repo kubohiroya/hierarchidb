@@ -37,6 +37,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
         {...panelProps}
         onStartTour={onStartTour}
         onContextMenuAction={onContextMenuAction}
+        onMoveNodes={panelProps.onMoveNodes}
       />
       {/* Our dynamic SpeedDial that replaces the hardcoded one */}
       <DynamicSpeedDial

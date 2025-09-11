@@ -56,4 +56,10 @@ export interface TreeConsoleBreadcrumbProps {
    * Custom context menu component
    */
   NodeContextMenu?: React.ComponentType<any>;
+
+  /**
+   * Called when a node is dropped onto a breadcrumb item.
+   * Enables reparenting via drag & drop onto the breadcrumb.
+   */
+  onDropToNode?: (targetNodeId: string, draggedNodeId: string) => void;
 }

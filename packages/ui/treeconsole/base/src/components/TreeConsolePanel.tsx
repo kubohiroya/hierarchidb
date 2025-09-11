@@ -13,7 +13,7 @@ import type { TreeTableColumn } from './TreeTable';
 import { RowContextMenu } from './TreeTable';
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-//import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
 import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 // import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -63,6 +63,7 @@ export interface TreeConsolePanelProps {
   readonly canGoForward?: boolean;
   readonly onContextMenuAction: (action: string, node: TreeNodeData) => void;
   readonly onStartTour?: () => void;
+  readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -111,6 +112,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         }
       },
       onNodeExpand: props.onNodeExpand,
+      onMoveNodes: (nodeIds: string[], targetParentId: string) => {
+        props.onMoveNodes?.(nodeIds, targetParentId);
+      },
     };
   }, [
     props.data,
@@ -119,6 +123,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     props.onNodeClick,
     props.onNodeSelect,
     props.onNodeExpand,
+    props.onMoveNodes,
   ]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, node: TreeNodeData) => {
@@ -193,13 +198,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         },
       }}
     >
-      {/* Breadcrumb Navigation
+      {/* Breadcrumb Navigation with drop-to-parent support */}
       <TreeConsoleBreadcrumb
         nodePath={[...props.breadcrumbItems]}
         onNodeClick={props.onBreadcrumbNavigate}
         variant="default"
+        onDropToNode={(targetId, draggedId) => props.onMoveNodes?.([draggedId], targetId)}
       />
-*/}
       {/* Toolbar
       <TreeTableToolbar
         title={props.title}

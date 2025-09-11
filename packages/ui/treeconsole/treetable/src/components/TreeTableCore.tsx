@@ -490,24 +490,35 @@ export function TreeTableCore({
   };
 
   // Column resize implementation
-  const resizeRef = useRef<{ startX: number; startWidth: number }>({ startX: 0, startWidth: 0 });
+  const resizeRef = useRef<{
+    startX: number;
+    leftStart: number;
+    rightStart: number;
+    leftId: string;
+    rightId: string;
+  }>({ startX: 0, leftStart: 0, rightStart: 0, leftId: '', rightId: '' });
 
-  const handleResizeStart = (columnId: string, e: React.MouseEvent) => {
+  const handleResizeStart = (leftColumnId: string, rightColumnId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     const startX = e.clientX;
-    const startWidth = columnWidths[columnId] || 100;
-    resizeRef.current = { startX, startWidth };
-    setResizingColumn(columnId);
+    const leftStart = columnWidths[leftColumnId] || 100;
+    const rightStart = columnWidths[rightColumnId] || 100;
+    resizeRef.current = { startX, leftStart, rightStart, leftId: leftColumnId, rightId: rightColumnId };
+    setResizingColumn(leftColumnId);
 
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       const deltaX = e.clientX - startX;
-      const newWidth = Math.max(50, startWidth + deltaX);
-      setColumnWidths((prev) => ({
-        ...prev,
-        [columnId]: newWidth,
-      }));
+      const MIN = 50;
+      const { leftStart, rightStart, leftId, rightId } = resizeRef.current;
+      // Clamp delta so neither side goes below MIN
+      const maxPositive = rightStart - MIN; // moving handle right: left grows, right shrinks
+      const maxNegative = leftStart - MIN;  // moving handle left: left shrinks, right grows
+      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
+      const leftNew = Math.max(MIN, leftStart + clamped);
+      const rightNew = Math.max(MIN, rightStart - clamped);
+      setColumnWidths((prev) => ({ ...prev, [leftId]: leftNew, [rightId]: rightNew }));
     };
 
     const handleMouseUp = () => {
@@ -566,7 +577,15 @@ export function TreeTableCore({
                         {!isSelectionColumn && header.column.id !== 'updatedAt' && (
                           <ResizeHandle
                             className={resizingColumn === header.column.id ? 'resizing' : ''}
-                            onMouseDown={(e) => handleResizeStart(header.column.id, e)}
+                            onMouseDown={(e) => {
+                              // Determine the immediate right neighbor column id within this header group
+                              const headers = headerGroup.headers;
+                              const idx = headers.findIndex((h) => h.id === header.id);
+                              const rightNeighbor = headers[idx + 1];
+                              const rightId = rightNeighbor?.column.id;
+                              if (!rightId) return; // safety: shouldn't happen because last column has no handle
+                              handleResizeStart(header.column.id, rightId, e);
+                            }}
                           />
                         )}
                       </>
@@ -587,6 +606,23 @@ export function TreeTableCore({
               <StyledTableRow
                 key={row.id}
                 selected={isSelected}
+                draggable
+                onDragStart={(e) => {
+                  try { e.dataTransfer?.setData('text/hdb-node', row.original.id); } catch {}
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer?.types?.includes('text/hdb-node')) {
+                    e.preventDefault();
+                  }
+                }}
+                onDrop={(e) => {
+                  try {
+                    const sourceId = e.dataTransfer?.getData('text/hdb-node');
+                    const targetId = row.original.id;
+                    if (!sourceId || !targetId || sourceId === targetId) return;
+                    controller?.onMoveNodes?.([sourceId], targetId);
+                  } catch {}
+                }}
                 onClick={(e) => handleRowClick(node, e)}
                 onDoubleClick={(e) => handleRowDoubleClick(node, e)}
                 onContextMenu={(e) => handleRowContextMenu(node, e)}

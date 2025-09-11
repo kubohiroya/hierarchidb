@@ -74,10 +74,12 @@ export interface TreeConsoleActions {
   handleUndo: () => void;
   handleRedo: () => void;
   handleCopy: () => void;
+  handleCut: () => void;
   handlePaste: () => void;
   handleDuplicate: () => void;
   handleImport: () => void;
   handleExport: () => void;
+  handleMoveNodes: (nodeIds: string[], targetParentId: string) => Promise<void>;
 }
 
 export function useTreeConsoleIntegration({
@@ -460,20 +462,32 @@ export function useTreeConsoleIntegration({
         setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
       },
 
+      handleCut: () => {
+        (globalThis as any).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds], cut: true };
+        setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
+      },
+
       handlePaste: async () => {
         if (!client) return;
         const clip = (globalThis as any).__HDB_CLIPBOARD__ as { nodeIds: NodeId[] } | undefined;
         const ids = clip?.nodeIds || [];
+        const isCut = Boolean(clip && (clip as any).cut);
         if (ids.length === 0) return;
         try {
           const mutationAPI = await client.getMutationAPI();
           const toParentId = pageNodeId as NodeId;
-          const res = await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
+          const res = isCut
+            ? await mutationAPI.moveNodes(ids as NodeId[], toParentId)
+            : await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
           if (!('success' in res) || !res.success) {
             showCommandError('INVALID_OPERATION', (res as any)?.error || 'Paste failed');
             return;
           }
           await loadChildrenOf(toParentId);
+          // Clear cut clipboard after move
+          if (isCut) {
+            (globalThis as any).__HDB_CLIPBOARD__ = undefined;
+          }
         } catch (e) {
           console.error('Paste failed:', e);
         }
@@ -565,6 +579,21 @@ export function useTreeConsoleIntegration({
             ...prev,
             error: `Export failed: ${error}`,
           }));
+        }
+      },
+      handleMoveNodes: async (nodeIds: string[], targetParentId: string) => {
+        if (!client || nodeIds.length === 0 || !targetParentId) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.moveNodes(nodeIds as NodeId[], targetParentId as NodeId);
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Move failed');
+            return;
+          }
+          await loadChildrenOf(targetParentId as NodeId);
+        } catch (e) {
+          console.error('Move failed:', e);
+          showCommandError('UNKNOWN_ERROR');
         }
       },
     }),

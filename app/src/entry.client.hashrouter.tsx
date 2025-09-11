@@ -1,4 +1,4 @@
-import { startTransition, StrictMode, useMemo, useEffect } from 'react';
+import { startTransition, StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { RouteObject } from 'react-router-dom';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
@@ -7,9 +7,11 @@ import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider
 import { AppConfigProvider } from './contexts/AppConfigContext';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
-import { createAppTheme, ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { AppThemeProvider } from './components/AppThemeProvider';
+import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { NotificationSystem } from '@hierarchidb/ui-core';
 import { WorkerProvider } from './contexts/WorkerProvider';
 import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIReadyReporter, I18nReadyReporter, AuthReadyReporter } from './init/InitReporters';
@@ -38,7 +40,6 @@ createApp().then((router) => {
     } catch {}
 
     function Providers({ children }: { children: React.ReactNode }) {
-      const theme = useMemo(() => createAppTheme('light'), []);
       useEffect(() => { try { console.log('[HDB-BOOT] AppShell mount'); } catch {} }, []);
       return (
         <BootProgressProvider>
@@ -46,9 +47,10 @@ createApp().then((router) => {
             <SimpleBFFAuthProvider>
               <LanguageProvider>
                 <StyledEngineProvider injectFirst>
-                  <ThemeProvider theme={theme}>
-                    <CustomThemeProvider>
+                  <CustomThemeProvider>
+                    <AppThemeProvider>
                       <CssBaseline />
+                      <LanguageEventsBridge />
                       <NotificationSystem />
                       {/* Mark non-worker steps as ready */}
                       <ConfigReadyReporter />
@@ -60,8 +62,8 @@ createApp().then((router) => {
                         <WorkerProgressReporter />
                         {children}
                       </WorkerProvider>
-                    </CustomThemeProvider>
-                  </ThemeProvider>
+                    </AppThemeProvider>
+                  </CustomThemeProvider>
                 </StyledEngineProvider>
               </LanguageProvider>
             </SimpleBFFAuthProvider>

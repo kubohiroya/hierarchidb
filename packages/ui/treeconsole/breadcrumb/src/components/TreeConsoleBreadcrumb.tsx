@@ -246,6 +246,17 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       fontWeight: 'bold',
                       fontSize: '0.975rem',
                     }}
+                    onDragOver={(e) => {
+                      if (e.dataTransfer?.types?.includes('text/hdb-node')) e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      try {
+                        const dragged = e.dataTransfer?.getData('text/hdb-node');
+                        if (dragged && nodeId && dragged !== nodeId) {
+                          props.onDropToNode?.(String(nodeId), dragged);
+                        }
+                      } catch {}
+                    }}
                   >
                     <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}
@@ -269,6 +280,17 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 0.5,
+                    }}
+                    onDragOver={(e) => {
+                      if (e.dataTransfer?.types?.includes('text/hdb-node')) e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      try {
+                        const dragged = e.dataTransfer?.getData('text/hdb-node');
+                        if (dragged && nodeId && dragged !== nodeId) {
+                          props.onDropToNode?.(String(nodeId), dragged);
+                        }
+                      } catch {}
                     }}
                   >
                     <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
