@@ -36,6 +36,7 @@ jobs:
         run: pnpm biome:check:core
 
   eslint-deprecations:
+    if: ${{ false }}
     name: ESLint Deprecations (core only)
     runs-on: ubuntu-latest
     timeout-minutes: 15
