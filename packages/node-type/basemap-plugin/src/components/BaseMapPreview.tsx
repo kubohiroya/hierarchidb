@@ -8,6 +8,7 @@ import React, { useMemo } from 'react';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { type MapLibreLayer, MapLibreMap, type MapLibreStyle, type MapViewState } from '@hierarchidb/ui-map';
+import { CrossViewSnackbar } from '@hierarchidb/ui-core';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles';
 
 export interface BaseMapPreviewProps {
@@ -45,6 +46,8 @@ export interface BaseMapPreviewProps {
   interactive?: boolean;
   /** Title for the preview */
   title?: string;
+  /** Optional datasetId for cross-view highlight channel */
+  datasetId?: string;
 }
 
 /**
@@ -73,6 +76,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                                                                 showMetadata = true,
                                                                 interactive = false,
                                                                 title = 'BaseMap Preview',
+                                                                datasetId,
                                                               }) => {
   // Convert to MapLibre view state
   const initialViewState = useMemo<MapViewState>(
@@ -347,6 +351,12 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 {attribution}
               </Typography>
             </Box>
+            {/* Cross-view snackbar when a dataset is specified */}
+            {datasetId && (
+              <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                <CrossViewSnackbar datasetId={datasetId} />
+              </Box>
+            )}
           </>
         )}
       </Box>

@@ -21,6 +21,7 @@ export type FolderPeerRow = {
   nodeId: NodeId;
   data?: unknown;
   updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
 };
 
 export class FolderEntitiesDB extends Dexie {

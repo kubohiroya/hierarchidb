@@ -385,6 +385,9 @@ export class CommandProcessor {
             }
           }
           if (beforeList.length > 0) this.preRemoveState.set(envelope.commandId, beforeList);
+          // Also remove plugin peer entities tied to the removed nodeIds.
+          // Note: This is for permanent deletion (empty trash), not for moveToTrash/recoverFromTrash.
+          await this.deletePeerEntitiesForNodes(beforeList);
           return { success: true, seq: this.getNextSeq() };
         } catch (e) {
           return this.createErrorResult(
@@ -825,6 +828,48 @@ export class CommandProcessor {
         //  : Refactor
         throw new Error(`Reverse operation not implemented for command type: ${command.kind}`);
     }
+  }
+
+  // Best-effort deletion of peerEntities (permanent delete only)
+  private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
+    try {
+      const { storeRegistry } = await import('~/entity/store-registry');
+      for (const n of nodes) {
+        const nodeType = (n as any).nodeType as string;
+        const nodeId = n.id as NodeId;
+        const store = storeRegistry.getPeer(nodeType);
+        if (store) {
+          try { await store.delete(nodeId); continue; } catch {}
+        }
+        // Fallback: direct Dexie access when no PeerStore registered
+        try {
+          await this.deletePeerEntityDirect(nodeType, nodeId);
+        } catch {
+          // ignore per-node failure
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private async deletePeerEntityDirect(nodeType: string, nodeId: NodeId): Promise<void> {
+    // Map known node types to their EntitiesDB modules
+    const map: Record<string, () => Promise<{ del(nodeId: NodeId): Promise<void> }>> = {
+      folder: async () => { const name = '@' + 'hierarchidb/folder-plugin/src/worker/folderEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.FolderEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      route: async () => { const name = '@' + 'hierarchidb/route-plugin/src/worker/routeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.RouteEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      resolver: async () => { const name = '@' + 'hierarchidb/resolver-plugin/src/worker/resolverEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ResolverEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      project: async () => { const name = '@' + 'hierarchidb/project-plugin/src/worker/projectEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ProjectEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      shape: async () => { const name = '@' + 'hierarchidb/shape-plugin/src/worker/shapeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ShapeEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      location: async () => { const name = '@' + 'hierarchidb/location-plugin/src/worker/locationEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.LocationEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      spreadsheet: async () => { const name = '@' + 'hierarchidb/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.SpreadsheetEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      styler: async () => { const name = '@' + 'hierarchidb/styler-plugin/src/worker/stylerEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.StylerEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+      basemap: async () => { const name = '@' + 'hierarchidb/basemap-plugin/src/worker/basemapEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.BasemapEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
+    };
+    const fn = map[nodeType];
+    if (!fn) return;
+    const adapter = await fn();
+    await adapter.del(nodeId);
   }
 
   /**

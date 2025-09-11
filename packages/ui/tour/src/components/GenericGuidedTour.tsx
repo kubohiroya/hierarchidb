@@ -2,7 +2,7 @@ import { type MouseEvent, useCallback, useEffect, useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useTheme } from '@mui/material/styles';
 import { Box, Checkbox, FormControlLabel, GlobalStyles, IconButton, Portal } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close as CloseIcon } from '@mui/icons-material';
 import GuidedTourStateManager from '../managers/GuidedTourStateManager';
 
 export interface GenericGuidedTourProps {

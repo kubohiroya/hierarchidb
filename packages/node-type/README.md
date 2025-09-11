@@ -194,14 +194,14 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 | プラグイン | P-Peer | P-Group | P-Relational | E-Peer | E-Group | E-Relational |
 |---|---|---|---|---|---|---|
 | base-plugin | - | - | - | - | - | - |
-| folder-plugin | folders | groupEntities | relations | - | - | - |
-| spreadsheet-plugin | spreadsheetEntities, workingCopies | groupEntities | relations | - | - | - |
-| styler-plugin | - | - | csvMetadata | - | - | - |
+| folder-plugin | folders | - | - | - | - | - |
+| spreadsheet-plugin | peerEntities | groupEntities | relations | - | - | - |
+| styler-plugin | - | - | - | - | - | - |
 | basemap-plugin | baseMaps, workingCopies | - | - | - | - | - |
-| shape-plugin | shapeEntities | - | - | - | rawBuffers, simplifiedBuffers, vectorTiles, sessions, cache | - |
-| location-plugin | peerEntities | groupEntities | relations | - | - | - |
-| route-plugin | routes, workingCopies | - | - | - | - | - |
-| resolver-plugin | resolvers, workingCopies | - | - | - | - | - |
+| shape-plugin | shapes | - | shapeFeatures, shapeVectorTiles, shapeBatchSessions, shapeBatchTasks, shapeCache | - | - | - |
+| location-plugin | locations, locationWorkingCopies | - | locationBatchSessions, locationBatchTasks | - | - | - |
+| route-plugin | routes, routeWorkingCopies | - | - | - | - | - |
+| resolver-plugin | resolvers | - | - | - | - | - |
 | project-plugin | projects | - | - | - | - | - |
 
 
@@ -232,6 +232,19 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 
 - ロード順: `dependencies` をもとにトポロジカルソート（folder → spreadsheet → styler 等）。
 - メニュー: `category.menuGroup` と `createOrder`、`displayName` から並び順/表示を決定。
+
+### ノード・ダイアログ評価API（新）
+
+ホスト側ダイアログ（ExtensibleFolderDialog）は、レジストリ経由で各プラグインが提供する「ステップ評価」と「サブミット可否」を取り込み、UI に反映します。
+
+- ステップ評価（充足/ナビ）
+  - `evaluateSteps: { getFilledSteps(data), getNavigableSteps(data) }`
+  - 複数プラグイン提供時は AND 合成。`dependsOn`（宣言的依存）も併せてガード。
+- サブミット可否
+  - `canSubmit(data): boolean | Promise<boolean>` を拡張側が定義可能。
+  - ホストは「全ステップ validate AND すべての canSubmit」を満たしたとき Submit を許可。
+- 初期化
+  - 推奨: `initializeDefaultNodeDialogExtensions()` を起動時に呼び出し（shape/spreadsheet/basemap/styler の評価器/ステップを登録）。
 
 ## Plugin Dev MUSTs（プラグイン実装の必須事項）
 - 公開TSXの戻り値型: プラグインが公開する TSX 関数/コンポーネントは `JSX.Element`（必要なら `| null`）を明示する（TS2742 回避）。

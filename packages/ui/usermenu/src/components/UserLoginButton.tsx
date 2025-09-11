@@ -197,7 +197,7 @@ export const UserLoginButton: React.FC = () => {
 
   // Show user menu when authenticated
   const userEmail = user?.profile?.email || '';
-  const userName = user?.profile?.name || user?.profile?.preferred_username || 'User';
+  const userName = user?.profile?.name || userEmail || 'User';
   const userPicture = user?.profile?.picture;
 
   return (

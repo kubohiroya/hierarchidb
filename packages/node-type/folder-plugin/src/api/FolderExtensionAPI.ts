@@ -9,6 +9,20 @@ import type {
 import type { FolderEntity } from '../entities/FolderEntity';
 
 /**
+ * Lightweight evaluator interface for folder-plugin extensions.
+ * Mirrors ui-dialog's StepStateEvaluator but stays local to avoid tight coupling.
+ */
+export interface StepArrayEvaluator {
+  getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+}
+
+/**
+ * Generic, folder-agnostic alias. Prefer this name in new code.
+ */
+export type NodeDialogStepEvaluator = StepArrayEvaluator;
+
+/**
  * Extension point for folder-plugin dialogs
  */
 export interface FolderDialogExtension {
@@ -31,7 +45,24 @@ export interface FolderDialogExtension {
    * Custom validation rules
    */
   validation?: ValidationExtension;
+
+  /**
+   * Optional step state evaluator supplied by the extension.
+   * When multiple extensions provide evaluators, they are combined conservatively (AND).
+   */
+  evaluateSteps?: StepArrayEvaluator;
+
+  /**
+   * Optional submit-eligibility function supplied by the extension.
+   * Multiple providers are AND-composed.
+   */
+  canSubmit?: (data: any) => boolean | Promise<boolean>;
 }
+
+/**
+ * Folder-agnostic alias for dialog extension. Prefer this in new code.
+ */
+export type NodeDialogExtension = FolderDialogExtension;
 
 /**
  * Extension point for folder-plugin entity handling
@@ -255,6 +286,34 @@ export class FolderExtensionRegistry {
 
     // Sort by stepNumber property
     return steps.sort((a, b) => a.stepNumber - b.stepNumber);
+  }
+
+  /**
+   * Get all dialog evaluators registered by extensions (dependency order).
+   */
+  getDialogEvaluators(): StepArrayEvaluator[] {
+    const evaluators: StepArrayEvaluator[] = [];
+    const extensions = this.getExtensionsInOrder();
+
+    for (const ext of extensions) {
+      if (ext.dialog?.evaluateSteps) {
+        evaluators.push(ext.dialog.evaluateSteps);
+      }
+    }
+
+    return evaluators;
+  }
+
+  /**
+   * Get all submit-eligibility evaluators registered by extensions.
+   */
+  getSubmitEvaluators(): Array<(data: any) => boolean | Promise<boolean>> {
+    const result: Array<(data: any) => boolean | Promise<boolean>> = [];
+    const extensions = this.getExtensionsInOrder();
+    for (const ext of extensions) {
+      if (ext.dialog?.canSubmit) result.push(ext.dialog.canSubmit);
+    }
+    return result;
   }
 
   /**
@@ -507,6 +566,10 @@ export class FolderExtensionRegistry {
     return dependents;
   }
 }
+
+// Folder-agnostic aliases (types/values)
+export { FolderExtensionRegistry as NodeDialogExtensionRegistry };
+export const nodeDialogExtensionRegistry = FolderExtensionRegistry.getInstance();
 
 /**
  * Helper function to create a folder-plugin extension

@@ -98,6 +98,9 @@ const TreeConsoleIntegrationInner: React.FC<
         case 'redo':
           actions.handleRedo?.();
           break;
+        case 'cut':
+          actions.handleCut?.();
+          break;
         case 'copy':
           actions.handleCopy?.();
           break;
@@ -207,8 +210,8 @@ const TreeConsoleIntegrationInner: React.FC<
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}
         rowClickAction="Select"
-        canUndo={state.canUndo || false}
-        canRedo={state.canRedo || false}
+        canUndo={state.canUndo}
+        canRedo={state.canRedo}
         canCopy={selectedIds.length > 0}
         canPaste={state.canPaste || false}
         canDuplicate={selectedIds.length > 0}
@@ -267,6 +270,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canGoBack={state.canGoBack}
         canGoForward={state.canGoForward}
         onContextMenuAction={actions.handleContextMenuAction}
+        onMoveNodes={actions.handleMoveNodes}
       />
     </Box>
   );

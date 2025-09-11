@@ -10,11 +10,8 @@
       "node"
     ],
     "skipLibCheck": true,
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
+    "noEmit": true,
     "rootDir": "./src",
-    "noEmit": false,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "baseUrl": ".",

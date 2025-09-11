@@ -15,6 +15,11 @@ export { BasicInfoFields } from './components/BasicInfoFields';
 export { TagChipsInput } from './components/TagChipsInput';
 export type { TagChipsInputProps } from './components/TagChipsInput';
 export { TabularPreview } from './components/TabularPreview/TabularPreview';
+export { CrossViewStyles } from './sync/CrossViewStyles';
+export { CrossViewSnackbar } from './components/CrossViewSnackbar';
+export { useCrossHighlightSync } from './hooks/useCrossHighlightSync';
+export { useMapLibreFeatureState } from './hooks/useMapLibreFeatureState';
+export { ensureDefaultStyles } from './utils/ensureDefaultStyles';
 
 // Hook Exports
 export { useAsyncOperation } from './hooks/useAsyncOperation';

@@ -14,9 +14,6 @@
       ],
       "@hierarchidb/common-auth/*": [
         "../../common/auth/src/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "../core/src/index.ts"
       ]
     },
     "types": [

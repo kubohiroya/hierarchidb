@@ -1,7 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Grid, TextField } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { type DialogStep, MultiStepDialog } from '@hierarchidb/ui-dialog';
+import type { StepStateEvaluator } from '@hierarchidb/ui-dialog';
+import { folderExtensionRegistry } from '../api/FolderExtensionAPI';
 import { useDialogUrlSync } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type { DialogStepDefinition, StepValidation, ValidationResult } from '@hierarchidb/common-type';
 import { NodeId } from '@hierarchidb/common-type';
@@ -215,8 +217,51 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     [],
   );
 
-  // Combine base step with additional steps
-  const allSteps = useMemo(() => [baseStep, ...additionalSteps], [baseStep, additionalSteps]);
+  // Display mode persistence per-node (standard | maximized | fullscreen)
+  // Dexie-backed persistence
+  const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (nodeId) {
+          const { getPeerDisplayMode } = await import('~/shared/peer-display-mode');
+          const m = (await getPeerDisplayMode('folder', String(nodeId))) || 'standard';
+          if (mounted) setDisplayMode(m);
+        }
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, [nodeId]);
+
+  // URL の mode=full を最優先（戻る操作等で同期される）
+  React.useEffect(() => {
+    setDisplayMode((prev) => (urlMode === 'full' ? 'fullscreen' : (prev === 'fullscreen' ? 'standard' : prev)));
+  }, [urlMode]);
+
+  const persistDisplayMode = useCallback((mode: 'standard' | 'maximized' | 'fullscreen') => {
+    (async () => {
+      try { if (nodeId) {
+        const { setPeerDisplayMode } = await import('~/shared/peer-display-mode');
+        await setPeerDisplayMode('folder', String(nodeId), mode);
+      } } catch {}
+    })();
+  }, [nodeId]);
+
+  // Combine base step with registry-provided steps and additional steps (props)
+  const allSteps = useMemo<DialogStepDefinition[]>(() => {
+    const fromRegistry: DialogStepDefinition[] = mode === 'edit'
+      ? folderExtensionRegistry.getEditDialogSteps()
+      : folderExtensionRegistry.getCreateDialogSteps();
+
+    // Deduplicate by stepNumber; explicit props win over registry; base wins by default
+    const byNumber = new Map<number, DialogStepDefinition>();
+    byNumber.set(1, baseStep);
+    for (const s of fromRegistry) byNumber.set(s.stepNumber, s);
+    for (const s of additionalSteps) byNumber.set(s.stepNumber, s);
+
+    return Array.from(byNumber.values()).sort((a, b) => a.stepNumber - b.stepNumber);
+  }, [baseStep, additionalSteps, mode]);
 
   // Set initial data based on mode
   const initialData = useMemo(() => {
@@ -330,9 +375,16 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         ? async () => {
           try {
             const res = await s.validation!.validate(formData as any);
-            if (res && typeof res === 'object' && 'valid' in res) {
-              setFormErrors(res.valid ? [] : (res as any).message ? [(res as any).message] : ['Validation failed']);
-              return (res as any).valid as boolean;
+            // Normalize result shape
+            if (typeof res === 'boolean') {
+              setFormErrors(res ? [] : ['Validation failed']);
+              return res;
+            }
+            if (res && typeof res === 'object') {
+              const isValid = 'isValid' in res ? (res as any).isValid : ('valid' in res ? (res as any).valid : true);
+              const message = (res as any).message as string | undefined;
+              setFormErrors(isValid ? [] : message ? [message] : (res as any).errors ?? ['Validation failed']);
+              return !!isValid;
             }
             return !!res;
           } catch {
@@ -344,6 +396,122 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     }));
   }, [allSteps, formData, formErrors]);
 
+  // === Step state evaluator (navigable/filled) based on validation + dependsOn ===
+  const stepStateEvaluator = useMemo<StepStateEvaluator>(() => {
+    const registeredEvaluators = folderExtensionRegistry.getDialogEvaluators();
+    const numberToIndex = new Map<number, number>();
+    allSteps.forEach((s, idx) => numberToIndex.set(s.stepNumber, idx));
+    const stepNumbers = allSteps.map(s => s.stepNumber);
+
+    const normalizeValidate = async (def: DialogStepDefinition | undefined): Promise<boolean> => {
+      if (!def?.validation?.validate) return true;
+      try {
+        const r = await def.validation.validate(formData);
+        if (typeof r === 'boolean') return r;
+        if (r && typeof r === 'object') {
+          if ('isValid' in r) return !!(r as any).isValid;
+          if ('valid' in r) return !!(r as any).valid;
+        }
+        return !!r;
+      } catch {
+        return false;
+      }
+    };
+
+    const defaultEvaluator: StepStateEvaluator = {
+      getFilledSteps: (_data: any) => {
+        // Synchronously mark unknowns as false; callers should not rely on async here.
+        // We run best-effort sync estimations by reading simple fields when possible, but
+        // for consistency we trigger validations via effectful calls below to keep UI up-to-date.
+        // For now, compute optimistically by invoking validate using current data via Promise.
+        // Note: MultiStepDialog treats this as instantaneous; keep it conservative.
+        // We execute validations synchronously by reading cached result from stepsForUi.validate
+        // but since that's not exposed, we call validate inline and ignore async timing in array.
+
+        // Build an array defaulting to false, then fire-and-forget to update formErrors via validate.
+        const arr = allSteps.map(() => false);
+        allSteps.forEach((def, idx) => {
+          void normalizeValidate(def).then((ok) => {
+            arr[idx] = ok;
+          });
+        });
+        return arr;
+      },
+      getNavigableSteps: (_data: any) => {
+        // Heuristic, stable, and fast:
+        // - Always allow current index and the immediate next index
+        // - Respect dependsOn by requiring all dependency stepNumbers to be <= current stepNumber
+        //   (i.e., cannot jump ahead before deps come earlier in the flow)
+        const nav = allSteps.map((_s, i) => false);
+        const current = activeStep;
+        const currentStepNumber = allSteps[current]?.stepNumber ?? 1;
+        allSteps.forEach((def, idx) => {
+          if (idx === current || idx === current + 1 || idx === 0) {
+            const deps = def.dependsOn || [];
+            const ok = deps.every((stepNo) => stepNo <= currentStepNumber);
+            nav[idx] = ok;
+          }
+        });
+        return nav;
+      },
+    };
+
+    // Compose with registered plugin evaluators (AND 合成: より厳しい制約を優先)
+    const composeAnd = (base: boolean[], extras: boolean[][]) => {
+      if (extras.length === 0) return base;
+      const len = base.length;
+      const out = base.slice();
+      for (const arr of extras) {
+        for (let i = 0; i < len; i++) {
+          const v = typeof arr[i] === 'boolean' ? arr[i] as boolean : true; // 未定義は非拘束として扱う
+          out[i] = out[i] && v;
+        }
+      }
+      return out;
+    };
+
+    return {
+      getFilledSteps: (data: any) => {
+        const base = defaultEvaluator.getFilledSteps(data);
+        const pluginFilled = registeredEvaluators.map(ev => ev.getFilledSteps(data, stepNumbers));
+        return composeAnd(base, pluginFilled);
+      },
+      getNavigableSteps: (data: any) => {
+        const base = defaultEvaluator.getNavigableSteps(data);
+        const pluginNav = registeredEvaluators.map(ev => ev.getNavigableSteps(data, stepNumbers));
+        return composeAnd(base, pluginNav);
+      },
+    };
+  }, [allSteps, formData, activeStep]);
+
+  // === Submit eligibility (compose: host default AND all plugin guards) ===
+  const evaluateSubmit = useCallback(async (data: any): Promise<boolean> => {
+    // Host default: re-validate all steps that define validation
+    for (const def of allSteps) {
+      if (def.validation?.validate) {
+        try {
+          const r = await def.validation.validate(data);
+          const ok = typeof r === 'boolean' ? r : ('isValid' in (r as any) ? (r as any).isValid : ('valid' in (r as any) ? (r as any).valid : true));
+          if (!ok) return false;
+        } catch {
+          return false;
+        }
+      }
+    }
+
+    // Plugin guards
+    const guards = folderExtensionRegistry.getSubmitEvaluators();
+    for (const g of guards) {
+      try {
+        const ok = await Promise.resolve(g(data));
+        if (!ok) return false;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }, [allSteps]);
+
   return (
     <MultiStepDialog
       open={open}
@@ -351,14 +519,24 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
       title={dialogTitle}
       icon={icon}
       steps={stepsForUi}
+      currentData={formData}
+      evaluateSteps={stepStateEvaluator}
+      evaluateSubmit={evaluateSubmit}
       activeStep={activeStep}
       onStepChange={setActiveStep}
-      fullScreen={urlMode === 'full'}
-      onFullscreenChange={(is) => setMode(is ? 'full' : 'normal')}
+      nonLinear={true}
+      displayMode={displayMode}
+      onDisplayModeChange={(m) => {
+        // URL と永続化の同期
+        if (m === 'fullscreen') setMode('full'); else setMode('normal');
+        setDisplayMode(m);
+        persistDisplayMode(m);
+      }}
       onSubmit={() => handleSubmit(formData)}
       onCancel={handleClose}
       submitText="Complete"
       showFullscreenToggle={true}
+      showMaximizeToggle={true}
     />
   );
 };

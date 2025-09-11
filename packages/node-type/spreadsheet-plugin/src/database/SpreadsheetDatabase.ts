@@ -10,7 +10,6 @@ import type {
   RawFileMetadata,
   RowChunk,
   SpreadsheetEntity,
-  SpreadsheetEntityWorkingCopy,
   SpreadsheetRow,
 } from '../types';
 
@@ -28,7 +27,6 @@ export class SpreadsheetDatabase extends Dexie {
 
   // PersistentPeerEntity Tables
   spreadsheetEntities!: Table<SpreadsheetEntity>;
-  workingCopies!: Table<SpreadsheetEntityWorkingCopy>;
 
   constructor(dbName: string = getDBName('spreadsheet-db')) {
     super(dbName);
@@ -49,8 +47,7 @@ export class SpreadsheetDatabase extends Dexie {
       //  SpreadsheetEntities: EntityTreeNode
       spreadsheetEntities: '&id, nodeId, rawFileMetadataId, createdAt, updatedAt',
 
-      //  WorkingCopies:
-      workingCopies: '&id, nodeId, originalNodeId, copiedAt, updatedAt',
+      //  WorkingCopies: removed in standard flow (use PeerStore WC). Kept absent intentionally.
     });
   }
 
@@ -295,36 +292,7 @@ export class SpreadsheetDatabase extends Dexie {
    * 【テスト対応】: WorkingCopy作成テスト
    * 🟢 信頼性レベル: 編集セッション管理
    */
-  async createWorkingCopy(
-    entity: SpreadsheetEntity,
-    originalNodeId?: NodeId,
-  ): Promise<SpreadsheetEntityWorkingCopy> {
-    const now = Date.now();
-    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
-    const workingCopy: SpreadsheetEntityWorkingCopy = {
-      ...entity,
-      id: workingCopyId,
-      copiedAt: now,
-      originalNodeId: originalNodeId,
-      originalVersion: entity.version,
-      hasEntityCopy: true,
-      entityWorkingCopyId: entity.id,
-      hasGroupEntityCopy: {},
-    };
-
-    await this.workingCopies.add(workingCopy);
-    return workingCopy;
-  }
-
-  /**
-   * 【機能概要】: NodeIDによるWorkingCopy取得
-   * 【実装方針】: 編集中のデータ取得
-   * 【テスト対応】: WorkingCopy取得テスト
-   * 🟢 信頼性レベル: インデックス検索
-   */
-  async getWorkingCopyByNodeId(nodeId: NodeId): Promise<SpreadsheetEntityWorkingCopy | undefined> {
-    return await this.workingCopies.where('nodeId').equals(nodeId).first();
-  }
+  // workingCopies are managed by runtime-worker PeerStore in the standard flow.
 
   /**
    * 【機能概要】: トランザクション処理
@@ -492,13 +460,11 @@ export class SpreadsheetDatabase extends Dexie {
       rowChunksCount,
       spreadsheetRowsCount,
       spreadsheetEntitiesCount,
-      workingCopiesCount,
     ] = await Promise.all([
       this.rawFileMetadata.count(),
       this.rowChunks.count(),
       this.spreadsheetRows.count(),
       this.spreadsheetEntities.count(),
-      this.workingCopies.count(),
     ]);
 
     // サイズ計算（簡易推定）: originalSizeでの計算に変更 🟡
@@ -510,7 +476,7 @@ export class SpreadsheetDatabase extends Dexie {
       rowChunksCount,
       spreadsheetRowsCount,
       spreadsheetEntitiesCount,
-      workingCopiesCount,
+      workingCopiesCount: 0,
       totalSize,
     };
   }
@@ -561,7 +527,6 @@ export class SpreadsheetDatabase extends Dexie {
       this.rawFileMetadata,
       this.rowChunks,
       this.spreadsheetRows,
-      this.workingCopies,
       async () => {
         // 【孤立チャンクの事前削除】: メタデータ削除前に孤立チャンクをチェック 🟡
         const allMetadataIds = await this.rawFileMetadata

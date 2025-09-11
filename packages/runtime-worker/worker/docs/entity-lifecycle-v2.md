@@ -40,7 +40,7 @@ vk:doc kind=design audience=dev scope=worker
 - バルクは `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE` でチャンク分割（既定 50）。
 
 フラグ運用
-- WORKER_ENTITY_UNIFIED=1: 統一 Entity ライフサイクルの有効化（既定OFF）。
+- WORKER_ENTITY_UNIFIED=1: 統一 Entity ライフサイクルの有効化（既定ON）。
 - WORKER_TX_ENABLED=1: コマンド境界 Tx の有効化（既定OFF）。
 - WORKER_METRICS_ENABLED=1: コマンド別レイテンシ観測（開発時）。
 

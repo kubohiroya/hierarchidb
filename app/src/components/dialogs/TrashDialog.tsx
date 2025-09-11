@@ -1,24 +1,13 @@
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-router';
-import { useState } from 'react';
-import {
-  AppBar,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  Toolbar,
-  Typography,
-} from '@mui/material';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
 import type { LoadTreeReturn } from '~/loader';
 import { loadTree, type LoadTreeArgs } from '~/loader';
 import { WorkerAPIClient } from '../../WorkerAPIClient';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
+import { CommonDialogTitle } from '@hierarchidb/ui-dialog';
 import { TreeConsolePanel, type TreeNodeData, type TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
@@ -58,6 +47,81 @@ export default function TrashDialog() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const paperRef = useRef<HTMLDivElement | null>(null);
+
+  // No persistence for TrashDialog (not tied to a stable nodeId)
+  useEffect(() => { /* noop */ }, []);
+  const persistDisplayMode = (_: 'standard' | 'maximized' | 'fullscreen') => { /* noop */ };
+
+  const toggleMaximize = (next?: boolean) => {
+    const val = next ?? !isMaximized;
+    setIsMaximized(val);
+    const m = val ? 'maximized' : 'standard';
+    setDisplayMode(m);
+    persistDisplayMode(m);
+  };
+  const toggleFullscreen = async (next?: boolean) => {
+    const val = next ?? !isFullscreen;
+    if (val) {
+      const el: any = paperRef.current;
+      const req = el?.requestFullscreen || el?.webkitRequestFullscreen || el?.msRequestFullscreen;
+      if (typeof req === 'function') {
+        try {
+          await req.call(el);
+          setIsFullscreen(true);
+          setDisplayMode('fullscreen');
+          persistDisplayMode('fullscreen');
+          return;
+        } catch {
+          // fallback
+        }
+      }
+      setIsFullscreen(true);
+      setDisplayMode('fullscreen');
+      persistDisplayMode('fullscreen');
+    } else {
+      try { if (document.fullscreenElement) await document.exitFullscreen?.(); } catch {}
+      setIsFullscreen(false);
+      const m = isMaximized ? 'maximized' : 'standard';
+      setDisplayMode(m);
+      persistDisplayMode(m);
+    }
+  };
+  useEffect(() => {
+    const onFsChange = () => {
+      const active = !!document.fullscreenElement;
+      setIsFullscreen(active);
+      if (active) {
+        setDisplayMode('fullscreen');
+        persistDisplayMode('fullscreen');
+      } else {
+        const m = isMaximized ? 'maximized' : 'standard';
+        setDisplayMode(m);
+        persistDisplayMode(m);
+      }
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange' as any, onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange' as any, onFsChange);
+    };
+  }, []);
+  const handleChangeDisplayMode = (m: 'standard' | 'maximized' | 'fullscreen') => {
+    if (m === 'fullscreen') {
+      if (!isFullscreen) void toggleFullscreen(true);
+      if (isMaximized) toggleMaximize(false);
+    } else if (m === 'maximized') {
+      if (isFullscreen) void toggleFullscreen(false);
+      if (!isMaximized) toggleMaximize(true);
+    } else {
+      if (isFullscreen) void toggleFullscreen(false);
+      if (isMaximized) toggleMaximize(false);
+    }
+  };
 
   // Handle restore selected items
   const handleRestore = async () => {
@@ -105,13 +169,18 @@ export default function TrashDialog() {
       // Use facade pattern: get MutationAPI first
       const mutationAPI = await client.getMutationAPI();
 
-      // Permanently delete all trash items
+      // Permanently delete all trash items (holders)
       const allTrashIds = (data.trashItems || []).map((item) => item.id);
 
       if (allTrashIds.length > 0) {
         const result = await mutationAPI.removeNodes(allTrashIds);
 
         if (result.success) {
+          // Dispatch removal event so cleanup is centralized
+          try {
+            const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as string | undefined) || item.id);
+            window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds } }));
+          } catch {}
           // Refresh the page to show empty trash
           navigate(-1); // Go back to the previous page
           window.location.reload(); // Or trigger a revalidation in parent route
@@ -166,17 +235,37 @@ export default function TrashDialog() {
   };
 
   return (
-    <Dialog open onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <AppBar position="static" color="default" elevation={1}>
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              {mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'} - {data.tree?.name}
-            </Typography>
-            <UserLoginButton />
-          </Toolbar>
-        </AppBar>
-      </DialogTitle>
+    <Dialog
+      open
+      onClose={handleClose}
+      maxWidth={isFullscreen ? false : (isMaximized ? false : 'md')}
+      fullWidth={!isFullscreen && !isMaximized}
+      fullScreen={isFullscreen}
+      slotProps={{
+        paper: {
+          ref: paperRef,
+          sx: isFullscreen
+            ? undefined
+            : (isMaximized
+              ? {
+                  m: 1,
+                  width: 'calc(100vw - 16px * 2)',
+                  height: 'calc(100vh - 16px * 2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  '& .MuiDialogContent-root': { flex: 1, minHeight: 200 },
+                }
+              : undefined),
+        },
+      }}
+    >
+      <CommonDialogTitle
+        title={`${mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'} - ${data.tree?.name ?? ''}`}
+        onClose={handleClose}
+        displayMode={displayMode}
+        onChangeDisplayMode={handleChangeDisplayMode}
+        showDisplayModeControls
+      />
       <DialogContent dividers sx={{ height: '60vh' }}>
         {loading ? (
           <Box
@@ -249,18 +338,36 @@ export default function TrashDialog() {
             }}
             onBreadcrumbNavigate={() => {
             }}
-            onContextMenuAction={(action: string, node: TreeNodeData) => {
-              console.log('Context menu action:', action, 'for node:', node);
+            onContextMenuAction={async (action: string, node: TreeNodeData) => {
               if (action === 'restore' && mode === 'restore') {
                 setSelectedIds([node.id]);
-                handleRestore();
+                await handleRestore();
               } else if (action === 'remove' && mode === 'empty') {
-                // Handle single item permanent delete
+                // Permanently delete a single trash item (holder)
+                const ok = confirm('Permanently delete this item? This cannot be undone.');
+                if (!ok) return;
+                try {
+                  const client = await WorkerAPIClient.getSingleton();
+                  const mutationAPI = await client.getMutationAPI();
+                  const res = await mutationAPI.removeNodes([node.id as unknown as NodeId]);
+                  if (res.success) {
+                    try {
+                      const raw = (data.trashItems || []).find((t) => t.id === (node.id as any));
+                      const targetId = (raw as any)?.holderTargetId || node.id;
+                      window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: [String(targetId)] } }));
+                    } catch {}
+                    window.location.reload();
+                  } else {
+                    console.error('Permanent delete failed:', res.error);
+                  }
+                } catch (e) {
+                  console.error('Error removing item:', e);
+                }
               }
             }}
           />
         )}
-      </DialogContent>
+          </DialogContent>
       <DialogActions>
         <Stack direction="row" spacing={2} sx={{ flexGrow: 1, justifyContent: 'flex-end' }}>
           {mode === 'restore' ? (
@@ -287,6 +394,7 @@ export default function TrashDialog() {
           <Button onClick={handleClose} color="inherit">
             Close
           </Button>
+          <UserLoginButton />
         </Stack>
       </DialogActions>
     </Dialog>

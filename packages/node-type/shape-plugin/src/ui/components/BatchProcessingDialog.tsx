@@ -32,7 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI';
 import { useShapeProgress } from '../hooks/useShapeProgress';
-import { TabularPreview } from '@hierarchidb/ui-core';
+import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
 
 import type { NodeId } from '@hierarchidb/common-type';
@@ -68,6 +68,7 @@ export function BatchProcessingDialog({
   const [completionTimer, setCompletionTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [tab, setTab] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
+  const datasetId = useMemo(() => (tableId ? `shape:${tableId}` : null), [tableId]);
 
   // Real-time progress subscription
   const {
@@ -367,6 +368,7 @@ export function BatchProcessingDialog({
       </Box>
 
       <DialogContent>
+        {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
         {tab === 0 && (
           <>
             {renderStatusSection()}

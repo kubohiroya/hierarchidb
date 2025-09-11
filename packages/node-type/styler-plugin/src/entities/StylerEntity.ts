@@ -126,11 +126,7 @@ export interface StylerEntity extends SpreadsheetEntity {
   * : StylerWorkingCopy
  * : Working Copy
   */
-export interface StylerWorkingCopy extends StylerEntity {
-  isDraft: boolean;
-  originalId?: string;
-  copiedAt: number;
-}
+// Working copies are handled by runtime-worker PeerStore; no dedicated type here.
 
 export interface StylerColorRule {
   column: string;

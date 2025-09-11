@@ -1,9 +1,5 @@
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import ExtensionIcon from '@mui/icons-material/Extension';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import { Info as InfoIcon, GitHub as GitHubIcon, HelpOutline as HelpOutlineIcon, Extension as ExtensionIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material';
 
 import { type TreeConfig, TreeToggleButtonGroup } from '@hierarchidb/ui-core';
 import { AccountTree, Folder } from '@mui/icons-material';

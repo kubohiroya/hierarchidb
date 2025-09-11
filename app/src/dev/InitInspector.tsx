@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 
 type Status = 'unknown' | 'starting' | 'ready' | 'error';
 
@@ -120,70 +121,128 @@ export const InitInspector: React.FC = () => {
     location.replace(location.pathname + '?nocache=' + Date.now());
   };
 
+  // Draggable position state (translate from initial bottom-right)
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const posStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const paperRef = useRef<HTMLDivElement | null>(null);
+
+  const onMouseDownTitle = (e: React.MouseEvent) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    posStartRef.current = { ...pos };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    e.preventDefault();
+  };
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragStartRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPos({ x: posStartRef.current.x + dx, y: posStartRef.current.y + dy });
+  };
+  const onMouseUp = () => {
+    dragStartRef.current = null;
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 10,
-      right: 10,
-      zIndex: 2147483647,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    }}>
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        padding: 10,
-        minWidth: 280,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{
+    <Dialog
+      open
+      hideBackdrop
+      keepMounted
+      PaperProps={{
+        ref: paperRef,
+        sx: {
+          position: 'fixed',
+          right: 10,
+          bottom: 10,
+          transform: `translate(${pos.x}px, ${pos.y}px)`,
+          border: '1px solid #e5e7eb',
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          minWidth: 280,
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          zIndex: 2147483647,
+          m: 0,
+        },
+      }}
+    >
+      <DialogTitle
+        onMouseDown={onMouseDownTitle}
+        sx={{
+          cursor: 'move',
+          display: 'flex',
+          alignItems: 'center',
+          py: 1,
+          '& .statusDot': {
             display: 'inline-block',
             width: 8,
             height: 8,
-            borderRadius: 9999,
+            borderRadius: '9999px',
             background: color,
-            marginRight: 8,
-          }} />
-          <strong style={{ fontSize: 12 }}>Init Inspector</strong>
-          <span style={{ marginLeft: 'auto', fontSize: 11, color: '#6b7280' }}>{state.version}</span>
-        </div>
+            mr: 1,
+          },
+          '& .version': { ml: 'auto', fontSize: 11, color: '#6b7280' },
+          fontSize: 12,
+        }}
+      >
+        <span className="statusDot" />
+        <strong style={{ fontSize: 12 }}>Init Inspector</strong>
+        <span className="version">{state.version}</span>
+      </DialogTitle>
+      <DialogContent dividers sx={{ p: 1.25 }}>
         <div style={{ fontSize: 12, lineHeight: 1.5 }}>
           <div>Worker: {state.workerState} / hasInstance: {String(state.workerHasInstance)}</div>
           <div>Client ready: {String(state.clientReady)} / INIT_COMPLETE: {String(state.initCompleteFlag)}</div>
-          <div>Event count: {state.channelMessageCount} /
-            last: {state.lastInitEventTs ? new Date(state.lastInitEventTs).toLocaleTimeString() : '-'}</div>
+          <div>
+            Event count: {state.channelMessageCount} / last:{' '}
+            {state.lastInitEventTs ? new Date(state.lastInitEventTs).toLocaleTimeString() : '-'}
+          </div>
           <div>Route: {state.route}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <button onClick={ping} style={{
-            fontSize: 11,
-            padding: '4px 8px',
-            borderRadius: 6,
-            border: '1px solid #d1d5db',
-            background: '#f3f4f6',
-          }}>Ping
+          <button
+            onClick={ping}
+            style={{
+              fontSize: 11,
+              padding: '4px 8px',
+              borderRadius: 6,
+              border: '1px solid #d1d5db',
+              background: '#f3f4f6',
+            }}
+          >
+            Ping
           </button>
-          <button onClick={forceEvent} style={{
-            fontSize: 11,
-            padding: '4px 8px',
-            borderRadius: 6,
-            border: '1px solid #d1d5db',
-            background: '#f3f4f6',
-          }}>Dispatch INIT
+          <button
+            onClick={forceEvent}
+            style={{
+              fontSize: 11,
+              padding: '4px 8px',
+              borderRadius: 6,
+              border: '1px solid #d1d5db',
+              background: '#f3f4f6',
+            }}
+          >
+            Dispatch INIT
           </button>
-          <button onClick={clearCaches} style={{
-            fontSize: 11,
-            padding: '4px 8px',
-            borderRadius: 6,
-            border: '1px solid #fecaca',
-            background: '#fee2e2',
-            color: '#b91c1c',
-          }}>Clear Caches
+          <button
+            onClick={clearCaches}
+            style={{
+              fontSize: 11,
+              padding: '4px 8px',
+              borderRadius: 6,
+              border: '1px solid #fecaca',
+              background: '#fee2e2',
+              color: '#b91c1c',
+            }}
+          >
+            Clear Caches
           </button>
         </div>
         <div style={{ marginTop: 6, fontSize: 11, color: '#6b7280' }}>Add ?debug=init to toggle.</div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

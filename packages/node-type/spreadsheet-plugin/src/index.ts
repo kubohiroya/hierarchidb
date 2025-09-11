@@ -15,3 +15,6 @@ export * from './extension/constants';
 export * from './steps/DataSourceStep';
 export * from './steps/FilteringStep';
 export * from './services';
+
+// Folder dialog extension initializer (optional)
+export { initializeSpreadsheetFolderExtension, spreadsheetFolderExtension } from './extensions/SpreadsheetFolderExtension';

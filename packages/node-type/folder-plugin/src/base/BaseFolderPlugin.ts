@@ -96,8 +96,10 @@ export abstract class BaseFolderPlugin {
     const editSteps = this.getEditDialogSteps();
     const transformData = this.transformDialogData?.bind(this);
     const validation = this.getValidationExtension();
+    const evaluateSteps = this.getStepStateEvaluator?.bind(this)();
+    const canSubmit = this.getSubmitEligibility?.bind(this)();
 
-    if (!createSteps && !editSteps && !transformData && !validation) {
+    if (!createSteps && !editSteps && !transformData && !validation && !evaluateSteps && !canSubmit) {
       return undefined;
     }
 
@@ -106,6 +108,8 @@ export abstract class BaseFolderPlugin {
       editSteps,
       transformData,
       validation,
+      evaluateSteps,
+      canSubmit,
     };
   }
 
@@ -163,6 +167,23 @@ export abstract class BaseFolderPlugin {
   protected getValidationExtension(): ValidationExtension | undefined {
     return undefined;
   }
+
+  /**
+   * Override to provide explicit step state evaluator (navigable/filled arrays based on entity/form data).
+   * The returned arrays should align with the final step sequence (by index) or accept stepNumbers via
+   * the second argument to map by stepNumber.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected getStepStateEvaluator?(): {
+    getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
+    getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  };
+
+  /**
+   * Override to provide overall submit eligibility check (AND-composed across extensions).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected getSubmitEligibility?(): (data: any) => boolean | Promise<boolean>;
 
   /**
    * Override to specify additional entity fields

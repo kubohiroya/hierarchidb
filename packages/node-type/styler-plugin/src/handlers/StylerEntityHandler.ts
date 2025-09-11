@@ -6,7 +6,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
-import type { StylerEntity, StylerWorkingCopy } from '../entities/StylerEntity';
+import type { StylerEntity } from '../entities/StylerEntity';
 import { StylerConfigDefault } from '../types/stylerTypes';
 import { StylerDataService } from '../services/StylerDataService';
 
@@ -49,6 +49,7 @@ export class StylerEntityHandler {
       generatedStyle: data?.generatedStyle,
     } as StylerEntity;
 
+    await this.mirrorToPeerStore(entity).catch(() => {});
     return { success: true, data: entity };
   }
 
@@ -100,6 +101,7 @@ export class StylerEntityHandler {
       }
     }
 
+    if (entity) await this.mirrorToPeerStore(entity).catch(() => {});
     return { success: !!entity, data: entity };
   }
 
@@ -118,27 +120,26 @@ export class StylerEntityHandler {
     return { success: true };
   }
 
-  async createWorkingCopy(nodeId: NodeId): Promise<StylerWorkingCopy> {
-    const res = await this.getEntity(nodeId);
-    if (!res.success || !res.data) throw new Error('Entity not found');
-    const entity = res.data;
+  // Working copy lifecycle is handled by runtime-worker; no plugin-level WC APIs.
 
-    const workingCopy: StylerWorkingCopy = {
-      ...entity,
-      isDraft: true,
-      copiedAt: Date.now(),
-    } as StylerWorkingCopy;
-
-    return workingCopy;
-  }
-
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: StylerWorkingCopy): Promise<void> {
-    // Remove working copy properties
-    const { isDraft, copiedAt, ...entityData } = workingCopy;
-    await this.updateEntity(nodeId, entityData);
-  }
-
-  async discardWorkingCopy(_nodeId: NodeId): Promise<void> {
-    // No-op: working copy is ephemeral
+  // Best-effort peer mirror for runtime-worker flows (WC/duplicate/paste)
+  private async mirrorToPeerStore(entity: StylerEntity): Promise<void> {
+    try {
+      // Build the module specifier dynamically to avoid TS trying to resolve it at type time
+      const workerModName: string = '@hierarchidb' + '/runtime-worker';
+      // Use variable-based dynamic import to avoid build-time type resolution
+      const mod: any = await import(/* @vite-ignore */ (workerModName as string));
+      const store = mod.storeRegistry.getPeer('styler');
+      if (!store) return;
+      const payload = {
+        stylerConfig: entity.stylerConfig,
+        selectedKeyColumn: entity.selectedKeyColumn,
+        selectedValueColumn: entity.selectedValueColumn,
+        schemaVersion: 1,
+      } as any;
+      await store.put({ nodeId: entity.nodeId, data: payload, updatedAt: Date.now() } as any);
+    } catch {
+      // ignore if worker not present
+    }
   }
 }

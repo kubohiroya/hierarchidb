@@ -32,6 +32,7 @@
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
     "comlink": "^4.4.1"
   },
   "peerDependencies": {

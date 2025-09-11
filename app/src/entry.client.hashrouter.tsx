@@ -1,15 +1,19 @@
-import { startTransition, StrictMode, useMemo, useEffect } from 'react';
+import { startTransition, StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { RouteObject } from 'react-router-dom';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import routes from './routes';
+import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
 import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
 import { AppConfigProvider } from './contexts/AppConfigContext';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
-import { createAppTheme, ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { AppThemeProvider } from './components/AppThemeProvider';
+import { registerTableStateCleanupEvents } from './shared/table-state';
+import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { NotificationSystem } from '@hierarchidb/ui-core';
 import { WorkerProvider } from './contexts/WorkerProvider';
 import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIReadyReporter, I18nReadyReporter, AuthReadyReporter } from './init/InitReporters';
@@ -19,6 +23,12 @@ import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIRead
 
 async function createApp() {
   const resolvedRoutes = await routes;
+  // Initialize node-type folder dialog extensions (shape/spreadsheet/basemap/styler) if available
+  try {
+    await initializeDefaultNodeDialogExtensions();
+  } catch (e) {
+    console.warn('[HDB] initializeDefaultFolderExtensions failed (non-fatal):', e);
+  }
   // flatRoutes() provides RouteConfig entries; cast to RouteObject[] for client router
   return createHashRouter(resolvedRoutes as unknown as RouteObject[]);
 }
@@ -38,17 +48,18 @@ createApp().then((router) => {
     } catch {}
 
     function Providers({ children }: { children: React.ReactNode }) {
-      const theme = useMemo(() => createAppTheme('light'), []);
       useEffect(() => { try { console.log('[HDB-BOOT] AppShell mount'); } catch {} }, []);
+      useEffect(() => { try { registerTableStateCleanupEvents(); } catch {} }, []);
       return (
         <BootProgressProvider>
           <AppConfigProvider>
             <SimpleBFFAuthProvider>
               <LanguageProvider>
                 <StyledEngineProvider injectFirst>
-                  <ThemeProvider theme={theme}>
-                    <CustomThemeProvider>
+                  <CustomThemeProvider>
+                    <AppThemeProvider>
                       <CssBaseline />
+                      <LanguageEventsBridge />
                       <NotificationSystem />
                       {/* Mark non-worker steps as ready */}
                       <ConfigReadyReporter />
@@ -60,8 +71,8 @@ createApp().then((router) => {
                         <WorkerProgressReporter />
                         {children}
                       </WorkerProvider>
-                    </CustomThemeProvider>
-                  </ThemeProvider>
+                    </AppThemeProvider>
+                  </CustomThemeProvider>
                 </StyledEngineProvider>
               </LanguageProvider>
             </SimpleBFFAuthProvider>

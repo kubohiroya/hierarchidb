@@ -20,8 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ChipProps } from '@mui/material/Chip';
-import SearchIcon from '@mui/icons-material/Search';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Search as SearchIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 
 interface LicenseData {
   [packageName: string]: {

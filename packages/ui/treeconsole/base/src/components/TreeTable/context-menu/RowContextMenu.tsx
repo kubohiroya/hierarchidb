@@ -1,5 +1,5 @@
 import React, { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip, Box } from '@mui/material';
 import {
   Add as AddIcon,
   AssignmentTurnedIn,
@@ -10,6 +10,7 @@ import {
   Folder as FolderIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
+// Defer resolving ui-core to runtime to avoid build-time type resolution issues
 
 // import { TreeNodeType } from "~/types"; // Unused
 
@@ -58,6 +59,23 @@ export const RowContextMenu = memo(
         setAddMenuOpen(true);
       }
     };
+
+    // Lazy-load UI plugin registry from @hierarchidb/ui-core
+    const [uiRegistry, setUiRegistry] = useState<any>(null);
+    useEffect(() => {
+      let active = true;
+      (async () => {
+        try {
+          const UICORE = '@hierarchidb/ui-core' as string;
+          const mod = await import(/* @vite-ignore */ UICORE);
+          const reg = (mod as any).getUIPluginRegistry?.();
+          if (active) setUiRegistry(reg || null);
+        } catch {
+          // ignore; context menu will render without plugin-driven entries
+        }
+      })();
+      return () => { active = false; };
+    }, []);
 
     const handleOpenClick = () => {
       const onOpen = propsRef.current.onOpen;
@@ -288,53 +306,65 @@ export const RowContextMenu = memo(
             },
           }}
         >
-          <MenuItem
-            onClick={() => {
-              handleCreateClick('folder');
-            }}
-            aria-label="Folder"
-          >
-            <ListItemIcon>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText>Folder</ListItemText>
-          </MenuItem>
+          {/* Dynamic plugin-driven create menu */}
+          {(() => {
+            try {
+              const registry = uiRegistry;
+              if (!registry) return null;
+              const plugins = registry.getCreatablePlugins?.() || [];
+              const byGroup = ['container', 'document', 'basic', 'advanced'] as const;
 
-          {props.addMenuNodeTypes.length > 0 && <Divider />}
-
-          {props.addMenuNodeTypes
-            .map((type, index) => {
-              const prevType = index > 0 ? props.addMenuNodeTypes[index - 1] : null;
-
-              // Add divider logic based on the specified grouping
-              const shouldAddDividerBefore =
-                // Divider after BaseMap (before Shapes)
-                (type === '_shapes_buggy' && prevType === 'basemap') ||
-                // Divider after Routes (before Styler)
-                (type === 'styler' && prevType === 'routes') ||
-                // Divider after Styler (before Resolver)
-                (type === 'resolver' && prevType === 'styler');
+              const groupBg: Record<string, string> = {
+                container: 'rgba(25, 118, 210, 0.06)',
+                document: 'rgba(46, 125, 50, 0.06)',
+                basic: 'rgba(0, 0, 0, 0.03)',
+                advanced: 'rgba(156, 39, 176, 0.06)',
+              };
 
               const items: React.ReactNode[] = [];
-
-              // Add divider if needed
-              if (shouldAddDividerBefore) {
-                items.push(<Divider key={`divider-${type}`} />);
-              }
-
-              // Add menu item
-              items.push(
-                <MenuItem key={type} onClick={() => handleCreateClick(type)} aria-label={type}>
-                  <ListItemIcon>
-                    <FolderIcon />
-                  </ListItemIcon>
-                  <ListItemText>{type}</ListItemText>
-                </MenuItem>,
-              );
-
+              byGroup.forEach((group, gi) => {
+                const groupItems = plugins
+                  .filter((p: any) => p.menu.group === group)
+                  .sort((a: any, b: any) => (a.menu.createOrder || 999) - (b.menu.createOrder || 999));
+                if (groupItems.length === 0) return;
+                if (gi > 0) items.push(<Divider key={`gdiv-${group}`} />);
+                groupItems.forEach((p: any) => {
+                  const Icon = p.components.icon as any;
+                  items.push(
+                    <Tooltip
+                      key={p.nodeType}
+                      title={
+                        <Box sx={{ p: 0.5 }}>
+                          <div style={{ fontWeight: 600, marginBottom: 2 }}>{p.displayName}</div>
+                          <div style={{ fontSize: 12, opacity: 0.8 }}>{p.description || ''}</div>
+                        </Box>
+                      }
+                      placement="right"
+                      arrow
+                    >
+                      <MenuItem
+                        onClick={() => handleCreateClick(p.nodeType)}
+                        aria-label={p.nodeType}
+                        sx={{ backgroundColor: groupBg[group] }}
+                      >
+                        <ListItemIcon>
+                          {Icon ? <Icon fontSize="small" /> : <FolderIcon />}
+                        </ListItemIcon>
+                        <ListItemText primary={p.displayName} />
+                      </MenuItem>
+                    </Tooltip>,
+                  );
+                });
+              });
               return items;
-            })
-            .flat()}
+            } catch (e) {
+              return (
+                <MenuItem disabled>
+                  <ListItemText>Plugin registry unavailable</ListItemText>
+                </MenuItem>
+              );
+            }
+          })()}
         </Menu>
       </>
     );

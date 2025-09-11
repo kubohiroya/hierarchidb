@@ -59,11 +59,7 @@ export interface StylerEntity extends SpreadsheetEntity, StylerExtendedFields {
   * : StylerWorkingCopy
  * : Working Copy
   */
-export interface StylerWorkingCopy extends StylerEntity {
-  isDraft: boolean;
-  originalId?: string;
-  copiedAt: number;
-}
+// Working copies are managed by runtime-worker PeerStore; no dedicated type here.
 
 /**
   * : Styler

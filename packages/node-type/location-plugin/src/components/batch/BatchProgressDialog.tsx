@@ -50,7 +50,7 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '../../types';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
-import { TabularPreview } from '@hierarchidb/ui-core';
+import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB';
 import { useLocationProgress } from '../../hooks/useLocationProgress';
 
@@ -125,6 +125,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                                                                         }) => {
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
+  const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
   const [progress, setProgress] = useState<ProgressInfo>({
     percentage: 0,
     phase: 'download',
@@ -324,6 +325,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       </Box>
 
       <DialogContent sx={{ flex: 1, overflow: 'hidden', p: 0 }}>
+        {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
         {(() => {
           const svc = new LocationVectorTileService();
           const { progress: realProgress } = useLocationProgress(svc, sessionId, { autoSubscribe: true });

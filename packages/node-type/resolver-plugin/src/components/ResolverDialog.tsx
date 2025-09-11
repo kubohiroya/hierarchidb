@@ -1,21 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Step,
-  StepLabel,
-  Stepper,
-  Typography,
-} from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+// import { Alert } from '@mui/material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { MappingValidationResult, ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
+import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
 // Step components
 import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep';
@@ -24,6 +10,10 @@ import { PropertyMappingStep } from './steps/PropertyMappingStep';
 import { ValidationConfigStep } from './steps/ValidationConfigStep';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep';
 import { PreviewTestStep } from './steps/PreviewTestStep';
+// Avoid hard build-time dependency on ui-dialog: load at runtime
+type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
+type StepStateEvaluator = { getFilledSteps?: (data: any) => boolean[]; getNavigableSteps?: (data: any) => boolean[] };
+let MultiStepDialog: any;
 
 interface ResolverDialogProps {
   open: boolean;
@@ -34,18 +24,9 @@ interface ResolverDialogProps {
   onCancel: () => void;
 }
 
-const STEPS = [
-  'Basic Information',
-  'Schema Selection',
-  'Property Mapping',
-  'Validation Rules',
-  'Duplicate Resolution',
-  'Preview & Test',
-];
+const STEPS = ['Basic Information','Schema Selection','Property Mapping','Validation Rules','Duplicate Resolution','Preview & Test'];
 
-interface StepValidation {
-  [key: number]: boolean;
-}
+// Removed unused StepValidation (computed validity is used instead)
 
 export const ResolverDialog: React.FC<ResolverDialogProps> = ({
                                                                 open,
@@ -55,17 +36,22 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
                                                                 onSave,
                                                                 onCancel,
                                                               }) => {
-  const [activeStep, setActiveStep] = useState(0);
   const [workingCopy, setWorkingCopy] = useState<Partial<ResolverWorkingCopyEntity>>({});
-  const [stepValidation, setStepValidation] = useState<StepValidation>({});
+  // No local stepValidation state (computed evaluator is used)
   const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(null);
   const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
-  const [validationResult, setValidationResult] = useState<MappingValidationResult | null>(null);
+  // No local validationResult state (Preview step manages its own state)
   const [isSaving, setIsSaving] = useState(false);
-  const [hasCompletedOnce, setHasCompletedOnce] = useState(false);
 
   // Initialize working copy from entity
   useEffect(() => {
+    (async () => {
+      try {
+        const M = '@hierarchidb/ui-dialog' as string;
+        const mod = await import(/* @vite-ignore */ M);
+        MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
+      } catch {}
+    })();
     if (entity) {
       setWorkingCopy({
         ...entity,
@@ -109,31 +95,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     [],
   );
 
-  const handleStepValidation = useCallback((step: number, isValid: boolean) => {
-    setStepValidation(prev => ({ ...prev, [step]: isValid }));
+  const handleStepValidation = useCallback((_step: number, _isValid: boolean) => {
+    // no-op (kept for compatibility)
   }, []);
-
-  const handleNext = useCallback(() => {
-    if (activeStep < STEPS.length - 1) {
-      setActiveStep(activeStep + 1);
-    } else {
-      // Completed all steps
-      setHasCompletedOnce(true);
-    }
-  }, [activeStep]);
-
-  const handleBack = useCallback(() => {
-    if (activeStep > 0) {
-      setActiveStep(activeStep - 1);
-    }
-  }, [activeStep]);
-
-  // Hybrid navigation: allow free movement after completing once
-  const handleStepClick = useCallback((step: number) => {
-    if (hasCompletedOnce || step <= activeStep) {
-      setActiveStep(step);
-    }
-  }, [hasCompletedOnce, activeStep]);
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
@@ -151,193 +115,144 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   }, [isSaving, workingCopy, onSave, onClose]);
 
   const handleCancel = useCallback(() => {
-    setActiveStep(0);
     setWorkingCopy({});
-    setStepValidation({});
     setSourceSchema(null);
     setTargetSchema(null);
-    setValidationResult(null);
-    setHasCompletedOnce(false);
     onCancel();
   }, [onCancel]);
 
-  const isStepComplete = useCallback((step: number) => {
-    return stepValidation[step] === true;
-  }, [stepValidation]);
+  // Display mode persistence per node
+  const [displayMode, setDisplayModeState] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (mounted) setDisplayModeState('standard');
+    })();
+    return () => { mounted = false; };
+  }, [nodeId]);
+  const persistMode = useCallback((_m: 'standard' | 'maximized' | 'fullscreen') => {}, [nodeId]);
+  const steps: DialogStep[] = useMemo(() => [
+    {
+      id: '1',
+      label: STEPS[0]!,
+      component: (
+        <ResolverBasicInfoStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+        />
+      ),
+      validate: async () => Boolean((workingCopy as any).name?.trim()),
+    },
+    {
+      id: '2',
+      label: STEPS[1]!,
+      component: (
+        <SchemaSelectionStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+          onSourceSchemaChange={setSourceSchema}
+          onTargetSchemaChange={setTargetSchema}
+        />
+      ),
+      validate: async () => Boolean((workingCopy as any).sourceSchema) && Boolean((workingCopy as any).targetSchema),
+    },
+    {
+      id: '3',
+      label: STEPS[2]!,
+      component: (
+        <PropertyMappingStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+          sourceSchema={sourceSchema}
+          targetSchema={targetSchema}
+        />
+      ),
+      validate: async () => Array.isArray((workingCopy as any).mappingRules) && (workingCopy as any).mappingRules.length >= 0,
+    },
+    {
+      id: '4',
+      label: STEPS[3]!,
+      component: (
+        <ValidationConfigStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+          sourceSchema={sourceSchema}
+          targetSchema={targetSchema}
+        />
+      ),
+      validate: async () => true,
+    },
+    {
+      id: '5',
+      label: STEPS[4]!,
+      component: (
+        <DuplicateResolutionStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+        />
+      ),
+      validate: async () => Boolean((workingCopy as any).duplicateResolution),
+    },
+    {
+      id: '6',
+      label: STEPS[5]!,
+      component: (
+        <PreviewTestStep
+          data={workingCopy}
+          onUpdate={updateWorkingCopy}
+          onValidationChange={() => {}}
+          sourceSchema={sourceSchema}
+          targetSchema={targetSchema}
+          onValidationResult={() => {}}
+        />
+      ),
+      validate: async () => true,
+    },
+  ], [workingCopy, updateWorkingCopy, handleStepValidation, sourceSchema, targetSchema]);
 
-  const canProceedToNext = isStepComplete(activeStep);
-  const isLastStep = activeStep === STEPS.length - 1;
+  const evaluator: StepStateEvaluator = useMemo(() => ({
+    getFilledSteps: (data: any) => [
+      Boolean(data?.name?.trim()),
+      Boolean(data?.sourceSchema) && Boolean(data?.targetSchema),
+      Array.isArray(data?.mappingRules),
+      true,
+      Boolean(data?.duplicateResolution),
+      true,
+    ],
+    getNavigableSteps: (data: any) => {
+      const f = [
+        Boolean(data?.name?.trim()),
+        Boolean(data?.sourceSchema) && Boolean(data?.targetSchema),
+        Array.isArray(data?.mappingRules),
+        true,
+        Boolean(data?.duplicateResolution),
+      ];
+      return [true, f[0], f[1], f[2], f[3]] as boolean[];
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);
 
-  const renderStepContent = () => {
-    switch (activeStep) {
-      case 0:
-        return (
-          <ResolverBasicInfoStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(0, isValid)}
-          />
-        );
-      case 1:
-        return (
-          <SchemaSelectionStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(1, isValid)}
-            onSourceSchemaChange={setSourceSchema}
-            onTargetSchemaChange={setTargetSchema}
-          />
-        );
-      case 2:
-        return (
-          <PropertyMappingStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(2, isValid)}
-            sourceSchema={sourceSchema}
-            targetSchema={targetSchema}
-          />
-        );
-      case 3:
-        return (
-          <ValidationConfigStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(3, isValid)}
-            sourceSchema={sourceSchema}
-            targetSchema={targetSchema}
-          />
-        );
-      case 4:
-        return (
-          <DuplicateResolutionStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(4, isValid)}
-          />
-        );
-      case 5:
-        return (
-          <PreviewTestStep
-            data={workingCopy}
-            onUpdate={updateWorkingCopy}
-            onValidationChange={(isValid) => handleStepValidation(5, isValid)}
-            sourceSchema={sourceSchema}
-            targetSchema={targetSchema}
-            onValidationResult={setValidationResult}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+  const canSubmit = useCallback((data: any) => evaluator.getFilledSteps!(data).every(Boolean), [evaluator]);
 
   return (
-    <Dialog
+    <MultiStepDialog
       open={open}
-      onClose={handleCancel}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: { minHeight: '70vh', maxHeight: '90vh' },
-      }}
-    >
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">
-            {entity ? 'Edit Property Resolver' : 'Create Property Resolver'}
-          </Typography>
-          <IconButton
-            onClick={handleCancel}
-            size="small"
-            sx={{ color: 'grey.500' }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ pb: 1 }}>
-        <Box sx={{ mb: 3 }}>
-          <Stepper
-            activeStep={activeStep}
-            alternativeLabel
-            sx={{ mb: 2 }}
-          >
-            {STEPS.map((label, index) => (
-              <Step
-                key={label}
-                completed={isStepComplete(index)}
-                sx={{
-                  cursor: hasCompletedOnce || index <= activeStep ? 'pointer' : 'default',
-                  '& .MuiStepLabel-root': {
-                    cursor: hasCompletedOnce || index <= activeStep ? 'pointer' : 'default',
-                  },
-                }}
-              >
-                <StepLabel
-                  onClick={() => handleStepClick(index)}
-                  sx={{
-                    '&:hover': {
-                      opacity: hasCompletedOnce || index <= activeStep ? 0.7 : 1,
-                    },
-                  }}
-                >
-                  {label}
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-
-          {validationResult && !validationResult.isValid && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Configuration validation failed. Please review the errors in the Preview & Test step.
-            </Alert>
-          )}
-        </Box>
-
-        <Box sx={{ minHeight: '400px' }}>
-          {renderStepContent()}
-        </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button
-          onClick={handleCancel}
-          color="inherit"
-        >
-          Cancel
-        </Button>
-
-        <Box sx={{ flexGrow: 1 }} />
-
-        {activeStep > 0 && (
-          <Button
-            onClick={handleBack}
-            color="primary"
-          >
-            Back
-          </Button>
-        )}
-
-        {!isLastStep ? (
-          <Button
-            onClick={handleNext}
-            variant="contained"
-            disabled={!canProceedToNext}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={!isStepComplete(activeStep) || isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        )}
-      </DialogActions>
-    </Dialog>
+      mode={entity ? 'edit' : 'create'}
+      title={entity ? 'Edit Property Resolver' : 'Create Property Resolver'}
+      steps={steps}
+      currentData={workingCopy}
+      evaluateSteps={evaluator}
+      evaluateSubmit={() => canSubmit(workingCopy)}
+      onSubmit={handleSave}
+      onCancel={handleCancel}
+      enableA11yTestControls={process.env.NODE_ENV === 'test'}
+      displayMode={displayMode}
+      onDisplayModeChange={(m: 'standard' | 'maximized' | 'fullscreen') => { setDisplayModeState(m); persistMode(m); }}
+    />
   );
 };

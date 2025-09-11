@@ -13,6 +13,8 @@ import type { StepperProps } from '../types/MultiStepDialog.types';
 export const DialogStepper: React.FC<StepperProps & {
   currentData?: any;
   // baseUrl?: string;
+  /** Optional externally-evaluated navigability array */
+  navigable?: boolean[];
 }> = ({
         steps,
         activeStep,
@@ -21,6 +23,7 @@ export const DialogStepper: React.FC<StepperProps & {
         nonLinear = false,
         alternativeLabel = false,
         currentData = {},
+        navigable,
         // baseUrl,
       }) => {
   // const location = useLocation();
@@ -41,6 +44,11 @@ export const DialogStepper: React.FC<StepperProps & {
   const canNavigateToStep = (stepIndex: number) => {
     const step = steps[stepIndex];
     if (!step) return false;
+
+    // If external navigability is provided, honor it first
+    if (Array.isArray(navigable) && typeof navigable[stepIndex] === 'boolean') {
+      return navigable[stepIndex]!;
+    }
 
     // If step has capabilities, check canNavigateTo
     if (step.capabilities?.canNavigateTo) {

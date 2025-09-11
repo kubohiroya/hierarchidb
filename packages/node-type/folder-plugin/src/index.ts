@@ -10,5 +10,11 @@ export * from './entities/FolderEntity';
 // Export plugin definition for worker consumption
 export { FolderDefinition } from './definitions/FolderDefinition';
 
+// Export BaseFolderPlugin for extensions to extend
+export * from './base/BaseFolderPlugin';
+
+// Convenience initializer to register common extensions
+export { initializeDefaultFolderExtensions, initializeDefaultNodeDialogExtensions } from './init/register-default-extensions';
+
 // Optional runtime wiring (no-op for folder plugin)
 export const runtimeWiring = {} as const;

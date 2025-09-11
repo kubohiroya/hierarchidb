@@ -9,13 +9,13 @@ export class PeerEntityHandler {
 
   async copyPeer(originalId: NodeId, wcId: NodeId): Promise<void> {
     const src: PeerEntity | undefined = await this.store.get(originalId);
-    const copy: PeerEntity = { nodeId: wcId, data: src?.data, updatedAt: Date.now() };
+    const copy: PeerEntity = { nodeId: wcId, data: src?.data, displayMode: src?.displayMode, updatedAt: Date.now() };
     await this.store.put(copy);
   }
 
   async upsertPeer(targetId: NodeId, fromWcId: NodeId): Promise<void> {
     const src: PeerEntity | undefined = await this.store.get(fromWcId);
-    const next: PeerEntity = { nodeId: targetId, data: src?.data, updatedAt: Date.now() };
+    const next: PeerEntity = { nodeId: targetId, data: src?.data, displayMode: src?.displayMode, updatedAt: Date.now() };
     await this.store.put(next);
   }
 
@@ -29,7 +29,7 @@ export class PeerEntityHandler {
       const entities: PeerEntity[] = [];
       for (const { targetId, fromId } of pairs) {
         const src: PeerEntity | undefined = await this.store.get(fromId);
-        entities.push({ nodeId: targetId, data: src?.data, updatedAt: Date.now() });
+        entities.push({ nodeId: targetId, data: src?.data, displayMode: src?.displayMode, updatedAt: Date.now() });
       }
       await (this.store as any).bulkUpsert(entities);
       return;

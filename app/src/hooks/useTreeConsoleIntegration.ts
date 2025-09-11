@@ -5,7 +5,7 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { showCommandError } from '~/shared/command-errors';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
@@ -74,10 +74,12 @@ export interface TreeConsoleActions {
   handleUndo: () => void;
   handleRedo: () => void;
   handleCopy: () => void;
+  handleCut: () => void;
   handlePaste: () => void;
   handleDuplicate: () => void;
   handleImport: () => void;
   handleExport: () => void;
+  handleMoveNodes: (nodeIds: string[], targetParentId: string) => Promise<void>;
 }
 
 export function useTreeConsoleIntegration({
@@ -129,6 +131,44 @@ export function useTreeConsoleIntegration({
 
   // Import/Export functionality
   const importExport = useImportExport(client, !!client);
+
+  // Helper: sync canUndo/canRedo from CommandProcessor
+  const refreshUndoRedo = useCallback(async () => {
+    try {
+      const cp = await (client as any)?.getCommandProcessor?.();
+      if (!cp) return;
+      const canUndo = cp?.canUndo?.() ?? false;
+      const canRedo = cp?.canRedo?.() ?? false;
+      setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+    } catch {}
+  }, [client]);
+
+  // Global event bus: listen to command-complete events to refresh canUndo/canRedo
+  useEffect(() => {
+    const handler = () => { void refreshUndoRedo(); };
+    window.addEventListener('hdb-cmd', handler as any);
+    return () => window.removeEventListener('hdb-cmd', handler as any);
+  }, [refreshUndoRedo]);
+
+  const fireCmdEvent = () => {
+    try { window.dispatchEvent(new CustomEvent('hdb-cmd')); } catch {}
+  };
+
+  // Cleanup helper: remove persisted UI state for given nodes
+  const cleanupPersistedLayouts = (ids: NodeId[]) => {
+    try {
+      const keysToRemove = new Set<string>();
+      for (const id of ids) {
+        // Current key scheme (per-node persistenceKey used by TreeTableCore)
+        keysToRemove.add(`TreeTableCore.columnWidths:tree:${id}`);
+        // Backward-compatible key patterns that may have been used
+        keysToRemove.add(`TreeTableCore.columnWidths:${id}`);
+      }
+      keysToRemove.forEach((k) => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+    } catch {}
+  };
 
   // Helper: apply sort/filter/search to raw nodes
   const applySortFilterSearch = (nodes: TreeNode[]): TreeNodeData[] => {
@@ -269,6 +309,7 @@ export function useTreeConsoleIntegration({
             return;
           }
           await loadChildrenOf(parentId);
+          fireCmdEvent();
         } catch (e) {
           console.error('Create failed:', e);
           showCommandError('UNKNOWN_ERROR');
@@ -289,6 +330,7 @@ export function useTreeConsoleIntegration({
           }
           const parent = pageNodeId as NodeId;
           await loadChildrenOf(parent);
+          fireCmdEvent();
         } catch (e) {
           console.error('Update failed:', e);
           showCommandError('UNKNOWN_ERROR');
@@ -309,6 +351,10 @@ export function useTreeConsoleIntegration({
           const parent = pageNodeId as NodeId;
           await loadChildrenOf(parent);
           setSelectedIds([]);
+          fireCmdEvent();
+
+          // Note: Do not clear persisted layouts on move-to-trash.
+          // Cleanup is performed only on permanent deletion from Trash dialog.
         } catch (e) {
           console.error('Remove failed:', e);
           showCommandError('UNKNOWN_ERROR');
@@ -422,6 +468,55 @@ export function useTreeConsoleIntegration({
           return;
         }
 
+        // Inline rename
+        if (action === 'rename-inline' && node?.id && typeof node.name === 'string') {
+          try {
+            const mutationAPI = await client.getMutationAPI();
+            const next = node.name.trim();
+            const current = rawNodes.find((n) => n.id === node.id)?.name ?? '';
+            if (next === current) return; // 未変更ならスキップ
+            if (!next) { showCommandError('VALIDATION_ERROR', 'Name is required'); return; }
+            if (next.length > 255) { showCommandError('VALIDATION_ERROR', 'Name is too long (max 255)'); return; }
+            if (!/^[^<>:"/\\|?*]+$/.test(next)) { showCommandError('VALIDATION_ERROR', 'Invalid characters in name'); return; }
+            const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, name: next });
+            if (!res.success) {
+              showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+              return;
+            }
+            const parent = pageNodeId as NodeId;
+            await loadChildrenOf(parent);
+            await refreshUndoRedo();
+            fireCmdEvent();
+          } catch (e) {
+            console.error('Inline rename failed:', e);
+            showCommandError('UNKNOWN_ERROR');
+          }
+          return;
+        }
+
+        if (action === 'update-desc-inline' && node?.id && typeof (node as any).description === 'string') {
+          try {
+            const mutationAPI = await client.getMutationAPI();
+            const next = String((node as any).description ?? '').trim();
+            const current = rawNodes.find((n) => n.id === node.id)?.description ?? '';
+            if (next === current) return; // 未変更ならスキップ
+            if (next.length > 1000) { showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)'); return; }
+            const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, description: next });
+            if (!res.success) {
+              showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+              return;
+            }
+            const parent = pageNodeId as NodeId;
+            await loadChildrenOf(parent);
+            await refreshUndoRedo();
+            fireCmdEvent();
+          } catch (e) {
+            console.error('Inline description update failed:', e);
+            showCommandError('UNKNOWN_ERROR');
+          }
+          return;
+        }
+
         // Handle import/export through context menu
         if ((action as string) === 'export' && node?.id) {
           // Export is handled via actions.handleExport; in this minimal phase, omit here.
@@ -438,6 +533,8 @@ export function useTreeConsoleIntegration({
           await cp.undo();
           const root = pageNodeId as NodeId;
           await loadChildrenOf(root);
+          await refreshUndoRedo();
+          fireCmdEvent();
         } catch (e) {
           console.error('Undo failed:', e);
         }
@@ -450,6 +547,8 @@ export function useTreeConsoleIntegration({
           await cp.redo();
           const root = pageNodeId as NodeId;
           await loadChildrenOf(root);
+          await refreshUndoRedo();
+          fireCmdEvent();
         } catch (e) {
           console.error('Redo failed:', e);
         }
@@ -460,20 +559,34 @@ export function useTreeConsoleIntegration({
         setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
       },
 
+      handleCut: () => {
+        (globalThis as any).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds], cut: true };
+        setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
+      },
+
       handlePaste: async () => {
         if (!client) return;
         const clip = (globalThis as any).__HDB_CLIPBOARD__ as { nodeIds: NodeId[] } | undefined;
         const ids = clip?.nodeIds || [];
+        const isCut = Boolean(clip && (clip as any).cut);
         if (ids.length === 0) return;
         try {
           const mutationAPI = await client.getMutationAPI();
           const toParentId = pageNodeId as NodeId;
-          const res = await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
+          const res = isCut
+            ? await mutationAPI.moveNodes({ nodeIds: ids as NodeId[], toParentId })
+            : await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
           if (!('success' in res) || !res.success) {
             showCommandError('INVALID_OPERATION', (res as any)?.error || 'Paste failed');
             return;
           }
           await loadChildrenOf(toParentId);
+          // Clear cut clipboard after move
+          if (isCut) {
+            (globalThis as any).__HDB_CLIPBOARD__ = undefined;
+          }
+          await refreshUndoRedo();
+          fireCmdEvent();
         } catch (e) {
           console.error('Paste failed:', e);
         }
@@ -490,6 +603,12 @@ export function useTreeConsoleIntegration({
             return;
           }
           await loadChildrenOf(toParentId);
+          await refreshUndoRedo();
+          fireCmdEvent();
+          try {
+            const cp = await (client as any).getCommandProcessor();
+            setState((prev) => ({ ...prev, canUndo: cp?.canUndo?.() ?? false, canRedo: cp?.canRedo?.() ?? false }));
+          } catch {}
         } catch (e) {
           console.error('Duplicate failed:', e);
         }
@@ -519,6 +638,8 @@ export function useTreeConsoleIntegration({
               console.log('Import result:', result);
               // Refresh tree data after import
               await actions.handleRefresh();
+              await refreshUndoRedo();
+              fireCmdEvent();
             } catch (error) {
               console.error('Import failed:', error);
               setState((prev) => ({
@@ -565,6 +686,23 @@ export function useTreeConsoleIntegration({
             ...prev,
             error: `Export failed: ${error}`,
           }));
+        }
+      },
+      handleMoveNodes: async (nodeIds: string[], targetParentId: string) => {
+        if (!client || nodeIds.length === 0 || !targetParentId) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.moveNodes({ nodeIds: nodeIds as NodeId[], toParentId: targetParentId as NodeId });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Move failed');
+            return;
+          }
+          await loadChildrenOf(targetParentId as NodeId);
+          await refreshUndoRedo();
+          fireCmdEvent();
+        } catch (e) {
+          console.error('Move failed:', e);
+          showCommandError('UNKNOWN_ERROR');
         }
       },
     }),
@@ -621,6 +759,30 @@ export function useTreeConsoleIntegration({
 
     loadTreeData();
   }, [client, pageNodeId, locationSearch]);
+
+  // Poll CommandProcessor for canUndo/canRedo and reflect into state
+  useEffect(() => {
+    let stopped = false;
+    let cp: any;
+    const tick = async () => {
+      try {
+        cp = cp || (await (client as any)?.getCommandProcessor?.());
+        if (!cp) return;
+        const canUndo = cp?.canUndo?.() ?? false;
+        const canRedo = cp?.canRedo?.() ?? false;
+        setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+      } catch {}
+    };
+    // initial read
+    tick();
+    const id = globalThis.setInterval(() => {
+      if (!stopped) tick();
+    }, 600);
+    return () => {
+      stopped = true;
+      try { globalThis.clearInterval(id); } catch {}
+    };
+  }, [client]);
 
   // Sync search (q) only to URL query parameters
   useEffect(() => {

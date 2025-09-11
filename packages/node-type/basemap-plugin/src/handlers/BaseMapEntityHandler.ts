@@ -123,6 +123,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
       displayOptions: data?.displayOptions || DEFAULT_DISPLAY_OPTIONS,
     } as BaseMapEntity;
     await this.table.add(entity);
+    await this.mirrorToPeerStore(entity).catch(() => {});
     return entity;
   }
 
@@ -180,15 +181,17 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   async commitWorkingCopy(_nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<BaseMapEntity> {
     // If original exists, update it; otherwise create a new entity for provided nodeId
     if (workingCopy.originalId) {
-      return await this.updateEntity(workingCopy.originalId as NodeId, {
+      const updated = await this.updateEntity(workingCopy.originalId as NodeId, {
         name: workingCopy.name,
         mapStyle: workingCopy.mapStyle,
         viewport: workingCopy.viewport,
         displayOptions: workingCopy.displayOptions,
       } as Partial<BaseMapEntity>);
+      await this.mirrorToPeerStore(updated).catch(() => {});
+      return updated;
     }
     // Create a new entity using working copy fields (explicit mapping)
-    return await this.createEntity(workingCopy.nodeId as NodeId, {
+    const created = await this.createEntity(workingCopy.nodeId as NodeId, {
       name: workingCopy.name,
       description: workingCopy.description,
       category: (workingCopy as BaseMapEntity).category,
@@ -199,6 +202,8 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
       viewport: workingCopy.viewport,
       displayOptions: workingCopy.displayOptions,
     } as CreateBaseMapData);
+    await this.mirrorToPeerStore(created).catch(() => {});
+    return created;
   }
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
@@ -210,13 +215,17 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
   async updateMapStyle(nodeId: NodeId, mapStyle: MapStyle): Promise<BaseMapEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) throw new Error(`BaseMap entity for node ${nodeId} not found`);
-    return await this.updateEntity(entity.id, { mapStyle });
+    const updated = await this.updateEntity(entity.id, { mapStyle });
+    await this.mirrorToPeerStore(updated).catch(() => {});
+    return updated;
   }
 
   async updateViewport(nodeId: NodeId, viewport: MapViewport): Promise<BaseMapEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) throw new Error(`BaseMap entity for node ${nodeId} not found`);
-    return await this.updateEntity(entity.id, { viewport });
+    const updated = await this.updateEntity(entity.id, { viewport });
+    await this.mirrorToPeerStore(updated).catch(() => {});
+    return updated;
   }
 
   async updateDisplayOptions(
@@ -343,9 +352,13 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
 
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
-      return await this.createEntity(nodeId, { name: 'Imported BaseMap', ...config } as CreateBaseMapData);
+      const created = await this.createEntity(nodeId, { name: 'Imported BaseMap', ...config } as CreateBaseMapData);
+      await this.mirrorToPeerStore(created).catch(() => {});
+      return created;
     }
-    return await this.updateEntity(entity.id, config);
+    const updated = await this.updateEntity(entity.id, config);
+    await this.mirrorToPeerStore(updated).catch(() => {});
+    return updated;
   }
 
   // Override getEntity to return undefined when not found (some tests expect undefined)
@@ -362,10 +375,12 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
     const { id, nodeId, createdAt, updatedAt, version, ...cloneData } = sourceEntity as BaseMapEntity & {
       [k: string]: unknown;
     };
-    return await this.createEntity(targetNodeId, {
+    const created = await this.createEntity(targetNodeId, {
       ...cloneData,
       name: `${sourceEntity.name} (Copy)`,
     } as CreateBaseMapData);
+    await this.mirrorToPeerStore(created).catch(() => {});
+    return created;
   }
 
   async getUsedMapStyles(): Promise<string[]> {
@@ -379,8 +394,27 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
       const entity = await this.getEntityByNodeId(nodeId);
       if (entity) {
         const updatedViewport = { ...entity.viewport, ...viewport } as MapViewport;
-        await this.updateViewport(nodeId, updatedViewport);
+        const updated = await this.updateViewport(nodeId, updatedViewport);
+        await this.mirrorToPeerStore(updated).catch(() => {});
       }
+    }
+  }
+
+  private async mirrorToPeerStore(entity: BaseMapEntity): Promise<void> {
+    try {
+      const RW = '@hierarchidb/runtime-worker' as string;
+      const mod = await import(/* @vite-ignore */ RW as any);
+      const store = mod.storeRegistry.getPeer('basemap');
+      if (!store) return;
+      const payload = {
+        mapStyle: entity.mapStyle,
+        viewport: entity.viewport,
+        displayOptions: entity.displayOptions,
+        schemaVersion: 1,
+      } as any;
+      await store.put({ nodeId: entity.nodeId, data: payload, updatedAt: Date.now() } as any);
+    } catch {
+      // ignore in non-worker contexts or tests
     }
   }
 }

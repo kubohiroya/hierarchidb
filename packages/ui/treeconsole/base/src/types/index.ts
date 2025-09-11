@@ -250,7 +250,7 @@ export interface TreeViewController {
   onNodeExpand?: (nodeId: NodeId, expanded: boolean) => void;
   onNodeClick?: (nodeId: NodeId, node: TreeNode) => void;
   onNodeSelect?: (nodeIds: NodeId[], append: boolean) => void;
-  finishEdit?: (nodeId: NodeId, newValue: string) => void;
+  finishEdit?: (nodeId: NodeId, newValue: string, field?: 'name' | 'description') => void;
   cancelEdit?: () => void;
   onCreate?: (parentId: NodeId, nodeType: string) => void;
   onDuplicate?: (nodeId: NodeId) => void;
@@ -372,4 +372,6 @@ export type SubTreeChange = unknown; // TODO: Define proper type
 
 //  Props
 export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
+  /** Move nodes under a new parent (DnD) */
+  onMoveNodes?: (nodeIds: NodeId[], targetParentId: NodeId) => void;
 }

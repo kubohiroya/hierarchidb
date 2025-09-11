@@ -217,22 +217,7 @@ export interface ColumnSelection {
   width?: number;
 }
 
-// ============================================================================
-// Working Copy Types
-// ============================================================================
-
-/**
-  * : SpreadsheetEntityWorkingCopy
- * : WorkingCopy
-  */
-export interface SpreadsheetEntityWorkingCopy extends SpreadsheetEntity {
-  copiedAt: number;
-  originalNodeId?: NodeId;
-  originalVersion?: number;
-  hasEntityCopy?: boolean;
-  entityWorkingCopyId?: NodeId;
-  hasGroupEntityCopy?: Record<string, boolean>;
-}
+// Working copies are managed by runtime-worker PeerStore; no dedicated types here.
 
 // ============================================================================
 // Utility Types

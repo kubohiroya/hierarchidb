@@ -19,5 +19,7 @@ export default createTsupConfig({
     '@emotion/provider',
     '@emotion/styled',
     'dexie',
+    // Optional worker at runtime; keep external to avoid type resolution in DTS
+    '@hierarchidb/runtime-worker',
   ],
 });

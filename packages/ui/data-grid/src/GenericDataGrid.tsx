@@ -114,6 +114,26 @@ export interface GenericDataGridProps<T = any> {
   /** Selection change handler */
   onSelectionChange?: (selectedRows: Set<string | number>) => void;
 
+  // Row visual state sets (controlled)
+  /** Disabled rows (dimmed, non-interactive) */
+  disabledRows?: Set<string | number>;
+  /** Matched rows (e.g., search hits) */
+  matchedRows?: Set<string | number>;
+  /** Hovered rows (mouse focus). If omitted, hover style uses browser :hover only. */
+  hoveredRows?: Set<string | number>;
+  /** Rows currently being dragged */
+  draggingRows?: Set<string | number>;
+  /** Rows marked as drop targets */
+  dropTargetRows?: Set<string | number>;
+
+  // Row visual customization
+  /** Compute per-row inline style from row state */
+  rowStyle?: (state: RowState<T>) => React.CSSProperties | undefined;
+  /** Compute per-row css class from row state */
+  rowClassName?: (state: RowState<T>) => string | undefined;
+  /** Compute per-row MUI sx from row state */
+  rowSx?: (state: RowState<T>) => any;
+
   // Actions
   /** Export handler */
   onExport?: () => void;
@@ -123,6 +143,10 @@ export interface GenericDataGridProps<T = any> {
   onRowClick?: (row: T) => void;
   /** Row double-click handler */
   onRowDoubleClick?: (row: T) => void;
+
+  /** Row hover handlers (for cross-view sync etc.) */
+  onRowHover?: (row: T, rowId: string | number) => void;
+  onRowLeave?: (row: T, rowId: string | number) => void;
 
   // Virtualization
   /** Enable virtual scrolling */
@@ -155,6 +179,18 @@ export interface GenericDataGridProps<T = any> {
   toolbarComponent?: ReactNode;
 }
 
+export interface RowState<T = any> {
+  row: T;
+  rowId: string | number;
+  index: number;
+  selected: boolean;
+  disabled: boolean;
+  matched: boolean;
+  hovered: boolean;
+  dragging: boolean;
+  dropTarget: boolean;
+}
+
 /**
  * Generic data grid component
  */
@@ -184,20 +220,32 @@ export function GenericDataGrid<T = any>({
                                            onExport,
                                            onRefresh,
                                            onRowClick,
-                                           onRowDoubleClick,
-                                           enableVirtualization = false,
+                                          onRowDoubleClick,
+                                          onRowHover,
+                                          onRowLeave,
+                                          enableVirtualization = false,
                                            maxHeight = 600,
                                            dense = false,
                                            stickyHeader = true,
                                            showGridLines = false,
                                            striped = false,
                                            hover = true,
+                                           disabledRows,
+                                           matchedRows,
+                                           hoveredRows,
+                                           draggingRows,
+                                           dropTargetRows,
+                                           rowStyle,
+                                           rowClassName,
+                                           rowSx,
                                            emptyComponent,
                                            loadingComponent,
                                            errorComponent,
                                            toolbarComponent,
                                          }: GenericDataGridProps<T>): ReactElement {
   const [showFilters, setShowFilters] = useState(false);
+  void onRowHover; // keep optional callbacks referenced to satisfy noUnusedParameters
+  void onRowLeave;
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
 
   // Virtual scrolling setup
@@ -470,23 +518,46 @@ export function GenericDataGrid<T = any>({
           <TableBody>
             {displayRows.map((row, index) => {
               const rowId = getRowId(row);
-              const isSelected = selectedRows.has(rowId);
+              const state: RowState<T> = {
+                row,
+                rowId,
+                index,
+                selected: selectedRows.has(rowId),
+                disabled: !!disabledRows?.has(rowId),
+                matched: !!matchedRows?.has(rowId),
+                hovered: !!hoveredRows?.has(rowId),
+                dragging: !!draggingRows?.has(rowId),
+                dropTarget: !!dropTargetRows?.has(rowId),
+              };
+
+              // Default layered styles (can be overridden via rowSx/rowStyle)
+              const layeredSx: any[] = [];
+              if (striped && index % 2 === 0) layeredSx.push({ backgroundColor: 'action.hover' });
+              if (state.matched) layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
+              if (state.selected) layeredSx.push({ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.light' } });
+              if (state.hovered) layeredSx.push({ outline: '1px solid rgba(0,0,0,0.15)' });
+              if (state.dragging) layeredSx.push({ opacity: 0.7 });
+              if (state.dropTarget) layeredSx.push({ outline: '2px dashed rgba(25,118,210,0.8)' });
+              if (state.disabled) layeredSx.push({ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(0.2)' });
+              if (rowSx) layeredSx.push(rowSx(state));
 
               return (
                 <TableRow
                   key={rowId}
                   hover={hover}
-                  selected={isSelected}
-                  onClick={() => onRowClick?.(row)}
-                  onDoubleClick={() => onRowDoubleClick?.(row)}
+                  selected={state.selected}
+                  onClick={() => !state.disabled && onRowClick?.(row)}
+                  onDoubleClick={() => !state.disabled && onRowDoubleClick?.(row)}
+                  className={rowClassName?.(state)}
                   sx={{
-                    backgroundColor: striped && index % 2 === 0 ? 'action.hover' : undefined,
                     cursor: onRowClick || onRowDoubleClick ? 'pointer' : undefined,
+                    ...(layeredSx.length > 0 ? layeredSx : undefined),
+                    ...(rowStyle ? (rowStyle(state) as any) : undefined),
                   }}
                 >
                   {selectable && (
                     <TableCell padding="checkbox">
-                      <Checkbox checked={isSelected} onChange={() => handleSelectRow(row)} />
+                      <Checkbox checked={state.selected} disabled={state.disabled} onChange={() => handleSelectRow(row)} />
                     </TableCell>
                   )}
                   {visibleColumns.map((column) => {

@@ -13,7 +13,7 @@ vk:doc kind=guide audience=dev scope=worker
   - 目的: Trash 復元・競合・参照整合性の取り扱いを単純化。
   - 仕様: trashRoot 直下の holder.name に `${originalParentId}\t${trashedNodeId}` を埋め込み、子に実体ノード。
   - 復元: holder decode で originalParent を取得し、子を移動後に holder を削除。
-  - フラグ: `WORKER_TRASH_USE_HOLDER`（既定OFF）。従来（removedAt/original*）との二重対応を段階的に解除。
+  - フラグ: `WORKER_TRASH_USE_HOLDER`（既定ON）。従来（removedAt/original*）との二重対応は必要時のみ OFF を使用。
 
 - 名前衝突（onNameConflict）
   - 統一ポリシー: `'error' | 'auto-rename'`
@@ -27,6 +27,5 @@ vk:doc kind=guide audience=dev scope=worker
   - `WORKER_USE_CMDPROC_CREATE_UPDATE`
   - `WORKER_USE_CMDPROC_MOVE_REMOVE`
   - `WORKER_TRASH_USE_HOLDER`
-  - `WORKER_WC_COMMIT_V2`
+  - `WORKER_WC_COMMIT_V2`（既定ON）
   - `WORKER_POLICY_C`
-

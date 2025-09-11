@@ -23,6 +23,20 @@ export type StepTransitionHook = (
 ) => boolean | Promise<boolean>;
 
 /**
+ * External step state evaluator supplied by plugins/hosts.
+ * Returns boolean arrays (length = steps.length).
+ */
+export interface StepStateEvaluator {
+  /** Which steps are navigable at this moment (index-based). */
+  getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  /** Which steps are currently filled (all required inputs satisfied). */
+  getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+}
+
+/** Submit eligibility evaluator */
+export type SubmitEligibilityFn = (data: any) => boolean | Promise<boolean>;
+
+/**
  * Step capability checks
  */
 export interface StepCapabilities {
@@ -102,6 +116,15 @@ export interface MultiStepDialogProps {
   /** Array of step configurations */
   steps: DialogStep[];
 
+  /** Current form/entity data for evaluation */
+  currentData?: any;
+
+  /** External evaluator to decide navigability and filled states */
+  evaluateSteps?: StepStateEvaluator;
+
+  /** External submit eligibility evaluator */
+  evaluateSubmit?: SubmitEligibilityFn;
+
   /** Current active step (for controlled mode) */
   activeStep?: number;
 
@@ -114,7 +137,10 @@ export interface MultiStepDialogProps {
   /** Dialog max width */
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
 
-  /** Full screen mode */
+  /**
+   * Full screen mode
+   * @deprecated Use `displayMode` (set to 'fullscreen') and `onDisplayModeChange` instead.
+   */
   fullScreen?: boolean;
 
   /** Show fullscreen toggle button */
@@ -165,8 +191,32 @@ export interface MultiStepDialogProps {
   /**
    * Callback when fullscreen toggles.
    * Useful for syncing URL or external state.
+   * @deprecated Use `onDisplayModeChange` with 'fullscreen' instead.
    */
   onFullscreenChange?: (isFullscreen: boolean) => void;
+
+  /**
+   * Window内で最大化（ヘッダー/フッターありで可能な限り拡大）
+   * @deprecated Use `displayMode` (set to 'maximized') and `onDisplayModeChange` instead.
+   */
+  maximized?: boolean;
+  /** Maximize トグルの表示可否（デフォルト: true） */
+  showMaximizeToggle?: boolean;
+  /**
+   * Maximize 変更時のコールバック
+   * @deprecated Use `onDisplayModeChange` with 'maximized'/'standard' instead.
+   */
+  onMaximizeChange?: (isMaximized: boolean) => void;
+
+  /**
+   * 表示モード（制御用）。指定時は内部 state をこの値に追従させる。
+   * - 'standard': 通常サイズ
+   * - 'maximized': ウィンドウ内で可能な限り拡大
+   * - 'fullscreen': ブラウザ Fullscreen API によるモニタ全面表示
+   */
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  /** 表示モード変更時のコールバック（制御モードで利用） */
+  onDisplayModeChange?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
 
   /**
    * Enable hidden a11y test controls (Cancel/Next/Complete buttons rendered off-screen).

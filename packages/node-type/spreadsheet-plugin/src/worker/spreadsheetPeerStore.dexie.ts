@@ -1,30 +1,22 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { SheetPeerRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB';
-import type { SpreadsheetPeerData } from '../types/entities';
 
-export function createSpreadsheetPeerStoreDexie(db: SpreadsheetEntitiesDB): PeerStore<SpreadsheetPeerData> {
+export function createSpreadsheetPeerStoreDexie(db: SpreadsheetEntitiesDB): PeerStore<any> {
   return {
     async get(nodeId: NodeId) {
       return (await db.peerEntities.get(nodeId)) as any;
     },
-    async put(e: PeerEntity<SpreadsheetPeerData>) {
-      const data = normalizeV1(e.data);
-      await db.peerEntities.put({ ...e, data, updatedAt: Date.now() } as SheetPeerRow);
+    async put(e: PeerEntity<any>) {
+      const row: SheetPeerRow = { nodeId: e.nodeId, updatedAt: Date.now(), displayMode: (e as any).displayMode };
+      await db.peerEntities.put(row);
     },
     async delete(nodeId: NodeId) {
       await db.peerEntities.delete(nodeId);
     },
-    async bulkUpsert(entities: PeerEntity<SpreadsheetPeerData>[]) {
-      const rows = entities.map((e) => ({ ...e, data: normalizeV1(e.data), updatedAt: Date.now() })) as SheetPeerRow[];
+    async bulkUpsert(entities: PeerEntity<any>[]) {
+      const rows = entities.map((e) => ({ nodeId: e.nodeId, updatedAt: Date.now(), displayMode: (e as any).displayMode })) as SheetPeerRow[];
       await db.peerEntities.bulkPut(rows);
     },
   };
-}
-
-function normalizeV1(data?: SpreadsheetPeerData): SpreadsheetPeerData {
-  if (!data) return { schemaVersion: 1 } as SpreadsheetPeerData;
-  if ((data as any).schemaVersion === 1) return data;
-  if ((data as any).schemaVersion === undefined) return { ...data, schemaVersion: 1 } as SpreadsheetPeerData;
-  throw new Error(`Unsupported SpreadsheetPeerData schemaVersion: ${(data as any).schemaVersion}`);
 }

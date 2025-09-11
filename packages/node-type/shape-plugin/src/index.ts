@@ -37,3 +37,6 @@ export const runtimeWiring = {
     } catch { /* noop */ }
   },
 } as const;
+
+// Folder dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
+export { initializeShapeFolderExtension, shapeFolderExtension } from './extensions/ShapeFolderExtension';

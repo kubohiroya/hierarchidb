@@ -167,8 +167,8 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                     (nodeId: string) => controller.startEdit!(nodeId as NodeId) :
                     undefined,
                   finishEdit: controller.finishEdit ?
-                    (nodeId: string, newName: string) =>
-                      controller.finishEdit!(nodeId as NodeId, newName) :
+                    (nodeId: string, newName: string, field?: 'name' | 'description') =>
+                      controller.finishEdit!(nodeId as NodeId, newName, field) :
                     undefined,
                   cancelEdit: controller.cancelEdit,
                   onCreate: controller.onCreate ?

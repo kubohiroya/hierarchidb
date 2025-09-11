@@ -208,7 +208,14 @@ export function DynamicSpeedDial({
           : sortedPlugins.map((plugin) => {
             const displayName = plugin.displayName || plugin.name;
             const icon = getIconComponent(plugin);
-            const tooltipTitle = displayName;
+            const tooltipTitle = (
+              <Box sx={{ p: 0.5 }}>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>{displayName}</div>
+                {plugin.description ? (
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>{plugin.description}</div>
+                ) : null}
+              </Box>
+            );
             return (
               <SpeedDialAction
                 key={plugin.nodeType}

@@ -1,9 +1,9 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router-dom';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
-import { StrictMode, useMemo } from 'react';
+import { StrictMode } from 'react';
 import { AppConfigProvider } from './contexts/AppConfigContext';
-import { createAppTheme, ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { WorkerProvider } from './contexts/WorkerProvider';
@@ -15,6 +15,8 @@ import { APP_VERSION, BUILD_TIME } from './version';
 import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
 import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
+import { AppThemeProvider } from './components/AppThemeProvider';
+import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
 
 // Log version and build time at startup (local time)
@@ -265,9 +267,6 @@ function AppContent() {
 }
 
 export default function App() {
-  // Create theme inside component with useMemo to avoid hydration mismatch
-  const theme = useMemo(() => createAppTheme('light'), []);
-
   return (
     <BootProgressProvider>
       <AppConfigProvider>
@@ -283,12 +282,13 @@ export default function App() {
             <I18nReadyReporter />
 
             <StyledEngineProvider injectFirst>
-              <ThemeProvider theme={theme}>
-                <CustomThemeProvider>
+              <CustomThemeProvider>
+                <AppThemeProvider>
                   {/* Theme step can be considered ready now */}
                   <ThemeReadyReporter />
 
                   <CssBaseline />
+                  <LanguageEventsBridge />
                   {/* Global notifications */}
                   <NotificationSystem />
                   {/* UI plugins were registered at module load, confirm step */}
@@ -300,8 +300,8 @@ export default function App() {
                     {/* Render app content; gating is handled by BootOverlay removal on Worker done */}
                     <AppContent />
                   </WorkerProvider>
-                </CustomThemeProvider>
-              </ThemeProvider>
+                </AppThemeProvider>
+              </CustomThemeProvider>
             </StyledEngineProvider>
           </LanguageProvider>
         </SimpleBFFAuthProvider>

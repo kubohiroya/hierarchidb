@@ -2,7 +2,7 @@
  * Multi-step dialog component with React Router integration
  */
 
-import React, { useCallback, useMemo, useState, useLayoutEffect } from 'react';
+import React, { useCallback, useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -19,7 +19,10 @@ import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
+  OpenInFull as OpenInFullIcon,
+  CloseFullscreen as CloseFullscreenIcon,
 } from '@mui/icons-material';
+import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { DialogStepper } from './DialogStepper';
 import type { FooterRenderProps, MultiStepDialogProps } from '../types/MultiStepDialog.types';
@@ -34,13 +37,21 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   subtitle,
                                                                   icon,
                                                                   steps,
+                                                                  currentData,
+                                                                  evaluateSteps,
+                                                                  evaluateSubmit,
                                                                   activeStep: controlledActiveStep,
                                                                   onStepChange,
                                                                   nonLinear = false,
                                                                   maxWidth = 'lg',
                                                                   fullScreen: initialFullScreen = false,
                                                                   showFullscreenToggle = true,
+                                                                  maximized: initialMaximized = false,
+                                                                  showMaximizeToggle = true,
+                                                                  onMaximizeChange,
                                                                   onFullscreenChange,
+                                                                  displayMode,
+                                                                  onDisplayModeChange,
                                                                   hasUnsavedChanges = false,
                                                                   supportsDraft = false,
                                                                   onSubmit,
@@ -57,13 +68,27 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   nextText = 'Next',
                                                                   enableA11yTestControls = false,
                                                                 }) => {
+  // Soft enforcement: warn when legacy props are used and legacy is disallowed.
+  try {
+    const allowLegacy = (globalThis as any)?.FEATURE_FLAGS?.UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE;
+    const allowLegacyBool = String(allowLegacy ?? 'false').toLowerCase() === 'true' || String(allowLegacy ?? 'false') === '1';
+    if (!allowLegacyBool) {
+      if (initialFullScreen !== false || typeof onFullscreenChange === 'function' || initialMaximized !== false || typeof onMaximizeChange === 'function') {
+        console.warn('[UI] Legacy display-mode props (fullScreen/maximized/*Change) are disabled by default. Use displayMode/onDisplayModeChange instead.');
+      }
+    }
+  } catch {}
   // State
   const [internalActiveStep, setInternalActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(initialMaximized);
+  const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
+  const paperRef = useRef<HTMLDivElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepErrors, setStepErrors] = useState<Map<number, string>>(new Map());
+  const [externalSubmitEligible, setExternalSubmitEligible] = useState(true);
 
   // Use controlled or internal step
   const currentStep = controlledActiveStep ?? internalActiveStep;
@@ -105,21 +130,54 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   }, []);
 
   // Check if can navigate
+  // Evaluate external step states if provided
+  const evaluated = useMemo(() => {
+    if (!evaluateSteps) return { navigable: undefined as boolean[] | undefined, filled: undefined as boolean[] | undefined };
+    try {
+      const filled = evaluateSteps.getFilledSteps?.(currentData);
+      const navigable = evaluateSteps.getNavigableSteps?.(currentData);
+      return { navigable, filled };
+    } catch {
+      return { navigable: undefined, filled: undefined };
+    }
+  }, [evaluateSteps, currentData]);
+
   const canGoNext = useMemo(() => {
-    // Allow clicking Next; validation will guard progression
+    // Keep simple: validation guards progression; evaluator is used for non-linear navigation.
     return !loading;
   }, [loading]);
 
   const canGoPrevious = currentStep > 0 && !loading;
 
   const canSubmit = useMemo(() => {
-    // All non-optional steps must be completed
-    return visibleSteps.every((step, index) => {
-      if (step.optional) return true;
-      if (index === currentStep) return !stepErrors.has(index);
-      return completedSteps.has(index);
-    }) && !loading;
-  }, [visibleSteps, completedSteps, stepErrors, loading]);
+    // Prefer external filled[] if提供; else rely on completedSteps + current step error-free
+    let requiredOk: boolean;
+    if (evaluated.filled && Array.isArray(evaluated.filled)) {
+      requiredOk = evaluated.filled.every((filled, idx) => visibleSteps[idx]?.optional ? true : !!filled);
+    } else {
+      requiredOk = visibleSteps.every((step, index) => {
+        if (step.optional) return true;
+        if (index === currentStep) return !stepErrors.has(index);
+        return completedSteps.has(index);
+      });
+    }
+    return requiredOk && !loading && externalSubmitEligible;
+  }, [visibleSteps, completedSteps, stepErrors, loading, externalSubmitEligible, evaluated.filled]);
+
+  // Keep external submit eligibility in sync for button disabled state
+  React.useEffect(() => {
+    if (!evaluateSubmit) {
+      setExternalSubmitEligible(true);
+      return;
+    }
+    let mounted = true;
+    Promise.resolve(evaluateSubmit(currentData)).then((ok) => {
+      if (mounted) setExternalSubmitEligible(!!ok);
+    }).catch(() => {
+      if (mounted) setExternalSubmitEligible(false);
+    });
+    return () => { mounted = false; };
+  }, [evaluateSubmit, currentData]);
 
   // Handle step change
   const handleStepChange = useCallback(async (newStep: number) => {
@@ -163,9 +221,14 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   const handleStepClick = useCallback(async (stepIndex: number) => {
     if (!nonLinear) return;
 
-    // Can navigate to completed steps or the next step
-    const canNavigate = completedSteps.has(stepIndex) ||
-      stepIndex === currentStep + 1;
+    // External evaluator takes precedence
+    let canNavigate: boolean;
+    if (Array.isArray(evaluated.navigable) && typeof evaluated.navigable[stepIndex] === 'boolean') {
+      canNavigate = evaluated.navigable[stepIndex]!;
+    } else {
+      // Default: completed or next
+      canNavigate = completedSteps.has(stepIndex) || stepIndex === currentStep + 1;
+    }
 
     if (canNavigate && stepIndex !== currentStep) {
       if (stepIndex > currentStep) {
@@ -175,7 +238,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       }
       await handleStepChange(stepIndex);
     }
-  }, [nonLinear, completedSteps, validateCurrentStep, handleStepChange]);
+  }, [nonLinear, completedSteps, validateCurrentStep, handleStepChange, evaluated]);
 
   // Close handlers
   const handleClose = useCallback(() => {
@@ -215,7 +278,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     if (!isValid) return;
 
     // Only proceed to submit if all required steps are complete.
-    // Use immediate validity for the current step to avoid stale state from async setState.
+    // Prefer external evaluator when supplied; otherwise fall back to completedSteps.
     const allRequiredCompleted = visibleSteps.every((step, index) => {
       if (step.optional) return true;
       return index === currentStep ? true : completedSteps.has(index);
@@ -224,6 +287,15 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
 
     try {
       setIsSubmitting(true);
+      // External submit guard if provided
+      if (evaluateSubmit) {
+        const ok = await Promise.resolve(evaluateSubmit(currentData));
+        if (!ok) {
+          setStepErrors(prev => new Map(prev).set(currentStep, 'Submit conditions are not satisfied'));
+          setIsSubmitting(false);
+          return;
+        }
+      }
       await onSubmit();
     } catch (error) {
       console.error('Submit failed:', error);
@@ -236,9 +308,106 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
     const next = !isFullscreen;
-    setIsFullscreen(next);
-    onFullscreenChange?.(next);
+    if (next) {
+      const el: any = paperRef.current;
+      const req = el?.requestFullscreen || el?.webkitRequestFullscreen || el?.msRequestFullscreen;
+      if (typeof req === 'function') {
+        try {
+          req.call(el).then?.(() => {
+            setIsFullscreen(true);
+            onFullscreenChange?.(true);
+          }).catch?.(() => {
+            // Fallback to viewport fullscreen
+            setIsFullscreen(true);
+            onFullscreenChange?.(true);
+          });
+          return;
+        } catch {
+          // Fallback to viewport fullscreen
+        }
+      }
+      // Fallback when Fullscreen API is unavailable
+      setIsFullscreen(true);
+      onFullscreenChange?.(true);
+      onDisplayModeChange?.('fullscreen');
+    } else {
+      // Turn off fullscreen
+      if (document.fullscreenElement) {
+        try { document.exitFullscreen?.(); } catch {}
+      }
+      setIsFullscreen(false);
+      onFullscreenChange?.(false);
+      // fullscreen解除時は、最大化が有効でなければ standard
+      onDisplayModeChange?.(isMaximized ? 'maximized' : 'standard');
+    }
   }, [isFullscreen, onFullscreenChange]);
+
+  // Keep in sync with browser-level fullscreen changes (ESC, OS shortcuts)
+  useEffect(() => {
+    const onFsChange = () => {
+      const active = !!document.fullscreenElement;
+      setIsFullscreen(active);
+      onFullscreenChange?.(active);
+      onDisplayModeChange?.(active ? 'fullscreen' : (isMaximized ? 'maximized' : 'standard'));
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    // Safari legacy events
+    document.addEventListener('webkitfullscreenchange' as any, onFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange' as any, onFsChange);
+    };
+  }, [onFullscreenChange]);
+
+  const toggleMaximize = useCallback(() => {
+    const next = !isMaximized;
+    setIsMaximized(next);
+    onMaximizeChange?.(next);
+    if (!isFullscreen) onDisplayModeChange?.(next ? 'maximized' : 'standard');
+  }, [isMaximized, onMaximizeChange]);
+
+  // Display-mode menu handlers
+  const openModeMenu = useCallback((e: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(e.currentTarget), []);
+  const closeModeMenu = useCallback(() => setModeMenuAnchor(null), []);
+  const selectDisplayMode = useCallback((mode: 'standard' | 'maximized' | 'fullscreen') => {
+    if (mode === 'fullscreen') {
+      if (!isFullscreen) toggleFullscreen();
+      if (isMaximized) toggleMaximize();
+    } else if (mode === 'maximized') {
+      if (isFullscreen) toggleFullscreen();
+      if (!isMaximized) toggleMaximize();
+    } else {
+      if (isFullscreen) toggleFullscreen();
+      if (isMaximized) toggleMaximize();
+    }
+    closeModeMenu();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFullscreen, isMaximized, toggleFullscreen, toggleMaximize]);
+
+  // 制御モード：displayMode prop から内部状態に反映
+  useEffect(() => {
+    if (!displayMode) return;
+    if (displayMode === 'fullscreen') {
+      if (!isFullscreen) toggleFullscreen();
+      if (isMaximized) setIsMaximized(false);
+    } else if (displayMode === 'maximized') {
+      if (isFullscreen) {
+        // 可能なら退出
+        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {}
+        setIsFullscreen(false);
+      }
+      setIsMaximized(true);
+    } else {
+      // standard
+      if (isFullscreen) {
+        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {}
+        setIsFullscreen(false);
+      }
+      setIsMaximized(false);
+    }
+    // 注: ブラウザの Fullscreen API 仕様により、ユーザー操作無しでの requestFullscreen は拒否される場合がある点を許容
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayMode]);
 
   // Validate on mount and step change
   useLayoutEffect(() => {
@@ -265,8 +434,8 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       <Dialog
         open={open}
         onClose={handleClose}
-        maxWidth={isFullscreen ? false : maxWidth}
-        fullWidth={!isFullscreen}
+        maxWidth={isFullscreen ? false : (isMaximized ? false : maxWidth)}
+        fullWidth={!isFullscreen && !isMaximized}
         fullScreen={isFullscreen}
         disableEscapeKeyDown={hasUnsavedChanges}
         // Testing-friendly settings to reduce async focus/transition updates
@@ -277,6 +446,23 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
         TransitionProps={{ timeout: 0 }}
         role="dialog"
         aria-modal="true"
+        slotProps={{
+          paper: {
+            ref: paperRef,
+            sx: isFullscreen
+              ? undefined
+              : (isMaximized
+                ? {
+                    m: 1,
+                    width: 'calc(100vw - 16px * 2)',
+                    height: 'calc(100vh - 16px * 2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    '& .MuiDialogContent-root': { flex: 1, minHeight: 200 },
+                  }
+                : undefined),
+          },
+        }}
       >
         {/* Header */}
         <DialogTitle sx={{ pb: 1 }}>
@@ -294,13 +480,42 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
             </Stack>
 
             <Stack direction="row" spacing={1}>
+              {headerActions}
+              {/* Display mode menu (Standard / Maximize / Fullscreen) */}
+              <IconButton aria-label="Display mode" onClick={openModeMenu} size="small">
+                <OpenInFullIcon />
+              </IconButton>
+              <Menu anchorEl={modeMenuAnchor} open={Boolean(modeMenuAnchor)} onClose={closeModeMenu} keepMounted>
+                <MenuItem selected={!isFullscreen && !isMaximized} onClick={() => selectDisplayMode('standard')}>
+                  <ListItemIcon>
+                    <CloseFullscreenIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>標準サイズ</ListItemText>
+                </MenuItem>
+                <MenuItem selected={!isFullscreen && isMaximized} onClick={() => selectDisplayMode('maximized')}>
+                  <ListItemIcon>
+                    <OpenInFullIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>最大化（ウィンドウ内）</ListItemText>
+                </MenuItem>
+                <MenuItem selected={isFullscreen} onClick={() => selectDisplayMode('fullscreen')}>
+                  <ListItemIcon>
+                    <FullscreenIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>フルスクリーン</ListItemText>
+                </MenuItem>
+              </Menu>
+              {showMaximizeToggle && !isFullscreen && (
+                <IconButton aria-label={isMaximized ? 'Restore size' : 'Maximize'} onClick={toggleMaximize} size="small">
+                  {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
+                </IconButton>
+              )}
               {showFullscreenToggle && (
-                <IconButton onClick={toggleFullscreen} size="small">
+                <IconButton aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={toggleFullscreen} size="small">
                   {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
                 </IconButton>
               )}
-              {headerActions}
-              <IconButton onClick={handleClose} size="small">
+              <IconButton aria-label="Close" onClick={handleClose} size="small">
                 <CloseIcon />
               </IconButton>
             </Stack>
@@ -313,6 +528,8 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
             completedSteps={completedSteps}
             onStepClick={nonLinear ? handleStepClick : undefined}
             nonLinear={nonLinear}
+            currentData={currentData}
+            navigable={evaluated.navigable}
             alternativeLabel={visibleSteps.length > 4}
           />
         </DialogTitle>

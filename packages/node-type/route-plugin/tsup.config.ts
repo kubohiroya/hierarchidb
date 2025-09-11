@@ -9,5 +9,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    // Treat ui-dialog as external optional peer to avoid bundling resolution
+    '@hierarchidb/ui-dialog',
   ],
 });

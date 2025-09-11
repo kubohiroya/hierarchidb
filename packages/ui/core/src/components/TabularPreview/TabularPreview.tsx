@@ -16,7 +16,9 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
-import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-data-grid';
+import { GenericDataGrid } from '@hierarchidb/ui-data-grid';
+import type { GridColumn } from '@hierarchidb/ui-data-grid-types';
+import { CrossViewStyles, useCrossHighlightSync, CrossViewSnackbar, ensureDefaultStyles } from '../../index';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { type ColumnFilter, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
@@ -42,6 +44,15 @@ export function TabularPreview({ pluginId, tableId }: {
     return cols;
   }, [columns]);
 
+  // Cross-view integration: datasetId and common wiring
+  const datasetId = useMemo(() => `${pluginId}:${tableId || 'unknown'}` as const, [pluginId, tableId]);
+  const { rowSets, dataGrid } = useCrossHighlightSync({ datasetId });
+  // Ensure default styles exist for basic hover/select/match visuals
+  useEffect(() => {
+    if (!tableId) return;
+    try { ensureDefaultStyles(datasetId, { includeRow: true, includeMap: true }); } catch {}
+  }, [datasetId, tableId]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -65,6 +76,19 @@ export function TabularPreview({ pluginId, tableId }: {
         const svc = new TabularQueryService(pluginId);
         const data = await svc.query(tableId, filters as ColumnFilter[], 1000);
         if (!cancelled) setRows(data);
+        // Auto-detect row→feature mapping when possible
+        try {
+          const pairs: Array<{ rowId: any; featureIds: any[] }> = [];
+          for (let i = 0; i < Math.min(500, data.length); i++) {
+            const row: any = data[i];
+            const rowId = (row?.id ?? i) as any;
+            const featureIds: any[] = Array.isArray(row?.featureIds)
+              ? row.featureIds
+              : (row?.featureId != null ? [row.featureId] : []);
+            if (featureIds.length > 0) pairs.push({ rowId, featureIds });
+          }
+          if (pairs.length > 0) CrossViewStyles.setMapping(datasetId, pairs);
+        } catch {}
       } catch (e: any) {
         if (!cancelled) setError(e?.message || String(e));
       } finally {
@@ -146,8 +170,18 @@ export function TabularPreview({ pluginId, tableId }: {
           stickyHeader
           hover
           striped
+          // Cross-view synced row state and handlers
+          selectedRows={rowSets.selected}
+          hoveredRows={rowSets.hovered}
+          matchedRows={rowSets.matched.size > 0 ? rowSets.matched : new Set(rows.map((r, i) => (r as any)?.id ?? i))}
+          disabledRows={rowSets.disabled}
+          rowSx={dataGrid.rowSx}
+          onRowHover={dataGrid.onRowHover}
+          onRowLeave={dataGrid.onRowLeave}
         />
       )}
+      {/* Focus detail via Snackbar */}
+      {tableId && <CrossViewSnackbar datasetId={datasetId} />}
     </Box>
   );
 }

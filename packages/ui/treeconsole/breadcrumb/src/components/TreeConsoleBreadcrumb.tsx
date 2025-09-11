@@ -141,6 +141,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
   const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState<string | null>(null);
 
   const [isNavigating, _setIsNavigating] = useState(false);
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const [hoverBlocked, setHoverBlocked] = useState<boolean>(false);
 
   let pathToUse: BreadcrumbNode[] = [];
 
@@ -245,7 +247,51 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       gap: 0.5,
                       fontWeight: 'bold',
                       fontSize: '0.975rem',
+                      outline:
+                        hoverId === nodeId
+                          ? hoverBlocked
+                            ? '2px dashed rgba(211,47,47,0.7)'
+                            : '2px dashed rgba(25,118,210,0.6)'
+                          : 'none',
+                      outlineOffset: '-2px',
+                      cursor: hoverId === nodeId && hoverBlocked ? 'not-allowed' : 'pointer',
                     }}
+                    aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
+                    title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                    onDragOver={(e) => {
+                      if (e.dataTransfer?.types?.includes('text/hdb-node')) {
+                        let blocked = false;
+                        try {
+                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                          if (raw) {
+                            const list = JSON.parse(raw) as string[];
+                            blocked = Array.isArray(list) && list.includes(String(nodeId));
+                          }
+                        } catch {}
+                        setHoverId(String(nodeId));
+                        setHoverBlocked(blocked);
+                        if (!blocked) e.preventDefault();
+                      }
+                    }}
+                    onDrop={(e) => {
+                      try {
+                        const dragged = e.dataTransfer?.getData('text/hdb-node');
+                        let blocked = hoverBlocked;
+                        try {
+                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                          if (raw) {
+                            const list = JSON.parse(raw) as string[];
+                            blocked = Array.isArray(list) && list.includes(String(nodeId));
+                          }
+                        } catch {}
+                        if (dragged && nodeId && dragged !== nodeId && !blocked) {
+                          props.onDropToNode?.(String(nodeId), dragged);
+                        }
+                      } catch {}
+                      setHoverId(null);
+                      setHoverBlocked(false);
+                    }}
+                    onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
                     <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}
@@ -269,7 +315,51 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 0.5,
+                      outline:
+                        hoverId === nodeId
+                          ? hoverBlocked
+                            ? '2px dashed rgba(211,47,47,0.7)'
+                            : '2px dashed rgba(25,118,210,0.6)'
+                          : 'none',
+                      outlineOffset: '-2px',
+                      cursor: hoverId === nodeId && hoverBlocked ? 'not-allowed' : 'pointer',
                     }}
+                    aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
+                    title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                    onDragOver={(e) => {
+                      if (e.dataTransfer?.types?.includes('text/hdb-node')) {
+                        let blocked = false;
+                        try {
+                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                          if (raw) {
+                            const list = JSON.parse(raw) as string[];
+                            blocked = Array.isArray(list) && list.includes(String(nodeId));
+                          }
+                        } catch {}
+                        setHoverId(String(nodeId));
+                        setHoverBlocked(blocked);
+                        if (!blocked) e.preventDefault();
+                      }
+                    }}
+                    onDrop={(e) => {
+                      try {
+                        const dragged = e.dataTransfer?.getData('text/hdb-node');
+                        let blocked = hoverBlocked;
+                        try {
+                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                          if (raw) {
+                            const list = JSON.parse(raw) as string[];
+                            blocked = Array.isArray(list) && list.includes(String(nodeId));
+                          }
+                        } catch {}
+                        if (dragged && nodeId && dragged !== nodeId && !blocked) {
+                          props.onDropToNode?.(String(nodeId), dragged);
+                        }
+                      } catch {}
+                      setHoverId(null);
+                      setHoverBlocked(false);
+                    }}
+                    onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
                     <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}

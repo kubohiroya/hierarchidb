@@ -7,8 +7,8 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
-    "ignore": [
+    "includes": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"],
+    "experimentalScannerIgnores": [
       "node_modules",
       "dist",
       "build",

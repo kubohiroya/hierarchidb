@@ -14,7 +14,6 @@ import { StylerExtension } from './extension/definition';
 // Types exports
 export type {
   StylerEntity,
-  StylerWorkingCopy,
   StylerStyle,
   StylerColorRule,
 } from './entities/StylerEntity';
@@ -121,6 +120,17 @@ export async function initializeStylerPlugin(context: {
       handler: entityHandler,
       dataService,
     });
+
+    // Optionally register folder-dialog extension for evaluator/steps (if host uses folder Extensible dialog)
+    // This is a no-op if the host does not consume folder extensions.
+    try {
+      const { stylerFolderExtension } = await import('./extensions/StylerFolderExtension');
+      // Defer initialization; host may call separately depending on lifecycle.
+      // await stylerFolderExtension.initialize();
+      void stylerFolderExtension; // keep import live without side effects
+    } catch {
+      // ignore (folder extension optional)
+    }
 
     console.log('[Styler] Plugin initialized successfully');
 

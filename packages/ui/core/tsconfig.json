@@ -1,25 +1,8 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "noEmit": false,
-    "outDir": "./dist",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "@hierarchidb/ui-data-grid": [
-        "../data-grid/dist/index.js"
-      ],
-      "@hierarchidb/table-metadata": [
-        "../../feature/table-metadata/dist/index.js"
-      ],
-      "@hierarchidb/tabular-store": [
-        "../../feature/tabular-store/dist/index.js"
-      ]
-    },
+    "noEmit": true,
+    "baseUrl": ".",
     "jsx": "react-jsx",
     "types": [
       "node"
@@ -29,7 +12,12 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@hierarchidb/ui-data-grid-types": [
+        "../data-grid/src/index.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",

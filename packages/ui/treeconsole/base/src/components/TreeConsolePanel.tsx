@@ -13,7 +13,7 @@ import type { TreeTableColumn } from './TreeTable';
 import { RowContextMenu } from './TreeTable';
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-//import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
 import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 // import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -63,6 +63,9 @@ export interface TreeConsolePanelProps {
   readonly canGoForward?: boolean;
   readonly onContextMenuAction: (action: string, node: TreeNodeData) => void;
   readonly onStartTour?: () => void;
+  readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
+  /** Optional: For column-width persistence, provide treeId to scope keys */
+  readonly treeIdForPersistence?: string;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -94,6 +97,15 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       data,
       rowSelection,
       expandedRowIds,
+      startEdit: async (_nodeId: string) => {},
+      finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
+        // delegate to parent handler via context-menu action channel
+        const nodeData: TreeNodeData = field === 'name'
+          ? ({ id: nodeId, name: newValue } as any)
+          : ({ id: nodeId, description: newValue } as any);
+        props.onContextMenuAction(field === 'name' ? 'rename-inline' : 'update-desc-inline', nodeData);
+      },
+      cancelEdit: () => {},
       onNodeClick: (_nodeId: string, node?: TreeNodeInUI) => {
         if (node && props.onNodeClick) {
           // Cast TreeNodeInUI to TreeNodeData for callback
@@ -111,6 +123,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         }
       },
       onNodeExpand: props.onNodeExpand,
+      onMoveNodes: (nodeIds: string[], targetParentId: string) => {
+        props.onMoveNodes?.(nodeIds, targetParentId);
+      },
     };
   }, [
     props.data,
@@ -119,6 +134,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     props.onNodeClick,
     props.onNodeSelect,
     props.onNodeExpand,
+    props.onContextMenuAction,
+    props.onMoveNodes,
   ]);
 
   const handleContextMenu = useCallback((event: React.MouseEvent, node: TreeNodeData) => {
@@ -193,13 +210,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         },
       }}
     >
-      {/* Breadcrumb Navigation
+      {/* Breadcrumb Navigation with drop-to-parent support */}
       <TreeConsoleBreadcrumb
         nodePath={[...props.breadcrumbItems]}
         onNodeClick={props.onBreadcrumbNavigate}
         variant="default"
+        onDropToNode={(targetId, draggedId) => props.onMoveNodes?.([draggedId], targetId)}
       />
-*/}
       {/* Toolbar
       <TreeTableToolbar
         title={props.title}
@@ -243,6 +260,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           hideDragHandler={false}
           rowClickAction="Select"
           selectionMode="multiple"
+          persistenceKey={props.treeIdForPersistence ? `hdb:treetable:colwidths:v1:${props.treeIdForPersistence}:${props.rootNodeId || 'root'}` : `hdb:treetable:colwidths:v1:unknown:${props.rootNodeId || 'root'}`}
           onRowContextMenu={(node: TreeNodeInUI, event: React.MouseEvent) => {
             // Cast TreeNodeInUI to TreeNodeData for callback  
             const nodeData: TreeNodeData = {

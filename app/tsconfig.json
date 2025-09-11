@@ -9,9 +9,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "~/*": ["src/*"],
+      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/src/worker/index.ts"],
+      "@hierarchidb/project-plugin/worker": ["../packages/node-type/project-plugin/src/worker/index.ts"]
     },
     "composite": false,
     "incremental": false,

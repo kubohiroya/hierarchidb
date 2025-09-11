@@ -16,5 +16,10 @@ export default createTsupConfig({
     '@emotion/styled',
     // runtime peers
     'dexie',
+    // Optional node-type plugins loaded dynamically; keep external to avoid bundle-time resolution
+    '@hierarchidb/shape-plugin',
+    '@hierarchidb/spreadsheet-plugin',
+    '@hierarchidb/basemap-plugin',
+    '@hierarchidb/styler-plugin',
   ],
 });

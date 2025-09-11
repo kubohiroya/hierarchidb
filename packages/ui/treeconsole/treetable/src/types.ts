@@ -38,13 +38,15 @@ export interface TreeTableController {
 
   // Editing
   startEdit?: (nodeId: string) => void;
-  finishEdit?: (nodeId: string, newName: string) => void;
+  finishEdit?: (nodeId: string, newValue: string, field?: 'name' | 'description') => void;
   cancelEdit?: () => void;
 
   // Context menu actions
   onCreate?: (parentId: string, type: string) => void;
   onDuplicate?: (nodeId: string) => void;
   onRemove?: (nodeIds: string[]) => void;
+  // Move nodes to a new parent
+  onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
 }
 
 // TreeTable core props
@@ -107,6 +109,12 @@ export interface TreeTableCoreProps {
   enableDragDropEnhancements?: boolean;
   enableSearchHighlight?: boolean;
   enableWorkingCopyIntegration?: boolean;
+
+  /**
+   * Persistence key for saving UI state (e.g., column widths) per tree/view.
+   * If omitted, a global default key is used.
+   */
+  persistenceKey?: string;
 
   /**
    * Callbacks

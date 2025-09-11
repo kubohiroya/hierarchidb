@@ -42,6 +42,7 @@
       "@hierarchidb/auth-recovery": ["./packages/feature/auth-recovery/src/index.ts"],
       "@hierarchidb/table-metadata": ["./packages/feature/table-metadata/src/index.ts"],
       "@hierarchidb/ui-data-grid": ["./packages/ui/data-grid/src/index.ts"],
+      "@hierarchidb/ui-date": ["./packages/ui/date/src/index.ts"],
       "@hierarchidb/tabular-store": ["./packages/feature/tabular-store/src/index.ts"]
     }
   },

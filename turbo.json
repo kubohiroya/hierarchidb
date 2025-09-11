@@ -43,6 +43,22 @@
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
       "env": ["NODE_ENV"]
     },
+    "@hierarchidb/ui-treeconsole-base#build": {
+      "dependsOn": [
+        "@hierarchidb/ui-core#build",
+        "@hierarchidb/ui-treeconsole-treetable#build"
+      ]
+    },
+    "@hierarchidb/basemap-plugin#build": {
+      "dependsOn": [
+        "@hierarchidb/runtime-worker#build"
+      ]
+    },
+    "@hierarchidb/resolver-plugin#build": {
+      "dependsOn": [
+        "@hierarchidb/ui-dialog#build"
+      ]
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
@@ -84,6 +100,21 @@
       "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
     },
     "clean": {
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$"]
+    },
+    "@hierarchidb/runtime-ui-tour#typecheck": {
+      "dependsOn": [
+        "@hierarchidb/ui-tour#build"
+      ],
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$"]
+    },
+    "@hierarchidb/ui-treeconsole-base#typecheck": {
+      "dependsOn": [
+        "@hierarchidb/ui-core#build",
+        "@hierarchidb/ui-treeconsole-treetable#build"
+      ],
       "outputs": [],
       "inputs": ["$TURBO_DEFAULT$"]
     }

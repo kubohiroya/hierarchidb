@@ -27,18 +27,25 @@ import {
   Terrain as TerrainIcon,
 } from '@mui/icons-material';
 import { MapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
+import { useCrossHighlightSync, useMapLibreFeatureState, ensureDefaultStyles } from '@hierarchidb/ui-core';
 import type { BoundingBox, ProjectEntity, ProjectRegion } from '~/types/project-types';
 
 interface RegionConfigStepProps {
   data: Partial<ProjectEntity>;
   onComplete: (data: Partial<ProjectEntity>) => void;
+  datasetId?: string;
 }
 
 export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
-                                                                    data,
-                                                                    onComplete: _onComplete,
-                                                                  }) => {
+  data,
+  onComplete: _onComplete,
+  datasetId,
+}) => {
   const map = useRef<MapLibreMapInstance | null>(null);
+  const unbindRef = useRef<null | (() => void)>(null);
+  const dsId = datasetId || 'project:region';
+  const { bindMapLibre } = useCrossHighlightSync({ datasetId: dsId, withDeckAccessors: false });
+  useMapLibreFeatureState({ datasetId: dsId, map: map.current as any, sourceId: 'bbox-source', throttleMs: 16 });
 
   const [formData, setFormData] = useState<ProjectRegion>({
     coverage: data.coverage || {
@@ -80,6 +87,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
     if (map.current && formData.coverage.type === 'bbox' && formData.coverage.bbox) {
       drawBoundingBox(formData.coverage.bbox);
     }
+    return () => { try { unbindRef.current?.(); } catch {} };
   }, [map.current]);
 
   const getMapStyle = (baseMap: string) => {
@@ -118,6 +126,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
       type: 'geojson',
       data: {
         type: 'Feature',
+        id: 'bbox-coverage',
         geometry: {
           type: 'Polygon',
           coordinates: [coordinates],
@@ -131,7 +140,12 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
       type: 'fill',
       source: 'bbox-source',
       paint: {
-        'fill-color': '#088',
+        'fill-color': [
+          'case',
+          ['to-boolean', ['feature-state', 'selected']], '#1976d2',
+          ['to-boolean', ['feature-state', 'hovered']], '#64b5f6',
+          '#088'
+        ],
         'fill-opacity': 0.3,
       },
     });
@@ -141,8 +155,18 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
       type: 'line',
       source: 'bbox-source',
       paint: {
-        'line-color': '#088',
-        'line-width': 2,
+        'line-color': [
+          'case',
+          ['to-boolean', ['feature-state', 'selected']], '#0d47a1',
+          ['to-boolean', ['feature-state', 'hovered']], '#1976d2',
+          '#088'
+        ],
+        'line-width': [
+          'case',
+          ['to-boolean', ['feature-state', 'selected']], 3,
+          ['to-boolean', ['feature-state', 'hovered']], 2.5,
+          2
+        ],
       },
     });
 
@@ -154,6 +178,13 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
       ],
       { padding: 50 },
     );
+
+    // Ensure default styles and bind events for cross-highlighting
+    try { ensureDefaultStyles(dsId, { includeRow: false, includeMap: true }); } catch {}
+    try {
+      unbindRef.current?.();
+      unbindRef.current = bindMapLibre(map.current, 'bbox-source', ['bbox-layer','bbox-outline'], { selectOnClick: true });
+    } catch {}
   };
 
   const handleCoverageTypeChange = (type: 'bbox' | 'polygon' | 'administrative' | 'custom') => {

@@ -42,6 +42,7 @@
     "@hierarchidb/base-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/util": "workspace:*"

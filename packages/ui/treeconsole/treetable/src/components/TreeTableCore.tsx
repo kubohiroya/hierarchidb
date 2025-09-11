@@ -7,7 +7,7 @@
  * Phase 5:
   */
 
-import { MouseEvent, useMemo, useRef, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -97,10 +97,10 @@ const StyledTableHead = styled(TableHead)`
 
 const ResizeHandle = styled('div')`
   position: absolute;
-  right: -3px;
+  right: -5px;
   top: 0;
   bottom: 0;
-  width: 6px;
+  width: 10px;
   cursor: col-resize;
   z-index: 10;
   user-select: none;
@@ -128,6 +128,7 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
     padding: 8px 12px;
     border-right: 1px solid ${({ theme }) => theme.palette.divider};
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
+    transition: outline-color 120ms ease, background-color 120ms ease;
 
     &:last-child {
       border-right: none;
@@ -165,13 +166,16 @@ export function TreeTableCore({
                                 onRowClick,
                                 onRowDoubleClick,
                                 onRowContextMenu,
+                                persistenceKey,
                               }: TreeTableCoreProps) {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
   // State
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<'name' | 'description' | null>(null);
   const [editingValue, setEditingValue] = useState('');
+  const [editingError, setEditingError] = useState<string | null>(null);
   const [contextMenuState, setContextMenuState] = useState<{
     anchorEl: HTMLElement | null;
     node: TreeNode | null;
@@ -185,6 +189,70 @@ export function TreeTableCore({
     updatedAt: 150,
   });
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [hoverDropTargetId, setHoverDropTargetId] = useState<string | null>(null);
+  const [forbiddenTargets, setForbiddenTargets] = useState<Set<string>>(new Set());
+
+  // Simple inline validator for name/description
+  const validateInline = useCallback((field: 'name' | 'description', value: string): { ok: boolean; message?: string } => {
+    const v = (value ?? '').trim();
+    if (field === 'name') {
+      if (!v) return { ok: false, message: 'Name is required' };
+      if (v.length > 120) return { ok: false, message: 'Name is too long' };
+    } else {
+      if (v.length > 2000) return { ok: false, message: 'Description is too long' };
+    }
+    return { ok: true };
+  }, []);
+
+  // Persist/restore column widths per view (treeId/rootId/persistenceKey)
+  const storageKey = useMemo(() => {
+    const rootId = (controller as any)?.rootNodeId || '';
+    const treeId = (controller as any)?.treeId || '';
+    const key = persistenceKey || `${treeId}:${rootId}` || 'default';
+    return `hdb:treetable:colwidths:v1:${key}`;
+  }, [controller, persistenceKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+        // legacy keys fallback
+        || localStorage.getItem(`TreeTableCore.columnWidths:tree:${(controller as any)?.rootNodeId || ''}`)
+        || localStorage.getItem(`TreeTableCore.columnWidths:${(controller as any)?.rootNodeId || ''}`);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && typeof saved === 'object') {
+          setColumnWidths((prev) => ({ ...prev, ...saved }));
+        }
+      }
+    } catch {}
+  }, [storageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(columnWidths));
+    } catch {}
+  }, [columnWidths, storageKey]);
+
+  // Helper: compute descendants including self
+  const getDescendants = useCallback((nodeId: string): Set<string> => {
+    const descendants = new Set<string>();
+    const stack = [nodeId];
+    const byParent = new Map<string, string[]>();
+    (controller?.data || []).forEach((n) => {
+      if (!n?.parentId || !n?.id) return;
+      const arr = byParent.get(n.parentId) || [];
+      arr.push(n.id);
+      byParent.set(n.parentId, arr);
+    });
+    while (stack.length > 0) {
+      const cur = stack.pop()!;
+      if (descendants.has(cur)) continue;
+      descendants.add(cur);
+      const children = byParent.get(cur) || [];
+      for (const c of children) stack.push(c);
+    }
+    return descendants;
+  }, [controller]);
 
   // Get data from controller
   const rawData = controller?.data || [];
@@ -309,25 +377,35 @@ export function TreeTableCore({
               <IconComponent nodeType={node.nodeType || 'folder'} size="small" />
 
               {/* Node name (editable) */}
-              {isEditing ? (
+              {isEditing && editingField === 'name' ? (
                 <TextField
                   size="small"
                   value={editingValue}
-                  onChange={(e) => setEditingValue(e.target.value)}
+                  onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
                   onBlur={() => {
-                    controller?.finishEdit?.(node.id, editingValue);
-                    setEditingNodeId(null);
+                    const next = editingValue.trim();
+                    if (next === node.name) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                    const vr = validateInline('name', next);
+                    if (!vr.ok) { setEditingError(vr.message || 'Invalid name'); return; }
+                    controller?.finishEdit?.(node.id, next, 'name');
+                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      controller?.finishEdit?.(node.id, editingValue);
-                      setEditingNodeId(null);
+                      const next = editingValue.trim();
+                      if (next === node.name) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                      const vr = validateInline('name', next);
+                      if (!vr.ok) { setEditingError(vr.message || 'Invalid name'); return; }
+                      controller?.finishEdit?.(node.id, next, 'name');
+                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
                     } else if (e.key === 'Escape') {
                       controller?.cancelEdit?.();
-                      setEditingNodeId(null);
+                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
                     }
                   }}
                   autoFocus
+                  error={!!editingError}
+                  helperText={editingError || ' '}
                   sx={{ flex: 1 }}
                 />
               ) : (
@@ -340,7 +418,7 @@ export function TreeTableCore({
                   onClick={(e) => {
                     e.stopPropagation();
                     if (rowClickAction === 'Edit') {
-                      handleStartEdit(node);
+                      handleStartEdit(node, 'name');
                     } else if (rowClickAction === 'Navigate') {
                       controller?.onNodeClick?.(node.id, node);
                     }
@@ -358,7 +436,55 @@ export function TreeTableCore({
         header: 'Description',
         size: columnWidths.description,
         enableSorting: true,
-        cell: ({ row }) => row.original.description || '-',
+        cell: ({ row }) => {
+          const node: any = row.original;
+          const isEditingDesc = editingNodeId === node.id && editingField === 'description';
+          if (isEditingDesc) {
+            return (
+              <TextField
+                size="small"
+                fullWidth
+                value={editingValue}
+                onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
+                onBlur={() => {
+                  const next = editingValue.trim();
+                  if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                  const vr = validateInline('description', next);
+                  if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
+                  controller?.finishEdit?.(node.id, next, 'description');
+                  setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const next = editingValue.trim();
+                    if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                    const vr = validateInline('description', next);
+                    if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
+                    controller?.finishEdit?.(node.id, next, 'description');
+                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                  } else if (e.key === 'Escape') {
+                    controller?.cancelEdit?.();
+                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                  }
+                }}
+                error={!!editingError}
+                helperText={editingError || ' '}
+                autoFocus
+              />
+            );
+          }
+          return (
+            <Box
+              sx={{ cursor: rowClickAction === 'Edit' ? 'text' : 'default' }}
+              onDoubleClick={() => handleStartEdit(node as any, 'description')}
+              onClick={() => {
+                if (rowClickAction === 'Edit') handleStartEdit(node as any, 'description');
+              }}
+            >
+              {node.description || '-'}
+            </Box>
+          );
+        },
       },
       {
         id: 'createdAt',
@@ -438,9 +564,11 @@ export function TreeTableCore({
   });
 
   // Event handlers
-  const handleStartEdit = (node: TreeNode) => {
+  const handleStartEdit = (node: TreeNode, field: 'name' | 'description' = 'name') => {
     setEditingNodeId(node.id);
-    setEditingValue(node.name);
+    setEditingField(field);
+    const initial = field === 'name' ? node.name : ((node as any).description || '');
+    setEditingValue(initial);
     controller?.startEdit?.(node.id);
   };
 
@@ -490,24 +618,35 @@ export function TreeTableCore({
   };
 
   // Column resize implementation
-  const resizeRef = useRef<{ startX: number; startWidth: number }>({ startX: 0, startWidth: 0 });
+  const resizeRef = useRef<{
+    startX: number;
+    leftStart: number;
+    rightStart: number;
+    leftId: string;
+    rightId: string;
+  }>({ startX: 0, leftStart: 0, rightStart: 0, leftId: '', rightId: '' });
 
-  const handleResizeStart = (columnId: string, e: React.MouseEvent) => {
+  const handleResizeStart = (leftColumnId: string, rightColumnId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     const startX = e.clientX;
-    const startWidth = columnWidths[columnId] || 100;
-    resizeRef.current = { startX, startWidth };
-    setResizingColumn(columnId);
+    const leftStart = columnWidths[leftColumnId] || 100;
+    const rightStart = columnWidths[rightColumnId] || 100;
+    resizeRef.current = { startX, leftStart, rightStart, leftId: leftColumnId, rightId: rightColumnId };
+    setResizingColumn(leftColumnId);
 
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       const deltaX = e.clientX - startX;
-      const newWidth = Math.max(50, startWidth + deltaX);
-      setColumnWidths((prev) => ({
-        ...prev,
-        [columnId]: newWidth,
-      }));
+      const MIN = 50;
+      const { leftStart, rightStart, leftId, rightId } = resizeRef.current;
+      // Clamp delta so neither side goes below MIN
+      const maxPositive = rightStart - MIN; // moving handle right: left grows, right shrinks
+      const maxNegative = leftStart - MIN;  // moving handle left: left shrinks, right grows
+      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
+      const leftNew = Math.max(MIN, leftStart + clamped);
+      const rightNew = Math.max(MIN, rightStart - clamped);
+      setColumnWidths((prev) => ({ ...prev, [leftId]: leftNew, [rightId]: rightNew }));
     };
 
     const handleMouseUp = () => {
@@ -566,7 +705,15 @@ export function TreeTableCore({
                         {!isSelectionColumn && header.column.id !== 'updatedAt' && (
                           <ResizeHandle
                             className={resizingColumn === header.column.id ? 'resizing' : ''}
-                            onMouseDown={(e) => handleResizeStart(header.column.id, e)}
+                            onMouseDown={(e) => {
+                              // Determine the immediate right neighbor column id within this header group
+                              const headers = headerGroup.headers;
+                              const idx = headers.findIndex((h) => h.id === header.id);
+                              const rightNeighbor = headers[idx + 1];
+                              const rightId = rightNeighbor?.column.id;
+                              if (!rightId) return; // safety: shouldn't happen because last column has no handle
+                              handleResizeStart(header.column.id, rightId, e);
+                            }}
                           />
                         )}
                       </>
@@ -583,14 +730,64 @@ export function TreeTableCore({
             const node = row.original;
             const isSelected = rowSelection[node.id] || false;
 
+            const isBlockedTarget = forbiddenTargets.has(row.original.id);
             return (
               <StyledTableRow
                 key={row.id}
                 selected={isSelected}
+                draggable
+                onDragStart={(e) => {
+                  try {
+                    const src = row.original.id;
+                    e.dataTransfer?.setData('text/hdb-node', src);
+                    const forb = getDescendants(src);
+                    setForbiddenTargets(forb);
+                    try {
+                      e.dataTransfer?.setData('application/hdb-node-descendants', JSON.stringify(Array.from(forb)));
+                    } catch {}
+                  } catch {}
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer?.types?.includes('text/hdb-node')) {
+                    const targetId = row.original.id;
+                    const blocked = forbiddenTargets.has(targetId);
+                    if (!blocked) e.preventDefault();
+                    try { setHoverDropTargetId(targetId); } catch {}
+                  }
+                }}
+                onDrop={(e) => {
+                  try {
+                    const sourceId = e.dataTransfer?.getData('text/hdb-node');
+                    const targetId = row.original.id;
+                    if (!sourceId || !targetId || sourceId === targetId) return;
+                    if (forbiddenTargets.has(targetId)) return;
+                    controller?.onMoveNodes?.([sourceId], targetId);
+                  } catch {}
+                  try {
+                    setHoverDropTargetId(null);
+                    setForbiddenTargets(new Set());
+                  } catch {}
+                }}
+                onDragEnd={() => { try { setHoverDropTargetId(null); setForbiddenTargets(new Set()); } catch {} }}
+                onDragLeave={() => { try { setHoverDropTargetId((id) => (id === row.original.id ? null : id)); } catch {} }}
                 onClick={(e) => handleRowClick(node, e)}
                 onDoubleClick={(e) => handleRowDoubleClick(node, e)}
                 onContextMenu={(e) => handleRowContextMenu(node, e)}
-                sx={{ cursor: 'pointer' }}
+                sx={{
+                  cursor:
+                    hoverDropTargetId === row.original.id && isBlockedTarget
+                      ? 'not-allowed'
+                      : 'pointer',
+                  outline:
+                    hoverDropTargetId === row.original.id
+                      ? isBlockedTarget
+                        ? '2px dashed rgba(211,47,47,0.7)'
+                        : '2px dashed rgba(25,118,210,0.6)'
+                      : 'none',
+                  outlineOffset: '-2px',
+                }}
+                aria-disabled={hoverDropTargetId === row.original.id && isBlockedTarget ? true : undefined}
+                title={hoverDropTargetId === row.original.id && isBlockedTarget ? '子孫に移動することはできません' : undefined}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell

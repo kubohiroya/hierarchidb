@@ -18,6 +18,8 @@ export interface PeerEntity<TData = unknown> {
   // Domain data only; UI-facing fields (name/description) live in TreeNode
   data?: TData;
   updatedAt?: number;
+  // UI presentation mode for dialogs/panels associated with this node
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
 }
 
 export interface PeerStore<TData = unknown> {

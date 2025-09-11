@@ -33,6 +33,7 @@ import {
   Clear as RemoveIcon,
   ContentCopy as ContentCopyIcon,
   ContentPaste as ContentPasteIcon,
+  ContentCut as ContentCutIcon,
   Delete as TrashIcon,
   Edit,
   FileCopy as DuplicateIcon,
@@ -208,8 +209,11 @@ function TreeConsoleToolbarContent({
         </Button>
       </ButtonGroup>
 
-      {/* Copy/Paste Group */}
+      {/* Cut/Copy/Paste Group */}
       <ButtonGroup size="small">
+        <Button title="Cut (⌘+X)" disabled={!canCopy} onClick={() => handleAction('cut')}>
+          <ContentCutIcon fontSize="small" />
+        </Button>
         <Button title="Copy (⌘+C)" disabled={!canCopy} onClick={() => handleAction('copy')}>
           <ContentCopyIcon fontSize="small" />
         </Button>

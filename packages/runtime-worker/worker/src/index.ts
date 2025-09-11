@@ -35,6 +35,9 @@ export class WorkerService implements WorkerAPI {
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
       await bootstrapFeatures();
 
+      // Plugin-side Dexie peer stores are expected to self-register where applicable.
+      // We avoid forcing worker-bundle imports here to keep bundles lean and prevent divergence.
+
       // Enable import/export capability for all node types by default
       enableAllImporters();
       enableAllExporters();
