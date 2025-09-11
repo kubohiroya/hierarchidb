@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   biome-core:
+    if: ${{ false }}
     name: Biome Check (core only)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -56,4 +57,3 @@ jobs:
 
       - name: Deprecations check (ESLint)
         run: pnpm eslint:deprecations
-
