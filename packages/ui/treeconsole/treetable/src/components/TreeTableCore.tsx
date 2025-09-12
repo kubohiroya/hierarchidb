@@ -81,6 +81,8 @@ const StyledTableHead = styled(TableHead)`
   /* Keep above rows but below toolbars/menus */
   z-index: 1;
   background: ${({ theme }) => theme.palette.background.paper};
+  /* Add a top border line for clear separation from elements above */
+  border-top: 1px solid ${({ theme }) => theme.palette.divider};
 
   & .MuiTableCell-root {
     font-weight: 600;

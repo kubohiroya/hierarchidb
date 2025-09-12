@@ -167,7 +167,8 @@
       "type-fest": "0.21.3",
       "type-fest@*": "0.21.3",
       "i18next": "22.5.0",
-      "react-i18next": "12.3.1"
+      "react-i18next": "12.3.1",
+      "@mui/icons-material": "7.3.1"
     }
   },
   "keywords": [

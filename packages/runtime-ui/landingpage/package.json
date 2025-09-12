@@ -13,7 +13,7 @@
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
-    "@mui/icons-material": "^7.0.0",
+    "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.0.0",
     "react": ">=18.0.0",
     "react-router": "^7.0.0"
@@ -24,7 +24,7 @@
     "tsc-alias": "^1.8.16",
     "react": ">=18.0.0",
     "@mui/material": "^7.0.0",
-    "@mui/icons-material": "^7.0.0"
+    "@mui/icons-material": "^7.3.1"
   },
   "dependencies": {},
   "license": "MIT",

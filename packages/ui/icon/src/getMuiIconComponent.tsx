@@ -21,7 +21,7 @@ export function toPascalCase(name?: string): string {
   return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join('');
 }
 
-function IconByName({ name }: { name: string }) {
+function IconByName({ name, emoji }: { name: string; emoji?: string }) {
   const LazyIcon = React.useMemo(
     () =>
       React.lazy(async () => {
@@ -32,24 +32,33 @@ function IconByName({ name }: { name: string }) {
           const C = (mod as any).default || (mod as any)[name];
           return { default: (C as React.ComponentType) ?? AddIcon };
         } catch {
+          // If MUI icon not found or failed to load, prefer emoji fallback when provided
+          if (emoji) {
+            const Fallback = () => <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
+            return { default: Fallback as unknown as React.ComponentType };
+          }
           return { default: AddIcon };
         }
       }),
-    [name],
+    [name, emoji],
   );
 
+  const Fallback = emoji ? <span style={{ fontSize: '1.5rem' }}>{emoji}</span> : <AddIcon />;
   return (
-    <Suspense fallback={<AddIcon />}>
+    <Suspense fallback={Fallback}>
       <LazyIcon />
     </Suspense>
   );
 }
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {
-  if (emoji) return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
+  // Primary: MUI icon by name (if provided)
   const pascal = toPascalCase(muiIconName);
-  if (!pascal) return <AddIcon />;
-  return <IconByName name={pascal} />;
+  if (pascal) return <IconByName name={pascal} emoji={emoji} />;
+  // Secondary: emoji fallback when no valid MUI name given
+  if (emoji) return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
+  // Final fallback
+  return <AddIcon />;
 }
 
 // Simple prefetch cache to avoid duplicate dynamic imports

@@ -107,6 +107,22 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   // Display mode: keep volatile here (UI layer is responsible for persistence)
   const [displayMode, setDisplayModeState] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
 
+  // Load MultiStepDialog dynamically to avoid static linkage
+  useEffect(() => {
+    (async () => {
+      try {
+        const M = '@hierarchidb/ui-dialog' as string;
+        const mod = await import(/* @vite-ignore */ M);
+        MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
+      } catch {}
+    })();
+  }, []);
+
+  // Cleanup draft on unmount (best-effort)
+  useEffect(() => {
+    return () => { void (async () => { try { await discard(); } catch {} })(); };
+  }, [discard]);
+
   return (
     <MultiStepDialog
       open={open}
@@ -139,18 +155,3 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     />
   );
 };
-  // Load MultiStepDialog dynamically to avoid static linkage
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const M = '@hierarchidb/ui-dialog' as string;
-        const mod = await import(/* @vite-ignore */ M);
-        MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
-      } catch {}
-    })();
-  }, []);
-
-  // Cleanup draft on unmount (best-effort)
-  React.useEffect(() => {
-    return () => { void (async () => { try { await discard(); } catch {} })(); };
-  }, [discard]);

@@ -47,7 +47,7 @@
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^6.0.0",
+    "@mui/icons-material": "^7.3.1",
     "@mui/material": "^6.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -56,7 +56,7 @@
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@mui/icons-material": "^6.0.0",
+    "@mui/icons-material": "^7.3.1",
     "@mui/material": "^6.0.0",
     "@types/node": "^20.10.5",
     "react": "^18.2.0",
@@ -68,7 +68,7 @@
     "plugin": {
       "nodeType": "route",
       "name": "Route Plugin",
-      "icon": { "mui": "Route", "emoji": "🛣️", "color": "#a3b030" }
+      "icon": { "mui": "Route", "emoji": "〰️", "color": "#a3b030" }
     }
   },
   "tsup": {

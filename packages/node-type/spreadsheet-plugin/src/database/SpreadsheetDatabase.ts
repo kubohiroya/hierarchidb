@@ -569,15 +569,9 @@ export class SpreadsheetDatabase extends Dexie {
 
         await this.spreadsheetRows.where('createdAt').below(cutoffTime).delete();
 
-        // 【期限切れワーキングコピー削除】: 古いワーキングコピーを削除
-        const oldWorkingCopies = await this.workingCopies
-          .where('copiedAt')
-          .below(cutoffTime)
-          .toArray();
-
-        deletedWorkingCopies = oldWorkingCopies.length;
-
-        await this.workingCopies.where('copiedAt').below(cutoffTime).delete();
+        // 【期限切れワーキングコピー削除】: 標準フローでは PeerStore に統合済みのため該当なし
+        // （将来ローカルWCテーブルを復活させる場合に備えてプレースホルダのみ残す）
+        deletedWorkingCopies = 0;
       },
     );
 
