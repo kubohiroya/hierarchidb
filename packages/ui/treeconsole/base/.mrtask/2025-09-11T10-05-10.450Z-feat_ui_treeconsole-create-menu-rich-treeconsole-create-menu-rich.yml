@@ -1,0 +1,20 @@
+id: 2025-09-11T10-05-10.450Z-feat_ui_treeconsole-create-menu-rich-treeconsole-create-menu-rich
+createdAt: 2025-09-11T10:05:10.813Z
+branch: feat/ui/treeconsole-create-menu-rich
+title: treeconsole create menu rich
+description: "TreeConsole:
+  Createメニューをプラグイン定義ベースでリッチ表示＋作成実行に接続。行/パンくずD&D移動、ツールバー操作配線、局所カラムリサイズを含む。"
+status: open
+primaryDir: packages/ui/treeconsole/base
+workDirs:
+  - packages/ui/treeconsole/base
+  - packages/ui/treeconsole/treetable
+  - packages/ui/treeconsole/breadcrumb
+  - packages/ui/treeconsole/toolbar
+  - packages/ui/core
+  - app/src/components
+  - app/src/hooks
+tags: []
+checklist: []
+relatedPRs: []
+assignees: []

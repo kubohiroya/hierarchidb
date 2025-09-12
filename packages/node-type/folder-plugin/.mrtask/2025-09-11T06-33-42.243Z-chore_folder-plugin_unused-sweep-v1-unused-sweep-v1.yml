@@ -1,0 +1,13 @@
+id: 2025-09-11T06-33-42.243Z-chore_folder-plugin_unused-sweep-v1-unused-sweep-v1
+createdAt: 2025-09-11T06:33:42.624Z
+branch: chore/folder-plugin/unused-sweep-v1
+title: unused sweep v1
+description: Folder plugin の未使用コード/型/テストを棚卸しし、役割を明確化の上で不要物を削除（ドキュメント整合含む）
+status: open
+primaryDir: packages/node-type/folder-plugin
+workDirs:
+  - packages/node-type/folder-plugin
+tags: []
+checklist: []
+relatedPRs: []
+assignees: []
