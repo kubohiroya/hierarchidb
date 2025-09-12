@@ -39,6 +39,9 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   flex: 1;
   white-space: nowrap;
 
+  /* Dark theme background */
+  background-color: ${props => (props.theme?.palette?.mode === 'dark' ? '#181818' : 'transparent')};
+
   /* Custom scrollbar styling for horizontal scroll */
 
   &::-webkit-scrollbar {

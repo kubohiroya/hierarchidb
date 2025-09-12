@@ -398,7 +398,7 @@ packages/ui-treeconsole/src/features/tree-table/
 - `TreeTableConsolePanel.tsx` (main panel)
 - `TreeConsoleHeader.tsx`
 - `TreeConsoleBreadcrumb.tsx`
-- `TreeConsoleToolbar.tsx`
+- `TreeConsoleToolbar_Deprecated.tsx`
 - `TreeConsoleContent.tsx`
 - `TreeConsoleFooter.tsx`
 - `TreeConsoleActions.tsx`

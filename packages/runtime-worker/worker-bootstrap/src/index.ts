@@ -22,6 +22,7 @@ export type { WorkerClientHook } from './ui/workerClientHook';
 
 // Wiring utilities (plugin capability bootstrap)
 export { wirePluginsFromModules } from './wiring/wirePlugins';
+export { getRuntimeExports, getAllRuntimeExports, registerRuntimeExports } from './wiring/runtime-export-registry';
 
 
 // Re-export types for convenience

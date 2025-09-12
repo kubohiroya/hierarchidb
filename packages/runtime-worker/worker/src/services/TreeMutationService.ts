@@ -248,7 +248,7 @@ export class TreeMutationService implements TreeMutationAPI {
     }
     //  Register sourcetarget mapping for lifecycle
     try {
-      const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
       (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
     } catch {
     }
@@ -354,7 +354,7 @@ export class TreeMutationService implements TreeMutationAPI {
       }
 
       if (toCreate.length === 1) {
-        await this.coreDB.createNode?.(toCreate[0]);
+        await this.coreDB.createNode?.(toCreate[0]!);
       } else if (toCreate.length > 1) {
         const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
         for (let i = 0; i < toCreate.length; i += size) {

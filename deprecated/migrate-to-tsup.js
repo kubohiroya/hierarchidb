@@ -54,7 +54,7 @@ export default defineConfig({
   treeshake: true,
   outDir: 'dist',
   external: [
-    ${isReactPackage ? "'react',\n    'react-dom',\n    '@mui/material',\n    '@mui/icons-material',\n    '@emotion/react',\n    '@emotion/styled'," : ''}
+    ${isReactPackage ? "'react',\n    'react-dom',\n    '@mui/material',\n    '@mui/icon-material',\n    '@emotion/react',\n    '@emotion/styled'," : ''}
     'dexie',
     'comlink',
     'rxjs',

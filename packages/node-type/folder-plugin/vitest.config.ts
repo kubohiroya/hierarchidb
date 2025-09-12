@@ -21,7 +21,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
-      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/dist/index.js'),
+      // Use source during tests to avoid requiring a prebuild
+      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
     },

@@ -1,7 +1,11 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true,
+    "composite": true,
+    "incremental": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist-types",
     "baseUrl": ".",
     "jsx": "react-jsx",
     "types": [
@@ -12,12 +16,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "skipLibCheck": true,
-    "paths": {
-      "@hierarchidb/ui-data-grid-types": [
-        "../data-grid/src/index.ts"
-      ]
-    }
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

@@ -4,6 +4,7 @@ export default createTsupConfig({
   entry: {
     index: 'src/index.ts',
     'ui/index': 'src/ui/index.ts',
+    'worker/index': 'src/worker/index.ts',
   },
   external: [
     'provider',

@@ -6,7 +6,7 @@
     "noEmit": true,
     "incremental": true,
     "composite": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {

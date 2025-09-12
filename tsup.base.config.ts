@@ -17,6 +17,8 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     'dexie',
     'react-i18next',
     'i18next',
+    '@hierarchidb/ui-core',
+    '@hierarchidb/ui-icon',
   ];
 
   const mergedExternal = Array.from(
@@ -39,6 +41,9 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
         composite: false,
         incremental: false,
         tsBuildInfoFile: undefined,
+        // Force Node-style resolution for TS 4.9 during dts bundling
+        moduleResolution: 'node',
+        resolveJsonModule: true,
       },
     },
 

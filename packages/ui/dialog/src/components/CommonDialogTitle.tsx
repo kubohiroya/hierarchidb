@@ -9,7 +9,7 @@ import {
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
-// Use existing icons available in our dev/peer range to avoid subpath type issues
+// Use existing icon available in our dev/peer range to avoid subpath type issues
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 
 export interface CommonDialogTitleProps {

@@ -63,18 +63,18 @@ if (typeof window !== 'undefined') {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
 
-  // Opportunistically warm-load menu builders only in non-dev to avoid spurious TS parse noise in dev toolchain
+  // Warm-load menu builders in all modes so DynamicSpeedDial can build items
   try {
-    if (!(import.meta as any)?.env?.DEV) {
-      import('./plugins/menu-builders')
-        .then((mod) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).__HDB_MENU_BUILDERS__ = mod;
-        })
-        .catch((err) => {
-          console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
-        });
-    }
+    import('./plugins/menu-builders')
+      .then(async (mod) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__HDB_MENU_BUILDERS__ = mod;
+        // Warm icon chunks for both contexts
+        try { await (mod as any).prefetchIconsForAllContexts?.(); } catch {}
+      })
+      .catch((err) => {
+        console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
+      });
   } catch {}
 }
 

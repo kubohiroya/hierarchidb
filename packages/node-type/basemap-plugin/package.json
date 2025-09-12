@@ -20,6 +20,9 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
+    },
+    "./worker": {
+      "import": "./dist/worker/index.js"
     }
   },
   "scripts": {
@@ -85,22 +88,13 @@
     "plugin": {
       "nodeType": "basemap",
       "name": "BaseMap Plugin",
+      "icon": { "mui": "Public", "emoji": "🌍", "color": "#b0b3d9" },
       "priority": 900,
       "category": "geographic",
       "extends": "folder",
       "dependencies": [
         "folder"
       ],
-      "exports": {
-        "definition": "BaseMapDefinition",
-        "handler": "BaseMapEntityHandler",
-        "extension": "BaseMapExtension",
-        "components": [
-          "MapStyleStep",
-          "MapViewportStep",
-          "DisplayOptionsStep"
-        ]
-      },
       "capabilities": {
         "canHaveChildren": true,
         "canBeRoot": false,

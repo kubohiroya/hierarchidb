@@ -95,20 +95,14 @@
     "plugin": {
       "nodeType": "styler",
       "name": "Styler Plugin",
+      "icon": { "mui": "Palette", "emoji": "🎨", "color": "#dcbc50" },
       "priority": 700,
       "category": "visualization",
       "extends": "spreadsheet",
       "dependencies": [
         "@hierarchidb/spreadsheet-plugin"
       ],
-      "exports": {
-        "definition": "StylerDefinition",
-        "handler": "StylerEntityHandler",
-        "components": [
-          "StylerDialog",
-          "StylerPanel"
-        ]
-      },
+      
       "capabilities": {
         "canHaveChildren": false,
         "canBeRoot": false,

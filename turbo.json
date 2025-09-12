@@ -1,125 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
-    "@hierarchidb/app#build": {
-      // Ensure the app builds only after core worker and node-type plugins
-      // are built, since the app bundles their emitted JS via the Vite plugin.
-      "dependsOn": [
-        "^build",
-        "@hierarchidb/runtime-worker#build",
-        "@hierarchidb/folder-plugin#build",
-        "@hierarchidb/spreadsheet-plugin#build",
-        "@hierarchidb/shape-plugin#build",
-        "@hierarchidb/location-plugin#build",
-        "@hierarchidb/resolver-plugin#build",
-        "@hierarchidb/basemap-plugin#build",
-        "@hierarchidb/project-plugin#build",
-        "@hierarchidb/styler-plugin#build"
-      ],
-      "outputs": ["build/**", ".react-router/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
-      "env": ["NODE_ENV", "VITE_APP_NAME", "VITE_USE_HASH_ROUTING"]
-    },
-    "check:deps": {
-      "outputs": [],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "dep-fence.config.mjs",
-        "**/package.json",
-        "**/tsup.config.*",
-        "**/tsconfig.json"
-      ]
-    },
-    "@hierarchidb/app#dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true,
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
-      "env": ["NODE_ENV", "VITE_APP_NAME", "VITE_USE_HASH_ROUTING"]
-    },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
-      "env": ["NODE_ENV"]
+      "outputs": ["dist/**", "build/**", "storybook-static/**"]
     },
-    "@hierarchidb/ui-treeconsole-base#build": {
-      "dependsOn": [
-        "@hierarchidb/ui-core#build",
-        "@hierarchidb/ui-treeconsole-treetable#build"
-      ]
-    },
-    "@hierarchidb/basemap-plugin#build": {
-      "dependsOn": [
-        "@hierarchidb/runtime-worker#build"
-      ]
-    },
-    "@hierarchidb/resolver-plugin#build": {
-      "dependsOn": [
-        "@hierarchidb/ui-dialog#build"
-      ]
-    },
-    "dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true,
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
-      "env": ["NODE_ENV"]
-    },
-    "coverage": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"],
-      "env": ["NODE_ENV"]
-    },
-    "lint": {
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "format": {
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "format:check": {
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "typecheck": {
-      "dependsOn": ["^build"],
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "e2e": {
-      "dependsOn": ["build"],
-      "outputs": ["playwright-report/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!references/**", "!docs/references/**"]
-    },
-    "clean": {
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$"]
-    },
-    "@hierarchidb/runtime-ui-tour#typecheck": {
-      "dependsOn": [
-        "@hierarchidb/ui-tour#build"
-      ],
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$"]
-    },
-    "@hierarchidb/ui-treeconsole-base#typecheck": {
-      "dependsOn": [
-        "@hierarchidb/ui-core#build",
-        "@hierarchidb/ui-treeconsole-treetable#build"
-      ],
-      "outputs": [],
-      "inputs": ["$TURBO_DEFAULT$"]
-    }
-  },
-  "globalEnv": ["NODE_ENV", "VITE_*"],
-  "globalDependencies": ["tsconfig.json", "tsconfig.base.json"],
-  "concurrency": "30"
+    "typecheck": { "dependsOn": ["^typecheck"] },
+    "test": { "dependsOn": ["^build"], "outputs": ["coverage/**", "reports/**"] },
+    "lint": {},
+    "dev": { "cache": false, "persistent": true },
+    "preview": { "cache": false, "persistent": true },
+    "e2e": { "dependsOn": ["build"], "cache": false, "persistent": false }
+  }
 }

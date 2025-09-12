@@ -4,11 +4,23 @@
  */
 
 // Vite virtual module (types are declared in src/types/shims.d.ts)
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import pluginDefinitions from 'virtual:plugin-definitions';
 
 export type TreeContext = 'resources' | 'projects';
+
+/**
+ * Map app-level TreeId to logical menu context.
+ * - 'r' => resources
+ * - 't' or 'p' => projects (accept both to be tolerant of typos)
+ */
+export function normalizeContextFromTreeId(treeId?: string | null): TreeContext {
+  const t = (treeId || '').toLowerCase();
+  if (t === 'r') return 'resources';
+  if (t === 't' || t === 'p') return 'projects';
+  // default to resources to keep menus usable in unknown contexts
+  return 'resources';
+}
 
 export interface PluginMenuItem {
   key: string; // unique key (nodeType)
@@ -105,19 +117,64 @@ function getLabel(def: VMDef): string {
 }
 
 export function buildMenuItemsForContext(context: TreeContext): PluginMenuItem[] {
-  const defs = toArray().filter((d) => isForContext(d, context));
+  // Explicit menu spec from product owner
+  // resources (r): groups and order
+  const SPEC: Record<TreeContext, { groups: string[]; order: string[]; groupOf: Record<string, string> }> = {
+    resources: {
+      groups: ['core', 'base', 'geo', 'tabular'],
+      order: ['folder', 'basemap', 'shape', 'location', 'route', 'spreadsheet', 'styler', 'resolver'],
+      groupOf: {
+        folder: 'core',
+        basemap: 'base',
+        shape: 'geo',
+        location: 'geo',
+        route: 'geo',
+        spreadsheet: 'tabular',
+        styler: 'tabular',
+        resolver: 'tabular',
+      },
+    },
+    projects: {
+      groups: ['core', 'project'],
+      order: ['folder', 'project'],
+      groupOf: {
+        folder: 'core',
+        project: 'project',
+      },
+    },
+  } as const;
 
-  const items: PluginMenuItem[] = defs.map((d) => ({
-    key: d.nodeType,
-    nodeType: d.nodeType,
-    label: getLabel(d),
-    icon: getIcon(d),
-    group: getGroup(d),
-    priority: getPriority(d),
-  }));
+  const spec = SPEC[context];
+  const defs = toArray();
+  const defByType = Object.fromEntries(defs.map((d) => [d.nodeType, d] as const));
 
-  // Sort by priority asc, then label
-  items.sort((a, b) => (a.priority - b.priority) || a.label.localeCompare(b.label));
+  const items: PluginMenuItem[] = [];
+  for (const nodeType of spec.order) {
+    const d = defByType[nodeType];
+    const group = spec.groupOf[nodeType] || 'core';
+    if (d) {
+      items.push({
+        key: d.nodeType,
+        nodeType: d.nodeType,
+        label: getLabel(d),
+        icon: getIcon(d),
+        group,
+        // Encode group and index into priority for stable sort
+        priority: spec.groups.indexOf(group) * 100 + spec.order.indexOf(nodeType),
+      });
+    } else {
+      // Fallback stub when plugin definition is absent (e.g., spreadsheet/resolver)
+      items.push({
+        key: nodeType,
+        nodeType,
+        label: nodeType,
+        icon: { muiIconName: nodeType === 'folder' ? 'Folder' : 'Extension' },
+        group,
+        priority: spec.groups.indexOf(group) * 100 + spec.order.indexOf(nodeType),
+      });
+    }
+  }
+
   return items;
 }
 
@@ -129,3 +186,24 @@ export function buildProjectsMenuItems(): PluginMenuItem[] {
   return buildMenuItemsForContext('projects');
 }
 
+/**
+ * Convenience: build using TreeId directly (e.g., 'r' or 't')
+ */
+export function buildMenuItemsForTreeId(treeId?: string | null): PluginMenuItem[] {
+  return buildMenuItemsForContext(normalizeContextFromTreeId(treeId));
+}
+
+/**
+ * Utility to precompute icons for both contexts (used by root.tsx preload)
+ */
+export async function prefetchIconsForAllContexts() {
+  try {
+    const { prefetchMuiIcons } = await import('@hierarchidb/ui-icon');
+    const r = buildMenuItemsForContext('resources');
+    const p = buildMenuItemsForContext('projects');
+    const names = [...r, ...p].map((i) => i.icon?.muiIconName);
+    await prefetchMuiIcons(names);
+  } catch {
+    // ignore
+  }
+}

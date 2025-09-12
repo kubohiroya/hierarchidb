@@ -8,7 +8,7 @@ export * from './types';
 export * from './entities/FolderEntity';
 
 // Export plugin definition for worker consumption
-export { FolderDefinition } from './definitions/FolderDefinition';
+// Plugin definition export removed: metadata is sourced from package.json
 
 // Export BaseFolderPlugin for extensions to extend
 export * from './base/BaseFolderPlugin';

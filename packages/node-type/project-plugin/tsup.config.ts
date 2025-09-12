@@ -1,11 +1,10 @@
-import { defineConfig } from 'tsup';
+import { createTsupConfig } from '../../../tsup.base.config';
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm'],
-  dts: true,
-  clean: true,
-  sourcemap: true,
+export default createTsupConfig({
+  entry: [
+    'src/index.ts',
+    'src/worker/index.ts',
+  ],
   external: [
     'react',
     'react-dom',
@@ -13,18 +12,14 @@ export default defineConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    'dexie',
     '@deck.gl/core',
     '@deck.gl/layers',
+    '@deck.gl/extensions',
     '@deck.gl/aggregation-layers',
     '@deck.gl/geo-layers',
-    '@deck.gl/mesh-layers',
-    '@deck.gl/extensions',
     '@deck.gl/mapbox',
-    'dexie',
+    '@deck.gl/mesh-layers',
+    '@hierarchidb/runtime-worker',
   ],
-  esbuildOptions(options) {
-    options.banner = {
-      js: '"use client"',
-    };
-  },
 });

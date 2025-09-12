@@ -86,7 +86,7 @@ export class WorkerAPIAdapter {
 - **TreeConsole.tsx** - メインコンテナコンポーネント
 - **TreeTableConsolePanel.tsx** - テーブル表示とツールバー統合
 - **TreeConsoleHeader.tsx** - ヘッダー（パンくず、タイトル）
-- **TreeConsoleToolbar.tsx** - 操作ツールバー  
+- **TreeConsoleToolbar_Deprecated.tsx** - 操作ツールバー  
 - **TreeConsoleContent.tsx** - 仮想化されたツリーテーブル本体
 - **TreeConsoleFooter.tsx** - フッター（ガイドツアー等）
 - **TreeConsoleActions.tsx** - FloatingActionButton群

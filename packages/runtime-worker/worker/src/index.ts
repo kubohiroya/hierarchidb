@@ -257,3 +257,4 @@ export type {
   RelationStore,
 } from './entity/store';
 export { storeRegistry } from './entity/store-registry';
+export { entityRegistry } from './entity/EntityRegistry';

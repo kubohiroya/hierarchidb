@@ -370,7 +370,7 @@ export class TreeSubscriptionService {
 
     for (const [id, subscription] of Array.from(this.subscriptions.entries())) {
       if (!subscription.isActive || now - subscription.lastActivity > maxInactiveTime) {
-        subscription.subject.complete();
+        subscription.subject?.complete();
         toDelete.push(id);
       }
     }
@@ -850,7 +850,7 @@ export class TreeSubscriptionService {
 
     // Complete all subjects
     for (const subscription of Array.from(this.subscriptions.values())) {
-      subscription.subject.complete();
+      subscription.subject?.complete();
     }
 
     // Clear all subscriptions

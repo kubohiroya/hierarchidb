@@ -20,6 +20,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
+      // Provide bootstrap at source for unit tests
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/src/index.ts'),
     },
   },
 });

@@ -7,7 +7,7 @@ const UI_LIBS = [
   'react',
   'react-dom',
   '@mui/material',
-  '@mui/icons-material',
+  '@mui/icon-material',
   '@emotion/react',
   '@emotion/styled',
 ];

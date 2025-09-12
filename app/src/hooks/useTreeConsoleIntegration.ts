@@ -57,6 +57,7 @@ export interface TreeConsoleActions {
   handleNodeExpand: (nodeId: string, expanded: boolean) => void;
   handleSearchChange: (term: string) => void;
   handleSearchClear: () => void;
+  handleSearchCommit: () => void;
   handleCreate: () => void;
   handleEdit: () => void;
   handleDelete: () => void;
@@ -171,11 +172,11 @@ export function useTreeConsoleIntegration({
   };
 
   // Helper: apply sort/filter/search to raw nodes
-  const applySortFilterSearch = (nodes: TreeNode[]): TreeNodeData[] => {
+  const applySortFilterSearch = (nodes: TreeNode[], overrideTerm?: string): TreeNodeData[] => {
     const sortBy = state.sortBy || 'name';
     const sortDir = state.sortDirection || 'asc';
     const filterBy = state.filterBy || '';
-    const term = searchTerm?.trim();
+    const term = (overrideTerm ?? searchTerm)?.trim();
     let arr = [...nodes];
     if (filterBy) arr = arr.filter((n) => n.nodeType === (filterBy as unknown as NodeType));
     if (term) {
@@ -192,7 +193,7 @@ export function useTreeConsoleIntegration({
   };
 
   // Helper: load children of a node and refresh view
-  const loadChildrenOf = async (parentId: NodeId) => {
+  const loadChildrenOf = async (parentId: NodeId, optTerm?: string) => {
     if (!client) return;
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
@@ -205,7 +206,7 @@ export function useTreeConsoleIntegration({
         displayNodes = batches.flat();
       }
       setRawNodes(displayNodes);
-      setTreeData(applySortFilterSearch(displayNodes));
+      setTreeData(applySortFilterSearch(displayNodes, optTerm));
     } catch (err) {
       console.error('Failed to load children:', err);
       setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));
@@ -279,14 +280,14 @@ export function useTreeConsoleIntegration({
         if (!client) return;
         const root = pageNodeId as NodeId;
         if (!term.trim()) {
-          loadChildrenOf(root);
+          await loadChildrenOf(root, '');
           return;
         }
         try {
           const queryAPI = await client.getQueryAPI();
           const results = await queryAPI.searchNodes({ rootNodeId: root, query: term, mode: 'partial', maxResults: 200 });
           setRawNodes(results);
-          setTreeData(applySortFilterSearch(results));
+          setTreeData(applySortFilterSearch(results, term));
         } catch (e) {
           console.error('Search failed:', e);
         }
@@ -294,6 +295,29 @@ export function useTreeConsoleIntegration({
 
       handleSearchClear: () => {
         setSearchTerm('');
+        // When cleared, immediately show unfiltered children
+        const root = pageNodeId as NodeId;
+        void loadChildrenOf(root, '');
+        // Reflect removal in URL: update only the search part (avoid duplicating basename)
+        try {
+          if (pushPath) {
+            const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+            sp.delete('q');
+            const nextSearch = sp.toString();
+            pushPath(nextSearch ? `?${nextSearch}` : '?');
+          }
+        } catch {}
+      },
+
+      handleSearchCommit: () => {
+        if (!pushPath) return;
+        try {
+          const term = (searchTerm || '').trim();
+          // Update only the search part to avoid basename duplication
+          const next = term ? `?q=${encodeURIComponent(term)}` : '?';
+          const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+          if (currentSearch !== (next === '?' ? '' : next)) pushPath(next);
+        } catch {}
       },
 
       handleCreate: async () => {
@@ -737,7 +761,7 @@ export function useTreeConsoleIntegration({
               const queryAPI = await client.getQueryAPI();
               const results = await queryAPI.searchNodes({ rootNodeId: root, query: q, mode: 'partial', maxResults: 200 });
               setRawNodes(results);
-              setTreeData(applySortFilterSearch(results));
+              setTreeData(applySortFilterSearch(results, q));
               setState((prev) => ({ ...prev, loading: false }));
               return;
             }
@@ -784,32 +808,7 @@ export function useTreeConsoleIntegration({
     };
   }, [client]);
 
-  // Sync search (q) only to URL query parameters
-  useEffect(() => {
-    if (!pushPath || !treeId) return;
-    const root = pageNodeId as NodeId;
-    if (!root) return;
-    const params = new URLSearchParams();
-    if (searchTerm?.trim()) params.set('q', searchTerm.trim());
-    const qs = params.toString();
-    // Do not append the rootId segment when the current URL is already the short form `/t/:treeId`
-    let pathBase = `/t/${treeId}`;
-    try {
-      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-      let isDeep = pathname.startsWith(`${pathBase}/`);
-      // If the current page node is the tree root, prefer the short form even when URL was deep
-      if (pageTreeNode && pageTreeNode.id === root) {
-        isDeep = false;
-      }
-      const path = `${pathBase}${isDeep ? `/${root}` : ''}${qs ? `?${qs}` : ''}`;
-      pushPath(path);
-    } catch {
-      // Fallback: never include the rootId segment
-      const path = `${pathBase}${qs ? `?${qs}` : ''}`;
-      try { pushPath(path); } catch {}
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, pageNodeId]);
+  // Remove live URL sync; URL will be updated on explicit commit (blur) via actions.handleSearchCommit
 
   // Permission checks (simplified for now, avoiding Orchestrated APIs)
   const canCreate = true;

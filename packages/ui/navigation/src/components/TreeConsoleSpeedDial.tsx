@@ -5,12 +5,7 @@
 
 import { useMemo, useState } from 'react';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
-import {
-  Add as AddIcon,
-  CreateNewFolder as FolderIcon,
-  Extension as ExtensionIcon,
-  Note as NoteIcon,
-} from '@mui/icons-material';
+import { getMuiIconComponent } from '@hierarchidb/ui-icon';
 
 import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
 
@@ -32,23 +27,7 @@ interface TreeConsoleSpeedDialProps {
 /**
   * MUI
   */
-function getIconComponent(iconName?: string, emoji?: string) {
-  switch (iconName) {
-    case 'Folder':
-    case 'CreateNewFolder':
-      return <FolderIcon />;
-    case 'Note':
-    case 'NoteAdd':
-      return <NoteIcon />;
-    case 'Extension':
-      return <ExtensionIcon />;
-    default:
-      if (emoji) {
-        return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
-      }
-      return <AddIcon />;
-  }
-}
+const getIconComponent = (iconName?: string, emoji?: string) => getMuiIconComponent(iconName, emoji);
 
 /**
   * SpeedDial

@@ -48,7 +48,7 @@ export interface TreeConsoleBreadcrumbProps {
   depthOffset?: number;
 
   /**
-   * Custom icons component
+   * Custom icon component
    */
   NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
 

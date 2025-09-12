@@ -20,4 +20,3 @@ export function createRoutePeerStoreDexie(db: RouteEntitiesDB): PeerStore<any> {
     },
   };
 }
-

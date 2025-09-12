@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
+// Root Vitest config orchestrates per-package projects so each package's
+// own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
 export default defineConfig({
   test: {
     environment: 'jsdom',
@@ -8,6 +10,14 @@ export default defineConfig({
     globals: true,
     root: process.cwd(),
     passWithNoTests: true,
+    // Never pick up Playwright e2e in Vitest runs
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/storybook-static/**',
+      '**/e2e/**',
+    ],
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',
@@ -25,29 +35,47 @@ export default defineConfig({
         '**/build/**',
         '**/storybook-static/**',
         '**/e2e/**',
-        '**/references/**'
+        '**/references/**',
       ],
-      thresholds: {
-        statements: 0,
-        branches: 0,
-        functions: 0,
-        lines: 0,
-      }
-    }
+      thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 },
+    },
+    // Delegate to package-level configs
+    projects: [
+      './packages/backend/bff',
+      './packages/common/api',
+      './packages/common/types',
+      './packages/node-type/base-plugin',
+      './packages/node-type/basemap-plugin',
+      './packages/node-type/folder-plugin',
+      './packages/node-type/location-plugin',
+      './packages/node-type/resolver-plugin',
+      './packages/node-type/route-plugin',
+      './packages/node-type/shape-plugin',
+      './packages/node-type/spreadsheet-plugin',
+      './packages/node-type/styler-plugin',
+      './packages/runtime-ui/plugin-dialog',
+      './packages/runtime-worker/worker-bootstrap',
+      './packages/runtime-worker/worker',
+      './packages/tools/vite-plugin-package-reader',
+      './packages/ui/auth',
+      './packages/ui/core',
+      './packages/ui/dialog',
+    ],
   },
   resolve: {
     alias: {
-      '~': path.resolve(__dirname, './packages/ui/core/src'),
-      '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src'),
-      '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src'),
-      // Note: common-core package has been removed. Use common-type/common-api.
-      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, './packages/runtime-worker/worker/src'),
-      // For integration tests, point WorkerAPIImpl to mock implementation
-      '@hierarchidb/runtime-worker-worker/WorkerAPIImpl': path.resolve(
-        __dirname,
-        './packages/runtime-ui/plugin-dialog/src/tests/mocks/WorkerAPIImpl.ts',
-      ),
+      // Map frequently referenced workspace packages to source to avoid prebuilding
+      '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
+      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-ui/plugin-dialog/src/index.ts'),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, './packages/runtime-worker/worker-bootstrap/src/index.ts'),
+      '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
+      '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
+      '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, './packages/node-type/spreadsheet-plugin/src/index.ts'),
+      '@hierarchidb/location-plugin': path.resolve(__dirname, './packages/node-type/location-plugin/src/index.ts'),
+      '@hierarchidb/shape-plugin': path.resolve(__dirname, './packages/node-type/shape-plugin/src/index.ts'),
+      '@hierarchidb/route-plugin': path.resolve(__dirname, './packages/node-type/route-plugin/src/index.ts'),
+      // Important: don't set a global "~" alias here to avoid conflicts across packages.
     },
   },
 });

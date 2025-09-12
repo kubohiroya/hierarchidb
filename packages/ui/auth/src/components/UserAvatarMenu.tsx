@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { UserAvatar } from './UserAvatar';
-// import { KeyboardArrowDownIcon, LoginIcon, LogoutIcon } from "@/icons";
+// import { KeyboardArrowDownIcon, LoginIcon, LogoutIcon } from "@/icon";
 import {
   DeleteForever,
   KeyboardArrowDown as KeyboardArrowDownIcon,

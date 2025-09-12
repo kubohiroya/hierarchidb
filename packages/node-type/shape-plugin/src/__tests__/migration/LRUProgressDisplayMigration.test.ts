@@ -110,7 +110,8 @@ describe('LRU Progress Display Migration Tests', () => {
       expect(screen.getByTestId('download-progress-pane')).toBeInTheDocument();
       expect(screen.getByTestId('simplify1-progress-pane')).toBeInTheDocument();
       expect(screen.getByTestId('simplify2-progress-pane')).toBeInTheDocument();
-      expect(screen.getByTestId('vectortiles-progress-pane')).toBeInTheDocument();
+      // Component uses singular 'vectortile' for test id
+      expect(screen.getByTestId('vectortile-progress-pane')).toBeInTheDocument();
 
       expect(screen.getByText('25%')).toBeInTheDocument(); // Download
       expect(screen.getByText('50%')).toBeInTheDocument(); // Simplify1
@@ -259,7 +260,7 @@ describe('LRU Progress Display Migration Tests', () => {
 
       //  3
       expect(screen.getByTestId('simplify2-progress-pane')).toBeInTheDocument();
-      expect(screen.getByTestId('vectortiles-progress-pane')).toBeInTheDocument();
+      expect(screen.getByTestId('vectortile-progress-pane')).toBeInTheDocument();
       expect(screen.getByTestId('download-progress-pane')).toBeInTheDocument();
     });
 
@@ -291,7 +292,7 @@ describe('LRU Progress Display Migration Tests', () => {
 
       //  Then: 3timestamp
       expect(screen.getByTestId('download-progress-pane')).toBeInTheDocument(); // Most recent
-      expect(screen.getByTestId('vectortiles-progress-pane')).toBeInTheDocument();
+      expect(screen.getByTestId('vectortile-progress-pane')).toBeInTheDocument();
       expect(screen.getByTestId('simplify2-progress-pane')).toBeInTheDocument();
       expect(screen.queryByTestId('simplify1-progress-pane')).not.toBeInTheDocument(); // Oldest, excluded by LRU
     });

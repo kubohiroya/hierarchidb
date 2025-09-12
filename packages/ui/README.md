@@ -559,7 +559,7 @@ export default {
     'provider',
     'provider-dom', 
     '@mui/material',
-    '@mui/icons-material'
+    '@mui/icon-material'
   ]
 };
 ```

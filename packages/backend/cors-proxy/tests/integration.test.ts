@@ -4,6 +4,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+// Skip network-dependent tests unless explicitly enabled via env
+// Run with: NETWORK_TESTS=1 pnpm -C packages/backend/cors-proxy test:run
+const describeIf = process.env.NETWORK_TESTS === '1' ? describe : describe.skip;
 
 // Test configuration
 const PROXY_URL = process.env.CORS_PROXY_TEST_URL || 'http://localhost:8788';
@@ -32,7 +35,7 @@ const config: TestConfig = {
   targetUrl: TEST_TARGET_URL,
 };
 
-describe('CORS Proxy Service Integration Tests', () => {
+describeIf('CORS Proxy Service Integration Tests', () => {
   describe('CORS Headers', () => {
     it('should handle preflight OPTIONS requests', async () => {
       const response = await fetch(`${config.proxyUrl}/`, {

@@ -304,7 +304,7 @@ const codeSplitting = {
   ],
   
   recommendations: [
-    'Split MUI icons into separate chunk',
+    'Split MUI icon into separate chunk',
     'Lazy load heavy plugins',
     'Use dynamic imports for routes'
   ]

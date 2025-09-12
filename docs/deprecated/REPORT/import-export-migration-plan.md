@@ -220,7 +220,7 @@ export class WorkerAPIImpl implements WorkerAPI {
 
 #### 3.2 TreeConsoleToolbar連携
 ```typescript
-// packages/ui-treeconsole/ui-treeconsole-toolbar/src/containers/TreeConsoleToolbar.tsx
+// packages/ui-treeconsole/ui-treeconsole-toolbar/src/containers/TreeConsoleToolbar_Deprecated.tsx
 const handleAction = (action: string, params?: any) => {
   switch (action) {
     case 'import':

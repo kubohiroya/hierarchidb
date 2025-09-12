@@ -84,8 +84,8 @@ const StyledTableHead = styled(TableHead)`
 
   & .MuiTableCell-root {
     font-weight: 600;
-    border-bottom: 2px solid ${({ theme }) => theme.palette.divider};
-    border-right: 1px solid ${({ theme }) => theme.palette.divider};
+    border-bottom: 3px solid ${({ theme }) => theme.palette.divider};
+    border-right: 2px solid ${({ theme }) => theme.palette.divider};
     padding: 8px 12px;
     user-select: none;
     position: relative;
@@ -226,13 +226,17 @@ export function TreeTableCore({
           setColumnWidths((prev) => ({ ...prev, ...saved }));
         }
       }
-    } catch {}
+    } catch {
+      throw new Error(`Failed to load column widths from localStorage for key: ${storageKey}`);
+    }
   }, [storageKey]);
 
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(columnWidths));
-    } catch {}
+    } catch {
+      throw new Error(`Failed to save column widths to localStorage for key: ${storageKey}`);
+    }
   }, [columnWidths, storageKey]);
 
   // Helper: compute descendants including self
@@ -330,6 +334,7 @@ export function TreeTableCore({
       },
       {
         id: 'name',
+        accessorKey: 'name',
         header: 'Name',
         size: columnWidths.name,
         enableSorting: true,
@@ -435,6 +440,7 @@ export function TreeTableCore({
       },
       {
         id: 'description',
+        accessorKey: 'description',
         header: 'Description',
         size: columnWidths.description,
         enableSorting: true,
@@ -490,6 +496,7 @@ export function TreeTableCore({
       },
       {
         id: 'createdAt',
+        accessorKey: 'createdAt',
         header: 'Created',
         size: columnWidths.createdAt,
         enableSorting: true,
@@ -500,6 +507,7 @@ export function TreeTableCore({
       },
       {
         id: 'updatedAt',
+        accessorKey: 'updatedAt',
         header: 'Updated',
         size: columnWidths.updatedAt,
         enableSorting: true,
@@ -746,15 +754,21 @@ export function TreeTableCore({
                     setForbiddenTargets(forb);
                     try {
                       e.dataTransfer?.setData('application/hdb-node-descendants', JSON.stringify(Array.from(forb)));
-                    } catch {}
-                  } catch {}
+                    } catch {
+                      throw new Error('Failed to set data transfer');
+                    }
+                  } catch {
+                    throw new Error('Failed to set data transfer');
+                  }
                 }}
                 onDragOver={(e) => {
                   if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                     const targetId = row.original.id;
                     const blocked = forbiddenTargets.has(targetId);
                     if (!blocked) e.preventDefault();
-                    try { setHoverDropTargetId(targetId); } catch {}
+                    try { setHoverDropTargetId(targetId); } catch {
+                      throw new Error('Failed to set hover drop target');
+                    }
                   }
                 }}
                 onDrop={(e) => {
@@ -764,14 +778,22 @@ export function TreeTableCore({
                     if (!sourceId || !targetId || sourceId === targetId) return;
                     if (forbiddenTargets.has(targetId)) return;
                     controller?.onMoveNodes?.([sourceId], targetId);
-                  } catch {}
+                  } catch {
+                    throw new Error('Failed to move nodes');
+                  }
                   try {
                     setHoverDropTargetId(null);
                     setForbiddenTargets(new Set());
-                  } catch {}
+                  } catch {
+                    throw new Error('Failed to set hover drop target');
+                  }
                 }}
-                onDragEnd={() => { try { setHoverDropTargetId(null); setForbiddenTargets(new Set()); } catch {} }}
-                onDragLeave={() => { try { setHoverDropTargetId((id) => (id === row.original.id ? null : id)); } catch {} }}
+                onDragEnd={() => { try { setHoverDropTargetId(null); setForbiddenTargets(new Set()); } catch {
+                  throw new Error('Failed to set hover drop target');
+                } }}
+                onDragLeave={() => { try { setHoverDropTargetId((id) => (id === row.original.id ? null : id)); } catch {
+                  throw new Error('Failed to set hover drop target');
+                } }}
                 onClick={(e) => handleRowClick(node, e)}
                 onDoubleClick={(e) => handleRowDoubleClick(node, e)}
                 onContextMenu={(e) => handleRowContextMenu(node, e)}

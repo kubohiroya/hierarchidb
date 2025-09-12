@@ -50,6 +50,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "i18next": "22.5.0",
     "react-hook-form": "^7.62.0",
@@ -94,16 +95,11 @@
     "plugin": {
       "nodeType": "folder",
       "name": "Folder Plugin",
+      "icon": { "mui": "Folder", "emoji": "📁", "color": "#c0eeff" },
       "priority": 1000,
       "category": "core",
       "dependencies": [],
-      "exports": {
-        "definition": "FolderDefinition",
-        "components": [
-          "FolderDialog",
-          "FolderPanel"
-        ]
-      },
+      
       "capabilities": {
         "canHaveChildren": true,
         "canBeRoot": true,

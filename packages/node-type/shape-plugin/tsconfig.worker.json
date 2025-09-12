@@ -14,7 +14,6 @@
     "src/components",
     "src/ui",
     "src/services",
-    "src/definitions",
     "src/extension",
     "src/api"
   ]

@@ -148,7 +148,9 @@ export class SessionController {
       while (this.paused) await new Promise(r => setTimeout(r, 100));
       const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
       if (!u8) continue;
-      const data = (u8 as Uint8Array).buffer.slice(0);
+      // Ensure we store a plain ArrayBuffer (avoid SharedArrayBuffer unions)
+      const copy = new Uint8Array(u8 as Uint8Array);
+      const data: ArrayBuffer = copy.buffer.slice(0);
       const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
       const hash = await sha256Hex(new Uint8Array(data));
       await db.vectorTiles.put({
@@ -217,7 +219,12 @@ function computeBbox(pts: LocationPointInput[]): [number, number, number, number
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   if (typeof crypto !== 'undefined' && 'subtle' in crypto) {
-    const h = await crypto.subtle.digest('SHA-256', bytes);
+    // Avoid BufferSource typing issues under libs that include SharedArrayBuffer by
+    // passing a plain ArrayBuffer copy to SubtleCrypto.
+    const h = await crypto.subtle.digest(
+      'SHA-256',
+      bytes.slice().buffer,
+    );
     return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, '0')).join('');
   }
   // Node fallback

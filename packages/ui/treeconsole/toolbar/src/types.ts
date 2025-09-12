@@ -1,9 +1,9 @@
 /**
- * Types for TreeConsoleToolbar package
+ * Types for TreeConsoleToolbar_Deprecated package
  */
 
 /**
- * Action types and their parameters for TreeConsoleToolbar
+ * Action types and their parameters for TreeConsoleToolbar_Deprecated
  */
 export type TreeConsoleToolbarAction =
   | { action: 'undo' }
@@ -19,7 +19,7 @@ export type TreeConsoleToolbarAction =
   | { action: 'setRowClickAction'; params: 'Select' | 'Edit' | 'Navigate' };
 
 /**
- * Parameters type for TreeConsoleToolbar actions
+ * Parameters type for TreeConsoleToolbar_Deprecated actions
  */
 export type TreeConsoleToolbarActionParams =
   | undefined
@@ -28,6 +28,10 @@ export type TreeConsoleToolbarActionParams =
 export interface TreeConsoleToolbarController {
   searchText?: string;
   handleSearchTextChange?: (value: string) => void;
+  /**
+   * Called when the search input loses focus to commit the current value.
+   */
+  handleSearchCommit?: () => void;
 }
 
 export interface TreeConsoleToolbarContext {

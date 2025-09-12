@@ -9,7 +9,6 @@
 // Avoid re-exporting names that collide with orchestrator/types (e.g., TransportMode)
 export type { RouteEntity, RouteWorkingCopy, RouteProcessingConfig, RouteParameters, RouteStatistics } from './types';
 export * from './entities/RouteEntityHandler';
-export * from './components';
 export * from './i18n';
 export { ThrottledPort } from './services/net/ThrottledPort';
 export * from './services/engines/OsrmEngine';
@@ -23,7 +22,6 @@ export * from './ui/components/RouteBatchLaunchForm';
 export * from './orchestrator/RouteSourceOrchestrator';
 export * from './orchestrator/RouteBatchOrchestrationService';
 export * from './ui/hooks/useRouteBatchProgress';
-export * from './ui/components/RouteBatchProgressBar';
 export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabular-store';
 
 // Unified Batch Control API (API v2)
@@ -33,15 +31,12 @@ export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/re
 export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier } from './services/download/registry';
 export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService';
 
-// UI Hooks/Components (minimal)
-export * from './ui/hooks/useRouteBatchProgress';
-export * from './ui/components/RouteBatchProgressBar';
+// UI exports are available via subpath export "@hierarchidb/route-plugin/ui"
 
 /**
  * Route Plugin Definition
  */
-export { RoutePluginDefinition } from './definitions/RoutePluginDefinition';
-export { default } from './definitions/RoutePluginDefinition';
+// Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {

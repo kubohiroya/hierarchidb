@@ -191,7 +191,7 @@ describe('UserProfile', () => {
 
       const loginButton = screen.getByRole('button', { name: /login/i });
       expect(loginButton).toBeInTheDocument();
-      // Check that the button contains the login icon (MUI icons render as SVGs)
+      // Check that the button contains the login icon (MUI icon render as SVGs)
       expect(loginButton.querySelector('svg')).toBeInTheDocument();
     });
   });

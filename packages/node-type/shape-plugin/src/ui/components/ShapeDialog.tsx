@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { NodeId } from '../../shared/types';
-import { useShapeAPIGetter } from '../hooks/useShapeAPI';
+import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import { CreateShapeData, ShapeEntity, ShapeWorkingCopy, UI_CONSTANTS, UpdateShapeData } from '../../shared';
 
 export interface ShapeDialogProps {
@@ -40,7 +40,7 @@ export function ShapeDialog({
                               onSuccess,
                               onError,
                             }: ShapeDialogProps) {
-  const getShapeAPI = useShapeAPIGetter();
+  const { init, commit, discard } = useWorkingCopy<ShapeWorkingCopy>({ nodeType: 'shape', mode, nodeId: nodeId as any, parentId: parentId as any });
 
   // State management
   const [activeStep, setActiveStep] = useState(0);
@@ -95,21 +95,25 @@ export function ShapeDialog({
 
     setInitializing(true);
     try {
-      const api = await getShapeAPI();
+      const wc = await (async () => {
+        const useWorker = (await import('@hierarchidb/runtime-worker-bootstrap')).getWorkerClientHook();
+        if (!useWorker) throw new Error('worker not available');
+        const client = useWorker();
+        const api = client.getAPI();
+        return (await api.getWorkingCopyAPI()) as any;
+      })();
 
       if (mode === 'edit' && nodeId) {
-        //  CopyOnWrite: Create working copy from existing entity
-        const workingCopyId = await api.createWorkingCopy(nodeId);
-        const workingCopyData = await api.getWorkingCopy(workingCopyId);
-        if (workingCopyData) {
-          setWorkingCopy(workingCopyData as ShapeWorkingCopy);
+        const data = await wc.getWorkingCopy(nodeId as any);
+        if (data) {
+          setWorkingCopy(data as ShapeWorkingCopy);
+          // wcId managed internally by hook; keep local only for legacy paths
         }
       } else if (mode === 'create' && parentId) {
-        //  New draft: Create working copy for new entity
-        const workingCopyId = await api.createNewDraftWorkingCopy(parentId);
-        const workingCopyData = await api.getWorkingCopy(workingCopyId);
-        if (workingCopyData) {
-          setWorkingCopy(workingCopyData as ShapeWorkingCopy);
+        const id = await wc.createDraftWorkingCopy('shape', parentId as any, {});
+        const data = await wc.getWorkingCopy(id as any);
+        if (data) {
+          setWorkingCopy(data as ShapeWorkingCopy);
         }
       }
     } catch (error) {
@@ -118,7 +122,7 @@ export function ShapeDialog({
     } finally {
       setInitializing(false);
     }
-  }, [mode, nodeId, parentId, getShapeAPI, onError, initializing, workingCopy]);
+  }, [mode, nodeId, parentId, getWorkingCopyAPI, onError, initializing, workingCopy]);
 
   const handleNext = useCallback(async () => {
     //  Step 1 Step 2: Create actual WorkingCopyTypes (CopyOnWrite)
@@ -144,43 +148,21 @@ export function ShapeDialog({
 
     setLoading(true);
     try {
-      const api = await getShapeAPI();
-
-      if (mode === 'create') {
-        const createData: CreateShapeData = {
-          name: workingCopy.name,
-          description: workingCopy.description,
-          dataSourceName: workingCopy.dataSourceName,
-          processingConfig: workingCopy.processingConfig,
-        };
-
-        const entity = await api.createEntity(parentId as NodeId, createData);
-        onSuccess?.(entity);
-      } else if (mode === 'edit' && nodeId) {
-        const updateData: UpdateShapeData = {
-          name: workingCopy.name,
-          description: workingCopy.description,
-          processingConfig: workingCopy.processingConfig,
-          selectedCountries: workingCopy.selectedCountries,
-          adminLevels: workingCopy.adminLevels,
-          urlMetadata: workingCopy.urlMetadata,
-        };
-
-        await api.updateEntity(nodeId, updateData);
-        const updatedEntity = await api.getEntity(nodeId);
-        if (updatedEntity) {
-          onSuccess?.(updatedEntity);
-        }
-      }
-
+      await commit();
+      onSuccess?.(workingCopy as any);
+      notify.success('Shape saved successfully');
       onClose();
     } catch (error) {
       console.error('Failed to submit shape:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to submit'));
+      notify.error('Failed to save shape');
     } finally {
       setLoading(false);
     }
-  }, [mode, workingCopy, nodeId, parentId, getShapeAPI, onSuccess, onError, onClose]);
+  }, [workingCopy, wcId, nodeId, getWorkingCopyAPI, onSuccess, onError, onClose]);
+  
+  useEffect(() => { if (open) void init(); }, [open, init]);
+  useEffect(() => { return () => { void discard().catch(() => {}); }; }, [discard]);
 
   const handleClose = useCallback(() => {
     setActiveStep(0);

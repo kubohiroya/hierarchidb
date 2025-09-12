@@ -14,7 +14,7 @@ TreeConsoleの移植において、既存のデータフロー構造を維持し
 flowchart TD
     A[TreeConsole] --> B[TreeTableConsolePanel]
     B --> C[TreeConsoleHeader]
-    B --> D[TreeConsoleToolbar]
+    B --> D[TreeConsoleToolbar_Deprecated]
     B --> E[TreeConsoleContent]
     B --> F[TreeConsoleFooter]
     B --> G[TreeConsoleActions]

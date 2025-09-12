@@ -179,7 +179,6 @@ export default function TLayout() {
                 ))}
             </ToggleButtonGroup>
 
-            <LanguageSelector />
             {/* User Login Button - Right Aligned with 8px gap */}
             <Box sx={{ ml: '8px' }}>
               <UserLoginButton />

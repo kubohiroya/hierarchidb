@@ -288,11 +288,12 @@ export class CoreDB extends Dexie {
         name: undefined,
         parentId: undefined,
       };
-      if (oldNode.name !== node.name) {
-        changes.name = { old: oldNode.name, new: node.name };
+      // Compare against the concrete next value to avoid undefined unions
+      if (oldNode.name !== (next as TreeNode).name) {
+        changes.name = { old: oldNode.name, new: (next as TreeNode).name };
       }
-      if (oldNode.parentId !== node.parentId) {
-        changes.parentId = { old: oldNode.parentId, new: node.parentId };
+      if (oldNode.parentId !== (next as TreeNode).parentId) {
+        changes.parentId = { old: oldNode.parentId, new: (next as TreeNode).parentId };
       }
 
       const changeEvent: TreeChangeEvent = {

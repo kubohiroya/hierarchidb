@@ -76,7 +76,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     }
 
     const gjvt = (await import('geojson-vt')).default as any;
-    const vtpbf = (await import('@maplibre/vt-pbf')).default as any;
+    // @maplibre/vt-pbf exposes named exports; use the module object directly
+    const vtpbf = await import('@maplibre/vt-pbf');
     const extent = 4096;
     const index = gjvt(geojson, { maxZoom: 6, extent, indexMaxZoom: 6, promoteId: 'id' });
 
@@ -114,7 +115,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       for (let y = y1; y <= y2; y++) {
         const tile = index.getTile(z, x, y);
         if (tile && tile.features && tile.features.length) {
-          const pbf = vtpbf.fromGeojsonVt({ layer0: tile }, { version: 2 });
+          const pbf = vtpbf.fromGeojsonVt({ layer0: tile } as any, { version: 2 } as any);
           const bytes = pbf as Uint8Array;
           tiles++;
           totalBytes += bytes.byteLength;
@@ -123,7 +124,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
             key,
             sessionId,
             z, x, y,
-            data: bytes.buffer.slice(0),
+            // Ensure ArrayBuffer, not SharedArrayBuffer union
+            data: bytes.slice().buffer,
             size: bytes.byteLength,
             contentType: 'application/vnd.mapbox-vector-tile',
             timestamp: Date.now(),
@@ -197,3 +199,4 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
   const client = mod.wrap<StageProcessingService>(worker);
   return client as unknown as StageProcessingService;
 }
+/// <reference path="../types/external.d.ts" />

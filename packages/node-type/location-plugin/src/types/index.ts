@@ -129,4 +129,6 @@ export interface LocationDialogProps {
   parentId?: NodeId;
   open: boolean;
   onClose: () => void;
+  onSuccess?: (entity: LocationWorkingCopy) => void;
+  onError?: (error: Error) => void;
 }

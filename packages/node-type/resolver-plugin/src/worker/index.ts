@@ -15,3 +15,5 @@ try {
   }).catch(() => {});
 } catch {}
 
+// Make this file a module under --isolatedModules
+export {};

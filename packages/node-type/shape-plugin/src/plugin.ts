@@ -3,7 +3,6 @@
  * Registers the Shape plugin with HierarchiDB plugin system
  */
 
-import { ShapePluginDefinition } from './definitions/ShapePluginDefinition';
 import { shapePluginAPI } from './api/ShapePluginAPI';
 
 // Note: Worker API import removed as it may not be implemented yet
@@ -25,8 +24,8 @@ export async function registerShapePlugin(): Promise<void> {
 
     console.log('Registering Shape plugin...');
 
-    // Register the plugin definition
-    await registry.register(ShapePluginDefinition);
+    // Register the plugin by nodeType (metadata is sourced from package.json)
+    await registry.register({ nodeType: 'shape' });
 
     // Initialize plugin API in worker context
     if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
@@ -85,7 +84,7 @@ export function getShapePluginInfo() {
   return {
     name: 'Shape Plugin',
     version: '1.0.0',
-    nodeType: ShapePluginDefinition.nodeType,
+    nodeType: 'shape',
     description: 'Geographic shape-plugin data plugin for HierarchiDB',
     features: {
       batchProcessing: true,
@@ -102,8 +101,8 @@ export function getShapePluginInfo() {
   };
 }
 
-// Export plugin definition and APIs for direct access
-export { ShapePluginDefinition, shapePluginAPI };
+// Export APIs for direct access
+export { shapePluginAPI };
 
 // Auto-register if this module is imported in an environment that supports it
 if (typeof window !== 'undefined' || typeof WorkerGlobalScope !== 'undefined') {

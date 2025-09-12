@@ -56,7 +56,7 @@ export class WorkerAPIImpl {
 
     return {
       async createWorkingCopy(nodeType: string, parentNodeId?: NodeId): Promise<NodeId> {
-        if (!['folder-plugin', 'folder', 'location', 'location-plugin'].includes(nodeType)) {
+        if (!['folder-plugin', 'folder', 'location', 'location-plugin', 'basemap', 'spreadsheet', 'shape', 'styler', 'route', 'resolver', 'project'].includes(nodeType)) {
           throw new Error(`No handler found for node type: ${nodeType}`);
         }
         const id = genId();
@@ -96,6 +96,13 @@ export class WorkerAPIImpl {
         const d = wc.data || {};
         const isFolder = wc.nodeType === 'folder-plugin' || wc.nodeType === 'folder';
         const isLocation = wc.nodeType === 'location' || wc.nodeType === 'location-plugin';
+        const isBaseMap = wc.nodeType === 'basemap';
+        const isSpreadsheet = wc.nodeType === 'spreadsheet';
+        const isShape = wc.nodeType === 'shape';
+        const isStyler = wc.nodeType === 'styler';
+        const isRoute = wc.nodeType === 'route';
+        const isResolver = wc.nodeType === 'resolver';
+        const isProject = wc.nodeType === 'project';
 
         const base: Capabilities = {
           canNavigateTo: false,
@@ -139,6 +146,213 @@ export class WorkerAPIImpl {
             base.canSave = true;
             base.canStartBatch = true;
           }
+        }
+
+        if (isBaseMap) {
+          // Step 0: Basic info (inherited from folder) – require name
+          if (step === 0) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.name?.trim());
+            return base;
+          }
+          // Step 1: Map Style – require mapStyle.style; if 'custom', require customStyleUrl
+          if (step === 1) {
+            const ok = Boolean(d.name?.trim());
+            const styleOk = Boolean(d.mapStyle?.style) && (d.mapStyle?.style !== 'custom' || Boolean(d.mapStyle?.customStyleUrl));
+            base.canNavigateTo = ok;
+            base.canProceedToNext = ok && styleOk;
+            base.canSave = ok && styleOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          // Step 2: Viewport – require viewport.center [lng,lat] and zoom 0..24
+          if (step === 2) {
+            const ok = Boolean(d.name?.trim());
+            const vp = d.viewport;
+            const vpOk = !!vp && Array.isArray(vp.center) && typeof vp.center[0] === 'number' && typeof vp.center[1] === 'number' && typeof vp.zoom === 'number' && vp.zoom >= 0 && vp.zoom <= 24;
+            base.canNavigateTo = ok;
+            base.canProceedToNext = ok && vpOk;
+            base.canSave = ok && vpOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          // Step 3: Display Options – optional
+          if (step === 3) {
+            const ok = Boolean(d.name?.trim());
+            base.canNavigateTo = ok;
+            base.canProceedToNext = true;
+            base.canSave = ok;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isSpreadsheet) {
+          if (step === 0) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.name?.trim());
+            return base;
+          }
+          if (step === 1) {
+            const ok = Boolean(d.name?.trim());
+            const dsOk = !!d.dataSource && ['file', 'url', 'manual'].includes(d.dataSource?.type);
+            base.canNavigateTo = ok;
+            base.canProceedToNext = ok && dsOk;
+            base.canSave = ok && dsOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 2) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = true;
+            base.canSave = true;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isShape) {
+          if (step === 0) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.name?.trim());
+            return base;
+          }
+          if (step === 1) {
+            const ok = Boolean(d.name?.trim());
+            const srcOk = Boolean(d.dataSourceName);
+            base.canNavigateTo = ok;
+            base.canProceedToNext = ok && srcOk;
+            base.canSave = ok && srcOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 2) {
+            const licOk = d.licenseAgreement === true;
+            base.canNavigateTo = true;
+            base.canProceedToNext = licOk;
+            base.canSave = licOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 3) {
+            const levels: number[] = d.selectedAdminLevels || [];
+            const ok = Array.isArray(levels) && levels.length > 0 && levels.every((x) => typeof x === 'number' && x >= 0 && x <= 3);
+            base.canNavigateTo = true;
+            base.canProceedToNext = ok;
+            base.canSave = ok;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 4) {
+            const countries: string[] = d.selectedCountries || [];
+            const ok = Array.isArray(countries) && countries.length > 0;
+            base.canNavigateTo = true;
+            base.canProceedToNext = ok;
+            base.canSave = ok;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isStyler) {
+          if (step === 0) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.name?.trim());
+            return base;
+          }
+          if (step === 1) {
+            const styleOk = !d.styleType || !!d.dataSource; // styleType選択時はdataSource必須
+            base.canNavigateTo = true;
+            base.canProceedToNext = styleOk;
+            base.canSave = styleOk;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 2) {
+            const cats: string[] = d.categories || [];
+            const unique = new Set(cats);
+            const ok = cats.length <= 50 && unique.size === cats.length;
+            base.canNavigateTo = true;
+            base.canProceedToNext = ok;
+            base.canSave = ok;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isRoute) {
+          if (step === 0) {
+            const ok = Boolean(d.name?.trim()) && Boolean(d.routeType) && Array.isArray(d.transportModes) && d.transportModes.length > 0;
+            base.canNavigateTo = true;
+            base.canProceedToNext = ok;
+            return base;
+          }
+          if (step === 1) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = true; // selection simplified
+            base.canSave = true;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 2) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = true;
+            base.canSave = true;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isResolver) {
+          if (step === 0) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.name?.trim());
+            return base;
+          }
+          if (step === 1) {
+            const ok = Boolean(d.sourceSchema) && Boolean(d.targetSchema);
+            base.canNavigateTo = true;
+            base.canProceedToNext = ok;
+            base.canSave = ok;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 2) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Array.isArray(d.mappingRules);
+            base.canSave = Array.isArray(d.mappingRules);
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 3) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = true;
+            base.canSave = true;
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 4) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = Boolean(d.duplicateResolution);
+            base.canSave = Boolean(d.duplicateResolution);
+            base.canBackToPrevious = true;
+            return base;
+          }
+          if (step === 5) {
+            base.canNavigateTo = true;
+            base.canProceedToNext = true;
+            base.canSave = true;
+            base.canBackToPrevious = true;
+            return base;
+          }
+        }
+
+        if (isProject) {
+          base.canNavigateTo = true;
+          base.canProceedToNext = true;
+          base.canSave = true;
+          base.canBackToPrevious = step > 0;
+          return base;
         }
 
         return base;

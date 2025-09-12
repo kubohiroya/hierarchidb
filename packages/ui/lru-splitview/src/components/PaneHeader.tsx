@@ -15,7 +15,7 @@ import {
 import type { PaneHeaderProps } from '../types/LRUSplitView';
 
 export interface PaneHeaderComponentProps extends PaneHeaderProps {
-  /** Whether to use vertical orientation icons */
+  /** Whether to use vertical orientation icon */
   vertical?: boolean;
   /** Whether to show progress information */
   showProgress?: boolean;
@@ -29,7 +29,7 @@ export interface PaneHeaderComponentProps extends PaneHeaderProps {
  * Features:
  * - Clickable header to toggle pane expansion
  * - Progress display with task counts
- * - Customizable icons and colors
+ * - Customizable icon and colors
  * - Hover effects and transitions
  * - Support for header actions
  */

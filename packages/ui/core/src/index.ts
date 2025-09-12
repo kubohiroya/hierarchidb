@@ -61,3 +61,10 @@ export type { EditDialogProps } from './plugins';
 
 // Notifications
 export { NotificationSystem, notify } from './components/NotificationSystem/NotificationSystem';
+
+// Plugin host-facing component types
+export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports';
+
+// Common hooks
+export { useWorkingCopy } from './hooks/useWorkingCopy';
+export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy';

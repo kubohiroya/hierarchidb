@@ -22,9 +22,10 @@ describe('Feature flag: WORKER_USE_CMDPROC_CREATE_UPDATE', () => {
   };
 
   beforeEach(() => {
-    // Ensure flag is ON for this test
+    // Ensure flags are ON for this test (fixed behavior)
     (process as any).env.WORKER_USE_CMDPROC_CREATE_UPDATE = '1';
     (process as any).env.WORKER_WC_COMMIT_V2 = '1';
+    (process as any).env.WORKER_TRASH_USE_HOLDER = '1';
     vi.clearAllMocks();
   });
 

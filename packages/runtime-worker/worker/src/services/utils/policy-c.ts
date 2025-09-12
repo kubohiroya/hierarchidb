@@ -47,7 +47,9 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
   }
 
   // Fallback: full scan (older behavior)
-  const all = (await (coreDB.nodes as any).toArray?.()) as any[] | undefined;
+  const nodesTable: any = (coreDB as any).nodes;
+  if (!nodesTable || typeof nodesTable.toArray !== 'function') return false;
+  const all = (await nodesTable.toArray()) as any[] | undefined;
   if (!Array.isArray(all)) return false;
   const holders = all.filter((n) => typeof n?.parentId === 'string' && (n.parentId as string).endsWith(':workingCopy'));
   for (const h of holders) {

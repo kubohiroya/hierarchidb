@@ -7,6 +7,8 @@
 
 import 'fake-indexeddb/auto';
 import { beforeEach, vi } from 'vitest';
+// Testing Library matchers (toBeInTheDocument, toHaveClass, etc.)
+import '@testing-library/jest-dom/vitest';
 
 // ========================
 // Comlink Mock Setup
@@ -92,20 +94,26 @@ if (!globalThis.structuredClone) {
 
 // crypto.subtle mock for tests that need crypto APIs
 if (!globalThis.crypto) {
-  globalThis.crypto = {
+  (globalThis as any).crypto = {
     subtle: {
       digest: vi.fn(),
       encrypt: vi.fn(),
       decrypt: vi.fn(),
     },
     getRandomValues: vi.fn((arr) => {
-      for (let i = 0; i < arr.length; i++) {
-        arr[i] = Math.floor(Math.random() * 256);
-      }
+      for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
       return arr;
     }),
   } as any;
 }
+// Ensure window.crypto is writable/configurable for tests that reassign it
+try {
+  Object.defineProperty(globalThis.window ?? globalThis, 'crypto', {
+    value: globalThis.crypto,
+    configurable: true,
+    writable: true,
+  });
+} catch {}
 
 // CompressionStream mock for compression tests
 if (!globalThis.CompressionStream) {
@@ -115,6 +123,22 @@ if (!globalThis.CompressionStream) {
     readable = { getReader: () => ({ read: vi.fn() }) };
   } as any;
 }
+
+// URL.createObjectURL is used in worker bootstrap e2e-style tests
+if (!globalThis.URL?.createObjectURL) {
+  (globalThis.URL as any) = globalThis.URL || {};
+  (globalThis.URL as any).createObjectURL = vi.fn(() => 'blob:mock');
+}
+
+// Make window.location configurable/writable for tests that override it
+try {
+  const current = globalThis.window?.location ?? ({} as any);
+  Object.defineProperty(globalThis.window ?? globalThis, 'location', {
+    configurable: true,
+    writable: true,
+    value: current,
+  });
+} catch {}
 
 // ========================
 // Test Cleanup Utilities

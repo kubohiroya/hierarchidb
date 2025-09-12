@@ -66,6 +66,13 @@ export interface TreeConsolePanelProps {
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   /** Optional: For column-width persistence, provide treeId to scope keys */
   readonly treeIdForPersistence?: string;
+  /** Row click action behavior */
+  readonly rowClickAction?: 'Select' | 'Edit' | 'Navigate';
+  /**
+   * Whether to render the built-in static SpeedDial.
+   * Set to false when an external DynamicSpeedDial is provided by the host app.
+   */
+  readonly renderBuiltInSpeedDial?: boolean;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -213,37 +220,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         variant="default"
         onDropToNode={(targetId, draggedId) => props.onMoveNodes?.([draggedId], targetId)}
       />
-      {/* Toolbar
-      <TreeTableToolbar
-        title={props.title}
-        searchTerm={props.searchTerm}
-        onSearchChange={props.onSearchChange}
-        onSearchClear={props.onSearchClear}
-        selectedCount={selectedItems}
-        totalCount={totalItems}
-        canCreate={props.canCreate}
-        canEdit={props.canEdit}
-        canDelete={props.canDelete}
-        onCreate={props.onCreate}
-        onEdit={props.onEdit}
-        onDelete={props.onDelete}
-        onRefresh={props.onRefresh}
-        onExpandAll={props.onExpandAll}
-        onCollapseAll={props.onCollapseAll}
-        isLoading={props.loading}
-        viewMode={props.viewMode}
-        onViewModeChange={props.onViewModeChange}
-        sortBy={props.sortBy}
-        sortDirection={props.sortDirection}
-        onSortChange={(field, direction: string) => {
-          console.log('Sort direction:', direction);
-          props.onSort(field);
-        }}
-        filterBy={props.filterBy}
-        onFilterChange={props.onFilterChange}
-        availableFilters={props.availableFilters}
-      />
-*/}
       {/* Main Table Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <TreeTableCore
@@ -254,7 +230,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           depthOffset={0}
           disableDragAndDrop={false}
           hideDragHandler={false}
-          rowClickAction="Select"
+          rowClickAction={props.rowClickAction ?? 'Select'}
           selectionMode="multiple"
           persistenceKey={props.treeIdForPersistence ? `hdb:treetable:colwidths:v1:${props.treeIdForPersistence}:${props.rootNodeId || 'root'}` : `hdb:treetable:colwidths:v1:unknown:${props.rootNodeId || 'root'}`}
           onRowContextMenu={(node: TreeNodeInUI, event: React.MouseEvent) => {
@@ -296,8 +272,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         canDuplicate={true}
       />
 
-      {/* SpeedDial Menu */}
-      {props.canCreate && (
+      {/* SpeedDial Menu (can be disabled when host provides DynamicSpeedDial) */}
+      {props.canCreate && (props.renderBuiltInSpeedDial ?? true) && (
         <Box
           sx={{
             position: 'fixed',

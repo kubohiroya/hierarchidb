@@ -21,8 +21,7 @@ export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaul
 export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService';
 
 // Import and re-export the plugin definition
-export { LocationPluginDefinition } from './definitions/LocationDefinition';
-export { LocationPluginDefinition as default } from './definitions/LocationDefinition';
+// Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {

@@ -4,6 +4,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+// Skip network-dependent tests unless explicitly enabled via env
+// Run with: NETWORK_TESTS=1 pnpm -C packages/backend/bff test:run
+const describeIf = process.env.NETWORK_TESTS === '1' ? describe : describe.skip;
 
 // Test configuration
 const BFF_URL = process.env.BFF_TEST_URL || 'http://localhost:8787';
@@ -22,7 +25,7 @@ const config: TestConfig = {
   googleClientId: GOOGLE_CLIENT_ID,
 };
 
-describe('BFF Service Integration Tests', () => {
+describeIf('BFF Service Integration Tests', () => {
   describe('Health Check', () => {
     it('should return service status', async () => {
       const response = await fetch(`${config.bffUrl}/`);

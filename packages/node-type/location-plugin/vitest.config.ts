@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: [path.resolve(__dirname, '../../../vitest.setup.ts')],
     globals: true,
     // Avoid EPERM from child process kills in sandboxed CI
     pool: 'threads',

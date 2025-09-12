@@ -143,9 +143,9 @@ export function HeaderAuthButton() {
 ```tsx
 import { useState } from 'react';
 import { Avatar, Button, IconButton, Menu, MenuItem, ListItemIcon } from '@mui/material';
-import Logout from '@mui/icons-material/Logout';
-import Settings from '@mui/icons-material/Settings';
-import Person from '@mui/icons-material/Person';
+import Logout from '@mui/icon-material/Logout';
+import Settings from '@mui/icon-material/Settings';
+import Person from '@mui/icon-material/Person';
 import { useBFFAuth } from '@hierarchidb/ui-auth';
 
 export function HeaderAuthMenu() {

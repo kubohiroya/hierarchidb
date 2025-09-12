@@ -13,7 +13,7 @@
  *
  * @dependencies
  * - @mui/material: Drawer, Box, Stack containers and styling
- * - @mui/icons-material: DragIndicator icon
+ * - @mui/icon-material: DragIndicator icon
  * - React: hooks (useState, useRef, useLayoutEffect, useCallback)
  */
 

@@ -183,7 +183,7 @@ await api.commitWorkingCopy({
 - [ ] Update subscription pattern to use Observables
 - [ ] Remove custom command types
 
-### TreeConsoleToolbar.tsx
+### TreeConsoleToolbar_Deprecated.tsx
 - [ ] Update undo/redo to use `WorkerAPI.undo/redo`
 - [ ] Remove custom toolbar command handling
 

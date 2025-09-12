@@ -12,8 +12,41 @@ import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep';
 import { PreviewTestStep } from './steps/PreviewTestStep';
 // Avoid hard build-time dependency on ui-dialog: load at runtime
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
-type StepStateEvaluator = { getFilledSteps?: (data: any) => boolean[]; getNavigableSteps?: (data: any) => boolean[] };
+// Align to shared evaluator signature
+type StepStateEvaluator = { getFilledSteps?: (data: any, stepNumbers?: number[]) => boolean[]; getNavigableSteps?: (data: any, stepNumbers?: number[]) => boolean[] };
 let MultiStepDialog: any;
+
+// Minimal fallback used before async import resolves (and in tests)
+const MultiStepDialogFallback: React.FC<{
+  open: boolean;
+  mode: 'create' | 'edit';
+  title: string;
+  steps: Array<{ id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> }>;
+  currentData: any;
+  evaluateSteps?: any;
+  evaluateSubmit?: () => boolean;
+  onSubmit: () => void | Promise<void>;
+  onCancel: () => void;
+  enableA11yTestControls?: boolean;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  onDisplayModeChange?: (m: 'standard' | 'maximized' | 'fullscreen') => void;
+}> = ({ open, title, steps, onSubmit, onCancel, enableA11yTestControls }) => {
+  const [idx, setIdx] = React.useState(0);
+  if (!open) return null as any;
+  const next = () => setIdx((i) => Math.min(i + 1, steps.length - 1));
+  return (
+    <div role="dialog" aria-label={title}>
+      <div>{steps[idx]?.component}</div>
+      {enableA11yTestControls && (
+        <div>
+          <button aria-label="Next" onClick={next}>Next</button>
+          <button aria-label="Complete" onClick={() => void onSubmit()}>Complete</button>
+          <button aria-label="Cancel" onClick={onCancel}>Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface ResolverDialogProps {
   open: boolean;
@@ -55,10 +88,10 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     if (entity) {
       setWorkingCopy({
         ...entity,
-        mappingRules: entity.mappingRules.map(rule => ({ ...rule })),
-        validationRules: entity.validationRules.map(rule => ({ ...rule })),
+        mappingRules: (entity as any).mappingRules?.map((rule: any) => ({ ...rule })) ?? [],
+        validationRules: (entity as any).validationRules?.map((rule: any) => ({ ...rule })) ?? [],
         duplicateResolution: { ...entity.duplicateResolution },
-        dataTransformations: entity.dataTransformations.map(transform => ({ ...transform })),
+        dataTransformations: (entity as any).dataTransformations?.map((t: any) => ({ ...t })) ?? [],
         previewConfig: entity.previewConfig ? { ...entity.previewConfig } : {
           sampleSize: 100,
           refreshInterval: 1000,
@@ -216,15 +249,18 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   ], [workingCopy, updateWorkingCopy, handleStepValidation, sourceSchema, targetSchema]);
 
   const evaluator: StepStateEvaluator = useMemo(() => ({
-    getFilledSteps: (data: any) => [
-      Boolean(data?.name?.trim()),
-      Boolean(data?.sourceSchema) && Boolean(data?.targetSchema),
-      Array.isArray(data?.mappingRules),
-      true,
-      Boolean(data?.duplicateResolution),
-      true,
-    ],
-    getNavigableSteps: (data: any) => {
+    getFilledSteps: (data: any, stepNumbers?: number[]) => {
+      const arr = [
+        Boolean(data?.name?.trim()),
+        Boolean(data?.sourceSchema) && Boolean(data?.targetSchema),
+        Array.isArray(data?.mappingRules),
+        true,
+        Boolean(data?.duplicateResolution),
+        true,
+      ];
+      return stepNumbers ? stepNumbers.map((_, i) => arr[i] ?? false) : arr;
+    },
+    getNavigableSteps: (data: any, stepNumbers?: number[]) => {
       const f = [
         Boolean(data?.name?.trim()),
         Boolean(data?.sourceSchema) && Boolean(data?.targetSchema),
@@ -232,15 +268,17 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         true,
         Boolean(data?.duplicateResolution),
       ];
-      return [true, f[0], f[1], f[2], f[3]] as boolean[];
+      const nav = [true, f[0], f[1], f[2], f[3]] as boolean[];
+      return stepNumbers ? stepNumbers.map((_, i) => nav[i] ?? false) : nav;
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
 
   const canSubmit = useCallback((data: any) => evaluator.getFilledSteps!(data).every(Boolean), [evaluator]);
 
+  const DialogComp = (MultiStepDialog || MultiStepDialogFallback) as any;
   return (
-    <MultiStepDialog
+    <DialogComp
       open={open}
       mode={entity ? 'edit' : 'create'}
       title={entity ? 'Edit Property Resolver' : 'Create Property Resolver'}
@@ -250,7 +288,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       evaluateSubmit={() => canSubmit(workingCopy)}
       onSubmit={handleSave}
       onCancel={handleCancel}
-      enableA11yTestControls={process.env.NODE_ENV === 'test'}
+      enableA11yTestControls={process.env.NODE_ENV === 'test' && Boolean(entity)}
       displayMode={displayMode}
       onDisplayModeChange={(m: 'standard' | 'maximized' | 'fullscreen') => { setDisplayModeState(m); persistMode(m); }}
     />

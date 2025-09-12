@@ -2,36 +2,45 @@
   * Route Dialog Component (ui-dialog 版)
    */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteWorkingCopy } from '../types';
 import { useTranslation } from '../i18n';
 import { RouteBasicInfoStep } from './RouteBasicInfoStep';
 import { RouteSelectionStep } from './RouteSelectionStep';
 import { RouteProcessingStep } from './RouteProcessingStep';
+import { notify } from '@hierarchidb/ui-core';
+import { useWorkingCopy } from '@hierarchidb/ui-core';
 // Avoid build-time hard dependency on ui-dialog; load at runtime
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
-type StepStateEvaluator = { getFilledSteps?: (data: any) => boolean[]; getNavigableSteps?: (data: any) => boolean[] };
+// Align evaluator signature to shared interface: (data, stepNumbers?) => boolean[]
+type StepStateEvaluator = { getFilledSteps?: (data: any, stepNumbers?: number[]) => boolean[]; getNavigableSteps?: (data: any, stepNumbers?: number[]) => boolean[] };
 let MultiStepDialog: any;
 
 export interface RouteDialogProps {
   open: boolean;
   onClose: () => void;
-  nodeId: NodeId;
-  workingCopy: RouteWorkingCopy;
-  onSave: (workingCopy: RouteWorkingCopy) => void;
-  onCancel: () => void;
+  mode?: 'create' | 'edit';
+  nodeId?: NodeId;
+  parentId?: NodeId;
+  onSuccess?: (entity: RouteWorkingCopy) => void;
+  onError?: (error: Error) => void;
 }
 
 export const RouteDialog: React.FC<RouteDialogProps> = ({
   open,
-  onClose: _onClose,
-  nodeId: _nodeId,
-  workingCopy,
-  onSave,
-  onCancel,
+  onClose,
+  mode = 'create',
+  nodeId,
+  parentId,
+  onSuccess,
+  onError,
 }) => {
   const { t } = useTranslation();
+  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({ nodeType: 'route', mode, nodeId: nodeId as any, parentId: parentId as any });
+  // Initialize working copy from Worker when dialog opens
+  useEffect(() => { if (open) { void init(); } }, [open, init]);
+
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
     return Boolean((workingCopy as any).name?.trim()) && Boolean((workingCopy as any).routeType) &&
@@ -46,8 +55,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       label: t('base-dialog.steps.basicInfo', 'Basic Information'),
       component: (
         <RouteBasicInfoStep
-          workingCopy={workingCopy}
-          onUpdate={(updates) => onSave({ ...workingCopy, ...updates })}
+          workingCopy={workingCopy as any}
+          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
           onValidationChange={() => {/* computed above */}}
         />
       ),
@@ -58,8 +67,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       label: t('base-dialog.steps.routeSelection', 'Route Selection'),
       component: (
         <RouteSelectionStep
-          workingCopy={workingCopy}
-          onUpdate={(updates) => onSave({ ...workingCopy, ...updates })}
+          workingCopy={workingCopy as any}
+          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
           onValidationChange={() => {/* computed above */}}
         />
       ),
@@ -70,18 +79,27 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       label: t('base-dialog.steps.processing', 'Processing'),
       component: (
         <RouteProcessingStep
-          workingCopy={workingCopy}
-          onUpdate={(updates) => onSave({ ...workingCopy, ...updates })}
+          workingCopy={workingCopy as any}
+          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
           onValidationChange={() => {/* computed above */}}
         />
       ),
       validate: async () => isProcessingValid,
     },
-  ], [workingCopy, onSave, isBasicValid]);
+  ], [workingCopy, isBasicValid]);
 
   const evaluator: StepStateEvaluator = useMemo(() => ({
-    getFilledSteps: () => [isBasicValid, isSelectionValid, isProcessingValid],
-    getNavigableSteps: () => [true, isBasicValid, isSelectionValid],
+    getFilledSteps: (_data?: any, stepNumbers?: number[]) => {
+      const arr = [isBasicValid, isSelectionValid, isProcessingValid];
+      if (!stepNumbers || stepNumbers.length === arr.length) return arr;
+      // Map by index when stepNumbers provided but lengths differ
+      return stepNumbers.map((_, i) => arr[i] ?? false);
+    },
+    getNavigableSteps: (_data?: any, stepNumbers?: number[]) => {
+      const nav = [true, isBasicValid, isSelectionValid];
+      if (!stepNumbers || stepNumbers.length === nav.length) return nav;
+      return stepNumbers.map((_, i) => nav[i] ?? false);
+    },
   }), [isBasicValid]);
 
   const canSubmit = useCallback(() => isBasicValid && isSelectionValid && isProcessingValid, [isBasicValid]);
@@ -92,15 +110,29 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   return (
     <MultiStepDialog
       open={open}
-      mode={'edit'}
+      mode={mode}
       title={t('base-dialog.title', 'Route Configuration')}
       icon={null}
       steps={steps}
       currentData={workingCopy}
       evaluateSteps={evaluator}
       evaluateSubmit={canSubmit}
-      onSubmit={async () => onSave(workingCopy)}
-      onCancel={onCancel}
+      onSubmit={async () => {
+        try {
+          await commit();
+          if (workingCopy) onSuccess?.(workingCopy);
+          notify.success('Route saved successfully');
+        } catch (e) {
+          onError?.(e as Error);
+          notify.error('Failed to save route');
+        } finally {
+          onClose();
+        }
+      }}
+      onCancel={async () => {
+        try { await discard(); notify.info('Route changes discarded'); } catch {}
+        onClose();
+      }}
       enableA11yTestControls={process.env.NODE_ENV === 'test'}
       displayMode={displayMode}
       onDisplayModeChange={(m: 'standard' | 'maximized' | 'fullscreen') => { setDisplayModeState(m); }}
@@ -117,3 +149,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       } catch {}
     })();
   }, []);
+
+  // Cleanup draft on unmount (best-effort)
+  React.useEffect(() => {
+    return () => { void (async () => { try { await discard(); } catch {} })(); };
+  }, [discard]);

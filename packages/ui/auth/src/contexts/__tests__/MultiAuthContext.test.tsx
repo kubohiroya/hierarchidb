@@ -130,7 +130,12 @@ describe('MultiAuthProvider', () => {
       localStorage: mockLocalStorage as any,
     });
 
-    globalThis.crypto = mockCrypto as any;
+    try {
+      Object.defineProperty(globalThis, 'crypto', { value: mockCrypto as any, configurable: true });
+    } catch {
+      // Fallback for environments where property is writable
+      (globalThis as any).crypto = mockCrypto as any;
+    }
     globalThis.localStorage = mockLocalStorage as any;
 
     // Mock fetch for Google userinfo
@@ -141,7 +146,11 @@ describe('MultiAuthProvider', () => {
 
   afterEach(() => {
     globalThis.window = originalWindow;
-    globalThis.crypto = originalCrypto;
+    try {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto as any, configurable: true });
+    } catch {
+      (globalThis as any).crypto = originalCrypto as any;
+    }
     globalThis.localStorage = originalLocalStorage;
   });
 

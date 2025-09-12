@@ -39,7 +39,7 @@ HierarchiDBのUI層において、既存コンポーネントを変更するこ�
 graph TB
     subgraph "Core UI Components"
         A[TreeTableCore]
-        B[TreeConsoleToolbar]
+        B[TreeConsoleToolbar_Deprecated]
         C[TreeConsoleHeader]
     end
     

@@ -54,20 +54,14 @@
     "plugin": {
       "nodeType": "spreadsheet",
       "name": "Spreadsheet Plugin",
+      "icon": { "mui": "Poll", "emoji": "📈", "color": "#dcbc50" },
       "priority": 600,
       "category": "data",
       "extends": "folder",
       "dependencies": [
         "folder"
       ],
-      "exports": {
-        "definition": "SpreadsheetDefinition",
-        "handler": "SpreadsheetEntityHandler",
-        "components": [
-          "SpreadsheetDialog",
-          "SpreadsheetPanel"
-        ]
-      },
+      
       "capabilities": {
         "canHaveChildren": false,
         "canBeRoot": false,

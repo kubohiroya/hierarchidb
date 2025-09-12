@@ -1,7 +1,7 @@
 /**
  * BaseIcon Component
  *
- * A standardized base component for creating plugin icons with consistent props.
+ * A standardized base component for creating plugin icon with consistent props.
  * Reduces duplication across icon containers by providing common functionality.
  */
 
@@ -41,7 +41,7 @@ export interface BaseIconProps {
 }
 
 /**
- * Props for SVG-based icons
+ * Props for SVG-based icon
  */
 export interface SvgIconDefinition {
   viewBox?: string;
@@ -108,11 +108,11 @@ export function createSvgIcon(
 }
 
 /**
- * Creates a wrapper for MUI icons with consistent props
+ * Creates a wrapper for MUI icon with consistent props
  *
  * @example
  * ```typescript
- * import { Folder, FolderOpen } from '@mui/icons-material';
+ * import { Folder, FolderOpen } from '@mui/icon-material';
  *
  * export const FolderIcon = createMuiIconWrapper(
  *   (props) => props.open ? FolderOpen : Folder,

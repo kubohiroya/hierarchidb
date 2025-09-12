@@ -1,5 +1,5 @@
 /**
-  * TreeConsoleToolbar -
+  * TreeConsoleToolbar_Deprecated -
   * eria-cartographTreeConsoleToolbarUI
    */
 
@@ -8,7 +8,7 @@ import {
   Box,
   Button,
   ButtonGroup,
-  ClickAwayListener,
+  Divider,
   FormControlLabel,
   IconButton,
   InputAdornment,
@@ -45,6 +45,12 @@ import {
   Settings as SettingsIcon,
   SnippetFolder as SnippetFolderIcon,
   Undo as UndoIcon,
+
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  Translate as TranslateIcon,
+  SettingsBrightness as SystemThemeIcon,
+
 } from '@mui/icons-material';
 
 import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types';
@@ -57,7 +63,7 @@ const SearchTextFieldContainer = styled(Box)(() => ({
   borderColor: 'divider',
   backgroundColor: 'background.paper',
   minWidth: '200px',
-  width: '250px',
+  width: '300px',
   borderRadius: '24px'
 }));
 
@@ -69,7 +75,7 @@ const TreeConsoleToolbarContainer = styled(Box)(() => ({
   minHeight: '48px',
 }));
 
-function SearchField({ searchText, handleSearchTextChange, fullWidth }: { searchText: string; handleSearchTextChange: (_value: string) => void; fullWidth?: boolean}) {
+function SearchField({ searchText, handleSearchTextChange, handleSearchCommit, fullWidth }: { searchText: string; handleSearchTextChange: (_value: string) => void; handleSearchCommit?: () => void; fullWidth?: boolean}) {
   return (
     <SearchTextFieldContainer>
       <TextField
@@ -78,17 +84,41 @@ function SearchField({ searchText, handleSearchTextChange, fullWidth }: { search
         placeholder="Search......"
         value={searchText}
         onChange={(event: React.ChangeEvent<HTMLInputElement>)=>handleSearchTextChange(event.target.value)}
-        InputProps={{
-          style:{
-            borderRadius: '30px',
-          },
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
+        onBlur={() => handleSearchCommit?.()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSearchCommit?.();
+          }
         }}
-      />
+          InputProps={{
+            style:{
+              width: '300px',
+              borderRadius: '30px',
+            },
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            inputProps: {
+              'aria-label': 'Tree search',
+            autoComplete: 'new-password',
+              name: 'hdb-tree-search',
+              type: 'search',
+              inputMode: 'search',
+              spellCheck: false,
+              // Ask popular password managers to ignore this field
+              'data-1p-ignore': 'true',
+              'data-1p-skip': 'true',
+              'data-lpignore': 'true',
+              'data-bwignore': 'true',
+              'data-form-type': 'other',
+              autoCapitalize: 'off',
+              autoCorrect: 'off',
+            },
+          }}
+        />
     </SearchTextFieldContainer>
   );
 }
@@ -138,13 +168,21 @@ function TreeConsoleToolbarContent({
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
   const [importExportAnchorEl, setImportExportAnchorEl] = useState<null | HTMLElement>(null);
   const [trashAnchorEl, setTrashAnchorEl] = useState<null | HTMLElement>(null);
+  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
+  const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
+  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() =>
+    (typeof localStorage !== 'undefined' && (localStorage.getItem('app.theme') as 'system' | 'light' | 'dark')) || 'system',
+  );
+  const [language, setLanguage] = useState<string>(
+    () => (typeof localStorage !== 'undefined' && localStorage.getItem('app.lang')) || 'system',
+  );
 
   const settingsOpen = Boolean(settingsAnchorEl);
   const importExportOpen = Boolean(importExportAnchorEl);
   const trashOpen = Boolean(trashAnchorEl);
 
   const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
-    setSettingsAnchorEl(settingsAnchorEl ? null : event.currentTarget);
+    setSettingsAnchorEl(event.currentTarget);
   };
 
   const handleSettingsClose = () => {
@@ -197,12 +235,36 @@ function TreeConsoleToolbarContent({
     controller?.handleSearchTextChange,
   ]);
 
+  const themeOpen = Boolean(themeAnchorEl);
+  const languageOpen = Boolean(languageAnchorEl);
+
+  // Theme submenu handlers
+  const openThemeMenu = (event: MouseEvent<HTMLElement>) => setThemeAnchorEl(event.currentTarget);
+  const closeThemeMenu = () => setThemeAnchorEl(null);
+  const selectTheme = (mode: 'system' | 'light' | 'dark') => {
+    setThemeMode(mode);
+    localStorage.setItem('app.theme', mode);
+    window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } }));
+    closeThemeMenu();
+  };
+
+  // Language submenu handlers
+  const openLanguageMenu = (event: MouseEvent<HTMLElement>) => setLanguageAnchorEl(event.currentTarget);
+  const closeLanguageMenu = () => setLanguageAnchorEl(null);
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem('app.lang', lang);
+    window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } }));
+    closeLanguageMenu();
+  };
+
   return (
     <TreeConsoleToolbarContainer>
       {/* Search Input */}
       <SearchField
         searchText={controller?.searchText || ''}
         handleSearchTextChange={handleSearch}
+        handleSearchCommit={controller?.handleSearchCommit}
       />
 
       {/* Undo/Redo Group */}
@@ -313,17 +375,6 @@ function TreeConsoleToolbarContent({
           </MenuItem>
           <MenuItem
             onClick={() => {
-              handleAction('import-template', { templateId: 'population-2023' });
-              handleImportExportClose();
-            }}
-          >
-            <ListItemIcon>
-              <SnippetFolderIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Import Template: Population Data</ListItemText>
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
               handleAction('export');
               handleImportExportClose();
             }}
@@ -332,6 +383,18 @@ function TreeConsoleToolbarContent({
               <FileDownloadIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Export to JSON File</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem
+            onClick={() => {
+              handleAction('import-template', { templateId: 'population-2023' });
+              handleImportExportClose();
+            }}
+          >
+            <ListItemIcon>
+              <SnippetFolderIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Import Template</ListItemText>
           </MenuItem>
         </Menu>
 
@@ -343,25 +406,84 @@ function TreeConsoleToolbarContent({
           open={settingsOpen}
           anchorEl={settingsAnchorEl}
           container={portalContainer}
-          sx={{ zIndex: (theme) => Math.max(theme.zIndex.modal + 1, 2000) }}
+          onClose={handleSettingsClose}
         >
-          <ClickAwayListener onClickAway={handleSettingsClose}>
-            <Paper sx={{ p: 2, minWidth: 250, zIndex: (theme) => Math.max(theme.zIndex.modal + 2, 2001) }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Row Click Action
-              </Typography>
-              <RadioGroup
-                value={rowClickAction}
-                onChange={(e) =>
-                  handleRowClickActionChange(e.target.value as 'Select' | 'Edit' | 'Navigate')
-                }
-              >
-                <RadioItem icon={<CheckBox fontSize="small" />} label={'Select'} value={'Select'}/>
-                <RadioItem icon={<Edit fontSize="small" />} label={'Edit'} value={'Edit'}/>
-                <RadioItem icon={<OpenInNew fontSize="small" />} label={'Navigate'} value={'Navigate'}/>
-              </RadioGroup>
-            </Paper>
-          </ClickAwayListener>
+            <MenuItem>
+              <Paper sx={{ p: 2, minWidth: 250, zIndex: (theme) => Math.max(theme.zIndex.modal + 2, 2001) }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Row Click Action
+                </Typography>
+                <RadioGroup
+                  value={rowClickAction}
+                  onChange={(e) =>
+                    handleRowClickActionChange(e.target.value as 'Select' | 'Edit' | 'Navigate')
+                  }
+                >
+                  <RadioItem icon={<CheckBox fontSize="small" />} label={'Select'} value={'Select'}/>
+                  <RadioItem icon={<Edit fontSize="small" />} label={'Edit'} value={'Edit'}/>
+                  <RadioItem icon={<OpenInNew fontSize="small" />} label={'Navigate'} value={'Navigate'}/>
+                </RadioGroup>
+              </Paper>
+            </MenuItem>
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* Theme selection opener */}
+            <MenuItem onClick={openThemeMenu} aria-haspopup="menu">
+              <ListItemIcon>
+                {themeMode === 'dark' ? (
+                  <DarkModeIcon fontSize="small" />
+                ) : themeMode === 'light' ? (
+                  <LightModeIcon fontSize="small" />
+                ) : (
+                  <SystemThemeIcon fontSize="small" />
+                )}
+              </ListItemIcon>
+              <ListItemText primary="Theme" secondary={themeMode} />
+            </MenuItem>
+
+            {/* Language selection opener */}
+            <MenuItem onClick={openLanguageMenu} aria-haspopup="menu">
+              <ListItemIcon>
+                <TranslateIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Language" secondary={language} />
+            </MenuItem>
+
+            {/* Theme submenu */}
+            <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
+              <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
+                <ListItemIcon>
+                  <SystemThemeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="System" />
+              </MenuItem>
+              <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
+                <ListItemIcon>
+                  <LightModeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Light" />
+              </MenuItem>
+              <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
+                <ListItemIcon>
+                  <DarkModeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Dark" />
+              </MenuItem>
+            </Menu>
+
+            {/* Language submenu */}
+            <Menu anchorEl={languageAnchorEl} open={languageOpen} onClose={closeLanguageMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
+              <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
+                <ListItemText primary="System Default" />
+              </MenuItem>
+              <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
+                <ListItemText primary="English" />
+              </MenuItem>
+              <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
+                <ListItemText primary="日本語" />
+              </MenuItem>
+            </Menu>
         </Menu>
       </Box>
     </TreeConsoleToolbarContainer>
@@ -401,6 +523,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         searchText={controller?.searchText || ''}
         handleSearchTextChange={controller?.handleSearchTextChange || (() => {
         })}
+        handleSearchCommit={controller?.handleSearchCommit}
       />
     );
   }

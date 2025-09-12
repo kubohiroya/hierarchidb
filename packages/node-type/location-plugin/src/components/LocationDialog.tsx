@@ -2,7 +2,7 @@
   * Location Dialog Component
    */
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Button,
@@ -20,48 +20,48 @@ import {
   Typography,
 } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
-import type { LocationDialogProps, LocationWorkingCopy, NodeId } from '../types';
+import { notify } from '@hierarchidb/ui-core';
+import type { LocationDialogProps, LocationWorkingCopy } from '../types';
+import { useWorkingCopy } from '@hierarchidb/ui-core';
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
-                                                                mode,
-                                                                nodeId,
-                                                                open,
-                                                                onClose,
-                                                              }) => {
-  const [workingCopy, setWorkingCopy] = useState<LocationWorkingCopy>({
-    id: 'temp' as any,
-    nodeId: nodeId || 'temp' as NodeId,
+  mode,
+  nodeId,
+  parentId,
+  open,
+  onClose,
+  onSuccess,
+  onError,
+}) => {
+  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<LocationWorkingCopy>({ nodeType: 'location', mode, nodeId: nodeId as any, parentId: parentId as any });
+
+  useEffect(() => { if (open) void init(); }, [open, init]);
+  useEffect(() => { return () => { void discard().catch(() => {}); }; }, [discard]);
+
+  const handleSave = async () => {
+    try {
+      await commit();
+      if (workingCopy) onSuccess?.(workingCopy);
+      notify.success('Location saved successfully');
+    } catch (e) {
+      onError?.(e as Error);
+      notify.error('Failed to save location');
+    } finally {
+      onClose();
+    }
+  };
+
+  const handleCancel = async () => { await discard().catch(() => {}); notify.info('Location changes discarded'); onClose(); };
+
+  const updateWorkingCopy = (updates: Partial<LocationWorkingCopy>) => { setWorkingCopy(prev => ({ ...prev, ...updates } as LocationWorkingCopy)); };
+
+  // Fallback object for initial render before WC loads
+  const wc: LocationWorkingCopy = workingCopy ?? {
     name: '',
+    description: '',
     dataSourceName: 'openstreetmap',
     licenseAgreement: false,
-    processingConfig: {
-      concurrentDownloads: 2,
-      enableLocationFiltering: false,
-      enableClustering: false,
-      enableGeocoding: false,
-    },
-    processingStatus: 'idle',
-    checkboxState: {},
-    selectedCountries: [],
-    locationTypes: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    version: 1,
-  });
-
-  const handleSave = () => {
-    // TODO: Implement save logic
-    console.log('Saving location:', workingCopy);
-    onClose();
-  };
-
-  const handleCancel = () => {
-    onClose();
-  };
-
-  const updateWorkingCopy = (updates: Partial<LocationWorkingCopy>) => {
-    setWorkingCopy(prev => ({ ...prev, ...updates }));
-  };
+  } as LocationWorkingCopy;
 
   return (
     <Dialog
@@ -85,8 +85,9 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             fullWidth
             required
             label="名前"
-            value={workingCopy.name}
+            value={wc.name}
             onChange={(e) => updateWorkingCopy({ name: e.target.value })}
+            disabled={!workingCopy}
             sx={{ mb: 3 }}
           />
 
@@ -95,17 +96,19 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             multiline
             rows={3}
             label="説明"
-            value={workingCopy.description || ''}
+            value={wc.description || ''}
             onChange={(e) => updateWorkingCopy({ description: e.target.value })}
+            disabled={!workingCopy}
             sx={{ mb: 3 }}
           />
 
           <FormControl fullWidth sx={{ mb: 3 }}>
             <InputLabel>データソース</InputLabel>
             <Select
-              value={workingCopy.dataSourceName}
+              value={wc.dataSourceName}
               onChange={(e) => updateWorkingCopy({ dataSourceName: e.target.value as any })}
               label="データソース"
+              disabled={!workingCopy}
             >
               <MenuItem value="openstreetmap">OpenStreetMap</MenuItem>
               <MenuItem value="geonames">GeoNames</MenuItem>
@@ -117,8 +120,9 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
           <FormControlLabel
             control={
               <Checkbox
-                checked={workingCopy.licenseAgreement}
+                checked={wc.licenseAgreement}
                 onChange={(e) => updateWorkingCopy({ licenseAgreement: e.target.checked })}
+                disabled={!workingCopy}
               />
             }
             label="ライセンスに同意する"
@@ -134,7 +138,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={!workingCopy.name || !workingCopy.licenseAgreement}
+          disabled={!workingCopy || !wc.name || !wc.licenseAgreement}
         >
           保存
         </Button>

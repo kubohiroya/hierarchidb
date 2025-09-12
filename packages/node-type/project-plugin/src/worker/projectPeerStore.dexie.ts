@@ -1,14 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
+import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { ProjectEntitiesDB, ProjectPeerRow } from './projectEntitiesDB';
-
-// Minimal local replicas to avoid hard type coupling to runtime-worker during DTS
-export type PeerEntity<T = any> = { nodeId: NodeId; updatedAt: number; data?: T } & Record<string, any>;
-export type PeerStore<T = any> = {
-  get(nodeId: NodeId): Promise<PeerEntity<T> | undefined>;
-  put(e: PeerEntity<T>): Promise<void>;
-  delete(nodeId: NodeId): Promise<void>;
-  bulkUpsert(entities: PeerEntity<T>[]): Promise<void>;
-};
 
 export function createProjectPeerStoreDexie(db: ProjectEntitiesDB): PeerStore<any> {
   return {

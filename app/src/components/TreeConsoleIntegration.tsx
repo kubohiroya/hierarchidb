@@ -57,6 +57,9 @@ const TreeConsoleIntegrationInner: React.FC<
     locationSearch: location.search,
   });
 
+  // Row Click Action state (Select | Edit | Navigate)
+  const [rowClickAction, setRowClickAction] = useState<'Select' | 'Edit' | 'Navigate'>('Select');
+
   // Check for trash items when worker client is available
   useEffect(() => {
     const checkTrashItems = async () => {
@@ -83,6 +86,11 @@ const TreeConsoleIntegrationInner: React.FC<
       const currentPageNodeId = pageNodeId || 'root';
 
       switch (action) {
+        case 'setRowClickAction':
+          if (typeof params === 'string') {
+            setRowClickAction(params as 'Select' | 'Edit' | 'Navigate');
+          }
+          break;
         case 'restore':
           // Navigate to trash base-dialog in recover mode
           // Use the trash root as the target for now, will be refined based on selection
@@ -183,14 +191,10 @@ const TreeConsoleIntegrationInner: React.FC<
 
   // Select the appropriate tour based on the current path
   const renderGuidedTour = () => {
-    const path = location.pathname.toLowerCase();
-
-    if (path.includes('/projects') || pageTreeNode?.name?.toLowerCase().includes('project')) {
+    if (treeId === 'p') {
       return <ProjectsGuidedTour run={tourRun} onFinish={handleTourFinish} />;
     } else if (
-      path.includes('/resources') ||
-      pageTreeNode?.name?.toLowerCase().includes('resource')
-    ) {
+      treeId === 'r') {
       return <ResourcesGuidedTour run={tourRun} onFinish={handleTourFinish} />;
     } else {
       return <TopPageGuidedTour run={tourRun} onFinish={handleTourFinish} />;
@@ -206,10 +210,11 @@ const TreeConsoleIntegrationInner: React.FC<
         controller={{
           searchText: searchTerm,
           handleSearchTextChange: actions.handleSearchChange,
+          handleSearchCommit: actions.handleSearchCommit,
         }}
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}
-        rowClickAction="Select"
+        rowClickAction={rowClickAction}
         canUndo={state.canUndo}
         canRedo={state.canRedo}
         canCopy={selectedIds.length > 0}
@@ -223,13 +228,6 @@ const TreeConsoleIntegrationInner: React.FC<
         treeId={treeId as TreeId}
         workerClient={workerClient}
         onStartTour={handleStartTour}
-        menuContext={(() => {
-          const path = location.pathname.toLowerCase();
-          if (path.includes('/projects') || pageTreeNode?.name?.toLowerCase().includes('project')) {
-            return 'projects' as const;
-          }
-          return 'resources' as const;
-        })()}
         title={`Tree: ${pageTreeNode?.name || 'Root'}`}
         rootNodeId={pageNodeId}
         data={treeData}
@@ -245,6 +243,7 @@ const TreeConsoleIntegrationInner: React.FC<
         filterBy={state.filterBy}
         availableFilters={state.availableFilters}
         viewMode={viewMode}
+        rowClickAction={rowClickAction}
         canCreate={canCreate}
         canEdit={canEdit}
         canDelete={canDelete}

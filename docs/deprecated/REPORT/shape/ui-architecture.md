@@ -41,7 +41,7 @@ BatchProcessingMonitorDialog（全画面）→
 
 ```tsx
 import { StepperDialog, useWorkingCopy, useDialogContext } from '@hierarchidb/ui-base-dialog';
-import { FullscreenIcon, FullscreenExitIcon, PlayArrowIcon } from '@hierarchidb/ui-core/icons';
+import { FullscreenIcon, FullscreenExitIcon, PlayArrowIcon } from '@hierarchidb/ui-core/icon';
 
 export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);

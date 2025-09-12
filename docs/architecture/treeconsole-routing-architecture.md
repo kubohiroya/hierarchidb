@@ -78,7 +78,7 @@ app/src/routes/
 
 ```mermaid
 graph TD
-    TreeConsoleIntegration --> TreeConsoleToolbar
+    TreeConsoleIntegration --> TreeConsoleToolbar_Deprecated
     TreeConsoleIntegration --> TreeConsolePanelWithDynamicSpeedDial
     
     TreeConsolePanelWithDynamicSpeedDial --> TreeConsolePanel
@@ -94,7 +94,7 @@ graph TD
 
 ### Component Responsibilities
 
-#### TreeConsoleToolbar (`@hierarchidb/ui-treeconsole-toolbar`)
+#### TreeConsoleToolbar_Deprecated (`@hierarchidb/ui-treeconsole-toolbar`)
 - Search functionality
 - Undo/Redo buttons
 - Copy/Paste/Duplicate operations

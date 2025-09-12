@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
-// import { SvgIconComponent } from '@mui/icons-material';
+// import { SvgIconComponent } from '@mui/icon-material';
 
 // @ts-ignore - provider-router not available in ui-core
 const useNavigate = () => (_path: string, _options?: any) => {

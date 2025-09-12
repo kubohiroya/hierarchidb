@@ -1,5 +1,7 @@
 // dep-fence 0.4.x configuration (ESM)
 import { defaultPolicies } from 'dep-fence';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Internal conventions for this monorepo
@@ -34,38 +36,76 @@ const custom = [
     ],
   },
 
-  // Allow minimal, package-scoped ambient shims in node-type packages when used
-  // solely for bridging optional peer types during DTS bundling (e.g., bootstrap hooks).
-  // We still discourage UI package-local shims.
+  // Ban per-package ambient shims (shims-*.d.ts) — centralize in common-type only
   {
-    id: 'allow-node-type-ambient-shims',
-    when: (ctx) => {
-      const name = ctx.pkg?.name || '';
-      return name.startsWith('@hierarchidb/') && name.includes('shape-plugin');
-    },
-    because: 'node-type packages may include narrow ambient d.ts for peer-only types to keep DTS bundling stable without enforcing install order.',
+    id: 'ban-local-ambient-shims',
+    when: () => true,
+    because: 'ローカルshimsは作成禁止。型は公開パッケージまたは共通ambientに集約する方針。',
     rules: [
-      { rule: 'local-shims-allow', options: { allow: ['**/src/types/shims-*.d.ts'] }, severity: 'INFO' },
+      { rule: 'import-path-ban', options: { forbid: ['.*/src/.*/shims-.*\\.d\\.ts$'] }, severity: 'ERROR' },
+    ],
+  },
+
+  // Ban importing *.d.ts from src (types must come from published dist or designated ambient)
+  {
+    id: 'ban-src-dts-imports',
+    when: () => true,
+    because: '型の横断参照はdist/*.d.ts か共通ambientのみ許可。src内の*.d.ts直参照を禁止。',
+    rules: [
+      { rule: 'import-path-ban', options: { forbid: ['.*/src/.*\\.d\\.ts$'] }, severity: 'ERROR' },
+    ],
+  },
+
+  // Ban cross-package deep imports into src/dist internals (public API only)
+  {
+    id: 'ban-cross-package-deep-imports',
+    when: () => true,
+    because: '他パッケージの内部(src/dist)への深いimportは禁止。公開エントリのみ使用。',
+    rules: [
+      { rule: 'import-path-ban', options: { forbid: ['^packages/.+/(src|dist)/'], exceptSamePackage: true }, severity: 'ERROR' },
+    ],
+  },
+
+  // Ban repo-local aliases in public entrypoints (keep publish surface portable)
+  {
+    id: 'ban-alias-in-public-entries',
+    when: () => true,
+    because: '公開エントリ(src/index.ts 等)でレポジトリアイリアス(~ 等)の使用を禁止。',
+    rules: [
+      { rule: 'import-path-ban', options: { from: ['**/src/index.ts', '**/src/ui/index.ts', '**/src/worker/index.ts'], forbid: ['^~/.+'] }, severity: 'ERROR' },
     ],
   },
 ];
 
-// Patch default policies: route-plugin provides both tsconfig.json and tsconfig.build.json
-// but default tsconfig hygiene sometimes mis-detects JSX/extends. We scope-disable that
-// specific default policy for the route-plugin only, leaving it active everywhere else.
+// Refine default tsconfig policy to avoid false positives:
+// - Check package-local tsconfig.json and ensure it extends repo base and sets jsx: 'react-jsx'.
+// - If満たす場合のみ、既定のtsconfig-hygieneの検査をスキップ。
 const patchedDefaults = defaultPolicies.map((p) => {
-  if (p?.id === 'tsconfig-hygiene') {
-    const origWhen = p.when || (() => true);
-    return {
-      ...p,
-      when: (ctx) => {
-        const name = ctx.pkg?.name || '';
-        if (name === '@hierarchidb/route-plugin') return false; // skip tsconfig hygiene for this pkg
-        return origWhen(ctx);
-      },
-    };
-  }
-  return p;
+  if (p?.id !== 'tsconfig-hygiene') return p;
+  const origWhen = p.when || (() => true);
+  return {
+    ...p,
+    when: (ctx) => {
+      try {
+        const dir = ctx?.pkg?.dir || ctx?.dir || null;
+        if (dir) {
+          const tsconfigPath = path.join(dir, 'tsconfig.json');
+          if (fs.existsSync(tsconfigPath)) {
+            const ts = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
+            const jsx = ts?.compilerOptions?.jsx;
+            const ext = ts?.extends;
+            const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
+            const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev';
+            if (okExtends && okJsx) {
+              // Local tsconfig is already healthy; skip default hygiene for this pkg
+              return false;
+            }
+          }
+        }
+      } catch {}
+      return origWhen(ctx);
+    },
+  };
 });
 
 export const policies = [...patchedDefaults, ...custom];

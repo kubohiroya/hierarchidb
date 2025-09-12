@@ -1,7 +1,7 @@
 /**
  * @file DropdownMenu.tsx
  * @description A generic dropdown menu component that provides a clickable trigger element
- * with a popup menu of actions. Supports icons, dividers, and custom click handlers for
+ * with a popup menu of actions. Supports icon, dividers, and custom click handlers for
  * each menu item.
  *
  * @module components/ui/DropdownMenu

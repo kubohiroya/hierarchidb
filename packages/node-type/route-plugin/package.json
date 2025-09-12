@@ -10,12 +10,18 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./worker": {
+      "import": "./dist/worker/index.js"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.js"
     }
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
@@ -31,12 +37,14 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "dexie": "^4.2.0",
     "searoute-js": "^0.1.0"
   },
   "peerDependencies": {
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^6.0.0",
@@ -45,6 +53,9 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@mui/icons-material": "^6.0.0",
     "@mui/material": "^6.0.0",
     "@types/node": "^20.10.5",
@@ -52,6 +63,13 @@
     "react-dom": "^18.2.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "route",
+      "name": "Route Plugin",
+      "icon": { "mui": "Route", "emoji": "🛣️", "color": "#a3b030" }
+    }
   },
   "tsup": {
     "external": [

@@ -635,7 +635,7 @@ const { selectedNodeIds, isLoading, error } = orchestrator;
 | パッケージ名 | 責務 | 主要コンポーネント |
 |------------|------|------------------|
 | `ui-treeconsole-breadcrumb` | パンくずリスト | TreeConsoleBreadcrumb |
-| `ui-treeconsole-toolbar` | ツールバー | TreeConsoleToolbar, TreeConsoleActions |
+| `ui-treeconsole-toolbar` | ツールバー | TreeConsoleToolbar_Deprecated, TreeConsoleActions |
 | `ui-treeconsole-footer` | フッター | TreeConsoleFooter |
 | `ui-treeconsole-treetable` | メインテーブル | TreeTableView, TreeTableCore |
 | `ui-treeconsole-trashbin` | ゴミ箱UI | TrashBinColumns, TrashBinActions |

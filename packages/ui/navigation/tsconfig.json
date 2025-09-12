@@ -18,6 +18,9 @@
       "~/*": [
         "src/*"
       ]
+      // Note: Intentionally do not remap '@hierarchidb/ui-icon'.
+      // This package relies on Node resolution to the published package types
+      // to avoid pulling sibling sources outside this package's rootDir.
     }
   },
   "checkDeps": {

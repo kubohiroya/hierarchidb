@@ -184,9 +184,9 @@ export async function createWorkingCopyFromNode(
 
   // Notify lifecycle to copy Peer original->wc (behind-the-flag)
   try {
-    const { FEATURE_FLAGS } = await import('~/config/feature-flags');
+    const { FEATURE_FLAGS } = await import('../config/feature-flags');
     if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
-      const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
       const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
       await lifecycle.handleCommand({
         commandId: crypto.randomUUID() as any,
@@ -226,8 +226,19 @@ export async function commitWorkingCopyV2(
   const holder = await coreDB.nodes.get(wcNode.parentId);
   if (!holder) throw new Error('Working copy holder not found');
 
-  const targetParentNodeId = (holder as any).holderMetaParentId as NodeId;
-  const targetNodeId = (holder as any).holderTargetId as NodeId;
+  // Support both metadata fields (editing WC) and encoded holder name (draft WC)
+  let targetParentNodeId = (holder as any).holderMetaParentId as NodeId | undefined;
+  let targetNodeId = (holder as any).holderTargetId as NodeId | undefined;
+  if (!targetParentNodeId || !targetNodeId) {
+    try {
+      const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding');
+      const parsed = decodeWorkingCopyHolderName((holder as any).name as string);
+      targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
+      targetNodeId = targetNodeId ?? parsed.targetNodeId;
+    } catch {
+      // ignore parse error; will fail below
+    }
+  }
   if (!targetParentNodeId || !targetNodeId) throw new Error('Holder metadata missing');
   const parentNode = await coreDB.nodes.get(targetParentNodeId);
   if (!parentNode) throw new Error('Parent node not found');
@@ -417,11 +428,11 @@ export async function discardWorkingCopy(
   await coreDB.nodes.bulkDelete(workingCopyNodeIdPair);
   // workingCopyNodeIdPair = [holderId, wcId]; inform lifecycle to drop wc peer
   try {
-    const { FEATURE_FLAGS } = await import('~/config/feature-flags');
+    const { FEATURE_FLAGS } = await import('../config/feature-flags');
     if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
       const wcId = workingCopyNodeIdPair?.[1];
       if (wcId) {
-        const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+        const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
         const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
         await lifecycle.handleCommand({
           commandId: crypto.randomUUID() as any,

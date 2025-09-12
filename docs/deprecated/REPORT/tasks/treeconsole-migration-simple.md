@@ -90,7 +90,7 @@ packages/ui-treeconsole/
 │   │   ├── TreeConsole.tsx
 │   │   ├── TreeTableConsolePanel.tsx
 │   │   ├── TreeConsoleHeader.tsx
-│   │   ├── TreeConsoleToolbar.tsx
+│   │   ├── TreeConsoleToolbar_Deprecated.tsx
 │   │   └── ...
 │   ├── hooks/            # 既存hooksを移植＋アダプター対応
 │   │   └── useTreeViewController.tsx

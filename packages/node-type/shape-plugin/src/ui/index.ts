@@ -1,18 +1,11 @@
-/**
-  * UI layer exports - UI
-  */
+import type { PluginDialogComponent, PluginPanelComponent } from '@hierarchidb/ui-core';
 
-// Note: UI hooks reference an ambient module shim via triple-slash in the hook file.
-// Do not import .d.ts files here to avoid bundler resolution errors.
+export async function getDialogComponent(): Promise<PluginDialogComponent> {
+  const mod = await import('../components/ShapeDialog');
+  return (mod as any).ShapeDialog as unknown as PluginDialogComponent;
+}
 
-// Components
-export * from './components';
-
-// Hooks
-export * from './hooks';
-
-// Plugin definition
-export * from './plugin';
-
-// Auth helpers
-export * from './auth/setShapeAuthToken';
+export async function getPanelComponent(): Promise<PluginPanelComponent> {
+  const mod = await import('../components/ShapeViewPanel');
+  return (mod as any).ShapeViewPanel as unknown as PluginPanelComponent;
+}

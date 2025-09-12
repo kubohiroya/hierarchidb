@@ -304,10 +304,10 @@ export const ProjectMapView: React.FC<ProjectMapViewProps> = ({
   const getIconUrl = (symbol: string): string => {
     // Return icon URLs based on symbol type
     const icons: Record<string, string> = {
-      circle: '/icons/circle.png',
-      square: '/icons/square.png',
-      triangle: '/icons/triangle.png',
-      star: '/icons/star.png',
+      circle: '/icon/circle.png',
+      square: '/icon/square.png',
+      triangle: '/icon/triangle.png',
+      star: '/icon/star.png',
     };
     const url = icons[symbol] || icons.circle;
     if (!url) {

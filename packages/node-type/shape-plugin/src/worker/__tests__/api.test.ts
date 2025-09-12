@@ -7,13 +7,20 @@ import { shapePluginAPI } from '../api';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { CreateShapeData, UpdateShapeData } from '../../shared';
 
-// Mock ShapeEntityHandler
-vi.mock('../handlers/ShapeEntityHandler', () => ({
+// Mock ShapeEntityHandler (module path must match api.ts import './handlers')
+vi.mock('../handlers', () => ({
   ShapeEntityHandler: vi.fn().mockImplementation(() => ({
+    // Provide no-op stubs for all methods the API may call; override per-test via vi.doMock if needed
     createEntity: vi.fn(),
     getEntityByNodeId: vi.fn(),
     updateEntity: vi.fn(),
     deleteEntity: vi.fn(),
+    createWorkingCopy: vi.fn(),
+    createNewDraftWorkingCopy: vi.fn(),
+    getWorkingCopy: vi.fn(),
+    updateWorkingCopy: vi.fn(),
+    commitWorkingCopy: vi.fn(),
+    discardWorkingCopy: vi.fn(),
   })),
 }));
 
@@ -51,7 +58,7 @@ describe('Shape Plugin API', () => {
         }),
       };
 
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
+      vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
@@ -73,7 +80,7 @@ describe('Shape Plugin API', () => {
         createNewDraftWorkingCopy: vi.fn().mockResolvedValue(mockWorkingCopy),
       };
 
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
+      vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
@@ -94,7 +101,7 @@ describe('Shape Plugin API', () => {
         getWorkingCopy: vi.fn().mockResolvedValue(mockWorkingCopy),
       };
 
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
+      vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
@@ -117,7 +124,7 @@ describe('Shape Plugin API', () => {
         }),
       };
 
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
+      vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
@@ -134,7 +141,7 @@ describe('Shape Plugin API', () => {
         commitWorkingCopy: vi.fn().mockResolvedValue(expectedNodeId),
       };
 
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
+      vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 

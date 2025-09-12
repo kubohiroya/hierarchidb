@@ -14,6 +14,6 @@
     "allowSkipLibCheck": true,
     "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/shims/**/*"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

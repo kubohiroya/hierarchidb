@@ -80,11 +80,6 @@ export default function TrashDialog() {
   const navigate = useNavigate();
   const data = useLoaderData() as LoaderData;
 
-  // If targetNodeId or nodeType is missing/undefined, don't render the base-dialog
-  if (!targetNodeId || targetNodeId === 'undefined' || !nodeType || nodeType === 'undefined') {
-    return null;
-  }
-
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,6 +87,7 @@ export default function TrashDialog() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Determine mode from nodeType
+
   const mode = nodeType as 'recover' | 'delete';
   const isRecoverMode = mode === 'recover';
   const isDeleteMode = mode === 'delete';
@@ -318,6 +314,11 @@ export default function TrashDialog() {
     }
     return null;
   };
+
+  // If targetNodeId or nodeType is missing/undefined, don't render the base-dialog
+  if (!targetNodeId || targetNodeId === 'undefined' || !nodeType || nodeType === 'undefined') {
+    return null;
+  }
 
   return (
     <Dialog

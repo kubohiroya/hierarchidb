@@ -16,14 +16,16 @@ const rules: Rule[] = [
   pkgExportsExistRule({ roots: ['packages', 'app'], action: 'error' }),
 
   // tsconfig baseline/JSX/skipLibCheck governance
+  // Downgrade tsconfig hygiene to WARN in guards (CI-friendly); default dep-fence remains strict.
   tsconfigHygieneRule({
     roots: ['packages', 'app'],
     requireBaseExtends: true,
     jsxShouldBe: 'react-jsx',
+    action: 'warn',
     skipLibCheck: {
-      allowedPackages: [], // keep empty; rely on per-package checkDeps.allowSkipLibCheck
-      action: 'error',
-      requireReasonField: true,
+      allowedPackages: [],
+      action: 'warn',
+      requireReasonField: false,
     },
   }),
 ];

@@ -11,20 +11,17 @@ import { DynamicSpeedDial } from './DynamicSpeedDial';
 import type { TreeId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { TreeContext } from '~/plugins/menu-builders';
 
 interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProps {
   treeId: TreeId | undefined;
   workerClient: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
-  menuContext?: TreeContext;
 }
 
 export function TreeConsolePanelWithDynamicSpeedDial({
                                                        treeId,
                                                        workerClient,
                                                        onStartTour,
-                                                       menuContext,
                                                        ...panelProps
                                                      }: TreeConsolePanelWithDynamicSpeedDialProps) {
   const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {
@@ -43,8 +40,6 @@ export function TreeConsolePanelWithDynamicSpeedDial({
       {/* Our dynamic SpeedDial that replaces the hardcoded one */}
       <DynamicSpeedDial
         treeId={treeId}
-        workerClient={workerClient}
-        menuContext={menuContext}
         onCreateAction={(action: string, node: TreeNodeData) => onContextMenuAction(action, node)}
         position={{ bottom: 16, right: 16 }}
         hidden={!panelProps.canCreate}

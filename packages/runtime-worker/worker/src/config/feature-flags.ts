@@ -1,27 +1,31 @@
-// Centralized feature flag reading for runtime-worker
-// Make flags dynamic via getters so tests can mutate a global feature object.
-
-const flagOn = (k: string, def = false) => {
-  const g: any = (globalThis as any);
-  const v = g?.FEATURE_FLAGS?.[k];
-  if (v == null) return !!def;
+// Flags with env overrides for tests. Defaults stay aligned with production.
+const env = (typeof process !== 'undefined' ? (process as any).env : undefined) as
+  | Record<string, string | undefined>
+  | undefined;
+const envBool = (name: string, def: boolean) => {
+  const v = env?.[name];
+  if (v == null) return def;
   const s = String(v).toLowerCase();
-  return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
+  return s === '1' || s === 'true' || s === 'on' || s === 'yes';
 };
 
+// Fixed flags for worker commit/mutation routing (default ON)
+export const WORKER_WC_COMMIT_V2 = envBool('WORKER_WC_COMMIT_V2', true);
+export const WORKER_USE_CMDPROC_CREATE_UPDATE = envBool('WORKER_USE_CMDPROC_CREATE_UPDATE', true);
+export const WORKER_USE_CMDPROC_MOVE_REMOVE = envBool('WORKER_USE_CMDPROC_MOVE_REMOVE', true);
+export const WORKER_TRASH_USE_HOLDER = envBool('WORKER_TRASH_USE_HOLDER', true);
+export const WORKER_ENTITY_UNIFIED = envBool('WORKER_ENTITY_UNIFIED', true);
+export const WORKER_TX_ENABLED = envBool('WORKER_TX_ENABLED', true);
+export const WORKER_POLICY_C = envBool('WORKER_POLICY_C', true);
+export const WORKER_METRICS_ENABLED = envBool('WORKER_METRICS_ENABLED', false);
+
 export const FEATURE_FLAGS = {
-  get WORKER_USE_CMDPROC_CREATE_UPDATE() { return flagOn('WORKER_USE_CMDPROC_CREATE_UPDATE'); },
-  get WORKER_USE_CMDPROC_MOVE_REMOVE() { return flagOn('WORKER_USE_CMDPROC_MOVE_REMOVE'); },
-  // Defaults flipped to ON for latest implementation
-  get WORKER_WC_COMMIT_V2() { return flagOn('WORKER_WC_COMMIT_V2', true); },
-  get WORKER_TRASH_USE_HOLDER() { return flagOn('WORKER_TRASH_USE_HOLDER', true); },
-  get WORKER_METRICS_ENABLED() { return flagOn('WORKER_METRICS_ENABLED'); },
-  get WORKER_POLICY_C() { return flagOn('WORKER_POLICY_C'); },
-  get WORKER_TX_ENABLED() { return flagOn('WORKER_TX_ENABLED'); },
-  get WORKER_ENTITY_UNIFIED() { return flagOn('WORKER_ENTITY_UNIFIED', true); },
-  // Common progress type adoption across plugins (UI-independent)
-  get WORKER_PROGRESS_COMMON_TYPES() { return flagOn('WORKER_PROGRESS_COMMON_TYPES'); },
-  // Download strategy adoption (DI) for plugins
-  get LOCATION_DOWNLOAD_STRATEGY() { return flagOn('LOCATION_DOWNLOAD_STRATEGY'); },
-  get SHAPE_DOWNLOAD_STRATEGY() { return flagOn('SHAPE_DOWNLOAD_STRATEGY'); },
-} as const;
+  WORKER_WC_COMMIT_V2,
+  WORKER_USE_CMDPROC_CREATE_UPDATE,
+  WORKER_USE_CMDPROC_MOVE_REMOVE,
+  WORKER_TRASH_USE_HOLDER,
+  WORKER_ENTITY_UNIFIED,
+  WORKER_TX_ENABLED,
+  WORKER_POLICY_C,
+  WORKER_METRICS_ENABLED,
+};

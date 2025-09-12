@@ -7,7 +7,7 @@
 
 // Entity/handler/definition exports
 export * from './handlers';
-export * from './definitions';
+// Plugin metadata is sourced from package.json (hierarchidb.plugin); no definitions export
 
 // UI components
 // UI components moved under subpath to keep root worker-safe

@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from '@hierarchidb/ui-data-grid';
-import type { GridColumn } from '@hierarchidb/ui-data-grid-types';
 import { CrossViewStyles, useCrossHighlightSync, CrossViewSnackbar, ensureDefaultStyles } from '../../index';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { type ColumnFilter, TabularQueryService } from '@hierarchidb/tabular-store';
@@ -38,11 +37,23 @@ export function TabularPreview({ pluginId, tableId }: {
   // Column visibility
   const [visibleCols, setVisibleCols] = useState<string[] | null>(null);
 
+  // Minimal column type compatible with GenericDataGrid
+  type GridCol = {
+    id: string;
+    label: string;
+    sortable?: boolean;
+    filterable?: boolean;
+    width?: number | string;
+    align?: 'left' | 'center' | 'right';
+    hidden?: boolean;
+    // format?: (value: any, row: any) => React.ReactNode; // optional
+  };
+
   const gridColumns = useMemo(() => {
     const active = visibleCols && visibleCols.length > 0 ? visibleCols : columns;
-    const cols: GridColumn[] = active.map((c) => ({ id: c, label: c, sortable: false, filterable: false }));
+    const cols: GridCol[] = active.map((c) => ({ id: c, label: c, sortable: false, filterable: false }));
     return cols;
-  }, [columns]);
+  }, [columns, visibleCols]);
 
   // Cross-view integration: datasetId and common wiring
   const datasetId = useMemo(() => `${pluginId}:${tableId || 'unknown'}` as const, [pluginId, tableId]);

@@ -5,7 +5,7 @@
           ローカル開発用に devDependencies にも同じバージョンを保持 (--dev)
   - 使い方:
     node scripts/peerify.mjs \
-      --peers react,react-dom,@mui/material,@mui/icons-material \
+      --peers react,react-dom,@mui/material,@mui/icon-material \
       --dev \
       --dry
 */

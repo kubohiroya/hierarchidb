@@ -5,7 +5,7 @@
 
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
 // Placeholder until moved to proper package
-// import { AttachmentIcon, MapIcon } from '~/icons';
+// import { AttachmentIcon, MapIcon } from '~/icon';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
 // @ts-ignore - provider-router not available in ui-core

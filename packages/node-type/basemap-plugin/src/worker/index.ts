@@ -21,3 +21,5 @@ try {
   // ignore (SSR/tests)
 }
 
+// Ensure this file is treated as a module under --isolatedModules
+export {};

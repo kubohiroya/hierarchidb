@@ -419,23 +419,9 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
     };
 
     const defaultEvaluator: StepStateEvaluator = {
-      getFilledSteps: (_data: any) => {
-        // Synchronously mark unknowns as false; callers should not rely on async here.
-        // We run best-effort sync estimations by reading simple fields when possible, but
-        // for consistency we trigger validations via effectful calls below to keep UI up-to-date.
-        // For now, compute optimistically by invoking validate using current data via Promise.
-        // Note: MultiStepDialog treats this as instantaneous; keep it conservative.
-        // We execute validations synchronously by reading cached result from stepsForUi.validate
-        // but since that's not exposed, we call validate inline and ignore async timing in array.
-
-        // Build an array defaulting to false, then fire-and-forget to update formErrors via validate.
-        const arr = allSteps.map(() => false);
-        allSteps.forEach((def, idx) => {
-          void normalizeValidate(def).then((ok) => {
-            arr[idx] = ok;
-          });
-        });
-        return arr;
+      getFilledSteps: (_data: any, stepNumbers?: number[]) => {
+        if (!stepNumbers || stepNumbers.length === filledCache.length) return filledCache;
+        return stepNumbers.map((_, i) => filledCache[i] ?? false);
       },
       getNavigableSteps: (_data: any) => {
         // Heuristic, stable, and fast:
@@ -482,7 +468,31 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
         return composeAnd(base, pluginNav);
       },
     };
-  }, [allSteps, formData, activeStep]);
+  }, [allSteps, formData, activeStep, filledCache]);
+
+  // Cache for filled-state: run async validations in effect and keep last known results
+  const [filledCache, setFilledCache] = useState<boolean[]>(() => allSteps.map(() => false));
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results: boolean[] = [];
+      for (const def of allSteps) {
+        if (!def.validation?.validate) {
+          results.push(true);
+          continue;
+        }
+        try {
+          const r = await def.validation.validate(formData);
+          const ok = typeof r === 'boolean' ? r : ('isValid' in (r as any) ? (r as any).isValid : ('valid' in (r as any) ? (r as any).valid : true));
+          results.push(!!ok);
+        } catch {
+          results.push(false);
+        }
+      }
+      if (!cancelled) setFilledCache(results);
+    })();
+    return () => { cancelled = true; };
+  }, [allSteps, formData]);
 
   // === Submit eligibility (compose: host default AND all plugin guards) ===
   const evaluateSubmit = useCallback(async (data: any): Promise<boolean> => {

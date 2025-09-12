@@ -13,7 +13,7 @@
       "default": "./dist/index.js"
     },
     "./worker": {
-      "import": "./src/worker/index.ts"
+      "import": "./dist/worker/index.js"
     }
   },
   "scripts": {
@@ -31,6 +31,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-date": "workspace:*",
@@ -45,6 +46,7 @@
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.8",
@@ -60,6 +62,7 @@
     "@deck.gl/mesh-layers": "^9.0.0"
   },
   "devDependencies": {
+    "@hierarchidb/runtime-worker": "workspace:*",
     "dexie": "^4.2.0",
     "@types/d3-scale": "^4.0.0",
     "@types/geojson": "^7946.0.10",
@@ -69,7 +72,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^6.1.8",
-    "@mui/icons-material": "^6.1.8"
+    "@mui/icons-material": "^6.1.8",
+    "@deck.gl/core": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
+    "@deck.gl/extensions": "^9.0.0",
+    "@deck.gl/aggregation-layers": "^9.0.0",
+    "@deck.gl/geo-layers": "^9.0.0",
+    "@deck.gl/mapbox": "^9.0.0",
+    "@deck.gl/mesh-layers": "^9.0.0"
   },
   "author": "",
   "license": "MIT",
@@ -82,5 +92,19 @@
       "react",
       "react-dom"
     ]
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "project",
+      "name": "Project Plugin",
+      "displayName": "Project",
+      "description": "Project management container with map view",
+      "icon": { "mui": "AccountTree", "emoji": "🌲", "color": "#ffe0f3" },
+      "category": { "treeId": "*", "menuGroup": "document", "createOrder": 10 },
+      "priority": 10,
+      "creatable": true,
+      "tags": ["project", "container"],
+      "capabilities": ["workingCopy"]
+    }
   }
 }

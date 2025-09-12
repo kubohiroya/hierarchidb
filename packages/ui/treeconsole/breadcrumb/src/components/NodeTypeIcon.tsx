@@ -59,7 +59,7 @@ export function NodeTypeIcon({
   const standardSizes = ['small', 'medium', 'large'];
   const iconSize = standardSizes.includes(size) ? (size as 'small' | 'medium' | 'large') : 'small';
 
-  // Fallback to default icons
+  // Fallback to default icon
   const Icon = getIconByType(nodeType);
   const fontSize = iconSize === 'small' ? 'small' : iconSize === 'large' ? 'large' : 'medium';
 

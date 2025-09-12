@@ -28,7 +28,7 @@ const ALLOWED_EXTERNAL = [
   'react',
   'react-dom',
   '@mui/material',
-  '@mui/icons-material',
+  '@mui/icon-material',
   '@mui/system',
   '@mui/x-tree-view',
   '@emotion/react',

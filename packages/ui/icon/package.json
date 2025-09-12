@@ -1,0 +1,42 @@
+{
+  "name": "@hierarchidb/ui-icon",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "module": "dist/index.js",
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1",
+    "@emotion/react": "^11.14.0"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.1"
+  },
+  "tsup": {
+    "external": [
+      "react",
+      "@mui/material",
+      "@mui/icons-material",
+      "@emotion/react"
+    ]
+  }
+}

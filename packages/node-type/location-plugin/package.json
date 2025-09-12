@@ -12,6 +12,9 @@
     },
     "./worker": {
       "import": "./src/worker/index.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.js"
     }
   },
   "scripts": {
@@ -36,8 +39,7 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "dexie": "^4.2.0"
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
@@ -49,6 +51,7 @@
     "@mui/icons-material": "^6.0.0"
   },
   "peerDependencies": {
+    "dexie": "^4.2.0",
     "@hierarchidb/batch": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -64,5 +67,19 @@
       "react",
       "react-dom"
     ]
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "location",
+      "name": "Location Plugin",
+      "displayName": "Location",
+      "description": "Geographic location nodes with Shape integration",
+      "icon": { "mui": "LocationPin", "emoji": "📍", "color": "#a3b030" },
+      "category": { "treeId": "*", "menuGroup": "document", "createOrder": 40 },
+      "priority": 40,
+      "creatable": true,
+      "tags": ["geographic", "location"],
+      "capabilities": ["workingCopy", "batch", "visualization"]
+    }
   }
 }

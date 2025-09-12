@@ -1,6 +1,7 @@
 /**
  * Test setup for vitest
  */
+import '../../../../vitest.setup.base';
 
 import { beforeEach, vi } from 'vitest';
 

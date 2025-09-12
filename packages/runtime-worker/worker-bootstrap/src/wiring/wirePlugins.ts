@@ -10,8 +10,16 @@ export interface PluginRuntimeWiring {
  * Reflectively scans given modules for an exported `runtimeWiring` object and
  * calls its optional hooks in a safe, best-effort manner.
  */
-export async function wirePluginsFromModules(modules: unknown[]): Promise<void> {
-  for (const mod of modules) {
+import { registerRuntimeExports } from './runtime-export-registry';
+
+export interface PluginModuleEntry {
+  nodeType: string;
+  mod: unknown;
+}
+
+export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Promise<void> {
+  for (const entry of entries) {
+    const mod = entry.mod;
     try {
       const m = mod as any;
       const wiring: PluginRuntimeWiring | undefined = m?.runtimeWiring;
@@ -25,6 +33,15 @@ export async function wirePluginsFromModules(modules: unknown[]): Promise<void> 
       }
       if (typeof wiring.registerRuntimeWorkerAdapters === 'function') {
         await wiring.registerRuntimeWorkerAdapters();
+      }
+      // Register standardized factories/lifecycle when present
+      const exp: any = {};
+      const workerSide = m?.worker || m; // tolerate packaging that nests exports under .worker
+      if (typeof workerSide?.createEntityHandler === 'function') exp.createEntityHandler = workerSide.createEntityHandler;
+      if (typeof workerSide?.createBatchManager === 'function') exp.createBatchManager = workerSide.createBatchManager;
+      if (workerSide?.lifecycle && typeof workerSide.lifecycle === 'object') exp.lifecycle = workerSide.lifecycle;
+      if (Object.keys(exp).length > 0) {
+        registerRuntimeExports(entry.nodeType, exp);
       }
     } catch (e) {
       // eslint-disable-next-line no-console

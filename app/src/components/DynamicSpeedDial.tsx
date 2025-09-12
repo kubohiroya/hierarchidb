@@ -5,117 +5,79 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import { useMemo, useState } from 'react';
-import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
-import {
-  Add as AddIcon,
-  CreateNewFolder as FolderIcon,
-  Extension as ExtensionIcon,
-  Map as MapIcon,
-  Note as NoteIcon,
-  Palette as PaletteIcon,
-  Public as PublicIcon,
-} from '@mui/icons-material';
-import { usePluginsForTree } from '~/hooks/usePluginsForTree';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
+import { getMuiIconComponent } from '@hierarchidb/ui-icon';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
 import type { TreeContext } from '~/plugins/menu-builders';
-import type { PluginDefinition, TreeId } from '@hierarchidb/common-type';
-import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import { TreeId } from '@hierarchidb/common-type';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  workerClient: Remote<WorkerAPI> | null;
   onCreateAction: (action: string, node: TreeNodeData) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
   menuContext?: TreeContext; // Optional explicit context to build items from VM
 }
 
-/**
- * Get Material-UI icon component from plugin icon definition
- */
-function getIconComponent(plugin: PluginDefinition) {
-  const iconName = plugin.icon?.muiIconName;
-  const emoji = plugin.icon?.emoji;
-
-  // First, try to use emoji if available
-  if (emoji) {
-    return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
-  }
-
-  // Then, try to match MUI icon names
-  switch (iconName) {
-    case 'Folder':
-    case 'CreateNewFolder':
-      return <FolderIcon />;
-    case 'Note':
-    case 'NoteAdd':
-      return <NoteIcon />;
-    case 'Map':
-      return <MapIcon />;
-    case 'Palette':
-      return <PaletteIcon />;
-    case 'Public':
-    case 'Layers':
-      return <PublicIcon />;
-    case 'Extension':
-      return <ExtensionIcon />;
-    default:
-      // Default icon for plugins without specific icons
-      return <AddIcon />;
-  }
-}
-
 export function DynamicSpeedDial({
                                    treeId,
-                                   workerClient,
                                    onCreateAction,
                                    position = { bottom: 16, right: 16 },
                                    hidden = false,
-                                   menuContext,
                                  }: DynamicSpeedDialProps) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [debugHitbox, setDebugHitbox] = useState<boolean>(() => {
+    try {
+      // URL param sdHitbox=1 or debug=sd, or persisted flag
+      const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlOn = sp?.get('sdHitbox') === '1' || sp?.get('debug') === 'sd';
+      const persisted = typeof localStorage !== 'undefined' ? localStorage.getItem('hdb.sd.hitbox') === '1' : false;
+      const globalOn = typeof window !== 'undefined' && (window as any).__HDB_SD_HITBOX__ === true;
+      return urlOn || persisted || globalOn;
+    } catch {
+      return false;
+    }
+  });
+
+  const [hitboxes, setHitboxes] = useState<{
+    container?: DOMRect;
+    fab?: DOMRect;
+    actions: DOMRect[];
+    topAtFab?: string;
+  }>({ actions: [] });
 
   // If menuContext is provided, build items from virtual module definitions (VM-based path)
-  const vmItems = menuContext ? usePluginMenuItems(menuContext) : [];
+  const vmItems = usePluginMenuItems(treeId);
   // Use VM path only when we actually have menu items
-  const useVM = Boolean(menuContext) && vmItems.length > 0;
-
-  // Otherwise, fallback to worker-provided plugin definitions (compatibility path)
-  const { plugins, loading, error } = usePluginsForTree(treeId, workerClient);
-
-  // Sort plugins by category group and create order
-  const sortedPlugins = useMemo(() => {
-    return [...plugins].sort((a, b) => {
-      const aGroup = a.category?.menuGroup || 'basic';
-      const bGroup = b.category?.menuGroup || 'basic';
-      const aOrder = a.category?.createOrder || 999;
-      const bOrder = b.category?.createOrder || 999;
-
-      // Define group priority
-      const groupPriority: Record<string, number> = { basic: 1, container: 2, document: 3, advanced: 4 };
-      const aPriority = groupPriority[aGroup] || 999;
-      const bPriority = groupPriority[bGroup] || 999;
-
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-
-      return aOrder - bOrder;
-    });
-  }, [plugins]);
+  const useVM = vmItems.length > 0;
 
   const handleClose = () => setOpen(false);
-  const handleToggle = () => setOpen(!open);
+  const handleToggle = () => setOpen((v) => !v);
 
-  const handleActionClick = (plugin: PluginDefinition) => {
-    // Pass the actual nodeType directly for creation
-    const action = `create:${plugin.nodeType}`;
-    onCreateAction(action, {} as TreeNodeData);
-    handleClose();
-  };
+  // Custom outside-click behavior:
+  // - Keep menu open on mouse leave/blur
+  // - Close only when user clicks outside the SpeedDial container
+  useEffect(() => {
+    if (!open) return;
+    const onDocPointerDown = (ev: Event) => {
+      const root = containerRef.current;
+      const target = ev.target as Node | null;
+      if (!root) return;
+      if (target && root.contains(target)) {
+        // Clicked inside SpeedDial; action handlers will decide closing
+        return;
+      }
+      // Clicked outside → close
+      setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDocPointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onDocPointerDown, true);
+    };
+  }, [open]);
 
   // VM-based click
   const handleVMActionClick = (nodeType: string) => {
@@ -124,73 +86,140 @@ export function DynamicSpeedDial({
     handleClose();
   };
 
-  // Don't render if hidden or if there's an error
-  if (hidden || (!useVM && error)) {
+  // Toggle debug with Alt+Shift+H
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
+        setDebugHitbox((v) => {
+          const nv = !v;
+          try { localStorage.setItem('hdb.sd.hitbox', nv ? '1' : '0'); } catch {}
+          try { (window as any).__HDB_SD_HITBOX__ = nv; } catch {}
+          return nv;
+        });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Measure hitboxes while debug is on
+  useEffect(() => {
+    if (!debugHitbox) return;
+    let raf = 0;
+    let intervalId: number | undefined;
+    const measure = () => {
+      try {
+        const root = containerRef.current;
+        if (!root) return;
+        const fab = root.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
+        const actions = Array.from(root.querySelectorAll('.MuiSpeedDialAction-fab')) as HTMLElement[];
+        const rectRoot = root.getBoundingClientRect();
+        const rectFab = fab?.getBoundingClientRect();
+        const rectActs = actions.map((a) => a.getBoundingClientRect());
+        let topAtFab: string | undefined = undefined;
+        if (rectFab) {
+          const cx = rectFab.left + rectFab.width / 2;
+          const cy = rectFab.top + rectFab.height / 2;
+          const el = document.elementFromPoint(cx, cy);
+          if (el) {
+            const cls = (el as HTMLElement).className?.toString?.() || '';
+            const id = (el as HTMLElement).id ? `#${(el as HTMLElement).id}` : '';
+            const tn = el.nodeName.toLowerCase();
+            topAtFab = `${tn}${id}${cls ? '.' + cls.toString().split(' ').slice(0, 3).join('.') : ''}`;
+          }
+        }
+        setHitboxes({ container: rectRoot, fab: rectFab, actions: rectActs, topAtFab });
+      } catch {}
+    };
+    const onScrollOrResize = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    // Keep updating periodically while open to catch layout animations
+    intervalId = window.setInterval(measure, 300) as unknown as number;
+    measure();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      if (intervalId) window.clearInterval(intervalId);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [debugHitbox, open]);
+
+  // Don't render if hidden
+  if (hidden) {
     return null;
   }
 
-  // Show loading state
-  if (!useVM && loading) {
-    return (
+  console.log('[DynamicSpeedDial]', vmItems)
+
+  return (
+    <Portal>
       <Box
+        ref={containerRef}
         sx={{
           position: 'fixed',
           ...position,
-          zIndex: 9999,
+          // Put this above any app content and overlays
+          zIndex: 2147483000,
+          // Make only inner FAB/actions receive pointer events to avoid wrapper intercepts
+          pointerEvents: 'none',
+          outline: debugHitbox ? '2px solid rgba(0,255,255,0.6)' : undefined,
+          outlineOffset: debugHitbox ? '0px' : undefined,
         }}
+        data-testid="dynamic-speed-dial-container"
       >
         <SpeedDial
-          ariaLabel="Loading plugins..."
+          ariaLabel="Create new item"
           sx={{
+            position: 'static',
             '& .MuiSpeedDial-fab': {
-              bgcolor: 'grey.400',
+              bgcolor: 'primary.main',
               color: 'white',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+              // Ensure the visible icon and the hitbox align perfectly
+              width: 56,
+              height: 56,
+              minWidth: 56,
+              minHeight: 56,
+              pointerEvents: 'auto',
+              transform: 'translate3d(0,0,0)',
+              willChange: 'transform',
+              touchAction: 'manipulation',
+              outline: debugHitbox ? '2px dashed rgba(0,255,0,0.9)' : undefined,
+              outlineOffset: debugHitbox ? '0px' : undefined,
+            },
+            '& .MuiSpeedDial-actions': {
+              pointerEvents: 'auto',
+            },
+            '& .MuiSpeedDialAction-fab': {
+              outline: debugHitbox ? '2px dashed rgba(255,165,0,0.9)' : undefined,
+              outlineOffset: debugHitbox ? '0px' : undefined,
             },
           }}
           icon={<SpeedDialIcon />}
           direction="up"
-          open={false}
-        />
-      </Box>
-    );
-  }
-
-  return (
-    <Box
-      sx={{
-        position: 'fixed',
-        ...position,
-        zIndex: 9999,
-        pointerEvents: 'auto',
-      }}
-      data-testid="dynamic-speed-dial-container"
-    >
-      <SpeedDial
-        ariaLabel="Create new item"
-        sx={{
-          '& .MuiSpeedDial-fab': {
-            bgcolor: 'primary.main',
-            color: 'white',
-            '&:hover': {
-              bgcolor: 'primary.dark',
-            },
-          },
-        }}
-        icon={<SpeedDialIcon />}
-        direction="up"
-        onClick={handleToggle}
-        open={open}
-        onClose={handleClose}
-      >
-        {useVM
+          open={open}
+          onClose={(_, reason?: any) => {
+            // Ignore auto-close reasons we don’t want (blur/mouseLeave)
+            if (reason === 'blur' || reason === 'mouseLeave') return;
+            // Allow toggle, escape, clickAway to close
+            handleClose();
+          }}
+          FabProps={{
+            onClick: () => setOpen((v) => !v),
+            sx: { pointerEvents: 'auto' },
+          }}
+        >
+          {useVM
           ? vmItems.map((item) => (
             <SpeedDialAction
               key={item.key}
-              icon={item.icon?.emoji ? (
-                <span style={{ fontSize: '1.5rem' }}>{item.icon.emoji}</span>
-              ) : (
-                <AddIcon />
-              )}
+              icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji)}
               tooltipTitle={item.label}
               onClick={() => handleVMActionClick(item.nodeType)}
               sx={{
@@ -200,42 +229,75 @@ export function DynamicSpeedDial({
                   fontSize: '0.875rem',
                 },
               }}
-              FabProps={{ size: 'medium', color: 'default' }}
+              FabProps={{
+                size: 'medium',
+                color: 'default',
+                sx: {
+                  pointerEvents: 'auto',
+                  touchAction: 'manipulation',
+                  transform: 'translate3d(0,0,0)',
+                },
+              }}
               tooltipPlacement="left"
               data-testid={`create-${item.nodeType}-action`}
             />
           ))
-          : sortedPlugins.map((plugin) => {
-            const displayName = plugin.displayName || plugin.name;
-            const icon = getIconComponent(plugin);
-            const tooltipTitle = (
-              <Box sx={{ p: 0.5 }}>
-                <div style={{ fontWeight: 600, marginBottom: 2 }}>{displayName}</div>
-                {plugin.description ? (
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>{plugin.description}</div>
-                ) : null}
-              </Box>
-            );
-            return (
-              <SpeedDialAction
-                key={plugin.nodeType}
-                icon={icon}
-                tooltipTitle={tooltipTitle}
-                onClick={() => handleActionClick(plugin)}
+          : null}
+        </SpeedDial>
+
+        {/* Debug overlays: fixed boxes showing current hitboxes and top element at FAB center */}
+        {debugHitbox && (
+          <>
+            {/* FAB center marker and info label */}
+            {hitboxes.fab && (
+              <Box
                 sx={{
-                  color: plugin.icon?.color || 'inherit',
-                  '& .MuiTooltip-tooltip': {
-                    maxWidth: 300,
-                    fontSize: '0.875rem',
-                  },
+                  position: 'fixed',
+                  left: hitboxes.fab.left + hitboxes.fab.width / 2 - 4,
+                  top: hitboxes.fab.top + hitboxes.fab.height / 2 - 4,
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(0,255,0,0.9)',
+                  pointerEvents: 'none',
                 }}
-                FabProps={{ size: 'medium', color: 'default' }}
-                tooltipPlacement="left"
-                data-testid={`create-${plugin.nodeType}-action`}
               />
-            );
-          })}
-      </SpeedDial>
-    </Box>
+            )}
+            {(hitboxes.fab || hitboxes.container) && (
+              <Box
+                sx={{
+                  position: 'fixed',
+                  left: (hitboxes.fab?.left ?? hitboxes.container!.left),
+                  top: (hitboxes.fab?.top ?? hitboxes.container!.top) - 22,
+                  px: 1,
+                  py: 0.25,
+                  fontSize: 11,
+                  bgcolor: 'rgba(0,0,0,0.7)',
+                  color: '#fff',
+                  borderRadius: 1,
+                  pointerEvents: 'none',
+                }}
+              >
+                SD hitbox debug — topAtFab: {hitboxes.topAtFab || 'n/a'}
+              </Box>
+            )}
+            {/* Action boxes outline rendered via CSS; extra fixed rectangles to visualize area explicitly */}
+            {hitboxes.actions.map((r, idx) => (
+              <Box key={idx}
+                   sx={{
+                     position: 'fixed',
+                     left: r.left,
+                     top: r.top,
+                     width: r.width,
+                     height: r.height,
+                     border: '1px dotted rgba(255,165,0,0.9)',
+                     pointerEvents: 'none',
+                   }}
+              />
+            ))}
+          </>
+        )}
+      </Box>
+    </Portal>
   );
 }

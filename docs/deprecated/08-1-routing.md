@@ -554,7 +554,7 @@ export default defineConfig({
       'provider-dom',
       'provider-router-dom',
       '@mui/material',
-      '@mui/icons-material',
+      '@mui/icon-material',
       '@emotion/provider',
       '@emotion/styled',
     ],

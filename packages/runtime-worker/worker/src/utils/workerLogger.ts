@@ -41,8 +41,8 @@ const getCurrentLanguage = (): string => {
 // Simple translation function
 const t = (key: string, interpolations?: Record<string, any>): string => {
   const currentLang = getCurrentLanguage();
-  const langMap = translations[currentLang] || translations.en;
-  let text = langMap[key] || key;
+  const langMap = (translations[currentLang] ?? translations.en) as Record<string, string>;
+  let text = (langMap[key] ?? key);
 
   if (interpolations) {
     Object.entries(interpolations).forEach(([k, v]) => {

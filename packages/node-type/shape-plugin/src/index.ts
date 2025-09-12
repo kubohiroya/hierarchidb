@@ -24,7 +24,7 @@ export { BatchSessionManager as ShapeBatchSessionManager } from './services/batc
 
 // Batch processing exports are temporarily internal-only until type contracts are stabilized
 // Export plugin definition for worker fallback loading
-export { ShapePluginDefinition } from './definitions/ShapePluginDefinition';
+// Plugin definition export removed: metadata is sourced from package.json
 export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabular-store';
 export * from './services/tiles/RuntimeTileClient';
 

@@ -37,7 +37,7 @@ export type { TreeConsoleBreadcrumbProps } from './types';
 **責務**: ツールバーとアクションボタンUIの提供
 ```typescript
 // 主要エクスポート
-export { TreeConsoleToolbar } from './TreeConsoleToolbar';
+export { TreeConsoleToolbar_Deprecated } from './TreeConsoleToolbar_Deprecated';
 export { TreeConsoleActions } from './TreeConsoleActions';
 export type { TreeConsoleToolbarProps, TreeConsoleActionsProps } from './types';
 ```
@@ -129,7 +129,7 @@ packages/
 │
 ├── ui-treeconsole-toolbar/
 │   ├── src/
-│   │   ├── TreeConsoleToolbar.tsx
+│   │   ├── TreeConsoleToolbar_Deprecated.tsx
 │   │   ├── TreeConsoleActions.tsx
 │   │   ├── lifecycle-types.ts
 │   │   └── openstreetmap-type.ts
@@ -301,7 +301,7 @@ export default defineConfig({
 packages/ui-treeconsole-toolbar/
 └── src/
     └── __tests__/
-        ├── TreeConsoleToolbar.test.tsx
+        ├── TreeConsoleToolbar_Deprecated.test.tsx
         └── TreeConsoleActions.test.tsx
 ```
 

@@ -1,5 +1,3 @@
-import { ResolverDefinition } from './definitions/ResolverDefinition';
-import type { PluginDefinition } from '@hierarchidb/common-type';
 
 // Export types
 export type {
@@ -38,17 +36,7 @@ export {
 // export { ChainManager } from './services/ChainManager';
 // export { SchemaDetector } from './services/SchemaDetector';
 
-// Plugin registration
-export const ResolverPlugin: PluginDefinition = {
-  ...ResolverDefinition,
-  ui: {
-    dialogComponentPath: '@hierarchidb/resolver-plugin/components/ResolverDialog',
-    panelComponentPath: '@hierarchidb/resolver-plugin/components/ResolverPanel',
-  },
-} as PluginDefinition;
-
-// Default export for convenient plugin registration
-export default ResolverPlugin;
+// Plugin definition exports removed: metadata is sourced from package.json
 
 // Optional runtime wiring (no-op)
 export const runtimeWiring = {} as const;

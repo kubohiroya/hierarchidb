@@ -9,10 +9,8 @@ import type { NodeType } from '@hierarchidb/common-type';
 // Provided by @hierarchidb/tools-vite-plugin-package-reader (vite virtual modules)
 // These module declarations are injected during dev by the Vite plugin.
 // In build, they are real modules generated at compile time.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import pluginDefinitions from 'virtual:plugin-definitions';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { pluginMap } from 'virtual:plugin-map';
 

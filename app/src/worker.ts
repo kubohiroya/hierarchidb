@@ -3,7 +3,7 @@
  * Avoid static imports so we can report precise failures to UI.
  */
 
-import { WorkerInitializationReporter, wirePluginsFromModules } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
 import { APP_VERSION, BUILD_TIME } from './version';
 
 try {
@@ -142,6 +142,8 @@ reporter.reportStepProgress('Load Comlink', 0);
           // Use package subpath exports to avoid importing TS sources directly
           location: async () => import('@hierarchidb/location-plugin/worker'),
           project: async () => import('@hierarchidb/project-plugin/worker'),
+          route: async () => import('@hierarchidb/route-plugin/worker'),
+          shape: async () => import('@hierarchidb/shape-plugin/worker'),
         };
         pluginMap = { ...pluginMap, ...workerOverrides } as any;
 
@@ -151,7 +153,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         // Allowlist overrides above; keep env-based deny for local experimentation
         const deny = new Set([...denyEnv.split(',').map(s => s.trim()).filter(Boolean)]);
 
-        const modList: unknown[] = [];
+        const modEntries: Array<{ nodeType: string; mod: unknown }> = [];
         for (const d of defs) {
           const nodeType = d?.nodeType as string;
           if (deny.has(nodeType)) {
@@ -162,7 +164,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           if (typeof loader === 'function') {
             try {
               const mod = await loader();
-              modList.push(mod);
+              modEntries.push({ nodeType, mod });
             } catch (e: unknown) {
               const msg = (e as any)?.message ?? String(e);
               const soft = /document is not defined|Grid2|does not provide an export/i.test(msg);
@@ -174,11 +176,103 @@ reporter.reportStepProgress('Load Comlink', 0);
             }
           }
         }
-        await wirePluginsFromModules(modList);
+        await wirePluginsFromModules(modEntries);
       }
     } catch (e) {
       console.warn('[Worker] wiring failed:', e);
     }
+    // Merge standardized lifecycles discovered from worker modules into pluginDefinitions
+    try {
+      const exportsByType = getAllRuntimeExports();
+      const enriched = (pluginDefinitions as any[]).map((d) => {
+        const exp = exportsByType?.[d.nodeType];
+        return exp && exp.lifecycle ? { ...d, lifecycle: exp.lifecycle } : d;
+      });
+      // Hand off to WorkerService
+      // Register entity handlers if factories are provided
+      try {
+        const runtime = await import('@hierarchidb/runtime-worker');
+        const entityRegistry: any = (runtime as any).entityRegistry;
+        if (entityRegistry) {
+          for (const [nodeType, exp] of Object.entries(exportsByType)) {
+            const factory: any = (exp as any).createEntityHandler;
+            if (typeof factory === 'function') {
+              try {
+                const handler = await factory();
+                if (handler) entityRegistry.register(nodeType, handler as any);
+              } catch {}
+            }
+          }
+        }
+      } catch {}
+
+      const { WorkerService } = await import('@hierarchidb/runtime-worker');
+      const services = await WorkerService.getSingleton(enriched || (pluginDefinitions as any[]));
+      reporter.reportStepProgress('Bootstrap services', 100);
+
+      // Step 5: Create API facade
+      reporter.reportStepProgress('Create API facade', 10);
+
+      // Build plain facades (only functions) to ensure Comlink can proxy them safely
+      const query = services.getQueryAPI();
+      const mutation = services.getMutationAPI();
+      const subscription = services.getSubscriptionAPI();
+      const tag = services.getTagAPI();
+      const importExport = services.getImportExportAPI();
+      const workingCopy = services.getWorkingCopyAPI();
+      const pluginLifecycle = services.getPluginLifecycleAPI();
+
+      const queryFacade = {
+        getTree: (id: any) => query.getTree(id),
+        listTrees: () => query.listTrees(),
+        getNode: (id: any) => (query as any).getNode?.(id),
+        listChildren: (id: any) => (query as any).listChildren?.(id),
+        listDescendants: (id: any, maxDepth?: number) => (query as any).listDescendants?.(id, maxDepth),
+        listAncestors: (id: any) => (query as any).listAncestors?.(id),
+        searchNodes: (opts: any) => (query as any).searchNodes?.(opts),
+      } as const;
+      const mutationFacade = {
+        createNode: (args: any) => mutation.createNode(args),
+        updateNode: (args: any) => mutation.updateNode(args),
+        // Note: delete/move/remove are available on the fuller facade below
+      } as const;
+      const subscriptionFacade = {
+        subscribeNode: (id: any, cb: any) => subscription.subscribeNode(id, cb),
+        unsubscribe: (sid: any) => subscription.unsubscribe(sid),
+        unsubscribeAll: () => subscription.unsubscribeAll(),
+      } as const;
+      // Minimal tag facade omitted here; the full facade is exposed in the fallback branch below
+      const importExportFacade = {
+        importNodes: (a: any) => importExport.importNodes(a),
+        exportNodes: (a: any) => importExport.exportNodes(a),
+      } as const;
+      const workingCopyFacade = {
+        createDraftWorkingCopy: (t: any, p: any) => workingCopy.createDraftWorkingCopy(t, p),
+        commitWorkingCopy: (id: any) => workingCopy.commitWorkingCopy(id),
+        discardWorkingCopy: (id: any) => workingCopy.discardWorkingCopy(id),
+      } as const;
+
+      // Expose through Comlink (return proxy-marked facades to avoid structured-clone of functions)
+      Comlink.expose({
+        ping: () => services.ping(),
+        shutdown: () => services.shutdown(),
+        initialize: () => services.initialize(),
+        getQueryAPI: () => Comlink.proxy(queryFacade),
+        getMutationAPI: () => Comlink.proxy(mutationFacade),
+        getSubscriptionAPI: () => Comlink.proxy(subscriptionFacade),
+        getImportExportAPI: () => Comlink.proxy(importExportFacade),
+        getWorkingCopyAPI: () => Comlink.proxy(workingCopyFacade),
+        getPluginLifecycleAPI: () => Comlink.proxy(pluginLifecycle as any),
+        getSystemHealth: () => services.getSystemHealth(),
+      });
+
+      reporter.reportStepProgress('Create API facade', 100);
+      reporter.reportStepProgress('Expose API', 100);
+      // Ensure UI receives INIT_COMPLETE in all code paths
+      reporter.reportComplete();
+      return;
+    } catch {}
+
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
     reporter.reportStepProgress('Bootstrap services', 100);

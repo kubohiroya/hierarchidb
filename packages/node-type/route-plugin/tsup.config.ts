@@ -1,6 +1,18 @@
 import { createTsupConfig } from '../../../tsup.base.config';
 
 export default createTsupConfig({
+  // JS build entries
+  entry: [
+    'src/index.ts',
+    'src/worker/index.ts',
+    'src/ui/index.ts',
+  ],
+  // Narrow DTS generation to the stable library surface; exclude UI/worker from DTS
+  dts: {
+    entry: {
+      'index': 'src/index.ts',
+    },
+  },
   external: [
     // UI peers
     'react',
@@ -9,6 +21,9 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    '@hierarchidb/runtime-worker',
+    // workspace deps that must stay external in host app
+    '@hierarchidb/runtime-worker-bootstrap',
     // Treat ui-dialog as external optional peer to avoid bundling resolution
     '@hierarchidb/ui-dialog',
   ],

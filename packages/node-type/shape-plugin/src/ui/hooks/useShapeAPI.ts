@@ -1,4 +1,3 @@
-/// <reference path='../../types/shims-runtime-worker-bootstrap.d.ts' />
 /**
   * Shape API hook - PluginRegistryAPIAPI
  * WorkerAPIClient

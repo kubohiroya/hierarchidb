@@ -171,12 +171,15 @@ export class BFFAuthService {
 
     let authUrl: URL;
     if (isAbsoluteUrl) {
-      // For absolute URLs, construct the auth endpoint correctly
-      // baseUrl should be like: https://eria-cartograph-bff.kubohiroya.workers.dev
-      authUrl = new URL(`${this.baseUrl}/auth/${provider}/authorize`);
+      // Absolute BFF URL: always use /auth/{provider}/authorize
+      authUrl = new URL(`${this.baseUrl.replace(/\/$/, '')}/auth/${provider}/authorize`);
     } else {
-      // For relative URLs (like /api/auth), use window.location.origin
-      authUrl = new URL(`${this.baseUrl}/${provider}/authorize`, window.location.origin);
+      // Relative BFF URL for dev proxy.
+      // If baseUrl is empty (""), default to '/auth' which vite proxy maps to BFF.
+      // If baseUrl is provided (e.g., '/api/auth'), ensure it ends with '/auth'.
+      const base = (this.baseUrl && this.baseUrl.trim()) || '/auth';
+      const normalized = base.endsWith('/auth') ? base : `${base.replace(/\/$/, '')}/auth`;
+      authUrl = new URL(`${normalized}/${provider}/authorize`, window.location.origin);
     }
 
     // Add PKCE parameters
@@ -190,7 +193,11 @@ export class BFFAuthService {
 
     // Add redirect URI (BFF will handle the actual OAuth redirect)
     if (method === 'redirect') {
-      authUrl.searchParams.set('redirect_uri', `${window.location.origin}/auth/callback`);
+      // Respect vite base (e.g., '/hierarchidb/') to avoid broken callback paths
+      const base = (import.meta as any)?.env?.BASE_URL || '/';
+      const baseNorm = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
+      const baseClean = baseNorm.endsWith('/') ? baseNorm.slice(0, -1) : baseNorm;
+      authUrl.searchParams.set('redirect_uri', `${window.location.origin}${baseClean}/auth/callback`);
     }
 
     return authUrl;
