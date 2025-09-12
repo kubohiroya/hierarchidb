@@ -3,6 +3,7 @@
  */
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import { bootLog } from './utils/bootLog';
 
 let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;
@@ -11,8 +12,8 @@ let workerInitCompleted = false;
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
   const RETRY_DELAYS = [2000, 3000, 7000];
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
-    console.log(`[client:initWorker] attempt ${attempt + 1}/${RETRY_DELAYS.length + 1}`);
-    try { console.log('[HDB-BOOT] client:initWorker attempt=%d', attempt + 1); } catch {}
+    // Reduce console noise; log only via bootLog when explicitly enabled
+    bootLog('client:initWorker attempt=%d', attempt + 1);
     try {
       if (workerInstance) {
         try { rawWorkerInstance?.terminate(); } catch {}
@@ -32,12 +33,12 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         });
         rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
           const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
-          console.log('[client:initWorker] msg:', t);
-          try { console.log('[HDB-BOOT] client:recv %s', t); } catch {}
+          // Avoid spamming console for frequent worker posts; only log when explicitly enabled
+          bootLog('client:recv %s', t);
           if ((e as any)?.data?.type === 'INIT_COMPLETE') {
             workerInitCompleted = true;
             try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
-            try { console.log('[HDB-BOOT] client:set __HDB_INIT_COMPLETE__=true'); } catch {}
+            bootLog('client:set __HDB_INIT_COMPLETE__=true');
             try { window.dispatchEvent(new Event('hierarchidb-worker-init-complete')); } catch {}
           }
         });

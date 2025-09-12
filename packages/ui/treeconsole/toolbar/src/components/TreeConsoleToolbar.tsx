@@ -3,7 +3,7 @@
   * eria-cartographTreeConsoleToolbarUI
    */
 
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useState, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -17,18 +17,17 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Popper,
   Radio,
   RadioGroup,
   TextField,
   Typography,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 
 //  Icons -
 import {
   CheckBox,
-  ChevronRight,
+  OpenInNew,
   Clear as ClearIcon,
   Clear as RemoveIcon,
   ContentCopy as ContentCopyIcon,
@@ -50,34 +49,39 @@ import {
 
 import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types';
 
-/**
-   * SearchOnlyToolbar
-  */
-function SearchOnlyToolbar({
-                             searchText,
-                             onSearchTextChange,
-                           }: {
-  searchText: string;
-  onSearchTextChange: (value: string) => void;
-}) {
+const SearchTextFieldContainer = styled(Box)(() => ({
+  display: 'flex',
+  alignItems: 'center',
+  // padding: '8px 16px',
+  borderBottom: 1,
+  borderColor: 'divider',
+  backgroundColor: 'background.paper',
+  minWidth: '200px',
+  width: '250px',
+  borderRadius: '24px'
+}));
+
+const TreeConsoleToolbarContainer = styled(Box)(() => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '20px',
+  margin: '0 16px 2px',
+  minHeight: '48px',
+}));
+
+function SearchField({ searchText, handleSearchTextChange, fullWidth }: { searchText: string; handleSearchTextChange: (_value: string) => void; fullWidth?: boolean}) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '8px 16px',
-        borderBottom: 1,
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-      }}
-    >
+    <SearchTextFieldContainer>
       <TextField
-        fullWidth
+        fullWidth={fullWidth}
         size="small"
-        placeholder="Search..."
+        placeholder="Search......"
         value={searchText}
-        onChange={(e) => onSearchTextChange(e.target.value)}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>)=>handleSearchTextChange(event.target.value)}
         InputProps={{
+          style:{
+            borderRadius: '30px',
+          },
           startAdornment: (
             <InputAdornment position="start">
               <SearchIcon fontSize="small" />
@@ -85,8 +89,21 @@ function SearchOnlyToolbar({
           ),
         }}
       />
-    </Box>
+    </SearchTextFieldContainer>
   );
+}
+
+function RadioItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return <FormControlLabel
+    value={value}
+    control={<Radio size="small" />}
+    label={
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {icon}
+        <Typography variant="body2">{label}</Typography>
+      </Box>
+    }
+  />
 }
 
 /**
@@ -117,6 +134,7 @@ function TreeConsoleToolbarContent({
   canDuplicate?: boolean;
   canRemove?: boolean;
 }) {
+  const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
   const [importExportAnchorEl, setImportExportAnchorEl] = useState<null | HTMLElement>(null);
   const [trashAnchorEl, setTrashAnchorEl] = useState<null | HTMLElement>(null);
@@ -150,54 +168,42 @@ function TreeConsoleToolbarContent({
   };
 
   // Action handler
-  const handleAction = (action: string, params?: TreeConsoleToolbarActionParams) => {
+  const handleAction = useCallback((action: string, params?: TreeConsoleToolbarActionParams) => {
     if (onAction) {
       onAction(action, params);
     } else {
       console.log(`Action: ${action}`, params ? params : '- TODO: Connect to controller');
     }
-  };
+  }, [
+    onAction,
+  ]);
 
-  const handleRowClickActionChange = (action: 'Select' | 'Edit' | 'Navigate') => {
+  const handleRowClickActionChange = useCallback((action: 'Select' | 'Edit' | 'Navigate') => {
     if (onRowClickActionChange) {
       onRowClickActionChange(action);
     } else {
       handleAction('setRowClickAction', action);
     }
-  };
+  }, [handleAction, onRowClickActionChange]);
+
+
+  const handleSearch = useCallback((value: string) => {
+    try {
+      controller?.handleSearchTextChange?.(value);
+    } catch (error) {
+      console.warn('Search not implemented:', error);
+    }
+  }, [
+    controller?.handleSearchTextChange,
+  ]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        margin: '0 16px 2px',
-        minHeight: '48px',
-      }}
-    >
+    <TreeConsoleToolbarContainer>
       {/* Search Input */}
-      <Box sx={{ minWidth: 200 }}>
-        <TextField
-          size="small"
-          placeholder="Search..."
-          value={controller?.searchText || ''}
-          onChange={(e) => {
-            try {
-              controller?.handleSearchTextChange?.(e.target.value);
-            } catch (error) {
-              console.warn('Search not implemented:', error);
-            }
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Box>
+      <SearchField
+        searchText={controller?.searchText || ''}
+        handleSearchTextChange={handleSearch}
+      />
 
       {/* Undo/Redo Group */}
       <ButtonGroup size="small">
@@ -292,6 +298,7 @@ function TreeConsoleToolbarContent({
           anchorEl={importExportAnchorEl}
           open={importExportOpen}
           onClose={handleImportExportClose}
+          container={portalContainer}
         >
           <MenuItem
             onClick={() => {
@@ -332,9 +339,14 @@ function TreeConsoleToolbarContent({
         <IconButton size="small" onClick={handleSettingsClick} aria-label="Settings">
           <SettingsIcon fontSize="small" />
         </IconButton>
-        <Popper open={settingsOpen} anchorEl={settingsAnchorEl} placement="bottom-end">
+        <Menu
+          open={settingsOpen}
+          anchorEl={settingsAnchorEl}
+          container={portalContainer}
+          sx={{ zIndex: (theme) => Math.max(theme.zIndex.modal + 1, 2000) }}
+        >
           <ClickAwayListener onClickAway={handleSettingsClose}>
-            <Paper sx={{ p: 2, minWidth: 250 }}>
+            <Paper sx={{ p: 2, minWidth: 250, zIndex: (theme) => Math.max(theme.zIndex.modal + 2, 2001) }}>
               <Typography variant="subtitle2" gutterBottom>
                 Row Click Action
               </Typography>
@@ -344,50 +356,19 @@ function TreeConsoleToolbarContent({
                   handleRowClickActionChange(e.target.value as 'Select' | 'Edit' | 'Navigate')
                 }
               >
-                <FormControlLabel
-                  value="Select"
-                  control={<Radio size="small" />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <CheckBox fontSize="small" />
-                      <Typography variant="body2">Select</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  value="Edit"
-                  control={<Radio size="small" />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Edit fontSize="small" />
-                      <Typography variant="body2">Edit</Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  value="Navigate"
-                  control={<Radio size="small" />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <ChevronRight fontSize="small" />
-                      <Typography variant="body2">Navigate</Typography>
-                    </Box>
-                  }
-                />
+                <RadioItem icon={<CheckBox fontSize="small" />} label={'Select'} value={'Select'}/>
+                <RadioItem icon={<Edit fontSize="small" />} label={'Edit'} value={'Edit'}/>
+                <RadioItem icon={<OpenInNew fontSize="small" />} label={'Navigate'} value={'Navigate'}/>
               </RadioGroup>
             </Paper>
           </ClickAwayListener>
-        </Popper>
+        </Menu>
       </Box>
-    </Box>
+    </TreeConsoleToolbarContainer>
   );
 }
 
-/**
-  * TreeConsoleToolbar
- * TreeConsoleToolbar
-  */
-export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.Element | null {
+export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.Element | null => {
   const {
     hideConsole = false,
     showSearchOnly = false,
@@ -413,12 +394,12 @@ export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.El
     return null;
   }
 
-  // Search-only mode
   if (showSearchOnly) {
     return (
-      <SearchOnlyToolbar
+      <SearchField
+        fullWidth={true}
         searchText={controller?.searchText || ''}
-        onSearchTextChange={controller?.handleSearchTextChange || (() => {
+        handleSearchTextChange={controller?.handleSearchTextChange || (() => {
         })}
       />
     );

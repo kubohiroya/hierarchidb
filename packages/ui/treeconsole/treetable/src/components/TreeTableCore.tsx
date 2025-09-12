@@ -78,7 +78,8 @@ const StyledTable = styled(Table)`
 const StyledTableHead = styled(TableHead)`
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* Keep above rows but below toolbars/menus */
+  z-index: 1;
   background: ${({ theme }) => theme.palette.background.paper};
 
   & .MuiTableCell-root {
@@ -102,7 +103,8 @@ const ResizeHandle = styled('div')`
   bottom: 0;
   width: 10px;
   cursor: col-resize;
-  z-index: 10;
+  /* Below app menus/popovers; high enough for interaction over cells */
+  z-index: 2;
   user-select: none;
 
   &:hover {

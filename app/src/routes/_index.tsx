@@ -111,8 +111,8 @@ export default function Index() {
 
   return (
     <>
-      <div
-        style={{
+      <Box
+        sx={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -122,7 +122,8 @@ export default function Index() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#ffffff',
+          bgcolor: 'background.default',
+          color: 'text.primary',
           fontFamily: 'Roboto, sans-serif',
         }}
       >
@@ -271,7 +272,7 @@ export default function Index() {
             </Tooltip>
           )}
         </div>
-      </div>
+      </Box>
 
       {/* Guided Tour Component */}
       {isTourOpen && (

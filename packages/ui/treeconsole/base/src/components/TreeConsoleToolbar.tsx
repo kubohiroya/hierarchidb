@@ -112,7 +112,7 @@ function TreeConsoleToolbarContent({
   const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
 
   const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() =>
-    (typeof localStorage !== 'undefined' && (localStorage.getItem('app.theme') as any)) || 'system',
+    (typeof localStorage !== 'undefined' && (localStorage.getItem('app.theme') as 'system' | 'light' | 'dark')) || 'system',
   );
   const [language, setLanguage] = useState<string>(
     () => (typeof localStorage !== 'undefined' && localStorage.getItem('app.lang')) || 'system',
@@ -321,6 +321,7 @@ function TreeConsoleToolbarContent({
           anchorEl={importExportAnchorEl}
           open={importExportOpen}
           onClose={handleImportExportClose}
+          container={typeof window !== 'undefined' ? document.body : undefined}
         >
           <MenuItem
             onClick={() => {
@@ -357,12 +358,13 @@ function TreeConsoleToolbarContent({
           anchorEl={settingsAnchorEl}
           placement="bottom-end"
           disablePortal={false}
+          container={typeof window !== 'undefined' ? document.body : undefined}
           sx={{ zIndex: (theme) => Math.max(theme.zIndex.modal + 100, 2000) }}
         >
           <ClickAwayListener onClickAway={handleSettingsClose}>
             <Paper sx={{ p: 2, minWidth: 280, zIndex: (theme) => Math.max(theme.zIndex.modal + 101, 2001) }}>
               <Typography variant="subtitle2" gutterBottom>
-                Row Click Action
+                [DEPRECATED] Row Click Action
               </Typography>
               <RadioGroup
                 value={'Select'}
@@ -428,7 +430,7 @@ function TreeConsoleToolbarContent({
         </Popper>
 
         {/* Theme submenu */}
-        <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu}>
+        <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
           <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
             <ListItemIcon>
               <SystemThemeIcon fontSize="small" />
@@ -450,7 +452,7 @@ function TreeConsoleToolbarContent({
         </Menu>
 
         {/* Language submenu */}
-        <Menu anchorEl={languageAnchorEl} open={languageOpen} onClose={closeLanguageMenu}>
+        <Menu anchorEl={languageAnchorEl} open={languageOpen} onClose={closeLanguageMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
           <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
             <ListItemText primary="System Default" />
           </MenuItem>
@@ -501,14 +503,14 @@ export function TreeConsoleToolbar(props: TreeConsoleToolbarProps): React.JSX.El
   // Main toolbar for Projects/Resources pages
   if (isProjectsPage || isResourcesPage) {
     return (
-      <div
+      <Box
         data-testid="tree-console-toolbar"
         className="tree-console-toolbar"
         aria-label="TreeTypes console toolbar"
         style={{ backgroundColor: theme.palette.background.paper }}
       >
         <TreeConsoleToolbarContent controller={controller} hasTrashItems={hasTrashItems} />
-      </div>
+      </Box>
     );
   }
 

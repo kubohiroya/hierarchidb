@@ -6,6 +6,7 @@
   */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { bootLog } from '../utils/bootLog';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
 import { WorkerAPIClient } from '../WorkerAPIClient';
@@ -215,8 +216,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
   // Helper to finalize initialization and hide the banner
   const finalizeInitialized = async () => {
     try {
-      // eslint-disable-next-line no-console
-      console.log('[HDB-BOOT] WorkerProvider finalize start');
+      // Reduce boot log noise; print only when ?debug=init
+      bootLog('WorkerProvider finalize start');
       const client = await WorkerAPIClient.getSingleton();
       setState({
         client,
@@ -225,8 +226,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         initMessage: 'Worker初期化完了',
         error: null,
       });
-      // eslint-disable-next-line no-console
-      console.log('[HDB-BOOT] WorkerProvider finalized isInitialized=true');
+      bootLog('WorkerProvider finalized isInitialized=true');
     } catch (e) {
       console.warn('[WorkerProvider] finalizeInitialized failed, will rely on channel', e);
     }
@@ -236,20 +236,17 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       * Worker
       */
   const initializeWorker = async () => {
-    // eslint-disable-next-line no-console
-    console.log('[HDB-BOOT] WorkerProvider initialize() begin');
+    bootLog('WorkerProvider initialize() begin');
     try {
       setState(prev => ({ ...prev, error: null }));
 
       //  WorkerAPIClientWorker
       await WorkerAPIClient.initialize();
-      // eslint-disable-next-line no-console
-      console.log('[HDB-BOOT] WorkerProvider initialize resolved');
+      bootLog('WorkerProvider initialize resolved');
       // Fast-path if already ready
       try {
         if (WorkerAPIClient.isReady()) {
-          // eslint-disable-next-line no-console
-          console.log('[WorkerProvider] fast-path isReady=true, finalizing');
+          bootLog('WorkerProvider fast-path isReady=true, finalizing');
           __WORKER_INIT_COMPLETED__ = true;
           await finalizeInitialized();
           return;
@@ -273,10 +270,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
             initMessage: data.payload?.message || prev.initMessage,
           }));
           try { bootProgress?.setStepProgress('Worker', Number(data?.payload?.progress ?? 0), data?.payload?.message || ''); } catch {}
-          try {
-            // eslint-disable-next-line no-console
-            console.log('[HDB-BOOT] WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? '');
-          } catch {}
+          try { bootLog('WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? ''); } catch {}
         }
       };
       try {
@@ -300,8 +294,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
-        // eslint-disable-next-line no-console
-        console.log('[HDB-BOOT] WorkerProvider channel INIT_COMPLETE');
+        bootLog('WorkerProvider channel INIT_COMPLETE');
         try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
         await finalizeInitialized();
       } else {
@@ -319,13 +312,11 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
   //  + event listener for INIT_COMPLETE
   useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[HDB-BOOT] WorkerProvider mount');
+    bootLog('WorkerProvider mount');
     // In dev, add a short fallback to finalize if WorkerAPIClient becomes ready but the channel hasn't resolved (StrictMode races)
     let devFallbackTimer: number | undefined;
     const onInitComplete = async () => {
-      // eslint-disable-next-line no-console
-      console.log('[HDB-BOOT] WorkerProvider event INIT_COMPLETE');
+      bootLog('WorkerProvider event INIT_COMPLETE');
       __WORKER_INIT_COMPLETED__ = true;
       try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
       try {

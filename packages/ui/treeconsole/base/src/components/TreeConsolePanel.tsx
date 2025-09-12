@@ -204,10 +204,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        // Allow pointer events to pass through to SpeedDial
-        '& > *:last-child': {
-          pointerEvents: 'none',
-        },
       }}
     >
       {/* Breadcrumb Navigation with drop-to-parent support */}
@@ -307,8 +303,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             position: 'fixed',
             bottom: 16,
             right: 16,
-            zIndex: 9999, // Increase z-index to ensure it's above other elements
-            pointerEvents: 'auto', // Ensure pointer events work
+            zIndex: 9999,
           }}
           data-testid="speed-dial-container"
         >

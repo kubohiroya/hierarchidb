@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useEffect, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { createAppTheme, useThemeMode, type ThemeMode } from '@hierarchidb/ui-theme';
+import { createAppTheme, useThemeMode, type ThemeMode, getStoredThemeMode } from '@hierarchidb/ui-theme';
 
 export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
   const { actualTheme, setMode } = useThemeMode();
@@ -16,13 +16,14 @@ export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
     return () => window.removeEventListener('hierarchidb-theme-change', handler as EventListener);
   }, [setMode]);
 
-  // Sync initial mode from toolbar storage key if present
+  // Sync initial mode from storage if present (supports both ui-theme and legacy keys)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('app.theme');
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        setMode(stored as any);
-      }
+      const mode = getStoredThemeMode();
+      if (mode) setMode(mode);
+      // Back-compat fallback
+      const legacy = localStorage.getItem('app.theme');
+      if (legacy === 'light' || legacy === 'dark' || legacy === 'system') setMode(legacy as any);
     } catch {}
   }, [setMode]);
 

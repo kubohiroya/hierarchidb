@@ -2,6 +2,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from '
 import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { StrictMode } from 'react';
+import { bootLog } from './utils/bootLog';
 import { AppConfigProvider } from './contexts/AppConfigContext';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
@@ -254,12 +255,12 @@ export function ErrorBoundary() {
 }
 
 function AppContent() {
-  try { console.log('[HDB-BOOT] AppContent mount'); } catch {}
+  try { bootLog('AppContent mount'); } catch {}
   return (
     <StrictMode>
       <Outlet />
-      {/* Debug overlay to quickly classify issues: cache vs comms vs UI update. */}
-      {typeof window !== 'undefined' && (import.meta.env.DEV || new URLSearchParams(window.location.search).get('debug') === 'init') ? (
+      {/* Debug overlay is disabled by default; enable only via ?debug=init */}
+      {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === 'init' ? (
         <InitInspector />
       ) : null}
     </StrictMode>

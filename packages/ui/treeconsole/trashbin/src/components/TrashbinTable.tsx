@@ -44,7 +44,8 @@ const StyledTable = styled(Table)`
 const StyledTableHead = styled(TableHead)`
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* Keep above rows but below global menus */
+  z-index: 1;
   background: ${({ theme }) => theme.palette.background.paper};
 
   & .MuiTableCell-root {
