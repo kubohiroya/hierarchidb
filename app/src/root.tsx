@@ -268,6 +268,9 @@ function AppContent() {
 }
 
 export default function App() {
+  // Create theme inside component with useMemo to avoid hydration mismatch
+  const theme = useMemo(() => createAppTheme('light'), []);
+
   return (
     <BootProgressProvider>
       <AppConfigProvider>
