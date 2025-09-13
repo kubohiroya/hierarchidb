@@ -147,7 +147,14 @@ export class CommandProcessor {
     // In unit tests, CoreDB is often a lightweight stub without runInTx; fall back gracefully.
     const db: any = this.coreDB as any;
     if (FEATURE_FLAGS.WORKER_TX_ENABLED && typeof db?.runInTx === 'function') {
-      return await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope));
+      // Some commands perform dynamic imports / multi-phase operations that do not play well with Dexie TX scopes.
+      // Execute those without wrapping in a single TX to avoid PrematureCommitError.
+      const NON_TX: Set<string> = new Set([
+        'commitWorkingCopy',
+      ]);
+      if (!NON_TX.has(envelope.kind)) {
+        return await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope));
+      }
     }
     return this.executeCommandNoTx(envelope);
   }
@@ -312,10 +319,9 @@ export class CommandProcessor {
           const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
             | Array<{ rootId: NodeId; trashRootId: NodeId }>
             | undefined;
-          if (!Array.isArray(trees) || trees.length === 0) {
-            return this.createErrorResult('Trash roots not found', WorkerErrorCode.INVALID_OPERATION);
-          }
-          const rootToTrash = new Map<NodeId, NodeId>(trees.map((t) => [t.rootId, t.trashRootId]));
+          const rootToTrash = new Map<NodeId, NodeId>(
+            Array.isArray(trees) ? trees.map((t) => [t.rootId, t.trashRootId]) : [],
+          );
           for (const id of p.nodeIds) {
             const node = await this.coreDB.getNode?.(id);
             if (!node) continue;
@@ -331,9 +337,16 @@ export class CommandProcessor {
               if (!parent || parent.parentId === cursor) break;
               cursor = parent.parentId;
             }
+            // Fallback: derive trash root id from discovered root id pattern (e.g., r:root -> r:trash)
             if (!trashRootId) {
-              continue;
+              // If cursor stopped at a root-like id, try to replace suffix
+              const candidateRoot = cursor;
+              if (typeof candidateRoot === 'string' && candidateRoot.endsWith(':root')) {
+                const alt = (candidateRoot.slice(0, -(':root'.length)) + ':trash') as NodeId;
+                trashRootId = alt;
+              }
             }
+            if (!trashRootId) continue;
             const holderId = (crypto.randomUUID() as unknown) as NodeId;
             const holderName = encodeTrashHolderName(node.parentId, node.id);
             const now = (Date.now() as unknown) as Timestamp;
@@ -376,17 +389,28 @@ export class CommandProcessor {
               }
             }
           }
+          // Collect full deletion set: targets + all descendants (bottom-up)
           const beforeList: TreeNode[] = [];
-          for (const id of p.nodeIds) {
-            const n = await this.coreDB.getNode?.(id);
-            if (n) beforeList.push({ ...n });
+          const toDeleteSet = new Set<NodeId>();
+          const queue: NodeId[] = [...p.nodeIds];
+          while (queue.length) {
+            const cur = queue.shift()!;
+            if (toDeleteSet.has(cur)) continue;
+            toDeleteSet.add(cur);
+            const node = await this.coreDB.getNode?.(cur);
+            if (node) beforeList.push({ ...node });
+            const children = (await this.coreDB.listChildren?.(cur)) || [];
+            for (const c of children) queue.push(c.id);
           }
-          if (p.nodeIds.length === 1) {
-            await this.coreDB.deleteNode?.(p.nodeIds[0]!);
-          } else if (p.nodeIds.length > 1) {
-            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-            for (let i = 0; i < p.nodeIds.length; i += size) {
-              await (this.coreDB as any).bulkDeleteNodes?.(p.nodeIds.slice(i, i + size));
+          // Delete in chunks (order doesn’t matter for Dexie, but descendants included ensures no dangling lookups)
+          const ids = Array.from(toDeleteSet.values());
+          const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+          for (let i = 0; i < ids.length; i += size) {
+            const slice = ids.slice(i, i + size);
+            if (slice.length === 1) {
+              await this.coreDB.deleteNode?.(slice[0]!);
+            } else {
+              await (this.coreDB as any).bulkDeleteNodes?.(slice);
             }
           }
           if (beforeList.length > 0) this.preRemoveState.set(envelope.commandId, beforeList);
@@ -397,6 +421,41 @@ export class CommandProcessor {
         } catch (e) {
           return this.createErrorResult(
             e instanceof Error ? e.message : 'Remove failed',
+            WorkerErrorCode.DATABASE_ERROR,
+          );
+        }
+      case 'removeSubtree':
+        try {
+          const p = envelope.payload as unknown as { rootId: NodeId };
+          // Recursively collect descendants using coreDB.listChildren (post-order), then bulk delete
+          const toDelete: TreeNode[] = [];
+          const visit = async (parent: NodeId): Promise<void> => {
+            const children = (await (this.coreDB as any).listChildren?.(parent)) as Array<TreeNode> | undefined;
+            if (!children || children.length === 0) return;
+            for (const ch of children) {
+              await visit(ch.id as NodeId);
+              toDelete.push(ch);
+            }
+          };
+          await visit(p.rootId);
+
+          if (toDelete.length > 0) {
+            const ids = toDelete.map((n) => n.id);
+            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+            for (let i = 0; i < ids.length; i += size) {
+              const slice = ids.slice(i, i + size);
+              if ((this.coreDB as any).bulkDeleteNodes) {
+                await (this.coreDB as any).bulkDeleteNodes(slice);
+              } else {
+                for (const id of slice) await (this.coreDB as any).deleteNode?.(id);
+              }
+            }
+            await this.deletePeerEntitiesForNodes(toDelete);
+          }
+          return { success: true, seq: this.getNextSeq() };
+        } catch (e) {
+          return this.createErrorResult(
+            e instanceof Error ? e.message : 'RemoveSubtree failed',
             WorkerErrorCode.DATABASE_ERROR,
           );
         }
@@ -514,6 +573,7 @@ export class CommandProcessor {
       'moveToTrash',
       'remove',
       'recoverFromTrash',
+      'removeSubtree',
       'commitWorkingCopy',
     ]);
     return LEGACY_SUPPORTED.has(type);

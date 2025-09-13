@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { Box, Chip, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
-import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types';
 
@@ -76,9 +76,9 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
 
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-        <Grid2 container spacing={3}>
+        <Grid container spacing={3}>
           {/* Basic Info */}
-          <Grid2 size={12}>
+          <Grid size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 基本情報
@@ -110,51 +110,51 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 </ListItem>
               </List>
             </Paper>
-          </Grid2>
+          </Grid>
 
           {/* Processing Config */}
-          <Grid2 size={12}>
+          <Grid size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 処理設定
               </Typography>
-              <Grid2 container spacing={2}>
-                <Grid2 size={6}>
+              <Grid container spacing={2}>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
                     並行ダウンロード数
                   </Typography>
                   <Typography variant="body1">
                     {entity.processingConfig.concurrentDownloads}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
                     フィルタリング
                   </Typography>
                   <Typography variant="body1">
                     {entity.processingConfig.enableLocationFiltering ? '有効' : '無効'}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
                     クラスタリング
                   </Typography>
                   <Typography variant="body1">
                     {entity.processingConfig.enableClustering ? '有効' : '無効'}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
                     ジオコーディング
                   </Typography>
                   <Typography variant="body1">
                     {entity.processingConfig.enableGeocoding ? '有効' : '無効'}
                   </Typography>
-                </Grid2>
-              </Grid2>
+                </Grid>
+              </Grid>
             </Paper>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );

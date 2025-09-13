@@ -49,6 +49,13 @@ export default [
       'no-case-declarations': 'warn',
       'no-sparse-arrays': 'warn',
       'no-constant-binary-expression': 'warn',
+      // Forbid legacy/unstable Grid2 paths. Use Grid (v7) instead.
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: '@mui/material/Unstable_Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
+          { name: '@mui/material/Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
+        ],
+      }],
     },
   },
 

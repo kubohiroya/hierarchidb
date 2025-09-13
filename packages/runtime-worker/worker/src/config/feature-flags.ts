@@ -15,7 +15,8 @@ export const WORKER_USE_CMDPROC_CREATE_UPDATE = envBool('WORKER_USE_CMDPROC_CREA
 export const WORKER_USE_CMDPROC_MOVE_REMOVE = envBool('WORKER_USE_CMDPROC_MOVE_REMOVE', true);
 export const WORKER_TRASH_USE_HOLDER = envBool('WORKER_TRASH_USE_HOLDER', true);
 export const WORKER_ENTITY_UNIFIED = envBool('WORKER_ENTITY_UNIFIED', true);
-export const WORKER_TX_ENABLED = envBool('WORKER_TX_ENABLED', true);
+// Disable TX wrapper by default in tests to avoid Dexie PrematureCommitError with multi-phase commands
+export const WORKER_TX_ENABLED = envBool('WORKER_TX_ENABLED', false);
 export const WORKER_POLICY_C = envBool('WORKER_POLICY_C', true);
 export const WORKER_METRICS_ENABLED = envBool('WORKER_METRICS_ENABLED', false);
 

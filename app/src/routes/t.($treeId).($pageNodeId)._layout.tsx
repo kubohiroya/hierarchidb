@@ -12,26 +12,17 @@ import {
   Typography,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
-import { loadPageNode, LoadPageNodeArgs } from '~/loader';
+import { loadPageNode } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import { type NodeId, Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  const params = args.params as LoadPageNodeArgs;
-
-  //  pageNodeIdID
-  const pageNodeId = params.nodeId || (`${params.treeId}Root` as NodeId);
-
-  //  undefined
-  const actualPageNodeId =
-    pageNodeId === 'undefined' ? (`${params.treeId}Root` as NodeId) : pageNodeId;
-
-  return await loadPageNode({
-    ...params,
-    nodeId: actualPageNodeId,
-  });
+  // Map route params (pageNodeId) to loader args (nodeId)
+  const p = args.params as { treeId: string; pageNodeId?: string };
+  const pageNodeId = p.pageNodeId ||`${p.treeId}:root` as NodeId;
+  return await loadPageNode({ treeId: p.treeId, pageNodeId });
 }
 
 export default function TLayout() {

@@ -479,6 +479,11 @@ export class TreeSubscriptionService {
       isInSubtree = this.isDescendantNode(event.nodeId, rootNodeId);
     }
 
+    // Fast-path: if we have the node payload and its direct parent is the root, accept
+    if (!isInSubtree && event.node && event.node.parentId === rootNodeId) {
+      isInSubtree = true;
+    }
+
     if (!isInSubtree && event.nodeId !== rootNodeId) {
       return false;
     }
@@ -1137,9 +1142,29 @@ export class TreeSubscriptionService {
    * Convert TreeChangeEvent to TreeNodeEvent
    */
   private convertToTreeNodeEvent(changeEvent: TreeChangeEvent): TreeNodeEvent {
+    // Normalize event.type from CoreDB ('node-created' etc.) to public API ('created' etc.)
+    const mapType = (t: string): 'created' | 'updated' | 'deleted' | 'moved' => {
+      switch (t) {
+        case 'node-created':
+        case 'created':
+          return 'created';
+        case 'node-updated':
+        case 'updated':
+          return 'updated';
+        case 'node-deleted':
+        case 'deleted':
+          return 'deleted';
+        case 'node-moved':
+        case 'moved':
+          return 'moved';
+        default:
+          return 'updated';
+      }
+    };
+
     const nodeEvent: TreeNodeEvent = {
       nodeId: changeEvent.nodeId,
-      type: changeEvent.type as 'created' | 'updated' | 'deleted' | 'moved',
+      type: mapType(changeEvent.type as any),
       timestamp: changeEvent.timestamp || Date.now(),
       node: changeEvent.node,
       parentId: changeEvent.node?.parentId,

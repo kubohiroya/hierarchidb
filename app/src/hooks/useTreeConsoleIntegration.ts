@@ -322,19 +322,26 @@ export function useTreeConsoleIntegration({
       },
 
       handleCreate: async () => {
-        if (!client) return;
-        const name = prompt('Enter new item name (default: New Item)')?.trim() || 'New Item';
-        const parentId = pageNodeId as NodeId;
-        const nodeType: NodeType = 'folder' as NodeType;
+        // Toolbar create: request Worker to create a draft working copy, then navigate using wc nodeId
+        if (!client || !pageNodeId || !treeId) return;
         try {
+          const nodeType: NodeType = 'folder' as NodeType;
           const mutationAPI = await client.getMutationAPI();
-          const res = await mutationAPI.createNode({ nodeType, treeId: (treeId as TreeId) || ('default-tree' as TreeId), parentId, name });
-          if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Create failed');
+          const res = await mutationAPI.createNode({
+            nodeType,
+            treeId: (treeId as TreeId),
+            parentId: pageNodeId as NodeId,
+            name: 'New Folder',
+          });
+          if (!res?.success) {
+            showCommandError('INVALID_OPERATION', (res as any)?.error || 'Create failed');
             return;
           }
-          await loadChildrenOf(parentId);
+          const wcNodeId = res.nodeId as NodeId; // working copy node id
           fireCmdEvent();
+          if (pushPath) {
+            pushPath(`/t/${treeId}/${pageNodeId}/${wcNodeId}/${String(nodeType)}/create`);
+          }
         } catch (e) {
           console.error('Create failed:', e);
           showCommandError('UNKNOWN_ERROR');
@@ -457,30 +464,25 @@ export function useTreeConsoleIntegration({
         if (actionStr.startsWith('create:')) {
           const nodeType = actionStr.replace('create:', '') as string as NodeType;
           console.log('Creating node of type:', nodeType);
-
           try {
             if (client && pageNodeId && treeId) {
-              // 1) Create a draft working copy holder under the current page node (WorkingCopy pattern)
-              const workingCopyAPI = await (client as any).getWorkingCopyAPI();
               const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
-              // Use dedicated WorkingCopy root holder per design: parentId in holderName only;
-              // holder itself is created under `${treeId}:workingCopy` by the service.
-              const draft = await workingCopyAPI.createDraftWorkingCopy(
+              const mutationAPI = await client.getMutationAPI();
+              const res = await mutationAPI.createNode({
                 nodeType,
-                pageNodeId as NodeId,
-                { name: `New ${displayName}` },
-              );
-              const wcId: string = (draft?.id || draft?.wcNodeId || draft) as string;
-
-              if (!wcId) {
-                showCommandError('INVALID_OPERATION', 'Failed to create draft working copy');
+                treeId: (treeId as TreeId),
+                parentId: pageNodeId as NodeId,
+                name: `New ${displayName}`,
+              });
+              if (!res?.success) {
+                showCommandError('INVALID_OPERATION', (res as any)?.error || 'Create failed');
                 return;
               }
-
-              // 2) Route to plugin dialog in create mode
+              const wcNodeId = res.nodeId as NodeId;
+              fireCmdEvent();
               if (pushPath) {
                 const nodeTypePath = String(nodeType);
-                pushPath(`/t/${treeId}/${pageNodeId}/${wcId}/${nodeTypePath}/create`);
+                pushPath(`/t/${treeId}/${pageNodeId}/${wcNodeId}/${nodeTypePath}/create`);
               }
             } else {
               showCommandError('INVALID_OPERATION', 'Worker client or page context unavailable');

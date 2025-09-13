@@ -17,6 +17,7 @@ import type { WorkingCopyAPI } from './WorkingCopyAPI';
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI';
 import { TagAPI } from './TagAPI';
+import type { ProxyMarked } from 'comlink';
 
 /**
  * Main worker facade API
@@ -36,7 +37,7 @@ export interface WorkerAPI {
    * const tree = await queryAPI.getTree(treeId);
    * ```
    */
-  getQueryAPI(): TreeQueryAPI;
+  getQueryAPI(): ProxyMarked<TreeQueryAPI>;
 
   /**
    * Get the mutation API for data modification operations
@@ -52,7 +53,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getMutationAPI(): TreeMutationAPI;
+  getMutationAPI(): ProxyMarked<TreeMutationAPI>;
 
   /**
    * Get the subscription API for real-time monitoring
@@ -68,7 +69,7 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getSubscriptionAPI(): TreeSubscriptionAPI;
+  getSubscriptionAPI(): ProxyMarked<TreeSubscriptionAPI>;
 
   // Reserved for future: NodeTypeRegistryAPI
 
@@ -86,7 +87,7 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getWorkingCopyAPI(): WorkingCopyAPI;
+  getWorkingCopyAPI(): ProxyMarked<WorkingCopyAPI>;
 
   // ----------------------------------------------------------------//
   /**
@@ -135,7 +136,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getImportExportAPI(): ImportExportAPI;
+  getImportExportAPI(): ProxyMarked<ImportExportAPI>;
 
   // ----------------------------------------------------------------//
   /**
@@ -156,7 +157,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getTagAPI(): TagAPI;
+  getTagAPI(): ProxyMarked<TagAPI>;
 
   // ----------------------------------------------------------------//
   /**

@@ -15,7 +15,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid2,
   IconButton,
   LinearProgress,
   List,
@@ -33,6 +32,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Assessment,
   CheckCircle,
@@ -341,10 +341,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-            <Grid2 container spacing={3}>
+            <Grid container spacing={3}>
               {/*
 */}
-              <Grid2 size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -358,9 +358,9 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid2>
+              </Grid>
 
-              <Grid2 size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -374,9 +374,9 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid2>
+              </Grid>
 
-              <Grid2 size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
@@ -390,11 +390,11 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid2>
+              </Grid>
 
               {/*
 */}
-              <Grid2 size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
                   処理ステージ
                 </Typography>
@@ -434,11 +434,11 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     </Step>
                   ))}
                 </Stepper>
-              </Grid2>
+              </Grid>
 
               {/*
 */}
-              <Grid2 size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
                   アクティブタスク
                 </Typography>
@@ -486,8 +486,8 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                     </ListItem>
                   ))}
                 </List>
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           </Box>
         </TabPanel>
 

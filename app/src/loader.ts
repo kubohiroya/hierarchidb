@@ -28,7 +28,7 @@ export type LoadTreeReturn = {
 
 export type LoadPageNodeArgs = {
   treeId: string;
-  nodeId: string;
+  pageNodeId: string;
 };
 export type LoadPageNodeReturn = {
   pageNodeId: NodeId;
@@ -105,25 +105,23 @@ async function retryComlinkCall<T>(
       }
 
       // Avoid recreating the Worker while it is still booting to prevent races
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-        const { WorkerAPIClient } = await import('./WorkerAPIClient');
-        const initComplete = Boolean(g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
+      // @eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+      const { WorkerAPIClient } = await import('./WorkerAPIClient');
+      const initComplete = Boolean(g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
-        if (!initComplete) {
-          console.warn(`[${operationName}] Comlink error during boot; will wait instead of recreating worker.`);
-        } else {
-          console.warn(`[${operationName}] Comlink error post-boot; recreating worker connection...`);
-          try {
-            WorkerAPIClient.reset();
-            await WorkerAPIClient.initialize();
-            console.log(`[${operationName}] Worker connection recreated`);
-          } catch (recreationError) {
-            console.error(`[${operationName}] Failed to recreate worker connection:`, recreationError);
-          }
+      if (!initComplete) {
+        console.warn(`[${operationName}] Comlink error during boot; will wait instead of recreating worker.`);
+      } else {
+        console.warn(`[${operationName}] Comlink error post-boot; recreating worker connection...`);
+        try {
+          WorkerAPIClient.reset();
+          await WorkerAPIClient.initialize();
+          console.log(`[${operationName}] Worker connection recreated`);
+        } catch (recreationError) {
+          console.error(`[${operationName}] Failed to recreate worker connection:`, recreationError);
         }
-      } catch {}
+      }
 
       const delay = retryDelays[attempt];
       console.log(`[${operationName}] Retrying in ${delay}ms...`);
@@ -137,19 +135,18 @@ async function retryComlinkCall<T>(
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
   // Coordinate concurrent loader calls during hard-refresh/direct-access
   // by sharing a single wait promise for INIT_COMPLETE across the app runtime.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // @eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g: any = typeof window !== 'undefined' ? (window as any) : {};
   if (!g.__HDB_INIT_WAIT__) g.__HDB_INIT_WAIT__ = null as Promise<void> | null;
   const appConfig = loadAppConfig();
-  try { console.log('[HDB-BOOT] Loader start'); } catch {}
+  console.log('[HDB-BOOT] Loader start');
 
   try {
     //  WorkerAPIClient
     const { WorkerAPIClient } = await import('./WorkerAPIClient');
 
     // Fast path: if global INIT_COMPLETE already observed, return immediately
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // @eslint-disable-next-line @typescript-eslint/no-explicit-any
       const g: any = (typeof window !== 'undefined') ? (window as any) : {};
       if (g.__HDB_INIT_COMPLETE__) {
         try {
@@ -162,7 +159,6 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
           return { ...appConfig, client };
         }
       }
-    } catch {}
 
     // Ensure initialization kicked off exactly once per page load.
     // If the WorkerProvider already started, do not duplicate or spam logs.
@@ -170,12 +166,10 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
       const startedByProvider = !!g.__HDB_INIT_STARTED__;
       if (!startedByProvider && !g.__HDB_LOADER_INIT_STARTED__) {
         g.__HDB_LOADER_INIT_STARTED__ = true;
-        try { console.debug('[HDB-BOOT] Loader initializing WorkerAPIClient (first caller)'); } catch {}
         // Kick off initialization without awaiting to avoid race; event barrier will resolve readiness
         WorkerAPIClient.initialize().catch(() => {});
       } else {
         // Provider (or another loader) is already initializing; keep quiet to avoid noisy logs
-        try { console.debug('[HDB-BOOT] Loader sees initialization in progress; waiting'); } catch {}
       }
     }
 
@@ -183,29 +177,25 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     // Resolve when either (a) window event fires, or (b) WorkerAPIClient.isReady() becomes true,
     // or (c) an overall timeout elapses.
     const ensureInitComplete = async (timeoutMs = 20000) => {
-      try { console.log('[HDB-BOOT] Loader ensureInit start'); } catch {}
-      try { if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return; } catch {}
+      console.log('[HDB-BOOT] Loader ensureInit start');
+      if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
       if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
       if (!g.__HDB_INIT_WAIT__) {
         g.__HDB_INIT_WAIT__ = new Promise<void>((resolve) => {
           let done = false;
           const finish = () => { if (!done) { done = true; resolve(); } };
           const checkReady = () => {
-            try { if (WorkerAPIClient.isReady()) finish(); } catch {}
+            if (WorkerAPIClient.isReady()) finish();
           };
-          try {
             const handler = () => {
-              try { window.removeEventListener('hierarchidb-worker-init-complete', handler); } catch {}
+              window.removeEventListener('hierarchidb-worker-init-complete', handler);
               g.__HDB_INIT_COMPLETE__ = true;
-              try { console.log('[HDB-BOOT] Loader ensureInit via event'); } catch {}
               finish();
             };
             window.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
-          } catch {}
           const poll = window.setInterval(checkReady, 100);
           window.setTimeout(() => {
-            try { window.clearInterval(poll); } catch {}
-            try { console.log('[HDB-BOOT] Loader ensureInit timeout used'); } catch {}
+            window.clearInterval(poll);
             finish();
           }, timeoutMs);
         });
@@ -218,7 +208,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
     // Obtain the instance
     const client = WorkerAPIClient.getSingleton();
-    try { console.log('[HDB-BOOT] Loader getSingleton ok'); } catch {}
+    console.log('[HDB-BOOT] Loader getSingleton ok');
 
 
     return {
@@ -265,24 +255,34 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
 
 export async function loadPageNode({
                                      treeId,
-                                     nodeId,
+                                     pageNodeId,
                                    }: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
-  const loadTreeReturn = await loadTree({ treeId });
-  const resolvedPageId = (nodeId || `${treeId}Root`) as NodeId;
 
+  const loadTreeReturn = await loadTree({ treeId });
+  const resolvedPageNodeId = (pageNodeId || `${treeId}:root`) as NodeId;
+
+  /*
   const pageNode = await retryComlinkCall(
     async () => {
       // Get fresh client and queryAPI for each retry
       const workerAPIClientReturn = await loadWorkerAPIClient();
       const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
-      return queryAPI.getNode(resolvedPageId);
+      return queryAPI.getNode(resolvedPageNodeId);
     },
     'loadPageNode.getNode',
   );
+  console.log('**** loadPageNode', treeId, pageNodeId, pageNode);
+   */
+
+  const workerAPIClientReturn = await loadWorkerAPIClient();
+  const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
+  const pageNode = await queryAPI.getNode(resolvedPageNodeId);
+
+  console.log('**** loadPageNode', treeId, pageNodeId, pageNode);
 
   return {
     ...loadTreeReturn,
-    pageNodeId: resolvedPageId,
+    pageNodeId: resolvedPageNodeId,
     pageNode,
   };
 }
@@ -294,7 +294,7 @@ export async function loadTargetNode({
                                      }: LoadTargetNodeArgs): Promise<LoadTargetNodeReturn> {
   const loadPageNodeReturn = await loadPageNode({
     treeId,
-    nodeId: pageNodeId,
+    pageNodeId: pageNodeId,
   });
 
   const targetNode = await retryComlinkCall(
@@ -302,7 +302,7 @@ export async function loadTargetNode({
       // Get fresh client and queryAPI for each retry
       const workerAPIClientReturn = await loadWorkerAPIClient();
       const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
-      return queryAPI.getNode((targetNodeId || pageNodeId || `${treeId}Root`) as NodeId);
+      return queryAPI.getNode((targetNodeId || pageNodeId || `${treeId}:root`) as NodeId);
     },
     'loadTargetNode.getNode',
   );

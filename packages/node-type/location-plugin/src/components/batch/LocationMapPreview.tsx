@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogTitle,
   Fab,
-  Grid2,
   Menu,
   MenuItem,
   MenuList,
@@ -23,6 +22,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   CenterFocusStrong,
   GroupWork,
@@ -253,10 +253,10 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       {/*
 */}
       <Paper elevation={1} sx={{ p: 2, mb: 1 }}>
-        <Grid2 container spacing={2} alignItems="center">
+        <Grid container spacing={2} alignItems="center">
           {/*
 */}
-          <Grid2 size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <ToggleButtonGroup
               value={displayMode}
               exclusive
@@ -276,11 +276,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 <Typography variant="caption" sx={{ ml: 0.5 }}>Heatmap</Typography>
               </ToggleButton>
             </ToggleButtonGroup>
-          </Grid2>
+          </Grid>
 
           {/*
 */}
-          <Grid2 size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               size="small"
               fullWidth
@@ -291,11 +291,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
               }}
             />
-          </Grid2>
+          </Grid>
 
           {/*
 */}
-          <Grid2 size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
                 label={`${statistics.visiblePoints.toLocaleString()} / ${statistics.totalPoints.toLocaleString()}`}
@@ -310,8 +310,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 />
               )}
             </Box>
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
 
         {/*
 */}
@@ -562,50 +562,50 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             {TYPE_SETTINGS[selectedLocation.type].icon} {selectedLocation.name}
           </DialogTitle>
           <DialogContent>
-            <Grid2 container spacing={2}>
-              <Grid2 size={6}>
+            <Grid container spacing={2}>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   英語名
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.nameEn || 'N/A'}
                 </Typography>
-              </Grid2>
-              <Grid2 size={6}>
+              </Grid>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   国コード
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.countryCode}
                 </Typography>
-              </Grid2>
-              <Grid2 size={6}>
+              </Grid>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   緯度
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.coordinates[1].toFixed(6)}
                 </Typography>
-              </Grid2>
-              <Grid2 size={6}>
+              </Grid>
+              <Grid size={6}>
                 <Typography variant="body2" color="text.secondary">
                   経度
                 </Typography>
                 <Typography variant="body1">
                   {selectedLocation.coordinates[0].toFixed(6)}
                 </Typography>
-              </Grid2>
+              </Grid>
               {Object.entries(selectedLocation.properties).map(([key, value]) => (
-                <Grid2 size={6} key={key}>
+                <Grid size={6} key={key}>
                   <Typography variant="body2" color="text.secondary">
                     {key}
                   </Typography>
                   <Typography variant="body1">
                     {typeof value === 'number' ? value.toLocaleString() : String(value)}
                   </Typography>
-                </Grid2>
+                </Grid>
               ))}
-            </Grid2>
+            </Grid>
           </DialogContent>
           <DialogContent>
             <Button onClick={() => setSelectedLocation(null)}>

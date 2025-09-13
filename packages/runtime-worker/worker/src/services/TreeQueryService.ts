@@ -56,28 +56,26 @@ export class TreeQueryService implements TreeQueryAPI {
   }
 
   async listDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]> {
-    // Get all descendants recursively
-    const descendants: TreeNode[] = [];
-    const visited = new Set<NodeId>();
+    // Iterative DFS to avoid recursion pitfalls and ensure full coverage
+    const out: TreeNode[] = [];
+    const stack: Array<{ id: NodeId; depth: number }> = [{ id: nodeId, depth: 0 }];
+    const seen = new Set<NodeId>();
 
-    const collectDescendants = async (
-      currentNodeId: NodeId,
-      currentDepth: number,
-    ): Promise<void> => {
-      if (maxDepth !== undefined && currentDepth >= maxDepth) return;
-      if (visited.has(currentNodeId)) return;
+    while (stack.length) {
+      const { id, depth } = stack.pop()!;
+      if (maxDepth !== undefined && depth >= maxDepth) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
 
-      visited.add(currentNodeId);
-      const childNodes = await this.listChildren(currentNodeId);
+      const children = await this.listChildren(id);
+      if (!children || children.length === 0) continue;
 
-      for (const childNode of childNodes) {
-        descendants.push(childNode);
-        await collectDescendants(childNode.id, currentDepth + 1);
+      for (const ch of children) {
+        out.push(ch);
+        stack.push({ id: ch.id, depth: depth + 1 });
       }
-    };
-
-    await collectDescendants(nodeId, 0);
-    return descendants;
+    }
+    return out;
   }
 
   async listAncestors(nodeId: NodeId): Promise<TreeNode[]> {

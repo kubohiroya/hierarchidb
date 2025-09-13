@@ -80,4 +80,9 @@ export interface TreeMutationAPI {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: boolean; error?: string }>;
+
+  /**
+   * Permanently remove all descendants under the given root (e.g., empty trash).
+   */
+  removeSubtree(rootId: NodeId): Promise<{ success: boolean; error?: string }>;
 }

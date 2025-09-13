@@ -338,6 +338,67 @@ export class CoreDB extends Dexie {
   }
 
   /**
+   * List all descendants under a node (depth-first), excluding the node itself.
+   * Optional maxDepth limits the depth relative to the start node.
+   */
+  async listDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]> {
+    const out: TreeNode[] = [];
+    // Stack holds pairs of (nodeId, depth)
+    const stack: Array<{ id: NodeId; depth: number }> = [{ id: nodeId, depth: 0 }];
+    const seen = new Set<NodeId>();
+
+    while (stack.length) {
+      const { id, depth } = stack.pop()!;
+      if (maxDepth !== undefined && depth >= maxDepth) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+
+      // Fetch direct children and append to result, then schedule their children
+      const children = await this.listChildren(id);
+      if (!children || children.length === 0) continue;
+      for (const ch of children) {
+        out.push(ch);
+        stack.push({ id: ch.id, depth: depth + 1 });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Atomically remove all descendants under the given rootId within a single Dexie transaction.
+   * Returns the list of deleted nodeIds (descendants only; rootId itselfは含まない)。
+   */
+  async removeSubtreeTx(rootId: NodeId): Promise<NodeId[]> {
+    const deletedIds: NodeId[] = [];
+    await this.runInTx('rw', ['nodes'], async () => {
+      // Enumerate descendants inside the same transaction for a consistent snapshot
+      const toDelete: TreeNode[] = [];
+      const stack: Array<NodeId> = [rootId];
+      const seen = new Set<NodeId>();
+      while (stack.length) {
+        const pid = stack.pop()!;
+        if (seen.has(pid)) continue;
+        seen.add(pid);
+        const children = await this.nodes.where('parentId').equals(pid).toArray();
+        if (!children || children.length === 0) continue;
+        for (const ch of children) {
+          toDelete.push(ch as TreeNode);
+          stack.push(ch.id as NodeId);
+        }
+      }
+
+      if (toDelete.length === 0) return;
+      const ids = toDelete.map((n) => n.id);
+      await this.nodes.bulkDelete(ids);
+      ids.forEach((nodeId) => {
+        this.changeSubject.next({ type: 'node-deleted', nodeId, timestamp: Date.now() });
+      });
+      deletedIds.push(...ids);
+    });
+    return deletedIds;
+  }
+
+  /**
       * Subject
       */
   close(): void {

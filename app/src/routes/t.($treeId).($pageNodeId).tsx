@@ -5,22 +5,21 @@ import { type NodeId } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadPageNodeArgs;
-
-  //  pageNodeIdID
-  const pageNodeId = params.nodeId || (`${params.treeId}Root` as NodeId);
-  const actualPageNodeId =
-    pageNodeId === 'undefined' ? (`${params.treeId}Root` as NodeId) : pageNodeId;
+  const pageNodeId = params.pageNodeId || (`${params.treeId}:root` as NodeId);
 
   return await loadPageNode({
     ...params,
-    nodeId: actualPageNodeId,
+    pageNodeId,
   });
 }
 
 export default function TLayout() {
   const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
   if (!data.pageNode) {
-    return;
+    //return;
+    throw new Error('data.pageNode is undefined')
   }
+
+
   return <Outlet />;
 }

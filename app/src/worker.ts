@@ -258,30 +258,21 @@ reporter.reportStepProgress('Load Comlink', 0);
         unsubscribe: (sid: any) => subscription.unsubscribe(sid),
         unsubscribeAll: () => subscription.unsubscribeAll(),
       } as const;
-      // Minimal tag facade omitted here; the full facade is exposed in the fallback branch below
-      const importExportFacade = {
-        importNodes: (a: any) => importExport.importNodes(a),
-        exportNodes: (a: any) => importExport.exportNodes(a),
-      } as const;
-      const workingCopyFacade = {
-        createDraftWorkingCopy: (t: any, p: any) => workingCopy.createDraftWorkingCopy(t, p),
-        commitWorkingCopy: (id: any) => workingCopy.commitWorkingCopy(id),
-        discardWorkingCopy: (id: any) => workingCopy.discardWorkingCopy(id),
-      } as const;
-
-      // Expose through Comlink (return proxy-marked facades to avoid structured-clone of functions)
-      Comlink.expose({
+      // Expose through Comlink using direct service proxies (型安全 / as any 不要)
+      const api: import('@hierarchidb/common-api').WorkerAPI = {
         ping: () => services.ping(),
         shutdown: () => services.shutdown(),
         initialize: () => services.initialize(),
-        getQueryAPI: () => Comlink.proxy(queryFacade),
-        getMutationAPI: () => Comlink.proxy(mutationFacade),
-        getSubscriptionAPI: () => Comlink.proxy(subscriptionFacade),
-        getImportExportAPI: () => Comlink.proxy(importExportFacade),
-        getWorkingCopyAPI: () => Comlink.proxy(workingCopyFacade),
-        getPluginLifecycleAPI: () => Comlink.proxy(pluginLifecycle as any),
+        getQueryAPI: () => Comlink.proxy(query),
+        getMutationAPI: () => Comlink.proxy(mutation),
+        getSubscriptionAPI: () => Comlink.proxy(subscription),
+        getImportExportAPI: () => Comlink.proxy(importExport),
+        getWorkingCopyAPI: () => Comlink.proxy(workingCopy),
+        getPluginLifecycleAPI: () => Comlink.proxy(pluginLifecycle),
         getSystemHealth: () => services.getSystemHealth(),
-      });
+        getTagAPI: () => Comlink.proxy(tag),
+      };
+      Comlink.expose(api);
 
       reporter.reportStepProgress('Create API facade', 100);
       reporter.reportStepProgress('Expose API', 100);
@@ -297,7 +288,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     // Step 5: Create API facade
     reporter.reportStepProgress('Create API facade', 10);
 
-    // Build plain facades (only functions) to ensure Comlink can proxy them safely
+    // Build service instances
     const query = services.getQueryAPI();
     const mutation = services.getMutationAPI();
     const subscription = services.getSubscriptionAPI();
@@ -306,107 +297,18 @@ reporter.reportStepProgress('Load Comlink', 0);
     const workingCopy = services.getWorkingCopyAPI();
     const pluginLifecycle = services.getPluginLifecycleAPI();
 
-    const queryFacade = {
-      getTree: (id: any) => query.getTree(id),
-      listTrees: () => query.listTrees(),
-      getNode: (id: any) => query.getNode(id),
-      listChildren: (id: any) => query.listChildren(id),
-      listDescendants: (id: any, maxDepth?: number) => query.listDescendants(id, maxDepth),
-      listAncestors: (id: any) => query.listAncestors(id),
-      searchNodes: (opts: any) => query.searchNodes(opts),
-    };
-
-    const mutationFacade = {
-      createNode: (args: any) => mutation.createNode(args),
-      updateNode: (args: any) => mutation.updateNode(args),
-      removeNodes: (nodeIds: any[]) => mutation.removeNodes(nodeIds as any),
-      moveNodes: (nodeIds: any[], toParentId: any, onNameConflict?: 'error' | 'auto-rename') =>
-        mutation.moveNodes({ nodeIds: nodeIds as any, toParentId, onNameConflict }),
-      duplicateNodes: (nodeIds: any[], toParentId?: any) => mutation.duplicateNodes({
-        nodeIds: nodeIds as any,
-        toParentId,
-      }),
-      moveNodesToTrash: (nodeIds: any[]) => mutation.moveNodesToTrash(nodeIds as any),
-      recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => mutation.recoverNodesFromTrash({
-        nodeIds: nodeIds as any,
-        toParentId,
-      }),
-    };
-
-    const subscriptionFacade = {
-      subscribeNode: (id: any, cb: any, opts?: any) => (subscription as any).subscribeNode(id, cb, opts),
-      subscribeSubtree: (id: any, cb: any, opts?: any) => (subscription as any).subscribeSubtree(id, cb, opts),
-      subscribeTree: (treeId: any, cb: any, opts?: any) => (subscription as any).subscribeTree(treeId, cb, opts),
-      unsubscribe: (sid: any) => (subscription as any).unsubscribe(sid),
-      unsubscribeAll: () => subscription.unsubscribeAll(),
-    } as const;
-
-    const tagFacade = {
-      getAllTags: () => tag.getAllTags(),
-      createTag: (request: any) => tag.createTag(request),
-      deleteTag: (id: any) => tag.deleteTag(id),
-      addTagToNode: (req: any) => tag.addTagToNode(req),
-      removeTagFromNode: (req: any) => tag.removeTagFromNode(req),
-      getTagsForNode: (nodeId: any) => tag.getTagsForNode(nodeId),
-      getTag: (id: any) => tag.getTag(id),
-      updateTag: (id: any, updates: any) => tag.updateTag(id, updates),
-      searchTags: (q: string) => tag.searchTags(q),
-      getTagSuggestions: (q: string, limit = 10) => tag.getTagSuggestions(q, limit),
-      getTagStats: () => tag.getTagStats(),
-      getNodesByTag: (id: any) => tag.getNodesByTag(id),
-    };
-
-    const importExportFacade = {
-      importNodes: (p: any) => importExport.importNodes(p),
-      exportNodes: (p: any) => importExport.exportNodes(p),
-      validateImportData: (p: any) => importExport.validateImportData(p),
-      getOperationStatus: (id: string) => importExport.getOperationStatus(id),
-    };
-
-    const workingCopyFacade = {
-      createDraftWorkingCopy: (nodeType: any, parentId: any, initial?: any) =>
-        workingCopy.createDraftWorkingCopy(nodeType, parentId, initial),
-      createWorkingCopyFromNode: (nodeId: any) => workingCopy.createWorkingCopyFromNode(nodeId),
-      getWorkingCopy: (nodeId: any) => workingCopy.getWorkingCopy(nodeId),
-      updateWorkingCopy: (nodeId: any, updates: any) => workingCopy.updateWorkingCopy(nodeId, updates),
-      listWorkingCopies: () => workingCopy.listWorkingCopies(),
-      hasWorkingCopy: (nodeId: any) => workingCopy.hasWorkingCopy(nodeId),
-      commitWorkingCopy: (nodeId: any) => workingCopy.commitWorkingCopy(nodeId),
-      discardWorkingCopy: (nodeId: any) => workingCopy.discardWorkingCopy(nodeId),
-      discardAllWorkingCopies: () => workingCopy.discardAllWorkingCopies(),
-      validateWorkingCopy: (nodeId: any) => workingCopy.validateWorkingCopy(nodeId),
-      hasUnsavedChanges: (nodeId: any) => workingCopy.hasUnsavedChanges(nodeId),
-      commitMultipleWorkingCopies: (nodeIds: any[]) => workingCopy.commitMultipleWorkingCopies(nodeIds as any),
-      createMultipleWorkingCopies: (nodeIds: any[]) => workingCopy.createMultipleWorkingCopies(nodeIds as any),
-      getWorkingCopyStats: () => workingCopy.getWorkingCopyStats(),
-      cleanupOldWorkingCopies: (olderThan: number) => workingCopy.cleanupOldWorkingCopies(olderThan),
-    };
-
-    const pluginLifecycleFacade = {
-      register: (p: any) => pluginLifecycle.register(p),
-      unregister: (p: any) => pluginLifecycle.unregister(p),
-      validatePlugin: (p: any) => pluginLifecycle.validatePlugin(p),
-      checkHealth: (nodeType: any) => pluginLifecycle.checkHealth(nodeType),
-      listRegistered: (options?: any) => pluginLifecycle.listRegistered(options),
-      getDependencies: (n: any) => pluginLifecycle.getDependencies(n),
-      bulkOperation: (p: any) => pluginLifecycle.bulkOperation(p),
-      resetPlugin: (p: any) => pluginLifecycle.resetPlugin(p),
-      deletePlugin: (n: any) => pluginLifecycle.deletePlugin(n),
-      resetSystem: (createBackup?: boolean) => pluginLifecycle.resetSystem(createBackup),
-    };
-
-    const api: any = {
+    const api: import('@hierarchidb/common-api').WorkerAPI = {
       ping: () => services.ping(),
       initialize: () => services.initialize(),
       shutdown: () => services.shutdown(),
       getSystemHealth: () => services.getSystemHealth(),
-      getQueryAPI: () => Comlink.proxy(queryFacade),
-      getMutationAPI: () => Comlink.proxy(mutationFacade),
-      getSubscriptionAPI: () => Comlink.proxy(subscriptionFacade),
-      getWorkingCopyAPI: () => Comlink.proxy(workingCopyFacade),
-      getPluginLifecycleAPI: () => Comlink.proxy(pluginLifecycleFacade),
-      getImportExportAPI: () => Comlink.proxy(importExportFacade),
-      getTagAPI: () => Comlink.proxy(tagFacade),
+      getQueryAPI: () => Comlink.proxy(query),
+      getMutationAPI: () => Comlink.proxy(mutation),
+      getSubscriptionAPI: () => Comlink.proxy(subscription),
+      getWorkingCopyAPI: () => Comlink.proxy(workingCopy),
+      getPluginLifecycleAPI: () => Comlink.proxy(pluginLifecycle),
+      getImportExportAPI: () => Comlink.proxy(importExport),
+      getTagAPI: () => Comlink.proxy(tag),
     };
 
     reporter.reportStepProgress('Create API facade', 100);

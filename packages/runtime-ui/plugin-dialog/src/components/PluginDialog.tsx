@@ -19,10 +19,9 @@ export interface PluginDialogProps {
   nodeType: string;
 
   /** Node ID (working copy ID) */
-  nodeId?: NodeId;
+  nodeId: NodeId;
 
-  /** Parent node ID (for create mode) */
-  parentId?: NodeId;
+  pageNodeId: NodeId;
 
   /** Tree ID */
   treeId: TreeId;
@@ -47,7 +46,7 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
                                                             mode,
                                                             nodeType,
                                                             nodeId,
-                                                            parentId,
+  pageNodeId,
                                                             treeId,
                                                             open,
                                                             initialStep = 0,
@@ -70,7 +69,6 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
     mode,
     nodeType,
     nodeId,
-    parentId,
     treeId,
   });
 
@@ -150,7 +148,7 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
 
         // Update URL to reflect the saved node
         if (mode === 'create') {
-          navigate(`/t/${treeId}/${parentId}/${savedNodeId}`);
+          navigate(`/t/${treeId}/${pageNodeId}/${savedNodeId}`);
         }
       }
 
@@ -159,7 +157,7 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
       console.error('Failed to save:', error);
       throw error;
     }
-  }, [workingCopy, basicInfo, saveWorkingCopy, onSuccess, onClose, mode, navigate, treeId, parentId]);
+  }, [workingCopy, basicInfo, saveWorkingCopy, onSuccess, onClose, mode, navigate, treeId, pageNodeId]);
 
   // Handle save draft
   const handleSaveDraft = useCallback(async () => {
@@ -196,11 +194,11 @@ export const PluginDialog: React.FC<PluginDialogProps> = ({
     const stepId = steps[step]?.id;
     if (stepId) {
       const basePath = mode === 'create'
-        ? `/t/${treeId}/${parentId}/new/${nodeType}`
-        : `/t/${treeId}/${parentId}/${nodeId}/${nodeType}`;
+        ? `/t/${treeId}/${pageNodeId}/new/${nodeType}`
+        : `/t/${treeId}/${pageNodeId}/${nodeId}/${nodeType}`;
       navigate(`${basePath}/${stepId}`, { replace: true });
     }
-  }, [steps, mode, treeId, parentId, nodeId, nodeType, navigate]);
+  }, [steps, mode, treeId, pageNodeId, nodeId, nodeType, navigate]);
 
   // Error handling
   if (error) {

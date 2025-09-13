@@ -21,6 +21,7 @@ import { AppThemeProvider } from './components/AppThemeProvider';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
+import { autoLoadPlugins } from './plugins/auto-load';
 
 // Log version and build time at startup (local time)
 try {
@@ -54,6 +55,9 @@ declare global {
 
 // Register all UI plugins at startup (only once)
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
+  // Load plugins discovered by virtual modules (data-driven, no switch-case)
+  try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
+  // Keep legacy/stub registration as a fallback (no-ops when already registered)
   registerAllUIPlugins();
   window.__uiPluginsRegistered = true;
 }

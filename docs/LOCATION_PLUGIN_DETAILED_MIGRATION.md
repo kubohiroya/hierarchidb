@@ -69,12 +69,12 @@ export interface LocationEntity {
   <Paper>Content</Paper>
 </Grid>
 
-// 修正後（Grid2を使用またはFlexboxに変更）
-import { Grid2 } from '@mui/material';
+// 修正後（MUI v7: Grid を使用）
+import Grid from '@mui/material/Grid';
 
-<Grid2 xs={6} md={3}>
+<Grid xs={6} md={3}>
   <Paper>Content</Paper>
-</Grid2>
+</Grid>
 
 // または従来のFlexbox使用
 <Box sx={{ 

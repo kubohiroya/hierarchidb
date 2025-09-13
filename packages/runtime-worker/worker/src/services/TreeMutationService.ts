@@ -24,6 +24,7 @@ import { createNewName } from './WorkingCopyTreeNodeOperations';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
+import { encodeTrashHolderName } from './utils/holder-encoding';
 
 export class TreeMutationService implements TreeMutationAPI {
   // Note: Implementation now routes all mutating operations via CommandProcessor.
@@ -54,30 +55,16 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      const envelope: CommandEnvelope<'createNode', {
-        nodeType: NodeType;
-        treeId: TreeId;
-        parentId: NodeId;
-        name: string;
-        description?: string;
-      }> = {
-        commandId: crypto.randomUUID(),
-        groupId: crypto.randomUUID(),
-        kind: 'createNode',
-        payload: {
-          nodeType: params.nodeType,
-          treeId: params.treeId,
-          parentId: params.parentId,
-          name: params.name,
-          description: params.description,
-        },
-        issuedAt: Date.now() as Timestamp,
-      } as any;
-      const result = await this.commandProcessor.processCommand(envelope);
-      if (result.success) {
-        return { success: true, nodeId: (result.nodeId as NodeId) ?? ('' as NodeId) };
-      }
-      return { success: false, error: (result as any).error };
+      // New semantics: create a draft working copy under workingCopy root and return its wc nodeId
+      const { createDraftWorkingCopyGetOrCreate } = await import('./WorkingCopyTreeNodeOperations');
+      const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(
+        this.coreDB as any,
+        params.treeId,
+        params.parentId,
+        params.nodeType,
+        params.name,
+      );
+      return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -213,6 +200,41 @@ export class TreeMutationService implements TreeMutationAPI {
       error: ('error' in result ? (result as any).error : 'Unknown error'),
     };
     return { success: true };
+  }
+
+  async removeSubtree(rootId: NodeId): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Prefer atomic transactional removal when supported by CoreDB
+      const coreAny = this.coreDB as any;
+      let removed: import('@hierarchidb/common-type').NodeId[] | null = null;
+      if (typeof coreAny.removeSubtreeTx === 'function') {
+        removed = await coreAny.removeSubtreeTx(rootId);
+      } else {
+        // Fallback: query descendants then bulk delete (non-atomic)
+        const { TreeQueryService } = await import('./TreeQueryService');
+        const query = await TreeQueryService.getSingleton(this.coreDB as any);
+        const descendants = await query.listDescendants(rootId);
+        const ids = descendants.map((n) => n.id);
+        if (ids.length > 0) {
+          const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+          for (let i = 0; i < ids.length; i += size) {
+            const batch = ids.slice(i, i + size);
+            if (coreAny.bulkDeleteNodes) await coreAny.bulkDeleteNodes(batch);
+            else for (const id of batch) await coreAny.deleteNode?.(id);
+          }
+        }
+        removed = ids;
+      }
+      // Best-effort peer cleanup
+      if (Array.isArray(removed) && removed.length > 0) {
+        const nodesForCleanup = await Promise.all(removed.map((id) => this.coreDB.getNode?.(id) as any).map(async p => (await p))); // may be undefined after delete
+        const filtered = nodesForCleanup.filter(Boolean) as import('@hierarchidb/common-type').TreeNode[];
+        if (filtered.length > 0) await this.deletePeerEntitiesForNodes(filtered);
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
   }
 
   private async getParentId(nodeId: NodeId): Promise<NodeId> {
@@ -425,7 +447,52 @@ export class TreeMutationService implements TreeMutationAPI {
     if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
       const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
       const res = await this.commandProcessor.processCommand(env as any);
-      return res.success ? { success: true } : { success: false, error: (res as any).error };
+      if (res.success) return { success: true };
+      // Fallback: derive trash root from ancestor pattern (e.g., r:root -> r:trash) and perform inline move
+      try {
+        for (const nodeId of nodeIds) {
+          const node = await this.coreDB.getNode?.(nodeId);
+          if (!node) continue;
+          // ascend to find a root-like id ending with ':root'
+          let cursor: NodeId | undefined = node.parentId;
+          let trashRootId: NodeId | undefined;
+          while (cursor) {
+            if (typeof cursor === 'string' && cursor.endsWith(':root')) {
+              trashRootId = (cursor.slice(0, -(':root'.length)) + ':trash') as NodeId;
+              break;
+            }
+            const parent = await this.coreDB.getNode?.(cursor);
+            if (!parent || parent.parentId === cursor) break;
+            cursor = parent.parentId;
+          }
+          if (!trashRootId) continue;
+          const holderId = (crypto.randomUUID() as unknown) as NodeId;
+          const holderName = encodeTrashHolderName(node.parentId, node.id);
+          const now = (Date.now() as unknown) as Timestamp;
+          await this.coreDB.createNode?.({
+            id: holderId,
+            parentId: trashRootId,
+            nodeType: ('trash' as unknown) as NodeType,
+            name: holderName,
+            depth: 0,
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+            holderType: 'trash' as const,
+            holderTargetId: node.id,
+            holderMetaParentId: node.parentId,
+          } as any);
+          await this.coreDB.updateNode?.({
+            ...node,
+            parentId: holderId,
+            updatedAt: now,
+            version: (node.version || 1) + 1,
+          } as any);
+        }
+        return { success: true };
+      } catch (e) {
+        return { success: false, error: (e as Error).message || String(e) };
+      }
     }
     const trashRootId = 'trash' as NodeId;
     try {

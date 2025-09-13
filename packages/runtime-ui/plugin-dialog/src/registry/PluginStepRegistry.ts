@@ -163,7 +163,8 @@ export class PluginStepRegistry {
   async validateAccess(nodeType: string, nodeId?: string): Promise<boolean> {
     const provider = this.providers.get(nodeType);
     if (!provider) {
-      return false;
+      // No provider: default-allow so generic dialog (Basic step only) can render
+      return true;
     }
 
     if (provider.validateAccess) {
