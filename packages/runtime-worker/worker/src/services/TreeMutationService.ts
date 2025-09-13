@@ -422,7 +422,7 @@ export class TreeMutationService implements TreeMutationAPI {
       */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     // Route via CommandProcessor holder path when flag ON, else legacy inline path
-    if ((process as any)?.env?.WORKER_TRASH_USE_HOLDER === '1') {
+    if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
       const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
       const res = await this.commandProcessor.processCommand(env as any);
       return res.success ? { success: true } : { success: false, error: (res as any).error };

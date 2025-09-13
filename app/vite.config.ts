@@ -74,7 +74,18 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   //  main thread
   const plugins = [
     muiIconsVirtualModule(),
-    devHealthPlugin(),
+    devHealthPlugin({
+      // Ignore virtual/server-only or known peer-provided modules to avoid false positives
+      ignore: [
+        /@react-router\//,
+        'react-router',
+        'react-router-dom',
+        '@emotion/react',
+        'react-hook-geolocation',
+        'comlink',
+        'isbot',
+      ],
+    }),
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({

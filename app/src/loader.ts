@@ -164,12 +164,19 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
       }
     } catch {}
 
-    // Ensure initialization kicked off (does not block rendering)
+    // Ensure initialization kicked off exactly once per page load.
+    // If the WorkerProvider already started, do not duplicate or spam logs.
     if (!WorkerAPIClient.isReady()) {
-      console.warn('[loadWorkerAPIClient] Worker not initialized by provider, initializing now...');
-      try { console.log('[HDB-BOOT] Loader initializing WorkerAPIClient'); } catch {}
-      // Kick off initialization without awaiting to avoid race; event barrier will resolve readiness
-      WorkerAPIClient.initialize().catch(() => {});
+      const startedByProvider = !!g.__HDB_INIT_STARTED__;
+      if (!startedByProvider && !g.__HDB_LOADER_INIT_STARTED__) {
+        g.__HDB_LOADER_INIT_STARTED__ = true;
+        try { console.debug('[HDB-BOOT] Loader initializing WorkerAPIClient (first caller)'); } catch {}
+        // Kick off initialization without awaiting to avoid race; event barrier will resolve readiness
+        WorkerAPIClient.initialize().catch(() => {});
+      } else {
+        // Provider (or another loader) is already initializing; keep quiet to avoid noisy logs
+        try { console.debug('[HDB-BOOT] Loader sees initialization in progress; waiting'); } catch {}
+      }
     }
 
     // Wait for INIT_COMPLETE with a stricter gate to avoid early Comlink calls.

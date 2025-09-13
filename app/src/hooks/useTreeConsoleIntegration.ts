@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { proxy as comlinkProxy } from 'comlink';
 import { showCommandError } from '~/shared/command-errors';
 import type { NodeId, NodeType, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
@@ -366,6 +367,9 @@ export function useTreeConsoleIntegration({
         const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
         if (!ok) return;
         try {
+          // Prevent Comlink from invoking a stale subscription callback during mutation
+          await teardownSubscription();
+
           const mutationAPI = await client.getMutationAPI();
           const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
           if (!res.success) {
@@ -376,6 +380,9 @@ export function useTreeConsoleIntegration({
           await loadChildrenOf(parent);
           setSelectedIds([]);
           fireCmdEvent();
+
+          // Restore live subscription after mutation completes
+          await setupSubscription(parent);
 
           // Note: Do not clear persisted layouts on move-to-trash.
           // Cleanup is performed only on permanent deletion from Trash dialog.
@@ -781,47 +788,53 @@ export function useTreeConsoleIntegration({
   const activeSubRef = useRef<SubscriptionId | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
 
+  // Helpers to manage live subscription explicitly (to avoid stale Comlink callback errors)
+  const teardownSubscription = useCallback(async () => {
+    try {
+      if (!client) return;
+      if (activeSubRef.current) {
+        const subscriptionAPI = await client.getSubscriptionAPI();
+        await subscriptionAPI.unsubscribe(activeSubRef.current);
+        activeSubRef.current = null;
+      }
+    } catch {}
+  }, [client]);
+
+  const setupSubscription = useCallback(async (rootId: NodeId) => {
+    if (!client || !rootId) return;
+    try {
+      const subscriptionAPI = await client.getSubscriptionAPI();
+      // Debounced refresh to coalesce bursts
+      const requestRefresh = () => {
+        if (refreshTimerRef.current !== null) return;
+        refreshTimerRef.current = window.setTimeout(() => {
+          refreshTimerRef.current = null;
+          void loadChildrenOf(rootId);
+        }, 60);
+      };
+      const subId = await subscriptionAPI.subscribeSubtree(
+        rootId,
+        comlinkProxy((_event: any) => {
+          requestRefresh();
+        }),
+      );
+      activeSubRef.current = subId;
+    } catch (err) {
+      console.warn('[useTreeConsoleIntegration] Subscription setup failed:', err);
+    }
+  }, [client, loadChildrenOf]);
+
   useEffect(() => {
     let disposed = false;
-    const setup = async () => {
+    const run = async () => {
       if (!client || !pageNodeId) return;
-      try {
-        const subscriptionAPI = await client.getSubscriptionAPI();
-        // Always unsubscribe previous subscription for prior page
-        if (activeSubRef.current) {
-          try { await subscriptionAPI.unsubscribe(activeSubRef.current); } catch {}
-          activeSubRef.current = null;
-        }
-
-        const currentRoot = pageNodeId as NodeId;
-        // Debounced refresh to coalesce bursts
-        const requestRefresh = () => {
-          if (disposed) return;
-          if (refreshTimerRef.current !== null) return;
-          refreshTimerRef.current = window.setTimeout(() => {
-            refreshTimerRef.current = null;
-            void loadChildrenOf(currentRoot);
-          }, 60);
-        };
-
-        // Subscribe to the entire subtree under current page root
-        const subId = await subscriptionAPI.subscribeSubtree(
-          currentRoot,
-          () => {
-            requestRefresh();
-          },
-        );
-        if (disposed) {
-          try { await subscriptionAPI.unsubscribe(subId); } catch {}
-          return;
-        }
-        activeSubRef.current = subId;
-      } catch (err) {
-        console.warn('[useTreeConsoleIntegration] Subscription setup failed:', err);
-      }
+      // Always unsubscribe previous subscription for prior page
+      await teardownSubscription();
+      if (disposed) return;
+      await setupSubscription(pageNodeId as NodeId);
     };
 
-    void setup();
+    void run();
     return () => {
       disposed = true;
       // Clear pending refresh
@@ -830,18 +843,9 @@ export function useTreeConsoleIntegration({
         refreshTimerRef.current = null;
       }
       // Unsubscribe on cleanup
-      const doUnsub = async () => {
-        try {
-          if (client && activeSubRef.current) {
-            const subscriptionAPI = await client.getSubscriptionAPI();
-            await subscriptionAPI.unsubscribe(activeSubRef.current);
-          }
-        } catch {}
-        activeSubRef.current = null;
-      };
-      void doUnsub();
+      void teardownSubscription();
     };
-  }, [client, pageNodeId]);
+  }, [client, pageNodeId, setupSubscription, teardownSubscription]);
 
   // Poll CommandProcessor for canUndo/canRedo and reflect into state
   useEffect(() => {

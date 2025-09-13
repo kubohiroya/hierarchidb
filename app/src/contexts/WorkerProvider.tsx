@@ -239,6 +239,8 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     bootLog('WorkerProvider initialize() begin');
     try {
       setState(prev => ({ ...prev, error: null }));
+      // Mark global guard so route loaders know initialization has begun
+      try { (window as any).__HDB_INIT_STARTED__ = true; } catch {}
 
       //  WorkerAPIClientWorker
       await WorkerAPIClient.initialize();
@@ -294,6 +296,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
+        try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
         bootLog('WorkerProvider channel INIT_COMPLETE');
         try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
         await finalizeInitialized();

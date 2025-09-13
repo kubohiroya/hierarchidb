@@ -149,7 +149,11 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         try { await discard(); notify.info('Route changes discarded'); } catch {}
         onClose();
       }}
-      enableA11yTestControls={process.env.NODE_ENV === 'test'}
+      enableA11yTestControls={
+        // Prefer Vite/modern env; fall back to Node-style only if polyfilled
+        (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.MODE === 'test') ||
+        (typeof process !== 'undefined' && (process as any)?.env?.NODE_ENV === 'test')
+      }
       displayMode={displayMode}
       onDisplayModeChange={(m: 'standard' | 'maximized' | 'fullscreen') => { setDisplayModeState(m); }}
     />

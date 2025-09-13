@@ -138,8 +138,12 @@ export class WorkerAPIClient {
       throw new NotInitializedError();
     }
     if (this.state !== 'initialized') {
-      // eslint-disable-next-line no-console
-      console.warn('[WorkerAPIClient.getSingleton] Returning instance while state=', this.state);
+      try {
+        if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
+          // eslint-disable-next-line no-console
+          console.warn('[WorkerAPIClient.getSingleton] Returning instance while state=', this.state);
+        }
+      } catch {}
     }
     return this.workerInstance;
   }

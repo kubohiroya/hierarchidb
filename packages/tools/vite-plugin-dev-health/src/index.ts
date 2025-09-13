@@ -108,7 +108,12 @@ function readGitBranchAndUrl(root: string): { branch: string | null; url: string
   return { branch, url };
 }
 
-function detectMissingDeps(root: string, includeDevDeps: boolean): string[] {
+function normalizeIgnore(ignore?: Array<string | RegExp>): RegExp[] {
+  if (!ignore || ignore.length === 0) return [];
+  return ignore.map((it) => (typeof it === 'string' ? new RegExp('^' + it.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') : it));
+}
+
+function detectMissingDeps(root: string, includeDevDeps: boolean, ignore?: Array<string | RegExp>): string[] {
   const pkgPath = path.resolve(root, 'package.json');
   const pkg = readJSON<{ dependencies?: Record<string, string>; devDependencies?: Record<string, string> }>(pkgPath) || {};
   const all = new Set<string>([
@@ -116,7 +121,9 @@ function detectMissingDeps(root: string, includeDevDeps: boolean): string[] {
     ...(includeDevDeps ? Object.keys(pkg.devDependencies || {}) : []),
   ]);
   const missing: string[] = [];
+  const ignoreMatchers = normalizeIgnore(ignore);
   for (const dep of all) {
+    if (ignoreMatchers.some((re) => re.test(dep))) continue;
     const spec = (pkg.dependencies?.[dep] || pkg.devDependencies?.[dep] || '').toString();
     if (spec.startsWith('workspace:')) continue; // ignore workspace protocol to reduce noise
     try {
@@ -136,12 +143,13 @@ function detectMissingDeps(root: string, includeDevDeps: boolean): string[] {
   return missing;
 }
 
-export type DevHealthOptions = { includeDevDeps?: boolean };
+export type DevHealthOptions = { includeDevDeps?: boolean; ignore?: Array<string | RegExp> };
 
 const SERVER_START_MS = Date.now();
 
 export function devHealthPlugin(options: DevHealthOptions = {}): Plugin {
   const includeDevDeps = !!options.includeDevDeps;
+  const ignoreList = options.ignore || [];
   let server: ViteDevServer | null = null;
   let root = process.cwd();
   let cached: DevHealthStatus | null = null;
@@ -159,7 +167,7 @@ export function devHealthPlugin(options: DevHealthOptions = {}): Plugin {
     const lockfileMtime = statMtime(lockfilePath);
     const nodeModulesMtime = statMtime(nodeModulesMarker);
 
-    const missingDeps = detectMissingDeps(root, includeDevDeps);
+    const missingDeps = detectMissingDeps(root, includeDevDeps, ignoreList);
     const git = readGitBranchAndUrl(root);
 
     const needsInstall = !!(

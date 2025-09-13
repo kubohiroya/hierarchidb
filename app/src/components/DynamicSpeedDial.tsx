@@ -153,8 +153,6 @@ export function DynamicSpeedDial({
     return null;
   }
 
-  console.log('[DynamicSpeedDial]', vmItems)
-
   return (
     <Portal>
       <Box

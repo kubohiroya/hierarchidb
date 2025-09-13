@@ -25,6 +25,8 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g: any = globalThis as any;
   if (typeof g.global === 'undefined') g.global = g;
+  // Minimal Node-like `process` shim for libraries that probe env flags
+  if (typeof g.process === 'undefined') g.process = { env: {} };
 } catch {
 }
 const reporter = new WorkerInitializationReporter([
@@ -113,8 +115,9 @@ reporter.reportStepProgress('Load Comlink', 0);
     try {
       const defs = (pluginDefinitions as any[]) || [];
       if (defs.length === 0 || ((import.meta as any)?.env?.DEV)) {
-        if (defs.length === 0) console.warn('[Worker] No plugin definitions available; skipping plugin wiring');
-        if (((import.meta as any)?.env?.DEV)) console.log('[Worker] Dev mode: skipping plugin wiring');
+        // In dev or when no plugin definitions are provided, this is expected; keep logs quiet.
+        if (defs.length === 0) console.debug('[Worker] No plugin definitions; wiring skipped');
+        if (((import.meta as any)?.env?.DEV)) console.debug('[Worker] Dev mode: plugin wiring disabled');
       } else {
         // Use the generated pluginMap so Vite can statically analyze imports
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -234,10 +237,24 @@ reporter.reportStepProgress('Load Comlink', 0);
       const mutationFacade = {
         createNode: (args: any) => mutation.createNode(args),
         updateNode: (args: any) => mutation.updateNode(args),
-        // Note: delete/move/remove are available on the fuller facade below
+        // Ensure parity with fallback facade so UI methods are always available
+        removeNodes: (nodeIds: any[]) => (mutation as any).removeNodes(nodeIds as any),
+        moveNodes: (nodeIds: any[], toParentId: any, onNameConflict?: 'error' | 'auto-rename') =>
+          (mutation as any).moveNodes({ nodeIds: nodeIds as any, toParentId, onNameConflict }),
+        duplicateNodes: (nodeIds: any[], toParentId?: any) => (mutation as any).duplicateNodes({
+          nodeIds: nodeIds as any,
+          toParentId,
+        }),
+        moveNodesToTrash: (nodeIds: any[]) => (mutation as any).moveNodesToTrash(nodeIds as any),
+        recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => (mutation as any).recoverNodesFromTrash({
+          nodeIds: nodeIds as any,
+          toParentId,
+        }),
       } as const;
       const subscriptionFacade = {
-        subscribeNode: (id: any, cb: any) => subscription.subscribeNode(id, cb),
+        subscribeNode: (id: any, cb: any, opts?: any) => subscription.subscribeNode(id, cb, opts),
+        subscribeSubtree: (id: any, cb: any, opts?: any) => subscription.subscribeSubtree(id, cb, opts),
+        subscribeTree: (treeId: any, cb: any, opts?: any) => subscription.subscribeTree(treeId, cb, opts),
         unsubscribe: (sid: any) => subscription.unsubscribe(sid),
         unsubscribeAll: () => subscription.unsubscribeAll(),
       } as const;
@@ -317,10 +334,12 @@ reporter.reportStepProgress('Load Comlink', 0);
     };
 
     const subscriptionFacade = {
-      subscribe: (...args: any[]) => (subscription as any).subscribe?.(...args),
-      unsubscribe: (...args: any[]) => (subscription as any).unsubscribe?.(...args),
+      subscribeNode: (id: any, cb: any, opts?: any) => (subscription as any).subscribeNode(id, cb, opts),
+      subscribeSubtree: (id: any, cb: any, opts?: any) => (subscription as any).subscribeSubtree(id, cb, opts),
+      subscribeTree: (treeId: any, cb: any, opts?: any) => (subscription as any).subscribeTree(treeId, cb, opts),
+      unsubscribe: (sid: any) => (subscription as any).unsubscribe(sid),
       unsubscribeAll: () => subscription.unsubscribeAll(),
-    } as any;
+    } as const;
 
     const tagFacade = {
       getAllTags: () => tag.getAllTags(),
