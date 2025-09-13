@@ -86,23 +86,21 @@ const patchedDefaults = defaultPolicies.map((p) => {
   return {
     ...p,
     when: (ctx) => {
-      try {
-        const dir = ctx?.pkg?.dir || ctx?.dir || null;
-        if (dir) {
-          const tsconfigPath = path.join(dir, 'tsconfig.json');
-          if (fs.existsSync(tsconfigPath)) {
-            const ts = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
-            const jsx = ts?.compilerOptions?.jsx;
-            const ext = ts?.extends;
-            const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
-            const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev';
-            if (okExtends && okJsx) {
-              // Local tsconfig is already healthy; skip default hygiene for this pkg
-              return false;
-            }
+      const dir = ctx?.pkg?.dir || ctx?.dir || null;
+      if (dir) {
+        const tsconfigPath = path.join(dir, 'tsconfig.json');
+        if (fs.existsSync(tsconfigPath)) {
+          const ts = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
+          const jsx = ts?.compilerOptions?.jsx;
+          const ext = ts?.extends;
+          const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
+          const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev';
+          if (okExtends && okJsx) {
+            // Local tsconfig is already healthy; skip default hygiene for this pkg
+            return false;
           }
         }
-      } catch {}
+      }
       return origWhen(ctx);
     },
   };

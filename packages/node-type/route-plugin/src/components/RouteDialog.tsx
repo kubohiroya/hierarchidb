@@ -110,17 +110,15 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   // Load MultiStepDialog dynamically to avoid static linkage
   useEffect(() => {
     (async () => {
-      try {
-        const M = '@hierarchidb/ui-dialog' as string;
-        const mod = await import(/* @vite-ignore */ M);
-        MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
-      } catch {}
+      const M = '@hierarchidb/ui-dialog' as string;
+      const mod = await import(/* @vite-ignore */ M);
+      MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
     })();
   }, []);
 
   // Cleanup draft on unmount (best-effort)
   useEffect(() => {
-    return () => { void (async () => { try { await discard(); } catch {} })(); };
+    return () => { void (async () => { await discard(); })(); };
   }, [discard]);
 
   return (
@@ -146,7 +144,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         }
       }}
       onCancel={async () => {
-        try { await discard(); notify.info('Route changes discarded'); } catch {}
+        await discard(); notify.info('Route changes discarded');
         onClose();
       }}
       enableA11yTestControls={

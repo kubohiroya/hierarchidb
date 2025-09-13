@@ -23,7 +23,7 @@ export async function createBatchManager() {
 
 export const lifecycle = {
   async onCreate(nodeId: any): Promise<void> {
-    try { console.log(`[LocationPlugin] onCreate: ${nodeId}`); } catch {}
+    console.log(`[LocationPlugin] onCreate: ${nodeId}`);
   },
 } as const;
 

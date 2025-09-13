@@ -87,7 +87,7 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
     if (map.current && formData.coverage.type === 'bbox' && formData.coverage.bbox) {
       drawBoundingBox(formData.coverage.bbox);
     }
-    return () => { try { unbindRef.current?.(); } catch {} };
+    return () => { unbindRef.current?.(); };
   }, [map.current]);
 
   const getMapStyle = (baseMap: string) => {
@@ -180,11 +180,9 @@ export const RegionConfigStep: React.FC<RegionConfigStepProps> = ({
     );
 
     // Ensure default styles and bind events for cross-highlighting
-    try { ensureDefaultStyles(dsId, { includeRow: false, includeMap: true }); } catch {}
-    try {
-      unbindRef.current?.();
-      unbindRef.current = bindMapLibre(map.current, 'bbox-source', ['bbox-layer','bbox-outline'], { selectOnClick: true });
-    } catch {}
+    ensureDefaultStyles(dsId, { includeRow: false, includeMap: true });
+    unbindRef.current?.();
+    unbindRef.current = bindMapLibre(map.current, 'bbox-source', ['bbox-layer','bbox-outline'], { selectOnClick: true });
   };
 
   const handleCoverageTypeChange = (type: 'bbox' | 'polygon' | 'administrative' | 'custom') => {

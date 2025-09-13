@@ -12,7 +12,7 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   const { net } = await ensure();
   const res = await net.get(url, init);
   if (res.status === 401 || res.status === 403) {
-    try { notifyLocationAuthRequired({ resource: url, provider: 'location', hint: 'Authentication required', status: res.status }); } catch {}
+    notifyLocationAuthRequired({ resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
     throw new Error(`Auth required: ${res.status}`);
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

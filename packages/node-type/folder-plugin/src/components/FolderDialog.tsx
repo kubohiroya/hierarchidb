@@ -37,7 +37,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({ open, onClose, mode 
         }
       }}
       onCancel={async () => {
-        try { await discard(); } catch {}
+        await discard();
         notify.info('Folder changes discarded');
         onClose();
       }}

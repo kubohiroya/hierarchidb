@@ -55,11 +55,13 @@ declare global {
 
 // Register all UI plugins at startup (only once)
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
-  // Load plugins discovered by virtual modules (data-driven, no switch-case)
-  try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
-  // Keep legacy/stub registration as a fallback (no-ops when already registered)
-  registerAllUIPlugins();
-  window.__uiPluginsRegistered = true;
+  (async () => {
+    // Load plugins discovered by virtual modules (data-driven, no switch-case)
+    try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
+    // Keep legacy/stub registration as a fallback (no-ops when already registered)
+    try { registerAllUIPlugins(); } catch {}
+    window.__uiPluginsRegistered = true;
+  })();
 }
 
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it

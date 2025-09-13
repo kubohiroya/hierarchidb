@@ -17,6 +17,5 @@
     "src/worker/**",
     "**/*.test.ts",
     "**/*.test.tsx"
-  ],
-
+  ]
 }

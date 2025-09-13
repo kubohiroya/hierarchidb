@@ -899,24 +899,17 @@ export class CommandProcessor {
 
   // Best-effort deletion of peerEntities (permanent delete only)
   private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
-    try {
-      const { storeRegistry } = await import('../entity/store-registry');
-      for (const n of nodes) {
-        const nodeType = (n as any).nodeType as string;
-        const nodeId = n.id as NodeId;
-        const store = storeRegistry.getPeer(nodeType);
-        if (store) {
-          try { await store.delete(nodeId); continue; } catch {}
-        }
-        // Fallback: direct Dexie access when no PeerStore registered
-        try {
-          await this.deletePeerEntityDirect(nodeType, nodeId);
-        } catch {
-          // ignore per-node failure
-        }
+    const { storeRegistry } = await import('../entity/store-registry');
+    for (const n of nodes) {
+      const nodeType = (n as any).nodeType as string;
+      const nodeId = n.id as NodeId;
+      const store = storeRegistry.getPeer(nodeType);
+      if (store) {
+        await store.delete(nodeId);
+        continue;
       }
-    } catch {
-      // ignore
+      // Fallback: direct Dexie access when no PeerStore registered
+      await this.deletePeerEntityDirect(nodeType, nodeId);
     }
   }
 

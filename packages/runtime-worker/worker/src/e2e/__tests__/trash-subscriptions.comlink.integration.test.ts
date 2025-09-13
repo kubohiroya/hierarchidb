@@ -23,10 +23,10 @@ function toEndpoint(port: any) {
         handlerMap.delete(h);
       }
     },
-    start: () => { try { port.start?.(); } catch {} },
+    start: () => { port.start?.(); },
   } as any;
   // Proactively start message flow
-  try { ep.start(); } catch {}
+  ep.start();
   return ep;
 }
 

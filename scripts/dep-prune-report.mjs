@@ -57,16 +57,14 @@ async function loadConfigIgnores(pkgName) {
   for (const k of argvIgnores) out.add(k);
   // Try dep-fence.config.mjs in repo root
   const cfgPath = path.join(repoRoot, 'dep-fence.config.mjs');
-  try {
-    if (fs.existsSync(cfgPath)) {
-      const mod = await import(cfgPath);
-      const globalList = Array.isArray(mod.pruneIgnore) ? mod.pruneIgnore : [];
-      for (const k of globalList) out.add(String(k));
-      const perPkg = mod.pruneIgnoreByPackage || {};
-      const list = perPkg?.[pkgName];
-      if (Array.isArray(list)) for (const k of list) out.add(String(k));
-    }
-  } catch {}
+  if (fs.existsSync(cfgPath)) {
+    const mod = await import(cfgPath);
+    const globalList = Array.isArray(mod.pruneIgnore) ? mod.pruneIgnore : [];
+    for (const k of globalList) out.add(String(k));
+    const perPkg = mod.pruneIgnoreByPackage || {};
+    const list = perPkg?.[pkgName];
+    if (Array.isArray(list)) for (const k of list) out.add(String(k));
+  }
   return out;
 }
 

@@ -6,7 +6,7 @@
 
 export async function initializeDefaultFolderExtensions(): Promise<void> {
   if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
-    try { console.warn('[Deprecation] initializeDefaultFolderExtensions is deprecated. Use initializeDefaultNodeDialogExtensions instead.'); } catch {}
+    console.warn('[Deprecation] initializeDefaultFolderExtensions is deprecated. Use initializeDefaultNodeDialogExtensions instead.');
   }
   const inits: Array<() => Promise<void>> = [];
 

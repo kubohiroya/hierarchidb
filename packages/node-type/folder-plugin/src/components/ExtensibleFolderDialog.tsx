@@ -223,13 +223,11 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        if (nodeId) {
-          const { getPeerDisplayMode } = await import('~/shared/peer-display-mode');
-          const m = (await getPeerDisplayMode('folder', String(nodeId))) || 'standard';
-          if (mounted) setDisplayMode(m);
-        }
-      } catch {}
+      if (nodeId) {
+        const { getPeerDisplayMode } = await import('~/shared/peer-display-mode');
+        const m = (await getPeerDisplayMode('folder', String(nodeId))) || 'standard';
+        if (mounted) setDisplayMode(m);
+      }
     })();
     return () => { mounted = false; };
   }, [nodeId]);
@@ -241,10 +239,10 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
 
   const persistDisplayMode = useCallback((mode: 'standard' | 'maximized' | 'fullscreen') => {
     (async () => {
-      try { if (nodeId) {
+      if (nodeId) {
         const { setPeerDisplayMode } = await import('~/shared/peer-display-mode');
         await setPeerDisplayMode('folder', String(nodeId), mode);
-      } } catch {}
+      }
     })();
   }, [nodeId]);
 

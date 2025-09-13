@@ -40,20 +40,18 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
 
     const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
     // Best-effort: ensure sessions table has an entry (if not already written by manager)
-    try {
-      const db = getEphemeralLocationDB();
-      // @ts-ignore
-      await db.table('sessions').put({
-        sessionId: summary.sessionId,
-        nodeId,
-        bbox: summary.bbox,
-        zoomMin: summary.zoomMin,
-        zoomMax: summary.zoomMax,
-        totalPoints: summary.totalPoints,
-        createdAt: Date.now(),
-        status: 'running',
-      });
-    } catch {}
+    const db = getEphemeralLocationDB();
+    // @ts-ignore
+    await db.table('sessions').put({
+      sessionId: summary.sessionId,
+      nodeId,
+      bbox: summary.bbox,
+      zoomMin: summary.zoomMin,
+      zoomMax: summary.zoomMax,
+      totalPoints: summary.totalPoints,
+      createdAt: Date.now(),
+      status: 'running',
+    });
     return summary.sessionId;
   }
 
@@ -95,17 +93,15 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     return this.manager.onProgress(sessionId, async (event) => {
       const std: StandardProgressEvent = toStandardProgressEvent(event as any);
       // Persist lightweight progress snapshot (best-effort)
-      try {
-        const db = getEphemeralLocationDB();
-        // @ts-ignore
-        await db.table('sessions').update(sessionId, {
-          // store last known percentage and status hint
-          // schema is flexible; no index change required
-          progress: std.percentage,
-          updatedAt: Date.now(),
-          status: std.percentage >= 100 ? 'completed' : 'running',
-        });
-      } catch {}
+      const db = getEphemeralLocationDB();
+      // @ts-ignore
+      await db.table('sessions').update(sessionId, {
+        // store last known percentage and status hint
+        // schema is flexible; no index change required
+        progress: std.percentage,
+        updatedAt: Date.now(),
+        status: std.percentage >= 100 ? 'completed' : 'running',
+      });
       callback(std);
     });
   }

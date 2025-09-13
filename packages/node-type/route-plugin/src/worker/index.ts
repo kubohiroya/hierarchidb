@@ -1,21 +1,17 @@
 // Worker registration for route-plugin Dexie stores + standard worker exports
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
-try {
-  const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-  import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
-    if (!hasIndexedDB) return;
-    try {
-      const { RouteEntitiesDB } = await import('./routeEntitiesDB');
-      const db = new RouteEntitiesDB();
-      await db.open();
-      if (!storeRegistry.getPeer('route')) {
-        const { createRoutePeerStoreDexie } = await import('./routePeerStore.dexie');
-        storeRegistry.registerPeer('route', createRoutePeerStoreDexie(db));
-      }
-    } catch {}
-  }).catch(() => {});
-} catch {}
+const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
+  if (!hasIndexedDB) return;
+  const { RouteEntitiesDB } = await import('./routeEntitiesDB');
+  const db = new RouteEntitiesDB();
+  await db.open();
+  if (!storeRegistry.getPeer('route')) {
+    const { createRoutePeerStoreDexie } = await import('./routePeerStore.dexie');
+    storeRegistry.registerPeer('route', createRoutePeerStoreDexie(db));
+  }
+}).catch(() => {});
 
 // Standardized worker-side factory exports (polymorphic contract)
 export async function createEntityHandler() {
@@ -31,15 +27,15 @@ export async function createBatchManager() {
 export const lifecycle = {
   async onCreate(nodeId: NodeId): Promise<void> {
     // lightweight log only; real work should live in handler
-    try { console.log(`[RoutePlugin] onCreate: ${nodeId}`); } catch {}
+    console.log(`[RoutePlugin] onCreate: ${nodeId}`);
   },
   async afterCreate(node: TreeNode): Promise<void> {
-    try { console.log(`[RoutePlugin] afterCreate: ${node.id}`); } catch {}
+    console.log(`[RoutePlugin] afterCreate: ${node.id}`);
   },
   async beforeDelete(node: TreeNode): Promise<void> {
-    try { console.log(`[RoutePlugin] beforeDelete: ${node.id}`); } catch {}
+    console.log(`[RoutePlugin] beforeDelete: ${node.id}`);
   },
   async afterUpdate(node: TreeNode): Promise<void> {
-    try { console.log(`[RoutePlugin] afterUpdate: ${node.id}`); } catch {}
+    console.log(`[RoutePlugin] afterUpdate: ${node.id}`);
   },
 } as const;

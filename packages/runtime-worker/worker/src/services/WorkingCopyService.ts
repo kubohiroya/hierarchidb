@@ -92,16 +92,14 @@ export class WorkingCopyService implements WorkingCopyAPI {
         let targetParentNodeId = holder.holderMetaParentId;
         let targetNodeId = holder.holderTargetId;
         if (!targetParentNodeId || !targetNodeId) {
-          try {
-            const parsed: any = (await import('./utils/holder-encoding')).decodeWorkingCopyHolderName(holder.name);
-            targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
-            targetNodeId = targetNodeId ?? parsed.targetNodeId;
-            // Backfill metadata for future commits
-            holder.holderType = 'workingCopy';
-            holder.holderTargetId = targetNodeId;
-            holder.holderMetaParentId = targetParentNodeId;
-            await (this.coreDB as any).nodes.put(holder);
-          } catch {}
+          const parsed: any = (await import('./utils/holder-encoding')).decodeWorkingCopyHolderName(holder.name);
+          targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
+          targetNodeId = targetNodeId ?? parsed.targetNodeId;
+          // Backfill metadata for future commits
+          holder.holderType = 'workingCopy';
+          holder.holderTargetId = targetNodeId;
+          holder.holderMetaParentId = targetParentNodeId;
+          await (this.coreDB as any).nodes.put(holder);
         }
         if (!targetParentNodeId || !targetNodeId) return { success: false, error: 'Holder metadata missing' };
         const parent = await (this.coreDB as any).nodes.get(targetParentNodeId);
@@ -160,12 +158,8 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async createMultipleWorkingCopies(nodeIds: NodeId[]): Promise<TreeNode[]> {
     const results: TreeNode[] = [];
     for (const id of nodeIds) {
-      try {
-        const node = await this.coreDB.getNode(id);
-        if (node) results.push(await this.createWorkingCopyFromNode(id));
-      } catch {
-        // skip
-      }
+      const node = await this.coreDB.getNode(id);
+      if (node) results.push(await this.createWorkingCopyFromNode(id));
     }
     return results;
   }

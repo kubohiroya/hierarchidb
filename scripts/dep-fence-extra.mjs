@@ -11,10 +11,10 @@ import { createRequire } from 'module';
 
 const repoRoot = path.resolve(process.cwd());
 let config = {};
-try {
+{
   const mod = await import(path.join(repoRoot, 'dep-fence.config.mjs'));
   config = mod.policyOptions || {};
-} catch {}
+}
 
 function globPackages(dir) {
   const out = [];
@@ -52,6 +52,63 @@ function warn(msg) {
 
 function readJSON(p) {
   try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { return null; }
+}
+
+// Read JSON-with-comments (JSONC) safely — for tsconfig*.json
+function stripCommentsAndTrailingCommas(text) {
+  let out = '';
+  let inStr = false;
+  let quote = '';
+  let esc = false;
+  let inLine = false;
+  let inBlock = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+
+    if (inLine) {
+      if (c === '\n' || c === '\r') { inLine = false; out += c; }
+      continue;
+    }
+    if (inBlock) {
+      if (c === '*' && n === '/') { inBlock = false; i++; }
+      continue;
+    }
+    if (inStr) {
+      out += c;
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { esc = true; continue; }
+      if (c === quote) { inStr = false; }
+      continue;
+    }
+
+    // Detect start of comments only when outside strings
+    if (c === '/' && n === '/') { inLine = true; i++; continue; }
+    if (c === '/' && n === '*') { inBlock = true; i++; continue; }
+
+    // Handle strings
+    if (c === '"' || c === "'") { inStr = true; quote = c; out += c; continue; }
+
+    // Drop trailing commas before } or ]
+    if (c === ',') {
+      let j = i + 1;
+      while (j < text.length && /\s/.test(text[j])) j++;
+      const nxt = text[j];
+      if (nxt === '}' || nxt === ']') { continue; }
+    }
+
+    out += c;
+  }
+  return out;
+}
+function readJSONC(file) {
+  try {
+    const raw = fs.readFileSync(file, 'utf-8');
+    const cleaned = stripCommentsAndTrailingCommas(raw);
+    return JSON.parse(cleaned);
+  } catch {
+    return null;
+  }
 }
 
 // Prepare workspace package names for internal detection
@@ -99,17 +156,16 @@ if (config.routerV7NoTypes && rr && /^\s*\^?7\./.test(String(rr)) && typesRR) {
 }
 
 // Rule C: Runtime deps resolvable
+function tryResolve(req, spec) {
+  try { req.resolve(spec); return true; }
+  catch (e) { return false; }
+}
+
 function canResolveFrom(dir, dep) {
-  try {
-    const req = createRequire(path.join(dir, 'package.json'));
-    try { req.resolve(`${dep}/package.json`); return true; } catch {}
-    try { req.resolve(dep); return true; } catch {}
-  } catch {}
-  try {
-    const rootReq = createRequire(path.join(repoRoot, 'package.json'));
-    try { rootReq.resolve(`${dep}/package.json`); return true; } catch {}
-    try { rootReq.resolve(dep); return true; } catch {}
-  } catch {}
+  const req = createRequire(path.join(dir, 'package.json'));
+  if (tryResolve(req, `${dep}/package.json`) || tryResolve(req, dep)) return true;
+  const rootReq = createRequire(path.join(repoRoot, 'package.json'));
+  if (tryResolve(rootReq, `${dep}/package.json`) || tryResolve(rootReq, dep)) return true;
   return false;
 }
 for (const dir of workspaces) {
@@ -219,30 +275,39 @@ for (const dir of workspaces) {
 
   let disallowed = false;
   let reason = '';
-  try {
-    const ts = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
-    const co = ts?.compilerOptions || {};
-    const baseUrl = co.baseUrl;
-    const paths = co.paths || {};
+  {
+    const ts = readJSONC(tsconfigPath);
+    if (!ts) {
+      warn(`${path.relative(repoRoot, tsconfigPath)}: could not be parsed as JSON (comments/trailing commas?). Skipping strict checks.`);
+    } else {
+      const co = ts?.compilerOptions || {};
+      const baseUrl = co.baseUrl;
+      const paths = co.paths || {};
 
-    // Allow baseUrl only if '.' or undefined
-    if (typeof baseUrl !== 'undefined' && baseUrl !== '.') {
-      disallowed = true;
-      reason = `baseUrl should be '.' or omitted (found '${baseUrl}')`;
-    }
-
-    // Allow either no paths, or a single safe alias "~/*": ["./src/*"]
-    const keys = Object.keys(paths);
-    if (!disallowed && keys.length > 0) {
-      const isOnlyTilde = keys.length === 1 && keys[0] === '~/*';
-      const vals = isOnlyTilde ? paths['~/*'] : [];
-      const okVals = Array.isArray(vals) && vals.length > 0 && vals.every((v) => String(v) === './src/*');
-      if (!(isOnlyTilde && okVals)) {
+      // Allow baseUrl only if '.' or undefined
+      if (typeof baseUrl !== 'undefined' && baseUrl !== '.') {
         disallowed = true;
-        reason = `paths must be limited to { "~/*": ["./src/*"] }`;
+        reason = `baseUrl should be '.' or omitted (found '${baseUrl}')`;
+      }
+
+      // Allow either no paths, or a single safe alias "~/*": ["./src/*"]
+      const keys = Object.keys(paths);
+      if (!disallowed && keys.length > 0) {
+        const isOnlyTilde = keys.length === 1 && keys[0] === '~/*';
+      const vals = isOnlyTilde ? paths['~/*'] : [];
+      const okVals = Array.isArray(vals)
+        && vals.length > 0
+        && vals.every((v) => {
+             const s = String(v);
+             return s === './src/*' || s === 'src/*';
+           });
+        if (!(isOnlyTilde && okVals)) {
+          disallowed = true;
+          reason = `paths must be limited to { "~/*": ["./src/*"] }`;
+        }
       }
     }
-  } catch {}
+  }
 
   if (disallowed && !allowTsconfigOverrides.has(name)) {
     // Downgrade to WARN for legacy packages to avoid blocking builds,

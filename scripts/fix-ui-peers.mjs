@@ -57,27 +57,25 @@ function ensurePeers(pkgJson, rangeMap) {
 }
 
 function updateTsupExternal(tsupFile) {
-  try {
-    let src = fs.readFileSync(tsupFile, 'utf8');
-    if (/external\s*:\s*\[/.test(src)) {
-      // augment existing array
-      const before = src;
-      for (const lib of UI_LIBS) {
-        const rx = new RegExp(`['\"]${lib}['\"]`);
-        if (!rx.test(src)) {
-          src = src.replace(/external\s*:\s*\[/, (m) => `${m}'${lib}', `);
-        }
+  let src = fs.readFileSync(tsupFile, 'utf8');
+  if (/external\s*:\s*\[/.test(src)) {
+    // augment existing array
+    const before = src;
+    for (const lib of UI_LIBS) {
+      const rx = new RegExp(`['\"]${lib}['\"]`);
+      if (!rx.test(src)) {
+        src = src.replace(/external\s*:\s*\[/, (m) => `${m}'${lib}', `);
       }
-      if (src !== before) { fs.writeFileSync(tsupFile, src); return true; }
-      return false;
-    } else if (/defineConfig\s*\(\s*\{/.test(src)) {
-      // inject external field after first brace
-      const insertion = `external: [${UI_LIBS.map((s) => `'${s}'`).join(', ')}],\n`;
-      src = src.replace(/(defineConfig\s*\(\s*\{\s*)/, `$1${insertion}`);
-      fs.writeFileSync(tsupFile, src);
-      return true;
     }
-  } catch {}
+    if (src !== before) { fs.writeFileSync(tsupFile, src); return true; }
+    return false;
+  } else if (/defineConfig\s*\(\s*\{/.test(src)) {
+    // inject external field after first brace
+    const insertion = `external: [${UI_LIBS.map((s) => `'${s}'`).join(', ')}],\n`;
+    src = src.replace(/(defineConfig\s*\(\s*\{\s*)/, `$1${insertion}`);
+    fs.writeFileSync(tsupFile, src);
+    return true;
+  }
   return false;
 }
 
@@ -96,18 +94,16 @@ function isLikelyUiPackage(dir, pkgJson) {
   if (/\bui\b|plugin/i.test(pkgJson.name || '') || /\/ui\//.test(dir)) return true;
   // check for tsx existence (quick scan)
   const srcDir = path.join(dir, 'src');
-  try {
-    const stack = [srcDir];
-    while (stack.length) {
-      const d = stack.pop();
-      if (!d || !fs.existsSync(d)) continue;
-      for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
-        const p = path.join(d, ent.name);
-        if (ent.isDirectory()) stack.push(p);
-        else if (p.endsWith('.tsx')) return true;
-      }
+  const stack = [srcDir];
+  while (stack.length) {
+    const d = stack.pop();
+    if (!d || !fs.existsSync(d)) continue;
+    for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, ent.name);
+      if (ent.isDirectory()) stack.push(p);
+      else if (p.endsWith('.tsx')) return true;
     }
-  } catch {}
+  }
   return false;
 }
 
@@ -140,4 +136,3 @@ function main() {
 }
 
 main();
-

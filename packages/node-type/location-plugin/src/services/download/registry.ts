@@ -31,12 +31,9 @@ export function registerLocationAuthNotifier(fn: (info: { resource: string; prov
 
 export function notifyLocationAuthRequired(info: { resource: string; provider?: string; hint?: string; status?: number }): void {
   if (authNotifier) {
-    try { authNotifier(info); return; } catch {}
+    authNotifier(info); return;
   }
-  try {
-    const g: any = globalThis as any;
-    const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-    reg?.onAuthRequired?.(info);
-  } catch {}
+  const g: any = globalThis as any;
+  const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+  reg?.onAuthRequired?.(info);
 }
-

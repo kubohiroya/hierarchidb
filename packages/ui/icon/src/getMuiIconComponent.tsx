@@ -77,17 +77,13 @@ function IconByName({ name, emoji }: { name: string; emoji?: string }) {
         } catch {
           // If MUI icon not found or failed to load, prefer emoji fallback when provided
           if (emoji) {
-            try {
-              // eslint-disable-next-line no-console
-              console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to emoji: ${emoji}`);
-            } catch {}
+            // eslint-disable-next-line no-console
+            console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to emoji: ${emoji}`);
             const Fallback = () => <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
             return { default: Fallback as unknown as React.ComponentType };
           }
-          try {
-            // eslint-disable-next-line no-console
-            console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to AddIcon.`);
-          } catch {}
+          // eslint-disable-next-line no-console
+          console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to AddIcon.`);
           return { default: AddIcon };
         }
       }),
@@ -133,12 +129,8 @@ export async function prefetchMuiIcons(names: Array<string | undefined | null>):
   );
   await Promise.all(
     unique.map(async (name) => {
-      try {
-        await import(/* @vite-ignore */ `@mui/icons-material/${name}`);
-        _prefetched.add(name);
-      } catch {
-        // Swallow; we'll fallback to AddIcon at render if missing
-      }
+      await import(/* @vite-ignore */ `@mui/icons-material/${name}`);
+      _prefetched.add(name);
     }),
   );
 }
@@ -154,11 +146,9 @@ export function getMuiIconWithColor(
   emoji?: string,
   color?: string,
 ): ReactNode {
-  try {
-    const pascal = toPascalCase(normalizeMuiName(muiIconName));
-    const C = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
-    if (C) return <C sx={color ? { color } : undefined} />;
-  } catch {}
+  const pascal = toPascalCase(normalizeMuiName(muiIconName));
+  const C = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
+  if (C) return <C sx={color ? { color } : undefined} />;
   // Fallback to library resolver; try static map → dynamic import; wrap for color if needed
   const node = getMuiIconComponent(muiIconName, emoji) as any;
   return color ? <span style={{ color }}>{node as React.ReactNode}</span> : (node as React.ReactNode);

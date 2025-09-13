@@ -96,12 +96,12 @@ export const ProjectWizard: React.FC<ProjectWizardProps> = ({
     if (val) {
       const el: any = paperRef.current;
       const req = el?.requestFullscreen || el?.webkitRequestFullscreen || el?.msRequestFullscreen;
-      try { if (typeof req === 'function') await req.call(el); } catch {}
+      if (typeof req === 'function') await req.call(el);
       setIsFullscreen(true);
       setIsMaximized(false);
       await persistMode('fullscreen');
     } else {
-      try { if (document.fullscreenElement) await document.exitFullscreen?.(); } catch {}
+      if (document.fullscreenElement) await document.exitFullscreen?.();
       setIsFullscreen(false);
       await persistMode('standard');
     }

@@ -48,11 +48,9 @@ class RealSimplifyWorker implements SimplifyWorkerAPI {
 
 class RealVectorTileWorker implements VectorTileWorkerAPI {
   private async readBuffer(fileId: string): Promise<ArrayBuffer | null> {
-    try {
-      const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
-      const storage = (service as any)?.store;
-      if (storage?.readAll) return await storage.readAll(fileId);
-    } catch {}
+    const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
+    const storage = (service as any)?.store;
+    if (storage?.readAll) return await storage.readAll(fileId);
     return null;
   }
 
@@ -68,12 +66,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     const buf = await this.readBuffer(inputBufferId);
     if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
     let geojson: any;
-    try {
-      const txt = new TextDecoder().decode(buf);
-      geojson = JSON.parse(txt);
-    } catch {
-      return { tilesGenerated: 0, totalBytes: 0 };
-    }
+    const txt = new TextDecoder().decode(buf);
+    geojson = JSON.parse(txt);
 
     const gjvt = (await import('geojson-vt')).default as any;
     // @maplibre/vt-pbf exposes named exports; use the module object directly

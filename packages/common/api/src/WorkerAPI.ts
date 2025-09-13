@@ -17,7 +17,7 @@ import type { WorkingCopyAPI } from './WorkingCopyAPI';
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI';
 import { TagAPI } from './TagAPI';
-import type { ProxyMarked } from 'comlink';
+import type { Remote } from 'comlink';
 
 /**
  * Main worker facade API
@@ -37,7 +37,7 @@ export interface WorkerAPI {
    * const tree = await queryAPI.getTree(treeId);
    * ```
    */
-  getQueryAPI(): ProxyMarked<TreeQueryAPI>;
+  getQueryAPI(): Remote<TreeQueryAPI>;
 
   /**
    * Get the mutation API for data modification operations
@@ -53,7 +53,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getMutationAPI(): ProxyMarked<TreeMutationAPI>;
+  getMutationAPI(): Remote<TreeMutationAPI>;
 
   /**
    * Get the subscription API for real-time monitoring
@@ -69,7 +69,7 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getSubscriptionAPI(): ProxyMarked<TreeSubscriptionAPI>;
+  getSubscriptionAPI(): Remote<TreeSubscriptionAPI>;
 
   // Reserved for future: NodeTypeRegistryAPI
 
@@ -87,7 +87,7 @@ export interface WorkerAPI {
    * );
    * ```
    */
-  getWorkingCopyAPI(): ProxyMarked<WorkingCopyAPI>;
+  getWorkingCopyAPI(): Remote<WorkingCopyAPI>;
 
   // ----------------------------------------------------------------//
   /**
@@ -95,7 +95,7 @@ export interface WorkerAPI {
    *
    * @returns Proxy to PluginLifecycleAPI implementation
    */
-  getPluginLifecycleAPI(): PluginLifecycleAPI;
+  getPluginLifecycleAPI(): Remote<PluginLifecycleAPI>;
 
   /**
    * Get Plugin TreeTypes API facade
@@ -136,7 +136,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getImportExportAPI(): ProxyMarked<ImportExportAPI>;
+  getImportExportAPI(): Remote<ImportExportAPI>;
 
   // ----------------------------------------------------------------//
   /**
@@ -157,7 +157,7 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  getTagAPI(): ProxyMarked<TagAPI>;
+  getTagAPI(): Remote<TagAPI>;
 
   // ----------------------------------------------------------------//
   /**

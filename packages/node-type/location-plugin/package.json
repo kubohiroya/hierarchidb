@@ -41,11 +41,11 @@
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
-  },
-  "peerDependencies": {
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
     "dexie": "^4.2.0",
     "@hierarchidb/batch": "workspace:*",
     "react": "^18.3.1",

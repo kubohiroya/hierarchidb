@@ -72,7 +72,6 @@ function readGitBranchAndUrl(root: string): { branch: string | null; url: string
   if (!gitDir) return { branch: null, url: null };
   let branch: string | null = null;
   let url: string | null = null;
-  try {
     const headPath = path.resolve(gitDir, 'HEAD');
     const head = fs.readFileSync(headPath, 'utf-8').trim();
     const refMatch = head.match(/^ref:\s*(.*)$/);
@@ -83,8 +82,6 @@ function readGitBranchAndUrl(root: string): { branch: string | null; url: string
     } else if (/^[0-9a-fA-F]{7,40}$/.test(head)) {
       branch = `detached@${head.slice(0, 7)}`;
     }
-  } catch {}
-  try {
     const cfgPath = path.resolve(gitDir, 'config');
     const cfg = fs.readFileSync(cfgPath, 'utf-8');
     // naive INI scan: find [remote "origin"] block and read url
@@ -104,7 +101,7 @@ function readGitBranchAndUrl(root: string): { branch: string | null; url: string
         }
       }
     }
-  } catch {}
+
   return { branch, url };
 }
 
@@ -128,12 +125,10 @@ function detectMissingDeps(root: string, includeDevDeps: boolean, ignore?: Array
     if (spec.startsWith('workspace:')) continue; // ignore workspace protocol to reduce noise
     try {
       // Prefer resolving package.json to avoid failures when main points to unbuilt dist
-      // eslint-disable-next-line n/no-deprecated-api
       require.resolve(`${dep}/package.json`, { paths: [root, path.resolve(root, '..')] });
     } catch {
       try {
         // Fallback to module entry
-        // eslint-disable-next-line n/no-deprecated-api
         require.resolve(dep, { paths: [root, path.resolve(root, '..')] });
       } catch {
         missing.push(dep);

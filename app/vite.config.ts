@@ -103,12 +103,17 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         },
       },
     }),
-    dts({
-      outDir: isSsrBuild ? 'build/server-types' : 'build/client-types',
-      rollupTypes: false,
-      insertTypesEntry: false,
-      copyDtsFiles: true,
-    }),
+    // Generate d.ts only when explicitly enabled (apps usually don't need it)
+    ...(env.VITE_APP_DTS === 'true'
+      ? [
+          dts({
+            outDir: isSsrBuild ? 'build/server-types' : 'build/client-types',
+            rollupTypes: false,
+            insertTypesEntry: false,
+            copyDtsFiles: true,
+          }),
+        ]
+      : []),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     comlink(), // Add Comlink plugin for Worker support
     reactRouter(),
