@@ -20,6 +20,7 @@
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.12",
     "jotai": "^2.13.1"

@@ -64,8 +64,10 @@
     "external": [
       "@emotion/react",
       "@emotion/styled",
+      "@hierarchidb/runtime-worker",
       "@mui/icons-material",
       "@mui/material",
+      "dexie",
       "react",
       "react-dom"
     ]
@@ -76,12 +78,25 @@
       "name": "Resolver Plugin",
       "displayName": "Resolver",
       "description": "Property mapping and schema resolution",
-      "icon": { "mui": "Extension", "emoji": "🧩", "color": "#fff3c9" },
-      "category": { "treeId": "*", "menuGroup": "document", "createOrder": 60 },
+      "icon": {
+        "mui": "Extension",
+        "emoji": "🧩",
+        "color": "#ffb3c1"
+      },
+      "category": {
+        "treeId": "*",
+        "menuGroup": "document",
+        "createOrder": 60
+      },
       "priority": 60,
       "creatable": true,
-      "tags": ["mapping", "schema"],
-      "capabilities": ["relationalData"]
+      "tags": [
+        "mapping",
+        "schema"
+      ],
+      "capabilities": [
+        "relationalData"
+      ]
     }
   }
 }

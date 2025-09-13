@@ -14,6 +14,7 @@
       "@hierarchidb/project-plugin/worker": ["../packages/node-type/project-plugin/src/worker/index.ts"],
       "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/src/worker/index.ts"],
       "@hierarchidb/shape-plugin/worker": ["../packages/node-type/shape-plugin/src/worker/index.ts"],
+      "@hierarchidb/ui-auth": ["../packages/ui/auth/src/index.ts"],
       "@hierarchidb/ui-icon": ["../packages/ui/icon/src/index.ts"],
       "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/src/index.ts"],
       "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/src/index.ts"]

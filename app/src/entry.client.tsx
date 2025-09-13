@@ -1,4 +1,6 @@
 import { startTransition, StrictMode, useMemo, useEffect } from 'react';
+// Dev health overlay (dev only)
+if (import.meta.env.DEV) import('./dev-health-client');
 import { hydrateRoot } from 'react-dom/client';
 // @ts-ignore
 import { HydratedRouter } from 'react-router/dom';

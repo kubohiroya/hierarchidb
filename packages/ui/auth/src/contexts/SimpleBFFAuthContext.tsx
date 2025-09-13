@@ -300,7 +300,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const bffBaseUrl = import.meta.env.VITE_BFF_BASE_URL || 'http://localhost:8787';
 
         // Build authorization URL
-        const authUrl = new URL(`${bffBaseUrl}/auth/${provider}/authorize`);
+        const authUrl = new URL(`${bffBaseUrl}/auth/authorize/${provider}`);
 
         // Get the appropriate client ID based on provider
         let clientId: string | undefined;
@@ -535,7 +535,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           // For GitHub, first check if the endpoint exists
           if (provider === 'github') {
             try {
-              const checkUrl = new URL(`${bffBaseUrl}/auth/${provider}/authorize`);
+              const checkUrl = new URL(`${bffBaseUrl}/auth/authorize/${provider}`);
               const response = await fetch(checkUrl.toString(), {
                 method: 'HEAD',
               });

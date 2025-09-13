@@ -16,7 +16,8 @@
       "ES2022",
       "DOM",
       "DOM.Iterable"
-    ]
+    ],
+    "baseUrl": "."
   },
   "include": [
     "src/**/*.ts",

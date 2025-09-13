@@ -17,4 +17,21 @@ interface ImportMeta {
 
 // vite-plugin-comlink provides its own global types.
 // Avoid redeclaration here to prevent conflicts.
+
+declare global {
+  interface Window {
+    __DEV_HEALTH_OVERLAY__?: {
+      position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | { x: number; y: number };
+      storageKey?: string;
+      draggable?: boolean;
+    };
+  }
+}
+
 export {};
+
+declare module 'virtual:dev-health' {
+  export const status: any;
+  const _default: any;
+  export default _default;
+}

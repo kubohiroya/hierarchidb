@@ -58,6 +58,11 @@ export interface TreeConsoleBreadcrumbProps {
   NodeContextMenu?: React.ComponentType<any>;
 
   /**
+   * Optional treeId for context-aware create menus ('r' | 't' | 'p').
+   */
+  treeId?: string;
+
+  /**
    * Called when a node is dropped onto a breadcrumb item.
    * Enables reparenting via drag & drop onto the breadcrumb.
    */

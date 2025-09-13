@@ -11,10 +11,10 @@
     "resolveJsonModule": true,
     "outDir": "dist",
     "rootDir": "src",
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./*"
+        "./src/*"
       ]
     },
     "lib": [

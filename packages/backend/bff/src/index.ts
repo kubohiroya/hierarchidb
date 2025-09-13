@@ -7,10 +7,9 @@ import {
   exchangeCodeForTokens,
   getGoogleUserInfo,
   type GoogleOAuth2Config,
-  initiateGoogleAuth,
 } from './auth/google.js';
-import { type GitHubOAuth2Config, initiateGitHubAuth } from './auth/github.js';
-import { initiateMicrosoftAuth, type MicrosoftOAuth2Config } from './auth/microsoft.js';
+import { type GitHubOAuth2Config } from './auth/github.js';
+import { type MicrosoftOAuth2Config } from './auth/microsoft.js';
 import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
 import { refreshToken, revokeToken } from './auth/refresh.js';
 import { mapEnvironmentVariables, MappedEnv } from './env-mapper.js';
@@ -68,81 +67,183 @@ app.get('/', (c) => {
 // Google OAuth2 + PKCE Flow
 // ============================================================================
 
-// Step 1: Initiate OAuth2 flow (GET request as per standard OAuth2)
-//  Turnstile
-app.get('/auth/google/authorize', requireTurnstile, async (c) => {
+// Generic authorize endpoint to reduce namespace collisions:
+// /auth/authorize/:provider (google|github|microsoft)
+app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
   try {
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'google');
-
-    const config: GoogleOAuth2Config = {
-      clientId: c.env.GOOGLE_CLIENT_ID,
-      clientSecret: c.env.GOOGLE_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    //  StateManagerHMACstate
-    const env = c.env as any;
-    const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
-    const state = await stateManager.createState(c);
-
-    // For standard OAuth2 flow, redirect to Google's authorization page
-    // The client should have sent code_challenge in the request
+    const provider = c.req.param('provider');
     const url = new URL(c.req.url);
-    const code_challenge = url.searchParams.get('code_challenge');
-    const code_challenge_method = url.searchParams.get('code_challenge_method');
 
-    // Build Google OAuth URL with PKCE parameters
-    const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    googleAuthUrl.searchParams.set('client_id', config.clientId);
-    googleAuthUrl.searchParams.set('redirect_uri', config.redirectUri); // Always use BFF's redirect URI
-    googleAuthUrl.searchParams.set('response_type', 'code');
-    googleAuthUrl.searchParams.set(
-      'scope',
-      url.searchParams.get('scope') || 'openid profile email',
-    );
-    googleAuthUrl.searchParams.set('state', state);
+    switch (provider) {
+      case 'google': {
+        const redirectUri = getDynamicRedirectUri(c, 'google');
+        const config: GoogleOAuth2Config = {
+          clientId: c.env.GOOGLE_CLIENT_ID,
+          clientSecret: c.env.GOOGLE_CLIENT_SECRET,
+          redirectUri,
+        };
 
-    // Add PKCE parameters if provided
-    if (code_challenge) {
-      googleAuthUrl.searchParams.set('code_challenge', code_challenge);
-      googleAuthUrl.searchParams.set('code_challenge_method', code_challenge_method || 'S256');
+        const code_challenge = url.searchParams.get('code_challenge');
+        const code_challenge_method = url.searchParams.get('code_challenge_method');
+        const scope = url.searchParams.get('scope');
+
+        const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        googleAuthUrl.searchParams.set('client_id', config.clientId);
+        googleAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
+        googleAuthUrl.searchParams.set('response_type', 'code');
+        googleAuthUrl.searchParams.set('scope', scope || 'openid profile email');
+        // Recreate state using StateManager to ensure integrity
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+        googleAuthUrl.searchParams.set('state', state);
+        if (code_challenge) {
+          googleAuthUrl.searchParams.set('code_challenge', code_challenge);
+          googleAuthUrl.searchParams.set('code_challenge_method', code_challenge_method || 'S256');
+        }
+        return c.redirect(googleAuthUrl.toString());
+      }
+      case 'github': {
+        if (!c.env.GITHUB_CLIENT_ID || !c.env.GITHUB_CLIENT_SECRET) {
+          return c.json({ error: 'GitHub OAuth not configured' }, 501);
+        }
+
+        const redirectUri = getDynamicRedirectUri(c, 'github');
+        const config: GitHubOAuth2Config = {
+          clientId: c.env.GITHUB_CLIENT_ID,
+          clientSecret: c.env.GITHUB_CLIENT_SECRET,
+          redirectUri,
+        };
+
+        const client_state = url.searchParams.get('state');
+        const scope = url.searchParams.get('scope');
+
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+
+        const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
+        githubAuthUrl.searchParams.set('client_id', config.clientId);
+        githubAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
+        githubAuthUrl.searchParams.set('response_type', 'code');
+        githubAuthUrl.searchParams.set('scope', scope || 'read:user user:email');
+        githubAuthUrl.searchParams.set('state', client_state || state);
+        return c.redirect(githubAuthUrl.toString());
+      }
+      case 'microsoft': {
+        if (!c.env.MICROSOFT_CLIENT_ID || !c.env.MICROSOFT_CLIENT_SECRET) {
+          return c.json({ error: 'Microsoft OAuth not configured' }, 501);
+        }
+        const redirectUri = getDynamicRedirectUri(c, 'microsoft');
+        const config: MicrosoftOAuth2Config = {
+          clientId: c.env.MICROSOFT_CLIENT_ID,
+          clientSecret: c.env.MICROSOFT_CLIENT_SECRET,
+          redirectUri,
+        };
+        const code_challenge = url.searchParams.get('code_challenge');
+        const code_challenge_method = url.searchParams.get('code_challenge_method');
+        const client_state = url.searchParams.get('state');
+        const scope = url.searchParams.get('scope');
+
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+
+        const microsoftAuthUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+        microsoftAuthUrl.searchParams.set('client_id', config.clientId);
+        microsoftAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
+        microsoftAuthUrl.searchParams.set('response_type', 'code');
+        microsoftAuthUrl.searchParams.set('scope', scope || 'openid profile email User.Read');
+        microsoftAuthUrl.searchParams.set('state', client_state || state);
+        if (code_challenge) {
+          microsoftAuthUrl.searchParams.set('code_challenge', code_challenge);
+          microsoftAuthUrl.searchParams.set('code_challenge_method', code_challenge_method || 'S256');
+        }
+        return c.redirect(microsoftAuthUrl.toString());
+      }
+      default:
+        return c.json({ error: 'Unsupported provider' }, 400);
     }
-
-    // Redirect to Google's OAuth page
-    return c.redirect(googleAuthUrl.toString());
   } catch (error) {
-    console.error('Failed to initiate Google auth:', error);
+    console.error('Failed to initiate auth via generic authorize:', error);
     return c.json({ error: 'Failed to initiate authentication' }, 500);
   }
 });
 
-// Also support POST for backward compatibility
-app.post('/auth/google/authorize', async (c) => {
+// Optional: POST variant returns computed URL/state to clients that want to handle redirects themselves
+app.post('/auth/authorize/:provider', async (c) => {
   try {
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'google');
-
-    const config: GoogleOAuth2Config = {
-      clientId: c.env.GOOGLE_CLIENT_ID,
-      clientSecret: c.env.GOOGLE_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    const { authUrl, codeVerifier, state } = await initiateGoogleAuth(config);
-
-    // Store code verifier and state temporarily (in a real implementation,
-    // you might want to use KV storage or encrypt and return to client)
-    return c.json({
-      authUrl,
-      codeVerifier, // Client will store this temporarily
-      state,
-    });
+    const provider = c.req.param('provider');
+    const url = new URL(c.req.url);
+    switch (provider) {
+      case 'google': {
+        const redirectUri = getDynamicRedirectUri(c, 'google');
+        const config: GoogleOAuth2Config = {
+          clientId: c.env.GOOGLE_CLIENT_ID,
+          clientSecret: c.env.GOOGLE_CLIENT_SECRET,
+          redirectUri,
+        };
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+        const code_challenge = url.searchParams.get('code_challenge');
+        const code_challenge_method = url.searchParams.get('code_challenge_method') || 'S256';
+        const scope = url.searchParams.get('scope') || 'openid profile email';
+        const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        googleAuthUrl.searchParams.set('client_id', config.clientId);
+        googleAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
+        googleAuthUrl.searchParams.set('response_type', 'code');
+        googleAuthUrl.searchParams.set('scope', scope);
+        googleAuthUrl.searchParams.set('state', state);
+        if (code_challenge) {
+          googleAuthUrl.searchParams.set('code_challenge', code_challenge);
+          googleAuthUrl.searchParams.set('code_challenge_method', code_challenge_method);
+        }
+        return c.json({ authUrl: googleAuthUrl.toString(), state });
+      }
+      case 'github': {
+        if (!c.env.GITHUB_CLIENT_ID || !c.env.GITHUB_CLIENT_SECRET) {
+          return c.json({ error: 'GitHub OAuth not configured' }, 501);
+        }
+        const redirectUri = getDynamicRedirectUri(c, 'github');
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+        const scope = url.searchParams.get('scope') || 'read:user user:email';
+        const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
+        githubAuthUrl.searchParams.set('client_id', c.env.GITHUB_CLIENT_ID);
+        githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
+        githubAuthUrl.searchParams.set('response_type', 'code');
+        githubAuthUrl.searchParams.set('scope', scope);
+        githubAuthUrl.searchParams.set('state', state);
+        return c.json({ authUrl: githubAuthUrl.toString(), state });
+      }
+      case 'microsoft': {
+        if (!c.env.MICROSOFT_CLIENT_ID || !c.env.MICROSOFT_CLIENT_SECRET) {
+          return c.json({ error: 'Microsoft OAuth not configured' }, 501);
+        }
+        const redirectUri = getDynamicRedirectUri(c, 'microsoft');
+        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const state = await stateManager.createState(c);
+        const code_challenge = url.searchParams.get('code_challenge');
+        const code_challenge_method = url.searchParams.get('code_challenge_method') || 'S256';
+        const scope = url.searchParams.get('scope') || 'openid profile email User.Read';
+        const microsoftAuthUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+        microsoftAuthUrl.searchParams.set('client_id', c.env.MICROSOFT_CLIENT_ID);
+        microsoftAuthUrl.searchParams.set('redirect_uri', redirectUri);
+        microsoftAuthUrl.searchParams.set('response_type', 'code');
+        microsoftAuthUrl.searchParams.set('scope', scope);
+        microsoftAuthUrl.searchParams.set('state', state);
+        if (code_challenge) {
+          microsoftAuthUrl.searchParams.set('code_challenge', code_challenge);
+          microsoftAuthUrl.searchParams.set('code_challenge_method', code_challenge_method);
+        }
+        return c.json({ authUrl: microsoftAuthUrl.toString(), state });
+      }
+      default:
+        return c.json({ error: 'Unsupported provider' }, 400);
+    }
   } catch (error) {
-    console.error('Failed to initiate Google auth:', error);
+    console.error('Failed to prepare auth via generic authorize (POST):', error);
     return c.json({ error: 'Failed to initiate authentication' }, 500);
   }
 });
+
 
 // Step 2: Handle OAuth2 callback from Google (GET request)
 app.get('/auth/callback', handleOAuth2Callback);
@@ -209,74 +310,6 @@ app.post('/auth/google/callback', async (c) => {
 // GitHub OAuth2 Flow
 // ============================================================================
 
-// Step 1: Initiate OAuth2 flow (GET request as per standard OAuth2)
-app.get('/auth/github/authorize', async (c) => {
-  try {
-    if (!c.env.GITHUB_CLIENT_ID || !c.env.GITHUB_CLIENT_SECRET) {
-      return c.json({ error: 'GitHub OAuth not configured' }, 501);
-    }
-
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'github');
-
-    const config: GitHubOAuth2Config = {
-      clientId: c.env.GITHUB_CLIENT_ID,
-      clientSecret: c.env.GITHUB_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    const { state } = await initiateGitHubAuth(config);
-
-    // For standard OAuth2 flow, redirect to GitHub's authorization page
-    const url = new URL(c.req.url);
-    const client_state = url.searchParams.get('state');
-    const scope = url.searchParams.get('scope');
-
-    // Build GitHub OAuth URL
-    const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
-    githubAuthUrl.searchParams.set('client_id', config.clientId);
-    githubAuthUrl.searchParams.set('redirect_uri', config.redirectUri); // Always use BFF's redirect URI
-    githubAuthUrl.searchParams.set('response_type', 'code');
-    githubAuthUrl.searchParams.set('scope', scope || 'read:user user:email');
-    githubAuthUrl.searchParams.set('state', client_state || state);
-
-    // Redirect to GitHub's OAuth page
-    return c.redirect(githubAuthUrl.toString());
-  } catch (error) {
-    console.error('Failed to initiate GitHub auth:', error);
-    return c.json({ error: 'Failed to initiate authentication' }, 500);
-  }
-});
-
-// Also support POST for backward compatibility
-app.post('/auth/github/authorize', async (c) => {
-  try {
-    if (!c.env.GITHUB_CLIENT_ID || !c.env.GITHUB_CLIENT_SECRET) {
-      return c.json({ error: 'GitHub OAuth not configured' }, 501);
-    }
-
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'github');
-
-    const config: GitHubOAuth2Config = {
-      clientId: c.env.GITHUB_CLIENT_ID,
-      clientSecret: c.env.GITHUB_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    const { authUrl, codeVerifier, state } = await initiateGitHubAuth(config);
-
-    // Return auth URL and state for client to handle
-    return c.json({
-      authUrl,
-      codeVerifier, // Client will store this temporarily
-      state,
-    });
-  } catch (error) {
-    console.error('Failed to initiate GitHub auth:', error);
-    return c.json({ error: 'Failed to initiate authentication' }, 500);
-  }
-});
 
 // Step 2: Handle OAuth2 callback from GitHub (GET request)
 app.get('/auth/github/callback', handleOAuth2Callback);
@@ -288,84 +321,6 @@ app.post('/auth/github/token', exchangeCodeForToken);
 // Microsoft OAuth2 + PKCE Flow
 // ============================================================================
 
-// Step 1: Initiate OAuth2 flow (GET request as per standard OAuth2)
-app.get('/auth/microsoft/authorize', async (c) => {
-  try {
-    if (!c.env.MICROSOFT_CLIENT_ID || !c.env.MICROSOFT_CLIENT_SECRET) {
-      return c.json({ error: 'Microsoft OAuth not configured' }, 501);
-    }
-
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'microsoft');
-
-    const config: MicrosoftOAuth2Config = {
-      clientId: c.env.MICROSOFT_CLIENT_ID,
-      clientSecret: c.env.MICROSOFT_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    const { state } = await initiateMicrosoftAuth(config);
-
-    // For standard OAuth2 flow, redirect to Microsoft's authorization page
-    const url = new URL(c.req.url);
-    const code_challenge = url.searchParams.get('code_challenge');
-    const code_challenge_method = url.searchParams.get('code_challenge_method');
-    const client_state = url.searchParams.get('state');
-    const scope = url.searchParams.get('scope');
-
-    // Build Microsoft OAuth URL with PKCE parameters
-    const microsoftAuthUrl = new URL(
-      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    );
-    microsoftAuthUrl.searchParams.set('client_id', config.clientId);
-    microsoftAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
-    microsoftAuthUrl.searchParams.set('response_type', 'code');
-    microsoftAuthUrl.searchParams.set('scope', scope || 'openid profile email User.Read');
-    microsoftAuthUrl.searchParams.set('state', client_state || state);
-
-    // Add PKCE parameters if provided
-    if (code_challenge) {
-      microsoftAuthUrl.searchParams.set('code_challenge', code_challenge);
-      microsoftAuthUrl.searchParams.set('code_challenge_method', code_challenge_method || 'S256');
-    }
-
-    // Redirect to Microsoft's OAuth page
-    return c.redirect(microsoftAuthUrl.toString());
-  } catch (error) {
-    console.error('Failed to initiate Microsoft auth:', error);
-    return c.json({ error: 'Failed to initiate authentication' }, 500);
-  }
-});
-
-// Also support POST for backward compatibility
-app.post('/auth/microsoft/authorize', async (c) => {
-  try {
-    if (!c.env.MICROSOFT_CLIENT_ID || !c.env.MICROSOFT_CLIENT_SECRET) {
-      return c.json({ error: 'Microsoft OAuth not configured' }, 501);
-    }
-
-    // Use dynamic redirect URI based on request origin
-    const redirectUri = getDynamicRedirectUri(c, 'microsoft');
-
-    const config: MicrosoftOAuth2Config = {
-      clientId: c.env.MICROSOFT_CLIENT_ID,
-      clientSecret: c.env.MICROSOFT_CLIENT_SECRET,
-      redirectUri,
-    };
-
-    const { authUrl, codeVerifier, state } = await initiateMicrosoftAuth(config);
-
-    // Return auth URL and state for client to handle
-    return c.json({
-      authUrl,
-      codeVerifier, // Client will store this temporarily
-      state,
-    });
-  } catch (error) {
-    console.error('Failed to initiate Microsoft auth:', error);
-    return c.json({ error: 'Failed to initiate authentication' }, 500);
-  }
-});
 
 // Step 2: Handle OAuth2 callback from Microsoft (GET request)
 app.get('/auth/microsoft/callback', handleOAuth2Callback);
@@ -474,9 +429,9 @@ const oidcDiscoveryHandler = (c: Context) => {
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/auth/authorize`,
     authorization_endpoints: {
-      google: `${baseUrl}/auth/google/authorize`,
-      github: `${baseUrl}/auth/github/authorize`,
-      microsoft: `${baseUrl}/auth/microsoft/authorize`,
+      google: `${baseUrl}/auth/authorize/google`,
+      github: `${baseUrl}/auth/authorize/github`,
+      microsoft: `${baseUrl}/auth/authorize/microsoft`,
     },
     token_endpoint: `${baseUrl}/auth/token`,
     userinfo_endpoint: `${baseUrl}/auth/userinfo`,

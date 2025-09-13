@@ -5,9 +5,15 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "ui": ["dist/ui/index.d.ts"],
-      "shared": ["dist/shared/index.d.ts"],
-      "*": ["dist/index.d.ts"]
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "shared": [
+        "dist/shared/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "main": "dist/index.js",
@@ -95,11 +101,14 @@
     "plugin": {
       "nodeType": "folder",
       "name": "Folder Plugin",
-      "icon": { "mui": "Folder", "emoji": "📁", "color": "#c0eeff" },
+      "icon": {
+        "mui": "Folder",
+        "emoji": "📁",
+        "color": "#c0eeff"
+      },
       "priority": 1000,
       "category": "core",
       "dependencies": [],
-      
       "capabilities": {
         "canHaveChildren": true,
         "canBeRoot": true,
@@ -130,6 +139,7 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
+      "dexie",
       "react"
     ]
   }

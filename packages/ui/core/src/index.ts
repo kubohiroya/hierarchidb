@@ -68,3 +68,6 @@ export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, Pl
 // Common hooks
 export { useWorkingCopy } from './hooks/useWorkingCopy';
 export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy';
+
+// Misc types/utilities
+export { rainbowColors } from './types/RainbowColors';

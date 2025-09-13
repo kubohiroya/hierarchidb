@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
-import { getMuiIconComponent } from '@hierarchidb/ui-icon';
+import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
 import type { TreeContext } from '~/plugins/menu-builders';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
@@ -216,33 +216,35 @@ export function DynamicSpeedDial({
           }}
         >
           {useVM
-          ? vmItems.map((item) => (
-            <SpeedDialAction
-              key={item.key}
-              icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji)}
-              tooltipTitle={item.label}
-              onClick={() => handleVMActionClick(item.nodeType)}
-              sx={{
-                color: item.icon?.color || 'inherit',
-                '& .MuiTooltip-tooltip': {
-                  maxWidth: 300,
-                  fontSize: '0.875rem',
-                },
-              }}
-              FabProps={{
-                size: 'medium',
-                color: 'default',
-                sx: {
-                  pointerEvents: 'auto',
-                  touchAction: 'manipulation',
-                  transform: 'translate3d(0,0,0)',
-                },
-              }}
-              tooltipPlacement="left"
-              data-testid={`create-${item.nodeType}-action`}
-            />
-          ))
-          : null}
+            ? vmItems.map((item) => (
+              <SpeedDialAction
+                key={item.key}
+                icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji, item.icon?.color)}
+                tooltipTitle={item.label}
+                onClick={() => handleVMActionClick(item.nodeType)}
+                sx={{
+                  '& .MuiTooltip-tooltip': {
+                    maxWidth: 300,
+                    fontSize: '0.875rem',
+                  },
+                }}
+                FabProps={{
+                  size: 'medium',
+                  color: 'default',
+                  sx: {
+                    pointerEvents: 'auto',
+                    touchAction: 'manipulation',
+                    transform: 'translate3d(0,0,0)',
+                    // Keep background accent with slight transparency to improve contrast
+                    bgcolor: item.icon?.color ? `${item.icon.color}1A` : undefined, // ~10% opacity
+                    '&:hover': { bgcolor: item.icon?.color ? `${item.icon.color}33` : undefined },
+                  },
+                }}
+                tooltipPlacement="left"
+                data-testid={`create-${item.nodeType}-action`}
+              />
+            ))
+            : null}
         </SpeedDial>
 
         {/* Debug overlays: fixed boxes showing current hitboxes and top element at FAB center */}

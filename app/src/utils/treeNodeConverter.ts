@@ -42,21 +42,21 @@ export function createDefaultColumns(): TreeTableColumn[] {
       label: 'Name',
       sortable: true,
       width: 300,
-      render: (_value, node) => node.name,
+      render: (_value: unknown, node: TreeNodeData) => node.name,
     },
     {
       id: 'description',
       label: 'Description',
       sortable: true,
       width: 300,
-      render: (_value, node) => node.description || '-',
+      render: (_value: unknown, node: TreeNodeData) => node.description || '-',
     },
     {
       id: 'createdAt',
       label: 'Created',
       sortable: true,
       width: 160,
-      render: (_value, node) => {
+      render: (_value: unknown, node: TreeNodeData) => {
         return node.createdAt
           ? new Date(node.createdAt).toLocaleDateString()
           : '';
@@ -67,7 +67,7 @@ export function createDefaultColumns(): TreeTableColumn[] {
       label: 'Modified',
       sortable: true,
       width: 160,
-      render: (_value, node) => {
+      render: (_value: unknown, node: TreeNodeData) => {
         return node.updatedAt
           ? new Date(node.updatedAt).toLocaleDateString()
           : '';

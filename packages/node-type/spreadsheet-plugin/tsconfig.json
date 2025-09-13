@@ -5,17 +5,32 @@
     "incremental": false,
     "noEmit": true,
     "jsx": "react-jsx",
-    
     "baseUrl": ".",
-    "paths": { "~/*": ["./src/*"] },
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
     "lib": [
       "ES2022",
       "DOM",
       "DOM.Iterable"
     ],
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "module": "ESNext"
   },
-  "include": ["src/steps/**/*.tsx", "src/types/**/*.ts"],
-  "exclude": ["dist", "node_modules", "src/worker/**", "src/services/**", "**/*.test.*", "**/*.spec.*"]
+  "include": [
+    "src/steps/**/*.tsx",
+    "src/types/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/worker/**",
+    "src/services/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
 }

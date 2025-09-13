@@ -172,7 +172,7 @@ export function OIDCAuthProvider({ fallbackPath, children }: OIDCAuthProviderPro
 
     // Custom endpoints via BFF
     metadata: {
-      authorization_endpoint: `${bffBaseUrl}/auth/google/authorize`,
+      authorization_endpoint: `${bffBaseUrl}/auth/authorize/google`,
       token_endpoint: `${bffBaseUrl}/auth/google/callback`,
       userinfo_endpoint: `${bffBaseUrl}/auth/userinfo`,
       end_session_endpoint: `${bffBaseUrl}/auth/logout`,

@@ -3,7 +3,7 @@
   * TreeTableReact
    */
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { PluginRegistry } from './PluginRegistry';
 import type {
   PluginContext as IPluginContext,
@@ -17,7 +17,7 @@ import type {
 // Context Definition
 // =============================================================================
 
-export const PluginContext = createContext<IPluginContext | null>(null);
+export const PluginContext: React.Context<IPluginContext | null> = createContext<IPluginContext | null>(null);
 
 // =============================================================================
 // Provider Props
@@ -53,7 +53,7 @@ export function PluginProvider({
                                  config,
                                  debugMode = false,
                                  onPluginEvent,
-                               }: PluginProviderProps) {
+                               }: PluginProviderProps): ReactElement {
   //  Plugin Registry
   const registry = useMemo(() => {
     return new PluginRegistry({
@@ -392,7 +392,7 @@ export function withPlugins<P extends object>(
 ) {
   return function PluginEnhancedComponent(
     props: P & { plugins?: TreeTablePlugin[] },
-  ) {
+  ): ReactElement {
     const { plugins = defaultPlugins, ...restProps } = props;
 
     return (

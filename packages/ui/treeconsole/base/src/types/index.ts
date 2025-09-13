@@ -153,8 +153,6 @@ export interface TreeConsoleActionsProps {
   isProjectsPage: boolean;
   isResourcesPage: boolean;
   isTrashPage: boolean;
-  speedDialActions: SpeedDialActionType[];
-  speedDialIcon?: ReactNode;
   onClose: () => void;
   closeLink?: string;
   backLink: string;
@@ -183,12 +181,7 @@ export interface TreeNodeWithChildren extends TreeNode {
 /**
   * SpeedDial
   */
-export interface SpeedDialActionType {
-  name: string;
-  icon: ReactNode;
-  color?: string;
-  onClick: () => void;
-}
+// Deprecated: SpeedDialActionType removed.
 
 /**
   * Undo/Redo
@@ -269,7 +262,7 @@ export interface TreeViewController {
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
 }
 
-export type { SpeedDialActionType as SpeedDialAction };
+// Deprecated: SpeedDialAction removed from base types.
 
 //  TreeNodeData - UI
 //  TreeNodeInUI

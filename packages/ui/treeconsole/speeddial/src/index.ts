@@ -1,16 +1,3 @@
-/**
- * @hierarchidb/ui-treeconsole-speeddial
- *
- * SpeedDial floating action button component for HierarchiDB TreeConsole
- */
+// Deprecated stub: the original SpeedDial components were moved under deprecated/ui/speeddial
+export const deprecated = true as const;
 
-// Main containers
-export { TreeConsoleActions } from './components/TreeConsoleActions';
-export { SpeedDialMenu } from './components/SpeedDialMenu';
-
-// Types
-export type {
-  SpeedDialActionType,
-  TreeConsoleActionsProps,
-  SpeedDialMenuProps,
-} from './types';

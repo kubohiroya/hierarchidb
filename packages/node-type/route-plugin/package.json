@@ -68,13 +68,20 @@
     "plugin": {
       "nodeType": "route",
       "name": "Route Plugin",
-      "icon": { "mui": "Route", "emoji": "〰️", "color": "#a3b030" }
+      "icon": {
+        "mui": "Route",
+        "emoji": "〰️",
+        "color": "#a3b030"
+      }
     }
   },
   "tsup": {
     "external": [
       "@emotion/react",
       "@emotion/styled",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-worker-bootstrap",
+      "@hierarchidb/ui-dialog",
       "@mui/icons-material",
       "@mui/material",
       "react",

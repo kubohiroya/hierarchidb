@@ -27,7 +27,6 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
@@ -62,8 +61,12 @@
   },
   "tsup": {
     "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@hierarchidb/batch",
       "@mui/icons-material",
       "@mui/material",
+      "dexie",
       "react",
       "react-dom"
     ]
@@ -74,12 +77,27 @@
       "name": "Location Plugin",
       "displayName": "Location",
       "description": "Geographic location nodes with Shape integration",
-      "icon": { "mui": "LocationPin", "emoji": "📍", "color": "#a3b030" },
-      "category": { "treeId": "*", "menuGroup": "document", "createOrder": 40 },
+      "icon": {
+        "mui": "LocationPin",
+        "emoji": "📍",
+        "color": "#a3b030"
+      },
+      "category": {
+        "treeId": "*",
+        "menuGroup": "document",
+        "createOrder": 40
+      },
       "priority": 40,
       "creatable": true,
-      "tags": ["geographic", "location"],
-      "capabilities": ["workingCopy", "batch", "visualization"]
+      "tags": [
+        "geographic",
+        "location"
+      ],
+      "capabilities": [
+        "workingCopy",
+        "batch",
+        "visualization"
+      ]
     }
   }
 }

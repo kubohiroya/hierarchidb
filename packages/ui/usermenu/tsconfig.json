@@ -5,17 +5,7 @@
     "module": "ESNext",
     "baseUrl": ".",
     "skipLibCheck": true,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "@hierarchidb/common-auth": [
-        "../../common/auth/src/index.ts"
-      ],
-      "@hierarchidb/common-auth/*": [
-        "../../common/auth/src/*"
-      ]
-    },
+    "paths": { "~/*": ["./src/*"] },
     "types": [
       "node",
       "vite/client"

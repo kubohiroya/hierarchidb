@@ -119,7 +119,7 @@ UI層におけるツリー表示用のデータモデルに先立ち、ベース
   - `packages/app/src/root.tsx`（テーマ/Helmet/レイアウト統合）
   - `packages/app/src/routes/_index.tsx`（ホーム）
   - `packages/app/src/routes/info.tsx`（情報画面）
-  - 認証関連: `packages/app/src/routes/auth.callback.tsx`, `packages/app/src/routes/silent-renew.tsx`
+  - 認証関連: `packages/app/src/routes/auth.callback.tsx`, `packages/app/src/routes/auth.silent-renew.tsx`
 
 ##### ルーティングの基本構造
 

@@ -115,7 +115,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         <Grid item xs={12}>
           <BasicInfoFields
             value={{ name: localData.name, description: localData.description }}
-            onChange={(updates) => {
+            onChange={(updates: Partial<{ name: string; description: string }>) => {
               if (updates.name !== undefined) handleInputChange('name', updates.name);
               if (updates.description !== undefined) handleInputChange('description', updates.description);
             }}

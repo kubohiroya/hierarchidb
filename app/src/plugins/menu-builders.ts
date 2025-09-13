@@ -5,7 +5,10 @@
 
 // Vite virtual module (types are declared in src/types/shims.d.ts)
 // @ts-ignore
+import { TreeId } from '@hierarchidb/common-type';
 import pluginDefinitions from 'virtual:plugin-definitions';
+import { getPresentation, prefetchAllIcons } from '~/services/plugin-presentation';
+import { getMenuSpec } from '~/plugins/menu-spec';
 
 export type TreeContext = 'resources' | 'projects';
 
@@ -14,13 +17,7 @@ export type TreeContext = 'resources' | 'projects';
  * - 'r' => resources
  * - 't' or 'p' => projects (accept both to be tolerant of typos)
  */
-export function normalizeContextFromTreeId(treeId?: string | null): TreeContext {
-  const t = (treeId || '').toLowerCase();
-  if (t === 'r') return 'resources';
-  if (t === 't' || t === 'p') return 'projects';
-  // default to resources to keep menus usable in unknown contexts
-  return 'resources';
-}
+// TreeId → context mapping is now localized at call-sites as needed
 
 export interface PluginMenuItem {
   key: string; // unique key (nodeType)
@@ -31,7 +28,7 @@ export interface PluginMenuItem {
     emoji?: string;
     color?: string;
   };
-  group?: 'basic' | 'container' | 'document' | 'advanced' | string;
+  group?: 'core' | 'base' | 'geo' | 'tabular' | 'project' | string;
   priority: number; // lower first
 }
 
@@ -103,48 +100,19 @@ function getGroup(def: VMDef): PluginMenuItem['group'] {
   return 'basic';
 }
 
-function getIcon(def: VMDef): PluginMenuItem['icon'] {
-  const icon = def.config?.icon || {};
-  return {
-    muiIconName: icon.mui || icon.muiIconName || 'Extension',
-    emoji: icon.emoji,
-    color: icon.color,
-  };
-}
+// Presentation (label/icon) is sourced from the generic service by nodeType
 
-function getLabel(def: VMDef): string {
-  return def.config?.displayName || def.config?.name || def.nodeType;
-}
+type MenuSpec = {
+  groups: Array<NonNullable<PluginMenuItem['group']>>;
+  order: string[]; // list of nodeType in display order
+  groupOf: Record<string, NonNullable<PluginMenuItem['group']>>; // nodeType -> group
+};
 
-export function buildMenuItemsForContext(context: TreeContext): PluginMenuItem[] {
-  // Explicit menu spec from product owner
-  // resources (r): groups and order
-  const SPEC: Record<TreeContext, { groups: string[]; order: string[]; groupOf: Record<string, string> }> = {
-    resources: {
-      groups: ['core', 'base', 'geo', 'tabular'],
-      order: ['folder', 'basemap', 'shape', 'location', 'route', 'spreadsheet', 'styler', 'resolver'],
-      groupOf: {
-        folder: 'core',
-        basemap: 'base',
-        shape: 'geo',
-        location: 'geo',
-        route: 'geo',
-        spreadsheet: 'tabular',
-        styler: 'tabular',
-        resolver: 'tabular',
-      },
-    },
-    projects: {
-      groups: ['core', 'project'],
-      order: ['folder', 'project'],
-      groupOf: {
-        folder: 'core',
-        project: 'project',
-      },
-    },
-  } as const;
-
-  const spec = SPEC[context];
+export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuItem[] {
+  const spec = getMenuSpec(treeContext);
+  if(!spec){
+    throw new Error(`Unknown treeId: ${treeContext}`);
+  }
   const defs = toArray();
   const defByType = Object.fromEntries(defs.map((d) => [d.nodeType, d] as const));
 
@@ -153,11 +121,12 @@ export function buildMenuItemsForContext(context: TreeContext): PluginMenuItem[]
     const d = defByType[nodeType];
     const group = spec.groupOf[nodeType] || 'core';
     if (d) {
+      const pres = getPresentation(d.nodeType);
       items.push({
         key: d.nodeType,
         nodeType: d.nodeType,
-        label: getLabel(d),
-        icon: getIcon(d),
+        label: pres?.label || d.nodeType,
+        icon: pres?.icon,
         group,
         // Encode group and index into priority for stable sort
         priority: spec.groups.indexOf(group) * 100 + spec.order.indexOf(nodeType),
@@ -178,19 +147,13 @@ export function buildMenuItemsForContext(context: TreeContext): PluginMenuItem[]
   return items;
 }
 
-export function buildResourcesMenuItems(): PluginMenuItem[] {
-  return buildMenuItemsForContext('resources');
-}
-
-export function buildProjectsMenuItems(): PluginMenuItem[] {
-  return buildMenuItemsForContext('projects');
-}
-
 /**
  * Convenience: build using TreeId directly (e.g., 'r' or 't')
  */
-export function buildMenuItemsForTreeId(treeId?: string | null): PluginMenuItem[] {
-  return buildMenuItemsForContext(normalizeContextFromTreeId(treeId));
+export function buildMenuItemsForTreeId(treeId?: TreeId | null): PluginMenuItem[] {
+  const t = (treeId || '').toLowerCase();
+  const ctx: TreeContext = t === 'r' ? 'resources' : 'projects';
+  return buildMenuItemsForContext(ctx);
 }
 
 /**
@@ -198,11 +161,8 @@ export function buildMenuItemsForTreeId(treeId?: string | null): PluginMenuItem[
  */
 export async function prefetchIconsForAllContexts() {
   try {
-    const { prefetchMuiIcons } = await import('@hierarchidb/ui-icon');
-    const r = buildMenuItemsForContext('resources');
-    const p = buildMenuItemsForContext('projects');
-    const names = [...r, ...p].map((i) => i.icon?.muiIconName);
-    await prefetchMuiIcons(names);
+    // Reuse generic service that already aggregates all plugin icons
+    await prefetchAllIcons();
   } catch {
     // ignore
   }

@@ -7,7 +7,7 @@
  * Phase 5:
   */
 
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -18,18 +18,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import {
-  Box,
-  Checkbox,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  TextField,
-} from '@mui/material';
+import { Box, Checkbox, IconButton, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, TextField, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
   ChevronRight as ChevronRightIcon,
@@ -38,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import type { TreeTableCoreProps } from '../types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { rainbowColors } from '@hierarchidb/ui-core';
 import { TreeNode } from '@hierarchidb/common-type';
 
 //  TreeTable.css
@@ -88,7 +78,7 @@ const StyledTableHead = styled(TableHead)`
     font-weight: 600;
     border-bottom: 3px solid ${({ theme }) => theme.palette.divider};
     border-right: 2px solid ${({ theme }) => theme.palette.divider};
-    padding: 8px 12px;
+    padding: 4px 6px;
     user-select: none;
     position: relative;
 
@@ -129,7 +119,7 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
     background-color: rgba(25, 118, 210, 0.08) !important;
   `}
   & .MuiTableCell-root {
-    padding: 8px 12px;
+    padding: 4px 6px;
     border-right: 1px solid ${({ theme }) => theme.palette.divider};
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
     transition: outline-color 120ms ease, background-color 120ms ease;
@@ -145,10 +135,11 @@ const NameCell = styled(Box)`
   align-items: center;
   gap: 4px;
   min-height: 24px;
+  padding-left: 8px;
 `;
 
 const IndentSpace = styled(Box)<{ depth: number }>`
-  width: ${({ depth }) => depth * 20}px;
+  width: ${({ depth }) => depth * 8}px;
   flex-shrink: 0;
 `;
 
@@ -171,7 +162,7 @@ export function TreeTableCore({
                                 onRowDoubleClick,
                                 onRowContextMenu,
                                 persistenceKey,
-                              }: TreeTableCoreProps) {
+                              }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
@@ -186,7 +177,8 @@ export function TreeTableCore({
   }>({ anchorEl: null, node: null });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
-    selection: 50,
+    // 6px (left) + 37px (inner) + 6px (right) = 49px total
+    selection: 49,
     name: 350,
     description: 400,
     createdAt: 150,
@@ -195,6 +187,7 @@ export function TreeTableCore({
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [hoverDropTargetId, setHoverDropTargetId] = useState<string | null>(null);
   const [forbiddenTargets, setForbiddenTargets] = useState<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Simple inline validator for name/description
   const validateInline = useCallback((field: 'name' | 'description', value: string): { ok: boolean; message?: string } => {
@@ -240,6 +233,87 @@ export function TreeTableCore({
       throw new Error(`Failed to save column widths to localStorage for key: ${storageKey}`);
     }
   }, [columnWidths, storageKey]);
+
+  // Keep first data column ('name') fixed on container resize: adjust only other columns proportionally
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let ro: ResizeObserver | null = null;
+    let raf = 0;
+    const MIN = 50;
+
+    const onResize = (width: number) => {
+      // Fixed columns: 'selection' and 'name'
+      const fixedKeys = new Set(['selection', 'name']);
+      const fixedSum = Object.entries(columnWidths)
+        .filter(([k]) => fixedKeys.has(k))
+        .reduce((s, [, v]) => s + (v || 0), 0);
+
+      // Adjustable columns
+      const adjustable = Object.entries(columnWidths).filter(([k]) => !fixedKeys.has(k));
+      if (adjustable.length === 0) return;
+
+      const currentAdjustableSum = adjustable.reduce((s, [, v]) => s + (v || 0), 0);
+      const targetAdjustableSum = Math.max(MIN * adjustable.length, width - fixedSum);
+      if (targetAdjustableSum <= 0 || currentAdjustableSum <= 0) return;
+
+      // If the change is trivial (<1px total), skip to avoid thrashing
+      if (Math.abs(targetAdjustableSum - currentAdjustableSum) < 1) return;
+
+      const scale = targetAdjustableSum / currentAdjustableSum;
+      const next: Record<string, number> = { ...columnWidths };
+
+      // Scale each adjustable column, clamp to MIN, track residual to keep exact sum
+      adjustable.forEach(([key], idx) => {
+        const cur = columnWidths[key] || MIN;
+        // naive scale
+        let val = Math.max(MIN, Math.round(cur * scale));
+        // on last column, absorb residual to match target sum exactly
+        if (idx === adjustable.length - 1) {
+          const sumSoFar = adjustable.slice(0, -1).reduce((s, [k]) => s + (next[k] || 0), 0);
+          val = Math.max(MIN, targetAdjustableSum - sumSoFar);
+        }
+        next[key] = val;
+      });
+
+      setColumnWidths((prev) => {
+        // Avoid unnecessary state updates
+        const same = Object.keys(next).every((k) => next[k] === prev[k]);
+        return same ? prev : next;
+      });
+    };
+
+    const measure = () => {
+      try {
+        const rect = el.getBoundingClientRect();
+        onResize(Math.floor(rect.width));
+      } catch {}
+    };
+
+    // Use ResizeObserver when available
+    try {
+      ro = new ResizeObserver(() => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(measure);
+      });
+      ro.observe(el);
+    } catch {
+      // Fallback to window resize
+      const onWin = () => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(measure);
+      };
+      window.addEventListener('resize', onWin);
+      return () => {
+        window.removeEventListener('resize', onWin);
+      };
+    }
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      try { ro && ro.disconnect(); } catch {}
+    };
+  }, [columnWidths, containerRef]);
 
   // Helper: compute descendants including self
   const getDescendants = useCallback((nodeId: string): Set<string> => {
@@ -303,10 +377,30 @@ export function TreeTableCore({
     return data.some((node) => rowSelection[node.id]) && !allSelected;
   }, [data, rowSelection, allSelected]);
 
+  // Batch selection into a single frame
+  const pendingSelectionRef = useRef<{ ids: string[]; checked: boolean } | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const flushBatchedSelect = () => {
+    try {
+      const payload = pendingSelectionRef.current;
+      rafRef.current = null;
+      if (!payload || !controller?.onNodeSelect) return;
+      controller.onNodeSelect(payload.ids, payload.checked);
+    } finally {
+      pendingSelectionRef.current = null;
+    }
+  };
+  const batchSelect = (ids: string[], checked: boolean) => {
+    pendingSelectionRef.current = { ids, checked };
+    if (rafRef.current == null) {
+      rafRef.current = requestAnimationFrame(flushBatchedSelect);
+    }
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (!controller?.onNodeSelect) return;
-    const nodeIds = checked ? data.map((node) => node.id) : [];
-    controller.onNodeSelect(nodeIds, checked);
+    const nodeIds = data.map((node) => node.id);
+    batchSelect(nodeIds, checked);
   };
 
   // Column definitions
@@ -315,19 +409,21 @@ export function TreeTableCore({
       {
         id: 'selection',
         header: () => (
-          <Checkbox
-            checked={allSelected}
-            indeterminate={someSelected}
-            onChange={(e) => handleSelectAll(e.target.checked)}
-            size="small"
-          />
+          <Tooltip title={allSelected ? 'すべて解除' : 'すべて選択'} placement="bottom">
+            <Checkbox
+              checked={allSelected}
+              indeterminate={someSelected}
+              onChange={() => handleSelectAll(!allSelected)}
+              size="small"
+            />
+          </Tooltip>
         ),
         size: 50,
         cell: ({ row }) => (
           <Checkbox
             checked={rowSelection[row.original.id] || false}
             onChange={(e) => {
-              controller?.onNodeSelect?.([row.original.id], e.target.checked);
+              batchSelect([row.original.id], e.target.checked);
             }}
             size="small"
             onClick={(e) => e.stopPropagation()}
@@ -342,10 +438,13 @@ export function TreeTableCore({
         enableSorting: true,
         cell: ({ row }) => {
           const node = row.original;
-          const depth = (node.depth || 0) + depthOffset;
+          // Shift visual indentation one level left
+          const depth = Math.max(0, ((node.depth || 0) + depthOffset) - 1);
           const hasChildren = node.hasChildren || false;
           const isExpanded = expandedRowIds.has(node.id);
           const isEditing = editingNodeId === node.id;
+          const iconDepth = depth;
+          const iconColor = rainbowColors[iconDepth % rainbowColors.length];
 
           return (
             <NameCell>
@@ -379,11 +478,21 @@ export function TreeTableCore({
                   )}
                 </IconButton>
               ) : (
-                <Box sx={{ width: 28 }} />
+                <Box sx={{ width: 20 }} />
               )}
 
-              {/* Node icon */}
-              <IconComponent nodeType={node.nodeType || 'folder'} size="small" />
+              {/* Node icon (left-click to open context menu) */}
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextMenuState({ anchorEl: e.currentTarget as HTMLElement, node });
+                }}
+                sx={{ display: 'inline-flex', alignItems: 'center' }}
+                aria-label="Open menu"
+                role="button"
+              >
+                <IconComponent nodeType={node.nodeType || 'folder'} size="small" clickable color="inherit" htmlColor={iconColor} />
+              </Box>
 
               {/* Node name (editable) */}
               {isEditing && editingField === 'name' ? (
@@ -504,7 +613,11 @@ export function TreeTableCore({
         enableSorting: true,
         cell: ({ row }) => {
           const value = row.original.createdAt;
-          return value ? new Date(value).toLocaleDateString() : '-';
+          if (!value) return '-';
+          const d = new Date(value);
+          const date = d.toLocaleDateString();
+          const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          return <span title={time}>{date}</span>;
         },
       },
       {
@@ -515,7 +628,11 @@ export function TreeTableCore({
         enableSorting: true,
         cell: ({ row }) => {
           const value = row.original.updatedAt;
-          return value ? new Date(value).toLocaleDateString() : '-';
+          if (!value) return '-';
+          const d = new Date(value);
+          const date = d.toLocaleDateString();
+          const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          return <span title={time}>{date}</span>;
         },
       },
     ];
@@ -585,6 +702,12 @@ export function TreeTableCore({
   };
 
   const handleRowClick = (node: TreeNode, event: MouseEvent) => {
+    try {
+      const target = (event.target as unknown as HTMLElement) || null;
+      if (target && (target as any).closest && (target as any).closest('a[href]')) {
+        return; // let native navigation happen
+      }
+    } catch {}
     if (rowClickAction === 'Select' && selectionMode !== 'none') {
       const newSelection = { ...rowSelection };
       if (event.ctrlKey || event.metaKey) {
@@ -606,6 +729,12 @@ export function TreeTableCore({
   };
 
   const handleRowDoubleClick = (node: TreeNode, event: MouseEvent) => {
+    try {
+      const target = (event.target as unknown as HTMLElement) || null;
+      if (target && (target as any).closest && (target as any).closest('a[href]')) {
+        return;
+      }
+    } catch {}
     if (rowClickAction === 'Edit') {
       handleStartEdit(node);
     } else if (rowClickAction === 'Navigate') {
@@ -642,7 +771,10 @@ export function TreeTableCore({
     e.preventDefault();
     e.stopPropagation();
 
-    const startX = e.clientX;
+    // Align drag delta to the visual column boundary (center of the 10px handle),
+    // so horizontal mouse movement in pixels === exact column width delta.
+    const handleRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const startX = handleRect.left + handleRect.width / 2;
     const leftStart = columnWidths[leftColumnId] || 100;
     const rightStart = columnWidths[rightColumnId] || 100;
     resizeRef.current = { startX, leftStart, rightStart, leftId: leftColumnId, rightId: rightColumnId };
@@ -673,7 +805,7 @@ export function TreeTableCore({
 
   // Render
   return (
-    <StyledTableContainer sx={{ height: viewHeight || '100%', width: '100%' }}>
+    <StyledTableContainer ref={containerRef} sx={{ height: viewHeight || '100%', width: '100%' }}>
       <StyledTable stickyHeader>
         <StyledTableHead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -714,7 +846,8 @@ export function TreeTableCore({
                         ) : (
                           'Column'
                         )}
-                        {!isSelectionColumn && header.column.id !== 'updatedAt' && (
+                        {/* Disable resize handle for the first data column ('name') to keep it fixed */}
+                        {!isSelectionColumn && header.column.id !== 'updatedAt' && header.column.id !== 'name' && (
                           <ResizeHandle
                             className={resizingColumn === header.column.id ? 'resizing' : ''}
                             onMouseDown={(e) => {
@@ -840,6 +973,7 @@ export function TreeTableCore({
         onClose={handleContextMenuClose}
         nodeId={contextMenuState.node?.id || ''}
         nodeType={contextMenuState.node?.nodeType || 'folder'}
+        treeId={(controller as any)?.treeId}
         nodeName={contextMenuState.node?.name}
         canCreate={true}
         canEdit={true}

@@ -1,7 +1,7 @@
 {
   "extends": "../../../tsconfig.base.json",
   "include": [
-    "src/**/*"
+    "src"
   ],
   "exclude": [
     "dist",
@@ -15,7 +15,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

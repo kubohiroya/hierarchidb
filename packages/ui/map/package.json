@@ -41,10 +41,10 @@
   "type": "module",
   "tsup": {
     "external": [
+      "@deck.gl/mapbox",
       "@emotion/react",
       "@emotion/styled",
       "@mui/material",
-      "@deck.gl/mapbox",
       "react"
     ]
   }

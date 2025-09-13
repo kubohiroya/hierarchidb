@@ -37,6 +37,7 @@
   },
   "tsup": {
     "external": [
+      "@emotion/react",
       "@mui/icons-material",
       "@mui/material",
       "react"

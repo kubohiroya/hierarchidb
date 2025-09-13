@@ -290,7 +290,7 @@ describe('BaseMapEntityHandler', () => {
       const customEntity = await handler.createEntity(testNodeId, {
         mapStyle: { style: 'satellite' },
         viewport: { center: [0, 0], zoom: 5, bearing: 45, pitch: 30 },
-        displayOptions: { show3dBuildings: true, showLabels: false },
+        //displayOptions: { show3dBuildings: true, showLabels: false },
       });
 
       const config = await handler.getConfiguration(testNodeId);
@@ -420,19 +420,19 @@ describe('BaseMapEntityHandler', () => {
       await handler.createEntity('map1' as NodeId, {
         name: 'Tokyo Streets',
         mapStyle: { style: 'streets' },
-        displayOptions: { tags: ['tokyo', 'japan'] },
+        //displayOptions: { tags: ['tokyo', 'japan'] },
       });
 
       await handler.createEntity('map2' as NodeId, {
         name: 'New York Satellite',
         mapStyle: { style: 'satellite' },
-        displayOptions: { tags: ['newyork', 'usa'] },
+        //displayOptions: { tags: ['newyork', 'usa'] },
       });
 
       await handler.createEntity('map3' as NodeId, {
         name: 'London Terrain',
         mapStyle: { style: 'terrain' },
-        displayOptions: { tags: ['london', 'uk'] },
+        //displayOptions: { tags: ['london', 'uk'] },
       });
     });
 

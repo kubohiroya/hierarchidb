@@ -166,21 +166,11 @@ export class BFFAuthService {
     codeChallenge: string,
     method: 'popup' | 'redirect',
   ): URL {
-    // Fix: Check if baseUrl is absolute or relative
-    const isAbsoluteUrl = this.baseUrl.startsWith('http://') || this.baseUrl.startsWith('https://');
+    const { isAbsolute, authBase } = this.resolveAuthBase();
 
-    let authUrl: URL;
-    if (isAbsoluteUrl) {
-      // Absolute BFF URL: always use /auth/{provider}/authorize
-      authUrl = new URL(`${this.baseUrl.replace(/\/$/, '')}/auth/${provider}/authorize`);
-    } else {
-      // Relative BFF URL for dev proxy.
-      // If baseUrl is empty (""), default to '/auth' which vite proxy maps to BFF.
-      // If baseUrl is provided (e.g., '/api/auth'), ensure it ends with '/auth'.
-      const base = (this.baseUrl && this.baseUrl.trim()) || '/auth';
-      const normalized = base.endsWith('/auth') ? base : `${base.replace(/\/$/, '')}/auth`;
-      authUrl = new URL(`${normalized}/${provider}/authorize`, window.location.origin);
-    }
+    const authUrl = isAbsolute
+      ? new URL(`${authBase}/authorize/${provider}`)
+      : new URL(`${authBase}/authorize/${provider}`, window.location.origin);
 
     // Add PKCE parameters
     authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -193,14 +183,43 @@ export class BFFAuthService {
 
     // Add redirect URI (BFF will handle the actual OAuth redirect)
     if (method === 'redirect') {
-      // Respect vite base (e.g., '/hierarchidb/') to avoid broken callback paths
-      const base = (import.meta as any)?.env?.BASE_URL || '/';
-      const baseNorm = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
-      const baseClean = baseNorm.endsWith('/') ? baseNorm.slice(0, -1) : baseNorm;
+      const baseClean = this.getAppBasePrefix();
       authUrl.searchParams.set('redirect_uri', `${window.location.origin}${baseClean}/auth/callback`);
     }
 
     return authUrl;
+  }
+
+  /**
+   * Compute app base prefix from Vite `BASE_URL` (derived from `VITE_APP_NAME`).
+   * Returns a string like '' or '/hierarchidb'. No trailing slash.
+   */
+  private getAppBasePrefix(): string {
+    const base = (import.meta as any)?.env?.BASE_URL || '/';
+    const norm = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
+    return norm.endsWith('/') ? norm.slice(0, -1) : norm;
+  }
+
+  /**
+   * Resolve the effective auth base path for BFF endpoints.
+   * - Absolute `VITE_BFF_BASE_URL`: `<abs>/auth`
+   * - Relative or empty: `${BASE_URL}/auth` (or `${BASE_URL}${base}/auth` if `baseUrl` provided)
+   */
+  private resolveAuthBase(): { isAbsolute: boolean; authBase: string } {
+    const isAbsolute = this.baseUrl.startsWith('http://') || this.baseUrl.startsWith('https://');
+    if (isAbsolute) {
+      const abs = this.baseUrl.replace(/\/$/, '');
+      const withAuth = abs.endsWith('/auth') ? abs : `${abs}/auth`;
+      return { isAbsolute: true, authBase: withAuth };
+    }
+
+    const appBase = this.getAppBasePrefix(); // '' or '/hierarchidb'
+    const base = (this.baseUrl && this.baseUrl.trim()) || '/auth';
+    const rel = base.endsWith('/auth') ? base : `${base.replace(/\/$/, '')}/auth`;
+
+    // Join like `${appBase}${rel}` but avoid double slashes
+    const joined = `${appBase}${rel.startsWith('/') ? '' : '/'}${rel}`;
+    return { isAbsolute: false, authBase: joined };
   }
 
   /**
@@ -276,7 +295,9 @@ export class BFFAuthService {
     const provider = localStorage.getItem('auth_provider') || 'google';
 
     // Exchange code for tokens via BFF
-    const response = await fetch(`${this.baseUrl}/token`, {
+    const { isAbsolute, authBase } = this.resolveAuthBase();
+    const tokenUrl = isAbsolute ? `${authBase}/token` : `${authBase}/token`;
+    const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -286,7 +307,7 @@ export class BFFAuthService {
         state,
         code_verifier: codeVerifier,
         provider,
-        redirect_uri: `${window.location.origin}/auth/callback`,
+        redirect_uri: `${window.location.origin}${this.getAppBasePrefix()}/auth/callback`,
       }),
       credentials: 'include',
     });
@@ -325,7 +346,8 @@ export class BFFAuthService {
     // Call revoke endpoint if available
     if (token) {
       try {
-        await fetch(`${this.baseUrl}/revoke`, {
+        const { authBase } = this.resolveAuthBase();
+        await fetch(`${authBase}/revoke`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -353,7 +375,8 @@ export class BFFAuthService {
         return null;
       }
 
-      const response = await fetch(`${this.baseUrl}/refresh`, {
+      const { authBase } = this.resolveAuthBase();
+      const response = await fetch(`${authBase}/refresh`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

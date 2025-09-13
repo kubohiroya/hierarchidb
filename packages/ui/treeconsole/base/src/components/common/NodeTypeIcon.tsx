@@ -19,6 +19,8 @@ interface NodeTypeIconProps {
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
+  /** Optional explicit svg color (hex or css). */
+  htmlColor?: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export function NodeTypeIcon({
                                onClick,
                                disabled = false,
                                color = 'inherit',
+                               htmlColor,
                              }: NodeTypeIconProps) {
   const Icon = getIconByType(nodeType);
   const fontSize = size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium';
@@ -71,7 +74,7 @@ export function NodeTypeIcon({
           },
         }}
       >
-        <Icon fontSize={fontSize} color={color} />
+        <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
       </IconButton>
     );
   }
@@ -87,7 +90,7 @@ export function NodeTypeIcon({
         height: size === 'small' ? 20 : size === 'large' ? 28 : 24,
       }}
     >
-      <Icon fontSize={fontSize} color={color} />
+      <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
     </Box>
   );
 }

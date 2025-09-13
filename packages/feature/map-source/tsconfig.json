@@ -10,8 +10,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "dexie": [
-        "src/types/dexie.d.ts"
+      "~/*": [
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

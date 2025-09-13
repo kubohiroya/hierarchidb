@@ -4,7 +4,7 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { MouseEvent, useEffect, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useRef, useState, type ReactElement } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import {
   Add as AddIcon,
@@ -51,7 +51,7 @@ export interface NodeContextMenuProps {
   * NodeContextMenu
  * eria-cartographRowContextMenuMUI
   */
-export function NodeContextMenu(props: NodeContextMenuProps) {
+export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
     open,

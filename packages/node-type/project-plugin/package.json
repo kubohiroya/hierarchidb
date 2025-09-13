@@ -31,7 +31,6 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-date": "workspace:*",
@@ -39,7 +38,6 @@
     "@watergis/maplibre-gl-export": "^4.0.1",
     "d3-scale": "^4.0.0",
     "date-fns": "^3.0.0",
-    
     "h3-js": "^4.1.0",
     "jspdf": "^2.5.0",
     "@hierarchidb/util": "workspace:*"
@@ -85,10 +83,19 @@
   "license": "MIT",
   "tsup": {
     "external": [
+      "@deck.gl/aggregation-layers",
+      "@deck.gl/core",
+      "@deck.gl/extensions",
+      "@deck.gl/geo-layers",
+      "@deck.gl/layers",
+      "@deck.gl/mapbox",
+      "@deck.gl/mesh-layers",
       "@emotion/react",
       "@emotion/styled",
+      "@hierarchidb/runtime-worker",
       "@mui/icons-material",
       "@mui/material",
+      "dexie",
       "react",
       "react-dom"
     ]
@@ -99,12 +106,25 @@
       "name": "Project Plugin",
       "displayName": "Project",
       "description": "Project management container with map view",
-      "icon": { "mui": "AccountTree", "emoji": "🌲", "color": "#ffe0f3" },
-      "category": { "treeId": "*", "menuGroup": "document", "createOrder": 10 },
+      "icon": {
+        "mui": "AccountTree",
+        "emoji": "🌲",
+        "color": "#ffe0f3"
+      },
+      "category": {
+        "treeId": "*",
+        "menuGroup": "document",
+        "createOrder": 10
+      },
       "priority": 10,
       "creatable": true,
-      "tags": ["project", "container"],
-      "capabilities": ["workingCopy"]
+      "tags": [
+        "project",
+        "container"
+      ],
+      "capabilities": [
+        "workingCopy"
+      ]
     }
   }
 }

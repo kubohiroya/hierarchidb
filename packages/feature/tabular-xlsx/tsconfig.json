@@ -8,14 +8,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/tabular": [
-        "../tabular/src/index.ts"
-      ],
-      "@hierarchidb/tabular/*": [
-        "../tabular/src/*"
-      ],
       "~/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

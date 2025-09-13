@@ -1,3 +1,4 @@
+import './ambient-ui-global';
 export * from './action-types';
 export type {
   APIMethodArgs, APIMethodReturn, WorkerAPIMethod, WorkerAPIExtensions, ClientAPIExtensions,

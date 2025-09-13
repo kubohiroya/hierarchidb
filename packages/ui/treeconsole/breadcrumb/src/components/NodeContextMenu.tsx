@@ -6,18 +6,8 @@
 
 import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import {
-  Add as AddIcon,
-  AssignmentTurnedIn as AssignmentTurnedInIcon,
-  ChevronRight as ChevronRightIcon,
-  Clear as ClearIcon,
-  ContentCopy as ContentCopyIcon,
-  CreateNewFolder as CreateFolderIcon,
-  Edit as EditIcon,
-  Folder as FolderIcon,
-  NoteAdd as NoteAddIcon,
-  PlayArrow as PlayArrowIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
 
 
 export interface NodeContextMenuProps {
@@ -27,6 +17,7 @@ export interface NodeContextMenuProps {
   nodeId: string;
   nodeType?: string;
   nodeName?: string;
+  treeId?: string;
   canOpen?: boolean;
   canEdit?: boolean;
   canCreate?: boolean;
@@ -44,18 +35,22 @@ export interface NodeContextMenuProps {
   mode?: 'restore' | 'dispose';
   onRestoreToOriginal?: () => void;
   onRestoreToCurrent?: () => void;
+  /** Optional explicit create items list; if omitted, tries to build from global builders */
+  createItems?: Array<{ type: string; label: string }>;
 }
 
 /**
   * NodeContextMenu
  * eria-cartographRowContextMenuMUI
   */
-export function NodeContextMenu(props: NodeContextMenuProps) {
+import type { ReactElement } from 'react';
+export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
     open,
     onClose,
     nodeType = 'folder',
+    treeId,
     canOpen: _canOpen = true,
     canEdit = true,
     canCreate = true,
@@ -99,69 +94,68 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
     onClose();
   };
 
+  const blurActive = () => {
+    try {
+      const el = (globalThis?.document?.activeElement ?? null) as HTMLElement | null;
+      el?.blur?.();
+    } catch {}
+  };
+
   const handleOpenClick = () => {
     const onOpen = propsRef.current.onOpen;
+    blurActive();
     handleMainMenuClose();
-    // Call onOpen after menu is closed to avoid conflicts
-    requestAnimationFrame(() => {
-      onOpen?.();
-    });
+    // Defer until after menu unmount/aria-hidden settles
+    setTimeout(() => { onOpen?.(); }, 0);
   };
 
   const handleOpenFolderClick = () => {
     const onOpenFolder = propsRef.current.onOpenFolder;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onOpenFolder?.();
-    });
+    setTimeout(() => { onOpenFolder?.(); }, 0);
   };
 
   const handleEditClick = () => {
     const onEdit = propsRef.current.onEdit;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onEdit?.();
-    });
+    setTimeout(() => { onEdit?.(); }, 0);
   };
 
   const handleCreateClick = (type: string) => {
     const onCreate = propsRef.current.onCreate;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onCreate?.(type);
-    });
+    setTimeout(() => { onCreate?.(type); }, 0);
   };
 
   const handleDuplicateClick = () => {
     const onDuplicate = propsRef.current.onDuplicate;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onDuplicate?.();
-    });
+    setTimeout(() => { onDuplicate?.(); }, 0);
   };
 
   const handleRemoveClick = () => {
     const onRemove = propsRef.current.onRemove;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onRemove?.();
-    });
+    setTimeout(() => { onRemove?.(); }, 0);
   };
 
   const handlePreviewClick = () => {
     const onPreview = propsRef.current.onPreview;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onPreview?.();
-    });
+    setTimeout(() => { onPreview?.(); }, 0);
   };
 
   const handleCheckReferenceClick = () => {
     const onCheckReference = propsRef.current.onCheckReference;
+    blurActive();
     handleMainMenuClose();
-    requestAnimationFrame(() => {
-      onCheckReference?.();
-    });
+    setTimeout(() => { onCheckReference?.(); }, 0);
   };
 
   // Effect to ensure menus are closed when anchorEl changes
@@ -172,15 +166,54 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
     }
   }, [anchorEl]);
 
+  // Guard: ensure anchorEl is part of document layout
+  const safeAnchorEl = (() => {
+    try {
+      if (!anchorEl) return null;
+      const doc = anchorEl.ownerDocument || document;
+      return doc.contains(anchorEl) ? anchorEl : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  // If anchor is invalid while menu is open, close it proactively
+  useEffect(() => {
+    if (open && !safeAnchorEl) {
+      requestAnimationFrame(() => onClose());
+    }
+  }, [open, safeAnchorEl, onClose]);
+
   const isFolder =
     nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+
+  // Build Create submenu items
+  type BuiltItem = { type: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
+  const builtCreateItems: Array<BuiltItem> = (() => {
+    if (props.createItems && props.createItems.length) return props.createItems;
+    try {
+      const g: any = (globalThis as any).__HDB_MENU_BUILDERS__;
+      const builder = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
+      if (typeof builder === 'function') {
+        const items = builder(treeId) as Array<{ key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } }>;
+        return (items || []).map((i) => ({ type: i.nodeType, label: i.label, icon: i.icon }));
+      }
+    } catch {}
+    // Fallback minimal entries
+    return [
+      { type: 'folder', label: 'Folder', icon: { muiIconName: 'Folder' } },
+      { type: 'note', label: 'Note', icon: { muiIconName: 'Extension' } },
+    ];
+  })();
+
+  // Minimal local resolver for common MUI icon names (avoid extra deps)
 
   return (
     <>
       {/*
 */}
       <Menu
-        anchorEl={anchorEl}
+        anchorEl={safeAnchorEl}
         open={open}
         onClose={handleMainMenuClose}
         disablePortal={false}
@@ -272,17 +305,15 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
           <ListItemText>Check Reference</ListItemText>
         </MenuItem>
 
-        {!isFolder && (
-          <>
-            <Divider />
-            <MenuItem onClick={handlePreviewClick} aria-label="Preview">
-              <ListItemIcon>
-                <PlayArrowIcon />
-              </ListItemIcon>
-              <ListItemText>Preview</ListItemText>
-            </MenuItem>
-          </>
-        )}
+        {!isFolder && [
+          <Divider key="divider-preview" />,
+          <MenuItem key="menuitem-preview" onClick={handlePreviewClick} aria-label="Preview">
+            <ListItemIcon>
+              <PlayArrowIcon />
+            </ListItemIcon>
+            <ListItemText>Preview</ListItemText>
+          </MenuItem>,
+        ]}
       </Menu>
 
       {/*
@@ -322,20 +353,15 @@ export function NodeContextMenu(props: NodeContextMenuProps) {
           },
         }}
       >
-
-        <MenuItem onClick={() => handleCreateClick('folder-plugin')} aria-label="Folder">
-          <ListItemIcon>
-            <CreateFolderIcon />
-          </ListItemIcon>
-          <ListItemText>Folder</ListItemText>
-        </MenuItem>
-
-        <MenuItem onClick={() => handleCreateClick('note')} aria-label="Note">
-          <ListItemIcon>
-            <NoteAddIcon />
-          </ListItemIcon>
-          <ListItemText>Note</ListItemText>
-        </MenuItem>
+        {builtCreateItems.map((ci) => {
+          const IconEl = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color) as React.ReactNode;
+          return (
+            <MenuItem key={ci.type} onClick={() => handleCreateClick(ci.type)} aria-label={ci.label}>
+              <ListItemIcon>{IconEl}</ListItemIcon>
+              <ListItemText>{ci.label}</ListItemText>
+            </MenuItem>
+          );
+        })}
       </Menu>
     </>
   );

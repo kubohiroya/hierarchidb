@@ -20,8 +20,7 @@
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/react": "19.0.8",
     "tsup": "^8.3.5",
@@ -41,6 +40,7 @@
     "external": [
       "@mui/icons-material",
       "@mui/material",
+      "@tanstack/react-virtual",
       "react"
     ]
   }

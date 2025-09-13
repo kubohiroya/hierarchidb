@@ -87,7 +87,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Stack spacing={3}>
         <BasicInfoFields
           value={{ name: data.name, description: data.description }}
-          onChange={(updates) => handleUpdate(updates)}
+          onChange={(updates: Partial<{ name: string; description: string }>) => handleUpdate(updates)}
           disabled={disabled}
           nameLabel={String(t('basicInfo.name.label', 'Spreadsheet Name'))}
           nameHelperText={String(t('basicInfo.name.helper', 'Enter a descriptive name for this spreadsheet'))}
@@ -106,7 +106,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </Typography>
           <CategorySelector
             value={data.category as unknown as string}
-            onChange={(value) => handleCategoryChange(value as unknown as SpreadsheetCategory)}
+            onChange={(value: string | undefined) => handleCategoryChange(value as unknown as SpreadsheetCategory)}
             options={categoryOptions.map(o => ({ value: o.value as unknown as string, label: o.label }))}
             placeholder={String(t('basicInfo.category.helper', 'Select a category that best describes this spreadsheet'))}
           />

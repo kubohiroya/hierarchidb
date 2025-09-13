@@ -1,27 +1,18 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Box } from '@mui/material';
-import {
-  Add as AddIcon,
-  CreateNewFolder as CreateFolderIcon,
-  InsertDriveFile as FileIcon,
-  Map as MapIcon,
-  NoteAdd as NoteAddIcon,
-  Palette as PaletteIcon,
-  Public as PublicIcon,
-} from '@mui/icons-material';
 import type { TreeTableColumn } from './TreeTable';
 import { RowContextMenu } from './TreeTable';
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter';
-import type { SpeedDialActionType } from '@hierarchidb/ui-treeconsole-speeddial';
 // import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { SpeedDialMenu } from '@hierarchidb/ui-treeconsole-speeddial';
 import type { TreeNodeData } from '../types/index';
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
+  /** Optional treeId for context-aware menus (e.g., 'r'|'t'|'p') */
+  readonly treeId?: string;
   readonly rootNodeId?: string;
   readonly data: readonly TreeNodeData[];
   readonly columns: readonly TreeTableColumn[];
@@ -101,6 +92,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     const expandedRowIds = new Set(props.expandedIds);
 
     return {
+      // Expose treeId so downstream components (TreeTableCore->NodeContextMenu)
+      // can build context-aware Create menus
+      treeId: props.treeId as any,
       data,
       rowSelection,
       expandedRowIds,
@@ -168,38 +162,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   );
 
   // SpeedDial actions
-  const speedDialActions: SpeedDialActionType[] = [
-    {
-      icon: <CreateFolderIcon />,
-      name: 'Create Folder',
-      onClick: () => props.onCreate(),
-    },
-    {
-      icon: <MapIcon />,
-      name: 'Create BaseMap',
-      onClick: () => props.onContextMenuAction('create:basemap', {} as TreeNodeData),
-    },
-    {
-      icon: <PaletteIcon />,
-      name: 'Create Styler',
-      onClick: () => props.onContextMenuAction('create:styler-plugin', {} as TreeNodeData),
-    },
-    {
-      icon: <PublicIcon />,
-      name: 'Create Shape',
-      onClick: () => props.onContextMenuAction('create:shapes', {} as TreeNodeData),
-    },
-    {
-      icon: <NoteAddIcon />,
-      name: 'Create Note',
-      onClick: () => props.onContextMenuAction('create:note', {} as TreeNodeData),
-    },
-    {
-      icon: <FileIcon />,
-      name: 'Create File',
-      onClick: () => props.onContextMenuAction('create:file', {} as TreeNodeData),
-    },
-  ];
+  // Built-in static SpeedDial removed; host app may provide DynamicSpeedDial instead.
 
   //const totalItems = props.data.length;
   //const selectedItems = props.selectedIds.length;
@@ -217,6 +180,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       <TreeConsoleBreadcrumb
         nodePath={[...props.breadcrumbItems]}
         onNodeClick={props.onBreadcrumbNavigate}
+        treeId={props.treeId as any}
         variant="default"
         onDropToNode={(targetId, draggedId) => props.onMoveNodes?.([draggedId], targetId)}
       />
@@ -256,6 +220,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         nodeType={(contextMenuState.node as TreeNodeData)?.nodeType || 'folder'}
         addMenuNodeTypes={['folder', 'basemap', 'shapes', 'styler']}
         parentElem={contextMenuState.anchorEl}
+        treeId={props.treeId}
         onClose={handleContextMenuClose}
         onOpen={() => handleContextMenuAction('open')}
         onOpenFolder={() => handleContextMenuAction('openFolder')}
@@ -272,25 +237,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         canDuplicate={true}
       />
 
-      {/* SpeedDial Menu (can be disabled when host provides DynamicSpeedDial) */}
-      {props.canCreate && (props.renderBuiltInSpeedDial ?? true) && (
-        <Box
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16,
-            zIndex: 9999,
-          }}
-          data-testid="speed-dial-container"
-        >
-          <SpeedDialMenu
-            actions={speedDialActions}
-            icon={<AddIcon />}
-            tooltipTitle="Create new item"
-            position={{ bottom: 0, right: 0 }}
-          />
-        </Box>
-      )}
+      {/* Built-in SpeedDial disabled */}
     </Box>
   );
 });

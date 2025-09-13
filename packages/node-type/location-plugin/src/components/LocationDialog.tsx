@@ -53,7 +53,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const handleCancel = async () => { await discard().catch(() => {}); notify.info('Location changes discarded'); onClose(); };
 
-  const updateWorkingCopy = (updates: Partial<LocationWorkingCopy>) => { setWorkingCopy(prev => ({ ...prev, ...updates } as LocationWorkingCopy)); };
+  const updateWorkingCopy = (updates: Partial<LocationWorkingCopy>) => { setWorkingCopy((prev: LocationWorkingCopy) => ({ ...prev, ...updates } as LocationWorkingCopy)); };
 
   // Fallback object for initial render before WC loads
   const wc: LocationWorkingCopy = workingCopy ?? {

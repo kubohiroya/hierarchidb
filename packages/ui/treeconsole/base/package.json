@@ -31,7 +31,6 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-treeconsole-footer": "workspace:*",
-    "@hierarchidb/ui-treeconsole-speeddial": "workspace:*",
     "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
     "@hierarchidb/ui-treeconsole-trashbin": "workspace:*",
     "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
@@ -49,7 +48,8 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1"
+    "@emotion/styled": "^11.14.1",
+    "@hierarchidb/ui-icon": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.2.4",
@@ -90,12 +90,15 @@
       "@dnd-kit/core",
       "@dnd-kit/sortable",
       "@dnd-kit/utilities",
+      "@emotion/react",
+      "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
       "@tanstack/react-table",
       "@tanstack/react-virtual",
       "react",
-      "react-dom"
+      "react-dom",
+      "@hierarchidb/ui-icon"
     ]
   }
 }

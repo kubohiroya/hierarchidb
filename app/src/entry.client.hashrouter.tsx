@@ -1,4 +1,6 @@
 import { startTransition, StrictMode, useEffect } from 'react';
+// Dev health overlay (dev only)
+if (import.meta.env.DEV) import('./dev-health-client');
 import { createRoot } from 'react-dom/client';
 import type { RouteObject } from 'react-router-dom';
 import { createHashRouter, RouterProvider } from 'react-router-dom';

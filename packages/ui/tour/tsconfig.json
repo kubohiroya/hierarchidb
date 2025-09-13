@@ -5,10 +5,10 @@
     "noEmit": true,
     "composite": true,
     "incremental": true,
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

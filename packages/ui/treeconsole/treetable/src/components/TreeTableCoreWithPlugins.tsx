@@ -4,6 +4,7 @@
    */
 
 import { TreeTableCore as TreeTableCoreOriginal } from './TreeTableCore';
+import type { ReactElement } from 'react';
 import { PluginProvider } from '../plugin/PluginProvider';
 import type { TreeTableCoreProps } from '../types';
 import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '../plugin/types';
@@ -36,7 +37,7 @@ export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
   * Provider
  * TreeTableCore
   */
-export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins) {
+export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins): ReactElement {
   const {
     plugins,
     pluginConfig,
@@ -66,7 +67,7 @@ export function TreeTableCoreWithPlugins(props: TreeTableCorePropsWithPlugins) {
 /**
   * TreeTableCore
    */
-function TreeTableCoreWithPluginContext(props: TreeTableCoreProps) {
+function TreeTableCoreWithPluginContext(props: TreeTableCoreProps): ReactElement {
   return <TreeTableCoreOriginal {...props} />;
 }
 
@@ -78,7 +79,7 @@ function TreeTableCoreWithPluginContext(props: TreeTableCoreProps) {
   * TreeTable
  * @deprecated TreeTableCoreWithPluginsinlineEditPlugin
   */
-export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins) {
+export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins
@@ -93,7 +94,7 @@ export function InlineEditableTreeTable(props: TreeTableCorePropsWithPlugins) {
   * TreeTable
  * @deprecated TreeTableCoreWithPluginskeyboardNavigationPlugin
   */
-export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins) {
+export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins
@@ -108,7 +109,7 @@ export function KeyboardNavigableTreeTable(props: TreeTableCorePropsWithPlugins)
   * TreeTable
  * @deprecated TreeTableCoreWithPluginsfullFeaturedPlugins
   */
-export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins) {
+export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins): ReactElement {
   const plugins = props.plugins || [];
   return (
     <TreeTableCoreWithPlugins

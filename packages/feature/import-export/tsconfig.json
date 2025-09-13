@@ -8,17 +8,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/common-type": [
-        "../../common/types/src"
-      ],
-      "@hierarchidb/common-api": [
-        "../../common/api/src"
-      ],
-      "@hierarchidb/util": [
-        "../../util/src/index.ts"
-      ],
       "~/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

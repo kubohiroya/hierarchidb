@@ -49,7 +49,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data }) => {
           <Grid item xs={12}>
             <BasicInfoFields
               value={{ name: formData.name, description: formData.description }}
-              onChange={(updates) =>
+              onChange={(updates: Partial<{ name: string; description: string }>) =>
                 Object.entries(updates).forEach(([k, v]) => handleChange(k, v))
               }
               nameLabel={'Project Name'}

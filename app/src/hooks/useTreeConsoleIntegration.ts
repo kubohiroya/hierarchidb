@@ -5,9 +5,9 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { showCommandError } from '~/shared/command-errors';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
@@ -392,8 +392,8 @@ export function useTreeConsoleIntegration({
       },
 
       handleExpandAll: () => {
-        const allIds = treeData.map((node) => node.id);
-        setExpandedIds(allIds);
+        const allIds = treeData.map((node) => node.id as NodeId);
+        setExpandedIds(allIds as unknown as NodeId[]);
       },
 
       handleCollapseAll: () => {
@@ -446,44 +446,37 @@ export function useTreeConsoleIntegration({
         const actionStr = action as ContextAction;
         console.log('Context menu action:', actionStr, 'for node:', node);
 
-        // Handle creation actions from SpeedDial
+        // Handle creation actions from SpeedDial / context menus
         if (actionStr.startsWith('create:')) {
           const nodeType = actionStr.replace('create:', '') as string as NodeType;
           console.log('Creating node of type:', nodeType);
 
           try {
-            // Use the worker API to create a new node
-            if (client && pageNodeId) {
-              // Generate a user-friendly name based on the node type
+            if (client && pageNodeId && treeId) {
+              // 1) Create a draft working copy holder under the current page node (WorkingCopy pattern)
+              const workingCopyAPI = await (client as any).getWorkingCopyAPI();
               const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
-
-              const mutationAPI = await client.getMutationAPI();
-              const result = await mutationAPI.createNode({
+              // Use dedicated WorkingCopy root holder per design: parentId in holderName only;
+              // holder itself is created under `${treeId}:workingCopy` by the service.
+              const draft = await workingCopyAPI.createDraftWorkingCopy(
                 nodeType,
-                treeId: (treeId as TreeId) || ('default-tree' as TreeId),
-                parentId: pageNodeId as NodeId,
-                name: `New ${displayName}`,
-                description: '',
-              });
+                pageNodeId as NodeId,
+                { name: `New ${displayName}` },
+              );
+              const wcId: string = (draft?.id || draft?.wcNodeId || draft) as string;
 
-              if (result.success) {
-                console.log('Node created successfully:', result.nodeId);
-                // Refresh the tree data
-                if (client && pageNodeId) {
-                  try {
-                    const queryAPI = await client.getQueryAPI();
-                    const children = await queryAPI.listChildren(pageNodeId as NodeId);
-                    const treeNodeData = children.map(convertTreeNodeToTreeNodeData);
-                    setTreeData(treeNodeData);
-                  } catch (refreshError) {
-                    console.error('Failed to refresh after creation:', refreshError);
-                  }
-                }
-              } else {
-                console.error('Failed to create node:', result.error);
-                // Temporary user feedback until NotificationSystem is mounted
-                showCommandError('INVALID_OPERATION', result.error);
+              if (!wcId) {
+                showCommandError('INVALID_OPERATION', 'Failed to create draft working copy');
+                return;
               }
+
+              // 2) Route to plugin dialog in create mode
+              if (pushPath) {
+                const nodeTypePath = String(nodeType);
+                pushPath(`/t/${treeId}/${pageNodeId}/${wcId}/${nodeTypePath}/create`);
+              }
+            } else {
+              showCommandError('INVALID_OPERATION', 'Worker client or page context unavailable');
             }
           } catch (error) {
             console.error('Error creating node:', error);
@@ -783,6 +776,72 @@ export function useTreeConsoleIntegration({
 
     loadTreeData();
   }, [client, pageNodeId, locationSearch]);
+
+  // Live subscription: when pageNodeId (root) changes, unsubscribe from old and subscribe to new
+  const activeSubRef = useRef<SubscriptionId | null>(null);
+  const refreshTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let disposed = false;
+    const setup = async () => {
+      if (!client || !pageNodeId) return;
+      try {
+        const subscriptionAPI = await client.getSubscriptionAPI();
+        // Always unsubscribe previous subscription for prior page
+        if (activeSubRef.current) {
+          try { await subscriptionAPI.unsubscribe(activeSubRef.current); } catch {}
+          activeSubRef.current = null;
+        }
+
+        const currentRoot = pageNodeId as NodeId;
+        // Debounced refresh to coalesce bursts
+        const requestRefresh = () => {
+          if (disposed) return;
+          if (refreshTimerRef.current !== null) return;
+          refreshTimerRef.current = window.setTimeout(() => {
+            refreshTimerRef.current = null;
+            void loadChildrenOf(currentRoot);
+          }, 60);
+        };
+
+        // Subscribe to the entire subtree under current page root
+        const subId = await subscriptionAPI.subscribeSubtree(
+          currentRoot,
+          () => {
+            requestRefresh();
+          },
+        );
+        if (disposed) {
+          try { await subscriptionAPI.unsubscribe(subId); } catch {}
+          return;
+        }
+        activeSubRef.current = subId;
+      } catch (err) {
+        console.warn('[useTreeConsoleIntegration] Subscription setup failed:', err);
+      }
+    };
+
+    void setup();
+    return () => {
+      disposed = true;
+      // Clear pending refresh
+      if (refreshTimerRef.current !== null) {
+        try { window.clearTimeout(refreshTimerRef.current); } catch {}
+        refreshTimerRef.current = null;
+      }
+      // Unsubscribe on cleanup
+      const doUnsub = async () => {
+        try {
+          if (client && activeSubRef.current) {
+            const subscriptionAPI = await client.getSubscriptionAPI();
+            await subscriptionAPI.unsubscribe(activeSubRef.current);
+          }
+        } catch {}
+        activeSubRef.current = null;
+      };
+      void doUnsub();
+    };
+  }, [client, pageNodeId]);
 
   // Poll CommandProcessor for canUndo/canRedo and reflect into state
   useEffect(() => {

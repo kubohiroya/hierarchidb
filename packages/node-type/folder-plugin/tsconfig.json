@@ -11,7 +11,9 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": [
+        "./src/*"
+      ]
     },
     "lib": [
       "ES2020",
@@ -23,7 +25,10 @@
       "node"
     ]
   },
-  "checkDeps": { "allowSkipLibCheck": true, "reason": "UI transitive types (MUI/Emotion) — tracked to remove." },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "UI transitive types (MUI/Emotion) — tracked to remove."
+  },
   "include": [
     "src/types.ts",
     "src/types/**/*.d.ts"

@@ -71,7 +71,7 @@ describeIf('BFF Service Integration Tests', () => {
     describe('Google OAuth2', () => {
       it('should initiate Google OAuth2 flow', async () => {
         const response = await fetch(
-          `${config.bffUrl}/auth/google/authorize?` +
+          `${config.bffUrl}/auth/authorize/google?` +
           'scope=openid%20profile%20email&' +
           'state=test-state',
           {
@@ -94,7 +94,7 @@ describeIf('BFF Service Integration Tests', () => {
       it('should support PKCE parameters', async () => {
         const codeChallenge = 'test-challenge-123';
         const response = await fetch(
-          `${config.bffUrl}/auth/google/authorize?` +
+          `${config.bffUrl}/auth/authorize/google?` +
           `code_challenge=${codeChallenge}&` +
           'code_challenge_method=S256',
           {
@@ -111,7 +111,7 @@ describeIf('BFF Service Integration Tests', () => {
 
     describe('GitHub OAuth2', () => {
       it('should initiate GitHub OAuth2 flow', async () => {
-        const response = await fetch(`${config.bffUrl}/auth/github/authorize?state=test-state`, {
+        const response = await fetch(`${config.bffUrl}/auth/authorize/github?state=test-state`, {
           redirect: 'manual',
         });
 
@@ -131,7 +131,7 @@ describeIf('BFF Service Integration Tests', () => {
 
     describe('Microsoft OAuth2', () => {
       it('should initiate Microsoft OAuth2 flow', async () => {
-        const response = await fetch(`${config.bffUrl}/auth/microsoft/authorize?state=test-state`, {
+        const response = await fetch(`${config.bffUrl}/auth/authorize/microsoft?state=test-state`, {
           redirect: 'manual',
         });
 
@@ -151,7 +151,7 @@ describeIf('BFF Service Integration Tests', () => {
       it('should support PKCE for Microsoft', async () => {
         const codeChallenge = 'test-challenge-456';
         const response = await fetch(
-          `${config.bffUrl}/auth/microsoft/authorize?` +
+          `${config.bffUrl}/auth/authorize/microsoft?` +
           `code_challenge=${codeChallenge}&` +
           'code_challenge_method=S256',
           {

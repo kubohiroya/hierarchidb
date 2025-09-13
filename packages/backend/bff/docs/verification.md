@@ -49,7 +49,7 @@ curl https://hierarchidb-bff.kubohiroya.workers.dev/.well-known/openid-configura
 
 ```bash
 # リダイレクトが正しく設定されているか確認
-curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/google/authorize
+curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/authorize/google
 
 # 期待される応答:
 HTTP/2 302
@@ -60,7 +60,7 @@ Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
 
 ```bash
 # リダイレクトが正しく設定されているか確認
-curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/authorize
+curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/authorize/github
 
 # 期待される応答:
 HTTP/2 302
@@ -294,7 +294,7 @@ fi
 
 # 3. OAuth Endpoints
 echo -n "3. Google OAuth Endpoint... "
-GOOGLE=$(curl -s -o /dev/null -w "%{http_code}" ${BFF_URL}/auth/google/authorize)
+GOOGLE=$(curl -s -o /dev/null -w "%{http_code}" ${BFF_URL}/auth/authorize/google)
 if [ "$GOOGLE" = "302" ]; then
     echo -e "${GREEN}✓ PASS${NC}"
 else
@@ -302,7 +302,7 @@ else
 fi
 
 echo -n "4. GitHub OAuth Endpoint... "
-GITHUB=$(curl -s -o /dev/null -w "%{http_code}" ${BFF_URL}/auth/github/authorize)
+GITHUB=$(curl -s -o /dev/null -w "%{http_code}" ${BFF_URL}/auth/authorize/github)
 if [ "$GITHUB" = "302" ]; then
     echo -e "${GREEN}✓ PASS${NC}"
 else

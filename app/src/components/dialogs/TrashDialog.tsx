@@ -210,21 +210,21 @@ export default function TrashDialog() {
       label: 'Name',
       sortable: true,
       width: 300,
-      render: (_value, node) => node.name,
+      render: (_value: unknown, node: TreeNodeData) => node.name,
     },
     {
       id: 'nodeType',
       label: 'Type',
       sortable: true,
       width: 120,
-      render: (_value, node) => node.nodeType,
+      render: (_value: unknown, node: TreeNodeData) => node.nodeType,
     },
     {
       id: 'deletedAt',
       label: 'Deleted',
       sortable: true,
       width: 160,
-      render: (_value, node) => {
+      render: (_value: unknown, node: TreeNodeData) => {
         return node.updatedAt ? new Date(node.updatedAt).toLocaleDateString() : '';
       },
     },

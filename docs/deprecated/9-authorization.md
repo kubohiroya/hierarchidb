@@ -3,7 +3,7 @@
 本章では、hierarchidb の SPA（Single Page Application）における認証の実装方針と、その中心となる `@hierarchidb/ui-auth` の `useBFFAuth` フックを用いた統合的な認証処理について、現状のコードベースと推測できる設計方針をもとに詳述する。
 
 - 想定環境: フロントエンドは React + React Router v7 構成、UIはMUI。BFF（Backends For Frontends）は Cloudflare Workers 上にデプロイ。
-- 関連実装: `packages/ui-auth/src/hooks/useBFFAuth.ts`、`packages/app/app/routes/auth.callback.tsx`、`packages/app/app/routes/silent-renew.tsx`
+- 関連実装: `packages/ui-auth/src/hooks/useBFFAuth.ts`、`packages/app/app/routes/auth.callback.tsx`、`packages/app/app/routes/auth.silent-renew.tsx`
 - 関連章: 5章（ベースモジュール）bff/cors-proxy、7章（AOPアーキテクチャ）、8章（プラグイン・ルーティング）
 
 ## 9.1 概要
@@ -50,7 +50,7 @@ BFF は、OAuth2/OIDC プロバイダーとのやり取り（認証開始、コ�
   - `AuthCallbackHandler.handleCallback()` を呼び、`sessionStorage('auth.returnUrl')` に基づいて元画面へ `navigate()`
 - サイレントリニューアル
   - ルート: `/silent-renew`
-  - 実装: `packages/app/app/routes/silent-renew.tsx`
+  - 実装: `packages/app/app/routes/auth.silent-renew.tsx`
   - IFrame でロードされ、`resumeAfterSignIn()` を呼び出し、親ウィンドウへ `postMessage` で成功/失敗を通知
 
 ホーム・情報ページ等のベース画面については 10章を参照。

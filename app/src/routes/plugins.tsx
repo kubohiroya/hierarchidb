@@ -636,7 +636,7 @@ export default function PluginsPage() {
     try {
       setLoading(true);
       //  Phase 2: Use UI registry only; worker analyzer is optional and
-      const plugins: DisplayPlugin[] = uiPlugins.map((p, idx) => ({
+      const plugins: DisplayPlugin[] = uiPlugins.map((p: any, idx: number) => ({
         nodeType: p.nodeType as NodeType,
         displayName: (typeof (p as unknown as { displayName?: string }).displayName === 'string'
           ? (p as unknown as { displayName: string }).displayName
@@ -757,7 +757,7 @@ export default function PluginsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {workerPlugins.map((plugin, index) => (
+                {workerPlugins.map((plugin: any, index: number) => (
                   <EnhancedPluginRow
                     key={plugin.nodeType}
                     plugin={plugin}
@@ -823,7 +823,7 @@ export default function PluginsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {uiPlugins.map((plugin, index) => (
+                {uiPlugins.map((plugin: any, index: number) => (
                   <TableRow key={plugin.nodeType}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>

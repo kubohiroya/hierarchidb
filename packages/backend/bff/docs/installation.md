@@ -248,10 +248,10 @@ wrangler deploy
 2. **Test OAuth endpoints**
    ```bash
    # Should redirect to Google OAuth
-   curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/google/authorize
+   curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/authorize/google
    
    # Should redirect to GitHub OAuth
-   curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/authorize
+   curl -I https://hierarchidb-bff.kubohiroya.workers.dev/auth/authorize/github
    ```
 
 3. **Monitor logs**

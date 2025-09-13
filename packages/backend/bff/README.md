@@ -165,9 +165,7 @@ GET /
 
 Initiate OAuth2 flow:
 ```
-GET /auth/google/authorize
-GET /auth/github/authorize
-GET /auth/microsoft/authorize
+GET /auth/authorize/:provider (google|github|microsoft)
 ```
 
 Query parameters (optional):
@@ -268,7 +266,7 @@ GET /.well-known/openid_configuration
 
 ```javascript
 // Initiate OAuth2 flow
-window.location.href = 'https://your-bff-worker.workers.dev/auth/google/authorize';
+window.location.href = 'https://your-bff-worker.workers.dev/auth/authorize/google';
 
 // Handle callback (in your callback page)
 const urlParams = new URLSearchParams(window.location.search);
@@ -322,7 +320,7 @@ async function generatePKCE() {
 const { codeVerifier, codeChallenge } = await generatePKCE();
 sessionStorage.setItem('code_verifier', codeVerifier);
 
-const authUrl = new URL('https://your-bff-worker.workers.dev/auth/google/authorize');
+const authUrl = new URL('https://your-bff-worker.workers.dev/auth/authorize/google');
 authUrl.searchParams.set('code_challenge', codeChallenge);
 authUrl.searchParams.set('code_challenge_method', 'S256');
 window.location.href = authUrl.toString();

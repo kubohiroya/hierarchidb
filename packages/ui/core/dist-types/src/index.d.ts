@@ -32,4 +32,5 @@ export { NotificationSystem, notify } from './components/NotificationSystem/Noti
 export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports';
 export { useWorkingCopy } from './hooks/useWorkingCopy';
 export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy';
+export { rainbowColors } from './types/RainbowColors';
 //# sourceMappingURL=index.d.ts.map

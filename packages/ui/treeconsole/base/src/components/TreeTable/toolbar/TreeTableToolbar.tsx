@@ -57,7 +57,7 @@ export interface TreeTableToolbarProps {
   readonly availableFilters: readonly string[];
 }
 
-export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableToolbarProps) {
+export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableToolbarProps): React.JSX.Element {
   const hasSelection = props.selectedCount > 0;
 
   return (
@@ -248,4 +248,4 @@ export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableT
       </Box>
     </Toolbar>
   );
-});
+}) as (props: TreeTableToolbarProps) => React.JSX.Element;

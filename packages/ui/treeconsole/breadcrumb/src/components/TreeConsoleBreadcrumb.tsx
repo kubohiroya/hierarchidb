@@ -3,7 +3,7 @@
   * eria-cartographTreeConsoleBreadcrumbUI
    */
 
-import { type MouseEvent, useCallback, useState } from 'react';
+import { type MouseEvent, useCallback, useState, type ReactElement } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -21,6 +21,7 @@ import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { MoreVert as MoreVertIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types';
+import { rainbowColors } from '@hierarchidb/ui-core';
 import { NodeContextMenu } from './NodeContextMenu';
 import { NodeTypeIcon } from './NodeTypeIcon';
 
@@ -119,7 +120,7 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   * TreeConsoleBreadcrumb
  * TreeConsoleBreadcrumb
   */
-export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
+export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
   const {
     nodePath = [],
     currentNodeId: _currentNodeId,
@@ -238,6 +239,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
               const isLast = index === pathToUse.length - 1;
               const nodeId = node.id || node.id || '';
               const nodeName = node.name || 'Unknown';
+              const depth = Math.max(0, index + _depthOffset);
+              const iconColor = rainbowColors[depth % rainbowColors.length];
 
               if (isLast) {
                 return (
@@ -296,7 +299,15 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                     }}
                     onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
-                    <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
+                    {/* Icon click opens context menu (no navigation) */}
+                    <IconComponent
+                      nodeType={node.nodeType || node.type || 'folder-plugin'}
+                      size="small"
+                      color="inherit"
+                      htmlColor={iconColor}
+                      clickable
+                      onClick={(e: any) => handleContextMenuOpen(e, node)}
+                    />
                     {nodeName}
                   </Typography>
                 );
@@ -311,11 +322,21 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                     gap: 0.5,
                   }}
                 >
+                  {/* Icon click opens context menu (no navigation);
+                      split the icon from the link to avoid nesting a button inside an anchor. */}
+                  <IconComponent
+                    nodeType={node.nodeType || node.type || 'folder-plugin'}
+                    size="small"
+                    color="inherit"
+                    htmlColor={iconColor}
+                    clickable
+                    onClick={(e: any) => handleContextMenuOpen(e, node)}
+                  />
                   <Link
                     color="inherit"
                     onClick={() => handleNodeClick(nodeId, node)}
                     sx={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
                       gap: 0.5,
                       outline:
@@ -364,7 +385,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
                     }}
                     onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
-                    <IconComponent nodeType={node.nodeType || node.type || 'folder-plugin'} size="small" />
                     {nodeName}
                   </Link>
                   <IconButton
@@ -396,6 +416,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps) {
         nodeId={contextMenuNode?.id || contextMenuNode?.id || ''}
         nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder-plugin'}
         nodeName={contextMenuNode?.name}
+        treeId={(props as any)?.treeId}
         canCreate={true}
         canEdit={true}
         canRemove={true}

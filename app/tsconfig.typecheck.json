@@ -9,12 +9,8 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "src/*"
-      ],
-      "@hierarchidb/ui-dialog": ["@hierarchidb/ui-dialog"]
-    },
+    // Inherit full workspace path mappings from app/tsconfig.json.
+    // Do not override `paths` here to avoid clobbering workspace aliases.
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },
   "include": [

@@ -6,7 +6,7 @@
   - `packages/app/app/routes/_index.tsx`（ホーム）
   - `packages/app/app/routes/info.tsx`（情報画面）
   - `packages/app/app/routes/providers.tsx`（テーマ等のプロバイダ）
-  - 認証関連: 9章参照（`auth.callback.tsx`, `silent-renew.tsx`）
+  - 認証関連: 9章参照（`auth.callback.tsx`, `auth.silent-renew.tsx`）
 - 関連章: 5章（UIモジュール構成）, 8章（プラグイン・ルーティング）
 
 ## 10.1 ルーティングの基本構造

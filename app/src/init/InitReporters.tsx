@@ -47,7 +47,7 @@ export const I18nReadyReporter: React.FC = () => {
       }, 50);
       return () => clearInterval(t);
     }
-  }, [i18n?.isInitialized]);
+  }, [i18n?.isInitialized, markStepDone, setStepProgress]);
   return null;
 };
 
@@ -62,7 +62,7 @@ export const AuthReadyReporter: React.FC = () => {
     } else {
       setStepProgress('Auth', 30, 'Auth loading');
     }
-  }, [isLoading]);
+  }, [isLoading, markStepDone, setStepProgress]);
   return null;
 };
 
@@ -71,38 +71,54 @@ export const WorkerProgressReporter: React.FC = () => {
   const { initProgress, isInitialized, initMessage } = useWorker();
   // Reflect Provider progress
   useEffect(() => {
-    try { console.log('[HDB-BOOT] Reporter Worker state progress=%s initialized=%s msg=%s', initProgress, isInitialized, initMessage || ''); } catch {}
+    try { console.log('[HDB-BOOT] Reporter Worker state progress=%s initialized=%s msg=%s', initProgress, isInitialized, initMessage || ''); } catch {
+      throw new Error('Failed to log');
+    }
     setStepProgress('Worker', initProgress || 0, initMessage || 'Worker initializing');
     if (isInitialized) markStepDone('Worker', 'Worker ready');
-  }, [initProgress, isInitialized, initMessage]);
+  }, [initProgress, isInitialized, initMessage, setStepProgress, markStepDone]);
 
   // Fallbacks: event and polling
   useEffect(() => {
     const onEvt = () => {
-      try { console.log('[HDB-BOOT] Reporter Worker event INIT_COMPLETE'); } catch {}
+      try { console.log('[HDB-BOOT] Reporter Worker event INIT_COMPLETE'); } catch {
+        throw new Error('Failed to log');
+      }
       markStepDone('Worker', 'Worker ready');
     };
-    try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {}
+    try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {
+      throw new Error('Failed to log');
+    }
     // Immediate check on mount
     try {
       if ((window as any).__HDB_INIT_COMPLETE__) {
         console.log('[HDB-BOOT] Reporter Worker global flag detected');
         markStepDone('Worker', 'Worker ready');
       }
-    } catch {}
+    } catch {
+      throw new Error('Failed to log');
+    }
     const t = window.setInterval(() => {
       try {
         // Late import to avoid circular
         import('../WorkerAPIClient').then(({ WorkerAPIClient }) => {
           if (WorkerAPIClient.isReady()) {
-            try { console.log('[HDB-BOOT] Reporter Worker poll isReady=true'); } catch {}
+            try { console.log('[HDB-BOOT] Reporter Worker poll isReady=true'); } catch {
+              throw new Error('Failed to log');
+            }
             markStepDone('Worker', 'Worker ready');
             window.clearInterval(t);
           }
         }).catch(() => {});
-      } catch {}
+      } catch {
+        throw new Error('Failed to log');
+      }
     }, 200);
-    return () => { try { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); } catch {} try { window.clearInterval(t); } catch {} };
+    return () => { try { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); } catch {
+      throw new Error('Failed to log');
+    } try { window.clearInterval(t); } catch {
+      throw new Error('Failed to log');
+    } };
   }, [markStepDone]);
   return null;
 };

@@ -25,7 +25,7 @@ export interface TreeTableFooterProps {
   readonly onToggleDetails?: () => void;
 }
 
-export const TreeTableFooter = memo(function TreeTableFooter(props: TreeTableFooterProps) {
+export const TreeTableFooter = memo(function TreeTableFooter(props: TreeTableFooterProps): React.JSX.Element {
   const {
     totalItems,
     selectedItems,
@@ -219,4 +219,4 @@ export const TreeTableFooter = memo(function TreeTableFooter(props: TreeTableFoo
       )}
     </Box>
   );
-});
+}) as (props: TreeTableFooterProps) => React.JSX.Element;

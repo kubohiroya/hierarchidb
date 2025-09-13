@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/emit-ambient.mjs",
     "build:tsc": "tsc && tsc-alias",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",

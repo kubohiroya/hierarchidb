@@ -4,16 +4,25 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "jsx": "react-jsx",
+    "types": [
+      "react"
+    ],
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
     "lib": [
       "ES2022",
       "DOM"
     ],
     "composite": true,
     "incremental": true,
-    "noEmit": false
+    "noEmit": false,
+    "baseUrl": "."
   },
   "include": [
-    "src/**/*"
+    "src"
   ],
   "exclude": [
     "node_modules",

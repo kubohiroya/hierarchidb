@@ -8,8 +8,12 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "ui": ["dist/ui/index.d.ts"],
-      "*": ["dist/index.d.ts"]
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "exports": {
@@ -88,7 +92,11 @@
     "plugin": {
       "nodeType": "basemap",
       "name": "BaseMap Plugin",
-      "icon": { "mui": "Public", "emoji": "🌍", "color": "#b0b3d9" },
+      "icon": {
+        "mui": "Public",
+        "emoji": "🌍",
+        "color": "#b0b3d9"
+      },
       "priority": 900,
       "category": "geographic",
       "extends": "folder",
@@ -131,6 +139,7 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
+      "dexie",
       "react"
     ]
   }

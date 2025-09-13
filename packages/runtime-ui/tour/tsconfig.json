@@ -20,10 +20,10 @@
     "strict": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

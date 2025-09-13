@@ -54,14 +54,17 @@
     "plugin": {
       "nodeType": "spreadsheet",
       "name": "Spreadsheet Plugin",
-      "icon": { "mui": "Assesment", "emoji": "📈", "color": "#dcbc50" },
+      "icon": {
+        "mui": "Assessment",
+        "emoji": "📈",
+        "color": "#dcbc50"
+      },
       "priority": 600,
       "category": "data",
       "extends": "folder",
       "dependencies": [
         "folder"
       ],
-      
       "capabilities": {
         "canHaveChildren": false,
         "canBeRoot": false,
@@ -95,10 +98,14 @@
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1"
   },
-  
   "tsup": {
     "external": [
-      "react"
+      "@mui/icons-material",
+      "@mui/material",
+      "dexie",
+      "i18next",
+      "react",
+      "react-i18next"
     ]
   }
 }

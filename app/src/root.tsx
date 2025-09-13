@@ -1,4 +1,5 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router-dom';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
+import {useRouteError} from 'react-router';
 import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { StrictMode } from 'react';
@@ -15,10 +16,11 @@ import { APP_VERSION, BUILD_TIME } from './version';
 // Bridge: provide app's Worker client hook to shape-plugin UI hooks
 import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
-import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
+import { BootProgressProvider } from './contexts/BootProgressProvider';
 import { AppThemeProvider } from './components/AppThemeProvider';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
+import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 
 // Log version and build time at startup (local time)
 try {
@@ -32,12 +34,14 @@ try {
   // eslint-disable-next-line no-console
   console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 } catch {
+  throw new Error('Failed to log app version/build time');
 }
 
 // Register the app-provided hook once at module load
 try {
   registerWorkerClientHook(useWorkerAPIClient);
 } catch {
+  throw new Error('Failed to register worker client hook');
 }
 
 declare global {
@@ -67,15 +71,28 @@ if (typeof window !== 'undefined') {
   try {
     import('./plugins/menu-builders')
       .then(async (mod) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // @eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__HDB_MENU_BUILDERS__ = mod;
         // Warm icon chunks for both contexts
-        try { await (mod as any).prefetchIconsForAllContexts?.(); } catch {}
+        try { await (mod as any).prefetchIconsForAllContexts?.(); } catch {
+          throw new Error('Failed to prefetch icons for all contexts');
+        }
       })
       .catch((err) => {
         console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
       });
-  } catch {}
+  } catch {
+    throw new Error('Failed to preload menu builders');
+  }
+
+  // Inject app-generated static MUI icon map for ui-icon to use globally
+  import('virtual:mui-icon-map')
+    .then((mod: any) => {
+      try { setGlobalMuiIconMap(mod.default || mod.iconMap || {}); } catch {}
+    })
+    .catch(() => {
+      // ignore; ui-icon will fallback to its internal static map/dynamic import
+    });
 }
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
@@ -139,12 +156,7 @@ export function HydrateFallback() {
 }
 
 export function ErrorBoundary() {
-  let error: unknown;
-  try {
-    error = useRouteError();
-  } catch (e) {
-    error = e;
-  }
+  let error: unknown = useRouteError();
 
   const isDevelopment = import.meta.env.MODE === 'development';
 
@@ -255,7 +267,9 @@ export function ErrorBoundary() {
 }
 
 function AppContent() {
-  try { bootLog('AppContent mount'); } catch {}
+  try { bootLog('AppContent mount'); } catch {
+    throw new Error('Failed to log boot step');
+  }
   return (
     <StrictMode>
       <Outlet />
@@ -268,8 +282,6 @@ function AppContent() {
 }
 
 export default function App() {
-  // Create theme inside component with useMemo to avoid hydration mismatch
-  const theme = useMemo(() => createAppTheme('light'), []);
 
   return (
     <BootProgressProvider>

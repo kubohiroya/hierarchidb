@@ -88,8 +88,25 @@ echo "    ROUTE_RUNTIME_WORKER=${ROUTE_RUNTIME_WORKER:-false}"
 echo ""
 
 # ================================================================
-# コマンド実行
+# 事前依存チェック（dev 起動前）
 # ================================================================
+
+if [ "$COMMAND" = "dev" ]; then
+  echo "🔎 Running dependency guards (pre-dev) ..."
+  # 追加ガード（速い）: workspace: プロトコル/未解決依存/lockfile差分 など
+  pnpm -w run check:deps:extra || {
+    echo "❌ Dependency guard failed. Please fix the above issues.";
+    exit 1;
+  }
+  # dep-fence 本体（必要なら環境変数で有効化）
+  if [ "${HDB_DEV_RUN_STRICT_DEPFENCE:-0}" = "1" ]; then
+    pnpm -w run check:deps || {
+      echo "❌ dep-fence check failed in strict mode.";
+      exit 1;
+    }
+  fi
+  echo "✅ Dependency guards passed"
+fi
 
 # 開発サーバ起動前に、必要なローカル Vite ツールのビルドを最低限チェック
 # app の vite.config.ts が参照する @hierarchidb/tools-vite-plugin-package-reader は

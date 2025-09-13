@@ -13,19 +13,22 @@
     ],
     "module": "ESNext",
     "moduleResolution": "node",
-    "baseUrl": ".",
+    "types": [
+      "react"
+    ],
     "paths": {
       "~/*": [
         "./src/*"
       ]
     },
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "baseUrl": "."
   },
   "include": [
-    "./src/**/*"
+    "src"
   ],
   "exclude": [
-    "./node_modules",
-    "./dist"
+    "node_modules",
+    "dist"
   ]
 }

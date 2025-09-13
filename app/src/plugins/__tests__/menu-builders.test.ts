@@ -1,21 +1,19 @@
+import { TreeId } from '@hierarchidb/common-type';
 import { describe, it, expect } from 'vitest';
-import {
-  buildMenuItemsForContext,
-  buildMenuItemsForTreeId,
-  normalizeContextFromTreeId,
-  type TreeContext,
-} from '~/plugins/menu-builders';
+import { buildMenuItemsForContext, buildMenuItemsForTreeId } from '~/plugins/menu-builders';
 
 describe('menu-builders', () => {
-  it('normalizes treeId to context', () => {
-    expect(normalizeContextFromTreeId('r')).toBe('resources');
-    expect(normalizeContextFromTreeId('t')).toBe('projects');
-    expect(normalizeContextFromTreeId('p')).toBe('projects');
-    expect(normalizeContextFromTreeId(undefined)).toBe('resources');
+  it('maps treeId to context implicitly in buildMenuItemsForTreeId', () => {
+    const r = buildMenuItemsForTreeId('r' as TreeId);
+    const t = buildMenuItemsForTreeId('t' as TreeId);
+    const p = buildMenuItemsForTreeId('p' as TreeId);
+    expect(r.length).toBeGreaterThan(0);
+    expect(t.length).toBeGreaterThan(0);
+    expect(p.map((i) => i.nodeType)).toEqual(t.map((i) => i.nodeType));
   });
 
   it('builds resources (r) menu in specified order and groups', () => {
-    const items = buildMenuItemsForTreeId('r');
+    const items = buildMenuItemsForTreeId('r' as TreeId);
     const nodeTypes = items.map((i) => i.nodeType);
     expect(nodeTypes).toEqual([
       'folder',
@@ -42,7 +40,7 @@ describe('menu-builders', () => {
   });
 
   it('builds projects (t) menu in specified order and groups', () => {
-    const items = buildMenuItemsForTreeId('t');
+    const items = buildMenuItemsForTreeId('t' as TreeId);
     const nodeTypes = items.map((i) => i.nodeType);
     expect(nodeTypes).toEqual(['folder', 'project']);
     const groups = items.map((i) => i.group);
@@ -51,12 +49,11 @@ describe('menu-builders', () => {
 
   it('builds by context explicitly and matches treeId mapping', () => {
     const rByContext = buildMenuItemsForContext('resources');
-    const rByTreeId = buildMenuItemsForTreeId('r');
+    const rByTreeId = buildMenuItemsForTreeId('r' as TreeId);
     expect(rByContext.map((i) => i.nodeType)).toEqual(rByTreeId.map((i) => i.nodeType));
 
     const pByContext = buildMenuItemsForContext('projects');
-    const tByTreeId = buildMenuItemsForTreeId('t');
+    const tByTreeId = buildMenuItemsForTreeId('t' as TreeId);
     expect(pByContext.map((i) => i.nodeType)).toEqual(tByTreeId.map((i) => i.nodeType));
   });
 });
-

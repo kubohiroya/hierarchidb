@@ -33,10 +33,10 @@
   },
   "tsup": {
     "external": [
-      "react",
-      "@mui/material",
+      "@emotion/react",
       "@mui/icons-material",
-      "@emotion/react"
+      "@mui/material",
+      "react"
     ]
   }
 }

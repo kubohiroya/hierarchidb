@@ -7,6 +7,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { faviconPlugin } from './vite-plugin-favicon';
 import { comlink } from 'vite-plugin-comlink';
+import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
+import { muiIconsVirtualModule } from './vite-plugin-mui-icons';
 import {
   vitePluginPackageReader as toolsVitePluginPackageReader,
 } from '@hierarchidb/tools-vite-plugin-package-reader';
@@ -58,7 +60,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const DEV_SRC_MAP: Record<string, string> = {
     '@hierarchidb/ui-treeconsole-toolbar': '../packages/ui/treeconsole/toolbar/src/index.ts',
     '@hierarchidb/ui-treeconsole-base': '../packages/ui/treeconsole/base/src/index.ts',
-    '@hierarchidb/ui-treeconsole-speeddial': '../packages/ui/treeconsole/speeddial/src/index.ts',
     '@hierarchidb/ui-treeconsole-breadcrumb': '../packages/ui/treeconsole/breadcrumb/src/index.ts',
     '@hierarchidb/ui-icon': '../packages/ui/icon/src/index.ts',
     // 追加したいパッケージがあればここにマッピングを足してください
@@ -72,11 +73,13 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
+    muiIconsVirtualModule(),
+    devHealthPlugin(),
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
-        //  spreadsheet-plugin
-        pattern: /@hierarchidb\/(basemap-plugin|project-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin)$/,
+        // Include all node-type plugins used in menus (add spreadsheet/resolver)
+        pattern: /@hierarchidb\/(basemap-plugin|project-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin|resolver-plugin)$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
       }),
@@ -84,7 +87,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       hooks: {
         //  transform
         beforeTransform: async (packages) => {
-          packages.delete('@hierarchidb/spreadsheet-plugin');
+          // Do not exclude spreadsheet-plugin: allow menu/icon metadata (emoji) to surface in SpeedDial
           return packages;
         },
       },

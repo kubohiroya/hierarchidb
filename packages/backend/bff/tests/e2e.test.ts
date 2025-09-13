@@ -45,7 +45,7 @@ describe.skipIf(skipE2E)('BFF E2E Tests (Deployed)', () => {
 
   describe('OAuth2 Endpoints', () => {
     it('should have Google OAuth2 configured', async () => {
-      const response = await fetch(`${DEPLOYED_BFF_URL}/auth/google/authorize`, {
+      const response = await fetch(`${DEPLOYED_BFF_URL}/auth/authorize/google`, {
         redirect: 'manual',
       });
 
@@ -56,7 +56,7 @@ describe.skipIf(skipE2E)('BFF E2E Tests (Deployed)', () => {
 
     it('should support PKCE flow', async () => {
       const response = await fetch(
-        `${DEPLOYED_BFF_URL}/auth/google/authorize?` +
+        `${DEPLOYED_BFF_URL}/auth/authorize/google?` +
         'code_challenge=test123&code_challenge_method=S256',
         {
           redirect: 'manual',
@@ -83,9 +83,9 @@ describe.skipIf(skipE2E)('BFF E2E Tests (Deployed)', () => {
 
       // Check authorization endpoints for each provider
       expect(data.authorization_endpoints).toEqual({
-        google: `${DEPLOYED_BFF_URL}/auth/google/authorize`,
-        github: `${DEPLOYED_BFF_URL}/auth/github/authorize`,
-        microsoft: `${DEPLOYED_BFF_URL}/auth/microsoft/authorize`,
+        google: `${DEPLOYED_BFF_URL}/auth/authorize/google`,
+        github: `${DEPLOYED_BFF_URL}/auth/authorize/github`,
+        microsoft: `${DEPLOYED_BFF_URL}/auth/authorize/microsoft`,
       });
     });
   });

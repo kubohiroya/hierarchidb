@@ -1,15 +1,8 @@
 import React, { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip, Box } from '@mui/material';
-import {
-  Add as AddIcon,
-  AssignmentTurnedIn,
-  ChevronRight,
-  Clear as ClearIcon,
-  ContentCopy as ContentCopyIcon,
-  Edit as EditIcon,
-  Folder as FolderIcon,
-  PlayArrow as PlayArrowIcon,
-} from '@mui/icons-material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+
 // Defer resolving ui-core to runtime to avoid build-time type resolution issues
 
 // import { TreeNodeType } from "~/types"; // Unused
@@ -36,6 +29,8 @@ export interface RowContextMenuProps {
   readonly mode?: 'restore' | 'dispose';
   readonly onRestoreToOriginal?: () => void;
   readonly onRestoreToCurrent?: () => void;
+  /** Optional treeId for context-aware Create submenu (e.g., 'r'|'t'|'p') */
+  readonly treeId?: string;
 }
 
 export const RowContextMenu = memo(
@@ -60,22 +55,7 @@ export const RowContextMenu = memo(
       }
     };
 
-    // Lazy-load UI plugin registry from @hierarchidb/ui-core
-    const [uiRegistry, setUiRegistry] = useState<any>(null);
-    useEffect(() => {
-      let active = true;
-      (async () => {
-        try {
-          const UICORE = '@hierarchidb/ui-core' as string;
-          const mod = await import(/* @vite-ignore */ UICORE);
-          const reg = (mod as any).getUIPluginRegistry?.();
-          if (active) setUiRegistry(reg || null);
-        } catch {
-          // ignore; context menu will render without plugin-driven entries
-        }
-      })();
-      return () => { active = false; };
-    }, []);
+    // No registry dependency: use global menu-builders injected by the host app
 
     const handleOpenClick = () => {
       const onOpen = propsRef.current.onOpen;
@@ -163,12 +143,31 @@ export const RowContextMenu = memo(
 
     const isFolder = props.nodeType === 'folder';
 
+    // Guard: ensure anchorEl is part of document layout
+    const safeAnchorEl = (() => {
+      const el = props.parentElem;
+      try {
+        if (!el) return null;
+        const doc = el.ownerDocument || document;
+        return doc.contains(el) ? el : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    useEffect(() => {
+      if (safeAnchorEl === null && propsRef.current.parentElem && propsRef.current.onClose) {
+        // Parent element disappeared; close the menu to avoid MUI warnings
+        requestAnimationFrame(() => propsRef.current.onClose());
+      }
+    }, [safeAnchorEl]);
+
     return (
       <>
         <Menu
-          anchorEl={props.parentElem}
-          open={Boolean(props.parentElem)}
-          onClose={handleMainMenuClose}
+        anchorEl={safeAnchorEl}
+        open={Boolean(props.parentElem)}
+        onClose={handleMainMenuClose}
           disablePortal={false} // Enable portal to display outside scroll container
           keepMounted={false} // Don't keep mounted to avoid stale handlers
           disableScrollLock={true} // Disable scroll lock to prevent issues with virtual scroll
@@ -306,61 +305,34 @@ export const RowContextMenu = memo(
             },
           }}
         >
-          {/* Dynamic plugin-driven create menu */}
+          {/* Dynamic plugin-driven create menu via global menu-builders */}
           {(() => {
             try {
-              const registry = uiRegistry;
-              if (!registry) return null;
-              const plugins = registry.getCreatablePlugins?.() || [];
-              const byGroup = ['container', 'document', 'basic', 'advanced'] as const;
+              const g: any = (globalThis as any).__HDB_MENU_BUILDERS__;
+              const builder = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
+              if (typeof builder !== 'function') {
+                return (
+                  <MenuItem disabled>
+                    <ListItemText>Create menu unavailable</ListItemText>
+                  </MenuItem>
+                );
+              }
 
-              const groupBg: Record<string, string> = {
-                container: 'rgba(25, 118, 210, 0.06)',
-                document: 'rgba(46, 125, 50, 0.06)',
-                basic: 'rgba(0, 0, 0, 0.03)',
-                advanced: 'rgba(156, 39, 176, 0.06)',
-              };
-
-              const items: React.ReactNode[] = [];
-              byGroup.forEach((group, gi) => {
-                const groupItems = plugins
-                  .filter((p: any) => p.menu.group === group)
-                  .sort((a: any, b: any) => (a.menu.createOrder || 999) - (b.menu.createOrder || 999));
-                if (groupItems.length === 0) return;
-                if (gi > 0) items.push(<Divider key={`gdiv-${group}`} />);
-                groupItems.forEach((p: any) => {
-                  const Icon = p.components.icon as any;
-                  items.push(
-                    <Tooltip
-                      key={p.nodeType}
-                      title={
-                        <Box sx={{ p: 0.5 }}>
-                          <div style={{ fontWeight: 600, marginBottom: 2 }}>{p.displayName}</div>
-                          <div style={{ fontSize: 12, opacity: 0.8 }}>{p.description || ''}</div>
-                        </Box>
-                      }
-                      placement="right"
-                      arrow
-                    >
-                      <MenuItem
-                        onClick={() => handleCreateClick(p.nodeType)}
-                        aria-label={p.nodeType}
-                        sx={{ backgroundColor: groupBg[group] }}
-                      >
-                        <ListItemIcon>
-                          {Icon ? <Icon fontSize="small" /> : <FolderIcon />}
-                        </ListItemIcon>
-                        <ListItemText primary={p.displayName} />
-                      </MenuItem>
-                    </Tooltip>,
-                  );
-                });
+              // Build items from treeId (resources/projects context)
+              const items = builder(props.treeId) as Array<{ key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } }>;
+              return (items || []).map((i) => {
+                const IconEl = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color) as React.ReactNode;
+                return (
+                  <MenuItem key={i.key} onClick={() => handleCreateClick(i.nodeType)} aria-label={i.nodeType}>
+                    <ListItemIcon>{IconEl}</ListItemIcon>
+                    <ListItemText primary={i.label} />
+                  </MenuItem>
+                );
               });
-              return items;
-            } catch (e) {
+            } catch {
               return (
                 <MenuItem disabled>
-                  <ListItemText>Plugin registry unavailable</ListItemText>
+                  <ListItemText>Create menu unavailable</ListItemText>
                 </MenuItem>
               );
             }

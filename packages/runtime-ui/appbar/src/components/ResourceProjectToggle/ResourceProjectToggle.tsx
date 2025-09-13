@@ -6,8 +6,7 @@
 import { Button, ButtonGroup, ButtonProps } from '@mui/material';
 import { NodeId } from '@hierarchidb/common-type';
 import { useLoaderData, useNavigate } from 'react-router-dom';
-import AttachmentIcon from '@mui/icons-material/Attachment';
-import MapIcon from '@mui/icons-material/Map';
+import { Folder as FolderIcon, AccountTree as AccountTreeIcon } from '@mui/icons-material';
 
 export type ResourceProjectType = 'resources' | 'projects' | 'none';
 export type ResourceProjectToggleOrientation = 'horizontal' | 'vertical';
@@ -111,7 +110,7 @@ export function ResourceProjectToggle({
         color="primary"
         onClick={() => handleToggle('resources')}
         aria-pressed={selected === 'resources'}
-        startIcon={<AttachmentIcon />}
+        startIcon={<FolderIcon />}
         fullWidth={orientation === 'vertical'}
       >
         Resources
@@ -122,7 +121,7 @@ export function ResourceProjectToggle({
         size={'large'}
         onClick={() => handleToggle('projects')}
         aria-pressed={selected === 'projects'}
-        startIcon={<MapIcon />}
+        startIcon={<AccountTreeIcon />}
         fullWidth={orientation === 'vertical'}
       >
         Projects

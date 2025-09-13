@@ -13,11 +13,13 @@
     ],
     "module": "ESNext",
     "moduleResolution": "node",
-    "baseUrl": "./",
-    "types": ["vite/client"],
+    "baseUrl": ".",
+    "types": [
+      "vite/client"
+    ],
     "paths": {
       "~/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

@@ -2,7 +2,7 @@
   * NodeTypeIcon -
      */
 
-import { MouseEvent } from 'react';
+import { MouseEvent, type ReactElement } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
   Delete as TrashIcon,
@@ -10,6 +10,14 @@ import {
   Folder as FolderIcon,
   Home as HomeIcon,
   Note as NoteIcon,
+  Public as PublicIcon,
+  Hexagon as HexagonIcon,
+  Place as PlaceIcon,
+  AltRoute as AltRouteIcon,
+  Assessment as AssessmentIcon,
+  Palette as PaletteIcon,
+  Extension as ExtensionIcon,
+  AccountTree as AccountTreeIcon,
 } from '@mui/icons-material';
 
 interface NodeTypeIconProps {
@@ -19,12 +27,35 @@ interface NodeTypeIconProps {
   onClick?: (event: MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
+  /**
+   * Optional explicit color (hex or css color). When provided,
+   * the underlying SvgIcon uses it via htmlColor while keeping
+   * MUI color prop as 'inherit'.
+   */
+  htmlColor?: string;
 }
 
 /**
     */
 function getIconByType(nodeType: string) {
   switch (nodeType) {
+    // Known HierarchiDB node types
+    case 'project':
+      return AccountTreeIcon;
+    case 'basemap':
+      return PublicIcon;
+    case 'shape':
+      return HexagonIcon;
+    case 'location':
+      return PlaceIcon;
+    case 'route':
+      return AltRouteIcon;
+    case 'spreadsheet':
+      return AssessmentIcon;
+    case 'styler':
+      return PaletteIcon;
+    case 'resolver':
+      return ExtensionIcon;
     case 'ProjectFolder':
     case 'ResourceFolder':
     case 'folder-plugin':
@@ -54,7 +85,8 @@ export function NodeTypeIcon({
                                onClick,
                                disabled = false,
                                color = 'inherit',
-                             }: NodeTypeIconProps) {
+                               htmlColor,
+                             }: NodeTypeIconProps): ReactElement {
   // Handle both standard sizes and string size
   const standardSizes = ['small', 'medium', 'large'];
   const iconSize = standardSizes.includes(size) ? (size as 'small' | 'medium' | 'large') : 'small';
@@ -76,7 +108,8 @@ export function NodeTypeIcon({
           },
         }}
       >
-        <Icon fontSize={fontSize} color={color} />
+        {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+        <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
       </IconButton>
     );
   }
@@ -92,7 +125,8 @@ export function NodeTypeIcon({
         height: iconSize === 'small' ? 20 : iconSize === 'large' ? 28 : 24,
       }}
     >
-      <Icon fontSize={fontSize} color={color} />
+      {/* Keep color as 'inherit' so htmlColor takes effect when provided */}
+      <Icon fontSize={fontSize} color={color} htmlColor={htmlColor} />
     </Box>
   );
 }

@@ -11,7 +11,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { AccountTree as TreeIcon, Folder as FolderIcon, Map as MapIcon } from '@mui/icons-material';
+import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import AppLogoIcon from '~/components/AppLogoIcon';
 import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
@@ -168,9 +168,9 @@ export default function TLayout() {
                 .map((tree) => (
                   <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
                     {tree.name.toLowerCase().includes('project') ? (
-                      <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
+                      <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
                     ) : tree.name.toLowerCase().includes('resource') ? (
-                      <MapIcon sx={{ mr: 1, fontSize: 20 }} />
+                      <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
                     ) : (
                       <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
                     )}
