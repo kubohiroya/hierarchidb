@@ -1,1 +1,0 @@
-import{w as e,O as o}from"./vendor-react-BP9jdMJE.js";import{j as r}from"./jsx-runtime-D_zvdyIk.js";import{b as a}from"./loader-Ccba733m.js";import"./index-DbUbEqh-.js";async function m(t){return await a(t.params)}const p=e(function(){return r.jsx(o,{})});export{m as clientLoader,p as default};
