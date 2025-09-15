@@ -28,8 +28,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
-    "jotai": "^2.13.1"
+    "@hierarchidb/ui-core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
@@ -50,7 +49,8 @@
     "@mui/material": "^6.1.6",
     "@mui/icons-material": "^7.3.1",
     "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0"
+    "@emotion/styled": "^11.13.0",
+    "jotai": "^2.13.1"
   },
   "tsup": {
     "external": [
@@ -58,6 +58,7 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
+      "jotai",
       "react",
       "react-dom"
     ]

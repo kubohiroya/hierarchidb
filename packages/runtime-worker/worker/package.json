@@ -44,10 +44,12 @@
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
     "geojson-vt": "^3.2.1",
-    "jotai": "^2.13.1",
     "rxjs": "^7.8.2",
     "uuid": "^11.1.0",
     "zod": "^3.22.3"
+  },
+  "peerDependencies": {
+    "jotai": "^2.13.1"
   },
   "optionalDependencies": {
     "@hierarchidb/tabular-xlsx": "workspace:*"
