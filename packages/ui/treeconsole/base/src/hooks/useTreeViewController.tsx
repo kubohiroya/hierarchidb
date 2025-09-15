@@ -23,6 +23,7 @@ import {
 } from './useCopyPasteOperations';
 import { useUndoRedoOperations } from './useUndoRedoOperations';
 import { useCRUDOperations } from './useCRUDOperations';
+import type { UseCRUDOperationsOptions } from './useCRUDOperations';
 
 export interface TreeViewControllerProps {
   /** TreeTypes ID */
@@ -229,7 +230,8 @@ export function useTreeViewController(
 
   //  hooks: CRUDhook
   const crudOps = useCRUDOperations({
-    stateManager,
+    // Narrow unknown -> StateManagerLike accepted by CRUD hook
+    stateManager: stateManager as UseCRUDOperationsOptions['stateManager'],
     workerAdapter: workerAdapter || undefined,
     setIsLoading,
     onSelectedNodesChange: setSelectedNodes,

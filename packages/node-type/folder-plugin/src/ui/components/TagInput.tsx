@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import type { TagSuggestion as BaseTagSuggestion } from '@hierarchidb/common-type';
-import type { TagId } from '../../types';
+import type { TagId } from '@hierarchidb/common-type';
 
 type TagSuggestion = Omit<BaseTagSuggestion, 'id'> & { id: TagId };
 

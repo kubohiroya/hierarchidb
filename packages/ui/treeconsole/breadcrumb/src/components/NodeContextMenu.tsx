@@ -289,11 +289,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText>Duplicate</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={handleRemoveClick} disabled={!canRemove} aria-label="Remove">
+        <MenuItem onClick={handleRemoveClick} disabled={!canRemove} aria-label="Move to Trash">
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>
-          <ListItemText>Remove</ListItemText>
+          <ListItemText>Move to Trash</ListItemText>
         </MenuItem>
 
         <Divider />

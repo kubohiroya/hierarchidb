@@ -11,11 +11,15 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
+    "./database": {
+      "types": "./dist/database/index.d.mts",
+      "import": "./dist/database/index.mjs"
+    },
     "./worker": {
-      "import": "./dist/worker/index.js"
+      "import": "./dist/worker/index.mjs"
     },
     "./ui": {
-      "import": "./dist/ui/index.js"
+      "import": "./dist/ui/index.mjs"
     }
   },
   "scripts": {
@@ -36,6 +40,7 @@
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "dexie": "^4.2.0",

@@ -41,15 +41,13 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   = ({ children }) => {
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
     const base = Object.fromEntries(defaultSteps.map(s => [s.name, { ...s }])) as Record<StepName, BootStep>;
-    try {
-      // Persisted flags to survive remounts during dev/hydration
-      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-      if (g.__HDB_INIT_COMPLETE__) {
-        base.Worker.progress = 100;
-        base.Worker.done = true;
-        base.Worker.message = 'Worker ready';
-      }
-    } catch {}
+    // Persisted flags to survive remounts during dev/hydration
+    const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+    if (g.__HDB_INIT_COMPLETE__) {
+      base.Worker.progress = 100;
+      base.Worker.done = true;
+      base.Worker.message = 'Worker ready';
+    }
     return base;
   });
   // guard to ensure we only force worker-done once (Rules of Hooks: declare at top level)
@@ -70,7 +68,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
       }
       const next = { ...prev } as typeof prev;
       next[name] = { ...cur, progress: clamped, done: nextDone, message: nextMsg };
-      try { console.log('[HDB-BOOT] Step %s progress=%d msg=%s', name, clamped, nextMsg || ''); } catch {}
+      
       return next;
     });
   }, []);
@@ -78,7 +76,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   const markStepDone = useCallback((name: StepName, message?: string) => {
     // If already done, avoid redundant updates
     if (steps[name]?.done) return;
-    try { console.log('[HDB-BOOT] Step %s done', name); } catch {}
+    
     setStepProgress(name, 100, message);
   }, [steps, setStepProgress]);
 
@@ -96,7 +94,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   useEffect(() => {
     if (overallProgress === 100 && !overallLoggedRef.current) {
       overallLoggedRef.current = true;
-      try { console.log('[HDB-BOOT] BootProgress overall=100'); } catch {}
+      
     }
     if (overallProgress < 100 && overallLoggedRef.current) {
       // reset if progress regresses (dev hot updates)
@@ -122,25 +120,23 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
         if (prev.Worker?.done) return prev;
         const next = { ...prev } as typeof prev;
         next.Worker = { ...prev.Worker, progress: 100, done: true, message: prev.Worker.message || 'Worker ready' };
-        try { console.log('[HDB-BOOT] Step Worker done'); } catch {}
+        
         return next;
       });
       workerForcedRef.current = true;
     };
     const maybeDone = () => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).__HDB_INIT_COMPLETE__) forceDone();
-      } catch {}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__HDB_INIT_COMPLETE__) forceDone();
     };
     maybeDone();
     const onEvt = () => {
-      try { console.log('[HDB-BOOT] BootProgress fail-safe event INIT_COMPLETE'); } catch {}
+      
       forceDone();
     };
-    try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {}
+    window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
     const t = window.setInterval(maybeDone, 200);
-    return () => { try { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); } catch {} try { window.clearInterval(t); } catch {} };
+    return () => { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); window.clearInterval(t); };
   }, []);
 
   return (
@@ -160,14 +156,14 @@ const BootOverlay: React.FC = () => {
   const lastMsgRef = useRef<string>('');
 
   useEffect(() => {
-    try { console.log('[HDB-BOOT] BootOverlay mount'); } catch {}
+    
   }, []);
 
   useEffect(() => {
     // Hide overlay when either all steps are done, or at least Worker is done (temporary gating)
     const ready = isAllDone || Boolean(steps?.Worker?.done);
     if (ready) {
-      if (hideTimer.current) try { window.clearTimeout(hideTimer.current); } catch {}
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setVisible(false), 100);
     }
     return () => { if (hideTimer.current) window.clearTimeout(hideTimer.current); };
@@ -185,7 +181,7 @@ const BootOverlay: React.FC = () => {
     const p = overallProgress;
     const m = currentMessage || '';
     if (p === 0 || p === 100 || Math.abs(p - (lastLogRef.current || 0)) >= 10 || m !== lastMsgRef.current) {
-      try { console.log('[HDB-BOOT] BootOverlay progress=%d msg=%s', p, m); } catch {}
+      
       lastLogRef.current = p;
       lastMsgRef.current = m;
     }
@@ -232,7 +228,7 @@ export const StageGate: React.FC<{ dependsOn: StepName[]; children: React.ReactN
   React.useEffect(() => {
     if (ok && !openedRef.current) {
       openedRef.current = true;
-      try { console.log('[HDB-BOOT] StageGate open dependsOn=%o', dependsOn); } catch {}
+      
     }
   }, [ok, dependsOn]);
   return ok ? <>{children}</> : null;

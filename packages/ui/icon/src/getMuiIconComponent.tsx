@@ -8,7 +8,7 @@
  */
 import type { ReactNode } from 'react';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import React, { Suspense } from 'react';
+import React from 'react';
 import {
   Add as AddIcon,
   Folder as FolderIcon,
@@ -50,64 +50,32 @@ function normalizeMuiName(name?: string): string | undefined {
   return map[key] || name;
 }
 
-function IconByName({ name, emoji }: { name: string; emoji?: string }) {
-  // Fast path: resolve from a small static map to avoid dynamic import pitfalls
-  const staticMap: Record<string, React.ComponentType | undefined> = {
-    Folder: FolderIcon,
-    Public: PublicIcon,
-    Hexagon: HexagonIcon,
-    LocationOn: LocationOnIcon,
-    Route: RouteIcon,
-    Assessment: AssessmentIcon,
-    Palette: PaletteIcon,
-    Extension: ExtensionIcon,
-    AccountTree: AccountTreeIcon,
-  };
-  const StaticComp = staticMap[name];
-  if (StaticComp) return <StaticComp />;
-  const LazyIcon = React.useMemo(
-      () =>
-      React.lazy(async () => {
-        try {
-          const mod = await import(
-            /* @vite-ignore */ `@mui/icons-material/${name}`
-          );
-          const C = (mod as any).default || (mod as any)[name];
-          return { default: (C as React.ComponentType) ?? AddIcon };
-        } catch {
-          // If MUI icon not found or failed to load, prefer emoji fallback when provided
-          if (emoji) {
-            // eslint-disable-next-line no-console
-            console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to emoji: ${emoji}`);
-            const Fallback = () => <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
-            return { default: Fallback as unknown as React.ComponentType };
-          }
-          // eslint-disable-next-line no-console
-          console.warn(`[ui-icon] MUI icon not found: ${name}. Falling back to AddIcon.`);
-          return { default: AddIcon };
-        }
-      }),
-    [name, emoji],
-  );
+// Small static map to avoid dynamic import pitfalls for common icons
+const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> = {
+  Folder: FolderIcon,
+  Public: PublicIcon,
+  Hexagon: HexagonIcon,
+  LocationOn: LocationOnIcon,
+  Route: RouteIcon,
+  Assessment: AssessmentIcon,
+  Palette: PaletteIcon,
+  Extension: ExtensionIcon,
+  AccountTree: AccountTreeIcon,
+};
 
-  // Prioritize MUI icon: show neutral fallback while loading.
-  // Emoji is used only if the import fails (see catch above), not during load.
-  const Fallback = <AddIcon />;
-  return (
-    <Suspense fallback={Fallback}>
-      <LazyIcon />
-    </Suspense>
-  );
-}
+// Removed dynamic import path: we now rely on a build-time generated global icon map
+// (set via setGlobalMuiIconMap from virtual:mui-icon-map) and a small static map.
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {
-  // Primary: MUI icon by name (if provided)
   const normalized = normalizeMuiName(muiIconName);
   const pascal = toPascalCase(normalized);
-  if (pascal) return <IconByName name={pascal} emoji={emoji} />;
-  // Secondary: emoji fallback when no valid MUI name given
+  if (pascal) {
+    const G = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
+    if (G) return <G />;
+    const S = staticMap[pascal];
+    if (S) return <S />;
+  }
   if (emoji) return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
-  // Final fallback
   return <AddIcon />;
 }
 
@@ -119,20 +87,9 @@ const _prefetched = new Set<string>();
  * so first render of SpeedDial actions doesn’t stutter while chunks load.
  */
 export async function prefetchMuiIcons(names: Array<string | undefined | null>): Promise<void> {
-  const unique = Array.from(
-    new Set(
-      (names || [])
-        .filter(Boolean)
-        .map((n) => toPascalCase(String(n)))
-        .filter((n) => !!n && !_prefetched.has(n as string)) as string[],
-    ),
-  );
-  await Promise.all(
-    unique.map(async (name) => {
-      await import(/* @vite-ignore */ `@mui/icons-material/${name}`);
-      _prefetched.add(name);
-    }),
-  );
+  // No-op with minimal bookkeeping: global/static maps are synchronous.
+  const uniq = new Set((names || []).filter(Boolean).map((n) => toPascalCase(String(n))));
+  for (const n of uniq) _prefetched.add(n as string);
 }
 
 // Global icon map injection (to share app-generated static map)
@@ -149,7 +106,12 @@ export function getMuiIconWithColor(
   const pascal = toPascalCase(normalizeMuiName(muiIconName));
   const C = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
   if (C) return <C sx={color ? { color } : undefined} />;
-  // Fallback to library resolver; try static map → dynamic import; wrap for color if needed
-  const node = getMuiIconComponent(muiIconName, emoji) as any;
-  return color ? <span style={{ color }}>{node as React.ReactNode}</span> : (node as React.ReactNode);
+  // Fallback to static map or emoji
+  const S = staticMap[pascal];
+  if (S) return <S sx={color ? { color } : undefined} />;
+  if (emoji) {
+    return <span style={{ fontSize: '1.5rem', color }}>{emoji}</span>;
+  }
+  const node = <AddIcon />;
+  return color ? <span style={{ color }}>{node}</span> : node;
 }

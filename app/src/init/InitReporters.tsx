@@ -71,9 +71,6 @@ export const WorkerProgressReporter: React.FC = () => {
   const { initProgress, isInitialized, initMessage } = useWorker();
   // Reflect Provider progress
   useEffect(() => {
-    try { console.log('[HDB-BOOT] Reporter Worker state progress=%s initialized=%s msg=%s', initProgress, isInitialized, initMessage || ''); } catch {
-      throw new Error('Failed to log');
-    }
     setStepProgress('Worker', initProgress || 0, initMessage || 'Worker initializing');
     if (isInitialized) markStepDone('Worker', 'Worker ready');
   }, [initProgress, isInitialized, initMessage, setStepProgress, markStepDone]);
@@ -81,44 +78,28 @@ export const WorkerProgressReporter: React.FC = () => {
   // Fallbacks: event and polling
   useEffect(() => {
     const onEvt = () => {
-      try { console.log('[HDB-BOOT] Reporter Worker event INIT_COMPLETE'); } catch {
-        throw new Error('Failed to log');
-      }
       markStepDone('Worker', 'Worker ready');
     };
-    try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {
-      throw new Error('Failed to log');
-    }
+    window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
     // Immediate check on mount
     try {
       if ((window as any).__HDB_INIT_COMPLETE__) {
-        console.log('[HDB-BOOT] Reporter Worker global flag detected');
         markStepDone('Worker', 'Worker ready');
       }
-    } catch {
-      throw new Error('Failed to log');
-    }
+    } catch {}
     const t = window.setInterval(() => {
-      try {
-        // Late import to avoid circular
-        import('../WorkerAPIClient').then(({ WorkerAPIClient }) => {
-          if (WorkerAPIClient.isReady()) {
-            try { console.log('[HDB-BOOT] Reporter Worker poll isReady=true'); } catch {
-              throw new Error('Failed to log');
-            }
-            markStepDone('Worker', 'Worker ready');
-            window.clearInterval(t);
-          }
-        }).catch(() => {});
-      } catch {
-        throw new Error('Failed to log');
-      }
+      // Late import to avoid circular
+      import('../WorkerAPIClient').then(({ WorkerAPIClient }) => {
+        if (WorkerAPIClient.isReady()) {
+          markStepDone('Worker', 'Worker ready');
+          window.clearInterval(t);
+        }
+      }).catch(() => {});
     }, 200);
-    return () => { try { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); } catch {
-      throw new Error('Failed to log');
-    } try { window.clearInterval(t); } catch {
-      throw new Error('Failed to log');
-    } };
+    return () => {
+      window.removeEventListener('hierarchidb-worker-init-complete', onEvt);
+      window.clearInterval(t);
+    };
   }, [markStepDone]);
   return null;
 };

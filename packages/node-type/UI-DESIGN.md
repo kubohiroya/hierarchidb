@@ -232,8 +232,8 @@
 
 ---
 
-## project-plugin（ProjectWizard）
-- 実装: `packages/node-type/project-plugin/src/components/wizard/ProjectWizard.tsx`
+## linker-plugin（ProjectWizard）
+- 実装: `packages/node-type/linker-plugin/src/components/wizard/ProjectWizard.tsx`
 - ステップ構成: 6 ステップ
   1) Basic Information
   2) Target Region
@@ -370,4 +370,4 @@
 
 ## 備考
 - Folder 系ダイアログは拡張ステップ（extendedSteps / createDialogSteps）として他プラグインが差し込む構成です。実際の番号はホスト側の先頭ステップ数によって変動します（本書では実装が固定で提供している stepNumber/order を基準に表記）。
-- 「バッチ処理開始」ボタンは `shape-plugin` のステッパーダイアログに実装されています（Step 4〜）。`route-plugin`/`resolver-plugin`/`project-plugin` は当該ダイアログでは開始せず保存/完了で閉じます。
+- 「バッチ処理開始」ボタンは `shape-plugin` のステッパーダイアログに実装されています（Step 4〜）。`route-plugin`/`resolver-plugin`/`linker-plugin` は当該ダイアログでは開始せず保存/完了で閉じます。

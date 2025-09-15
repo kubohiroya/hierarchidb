@@ -50,7 +50,8 @@ import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType, TreeId } from '@hierarchidb/common-type';
 import { type PluginDefinition } from '@hierarchidb/common-type';
-import { getUIPluginRegistry } from '@hierarchidb/ui-core';
+// UIPluginRegistry is legacy; this page now reads vite-generated metadata
+// import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 import { useNavigate } from 'react-router';
 
@@ -484,6 +485,7 @@ function DeletePluginDialog({
 export default function PluginsPage() {
   const navigate = useNavigate();
   const [workerPlugins, setWorkerPlugins] = useState<DisplayPlugin[]>([]);
+  const [uiPluginsList, setUiPluginsList] = useState<DisplayPlugin[]>([]);
   const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -635,15 +637,19 @@ export default function PluginsPage() {
   async function loadPlugins() {
     try {
       setLoading(true);
-      //  Phase 2: Use UI registry only; worker analyzer is optional and
-      const plugins: DisplayPlugin[] = uiPlugins.map((p: any, idx: number) => ({
-        nodeType: p.nodeType as NodeType,
-        displayName: (typeof (p as unknown as { displayName?: string }).displayName === 'string'
-          ? (p as unknown as { displayName: string }).displayName
-          : p.nodeType),
-        category: { createOrder: idx + 1 },
+      // Source of truth: vite virtual module `virtual:plugin-definitions`
+      const mod: any = await import('virtual:plugin-definitions');
+      const defs: any[] = Array.isArray(mod?.default) ? mod.default : [];
+      const plugins: DisplayPlugin[] = defs.map((d, idx) => ({
+        nodeType: d.nodeType as NodeType,
+        displayName: (d.displayName || d.name || d.nodeType) as string,
+        category: { createOrder: d?.category?.createOrder ?? (idx + 1) },
+        database: d?.database ? { entityStore: d.database?.entityStore || '' } : undefined,
+        ui: d?.ui ? { dialogComponentPath: d.ui?.dialogComponentPath } : undefined,
+        lifecycle: d?.lifecycle ?? undefined,
       }));
       setWorkerPlugins(plugins);
+      setUiPluginsList(plugins);
 
       loadPluginDependencies();
     } catch (err) {
@@ -658,9 +664,7 @@ export default function PluginsPage() {
     loadPlugins();
   }, []);
 
-  // Get UI plugins
-  const uiRegistry = getUIPluginRegistry();
-  const uiPlugins = uiRegistry.getAll();
+  // UI plugins list now comes from vite metadata (uiPluginsList)
 
   if (loading) {
     return (
@@ -717,7 +721,7 @@ export default function PluginsPage() {
               <Typography color="text.secondary" gutterBottom>
                 UI Plugins
               </Typography>
-              <Typography variant="h4">{uiPlugins.length}</Typography>
+              <Typography variant="h4">{uiPluginsList.length}</Typography>
             </CardContent>
           </Card>
 
@@ -823,7 +827,7 @@ export default function PluginsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {uiPlugins.map((plugin: any, index: number) => (
+                {uiPluginsList.map((plugin: any, index: number) => (
                   <TableRow key={plugin.nodeType}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>

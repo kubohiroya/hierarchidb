@@ -3,21 +3,11 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   import('./version');
   let banner: HTMLDivElement | null = null;
   let errorActive = false;
-  let lastBuildLocal = (() => {
-    try {
-      // Lazy import to avoid circular at module init
-      // Will be updated below once module is loaded
-      return '';
-    } catch {
-      return '';
-    }
-  })();
+  let lastBuildLocal = '';
   (async () => {
-    try {
-      const v = await import('./version');
-      const t = (v as any)?.BUILD_TIME as string | undefined;
-      if (t) lastBuildLocal = new Date(t).toLocaleString();
-    } catch {}
+    const v = await import('./version');
+    const t = (v as any)?.BUILD_TIME as string | undefined;
+    if (t) lastBuildLocal = new Date(t).toLocaleString();
   })();
   type OverlayOpts = {
     position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | { x: number; y: number };
@@ -52,50 +42,48 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     document.body.appendChild(banner);
 
     // Apply initial position (saved > opts)
-    try {
-      const saved = localStorage.getItem(opts.storageKey!);
-      if (saved) {
-        const { x, y } = JSON.parse(saved) as { x: number; y: number };
-        banner.style.left = `${Math.max(0, x)}px`;
-        banner.style.top = `${Math.max(0, y)}px`;
-      } else {
-        // Apply from option keyword or coordinates
-        const pad = 8;
-        const applyCorner = (corner: string) => {
-          banner!.style.removeProperty('left');
-          banner!.style.removeProperty('top');
-          banner!.style.removeProperty('right');
-          banner!.style.removeProperty('bottom');
-          switch (corner) {
-            case 'top-left':
-              banner!.style.left = `${pad}px`;
-              banner!.style.top = `${pad}px`;
-              break;
-            case 'top-right':
-              banner!.style.right = `${pad}px`;
-              banner!.style.top = `${pad}px`;
-              break;
-            case 'bottom-left':
-              banner!.style.left = `${pad}px`;
-              banner!.style.bottom = `${pad}px`;
-              break;
-            case 'bottom-right':
-            default:
-              banner!.style.right = `${pad}px`;
-              banner!.style.bottom = `${pad}px`;
-              break;
-          }
-        };
-        if (typeof opts.position === 'string') {
-          applyCorner(opts.position);
-        } else if (opts.position && typeof opts.position === 'object') {
-          banner.style.left = `${Math.max(0, opts.position.x)}px`;
-          banner.style.top = `${Math.max(0, opts.position.y)}px`;
-        } else {
-          applyCorner('bottom-right');
+    const saved = localStorage.getItem(opts.storageKey!);
+    if (saved) {
+      const { x, y } = JSON.parse(saved) as { x: number; y: number };
+      banner.style.left = `${Math.max(0, x)}px`;
+      banner.style.top = `${Math.max(0, y)}px`;
+    } else {
+      // Apply from option keyword or coordinates
+      const pad = 8;
+      const applyCorner = (corner: string) => {
+        banner!.style.removeProperty('left');
+        banner!.style.removeProperty('top');
+        banner!.style.removeProperty('right');
+        banner!.style.removeProperty('bottom');
+        switch (corner) {
+          case 'top-left':
+            banner!.style.left = `${pad}px`;
+            banner!.style.top = `${pad}px`;
+            break;
+          case 'top-right':
+            banner!.style.right = `${pad}px`;
+            banner!.style.top = `${pad}px`;
+            break;
+          case 'bottom-left':
+            banner!.style.left = `${pad}px`;
+            banner!.style.bottom = `${pad}px`;
+            break;
+          case 'bottom-right':
+          default:
+            banner!.style.right = `${pad}px`;
+            banner!.style.bottom = `${pad}px`;
+            break;
         }
+      };
+      if (typeof opts.position === 'string') {
+        applyCorner(opts.position);
+      } else if (opts.position && typeof opts.position === 'object') {
+        banner.style.left = `${Math.max(0, opts.position.x)}px`;
+        banner.style.top = `${Math.max(0, opts.position.y)}px`;
+      } else {
+        applyCorner('bottom-right');
       }
-    } catch {}
+    }
 
     if (opts.draggable) {
       let dragging = false;
@@ -144,11 +132,9 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
         dragging = false;
         banner!.style.cursor = 'grab';
         // persist
-        try {
-          const rect = banner!.getBoundingClientRect();
-          const data = { x: Math.round(rect.left), y: Math.round(rect.top) };
-          localStorage.setItem(opts.storageKey!, JSON.stringify(data));
-        } catch {}
+        const rect = banner!.getBoundingClientRect();
+        const data = { x: Math.round(rect.left), y: Math.round(rect.top) };
+        localStorage.setItem(opts.storageKey!, JSON.stringify(data));
       };
       banner.addEventListener('mousedown', onDown, { passive: false });
       banner.addEventListener('touchstart', onDown, { passive: false });

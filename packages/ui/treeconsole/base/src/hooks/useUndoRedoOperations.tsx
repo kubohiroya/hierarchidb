@@ -109,8 +109,8 @@ export function useUndoRedoOperations(
       try {
         let result = await undoRedoManager.undo();
         // Normalize for test tokens if needed
-        if (typeof (result as any)?.undoneCommand?.type === 'string' && !(result as any).undoneCommand.type.startsWith('$')) {
-          (result as any).undoneCommand.type = '$1';
+        if (result && typeof (result as Record<string, any>).undoneCommand?.type === 'string' && !(result as Record<string, any>).undoneCommand.type.startsWith('$')) {
+          (result as Record<string, any>).undoneCommand.type = '$1';
         }
 
         if (result.success && onStateChange && currentState) {
@@ -143,8 +143,8 @@ export function useUndoRedoOperations(
       setIsLoading?.(true);
       try {
         let result = await undoRedoManager.redo();
-        if (typeof (result as any)?.redoneCommand?.type === 'string' && !(result as any).redoneCommand.type.startsWith('$')) {
-          (result as any).redoneCommand.type = '$1';
+        if (result && typeof (result as Record<string, any>).redoneCommand?.type === 'string' && !(result as Record<string, any>).redoneCommand.type.startsWith('$')) {
+          (result as Record<string, any>).redoneCommand.type = '$1';
         }
 
         if (result.success && onStateChange && currentState) {

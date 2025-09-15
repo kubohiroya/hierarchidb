@@ -92,8 +92,8 @@ export function DynamicSpeedDial({
       if (e.altKey && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
         setDebugHitbox((v) => {
           const nv = !v;
-          try { localStorage.setItem('hdb.sd.hitbox', nv ? '1' : '0'); } catch {}
-          try { (window as any).__HDB_SD_HITBOX__ = nv; } catch {}
+          localStorage.setItem('hdb.sd.hitbox', nv ? '1' : '0');
+          (window as any).__HDB_SD_HITBOX__ = nv;
           return nv;
         });
       }
@@ -108,28 +108,26 @@ export function DynamicSpeedDial({
     let raf = 0;
     let intervalId: number | undefined;
     const measure = () => {
-      try {
-        const root = containerRef.current;
-        if (!root) return;
-        const fab = root.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
-        const actions = Array.from(root.querySelectorAll('.MuiSpeedDialAction-fab')) as HTMLElement[];
-        const rectRoot = root.getBoundingClientRect();
-        const rectFab = fab?.getBoundingClientRect();
-        const rectActs = actions.map((a) => a.getBoundingClientRect());
-        let topAtFab: string | undefined = undefined;
-        if (rectFab) {
-          const cx = rectFab.left + rectFab.width / 2;
-          const cy = rectFab.top + rectFab.height / 2;
-          const el = document.elementFromPoint(cx, cy);
-          if (el) {
-            const cls = (el as HTMLElement).className?.toString?.() || '';
-            const id = (el as HTMLElement).id ? `#${(el as HTMLElement).id}` : '';
-            const tn = el.nodeName.toLowerCase();
-            topAtFab = `${tn}${id}${cls ? '.' + cls.toString().split(' ').slice(0, 3).join('.') : ''}`;
-          }
+      const root = containerRef.current;
+      if (!root) return;
+      const fab = root.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
+      const actions = Array.from(root.querySelectorAll('.MuiSpeedDialAction-fab')) as HTMLElement[];
+      const rectRoot = root.getBoundingClientRect();
+      const rectFab = fab?.getBoundingClientRect();
+      const rectActs = actions.map((a) => a.getBoundingClientRect());
+      let topAtFab: string | undefined = undefined;
+      if (rectFab) {
+        const cx = rectFab.left + rectFab.width / 2;
+        const cy = rectFab.top + rectFab.height / 2;
+        const el = document.elementFromPoint(cx, cy);
+        if (el) {
+          const cls = (el as HTMLElement).className?.toString?.() || '';
+          const id = (el as HTMLElement).id ? `#${(el as HTMLElement).id}` : '';
+          const tn = el.nodeName.toLowerCase();
+          topAtFab = `${tn}${id}${cls ? '.' + cls.toString().split(' ').slice(0, 3).join('.') : ''}`;
         }
-        setHitboxes({ container: rectRoot, fab: rectFab, actions: rectActs, topAtFab });
-      } catch {}
+      }
+      setHitboxes({ container: rectRoot, fab: rectFab, actions: rectActs, topAtFab });
     };
     const onScrollOrResize = () => {
       if (raf) cancelAnimationFrame(raf);
@@ -153,6 +151,9 @@ export function DynamicSpeedDial({
     return null;
   }
 
+  // Compute pointer-events for actions to avoid invisible hitbox when closed
+  const actionsPointerEvents = open ? 'auto' : 'none';
+
   return (
     <Portal>
       <Box
@@ -160,8 +161,8 @@ export function DynamicSpeedDial({
         sx={{
           position: 'fixed',
           ...position,
-          // Put this above any app content and overlays
-          zIndex: 2147483000,
+          // Keep above overlays only when open
+          zIndex: open ? 2147483000 : 0,
           // Make only inner FAB/actions receive pointer events to avoid wrapper intercepts
           pointerEvents: 'none',
           outline: debugHitbox ? '2px solid rgba(0,255,255,0.6)' : undefined,
@@ -192,11 +193,15 @@ export function DynamicSpeedDial({
               outlineOffset: debugHitbox ? '0px' : undefined,
             },
             '& .MuiSpeedDial-actions': {
-              pointerEvents: 'auto',
+              pointerEvents: actionsPointerEvents,
             },
             '& .MuiSpeedDialAction-fab': {
+              pointerEvents: actionsPointerEvents,
               outline: debugHitbox ? '2px dashed rgba(255,165,0,0.9)' : undefined,
               outlineOffset: debugHitbox ? '0px' : undefined,
+            },
+            '& .MuiSpeedDial-actionsClosed': {
+              pointerEvents: 'none',
             },
           }}
           icon={<SpeedDialIcon />}

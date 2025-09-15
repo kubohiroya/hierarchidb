@@ -34,7 +34,7 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
         total: p.total,
         completed: p.completed,
         failed: p.failed,
-        currentStage: (p.currentStage as any) || 'processing',
+        currentStage: (p.currentStage ?? 'processing') as ProcessingStage,
         currentTask: p.currentTask,
       });
     });

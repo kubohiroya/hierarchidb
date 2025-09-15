@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
     }
   },
   "files": [
@@ -18,6 +22,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:database": "tsup --config tsup.database.config.ts",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
@@ -33,22 +38,23 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "comlink": "^4.4.1"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^6.1.8",
+    "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^3.2.4",
     "fake-indexeddb": "^6.1.0",
     "tsup": "^8.3.5",
@@ -56,7 +62,7 @@
     "vitest": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^6.1.8",
+    "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
     "@hierarchidb/runtime-worker": "workspace:*"
   },

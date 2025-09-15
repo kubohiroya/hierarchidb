@@ -11,17 +11,9 @@
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type {
-  BatchSession,
-  CacheStatistics,
-  DataSourceName,
-  Feature,
-  FeatureIndex,
-  ProcessingStage,
-  ShapeEntity,
-  TaskStatus,
-  VectorTileEntity,
-} from '../../types';
+import type { ShapeEntity } from '../../types/ShapeEntity';
+import type { DataSourceName, VectorTileEntity } from '../../shared/types';
+import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../types';
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
@@ -66,7 +58,7 @@ export interface BatchTaskRecord {
   errorMessage?: string;
 }
 
-export interface FeatureRecord extends Feature {
+export interface FeatureRecord {
   id: number;
   nodeId: NodeId;
   properties: Record<string, any>;
@@ -84,7 +76,7 @@ export interface FeatureRecord extends Feature {
   updatedAt: number;
 }
 
-export interface FeatureIndexRecord extends FeatureIndex {
+export interface FeatureIndexRecord {
   indexId: string;
   featureId: string;
   mortonCode: number;

@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router';
+import { LoaderFunctionArgs, useLoaderData } from 'react-router';
 import { Outlet } from 'react-router';
 import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
 import { type NodeId } from '@hierarchidb/common-type';

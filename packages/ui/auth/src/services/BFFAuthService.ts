@@ -66,8 +66,8 @@ export class BFFAuthService {
 
   private constructor() {
     // Use proxy path for local development, direct URL for production
-    const envUrl = import.meta.env.VITE_BFF_BASE_URL;
-    const isDevelopment = import.meta.env.VITE_ENV_MODE === 'development';
+    const envUrl = ((import.meta as any)?.env?.VITE_BFF_BASE_URL as string);
+    const isDevelopment = (((import.meta as any)?.env?.VITE_ENV_MODE as string) === 'development');
 
     // In development, use relative URL for proxy; in production, use full URL
     if (isDevelopment && (!envUrl || envUrl.startsWith('http'))) {

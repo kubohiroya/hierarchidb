@@ -21,6 +21,8 @@ export type {
   PluginStepConfig,
   StepComponentProps,
 } from './registry/PluginStepRegistry';
+export { HostProfileRegistry } from './registry/HostProfileRegistry';
+export { composeStepConfigs } from './services/StepComposer';
 
 // Components
 export { PluginDialog } from './components/PluginDialog';

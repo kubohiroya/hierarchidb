@@ -82,7 +82,6 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
           try {
             await client.ping();
           } catch (verifyError) {
-            console.error('[WorkerProvider] Comlink verification failed:', verifyError);
             throw new Error(`Comlink verification failed: ${verifyError}`);
           }
 
@@ -98,7 +97,7 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
           return;
         } catch (error) {
           retryCount++;
-          console.error(`[WorkerProvider] Failed to initialize Worker (attempt ${retryCount}/${maxRetries}):`, error);
+          
 
           if (retryCount >= maxRetries) {
             if (mounted) {

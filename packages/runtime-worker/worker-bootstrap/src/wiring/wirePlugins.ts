@@ -44,7 +44,6 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
         registerRuntimeExports(entry.nodeType, exp);
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[wirePlugins] wiring failed for a module:', e);
     }
   }

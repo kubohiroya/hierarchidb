@@ -46,7 +46,7 @@ export interface TreeTableViewProps {
   readonly onNodeSelect?: (nodeId: string, selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSort?: (columnId: string) => void;
-  readonly onContextMenu?: (event: React.MouseEvent, node: TreeNodeData) => void;
+  // Right-click context menus are disabled app-wide
   readonly multiSelect?: boolean;
   readonly showCheckboxes?: boolean;
   readonly showIcons?: boolean;
@@ -69,7 +69,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     onNodeSelect,
     onNodeExpand,
     onSort,
-    onContextMenu,
+    
     multiSelect: _multiSelect = true,
     showCheckboxes = true,
     showIcons = true,
@@ -107,10 +107,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
       onNodeClick?.(node);
     };
 
-    const handleContextMenu = (event: React.MouseEvent) => {
-      event.preventDefault();
-      onContextMenu?.(event, node);
-    };
+    // No right-click handler
 
     const rows: React.ReactNode[] = [];
 
@@ -121,7 +118,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
         hover
         selected={selected}
         onClick={handleRowClick}
-        onContextMenu={handleContextMenu}
+        // Right-click disabled by policy
         sx={{
           cursor: 'pointer',
           '&.Mui-selected': {

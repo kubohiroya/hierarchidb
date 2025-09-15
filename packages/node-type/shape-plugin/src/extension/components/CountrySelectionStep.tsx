@@ -23,16 +23,17 @@ export const CountrySelectionStep: React.FC<CountrySelectionStepProps> = ({
                                                                             onPrevious,
                                                                             errors,
                                                                           }) => {
+  const wc = (data || {}) as any;
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step5CountrySelection
           workingCopy={{
-            ...data,
-            selectedCountries: data.selectedCountries || [],
+            ...wc,
+            selectedCountries: wc.selectedCountries || [],
           }}
           onUpdate={(updates) => {
-            const updatedData = { ...data, ...updates };
+            const updatedData = { ...wc, ...updates };
             onNext(updatedData);
           }}
           disabled={false}
@@ -58,8 +59,8 @@ export const CountrySelectionStep: React.FC<CountrySelectionStepProps> = ({
         <Button onClick={onPrevious}>Previous</Button>
         <Button
           variant="contained"
-          onClick={() => onNext(data)}
-          disabled={!data.selectedCountries || data.selectedCountries.length === 0}
+          onClick={() => onNext(wc)}
+          disabled={!wc.selectedCountries || wc.selectedCountries.length === 0}
         >
           Finish
         </Button>

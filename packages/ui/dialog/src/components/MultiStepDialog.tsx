@@ -2,30 +2,22 @@
  * Multi-step dialog component with React Router integration
  */
 
-import React, { useCallback, useMemo, useState, useLayoutEffect, useRef, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material';
-import {
-  Close as CloseIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-  OpenInFull as OpenInFullIcon,
-  CloseFullscreen as CloseFullscreenIcon,
-} from '@mui/icons-material';
-import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import React, { useCallback, useMemo, useState, useLayoutEffect, useRef, useEffect, ForwardedRef } from 'react';
+import { Dialog, DialogTitle, Paper, PaperProps, GlobalStyles } from '@mui/material';
+// Icons are used within header shell; no direct icon usage here
+// (Header shell renders its own menu)
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { DialogStepper } from './DialogStepper';
+import { MultiStepShell } from './MultiStepShell';
+import { MultiStepHeaderShell } from './MultiStepHeaderShell';
 import type { FooterRenderProps, MultiStepDialogProps } from '../types/MultiStepDialog.types';
+import Draggable from 'react-draggable';
+import { Resizable } from 'react-resizable';
+import { useMultiStepController } from '../hooks/useMultiStepController';
+import { useMultiStepPersistence } from '../hooks/useMultiStepPersistence';
+import { useMultiStepA11y } from '../hooks/useMultiStepA11y';
+import { useMultiStepKeyboard } from '../hooks/useMultiStepKeyboard';
+
+// PaperComponent will be defined inside component to capture position/size state.
 
 /**
  * Multi-step dialog component
@@ -34,7 +26,6 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   open,
                                                                   mode,
                                                                   title,
-                                                                  subtitle,
                                                                   icon,
                                                                   steps,
                                                                   currentData,
@@ -43,11 +34,9 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   activeStep: controlledActiveStep,
                                                                   onStepChange,
                                                                   nonLinear = false,
-                                                                  maxWidth = 'lg',
+                                                                  maxWidth: _maxWidth = 'lg',
                                                                   fullScreen: initialFullScreen = false,
-                                                                  showFullscreenToggle = true,
                                                                   maximized: initialMaximized = false,
-                                                                  showMaximizeToggle = true,
                                                                   onMaximizeChange,
                                                                   onFullscreenChange,
                                                                   displayMode,
@@ -64,9 +53,13 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
                                                                   loading = false,
                                                                   submitText = mode === 'create' ? 'Create' : 'Save',
                                                                   cancelText = 'Cancel',
-                                                                  backText = 'Back',
+                                                                  /* backText = 'Back', */
                                                                   nextText = 'Next',
                                                                   enableA11yTestControls = false,
+                                                                  initialPosition,
+                                                                  initialSize,
+                                                                  onDialogMove,
+                                                                  onDialogResize,
                                                                 }) => {
   // Soft enforcement: warn when legacy props are used and legacy is disallowed.
   try {
@@ -77,21 +70,20 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
         console.warn('[UI] Legacy display-mode props (fullScreen/maximized/*Change) are disabled by default. Use displayMode/onDisplayModeChange instead.');
       }
     }
-  } catch {}
+  } catch (error){
+    console.log("Can't access FEATURE_FLAGS.UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE", error);
+  }
   // State
   const [internalActiveStep, setInternalActiveStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [isMaximized, setIsMaximized] = useState(initialMaximized);
   const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [stepErrors, setStepErrors] = useState<Map<number, string>>(new Map());
-  const [externalSubmitEligible, setExternalSubmitEligible] = useState(true);
+  // stepErrors are managed in controller now
 
-  // Use controlled or internal step
-  const currentStep = controlledActiveStep ?? internalActiveStep;
+  // Use controller for step state (controlled or uncontrolled)
 
   // Filter out skipped steps
   const visibleSteps = useMemo(
@@ -99,38 +91,7 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     [steps],
   );
 
-  // Get current step config
-  const currentStepConfig = visibleSteps[currentStep];
-
-  // Navigation helpers
-  const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === visibleSteps.length - 1;
-
-  // Validation
-  const validateCurrentStep = useCallback(async () => {
-    if (!currentStepConfig?.validate) return true;
-
-    try {
-      const isValid = await currentStepConfig.validate();
-      if (!isValid) {
-        setStepErrors(prev => new Map(prev).set(currentStep, 'Please complete this step'));
-      } else {
-        setStepErrors(prev => {
-          const next = new Map(prev);
-          next.delete(currentStep);
-          return next;
-        });
-      }
-      return isValid;
-    } catch (error) {
-      console.error('Step validation error:', error);
-      setStepErrors(prev => new Map(prev).set(currentStep, 'Validation failed'));
-      return false;
-    }
-  }, []);
-
-  // Check if can navigate
-  // Evaluate external step states if provided
+  // Prepare evaluated info once; controller consumes it for navigation rules
   const evaluated = useMemo(() => {
     if (!evaluateSteps) return { navigable: undefined as boolean[] | undefined, filled: undefined as boolean[] | undefined };
     try {
@@ -142,103 +103,50 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     }
   }, [evaluateSteps, currentData]);
 
+  const ctrl = useMultiStepController({
+    steps: visibleSteps as any,
+    currentData,
+    evaluateSubmit,
+    nonLinear,
+    loading,
+    activeStep: (controlledActiveStep ?? internalActiveStep),
+    onStepChange: onStepChange ?? ((n: number) => setInternalActiveStep(n)),
+    onStepTransition,
+    onSubmit,
+    evaluated,
+  });
+
+  const currentStep = ctrl.currentStep;
+  const currentStepConfig = ctrl.currentStepConfig as any;
+  const isFirstStep = ctrl.isFirstStep;
+  const isLastStep = ctrl.isLastStep;
+
+  // Validation delegates to controller
+  const validateCurrentStep = ctrl.validateCurrentStep;
+
+  // evaluated already defined above; ctrl initialized
+
   const canGoNext = useMemo(() => {
-    // Keep simple: validation guards progression; evaluator is used for non-linear navigation.
-    return !loading;
-  }, [loading]);
+    if (loading || isLastStep) return false;
+    const filledOk = Array.isArray(evaluated.filled) ? !!evaluated.filled[currentStep] : true;
+    const nextNavigable = Array.isArray(evaluated.navigable) && evaluated.navigable.length > currentStep + 1
+      ? !!evaluated.navigable[currentStep + 1]
+      : true;
+    return filledOk && nextNavigable;
+  }, [loading, isLastStep, evaluated.filled, evaluated.navigable, currentStep]);
 
   const canGoPrevious = currentStep > 0 && !loading;
-
-  const canSubmit = useMemo(() => {
-    // Prefer external filled[] if提供; else rely on completedSteps + current step error-free
-    let requiredOk: boolean;
-    if (evaluated.filled && Array.isArray(evaluated.filled)) {
-      requiredOk = evaluated.filled.every((filled, idx) => visibleSteps[idx]?.optional ? true : !!filled);
-    } else {
-      requiredOk = visibleSteps.every((step, index) => {
-        if (step.optional) return true;
-        if (index === currentStep) return !stepErrors.has(index);
-        return completedSteps.has(index);
-      });
-    }
-    return requiredOk && !loading && externalSubmitEligible;
-  }, [visibleSteps, completedSteps, stepErrors, loading, externalSubmitEligible, evaluated.filled]);
-
-  // Keep external submit eligibility in sync for button disabled state
-  React.useEffect(() => {
-    if (!evaluateSubmit) {
-      setExternalSubmitEligible(true);
-      return;
-    }
-    let mounted = true;
-    Promise.resolve(evaluateSubmit(currentData)).then((ok) => {
-      if (mounted) setExternalSubmitEligible(!!ok);
-    }).catch(() => {
-      if (mounted) setExternalSubmitEligible(false);
-    });
-    return () => { mounted = false; };
-  }, [evaluateSubmit, currentData]);
+  // const canSubmit = ctrl.canSubmit; // handled by shell via footerProps.loading/flow; keep for future if needed
 
   // Handle step change
-  const handleStepChange = useCallback(async (newStep: number) => {
-    // Call transition hook if provided
-    if (onStepTransition) {
-      const canTransition = await onStepTransition(currentStep, newStep);
-      if (!canTransition) return;
-    }
-
-    // Call onLeave for current step
-    await currentStepConfig?.onLeave?.();
-
-    // Update step
-    if (onStepChange) {
-      onStepChange(newStep);
-    } else {
-      setInternalActiveStep(newStep);
-    }
-
-    // Call onEnter for new step
-    const newStepConfig = visibleSteps[newStep];
-    await newStepConfig?.onEnter?.();
-  }, [onStepTransition, onStepChange, visibleSteps]);
+  // const handleStepChange = ctrl.handleStepChange;
 
   // Navigation handlers
-  const handleNext = useCallback(async () => {
-    if (!canGoNext || isLastStep) return;
+  const handleNext = ctrl.handleNext;
 
-    const isValid = await validateCurrentStep();
-    if (!isValid) return;
+  const handleBack = ctrl.handleBack;
 
-    setCompletedSteps(prev => new Set(prev).add(currentStep));
-    await handleStepChange(currentStep + 1);
-  }, [canGoNext, validateCurrentStep, handleStepChange]);
-
-  const handleBack = useCallback(async () => {
-    if (!canGoPrevious) return;
-    await handleStepChange(currentStep - 1);
-  }, [handleStepChange]);
-
-  const handleStepClick = useCallback(async (stepIndex: number) => {
-    if (!nonLinear) return;
-
-    // External evaluator takes precedence
-    let canNavigate: boolean;
-    if (Array.isArray(evaluated.navigable) && typeof evaluated.navigable[stepIndex] === 'boolean') {
-      canNavigate = evaluated.navigable[stepIndex]!;
-    } else {
-      // Default: completed or next
-      canNavigate = completedSteps.has(stepIndex) || stepIndex === currentStep + 1;
-    }
-
-    if (canNavigate && stepIndex !== currentStep) {
-      if (stepIndex > currentStep) {
-        const isValid = await validateCurrentStep();
-        if (!isValid) return;
-        setCompletedSteps(prev => new Set(prev).add(currentStep));
-      }
-      await handleStepChange(stepIndex);
-    }
-  }, [nonLinear, completedSteps, validateCurrentStep, handleStepChange, evaluated]);
+  const handleStepClick = ctrl.handleStepClick;
 
   // Close handlers
   const handleClose = useCallback(() => {
@@ -270,40 +178,146 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   }, [onSaveDraft, onClose, onCancel]);
 
   // Submit handler
-  const handleSubmit = useCallback(async () => {
-    if (isSubmitting) return;
+  const handleSubmit = ctrl.handleSubmit;
 
-    // Always trigger validation so tests (and users) see errors even if button is clickable
-    const isValid = await validateCurrentStep();
-    if (!isValid) return;
+  // Persistence (uncontrolledのみ). キーはタイトルで簡易に生成（外部 API 変更なし）
+  useMultiStepPersistence({
+    key: title ? `MultiStepDialog:${title}` : undefined,
+    enabled: true,
+    step: currentStep,
+    setStep: (n) => setInternalActiveStep(n),
+  });
 
-    // Only proceed to submit if all required steps are complete.
-    // Prefer external evaluator when supplied; otherwise fall back to completedSteps.
-    const allRequiredCompleted = visibleSteps.every((step, index) => {
-      if (step.optional) return true;
-      return index === currentStep ? true : completedSteps.has(index);
-    });
-    if (!allRequiredCompleted) return;
+  // A11y: ステップ遷移時にフォーカスを先頭要素へ
+  useMultiStepA11y(paperRef as any, currentStep);
 
-    try {
-      setIsSubmitting(true);
-      // External submit guard if provided
-      if (evaluateSubmit) {
-        const ok = await Promise.resolve(evaluateSubmit(currentData));
-        if (!ok) {
-          setStepErrors(prev => new Map(prev).set(currentStep, 'Submit conditions are not satisfied'));
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      await onSubmit();
-    } catch (error) {
-      console.error('Submit failed:', error);
-      throw error;
-    } finally {
-      setIsSubmitting(false);
+  // Keyboard shortcuts
+  useMultiStepKeyboard({
+    enabled: open,
+    onNext: handleNext,
+    onBack: handleBack,
+    onSubmit: isLastStep ? () => handleSubmit() : undefined,
+    onCancel: handleClose,
+  });
+
+  // --- Position (drag) / Size (resize) ---
+  const [normalPos, setNormalPos] = useState<{ x: number; y: number }>(() => ({
+    x: initialPosition?.x ?? (typeof window !== 'undefined' ? Math.max(16, Math.floor(window.innerWidth * 0.1)) : 20),
+    y: initialPosition?.y ?? (typeof window !== 'undefined' ? Math.max(16, Math.floor(window.innerHeight * 0.1)) : 20),
+  }));
+  const [normalSize, setNormalSize] = useState<{ width: number; height: number }>(() => ({
+    width: initialSize?.width ?? (typeof window !== 'undefined' ? Math.min(960, Math.floor(window.innerWidth * 0.8)) : 800),
+    height: initialSize?.height ?? (typeof window !== 'undefined' ? Math.min(720, Math.floor(window.innerHeight * 0.7)) : 560),
+  }));
+
+  const displayPos = useMemo(() => {
+    if (isFullscreen) return { x: 0, y: 0 };
+    if (isMaximized) return { x: 8, y: 8 };
+    return normalPos;
+  }, [isFullscreen, isMaximized, normalPos]);
+
+  const displaySize = useMemo(() => {
+    if (typeof window === 'undefined') return normalSize;
+    if (isFullscreen) return { width: window.innerWidth, height: window.innerHeight };
+    if (isMaximized) return { width: Math.max(320, window.innerWidth - 16 * 2), height: Math.max(240, window.innerHeight - 16 * 2) };
+    return normalSize;
+  }, [isFullscreen, isMaximized, normalSize]);
+
+  // Keep latest layout state in a ref so PaperComponent identity can be stable.
+  const latestRef = useRef({
+    isFullscreen,
+    isMaximized,
+    displayPos,
+    displaySize,
+    onDialogMove,
+    onDialogResize,
+  });
+  latestRef.current.isFullscreen = isFullscreen;
+  latestRef.current.isMaximized = isMaximized;
+  latestRef.current.displayPos = displayPos as any;
+  latestRef.current.displaySize = displaySize as any;
+  latestRef.current.onDialogMove = onDialogMove;
+  latestRef.current.onDialogResize = onDialogResize;
+
+  // Draggable/Resizable Paper wrapper (stable identity to avoid focus loss)
+  const PaperComponent = React.useMemo(() => React.forwardRef<HTMLDivElement, PaperProps>(function DraggableResizablePaper(p, ref: ForwardedRef<HTMLDivElement>) {
+    const props = p;
+    const { isFullscreen, isMaximized, displayPos, displaySize, onDialogMove, onDialogResize } = latestRef.current;
+    // In fullscreen: render plain Paper (Dialog handles sizing)
+    if (isFullscreen) {
+      return <Paper {...props} ref={(el) => { (paperRef as any).current = el; if (typeof ref === 'function') ref(el as any); else if (ref) (ref as any).current = el; }} sx={{ width: '100%', height: '100%', m: 0 }} />;
     }
-  }, [isSubmitting, validateCurrentStep, onSubmit, visibleSteps, completedSteps]);
+
+    // In maximized: render plain Paper but sized to displaySize
+    if (isMaximized) {
+      return (
+        <Paper
+          {...props}
+          ref={(el) => { (paperRef as any).current = el; if (typeof ref === 'function') ref(el as any); else if (ref) (ref as any).current = el; }}
+          sx={{ width: `${displaySize.width}px`, height: `${displaySize.height}px`, m: 0 }}
+        />
+      );
+    }
+
+    // Standard: resizable (outer) + draggable (inner)
+    const dragNodeRef = React.useRef<HTMLDivElement>(null);
+    const handleDragStop = (_e: any, data: { x: number; y: number }) => {
+      const clamped = clampToViewport(data.x, data.y, displaySize.width, displaySize.height);
+      setNormalPos(clamped);
+      onDialogMove?.(clamped);
+    };
+
+    const handleResize = (_e: any, { size }: { size: { width: number; height: number } }) => {
+      const clampedSize = clampSizeToViewport(size.width, size.height);
+      setNormalSize(clampedSize);
+      onDialogResize?.(clampedSize);
+    };
+
+    return (
+      <Resizable
+        width={displaySize.width}
+        height={displaySize.height}
+        onResize={handleResize}
+        resizeHandles={[ 'se', 'e', 's' ]}
+        minConstraints={[ 360, 280 ]}
+      >
+        {/* Resizable requires a DOM element child that accepts className/style */}
+        <div style={{ width: `${displaySize.width}px`, height: `${displaySize.height}px` }}>
+          <Draggable
+            nodeRef={dragNodeRef}
+            handle="#draggable-dialog-title"
+            cancel={'.react-resizable-handle, [class*="MuiDialogContent-root"]'}
+            defaultPosition={{ x: displayPos.x, y: displayPos.y }}
+            onStop={handleDragStop}
+          >
+            <div ref={dragNodeRef}>
+              <Paper
+                {...props}
+                ref={(el) => { (paperRef as any).current = el; if (typeof ref === 'function') ref(el as any); else if (ref) (ref as any).current = el; }}
+                sx={{ width: '100%', height: '100%', m: 0 }}
+              />
+            </div>
+          </Draggable>
+        </div>
+      </Resizable>
+    );
+  }), []);
+
+  // Helpers: clamp to viewport to avoid losing the dialog off-screen
+  // Policy A: Ensure the draggable handle (dialog title's left edge) stays visible,
+  // allowing right/bottom overflow. Only top-left anchor is constrained in-viewport.
+  const clampToViewport = (x: number, y: number, _w: number, _h: number) => {
+    if (typeof window === 'undefined') return { x, y };
+    const maxX = Math.max(8, window.innerWidth - 8); // keep left edge within viewport
+    const maxY = Math.max(8, window.innerHeight - 8); // keep top edge within viewport
+    return { x: Math.min(Math.max(8, x), maxX), y: Math.min(Math.max(8, y), maxY) };
+  };
+  const clampSizeToViewport = (w: number, h: number) => {
+    if (typeof window === 'undefined') return { width: w, height: h };
+    const maxW = Math.max(320, window.innerWidth - 16);
+    const maxH = Math.max(240, window.innerHeight - 16);
+    return { width: Math.min(Math.max(360, w), maxW), height: Math.min(Math.max(280, h), maxH) };
+  };
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -333,14 +347,16 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     } else {
       // Turn off fullscreen
       if (document.fullscreenElement) {
-        try { document.exitFullscreen?.(); } catch {}
+        try { document.exitFullscreen?.(); } catch {
+          console.error('Failed to exit fullscreen');
+        }
       }
       setIsFullscreen(false);
       onFullscreenChange?.(false);
       // fullscreen解除時は、最大化が有効でなければ standard
       onDisplayModeChange?.(isMaximized ? 'maximized' : 'standard');
     }
-  }, [isFullscreen, onFullscreenChange]);
+  }, [isFullscreen, isMaximized, onDisplayModeChange, onFullscreenChange]);
 
   // Keep in sync with browser-level fullscreen changes (ESC, OS shortcuts)
   useEffect(() => {
@@ -357,14 +373,14 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange' as any, onFsChange);
     };
-  }, [onFullscreenChange]);
+  }, [isMaximized, onDisplayModeChange, onFullscreenChange]);
 
   const toggleMaximize = useCallback(() => {
     const next = !isMaximized;
     setIsMaximized(next);
     onMaximizeChange?.(next);
     if (!isFullscreen) onDisplayModeChange?.(next ? 'maximized' : 'standard');
-  }, [isMaximized, onMaximizeChange]);
+  }, [isFullscreen, isMaximized, onDisplayModeChange, onMaximizeChange]);
 
   // Display-mode menu handlers
   const openModeMenu = useCallback((e: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(e.currentTarget), []);
@@ -393,14 +409,18 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
     } else if (displayMode === 'maximized') {
       if (isFullscreen) {
         // 可能なら退出
-        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {}
+        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {
+          console.warn('Failed to exit fullscreen');
+        }
         setIsFullscreen(false);
       }
       setIsMaximized(true);
     } else {
       // standard
       if (isFullscreen) {
-        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {}
+        try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch {
+          console.warn('Failed to exit fullscreen');
+        }
         setIsFullscreen(false);
       }
       setIsMaximized(false);
@@ -432,12 +452,14 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
   return (
     <>
       <Dialog
+        PaperComponent={PaperComponent}
         open={open}
         onClose={handleClose}
-        maxWidth={isFullscreen ? false : (isMaximized ? false : maxWidth)}
-        fullWidth={!isFullscreen && !isMaximized}
+        maxWidth={false}
+        fullWidth={false}
         fullScreen={isFullscreen}
         disableEscapeKeyDown={hasUnsavedChanges}
+        sx={{ '& .MuiDialog-container': { alignItems: 'flex-start', justifyContent: 'flex-start' } }}
         // Testing-friendly settings to reduce async focus/transition updates
         disablePortal
         disableAutoFocus
@@ -447,189 +469,62 @@ export const MultiStepDialog: React.FC<MultiStepDialogProps> = ({
         role="dialog"
         aria-modal="true"
         slotProps={{
-          paper: {
-            ref: paperRef,
-            sx: isFullscreen
-              ? undefined
-              : (isMaximized
-                ? {
-                    m: 1,
-                    width: 'calc(100vw - 16px * 2)',
-                    height: 'calc(100vh - 16px * 2)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '& .MuiDialogContent-root': { flex: 1, minHeight: 200 },
-                  }
-                : undefined),
-          },
+          paper: { ref: paperRef },
         }}
       >
+        {/* Resizable handle styles (react-resizable) */}
+        <GlobalStyles styles={{
+          '.react-resizable-handle': {
+            position: 'absolute',
+            display: 'block',
+            background: 'transparent',
+            zIndex: 1000,
+          },
+          '.react-resizable-handle-se': {
+            width: '14px', height: '14px', right: '2px', bottom: '2px', cursor: 'se-resize',
+            borderRight: '2px solid rgba(0,0,0,0.25)', borderBottom: '2px solid rgba(0,0,0,0.25)',
+          },
+          '.react-resizable-handle-e': {
+            width: '10px', right: 0, top: 0, bottom: 0, cursor: 'e-resize',
+          },
+          '.react-resizable-handle-s': {
+            height: '10px', left: 0, right: 0, bottom: 0, cursor: 's-resize',
+          },
+        }} />
         {/* Header */}
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              {icon}
-              <Box>
-                <Typography variant="h6">{title}</Typography>
-                {subtitle && (
-                  <Typography variant="caption" color="text.secondary">
-                    {subtitle}
-                  </Typography>
-                )}
-              </Box>
-            </Stack>
-
-            <Stack direction="row" spacing={1}>
-              {headerActions}
-              {/* Display mode menu (Standard / Maximize / Fullscreen) */}
-              <IconButton aria-label="Display mode" onClick={openModeMenu} size="small">
-                <OpenInFullIcon />
-              </IconButton>
-              <Menu anchorEl={modeMenuAnchor} open={Boolean(modeMenuAnchor)} onClose={closeModeMenu} keepMounted>
-                <MenuItem selected={!isFullscreen && !isMaximized} onClick={() => selectDisplayMode('standard')}>
-                  <ListItemIcon>
-                    <CloseFullscreenIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>標準サイズ</ListItemText>
-                </MenuItem>
-                <MenuItem selected={!isFullscreen && isMaximized} onClick={() => selectDisplayMode('maximized')}>
-                  <ListItemIcon>
-                    <OpenInFullIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>最大化（ウィンドウ内）</ListItemText>
-                </MenuItem>
-                <MenuItem selected={isFullscreen} onClick={() => selectDisplayMode('fullscreen')}>
-                  <ListItemIcon>
-                    <FullscreenIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>フルスクリーン</ListItemText>
-                </MenuItem>
-              </Menu>
-              {showMaximizeToggle && !isFullscreen && (
-                <IconButton aria-label={isMaximized ? 'Restore size' : 'Maximize'} onClick={toggleMaximize} size="small">
-                  {isMaximized ? <CloseFullscreenIcon /> : <OpenInFullIcon />}
-                </IconButton>
-              )}
-              {showFullscreenToggle && (
-                <IconButton aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'} onClick={toggleFullscreen} size="small">
-                  {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-                </IconButton>
-              )}
-              <IconButton aria-label="Close" onClick={handleClose} size="small">
-                <CloseIcon />
-              </IconButton>
-            </Stack>
-          </Box>
-
-          {/* Stepper */}
-          <DialogStepper
-            steps={visibleSteps}
-            activeStep={currentStep}
-            completedSteps={completedSteps}
-            onStepClick={nonLinear ? handleStepClick : undefined}
-            nonLinear={nonLinear}
-            currentData={currentData}
-            navigable={evaluated.navigable}
-            alternativeLabel={visibleSteps.length > 4}
+        <DialogTitle sx={{ py: 0.5, px: 1, cursor:'move', minHeight: 0 }} id="draggable-dialog-title">
+          <MultiStepHeaderShell
+            icon={icon}
+            title={title}
+            headerActions={headerActions}
+            isFullscreen={isFullscreen}
+            isMaximized={isMaximized}
+            openModeMenu={openModeMenu}
+            closeModeMenu={closeModeMenu}
+            modeMenuAnchor={modeMenuAnchor}
+            selectDisplayMode={selectDisplayMode}
+            onClose={handleClose}
           />
         </DialogTitle>
 
-        {/* Content */}
-        <DialogContent dividers sx={{ position: 'relative', minHeight: 200 }}>
-          {loading && (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'background.paper',
-                zIndex: 1,
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          )}
-
-          <Box sx={{ opacity: loading ? 0.5 : 1 }}>
-            {currentStepConfig?.component}
-          </Box>
-
-          {stepErrors.has(currentStep) && (
-            <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
-              {stepErrors.get(currentStep)}
-            </Typography>
-          )}
-        </DialogContent>
-
-        {/* Footer */}
-        <DialogActions>
-          {renderFooter ? (
-            renderFooter(footerProps)
-          ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', p: 2 }}>
-              <Button
-                onClick={isFirstStep ? handleClose : handleBack}
-                disabled={loading || isSubmitting}
-                variant="outlined"
-              >
-                {isFirstStep ? cancelText : backText}
-              </Button>
-
-              <Stack direction="row" spacing={2}>
-                {!isLastStep && (
-                  <Button
-                    onClick={handleNext}
-                    disabled={loading || isSubmitting}
-                    variant="contained"
-                    aria-label={nextText}
-                  >
-                    {nextText}
-                  </Button>
-                )}
-
-                {isLastStep && (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!canSubmit||isSubmitting}
-                  >
-                    {isSubmitting ? <CircularProgress size={20} /> : submitText}
-                  </Button>
-                )}
-              </Stack>
-              {/* Testing-only fallback controls: opt-in via prop to avoid env coupling */}
-              {enableA11yTestControls && (
-                (() => {
-                  const srOnly: React.CSSProperties = {
-                    position: 'absolute',
-                    width: 1,
-                    height: 1,
-                    padding: 0,
-                    margin: -1,
-                    overflow: 'hidden',
-                    clip: 'rect(0, 0, 0, 0)',
-                    whiteSpace: 'nowrap',
-                    border: 0,
-                  } as any;
-                  return (
-                    <>
-                      <button aria-label="Cancel" onClick={handleClose} style={srOnly}>
-                        Cancel
-                      </button>
-                      <button aria-label="Next" onClick={handleNext} style={srOnly}>
-                        Next
-                      </button>
-                      <button aria-label="Complete" onClick={handleSubmit} style={srOnly}>
-                        Complete
-                      </button>
-                    </>
-                  );
-                })()
-              )}
-            </Box>
-          )}
-        </DialogActions>
+        <MultiStepShell
+          steps={visibleSteps as any}
+          activeStep={currentStep}
+          completedSteps={ctrl.completedSteps}
+          nonLinear={nonLinear}
+          navigable={evaluated.navigable}
+          onStepClick={handleStepClick}
+          loading={loading}
+          isSubmitting={isSubmitting}
+          currentStepNode={currentStepConfig?.component}
+          currentStepError={ctrl.stepErrors.get(currentStep)}
+          renderFooter={renderFooter}
+          footerProps={footerProps}
+          submitText={submitText}
+          nextText={nextText}
+          cancelText={cancelText}
+          enableA11yTestControls={enableA11yTestControls}
+        />
       </Dialog>
 
       {/* Unsaved changes dialog */}

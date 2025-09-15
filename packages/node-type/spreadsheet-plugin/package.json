@@ -10,6 +10,10 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.mts",
+      "import": "./dist/database/index.mjs"
     }
   },
   "scripts": {

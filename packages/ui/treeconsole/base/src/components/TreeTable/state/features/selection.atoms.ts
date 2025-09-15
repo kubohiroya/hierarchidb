@@ -21,8 +21,8 @@ export const selectionModeAtom = atom<SelectionMode>('single');
 
 /**
     */
-export type RowClickAction = 'select' | 'edit' | 'navigate';
-export const rowClickActionAtom = atom<RowClickAction>('select');
+export type RowClickAction = 'select-navigate' | 'select' | 'edit';
+export const rowClickActionAtom = atom<RowClickAction>('select-navigate');
 
 /**
   * ID

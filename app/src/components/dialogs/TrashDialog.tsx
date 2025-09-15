@@ -83,7 +83,7 @@ export default function TrashDialog() {
       setDisplayMode('fullscreen');
       persistDisplayMode('fullscreen');
     } else {
-      try { if (document.fullscreenElement) await document.exitFullscreen?.(); } catch {}
+      if (document.fullscreenElement) await document.exitFullscreen?.();
       setIsFullscreen(false);
       const m = isMaximized ? 'maximized' : 'standard';
       setDisplayMode(m);
@@ -177,10 +177,8 @@ export default function TrashDialog() {
 
         if (result.success) {
           // Dispatch removal event so cleanup is centralized
-          try {
-            const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as string | undefined) || item.id);
-            window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds } }));
-          } catch {}
+          const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as string | undefined) || item.id);
+          window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds } }));
           // Refresh the page to show empty trash
           navigate(-1); // Go back to the previous page
           window.location.reload(); // Or trigger a revalidation in parent route
@@ -241,22 +239,20 @@ export default function TrashDialog() {
       maxWidth={isFullscreen ? false : (isMaximized ? false : 'md')}
       fullWidth={!isFullscreen && !isMaximized}
       fullScreen={isFullscreen}
-      slotProps={{
-        paper: {
-          ref: paperRef,
-          sx: isFullscreen
-            ? undefined
-            : (isMaximized
-              ? {
-                  m: 1,
-                  width: 'calc(100vw - 16px * 2)',
-                  height: 'calc(100vh - 16px * 2)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  '& .MuiDialogContent-root': { flex: 1, minHeight: 200 },
-                }
-              : undefined),
-        },
+      PaperProps={{
+        ref: paperRef,
+        sx: isFullscreen
+          ? undefined
+          : (isMaximized
+            ? {
+                m: 1,
+                width: 'calc(100vw - 16px * 2)',
+                height: 'calc(100vh - 16px * 2)',
+                display: 'flex',
+                flexDirection: 'column',
+                '& .MuiDialogContent-root': { flex: 1, minHeight: 200 },
+              }
+            : undefined),
       }}
     >
       <CommonDialogTitle
@@ -281,7 +277,7 @@ export default function TrashDialog() {
         ) : (
           <TreeConsolePanel
             title={`Trash - ${data.tree?.name}`}
-            rootNodeId={data.tree?.trashRootId}
+            pageNodeId={data.tree?.trashRootId}
             data={treeData}
             columns={columns}
             breadcrumbItems={[

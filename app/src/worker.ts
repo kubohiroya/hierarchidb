@@ -6,29 +6,17 @@
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
 import { APP_VERSION, BUILD_TIME } from './version';
 
-try {
-  const localBuildTime = (() => {
-    try {
-      return new Date(BUILD_TIME).toLocaleString();
-    } catch {
-      return String(BUILD_TIME);
-    }
-  })();
-  // eslint-disable-next-line no-console
-  console.log(`[Worker] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
-} catch {
-}
+const localBuildTime = (() => {
+  try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
+})();
 
 // Minimal shims for Node-centric plugins to run inside Web Worker
-try {
-  // Provide a global alias so packages using `global` don't crash
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g: any = globalThis as any;
-  if (typeof g.global === 'undefined') g.global = g;
-  // Minimal Node-like `process` shim for libraries that probe env flags
-  if (typeof g.process === 'undefined') g.process = { env: {} };
-} catch {
-}
+// Provide a global alias so packages using `global` don't crash
+// @eslint-disable-next-line @typescript-eslint/no-explicit-any
+const g: any = globalThis as any;
+if (typeof g.global === 'undefined') g.global = g;
+// Minimal Node-like `process` shim for libraries that probe env flags
+if (typeof g.process === 'undefined') g.process = { env: {} };
 const reporter = new WorkerInitializationReporter([
   { name: 'Load Comlink', weight: 5 },
   { name: 'Load plugin loaders', weight: 10 },
@@ -48,52 +36,15 @@ reporter.reportStepProgress('Load Comlink', 0);
     const Comlink: typeof import('comlink') = await import('comlink');
     reporter.reportStepProgress('Load Comlink', 100);
 
-    // Step 2: Load plugin loader virtual modules (skip in dev to avoid virtual: dependency races)
+    // Step 2: Skip legacy plugin-map path; registries handle loading below
     const isDev = (import.meta as any)?.env?.DEV;
-    reporter.reportStepProgress('Load plugin loaders', isDev ? 100 : 10);
-    if (!isDev) {
-      try {
-        // Resolve plugin definitions and loader map from virtual modules (or local fallbacks)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const defsMod = await import('virtual:plugin-definitions').catch(async () =>
-          // Local fallback to empty list when package-reader virtuals are unavailable
-          await import('./virtual/plugin-definitions')
-        );
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const modAny: any = await import('virtual:plugin-map').catch(async () => ({}));
-        const pluginMap: Record<string, () => Promise<unknown>> =
-          (modAny?.pluginMapWorker as any) || {};
-
-        const defs = (defsMod?.default as any[]) || [];
-        const loadOrder = defs.map((d) => d.nodeType);
-
-        for (const [idx, nodeType] of loadOrder.entries()) {
-          const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
-          if (typeof loader === 'function') {
-            console.log(`⏳ Loading plugin: ${nodeType}`);
-            await loader();
-            console.log(`✅ Loaded plugin: ${nodeType}`);
-            // Update progress within the Load plugins step
-            const stepProgress = Math.round(((idx + 1) / loadOrder.length) * 100);
-            reporter.reportStepProgress('Load plugins', stepProgress);
-          }
-        }
-        reporter.reportStepProgress('Load plugin loaders', 100);
-      } catch (e) {
-        if (!isDev) {
-          console.warn('[Worker] Plugin loaders unavailable; skipping plugin loading phase');
-        }
-        reporter.reportStepProgress('Load plugin loaders', 100);
-      }
-    }
+    reporter.reportStepProgress('Load plugin loaders', 100);
 
     // After package-reader runs, resolve plugin defs (or fallback)
     let pluginDefinitions: any[] = [];
     if (!((import.meta as any)?.env?.DEV)) {
       try {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const mod = await import('virtual:plugin-definitions').catch(async () =>
           await import('./virtual/plugin-definitions')
@@ -116,36 +67,23 @@ reporter.reportStepProgress('Load Comlink', 0);
       const defs = (pluginDefinitions as any[]) || [];
       if (defs.length === 0 || ((import.meta as any)?.env?.DEV)) {
         // In dev or when no plugin definitions are provided, this is expected; keep logs quiet.
-        if (defs.length === 0) console.debug('[Worker] No plugin definitions; wiring skipped');
-        if (((import.meta as any)?.env?.DEV)) console.debug('[Worker] Dev mode: plugin wiring disabled');
+        
       } else {
-        // Use the generated pluginMap so Vite can statically analyze imports
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        // Prefer the worker map export from the unified virtual module, but be tolerant
-        // of environments that only provide `pluginMap` or the legacy `virtual:plugin-map-worker`.
-        let pluginMap: Record<string, () => Promise<unknown>> | undefined;
-        try {
-          const mod: any = await import('virtual:plugin-map');
-          pluginMap = mod?.pluginMapWorker; // Worker専用のみ採用
-        } catch {}
-        if (!pluginMap) {
-          // fallback to local stub only; do NOT attempt legacy virtual module to avoid CORS noise
-          try {
-            const local = await import('./virtual/plugin-map');
-            pluginMap = (local as any)?.pluginMap || {};
-          } catch {
-            pluginMap = {} as any;
-          }
-        }
-        if (!pluginMap) pluginMap = {} as any;
+        // Use the generated worker registry so Vite can statically analyze imports
+        const mod: any = await import('virtual:plugin-registry-worker').catch(() => null);
+        let pluginMap: Record<string, () => Promise<unknown>> = mod?.pluginMapWorker || {};
 
         // Worker overrides: force worker-safe entries for known plugins
         const workerOverrides: Record<string, () => Promise<unknown>> = {
           // Use package subpath exports to avoid importing TS sources directly
           location: async () => import('@hierarchidb/location-plugin/worker'),
-          project: async () => import('@hierarchidb/project-plugin/worker'),
+          // No worker for 'project'/'linker' in new design
           route: async () => import('@hierarchidb/route-plugin/worker'),
+          // In dev, import monorepo source directly to avoid unresolved workspace pkg; in prod, use published subpath
+          timeline: (isDev
+            ? async () => import('../../packages/node-type/timeline-plugin/src/worker/index')
+            : async () => import('@hierarchidb/timeline-plugin/worker')
+          ),
           shape: async () => import('@hierarchidb/shape-plugin/worker'),
         };
         pluginMap = { ...pluginMap, ...workerOverrides } as any;
@@ -160,7 +98,6 @@ reporter.reportStepProgress('Load Comlink', 0);
         for (const d of defs) {
           const nodeType = d?.nodeType as string;
           if (deny.has(nodeType)) {
-            console.log(`[Worker] wiring: denylisted plugin skipped: ${nodeType}`);
             continue;
           }
           const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
@@ -172,9 +109,9 @@ reporter.reportStepProgress('Load Comlink', 0);
               const msg = (e as any)?.message ?? String(e);
               const soft = /document is not defined|Grid2|does not provide an export/i.test(msg);
               if ((import.meta as any)?.env?.DEV || soft) {
-                console.log(`[Worker] wiring: skip module for ${nodeType}:`, msg);
+                
               } else {
-                console.warn(`[Worker] wiring: failed to load module for ${nodeType}:`, msg);
+                
               }
             }
           }
@@ -182,7 +119,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         await wirePluginsFromModules(modEntries);
       }
     } catch (e) {
-      console.warn('[Worker] wiring failed:', e);
+      
     }
     // Merge standardized lifecycles discovered from worker modules into pluginDefinitions
     try {
@@ -203,15 +140,22 @@ reporter.reportStepProgress('Load Comlink', 0);
               try {
                 const handler = await factory();
                 if (handler) entityRegistry.register(nodeType, handler as any);
-              } catch {}
+              } catch (e){
+                
+              }
             }
           }
         }
-      } catch {}
+      } catch (e){
+        
+      }
 
       const { WorkerService } = await import('@hierarchidb/runtime-worker');
       const services = await WorkerService.getSingleton(enriched || (pluginDefinitions as any[]));
       reporter.reportStepProgress('Bootstrap services', 100);
+      try {
+        (self as any).postMessage?.({ type: 'SERVICES_READY', source: 'worker', at: Date.now() });
+      } catch {}
 
       // Step 5: Create API facade
       reporter.reportStepProgress('Create API facade', 10);
@@ -259,11 +203,12 @@ reporter.reportStepProgress('Load Comlink', 0);
         unsubscribeAll: () => subscription.unsubscribeAll(),
       } as const;
       // Expose through Comlink using direct service proxies (型安全 / as any 不要)
-      const api: import('@hierarchidb/common-api').WorkerAPI = {
+      const api = {
         ping: () => services.ping(),
         shutdown: () => services.shutdown(),
         initialize: () => services.initialize(),
-        getQueryAPI: () => Comlink.proxy(query),
+        // Return minimal facades to avoid leaking Dexie instances/functions across the boundary
+        getQueryAPI: () => Comlink.proxy(queryFacade),
         getMutationAPI: () => Comlink.proxy(mutation),
         getSubscriptionAPI: () => Comlink.proxy(subscription),
         getImportExportAPI: () => Comlink.proxy(importExport),
@@ -279,7 +224,9 @@ reporter.reportStepProgress('Load Comlink', 0);
       // Ensure UI receives INIT_COMPLETE in all code paths
       reporter.reportComplete();
       return;
-    } catch {}
+    } catch (e){
+      
+    }
 
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
     const services = await WorkerService.getSingleton((pluginDefinitions as any[]) || []);
@@ -297,12 +244,21 @@ reporter.reportStepProgress('Load Comlink', 0);
     const workingCopy = services.getWorkingCopyAPI();
     const pluginLifecycle = services.getPluginLifecycleAPI();
 
-    const api: import('@hierarchidb/common-api').WorkerAPI = {
+    const api = {
       ping: () => services.ping(),
       initialize: () => services.initialize(),
       shutdown: () => services.shutdown(),
       getSystemHealth: () => services.getSystemHealth(),
-      getQueryAPI: () => Comlink.proxy(query),
+      // Return minimal facades to avoid leaking Dexie instances/functions across the boundary
+      getQueryAPI: () => Comlink.proxy({
+        getTree: (id: any) => query.getTree(id),
+        listTrees: () => (query as any).listTrees?.(),
+        getNode: (id: any) => (query as any).getNode?.(id),
+        listChildren: (id: any) => (query as any).listChildren?.(id),
+        listDescendants: (id: any, maxDepth?: number) => (query as any).listDescendants?.(id, maxDepth),
+        listAncestors: (id: any) => (query as any).listAncestors?.(id),
+        searchNodes: (opts: any) => (query as any).searchNodes?.(opts),
+      }),
       getMutationAPI: () => Comlink.proxy(mutation),
       getSubscriptionAPI: () => Comlink.proxy(subscription),
       getWorkingCopyAPI: () => Comlink.proxy(workingCopy),

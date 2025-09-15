@@ -55,11 +55,9 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
   useEffect(() => {
     if (normalizedValue !== value) {
       setValue(normalizedValue);
-      try {
-        localStorage.setItem('preferred-language', normalizedValue);
-        localStorage.setItem('i18nextLng', normalizedValue);
-        if (typeof document !== 'undefined') document.documentElement.lang = normalizedValue;
-      } catch {}
+      localStorage.setItem('preferred-language', normalizedValue);
+      localStorage.setItem('i18nextLng', normalizedValue);
+      if (typeof document !== 'undefined') document.documentElement.lang = normalizedValue;
     }
   }, [normalizedValue, value]);
 
@@ -71,29 +69,21 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
   const onChange = (e: SelectChangeEvent<string>) => {
     const next = (e.target?.value ?? '') as string;
     setValue(next);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('preferred-language', next);
-        localStorage.setItem('i18nextLng', next);
-        if (typeof document !== 'undefined') {
-          document.documentElement.lang = next;
-        }
-        // Try update without reload if i18next is available
-        // Attempt lazy i18n change without hard dependency
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const anyWindow = window as any;
-          if (anyWindow?.i18next?.changeLanguage) {
-            anyWindow.i18next.changeLanguage(next);
-          } else {
-            window.location.reload();
-          }
-        } catch {
-          window.location.reload();
-        }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferred-language', next);
+      localStorage.setItem('i18nextLng', next);
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = next;
       }
-    } catch {
-      // ignore
+      // Try update without reload if i18next is available
+      // Attempt lazy i18n change without hard dependency
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyWindow = window as any;
+      if (anyWindow?.i18next?.changeLanguage) {
+        anyWindow.i18next.changeLanguage(next);
+      } else {
+        window.location.reload();
+      }
     }
   };
 

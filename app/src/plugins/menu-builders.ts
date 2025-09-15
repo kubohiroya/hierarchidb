@@ -132,12 +132,19 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
         priority: spec.groups.indexOf(group) * 100 + spec.order.indexOf(nodeType),
       });
     } else {
-      // Fallback stub when plugin definition is absent (e.g., spreadsheet/resolver)
+      // Fallback stub when plugin definition is absent
+      const iconName = nodeType === 'folder'
+        ? 'Folder'
+        : nodeType === 'timeline'
+          ? 'AccessTime'
+          : nodeType === 'linker'
+            ? 'AccountTree'
+            : 'Extension';
       items.push({
         key: nodeType,
         nodeType,
         label: nodeType,
-        icon: { muiIconName: nodeType === 'folder' ? 'Folder' : 'Extension' },
+        icon: { muiIconName: iconName },
         group,
         priority: spec.groups.indexOf(group) * 100 + spec.order.indexOf(nodeType),
       });

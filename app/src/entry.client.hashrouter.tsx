@@ -26,11 +26,7 @@ import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIRead
 async function createApp() {
   const resolvedRoutes = await routes;
   // Initialize node-type folder dialog extensions (shape/spreadsheet/basemap/styler) if available
-  try {
-    await initializeDefaultNodeDialogExtensions();
-  } catch (e) {
-    console.warn('[HDB] initializeDefaultFolderExtensions failed (non-fatal):', e);
-  }
+  await initializeDefaultNodeDialogExtensions();
   // flatRoutes() provides RouteConfig entries; cast to RouteObject[] for client router
   return createHashRouter(resolvedRoutes as unknown as RouteObject[]);
 }
@@ -39,19 +35,18 @@ createApp().then((router) => {
   startTransition(() => {
     const root = document.getElementById('root');
     if (!root) throw new Error('Root element not found');
-    try {
-      const base = (import.meta as any)?.env?.BASE_URL || (document?.baseURI ? new URL(document.baseURI).pathname : '/');
-      const b = typeof base === 'string' ? base : '/';
-      if (b && b !== '/' && location.pathname.startsWith(b) && !location.hash) {
-        const rest = location.pathname.slice(b.length - (b.endsWith('/') ? 1 : 0));
-        location.replace(`${b}#${rest}${location.search}`);
-        return;
-      }
-    } catch {}
+    const base = (import.meta as any)?.env?.BASE_URL || (document?.baseURI ? new URL(document.baseURI).pathname : '/');
+    const b = typeof base === 'string' ? base : '/';
+    if (b && b !== '/' && location.pathname.startsWith(b) && !location.hash) {
+      const rest = location.pathname.slice(b.length - (b.endsWith('/') ? 1 : 0));
+      const normalized = `/${rest}`.replace(/\/+/, '/');
+      location.replace(`${b}#${normalized}${location.search}`);
+      return;
+    }
 
     function Providers({ children }: { children: React.ReactNode }) {
-      useEffect(() => { try { console.log('[HDB-BOOT] AppShell mount'); } catch {} }, []);
-      useEffect(() => { try { registerTableStateCleanupEvents(); } catch {} }, []);
+      
+      useEffect(() => { registerTableStateCleanupEvents(); }, []);
       return (
         <BootProgressProvider>
           <AppConfigProvider>

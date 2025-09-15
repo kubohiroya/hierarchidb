@@ -9,3 +9,6 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
   const mod = await import('../components/ShapeViewPanel');
   return (mod as any).ShapeViewPanel as unknown as PluginPanelComponent;
 }
+
+// Register host-composed steps using existing step components (idempotent)
+import './steps-provider';

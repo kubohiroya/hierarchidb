@@ -30,13 +30,15 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
   };
    */
 
+  const wc = (data || {}) as any;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step2DataSource
-          workingCopy={{ ...data, dataSourceName: data.dataSourceName }}
+          workingCopy={{ ...wc, dataSourceName: wc.dataSourceName }}
           onUpdate={(updates) => {
-            const updatedData = { ...data, ...updates };
+            const updatedData = { ...wc, ...updates };
             onNext(updatedData);
           }}
           disabled={false}
@@ -60,7 +62,7 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
         }}
       >
         <Button onClick={onPrevious}>Previous</Button>
-        <Button variant="contained" onClick={() => onNext(data)} disabled={!data.dataSourceName}>
+        <Button variant="contained" onClick={() => onNext(wc)} disabled={!wc.dataSourceName}>
           Next
         </Button>
       </Box>

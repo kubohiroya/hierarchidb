@@ -14,7 +14,7 @@ class MockPackageJsonReader {
       'shape-plugin',
       'location-plugin',
       'basemap-plugin',
-      'project-plugin',
+      'linker-plugin',
       'route-plugin',
       'resolver-plugin',
       'styler-plugin'

@@ -16,7 +16,7 @@
 ## クロスパッケージ import の取り扱い
 - 公開 API のみを使用: `@hierarchidb/{package}` のエクスポートから参照し、`src/*` などのディープパスは使用禁止。
 - 型参照の前提（日付更新）: 以前は多くのパッケージで `exports.types` を `src/index.ts` に向けていましたが、複数エントリ（UI/Worker/Workers/*）を公開するプラグインでは `dist/*.d.ts` を型エントリとします（例: shape-plugin）。利用側は公開エントリから解決し、`import type` を優先して JS 出力を抑制してください。
-- Node 環境型: Node グローバル（例: `process`）を型として使う必要がある場合、パッケージの `tsconfig.json` に `types: ["node"]` を追加します（例: `node-type/project-plugin`）。
+- Node 環境型: Node グローバル（例: `process`）を型として使う必要がある場合、パッケージの `tsconfig.json` に `types: ["node"]` を追加します（例: `node-type/linker-plugin`）。
 
 ## package.json の `exports` / `types` ポリシー（重要・更新）
 - 目的: 複数エントリ（UI/Worker/Workers/*）や Web Worker の公開があるプラグインでの型解決とビルド安定性を両立する。

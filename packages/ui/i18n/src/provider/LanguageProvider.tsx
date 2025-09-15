@@ -9,7 +9,8 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from '
 import { useTranslation } from 'react-i18next';
 import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
 import { enUS, ja } from 'date-fns/locale';
-import type { Locale } from 'date-fns';
+// Avoid hard type dependency on date-fns types during DTS build
+type Locale = unknown;
 
 // Language configuration
 export interface LanguageConfig {
@@ -204,7 +205,7 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
   const changeLanguage = async (languageCode: string): Promise<void> => {
     const targetLanguage = SUPPORTED_LANGUAGES.find((lang) => lang.code === languageCode);
     if (!targetLanguage) {
-      if (import.meta.env.DEV) {
+      if ((import.meta as any)?.env?.DEV) {
 
         console.warn(`Language ${languageCode} not supported`);
 
@@ -229,7 +230,7 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
         localStorage.setItem('preferred-language', languageCode);
       }
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if ((import.meta as any)?.env?.DEV) {
 
         console.error('Failed to change language:', error);
 

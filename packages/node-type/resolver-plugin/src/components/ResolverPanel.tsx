@@ -9,7 +9,6 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Grid,
   IconButton,
   LinearProgress,
   List,
@@ -21,6 +20,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Cached as CachedIcon,
   CheckCircle as CheckIcon,
@@ -273,7 +273,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       {/* Statistics Grid */}
       {statistics && (
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={6} sm={3}>
+          <Grid size={{ xs: 6, sm: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary">
                 {statistics.mappedProperties}
@@ -283,7 +283,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid size={{ xs: 6, sm: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="secondary">
                 {entity.validationRules.length}
@@ -293,7 +293,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid size={{ xs: 6, sm: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="success.main">
                 {statistics.coverage.toFixed(0)}%
@@ -303,7 +303,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid size={{ xs: 6, sm: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color={compilationStatus === 'compiled' ? 'success.main' : 'text.disabled'}>
                 {compilationStatus === 'compiled' ? '10x' : '--'}
@@ -380,7 +380,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
             Performance Metrics
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <TimelineIcon color="primary" />
                 <Box>
@@ -393,7 +393,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <MemoryIcon color="primary" />
                 <Box>
@@ -406,7 +406,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CachedIcon color="primary" />
                 <Box>
@@ -419,7 +419,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SpeedIcon color="success" />
                 <Box>

@@ -24,6 +24,16 @@ export interface PluginStepProvider {
 }
 
 /**
+ * New: Config-based provider that supplies typed component factories.
+ */
+export interface PluginStepConfigProvider {
+  nodeType: string;
+  getCreateStepConfigs(): PluginStepConfig[];
+  getEditStepConfigs(nodeId: string, data?: any): PluginStepConfig[];
+  validateAccess?(nodeId?: string): Promise<boolean>;
+}
+
+/**
  * Plugin step configuration
  */
 export interface PluginStepConfig {
@@ -37,7 +47,7 @@ export interface PluginStepConfig {
   componentFactory: (props: StepComponentProps) => ReactNode;
 
   /** Validation function */
-  validate?: () => boolean | Promise<boolean>;
+  validate?: (data?: any) => boolean | Promise<boolean>;
 
   /** Step capabilities */
   capabilities?: {
@@ -87,9 +97,11 @@ export interface StepComponentProps {
 export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
   private providers: Map<string, PluginStepProvider> = new Map();
+  private configProviders: Map<string, PluginStepConfigProvider> = new Map();
+  private listeners: Set<() => void> = new Set();
+  private version = 0;
 
-  private constructor() {
-  }
+  private constructor() { /* noop */ }
 
   /**
    * Get singleton instance
@@ -110,6 +122,17 @@ export class PluginStepRegistry {
     }
     this.providers.set(provider.nodeType, provider);
     console.log(`Registered step provider for nodeType: ${provider.nodeType}`);
+    this.emitChange();
+  }
+
+  /** Register a config-based provider (typed componentFactory) */
+  registerConfigProvider(provider: PluginStepConfigProvider): void {
+    if (this.configProviders.has(provider.nodeType)) {
+      console.warn(`Config provider for nodeType "${provider.nodeType}" is already registered`);
+    }
+    this.configProviders.set(provider.nodeType, provider);
+    console.log(`Registered config provider for nodeType: ${provider.nodeType}`);
+    this.emitChange();
   }
 
   /**
@@ -117,6 +140,8 @@ export class PluginStepRegistry {
    */
   unregister(nodeType: string): void {
     this.providers.delete(nodeType);
+    this.configProviders.delete(nodeType);
+    this.emitChange();
   }
 
   /**
@@ -124,6 +149,10 @@ export class PluginStepRegistry {
    */
   getProvider(nodeType: string): PluginStepProvider | undefined {
     return this.providers.get(nodeType);
+  }
+
+  getConfigProvider(nodeType: string): PluginStepConfigProvider | undefined {
+    return this.configProviders.get(nodeType);
   }
 
   /**
@@ -137,40 +166,37 @@ export class PluginStepRegistry {
    * Get create steps for node type
    */
   getCreateSteps(nodeType: string): DialogStep[] {
-    const provider = this.providers.get(nodeType);
-    if (!provider) {
-      console.warn(`No provider registered for nodeType: ${nodeType}`);
-      return [];
+    const cfgp = this.configProviders.get(nodeType);
+    if (cfgp) {
+      // Bridge to DialogStep: host側で componentFactory をラップして描画する
+      const cfgs = cfgp.getCreateStepConfigs();
+      return cfgs.map((c) => ({ id: c.id, label: c.label, component: null, validate: c.validate } as DialogStep));
     }
-    return provider.getCreateSteps();
+    const provider = this.providers.get(nodeType);
+    return provider ? provider.getCreateSteps() : [];
   }
 
   /**
    * Get edit steps for node type
    */
   getEditSteps(nodeType: string, nodeId: string, data?: any): DialogStep[] {
-    const provider = this.providers.get(nodeType);
-    if (!provider) {
-      console.warn(`No provider registered for nodeType: ${nodeType}`);
-      return [];
+    const cfgp = this.configProviders.get(nodeType);
+    if (cfgp) {
+      const cfgs = cfgp.getEditStepConfigs(nodeId, data);
+      return cfgs.map((c) => ({ id: c.id, label: c.label, component: null, validate: c.validate } as DialogStep));
     }
-    return provider.getEditSteps(nodeId, data);
+    const provider = this.providers.get(nodeType);
+    return provider ? provider.getEditSteps(nodeId, data) : [];
   }
 
   /**
    * Validate access to node
    */
   async validateAccess(nodeType: string, nodeId?: string): Promise<boolean> {
+    const cfgp = this.configProviders.get(nodeType);
+    if (cfgp?.validateAccess) return cfgp.validateAccess(nodeId);
     const provider = this.providers.get(nodeType);
-    if (!provider) {
-      // No provider: default-allow so generic dialog (Basic step only) can render
-      return true;
-    }
-
-    if (provider.validateAccess) {
-      return provider.validateAccess(nodeId);
-    }
-
+    if (provider?.validateAccess) return provider.validateAccess(nodeId);
     return true;
   }
 
@@ -179,5 +205,23 @@ export class PluginStepRegistry {
    */
   clear(): void {
     this.providers.clear();
+    this.configProviders.clear();
+    this.emitChange();
+  }
+
+  /** Subscribe to registry changes. Returns an unsubscribe function. */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
+
+  /** Current change counter for convenient dependencies. */
+  getVersion(): number { return this.version; }
+
+  private emitChange(): void {
+    this.version++;
+    for (const fn of Array.from(this.listeners)) {
+      try { fn(); } catch { /* noop */ }
+    }
   }
 }

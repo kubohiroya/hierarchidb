@@ -27,7 +27,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {
   });
   return (
-    <Box sx={{ position: 'relative', height: '100%' }}>
+    <Box sx={{ position: 'relative', height: '100%', minHeight: 0 }}>
       {/* TreeConsolePanel without SpeedDial (we'll add our own)
        */}
       <TreeConsolePanel

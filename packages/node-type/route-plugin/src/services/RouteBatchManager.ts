@@ -14,7 +14,7 @@ import { type RouteBatchConfig, RouteBatchSession, type RouteBatchTask } from '.
  * Route-specific batch configuration
  */
 export class RouteBatchManager {
-  constructor(private deps?: { engines?: any; emitter?: any; store?: any }) {
+  constructor(private deps?: { engines?: unknown; emitter?: { emit?: (ev: any) => void }; store?: { upsert?: (id: string, row: any) => void } }) {
   }
 
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
@@ -62,7 +62,7 @@ export class RouteBatchManager {
         if (route.startLocationId || route.endLocationId) {
           routeTasks.push({
             taskId: crypto.randomUUID(),
-            treeNodeId: nodeId as any,
+            treeNodeId: nodeId,
             sessionId,
             taskType: 'location_resolution',
             stage: 'download', // Reuse Shape's stage
@@ -96,8 +96,9 @@ export class RouteBatchManager {
           ...(route.startCoordinates && route.endCoordinates ? {
             startCoordinates: route.startCoordinates,
             endCoordinates: route.endCoordinates,
-          } as any : {}),
-          ...(route as any).methodOptions ? { methodOptions: (route as any).methodOptions } : {},
+          } : {}),
+          // 追加オプションは型安全に存在チェック
+          ...('methodOptions' in (route as Record<string, unknown>) ? { methodOptions: (route as Record<string, unknown>).methodOptions } : {}),
         },
       });
     }
@@ -136,7 +137,7 @@ export class RouteBatchManager {
       total: routeTasks.length,
       updatedAt: Date.now(),
       paused: false,
-    } as any);
+    } as unknown as any);
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks, (ev: ProgressEvent) => this.emitProgress(ev));
     await session.initialize();
@@ -259,11 +260,11 @@ export class RouteBatchManager {
   private emitProgress(ev: ProgressEvent): void {
     // bridge to UI progress emitter/store if provided via deps in createRouteBatchManager
     try {
-      this.deps?.emitter?.emit({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() });
+      this.deps?.emitter?.emit?.({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() });
     } catch {
     }
     try {
-      this.deps?.store?.upsert(ev.sessionId, {
+      this.deps?.store?.upsert?.(ev.sessionId, {
         jobId: ev.sessionId,
         progress: ev.percentage,
         phase: ev.stage,

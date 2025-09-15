@@ -5,7 +5,6 @@ import {
   Button,
   Chip,
   Collapse,
-  Grid,
   IconButton,
   LinearProgress,
   List,
@@ -23,6 +22,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
@@ -254,7 +254,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       {/* Performance Metrics */}
       {previewResult && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <SpeedIcon color="primary" />
@@ -270,7 +270,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
             </Paper>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <MemoryIcon color="primary" />
@@ -286,7 +286,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
             </Paper>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <Paper sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <StorageIcon color="primary" />
@@ -451,7 +451,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
             {/* Statistics */}
             <Box sx={{ p: 2 }}>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Total Records
                   </Typography>
@@ -459,7 +459,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {previewResult.statistics.totalRecords}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Successful Mappings
                   </Typography>
@@ -467,7 +467,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {previewResult.statistics.successfulMappings}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Failed Mappings
                   </Typography>
@@ -475,7 +475,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {previewResult.statistics.failedMappings}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Duplicates Found
                   </Typography>
@@ -483,7 +483,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {previewResult.statistics.duplicatesFound}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Duplicates Resolved
                   </Typography>
@@ -491,7 +491,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     {previewResult.statistics.duplicatesResolved}
                   </Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     Unmapped Properties
                   </Typography>

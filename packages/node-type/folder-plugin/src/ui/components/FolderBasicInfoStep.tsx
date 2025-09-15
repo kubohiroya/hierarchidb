@@ -7,7 +7,7 @@ import React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import type { TagId } from '../../types';
+import type { TagId } from '@hierarchidb/common-type';
 import { TagInput } from './TagInput';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 

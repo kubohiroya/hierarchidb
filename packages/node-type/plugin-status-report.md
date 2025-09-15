@@ -14,7 +14,7 @@
 | @hierarchidb/basemap-plugin | ok | ok | src: 28 / tests: 3 |
 | @hierarchidb/folder-plugin | ok | ok | src: 42 / tests: 7 |
 | @hierarchidb/location-plugin | ok | ok | src: 41 / tests: 2 |
-| @hierarchidb/project-plugin | ok | ok | src: 20 / tests: 1 |
+| @hierarchidb/linker-plugin | ok | ok | src: 20 / tests: 1 |
 | @hierarchidb/resolver-plugin | ok | ok | src: 17 / tests: 5 |
 | @hierarchidb/route-plugin | ok | ok | src: 40 / tests: 7 |
 | @hierarchidb/shape-plugin | ok | ok | src: 125 / tests: 27 |

@@ -1,0 +1,111 @@
+export type PeerDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+export type PeerDialogPosition = { x: number; y: number };
+export type PeerDialogSize = { width: number; height: number };
+
+export interface PeerDialogPersistence {
+  getDisplayMode(nodeId: string): Promise<PeerDisplayMode | null>;
+  setDisplayMode(nodeId: string, mode: PeerDisplayMode): Promise<void>;
+  getPosition(nodeId: string): Promise<PeerDialogPosition | null>;
+  setPosition(nodeId: string, pos: PeerDialogPosition): Promise<void>;
+  getSize(nodeId: string): Promise<PeerDialogSize | null>;
+  setSize(nodeId: string, size: PeerDialogSize): Promise<void>;
+  copyState?(fromNodeId: string, toNodeId: string): Promise<void>;
+}
+
+class UIPersistenceRegistry {
+  private providers = new Map<string, PeerDialogPersistence>();
+  private dbCache = new Map<string, { table: (name: string) => { get: (id: string) => Promise<any>; put: (row: any) => Promise<void> } } | null>();
+
+  register(nodeType: string, provider: PeerDialogPersistence) {
+    this.providers.set(nodeType, provider);
+  }
+
+  get(nodeType: string): PeerDialogPersistence {
+    if (!nodeType || typeof nodeType !== 'string') return this.noopProvider();
+    return this.providers.get(nodeType) || this.createDefaultProvider(nodeType);
+  }
+
+  private noopProvider(): PeerDialogPersistence {
+    return {
+      async getDisplayMode() { return null; },
+      async setDisplayMode() { /* no-op */ },
+      async getPosition() { return null; },
+      async setPosition() { /* no-op */ },
+      async getSize() { return null; },
+      async setSize() { /* no-op */ },
+      async copyState() { /* no-op */ },
+    };
+  }
+
+  private createDefaultProvider(nodeType: string): PeerDialogPersistence {
+    const ensureDB = async () => {
+      if (this.dbCache.has(nodeType)) return this.dbCache.get(nodeType);
+      if (!nodeType || typeof nodeType !== 'string') { this.dbCache.set(nodeType, null); return null; }
+      const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
+      const path = `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`;
+      try {
+        const mod: any = await import(/* @vite-ignore */ path);
+        const Ctor = mod[className];
+        const db = new Ctor();
+        await db.open?.();
+        this.dbCache.set(nodeType, db);
+        return db;
+      } catch (e) {
+        console.warn('[UIPersistenceRegistry] Failed to load EntitiesDB for', nodeType, e);
+        this.dbCache.set(nodeType, null);
+        return null;
+      }
+    };
+
+    const withRow = async (nodeId: string, updater: (row: any) => void | Promise<void>) => {
+      const db = await ensureDB(); if (!db) return;
+      const tbl = db.table('peerEntities');
+      const row = (await tbl.get(nodeId)) || { nodeId };
+      await Promise.resolve(updater(row));
+      row.updatedAt = Date.now();
+      await tbl.put(row);
+    };
+
+    return {
+      getDisplayMode: async (nodeId) => {
+        const db = await ensureDB(); if (!db) return null;
+        const row = await db.table('peerEntities').get(nodeId);
+        return (row?.displayMode as PeerDisplayMode) ?? null;
+      },
+      setDisplayMode: async (nodeId, mode) => withRow(nodeId, (r) => { r.displayMode = mode; }),
+      getPosition: async (nodeId) => {
+        const db = await ensureDB(); if (!db) return null;
+        const row = await db.table('peerEntities').get(nodeId);
+        return (row?.dialogPosition as PeerDialogPosition) ?? null;
+      },
+      setPosition: async (nodeId, pos) => withRow(nodeId, (r) => { r.dialogPosition = pos; }),
+      getSize: async (nodeId) => {
+        const db = await ensureDB(); if (!db) return null;
+        const row = await db.table('peerEntities').get(nodeId);
+        return (row?.dialogSize as PeerDialogSize) ?? null;
+      },
+      setSize: async (nodeId, size) => withRow(nodeId, (r) => { r.dialogSize = size; }),
+      copyState: async (fromId, toId) => {
+        const db = await ensureDB(); if (!db) return;
+        const tbl = db.table('peerEntities');
+        const src = await tbl.get(fromId); if (!src) return;
+        const dst = (await tbl.get(toId)) || { nodeId: toId };
+        dst.displayMode = src.displayMode ?? dst.displayMode;
+        dst.dialogPosition = src.dialogPosition ?? dst.dialogPosition;
+        dst.dialogSize = src.dialogSize ?? dst.dialogSize;
+        dst.updatedAt = Date.now();
+        await tbl.put(dst);
+      },
+    };
+  }
+}
+
+export const UIPersistence = new UIPersistenceRegistry();
+
+// Convenience wrappers (default provider)
+export const getPeerDisplayMode = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getDisplayMode(nodeId);
+export const setPeerDisplayMode = (nodeType: string, nodeId: string, mode: PeerDisplayMode) => UIPersistence.get(nodeType).setDisplayMode(nodeId, mode);
+export const getPeerDialogPosition = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getPosition(nodeId);
+export const setPeerDialogPosition = (nodeType: string, nodeId: string, pos: PeerDialogPosition) => UIPersistence.get(nodeType).setPosition(nodeId, pos);
+export const getPeerDialogSize = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getSize(nodeId);
+export const setPeerDialogSize = (nodeType: string, nodeId: string, size: PeerDialogSize) => UIPersistence.get(nodeType).setSize(nodeId, size);

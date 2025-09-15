@@ -57,7 +57,10 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
     if (!allowLegacyBool && (typeof toggleFullscreen === 'function' || typeof isFullscreen === 'boolean')) {
       console.warn('[UI] Legacy CommonDialogTitle props (isFullscreen/toggleFullscreen) are disabled by default. Use displayMode/onChangeDisplayMode instead.');
     }
-  } catch {}
+  } catch (err) {
+    // Accessing global FEATURE_FLAGS can fail in SSR; log at debug level
+    console.debug('[CommonDialogTitle] FEATURE_FLAGS access failed', err);
+  }
   const [modeMenuAnchor, setModeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const openModeMenu = (e: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(e.currentTarget);
   const closeModeMenu = () => setModeMenuAnchor(null);

@@ -24,6 +24,14 @@ const res = await svc.download('https://example.com/data.csv', 'file-001', { exp
 console.log(res);
 ```
 
+Dev CORS escape hatch
+---------------------
+If you set `HDB_LOCAL_PROXY=1` when launching the app’s Vite dev server, the
+download feature will route cross-origin HTTP/HTTPS requests through the local
+dev proxy endpoint (`${BASE_URL}/proxy`), which removes browser CORS limits in
+development. Same-origin requests are not proxied. Make sure the app has the
+Vite proxy middleware enabled.
+
 Usage notes
 -----------
 - Provide `NetworkPort` wrappers over `fetch` (or Axios) and a `StoragePort` (e.g., IndexedDB buckets) for persistence.

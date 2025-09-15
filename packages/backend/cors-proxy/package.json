@@ -16,8 +16,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "hono": "^4.9.2",
-    "jose": "^6.0.12",
     "change-case": "^5.4.4"
   },
   "devDependencies": {

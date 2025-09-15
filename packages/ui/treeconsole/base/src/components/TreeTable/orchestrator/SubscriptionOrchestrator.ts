@@ -162,19 +162,18 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       try {
         //  WorkerAPI
         const subscriptionAPI = await workerAPI.getSubscriptionAPI();
-        const subscription = await subscriptionAPI.subscribeSubtree(
+        const proxied = (await import('comlink')).proxy((event: any) => {
+          if (event.type === 'expanded') {
+            console.log('Expanded changes:', event);
+          } else {
+            handleSubTreeUpdate(event as SubTreeChanges);
+          }
+        });
+        const subscriptionId = await subscriptionAPI.subscribeSubtree(
           rootNodeId as NodeId,
-          (event: any) => {
-            if (event.type === 'expanded') {
-              console.log('Expanded changes:', event);
-            } else {
-              //  SubTree
-              handleSubTreeUpdate(event as SubTreeChanges);
-            }
-          },
+          proxied,
         );
-
-        subscriptionRef.current = subscription;
+        subscriptionRef.current = () => { void subscriptionAPI.unsubscribe(subscriptionId); };
         setSubscriptionId(rootNodeId); //  rootNodeId
         setSubscribedRootNodeId(rootNodeId);
       } catch (error) {

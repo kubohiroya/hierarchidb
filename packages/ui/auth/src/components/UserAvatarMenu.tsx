@@ -65,7 +65,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if ((import.meta as any)?.env?.DEV) {
         console.error('Failed to clear cache:', error);
       }
       alert('Failed to clear some cache data. Please try again.');

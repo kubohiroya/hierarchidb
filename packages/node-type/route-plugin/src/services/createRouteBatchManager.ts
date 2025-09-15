@@ -13,14 +13,13 @@ export function createRouteBatchManager(deps?: {
   osrmThrottle?: ThrottleOptions
 }) {
   const osrmPort = deps?.net ? (deps?.osrmThrottle ? new ThrottledPort(deps.net, deps.osrmThrottle) : deps.net) : undefined;
-  const engines = osrmPort ? {
-    osrm: new OsrmEngine(osrmPort),
-    searoute: new SearouteEngine(),
-  } : ({ searoute: new SearouteEngine() } as any);
+  const engines = osrmPort
+    ? { osrm: new OsrmEngine(osrmPort), searoute: new SearouteEngine() }
+    : { searoute: new SearouteEngine() };
   try {
-    return new (RouteBatchManager as any)({ engines, emitter: deps?.emitter, store: deps?.store });
+    // RouteBatchManager のコンストラクタは可搬性のため deps を任意で受ける
+    return new RouteBatchManager({ engines, emitter: deps?.emitter, store: deps?.store });
   } catch {
-    return new RouteBatchManager() as any;
+    return new RouteBatchManager();
   }
 }
-

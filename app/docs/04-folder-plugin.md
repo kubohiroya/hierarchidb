@@ -272,4 +272,4 @@ A: 移動先の権限と、循環参照になっていないか確認してく�
 
 ---
 
-[← 前へ: ナビゲーション](03-navigation.md) | [目次](00-index.md) | [次へ: プロジェクトプラグイン →](05-project-plugin.md)
+[← 前へ: ナビゲーション](03-navigation.md) | [目次](00-index.md) | [次へ: リンカープラグイン（linker） →](05-linker-plugin.md)

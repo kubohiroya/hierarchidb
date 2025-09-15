@@ -19,6 +19,8 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     'i18next',
     '@hierarchidb/ui-core',
     '@hierarchidb/ui-icon',
+    '@hierarchidb/ui-treeconsole-trashbin',
+    '@hierarchidb/ui-map',
   ];
 
   const mergedExternal = Array.from(
@@ -37,13 +39,21 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
 
     // Generate .d.ts files with optimized settings
     dts: {
+      // Avoid inlining external .d.ts (react, mui, workspace peers)
+      // This prevents API Extractor from pulling in TS5-specific paths like
+      // '@types/react/ts5.0/jsx-runtime' into the bundled output.
+      resolve: false,
       compilerOptions: {
         composite: false,
         incremental: false,
         tsBuildInfoFile: undefined,
-        // Force Node-style resolution for TS 4.9 during dts bundling
+        // Force Node-style resolution compatible with TS 4.9 during dts bundling
         moduleResolution: 'node',
         resolveJsonModule: true,
+        // Keep JSX types external to avoid leaking jsx-runtime symbols
+        jsx: 'react-jsx',
+        skipLibCheck: true,
+        types: ['react', 'node'],
       },
     },
 

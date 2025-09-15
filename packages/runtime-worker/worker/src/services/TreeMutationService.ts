@@ -44,6 +44,53 @@ export class TreeMutationService implements TreeMutationAPI {
   }
 
   // ==================
+  // Helper: ensure ancestors' hasChildren flags
+  // ==================
+  private async ensureAncestorsHaveChildrenFromParent(startParentId: NodeId | undefined): Promise<void> {
+    if (!startParentId) return;
+    let cursor: NodeId | undefined = startParentId;
+    const seen = new Set<string>();
+    while (cursor && !seen.has(cursor)) {
+      seen.add(cursor);
+      const parent = await this.coreDB.getNode?.(cursor);
+      if (!parent) break;
+      try {
+        await this.coreDB.updateNode?.({ id: parent.id, hasChildren: true as any, updatedAt: Date.now() as Timestamp, version: (parent.version || 1) + 1 } as any);
+      } catch {}
+      if (!parent.parentId || parent.parentId === parent.id) break;
+      cursor = parent.parentId;
+    }
+  }
+
+  private async ensureAncestorsHaveChildrenFromNodes(nodeIds: readonly NodeId[]): Promise<void> {
+    for (const id of nodeIds) {
+      const node = await this.coreDB.getNode?.(id);
+      if (node?.parentId) {
+        await this.ensureAncestorsHaveChildrenFromParent(node.parentId);
+      }
+    }
+  }
+
+  // Strict recomputation: sets hasChildren=true/false based on actual child count and propagates upward
+  private async recomputeAncestorsHasChildrenFromParent(startParentId: NodeId | undefined): Promise<void> {
+    if (!startParentId) return;
+    let cursor: NodeId | undefined = startParentId;
+    const seen = new Set<string>();
+    while (cursor && !seen.has(cursor)) {
+      seen.add(cursor);
+      const parent = await this.coreDB.getNode?.(cursor);
+      if (!parent) break;
+      const children = (await this.coreDB.listChildren?.(parent.id)) || [];
+      const flag = children.length > 0;
+      try {
+        await this.coreDB.updateNode?.({ id: parent.id, hasChildren: (flag as any), updatedAt: Date.now() as Timestamp, version: (parent.version || 1) + 1 } as any);
+      } catch {}
+      if (!parent.parentId || parent.parentId === parent.id) break;
+      cursor = parent.parentId;
+    }
+  }
+
+  // ==================
   // TreeMutationAPI Interface Methods
   // ==================
 
@@ -114,8 +161,23 @@ export class TreeMutationService implements TreeMutationAPI {
       },
       issuedAt: Date.now() as Timestamp,
     };
+    // Capture original parents before move
+    const originalParents = new Set<NodeId>();
+    for (const nid of params.nodeIds) {
+      const n = await this.coreDB.getNode?.(nid);
+      if (n?.parentId) originalParents.add(n.parentId);
+    }
     const result = await this.commandProcessor.processCommand(cmd);
     if (!result.success) return { success: false, error: (result as any).error ?? 'Unknown error' };
+    // After successful move, recompute destination ancestors and original parents
+    await this.recomputeAncestorsHasChildrenFromParent(params.toParentId);
+    for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
+    // Recompute depth under new parent for each moved root
+    try {
+      for (const rootId of params.nodeIds) {
+        await this.recomputeDepthForSubtree(params.toParentId, rootId);
+      }
+    } catch {}
     return { success: true };
   }
 
@@ -151,6 +213,8 @@ export class TreeMutationService implements TreeMutationAPI {
           } catch {
           }
         }
+        // After successful duplicate, recompute destination ancestors hasChildren
+        await this.recomputeAncestorsHasChildrenFromParent(parentId);
         return {
           success: true,
           nodeIds: result.newNodeIds || [],
@@ -165,6 +229,12 @@ export class TreeMutationService implements TreeMutationAPI {
 
   async removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     try {
+      // Capture current parents to reinforce flags after operation
+      const parentIds = new Set<NodeId>();
+      for (const nid of nodeIds) {
+        const n = await this.coreDB.getNode?.(nid);
+        if (n?.parentId) parentIds.add(n.parentId);
+      }
       const cmd: CommandEnvelope<'remove', { nodeIds: NodeId[] }> = {
         commandId: crypto.randomUUID(),
         groupId: crypto.randomUUID(),
@@ -173,7 +243,14 @@ export class TreeMutationService implements TreeMutationAPI {
         issuedAt: Date.now() as Timestamp,
       };
       const result = await this.commandProcessor.processCommand(cmd);
-      return result.success ? { success: true } : { success: false, error: (result as any).error };
+      if (result.success) {
+        // Recompute hasChildren along ancestor chains for all affected parents
+        for (const pid of Array.from(parentIds)) {
+          await this.recomputeAncestorsHasChildrenFromParent(pid);
+        }
+        return { success: true };
+      }
+      return { success: false, error: (result as any).error };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -199,39 +276,34 @@ export class TreeMutationService implements TreeMutationAPI {
       success: false,
       error: ('error' in result ? (result as any).error : 'Unknown error'),
     };
+    // After successful recover, recompute destination ancestors hasChildren
+    if (params.toParentId) {
+      await this.recomputeAncestorsHasChildrenFromParent(params.toParentId);
+      // Also recompute depth for recovered roots
+      try {
+        for (const rootId of params.nodeIds) {
+          await this.recomputeDepthForSubtree(params.toParentId, rootId);
+        }
+      } catch {}
+    } else {
+      await this.ensureAncestorsHaveChildrenFromNodes(params.nodeIds);
+    }
     return { success: true };
   }
 
   async removeSubtree(rootId: NodeId): Promise<{ success: boolean; error?: string }> {
+    // Delegate to CommandProcessor so that associated entities (peer/groups/relations)
+    // are also removed via its internal cleanup logic.
     try {
-      // Prefer atomic transactional removal when supported by CoreDB
-      const coreAny = this.coreDB as any;
-      let removed: import('@hierarchidb/common-type').NodeId[] | null = null;
-      if (typeof coreAny.removeSubtreeTx === 'function') {
-        removed = await coreAny.removeSubtreeTx(rootId);
-      } else {
-        // Fallback: query descendants then bulk delete (non-atomic)
-        const { TreeQueryService } = await import('./TreeQueryService');
-        const query = await TreeQueryService.getSingleton(this.coreDB as any);
-        const descendants = await query.listDescendants(rootId);
-        const ids = descendants.map((n) => n.id);
-        if (ids.length > 0) {
-          const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-          for (let i = 0; i < ids.length; i += size) {
-            const batch = ids.slice(i, i + size);
-            if (coreAny.bulkDeleteNodes) await coreAny.bulkDeleteNodes(batch);
-            else for (const id of batch) await coreAny.deleteNode?.(id);
-          }
-        }
-        removed = ids;
-      }
-      // Best-effort peer cleanup
-      if (Array.isArray(removed) && removed.length > 0) {
-        const nodesForCleanup = await Promise.all(removed.map((id) => this.coreDB.getNode?.(id) as any).map(async p => (await p))); // may be undefined after delete
-        const filtered = nodesForCleanup.filter(Boolean) as import('@hierarchidb/common-type').TreeNode[];
-        if (filtered.length > 0) await this.deletePeerEntitiesForNodes(filtered);
-      }
-      return { success: true };
+      const cmd: CommandEnvelope<'removeSubtree', { rootId: NodeId }> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'removeSubtree',
+        payload: { rootId },
+        issuedAt: Date.now() as Timestamp,
+      } as any;
+      const result = await this.commandProcessor.processCommand(cmd);
+      return result.success ? { success: true } : { success: false, error: (result as any).error };
     } catch (error) {
       return { success: false, error: String(error) };
     }
@@ -275,6 +347,48 @@ export class TreeMutationService implements TreeMutationAPI {
     } catch {
     }
     return { success: true, seq: this.getNextSeq(), newNodeIds };
+  }
+
+  /** Recompute depth for a subtree moved/duplicated/recovered under a new parent. */
+  private async recomputeDepthForSubtree(newParentId: NodeId, rootId: NodeId): Promise<void> {
+    let baseDepth = 0;
+    try {
+      const parent = await this.coreDB.getNode?.(newParentId);
+      baseDepth = (parent && typeof (parent as any).depth === 'number') ? (parent as any).depth : 0;
+    } catch {}
+    // Fetch descendants including root
+    const all: TreeNode[] = (await (this.coreDB as any).listDescendants?.(rootId)) || [];
+    const byParent = new Map<string, TreeNode[]>();
+    for (const n of all) {
+      const pid = (n as any).parentId as string | undefined;
+      if (!byParent.has(pid || '')) byParent.set(pid || '', []);
+      byParent.get(pid || '')!.push(n);
+    }
+    const queue: Array<{ id: string; depth: number }> = [{ id: rootId as unknown as string, depth: baseDepth + 1 }];
+    const visited = new Set<string>();
+    const updates: TreeNode[] = [];
+    while (queue.length) {
+      const { id, depth } = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const node = id === (rootId as unknown as string)
+        ? await this.coreDB.getNode?.(rootId)
+        : all.find((n) => (n as any).id === id);
+      if (!node) continue;
+      if ((node as any).depth !== depth) {
+        updates.push({ ...(node as any), depth } as any);
+      }
+      const children = byParent.get(id) || [];
+      for (const c of children) queue.push({ id: (c as any).id, depth: depth + 1 });
+    }
+    if (updates.length === 1) {
+      await this.coreDB.updateNode?.(updates[0] as any);
+    } else if (updates.length > 1) {
+      const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
+      for (let i = 0; i < updates.length; i += size) {
+        await (this.coreDB as any).bulkUpdateNodes?.(updates.slice(i, i + size));
+      }
+    }
   }
 
   /**
@@ -332,6 +446,15 @@ export class TreeMutationService implements TreeMutationAPI {
       const timestamp = Date.now() as Timestamp;
       const toCreate: TreeNode[] = [];
 
+      // Build quick lookup to detect relative parentage within clipboard set
+      const inClipboard = new Set<string>(nodeIds as unknown as string[]);
+      // Preload base depth from destination parent
+      let baseDepth = 0;
+      try {
+        const p = await this.coreDB.getNode?.(parentId);
+        baseDepth = (p && typeof (p as any).depth === 'number') ? (p as any).depth : 0;
+      } catch {}
+
       for (const nodeId of nodeIds) {
         const sourceNode = nodes[nodeId];
         if (!sourceNode) {
@@ -356,11 +479,19 @@ export class TreeMutationService implements TreeMutationAPI {
           } as CoreCommandResult;
         }
 
+        // Compute relative depth offset for clipboard nested nodes (simple 1-level detection; can be extended)
+        let rel = 1;
+        try {
+          const p = (sourceNode as any).parentId as string | undefined;
+          if (p && inClipboard.has(p)) rel = 2;
+        } catch {}
+
         const newNode = {
           ...sourceNode,
           id: newNodeId,
           parentId: parentId,
           name: newName,
+          depth: baseDepth + rel,
           createdAt: timestamp,
           updatedAt: timestamp,
           version: 1,
@@ -400,6 +531,8 @@ export class TreeMutationService implements TreeMutationAPI {
         }
       }
 
+      // Recompute destination ancestors hasChildren
+      await this.recomputeAncestorsHasChildrenFromParent(parentId);
       return { success: true, seq: this.getNextSeq(), newNodeIds } as CoreCommandResult;
     } catch (error) {
       //  :
@@ -444,10 +577,19 @@ export class TreeMutationService implements TreeMutationAPI {
       */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
     // Route via CommandProcessor holder path when flag ON, else legacy inline path
+    // Capture original parents to reinforce flags after operation
+    const originalParents = new Set<NodeId>();
+    for (const nid of nodeIds) {
+      const n = await this.coreDB.getNode?.(nid);
+      if (n?.parentId) originalParents.add(n.parentId);
+    }
     if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
       const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
       const res = await this.commandProcessor.processCommand(env as any);
-      if (res.success) return { success: true };
+      if (res.success) {
+        for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
+        return { success: true };
+      }
       // Fallback: derive trash root from ancestor pattern (e.g., r:root -> r:trash) and perform inline move
       try {
         for (const nodeId of nodeIds) {
@@ -489,6 +631,7 @@ export class TreeMutationService implements TreeMutationAPI {
             version: (node.version || 1) + 1,
           } as any);
         }
+        for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
         return { success: true };
       } catch (e) {
         return { success: false, error: (e as Error).message || String(e) };
@@ -510,6 +653,7 @@ export class TreeMutationService implements TreeMutationAPI {
           version: node.version + 1,
         } as any);
       }
+      for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
       return { success: true };
     } catch (e) {
       return { success: false, error: String(e) };
@@ -540,6 +684,26 @@ export class TreeMutationService implements TreeMutationAPI {
       newNodeIds.push(newNodeId);
     }
 
+    // Precompute base depth from destination parent (default 0)
+    let baseDepth = 0;
+    try {
+      const parent = await this.coreDB.getNode?.(toParentId);
+      baseDepth = (parent && typeof (parent as any).depth === 'number') ? (parent as any).depth : 0;
+    } catch {}
+
+    // Compute relative depth in the imported set (top-level = 1)
+    const relDepthCache = new Map<NodeId, number>();
+    const getRelDepth = (srcId: NodeId): number => {
+      if (relDepthCache.has(srcId)) return relDepthCache.get(srcId)!;
+      const n = nodes[srcId];
+      if (!n) { relDepthCache.set(srcId, 1); return 1; }
+      const p = n.parentId as NodeId | undefined;
+      if (!p || !nodes[p]) { relDepthCache.set(srcId, 1); return 1; }
+      const d = getRelDepth(p) + 1;
+      relDepthCache.set(srcId, d);
+      return d;
+    };
+
     // Second pass: import nodes with new IDs
     for (const nodeId of nodeIds) {
       const node = nodes[nodeId];
@@ -561,12 +725,15 @@ export class TreeMutationService implements TreeMutationAPI {
         id: newNodeId,
         parentId: newParentId,
         name: newName,
+        depth: baseDepth + getRelDepth(nodeId),
         createdAt: Date.now() as Timestamp,
         updatedAt: Date.now() as Timestamp,
         version: 1,
       });
     }
 
+    // Mark destination ancestors as hasChildren
+    await this.ensureAncestorsHaveChildrenFromParent(toParentId);
     const result: CoreCommandResult = {
       success: true,
       seq: this.getNextSeq(),

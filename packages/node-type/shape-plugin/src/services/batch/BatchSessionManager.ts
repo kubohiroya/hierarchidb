@@ -103,7 +103,7 @@ export class BatchSessionManager {
           failed: ev.failed,
           skipped: 0,
           percentage: ev.percentage,
-          currentStage: ev.stage as any,
+          currentStage: (ev.stage as ProcessingStage) ?? 'processing',
           currentTask: ev.currentTask,
         });
       } catch {
@@ -218,7 +218,7 @@ export class BatchSessionManager {
   // Private Methods
   private initializeStages(_config: BatchProcessConfig): Record<ProcessingStage, StageStatus> {
     const stages: ProcessingStage[] = ['download', 'simplify1', 'simplify2', 'vectortile'];
-    const stageStatus: Record<ProcessingStage, StageStatus> = {} as any;
+    const stageStatus = {} as Record<ProcessingStage, StageStatus>;
 
     for (const stage of stages) {
       stageStatus[stage] = {

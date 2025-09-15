@@ -8,6 +8,7 @@ export default createTsupConfig({
       'shared/index': 'src/shared/index.ts',
       'ui/index': 'src/ui/index.ts',
       'worker/index': 'src/worker/public.ts',
+      'services/index': 'src/services/index.ts',
       // worker entriesは内部型が多いため一旦除外
     },
   },
@@ -16,6 +17,7 @@ export default createTsupConfig({
     'shared/index': 'src/shared/index.ts',
     'ui/index': 'src/ui/index.ts',
     'worker/index': 'src/worker/index.ts',
+    'services/index': 'src/services/index.ts',
   },
   external: [
     'provider',

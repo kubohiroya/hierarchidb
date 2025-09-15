@@ -14,9 +14,10 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Link,
+  Link as MUILink,
   Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { MoreVert as MoreVertIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
@@ -217,6 +218,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     }
   };
 
+  const isRootContext = ((): boolean => {
+    if (!contextMenuNode) return false;
+    const first = pathToUse[0];
+    return !!first && (String(first.id) === String(contextMenuNode.id || contextMenuNode.id));
+  })();
+
   return (
     <>
       <BreadcrumbContainer>
@@ -241,12 +248,18 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const nodeName = node.name || 'Unknown';
               const depth = Math.max(0, index + _depthOffset);
               const iconColor = rainbowColors[depth % rainbowColors.length];
+              const treeId = (props as any)?.treeId as string | undefined;
+              const isRootLike = index === 0 && (!!(node as any)?.parentId === false || (treeId && nodeId === `${treeId}:root`));
+              const toHref = treeId ? (isRootLike ? `/t/${treeId}` : `/t/${treeId}/${String(nodeId)}`) : String(nodeId);
 
               if (isLast) {
+                // 現在ページ（単一要素でルートの場合を含む）もリンク化し、右クリック新規タブを可能にする
                 return (
-                  <Typography
+                  <MUILink
                     key={nodeId}
-                    color="text.primary"
+                    component={RouterLink as any}
+                    to={toHref}
+                    color="inherit"
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -261,10 +274,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                           : 'none',
                       outlineOffset: '-2px',
                       cursor: hoverId === nodeId && hoverBlocked ? 'not-allowed' : 'pointer',
+                      textDecoration: 'none',
                     }}
                     aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
                     title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
-                    onDragOver={(e) => {
+                    onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
                         try {
@@ -279,7 +293,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                         if (!blocked) e.preventDefault();
                       }
                     }}
-                    onDrop={(e) => {
+                    onDrop={(e: any) => {
                       try {
                         const dragged = e.dataTransfer?.getData('text/hdb-node');
                         let blocked = hoverBlocked;
@@ -309,7 +323,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                       onClick={(e: any) => handleContextMenuOpen(e, node)}
                     />
                     {nodeName}
-                  </Typography>
+                  </MUILink>
                 );
               }
 
@@ -332,9 +346,10 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     clickable
                     onClick={(e: any) => handleContextMenuOpen(e, node)}
                   />
-                  <Link
+                  <MUILink
                     color="inherit"
-                    onClick={() => handleNodeClick(nodeId, node)}
+                    component={RouterLink as any}
+                    to={toHref}
                     sx={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -350,7 +365,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     }}
                     aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
                     title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
-                    onDragOver={(e) => {
+                    onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
                         try {
@@ -365,7 +380,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                         if (!blocked) e.preventDefault();
                       }
                     }}
-                    onDrop={(e) => {
+                    onDrop={(e: any) => {
                       try {
                         const dragged = e.dataTransfer?.getData('text/hdb-node');
                         let blocked = hoverBlocked;
@@ -386,10 +401,10 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
                     {nodeName}
-                  </Link>
+                  </MUILink>
                   <IconButton
                     size="small"
-                    onClick={(e) => handleContextMenuOpen(e, node)}
+                    onClick={(e: MouseEvent<HTMLButtonElement>) => handleContextMenuOpen(e, node)}
                     sx={{
                       padding: 0.25,
                       ml: 0.5,
@@ -418,13 +433,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         nodeName={contextMenuNode?.name}
         treeId={(props as any)?.treeId}
         canCreate={true}
-        canEdit={true}
-        canRemove={true}
-        canDuplicate={true}
+        canEdit={!isRootContext}
+        canRemove={!isRootContext}
+        canDuplicate={!isRootContext}
         onCreate={handleCreate}
-        onEdit={handleEdit}
-        onDuplicate={handleDuplicate}
-        onRemove={handleRemove}
+        onEdit={() => { if (!isRootContext) handleEdit(); else handleContextMenuClose(); }}
+        onDuplicate={() => { if (!isRootContext) handleDuplicate(); else handleContextMenuClose(); }}
+        onRemove={() => { if (!isRootContext) handleRemove(); else handleContextMenuClose(); }}
         onOpen={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',

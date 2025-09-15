@@ -75,10 +75,8 @@ export function getIcon(nodeType: string): PluginIconInfo | undefined {
 
 export function getIconComponent(nodeType: string) {
   const icon = getIcon(nodeType);
-  try {
-    const Comp = getMuiIconComponent(icon?.muiIconName, icon?.emoji);
-    if (Comp) return Comp;
-  } catch {}
+  const Comp = getMuiIconComponent(icon?.muiIconName, icon?.emoji);
+  if (Comp) return Comp;
   // Fallback to a safe default icon
   return getMuiIconComponent('Extension');
 }

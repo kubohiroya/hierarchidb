@@ -16,7 +16,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
     bootLog('client:initWorker attempt=%d', attempt + 1);
     try {
       if (workerInstance) {
-        try { rawWorkerInstance?.terminate(); } catch {}
+        rawWorkerInstance?.terminate();
         workerInstance = null;
         rawWorkerInstance = null;
       }
@@ -24,25 +24,28 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       rawWorkerInstance = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
 
       const Comlink = await import('comlink');
-      try {
-        rawWorkerInstance.addEventListener('error', (e: ErrorEvent) => {
-          console.error('[client:initWorker] worker error', e);
-        });
-        rawWorkerInstance.addEventListener('messageerror', (e: MessageEvent) => {
-          console.error('[client:initWorker] messageerror', e);
-        });
-        rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
-          const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
-          // Avoid spamming console for frequent worker posts; only log when explicitly enabled
-          bootLog('client:recv %s', t);
-          if ((e as any)?.data?.type === 'INIT_COMPLETE') {
-            workerInitCompleted = true;
-            try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
-            bootLog('client:set __HDB_INIT_COMPLETE__=true');
-            try { window.dispatchEvent(new Event('hierarchidb-worker-init-complete')); } catch {}
-          }
-        });
-      } catch {}
+      rawWorkerInstance.addEventListener('error', (e: ErrorEvent) => {
+        console.error('[client:initWorker] worker error', e);
+      });
+      rawWorkerInstance.addEventListener('messageerror', (e: MessageEvent) => {
+        console.error('[client:initWorker] messageerror', e);
+      });
+      rawWorkerInstance.addEventListener('message', (e: MessageEvent) => {
+        const t = (e.data && (e.data.type || e.data?.payload?.type)) || 'unknown';
+        bootLog('client:recv %s', t);
+        if ((e as any)?.data?.type === 'INIT_COMPLETE') {
+          workerInitCompleted = true;
+          (window as any).__HDB_INIT_COMPLETE__ = true;
+          bootLog('client:set __HDB_INIT_COMPLETE__=true');
+          window.dispatchEvent(new Event('hierarchidb-worker-init-complete'));
+        }
+        if ((e as any)?.data?.type === 'SERVICES_READY') {
+          try {
+            const detail = { source: 'worker', at: Date.now() } as const;
+            window.dispatchEvent(new CustomEvent('hdb-services-ready', { detail }));
+          } catch {}
+        }
+      });
 
       const worker = Comlink.wrap<WorkerAPI>(rawWorkerInstance);
       workerInstance = worker;

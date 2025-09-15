@@ -18,24 +18,24 @@ export interface AppConfig {
 
 // Get configuration from environment variables
 const getAppConfig = (): AppConfig => ({
-  appPrefix: import.meta.env.VITE_APP_PREFIX || 'hierarchidb',
-  appName: import.meta.env.VITE_APP_NAME || 'HierarchiDB',
-  appTitle: import.meta.env.VITE_APP_TITLE || 'HierarchiDB',
+  appPrefix: ((import.meta as any)?.env?.VITE_APP_PREFIX as string) || 'hierarchidb',
+  appName: ((import.meta as any)?.env?.VITE_APP_NAME as string) || 'HierarchiDB',
+  appTitle: ((import.meta as any)?.env?.VITE_APP_TITLE as string) || 'HierarchiDB',
   appDescription:
-    import.meta.env.VITE_APP_DESCRIPTION ||
+    ((import.meta as any)?.env?.VITE_APP_DESCRIPTION as string) ||
     'High-performance tree-structured data management framework for browser environments',
   appDetails:
-    import.meta.env.VITE_APP_DETAILS ||
+    ((import.meta as any)?.env?.VITE_APP_DETAILS as string) ||
     'A powerful framework for managing hierarchical data in browser environments',
   appHomepage:
-    import.meta.env.VITE_APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
-  appLogo: import.meta.env.VITE_APP_LOGO || 'logo.png',
-  appFavicon: import.meta.env.VITE_APP_FAVICON || 'favicon.svg',
-  appTheme: import.meta.env.VITE_APP_THEME || 'light',
-  appLocale: import.meta.env.VITE_APP_LOCALE || 'en-US',
+    ((import.meta as any)?.env?.VITE_APP_HOMEPAGE as string) || 'https://github.com/kubohiroya/hierarchidb',
+  appLogo: ((import.meta as any)?.env?.VITE_APP_LOGO as string) || 'logo.png',
+  appFavicon: ((import.meta as any)?.env?.VITE_APP_FAVICON as string) || 'favicon.svg',
+  appTheme: ((import.meta as any)?.env?.VITE_APP_THEME as string) || 'light',
+  appLocale: ((import.meta as any)?.env?.VITE_APP_LOCALE as string) || 'en-US',
   appDefaultLocale: 'en-US',
   appDefaultLanguage: 'en',
-  appAttribution: import.meta.env.VITE_APP_ATTRIBUTION || '',
+  appAttribution: ((import.meta as any)?.env?.VITE_APP_ATTRIBUTION as string) || '',
 });
 
 const AppConfigContext = createContext<AppConfig | undefined>(undefined);

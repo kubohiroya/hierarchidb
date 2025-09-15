@@ -16,14 +16,14 @@ export type TreeConsoleToolbarAction =
   | { action: 'empty' }
   | { action: 'import' }
   | { action: 'export' }
-  | { action: 'setRowClickAction'; params: 'Select' | 'Edit' | 'Navigate' };
+  | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' };
 
 /**
  * Parameters type for TreeConsoleToolbar_Deprecated actions
  */
 export type TreeConsoleToolbarActionParams =
   | undefined
-  | ('Select' | 'Edit' | 'Navigate') | { treeId: string } | { templateId: string };
+  | ('Select/Navigate' | 'Edit') | { treeId: string } | { templateId: string };
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
@@ -85,12 +85,12 @@ export interface TreeConsoleToolbarProps {
   /**
    * Row click action setting
    */
-  rowClickAction?: 'Select' | 'Edit' | 'Navigate';
+  rowClickAction?: 'Select/Navigate' | 'Edit';
 
   /**
    * Callback when row click action changes
    */
-  onRowClickActionChange?: (action: 'Select' | 'Edit' | 'Navigate') => void;
+  onRowClickActionChange?: (action: 'Select/Navigate' | 'Edit') => void;
 
   /**
    * Undo/Redo availability
@@ -109,4 +109,10 @@ export interface TreeConsoleToolbarProps {
    */
   canDuplicate?: boolean;
   canRemove?: boolean;
+
+  /**
+   * Importable templates for the current tree. If empty or undefined,
+   * the "Import Template" menu item will be hidden.
+   */
+  availableTemplates?: Array<{ id: string; label?: string }>;
 }

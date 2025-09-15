@@ -1,4 +1,5 @@
-import React, { KeyboardEvent, useState } from 'react';
+import React, { KeyboardEvent, useMemo, useState } from 'react';
+import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
 
 export interface TagChipsInputProps {
   value?: string[];
@@ -14,17 +15,18 @@ export interface TagChipsInputProps {
 }
 
 export const TagChipsInput: React.FC<TagChipsInputProps> = ({
-                                                              value = [],
-                                                              onChange,
-                                                              placeholder = 'Enter tag and press Enter',
-                                                              label = 'Tags',
-                                                              maxTags = 20,
-                                                              disabled = false,
-                                                              helperText,
-                                                              error = false,
-                                                              required = false,
-                                                              suggestions = [],
-                                                            }) => {
+  value = [],
+  onChange,
+  placeholder = 'Enter tag and press Enter',
+  label = 'Tags',
+  maxTags = 20,
+  disabled = false,
+  helperText,
+  error = false,
+  required = false,
+  suggestions = [],
+}) => {
+  const theme = useTheme();
   const [input, setInput] = useState('');
 
   const addTag = (tag: string) => {
@@ -45,66 +47,65 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
     }
   };
 
-  const availableSuggestions = suggestions.filter((s) => s && !value.includes(s));
+  const availableSuggestions = useMemo(() => suggestions.filter((s) => s && !value.includes(s)), [suggestions, value]);
 
   return (
-    <div data-ui-core="TagChipsInput" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ fontWeight: 600 }}>
-        {label}{required ? ' *' : ''}
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+    <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {label && (
+        <Typography variant="subtitle2">
+          {label}{required ? ' *' : ''}
+        </Typography>
+      )}
+
+      {/* Selected tags */}
+      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 0.5 }}>
         {value.map((t) => (
-          <span key={t} style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            background: '#eee',
-            borderRadius: 16,
-            padding: '2px 8px',
-          }}>
-            <span>{t}</span>
-            <button type="button" disabled={disabled} aria-label={`Remove ${t}`} onClick={() => removeTag(t)}
-                    style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>×</button>
-          </span>
+          <Chip
+            key={t}
+            label={t}
+            color="primary" // default to primary for visibility in dark mode
+            onDelete={disabled ? undefined : () => removeTag(t)}
+            size="small"
+          />
         ))}
-      </div>
-      <input
+      </Stack>
+
+      {/* Input */}
+      <TextField
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled || value.length >= maxTags}
-        aria-invalid={error || undefined}
-        aria-required={required || undefined}
-        style={{ padding: 8, borderRadius: 4, border: `1px solid ${error ? '#d32f2f' : '#ddd'}`, maxWidth: 360 }}
+        required={required}
+        error={error}
+        helperText={helperText}
+        variant="outlined"
+        size="small"
+        sx={{
+          maxWidth: 480,
+          // Let MUI theme control colors; ensure contrast in dark mode
+          bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.paper',
+        }}
       />
-      {helperText && (
-        <div style={{ color: error ? '#d32f2f' : '#666', fontSize: 12 }}>{helperText}</div>
-      )}
 
+      {/* Suggestions */}
       {availableSuggestions.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }} aria-label="tag-suggestions">
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" aria-label="tag-suggestions">
           {availableSuggestions.slice(0, 10).map((s) => (
-            <button
+            <Chip
               key={s}
-              type="button"
-              disabled={disabled || value.length >= maxTags}
+              label={`+ ${s}`}
+              variant="outlined"
+              color="primary"
+              size="small"
               onClick={() => addTag(s)}
-              style={{
-                border: '1px solid #bbb',
-                background: '#fafafa',
-                padding: '2px 8px',
-                borderRadius: 16,
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
-            >
-              + {s}
-            </button>
+              sx={{ cursor: 'pointer' }}
+            />
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Box>
   );
 };
 

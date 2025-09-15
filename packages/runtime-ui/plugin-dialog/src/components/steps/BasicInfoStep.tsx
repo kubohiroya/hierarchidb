@@ -5,10 +5,12 @@
 
 import React, { useCallback } from 'react';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
+import { TagChipsInput } from '@hierarchidb/ui-core';
 
 export interface BasicInfoData {
   name: string;
   description: string;
+  tags?: string[];
 }
 
 export interface BasicInfoStepProps {
@@ -18,6 +20,9 @@ export interface BasicInfoStepProps {
   /** Current description value */
   description: string;
 
+  /** Current tags */
+  tags?: string[];
+
   /** Change handler */
   onChange: (data: BasicInfoData) => void;
 
@@ -26,6 +31,9 @@ export interface BasicInfoStepProps {
 
   /** Optional custom validation */
   validate?: (data: BasicInfoData) => string | null;
+
+  /** Optional tag suggestions */
+  tagSuggestions?: string[];
 }
 
 /**
@@ -34,25 +42,37 @@ export interface BasicInfoStepProps {
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                                                               name,
                                                               description,
+                                                              tags = [],
                                                               onChange,
                                                               mode,
                                                               validate,
+                                                              tagSuggestions = [],
                                                             }) => {
   // Handle name change
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     onChange({
       name: event.target.value,
       description,
+      tags,
     });
-  }, [description, onChange]);
+  }, [description, tags, onChange]);
 
   // Handle description change
   const handleDescriptionChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange({
       name,
       description: event.target.value,
+      tags,
     });
-  }, [name, onChange]);
+  }, [name, tags, onChange]);
+
+  const handleTagsChange = useCallback((nextTags: string[]) => {
+    onChange({
+      name,
+      description,
+      tags: nextTags,
+    });
+  }, [name, description, onChange]);
 
   // Validation
   const validationError = validate?.({ name, description });
@@ -72,7 +92,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           value={name}
           onChange={handleNameChange}
           required
-          autoFocus
           error={!!nameError}
           helperText={nameError}
           placeholder="Enter a descriptive name"
@@ -99,15 +118,22 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         />
       </FormControl>
 
+      {/* Tags input */}
+      <FormControl fullWidth>
+        <TagChipsInput
+          label="Tags"
+          value={tags}
+          onChange={handleTagsChange}
+          suggestions={tagSuggestions}
+          placeholder="Enter tag and press Enter"
+        />
+      </FormControl>
+
       {validationError && (
         <FormHelperText error>
           {validationError}
         </FormHelperText>
       )}
-
-      <Typography variant="caption" color="text.secondary">
-        * Required fields
-      </Typography>
     </Box>
   );
 };

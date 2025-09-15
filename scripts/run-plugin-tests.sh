@@ -9,7 +9,7 @@ PLUGINS=(
   packages/node-type/basemap-plugin
   packages/node-type/folder-plugin
   packages/node-type/location-plugin
-  packages/node-type/project-plugin
+  packages/node-type/linker-plugin
   packages/node-type/resolver-plugin
   packages/node-type/route-plugin
   packages/node-type/shape-plugin

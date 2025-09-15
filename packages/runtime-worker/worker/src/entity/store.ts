@@ -20,6 +20,9 @@ export interface PeerEntity<TData = unknown> {
   updatedAt?: number;
   // UI presentation mode for dialogs/panels associated with this node
   displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  // Optional persisted dialog window position/size for UI
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
 }
 
 export interface PeerStore<TData = unknown> {

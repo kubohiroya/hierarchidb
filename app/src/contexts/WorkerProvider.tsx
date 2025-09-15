@@ -228,7 +228,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
       });
       bootLog('WorkerProvider finalized isInitialized=true');
     } catch (e) {
-      console.warn('[WorkerProvider] finalizeInitialized failed, will rely on channel', e);
+      
     }
   };
 
@@ -240,7 +240,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     try {
       setState(prev => ({ ...prev, error: null }));
       // Mark global guard so route loaders know initialization has begun
-      try { (window as any).__HDB_INIT_STARTED__ = true; } catch {}
+      (window as any).__HDB_INIT_STARTED__ = true;
 
       //  WorkerAPIClientWorker
       await WorkerAPIClient.initialize();
@@ -253,8 +253,7 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
           await finalizeInitialized();
           return;
         }
-      } catch {
-      }
+      } catch {}
 
       const rawWorker = WorkerAPIClient.getRawWorkerInstance();
 
@@ -271,14 +270,11 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
             initProgress: typeof data.payload?.progress === 'number' ? data.payload!.progress! : prev.initProgress,
             initMessage: data.payload?.message || prev.initMessage,
           }));
-          try { bootProgress?.setStepProgress('Worker', Number(data?.payload?.progress ?? 0), data?.payload?.message || ''); } catch {}
-          try { bootLog('WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? ''); } catch {}
+          bootProgress?.setStepProgress('Worker', Number(data?.payload?.progress ?? 0), data?.payload?.message || '');
+          bootLog('WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? '');
         }
       };
-      try {
-        rawWorker.addEventListener('message', onProgressMessage);
-      } catch {
-      }
+      rawWorker.addEventListener('message', onProgressMessage);
 
       const channel = new WorkerInitializationChannel();
       setInitChannel(channel);
@@ -289,22 +285,19 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         debug,
       });
 
-      try {
-        rawWorker.removeEventListener('message', onProgressMessage);
-      } catch {
-      }
+      rawWorker.removeEventListener('message', onProgressMessage);
 
       if (result.success) {
         __WORKER_INIT_COMPLETED__ = true;
-        try { (window as any).__HDB_INIT_COMPLETE__ = true; } catch {}
+        (window as any).__HDB_INIT_COMPLETE__ = true;
         bootLog('WorkerProvider channel INIT_COMPLETE');
-        try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
+        bootProgress?.markStepDone('Worker', 'Worker ready');
         await finalizeInitialized();
       } else {
         throw new Error(result.error?.message || 'Worker initialization failed');
       }
     } catch (error) {
-      console.error('[WorkerProvider] Initialization failed:', error);
+      
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error : new Error('Unknown error'),
@@ -321,34 +314,29 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     const onInitComplete = async () => {
       bootLog('WorkerProvider event INIT_COMPLETE');
       __WORKER_INIT_COMPLETED__ = true;
-      try { bootProgress?.markStepDone('Worker', 'Worker ready'); } catch {}
+      bootProgress?.markStepDone('Worker', 'Worker ready');
       try {
         await WorkerAPIClient.initialize();
         const client = await WorkerAPIClient.getSingleton();
         setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
       } catch (e) {
-        console.warn('[WorkerProvider] finalize on event failed', e);
+        
       }
     };
-    try {
-      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-      if (!g.__HDB_WORKER_EVT_BOUND__) {
-        g.__HDB_WORKER_EVT_BOUND__ = true;
-        window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
-      }
-    } catch {}
+    const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+    if (!g.__HDB_WORKER_EVT_BOUND__) {
+      g.__HDB_WORKER_EVT_BOUND__ = true;
+      window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
+    }
 
     if (!__WORKER_INIT_STARTED__) {
       __WORKER_INIT_STARTED__ = true;
       void initializeWorker();
     } else {
       // Fast finalize on remount if completed
-      try {
-        if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
-          const client = WorkerAPIClient.getSingleton();
-          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
-        }
-      } catch {
+      if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
+        const client = WorkerAPIClient.getSingleton();
+        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
       }
     }
 
@@ -360,12 +348,10 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const g: any = (typeof window !== 'undefined') ? (window as any) : {};
         if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) {
-          try {
-            const client = await WorkerAPIClient.getOrInit();
-            setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
-            if (pollTimer) window.clearInterval(pollTimer);
-            return;
-          } catch {}
+          const client = await WorkerAPIClient.getOrInit();
+          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+          if (pollTimer) window.clearInterval(pollTimer);
+          return;
         }
         if (Date.now() - start > 5000 && pollTimer) {
           window.clearInterval(pollTimer);
@@ -376,33 +362,24 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     pollTimer = window.setInterval(poll, 100);
 
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.log('[WorkerProvider] scheduling dev fallback finalization');
       // @ts-ignore setTimeout returns number in browsers
       devFallbackTimer = window.setTimeout(async () => {
-        try {
-          if (!state.isInitialized && WorkerAPIClient.isReady()) {
-            // eslint-disable-next-line no-console
-            console.log('[WorkerProvider] dev fallback finalizing');
-            await finalizeInitialized();
-          }
-        } catch {
+        if (!state.isInitialized && WorkerAPIClient.isReady()) {
+          await finalizeInitialized();
         }
       }, 1500);
     }
 
     return () => {
       initChannel?.dispose();
-      try {
-        window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
-        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-        g.__HDB_WORKER_EVT_BOUND__ = false;
-      } catch {}
+      window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
+      const g2: any = (typeof window !== 'undefined') ? (window as any) : {};
+      g2.__HDB_WORKER_EVT_BOUND__ = false;
       if (devFallbackTimer) {
         window.clearTimeout(devFallbackTimer);
       }
       // clear poll
-      try { if (pollTimer) window.clearInterval(pollTimer); } catch {}
+      if (pollTimer) window.clearInterval(pollTimer);
     };
   }, []);
 

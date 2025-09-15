@@ -6,11 +6,14 @@
     "noEmit": true,
     "incremental": true,
     "composite": false,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "baseUrl": ".",
-    // Inherit full workspace path mappings from app/tsconfig.json.
-    // Do not override `paths` here to avoid clobbering workspace aliases.
+    // Override workspace path mappings to avoid pulling source from other packages during app typecheck.
+    // Keep only local alias and resolve workspace deps via their published type entries in package.json.
+    "paths": {
+      "~/*": ["src/*"]
+    },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },
   "include": [

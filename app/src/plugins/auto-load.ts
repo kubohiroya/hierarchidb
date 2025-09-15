@@ -1,7 +1,7 @@
 /**
   * Auto-load HierarchiDB plugins using virtual modules generated at build time.
  * - virtual:plugin-definitions metadata for plugins (includes hierarchidb.plugin)
- * - virtual:plugin-map dynamic import map per nodeType
+ * - virtual:plugin-registry-ui dynamic import map per nodeType
   */
 
 import type { NodeType } from '@hierarchidb/common-type';
@@ -12,7 +12,7 @@ import type { NodeType } from '@hierarchidb/common-type';
 // @ts-ignore
 import pluginDefinitions from 'virtual:plugin-definitions';
 // @ts-ignore
-import { pluginMap } from 'virtual:plugin-map';
+import { pluginMapUI as pluginMap } from 'virtual:plugin-registry-ui';
 
 type PluginDefinitionVM = {
   name: string;

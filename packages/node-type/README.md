@@ -1,6 +1,6 @@
 # HierarchiDB Node Type Plugin System
 
-最終更新: 2025-09-09 00:00 UTC
+最終更新: 2025-09-14 00:00 UTC
 
 HierarchiDBの拡張可能なノードタイププラグインシステムです。地理情報処理、データ管理、階層構造管理など、様々なドメインに特化したノードタイプを提供し、アプリケーションの機能を拡張します。
 
@@ -64,7 +64,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
   - location-plugin: 位置エンティティ/近接検索（Shape 連携オプション）
   - route-plugin: 経路生成/評価（Location 参照）
 - メタ/領域（Meta & Project）
-  - project-plugin: プロジェクト領域/メタ設定
+  - linker-plugin: プロジェクト領域/メタ設定（旧: project-plugin）
 
 ### プラグイン分類とパターン
 
@@ -147,7 +147,7 @@ graph TB
 | location-plugin | location | folder | location-entities-db | あり| Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | Shape 連携可 |
 | route-plugin | route | folder | route-db   | あり| Yes           | あり     | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
 | resolver-plugin | resolver | folder | resolver-db | - | -             | -      | -      | - | なし                               | Schema 検出/前処理 |
-| project-plugin | project | folder | project-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定 |
+| linker-plugin | linker | folder | project-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定 |
 
 注記:
 - データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
@@ -202,7 +202,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 | location-plugin | locations, locationWorkingCopies | - | locationBatchSessions, locationBatchTasks | - | - | - |
 | route-plugin | routes, routeWorkingCopies | - | - | - | - | - |
 | resolver-plugin | resolvers | - | - | - | - | - |
-| project-plugin | projects | - | - | - | - | - |
+| linker-plugin | projects | - | - | - | - | - |
 
 
  

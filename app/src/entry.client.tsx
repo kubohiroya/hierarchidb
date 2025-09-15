@@ -2,6 +2,7 @@ import { startTransition, StrictMode, useMemo, useEffect } from 'react';
 // Dev health overlay (dev only)
 if (import.meta.env.DEV) import('./dev-health-client');
 import { hydrateRoot } from 'react-dom/client';
+import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
 // @ts-ignore
 import { HydratedRouter } from 'react-router/dom';
 import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
@@ -18,6 +19,9 @@ import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIRead
 // Do not wrap HydratedRouter with providers here; SSR markup must match exactly.
 
 startTransition(() => {
+  // Initialize node-type dialog extensions (shape/spreadsheet/basemap/styler) for SSR hydration path as well.
+  // No DOM output; safe to run before hydration.
+  void initializeDefaultNodeDialogExtensions();
   hydrateRoot(
     document,
     <StrictMode>

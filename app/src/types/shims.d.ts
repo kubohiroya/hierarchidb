@@ -18,10 +18,7 @@ declare module 'virtual:plugin-definitions' {
   export default pluginDefinitions;
 }
 
-declare module 'virtual:plugin-map' {
-  export const pluginMap: Record<string, () => Promise<unknown>>;
-  export default pluginMap;
-}
+// legacy virtual:plugin-map removed; use virtual:plugin-registry-*
 
 //  Removed: UI and worker package shims replaced by real package types
 
@@ -118,6 +115,33 @@ declare module 'virtual:mui-icon-map' {
   export default iconMap;
 }
 
+declare module 'virtual:plugin-registry-services' {
+  // Known service module types per nodeType
+  type BasemapServices = typeof import('@hierarchidb/basemap-plugin/database');
+  type ResolverServices = typeof import('@hierarchidb/resolver-plugin/database');
+  type SpreadsheetServices = typeof import('@hierarchidb/spreadsheet-plugin/database');
+  type ShapeServices = typeof import('@hierarchidb/shape-plugin/services');
+  type RouteServices = typeof import('@hierarchidb/route-plugin/database');
+  // Fallback for plugins without explicit services
+  type UnknownMod = Record<string, unknown>;
+  export const pluginServices: {
+    basemap: () => Promise<BasemapServices>;
+    resolver: () => Promise<ResolverServices>;
+    spreadsheet: () => Promise<SpreadsheetServices>;
+    shape: () => Promise<ShapeServices>;
+    route: () => Promise<RouteServices>;
+    [nodeType: string]: () => Promise<unknown>;
+  };
+}
+
+declare module 'virtual:plugin-registry-worker' {
+  export const pluginMapWorker: Record<string, () => Promise<unknown>>;
+}
+
+declare module 'virtual:plugin-registry-ui' {
+  export const pluginMapUI: Record<string, () => Promise<unknown>>;
+}
+
 // Minimal shim for folder-plugin top-level helper used at app bootstrap
 declare module '@hierarchidb/folder-plugin' {
   export function initializeDefaultNodeDialogExtensions(): Promise<void>;
@@ -129,4 +153,53 @@ declare module '@hierarchidb/ui-theme' {
   export function useThemeMode(): { actualTheme: any; setMode: (m: ThemeMode) => void };
   export function getStoredThemeMode(): ThemeMode | null;
   export const ThemeProvider: any;
+}
+
+// Minimal shim for ui-treeconsole-toolbar until full d.ts is available
+declare module '@hierarchidb/ui-treeconsole-toolbar' {
+  export type TreeConsoleToolbarActionParams = any;
+  export const TreeConsoleToolbar: any;
+}
+
+// Minimal shim for ui-auth until full d.ts is available
+declare module '@hierarchidb/ui-auth' {
+  export const SimpleBFFAuthProvider: any;
+  export function useSimpleBFFAuth(): any;
+  export function useAuth(): any;
+  export const BFFAuthService: any;
+  export const LoginForm: any;
+}
+
+// Exports subpath shim for TS4.x (remove after TS5 migration or when nodenext is adopted)
+declare module '@hierarchidb/resolver-plugin/database' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/spreadsheet-plugin/database' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/route-plugin/database' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/shape-plugin/services' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/location-plugin/services' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/styler-plugin/services' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/timeline-plugin/services' {
+  const mod: any;
+  export = mod;
+}
+declare module '@hierarchidb/linker-plugin/services' {
+  const mod: any;
+  export = mod;
 }

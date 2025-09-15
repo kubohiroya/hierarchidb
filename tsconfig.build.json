@@ -1,0 +1,55 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/util" },
+    { "path": "./packages/common/types" },
+    { "path": "./packages/common/api" },
+    { "path": "./packages/common/core/tsconfig.typecheck.json" },
+    { "path": "./packages/common/auth/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/feature-registry/tsconfig.typecheck.json" },
+    { "path": "./packages/runtime-shared/batch-processor/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/table-metadata/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/download/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/import-export/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/route-searoute/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/map-source/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/tabular-store/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/tabular/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/tag/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/map-adapter/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/route-resolver/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/node-type/route-plugin/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/runtime-worker/worker/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/runtime-worker/worker-bootstrap/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/core/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/dialog/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/data-grid/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/icon/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/date/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/theme/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/i18n/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/layout/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/navigation/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/auth/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/usermenu/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/floating-window/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/monitoring/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/routing/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/lru-splitview/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/tour/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/map/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/import-export/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/csv-extract/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/country-select/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/accordion-config/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/file/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/base/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/breadcrumb/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/speeddial/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/toolbar/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/treetable/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/trashbin/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/treeconsole/footer/tsconfig.typecheck.json" }
+    
+  ]
+}

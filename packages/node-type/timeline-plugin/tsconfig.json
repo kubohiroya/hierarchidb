@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": false,
+    "jsx": "react-jsx",
+    "types": ["node", "react"],
+    "moduleResolution": "node",
+    // Avoid local path overrides that shadow public entrypoints; rely on ambient or published types
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

@@ -4,7 +4,6 @@ import {
   Box,
   Chip,
   FormControl,
-  Grid,
   InputLabel,
   List,
   ListItem,
@@ -15,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
 import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
@@ -215,7 +215,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
 
       <Grid container spacing={3}>
         {/* Source Schema */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'medium' }}>
             <SchemaIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Source Schema
@@ -252,7 +252,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         </Grid>
 
         {/* Target Schema */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'medium' }}>
             <SchemaIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
             Target Schema

@@ -224,6 +224,24 @@ export interface MultiStepDialogProps {
    * Defaults to false and should never be enabled in production UI.
    */
   enableA11yTestControls?: boolean;
+
+  /**
+   * Initial dialog position (standard modeのみで使用)。
+   * ドラッグ操作で更新され、onDialogMove が呼び出されます。
+   */
+  initialPosition?: { x: number; y: number };
+
+  /**
+   * Initial dialog size (standard modeのみで使用)。
+   * リサイズ操作で更新され、onDialogResize が呼び出されます。
+   */
+  initialSize?: { width: number; height: number };
+
+  /** 親へダイアログの移動を通知 */
+  onDialogMove?: (pos: { x: number; y: number }) => void;
+
+  /** 親へダイアログのリサイズを通知 */
+  onDialogResize?: (size: { width: number; height: number }) => void;
 }
 
 /**

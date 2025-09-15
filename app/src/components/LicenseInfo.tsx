@@ -122,11 +122,8 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
     const license = info.licenses || 'UNKNOWN';
     const category = categorizeLicense(license);
 
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-
-    acc[category].push({ name, ...info });
+    acc[category] = acc[category] ?? [];
+    acc[category]!.push({ name, ...info });
     return acc;
   }, {} as Record<string, Array<{ name: string } & LicenseData[string]>>);
 

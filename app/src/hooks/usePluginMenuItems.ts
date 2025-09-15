@@ -23,26 +23,18 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
 
     async function load() {
       // 1) Try cached builders injected by root.tsx
-      try {
-        const cached: any = (globalThis as any).__HDB_MENU_BUILDERS__;
-        if (cached) {
-          const builder = cached.buildMenuItemsForTreeId || cached.buildMenuItemsForContext;
-          if (typeof builder === 'function') {
-            // If using context-builder, normalize from treeId when helper is available
-            const arg = cached.buildMenuItemsForTreeId
-              ? treeId
-              : (cached.normalizeContextFromTreeId?.(treeId) ?? treeId);
-            const list = builder(arg) as PluginMenuItem[];
-            if (active) setItems(list);
-            // Warm icon chunks for smoother first open
-            try {
-              await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName));
-            } catch {}
-            return;
-          }
+      const cached: any = (globalThis as any).__HDB_MENU_BUILDERS__;
+      if (cached) {
+        const builder = cached.buildMenuItemsForTreeId || cached.buildMenuItemsForContext;
+        if (typeof builder === 'function') {
+          const arg = cached.buildMenuItemsForTreeId
+            ? treeId
+            : (cached.normalizeContextFromTreeId?.(treeId) ?? treeId);
+          const list = builder(arg) as PluginMenuItem[];
+          if (active) setItems(list);
+          await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName));
+          return;
         }
-      } catch {
-        // Fall through to dynamic import
       }
 
       // 2) Fallback: dynamic import (works in dev as well)
@@ -53,9 +45,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
         const builder = (mod as any).buildMenuItemsForTreeId || (mod as any).buildMenuItemsForContext;
         const list = builder(treeId) as PluginMenuItem[];
         if (active) setItems(list);
-        try {
-          await prefetchMuiIcons(list.map((i: PluginMenuItem) => i.icon?.muiIconName));
-        } catch {}
+        await prefetchMuiIcons(list.map((i: PluginMenuItem) => i.icon?.muiIconName));
         return;
       } catch (err) {
         console.warn('[usePluginMenuItems] Failed to load menu-builders:', err);

@@ -134,7 +134,7 @@ export interface TreeConsoleContentProps {
   // TreeTableCore specific props
   disableDragAndDrop?: boolean;
   hideDragHandler?: boolean;
-  rowClickAction?: 'Select' | 'Edit' | 'Navigate';
+  rowClickAction?: 'Select/Navigate' | 'Edit';
   selectionMode?: 'none' | 'single' | 'multiple';
   NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
   NodeContextMenu?: React.ComponentType<any>;
@@ -147,6 +147,10 @@ export interface TreeConsoleFooterProps {
   controller: TreeViewController | null;
   height?: number;
   onStartTour?: () => void;
+  /** Optional: when controller is null, override the default 'Loading...' text */
+  loadingText?: string;
+  /** Optional: tooltip content for the loadingText (e.g., explain counters) */
+  loadingTooltip?: React.ReactNode;
 }
 
 export interface TreeConsoleActionsProps {

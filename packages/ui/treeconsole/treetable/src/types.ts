@@ -33,6 +33,11 @@ export interface TreeTableController {
   // Actions
   handleSearchTextChange?: (value: string) => void;
   onNodeClick?: (nodeId: string, node?: TreeNodeInUI) => void;
+  /**
+   * Navigate to Edit dialog/page for the node.
+   * If omitted, callers should fallback to onNodeClick.
+   */
+  onEdit?: (nodeId: string, node?: TreeNodeInUI) => void;
   onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
 
@@ -61,6 +66,16 @@ export interface TreeTableCoreProps {
    */
   viewHeight: number;
   viewWidth: number;
+  /**
+   * Page context: unique identifier for the current view root.
+   * Used as primary key when persisting UI state in Dexie.
+   */
+  pageNodeId?: string;
+
+  /**
+   * Current tree context (used for path building and context menus)
+   */
+  treeId?: string;
 
   /**
    * Table configuration
@@ -98,7 +113,7 @@ export interface TreeTableCoreProps {
   /**
    * Row click behavior
    */
-  rowClickAction?: 'Select' | 'Edit' | 'Navigate';
+  rowClickAction?: 'Select/Navigate' | 'Edit';
 
   /**
    * Plugin System (Extension Points)
@@ -110,11 +125,7 @@ export interface TreeTableCoreProps {
   enableSearchHighlight?: boolean;
   enableWorkingCopyIntegration?: boolean;
 
-  /**
-   * Persistence key for saving UI state (e.g., column widths) per tree/view.
-   * If omitted, a global default key is used.
-   */
-  persistenceKey?: string;
+  // No persistenceKey string: Dexie uses pageNodeId as the primary key.
 
   /**
    * Callbacks

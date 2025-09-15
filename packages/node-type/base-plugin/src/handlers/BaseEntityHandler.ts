@@ -356,14 +356,12 @@ export abstract class BaseEntityHandler<
    * Abstract method to build entity from data
    * Must be implemented by derived classes
    */
-  // eslint-disable-next-line no-unused-vars
   protected abstract buildEntity(_nodeId: NodeId, _entityId: NodeId, _data: TCreateData): TEntity;
 
   /**
    * Optional method to cleanup related data when entity is deleted
    * Can be overridden by derived classes
    */
-  // eslint-disable-next-line no-unused-vars
   protected async cleanupEntityData(_entity: TEntity): Promise<void> {
     // Default implementation does nothing
     // Override in derived classes for specific cleanup logic

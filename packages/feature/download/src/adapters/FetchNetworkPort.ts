@@ -1,4 +1,5 @@
 import type { NetworkPort, ResponseLike } from '../ports';
+import { shouldUseLocalProxy, toLocalProxyUrl } from '../helpers/localProxy';
 
 export interface FetchNetworkPortOptions {
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
@@ -60,7 +61,8 @@ export class FetchNetworkPort implements NetworkPort {
       let lastErr: any;
       while (attempt <= this.opts.retries) {
         try {
-          const res = await fetch(url, { ...init, headers });
+          const target = shouldUseLocalProxy(url) ? toLocalProxyUrl(url) : url;
+          const res = await fetch(target, { ...init, headers });
           if (res.ok) return wrap(res);
           if (!this.shouldRetry(res.status)) return wrap(res);
           await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));

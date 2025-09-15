@@ -89,6 +89,278 @@
     - updated: 2025-09-07 19:45 進捗同期（前半完了・残タスク明記）。
     - updated: 2025-09-07 20:10 レーン別セマフォ実装とテスト確認（Session/Manager）。
 
+- chore/build/tsc-project-refs-phase1 — 型チェックのトポロジカル順制御の導入（Phase 1: 最小セット）
+  - ブランチ: `chore/build/tsc-project-refs-phase1`
+  - 依存: なし（ローカル設定のみ）
+  - スコープ（Phase 1）:
+    - ルートに `tsconfig.build.json` を追加し、以下のパッケージを references 登録
+      - `packages/util`
+      - `packages/common/types`
+      - `packages/common/api`
+    - ルート `package.json` に `typecheck:graph` / `typecheck:graph:watch` を追加（`tsc -b` 実行用）
+  - 受け入れ基準（DoD）:
+    - [ ] `pnpm typecheck:graph` が成功し、上記3パッケージの型チェックがトポロジカル順で実行される
+    - [ ] 既存の `pnpm typecheck`（turbo 経由）は影響なし（後方互換）
+    - [ ] `TASKS.md` に本タスクのロールバック手順が記載されている
+  - ロールバック手順:
+    - ルートの `tsconfig.build.json` を削除
+    - ルート `package.json` から `typecheck:graph*` スクリプトを削除
+  - 運用ログ:
+    - start: 2025-09-14 10:00 仕様合意に基づき Phase 1 を着手
+
+- chore/build/tsc-project-refs-phase2 — common 層を solution 参照に拡張（tsc -b）
+  - ブランチ: `chore/build/tsc-project-refs-phase2`
+  - 依存: なし（ローカル設定のみ）
+  - スコープ（Phase 2）:
+    - `packages/common/auth/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - `packages/common/core/tsconfig.typecheck.json` を追加（同上）
+    - ルート `tsconfig.build.json` の references に上記2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` が成功
+    - [x] `tsc -b tsconfig.build.json` が `TS6379` 等なく通過（`incremental` 有効化済）
+    - [x] 既存ビルド（tsup）は未変更（パッケージ既存 tsconfig は不変）
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から追加分の references を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:10 Phase 2 着手
+    - done: 2025-09-14 10:14 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase3 — feature-registry を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase3`
+  - 依存: common 層（types/api/core/auth）
+  - スコープ（Phase 3）:
+    - `packages/feature/feature-registry/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+    - [x] 既存ビルド（tsup）は未変更で成功を阻害しない
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:18 Phase 3 着手
+    - done: 2025-09-14 10:19 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase4 — runtime-shared/batch-processor を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase4`
+  - 依存: common 層 / feature-registry
+  - スコープ（Phase 4）:
+    - `packages/runtime-shared/batch-processor/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:22 Phase 4 着手
+    - done: 2025-09-14 10:23 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase5 — feature/table-metadata を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase5`
+  - 依存: common 層 / feature-registry / runtime-shared-batch-processor
+  - スコープ（Phase 5）:
+    - `packages/feature/table-metadata/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:26 Phase 5 着手
+    - done: 2025-09-14 10:27 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase6 — feature/download と feature/import-export を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase6`
+  - 依存: common 層 / feature-registry / runtime-shared-batch-processor
+  - スコープ（Phase 6）:
+    - `packages/feature/download/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - `packages/feature/import-export/tsconfig.typecheck.json` を追加（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:30 Phase 6 着手
+    - done: 2025-09-14 10:31 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase7 — feature/route-searoute と feature/map-source を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase7`
+  - 依存: common 層 / feature-registry / runtime-shared-batch-processor / download
+  - スコープ（Phase 7）:
+    - `packages/feature/route-searoute/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - `packages/feature/map-source/tsconfig.typecheck.json` を追加（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:34 Phase 7 着手
+    - done: 2025-09-14 10:35 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase8 — feature/tabular-store を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase8`
+  - 依存: common 層 / runtime-shared / feature-registry
+  - スコープ（Phase 8）:
+    - `packages/feature/tabular-store/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:38 Phase 8 着手
+    - done: 2025-09-14 10:39 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase10 — feature/map-adapter と feature/route-resolver を solution 参照に追加（route-plugin は保留）
+  - ブランチ: `chore/build/tsc-project-refs-phase10`
+  - 依存: common 層 / runtime-shared / feature-registry
+  - スコープ（Phase 10）:
+    - `packages/feature/map-adapter/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - `packages/feature/route-resolver/tsconfig.typecheck.json` を追加（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+    - （予定）`packages/node-type/route-plugin` を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功（map-adapter / route-resolver）
+    - [ ] `pnpm typecheck:graph` 成功（route-plugin）
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:46 Phase 10 着手
+    - done: 2025-09-14 10:47 map-adapter / route-resolver 追加 → 成功
+    - blocked: 2025-09-14 10:49 route-plugin 追加で `rootDir` 越境/`paths` 直参照により多数エラー。
+      - B-対応: 2025-09-14 10:52 ルート `tsconfig.base.json` の `paths`（workspace src 直参照）を撤去。
+      - 再検証: 2025-09-14 10:54 `packages/node-type/route-plugin` を references に追加 → `pnpm typecheck:graph` 成功。
+
+- chore/build/tsc-project-refs-phase11 — runtime-worker と UI コア層を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase11`
+  - 依存: 既存 Phase（common/feature/runtime-shared/route-plugin）
+  - スコープ（Phase 11）:
+    - 追加: `packages/runtime-worker/worker/tsconfig.typecheck.json`（`composite:true`, `noEmit:true`, `incremental:true`）
+    - 追加: `packages/runtime-worker/worker-bootstrap/tsconfig.typecheck.json`（同上）
+    - 追加: `packages/ui/core/tsconfig.typecheck.json`（`emitDeclarationOnly:false` に上書き, `noEmit:true`）
+    - ルート `tsconfig.build.json` の references に上記3件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 11:00 Phase 11 着手
+    - blocked: 2025-09-14 11:02 `ui/core` で `emitDeclarationOnly` と `noEmit` 競合 → typecheck 用 tsconfig で上書き
+    - done: 2025-09-14 11:03 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase12 — UI/dialog と UI/data-grid を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase12`
+  - 依存: Phase 11 までの完了
+  - スコープ（Phase 12）:
+    - 追加: `packages/ui/dialog/tsconfig.typecheck.json`（`composite:true`, `noEmit:true`, `incremental:true`）
+    - 追加: `packages/ui/data-grid/tsconfig.typecheck.json`（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 11:06 Phase 12 着手
+    - blocked: 2025-09-14 11:07 `ui/data-grid` が TS6304（composite で declaration 無効）→ typecheck 用 tsconfig から宣言設定の上書きを撤去
+    - done: 2025-09-14 11:09 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase13 — UI/icon と UI/date を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase13`
+  - 依存: Phase 12 までの完了
+  - スコープ（Phase 13）:
+    - 追加: `packages/ui/icon/tsconfig.typecheck.json`（`composite:true`, `noEmit:true`, `incremental:true`）
+    - 追加: `packages/ui/date/tsconfig.typecheck.json`（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 11:12 Phase 13 着手
+    - done: 2025-09-14 11:13 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase14 — UI/layout / navigation / theme / i18n / auth / usermenu / floating-window を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase14`
+  - 依存: Phase 13 までの完了
+  - スコープ（Phase 14）:
+    - 各パッケージに `tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に7件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 11:16 Phase 14 着手
+    - done: 2025-09-14 11:18 `pnpm typecheck:graph` 成功
+
+- chore/build/tsc-project-refs-phase15 — UI 残群（accordion-config / file / import-export / csv-extract / country-select / lru-splitview / monitoring / map / routing）を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase15`
+  - 依存: Phase 14 までの完了
+  - スコープ（Phase 15）:
+    - 各パッケージに `tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - ルート `tsconfig.build.json` の references に9件を追加
+    - 備考: `ui/treeconsole/*` は別タスクへ分離
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 11:20 Phase 15 着手
+    - blocked: 2025-09-14 11:22 `ui/treeconsole/base` 追加時に `comlink` 型未解決（TS2307）を検出
+    - done: 2025-09-14 11:24 treeconsole 群を一旦除外し、Phase 15 の対象のみ追加 → 成功
+
+- chore/ui-treeconsole/typecheck-enable — treeconsole 群の型解決（別タスク）
+  - ブランチ: `chore/ui-treeconsole/typecheck-enable`
+  - スコープ:
+    - `@hierarchidb/ui-treeconsole-*` の `dependencies` または `devDependencies` に `comlink` を追加（または `types` の導入）
+    - 代替案: パッケージ内に `shims/comlink.d.ts` を追加し `declare module 'comlink'` で暫定解決（本番は依存追加を推奨）
+    - ルート `tsconfig.build.json` に treeconsole 参照を復帰
+  - DoD:
+    - [x] `pnpm typecheck:graph` グリーン（solution 参照に復帰後）
+    - [x] `comlink` を各 `ui-treeconsole-*` の `dependencies` に追加
+    - [ ] shim を削除（依存解決後）し、`pnpm typecheck:graph` グリーン
+  - ロールバック: 参照復帰の差分をリバート
+  - 手順（finish）:
+    - 1) `pnpm -w install`（ネット必要）
+    - 2) `pnpm treeconsole:shims:remove`
+    - 3) `pnpm typecheck:graph` で再検証
+  - 運用ログ:
+    - start: 2025-09-14 11:26 treeconsole 追加時に `comlink` 型未解決
+    - workaround: 2025-09-14 11:28 各 treeconsole パッケージに `src/shims/comlink.d.ts` を追加
+    - done: 2025-09-14 11:30 references 復帰 → `pnpm typecheck:graph` 成功
+    - done: 2025-09-14 11:35 `dependencies` に `comlink` を追加、finish スクリプト（`treeconsole:shims:remove`）を作成
+
+- chore/build/tsc-project-refs-phase9 — feature/tabular と feature/tag を solution 参照に追加
+  - ブランチ: `chore/build/tsc-project-refs-phase9`
+  - 依存: common 層 / runtime-shared / feature-registry
+  - スコープ（Phase 9）:
+    - `packages/feature/tabular/tsconfig.typecheck.json` を追加（`composite:true`, `noEmit:true`, `incremental:true`）
+    - `packages/feature/tag/tsconfig.typecheck.json` を追加（同上）
+    - ルート `tsconfig.build.json` の references に2件を追加
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm typecheck:graph` 成功
+  - ロールバック手順:
+    - ルート `tsconfig.build.json` から該当参照を削除
+    - 追加した `tsconfig.typecheck.json` を削除
+  - 運用ログ:
+    - start: 2025-09-14 10:42 Phase 9 着手
+    - done: 2025-09-14 10:43 `pnpm typecheck:graph` 成功
+
+
 - feat/node-type/progress-type-extract — 進捗データ型を common-type へ抽出（UI 依存排除）
   - ブランチ: `feat/node-type/progress-type-extract`
   - フラグ: `WORKER_PROGRESS_COMMON_TYPES`（既定OFF）
@@ -767,6 +1039,33 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 受け入れ基準: `pnpm --filter @hierarchidb/app typecheck && build` がグリーン。通知無でもフォールバックで致命傷にならない。
 
 ## 運用ログ（today） <a id="log-today"></a>
+- 2025-09-15 done: fix/app+i18n/base-resolution — dev 環境での i18n ロケール 404 と SSR hydration mismatch を同時解消。
+  - 原因: i18n パッケージ内での `import.meta.env.BASE_URL` 解決が依存最適化経路で拾えず `/locales/...` を参照→404。
+  - 対応(最終):
+    - app: `<head>` へのスクリプト注入は撤回（SSR との不一致のため）。
+    - ui-i18n: `computeBasePath()` に開発時フォールバックを追加（`window.location.pathname` の先頭セグメントから `/hierarchidb/` を自動検出）。
+  - 受け入れ基準（DoD）:
+    - [x] `guidedTour.json`/`common.json` の取得先が `/hierarchidb/locales/...` となり 200。
+    - [x] Hydration mismatch 警告が消える（`<head>` に独自 `<script>` を追加しない）。
+  - 検証: `pnpm -C packages/ui/i18n build` → OK、`pnpm -C app typecheck` → グリーン。
+  - ロールバック: app の注入スクリプト削除＋ ui-i18n の `computeBasePath()` 差分を revert する。
+
+- 2025-09-15 done: fix/app/emotion-insertion-point — Emotion/MUI の style 挿入で `insertBefore NotFoundError` を解消。
+  - 原因: SSR + HMR 下で `<head>` 再構成時に Emotion の style タグ挿入位置が不安定になり、`insertBefore` の参照ノードが既存ノード配下でなくなるケースがあった。
+  - 対応: `<meta name="emotion-insertion-point" />` を `<head>` に追加し、`CacheProvider` + 明示的 Emotion Cache（insertionPoint 指定）を導入。
+  - 変更: `app/src/emotionCache.ts` を追加。`app/src/root.tsx` に `CacheProvider` を追加し、`StyledEngineProvider` は削除。
+  - 最終方針: 追加の Emotion Cache/StyledEngineProvider を使わず（いずれも撤去）、デフォルト挿入順で安定動作を確認。
+
+- 2025-09-15 done: fix/plugins/dynamic-require-ui-map — 動的 `require('@hierarchidb/ui-map')` による実行時エラーを解消。
+  - 原因: `@hierarchidb/linker-plugin` UI の `MapPreview.tsx` が CommonJS の `require()` を使用し、Vite/ESM 環境で `Dynamic require is not supported` が発生。
+  - 対応: ESM import に変更（`import { MapLibreMap } from '@hierarchidb/ui-map';`）。
+  - 検証: `pnpm -C packages/node-type/linker-plugin build` → OK、`pnpm -C app typecheck` → グリーン。起動時の `autoLoadPlugins` でエラーが出ないことを確認。
+  - ロールバック: 変更前の `require()` に戻す（非推奨）。
+  - 受け入れ基準（DoD）:
+    - [x] `Failed to execute 'insertBefore' on 'Node'` が発生しない。
+    - [x] MUI/Emotion のスタイル順序が安定（injectFirst + insertion point）。
+  - 検証: `pnpm -C app typecheck` グリーン。ローカル実行で再発しないことを確認（Network/Console）。
+  - ロールバック: `CacheProvider`/`emotionCache.ts`/`<meta name="emotion-insertion-point">` を削除し、従来の `StyledEngineProvider injectFirst` のみに戻す。
 - 2025-09-11 done: chore/eslint/lint-green — ESLint 設定を調整して monorepo 全体の `pnpm -w lint` をグリーン化。
   - 追加: `eslint.config.js` に `eslint-plugin-react-hooks` を導入し、`rules-of-hooks:error` / `exhaustive-deps:warn` を有効化。
   - 例外: `**/*.stories.*` では hooks ルールを無効化（Storybook の render 関数パターン対応）。
@@ -792,6 +1091,19 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 対応(暫定): `app/vite.config.ts` に `resolve.alias` を追加し、`@hierarchidb/batch` を `../packages/feature/batch/dist/index.js` へ解決（ワークスペース再リンク無しでも解決可能に）。
   - ロールバック: `vite.config.ts` の alias 追加を削除し、`pnpm -w i` により workspace を再リンクすれば元に戻る。
 
+- 2025-09-15 done: chore/dep-fence/peer-externals — dep-fence(strict) のエラー/警告に対応（ビルドブロッカー解消）。
+  - 対応: 各パッケージの `tsup.external` に peer を明示追加、`skipLibCheck` の禁止違反を修正。
+    - linker-plugin: `dexie`, `@hierarchidb/runtime-worker`, React/MUI/Emotion, `@deck.gl/*` を external に追加。
+    - styler-plugin: React/MUI/Emotion, `react-i18next`, `i18next`, `dexie`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/spreadsheet-plugin` を external に追加。
+    - timeline-plugin: React/MUI/Emotion, `@hierarchidb/ui-dialog` を external に追加。`tsconfig.json` の `skipLibCheck: false` に修正。
+    - runtime-ui/plugin-dialog: `@hierarchidb/ui-core` を external に追加。
+    - ui-treeconsole-breadcrumb/treetable: `react-router-dom` を external に追加。
+  - 検証: `pnpm exec dep-fence --strict` はエラーなし（警告のみ）。
+  - 残警告（情報）:
+    - ui-i18n: detector/backend/date-fns は external in deps（peer 化候補）。
+    - styler-plugin: spreadsheet-plugin は external in deps（peer 化候補）。
+    - 一部パッケージのローカル型シム（将来的に解消検討）。
+  - 備考: 本環境では `analyze:licenses` 実行時に tsx の IPC 生成が権限エラー（EPERM）で停止。ローカル環境では問題ないはず。必要なら `HDB_SKIP_LICENSES=1 pnpm build` 等で回避可能。
 - 2025-09-10 done: fix/tools/analyze-licenses-tsup-missing — prebuild 中の `tsup: command not found` 解消。
   - 原因: `@hierarchidb/analyze-licenses` パッケージが `tsup` を devDependencies に未宣言のため、環境により PATH 解決されずビルド失敗。
   - 対応(即効・非破壊): ルート `package.json` の `analyze:licenses` を `tsx src/cli.ts` 実行に変更し、ビルド不要で CLI を実行。
@@ -1869,6 +2181,20 @@ P2:
 ### 進捗メモ <a id="progress-notes"></a>
 
 - runtime-worker の型検証で `decodeWorkingCopyHolderName` がブランド型 `NodeId` と不一致だったため、`@hierarchidb/common-type` の `NodeId` を利用するよう util を修正し、返却値を `as NodeId` で正規化（実行時挙動は非変更）。
+
+2025-09-15
+- start: Vite 本番ビルドでの `virtual:plugin-registry-services` パースエラー修正（app）
+  - ブランチ: `fix/app/vite-virtual-services-parse`
+  - 変更: `app/vite-plugin-plugin-services.ts`
+    - 生成コードから TS/optional chaining/async-await を除去し、純 JS の Promise チェーンで `import()` を列挙
+    - `'/@fs'` 直参照を排し、パッケージ解決（`@hierarchidb/*`）に統一（本番ビルドは prebuild 前提）
+    - 仮想IDを `\0virtual:plugin-registry-services.js` へ（拡張子付与）
+    - デバッグ用に `HDB_MINIMAL_PLUGIN_SERVICES=1`（最小スタブ）と `HDB_SERVICES_DEBUG_MODE=one`（単一エントリ）を追加
+  - 受け入れ基準:
+    - `pnpm -C app typecheck` グリーン
+    - `HDB_MINIMAL_PLUGIN_SERVICES=1 pnpm -C app build:vite` が通過
+    - 通常の `pnpm -C app build` は import-analysis では失敗しない（usermenu の DTS 失敗は別件）
+  - ロールバック: 当該ファイル差分を revert。必要に応じて `HDB_MINIMAL_PLUGIN_SERVICES=1` で一時運用
 
 > 以降の進捗は、このセクションに「start/done/blocked」を時系列で追記します。
 

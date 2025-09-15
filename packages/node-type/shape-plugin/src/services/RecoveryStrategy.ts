@@ -310,7 +310,7 @@ export class FallbackStrategy implements RecoveryStrategy {
       success: true,
       strategy: this.name,
       newConfig: {
-        dataSource: newSource as any,
+        dataSource: newSource,
       },
       message: `データソースを ${currentSource} から ${newSource} に変更しました`,
     };

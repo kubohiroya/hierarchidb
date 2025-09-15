@@ -1,25 +1,26 @@
-import { createTsupConfig } from '../../../tsup.base.config';
+import { createTsupConfig } from "../../../tsup.base.config";
 
 export default createTsupConfig({
-  entry: {
-    index: 'src/index.ts',
-    'ui/index': 'src/ui/index.ts',
-    'shared/index': 'src/shared/index.ts',
-  },
+  entry: [
+    "src/index.ts",
+    "src/ui/index.ts",
+    "src/shared/index.ts",
+    "src/services/index.ts"
+  ],
+  // UI-heavy: DTS often pulls in React/MUI internals; skip DTS for now
+  dts: false,
   external: [
-    'provider',
-    'provider-dom',
-    // 'provider-i18next' is obsolete; use react-i18next
-    'react-i18next',
-    'i18next',
+    '@hierarchidb/runtime-ui-plugin-dialog',
+    '@hierarchidb/spreadsheet-plugin',
+    // Explicit peers
     'react',
     'react-dom',
     '@mui/material',
     '@mui/icons-material',
-    '@emotion/provider',
+    '@emotion/react',
     '@emotion/styled',
     'dexie',
-    // Optional worker at runtime; keep external to avoid type resolution in DTS
-    '@hierarchidb/runtime-worker',
+    'i18next',
+    'react-i18next',
   ],
 });

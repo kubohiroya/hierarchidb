@@ -15,6 +15,7 @@ export type { TreeTableOrchestratorResult } from './orchestrator';
 
 // State management
 export * from './state';
+export { getColumnWidths, saveColumnWidths, removeColumnWidths, removeColumnWidthsMany } from './state/column-widths-db';
 
 // Utilities
 export * from './utils';

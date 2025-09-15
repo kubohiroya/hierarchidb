@@ -11,7 +11,6 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  Grid,
   IconButton,
   InputLabel,
   List,
@@ -25,6 +24,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   Add as AddIcon,
   Close as CloseIcon,
@@ -186,7 +186,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
       case 'range':
         return (
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <TextField
                 fullWidth
                 label="Minimum Value"
@@ -197,7 +197,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                 })}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <TextField
                 fullWidth
                 label="Maximum Value"

@@ -27,7 +27,6 @@ import { styled, useTheme } from '@mui/material/styles';
 //  Icons -
 import {
   CheckBox,
-  OpenInNew,
   Clear as ClearIcon,
   Clear as RemoveIcon,
   ContentCopy as ContentCopyIcon,
@@ -44,6 +43,7 @@ import {
   Search as SearchIcon,
   Settings as SettingsIcon,
   SnippetFolder as SnippetFolderIcon,
+  Save as SaveIcon,
   Undo as UndoIcon,
 
   DarkMode as DarkModeIcon,
@@ -143,7 +143,7 @@ function TreeConsoleToolbarContent({
                                      controller,
                                      hasTrashItems,
                                      onAction,
-                                     rowClickAction = 'Select',
+                                     rowClickAction = 'Select/Navigate',
                                      onRowClickActionChange,
                                      canUndo = false,
                                      canRedo = false,
@@ -151,6 +151,7 @@ function TreeConsoleToolbarContent({
                                      canPaste = false,
                                      canDuplicate = false,
                                      canRemove = false,
+                                     availableTemplates = [],
                                    }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
@@ -163,6 +164,7 @@ function TreeConsoleToolbarContent({
   canPaste?: boolean;
   canDuplicate?: boolean;
   canRemove?: boolean;
+  availableTemplates?: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
 }) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
@@ -182,6 +184,11 @@ function TreeConsoleToolbarContent({
   const trashOpen = Boolean(trashAnchorEl);
 
   const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
+    // Close other menus before opening Settings
+    setImportExportAnchorEl(null);
+    setTrashAnchorEl(null);
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(null);
     setSettingsAnchorEl(event.currentTarget);
   };
 
@@ -190,6 +197,11 @@ function TreeConsoleToolbarContent({
   };
 
   const handleImportExportClick = (event: MouseEvent<HTMLElement>) => {
+    // Close other menus before opening Import/Export
+    setSettingsAnchorEl(null);
+    setTrashAnchorEl(null);
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(null);
     setImportExportAnchorEl(event.currentTarget);
   };
 
@@ -198,6 +210,11 @@ function TreeConsoleToolbarContent({
   };
 
   const handleTrashClick = (event: MouseEvent<HTMLElement>) => {
+    // Close other menus before opening Trash menu
+    setSettingsAnchorEl(null);
+    setImportExportAnchorEl(null);
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(null);
     setTrashAnchorEl(event.currentTarget);
   };
 
@@ -216,7 +233,7 @@ function TreeConsoleToolbarContent({
     onAction,
   ]);
 
-  const handleRowClickActionChange = useCallback((action: 'Select' | 'Edit' | 'Navigate') => {
+  const handleRowClickActionChange = useCallback((action: 'Select/Navigate' | 'Edit') => {
     if (onRowClickActionChange) {
       onRowClickActionChange(action);
     } else {
@@ -239,7 +256,11 @@ function TreeConsoleToolbarContent({
   const languageOpen = Boolean(languageAnchorEl);
 
   // Theme submenu handlers
-  const openThemeMenu = (event: MouseEvent<HTMLElement>) => setThemeAnchorEl(event.currentTarget);
+  const openThemeMenu = (event: MouseEvent<HTMLElement>) => {
+    // Ensure sibling sub-menu is closed
+    setLanguageAnchorEl(null);
+    setThemeAnchorEl(event.currentTarget);
+  };
   const closeThemeMenu = () => setThemeAnchorEl(null);
   const selectTheme = (mode: 'system' | 'light' | 'dark') => {
     setThemeMode(mode);
@@ -249,7 +270,10 @@ function TreeConsoleToolbarContent({
   };
 
   // Language submenu handlers
-  const openLanguageMenu = (event: MouseEvent<HTMLElement>) => setLanguageAnchorEl(event.currentTarget);
+  const openLanguageMenu = (event: MouseEvent<HTMLElement>) => {
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(event.currentTarget);
+  };
   const closeLanguageMenu = () => setLanguageAnchorEl(null);
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
@@ -290,7 +314,7 @@ function TreeConsoleToolbarContent({
         </Button>
       </ButtonGroup>
 
-      {/* Duplicate/Remove Group */}
+      {/* Duplicate/Move to Trash Group */}
       <ButtonGroup size="small">
         <Button
           title="Duplicate (⌘+D)"
@@ -300,7 +324,7 @@ function TreeConsoleToolbarContent({
           <DuplicateIcon fontSize="small" />
         </Button>
         <Button
-          title="Remove (⌘+X)"
+          title="Move to Trash (⌘+X)"
           disabled={!canRemove}
           onClick={() => handleAction('remove')}
           color="error"
@@ -353,7 +377,7 @@ function TreeConsoleToolbarContent({
             onClick={handleImportExportClick}
             color="primary"
           >
-            <SnippetFolderIcon fontSize="small" />
+            <SaveIcon fontSize="small" />
           </Button>
         </ButtonGroup>
         <Menu
@@ -384,18 +408,26 @@ function TreeConsoleToolbarContent({
             </ListItemIcon>
             <ListItemText>Export to JSON File</ListItemText>
           </MenuItem>
-          <Divider />
-          <MenuItem
-            onClick={() => {
-              handleAction('import-template', { templateId: 'population-2023' });
-              handleImportExportClose();
-            }}
-          >
-            <ListItemIcon>
-              <SnippetFolderIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Import Template</ListItemText>
-          </MenuItem>
+          {availableTemplates && availableTemplates.length > 0 && ([
+            <Divider key="tmpl-divider" />,
+            <MenuItem
+              key="tmpl-import"
+              onClick={() => {
+                const first = availableTemplates[0]!;
+                handleAction('import-template', { templateId: first.id });
+                handleImportExportClose();
+              }}
+            >
+              <ListItemIcon>
+                <SnippetFolderIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>
+                {availableTemplates.length === 1
+                  ? (availableTemplates[0]?.label || 'Import Template')
+                  : 'Import Template'}
+              </ListItemText>
+            </MenuItem>
+          ])}
         </Menu>
 
         {/* Settings Button */}
@@ -415,13 +447,10 @@ function TreeConsoleToolbarContent({
                 </Typography>
                 <RadioGroup
                   value={rowClickAction}
-                  onChange={(e) =>
-                    handleRowClickActionChange(e.target.value as 'Select' | 'Edit' | 'Navigate')
-                  }
+                  onChange={(e) => handleRowClickActionChange(e.target.value as 'Select/Navigate' | 'Edit')}
                 >
-                  <RadioItem icon={<CheckBox fontSize="small" />} label={'Select'} value={'Select'}/>
+                  <RadioItem icon={<CheckBox fontSize="small" />} label={'Select/Navigate'} value={'Select/Navigate'}/>
                   <RadioItem icon={<Edit fontSize="small" />} label={'Edit'} value={'Edit'}/>
-                  <RadioItem icon={<OpenInNew fontSize="small" />} label={'Navigate'} value={'Navigate'}/>
                 </RadioGroup>
               </Paper>
             </MenuItem>
@@ -449,41 +478,51 @@ function TreeConsoleToolbarContent({
               </ListItemIcon>
               <ListItemText primary="Language" secondary={language} />
             </MenuItem>
+        </Menu>
 
-            {/* Theme submenu */}
-            <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
-              <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
-                <ListItemIcon>
-                  <SystemThemeIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="System" />
-              </MenuItem>
-              <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
-                <ListItemIcon>
-                  <LightModeIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Light" />
-              </MenuItem>
-              <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
-                <ListItemIcon>
-                  <DarkModeIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Dark" />
-              </MenuItem>
-            </Menu>
+        {/* Theme submenu (rendered outside parent Menu to avoid invalid children) */}
+        <Menu
+          anchorEl={themeAnchorEl}
+          open={themeOpen}
+          onClose={closeThemeMenu}
+          container={typeof window !== 'undefined' ? document.body : undefined}
+        >
+          <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
+            <ListItemIcon>
+              <SystemThemeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="System" />
+          </MenuItem>
+          <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
+            <ListItemIcon>
+              <LightModeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Light" />
+          </MenuItem>
+          <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
+            <ListItemIcon>
+              <DarkModeIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Dark" />
+          </MenuItem>
+        </Menu>
 
-            {/* Language submenu */}
-            <Menu anchorEl={languageAnchorEl} open={languageOpen} onClose={closeLanguageMenu} container={typeof window !== 'undefined' ? document.body : undefined}>
-              <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
-                <ListItemText primary="System Default" />
-              </MenuItem>
-              <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
-                <ListItemText primary="English" />
-              </MenuItem>
-              <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
-                <ListItemText primary="日本語" />
-              </MenuItem>
-            </Menu>
+        {/* Language submenu (rendered outside parent Menu) */}
+        <Menu
+          anchorEl={languageAnchorEl}
+          open={languageOpen}
+          onClose={closeLanguageMenu}
+          container={typeof window !== 'undefined' ? document.body : undefined}
+        >
+          <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
+            <ListItemText primary="System Default" />
+          </MenuItem>
+          <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
+            <ListItemText primary="English" />
+          </MenuItem>
+          <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
+            <ListItemText primary="日本語" />
+          </MenuItem>
         </Menu>
       </Box>
     </TreeConsoleToolbarContainer>
@@ -499,7 +538,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     controller,
     hasTrashItems = false,
     onAction,
-    rowClickAction = 'Select',
+    rowClickAction = 'Select/Navigate',
     onRowClickActionChange,
     canUndo = false,
     canRedo = false,
@@ -507,6 +546,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canPaste = false,
     canDuplicate = false,
     canRemove = false,
+    availableTemplates = [],
   } = props;
 
   const theme = useTheme();
@@ -549,6 +589,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
           canPaste={canPaste}
           canDuplicate={canDuplicate}
           canRemove={canRemove}
+          availableTemplates={availableTemplates}
         />
       </Box>
     );

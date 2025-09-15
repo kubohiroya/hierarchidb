@@ -24,7 +24,7 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService';
 
-export class WorkerService implements WorkerAPI {
+export class WorkerService{
   private readonly startTime = Date.now();
 
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
@@ -138,27 +138,27 @@ export class WorkerService implements WorkerAPI {
     // Initialization is handled in getSingleton; nothing to do.
   }
 
-  getQueryAPI(): TreeQueryAPI {
+  getQueryAPI() {
     return this.queryService;
   }
 
-  getMutationAPI(): TreeMutationAPI {
+  getMutationAPI() {
     return this.mutationService;
   }
 
-  getSubscriptionAPI(): TreeSubscriptionAPI {
+  getSubscriptionAPI() {
     return this.subscriptionService;
   }
 
-  getWorkingCopyAPI(): WorkingCopyAPI {
+  getWorkingCopyAPI() {
     return this.workingCopyService;
   }
 
-  getImportExportAPI(): ImportExportAPI {
+  getImportExportAPI() {
     return this.importExportService;
   }
 
-  getTagAPI(): TagAPI {
+  getTagAPI() {
     return this.tagService;
   }
 

@@ -10,3 +10,6 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
   const mod = await import('../components/RoutePanel');
   return (mod as any).RoutePanel as unknown as PluginPanelComponent;
 }
+
+// Register host-composed steps on import (idempotent in registry)
+import './steps-provider';

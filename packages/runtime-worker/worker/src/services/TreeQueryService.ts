@@ -31,9 +31,9 @@ export class TreeQueryService implements TreeQueryAPI {
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    console.log('[TreeQueryService] getTree called with treeId:', treeId);
+    
     const result = await this.coreDB.getTree(treeId);
-    console.log('[TreeQueryService] getTree result:', result);
+    
     return result;
   }
 

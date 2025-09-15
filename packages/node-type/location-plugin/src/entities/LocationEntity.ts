@@ -274,6 +274,8 @@ export interface LocationSearchConfig {
     // Custom options
     customEndpoint?: string;
     customHeaders?: Record<string, string>;
+    // Generic query parameters for custom endpoints
+    queryParams?: Record<string, string>;
   };
 }
 

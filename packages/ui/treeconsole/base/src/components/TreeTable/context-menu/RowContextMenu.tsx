@@ -243,11 +243,11 @@ export const RowContextMenu = memo(
             <ListItemText>Duplicate</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={handleRemoveClick} disabled={!props.canRemove} aria-label="Remove">
+          <MenuItem onClick={handleRemoveClick} disabled={!props.canRemove} aria-label="Move to Trash">
             <ListItemIcon>
               <ClearIcon color="error" />
             </ListItemIcon>
-            <ListItemText>Remove</ListItemText>
+            <ListItemText>Move to Trash</ListItemText>
           </MenuItem>
 
           <Divider />

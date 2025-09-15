@@ -36,7 +36,7 @@ export function useWorkerAPIClient() {
             if (!cancelled) setError(err as Error);
           }
         };
-        try { window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true }); } catch {}
+        window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
         // Also poll briefly
         const start = Date.now();
         const t = window.setInterval(async () => {
@@ -56,14 +56,10 @@ export function useWorkerAPIClient() {
       }
     };
     // Global flag immediate path
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((window as any).__HDB_INIT_COMPLETE__) {
-        WorkerAPIClient.getOrInit().then(trySet).catch(setError);
-      } else {
-        init().catch(setError);
-      }
-    } catch {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).__HDB_INIT_COMPLETE__) {
+      WorkerAPIClient.getOrInit().then(trySet).catch(setError);
+    } else {
       init().catch(setError);
     }
     return () => { cancelled = true; };

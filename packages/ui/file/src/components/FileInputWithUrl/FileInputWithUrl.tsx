@@ -196,7 +196,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
                 if (typeof signIn === 'function') {
                   signIn(provider);
                 } else {
-                  if (import.meta.env.DEV) {
+                  if ((import.meta as any)?.env?.DEV) {
 
                     console.error('signIn is not a function in onSignIn:', signIn);
 
@@ -233,7 +233,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
                     if (typeof signIn === 'function') {
                       signIn();
                     } else {
-                      if (import.meta.env.DEV) {
+                      if ((import.meta as any)?.env?.DEV) {
 
                         console.error('signIn is not a function:', signIn);
 

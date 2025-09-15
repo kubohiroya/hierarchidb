@@ -6,7 +6,9 @@
  */
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
 import { proxy as comlinkProxy } from 'comlink';
+import { Subscriptions } from '~/subscriptions/controller';
 import { showCommandError } from '~/shared/command-errors';
 import type { NodeId, NodeType, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
@@ -15,6 +17,8 @@ import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useImportExport } from '@hierarchidb/ui-import-export';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
+import { rebuildAdjacency, buildVisibleRows } from '~/state/treeconsole.derive';
+import { preconnectForNodeTypes, preconnectPluginServices } from '~/services/preconnect';
 
 export interface UseTreeConsoleIntegrationParams {
   client: Remote<WorkerAPI>;
@@ -92,27 +96,28 @@ export function useTreeConsoleIntegration({
                                             pushPath,
                                             locationSearch,
                                           }: UseTreeConsoleIntegrationParams) {
-  // TreeTypes data state
-  const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
-  const [rawNodes, setRawNodes] = useState<TreeNode[]>([]);
-  const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
-  const [expandedIds, setExpandedIds] = useState<NodeId[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  // Jotai SSOT for this pageNodeId
+  const { state: ssot, set: setSSOT, incRef, decRef } = useTreeConsoleSSOT(pageNodeId as string | undefined);
+  const treeData = ssot.treeData as TreeNodeData[];
+  const rawNodes = ssot.rawNodes as TreeNode[];
+  const selectedIds = ssot.selectedIds as NodeId[];
+  const expandedIds = ssot.expandedIds as NodeId[];
+  const searchTerm = ssot.searchTerm || '';
+  const viewMode = (ssot.viewMode as ViewMode) || 'list';
 
   // TreeConsole internal state
   const [state, setState] = useState<TreeConsoleState>({
-    loading: false,
-    error: null,
-    sortBy: 'name',
-    sortDirection: 'asc',
-    filterBy: '',
+    loading: ssot.loading,
+    error: ssot.error,
+    sortBy: ssot.sortBy || 'name',
+    sortDirection: ssot.sortDirection || 'asc',
+    filterBy: ssot.filterBy || '',
     availableFilters: ['folder', 'basemap', '_shapes_buggy'],
     canGoBack: false,
     canGoForward: false,
-    canUndo: false,
-    canRedo: false,
-    canPaste: false,
+    canUndo: ssot.canUndo,
+    canRedo: ssot.canRedo,
+    canPaste: ssot.canPaste,
   });
 
   // Memoized columns configuration
@@ -137,66 +142,69 @@ export function useTreeConsoleIntegration({
   // Helper: sync canUndo/canRedo from CommandProcessor
   const refreshUndoRedo = useCallback(async () => {
     try {
-      const cp = await (client as any)?.getCommandProcessor?.();
+      type MaybeCP = { getCommandProcessor?: () => Promise<{ canUndo?: () => boolean; canRedo?: () => boolean; undo?: () => Promise<void>; redo?: () => Promise<void> }> };
+      const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+      if (typeof getCP !== 'function') return;
+      let cp: any;
+      try { cp = await getCP(); } catch { return; }
       if (!cp) return;
-      const canUndo = cp?.canUndo?.() ?? false;
-      const canRedo = cp?.canRedo?.() ?? false;
+      const canUndo = typeof cp.canUndo === 'function' ? (cp.canUndo() as boolean) : false;
+      const canRedo = typeof cp.canRedo === 'function' ? (cp.canRedo() as boolean) : false;
       setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
-    } catch {}
+    } catch {
+      // Swallow Comlink shape-mismatch errors
+    }
   }, [client]);
 
   // Global event bus: listen to command-complete events to refresh canUndo/canRedo
   useEffect(() => {
     const handler = () => { void refreshUndoRedo(); };
-    window.addEventListener('hdb-cmd', handler as any);
-    return () => window.removeEventListener('hdb-cmd', handler as any);
+    window.addEventListener('hdb-cmd', handler as EventListener);
+    return () => window.removeEventListener('hdb-cmd', handler as EventListener);
   }, [refreshUndoRedo]);
 
   const fireCmdEvent = () => {
-    try { window.dispatchEvent(new CustomEvent('hdb-cmd')); } catch {}
+    window.dispatchEvent(new CustomEvent('hdb-cmd'));
   };
 
   // Cleanup helper: remove persisted UI state for given nodes
   const cleanupPersistedLayouts = (ids: NodeId[]) => {
-    try {
-      const keysToRemove = new Set<string>();
-      for (const id of ids) {
-        // Current key scheme (per-node persistenceKey used by TreeTableCore)
-        keysToRemove.add(`TreeTableCore.columnWidths:tree:${id}`);
-        // Backward-compatible key patterns that may have been used
-        keysToRemove.add(`TreeTableCore.columnWidths:${id}`);
-      }
-      keysToRemove.forEach((k) => {
-        try { localStorage.removeItem(k); } catch {}
-      });
-    } catch {}
+    const keysToRemove = new Set<string>();
+    for (const id of ids) {
+      keysToRemove.add(`TreeTableCore.columnWidths:tree:${id}`);
+      keysToRemove.add(`TreeTableCore.columnWidths:${id}`);
+    }
+    keysToRemove.forEach((k) => {
+      localStorage.removeItem(k);
+    });
   };
 
   // Helper: apply sort/filter/search to raw nodes
-  const applySortFilterSearch = (nodes: TreeNode[], overrideTerm?: string): TreeNodeData[] => {
+  const applySortFilterSearch = (nodes: TreeNodeData[], overrideTerm?: string): TreeNodeData[] => {
     const sortBy = state.sortBy || 'name';
     const sortDir = state.sortDirection || 'asc';
     const filterBy = state.filterBy || '';
     const term = (overrideTerm ?? searchTerm)?.trim();
-    let arr = [...nodes];
+    let arr: TreeNodeData[] = [...nodes];
     if (filterBy) arr = arr.filter((n) => n.nodeType === (filterBy as unknown as NodeType));
     if (term) {
       const t = term.toLowerCase();
       arr = arr.filter((n) => (n.name || '').toLowerCase().includes(t));
     }
     arr.sort((a, b) => {
-      const va = (a as any)[sortBy] ?? '';
-      const vb = (b as any)[sortBy] ?? '';
+      const va = (a as Record<string, unknown>)[sortBy ?? 'name'] ?? '';
+      const vb = (b as Record<string, unknown>)[sortBy ?? 'name'] ?? '';
       const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
       return sortDir === 'asc' ? cmp : -cmp;
     });
-    return arr.map(convertTreeNodeToTreeNodeData);
+    return arr;
   };
 
   // Helper: load children of a node and refresh view
   const loadChildrenOf = async (parentId: NodeId, optTerm?: string) => {
     if (!client) return;
     setState((prev) => ({ ...prev, loading: true, error: null }));
+    setSSOT({ loading: true, error: null });
     try {
       const queryAPI = await client.getQueryAPI();
       const children = await queryAPI.listChildren(parentId);
@@ -206,13 +214,23 @@ export function useTreeConsoleIntegration({
         const batches = await Promise.all(children.map((h) => queryAPI.listChildren(h.id as NodeId)));
         displayNodes = batches.flat();
       }
-      setRawNodes(displayNodes);
-      setTreeData(applySortFilterSearch(displayNodes, optTerm));
+      // Normalize into adjacency maps and rebuild visible rows
+      const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map<string, TreeNode>());
+      const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map<string, Set<string>>());
+      rebuildAdjacency(nodesById, childrenByParent, String(parentId), displayNodes);
+      const rootId = String(pageNodeId || parentId);
+      const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
+      const sorted = applySortFilterSearch(flat, optTerm);
+      setSSOT({ rawNodes: displayNodes, nodesById, childrenByParent, treeData: sorted });
+      // Opportunistically preconnect services for the node types present among children
+      const types = displayNodes.map((n) => String((n as unknown as { nodeType?: string }).nodeType || ''));
+      void preconnectForNodeTypes(types);
     } catch (err) {
       console.error('Failed to load children:', err);
       setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
+      setSSOT({ loading: false });
     }
   };
 
@@ -221,55 +239,57 @@ export function useTreeConsoleIntegration({
     () => ({
       handleNodeClick: (node: TreeNodeData) => {
         const targetId = node.id as NodeId;
-        try {
-          if (pushPath && treeId) {
-            const isRootLike = pageTreeNode && pageTreeNode.id === targetId;
-            const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
-            pushPath(isRootLike ? `/t/${treeId}${qs}` : `/t/${treeId}/${targetId}${qs}`);
-          }
-        } catch {}
+        // Preconnect for the clicked node's type (best-effort, non-blocking)
+        void preconnectPluginServices(String(node.nodeType || ''));
+        if (pushPath && treeId) {
+          const isRootLike = pageTreeNode && pageTreeNode.id === targetId;
+          const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
+          pushPath(isRootLike ? `/t/${treeId}${qs}` : `/t/${treeId}/${targetId}${qs}`);
+        }
       },
 
       handleNodeSelect: (nodeId: string, selected: boolean) => {
-        setSelectedIds((prev) => {
+        setSSOT({
+          selectedIds: (() => {
+            const prev = selectedIds;
           if (selected) {
-            return [...new Set([...prev, nodeId as NodeId])];
+            return [...new Set([...(prev || []), nodeId as NodeId])];
           } else {
-            return prev.filter((id) => id !== nodeId);
+            return (prev || []).filter((id) => id !== nodeId);
           }
+          })(),
         });
       },
 
       handleNodeExpand: async (nodeId: string, expanded: boolean) => {
-        setExpandedIds((prev) => {
-          if (expanded) {
-            return [...new Set([...prev, nodeId as NodeId])];
-          } else {
-            return prev.filter((id) => id !== nodeId);
-          }
+        setSSOT({
+          expandedIds: (() => {
+            const prev = expandedIds;
+            if (expanded) return [...new Set([...(prev || []), nodeId as NodeId])];
+            return (prev || []).filter((id) => id !== nodeId);
+          })(),
         });
 
-        // Load children when expanding (if not already loaded)
+        // Load children when expanding (SSOT優先, 未構築時のみ取得)
         if (expanded && client) {
           try {
-            const queryAPI = await client.getQueryAPI();
-            const children = await queryAPI.listChildren(nodeId as NodeId);
-
-            // Update tree data with children
-            setTreeData((prev) => {
-              const updated = [...prev];
-              const parentIndex = updated.findIndex((node) => node.id === nodeId);
-              if (parentIndex >= 0) {
-                const currentNode = updated[parentIndex];
-                if (currentNode?.id) {
-                  updated[parentIndex] = {
-                    ...currentNode,
-                    children: children.map((child) => convertTreeNodeToTreeNodeData(child)),
-                  };
-                }
-              }
-              return updated;
-            });
+            const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map<string, TreeNode>());
+            const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map<string, Set<string>>());
+            let children: TreeNode[] | null = null;
+            const existing: Set<string> | undefined = childrenByParent.get(String(nodeId));
+            if (existing && existing.size) {
+              children = Array.from(existing)
+                .map((cid) => nodesById.get(String(cid)))
+                .filter((n): n is TreeNode => Boolean(n));
+            }
+            if (!children) {
+              const queryAPI = await client.getQueryAPI();
+              children = await queryAPI.listChildren(nodeId as NodeId);
+              rebuildAdjacency(nodesById, childrenByParent, String(nodeId), children);
+            }
+            const rootId = String(pageNodeId || nodeId);
+            const flat = buildVisibleRows(rootId, nodesById, childrenByParent, [...expandedIds, String(nodeId)]);
+            setSSOT({ nodesById, childrenByParent, treeData: applySortFilterSearch(flat) });
           } catch (err) {
             console.error('Failed to load children for node:', nodeId, err);
           }
@@ -277,7 +297,7 @@ export function useTreeConsoleIntegration({
       },
 
       handleSearchChange: async (term: string) => {
-        setSearchTerm(term);
+        setSSOT({ searchTerm: term });
         if (!client) return;
         const root = pageNodeId as NodeId;
         if (!term.trim()) {
@@ -287,38 +307,33 @@ export function useTreeConsoleIntegration({
         try {
           const queryAPI = await client.getQueryAPI();
           const results = await queryAPI.searchNodes({ rootNodeId: root, query: term, mode: 'partial', maxResults: 200 });
-          setRawNodes(results);
-          setTreeData(applySortFilterSearch(results, term));
+          const rows = results.map(convertTreeNodeToTreeNodeData);
+          setSSOT({ rawNodes: results, treeData: applySortFilterSearch(rows, term) });
         } catch (e) {
           console.error('Search failed:', e);
         }
       },
 
       handleSearchClear: () => {
-        setSearchTerm('');
+        setSSOT({ searchTerm: '' });
         // When cleared, immediately show unfiltered children
         const root = pageNodeId as NodeId;
         void loadChildrenOf(root, '');
         // Reflect removal in URL: update only the search part (avoid duplicating basename)
-        try {
-          if (pushPath) {
-            const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-            sp.delete('q');
-            const nextSearch = sp.toString();
-            pushPath(nextSearch ? `?${nextSearch}` : '?');
-          }
-        } catch {}
+        if (pushPath) {
+          const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+          sp.delete('q');
+          const nextSearch = sp.toString();
+          pushPath(nextSearch ? `?${nextSearch}` : '?');
+        }
       },
 
       handleSearchCommit: () => {
         if (!pushPath) return;
-        try {
-          const term = (searchTerm || '').trim();
-          // Update only the search part to avoid basename duplication
-          const next = term ? `?q=${encodeURIComponent(term)}` : '?';
-          const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-          if (currentSearch !== (next === '?' ? '' : next)) pushPath(next);
-        } catch {}
+        const term = (searchTerm || '').trim();
+        const next = term ? `?q=${encodeURIComponent(term)}` : '?';
+        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+        if (currentSearch !== (next === '?' ? '' : next)) pushPath(next);
       },
 
       handleCreate: async () => {
@@ -334,7 +349,8 @@ export function useTreeConsoleIntegration({
             name: 'New Folder',
           });
           if (!res?.success) {
-            showCommandError('INVALID_OPERATION', (res as any)?.error || 'Create failed');
+            const err = (res as unknown as { error?: string })?.error;
+            showCommandError('INVALID_OPERATION', err || 'Create failed');
             return;
           }
           const wcNodeId = res.nodeId as NodeId; // working copy node id
@@ -385,7 +401,7 @@ export function useTreeConsoleIntegration({
           }
           const parent = pageNodeId as NodeId;
           await loadChildrenOf(parent);
-          setSelectedIds([]);
+          setSSOT({ selectedIds: [] });
           fireCmdEvent();
 
           // Restore live subscription after mutation completes
@@ -407,11 +423,11 @@ export function useTreeConsoleIntegration({
 
       handleExpandAll: () => {
         const allIds = treeData.map((node) => node.id as NodeId);
-        setExpandedIds(allIds as unknown as NodeId[]);
+        setSSOT({ expandedIds: allIds });
       },
 
       handleCollapseAll: () => {
-        setExpandedIds([]);
+        setSSOT({ expandedIds: [] });
       },
 
       handleSort: (columnId: string) => {
@@ -420,40 +436,45 @@ export function useTreeConsoleIntegration({
           sortBy: columnId,
           sortDirection: prev.sortBy === columnId && prev.sortDirection === 'asc' ? 'desc' : 'asc',
         }));
-        setTreeData(applySortFilterSearch(rawNodes));
+        {
+          const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map());
+          const childrenByParent = new Map<string, string[]>(ssot.childrenByParent ?? new Map());
+          const rootId = String(pageNodeId || '');
+          const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
+          setSSOT({ treeData: applySortFilterSearch(flat) });
+        }
       },
 
       handleFilterChange: (filter: string) => {
         setState((prev) => ({ ...prev, filterBy: filter }));
-        setTreeData(applySortFilterSearch(rawNodes));
+        {
+          const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map());
+          const childrenByParent = new Map<string, string[]>(ssot.childrenByParent ?? new Map());
+          const rootId = String(pageNodeId || '');
+          const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
+          setSSOT({ treeData: applySortFilterSearch(flat) });
+        }
       },
 
       handleViewModeChange: (mode: ViewMode) => {
-        setViewMode(mode);
+        setSSOT({ viewMode: mode });
       },
 
       handleBreadcrumbNavigate: (nodeId: string) => {
         const target = nodeId as NodeId;
         if (!target) return;
-        try {
-          if (pushPath && treeId) {
-            // If navigating to the tree root, prefer the short form `/t/:treeId`
-            const isRootLike = pageTreeNode && pageTreeNode.id === target;
-            pushPath(isRootLike ? `/t/${treeId}` : `/t/${treeId}/${target}`);
-          }
-        } catch {}
+        if (pushPath && treeId) {
+          const isRootLike = pageTreeNode && pageTreeNode.id === target;
+          pushPath(isRootLike ? `/t/${treeId}` : `/t/${treeId}/${target}`);
+        }
       },
 
       handleNavigateBack: () => {
-        try {
-          if (pushPath) pushPath(-1);
-        } catch {}
+        if (pushPath) pushPath(-1);
       },
 
       handleNavigateForward: () => {
-        try {
-          if (pushPath) pushPath(1);
-        } catch {}
+        if (pushPath) pushPath(1);
       },
 
       handleContextMenuAction: async (action: string, node: TreeNodeData) => {
@@ -475,9 +496,12 @@ export function useTreeConsoleIntegration({
                 name: `New ${displayName}`,
               });
               if (!res?.success) {
-                showCommandError('INVALID_OPERATION', (res as any)?.error || 'Create failed');
-                return;
-              }
+            {
+              const err = (res as unknown as { error?: string })?.error;
+              showCommandError('INVALID_OPERATION', err || 'Create failed');
+            }
+            return;
+          }
               const wcNodeId = res.nodeId as NodeId;
               fireCmdEvent();
               if (pushPath) {
@@ -520,10 +544,10 @@ export function useTreeConsoleIntegration({
           return;
         }
 
-        if (action === 'update-desc-inline' && node?.id && typeof (node as any).description === 'string') {
+        if (action === 'update-desc-inline' && node?.id && typeof (node as TreeNodeData).description === 'string') {
           try {
             const mutationAPI = await client.getMutationAPI();
-            const next = String((node as any).description ?? '').trim();
+            const next = String((node as TreeNodeData).description ?? '').trim();
             const current = rawNodes.find((n) => n.id === node.id)?.description ?? '';
             if (next === current) return; // 未変更ならスキップ
             if (next.length > 1000) { showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)'); return; }
@@ -555,46 +579,57 @@ export function useTreeConsoleIntegration({
       handleUndo: async () => {
         if (!client) return;
         try {
-          const cp = await (client as any).getCommandProcessor();
-          await cp.undo();
-          const root = pageNodeId as NodeId;
-          await loadChildrenOf(root);
-          await refreshUndoRedo();
-          fireCmdEvent();
+      const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+          if (typeof getCP !== 'function') return;
+          const cp = await getCP();
+          if (cp && typeof cp.undo === 'function') {
+            await cp.undo();
+            const root = pageNodeId as NodeId;
+            await loadChildrenOf(root);
+            await refreshUndoRedo();
+            fireCmdEvent();
+          }
         } catch (e) {
-          console.error('Undo failed:', e);
+          // Ignore if CommandProcessor is not available in this build
         }
       },
 
       handleRedo: async () => {
         if (!client) return;
         try {
-          const cp = await (client as any).getCommandProcessor();
-          await cp.redo();
-          const root = pageNodeId as NodeId;
-          await loadChildrenOf(root);
-          await refreshUndoRedo();
-          fireCmdEvent();
+      const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+          if (typeof getCP !== 'function') return;
+          const cp = await getCP();
+          if (cp && typeof cp.redo === 'function') {
+            await cp.redo();
+            const root = pageNodeId as NodeId;
+            await loadChildrenOf(root);
+            await refreshUndoRedo();
+            fireCmdEvent();
+          }
         } catch (e) {
-          console.error('Redo failed:', e);
+          // Ignore if CommandProcessor is not available
         }
       },
 
       handleCopy: () => {
-        (globalThis as any).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds] };
+        type GlobalWithClipboard = typeof globalThis & { __HDB_CLIPBOARD__?: { nodeIds: NodeId[]; cut?: boolean } };
+        (globalThis as GlobalWithClipboard).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds] };
         setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
+        setSSOT({ canPaste: selectedIds.length > 0 });
       },
 
       handleCut: () => {
-        (globalThis as any).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds], cut: true };
+        (globalThis as GlobalWithClipboard).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds], cut: true };
         setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
+        setSSOT({ canPaste: selectedIds.length > 0 });
       },
 
       handlePaste: async () => {
         if (!client) return;
-        const clip = (globalThis as any).__HDB_CLIPBOARD__ as { nodeIds: NodeId[] } | undefined;
+        const clip = (globalThis as GlobalWithClipboard).__HDB_CLIPBOARD__;
         const ids = clip?.nodeIds || [];
-        const isCut = Boolean(clip && (clip as any).cut);
+        const isCut = Boolean(clip && clip.cut);
         if (ids.length === 0) return;
         try {
           const mutationAPI = await client.getMutationAPI();
@@ -603,13 +638,16 @@ export function useTreeConsoleIntegration({
             ? await mutationAPI.moveNodes({ nodeIds: ids as NodeId[], toParentId })
             : await mutationAPI.duplicateNodes({ nodeIds: ids, toParentId });
           if (!('success' in res) || !res.success) {
-            showCommandError('INVALID_OPERATION', (res as any)?.error || 'Paste failed');
+            {
+              const err = (res as unknown as { error?: string })?.error;
+              showCommandError('INVALID_OPERATION', err || 'Paste failed');
+            }
             return;
           }
           await loadChildrenOf(toParentId);
           // Clear cut clipboard after move
           if (isCut) {
-            (globalThis as any).__HDB_CLIPBOARD__ = undefined;
+            (globalThis as GlobalWithClipboard).__HDB_CLIPBOARD__ = undefined;
           }
           await refreshUndoRedo();
           fireCmdEvent();
@@ -632,8 +670,13 @@ export function useTreeConsoleIntegration({
           await refreshUndoRedo();
           fireCmdEvent();
           try {
-            const cp = await (client as any).getCommandProcessor();
-            setState((prev) => ({ ...prev, canUndo: cp?.canUndo?.() ?? false, canRedo: cp?.canRedo?.() ?? false }));
+            const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+            if (typeof getCP === 'function') {
+              const cp = await getCP();
+              const canUndo = cp && typeof cp.canUndo === 'function' ? cp.canUndo() : false;
+              const canRedo = cp && typeof cp.canRedo === 'function' ? cp.canRedo() : false;
+              setState((prev) => ({ ...prev, canUndo, canRedo }));
+            }
           } catch {}
         } catch (e) {
           console.error('Duplicate failed:', e);
@@ -737,44 +780,45 @@ export function useTreeConsoleIntegration({
 
   // Load tree data when client is ready
   useEffect(() => {
-    if (!client || !pageNodeId) {
-      console.log(
-        '[useTreeConsoleIntegration] Skipping load - client:',
-        !!client,
-        'pageNodeId:',
-        pageNodeId,
-      );
-      return;
-    }
+    if (!client || !pageNodeId) return;
+
+    // Clear previous view state immediately to avoid showing stale content during route change
+    setSSOT({
+      treeData: [],
+      rawNodes: [],
+      selectedIds: [],
+      expandedIds: [],
+      searchTerm: '',
+      error: null,
+    });
 
     const loadTreeData = async () => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
+      setSSOT({ loading: true, error: null });
 
       try {
-        console.log('[useTreeConsoleIntegration] Loading tree data for node:', pageNodeId);
+        
         // Initialize from query params if provided
-        try {
-          if (locationSearch) {
-            const params = new URLSearchParams(locationSearch);
-            const q = params.get('q') || '';
-            if (q) setSearchTerm(q);
-            const root = pageNodeId as NodeId;
-            if (q) {
-              const queryAPI = await client.getQueryAPI();
-              const results = await queryAPI.searchNodes({ rootNodeId: root, query: q, mode: 'partial', maxResults: 200 });
-              setRawNodes(results);
-              setTreeData(applySortFilterSearch(results, q));
-              setState((prev) => ({ ...prev, loading: false }));
-              return;
-            }
+        if (locationSearch) {
+          const params = new URLSearchParams(locationSearch);
+          const q = params.get('q') || '';
+          if (q) setSSOT({ searchTerm: q });
+          const root = pageNodeId as NodeId;
+          if (q) {
+            const queryAPI = await client.getQueryAPI();
+            const results = await queryAPI.searchNodes({ rootNodeId: root, query: q, mode: 'partial', maxResults: 200 });
+            const rows = results.map(convertTreeNodeToTreeNodeData);
+            setSSOT({ rawNodes: results, treeData: applySortFilterSearch(rows, q) });
+            setState((prev) => ({ ...prev, loading: false }));
+            return;
           }
-        } catch {}
+        }
 
         const rootToLoad = pageNodeId as NodeId;
         await loadChildrenOf(rootToLoad);
         setState((prev) => ({ ...prev, loading: false }));
       } catch (err) {
-        console.error('[useTreeConsoleIntegration] Failed to load tree data:', err);
+        
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -787,67 +831,119 @@ export function useTreeConsoleIntegration({
   }, [client, pageNodeId, locationSearch]);
 
   // Live subscription: when pageNodeId (root) changes, unsubscribe from old and subscribe to new
-  const activeSubRef = useRef<SubscriptionId | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
 
   // Helpers to manage live subscription explicitly (to avoid stale Comlink callback errors)
-  const teardownSubscription = useCallback(async () => {
-    try {
-      if (!client) return;
-      if (activeSubRef.current) {
-        const subscriptionAPI = await client.getSubscriptionAPI();
-        await subscriptionAPI.unsubscribe(activeSubRef.current);
-        activeSubRef.current = null;
-      }
-    } catch {}
+  const teardownSubscription = useCallback(async (rootId?: NodeId) => {
+    if (!client || !rootId) return;
+    await Subscriptions.release('page', client, rootId);
   }, [client]);
 
   const setupSubscription = useCallback(async (rootId: NodeId) => {
     if (!client || !rootId) return;
+    const requestRefresh = () => {
+      if (refreshTimerRef.current !== null) return;
+      refreshTimerRef.current = window.setTimeout(() => {
+        refreshTimerRef.current = null;
+        void loadChildrenOf(rootId);
+      }, 60);
+    };
+    // Reflect subscription events directly into SSOT, and fall back to refresh for safety
+    const cb = comlinkProxy((event: unknown) => {
+      try {
+        if (typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_SUBSCRIPTION_DEBUG === '1') {
+          console.log('[Subscription][page] event', event);
+        }
+        type Ev = { type: 'created'|'updated'|'deleted'|'moved'; nodeId: string; node?: TreeNode; parentId?: string; previousParentNodeId?: string };
+        const ev = event as Ev;
+        const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map<string, TreeNode>());
+        const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map<string, Set<string>>());
+
+        if (ev.type === 'created' && ev.node) {
+          nodesById.set(String(ev.node.id), ev.node);
+          if (ev.node.parentId) {
+            const pid = String(ev.node.parentId);
+            const cur = childrenByParent.get(pid) || new Set<string>();
+            if (!cur.has(String(ev.node.id))) { const next = new Set(cur); next.add(String(ev.node.id)); childrenByParent.set(pid, next); }
+          }
+        } else if (ev.type === 'updated' && ev.node) {
+          const prev = nodesById.get(String(ev.node.id));
+          nodesById.set(String(ev.node.id), { ...(prev || {} as TreeNode), ...(ev.node as TreeNode) });
+        } else if (ev.type === 'deleted') {
+          // Remove victim and all its descendants from SSOT
+          const stack: string[] = [String(ev.nodeId)];
+          const toRemove = new Set<string>();
+          while (stack.length) {
+            const id = stack.pop()!;
+            if (toRemove.has(id)) continue;
+            toRemove.add(id);
+            const ch = childrenByParent.get(id);
+            if (ch) for (const cid of ch) stack.push(cid);
+          }
+          for (const id of toRemove) {
+            const n = nodesById.get(id);
+            if (n?.parentId) {
+              const pid = String(n.parentId);
+              const cur = childrenByParent.get(pid);
+              if (cur && cur.has(id)) { const next = new Set(cur); next.delete(id); childrenByParent.set(pid, next); }
+            }
+            childrenByParent.delete(id);
+            nodesById.delete(id);
+          }
+        } else if (ev.type === 'moved' && ev.node) {
+          const prev = nodesById.get(String(ev.node.id));
+          nodesById.set(String(ev.node.id), { ...(prev || {} as TreeNode), ...(ev.node as TreeNode) });
+          if (ev.previousParentNodeId) {
+            const oldPid = String(ev.previousParentNodeId);
+            const cur = childrenByParent.get(oldPid);
+            if (cur && cur.has(String(ev.node.id))) { const next = new Set(cur); next.delete(String(ev.node.id)); childrenByParent.set(oldPid, next); }
+          }
+          const newPid = String(ev.parentId || ev.node.parentId || '');
+          if (newPid) {
+            const cur = childrenByParent.get(newPid) || new Set<string>();
+            if (!cur.has(String(ev.node.id))) { const next = new Set(cur); next.add(String(ev.node.id)); childrenByParent.set(newPid, next); }
+          }
+        }
+
+        const root = String(rootId);
+        const flat = buildVisibleRows(root, nodesById, childrenByParent, expandedIds);
+        setSSOT({ nodesById, childrenByParent, treeData: applySortFilterSearch(flat) });
+      } catch (e) {
+        // If any shape mismatch happens, fallback to safe refresh
+        requestRefresh();
+      }
+    });
+    // If already subscribed, skip re-subscribing/logging
+    const existing = Subscriptions.getActive('page', rootId);
+    if (existing) return;
+    const { subId, created } = await Subscriptions.subscribe('page', client, rootId, cb);
     try {
-      const subscriptionAPI = await client.getSubscriptionAPI();
-      // Debounced refresh to coalesce bursts
-      const requestRefresh = () => {
-        if (refreshTimerRef.current !== null) return;
-        refreshTimerRef.current = window.setTimeout(() => {
-          refreshTimerRef.current = null;
-          void loadChildrenOf(rootId);
-        }, 60);
-      };
-      const subId = await subscriptionAPI.subscribeSubtree(
-        rootId,
-        comlinkProxy((_event: any) => {
-          requestRefresh();
-        }),
-      );
-      activeSubRef.current = subId;
-    } catch (err) {
-      console.warn('[useTreeConsoleIntegration] Subscription setup failed:', err);
-    }
+      if (created && subId && import.meta.env && import.meta.env.VITE_SUBSCRIPTION_DEBUG === '1') {
+        console.log('[Subscription][page] subscribed', { rootId, subId });
+      }
+    } catch {}
   }, [client, loadChildrenOf]);
 
   useEffect(() => {
     let disposed = false;
     const run = async () => {
       if (!client || !pageNodeId) return;
-      // Always unsubscribe previous subscription for prior page
-      await teardownSubscription();
-      if (disposed) return;
+      incRef();
       await setupSubscription(pageNodeId as NodeId);
     };
 
     void run();
     return () => {
       disposed = true;
+      decRef();
       // Clear pending refresh
       if (refreshTimerRef.current !== null) {
-        try { window.clearTimeout(refreshTimerRef.current); } catch {}
+        window.clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = null;
       }
-      // Unsubscribe on cleanup
-      void teardownSubscription();
+      void teardownSubscription(pageNodeId as NodeId);
     };
-  }, [client, pageNodeId, setupSubscription, teardownSubscription]);
+  }, [client, pageNodeId]);
 
   // Poll CommandProcessor for canUndo/canRedo and reflect into state
   useEffect(() => {
@@ -855,12 +951,17 @@ export function useTreeConsoleIntegration({
     let cp: any;
     const tick = async () => {
       try {
-        cp = cp || (await (client as any)?.getCommandProcessor?.());
+      const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+        if (typeof getCP !== 'function') return;
+        cp = cp || (await getCP());
         if (!cp) return;
-        const canUndo = cp?.canUndo?.() ?? false;
-        const canRedo = cp?.canRedo?.() ?? false;
-        setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
-      } catch {}
+      const canUndo = typeof cp.canUndo === 'function' ? (cp.canUndo() as boolean) : false;
+      const canRedo = typeof cp.canRedo === 'function' ? (cp.canRedo() as boolean) : false;
+      setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+      setSSOT({ canUndo, canRedo });
+      } catch {
+        // Swallow comlink method-missing errors
+      }
     };
     // initial read
     tick();
@@ -869,7 +970,7 @@ export function useTreeConsoleIntegration({
     }, 600);
     return () => {
       stopped = true;
-      try { globalThis.clearInterval(id); } catch {}
+      globalThis.clearInterval(id);
     };
   }, [client]);
 

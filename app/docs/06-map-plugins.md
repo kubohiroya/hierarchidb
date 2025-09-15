@@ -399,4 +399,4 @@ A: 表示するデータ量を減らすか、クラスタリング機能を使�
 
 ---
 
-[← 前へ: プロジェクトプラグイン](05-project-plugin.md) | [目次](00-index.md) | [次へ: スプレッドシートプラグイン →](07-spreadsheet-plugin.md)
+[← 前へ: リンカープラグイン（linker）](05-linker-plugin.md) | [目次](00-index.md) | [次へ: スプレッドシートプラグイン →](07-spreadsheet-plugin.md)

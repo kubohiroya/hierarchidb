@@ -9,6 +9,9 @@ import { faviconPlugin } from './vite-plugin-favicon';
 import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { muiIconsVirtualModule } from './vite-plugin-mui-icons';
+import { muiIconMapPlugin } from './vite-plugin-mui-icon-map';
+import { pluginRegistryPlugin } from './vite-plugin-plugin-registry';
+import { pluginServicesRegistry } from './vite-plugin-plugin-services';
 import {
   vitePluginPackageReader as toolsVitePluginPackageReader,
 } from '@hierarchidb/tools-vite-plugin-package-reader';
@@ -17,9 +20,9 @@ import { hierarchiDBMultiModulePreset } from '@hierarchidb/tools-vite-plugin-pac
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const appName = env.VITE_APP_NAME || '';
-  //  VITE_APP_NAMEbase
-  const base = appName ? `/${appName}/` : '/';
+  // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
+  const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
+  const base = appPrefix ? `/${appPrefix}/` : '/';
   // const isDev = mode === 'development';
 
   /**
@@ -61,7 +64,12 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     '@hierarchidb/ui-treeconsole-toolbar': '../packages/ui/treeconsole/toolbar/src/index.ts',
     '@hierarchidb/ui-treeconsole-base': '../packages/ui/treeconsole/base/src/index.ts',
     '@hierarchidb/ui-treeconsole-breadcrumb': '../packages/ui/treeconsole/breadcrumb/src/index.ts',
+    '@hierarchidb/ui-treeconsole-treetable': '../packages/ui/treeconsole/treetable/src/index.ts',
     '@hierarchidb/ui-icon': '../packages/ui/icon/src/index.ts',
+    '@hierarchidb/ui-dialog': '../packages/ui/dialog/src/index.ts',
+    // Node-type plugins (opt-in via HDB_DEV)
+    '@hierarchidb/resolver-plugin': '../packages/node-type/resolver-plugin/src/index.ts',
+    '@hierarchidb/linker-plugin': '../packages/node-type/linker-plugin/src/index.ts',
     // 追加したいパッケージがあればここにマッピングを足してください
   };
 
@@ -74,6 +82,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   //  main thread
   const plugins = [
     muiIconsVirtualModule(),
+    muiIconMapPlugin({ rootDir: path.resolve(__dirname, '..') }),
+    pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
+    pluginServicesRegistry({ rootDir: path.resolve(__dirname, '..') }),
     devHealthPlugin({
       // Ignore virtual/server-only or known peer-provided modules to avoid false positives
       ignore: [
@@ -84,13 +95,18 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         'react-hook-geolocation',
         'comlink',
         'isbot',
+        // Provided as app deps but sometimes hoisted/resolved at root in monorepo
+        'react-resizable',
+        'react-draggable',
       ],
     }),
+    // Use default react-router plugin; let it infer basename from Vite base
+    reactRouter(),
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
-        // Include all node-type plugins used in menus (add spreadsheet/resolver)
-        pattern: /@hierarchidb\/(basemap-plugin|project-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin|resolver-plugin)$/,
+        // Include all node-type plugins used in menus
+        pattern: /@hierarchidb\/(basemap-plugin|linker-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin|resolver-plugin|timeline-plugin)$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
       }),
@@ -116,7 +132,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       : []),
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     comlink(), // Add Comlink plugin for Worker support
-    reactRouter(),
     tsconfigPaths({
       projects: ['./tsconfig.json'],
     }),
@@ -146,6 +161,140 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify(payload));
       });
+    },
+  } as any;
+
+  // Simple dev-time CORS-bypass proxy via query param (?url=...)
+  const hdbDevProxyPlugin = {
+    name: 'hdb-dev-proxy',
+    configureServer(server: any) {
+      const handler = async (req: any, res: any) => {
+        try {
+          // Allow only localhost callers
+          const remote = (req.socket?.remoteAddress || req.connection?.remoteAddress || '').toString();
+          const xff = (Array.isArray(req.headers['x-forwarded-for'])
+            ? req.headers['x-forwarded-for'][0]
+            : req.headers['x-forwarded-for']) as string | undefined;
+          const forwarded = (xff || '').split(',')[0].trim();
+          const hostHeader = (req.headers['host'] || '').toString();
+          const isLocalAddr = (addr: string) => !!addr && (
+            addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1'
+          );
+          const isLocalHostHeader = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(hostHeader);
+          const isLocal = isLocalAddr(remote) || isLocalAddr(forwarded) || isLocalHostHeader;
+          if (!isLocal) {
+            res.statusCode = 403;
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ error: 'forbidden', message: 'Proxy is restricted to localhost' }));
+            return;
+          }
+
+          const origin = (req.headers['origin'] || '').toString();
+          const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+
+          // Parse target URL from query
+          const u = new URL(req.url, 'http://localhost');
+          const target = u.searchParams.get('url');
+          if (!target) {
+            res.statusCode = 400;
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ error: 'Missing url query parameter' }));
+            return;
+          }
+          let targetUrl: URL;
+          try {
+            targetUrl = new URL(target);
+          } catch {
+            res.statusCode = 400;
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ error: 'Invalid url' }));
+            return;
+          }
+          if (!/^https?:$/.test(targetUrl.protocol)) {
+            res.statusCode = 400;
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify({ error: 'Only http/https are allowed' }));
+            return;
+          }
+
+          // Handle CORS preflight early if the proxy endpoint is called cross-origin during dev
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204;
+            if (isLocalOrigin) res.setHeader('access-control-allow-origin', origin);
+            res.setHeader('access-control-allow-methods', 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS');
+            res.setHeader('access-control-allow-headers', req.headers['access-control-request-headers'] || '*');
+            res.end();
+            return;
+          }
+
+          // Collect request body (for POST/PUT/PATCH)
+          const getBody = async () => new Promise<Buffer>((resolve) => {
+            const chunks: Buffer[] = [];
+            req.on('data', (c: Buffer) => chunks.push(Buffer.from(c)));
+            req.on('end', () => resolve(Buffer.concat(chunks)));
+            req.on('error', () => resolve(Buffer.alloc(0)));
+          });
+
+          const method = req.method || 'GET';
+          const rawBody = method === 'GET' || method === 'HEAD' ? undefined : await getBody();
+
+          // Forward headers, dropping hop-by-hop and origin-specific ones
+          const fwdHeaders = new Headers();
+          const drop = new Set(['host', 'connection', 'content-length', 'accept-encoding', 'referer', 'origin']);
+          for (const [k, v] of Object.entries(req.headers)) {
+            if (!v) continue;
+            const key = k.toLowerCase();
+            if (drop.has(key)) continue;
+            // Handle multi-value headers
+            if (Array.isArray(v)) {
+              for (const vv of v) fwdHeaders.append(key, vv);
+            } else {
+              fwdHeaders.set(key, String(v));
+            }
+          }
+          if (rawBody && !fwdHeaders.has('content-type') && req.headers['content-type']) {
+            fwdHeaders.set('content-type', String(req.headers['content-type']));
+          }
+
+          const resp = await fetch(targetUrl, {
+            method,
+            headers: fwdHeaders,
+            body: rawBody,
+            redirect: 'manual',
+          } as any);
+
+          // Relay status and headers
+          res.statusCode = resp.status;
+          resp.headers.forEach((value, key) => {
+            // Skip security headers that may conflict in dev context
+            if (/^content-security-policy/i.test(key)) return;
+            res.setHeader(key, value);
+          });
+          // Allow browser clients to read headers; restrict to localhost origins
+          if (isLocalOrigin) res.setHeader('access-control-allow-origin', origin);
+          res.setHeader('access-control-expose-headers', '*');
+
+          // Stream body if possible
+          const body = resp.body as any;
+          if (body && typeof body.getReader === 'function') {
+            const { Readable } = await import('node:stream');
+            Readable.fromWeb(body).pipe(res);
+          } else {
+            const buf = Buffer.from(await resp.arrayBuffer());
+            res.end(buf);
+          }
+        } catch (err: any) {
+          res.statusCode = 502;
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify({ error: 'Proxy error', message: String(err?.message || err) }));
+        }
+      };
+
+      // Mount at both fixed and base-prefixed paths for convenience
+      const paths = ['/hierarchidb/proxy', `${base.replace(/\/$/, '')}/proxy`];
+      for (const p of Array.from(new Set(paths))) {
+        server.middlewares.use(p, handler);
+      }
     },
   } as any;
 
@@ -201,23 +350,61 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       return {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),
+        // Expose selected non-VITE_ envs for client/runtime packages that check them
+        'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
     })(),
-    plugins: [buildBeaconPlugin, hdbDevBannerPlugin, ...plugins],
+    plugins: [buildBeaconPlugin, hdbDevProxyPlugin, hdbDevBannerPlugin, ...plugins],
     resolve: {
       // Avoid multiple React copies by always resolving to the app's React
-      dedupe: ['react', 'react-dom', '@emotion/react', '@emotion/styled', 'provider', 'provider-dom'],
+      dedupe: [
+        'react',
+        'react-dom',
+        'jotai',
+        '@emotion/react',
+        '@emotion/styled',
+        'provider',
+        'provider-dom',
+        // Ensure a single instance for plugin dialog runtime across app and plugins
+        '@hierarchidb/runtime-ui-plugin-dialog',
+      ],
       alias: [
         { find: '~', replacement: path.resolve(__dirname, './src') },
+        // Active dev packages are resolved above via HDB_DEV -> devAliases
+        // Force ESM/modern entrypoints for MUI to avoid SSR CJS 'require is not defined'
+        // These aliases are safe across v5/v7 as they point to ESM builds.
+        // Do not alias MUI packages to ESM entry files.
+        // Aliasing to index.js breaks subpath imports like '@mui/system/Grid'
+        // which would resolve to '.../esm/index.js/Grid' and fail.
         // Active dev packages: resolve to src for instant HMR
         ...devAliases,
+        // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
+        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Worker subpath exports — map to src during dev so Vite can resolve without prior builds
         { find: '@hierarchidb/route-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/project-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/project-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/route-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/database/index.ts') },
+        { find: '@hierarchidb/route-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/index.ts') },
+        { find: '@hierarchidb/timeline-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/worker/index.ts') },
+        
         { find: '@hierarchidb/location-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/worker/index.ts') },
         { find: '@hierarchidb/shape-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/worker/index.ts') },
+        // Resolver plugin database: map to src during dev for HMR-friendly services (must come BEFORE root alias)
+        { find: '@hierarchidb/resolver-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/database/index.ts') },
+        // Some plugins don't ship a root dist during dev; point to src to avoid "Failed to resolve entry".
+        { find: '@hierarchidb/resolver-plugin', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/index.ts') },
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
+        // Unify plugin-dialog runtime to a single module instance to avoid split singletons
+        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
+        // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
+        // make it resolvable to its built output to avoid dev server crashes.
+        { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
+        { find: '@hierarchidb/location-plugin/services', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/services/index.ts') },
+        // Spreadsheet plugin database subpath must resolve before the root alias
+        { find: '@hierarchidb/spreadsheet-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/database/index.ts') },
+        // Spreadsheet plugin is referenced by Styler UI; ensure resolvable during app build
+        { find: '@hierarchidb/spreadsheet-plugin', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/index.ts') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
@@ -240,11 +427,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Rationale: location-plugin bundles it as external; alias points to built dist
         // Temporary aliases removed after dynamic imports hardened
         // Note: do not alias workspace packages; rely on declared deps and workspace linking
-        // Known broken package: route to a harmless stub until implemented
-        {
-          find: '@hierarchidb/spreadsheet-plugin',
-          replacement: path.resolve(__dirname, './src/virtual/stubs/spreadsheet-plugin-stub.ts'),
-        },
       ],
     },
     server: {
@@ -269,19 +451,18 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       // Apply both comlink and package-reader to worker bundle so virtual modules
       // are available inside the worker context as well.
       plugins: () => [
+        // Provide UI/Worker registries and icon map in worker context, too
+        pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
         // Run package-reader first so virtual modules are available early
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
-            pattern: /@hierarchidb\/(basemap-plugin|project-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin)$/,
+            pattern: /@hierarchidb\/(basemap-plugin|linker-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin)$/,
             priorityPlugin: 'folder',
             extractPluginConfig: true,
           }),
           rootDir: path.resolve(__dirname, '..'),
           hooks: {
-            beforeTransform: async (packages) => {
-              packages.delete('@hierarchidb/spreadsheet-plugin');
-              return packages;
-            },
+            beforeTransform: async (packages) => packages,
             // Do not auto-import plugin-specific worker bundles here.
             // Runtime wiring now handles worker adapters centrally via @hierarchidb/runtime-worker.
           },
@@ -299,6 +480,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       //  production
       sourcemap: mode === 'development',
       rollupOptions: {
+        external: [
+          // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
+          'react-resizable',
+          'react-draggable',
+        ],
         output: {
           entryFileNames: 'assets/[name].js',
           chunkFileNames: 'assets/[name]-[hash].js',
@@ -316,21 +502,29 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     // Prevent Vite/React Router SSR build from externalizing workspace packages,
     // which would otherwise cause runtime failures when loaded in the browser.
     ssr: {
-      noExternal: [/^@hierarchidb\//],
+      // Bundle MUI and Emotion into the SSR build to avoid Node ESM directory-import resolution
+      // errors (e.g., importing '@mui/material/styles' from the server bundle).
+      noExternal: [/^@hierarchidb\//, /^@mui\//, /^@emotion\//],
     },
     optimizeDeps: {
       include: [
         'react',
         'react-dom',
         'react-router-dom',
+        'dexie',
+        'react-resizable',
+        'react-draggable',
         '@mui/material',
         '@mui/icons-material',
         '@emotion/react',
         '@emotion/styled',
       ],
-      //  @emotion/react
-      // Exclude active dev packages from pre-bundle so Vite watches their sources directly
-      exclude: DEV_PACKAGES,
+      // Exclude specific packages from pre-bundle so Vite watches sources directly
+      exclude: [
+        // Do not prebundle bootstrap; resolve via alias to dist at build time
+        '@hierarchidb/runtime-worker-bootstrap',
+        ...DEV_PACKAGES,
+      ],
       esbuildOptions: {
         target: 'es2020',
       },

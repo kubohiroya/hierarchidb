@@ -23,17 +23,18 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({
                                                                 onPrevious,
                                                                 errors,
                                                               }) => {
+  const wc = (data || {}) as any;
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step4Processing
           workingCopy={{
-            ...data,
-            selectedAdminLevels: data.selectedAdminLevels || [],
-            batchConfig: data.batchConfig,
+            ...wc,
+            selectedAdminLevels: wc.selectedAdminLevels || [],
+            batchConfig: wc.batchConfig,
           }}
           onUpdate={(updates) => {
-            const updatedData = { ...data, ...updates };
+            const updatedData = { ...wc, ...updates };
             onNext(updatedData);
           }}
           disabled={false}
@@ -59,8 +60,8 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({
         <Button onClick={onPrevious}>Previous</Button>
         <Button
           variant="contained"
-          onClick={() => onNext(data)}
-          disabled={!data.selectedAdminLevels || data.selectedAdminLevels.length === 0}
+          onClick={() => onNext(wc)}
+          disabled={!wc.selectedAdminLevels || wc.selectedAdminLevels.length === 0}
         >
           Next
         </Button>

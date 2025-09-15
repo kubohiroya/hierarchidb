@@ -18,13 +18,14 @@ export interface LicenseStepProps {
 }
 
 export const LicenseStep: React.FC<LicenseStepProps> = ({ data, onNext, onPrevious, errors }) => {
+  const wc = (data || {}) as any;
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step3License
-          workingCopy={{ ...data, licenseAgreement: data.licenseAgreement || false }}
+          workingCopy={{ ...wc, licenseAgreement: wc.licenseAgreement || false }}
           onUpdate={(updates) => {
-            const updatedData = { ...data, ...updates };
+            const updatedData = { ...wc, ...updates };
             onNext(updatedData);
           }}
           disabled={false}
@@ -48,7 +49,7 @@ export const LicenseStep: React.FC<LicenseStepProps> = ({ data, onNext, onPrevio
         }}
       >
         <Button onClick={onPrevious}>Previous</Button>
-        <Button variant="contained" onClick={() => onNext(data)} disabled={!data.licenseAgreement}>
+        <Button variant="contained" onClick={() => onNext(wc)} disabled={!wc.licenseAgreement}>
           Next
         </Button>
       </Box>

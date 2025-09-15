@@ -18,3 +18,6 @@ export * from './services';
 
 // Folder dialog extension initializer (optional)
 export { initializeSpreadsheetFolderExtension, spreadsheetFolderExtension } from './extensions/SpreadsheetFolderExtension';
+
+// Register UI steps-provider for host-composed dialog (idempotent)
+import './ui/steps-provider';

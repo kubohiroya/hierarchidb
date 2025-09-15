@@ -1,7 +1,7 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
 import {useRouteError} from 'react-router';
 import { CssBaseline } from '@mui/material';
-import { StyledEngineProvider } from '@mui/material/styles';
+// Note: When using Emotion Cache with insertion point, do not also use StyledEngineProvider injectFirst
 import { StrictMode } from 'react';
 import { bootLog } from './utils/bootLog';
 import { AppConfigProvider } from './contexts/AppConfigContext';
@@ -14,36 +14,36 @@ import { InitInspector } from './dev/InitInspector';
 import { NotificationSystem, registerAllUIPlugins } from '@hierarchidb/ui-core';
 import { APP_VERSION, BUILD_TIME } from './version';
 // Bridge: provide app's Worker client hook to shape-plugin UI hooks
-import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
 import { BootProgressProvider } from './contexts/BootProgressProvider';
 import { AppThemeProvider } from './components/AppThemeProvider';
+import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
+import { ServicesReadySnackbar } from './components/ServicesReadySnackbar';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 import { autoLoadPlugins } from './plugins/auto-load';
 
 // Log version and build time at startup (local time)
-try {
-  const localBuildTime = (() => {
-    try {
-      return new Date(BUILD_TIME).toLocaleString();
-    } catch {
-      return String(BUILD_TIME);
-    }
-  })();
-  // eslint-disable-next-line no-console
-  console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
-} catch {
-  throw new Error('Failed to log app version/build time');
-}
+const localBuildTime = (() => {
+  try {
+    return new Date(BUILD_TIME).toLocaleString();
+  } catch {
+    return String(BUILD_TIME);
+  }
+})();
+// eslint-disable-next-line no-console
+console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 
 // Register the app-provided hook once at module load
-try {
-  registerWorkerClientHook(useWorkerAPIClient);
-} catch {
-  throw new Error('Failed to register worker client hook');
+registerWorkerClientHook(useWorkerAPIClient);
+// Also expose the hook getter on window for plugin UIs that avoid static imports to keep bundling lean
+if (typeof window !== 'undefined') {
+  (window as any).__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
 }
+
+// No runtime globals for base; SSOT is Vite's BASE_URL consumed directly where needed.
 
 declare global {
   interface Window {
@@ -56,10 +56,14 @@ declare global {
 // Register all UI plugins at startup (only once)
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
   (async () => {
-    // Load plugins discovered by virtual modules (data-driven, no switch-case)
-    try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
+    // Load plugins discovered by virtual modules unless explicitly skipped
+    if (!((import.meta as any)?.env?.VITE_SKIP_PLUGIN_AUTOLOAD === '1')) {
+      try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
+    } else {
+      console.warn('[root] autoLoadPlugins skipped by VITE_SKIP_PLUGIN_AUTOLOAD=1');
+    }
     // Keep legacy/stub registration as a fallback (no-ops when already registered)
-    try { registerAllUIPlugins(); } catch {}
+    registerAllUIPlugins();
     window.__uiPluginsRegistered = true;
   })();
 }
@@ -74,31 +78,54 @@ if (typeof window !== 'undefined') {
   });
 
   // Warm-load menu builders in all modes so DynamicSpeedDial can build items
-  try {
-    import('./plugins/menu-builders')
-      .then(async (mod) => {
-        // @eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__HDB_MENU_BUILDERS__ = mod;
-        // Warm icon chunks for both contexts
-        try { await (mod as any).prefetchIconsForAllContexts?.(); } catch {
-          throw new Error('Failed to prefetch icons for all contexts');
-        }
-      })
-      .catch((err) => {
-        console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
-      });
-  } catch {
-    throw new Error('Failed to preload menu builders');
-  }
+  import('./plugins/menu-builders')
+    .then(async (mod) => {
+      // @eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__HDB_MENU_BUILDERS__ = mod;
+      await (mod as any).prefetchIconsForAllContexts?.();
+    })
+    .catch((err) => {
+      console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
+    });
+
+  // Provide plugin definitions to runtime-ui packages that rely on global injection
+  // @ts-ignore virtual module provided by package-reader
+  import('virtual:plugin-definitions')
+    .then((mod: any) => {
+      (window as any).__HDB_PLUGIN_DEFS__ = mod?.default || [];
+    })
+    .catch(() => {});
+
+  // Expose TreeConsolePanel for plugin UIs that avoid static imports
+  (window as any).__HDB_TreeConsolePanel = TreeConsolePanel;
+
 
   // Inject app-generated static MUI icon map for ui-icon to use globally
   import('virtual:mui-icon-map')
     .then((mod: any) => {
-      try { setGlobalMuiIconMap(mod.default || mod.iconMap || {}); } catch {}
+      setGlobalMuiIconMap(mod.default || mod.iconMap || {});
     })
     .catch(() => {
       // ignore; ui-icon will fallback to its internal static map/dynamic import
     });
+
+  // Optional: prewarm plugin services (DB/Shared/Services) in dev when enabled
+  if ((import.meta as any)?.env?.VITE_PREWARM_SERVICES) {
+    import('~/services/databases').then(async (db) => {
+      const results = await Promise.allSettled([
+        db.getBaseMapDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'basemap'; }),
+        db.getResolverDB().then(async (r) => { try { await (r as any)?.open?.(); } catch {} ; return 'resolver'; }),
+        db.getSpreadsheetDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'spreadsheet'; }),
+        db.getRouteDatabase().then(async (d) => { try { await (d as any)?.open?.(); } catch {} ; return 'route'; }),
+        db.getShapeDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'shape'; }),
+        db.getLocationEphemeralDB().then(async (d) => { try { await (d as any)?.open?.(); } catch {} ; return 'location'; }),
+      ]);
+      const ok = results.filter(r => r.status === 'fulfilled').map((r:any) => r.value as string);
+
+        window.dispatchEvent(new CustomEvent('hdb-services-ready', { detail: { source: 'ui', at: Date.now(), nodeTypes: ok } }));
+
+    }).catch(() => {});
+  }
 }
 
 //const appPrefix = import.meta.env.VITE_APP_PREFIX || '/';
@@ -115,6 +142,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </head>
     <body suppressHydrationWarning>
     {children}
+    {/* Snackbars */}
+    <ServicesReadySnackbar />
     <ScrollRestoration />
     <Scripts />
     </body>
@@ -303,9 +332,8 @@ export default function App() {
             {/* I18n readiness */}
             <I18nReadyReporter />
 
-            <StyledEngineProvider injectFirst>
-              <CustomThemeProvider>
-                <AppThemeProvider>
+                <CustomThemeProvider>
+                  <AppThemeProvider>
                   {/* Theme step can be considered ready now */}
                   <ThemeReadyReporter />
 
@@ -324,7 +352,6 @@ export default function App() {
                   </WorkerProvider>
                 </AppThemeProvider>
               </CustomThemeProvider>
-            </StyledEngineProvider>
           </LanguageProvider>
         </SimpleBFFAuthProvider>
       </AppConfigProvider>

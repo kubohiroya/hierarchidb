@@ -13,12 +13,12 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
     const url = this.buildUrl(task);
     const net = new FetchNetworkPort({ perHostConcurrency: 4, retries: 3 });
     const store = new DexieChunkStoragePort('hidb-chunks');
-    const dl = new DownloadService(net, store, undefined as any);
+  const dl = new DownloadService(net, store, undefined as unknown as never);
     const fileId = `${task.sessionId}-${task.config?.country}-L${task.config?.adminLevel}`;
     const res = await dl.download(url, fileId, {});
     let text: string;
     if (typeof store.readAll === 'function') {
-      const buf = await (store as any).readAll(fileId);
+  const buf = await (store as { readAll: (id: string) => Promise<Uint8Array | ArrayBuffer> }).readAll(fileId);
       text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
     } else {
       const { authFetch } = await import('../../utils/authFetch');
@@ -45,4 +45,3 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
     }
   }
 }
-

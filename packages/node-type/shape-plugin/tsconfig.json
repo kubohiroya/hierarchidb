@@ -19,6 +19,7 @@
   "include": [
     "src/shared/**/*",
     "src/types/**/*",
+    "src/services/**/*",
     "src/worker/api.ts",
     "src/worker/handlers/**/*",
     "src/worker/plugin.ts"
@@ -31,7 +32,6 @@
     "**/*.spec.*",
     "src/ui/**",
     "src/components/**",
-    "src/services/**",
     "src/worker/**",
     "src/extension/handler.ts"
   ]

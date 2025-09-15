@@ -1,0 +1,72 @@
+{
+  "name": "@hierarchidb/timeline-plugin",
+  "version": "0.0.1",
+  "description": "Timeline plugin scaffold for HierarchiDB (new design)",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
+    "./worker": {
+      "import": "./dist/worker/index.js"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+  },
+  "dependencies": {
+    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "react": ">=18.0.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "timeline",
+      "name": "Timeline Plugin",
+      "icon": { "mui": "Timeline", "emoji": "🕒", "color": "#8a7cbf" }
+    }
+  },
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "@hierarchidb/ui-dialog",
+      "react"
+    ]
+  }
+}

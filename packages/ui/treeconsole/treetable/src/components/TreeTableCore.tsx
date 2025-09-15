@@ -18,7 +18,8 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Box, Checkbox, IconButton, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, TextField, Tooltip } from '@mui/material';
+import { Box, Button, Checkbox, Chip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, TextField, Tooltip } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import {
   ChevronRight as ChevronRightIcon,
@@ -154,14 +155,15 @@ export function TreeTableCore({
                                 depthOffset = 0,
                                 disableDragAndDrop = false,
                                 hideDragHandler = false,
-                                rowClickAction = 'Select',
+                                rowClickAction = 'Select/Navigate',
                                 selectionMode = 'multiple',
                                 NodeTypeIcon: CustomNodeTypeIcon,
                                 NodeContextMenu: CustomNodeContextMenu,
                                 onRowClick,
                                 onRowDoubleClick,
-                                onRowContextMenu,
-                                persistenceKey,
+                                onRowContextMenu: _onRowContextMenu,
+                                pageNodeId,
+                                treeId,
                               }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
@@ -201,38 +203,25 @@ export function TreeTableCore({
     return { ok: true };
   }, []);
 
-  // Persist/restore column widths per view (treeId/rootId/persistenceKey)
-  const storageKey = useMemo(() => {
-    const rootId = (controller as any)?.rootNodeId || '';
-    const treeId = (controller as any)?.treeId || '';
-    const key = persistenceKey || `${treeId}:${rootId}` || 'default';
-    return `hdb:treetable:colwidths:v1:${key}`;
-  }, [controller, persistenceKey]);
-
+  // Persist/restore column widths in Dexie using pageNodeId as the primary key
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey)
-        // legacy keys fallback
-        || localStorage.getItem(`TreeTableCore.columnWidths:tree:${(controller as any)?.rootNodeId || ''}`)
-        || localStorage.getItem(`TreeTableCore.columnWidths:${(controller as any)?.rootNodeId || ''}`);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved && typeof saved === 'object') {
-          setColumnWidths((prev) => ({ ...prev, ...saved }));
-        }
+    let cancelled = false;
+    (async () => {
+      if (!pageNodeId) return;
+      const saved = await (await import('../state/column-widths-db')).getColumnWidths(pageNodeId);
+      if (!cancelled && saved && typeof saved === 'object') {
+        setColumnWidths((prev) => ({ ...prev, ...saved }));
       }
-    } catch {
-      throw new Error(`Failed to load column widths from localStorage for key: ${storageKey}`);
-    }
-  }, [storageKey]);
+    })();
+    return () => { cancelled = true; };
+  }, [pageNodeId]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(columnWidths));
-    } catch {
-      throw new Error(`Failed to save column widths to localStorage for key: ${storageKey}`);
-    }
-  }, [columnWidths, storageKey]);
+    (async () => {
+      if (!pageNodeId) return;
+      await (await import('../state/column-widths-db')).saveColumnWidths(pageNodeId, columnWidths);
+    })();
+  }, [columnWidths, pageNodeId]);
 
   // Keep first data column ('name') fixed on container resize: adjust only other columns proportionally
   useEffect(() => {
@@ -346,13 +335,22 @@ export function TreeTableCore({
 
     rawData.forEach((node) => nodeMap.set(node.id, node as TreeNode));
 
+    const rootId = (controller as any)?.rootNodeId as string | undefined;
+
     function getDepth(nodeId: string): number {
       if (depthMap.has(nodeId)) return depthMap.get(nodeId)!;
 
       const node = nodeMap.get(nodeId);
-      if (!node || !node.parentId) {
+      if (!node) {
         depthMap.set(nodeId, 0);
         return 0;
+      }
+      // If parentId is missing, treat as direct child of the current root (depth 1),
+      // unless the node itself is the root.
+      if (!node.parentId) {
+        const d = rootId && node.id !== rootId ? 1 : 0;
+        depthMap.set(nodeId, d);
+        return d;
       }
 
       const depth = getDepth(node.parentId) + 1;
@@ -364,6 +362,15 @@ export function TreeTableCore({
       ...node,
       depth: getDepth(node.id),
     }));
+  }, [rawData]);
+  // Derive which nodes have at least one child when hasChildren is not provided
+  const nodesWithChildren = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of rawData) {
+      const pid = (n as any).parentId as string | undefined;
+      if (pid) set.add(pid);
+    }
+    return set;
   }, [rawData]);
   const rowSelection = controller?.rowSelection || {};
   const expandedRowIds = controller?.expandedRowIds || new Set();
@@ -440,7 +447,7 @@ export function TreeTableCore({
           const node = row.original;
           // Shift visual indentation one level left
           const depth = Math.max(0, ((node.depth || 0) + depthOffset) - 1);
-          const hasChildren = node.hasChildren || false;
+          const hasChildren = node.hasChildren === true || nodesWithChildren.has(node.id);
           const isExpanded = expandedRowIds.has(node.id);
           const isEditing = editingNodeId === node.id;
           const iconDepth = depth;
@@ -461,30 +468,44 @@ export function TreeTableCore({
                 </IconButton>
               )}
 
-              {/* Expand/Collapse button */}
-              {hasChildren ? (
-                <IconButton
-                  size="small"
-                  sx={{ padding: 0.25 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    controller?.onNodeExpand?.(node.id, !isExpanded);
-                  }}
-                >
-                  {isExpanded ? (
-                    <ExpandMoreIcon fontSize="small" />
-                  ) : (
-                    <ChevronRightIcon fontSize="small" />
-                  )}
-                </IconButton>
-              ) : (
-                <Box sx={{ width: 20 }} />
-              )}
+              {/* Expand/Collapse button with fixed width to keep horizontal alignment */}
+              <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {hasChildren ? (
+                  <IconButton
+                    size="small"
+                    sx={{ p: 0.25, width: 24, height: 24 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      controller?.onNodeExpand?.(node.id, !isExpanded);
+                    }}
+                  >
+                    {isExpanded ? (
+                      <ExpandMoreIcon fontSize="small" />
+                    ) : (
+                      <ChevronRightIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                ) : null}
+              </Box>
 
               {/* Node icon (left-click to open context menu) */}
               <Box
                 onClick={(e) => {
                   e.stopPropagation();
+                  // Ctrl/Cmd+Click on the icon should toggle selection in Select/Navigate mode (no menu)
+                  if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none' && (e.ctrlKey || e.metaKey)) {
+                    const prevSelection = { ...rowSelection };
+                    const nextSelection = { ...rowSelection };
+                    nextSelection[node.id] = !nextSelection[node.id];
+                    const prevIds = Object.keys(prevSelection).filter((id) => prevSelection[id]);
+                    const nextIds = Object.keys(nextSelection).filter((id) => nextSelection[id]);
+                    const toDeselect = prevIds.filter((id) => !nextSelection[id]);
+                    const toSelect = nextIds.filter((id) => !prevSelection[id]);
+                    if (toDeselect.length) controller?.onNodeSelect?.(toDeselect, false);
+                    if (toSelect.length) controller?.onNodeSelect?.(toSelect, true);
+                    return;
+                  }
+                  // Otherwise, open the context menu via left-click on the icon
                   setContextMenuState({ anchorEl: e.currentTarget as HTMLElement, node });
                 }}
                 sx={{ display: 'inline-flex', alignItems: 'center' }}
@@ -496,53 +517,72 @@ export function TreeTableCore({
 
               {/* Node name (editable) */}
               {isEditing && editingField === 'name' ? (
-                <TextField
-                  size="small"
-                  value={editingValue}
-                  onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
-                  onBlur={() => {
-                    const next = editingValue.trim();
-                    if (next === node.name) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
-                    const vr = validateInline('name', next);
-                    if (!vr.ok) { setEditingError(vr.message || 'Invalid name'); return; }
-                    controller?.finishEdit?.(node.id, next, 'name');
-                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', flex: 1 }}>
+                  <TextField
+                    size="small"
+                    value={editingValue}
+                    onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
+                    onBlur={() => {
                       const next = editingValue.trim();
                       if (next === node.name) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
                       const vr = validateInline('name', next);
                       if (!vr.ok) { setEditingError(vr.message || 'Invalid name'); return; }
                       controller?.finishEdit?.(node.id, next, 'name');
                       setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                    } else if (e.key === 'Escape') {
-                      controller?.cancelEdit?.();
-                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                    }
-                  }}
-                  autoFocus
-                  error={!!editingError}
-                  helperText={editingError || ' '}
-                  sx={{ flex: 1 }}
-                />
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        const next = editingValue.trim();
+                        if (next === node.name) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                        const vr = validateInline('name', next);
+                        if (!vr.ok) { setEditingError(vr.message || 'Invalid name'); return; }
+                        controller?.finishEdit?.(node.id, next, 'name');
+                        setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                      } else if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        controller?.cancelEdit?.();
+                        setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                      }
+                    }}
+                    autoFocus
+                    error={!!editingError}
+                    placeholder={!editingValue ? 'Enterで確定 / Escでキャンセル' : undefined}
+                    helperText={editingError || undefined}
+                    sx={{ flex: 1 }}
+                  />
+                </Box>
               ) : (
                 <Box
                   sx={{
                     flex: 1,
                     cursor: 'pointer',
                     '&:hover': { textDecoration: 'underline' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    flexWrap: 'wrap',
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (rowClickAction === 'Edit') {
                       handleStartEdit(node, 'name');
-                    } else if (rowClickAction === 'Navigate') {
-                      controller?.onNodeClick?.(node.id, node);
                     }
                   }}
                 >
-                  {node.name}
+                  <Box
+                    component={RouterLink as any}
+                    to={`/${['t', String(treeId || '') , String(node.id)].filter(Boolean).join('/')}`}
+                    sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                  >
+                    {node.name}
+                  </Box>
+                  {Boolean((node as any)?.isDraft) && (
+                    <Chip label="draft" size="small" color="warning" variant="outlined" sx={{ height: 20 }} onClick={(e) => e.stopPropagation()} />
+                  )}
+                  {Array.isArray((node as any)?.tags) && (node as any).tags.map((t: string, idx: number) => (
+                    <Chip key={`${node.id}:tag:${idx}`} label={t} size="small" variant="outlined" sx={{ height: 20 }} onClick={(e) => e.stopPropagation()} />
+                  ))}
                 </Box>
               )}
             </NameCell>
@@ -560,36 +600,55 @@ export function TreeTableCore({
           const isEditingDesc = editingNodeId === node.id && editingField === 'description';
           if (isEditingDesc) {
             return (
-              <TextField
-                size="small"
-                fullWidth
-                value={editingValue}
-                onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
-                onBlur={() => {
-                  const next = editingValue.trim();
-                  if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
-                  const vr = validateInline('description', next);
-                  if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
-                  controller?.finishEdit?.(node.id, next, 'description');
-                  setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const next = editingValue.trim();
-                    if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
-                    const vr = validateInline('description', next);
-                    if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
-                    controller?.finishEdit?.(node.id, next, 'description');
-                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                  } else if (e.key === 'Escape') {
-                    controller?.cancelEdit?.();
-                    setEditingNodeId(null); setEditingField(null); setEditingError(null);
-                  }
-                }}
-                error={!!editingError}
-                helperText={editingError || ' '}
-                autoFocus
-              />
+              <Box sx={{ position: 'relative', width: '100%' }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  maxRows={12}
+                  value={editingValue}
+                  onChange={(e) => { setEditingValue(e.target.value); if (editingError) setEditingError(null); }}
+                  onBlur={() => {
+                    // Do not auto-save on blur for multiline; rely on OK or Ctrl+Enter
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                      e.stopPropagation();
+                      const next = editingValue.trim();
+                      if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                      const vr = validateInline('description', next);
+                      if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
+                      controller?.finishEdit?.(node.id, next, 'description');
+                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                    } else if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      controller?.cancelEdit?.();
+                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                    }
+                  }}
+                  error={!!editingError}
+                  placeholder={!editingValue ? 'Enterで改行 / Ctrl+Enterで保存 / Escでキャンセル' : undefined}
+                  helperText={editingError || undefined}
+                  autoFocus
+                />
+                <Box sx={{ position: 'absolute', right: 4, bottom: 4, display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      const next = editingValue.trim();
+                      if ((node.description || '') === next) { setEditingNodeId(null); setEditingField(null); setEditingError(null); return; }
+                      const vr = validateInline('description', next);
+                      if (!vr.ok) { setEditingError(vr.message || 'Invalid description'); return; }
+                      controller?.finishEdit?.(node.id, next, 'description');
+                      setEditingNodeId(null); setEditingField(null); setEditingError(null);
+                    }}
+                  >
+                    OK
+                  </Button>
+                </Box>
+              </Box>
             );
           }
           return (
@@ -668,14 +727,21 @@ export function TreeTableCore({
     someSelected,
   ]);
 
+  // Compute visible rows. To avoid false negatives (No data) in edge cases,
+  // start with a permissive rule: show all provided rows. Collapsing behavior
+  // will only hide descendants once expansion state is wired with a proper
+  // parent chain that includes the current root.
+  const visibleData = useMemo(() => data, [data]);
+
   // React Table instance
   const table = useReactTable({
-    data,
+    data: visibleData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getRowId: (row) => String((row as any).id ?? ''),
     enableRowSelection: selectionMode !== 'none',
     enableMultiRowSelection: selectionMode === 'multiple',
     state: {
@@ -708,21 +774,29 @@ export function TreeTableCore({
         return; // let native navigation happen
       }
     } catch {}
-    if (rowClickAction === 'Select' && selectionMode !== 'none') {
-      const newSelection = { ...rowSelection };
+    if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none') {
+      const prevSelection = { ...rowSelection };
+      const nextSelection = { ...rowSelection };
+
       if (event.ctrlKey || event.metaKey) {
-        // Toggle selection
-        newSelection[node.id] = !newSelection[node.id];
+        // Toggle only the clicked row
+        nextSelection[node.id] = !nextSelection[node.id];
       } else {
-        // Single selection
-        Object.keys(newSelection).forEach((id) => {
-          newSelection[id] = false;
+        // Single select
+        Object.keys(nextSelection).forEach((id) => {
+          nextSelection[id] = false;
         });
-        newSelection[node.id] = true;
+        nextSelection[node.id] = true;
       }
 
-      const selectedIds = Object.keys(newSelection).filter((id) => newSelection[id]);
-      controller?.onNodeSelect?.(selectedIds, true);
+      const prevIds = Object.keys(prevSelection).filter((id) => prevSelection[id]);
+      const nextIds = Object.keys(nextSelection).filter((id) => nextSelection[id]);
+
+      const toDeselect = prevIds.filter((id) => !nextSelection[id]);
+      const toSelect = nextIds.filter((id) => !prevSelection[id]);
+
+      if (toDeselect.length) controller?.onNodeSelect?.(toDeselect, false);
+      if (toSelect.length) controller?.onNodeSelect?.(toSelect, true);
     }
 
     onRowClick?.(node, event);
@@ -737,22 +811,12 @@ export function TreeTableCore({
     } catch {}
     if (rowClickAction === 'Edit') {
       handleStartEdit(node);
-    } else if (rowClickAction === 'Navigate') {
-      controller?.onNodeClick?.(node.id, node);
     }
 
     onRowDoubleClick?.(node, event);
   };
 
-  const handleRowContextMenu = (node: TreeNode, event: MouseEvent) => {
-    event.preventDefault();
-    setContextMenuState({
-      anchorEl: event.currentTarget as HTMLElement,
-      node,
-    });
-
-    onRowContextMenu?.(node, event);
-  };
+  // Right-click context menus are disabled app-wide; do not register handlers.
 
   const handleContextMenuClose = () => {
     setContextMenuState({ anchorEl: null, node: null });
@@ -871,6 +935,49 @@ export function TreeTableCore({
         </StyledTableHead>
 
         <TableBody>
+          {(table.getRowModel().rows.length === 0 && visibleData.length === 0) && (
+            <TableRow>
+              <TableCell colSpan={columns.length} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                No data
+              </TableCell>
+            </TableRow>
+          )}
+
+          {/* Fallback: if react-table produced 0 rows while we do have data, render simple rows */}
+          {table.getRowModel().rows.length === 0 && visibleData.length > 0 && (
+            visibleData.map((node) => (
+              <StyledTableRow key={(node as any).id} selected={!!rowSelection[(node as any).id]} draggable={false}
+                onClick={(e) => handleRowClick(node as any, e as unknown as MouseEvent)}
+              >
+                <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
+                  <Checkbox
+                    checked={rowSelection[(node as any).id] || false}
+                    onChange={(e) => batchSelect([(node as any).id], e.target.checked)}
+                    size="small"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableCell>
+                <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px` }}>
+                  <NameCell>
+                    <IndentSpace depth={Math.max(0, (((node as any).depth || 0) + depthOffset) - 1)} />
+                    <Box component={RouterLink as any} to={`/${['t', String(treeId || ''), String((node as any).id)].filter(Boolean).join('/')}`}
+                      sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                      {(node as any).name}
+                    </Box>
+                  </NameCell>
+                </TableCell>
+                <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px` }}>
+                  {(node as any).description || '-'}
+                </TableCell>
+                <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
+                  {(() => { const v = (node as any).createdAt; if (!v) return '-'; const d=new Date(v); return <span title={d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}>{d.toLocaleDateString()}</span>; })()}
+                </TableCell>
+                <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px` }}>
+                  {(() => { const v = (node as any).updatedAt; if (!v) return '-'; const d=new Date(v); return <span title={d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}>{d.toLocaleDateString()}</span>; })()}
+                </TableCell>
+              </StyledTableRow>
+            ))
+          )}
           {table.getRowModel().rows.map((row) => {
             const node = row.original;
             const isSelected = rowSelection[node.id] || false;
@@ -931,7 +1038,7 @@ export function TreeTableCore({
                 } }}
                 onClick={(e) => handleRowClick(node, e)}
                 onDoubleClick={(e) => handleRowDoubleClick(node, e)}
-                onContextMenu={(e) => handleRowContextMenu(node, e)}
+                // Right-click disabled by policy
                 sx={{
                   cursor:
                     hoverDropTargetId === row.original.id && isBlockedTarget
@@ -966,19 +1073,23 @@ export function TreeTableCore({
         </TableBody>
       </StyledTable>
 
-      {/* Context Menu */}
+      {/* Context Menu (opened via left-click icon; no right-click handlers registered) */}
+      {(() => {
+        const n = contextMenuState.node as any;
+        const isRoot = !!n && (n.depth === 0);
+        return (
       <ContextMenuComponent
         anchorEl={contextMenuState.anchorEl}
         open={Boolean(contextMenuState.anchorEl)}
         onClose={handleContextMenuClose}
         nodeId={contextMenuState.node?.id || ''}
         nodeType={contextMenuState.node?.nodeType || 'folder'}
-        treeId={(controller as any)?.treeId}
+        treeId={treeId}
         nodeName={contextMenuState.node?.name}
         canCreate={true}
-        canEdit={true}
-        canRemove={true}
-        canDuplicate={true}
+        canEdit={!isRoot}
+        canRemove={!isRoot}
+        canDuplicate={!isRoot}
         onCreate={(type: string) => {
           if (contextMenuState.node) {
             controller?.onCreate?.(contextMenuState.node.id, type);
@@ -986,19 +1097,25 @@ export function TreeTableCore({
           handleContextMenuClose();
         }}
         onEdit={() => {
-          if (contextMenuState.node) {
-            handleStartEdit(contextMenuState.node);
+          const n = contextMenuState.node;
+          if (n) {
+            if ((n as any).depth === 0) { handleContextMenuClose(); return; }
+            // Prefer explicit onEdit hook for navigation to Edit dialog; fallback to onNodeClick
+            if (controller?.onEdit) controller.onEdit(n.id, n as any);
+            else controller?.onNodeClick?.(n.id, n as any);
           }
           handleContextMenuClose();
         }}
         onDuplicate={() => {
           if (contextMenuState.node) {
+            if ((contextMenuState.node as any).depth === 0) { handleContextMenuClose(); return; }
             controller?.onDuplicate?.(contextMenuState.node.id);
           }
           handleContextMenuClose();
         }}
         onRemove={() => {
           if (contextMenuState.node) {
+            if ((contextMenuState.node as any).depth === 0) { handleContextMenuClose(); return; }
             controller?.onRemove?.([contextMenuState.node.id]);
           }
           handleContextMenuClose();
@@ -1023,7 +1140,8 @@ export function TreeTableCore({
           console.log('PreviewStep:', contextMenuState.node?.id);
           handleContextMenuClose();
         }}
-      />
+      />);
+      })()}
     </StyledTableContainer>
   );
 }

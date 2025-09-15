@@ -6,11 +6,13 @@ export default createTsupConfig({
     'src/index.ts',
     'src/worker/index.ts',
     'src/ui/index.ts',
+    'src/database/index.ts',
   ],
   // Narrow DTS generation to the stable library surface; exclude UI/worker from DTS
   dts: {
     entry: {
       'index': 'src/index.ts',
+      'database/index': 'src/database/index.ts',
     },
   },
   external: [

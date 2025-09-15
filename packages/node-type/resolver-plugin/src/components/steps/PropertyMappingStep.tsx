@@ -8,7 +8,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   IconButton,
   List,
   ListItem,
@@ -18,6 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
 import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
 
@@ -214,7 +214,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
       <Grid container spacing={3}>
         {/* Mapping Rules Input */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
               Mapping Rules
@@ -262,7 +262,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         </Grid>
 
         {/* Schema Reference and Suggestions */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle1" sx={{ mb: 2 }}>
             Suggested Mappings
           </Typography>
@@ -400,7 +400,7 @@ date -> created_at | parse_date
               <Typography variant="h6" sx={{ mb: 2 }}>Preview Results</Typography>
 
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Sample Mapped Data</Typography>
                   <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                     <Typography variant="body2" component="pre" sx={{ fontSize: '0.8rem' }}>
@@ -409,7 +409,7 @@ date -> created_at | parse_date
                   </Paper>
                 </Grid>
 
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Statistics</Typography>
                   <Paper sx={{ p: 2 }}>
                     <Typography variant="body2">Total Records: {previewResult.statistics.totalRecords}</Typography>

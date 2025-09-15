@@ -13,9 +13,6 @@
     ],
     "module": "ESNext",
     "moduleResolution": "node",
-    "types": [
-      "react"
-    ],
     "paths": {
       "~/*": [
         "./src/*"

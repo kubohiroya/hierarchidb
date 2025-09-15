@@ -3,7 +3,7 @@
   * eria-cartographTreeConsoleFooterUI
    */
 
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HelpOutline } from '@mui/icons-material';
 import { type Theme, useTheme } from '@mui/material/styles';
 import styled from '@emotion/styled';
@@ -35,7 +35,7 @@ const FooterText = styled(Typography)`
  * TreeConsoleFooter
   */
 export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Element {
-  const { controller, onStartTour, height = 32 } = props;
+  const { controller, onStartTour, height = 32, loadingText, loadingTooltip } = props;
 
   const theme = useTheme();
 
@@ -71,13 +71,15 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
         >
           <HelpOutline fontSize="small" />
         </IconButton>
-        <FooterText
-          variant="body2"
-          theme={theme}
-          sx={{ ml: 2 }}
-        >
-          Loading...
-        </FooterText>
+        <Tooltip title={loadingTooltip || ''} arrow disableHoverListener={!loadingTooltip}>
+          <FooterText
+            variant="body2"
+            theme={theme}
+            sx={{ ml: 2 }}
+          >
+            {loadingText ?? 'Loading...'}
+          </FooterText>
+        </Tooltip>
       </FooterContainer>
     );
   }

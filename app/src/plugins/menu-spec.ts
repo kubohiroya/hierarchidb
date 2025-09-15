@@ -23,10 +23,11 @@ export const MENU_SPEC: Record<'resources' | 'projects', MenuSpec> = {
   },
   projects: {
     groups: ['core', 'project'],
-    order: ['folder', 'project'],
+    // Temporarily remove 'linker' until it is re-implemented
+    order: ['folder', 'timeline'],
     groupOf: {
       folder: 'core',
-      project: 'project',
+      timeline: 'project',
     },
   },
 };

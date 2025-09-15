@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator';
 import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService';
 import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager';
@@ -7,15 +8,17 @@ import { getNetPort } from '../../services/net/getNetPort';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 
-export function RouteBatchLaunchForm({
-                                       nodeId,
-                                       createRouteBatchManager,
-                                       onLaunched,
-                                     }: {
+export interface RouteBatchLaunchFormProps {
   nodeId: string;
   createRouteBatchManager: typeof createMgrFn;
   onLaunched?: (res: { jobId: string; count: number }) => void;
-}) {
+}
+
+export function RouteBatchLaunchForm({
+  nodeId,
+  createRouteBatchManager,
+  onLaunched,
+}: RouteBatchLaunchFormProps): JSX.Element {
   const [kind, setKind] = useState<JobKind>('recompute');
   const [csvUrl, setCsvUrl] = useState('');
   const [csvUrl2, setCsvUrl2] = useState('');

@@ -2,11 +2,11 @@
   * TrashbinTable -
     */
 
-import { MouseEvent, useMemo, useState } from 'react';
+import { MouseEvent, useMemo } from 'react';
 import { Box, Checkbox, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TrashbinTableProps, TrashItem } from '../types';
-import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 const StyledTableContainer = styled(Box)`
   width: 100%;
@@ -89,18 +89,15 @@ export function TrashbinTable({
                                 showMetadata = true,
                                 allowMultiSelect = true,
                                 NodeTypeIcon: CustomNodeTypeIcon,
-                                NodeContextMenu: CustomNodeContextMenu,
+                                NodeContextMenu: _CustomNodeContextMenu,
                                 onItemDoubleClick,
-                                onItemContextMenu,
+                                onItemContextMenu: _onItemContextMenu,
                               }: TrashbinTableProps) {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
-  const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
+  // Right-click context menu disabled app-wide
 
   // State
-  const [contextMenuState, setContextMenuState] = useState<{
-    anchorEl: HTMLElement | null;
-    item: TrashItem | null;
-  }>({ anchorEl: null, item: null });
+  // No context menu state
 
   // Get data from controller
   const trashItems = controller?.trashItems || [];
@@ -153,18 +150,7 @@ export function TrashbinTable({
     onItemDoubleClick?.(item);
   };
 
-  const handleItemContextMenu = (item: TrashItem, event: MouseEvent) => {
-    event.preventDefault();
-    setContextMenuState({
-      anchorEl: event.currentTarget as HTMLElement,
-      item,
-    });
-    onItemContextMenu?.(item, event);
-  };
-
-  const handleContextMenuClose = () => {
-    setContextMenuState({ anchorEl: null, item: null });
-  };
+  // Right-click handler removed by policy
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -224,7 +210,7 @@ export function TrashbinTable({
                 selected={isSelected}
                 onClick={(e) => handleItemClick(item, e)}
                 onDoubleClick={(e) => handleItemDoubleClick(item, e)}
-                onContextMenu={(e) => handleItemContextMenu(item, e)}
+                // Right-click disabled by policy
                 sx={{ cursor: 'pointer' }}
               >
                 {allowMultiSelect && (
@@ -307,32 +293,7 @@ export function TrashbinTable({
         </TableBody>
       </StyledTable>
 
-      {/* Context Menu */}
-      <ContextMenuComponent
-        anchorEl={contextMenuState.anchorEl}
-        open={Boolean(contextMenuState.anchorEl)}
-        onClose={handleContextMenuClose}
-        nodeId={contextMenuState.item?.id || ''}
-        nodeType={contextMenuState.item?.nodeType || contextMenuState.item?.type || 'folder-plugin'}
-        nodeName={contextMenuState.item?.name}
-        canCreate={false}
-        canEdit={false}
-        canRemove={true}
-        canDuplicate={false}
-        mode="restore"
-        onRestoreToOriginal={() => {
-          if (contextMenuState.item) {
-            controller?.onRestore?.([contextMenuState.item.id]);
-          }
-          handleContextMenuClose();
-        }}
-        onRemove={() => {
-          if (contextMenuState.item) {
-            controller?.onPermanentDelete?.([contextMenuState.item.id]);
-          }
-          handleContextMenuClose();
-        }}
-      />
+      {/* Right-click context menu removed per policy */}
     </StyledTableContainer>
   );
 }

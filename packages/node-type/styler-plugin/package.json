@@ -24,6 +24,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
@@ -52,8 +56,9 @@
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
-    "jszip": "^3.4.1",
+    "jszip": "^3.10.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
     "@hierarchidb/common-type": "workspace:*"
@@ -69,7 +74,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
-    "@types/jszip": "^3.4.1",
+    
     "@types/react-window": "^1.8.8",
     "@vitest/ui": "^3.2.4",
     "vitest": "^3.2.4",

@@ -1,20 +1,22 @@
-export function makeColumnWidthsKey(treeId: string | undefined, rootNodeId: string | undefined): string {
-  const key = `hdb:treetable:colwidths:v1:${treeId || 'unknown'}:${rootNodeId || 'root'}`;
-  return key;
+// Dexie-backed deletion of saved column widths. Primary key = pageNodeId.
+async function deleteColumnWidthsMany(ids: string[]): Promise<void> {
+  try {
+    const mod = await import('@hierarchidb/ui-treeconsole-treetable');
+    const fn = (mod as any).removeColumnWidthsMany as (ids: readonly string[]) => Promise<void>;
+    if (typeof fn === 'function') await fn(ids);
+  } catch {
+    // As a safety net, also remove legacy localStorage keys if present
+    for (const id of ids) {
+      localStorage.removeItem(`hdb:treetable:colwidths:v1:${id}`);
+      localStorage.removeItem(`TreeTableCore.columnWidths:tree:${id}`);
+      localStorage.removeItem(`TreeTableCore.columnWidths:${id}`);
+    }
+  }
 }
 
-export function cleanupColumnWidths(treeId: string | undefined, nodeIds: string[]): void {
-  try {
-    const keys = new Set<string>();
-    for (const id of nodeIds) {
-      // current
-      keys.add(makeColumnWidthsKey(treeId, id));
-      // legacy fallbacks
-      keys.add(`TreeTableCore.columnWidths:tree:${id}`);
-      keys.add(`TreeTableCore.columnWidths:${id}`);
-    }
-    keys.forEach((k) => { try { localStorage.removeItem(k); } catch {} });
-  } catch {}
+export function cleanupColumnWidths(_treeId: string | undefined, nodeIds: string[]): void {
+  // Fire and forget
+  void deleteColumnWidthsMany(nodeIds.filter(Boolean));
 }
 
 export function registerTableStateCleanupEvents(): void {
@@ -23,6 +25,5 @@ export function registerTableStateCleanupEvents(): void {
     if (!detail?.nodeIds || detail.nodeIds.length === 0) return;
     cleanupColumnWidths(detail.treeId, detail.nodeIds);
   };
-  try { window.addEventListener('hdb-remove', handler as any); } catch {}
+  window.addEventListener('hdb-remove', handler as any);
 }
-

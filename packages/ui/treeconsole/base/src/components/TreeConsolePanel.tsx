@@ -1,7 +1,7 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
-import { Box } from '@mui/material';
+import { memo, useMemo } from 'react';
+import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable';
-import { RowContextMenu } from './TreeTable';
+// RowContextMenu removed: right-click is disabled app-wide
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -13,7 +13,11 @@ export interface TreeConsolePanelProps {
   readonly title?: string;
   /** Optional treeId for context-aware menus (e.g., 'r'|'t'|'p') */
   readonly treeId?: string;
-  readonly rootNodeId?: string;
+  /**
+   * Page context root (formerly called rootNodeId in this component).
+   * Keep naming aligned with app layer that uses `pageNodeId`.
+   */
+  readonly pageNodeId?: string;
   readonly data: readonly TreeNodeData[];
   readonly columns: readonly TreeTableColumn[];
   readonly breadcrumbItems: readonly any[];
@@ -58,7 +62,7 @@ export interface TreeConsolePanelProps {
   /** Optional: For column-width persistence, provide treeId to scope keys */
   readonly treeIdForPersistence?: string;
   /** Row click action behavior */
-  readonly rowClickAction?: 'Select' | 'Edit' | 'Navigate';
+  readonly rowClickAction?: 'Edit' | 'Select/Navigate';
   /**
    * Whether to render the built-in static SpeedDial.
    * Set to false when an external DynamicSpeedDial is provided by the host app.
@@ -67,21 +71,24 @@ export interface TreeConsolePanelProps {
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
-  const [contextMenuState, setContextMenuState] = useState<{
-    node: TreeNodeData | null;
-    anchorEl: HTMLElement | null;
-  }>({ node: null, anchorEl: null });
+  // Right-click context menus are disabled by policy
 
   // Create TreeTableController from props
-  const controller: TreeTableController = useMemo(() => {
+  const controller: TreeTableController = useMemo((): TreeTableController => {
     // Convert data to TreeNodeInUI format
-    const data = props.data.map((node) => ({
-      ...node,
-      nodeType: node.nodeType || 'folder',
-      type: node.nodeType,
-      name: node.name || '',
-      hasChildren: node.hasChildren || false,
-    })) as TreeNodeInUI[];
+    const data = props.data.map((node) => {
+      const depth = typeof (node as any).depth === 'number' && isFinite((node as any).depth)
+        ? (node as any).depth as number
+        : 1; // default: root's direct child
+      return {
+        ...node,
+        nodeType: node.nodeType || 'folder',
+        type: node.nodeType,
+        name: node.name || '',
+        hasChildren: Boolean((node as any).hasChildren),
+        depth,
+      } as TreeNodeInUI;
+    });
 
     // Convert selectedIds and expandedIds to the expected format
     const rowSelection: Record<string, boolean> = {};
@@ -92,9 +99,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     const expandedRowIds = new Set(props.expandedIds);
 
     return {
-      // Expose treeId so downstream components (TreeTableCore->NodeContextMenu)
-      // can build context-aware Create menus
-      treeId: props.treeId as any,
       data,
       rowSelection,
       expandedRowIds,
@@ -139,27 +143,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     props.onMoveNodes,
   ]);
 
-  const handleContextMenu = useCallback((event: React.MouseEvent, node: TreeNodeData) => {
-    event.preventDefault();
-    setContextMenuState({
-      node,
-      anchorEl: event.currentTarget as HTMLElement,
-    });
-  }, []);
-
-  const handleContextMenuClose = useCallback(() => {
-    setContextMenuState({ node: null, anchorEl: null });
-  }, []);
-
-  const handleContextMenuAction = useCallback(
-    (action: string) => {
-      if (contextMenuState.node) {
-        props.onContextMenuAction(action, contextMenuState.node);
-      }
-      handleContextMenuClose();
-    },
-    [contextMenuState.node, props.onContextMenuAction, handleContextMenuClose],
-  );
+  // No right-click handlers
 
   // SpeedDial actions
   // Built-in static SpeedDial removed; host app may provide DynamicSpeedDial instead.
@@ -167,6 +151,20 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   //const totalItems = props.data.length;
   //const selectedItems = props.selectedIds.length;
   // const visibleItems = props.data.length; // In real implementation, this would be filtered count
+
+  // Compute footer counters for loading state (controller not yet available)
+  const countLoadedRecursive = (nodes: any[]): number => {
+    let c = 0;
+    for (const n of nodes || []) {
+      c += 1;
+      const ch = (n as any).children as any[] | undefined;
+      if (Array.isArray(ch) && ch.length) c += countLoadedRecursive(ch);
+    }
+    return c;
+  };
+  const footerTopLevel = Array.isArray(props.data) ? props.data.length : 0;
+  const footerLoaded = countLoadedRecursive(props.data as any[]);
+  const footerSelected = props.selectedIds.length;
 
   return (
     <Box
@@ -182,7 +180,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         onNodeClick={props.onBreadcrumbNavigate}
         treeId={props.treeId as any}
         variant="default"
-        onDropToNode={(targetId, draggedId) => props.onMoveNodes?.([draggedId], targetId)}
+        onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
       />
       {/* Main Table Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
@@ -190,21 +188,15 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           controller={controller}
           viewHeight={600}
           viewWidth={1200}
+          treeId={props.treeId}
+          pageNodeId={props.pageNodeId}
           useTrashColumns={false}
           depthOffset={0}
           disableDragAndDrop={false}
           hideDragHandler={false}
-          rowClickAction={props.rowClickAction ?? 'Select'}
+          rowClickAction={(props.rowClickAction ?? 'Select/Navigate') as any}
           selectionMode="multiple"
-          persistenceKey={props.treeIdForPersistence ? `hdb:treetable:colwidths:v1:${props.treeIdForPersistence}:${props.rootNodeId || 'root'}` : `hdb:treetable:colwidths:v1:unknown:${props.rootNodeId || 'root'}`}
-          onRowContextMenu={(node: TreeNodeInUI, event: React.MouseEvent) => {
-            // Cast TreeNodeInUI to TreeNodeData for callback  
-            const nodeData: TreeNodeData = {
-              ...node,
-              type: node.type || node.nodeType,
-            };
-            handleContextMenu(event as React.MouseEvent, nodeData);
-          }}
+          // Right-click disabled
         />
       </Box>
 
@@ -213,29 +205,18 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         controller={null} // TODO: Convert TreeTableController to TreeViewController
         onStartTour={props.onStartTour}
         height={32}
+        loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
+        loadingTooltip={(
+          <Box sx={{ p: 0.5 }}>
+            <Typography variant="caption" display="block">左から順に:</Typography>
+            <Typography variant="caption" display="block">- 購読中サブツリーの最上位の子の数</Typography>
+            <Typography variant="caption" display="block">- 読み込み済みのノード数（表示中＋展開分）</Typography>
+            <Typography variant="caption" display="block">- 選択されているノード数</Typography>
+          </Box>
+        )}
       />
 
-      {/* Context Menu */}
-      <RowContextMenu
-        nodeType={(contextMenuState.node as TreeNodeData)?.nodeType || 'folder'}
-        addMenuNodeTypes={['folder', 'basemap', 'shapes', 'styler']}
-        parentElem={contextMenuState.anchorEl}
-        treeId={props.treeId}
-        onClose={handleContextMenuClose}
-        onOpen={() => handleContextMenuAction('open')}
-        onOpenFolder={() => handleContextMenuAction('openFolder')}
-        onPreview={() => handleContextMenuAction('preview')}
-        onEdit={() => handleContextMenuAction('edit')}
-        onCreate={(type) => handleContextMenuAction(`create:${type}`)}
-        onDuplicate={() => handleContextMenuAction('duplicate')}
-        onRemove={() => handleContextMenuAction('remove')}
-        onCheckReference={() => handleContextMenuAction('checkReference')}
-        canOpen={true}
-        canEdit={props.canEdit}
-        canCreate={props.canCreate}
-        canRemove={props.canDelete}
-        canDuplicate={true}
-      />
+      {/* Right-click context menu removed per policy */}
 
       {/* Built-in SpeedDial disabled */}
     </Box>

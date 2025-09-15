@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, Outlet, useLoaderData, useNavigate } from 'react-router';
+import { type LoaderFunctionArgs, Outlet, useLoaderData, useNavigate, useParams } from 'react-router';
 import { Suspense, useEffect, useState } from 'react';
 import {
   AppBar,
@@ -16,18 +16,18 @@ import AppLogoIcon from '~/components/AppLogoIcon';
 import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { LanguageSelector } from '~/components/LanguageSelector';
+//import { LanguageSelector } from '~/components/LanguageSelector';
 import { WorkerAPIClient } from '../WorkerAPIClient';
 import type { Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
-  console.log('[t.($treeId).tsx] clientLoader called with params:', args.params);
+  
   const { treeId } = args.params as LoadTreeArgs;
 
   try {
     const treeData = await loadTree({ treeId });
 
-    console.log('[t.($treeId).tsx] Loaded tree data:', treeData);
+    
 
     // If tree doesn't exist, throw an error
     if (!treeData.tree) {
@@ -38,7 +38,7 @@ export async function clientLoader(args: LoaderFunctionArgs) {
       // Use facade pattern: get QueryAPI first
       const queryAPI = await treeData.client.getQueryAPI();
       const rootNode = await queryAPI.getNode(treeData.tree.rootId);
-      console.log('[t.($treeId).tsx] Loaded root node:', rootNode);
+      
       return {
         ...treeData,
         rootNode,
@@ -54,33 +54,23 @@ export async function clientLoader(args: LoaderFunctionArgs) {
 type TLayoutLoaderData = LoadTreeReturn & { rootNode?: import('@hierarchidb/common-type').TreeNode };
 
 export default function TLayout() {
-  console.log('[TLayout] Component rendering');
   const data = useLoaderData() as TLayoutLoaderData;
-  console.log('[TLayout] Loader data:', data);
 
   const navigate = useNavigate();
+  const params = useParams();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data?.tree?.id || null);
   // Load available trees
   useEffect(() => {
     const loadTrees = async () => {
       try {
-        console.log('[TreePage] Loading trees...');
         const client = await WorkerAPIClient.getSingleton();
-        console.log('[TreePage] WorkerAPIClient obtained:', client);
-
-        console.log('[TreePage] Client obtained:', client);
-
         // Use facade pattern: get QueryAPI first
         const queryAPI = await client.getQueryAPI();
-        console.log('[TreePage] QueryAPI obtained:', queryAPI);
-
         const availableTrees = await queryAPI.listTrees();
-        console.log('[TreePage] Trees loaded:', availableTrees);
         setTrees(availableTrees);
       } catch (error) {
-        console.error('Failed to load trees:', error);
-        console.error('Error stack:', (error as Error)?.stack);
+        
       }
     };
     loadTrees();
@@ -101,6 +91,8 @@ export default function TLayout() {
       navigate(`/t/${newTreeId}`);
     }
   };
+
+  const showDialog = params?.action;
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -187,32 +179,27 @@ export default function TLayout() {
         </Toolbar>
       </AppBar>
 
-      {/* TreeConsole Integration - showing tree root when pageNodeId is not specified */}
+      {/* If a child route with :pageNodeId is active, defer rendering to the child via <Outlet/>. */}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <Suspense
-          fallback={
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          }
-        >
-          <TreeConsoleIntegration
-            treeId={data?.tree?.id}
-            pageNodeId={data?.tree?.rootId}
-            pageTreeNode={data?.rootNode}
-          />
-        </Suspense>
+        {params.pageNodeId ? (
+          <Outlet key={`${params.treeId || ''}:${params.pageNodeId}`} />
+        ) : (
+          <Suspense
+            fallback={
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <TreeConsoleIntegration
+              treeId={data?.tree?.id}
+              pageNodeId={data?.tree?.rootId}
+              pageTreeNode={data?.rootNode}
+            />
+          </Suspense>
+        )}
       </Box>
-
-      {/* Child Routes */}
-      <Outlet />
+      {showDialog && <Outlet />}
     </Box>
   );
 }

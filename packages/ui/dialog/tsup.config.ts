@@ -6,5 +6,7 @@ export default createTsupConfig({
     'react-dom',
     '@mui/material',
     '@mui/icons-material',
+    'react-draggable',
+    'react-resizable',
   ],
 });

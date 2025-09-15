@@ -42,6 +42,7 @@ export type LoadTargetNodeArgs = {
 };
 export type LoadTargetNodeReturn = {
   targetNode: TreeNode | undefined;
+  targetNodeId: NodeId;
 } & LoadPageNodeReturn;
 
 export type LoadNodeTypeArgs = {
@@ -139,7 +140,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
   const g: any = typeof window !== 'undefined' ? (window as any) : {};
   if (!g.__HDB_INIT_WAIT__) g.__HDB_INIT_WAIT__ = null as Promise<void> | null;
   const appConfig = loadAppConfig();
-  console.log('[HDB-BOOT] Loader start');
+  
 
   try {
     //  WorkerAPIClient
@@ -151,11 +152,11 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
       if (g.__HDB_INIT_COMPLETE__) {
         try {
           const client = WorkerAPIClient.getSingleton();
-          console.log('[HDB-BOOT] Loader fast-return via global INIT_COMPLETE (getSingleton)');
+          
           return { ...appConfig, client };
         } catch {
           const client = await WorkerAPIClient.getOrInit();
-          console.log('[HDB-BOOT] Loader fast-return via global INIT_COMPLETE (getOrInit)');
+          
           return { ...appConfig, client };
         }
       }
@@ -177,7 +178,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     // Resolve when either (a) window event fires, or (b) WorkerAPIClient.isReady() becomes true,
     // or (c) an overall timeout elapses.
     const ensureInitComplete = async (timeoutMs = 20000) => {
-      console.log('[HDB-BOOT] Loader ensureInit start');
+      
       if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
       if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
       if (!g.__HDB_INIT_WAIT__) {
@@ -208,7 +209,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
     // Obtain the instance
     const client = WorkerAPIClient.getSingleton();
-    console.log('[HDB-BOOT] Loader getSingleton ok');
+    
 
 
     return {
@@ -254,9 +255,9 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
 }
 
 export async function loadPageNode({
-                                     treeId,
-                                     pageNodeId,
-                                   }: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
+  treeId,
+  pageNodeId,
+}: LoadPageNodeArgs): Promise<LoadPageNodeReturn> {
 
   const loadTreeReturn = await loadTree({ treeId });
   const resolvedPageNodeId = (pageNodeId || `${treeId}:root`) as NodeId;
@@ -271,14 +272,19 @@ export async function loadPageNode({
     },
     'loadPageNode.getNode',
   );
-  console.log('**** loadPageNode', treeId, pageNodeId, pageNode);
+  
    */
 
-  const workerAPIClientReturn = await loadWorkerAPIClient();
-  const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
-  const pageNode = await queryAPI.getNode(resolvedPageNodeId);
+  const pageNode = await retryComlinkCall(
+    async () => {
+      const workerAPIClientReturn = await loadWorkerAPIClient();
+      const queryAPI = await workerAPIClientReturn.client.getQueryAPI();
+      return await queryAPI.getNode(resolvedPageNodeId);
+    },
+    'loadPageNode.getNode',
+  );
 
-  console.log('**** loadPageNode', treeId, pageNodeId, pageNode);
+  
 
   return {
     ...loadTreeReturn,
@@ -310,6 +316,7 @@ export async function loadTargetNode({
   return {
     ...loadPageNodeReturn,
     targetNode,
+    targetNodeId: (targetNodeId || pageNodeId || `${treeId}:root`) as NodeId,
   };
 }
 

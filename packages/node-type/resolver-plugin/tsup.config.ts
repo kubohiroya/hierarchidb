@@ -1,6 +1,10 @@
 import { createTsupConfig } from '../../../tsup.base.config';
 
 export default createTsupConfig({
+  entry: {
+    index: 'src/index.ts',
+    'database/index': 'src/database/index.ts',
+  },
   external: [
     // UI peers
     'react',

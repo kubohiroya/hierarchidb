@@ -1,0 +1,2 @@
+export { resolverDB } from './ResolverDatabase';
+

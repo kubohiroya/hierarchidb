@@ -131,7 +131,18 @@ export const policyOptions = {
     '@hierarchidb/map-adapter',
   ],
   // UI peer policy: these should be peerDependencies (and optionally devDependencies for local dev)
-  uiPeerLibs: ['react', 'react-dom', '@mui/material', '@emotion/react', '@emotion/styled'],
+  // UI peer policy: these should be peerDependencies (and optionally devDependencies for local dev)
+  // Also used to verify no package ships its own copy (externalize in tsup)
+  uiPeerLibs: [
+    'react',
+    'react-dom',
+    'react-router',
+    'react-router-dom',
+    'jotai',
+    '@mui/material',
+    '@emotion/react',
+    '@emotion/styled',
+  ],
   // Check that tsup.external includes all peerDependencies
   checkTsupExternalizePeers: true,
 };

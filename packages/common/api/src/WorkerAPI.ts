@@ -89,7 +89,6 @@ export interface WorkerAPI {
    */
   getWorkingCopyAPI(): Remote<WorkingCopyAPI>;
 
-  // ----------------------------------------------------------------//
   /**
    * Get PluginLifecycleAPI for plugin lifecycle management
    *
@@ -114,9 +113,6 @@ export interface WorkerAPI {
    * });
    * ```
    */
-  //getPluginExtensionAPI(): PluginExtensionAPI& ProxyMarked;
-
-  // ----------------------------------------------------------------//
   /**
    * Get Import/Export API for data transfer operations
    *
@@ -138,7 +134,6 @@ export interface WorkerAPI {
    */
   getImportExportAPI(): Remote<ImportExportAPI>;
 
-  // ----------------------------------------------------------------//
   /**
    * Get Tag Service API for tag management operations
    *
@@ -159,7 +154,6 @@ export interface WorkerAPI {
    */
   getTagAPI(): Remote<TagAPI>;
 
-  // ----------------------------------------------------------------//
   /**
    * Simple ping method for health check
    *

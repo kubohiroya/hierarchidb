@@ -1,8 +1,8 @@
-import program from 'commander';
+import { Command } from 'commander';
 import path from 'path';
 import { fetchMetadata, getAvailableDataSources } from './index.js';
 
-program
+const program = new Command()
   .name('fetch-metadata')
   .description('Fetch and transform metadata from various open data sources')
   .version('0.0.1');

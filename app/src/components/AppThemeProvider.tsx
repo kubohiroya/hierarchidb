@@ -18,13 +18,11 @@ export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
 
   // Sync initial mode from storage if present (supports both ui-theme and legacy keys)
   useEffect(() => {
-    try {
-      const mode = getStoredThemeMode();
-      if (mode) setMode(mode);
-      // Back-compat fallback
-      const legacy = localStorage.getItem('app.theme');
-      if (legacy === 'light' || legacy === 'dark' || legacy === 'system') setMode(legacy as any);
-    } catch {}
+    const mode = getStoredThemeMode();
+    if (mode) setMode(mode);
+    // Back-compat fallback
+    const legacy = localStorage.getItem('app.theme');
+    if (legacy === 'light' || legacy === 'dark' || legacy === 'system') setMode(legacy as any);
   }, [setMode]);
 
   const muiTheme = useMemo(() => createAppTheme(actualTheme), [actualTheme]);

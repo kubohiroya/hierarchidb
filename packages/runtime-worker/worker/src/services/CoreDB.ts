@@ -172,10 +172,10 @@ export class CoreDB extends Dexie {
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    console.log('[CoreDB] getTree called with treeId:', treeId);
+    
     try {
       const tree = await this.trees.get(treeId);
-      console.log('[CoreDB] getTree result:', tree);
+      
 
       // Ensure we return a plain object that can be serialized by Comlink
       if (tree) {
@@ -191,7 +191,7 @@ export class CoreDB extends Dexie {
 
       return undefined;
     } catch (error) {
-      console.error('[CoreDB] getTree error:', error);
+      
       throw error;
     }
   }

@@ -9,3 +9,6 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
   const mod = await import('../components/LocationPanel');
   return (mod as any).LocationPanel as unknown as PluginPanelComponent;
 }
+
+// Register host-composed steps on import (idempotent)
+import './steps-provider';

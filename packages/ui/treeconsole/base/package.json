@@ -25,6 +25,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "comlink": "^4.4.2",
     "@dnd-kit/modifiers": "^9.0.0",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
@@ -34,7 +35,6 @@
     "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
     "@hierarchidb/ui-treeconsole-trashbin": "workspace:*",
     "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
-    "jotai": "^2.13.1",
     "rxjs": "^7.8.2"
   },
   "peerDependencies": {
@@ -47,6 +47,7 @@
     "@tanstack/react-virtual": "^3.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
+    "jotai": "^2.13.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hierarchidb/ui-icon": "workspace:*"
@@ -96,6 +97,7 @@
       "@mui/material",
       "@tanstack/react-table",
       "@tanstack/react-virtual",
+      "jotai",
       "react",
       "react-dom",
       "@hierarchidb/ui-icon"

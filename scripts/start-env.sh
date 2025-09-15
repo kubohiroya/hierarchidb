@@ -174,7 +174,7 @@ ensure_built "@hierarchidb/shape-plugin" "packages/node-type/shape-plugin/dist/i
 ensure_built "@hierarchidb/styler-plugin" "packages/node-type/styler-plugin/dist/index.js"
 ensure_built "@hierarchidb/route-plugin" "packages/node-type/route-plugin/dist/index.mjs"
 ensure_built "@hierarchidb/location-plugin" "packages/node-type/location-plugin/dist/index.js"
-ensure_built "@hierarchidb/project-plugin" "packages/node-type/project-plugin/dist/index.js"
+ensure_built "@hierarchidb/linker-plugin" "packages/node-type/linker-plugin/dist/index.js"
 
 case "$COMMAND" in
     dev)

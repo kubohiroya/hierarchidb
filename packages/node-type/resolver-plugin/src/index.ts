@@ -31,6 +31,15 @@ export {
   ResolverPanel,
 } from './components';
 
+// Standard entry for PluginDialogRoute to discover dialog component
+export async function getDialogComponent() {
+  const mod = await import('./components/ResolverDialog');
+  return (mod as any).ResolverDialog;
+}
+
+// Register host-composed steps on import (idempotent)
+import './ui/steps-provider';
+
 // Export services (to be implemented)
 // export { MappingCompiler } from './services/MappingCompiler';
 // export { ChainManager } from './services/ChainManager';

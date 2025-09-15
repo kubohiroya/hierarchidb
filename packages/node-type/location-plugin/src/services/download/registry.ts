@@ -1,4 +1,6 @@
 import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import type { ILocationDownloadStrategy } from './types';
+import type { LocationSearchConfig } from '../../entities/LocationEntity';
 
 export interface LocationNetService {
   net: { get: (url: string, init?: RequestInit) => Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }> };
@@ -36,4 +38,20 @@ export function notifyLocationAuthRequired(info: { resource: string; provider?: 
   const g: any = globalThis as any;
   const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
   reg?.onAuthRequired?.(info);
+}
+
+// Simple in-memory strategy registry
+const _strategies: ILocationDownloadStrategy[] = [];
+
+export function registerLocationStrategy(strategy: ILocationDownloadStrategy): void {
+  if (!_strategies.find((s) => s.id === strategy.id)) {
+    _strategies.push(strategy);
+  }
+}
+
+export function getLocationStrategy(config: LocationSearchConfig): ILocationDownloadStrategy | null {
+  for (const s of _strategies) {
+    try { if (s.supports(config)) return s; } catch { /* ignore */ }
+  }
+  return null;
 }

@@ -41,10 +41,12 @@ export { registerRouteSharedDownloadService } from './services/download/register
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {
   try {
-    const g: any = (globalThis as any);
-    const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
+    const g = (globalThis as unknown) as Record<string, unknown>;
+    const env = ((typeof process !== 'undefined' ? (process as any).env : undefined) || {}) as Record<string, unknown>;
     const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
+    const gv = g?.[name];
+    const ev = env?.[name];
+    const v = ls?.getItem(name) ?? (typeof gv === 'string' ? gv : undefined) ?? (typeof ev === 'string' ? ev : undefined);
     const n = Number(v);
     return isFinite(n) ? n : fallback;
   } catch { return fallback; }
@@ -65,7 +67,7 @@ export const runtimeWiring = {
       const { registerRouteAuthNotifier } = require('./services/download/registry');
       registerRouteAuthNotifier((info: any) => {
         try {
-          const g: any = globalThis as any;
+          const g = globalThis as unknown as Record<string, any>;
           const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
           reg?.onAuthRequired?.(info);
         } catch { /* noop */ }

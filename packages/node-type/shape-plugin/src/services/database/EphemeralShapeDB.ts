@@ -113,13 +113,13 @@ export class EphemeralShapeDB extends Dexie {
    * Clear all data for a session
    */
   async clearSession(sessionId: string): Promise<void> {
-    await this.transaction('rw',
+    await this.transaction('rw', [
       this.rawBuffers,
       this.simplifiedBuffers,
       this.vectorTiles,
       this.sessions,
       this.cache,
-      async () => {
+    ], async () => {
         await this.rawBuffers.where('sessionId').equals(sessionId).delete();
         await this.simplifiedBuffers.where('sessionId').equals(sessionId).delete();
         await this.vectorTiles.where('sessionId').equals(sessionId).delete();
@@ -198,13 +198,13 @@ export class EphemeralShapeDB extends Dexie {
    * Clear all data (complete reset)
    */
   async clearAll(): Promise<void> {
-    await this.transaction('rw',
+    await this.transaction('rw', [
       this.rawBuffers,
       this.simplifiedBuffers,
       this.vectorTiles,
       this.sessions,
       this.cache,
-      async () => {
+    ], async () => {
         await Promise.all([
           this.rawBuffers.clear(),
           this.simplifiedBuffers.clear(),
@@ -212,8 +212,7 @@ export class EphemeralShapeDB extends Dexie {
           this.sessions.clear(),
           this.cache.clear(),
         ]);
-      },
-    );
+      });
 
     console.log('Cleared all EphemeralShapeDB data');
   }

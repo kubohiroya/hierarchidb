@@ -100,8 +100,8 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   const handleMapClick = () => {
     if (!interactive) {
       const baseUrl = window.location.origin;
-      const basePath = import.meta.env.VITE_APP_PREFIX
-        ? `/${import.meta.env.VITE_APP_PREFIX}/`
+      const basePath = (import.meta as any)?.env?.VITE_APP_PREFIX
+        ? `/${(import.meta as any)?.env?.VITE_APP_PREFIX}/`
         : '/';
       const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
       window.open(mapUrl, '_blank');

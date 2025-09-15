@@ -126,6 +126,11 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
       const now = await queryAPI.listDescendants(trashRootId);
       return now.length === 0;
     });
+    // Explicitly assert count==0 for clarity
+    const finalDesc = await queryAPI.listDescendants(trashRootId);
+    expect(finalDesc.length).toBe(0);
+    const finalChildren = await queryAPI.listChildren(trashRootId);
+    expect(finalChildren.length).toBe(0);
 
     // Cleanup
     await subscriptionAPI.unsubscribe(subtreeSid);

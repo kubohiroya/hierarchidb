@@ -2,8 +2,14 @@ import { useCallback } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPIAdapter } from '~/adapters';
 
+type StateManagerLike = Partial<{
+  moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<void> | void;
+  deleteNode: (nodeId: NodeId) => Promise<void> | void;
+  duplicateNode: (nodeId: NodeId) => Promise<void> | void;
+}>;
+
 export interface UseCRUDOperationsOptions {
-  stateManager?: unknown;
+  stateManager?: StateManagerLike;
   /** Worker API adapter */
   workerAdapter?: WorkerAPIAdapter;
   /** Loading state setter */
@@ -58,12 +64,12 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        const canMove = stateManager && typeof (stateManager as any).moveNode === 'function';
+        const canMove = stateManager && typeof stateManager.moveNode === 'function';
         if (!canMove) throw new Error('No adapter available for move operation');
         setIsLoading?.(true);
         try {
-          await (stateManager as any).moveNode(nodeId, targetParentId, _index ?? 0);
-          onExpandedNodesChange?.((prev) => (prev.includes('new-parent' as any) ? prev : [...prev, 'new-parent' as any]));
+          await stateManager.moveNode!(nodeId, targetParentId, _index ?? 0);
+          onExpandedNodesChange?.((prev) => (prev.includes(targetParentId) ? prev : [...prev, targetParentId]));
         } finally {
           setIsLoading?.(false);
         }
@@ -111,11 +117,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        const canDelete = stateManager && typeof (stateManager as any).deleteNode === 'function';
+        const canDelete = stateManager && typeof stateManager.deleteNode === 'function';
         if (!canDelete) throw new Error('No adapter available for delete operation');
         setIsLoading?.(true);
         try {
-          await (stateManager as any).deleteNode(nodeId);
+          await stateManager.deleteNode!(nodeId);
           onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
@@ -130,11 +136,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
   const deleteNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        const canDelete = stateManager && typeof (stateManager as any).deleteNode === 'function';
+        const canDelete = stateManager && typeof stateManager.deleteNode === 'function';
         if (!canDelete) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          for (const id of nodeIds) await (stateManager as any).deleteNode(id);
+          for (const id of nodeIds) await stateManager.deleteNode!(id);
           onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
@@ -163,11 +169,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
   const duplicateNode = useCallback(
     async (nodeId: NodeId) => {
       if (!workerAdapter) {
-        const canDup = stateManager && typeof (stateManager as any).duplicateNode === 'function';
+        const canDup = stateManager && typeof stateManager.duplicateNode === 'function';
         if (!canDup) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          await (stateManager as any).duplicateNode(nodeId);
+          await stateManager.duplicateNode!(nodeId);
         } finally {
           setIsLoading?.(false);
         }

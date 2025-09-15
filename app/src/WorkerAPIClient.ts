@@ -35,16 +35,11 @@ export class WorkerAPIClient {
         return;
 
       case 'initializing':
-        console.log(
-          '[WorkerAPIClient.initialize] Already initializing, returning existing promise',
-        );
         if (this.initializationPromise) {
           return this.initializationPromise;
         }
         // If promise is somehow null, fall through to reinitialize
-        console.warn(
-          '[WorkerAPIClient.initialize] State is initializing but no promise found, reinitializing',
-        );
+        
         break;
 
       case 'error':
@@ -68,7 +63,7 @@ export class WorkerAPIClient {
         this.initializationPromise = null;
       })
       .catch((error) => {
-        console.error('[WorkerAPIClient.initialize] Initialization failed:', error);
+        
         this.state = 'error';
         this.lastError = error instanceof Error ? error : new Error(String(error));
         this.initializationPromise = null;
@@ -94,19 +89,14 @@ export class WorkerAPIClient {
         const initComplete = Boolean(isWorkerInitCompleted?.());
         if (!initComplete) {
           const pingResult = await remoteWorker.ping();
-          // eslint-disable-next-line no-console
-          console.log('[WorkerAPIClient.doInitialize] ping OK', pingResult);
           this.verified = true;
         } else {
-          // eslint-disable-next-line no-console
-          console.log('[WorkerAPIClient.doInitialize] INIT_COMPLETE observed; skipping ping');
+          
           this.verified = true;
         }
-        if (this.lastError) {
-          console.log('👍 [WorkerAPIClient.doInitialize] Reconnection successful after previous failure!');
-        }
+        
       } catch (pingError) {
-        console.warn('[WorkerAPIClient.doInitialize] Ping failed (continuing, channel will gate readiness):', pingError);
+        
         // Leave this.verified as false; Provider will wait on channel/event.
       }
 
@@ -116,8 +106,8 @@ export class WorkerAPIClient {
 
 
     } catch (error) {
-      console.error('[WorkerAPIClient.doInitialize] Failed:', error);
-      console.error('[WorkerAPIClient.doInitialize] Error stack:', (error as Error)?.stack);
+      
+      
 
       // Clean up on failure
       this.workerInstance = null;
@@ -130,18 +120,13 @@ export class WorkerAPIClient {
    */
   static getSingleton(): WorkerInterface {
     if (!this.workerInstance) {
-      console.error('[WorkerAPIClient.getSingleton] No instance available', {
-        state: this.state,
-        hasInstance: !!this.workerInstance,
-        lastError: this.lastError,
-      });
+      
       throw new NotInitializedError();
     }
     if (this.state !== 'initialized') {
       try {
         if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-          // eslint-disable-next-line no-console
-          console.warn('[WorkerAPIClient.getSingleton] Returning instance while state=', this.state);
+          
         }
       } catch {}
     }
@@ -164,16 +149,10 @@ export class WorkerAPIClient {
    * Useful when connection fails and needs to be retried
    */
   static reset(): void {
-    try {
-      if (this.workerInstance) {
-        // Attempt to terminate raw worker if possible
-        const raw = WorkerAPIClient.getRawWorkerInstance();
-        try {
-          raw?.terminate();
-        } catch {
-        }
-      }
-    } catch {
+    if (this.workerInstance) {
+      // Attempt to terminate raw worker if possible
+      const raw = WorkerAPIClient.getRawWorkerInstance();
+      raw?.terminate();
     }
     this.workerInstance = null;
     this.state = 'uninitialized';
@@ -188,27 +167,17 @@ export class WorkerAPIClient {
    */
   static isReady(): boolean {
     // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
-    try {
-      const globalInit = (typeof window !== 'undefined') && (window as any).__HDB_INIT_COMPLETE__;
-      if (!this.verified && globalInit) this.verified = true;
-      if (this.state !== 'initialized' && this.workerInstance && globalInit) {
-        this.state = 'initialized';
-        // eslint-disable-next-line no-console
-        console.log('[WorkerAPIClient] Promoted to initialized via global INIT_COMPLETE');
-      }
-    } catch {
+    const globalInit = (typeof window !== 'undefined') && (window as any).__HDB_INIT_COMPLETE__;
+    if (!this.verified && globalInit) this.verified = true;
+    if (this.state !== 'initialized' && this.workerInstance && globalInit) {
+      this.state = 'initialized';
+      
     }
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
-    try {
-      if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-        // eslint-disable-next-line no-console
-        console.log(
-          `[WorkerAPIClient.isReady] state: ${this.state}, hasInstance: ${!!this.workerInstance}, returning: ${ready}`,
-        );
-      }
-    } catch {
+    if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
+      
     }
     return ready;
   }

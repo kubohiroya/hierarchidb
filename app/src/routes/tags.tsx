@@ -80,10 +80,8 @@ export default function TagsPage() {
   const tagsByCategory = filteredTags.reduce(
     (acc, tag) => {
       const category = tag.category || 'uncategorized';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(tag);
+      acc[category] = acc[category] ?? [];
+      acc[category]!.push(tag);
       return acc;
     },
     {} as Record<string, TagEntity[]>,

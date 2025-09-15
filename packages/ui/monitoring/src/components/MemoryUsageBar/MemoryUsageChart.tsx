@@ -200,7 +200,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         return newPoints;
       });
     } catch (error) {
-      if (import.meta.env.DEV) {
+      if ((import.meta as any)?.env?.DEV) {
 
         console.warn('Memory measurement failed:', error);
 

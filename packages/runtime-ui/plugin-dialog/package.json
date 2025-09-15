@@ -28,9 +28,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "comlink": "^4.4.2",
-    "jotai": "^2.11.2",
-    "react-router-dom": "^7.1.1"
+    "comlink": "^4.4.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",
@@ -46,12 +44,22 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^7.1.0",
-    "@mui/icons-material": "^7.3.1"
+    "@mui/icons-material": "^7.3.1",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "jotai": "^2.11.2",
+    "react-router-dom": ">=7.0.0"
   },
   "tsup": {
     "external": [
       "@mui/icons-material",
       "@mui/material",
+      "@hierarchidb/ui-icon",
+      "@hierarchidb/runtime-worker-bootstrap",
+      "@hierarchidb/ui-core",
+      "jotai",
+      "react-router-dom",
       "react",
       "react-dom"
     ]

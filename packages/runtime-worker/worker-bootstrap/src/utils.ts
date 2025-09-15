@@ -22,11 +22,7 @@ export async function initializeWorkerWithReporting(
     // Report completion
     reporter.reportComplete();
 
-    if (debug) {
-      console.log('[Worker] Initialization completed successfully');
-    }
   } catch (error) {
-    console.error('[Worker] Initialization failed:', error);
     reporter.reportError(error as Error);
     throw error;
   }
@@ -40,7 +36,7 @@ export async function initializeWorkerWithReporting(
  */
 export function createLazySingletonInitializer<T>(
   factory: () => Promise<T>,
-  reportProgress?: (message: string, progress: number) => void,
+  reportProgress?: (_message: string, _progress: number) => void,
 ): () => Promise<T> {
   let instance: T | null = null;
   let initPromise: Promise<T> | null = null;
@@ -88,17 +84,9 @@ export const DEFAULT_INIT_STEPS: InitializationStep[] = [
 export function createReportingWorker(
   workerUrl: URL | string,
   options?: WorkerOptions,
-  debug = false,
+  _debug = false,
 ): Worker {
   const worker = new Worker(workerUrl, options);
-
-  if (debug) {
-    worker.addEventListener('message', (event) => {
-      if (event.data.type?.startsWith('INIT_')) {
-        console.log('[Worker Message]', event.data);
-      }
-    });
-  }
 
   return worker;
 }
