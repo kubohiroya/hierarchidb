@@ -568,32 +568,28 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     );
   }
 
-  // Main toolbar for Projects/Resources pages
-  if (isProjectsPage || isResourcesPage) {
-    return (
-      <Box
-        data-testid="tree-console-toolbar"
-        className="tree-console-toolbar"
-        aria-label="TreeTypes console toolbar"
-        style={{ backgroundColor: theme.palette.background.paper }}
-      >
-        <TreeConsoleToolbarContent
-          controller={controller}
-          hasTrashItems={hasTrashItems}
-          onAction={onAction}
-          rowClickAction={rowClickAction}
-          onRowClickActionChange={onRowClickActionChange}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          canCopy={canCopy}
-          canPaste={canPaste}
-          canDuplicate={canDuplicate}
-          canRemove={canRemove}
-          availableTemplates={availableTemplates}
-        />
-      </Box>
-    );
-  }
-
-  return null;
+  // Render full toolbar for any page unless explicitly hidden
+  return (
+    <Box
+      data-testid="tree-console-toolbar"
+      className="tree-console-toolbar"
+      aria-label="TreeTypes console toolbar"
+      style={{ backgroundColor: theme.palette.background.paper }}
+    >
+      <TreeConsoleToolbarContent
+        controller={controller}
+        hasTrashItems={hasTrashItems}
+        onAction={onAction}
+        rowClickAction={rowClickAction}
+        onRowClickActionChange={onRowClickActionChange}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        canCopy={canCopy}
+        canPaste={canPaste}
+        canDuplicate={canDuplicate}
+        canRemove={canRemove}
+        availableTemplates={availableTemplates}
+      />
+    </Box>
+  );
 }
