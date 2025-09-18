@@ -1,1 +1,1 @@
-export { MemoryUsageMonitor } from './MemoryUsageMonitor';
+export { MemoryUsageMonitor } from './MemoryUsageMonitor.js';

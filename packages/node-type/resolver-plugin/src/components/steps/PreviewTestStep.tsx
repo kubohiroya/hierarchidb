@@ -35,7 +35,7 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
+import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../types/index.js';
 
 interface PreviewTestStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -97,9 +97,9 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       // Generate mock preview result
       const mockResult: MappingPreviewResult = {
         success: true,
-        mappedData: sourceSchema.sampleData?.slice(0, 5).map((sample, index) => {
+        mappedData: sourceSchema.sampleData?.slice(0, 5).map((sample: Record<string, unknown>, index: number) => {
           const mapped: Record<string, unknown> = {};
-          data.mappingRules!.forEach(rule => {
+          data.mappingRules!.forEach((rule: PropertyMappingRule) => {
             if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
               let value = (sample as Record<string, unknown>)[rule.sourceProperty];
 
@@ -121,8 +121,8 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
           return mapped;
         }) || [],
         unmappedProperties: sourceSchema.properties
-          .filter(prop => !data.mappingRules!.some(rule => rule.sourceProperty === prop.name))
-          .map(prop => prop.name),
+          .filter((prop: PropertyInfo) => !data.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
+          .map((prop: PropertyInfo) => prop.name),
         errors: [],
         statistics: {
           totalRecords: sourceSchema.sampleData?.length || 0,
@@ -138,7 +138,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       // Generate validation result
       const mockValidation: MappingValidationResult = {
         isValid: mockResult.errors.length === 0,
-        errors: mockResult.errors.map(err => ({
+        errors: mockResult.errors.map((err: string) => ({
           ruleId: crypto.randomUUID(),
           property: 'unknown',
           message: err,
@@ -423,7 +423,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                       Warnings ({validationResult.warnings.length})
                     </Typography>
                     <List dense>
-                      {validationResult.warnings.map((warning, index) => (
+                      {validationResult.warnings.map((warning: ValidationWarning, index: number) => (
                         <ListItem key={index}>
                           <ListItemIcon>
                             <WarningIcon color="warning" fontSize="small" />
@@ -507,7 +507,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Unmapped Source Properties
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {previewResult.unmappedProperties.map((prop) => (
+                    {previewResult.unmappedProperties.map((prop: string) => (
                       <Chip
                         key={prop}
                         label={prop}

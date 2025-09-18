@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
-import type { LocationEntitiesDB, LocationGroupRow } from './locationEntitiesDB';
-import type { LocationGroupItemData } from '../types/entities';
+import type { LocationEntitiesDB, LocationGroupRow } from './locationEntitiesDB.js';
+import type { LocationGroupItemData } from '../types/entities.js';
 
 type Item = GroupItemBase<LocationGroupItemData>;
 

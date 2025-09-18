@@ -14,9 +14,9 @@ import {
   type MapViewState,
 } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BaseMapEntity } from '../types/BaseMapEntity';
-import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
-import { BUILT_IN_STYLES } from '../constants/builtInStyles';
+import type { BaseMapEntity } from '../types/BaseMapEntity.js';
+import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
+import { BUILT_IN_STYLES } from '../constants/builtInStyles.js';
 import { CrossViewSnackbar, useCrossHighlightSync, useMapLibreFeatureState, ensureDefaultStyles } from '@hierarchidb/ui-core';
 
 export interface BaseMapDisplayProps {

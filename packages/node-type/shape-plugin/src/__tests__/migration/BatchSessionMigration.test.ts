@@ -11,9 +11,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { BatchSessionManager } from '../../services/BatchSessionManager';
-import type { BatchConfig } from '../../types/BatchConfig';
-import type { BatchProgressEvent } from '../../types/BatchProgressEvent';
+import { BatchSessionManager } from '../../services/BatchSessionManager.js';
+import type { BatchConfig } from '../../types/BatchConfig.js';
+import type { BatchProgressEvent } from '../../types/BatchProgressEvent.js';
 
 type TreeNodeId = NodeId;
 

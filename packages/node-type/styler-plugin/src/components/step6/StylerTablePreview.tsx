@@ -31,8 +31,8 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 // import { VariableSizeList as List } from 'provider-window';
-import type { StylerConfig } from '../../types/stylerTypes';
-import { valueToColor } from '../../utils/colorUtils';
+import type { StylerConfig } from '../../types/stylerTypes.js';
+import { valueToColor } from '../../utils/colorUtils.js';
 
 /**
   * :

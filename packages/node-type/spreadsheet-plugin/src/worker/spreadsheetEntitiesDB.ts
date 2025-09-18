@@ -1,7 +1,7 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities';
+import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities.js';
 
 export type SheetPeerRow = { nodeId: NodeId; updatedAt?: number; displayMode?: 'standard' | 'maximized' | 'fullscreen' };
 export type SheetGroupRow = { nodeId: NodeId; id: string; data?: SpreadsheetGroupItemData; updatedAt?: number };

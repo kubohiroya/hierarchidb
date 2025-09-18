@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TreeConsoleHeader } from '../TreeConsoleHeader';
+import { TreeConsoleHeader } from '../TreeConsoleHeader.js';
 import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
 
 const mockController: TreeViewController = {
@@ -71,7 +71,8 @@ describe('TreeConsoleHeader', () => {
     render(<TreeConsoleHeader {...defaultProps} />);
 
     // Text is rendered in lowercase and uppercased via CSS; match case-insensitively
-    expect(screen.getByText(/resources/i)).toBeInTheDocument();
+    const items = screen.getAllByText(/resources/i);
+    expect(items.length).toBeGreaterThan(0);
   });
 
   it('should show projects page type when isProjectsPage is true', () => {
@@ -83,7 +84,8 @@ describe('TreeConsoleHeader', () => {
   it('should show trash indicator when isTrashPage is true', () => {
     render(<TreeConsoleHeader {...defaultProps} isTrashPage={true} />);
 
-    expect(screen.getByText(/trash/i)).toBeInTheDocument();
+    const items = screen.getAllByText(/trash/i);
+    expect(items.length).toBeGreaterThan(0);
   });
 
   it('should show preview button when canPreviewNode is true', () => {

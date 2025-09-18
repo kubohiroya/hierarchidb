@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor.js';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Policy C: block move/remove when WC exists', () => {
@@ -18,7 +18,6 @@ describe('Policy C: block move/remove when WC exists', () => {
   let state: Record<string, any>;
 
   beforeEach(() => {
-    (process as any).env.WORKER_POLICY_C = '1';
     state = {
       root: makeNode('root', 'super', 'root'),
       a: makeNode('a', 'root', 'A'),

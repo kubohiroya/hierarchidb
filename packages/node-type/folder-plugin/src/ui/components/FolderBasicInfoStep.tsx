@@ -8,7 +8,7 @@ import { Box, Divider, Stack, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { TagId } from '@hierarchidb/common-type';
-import { TagInput } from './TagInput';
+import { TagInput } from './TagInput.js';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 // TagId is a local branded string type

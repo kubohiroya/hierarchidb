@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
-import type { WorkerInitMessage } from '../types';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
+import type { WorkerInitMessage } from '../types.js';
 
 // Create a real Worker script as a Blob
 const createTestWorkerScript = () => {

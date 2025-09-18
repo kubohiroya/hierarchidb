@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { Stack } from '@mui/material';
-import type { MapViewport } from '../../types/BaseMapEntity';
+import type { MapViewport } from '../../types/BaseMapEntity.js';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;

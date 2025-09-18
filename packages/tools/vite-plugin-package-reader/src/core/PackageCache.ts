@@ -1,4 +1,4 @@
-import type { PackageJson } from '../types';
+import type { PackageJson } from '../types.js';
 
 export interface CacheEntry<T = any> {
   data: T;

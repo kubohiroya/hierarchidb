@@ -6,17 +6,17 @@
 // === Core Exports (Standard Structure) ===
 
 // Entity/handler/definition exports
-export * from './handlers';
+export * from './handlers/index.js';
 // Plugin metadata is sourced from package.json (hierarchidb.plugin); no definitions export
 
 // UI components
 // UI components moved under subpath to keep root worker-safe
 
 // Type exports (root)
-export * from './types';
+export * from './types/index.js';
 
 // Database
-export * from './database';
+export * from './database/index.js';
 
 // === Extension Exports (Legacy Compatibility)
 // Removed: legacy extension layer is not present in this package.
@@ -67,4 +67,4 @@ export const PLUGIN_INFO = {
 export const runtimeWiring = {} as const;
 
 // Folder dialog extension initializer (optional)
-export { initializeBaseMapFolderExtension, baseMapFolderExtension } from './extensions/BaseMapFolderExtension';
+export { initializeBaseMapFolderExtension, baseMapFolderExtension } from './extensions/BaseMapFolderExtension.js';

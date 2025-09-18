@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { NodeId } from '@hierarchidb/common-type';
-import { useFolderAPIGetter } from './useFolderAPI';
-import type { FolderEntity } from '../../shared';
+import { useFolderAPIGetter } from './useFolderAPI.js';
+import type { FolderEntity } from '../../shared/index.js';
 import { CreateFolderData, UpdateFolderData } from '~/shared/types';
 
 /**

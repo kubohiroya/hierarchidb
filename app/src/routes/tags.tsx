@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
-import { useWorkerClient } from '../contexts/WorkerProvider';
+import { useWorkerClient } from '../contexts/WorkerProvider.js';
 import type { TagEntity } from '@hierarchidb/common-type';
 
 // Meta function for React Router v7

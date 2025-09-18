@@ -8,6 +8,8 @@
     "node_modules"
   ],
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": "src",
     "isolatedModules": false,

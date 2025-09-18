@@ -1,8 +1,8 @@
-export { useFloatingWindow } from './useFloatingWindow';
-export type { UseFloatingWindowOptions, UseFloatingWindowResult } from './useFloatingWindow';
+export { useFloatingWindow } from './useFloatingWindow.js';
+export type { UseFloatingWindowOptions, UseFloatingWindowResult } from './useFloatingWindow.js';
 
-export { useDragging } from './useDragging';
-export type { UseDraggingOptions, UseDraggingResult } from './useDragging';
+export { useDragging } from './useDragging.js';
+export type { UseDraggingOptions, UseDraggingResult } from './useDragging.js';
 
-export { useResizing } from './useResizing';
-export type { UseResizingOptions, UseResizingResult } from './useResizing';
+export { useResizing } from './useResizing.js';
+export type { UseResizingOptions, UseResizingResult } from './useResizing.js';

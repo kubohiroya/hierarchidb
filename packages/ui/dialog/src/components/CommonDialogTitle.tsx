@@ -27,14 +27,6 @@ export interface CommonDialogTitleProps {
   onChangeDisplayMode?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
   /** Show AspectRatio menu + quick toggles */
   showDisplayModeControls?: boolean;
-  /**
-   * @deprecated Use `displayMode === 'fullscreen'` and `onChangeDisplayMode('fullscreen'|'standard')`.
-   */
-  isFullscreen?: boolean;
-  /**
-   * @deprecated Use `onChangeDisplayMode('fullscreen'|'standard')`.
-   */
-  toggleFullscreen?: () => void;
 }
 
 export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
@@ -48,19 +40,7 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
                                                                        displayMode = 'standard',
                                                                        onChangeDisplayMode,
                                                                        showDisplayModeControls = true,
-                                                                       isFullscreen,
-                                                                       toggleFullscreen,
                                                                     }) => {
-  try {
-    const allowLegacy = (globalThis as any)?.FEATURE_FLAGS?.UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE;
-    const allowLegacyBool = String(allowLegacy ?? 'false').toLowerCase() === 'true' || String(allowLegacy ?? 'false') === '1';
-    if (!allowLegacyBool && (typeof toggleFullscreen === 'function' || typeof isFullscreen === 'boolean')) {
-      console.warn('[UI] Legacy CommonDialogTitle props (isFullscreen/toggleFullscreen) are disabled by default. Use displayMode/onChangeDisplayMode instead.');
-    }
-  } catch (err) {
-    // Accessing global FEATURE_FLAGS can fail in SSR; log at debug level
-    console.debug('[CommonDialogTitle] FEATURE_FLAGS access failed', err);
-  }
   const [modeMenuAnchor, setModeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const openModeMenu = (e: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(e.currentTarget);
   const closeModeMenu = () => setModeMenuAnchor(null);
@@ -119,17 +99,6 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
                 {displayMode === 'fullscreen' ? <FullscreenExitIcon /> : <FullscreenIcon />}
               </IconButton>
             </>
-          )}
-          {/* Backward-compat: fullscreen-only button */}
-          {!onChangeDisplayMode && (
-            <IconButton
-              onClick={toggleFullscreen}
-              color="inherit"
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              size="small"
-            >
-              {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-            </IconButton>
           )}
           <IconButton onClick={onClose} color="inherit" aria-label="Close dialog">
             <CloseIcon />

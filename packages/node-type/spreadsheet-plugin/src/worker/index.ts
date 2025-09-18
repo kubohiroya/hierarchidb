@@ -4,19 +4,19 @@ try {
   import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
-      const { SpreadsheetEntitiesDB } = await import('./spreadsheetEntitiesDB');
+      const { SpreadsheetEntitiesDB } = await import('./spreadsheetEntitiesDB.js');
       const db = new SpreadsheetEntitiesDB();
       await db.open();
       if (!storeRegistry.getPeer('spreadsheet')) {
-        const { createSpreadsheetPeerStoreDexie } = await import('./spreadsheetPeerStore.dexie');
+        const { createSpreadsheetPeerStoreDexie } = await import('./spreadsheetPeerStore.dexie.js');
         storeRegistry.registerPeer('spreadsheet', createSpreadsheetPeerStoreDexie(db));
       }
       if (!storeRegistry.getGroup('spreadsheet')) {
-        const { createSpreadsheetGroupStoreDexie } = await import('./spreadsheetGroupStore.dexie');
+        const { createSpreadsheetGroupStoreDexie } = await import('./spreadsheetGroupStore.dexie.js');
         storeRegistry.registerGroup('spreadsheet', createSpreadsheetGroupStoreDexie(db));
       }
       if (!storeRegistry.getRelations('spreadsheet')) {
-        const { createSpreadsheetRelationStoreDexie } = await import('./spreadsheetRelationStore.dexie');
+        const { createSpreadsheetRelationStoreDexie } = await import('./spreadsheetRelationStore.dexie.js');
         storeRegistry.registerRelations('spreadsheet', createSpreadsheetRelationStoreDexie(db));
       }
     } catch {

@@ -4,8 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../entities/BaseMapEntity';
-import type { BaseMapConfig } from './types';
+import type { BaseMapEntity, BaseMapWorkingCopy } from '../entities/BaseMapEntity.js';
+import type { BaseMapConfig } from './types.js';
 
 export interface BaseMapAPI {
   // Entity operations

@@ -3,8 +3,8 @@
  * UI environment plugin registration
  */
 
-import { ShapeMetadata } from '../shared';
-import { ShapeDialog, ShapePanel } from './components';
+import { ShapeMetadata } from '../shared/index.js';
+import { ShapeDialog, ShapePanel } from './components/index.js';
 
 /**
  * UI Plugin definition for Shape plugin

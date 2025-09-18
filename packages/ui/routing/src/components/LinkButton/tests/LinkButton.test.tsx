@@ -7,8 +7,8 @@ import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
-import { LinkButton } from '../LinkButton';
-import { useLinkButton } from '../useLinkButton';
+import { LinkButton } from '../LinkButton.js';
+import { useLinkButton } from '../useLinkButton.js';
 
 // Mock provider-router-dom
 vi.mock('provider-router-dom', async () => {

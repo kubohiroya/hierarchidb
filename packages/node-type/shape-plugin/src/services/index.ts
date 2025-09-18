@@ -1,3 +1,3 @@
-export { ShapeDB } from './database/ShapeDB';
-export { EphemeralShapeDB } from './database/EphemeralShapeDB';
+export { ShapeDB } from './database/ShapeDB.js';
+export { EphemeralShapeDB } from './database/EphemeralShapeDB.js';
 

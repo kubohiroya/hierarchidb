@@ -1,7 +1,7 @@
-import type { DataSourceSpec, OdPair, RouteBatchSpec, StrategyContext, TaskPlan } from './types';
-import { getRouteDownloadService, notifyAuthRequired } from '../services/download/registry';
-import { CsvStrategy } from './strategies/CsvStrategy';
-import { GeoJsonStrategy } from './strategies/GeoJsonStrategy';
+import type { DataSourceSpec, OdPair, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
+import { getRouteDownloadService, notifyAuthRequired } from '../services/download/registry.js';
+import { CsvStrategy } from './strategies/CsvStrategy.js';
+import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
 
 export interface NetworkPortLike {
   get(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;

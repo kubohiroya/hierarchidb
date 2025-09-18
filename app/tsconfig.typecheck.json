@@ -6,7 +6,7 @@
     "noEmit": true,
     "incremental": true,
     "composite": false,
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "resolveJsonModule": true,
     "baseUrl": ".",
     // Override workspace path mappings to avoid pulling source from other packages during app typecheck.

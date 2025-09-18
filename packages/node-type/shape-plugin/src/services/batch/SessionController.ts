@@ -9,18 +9,18 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter';
-import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter';
-import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../types';
-import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter';
-import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter';
-import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter';
-import { RuntimeWorkerSimplify1Adapter, RuntimeWorkerSimplify2Adapter } from './adapters/RuntimeWorkerSimplifyAdapters';
-import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter';
-import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient';
-import type { BatchProcessConfig } from './types';
-import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../shared';
-import type { DownloadTask } from '../../shared/types';
+import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter.js';
+import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter.js';
+import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../types.js';
+import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter.js';
+import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js';
+import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
+import { RuntimeWorkerSimplify1Adapter, RuntimeWorkerSimplify2Adapter } from './adapters/RuntimeWorkerSimplifyAdapters.js';
+import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
+import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
+import type { BatchProcessConfig } from './types.js';
+import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../shared/index.js';
+import type { DownloadTask } from '../../shared/types.js';
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;

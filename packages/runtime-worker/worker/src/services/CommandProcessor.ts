@@ -1,18 +1,18 @@
 import crypto from 'crypto';
 import type { CommandId, NodeId, NodeType, Seq, Timestamp, TreeNode } from '@hierarchidb/common-type';
-import { commitWorkingCopyV2, createNewName } from './WorkingCopyTreeNodeOperations';
-import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types';
-import { WorkerErrorCode } from './command-types';
-import type { CoreDB } from './CoreDB';
+import { commitWorkingCopyV2, createNewName } from './WorkingCopyTreeNodeOperations.js';
+import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
+import { WorkerErrorCode } from './command-types.js';
+import type { CoreDB } from './CoreDB.js';
 import { SingletonMixin } from '@hierarchidb/util';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config';
-import { commandRegistry } from './command/registry';
-import { validateAndNormalizeEnvelope } from './validation/envelope';
-import { FEATURE_FLAGS } from '../config/feature-flags';
-import { encodeTrashHolderName } from './utils/holder-encoding';
-import { hasWorkingCopyInSubtree } from './utils/policy-c';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
-import { recordCommandLatency } from '../utils/metrics';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
+import { commandRegistry } from './command/registry.js';
+import { validateAndNormalizeEnvelope } from './validation/envelope.js';
+import { FEATURE_FLAGS } from '../config/feature-flags.js';
+import { encodeTrashHolderName } from './utils/holder-encoding.js';
+import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
+import { recordCommandLatency } from '../utils/metrics.js';
 
 // Sanitized result shape used for logging only (no sensitive fields)
 type SanitizedLogResult = {
@@ -908,7 +908,7 @@ export class CommandProcessor {
 
   // Best-effort deletion of peerEntities (permanent delete only)
   private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
-    const { storeRegistry } = await import('../entity/store-registry');
+    const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
       const nodeType = (n as any).nodeType as string;
       const nodeId = n.id as NodeId;

@@ -1,2 +1,2 @@
-export { SimpleTableMetadataManager } from './table/SimpleTableMetadataManager';
+export { SimpleTableMetadataManager } from './table/SimpleTableMetadataManager.js';
 

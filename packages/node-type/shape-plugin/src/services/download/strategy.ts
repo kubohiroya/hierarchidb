@@ -1,4 +1,4 @@
-import type { BatchTaskLike } from '../../types/BatchTaskLike';
+import type { BatchTaskLike } from '../../types/BatchTaskLike.js';
 
 export interface IShapeDownloadStrategy {
   readonly id: string;

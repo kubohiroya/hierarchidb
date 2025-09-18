@@ -25,13 +25,18 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "storybook": "storybook dev -c ./.storybook --port 6307 --disable-telemetry",
+    "storybook:build": "storybook build -c ./.storybook",
+    "pretest:playwright": "pnpm storybook:build",
+    "test:playwright": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "notistack": "^3.0.2",
     "@hierarchidb/common-type": "workspace:*"
   },
   "devDependencies": {
+    "@types/react-resizable": "^3.0.8"
   },
   "peerDependencies": {
     "react": "^18.3.1",

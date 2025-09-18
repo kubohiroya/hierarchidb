@@ -2,7 +2,7 @@
  * Types specific to batch processing sessions
  */
 
-import type { BatchConfig } from '../../types/BatchConfig';
+import type { BatchConfig } from '../../types/BatchConfig.js';
 
 /**
  * Extended batch process configuration that includes worker settings

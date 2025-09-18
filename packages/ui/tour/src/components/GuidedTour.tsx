@@ -1,4 +1,4 @@
-import { GenericGuidedTour } from './GenericGuidedTour';
+import { GenericGuidedTour } from './GenericGuidedTour.js';
 
 const TopPageGuidedTour = ({ run, onFinish }: { run: boolean; onFinish?: () => void }) => {
   return (

@@ -8,7 +8,7 @@
 // import React from 'provider'; // Not needed with new JSX transform
 import { Box, Typography } from '@mui/material';
 // import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { TreeConsoleHeaderProps } from '../types/index';
+import type { TreeConsoleHeaderProps } from '../types/index.js';
 
 /**
   * TreeConsoleHeader

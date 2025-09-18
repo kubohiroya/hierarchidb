@@ -1,4 +1,4 @@
-import type { HashAlgorithm, HashPort } from '../ports';
+import type { HashAlgorithm, HashPort } from '../ports.js';
 import { sha3_256 } from '@noble/hashes/sha3';
 
 export class NobleSha3HashPort implements HashPort {

@@ -1,4 +1,4 @@
-import type { NodeType } from './id-types';
+import type { NodeType } from './id-types.js';
 
 /**
  * Lightweight, publish-stable metadata that plugins may expose for discovery.

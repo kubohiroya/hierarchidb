@@ -15,9 +15,9 @@ import { refreshToken, revokeToken } from './auth/refresh.js';
 import { mapEnvironmentVariables, MappedEnv } from './env-mapper.js';
 import { getDynamicRedirectUri } from './utils/redirect-uri.js';
 import { StateManager } from './utils/state-manager.js';
-import { validateOrigin } from './middleware/origin-validator';
-import { requireTurnstile } from './utils/turnstile';
-import { Env } from './types';
+import { validateOrigin } from './middleware/origin-validator.js';
+import { requireTurnstile } from './utils/turnstile.js';
+import { Env } from './types.js';
 
 const app = new Hono<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>();
 
@@ -399,7 +399,7 @@ app.post('/auth/logout', async (c) => {
       const token = extractBearerToken(authHeader);
 
       if (token) {
-        const kvManager = new (await import('./utils/kv-storage')).KVStorageManager(
+        const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
           c.env.AUTH_KV,
           c.env.JWT_SECRET,
         );

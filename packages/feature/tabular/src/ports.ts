@@ -1,4 +1,4 @@
-import type { DetectionResult, FileLike, ParseOptions, TabularParseResult } from './types';
+import type { DetectionResult, FileLike, ParseOptions, TabularParseResult } from './types.js';
 
 export interface TabularParserPort {
   id: string;

@@ -1,60 +1,93 @@
-import type { TreeNode } from '@hierarchidb/common-type';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+type TreeNodeLike = {
+  id?: string | number;
+  treeNodeId?: string | number;
+};
+
+function toId(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const str = String(value).trim();
+  return str.length > 0 ? str : null;
+}
+
+function getNodeId(node: TreeNodeLike | null | undefined): string | null {
+  if (!node) return null;
+  return toId(node.id ?? node.treeNodeId);
+}
+
+function removeRecursively(
+  nodesById: Map<string, any>,
+  childrenByParent: Map<string, Set<string>>,
+  nodeId: string,
+) {
+  nodesById.delete(nodeId);
+  const children = childrenByParent.get(nodeId);
+  if (!children) return;
+  childrenByParent.delete(nodeId);
+  for (const childId of children) {
+    removeRecursively(nodesById, childrenByParent, childId);
+  }
+}
 
 export function rebuildAdjacency(
-  nodesById: Map<string, TreeNode>,
+  nodesById: Map<string, any>,
   childrenByParent: Map<string, Set<string>>,
   parentId: string,
-  children: TreeNode[],
-) {
-  const nextIds = new Set<string>(children.map((c) => String(c.id)));
-  childrenByParent.set(parentId, nextIds);
-  for (const n of children) {
-    nodesById.set(String(n.id), n);
-  }
-}
+  children: any[],
+): void {
+  const key = toId(parentId) ?? '';
+  const nextIds = new Set<string>();
 
-export function removeFromParent(childrenByParent: Map<string, Set<string>>, parentId: string | undefined, nodeId: string) {
-  if (!parentId) return;
-  const set = childrenByParent.get(parentId);
-  if (!set) return;
-  if (set.has(nodeId)) {
-    const next = new Set(set);
-    next.delete(nodeId);
-    childrenByParent.set(parentId, next);
+  for (const child of children ?? []) {
+    const id = getNodeId(child);
+    if (!id) continue;
+    nodesById.set(id, child);
+    nextIds.add(id);
   }
-}
 
-export function addToParent(childrenByParent: Map<string, Set<string>>, parentId: string | undefined, nodeId: string) {
-  if (!parentId) return;
-  const set = childrenByParent.get(parentId) || new Set<string>();
-  if (!set.has(nodeId)) {
-    const next = new Set(set);
-    next.add(nodeId);
-    childrenByParent.set(parentId, next);
+  const prevIds = childrenByParent.get(key);
+  if (prevIds) {
+    for (const staleId of prevIds) {
+      if (!nextIds.has(staleId)) {
+        removeRecursively(nodesById, childrenByParent, staleId);
+      }
+    }
   }
+
+  childrenByParent.set(key, nextIds);
 }
 
 export function buildVisibleRows(
-  pageRootId: string,
-  nodesById: Map<string, TreeNode>,
+  rootId: string,
+  nodesById: Map<string, any>,
   childrenByParent: Map<string, Set<string>>,
-  expandedIds: readonly string[],
-): TreeNodeData[] {
-  const out: TreeNodeData[] = [];
-  const expanded = new Set<string>(expandedIds);
+  expandedIds: readonly (string | number | undefined)[],
+): any[] {
+  const expanded = new Set<string>(
+    (expandedIds ?? []).map((id) => toId(id) ?? '').filter((id) => id !== ''),
+  );
 
-  const walk = (parentId: string, depth: number) => {
-    const ids = childrenByParent.get(parentId) || new Set<string>();
-    for (const id of ids) {
-      const node = nodesById.get(id);
+  const result: any[] = [];
+
+  const visit = (parent: string, depth: number) => {
+    const children = childrenByParent.get(parent);
+    if (!children) return;
+    for (const childId of children) {
+      const node = nodesById.get(childId);
       if (!node) continue;
-      const hasChildren = (childrenByParent.get(id)?.size || 0) > 0;
-      out.push({ ...(node as any), id, nodeType: node.nodeType, depth, hasChildren });
-      if (expanded.has(id)) walk(id, depth + 1);
+      const enriched =
+        node && typeof (node as any).depth === 'number'
+          ? { ...node }
+          : { ...node, depth };
+      if (typeof enriched.depth !== 'number') {
+        enriched.depth = depth;
+      }
+      result.push(enriched);
+      if (expanded.has(childId)) {
+        visit(childId, depth + 1);
+      }
     }
   };
 
-  walk(pageRootId, 1);
-  return out;
+  visit(toId(rootId) ?? '', 0);
+  return result;
 }

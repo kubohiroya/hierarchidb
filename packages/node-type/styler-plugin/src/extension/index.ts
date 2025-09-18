@@ -2,8 +2,8 @@
  * Styler plugin extension exports
  */
 
-export { StylerExtension } from './definition';
-export { StylerExtensionStep } from './components/StylerExtensionStep';
-export { StylerExtensionHandler } from './handler';
-export type { StylerExtensionData } from './handler';
-export type { StylerStepData } from './components/StylerExtensionStep';
+export { StylerExtension } from './definition.js';
+export { StylerExtensionStep } from './components/StylerExtensionStep.js';
+export { StylerExtensionHandler } from './handler.js';
+export type { StylerExtensionData } from './handler.js';
+export type { StylerStepData } from './components/StylerExtensionStep.js';

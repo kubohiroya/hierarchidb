@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '../../shared/types';
-import { useShapeAPIGetter } from './useShapeAPI';
-import { BatchProgressEvent, ProcessingStatus, ProgressInfo } from '../../shared';
+import type { NodeId } from '../../shared/types.js';
+import { useShapeAPIGetter } from './useShapeAPI.js';
+import { BatchProgressEvent, ProcessingStatus, ProgressInfo } from '../../shared/index.js';
 
 export interface ShapeProgressState {
   progress: ProgressInfo | null;

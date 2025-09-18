@@ -11,9 +11,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import { ShapeErrorHandler } from '../../services/ShapeErrorHandler';
-import type { BatchConfig } from '../../types/BatchConfig';
-import { ErrorCategory, ErrorSeverity, ShapeErrorFactory } from '../../types/ShapeErrorHierarchy';
+import { ShapeErrorHandler } from '../../services/ShapeErrorHandler.js';
+import type { BatchConfig } from '../../types/BatchConfig.js';
+import { ErrorCategory, ErrorSeverity, ShapeErrorFactory } from '../../types/ShapeErrorHierarchy.js';
 
 describe('Error Handling Migration Tests', () => {
   let errorHandler: ShapeErrorHandler;

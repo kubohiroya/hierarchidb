@@ -2,7 +2,7 @@ export type MenuGroup = 'core' | 'base' | 'geo' | 'tabular' | 'project';
 
 export interface MenuSpec {
   groups: MenuGroup[];
-  order: string[]; // nodeType order
+  order: string[];
   groupOf: Record<string, MenuGroup>;
 }
 
@@ -23,22 +23,21 @@ export const MENU_SPEC: Record<'resources' | 'projects', MenuSpec> = {
   },
   projects: {
     groups: ['core', 'project'],
-    // Temporarily remove 'linker' until it is re-implemented
-    order: ['folder', 'timeline'],
+    order: ['folder', 'linker', 'timeline'],
     groupOf: {
       folder: 'core',
+      linker: 'project',
       timeline: 'project',
     },
   },
 };
 
-// Optional runtime override via global variable for project-level customization
-// window.__HDB_MENU_SPEC__ = { resources?: Partial<MenuSpec>, projects?: Partial<MenuSpec> }
 export function getMenuSpec(context: 'resources' | 'projects'): MenuSpec {
   try {
-    const g: any = (globalThis as any).__HDB_MENU_SPEC__;
+    const overrides: Partial<Record<'resources' | 'projects', Partial<MenuSpec>>> =
+      (globalThis as any).__HDB_MENU_SPEC__ || {};
     const base = MENU_SPEC[context];
-    const override = g?.[context] || {};
+    const override = overrides[context] || {};
     return {
       groups: override.groups || base.groups,
       order: override.order || base.order,

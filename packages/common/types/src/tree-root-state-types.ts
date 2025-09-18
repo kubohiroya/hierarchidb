@@ -1,4 +1,4 @@
-import { NodeId, TreeId } from './id-types';
+import { NodeId, TreeId } from './id-types.js';
 
 export interface TreeRootState {
   rootNodeId: NodeId;

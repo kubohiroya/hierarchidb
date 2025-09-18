@@ -7,10 +7,10 @@ import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
 import type { DialogStepDefinition } from '@hierarchidb/common-type';
 
 // Reuse existing step components from the Shape plugin
-import { DataSourceStep } from '../extension/components/DataSourceStep';
-import { LicenseStep } from '../extension/components/LicenseStep';
-import { ProcessingStep } from '../extension/components/ProcessingStep';
-import { CountrySelectionStep } from '../extension/components/CountrySelectionStep';
+import { DataSourceStep } from '../extension/components/DataSourceStep.js';
+import { LicenseStep } from '../extension/components/LicenseStep.js';
+import { ProcessingStep } from '../extension/components/ProcessingStep.js';
+import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
 export class ShapeFolderExtension extends BaseFolderPlugin {
   readonly pluginId = 'shape-plugin-folder-extension';

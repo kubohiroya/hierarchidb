@@ -3,11 +3,11 @@
  */
 
 import type { UIPluginDefinition } from '@hierarchidb/ui-core';
-import { validateFolderData } from '../shared/utils';
-import type { CreateFolderData } from '../shared/types';
-import { FolderCreateDialog } from '../components/FolderCreateDialog';
-import { FolderEditDialog } from '../components/FolderEditDialog';
-import { FolderIcon } from '../components/FolderIcon';
+import { validateFolderData } from '../shared/utils.js';
+import type { CreateFolderData } from '../shared/types.js';
+import { FolderCreateDialog } from '../components/FolderCreateDialog.js';
+import { FolderEditDialog } from '../components/FolderEditDialog.js';
+import { FolderIcon } from '../components/FolderIcon.js';
 
 /**
  * Folder UI Plugin

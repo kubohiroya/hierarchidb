@@ -1,8 +1,8 @@
 import { Box, Tooltip } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MemoryUsageBar } from '../MemoryUsageBar/MemoryUsageBar';
+import { MemoryUsageBar } from '../MemoryUsageBar/MemoryUsageBar.js';
 import { DragIndicator } from '@mui/icons-material';
-import { MemoryUsageChart } from '../MemoryUsageBar';
+import { MemoryUsageChart } from '../MemoryUsageBar/index.js';
 
 interface DevelopmentTimestampProps {
   className?: string;

@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { Step2DataSource } from '../../components/steps/Step2DataSource';
+import { Step2DataSource } from '../../components/steps/Step2DataSource.js';
 
 export interface DataSourceStepProps {
   data: any;

@@ -9,8 +9,8 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-type';
 import { useCallback } from 'react';
-import type { TreeViewController } from '../../../types/index';
-import { clearSelectionAtom, rowSelectionAtom, selectAllAtom, selectedNodeIdsAtom, selectionModeAtom } from '../state';
+import type { TreeViewController } from '../../../types/index.js';
+import { clearSelectionAtom, rowSelectionAtom, selectAllAtom, selectedNodeIdsAtom, selectionModeAtom } from '../state/index.js';
 
 export interface SelectionOrchestratorResult {
   // State

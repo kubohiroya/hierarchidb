@@ -1,6 +1,6 @@
 // API Interfaces
-export type { TreeMutationAPI } from './TreeMutationAPI';
-export type { ImportExportAPI } from './ImportExportAPI';
+export type { TreeMutationAPI } from './TreeMutationAPI.js';
+export type { ImportExportAPI } from './ImportExportAPI.js';
 export type {
   ImportNodesParams,
   ExportNodesParams,
@@ -12,14 +12,14 @@ export type {
   ImportProgress,
   ExportProgress,
   OperationStatus,
-} from './ImportExportAPI';
-export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
-export type { TreeQueryAPI } from './TreeQueryAPI';
-export type { WorkingCopyAPI } from './WorkingCopyAPI';
-export type { WorkerAPI } from './WorkerAPI';
+} from './ImportExportAPI.js';
+export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+export type { TreeQueryAPI } from './TreeQueryAPI.js';
+export type { WorkingCopyAPI } from './WorkingCopyAPI.js';
+export type { WorkerAPI } from './WorkerAPI.js';
 
 // Plugin-related APIs (new architecture)
-export type { NodeTypeAPI } from './NodeTypeAPI';
+export type { NodeTypeAPI } from './NodeTypeAPI.js';
 
 // New exports from PluginLifecycleAPI
 export type {
@@ -36,7 +36,7 @@ export type {
   PluginResetOptions as PluginResetOptionsNew,
   PluginResetResult as PluginResetResultNew,
   PluginDeleteResult as PluginDeleteResultNew,
-} from './PluginLifecycleAPI';
+} from './PluginLifecycleAPI.js';
 export type {
   // Legacy export (deprecated)
   PluginTreeAPI,
@@ -51,18 +51,33 @@ export type {
   TimePeriod,
   GraphOptions,
   MetricOptions,
-} from './PluginTreeAPI';
+} from './PluginTreeAPI.js';
+// Node16 requires extension for re-export specifiers
+export type {
+  PluginTreeAPI as _PluginTreeAPI,
+  TreePluginInfo as _TreePluginInfo,
+  GetPluginsForTreeRequest as _GetPluginsForTreeRequest,
+  GetPluginsForTreeResponse as _GetPluginsForTreeResponse,
+  PluginUsageStats as _PluginUsageStats,
+  CompatibilityResult as _CompatibilityResult,
+  OptimizationResult as _OptimizationResult,
+  DependencyGraph as _DependencyGraph,
+  PluginMetrics as _PluginMetrics,
+  TimePeriod as _TimePeriod,
+  GraphOptions as _GraphOptions,
+  MetricOptions as _MetricOptions,
+} from './PluginTreeAPI.js';
 
 // New exports
-export type { PluginExtensionAPI } from './PluginExtensionAPI';
-export { PluginExtensionRegistry } from './PluginExtensionAPI';
+export type { PluginExtensionAPI } from './PluginExtensionAPI.js';
+export { PluginExtensionRegistry } from './PluginExtensionAPI.js';
 
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
-export type { PluginRuntimeWiring } from './RuntimeWiring';
+export type { PluginRuntimeWiring } from './RuntimeWiring.js';
 
 // Plugin Registry API
-export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI';
-export * from './TagAPI';
+export type { PluginRegistryAPI, PluginInfo } from './PluginRegistryAPI.js';
+export * from './TagAPI.js';
 
 // Multi-Step Dialog API
-export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI';
+export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI.js';

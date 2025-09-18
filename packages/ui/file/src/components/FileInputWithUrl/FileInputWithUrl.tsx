@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import { Login } from '@mui/icons-material';
 
-import { useDragDrop, useFileInput, useUrlDownload } from './hooks';
-import { DragDropSection } from './DragDropSection';
-import { UrlDownloadSection } from './UrlDownloadSection';
-import { LoadingOverlay } from './LoadingOverlay';
+import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
+import { DragDropSection } from './DragDropSection.js';
+import { UrlDownloadSection } from './UrlDownloadSection.js';
+import { LoadingOverlay } from './LoadingOverlay.js';
 
 export interface FileInputWithUrlProps {
   /**

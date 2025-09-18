@@ -1,7 +1,7 @@
-import type { RouteBatchSpec } from './types';
-import { RouteSourceOrchestrator } from './RouteSourceOrchestrator';
-import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks } from './TaskMapper';
-import { createRouteBatchManager, type NetworkPortLike } from '../services/createRouteBatchManager';
+import type { RouteBatchSpec } from './types.js';
+import { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
+import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks } from './TaskMapper.js';
+import { createRouteBatchManager, type NetworkPortLike } from '../services/createRouteBatchManager.js';
 
 export interface RouteBatchManagerLike {
   startRouteBatchSession(nodeId: any, config: any, routes: Array<{

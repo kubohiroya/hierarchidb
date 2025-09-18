@@ -4,9 +4,9 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter';
-import type { WorkerInitMessage } from '../types';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
+import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
+import type { WorkerInitMessage } from '../types.js';
 
 // Create a more complete MockWorker class
 class MockWorker implements Partial<Worker> {

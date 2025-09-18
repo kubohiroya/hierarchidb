@@ -1,4 +1,4 @@
-import type { EntityHandler } from './EntityHandler';
+import type { EntityHandler } from './EntityHandler.js';
 
 class EntityRegistry {
   private handlers = new Map<string, EntityHandler>();

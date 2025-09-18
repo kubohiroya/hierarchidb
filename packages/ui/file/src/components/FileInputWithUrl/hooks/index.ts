@@ -1,3 +1,3 @@
-export { useDragDrop } from './useDragDrop';
-export { useFileInput } from './useFileInput';
-export { useUrlDownload } from './useUrlDownload';
+export { useDragDrop } from './useDragDrop.js';
+export { useFileInput } from './useFileInput.js';
+export { useUrlDownload } from './useUrlDownload.js';

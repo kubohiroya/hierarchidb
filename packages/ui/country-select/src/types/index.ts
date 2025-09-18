@@ -4,7 +4,7 @@ export type {
   Continent,
   CountrySelection,
   CountryFilter,
-} from './Country';
+} from './Country.js';
 
 export type {
   MatrixColumnBase,
@@ -17,7 +17,7 @@ export type {
   ColumnSet,
   MatrixSelection,
   MatrixConfig,
-} from './MatrixColumn';
+} from './MatrixColumn.js';
 
 export {
   ADMIN_LEVELS_COLUMN_SET,
@@ -28,6 +28,6 @@ export {
   COLUMN_SETS,
   getColumnSet,
   getColumnSetTypes,
-} from './ColumnSets';
+} from './ColumnSets.js';
 
-export { CONTINENTS } from './Country';
+export { CONTINENTS } from './Country.js';

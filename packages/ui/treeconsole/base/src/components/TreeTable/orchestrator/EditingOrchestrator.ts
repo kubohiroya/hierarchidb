@@ -8,8 +8,8 @@
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { TreeViewController } from '../../../types/index';
-import { editingNodeIdAtom, editingValueAtom } from '../state';
+import type { TreeViewController } from '../../../types/index.js';
+import { editingNodeIdAtom, editingValueAtom } from '../state/index.js';
 
 export interface EditingOrchestratorResult {
   // State

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB, ShapePeerRow } from './shapeEntitiesDB';
-import type { ShapePeerData } from '../types/entities';
+import type { ShapeEntitiesDB, ShapePeerRow } from './shapeEntitiesDB.js';
+import type { ShapePeerData } from '../types/entities.js';
 
 export function createShapePeerStoreDexie(db: ShapeEntitiesDB): PeerStore<ShapePeerData> {
   return {

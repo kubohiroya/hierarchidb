@@ -3,4 +3,4 @@ export {
   getCountriesByContinent,
   getCountryByCode,
   searchCountries,
-} from './countries';
+} from './countries.js';

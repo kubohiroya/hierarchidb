@@ -4,7 +4,6 @@ import type { NodeId } from '@hierarchidb/common-type';
 describe('EntityLifecycleManager integration (base skeleton)', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('notifies lifecycle on commitWorkingCopy when flag ON', async () => {
@@ -29,4 +28,3 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
     expect(mock.handleCommand).toHaveBeenCalledTimes(1);
   });
 });
-

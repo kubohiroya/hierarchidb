@@ -4,7 +4,7 @@
  */
 
 import { NodeId } from '@hierarchidb/common-type';
-import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI';
+import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI.js';
 
 /**
  * Worker-exposed API for Shape plugin

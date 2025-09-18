@@ -1,12 +1,12 @@
 import type { PluginDialogComponent, PluginPanelComponent } from '@hierarchidb/ui-core';
 
 export async function getDialogComponent(): Promise<PluginDialogComponent> {
-  const mod = await import('../components/LocationDialog');
+  const mod = await import('../components/LocationDialog.js');
   return (mod as any).LocationDialog as unknown as PluginDialogComponent;
 }
 
 export async function getPanelComponent(): Promise<PluginPanelComponent> {
-  const mod = await import('../components/LocationPanel');
+  const mod = await import('../components/LocationPanel.js');
   return (mod as any).LocationPanel as unknown as PluginPanelComponent;
 }
 

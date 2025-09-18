@@ -3,7 +3,7 @@
   */
 
 import { NodeId } from '@hierarchidb/common-type';
-import { CreateFolderData, FolderEntity, FolderSearchQuery, UpdateFolderData } from './types';
+import { CreateFolderData, FolderEntity, FolderSearchQuery, UpdateFolderData } from './types.js';
 
 /**
  * Main Folder API interface for UI-Worker communication via PluginRegistryImpl

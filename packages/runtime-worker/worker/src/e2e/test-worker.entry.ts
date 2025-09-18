@@ -2,7 +2,7 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import {proxy, expose, Remote} from 'comlink';
-import { WorkerService } from '../index';
+import { WorkerService } from '../index.js';
 import { TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
 
 type Endpoint = MessagePort | Worker;

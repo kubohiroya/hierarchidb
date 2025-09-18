@@ -1,5 +1,5 @@
-import type { IShapeDownloadStrategy } from '../strategy';
-import type { BatchTaskLike } from '../../../types/BatchTaskLike';
+import type { IShapeDownloadStrategy } from '../strategy.js';
+import type { BatchTaskLike } from '../../../types/BatchTaskLike.js';
 import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
 export class HttpUrlStrategy implements IShapeDownloadStrategy {
@@ -21,7 +21,7 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
   const buf = await (store as { readAll: (id: string) => Promise<Uint8Array | ArrayBuffer> }).readAll(fileId);
       text = new TextDecoder('utf-8').decode(new Uint8Array(buf));
     } else {
-      const { authFetch } = await import('../../utils/authFetch');
+      const { authFetch } = await import('../../utils/authFetch.js');
       text = await (await authFetch(url)).text();
     }
     return { text, sizeBytes: res.sizeBytes };

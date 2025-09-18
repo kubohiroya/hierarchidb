@@ -16,8 +16,8 @@ import {
   Typography,
 } from '@mui/material';
 import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
-import { useQuery } from '~/hooks/useQuery';
-import { useWorkerClient } from '~/contexts/WorkerProvider';
+import { useQuery } from '~/hooks/useQuery.js';
+import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import type { NodeTagAssociation, TagEntity, TreeId, TreeNode, TagId } from '@hierarchidb/common-type';
 
 interface TaggedNode {

@@ -1,4 +1,5 @@
 import React, { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
+import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-type';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
@@ -308,8 +309,8 @@ export const RowContextMenu = memo(
           {/* Dynamic plugin-driven create menu via global menu-builders */}
           {(() => {
             try {
-              const g: any = (globalThis as any).__HDB_MENU_BUILDERS__;
-              const builder = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
+              const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
+              const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
               if (typeof builder !== 'function') {
                 return (
                   <MenuItem disabled>
@@ -319,7 +320,7 @@ export const RowContextMenu = memo(
               }
 
               // Build items from treeId (resources/projects context)
-              const items = builder(props.treeId) as Array<{ key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } }>;
+              const items = builder(props.treeId) as CreateMenuEntry[];
               return (items || []).map((i) => {
                 const IconEl = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color) as React.ReactNode;
                 return (

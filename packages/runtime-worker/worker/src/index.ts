@@ -7,22 +7,22 @@ import {
   WorkerAPI,
   WorkingCopyAPI,
 } from '@hierarchidb/common-api';
-import { CoreDB } from './services/CoreDB';
-import { EphemeralDB } from './services/EphemeralDB';
-import { NodeLifecycleManager } from './services/NodeLifecycleManager';
-import { CommandProcessor } from './services/CommandProcessor';
+import { CoreDB } from './services/CoreDB.js';
+import { EphemeralDB } from './services/EphemeralDB.js';
+import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
+import { CommandProcessor } from './services/CommandProcessor.js';
 import { PluginDefinition } from '@hierarchidb/common-type';
-import { TreeQueryService } from './services/TreeQueryService';
+import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
-import { TreeMutationService } from './services/TreeMutationService';
-import { TreeSubscriptionService } from './services/TreeSubscriptionService';
+import { TreeMutationService } from './services/TreeMutationService.js';
+import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TagService } from '@hierarchidb/tag';
-import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter';
+import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
-import { bootstrapFeatures } from './services/FeatureBootstrap';
-import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter';
+import { bootstrapFeatures } from './services/FeatureBootstrap.js';
+import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 // No direct Comlink types should leak at this boundary
-import { WorkingCopyService } from './services/WorkingCopyService';
+import { WorkingCopyService } from './services/WorkingCopyService.js';
 
 export class WorkerService{
   private readonly startTime = Date.now();
@@ -244,8 +244,8 @@ export class WorkerService{
 }
 
 // Re-export stage worker API contracts for clients (adapters)
-export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types';
-export { getStageProcessingClient, createStageWorkerClient } from './services/StageProcessingService';
+export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types.js';
+export { getStageProcessingClient, createStageWorkerClient } from './services/StageProcessingService.js';
 
 // Public re-exports for plugin-side stores and registry
 export type {
@@ -255,6 +255,6 @@ export type {
   GroupStore,
   RelationBase,
   RelationStore,
-} from './entity/store';
-export { storeRegistry } from './entity/store-registry';
-export { entityRegistry } from './entity/EntityRegistry';
+} from './entity/store.js';
+export { storeRegistry } from './entity/store-registry.js';
+export { entityRegistry } from './entity/EntityRegistry.js';

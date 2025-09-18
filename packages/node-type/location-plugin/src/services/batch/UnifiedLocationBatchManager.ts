@@ -11,10 +11,10 @@ import type {
   StandardProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { LocationBatchSessionManager } from './BatchSessionManager';
-import type { LocationPointInput, LocationTileSettings } from './SessionController';
-import { toStandardProgressEvent } from './ProgressAdapter';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import { LocationBatchSessionManager } from './BatchSessionManager.js';
+import type { LocationPointInput, LocationTileSettings } from './SessionController.js';
+import { toStandardProgressEvent } from './ProgressAdapter.js';
+import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 
 /**
  * Unified location batch manager implementing the standard interface

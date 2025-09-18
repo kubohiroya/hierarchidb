@@ -137,14 +137,8 @@ export interface MultiStepDialogProps {
   /** Dialog max width */
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
 
-  /**
-   * Full screen mode
-   * @deprecated Use `displayMode` (set to 'fullscreen') and `onDisplayModeChange` instead.
-   */
-  fullScreen?: boolean;
-
-  /** Show fullscreen toggle button */
-  showFullscreenToggle?: boolean;
+  /** Initial display mode for uncontrolled usage */
+  initialDisplayMode?: 'standard' | 'maximized' | 'fullscreen';
 
   /** Has unsaved changes */
   hasUnsavedChanges?: boolean;
@@ -189,26 +183,6 @@ export interface MultiStepDialogProps {
   nextText?: string;
 
   /**
-   * Callback when fullscreen toggles.
-   * Useful for syncing URL or external state.
-   * @deprecated Use `onDisplayModeChange` with 'fullscreen' instead.
-   */
-  onFullscreenChange?: (isFullscreen: boolean) => void;
-
-  /**
-   * Window内で最大化（ヘッダー/フッターありで可能な限り拡大）
-   * @deprecated Use `displayMode` (set to 'maximized') and `onDisplayModeChange` instead.
-   */
-  maximized?: boolean;
-  /** Maximize トグルの表示可否（デフォルト: true） */
-  showMaximizeToggle?: boolean;
-  /**
-   * Maximize 変更時のコールバック
-   * @deprecated Use `onDisplayModeChange` with 'maximized'/'standard' instead.
-   */
-  onMaximizeChange?: (isMaximized: boolean) => void;
-
-  /**
    * 表示モード（制御用）。指定時は内部 state をこの値に追従させる。
    * - 'standard': 通常サイズ
    * - 'maximized': ウィンドウ内で可能な限り拡大
@@ -217,6 +191,21 @@ export interface MultiStepDialogProps {
   displayMode?: 'standard' | 'maximized' | 'fullscreen';
   /** 表示モード変更時のコールバック（制御モードで利用） */
   onDisplayModeChange?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
+  /** 表示モードのクイック切替 UI を表示するか（既定: true）。 */
+  showDisplayModeControls?: boolean;
+
+  /** @deprecated `displayMode`/`onDisplayModeChange` へ移行済み。 */
+  fullScreen?: boolean;
+  /** @deprecated `displayMode`/`onDisplayModeChange` へ移行済み。 */
+  onFullscreenChange?: (fullScreen: boolean) => void;
+  /** @deprecated `displayMode`/`onDisplayModeChange` へ移行済み。 */
+  maximized?: boolean;
+  /** @deprecated `displayMode`/`onDisplayModeChange` へ移行済み。 */
+  onMaximizeChange?: (maximized: boolean) => void;
+  /** @deprecated `showDisplayModeControls` で一括制御。 */
+  showFullscreenToggle?: boolean;
+  /** @deprecated `showDisplayModeControls` で一括制御。 */
+  showMaximizeToggle?: boolean;
 
   /**
    * Enable hidden a11y test controls (Cancel/Next/Complete buttons rendered off-screen).

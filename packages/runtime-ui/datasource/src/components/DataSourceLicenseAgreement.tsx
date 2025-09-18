@@ -12,7 +12,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 
-import { DataSourceConfig, DataSourceConfigs, DataSourceName, getLicenseColor } from '../types/DataSource';
+import { DataSourceConfig, DataSourceConfigs, DataSourceName, getLicenseColor } from '../types/DataSource.js';
 
 export interface DataSourceLicenseAgreementProps {
   /**

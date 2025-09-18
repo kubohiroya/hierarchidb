@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type React from 'react';
-import { StylerStep5 } from '../components/steps/StylerStep5';
-import { StylerStep6 } from '../components/steps/StylerStep6';
+import { StylerStep5 } from '../components/steps/StylerStep5.js';
+import { StylerStep6 } from '../components/steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
 import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/spreadsheet-plugin';

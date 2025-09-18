@@ -1,11 +1,11 @@
 // Dev-only: surface Vite build errors and dependency drift
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  import('./version');
+  import('./version.js');
   let banner: HTMLDivElement | null = null;
   let errorActive = false;
   let lastBuildLocal = '';
   (async () => {
-    const v = await import('./version');
+    const v = await import('./version.js');
     const t = (v as any)?.BUILD_TIME as string | undefined;
     if (t) lastBuildLocal = new Date(t).toLocaleString();
   })();

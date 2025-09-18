@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyledAccordion, StyledAccordionProps } from '../components/StyledAccordion';
+import { StyledAccordion, StyledAccordionProps } from '../components/StyledAccordion.js';
 import { Chip } from '@mui/material';
 
 export interface WorkflowStep {

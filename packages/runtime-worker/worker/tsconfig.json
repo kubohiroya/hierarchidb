@@ -6,9 +6,9 @@
       "WebWorker"
     ],
     "outDir": "./dist",
-    "module": "ESNext",
+    "module": "Node16",
     "target": "es2022",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "composite": false,
     "incremental": false,
     "noEmit": true,

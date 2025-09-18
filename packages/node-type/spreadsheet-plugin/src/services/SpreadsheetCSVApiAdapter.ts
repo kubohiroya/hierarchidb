@@ -9,9 +9,9 @@ import type {
   ICSVDataApi,
   PaginationOptions,
 } from '@hierarchidb/ui-csv-extract';
-import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver';
-import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver';
-import { authFetch } from './utils/authFetch';
+import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
+import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
+import { authFetch } from './utils/authFetch.js';
 
 export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   constructor(private pluginId: string = 'spreadsheet') {

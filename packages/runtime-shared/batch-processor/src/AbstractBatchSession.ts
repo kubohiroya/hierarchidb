@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { IBatchControlCommands, StandardProgressEvent } from './BatchControlAPI';
+import type { IBatchControlCommands, StandardProgressEvent } from './BatchControlAPI.js';
 
 /**
  * Base configuration for all batch sessions

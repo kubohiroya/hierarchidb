@@ -10,7 +10,7 @@ vk:doc kind=design audience=dev scope=worker
 - 1ノード=1エンティティ原則: 同じ NodeId に対し同一種別の Entity は常に1つ。
 - 単一ストア: Ephemeral ではなく CoreDB の永続テーブルに保存（WC/Trash/通常の区別は TreeNode の位置で解釈）。
 - 責務分離: name/description 等の表示系は TreeNode。Peer/Group/Relational はドメインデータのみを保持。
-- 同一Tx: TreeNode 操作と Entity 操作は常に同一トランザクション内（WORKER_TX_ENABLED=1）。
+- 同一Tx: TreeNode 操作と Entity 操作は常に同一トランザクション内（`WORKER_TX_ENABLED` を有効化した環境では1Txで実行）。
 - バルク/チャンク: 大量操作は bulkCreate/bulkUpdate/bulkDelete をチャンク分割で実行。
 
 エンティティ種別
@@ -40,9 +40,9 @@ vk:doc kind=design audience=dev scope=worker
 - バルクは `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE` でチャンク分割（既定 50）。
 
 フラグ運用
-- WORKER_ENTITY_UNIFIED=1: 統一 Entity ライフサイクルの有効化（既定ON）。
-- WORKER_TX_ENABLED=1: コマンド境界 Tx の有効化（既定OFF）。
-- WORKER_METRICS_ENABLED=1: コマンド別レイテンシ観測（開発時）。
+- 統一 Entity ライフサイクルは常時有効。
+- `WORKER_TX_ENABLED=1`: コマンド境界 Tx の有効化（既定OFF）。
+- `WORKER_METRICS_ENABLED=1`: コマンド別レイテンシ観測（開発時）。
 
 スキーマ案（CoreDB 例）
 ```ts
@@ -77,7 +77,7 @@ DoD（段階）
 3) RelationalEntity: サブツリー内参照だけ複製、外部参照方針を明記、テスト/E2E。
 
 移行/切替
-- 今実装を flag 既定OFFで main へ取り込み → プラグインの Entity 対応を段階実装 → ステージング限定ON → 本番段階ON → 安定後に旧経路削除。
+- Entity ライフサイクル V2 は本番で常時有効化済み。プラグイン側の拡張は段階的に進める。
 
 設計上の決定事項（レビュー確定）
 - ID保持方針:

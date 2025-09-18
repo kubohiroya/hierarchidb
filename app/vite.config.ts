@@ -5,13 +5,13 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import * as fs from 'fs';
-import { faviconPlugin } from './vite-plugin-favicon';
+import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
-import { muiIconsVirtualModule } from './vite-plugin-mui-icons';
-import { muiIconMapPlugin } from './vite-plugin-mui-icon-map';
-import { pluginRegistryPlugin } from './vite-plugin-plugin-registry';
-import { pluginServicesRegistry } from './vite-plugin-plugin-services';
+import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
+import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
+import { pluginRegistryPlugin } from './vite-plugin-plugin-registry.js';
+import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
 import {
   vitePluginPackageReader as toolsVitePluginPackageReader,
 } from '@hierarchidb/tools-vite-plugin-package-reader';

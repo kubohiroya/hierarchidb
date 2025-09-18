@@ -1,4 +1,4 @@
-import type { NetworkPortLike } from './ThrottledPort';
+import type { NetworkPortLike } from './ThrottledPort.js';
 
 export function getNetPort(): NetworkPortLike {
   const g: any = (globalThis as any);

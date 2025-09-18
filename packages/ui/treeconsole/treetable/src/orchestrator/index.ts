@@ -4,7 +4,7 @@
    */
 
 import { useMemo } from 'react';
-import type { TreeTableController, TreeTableOrchestratorResult } from '../types';
+import type { TreeTableController, TreeTableOrchestratorResult } from '../types.js';
 
 /**
   * TreeTableOrchestrator Hook

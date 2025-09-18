@@ -15,8 +15,8 @@ import type {
   TreeNodeEvent,
 } from '@hierarchidb/common-type';
 import { bufferTime, concat, filter as rxFilter, from, map, mergeMap, type Observable, share, Subject } from 'rxjs';
-import type { CoreDB } from './CoreDB';
-import { TreeQueryService } from './TreeQueryService';
+import type { CoreDB } from './CoreDB.js';
+import { TreeQueryService } from './TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
 
 interface SubscriptionInfo {

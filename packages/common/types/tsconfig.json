@@ -15,7 +15,6 @@
       "node"
     ],
     "jsx": "react-jsx",
-    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
       "~/*": [

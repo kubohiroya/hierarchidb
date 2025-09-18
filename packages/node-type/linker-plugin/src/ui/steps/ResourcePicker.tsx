@@ -76,6 +76,61 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value), []);
   const handleSearchClear = useCallback(() => setSearchTerm(''), []);
 
+  // Helpers declared before useMemo to avoid TS2454
+  const toRows = (nodes: TreeNode[], depth: number): Row[] => (nodes||[]).map((n) => ({ id: String(n.id), name: n.name, nodeType: (n as any).nodeType, hasChildren: !!(n as any).hasChildren, depth }));
+
+  const ensureChildren = useCallback(async (parentId: string) => {
+    if (cacheRef.current.has(parentId)) return;
+    try {
+      const getClient = getWorkerClientHook<any>() || null;
+      const ref = getClient ? getClient() : null;
+      const client = ref && ('getQueryAPI' in ref) ? ref : (ref?.client ?? null);
+      if (!client) return;
+      const query: TreeQueryAPI = await client.getQueryAPI();
+      const children = await query.listChildren(parentId as any);
+      cacheRef.current.set(parentId, toRows(children, ((breadcrumb.length||1)+0)));
+    } catch { /* noop */ }
+  }, [breadcrumb.length]);
+
+  const computeSelectionSets = useCallback(async (query: TreeQueryAPI) => {
+    try {
+      const nodeApi = query;
+      const selfSet = new Set<string>(Array.from(value || new Set<string>()));
+      setsRef.current.self = selfSet;
+      const closure = new Set<string>();
+      for (const id of selfSet) {
+        try {
+          const desc = await nodeApi.listDescendants(id as any);
+          (desc||[]).forEach((d)=> closure.add(String(d.id as any)));
+        } catch { /* noop */ }
+      }
+      const ancestorLike = new Set<string>();
+      const descendantLike = new Set<string>();
+      setsRef.current.ancestor = ancestorLike;
+      setsRef.current.descendant = descendantLike;
+      setsRef.current.selfClosure = new Set<string>([...closure].filter(id => !selfSet.has(id)));
+    } catch {
+      setsRef.current = { ancestor:new Set(), self:new Set(value||[]), selfClosure:new Set(), descendant:new Set() };
+    }
+  }, [value]);
+
+  const applySearchAndBadges = useCallback((rows: Row[]) => {
+    const term = searchTerm.trim().toLowerCase();
+    const { ancestor, self, selfClosure, descendant } = setsRef.current;
+    const decorate = (r: Row) => {
+      const id = String(r.id);
+      let prefix = '';
+      if (self.has(id)) prefix = '● ';
+      else if (selfClosure.has(id)) prefix = '○ ';
+      else if (ancestor.has(id)) prefix = '▲ ';
+      else if (descendant.has(id)) prefix = '■ ';
+      return { ...r, name: prefix + (r.name || '') };
+    };
+    const base = rows.map(decorate);
+    if (!term) return base;
+    return base.filter((r)=> String(r.name).toLowerCase().includes(term));
+  }, [searchTerm]);
+
   const panelProps: TreeConsolePanelProps = useMemo(() => ({
     title: 'Resources',
     treeId: 'r',
@@ -173,71 +228,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     return () => { disposed = true; };
   }, [applySearchAndBadges, computeSelectionSets]);
 
-  const toRows = (nodes: TreeNode[], depth: number): Row[] => (nodes||[]).map((n) => ({ id: String(n.id), name: n.name, nodeType: (n as any).nodeType, hasChildren: !!(n as any).hasChildren, depth }));
-
-  const ensureChildren = useCallback(async (parentId: string) => {
-    if (cacheRef.current.has(parentId)) return;
-    try {
-      const getClient = getWorkerClientHook<any>() || null;
-      const ref = getClient ? getClient() : null;
-      const client = ref && ('getQueryAPI' in ref) ? ref : (ref?.client ?? null);
-      if (!client) return;
-      const query: TreeQueryAPI = await client.getQueryAPI();
-      const children = await query.listChildren(parentId as any);
-      cacheRef.current.set(parentId, toRows(children, ((breadcrumb.length||1)+0)));
-    } catch { /* noop */ }
-  }, [breadcrumb.length]);
-
-  // Compute selection/badge sets: ancestor/self/selfClosure/descendant
-  const computeSelectionSets = useCallback(async (query: TreeQueryAPI) => {
-    try {
-      const nodeApi = query; // using QueryAPI abstraction
-      // Current Linker context (L0) は Dialog ルートの nodeId が必要だが、ここでは省略し self を value として扱う
-      const selfSet = new Set<string>(Array.from(value || new Set<string>()));
-      setsRef.current.self = selfSet;
-      // ClosureR(self)
-      const closure = new Set<string>();
-      for (const id of selfSet) {
-        try {
-          const desc = await nodeApi.listDescendants(id as any);
-          (desc||[]).forEach((d)=> closure.add(String(d.id as any)));
-        } catch { /* noop */ }
-      }
-      // 祖先/子孫の Linker ノードから likedNodeIdSet を収集
-      // placeholder for future context-based ancestor/descendant collection
-      const currentContextId = undefined; // TODO: pass from dialog props if available
-      void currentContextId;
-      // Best-effort: look for Linker nodes around current selection roots if any
-      // collectFrom reserved for future wiring when Linker context is known
-      // If we can infer a context later, replace with listAncestors/listDescendants of that Linker node
-      const ancestorLike = new Set<string>();
-      const descendantLike = new Set<string>();
-      // Store
-      setsRef.current.ancestor = ancestorLike;
-      setsRef.current.descendant = descendantLike;
-      setsRef.current.selfClosure = new Set<string>([...closure].filter(id => !selfSet.has(id)));
-    } catch {
-      setsRef.current = { ancestor:new Set(), self:new Set(value||[]), selfClosure:new Set(), descendant:new Set() };
-    }
-  }, [value]);
-
-  // Apply search and badges (prefix markers) to rows
-  const applySearchAndBadges = useCallback((rows: Row[]) => {
-    const term = searchTerm.trim().toLowerCase();
-    const { ancestor, self, selfClosure, descendant } = setsRef.current;
-    const decorate = (r: Row) => {
-      const id = String(r.id);
-      let prefix = '';
-      if (self.has(id)) prefix = '● '; // self-selected
-      else if (selfClosure.has(id)) prefix = '○ ';
-      else if (ancestor.has(id)) prefix = '▲ ';
-      else if (descendant.has(id)) prefix = '■ ';
-      return { ...r, name: prefix + (r.name || '') };
-    };
-    const base = rows.map(decorate);
-    if (!term) return base;
-    return base.filter((r)=> String(r.name).toLowerCase().includes(term));
-  }, [searchTerm]);
+  
 
   return (
     <Box sx={{ p: 2 }}>

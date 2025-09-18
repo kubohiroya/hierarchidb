@@ -5,8 +5,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NodeId } from '@hierarchidb/common-type';
-import { StepCapabilitiesState } from '../services/WorkingCopyService';
-import { useWorkerAPI } from './useWorkerAPI';
+import { StepCapabilitiesState } from '../services/WorkingCopyService.js';
+import { useWorkerAPI } from './useWorkerAPI.js';
 import { DialogStep } from '@hierarchidb/ui-dialog';
 
 interface UseStepCapabilitiesOptions {

@@ -1,4 +1,4 @@
-import { PeerEntity } from './entity-types';
+import { PeerEntity } from './entity-types.js';
 
 export type ValidationErrors<T> = {
   [K in keyof T]?: string;

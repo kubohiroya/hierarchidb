@@ -6,12 +6,12 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "ESNext",
+    "module": "Node16",
     "composite": true,
     "incremental": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "noEmit": false,
     "types": [
       "vite/client"

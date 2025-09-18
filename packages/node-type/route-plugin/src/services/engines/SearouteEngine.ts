@@ -1,4 +1,4 @@
-import type { RoutingEngine } from './types';
+import type { RoutingEngine } from './types.js';
 
 type SeaRouteLike =
   | { getSeaRoute: (from: [number, number], to: [number, number], options?: any) => Promise<any> }

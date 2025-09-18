@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Box, Button, Typography } from '@mui/material';
-import { AuthProviderType } from '../types/AuthProviderType';
+import { AuthProviderType } from '../types/AuthProviderType.js';
 
 interface LoginFormProps {
   onLogin?: (provider: string, turnstileToken: string) => void;

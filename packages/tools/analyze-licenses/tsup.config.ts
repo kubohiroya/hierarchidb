@@ -8,6 +8,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   target: 'node18',
+  outExtension: () => ({ js: '.mjs' }),
   banner: { js: '#!/usr/bin/env node' },
   external: [],
 });

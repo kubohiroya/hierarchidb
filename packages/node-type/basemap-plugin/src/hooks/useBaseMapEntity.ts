@@ -5,8 +5,8 @@
 
 import { useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BaseMapEntity } from '../types/BaseMapEntity';
-import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler';
+import type { BaseMapEntity } from '../types/BaseMapEntity.js';
+import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 
 export interface UseBaseMapEntityResult {
   entity: BaseMapEntity | null;

@@ -5,7 +5,7 @@
  * : OAuth2.0 Security BCP (RFC 8252)
   */
 
-import { AUTH_CONSTANTS } from './AuthServiceConfig';
+import { AUTH_CONSTANTS } from './AuthServiceConfig.js';
 
 /**
   * :

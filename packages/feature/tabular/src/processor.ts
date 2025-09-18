@@ -1,4 +1,4 @@
-import type { TabularSchema } from './types';
+import type { TabularSchema } from './types.js';
 
 export interface TabularContext {
   holderId?: string;

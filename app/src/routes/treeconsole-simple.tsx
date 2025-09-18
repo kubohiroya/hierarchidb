@@ -5,7 +5,7 @@
 
 import { Alert, Box, CircularProgress, Container, Typography } from '@mui/material';
 import { TreeConsolePanel, type TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient';
+import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient.js';
 
 export default function TreeConsoleSimple() {
   // Get the Worker API client

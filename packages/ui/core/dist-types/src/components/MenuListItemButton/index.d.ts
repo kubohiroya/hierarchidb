@@ -1,3 +1,3 @@
-export { MenuListItemLinkButton } from './MenuListItemLinkButton';
-export type { MenuItemLinkType } from './MenuListItemLinkButton';
+export { MenuListItemLinkButton } from './MenuListItemLinkButton.js';
+export type { MenuItemLinkType } from './MenuListItemLinkButton.js';
 //# sourceMappingURL=index.d.ts.map

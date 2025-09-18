@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { CrossViewStyles } from '../sync/CrossViewStyles';
+import { CrossViewStyles } from '../sync/CrossViewStyles.js';
 
 export interface UseMapLibreFeatureStateOptions {
   datasetId: string;

@@ -81,7 +81,7 @@ export declare const CrossViewStyles: {
     /**
      * 行/フィーチャの状態集合を更新します。hovered/selected/matched は相互側へも反映されます。
      */
-    setState(datasetId: DatasetId, which: 'rows' | 'features', state: VisualState, ids: Set<Id>): void;
+    setState(datasetId: DatasetId, which: "rows" | "features", state: VisualState, ids: Set<Id>): void;
     /**
      * スタイル辞書（StyleId→StyleSpec）を設定します。priority の大きい StyleSpec が優先されます。
      */

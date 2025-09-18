@@ -2,7 +2,7 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client';
+import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 

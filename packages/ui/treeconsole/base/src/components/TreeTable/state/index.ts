@@ -11,13 +11,13 @@ export {
   totalCountAtom,
   filteredCountAtom,
   isEmptyAtom,
-} from './core/data.atoms';
+} from './core/data.atoms.js';
 
 // Table State Atoms
 export {
   sortingAtom,
   columnSizingAtom,
-} from './core/table.atoms';
+} from './core/table.atoms.js';
 
 // Selection Feature
 export {
@@ -30,27 +30,27 @@ export {
   selectAllAtom,
   type SelectionMode,
   type RowClickAction,
-} from './features/selection.atoms';
+} from './features/selection.atoms.js';
 
 // Expansion Feature
 export {
   expandedAtom,
   toggleExpandedAtom,
   toggleAllExpandedAtom,
-} from './features/expansion.atoms';
+} from './features/expansion.atoms.js';
 
 // Editing Feature
 export {
   editingNodeIdAtom,
   editingValueAtom,
-} from './features/editing.atoms';
+} from './features/editing.atoms.js';
 
 // Drag & Drop Feature
 export {
   draggingNodeIdAtom,
   dropTargetNodeIdAtom,
   forbiddenDropTargetsAtom,
-} from './features/dragDrop.atoms';
+} from './features/dragDrop.atoms.js';
 
 // Subscription Feature
 export {
@@ -59,7 +59,7 @@ export {
   subscriptionDepthAtom,
   lastUpdateTimestampAtom,
   pendingUpdatesAtom,
-} from './features/subscription.atoms';
+} from './features/subscription.atoms.js';
 
 // View Configuration
 export {
@@ -67,10 +67,10 @@ export {
   viewWidthAtom,
   useTrashColumnsAtom,
   depthOffsetAtom,
-} from './config/view.atoms';
+} from './config/view.atoms.js';
 
 // UI State
 export {
   isLoadingAtom,
   errorAtom,
-} from './config/ui.atoms';
+} from './config/ui.atoms.js';

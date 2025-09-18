@@ -1,4 +1,4 @@
-import type { TreeNode } from './tree-node-types';
+import type { TreeNode } from './tree-node-types.js';
 
 export interface CommitResult {
   success: boolean;

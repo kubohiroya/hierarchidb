@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEnvelopeSchema, validateAndNormalizeEnvelope } from '../envelope';
+import { createEnvelopeSchema, validateAndNormalizeEnvelope } from '../envelope.js';
 
 describe('Envelope validation (ZE-2)', () => {
   it('accepts envelope with kind', () => {

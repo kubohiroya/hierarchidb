@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ThrottledPort } from '../services/net/ThrottledPort';
+import { ThrottledPort } from '../services/net/ThrottledPort.js';
 
 class FakePort {
   async get(_url: string) {

@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { ToastConfig } from './LinkButton';
+import { ToastConfig } from './LinkButton.js';
 
 /**
  * Default toast configurations

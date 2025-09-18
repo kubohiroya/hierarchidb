@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
 import { CSVFileUploadStep, CSVProvider } from '@hierarchidb/ui-csv-extract';
-import { createSpreadsheetCSVApi } from '../ui/facade';
+import { createSpreadsheetCSVApi } from '../ui/facade/index.js';
 
 export interface CSVUploadPanelProps {
   pluginId?: string;

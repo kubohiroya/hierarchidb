@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BatchProgress, BatchSessionState } from './AbstractBatchSession';
+import type { BatchProgress, BatchSessionState } from './AbstractBatchSession.js';
 
 /**
  * Common interface for batch session management across all plugins

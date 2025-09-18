@@ -45,7 +45,7 @@ import {
   Refresh as RefreshIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { WorkerAPIClient } from '../WorkerAPIClient';
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType, TreeId } from '@hierarchidb/common-type';

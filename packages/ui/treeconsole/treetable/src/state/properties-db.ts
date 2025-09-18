@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 
 export type TreeTableProperties = {
   pageNodeId: string; // primary key
@@ -81,4 +81,3 @@ export async function removeColumnWidths(pageNodeId: string | undefined): Promis
 export async function removeColumnWidthsMany(pageNodeIds: readonly string[]): Promise<void> {
   await removePropertiesMany(pageNodeIds);
 }
-

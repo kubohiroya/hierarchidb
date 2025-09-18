@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB, ShapeGroupRow } from './shapeEntitiesDB';
+import type { ShapeEntitiesDB, ShapeGroupRow } from './shapeEntitiesDB.js';
 
 type Item = GroupItemBase<{ value?: unknown }>;
 

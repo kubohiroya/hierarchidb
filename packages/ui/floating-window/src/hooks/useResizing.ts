@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 /* eslint-disable no-unused-vars */
 import type React from 'react';
-import type { Size } from '../types/WindowState';
+import type { Size } from '../types/WindowState.js';
 
 export interface UseResizingOptions {
   onResizeStart?: () => void;

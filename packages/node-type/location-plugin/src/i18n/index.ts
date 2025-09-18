@@ -4,9 +4,9 @@
   */
 
 import { useMemo } from 'react';
-import type { LocationPluginTranslations, SupportedLocale } from './types';
-import { ja } from './ja';
-import { en } from './en';
+import type { LocationPluginTranslations, SupportedLocale } from './types.js';
+import { ja } from './ja.js';
+import { en } from './en.js';
 
 const translations: Record<SupportedLocale, LocationPluginTranslations> = {
   ja,
@@ -133,5 +133,5 @@ export function formatNumber(
   return new Intl.NumberFormat(locale === 'ja' ? 'ja-JP' : 'en-US').format(num);
 }
 
-export type { SupportedLocale, LocationPluginTranslations } from './types';
+export type { SupportedLocale, LocationPluginTranslations } from './types.js';
 export { translations };

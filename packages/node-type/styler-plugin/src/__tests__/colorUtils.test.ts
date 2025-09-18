@@ -17,8 +17,8 @@ import {
   rgbToHex,
   rgbToHsv,
   valueToColor,
-} from '../utils/colorUtils';
-import { StylerConfigDefault } from '../types/stylerTypes';
+} from '../utils/colorUtils.js';
+import { StylerConfigDefault } from '../types/stylerTypes.js';
 
 describe('Color Utils', () => {
   describe('HSV/RGB Conversion', () => {

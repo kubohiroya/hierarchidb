@@ -25,9 +25,5 @@ export VITE_GOOGLE_CLIENT_ID="http://116194448043-hesk0hio07cec1qdgm510kurefh0gh
 export VITE_GITHUB_CLIENT_ID="Ov23liRWoNQEyVrTghMj"
 
 # --- Worker feature flags ---
-# NOTE: The following two flags are deprecated and ignored (>= 2025-09-02):
-# WORKER_USE_CMDPROC_CREATE_UPDATE, WORKER_USE_CMDPROC_MOVE_REMOVE
-# They are kept here only for historical reference.
-# export WORKER_TRASH_USE_HOLDER="1"            # Switch to holder-based trash handling
 # export WORKER_METRICS_ENABLED="1"             # Enable lightweight dev metrics
 # export WORKER_TX_ENABLED="1"                  # Enable per-command Dexie transactions

@@ -15,7 +15,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
@@ -33,7 +35,7 @@
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.1",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1"
+    "@emotion/styled": "^11.14.0"
   },
   "files": [
     "dist",

@@ -1,2 +1,2 @@
-export { NavLinkMenu } from './NavLinkMenu';
-export type { NavLinkItemType } from './NavLinkMenu';
+export { NavLinkMenu } from './NavLinkMenu.js';
+export type { NavLinkItemType } from './NavLinkMenu.js';

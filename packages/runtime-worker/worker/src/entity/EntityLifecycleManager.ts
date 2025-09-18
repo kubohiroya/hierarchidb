@@ -1,8 +1,8 @@
-import type { CommandEnvelope } from '../services/command-types';
-import type { CoreDB } from '../services/CoreDB';
-import { PeerEntityHandler } from './handlers/PeerEntityHandler';
-import { decodeWorkingCopyHolderName } from '../services/utils/holder-encoding';
-import { storeRegistry } from './store-registry';
+import type { CommandEnvelope } from '../services/command-types.js';
+import type { CoreDB } from '../services/CoreDB.js';
+import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
+import { decodeWorkingCopyHolderName } from '../services/utils/holder-encoding.js';
+import { storeRegistry } from './store-registry.js';
 
 export class EntityLifecycleManager {
   private static instance: EntityLifecycleManager | undefined;
@@ -210,7 +210,7 @@ export class EntityLifecycleManager {
         const srcNode = sourceNodes?.[src] || (await (this.coreDB as any).getNode?.(src));
         const nodeType = (srcNode as any)?.nodeType as string | undefined;
         if (!nodeType) continue;
-        const store = (await import('./store-registry')).storeRegistry.getGroup(nodeType);
+        const store = (await import('./store-registry.js')).storeRegistry.getGroup(nodeType);
         if (!store) continue;
         const items = await store.list(src as any);
         if (!items?.length) continue;
@@ -226,7 +226,7 @@ export class EntityLifecycleManager {
     sourceNodes?: Record<string, { nodeType?: string }>,
   ): Promise<void> {
     try {
-      const storeReg = (await import('./store-registry')).storeRegistry;
+      const storeReg = (await import('./store-registry.js')).storeRegistry;
       for (const [src] of mapping.entries()) {
         const srcNode = sourceNodes?.[src] || (await (this.coreDB as any).getNode?.(src));
         const nodeType = (srcNode as any)?.nodeType as string | undefined;

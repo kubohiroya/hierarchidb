@@ -1,5 +1,10 @@
 # AGENTS.md — 作業ルール（必読）
 
+## 0. 会話・ドキュメント記述に用いる言語
+
+* ユーザーとの対話に用いる言語は、丁寧な明瞭な日本語で行うこととしてください。短縮語を使うときには事前の定義をしてください。
+* ソースコード内のメッセージやインラインドキュメント、README.mdなどの記述で使用する言語は、特に指定がない限りは英語で行うこととしてください。
+
 このリポジトリでエージェント（AI/自動化）が機能追加や不具合修正を行う際の運用ルールです。以後の作業では本ドキュメントを最優先で順守してください（ユーザー/開発者の明示指示がある場合はそれを最優先）。
 
 ## 1. 完了報告前のビルド/型検証（必須）
@@ -22,6 +27,38 @@
 ## 4. その他
 - 既存の `TASKS.md` / `TASKS.csv` / `mrtask` 運用がある場合は、そちらの個別ルールを優先する（SSOT）。
 - リポジトリ内の他の AGENTS.md がより深い階層に存在する場合、そのスコープ内ではそちらを優先する。
+- コンテキストウィンドウの残りが15%以下になったときには、自動的に /compact を実行する。
 
-以上。
+Motto: "Small, clear, safe steps — always grounded in real docs."
 
+## Principles
+
+* Keep changes minimal, safe, and reversible.
+* Prefer clarity over cleverness; simplicity over complexity.
+* Avoid new dependencies unless necessary; remove when possible.
+
+## Knowledge & Libraries
+* Use context7 (MCP server) to fetch current docs before coding.
+* Call resolve-library-id, then get-library-docs to verify APls.
+* If uncertain, pause and request clarification.
+
+## Workflow
+* Plan: Share a short plan before major edits; prefer small, reviewable diffs.
+* Read: Identify and read all relevant files fully before changing anything.
+* Verify: Confirm external APIs/assumptions against docs; after edits, re-read affected code to ensure syntax/indentation is valid.
+* Implement: Keep scope tight; write modular, single-purpose files.
+* Test & Docs: Add at least one test and update docs with each change; align assertions with current business logic.
+* Reflect: Fix at the root cause; consider adjacent risks to prevent regressions.
+
+## Code Style & Limits
+* Files ≤ 300 LOC; keep modules single-purpose.
+* Comments: Add a brief header at the top of every file (where, what, why). Prefer clear, simple explanations; comment non-obvious logic.
+* Commenting habit: Err on the side of more comments; include rationale, assumptions, and trade-offs.
+* Configuration: Centralize runtime tunables in config-py; avoid magic numbers in code and tests. Pull defaults from config when wiring dependencies.
+* Simplicity: Implement exactly what's requested —no extra features.
+
+## Collaboration & Accountability
+* Escalate when requirements are ambiguous, security-sensitive, or when UX/API contracts would change.
+* Tell me when you are not confident about your code, plan, or fix. Ask questions or help, when your confidence level is below 80%
+* Assume that you get -4 points for wrong code and/or breaking changes. +1 point for successful changes. O point when you honestly tell me you're uncertain.
+* Value correctness over speed (a wrong change costs more than a small win).

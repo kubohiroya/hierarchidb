@@ -14,7 +14,8 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "module": "Node16"
   },
   "include": [
     "src/shared/**/*",

@@ -1,8 +1,8 @@
 // Lightweight adapter to bind MapLibre GL JS and deck.gl together on demand.
 // Heavy libs are peerDependencies; pass constructors at runtime to avoid bundling.
 
-import type { MapAdapterPort } from '../ports';
-import type { DeckLayerSpec, MapStyleSpec, ViewState } from '../types';
+import type { MapAdapterPort } from '../ports.js';
+import type { DeckLayerSpec, MapStyleSpec, ViewState } from '../types.js';
 import type * as MapLibreNS from 'maplibre-gl';
 import type { Deck, LayersList } from 'deck.gl';
 

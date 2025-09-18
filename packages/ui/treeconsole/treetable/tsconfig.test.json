@@ -5,12 +5,13 @@
       "vitest/globals",
       "@testing-library/jest-dom"
     ],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "ESNext"
   },
   "include": [
-    "src/**/*.test.ts",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts",
-    "src/**/*.spec.ts"
+    "src*.test.ts",
+    "src*.test.ts",
+    "src*.spec.ts",
+    "src*.spec.ts"
   ]
 }

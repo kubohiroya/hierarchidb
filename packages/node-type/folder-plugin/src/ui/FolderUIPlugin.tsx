@@ -1,6 +1,6 @@
-import { FolderIcon } from '../components/FolderIcon';
-import { FolderCreateDialog } from '../components/FolderCreateDialog';
-import { FolderEditDialog } from '../components/FolderEditDialog';
+import { FolderIcon } from '../components/FolderIcon.js';
+import { FolderCreateDialog } from '../components/FolderCreateDialog.js';
+import { FolderEditDialog } from '../components/FolderEditDialog.js';
 
 /**
  * Simple UI plugin definition for folders

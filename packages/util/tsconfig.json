@@ -12,7 +12,11 @@
     "rootDir": "src",
     "outDir": "dist",
     "baseUrl": ".",
-    "paths": { "~/*": ["./src/*"] },
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
     "jsx": "react-jsx"
   },
   "include": [

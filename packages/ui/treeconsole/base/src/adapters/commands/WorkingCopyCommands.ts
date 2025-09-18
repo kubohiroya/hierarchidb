@@ -14,9 +14,9 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-type';
 import { toNodeType } from '@hierarchidb/common-type';
-import { createAdapterCommandId, createCommand } from '../utils';
-import type { CommandAdapterOptions } from '../../types/index';
-import { TreeConsoleAdapterError } from '../../types/index';
+import { createAdapterCommandId, createCommand } from '../utils.js';
+import type { CommandAdapterOptions } from '../../types/index.js';
+import { TreeConsoleAdapterError } from '../../types/index.js';
 
 export interface WorkingCopyEditSession {
   workingCopyId: string;
@@ -44,15 +44,8 @@ export class WorkingCopyCommandsAdapter {
       // Command creation is no longer needed with the new API
       const workingCopyId = createAdapterCommandId();
 
-      const workingCopyAPI = (this.workerAPI as any).getWorkingCopyAPI
-        ? await (this.workerAPI as any).getWorkingCopyAPI()
-        : (this.workerAPI as any);
-      const createFromNode = (workingCopyAPI as any).createWorkingCopyFromNode?.bind(workingCopyAPI)
-        || (workingCopyAPI as any).createWorkingCopy?.bind(workingCopyAPI);
-      if (typeof createFromNode !== 'function') {
-        throw new Error('createWorkingCopy not available on WorkerAPI');
-      }
-      await createFromNode(sourceNodeId);
+      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      await workingCopyAPI.createWorkingCopyFromNode(sourceNodeId);
 
       //  expectedUpdatedAt
       const currentNodeData = await this.getCurrentNodeData(sourceNodeId);
@@ -90,17 +83,12 @@ export class WorkingCopyCommandsAdapter {
     try {
       // Command creation is no longer needed with the new API
 
-      const workingCopyAPI = (this.workerAPI as any).getWorkingCopyAPI
-        ? await (this.workerAPI as any).getWorkingCopyAPI()
-        : (this.workerAPI as any);
-      const createDraft = (workingCopyAPI as any).createDraftWorkingCopy?.bind(workingCopyAPI)
-        || (workingCopyAPI as any).createWorkingCopyForCreate?.bind(workingCopyAPI);
-      if (typeof createDraft !== 'function') {
-        throw new Error('createWorkingCopyForCreate not available on WorkerAPI');
-      }
-      const workingCopy = await createDraft(toNodeType(nodeType), parentId, {
-        name,
-      });
+      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
+        toNodeType(nodeType),
+        parentId,
+        { name },
+      );
 
       return {
         workingCopyId: workingCopy.id,
@@ -147,14 +135,8 @@ export class WorkingCopyCommandsAdapter {
         },
       );
 
-      const workingCopyAPI = (this.workerAPI as any).getWorkingCopyAPI
-        ? await (this.workerAPI as any).getWorkingCopyAPI()
-        : (this.workerAPI as any);
-      const commit = (workingCopyAPI as any).commitWorkingCopy?.bind(workingCopyAPI)
-        || (workingCopyAPI as any).commitWorkingCopyForCreate?.bind(workingCopyAPI);
-      const result = await commit(
-        command.payload.workingCopyId as NodeId,
-      );
+      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
 
       if (!result.success) {
         throw new TreeConsoleAdapterError(
@@ -204,14 +186,8 @@ export class WorkingCopyCommandsAdapter {
         },
       );
 
-      const workingCopyAPI = (this.workerAPI as any).getWorkingCopyAPI
-        ? await (this.workerAPI as any).getWorkingCopyAPI()
-        : (this.workerAPI as any);
-      const commit = (workingCopyAPI as any).commitWorkingCopy?.bind(workingCopyAPI)
-        || (workingCopyAPI as any).commitWorkingCopyForCreate?.bind(workingCopyAPI);
-      const result = await commit(
-        command.payload.workingCopyId as NodeId,
-      );
+      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
 
       if (!result.success) {
         throw new TreeConsoleAdapterError(
@@ -257,12 +233,8 @@ export class WorkingCopyCommandsAdapter {
         },
       );
 
-      const workingCopyAPI = (this.workerAPI as any).getWorkingCopyAPI
-        ? await (this.workerAPI as any).getWorkingCopyAPI()
-        : (this.workerAPI as any);
-      const discard = (workingCopyAPI as any).discardWorkingCopy?.bind(workingCopyAPI)
-        || (workingCopyAPI as any).discardWorkingCopyForCreate?.bind(workingCopyAPI);
-      await discard(command.payload.workingCopyId as NodeId);
+      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      await workingCopyAPI.discardWorkingCopy(command.payload.workingCopyId as NodeId);
     } catch (error) {
       throw new TreeConsoleAdapterError(
         `Failed to discard working copy ${editSession.workingCopyId}`,

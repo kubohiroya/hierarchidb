@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { RouteSelectionStep } from '../components/RouteSelectionStep';
-import { RouteProcessingStep } from '../components/RouteProcessingStep';
-import type { RouteWorkingCopy } from '../types';
+import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
+import { RouteProcessingStep } from '../components/RouteProcessingStep.js';
+import type { RouteWorkingCopy } from '../types/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 

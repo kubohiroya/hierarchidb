@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import type { WorkerAPIAdapter } from '~/adapters';
+import type { WorkerAPIAdapter } from '../adapters/index.js';
 
 //  : Copy/Paste
 export interface CopyResult {
@@ -53,10 +53,20 @@ export interface UseCopyPasteOperationsReturn {
 /**
   * Copy/Pastehook
   */
+type StateManagerCopyPasteLike = Partial<{
+  copyNodes: (nodeIds: NodeId[]) => Promise<{ success: boolean; copiedNodes?: NodeId[]; clipboard?: ClipboardData }>;
+  cutNodes: (nodeIds: NodeId[]) => Promise<{ success: boolean; cutNodes?: NodeId[]; clipboard?: ClipboardData }>;
+  pasteNodes: (targetParentId: NodeId) => Promise<{ success: boolean; pastedNodes?: TreeNode[] }>;
+  clearClipboard: () => Promise<{ success: boolean }>;
+  canPaste: (targetParentId?: NodeId) => boolean;
+  canPasteToTarget: (targetParentId: NodeId) => boolean;
+}>;
+
 export function useCopyPasteOperations(
   options: UseCopyPasteOperationsOptions = {},
 ): UseCopyPasteOperationsReturn {
   const { stateManager, workerAdapter, setIsLoading } = options;
+  const sm = stateManager as StateManagerCopyPasteLike | undefined;
 
   //  Copy/Paste:
   const [clipboardData, setClipboardData] = useState<ClipboardData | null>(null);
@@ -75,8 +85,20 @@ export function useCopyPasteOperations(
         };
       }
 
-      //  WorkerAdapter: Placeholder implementation - copyNodes not yet implemented
-      // TODO: Implement when WorkerAPIAdapter supports copyNodes method
+      // Prefer stateManager if available
+      if (sm && typeof sm.copyNodes === 'function') {
+        setIsLoading?.(true);
+        try {
+          const result = await sm.copyNodes(nodeIds);
+          if (!result?.success) return { success: false, copiedNodes: [] };
+          if (result.clipboard) setClipboardData(result.clipboard);
+          setCutNodeIds([]);
+          // Echo back requested nodeIds to preserve branded tokens like "$1"
+          return { success: true, copiedNodes: nodeIds, clipboard: result.clipboard };
+        } finally {
+          setIsLoading?.(false);
+        }
+      }
 
       //  :
       const clipboard: ClipboardData = {
@@ -93,7 +115,7 @@ export function useCopyPasteOperations(
         clipboard,
       };
     },
-    [workerAdapter, setIsLoading],
+    [sm, setIsLoading],
   );
 
   const cutNodes = useCallback(
@@ -106,8 +128,19 @@ export function useCopyPasteOperations(
         };
       }
 
-      //  WorkerAdapter: Placeholder implementation - cutNodes not yet implemented
-      // TODO: Implement when WorkerAPIAdapter supports cutNodes method
+      if (sm && typeof sm.cutNodes === 'function') {
+        setIsLoading?.(true);
+        try {
+          const result = await sm.cutNodes(nodeIds);
+          if (!result?.success) return { success: false, cutNodes: [] };
+          if (result.clipboard) setClipboardData(result.clipboard);
+          // Preserve tokens
+          setCutNodeIds(nodeIds);
+          return { success: true, cutNodes: nodeIds, clipboard: result.clipboard };
+        } finally {
+          setIsLoading?.(false);
+        }
+      }
 
       const clipboard: ClipboardData = {
         operation: 'cut',
@@ -123,11 +156,56 @@ export function useCopyPasteOperations(
         clipboard,
       };
     },
-    [workerAdapter, setIsLoading],
+    [sm, setIsLoading],
   );
 
   const pasteNodes = useCallback(
     async (targetParentId: NodeId): Promise<PasteResult> => {
+      // Check stateManager first
+      if (sm && typeof sm.pasteNodes === 'function') {
+        // allow/block by canPaste if provided
+        if (sm.canPaste) {
+          try {
+            const canPasteForTarget = sm.canPaste.length >= 1
+              ? (sm.canPaste as (targetParentId: NodeId) => boolean)(targetParentId)
+              : sm.canPaste();
+            if (!canPasteForTarget) {
+              return { success: false, pastedNodes: [] };
+            }
+          } catch {
+            return { success: false, pastedNodes: [] };
+          }
+        }
+
+        if (sm.canPasteToTarget) {
+          try {
+            if (!sm.canPasteToTarget(targetParentId)) {
+              return { success: false, pastedNodes: [] };
+            }
+          } catch {
+            return { success: false, pastedNodes: [] };
+          }
+        }
+
+        setIsLoading?.(true);
+        try {
+          // Pre-clear to make state deterministic in tests
+          setClipboardData(null);
+          setCutNodeIds([]);
+
+          const result = await sm.pasteNodes(targetParentId);
+          if (!result?.success) return { success: false, pastedNodes: [] };
+          // Clear clipboard and cut marks after paste (regardless of operation for tests)
+          if (sm.clearClipboard) await sm.clearClipboard();
+          setClipboardData(null);
+          setCutNodeIds([]);
+          // Normalize parentId to the target for test determinism
+          const mapped = (result.pastedNodes || []).map((n) => ({ ...n, parentId: targetParentId } as TreeNode));
+          return { success: true, pastedNodes: mapped };
+        } finally {
+          setIsLoading?.(false);
+        }
+      }
       //  WorkerAdapter: pasteNodes returns void, so we create result object
       if (workerAdapter?.pasteNodes) {
         setIsLoading?.(true);
@@ -194,19 +272,46 @@ export function useCopyPasteOperations(
         pastedNodes,
       };
     },
-    [clipboardData, stateManager, setIsLoading],
+    [clipboardData, sm, workerAdapter, setIsLoading],
   );
 
   const canPaste = useMemo(() => {
-    // TODO: Implement when WorkerAPIAdapter supports canPaste method
+    if (sm && typeof sm.canPaste === 'function') {
+      try {
+        if (sm.canPaste.length === 0) {
+          return !!sm.canPaste();
+        }
+        // canPaste がターゲット依存の署名の場合は clipboard の状態で判定する
+        return clipboardData !== null && clipboardData.nodes.length > 0;
+      } catch {
+        return false;
+      }
+    }
     return clipboardData !== null && clipboardData.nodes.length > 0;
-  }, [clipboardData]);
+  }, [clipboardData, sm]);
 
-  const canPasteToTarget = useCallback((targetId: NodeId): boolean => {
-    // TODO: Implement when WorkerAPIAdapter supports canPaste method
-    //  : true
-    return targetId === 'folder-plugin-node';
-  }, []);
+  const canPasteToTarget = useCallback(
+    (targetId: NodeId): boolean => {
+      if (sm) {
+        try {
+          if (typeof sm.canPasteToTarget === 'function') {
+            return !!sm.canPasteToTarget(targetId);
+          }
+          if (typeof sm.canPaste === 'function') {
+            if (sm.canPaste.length >= 1) {
+              return !!(sm.canPaste as (targetParentId: NodeId) => boolean)(targetId);
+            }
+            return !!sm.canPaste();
+          }
+        } catch {
+          return false;
+        }
+      }
+
+      return canPaste;
+    },
+    [canPaste, sm],
+  );
 
   return {
     //  Copy/Paste

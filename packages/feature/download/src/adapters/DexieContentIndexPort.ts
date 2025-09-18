@@ -1,6 +1,6 @@
-import Dexie from 'dexie';
+import { Dexie } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '../ports';
+import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '../ports.js';
 
 class CasDB extends Dexie {
   contents!: any; // Table<ContentMeta, [hash, algo]>

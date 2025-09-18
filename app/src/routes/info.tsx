@@ -12,9 +12,9 @@
   );
  */
 // import { useOutletContext } from 'provider-router-dom';
-import { InfoPage } from '~/pages/Info/InfoPage';
+import { InfoPage } from '~/pages/Info/InfoPage.js';
 import { useLoaderData } from 'react-router';
-import { loadAppConfig } from '~/loadAppConfig';
+import { loadAppConfig } from '~/loadAppConfig.js';
 
 // Meta function for React Router v7
 export function meta() {

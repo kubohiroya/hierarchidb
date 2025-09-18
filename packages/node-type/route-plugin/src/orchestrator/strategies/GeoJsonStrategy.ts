@@ -1,4 +1,4 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, StrategyContext, TaskPlan } from '../types';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, StrategyContext, TaskPlan } from '../types.js';
 
 export class GeoJsonStrategy implements DataSourceStrategy {
   supports(spec: DataSourceSpec): boolean {

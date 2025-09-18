@@ -1,5 +1,5 @@
-import type { ProgressInfo } from '../../../shared';
-import type { VectorTileTask } from '../../types';
+import type { ProgressInfo } from '../../../shared/index.js';
+import type { VectorTileTask } from '../../types.js';
 
 export interface VectorTileStageAdapterResult {
   processed: number;

@@ -1,4 +1,4 @@
-import type { IntegrityPort, NetworkPort, StoragePort } from './ports';
+import type { IntegrityPort, NetworkPort, StoragePort } from './ports.js';
 
 export interface DownloadOptions {
   concurrency?: number; // for multi-part in future

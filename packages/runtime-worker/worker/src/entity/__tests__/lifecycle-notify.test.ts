@@ -4,7 +4,6 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 describe('Entity lifecycle notifications from services', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('duplicateNodes notifies lifecycle when flag ON', async () => {
@@ -98,4 +97,3 @@ describe('Entity lifecycle notifications from services', () => {
     expect(mock.handleCommand).toHaveBeenCalled();
   });
 });
-

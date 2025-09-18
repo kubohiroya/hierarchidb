@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator';
-import * as registry from '../../services/download/registry';
+import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator.js';
+import * as registry from '../../services/download/registry.js';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {
@@ -19,7 +19,8 @@ describe('RouteSourceOrchestrator auth notifier', () => {
 
     await expect(orch.preview(spec)).rejects.toThrowError();
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy.mock.calls[0][0].resource).toContain('protected.csv');
+    const [[firstCall]] = spy.mock.calls as [[{ resource?: string }]];
+    expect(firstCall?.resource).toContain('protected.csv');
 
     spySvc.mockRestore();
   });

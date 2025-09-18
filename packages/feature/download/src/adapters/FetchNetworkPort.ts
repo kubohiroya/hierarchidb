@@ -1,5 +1,5 @@
-import type { NetworkPort, ResponseLike } from '../ports';
-import { shouldUseLocalProxy, toLocalProxyUrl } from '../helpers/localProxy';
+import type { NetworkPort, ResponseLike } from '../ports.js';
+import { shouldUseLocalProxy, toLocalProxyUrl } from '../helpers/localProxy.js';
 
 export interface FetchNetworkPortOptions {
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);

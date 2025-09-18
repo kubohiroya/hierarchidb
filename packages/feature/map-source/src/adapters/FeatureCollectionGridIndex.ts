@@ -1,4 +1,4 @@
-import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports';
+import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports.js';
 
 interface Cell {
   feats: any[];

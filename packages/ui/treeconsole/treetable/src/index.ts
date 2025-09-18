@@ -5,26 +5,26 @@
  */
 
 // Main components
-export { TreeTableCore } from './components/TreeTableCore';
-export { TreeTableCoreWithPlugins } from './components/TreeTableCoreWithPlugins';
-export type { TreeTableCorePropsWithPlugins } from './components/TreeTableCoreWithPlugins';
+export { TreeTableCore } from './components/TreeTableCore.js';
+export { TreeTableCoreWithPlugins } from './components/TreeTableCoreWithPlugins.js';
+export type { TreeTableCorePropsWithPlugins } from './components/TreeTableCoreWithPlugins.js';
 
 // Orchestrator
-export { useTreeTableOrchestrator } from './orchestrator';
-export type { TreeTableOrchestratorResult } from './orchestrator';
+export { useTreeTableOrchestrator } from './orchestrator/index.js';
+export type { TreeTableOrchestratorResult } from './orchestrator/index.js';
 
 // State management
-export * from './state';
-export { getColumnWidths, saveColumnWidths, removeColumnWidths, removeColumnWidthsMany } from './state/column-widths-db';
+export * from './state/index.js';
+export { getColumnWidths, saveColumnWidths, removeColumnWidths, removeColumnWidthsMany } from './state/column-widths-db.js';
 
 // Utilities
-export * from './utils';
+export * from './utils/index.js';
 
 // Plugin System
-export * from './plugin';
+export * from './plugin/index.js';
 
 // Built-in Plugins
-export * from './plugins';
+export * from './plugins/index.js';
 
 // Types
 export type {
@@ -37,4 +37,4 @@ export type {
   EditingState,
   DragDropState,
   SearchState,
-} from './types';
+} from './types.js';

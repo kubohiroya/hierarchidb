@@ -4,4 +4,4 @@ export {
   prefetchMuiIcons,
   setGlobalMuiIconMap,
   getMuiIconWithColor,
-} from './getMuiIconComponent';
+} from './getMuiIconComponent.js';

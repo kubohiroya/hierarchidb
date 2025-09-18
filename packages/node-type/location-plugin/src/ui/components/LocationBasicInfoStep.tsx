@@ -5,8 +5,8 @@
 import React from 'react';
 import { Box, Divider, Stack, TextField, Typography } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
-import type { LocationCategory, LocationWorkingCopy, TagId } from '../../types';
-import { useTranslation } from '../../i18n';
+import type { LocationCategory, LocationWorkingCopy, TagId } from '../../types/index.js';
+import { useTranslation } from '../../i18n/index.js';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 export interface LocationBasicInfoStepProps {

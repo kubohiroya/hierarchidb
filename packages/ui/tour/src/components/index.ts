@@ -1,6 +1,6 @@
 // Generic guided tour component
-export { GenericGuidedTour } from './GenericGuidedTour';
-export type { GenericGuidedTourProps } from './GenericGuidedTour';
+export { GenericGuidedTour } from './GenericGuidedTour.js';
+export type { GenericGuidedTourProps } from './GenericGuidedTour.js';
 
 // Legacy export for backward compatibility
-export { GuidedTour } from './GuidedTour';
+export { GuidedTour } from './GuidedTour.js';

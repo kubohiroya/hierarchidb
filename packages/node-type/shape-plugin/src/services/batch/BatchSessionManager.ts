@@ -10,12 +10,12 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB';
-import { SessionController } from './SessionController';
-import { ShapeBatchSession } from './ShapeBatchSession';
-import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../types';
-import type { BatchProcessConfig } from './types';
-import type { UrlMetadata } from '../../shared/types';
+import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB.js';
+import { SessionController } from './SessionController.js';
+import { ShapeBatchSession } from './ShapeBatchSession.js';
+import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../types.js';
+import type { BatchProcessConfig } from './types.js';
+import type { UrlMetadata } from '../../shared/types.js';
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;

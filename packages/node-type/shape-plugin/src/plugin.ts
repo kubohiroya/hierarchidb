@@ -3,7 +3,7 @@
  * Registers the Shape plugin with HierarchiDB plugin system
  */
 
-import { shapePluginAPI } from './api/ShapePluginAPI';
+import { shapePluginAPI } from './api/ShapePluginAPI.js';
 
 // Note: Worker API import removed as it may not be implemented yet
 

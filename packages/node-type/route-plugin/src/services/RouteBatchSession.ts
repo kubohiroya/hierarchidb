@@ -5,9 +5,9 @@ import {
 } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
-import { RouteDatabase } from '../database/RouteDatabase';
-import type { RouteGenerationConfig } from '../entities/RouteEntity';
-import { RouteGenerator } from './RouteGenerator';
+import { RouteDatabase } from '../database/RouteDatabase.js';
+import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
+import { RouteGenerator } from './RouteGenerator.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 
 export interface RouteBatchConfig extends BaseBatchConfig {

@@ -3,8 +3,8 @@
  * https://www.geoboundaries.org/
   */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy';
-import { ShapeEntity } from '../../types/ShapeEntity';
+import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy.js';
+import { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  GeoBoundaries
 export interface GeoBoundariesRawData {
@@ -230,7 +230,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
         console.log(`[GeoBoundaries] Trying ${releaseType}: ${url}`);
 
-        const { authFetch } = await import('../utils/authFetch');
+        const { authFetch } = await import('../utils/authFetch.js');
         const response = await authFetch(url);
 
         if (response.ok) {
@@ -308,7 +308,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         const controller = new AbortController();
         const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
-        const { authFetch } = await import('../utils/authFetch');
+        const { authFetch } = await import('../utils/authFetch.js');
         const response = await authFetch(url, {
           signal: controller.signal,
         });
@@ -393,7 +393,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
   async getAvailableCountries(): Promise<string[]> {
     try {
-      const { authFetch } = await import('../utils/authFetch');
+      const { authFetch } = await import('../utils/authFetch.js');
       const response = await authFetch(`${this.config.access.baseUrl}available/`);
       if (response.ok) {
         const data = await response.json();
@@ -408,7 +408,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   async getAvailableAdminLevels(country: string): Promise<string[]> {
     try {
       const normalizedCountry = this.normalizeCountryCode(country);
-      const { authFetch } = await import('../utils/authFetch');
+      const { authFetch } = await import('../utils/authFetch.js');
       const response = await authFetch(`${this.config.access.baseUrl}available/`);
       if (response.ok) {
         const data = await response.json();

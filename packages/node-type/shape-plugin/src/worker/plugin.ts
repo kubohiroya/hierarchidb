@@ -3,9 +3,9 @@
  * Worker environment plugin registration
  */
 
-import { ShapeMetadata } from '../shared';
-import { shapePluginAPI } from './api';
-import { ShapeEntityHandler } from './handlers';
+import { ShapeMetadata } from '../shared/index.js';
+import { shapePluginAPI } from './api.js';
+import { ShapeEntityHandler } from './handlers/index.js';
 
 /**
  * Worker Plugin definition for Shape plugin

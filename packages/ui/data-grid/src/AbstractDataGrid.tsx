@@ -45,7 +45,7 @@ import type {
   QueryParams,
   QueryResult,
   SortParams,
-} from './types/DataProvider';
+} from './types/DataProvider.js';
 
 export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   /** Data provider instance */

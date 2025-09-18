@@ -10,7 +10,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { UserAvatar } from './UserAvatar';
+import { UserAvatar } from './UserAvatar.js';
 // import { KeyboardArrowDownIcon, LoginIcon, LogoutIcon } from "@/icon";
 import {
   DeleteForever,

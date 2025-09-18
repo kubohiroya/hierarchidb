@@ -26,10 +26,11 @@ import {
   DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import type { TreeTableCoreProps } from '../types';
+import type { TreeTableCoreProps } from '../types.js';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { rainbowColors } from '@hierarchidb/ui-core';
 import { TreeNode } from '@hierarchidb/common-type';
+import { computeDescendants } from '../utils/descendants.js';
 
 //  TreeTable.css
 const StyledTableContainer = styled(Box)`
@@ -208,7 +209,7 @@ export function TreeTableCore({
     let cancelled = false;
     (async () => {
       if (!pageNodeId) return;
-      const saved = await (await import('../state/column-widths-db')).getColumnWidths(pageNodeId);
+      const saved = await (await import('../state/column-widths-db.js')).getColumnWidths(pageNodeId);
       if (!cancelled && saved && typeof saved === 'object') {
         setColumnWidths((prev) => ({ ...prev, ...saved }));
       }
@@ -219,7 +220,7 @@ export function TreeTableCore({
   useEffect(() => {
     (async () => {
       if (!pageNodeId) return;
-      await (await import('../state/column-widths-db')).saveColumnWidths(pageNodeId, columnWidths);
+      await (await import('../state/column-widths-db.js')).saveColumnWidths(pageNodeId, columnWidths);
     })();
   }, [columnWidths, pageNodeId]);
 
@@ -306,23 +307,8 @@ export function TreeTableCore({
 
   // Helper: compute descendants including self
   const getDescendants = useCallback((nodeId: string): Set<string> => {
-    const descendants = new Set<string>();
-    const stack = [nodeId];
-    const byParent = new Map<string, string[]>();
-    (controller?.data || []).forEach((n) => {
-      if (!n?.parentId || !n?.id) return;
-      const arr = byParent.get(n.parentId) || [];
-      arr.push(n.id);
-      byParent.set(n.parentId, arr);
-    });
-    while (stack.length > 0) {
-      const cur = stack.pop()!;
-      if (descendants.has(cur)) continue;
-      descendants.add(cur);
-      const children = byParent.get(cur) || [];
-      for (const c of children) stack.push(c);
-    }
-    return descendants;
+    const data = (controller?.data || []) as unknown as TreeNode[];
+    return computeDescendants(data, nodeId as any) as unknown as Set<string>;
   }, [controller]);
 
   // Get data from controller
@@ -447,7 +433,21 @@ export function TreeTableCore({
           const node = row.original;
           // Shift visual indentation one level left
           const depth = Math.max(0, ((node.depth || 0) + depthOffset) - 1);
-          const hasChildren = node.hasChildren === true || nodesWithChildren.has(node.id);
+          const nodeLike = node as TreeNode & {
+            children?: readonly string[] | undefined;
+            childCount?: number | undefined;
+          };
+          const derivedChildCount =
+            typeof node.descendantCount === 'number'
+              ? node.descendantCount
+              : typeof nodeLike.childCount === 'number'
+                ? nodeLike.childCount
+                : undefined;
+          const hasChildren =
+            node.hasChildren === true ||
+            nodesWithChildren.has(node.id) ||
+            (Array.isArray(nodeLike.children) && nodeLike.children.length > 0) ||
+            (typeof derivedChildCount === 'number' && derivedChildCount > 0);
           const isExpanded = expandedRowIds.has(node.id);
           const isEditing = editingNodeId === node.id;
           const iconDepth = depth;

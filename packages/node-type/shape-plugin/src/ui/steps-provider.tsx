@@ -1,8 +1,8 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { DataSourceStep } from '../extension/components/DataSourceStep';
-import { LicenseStep } from '../extension/components/LicenseStep';
-import { ProcessingStep } from '../extension/components/ProcessingStep';
-import { CountrySelectionStep } from '../extension/components/CountrySelectionStep';
+import { DataSourceStep } from '../extension/components/DataSourceStep.js';
+import { LicenseStep } from '../extension/components/LicenseStep.js';
+import { ProcessingStep } from '../extension/components/ProcessingStep.js';
+import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
 type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();

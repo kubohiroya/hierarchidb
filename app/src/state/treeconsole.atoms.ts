@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
@@ -6,13 +6,10 @@ export type ViewMode = 'list' | 'grid';
 
 export interface TreeConsoleSSOTEntry {
   pageNodeId: string;
-  // data
   rawNodes: TreeNode[];
   treeData: TreeNodeData[];
-  // normalized graph indices
   nodesById?: Map<string, TreeNode>;
   childrenByParent?: Map<string, Set<string>>;
-  // ui state
   selectedIds: string[];
   expandedIds: string[];
   searchTerm: string;
@@ -20,14 +17,11 @@ export interface TreeConsoleSSOTEntry {
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   filterBy?: string;
-  // toolbar/enable flags
   canUndo: boolean;
   canRedo: boolean;
   canPaste: boolean;
-  // loading/error
   loading: boolean;
   error: string | null;
-  // subscription ref management (optional)
   refCount: number;
 }
 
@@ -56,29 +50,31 @@ function defaults(pageNodeId: string): TreeConsoleSSOTEntry {
   };
 }
 
-// Single Source of Truth for TreeConsole state across the app (keyed by pageNodeId)
-let __TREECONSOLE_SSOT__: TreeConsoleSSOT = {};
-const __LISTENERS__ = new Set<() => void>();
+let STORE: TreeConsoleSSOT = {};
+const LISTENERS = new Set<() => void>();
 
 function getStore(): TreeConsoleSSOT {
-  return __TREECONSOLE_SSOT__;
+  return STORE;
 }
 
 function updateStore(mutator: (prev: TreeConsoleSSOT) => TreeConsoleSSOT) {
-  __TREECONSOLE_SSOT__ = mutator(__TREECONSOLE_SSOT__);
-  for (const fn of Array.from(__LISTENERS__)) {
+  STORE = mutator(STORE);
+  for (const fn of Array.from(LISTENERS)) {
     try { fn(); } catch { /* noop */ }
   }
 }
 
 export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
   const [, setTick] = useState(0);
-  const store = useMemo(() => getStore(), []);
+  const store = getStore();
   useEffect(() => {
-    const l = () => setTick((t) => t + 1);
-    __LISTENERS__.add(l);
-    return () => { __LISTENERS__.delete(l); };
+    const listener = () => setTick((prev) => prev + 1);
+    LISTENERS.add(listener);
+    return () => {
+      LISTENERS.delete(listener);
+    };
   }, []);
+
   const key = pageNodeId || '';
   const state = key ? (store[key] ?? defaults(key)) : defaults('');
 
@@ -86,7 +82,11 @@ export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
     if (!key) return;
     updateStore((prev) => ({
       ...prev,
-      [key]: { ...((prev[key] as TreeConsoleSSOTEntry) ?? defaults(key)), ...patch, pageNodeId: key },
+      [key]: {
+        ...((prev[key] as TreeConsoleSSOTEntry) ?? defaults(key)),
+        ...patch,
+        pageNodeId: key,
+      },
     }));
   };
 
@@ -98,9 +98,9 @@ export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
   const clear = () => {
     if (!key) return;
     updateStore((prev) => {
-      const cp = { ...prev } as TreeConsoleSSOT;
-      delete cp[key];
-      return cp;
+      const copy = { ...prev } as TreeConsoleSSOT;
+      delete copy[key];
+      return copy;
     });
   };
 

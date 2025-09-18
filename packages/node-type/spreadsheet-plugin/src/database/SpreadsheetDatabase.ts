@@ -3,7 +3,7 @@
  * @description Database schema and management for Spreadsheet plugin
  */
 
-import Dexie, { Table } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
@@ -11,7 +11,7 @@ import type {
   RowChunk,
   SpreadsheetEntity,
   SpreadsheetRow,
-} from '../types';
+} from '../types/index.js';
 
 /**
   * : Spreadsheet
@@ -19,7 +19,8 @@ import type {
  * :
  * : Dexie
   */
-export class SpreadsheetDatabase extends Dexie {
+// Dexie v4 typings expose Dexie as a value with constructor type; cast to any for subclassing in UI-only typecheck
+export class SpreadsheetDatabase extends (Dexie as any) {
   // PersistentRelationalEntity Tables
   rawFileMetadata!: Table<RawFileMetadata>;
   rowChunks!: Table<RowChunk>;

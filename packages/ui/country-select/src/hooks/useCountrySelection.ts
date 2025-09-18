@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import type { MatrixColumn, MatrixSelection } from '../types/MatrixColumn';
+import type { MatrixColumn, MatrixSelection } from '../types/MatrixColumn.js';
 
 export interface UseCountrySelectionOptions {
   /** Initial selections */

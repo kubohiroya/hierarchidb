@@ -14,13 +14,13 @@ import {
   updateWorkingCopyAtom,
   workerConnectionAtom,
   workingCopyAtom,
-} from '../atoms/workingCopyAtoms';
+} from '../atoms/workingCopyAtoms.js';
 import {
   type CapabilitiesRequest,
   getWorkerBridge,
   type ValidationRequest,
   type WorkerNotification,
-} from '../services/WorkerBridge';
+} from '../services/WorkerBridge.js';
 
 interface UseWorkerSyncOptions {
   nodeId: NodeId;

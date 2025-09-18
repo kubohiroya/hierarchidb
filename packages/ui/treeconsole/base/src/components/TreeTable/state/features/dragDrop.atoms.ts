@@ -7,17 +7,18 @@
   */
 
 import { atom } from 'jotai';
+import type { NodeId } from '@hierarchidb/common-type';
 
 /**
   * ID
   */
-export const draggingNodeIdAtom = atom<string | null>(null);
+export const draggingNodeIdAtom = atom<NodeId | null>(null);
 
 /**
   * ID
   */
-export const dropTargetNodeIdAtom = atom<string | null>(null);
+export const dropTargetNodeIdAtom = atom<NodeId | null>(null);
 
 /**
     */
-export const forbiddenDropTargetsAtom = atom<Set<string>>(new Set<string>());
+export const forbiddenDropTargetsAtom = atom<Set<NodeId>>(new Set<NodeId>());

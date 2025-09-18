@@ -1,1 +1,1 @@
-export { FloatingWindow } from './FloatingWindow';
+export { FloatingWindow } from './FloatingWindow.js';

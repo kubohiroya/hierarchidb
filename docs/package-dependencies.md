@@ -45,7 +45,7 @@ graph LR
     N21["@hierarchidb/basemap-plugin"]
     N22["@hierarchidb/folder-plugin"]
     N23["@hierarchidb/location-plugin"]
-    N24["@hierarchidb/project-plugin"]
+    N24["@hierarchidb/linker-plugin"]
     N25["@hierarchidb/resolver-plugin"]
     N26["@hierarchidb/route-plugin"]
     N27["@hierarchidb/shape-plugin"]

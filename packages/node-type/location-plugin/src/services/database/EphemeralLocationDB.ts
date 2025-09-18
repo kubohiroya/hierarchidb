@@ -2,7 +2,7 @@
  * EphemeralLocationDB - temporary storage for Location plugin artifacts
  */
 
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 

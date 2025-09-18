@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { MapLibreMap } from '@hierarchidb/ui-map';
-import type { ResourceSummary } from './ResourcePicker';
+import type { ResourceSummary } from './ResourcePicker.js';
 
 export interface MapPreviewProps {
   items: ResourceSummary[];

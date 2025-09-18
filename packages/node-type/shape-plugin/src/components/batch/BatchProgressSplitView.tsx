@@ -3,7 +3,7 @@ import { Box, Card, CardContent, Chip, LinearProgress, Stack, Typography } from 
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { BatchTaskStage, DownloadTask, ProcessingConfig, SimplifyTask, VectorTileTask } from '~/shared';
-import { TaskMonitor } from './TaskMonitor';
+import { TaskMonitor } from './TaskMonitor.js';
 
 // Temporary JSX typing workaround for Allotment with React 19 types
 const A: any = Allotment as any;

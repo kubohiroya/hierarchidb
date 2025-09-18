@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
-import type { WorkerInitConfig } from '../types';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
+import type { WorkerInitConfig } from '../types.js';
 
 // Mock Worker class
 class MockWorker {

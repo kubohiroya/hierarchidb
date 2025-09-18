@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '../EntityLifecycleManager';
-import { storeRegistry } from '../store-registry';
-import type { PeerStore } from '../store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
+import { storeRegistry } from '../store-registry.js';
+import type { PeerStore } from '../store.js';
 
 describe('EntityLifecycleManager working copy peer (create/discard)', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('copies peer on createWorkingCopy and deletes on discardWorkingCopy', async () => {

@@ -5,12 +5,12 @@ export type {
   FolderSearchQuery,
   FolderStatsSummary,
   FolderStructureNode,
-} from '../entities/FolderEntity';
+} from '../entities/FolderEntity.js';
 
 // Import tag-related types
 export type { TagId } from '@hierarchidb/common-type';
 // Keep existing simple types for backward compatibility if needed
-import type { FolderSettings as ImportedFolderSettings } from '../shared/types';
+import type { FolderSettings as ImportedFolderSettings } from '../shared/types.js';
 
 export type { TagSuggestion } from '@hierarchidb/common-type';
 

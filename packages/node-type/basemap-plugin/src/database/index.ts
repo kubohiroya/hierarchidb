@@ -3,4 +3,4 @@
  * @description Database layer exports for BaseMap plugin
  */
 
-export { BaseMapDatabase } from './BaseMapDatabase';
+export { BaseMapDatabase } from './BaseMapDatabase.js';

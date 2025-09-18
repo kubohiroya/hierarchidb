@@ -6,4 +6,4 @@ export {
   hierarchiDBMultiModulePreset,
   type PluginDefinition,
   type HierarchiDBStrategyOptions,
-} from './hierarchidb';
+} from './hierarchidb.js';

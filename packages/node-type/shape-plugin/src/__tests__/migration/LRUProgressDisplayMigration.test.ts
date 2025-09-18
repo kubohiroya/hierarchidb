@@ -12,8 +12,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ShapeBatchProgressDisplay } from '../../ui/components/ShapeBatchProgressDisplay';
-import type { BatchProgressEvent } from '../../types/BatchProgressEvent';
+import { ShapeBatchProgressDisplay } from '../../ui/components/ShapeBatchProgressDisplay.js';
+import type { BatchProgressEvent } from '../../types/BatchProgressEvent.js';
 import type { NodeId } from '@hierarchidb/common-type';
 type TreeNodeId = NodeId;
 const mockTreeNodeId = 'tree-node-123' as TreeNodeId;

@@ -7,8 +7,8 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { TreeViewController } from '../../../types/index';
-import { filteredDataAtom, searchTermAtom, tableDataAtom } from '../state';
+import type { TreeViewController } from '../../../types/index.js';
+import { filteredDataAtom, searchTermAtom, tableDataAtom } from '../state/index.js';
 
 export interface SearchOrchestratorResult {
   // State

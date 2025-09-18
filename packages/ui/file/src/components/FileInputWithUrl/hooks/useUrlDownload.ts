@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // import { useAuth } from "@/shared/auth";
 import { validateExternalURL } from '@hierarchidb/util';
 
-import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
+import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService.js';
 
 interface UseUrlDownloadProps {
   accept: string;

@@ -10,7 +10,7 @@ import type {
 } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import crypto from 'crypto';
-import type { ImportExportDBPort } from './ports';
+import type { ImportExportDBPort } from './ports.js';
 
 export class ImportExportService implements ImportExportAPI {
   private operations = new Map<string, OperationStatus>();

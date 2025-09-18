@@ -3,4 +3,4 @@
  * @description Shared exports for Styler plugin
  */
 
-export { StylerMetadata } from './metadata';
+export { StylerMetadata } from './metadata.js';

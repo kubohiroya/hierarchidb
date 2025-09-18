@@ -1,5 +1,6 @@
 {
   "name": "@hierarchidb/spreadsheet-plugin",
+  "type": "module",
   "version": "0.0.1",
   "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
   "main": "dist/index.mjs",
@@ -28,6 +29,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",

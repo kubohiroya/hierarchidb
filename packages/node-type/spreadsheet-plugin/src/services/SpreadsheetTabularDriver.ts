@@ -1,7 +1,7 @@
 import { type FileLike, TabularService } from '@hierarchidb/tabular';
 import type { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 type CSVTableMetadataLike = Parameters<SimpleTableMetadataManager['create']>[0];
-import { SpreadsheetStorePort } from './SpreadsheetStorePort';
+import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
 
 export class SpreadsheetTabularDriver {
   constructor(private pluginId: string = 'spreadsheet') {

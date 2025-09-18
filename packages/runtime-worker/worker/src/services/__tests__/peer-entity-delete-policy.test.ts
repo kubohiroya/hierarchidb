@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
-import { CommandProcessor } from '../CommandProcessor';
-import { storeRegistry } from '../../entity/store-registry';
-import type { PeerStore } from '../../entity/store';
+import { CommandProcessor } from '../CommandProcessor.js';
+import { storeRegistry } from '../../entity/store-registry.js';
+import type { PeerStore } from '../../entity/store.js';
 
 describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
   let core: any;

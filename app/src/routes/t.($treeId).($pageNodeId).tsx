@@ -3,9 +3,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import { AppBar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, ToggleButton, ToggleButtonGroup, Toolbar, Typography } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
-import { loadPageNode, type LoadPageNodeArgs } from '~/loader';
-import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
-import { WorkerAPIClient } from '../WorkerAPIClient';
+import { loadPageNode, type LoadPageNodeArgs } from '~/loader.js';
+import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {

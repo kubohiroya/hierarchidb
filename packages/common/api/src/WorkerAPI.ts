@@ -7,16 +7,16 @@
  * client interactions with the worker layer.
  */
 
-import type { TreeQueryAPI } from './TreeQueryAPI';
-import type { TreeMutationAPI } from './TreeMutationAPI';
-import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI';
-import type { ImportExportAPI } from './ImportExportAPI';
+import type { TreeQueryAPI } from './TreeQueryAPI.js';
+import type { TreeMutationAPI } from './TreeMutationAPI.js';
+import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+import type { ImportExportAPI } from './ImportExportAPI.js';
 
-import type { WorkingCopyAPI } from './WorkingCopyAPI';
+import type { WorkingCopyAPI } from './WorkingCopyAPI.js';
 
-import type { PluginLifecycleAPI } from './PluginLifecycleAPI';
-//import type { PluginExtensionAPI } from './PluginExtensionAPI';
-import { TagAPI } from './TagAPI';
+import type { PluginLifecycleAPI } from './PluginLifecycleAPI.js';
+//import type { PluginExtensionAPI } from './PluginExtensionAPI.js';
+import { TagAPI } from './TagAPI.js';
 import type { Remote } from 'comlink';
 
 /**

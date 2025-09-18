@@ -5,7 +5,7 @@
 import { MouseEvent, useMemo } from 'react';
 import { Box, Checkbox, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { TrashbinTableProps, TrashItem } from '../types';
+import type { TrashbinTableProps, TrashItem } from '../types.js';
 import { NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 const StyledTableContainer = styled(Box)`

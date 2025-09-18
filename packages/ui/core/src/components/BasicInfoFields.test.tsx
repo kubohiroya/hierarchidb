@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { BasicInfoFields } from './BasicInfoFields';
+import { BasicInfoFields } from './BasicInfoFields.js';
 
 describe('BasicInfoFields', () => {
   it('renders name and description with defaults', () => {

@@ -1,4 +1,4 @@
-import type { TabularProcessor } from '../processor';
+import type { TabularProcessor } from '../processor.js';
 
 export function createRequiredColumnsValidator(id: string, required: string[]): TabularProcessor {
   const set = new Set(required);

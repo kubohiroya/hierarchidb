@@ -3,7 +3,7 @@
   * TreeTable
   */
 
-import type { TreeTablePlugin } from '../plugin/types';
+import type { TreeTablePlugin } from '../plugin/types.js';
 import { KeyboardEvent } from 'react';
 
 /**

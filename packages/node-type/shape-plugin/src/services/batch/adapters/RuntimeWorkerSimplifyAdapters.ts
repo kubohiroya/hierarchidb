@@ -1,8 +1,8 @@
-import type { ProgressInfo } from '../../../shared';
-import type { Simplify1Task, Simplify2Task } from '../../types';
-import type { Simplify1StageAdapter } from './Simplify1StageAdapter';
-import type { Simplify2StageAdapter } from './Simplify2StageAdapter';
-import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient';
+import type { ProgressInfo } from '../../../shared/index.js';
+import type { Simplify1Task, Simplify2Task } from '../../types.js';
+import type { Simplify1StageAdapter } from './Simplify1StageAdapter.js';
+import type { Simplify2StageAdapter } from './Simplify2StageAdapter.js';
+import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 export class RuntimeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void) {

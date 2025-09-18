@@ -1,0 +1,14 @@
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'happy-dom',
+    include: ['src/__tests__/**/*.test.ts'],
+    exclude: ['**/dist/**', '**/node_modules/**'],
+    globals: true,
+    pool: 'threads',
+    poolOptions: {
+      threads: { singleThread: true },
+    },
+  },
+});

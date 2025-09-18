@@ -14,12 +14,11 @@ Highlights
 - Lightweight command metrics (flag `WORKER_METRICS_ENABLED`)
 
 Flags
-- Deprecated (ignored >= 2025-09-02): `WORKER_USE_CMDPROC_CREATE_UPDATE`, `WORKER_USE_CMDPROC_MOVE_REMOVE`
-- Still available: `WORKER_WC_COMMIT_V2`, `WORKER_TRASH_USE_HOLDER`, `WORKER_POLICY_C`, `WORKER_METRICS_ENABLED`, `WORKER_TX_ENABLED`
+- Removed: `WORKER_USE_CMDPROC_CREATE_UPDATE`, `WORKER_USE_CMDPROC_MOVE_REMOVE`, `WORKER_WC_COMMIT_V2`, `WORKER_TRASH_USE_HOLDER`, `WORKER_POLICY_C`, `WORKER_ENTITY_UNIFIED` (最新実装に統一)
+- Remaining toggles: `WORKER_METRICS_ENABLED`, `WORKER_TX_ENABLED`
 
 Rollback
 - If necessary, revert to the tag prior to 2025-09-02 changes. All removals are non-destructive and data-safe.
 
 Notes
 - See CHANGELOG for detailed entries and doc links.
-

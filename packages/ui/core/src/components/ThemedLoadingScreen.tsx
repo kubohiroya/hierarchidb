@@ -5,7 +5,7 @@ import {
   getTextColorForTheme,
   getThemeBackgroundColor,
   getThemeTextColor,
-} from '../utils/theme';
+} from '../utils/theme.js';
 
 interface ThemedLoadingScreenProps {
   variant?: 'linear' | 'circular';

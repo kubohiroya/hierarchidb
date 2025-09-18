@@ -5,8 +5,8 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
-import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
@@ -14,7 +14,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Re-export types for backward compatibility
-export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props';
+export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props.js';
 
 export interface MapLibreMapProps extends BaseMapProps {
   /** Children components (layers, markers, etc.) */

@@ -1,15 +1,15 @@
 // Main plugin system exports
-export { UIPluginRegistry, getUIPluginRegistry } from './registry/UIPluginRegistry';
-import { getUIPluginRegistry } from './registry/UIPluginRegistry';
+export { UIPluginRegistry, getUIPluginRegistry } from './registry/UIPluginRegistry.js';
+import { getUIPluginRegistry } from './registry/UIPluginRegistry.js';
 
-export { NodeDataAdapter } from './adapters/NodeDataAdapter';
-export { UnifiedNodeOperations } from './operations/UnifiedNodeOperations';
+export { NodeDataAdapter } from './adapters/NodeDataAdapter.js';
+export { UnifiedNodeOperations } from './operations/UnifiedNodeOperations.js';
 
 // React hooks
-export { useDynamicCreateMenu, useCreateMenuItem } from './hooks/useDynamicCreateMenu';
+export { useDynamicCreateMenu, useCreateMenuItem } from './hooks/useDynamicCreateMenu.js';
 
 // React containers
-export { DynamicCreateMenu, SimpleDynamicCreateMenu } from './components/DynamicCreateMenu';
+export { DynamicCreateMenu, SimpleDynamicCreateMenu } from './components/DynamicCreateMenu.js';
 
 // Types
 export type {
@@ -49,7 +49,7 @@ export type {
   DragStartResult,
   DropParams,
   DropResult,
-} from './types';
+} from './types.js';
 
 // Plugin registration helper
 export function registerAllUIPlugins(): void {

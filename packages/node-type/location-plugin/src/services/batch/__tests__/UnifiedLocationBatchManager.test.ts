@@ -4,7 +4,7 @@ vi.mock('@hierarchidb/batch', () => ({ BatchService: class {} }));
 vi.mock('@hierarchidb/tabular-store', () => ({ TabularWriter: class {} }));
 
 // Import after mocks are set up
-const { UnifiedLocationBatchManager } = await import('../UnifiedLocationBatchManager');
+const { UnifiedLocationBatchManager } = await import('../UnifiedLocationBatchManager.js');
 
 describe('UnifiedLocationBatchManager.onBatchProgress', () => {
   it('converts plugin events to StandardProgressEvent via adapter', async () => {

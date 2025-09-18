@@ -1,4 +1,4 @@
-import type { NetworkPortLike, RoutingEngine } from './types';
+import type { NetworkPortLike, RoutingEngine } from './types.js';
 
 export interface OsrmOptions {
   baseUrl?: string;

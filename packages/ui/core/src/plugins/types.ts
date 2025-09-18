@@ -303,7 +303,7 @@ export interface CreateMenuItem {
   readonly nodeType?: string;
   readonly label?: string;
   readonly description?: string;
-  readonly icon?: React.ComponentType<any>;
+  readonly icon?: React.ComponentType<any> | React.ReactNode | string;
   readonly group?: string;
   readonly order?: number;
   readonly onClick?: () => void;

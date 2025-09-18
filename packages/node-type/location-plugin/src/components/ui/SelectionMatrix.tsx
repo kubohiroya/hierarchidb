@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Search, SelectAll } from '@mui/icons-material';
-import type { LocationType } from '../../types';
+import type { LocationType } from '../../types/index.js';
 
 export interface Country {
   code: string;           // ISO 3166-1 alpha-3

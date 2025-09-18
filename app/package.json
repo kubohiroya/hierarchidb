@@ -13,7 +13,7 @@
     "build:dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
     "preview": "vite preview --config vite.preview.config.ts",
-    "typecheck": "pnpm -C ../packages/node-type/basemap-plugin build && pnpm -C ../packages/node-type/spreadsheet-plugin build && pnpm -C ../packages/node-type/resolver-plugin run build:database && pnpm -C ../packages/node-type/route-plugin exec tsup --config tsup.database.config.ts && NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -p tsconfig.typecheck.json --noEmit --pretty false",
+    "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -p tsconfig.typecheck.json --noEmit --pretty false",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "predeploy": "pnpm run build",

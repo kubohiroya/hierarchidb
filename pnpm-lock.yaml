@@ -106,6 +106,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.7
         version: 18.3.7(@types/react@18.3.24)
+      '@types/react-resizable':
+        specifier: ^3.0.8
+        version: 3.0.8
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.18.0
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.35.0)(typescript@5.6.2))(eslint@9.35.0)(typescript@5.6.2)
@@ -1426,6 +1429,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-ui-plugin-dialog':
+        specifier: workspace:*
+        version: link:../../runtime-ui/plugin-dialog
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime-worker/worker
@@ -1594,9 +1600,15 @@ importers:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
+      '@types/react-transition-group':
+        specifier: ^4.4.12
+        version: 4.4.12(@types/react@18.3.24)
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
+      react-transition-group:
+        specifier: ^4.4.5
+        version: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tsup:
         specifier: ^8.0.1
         version: 8.5.0(@microsoft/api-extractor@7.52.13(@types/node@18.19.123))(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.2)(yaml@2.8.1)
@@ -2328,6 +2340,35 @@ importers:
       react-resizable:
         specifier: ^3.0.5
         version: 3.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@types/react-resizable':
+        specifier: ^3.0.8
+        version: 3.0.8
+
+  packages/ui/dialog2:
+    dependencies:
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
+      '@emotion/styled':
+        specifier: 11.14.0
+        version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.2
+        version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.24
+        version: 18.3.24
+      '@types/react-dom':
+        specifier: ^18.3.7
+        version: 18.3.7(@types/react@18.3.24)
 
   packages/ui/file:
     dependencies:
@@ -2792,6 +2833,9 @@ importers:
 
   packages/ui/treeconsole/breadcrumb:
     dependencies:
+      '@hierarchidb/common-type':
+        specifier: workspace:*
+        version: link:../../../common/types
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../core
@@ -5724,6 +5768,9 @@ packages:
 
   '@types/react-gravatar@2.6.14':
     resolution: {integrity: sha512-esbOXcvdGEJAsu1X8yHmArQ28Jo1gUmRZNVyA8MlEn7Z1mjj+9daHKiRoDQk61Y0kqbFGl75C4DOfUhb9uk5Tw==}
+
+  '@types/react-resizable@3.0.8':
+    resolution: {integrity: sha512-Pcvt2eGA7KNXldt1hkhVhAgZ8hK41m0mp89mFgQi7LAAEZiaLgm4fHJ5zbJZ/4m2LVaAyYrrRRv1LHDcrGQanA==}
 
   '@types/react-transition-group@4.4.12':
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
@@ -13654,6 +13701,10 @@ snapshots:
       '@types/react': 18.3.24
 
   '@types/react-gravatar@2.6.14':
+    dependencies:
+      '@types/react': 18.3.24
+
+  '@types/react-resizable@3.0.8':
     dependencies:
       '@types/react': 18.3.24
 

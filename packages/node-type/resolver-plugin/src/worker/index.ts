@@ -4,11 +4,11 @@ try {
   import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
-      const { ResolverEntitiesDB } = await import('./resolverEntitiesDB');
+      const { ResolverEntitiesDB } = await import('./resolverEntitiesDB.js');
       const db = new ResolverEntitiesDB();
       await db.open();
       if (!storeRegistry.getPeer('resolver')) {
-        const { createResolverPeerStoreDexie } = await import('./resolverPeerStore.dexie');
+        const { createResolverPeerStoreDexie } = await import('./resolverPeerStore.dexie.js');
         storeRegistry.registerPeer('resolver', createResolverPeerStoreDexie(db));
       }
     } catch {}

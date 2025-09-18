@@ -1,6 +1,6 @@
 // import { devError } from "@/shared/utils/logger.ts";
 // const devError = (msg: string, error?: any) => console.error(msg, error);
-import { handleAuthError } from './handleAuthError';
+import { handleAuthError } from './handleAuthError.js';
 
 /**
   * fetch401

@@ -9,8 +9,8 @@
 import type { BaseEntityExtension, NodeId } from '@hierarchidb/common-type';
 import type { FolderEntity } from '@hierarchidb/folder-plugin';
 import { FolderEntityHandler } from '@hierarchidb/folder-plugin';
-import type { DataSourceName, ShapeEntity } from '../types';
-import { ShapeEntityHandler as OriginalShapeEntityHandler } from '../worker/handlers/ShapeEntityHandler';
+import type { DataSourceName, ShapeEntity } from '../types/index.js';
+import { ShapeEntityHandler as OriginalShapeEntityHandler } from '../worker/handlers/ShapeEntityHandler.js';
 
 /**
  * ShapeEntityHandler that extends FolderEntityHandler

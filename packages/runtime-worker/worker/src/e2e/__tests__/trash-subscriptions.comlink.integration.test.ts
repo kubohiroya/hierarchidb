@@ -3,8 +3,8 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import { decodeTrashHolderName, isValidTrashHolderName } from '../../services/utils/holder-encoding';
-import { exposeTestAPI } from '../test-worker.entry';
+import { decodeTrashHolderName, isValidTrashHolderName } from '../../services/utils/holder-encoding.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 // Minimal adapter to make Node's MessagePort look like a Comlink endpoint
 function toEndpoint(port: any) {
@@ -86,7 +86,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const wcHolder = await queryAPI.getNode(wcNode!.parentId as NodeId);
     expect(wcHolder).toBeTruthy();
     // Decode canonical target id from holder name
-    const { decodeWorkingCopyHolderName } = await import('../../services/utils/holder-encoding');
+    const { decodeWorkingCopyHolderName } = await import('../../services/utils/holder-encoding.js');
     const { targetNodeId } = decodeWorkingCopyHolderName((wcHolder as any).name as string);
     const canonicalId = targetNodeId as NodeId;
 

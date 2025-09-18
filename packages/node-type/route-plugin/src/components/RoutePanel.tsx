@@ -36,16 +36,16 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RouteEntity, RouteType } from '../types';
-import { TransportMode } from '../types';
-import { useTranslation } from '../i18n';
-import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm';
-import { RouteBatchSummary } from '../ui/components/RouteBatchSummary';
-import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress';
+import type { RouteEntity, RouteType } from '../types/index.js';
+import { TransportMode } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
+import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm.js';
+import { RouteBatchSummary } from '../ui/components/RouteBatchSummary.js';
+import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress.js';
 import { TabularPreview } from '@hierarchidb/ui-core';
-import { RouteDatabase } from '../database/RouteDatabase';
-import { createRouteBatchManager } from '../services/createRouteBatchManager';
-import { isFlagEnabled } from '../services/config/flags';
+import { RouteDatabase } from '../database/RouteDatabase.js';
+import { createRouteBatchManager } from '../services/createRouteBatchManager.js';
+import { isFlagEnabled } from '../services/config/flags.js';
 
 export interface RoutePanelProps {
   nodeId: NodeId;

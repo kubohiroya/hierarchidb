@@ -94,7 +94,7 @@ graph TB
     ROUTE[🛣️ route]
 
     %% メタ
-    PROJECT[📦 project]
+    LINKER[📦 linker]
 
     %% 単一継承の依存
     FOLDER --> SPREADSHEET
@@ -103,7 +103,7 @@ graph TB
     FOLDER --> LOCATION
     LOCATION --> ROUTE
     FOLDER --> RESOLVER
-    FOLDER --> PROJECT
+    FOLDER --> LINKER
 
     %% 継承（入力あり）
     FOLDER --> SHAPE
@@ -116,7 +116,7 @@ graph TB
     LOCATION --> EXTENDING
     ROUTE --> EXTENDING
     RESOLVER --> EXTENDING
-    PROJECT --> EXTENDING
+    LINKER --> EXTENDING
 
     %% ミックスイン（feature付与の概念）
     EXTENDING -. feature .- MIXIN
@@ -131,7 +131,7 @@ graph TB
     style LOCATION fill:#ffecb3,stroke:#ffa000,stroke-width:2px
     style ROUTE fill:#ffe0b2,stroke:#ff9800,stroke-width:2px
     style RESOLVER fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
-    style PROJECT fill:#f1f8e9,stroke:#8bc34a,stroke-width:2px
+    style LINKER fill:#f1f8e9,stroke:#8bc34a,stroke-width:2px
 ```
 
 ### 比較表（概要）
@@ -147,7 +147,7 @@ graph TB
 | location-plugin | location | folder | location-entities-db | あり| Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | Shape 連携可 |
 | route-plugin | route | folder | route-db   | あり| Yes           | あり     | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
 | resolver-plugin | resolver | folder | resolver-db | - | -             | -      | -      | - | なし                               | Schema 検出/前処理 |
-| linker-plugin | linker | folder | project-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定 |
+| linker-plugin | linker | folder | linker-db, linker-entities-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定（旧 project-plugin） |
 
 注記:
 - データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。

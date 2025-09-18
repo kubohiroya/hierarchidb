@@ -7,7 +7,7 @@ import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HelpOutline } from '@mui/icons-material';
 import { type Theme, useTheme } from '@mui/material/styles';
 import styled from '@emotion/styled';
-import type { TreeConsoleFooterProps } from '../types/index';
+import type { TreeConsoleFooterProps } from '../types/index.js';
 
 /**
   * FooterContainer -

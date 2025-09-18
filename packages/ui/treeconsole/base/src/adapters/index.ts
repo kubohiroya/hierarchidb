@@ -3,12 +3,12 @@
   * API
   */
 
-export { WorkerAPIAdapter } from './WorkerAPIAdapter';
+export { WorkerAPIAdapter } from './WorkerAPIAdapter.js';
 
-export { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter';
-export { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands';
-export { WorkingCopyCommandsAdapter } from './commands/WorkingCopyCommands';
-export { SubscriptionManager } from './subscriptions/SubscriptionManager';
+export { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js';
+export { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
+export { WorkingCopyCommandsAdapter } from './commands/WorkingCopyCommands.js';
+export { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
 
 export type {
   WorkerAPIAdapterConfig,
@@ -19,13 +19,13 @@ export type {
   LegacyExpandedStateChanges,
   LegacySubTreeChanges,
   TreeConsoleAdapterError,
-} from './types';
+} from './types.js';
 
-export type { WorkingCopyEditSession } from './commands/WorkingCopyCommands';
+export type { WorkingCopyEditSession } from './commands/WorkingCopyCommands.js';
 
 export {
   createCommand,
   createAdapterGroupId,
   createAdapterCommandId,
   createTimestamp,
-} from './utils';
+} from './utils.js';

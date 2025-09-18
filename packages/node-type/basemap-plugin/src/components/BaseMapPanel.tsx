@@ -33,8 +33,8 @@ import {
   Settings,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import { BaseMapDisplay } from './BaseMapDisplay';
-import { useBaseMapEntity } from '../hooks/useBaseMapEntity';
+import { BaseMapDisplay } from './BaseMapDisplay.js';
+import { useBaseMapEntity } from '../hooks/useBaseMapEntity.js';
 import type { MapViewState } from '@hierarchidb/ui-map';
 
 export interface BaseMapPanelProps {

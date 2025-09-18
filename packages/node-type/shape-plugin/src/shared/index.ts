@@ -3,18 +3,18 @@
   */
 
 // API interface
-export * from './api';
+export * from './api.js';
 
 // Types
-export * from './types';
+export * from './types.js';
 // Bridge legacy worker/UI event types used by hooks/components
-export type { BatchProgressEvent } from '../types/BatchProgressEvent';
+export type { BatchProgressEvent } from '../types/BatchProgressEvent.js';
 
 // Metadata
-export * from './metadata';
+export * from './metadata.js';
 
 // Constants
-export * from './constants';
+export * from './constants.js';
 
 // Utilities
-export * from './utils';
+export * from './utils.js';

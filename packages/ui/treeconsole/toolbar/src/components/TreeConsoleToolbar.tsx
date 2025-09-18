@@ -53,7 +53,7 @@ import {
 
 } from '@mui/icons-material';
 
-import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types';
+import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types.js';
 
 const SearchTextFieldContainer = styled(Box)(() => ({
   display: 'flex',

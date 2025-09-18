@@ -1,5 +1,5 @@
-import { GroupEntity, PeerEntity, RelationalEntity } from './entity-types';
-import { NodeId } from './id-types';
+import { GroupEntity, PeerEntity, RelationalEntity } from './entity-types.js';
+import { NodeId } from './id-types.js';
 
 //  API
 export type APIMethodArgs = readonly [NodeId, ...any[]];

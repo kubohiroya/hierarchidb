@@ -5,7 +5,7 @@
   */
 
 import * as pako from 'pako';
-import type { ChunkBinaryFormat, ProcessingStats } from '../types';
+import type { ChunkBinaryFormat, ProcessingStats } from '../types/index.js';
 
 /**
   * : ArrayBuffer

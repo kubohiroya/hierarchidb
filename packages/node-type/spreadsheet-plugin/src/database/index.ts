@@ -1,2 +1,2 @@
-export { SpreadsheetDatabase } from './SpreadsheetDatabase';
+export { SpreadsheetDatabase } from './SpreadsheetDatabase.js';
 

@@ -3,14 +3,14 @@
   */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { FolderEntity } from '../entities/FolderEntity';
+import type { FolderEntity } from '../entities/FolderEntity.js';
 
 // Re-export existing types from the entities directory
 export type {
   FolderEntity,
   FolderOperationResult,
   FolderSearchQuery,
-} from '../entities/FolderEntity';
+} from '../entities/FolderEntity.js';
 
 /**
  * Create/Update data types for API operations

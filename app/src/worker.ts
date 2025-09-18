@@ -4,7 +4,7 @@
  */
 
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
-import { APP_VERSION, BUILD_TIME } from './version';
+import { APP_VERSION, BUILD_TIME } from './version.js';
 
 const localBuildTime = (() => {
   try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
@@ -47,7 +47,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         // @eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const mod = await import('virtual:plugin-definitions').catch(async () =>
-          await import('./virtual/plugin-definitions')
+          await import('./virtual/plugin-definitions.js')
         );
         pluginDefinitions = (mod?.default as any[]) || [];
       } catch {
@@ -81,7 +81,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           route: async () => import('@hierarchidb/route-plugin/worker'),
           // In dev, import monorepo source directly to avoid unresolved workspace pkg; in prod, use published subpath
           timeline: (isDev
-            ? async () => import('../../packages/node-type/timeline-plugin/src/worker/index')
+            ? async () => import('../../packages/node-type/timeline-plugin/src/worker/index.js')
             : async () => import('@hierarchidb/timeline-plugin/worker')
           ),
           shape: async () => import('@hierarchidb/shape-plugin/worker'),

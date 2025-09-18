@@ -1,6 +1,6 @@
-export { useCountrySelection } from './useCountrySelection';
+export { useCountrySelection } from './useCountrySelection.js';
 
 export type {
   UseCountrySelectionOptions,
   UseCountrySelectionResult,
-} from './useCountrySelection';
+} from './useCountrySelection.js';

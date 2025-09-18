@@ -2,7 +2,7 @@
  * Shape plugin constants
  */
 
-import type { DataSourceConfig, ProcessingConfig } from './types';
+import type { DataSourceConfig, ProcessingConfig } from './types.js';
 
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   concurrentDownloads: 2,

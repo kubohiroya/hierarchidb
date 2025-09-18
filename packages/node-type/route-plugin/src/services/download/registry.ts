@@ -1,5 +1,5 @@
-import type { NetworkPortLike } from '../../orchestrator/RouteSourceOrchestrator';
-import { createRouteDownloadService } from './factory';
+import type { NetworkPortLike } from '../../orchestrator/RouteSourceOrchestrator.js';
+import { createRouteDownloadService } from './factory.js';
 
 export interface RouteDownloadService {
   service: { download: (url: string, fileId: string) => Promise<any> };

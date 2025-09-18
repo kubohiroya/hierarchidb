@@ -1,6 +1,6 @@
-import type { FolderEntity } from '../entities/FolderEntity';
-import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI';
-import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI';
+import type { FolderEntity } from '../entities/FolderEntity.js';
+import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI.js';
+import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI.js';
 import type {
   DialogStepDefinition,
   NodeId,

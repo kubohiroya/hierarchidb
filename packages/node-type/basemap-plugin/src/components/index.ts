@@ -1,8 +1,8 @@
-export { default as BaseMapDisplay } from './BaseMapDisplay';
-export { default as BaseMapPanel } from './BaseMapPanel';
-export { default as BaseMapPreview } from './BaseMapPreview';
+export { default as BaseMapDisplay } from './BaseMapDisplay.js';
+export { default as BaseMapPanel } from './BaseMapPanel.js';
+export { default as BaseMapPreview } from './BaseMapPreview.js';
 
-export * from './BaseMapDisplay';
-export * from './BaseMapPanel';
-export * from './BaseMapPreview';
+export * from './BaseMapDisplay.js';
+export * from './BaseMapPanel.js';
+export * from './BaseMapPreview.js';
 

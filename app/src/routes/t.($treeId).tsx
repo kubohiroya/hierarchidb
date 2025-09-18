@@ -12,12 +12,12 @@ import {
   Typography,
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
-import AppLogoIcon from '~/components/AppLogoIcon';
-import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader';
-import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration';
+import AppLogoIcon from '~/components/AppLogoIcon.js';
+import { loadTree, type LoadTreeArgs, type LoadTreeReturn } from '~/loader.js';
+import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 //import { LanguageSelector } from '~/components/LanguageSelector';
-import { WorkerAPIClient } from '../WorkerAPIClient';
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { Tree } from '@hierarchidb/common-type';
 
 export async function clientLoader(args: LoaderFunctionArgs) {

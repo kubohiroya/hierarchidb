@@ -1,6 +1,6 @@
-import type { BatchTaskLike } from '../../types/BatchTaskLike';
-import type { IShapeDownloadStrategy } from './strategy';
-import { HttpUrlStrategy } from './strategies/http-url';
+import type { BatchTaskLike } from '../../types/BatchTaskLike.js';
+import type { IShapeDownloadStrategy } from './strategy.js';
+import { HttpUrlStrategy } from './strategies/http-url.js';
 
 class InMemoryRegistry {
   private list: IShapeDownloadStrategy[] = [];

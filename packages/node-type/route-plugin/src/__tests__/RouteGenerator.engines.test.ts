@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RouteGenerator } from '../../src/services/RouteGenerator';
+import { RouteGenerator } from '../../src/services/RouteGenerator.js';
 
 describe('RouteGenerator engine delegation', () => {
   it('delegates osm_route to provided engine and maps distance/duration', async () => {

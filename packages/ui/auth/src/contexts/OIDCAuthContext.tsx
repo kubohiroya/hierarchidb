@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { AuthProvider, useAuth } from 'react-oidc-context';
 // import { devError } from "@/shared/utils/logger";
 // const devError = (msg: string, error?: any) => console.error(msg, error);
-import { AuthContextType } from '../types/AuthContextType';
-import { AuthUser } from '../types/AuthUser';
+import { AuthContextType } from '../types/AuthContextType.js';
+import { AuthUser } from '../types/AuthUser.js';
 // import { getSecureConfig } from "@/config/secureConfig";
 const getSecureConfig = () => ({
   oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY || '',

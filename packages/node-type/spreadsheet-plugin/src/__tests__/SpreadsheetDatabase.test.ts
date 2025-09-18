@@ -10,8 +10,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 (describe as any).runIf?.(process.env.ENABLE_TDD_RED === '1');
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-type';
-import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
-import type { SpreadsheetEntity } from '../types';
+import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
+import type { SpreadsheetEntity } from '../types/index.js';
 // RawFileMetadata and RowChunk are used in commented out helper functions
 
 describe('SpreadsheetDatabase', () => {

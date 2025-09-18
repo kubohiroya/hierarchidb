@@ -10,7 +10,7 @@ import type {
   LocationEntity,
   LocationSearchConfig,
   LocationType,
-} from '../entities/LocationEntity';
+} from '../entities/LocationEntity.js';
 
 /**
  * Location batch task interface
@@ -264,7 +264,7 @@ export class LocationBatchManager {
   private async searchLocations(config: LocationSearchConfig): Promise<LocationEntity[]> {
     // Try Strategy registry first (feature-gated)
     try {
-      const { getLocationStrategy } = await import('./download/registry');
+      const { getLocationStrategy } = await import('./download/registry.js');
       const strategy = getLocationStrategy(config);
       if (strategy) {
         const list = await strategy.search(config);
@@ -328,7 +328,7 @@ export class LocationBatchManager {
     }
 
     try {
-      const { getJson } = await import('./utils/sharedNet');
+      const { getJson } = await import('./utils/sharedNet.js');
       const data = await getJson(`${endpoint}?${params}`);
       return this.convertOSMToLocations(data);
     } catch (error) {
@@ -363,7 +363,7 @@ export class LocationBatchManager {
     const query = config.options?.overpassQuery || this.buildOverpassQuery(config);
 
     try {
-      const { postJson } = await import('./utils/sharedNet');
+      const { postJson } = await import('./utils/sharedNet.js');
       const data = await postJson(endpoint, query, { 'Content-Type': 'application/x-www-form-urlencoded' });
       return this.convertOverpassToLocations(data);
     } catch (error) {
@@ -382,7 +382,7 @@ export class LocationBatchManager {
     }
 
     try {
-      const { getJson } = await import('./utils/sharedNet');
+      const { getJson } = await import('./utils/sharedNet.js');
       const url = config.options.customEndpoint;
       const params = new URLSearchParams((config.options.queryParams || {}) as any).toString();
       const data = await getJson(params ? `${url}?${params}` : url, { headers: config.options.customHeaders as any });

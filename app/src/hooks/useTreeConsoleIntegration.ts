@@ -6,19 +6,23 @@
  */
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.js';
 import { proxy as comlinkProxy } from 'comlink';
-import { Subscriptions } from '~/subscriptions/controller';
-import { showCommandError } from '~/shared/command-errors';
+import { Subscriptions } from '~/subscriptions/controller.js';
+import { showCommandError } from '~/shared/command-errors.js';
 import type { NodeId, NodeType, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useImportExport } from '@hierarchidb/ui-import-export';
-import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter';
-import { rebuildAdjacency, buildVisibleRows } from '~/state/treeconsole.derive';
-import { preconnectForNodeTypes, preconnectPluginServices } from '~/services/preconnect';
+import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
+import { rebuildAdjacency, buildVisibleRows } from '~/state/treeconsole.derive.js';
+import { preconnectForNodeTypes, preconnectPluginServices } from '~/services/preconnect.js';
+
+// Top-level helper types used across multiple callbacks
+type MaybeCP = { getCommandProcessor?: () => Promise<{ canUndo?: () => boolean; canRedo?: () => boolean; undo?: () => Promise<void>; redo?: () => Promise<void> }> };
+type GlobalWithClipboard = typeof globalThis & { __HDB_CLIPBOARD__?: { nodeIds: NodeId[]; cut?: boolean } };
 
 export interface UseTreeConsoleIntegrationParams {
   client: Remote<WorkerAPI>;
@@ -123,18 +127,46 @@ export function useTreeConsoleIntegration({
   // Memoized columns configuration
   const columns = useMemo(() => createDefaultColumns(), []);
 
-  // Memoized breadcrumb items
-  const breadcrumbItems = useMemo<BreadcrumbNode[]>(() => {
-    if (!pageTreeNode) return [];
-
-    return [
-      {
-        id: pageTreeNode.id,
-        name: pageTreeNode.name,
-        nodeType: pageTreeNode.nodeType,
-      },
-    ];
-  }, [pageTreeNode]);
+  // Breadcrumb items: ancestors (root -> parent) + current node
+  const [breadcrumbItems, setBreadcrumbItems] = useState<BreadcrumbNode[]>([]);
+  const MAX_BREADCRUMB_ITEMS = (() => {
+    try {
+      const v = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_MAX_BREADCRUMB;
+      const n = v ? Number(v) : NaN;
+      return Number.isFinite(n) && n > 3 ? n : 20;
+    } catch { return 20; }
+  })();
+  useEffect(() => {
+    let disposed = false;
+    (async () => {
+      try {
+        if (!client || !pageTreeNode?.id) { setBreadcrumbItems([]); return; }
+        const queryAPI = await client.getQueryAPI();
+        const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
+        // ancestors: root -> parent
+        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType }));
+        // Truncate for performance on deep trees
+        if (nodes.length + 1 > MAX_BREADCRUMB_ITEMS) {
+          const keepTail = Math.max(1, MAX_BREADCRUMB_ITEMS - 3); // root + ellipsis + tail + current
+          const root = nodes[0];
+          const tail = nodes.slice(nodes.length - keepTail);
+          nodes = [
+            { id: root.id, name: root.name, nodeType: root.nodeType },
+            { id: '', name: '…', nodeType: 'ellipsis', isClickable: false },
+            ...tail,
+          ];
+        }
+        const path: BreadcrumbNode[] = [
+          ...nodes,
+          { id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType },
+        ];
+        if (!disposed) setBreadcrumbItems(path);
+      } catch {
+        if (!disposed && pageTreeNode) setBreadcrumbItems([{ id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType }]);
+      }
+    })();
+    return () => { disposed = true; };
+  }, [client, pageTreeNode?.id, pageTreeNode?.name, pageTreeNode?.nodeType, MAX_BREADCRUMB_ITEMS]);
 
   // Import/Export functionality
   const importExport = useImportExport(client, !!client);
@@ -142,7 +174,6 @@ export function useTreeConsoleIntegration({
   // Helper: sync canUndo/canRedo from CommandProcessor
   const refreshUndoRedo = useCallback(async () => {
     try {
-      type MaybeCP = { getCommandProcessor?: () => Promise<{ canUndo?: () => boolean; canRedo?: () => boolean; undo?: () => Promise<void>; redo?: () => Promise<void> }> };
       const getCP = (client as unknown as MaybeCP).getCommandProcessor;
       if (typeof getCP !== 'function') return;
       let cp: any;
@@ -438,7 +469,7 @@ export function useTreeConsoleIntegration({
         }));
         {
           const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map());
-          const childrenByParent = new Map<string, string[]>(ssot.childrenByParent ?? new Map());
+          const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map());
           const rootId = String(pageNodeId || '');
           const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
           setSSOT({ treeData: applySortFilterSearch(flat) });
@@ -449,7 +480,7 @@ export function useTreeConsoleIntegration({
         setState((prev) => ({ ...prev, filterBy: filter }));
         {
           const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map());
-          const childrenByParent = new Map<string, string[]>(ssot.childrenByParent ?? new Map());
+          const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map());
           const rootId = String(pageNodeId || '');
           const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
           setSSOT({ treeData: applySortFilterSearch(flat) });
@@ -460,7 +491,9 @@ export function useTreeConsoleIntegration({
         setSSOT({ viewMode: mode });
       },
 
-      handleBreadcrumbNavigate: (nodeId: string) => {
+      handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => {
+        // Ignore non-clickable breadcrumb items (e.g., ellipsis)
+        if (!nodeId || (node && (node as any).isClickable === false)) return;
         const target = nodeId as NodeId;
         if (!target) return;
         if (pushPath && treeId) {
@@ -613,7 +646,6 @@ export function useTreeConsoleIntegration({
       },
 
       handleCopy: () => {
-        type GlobalWithClipboard = typeof globalThis & { __HDB_CLIPBOARD__?: { nodeIds: NodeId[]; cut?: boolean } };
         (globalThis as GlobalWithClipboard).__HDB_CLIPBOARD__ = { nodeIds: [...selectedIds] };
         setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
         setSSOT({ canPaste: selectedIds.length > 0 });

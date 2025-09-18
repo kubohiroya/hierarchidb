@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
-import { CoreDB } from '../CoreDB';
-import { CommandProcessor } from '../CommandProcessor';
-import { commandMetrics } from '../utils/metrics';
+import { CoreDB } from '../CoreDB.js';
+import { CommandProcessor } from '../CommandProcessor.js';
+import { commandMetrics } from '../utils/metrics.js';
 
 describe('Headless metrics (command latency)', () => {
   beforeEach(() => {

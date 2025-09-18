@@ -9,8 +9,8 @@
   */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WorkerAPIAdapter } from '~/adapters';
-import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index';
+import { WorkerAPIAdapter } from '../adapters/index.js';
+import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
@@ -20,10 +20,10 @@ import {
   type CutResult,
   type PasteResult,
   useCopyPasteOperations,
-} from './useCopyPasteOperations';
-import { useUndoRedoOperations } from './useUndoRedoOperations';
-import { useCRUDOperations } from './useCRUDOperations';
-import type { UseCRUDOperationsOptions } from './useCRUDOperations';
+} from './useCopyPasteOperations.js';
+import { useUndoRedoOperations } from './useUndoRedoOperations.js';
+import { useCRUDOperations } from './useCRUDOperations.js';
+import type { UseCRUDOperationsOptions } from './useCRUDOperations.js';
 
 export interface TreeViewControllerProps {
   /** TreeTypes ID */

@@ -10,8 +10,8 @@ import type {
   PluginRegistry as IPluginRegistry,
   TreeTableHooks,
   TreeTablePlugin,
-} from './types';
-import { HookExecutionError, PluginError, PluginRegistrationError } from './types';
+} from './types.js';
+import { HookExecutionError, PluginError, PluginRegistrationError } from './types.js';
 
 /**
     */

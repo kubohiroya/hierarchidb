@@ -3,9 +3,9 @@ import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-ro
 import { useState, useRef, useEffect } from 'react';
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
-import type { LoadTreeReturn } from '~/loader';
-import { loadTree, type LoadTreeArgs } from '~/loader';
-import { WorkerAPIClient } from '../../WorkerAPIClient';
+import type { LoadTreeReturn } from '~/loader.js';
+import { loadTree, type LoadTreeArgs } from '~/loader.js';
+import { WorkerAPIClient } from '../../WorkerAPIClient.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { CommonDialogTitle } from '@hierarchidb/ui-dialog';
 import { TreeConsolePanel, type TreeNodeData, type TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
@@ -18,10 +18,10 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   if (treeData.tree) {
     // Use facade pattern: get QueryAPI first
     const queryAPI = await treeData.client.getQueryAPI();
-    const trashRootNode = await queryAPI.getNode(treeData.tree.trashRootId);
+    const trashRootNode = await queryAPI.getNode(treeData.tree.trashRootId as string);
 
     // Load trash items (children of trash root)
-    const trashItems = await queryAPI.listChildren(treeData.tree.trashRootId);
+    const trashItems = await queryAPI.listChildren(treeData.tree.trashRootId as string);
 
     return {
       ...treeData,
@@ -47,9 +47,11 @@ export default function TrashDialog() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const isFullscreen = displayMode === 'fullscreen';
+  const isMaximized = displayMode === 'maximized';
+  const setIsFullscreen = (v: boolean) => setDisplayMode(v ? 'fullscreen' : (isMaximized ? 'maximized' : 'standard'));
+  const setIsMaximized = (v: boolean) => setDisplayMode(v ? 'maximized' : (isFullscreen ? 'fullscreen' : 'standard'));
   const paperRef = useRef<HTMLDivElement | null>(null);
 
   // No persistence for TrashDialog (not tied to a stable nodeId)

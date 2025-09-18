@@ -14,7 +14,7 @@ import type {
 // Delegates at runtime via dynamic import.
 export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVDataApi {
   const getAdapter = async () => {
-    const mod = await import('../../services/SpreadsheetCSVApiAdapter');
+    const mod = await import('../../services/SpreadsheetCSVApiAdapter.js');
     return mod.createSpreadsheetCSVApi(pluginId);
   };
 

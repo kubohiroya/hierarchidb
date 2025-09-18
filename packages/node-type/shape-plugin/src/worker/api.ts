@@ -23,12 +23,12 @@ import {
   UrlMetadata,
   validateProcessingConfig,
   ValidationResult,
-} from '../shared';
-import { ShapeEntityHandler } from './handlers';
+} from '../shared/index.js';
+import { ShapeEntityHandler } from './handlers/index.js';
 
-import { metadataLoader } from '../services/metadata/MetadataLoader';
-import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager';
-import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB';
+import { metadataLoader } from '../services/metadata/MetadataLoader.js';
+import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
+import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import * as Comlink from 'comlink';
 
 // Create singleton unified batch manager

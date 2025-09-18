@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { LocationBasicInfoStep } from '../ui/components/LocationBasicInfoStep';
-import { LocationSelectionStep } from '../components/steps/LocationSelectionStep';
-import type { LocationWorkingCopy } from '../types';
+import { LocationBasicInfoStep } from '../ui/components/LocationBasicInfoStep.js';
+import { LocationSelectionStep } from '../components/steps/LocationSelectionStep.js';
+import type { LocationWorkingCopy } from '../types/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 

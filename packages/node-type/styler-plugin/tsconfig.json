@@ -26,7 +26,8 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "module": "Node16"
   },
   "include": [
     "src/types/**/*.ts",

@@ -8,8 +8,8 @@ import {
   type LocationTileSettings,
   SessionController,
   type SessionSummary,
-} from './SessionController';
-import { LocationBatchSession } from './LocationBatchSession';
+} from './SessionController.js';
+import { LocationBatchSession } from './LocationBatchSession.js';
 
 export class LocationBatchSessionManager {
   private shared = new Map<string, LocationBatchSession>();
@@ -38,7 +38,7 @@ export class LocationBatchSessionManager {
     this.summaries.set(sessionId, summary);
     // Persist session meta (best-effort)
     try {
-      const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
+      const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
       // Opportunistic cleanup (7 days)
       try {
@@ -68,7 +68,7 @@ export class LocationBatchSessionManager {
 
     shared.start().then(async () => {
       try {
-        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
+        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         // @ts-ignore
         await db.table('sessions').update(sessionId, { status: 'completed' });
@@ -77,7 +77,7 @@ export class LocationBatchSessionManager {
     }).catch(async (e: any) => {
       console.error('Location session failed', e);
       try {
-        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB');
+        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         // @ts-ignore
         await db.table('sessions').update(sessionId, { status: 'failed' });

@@ -4,7 +4,7 @@
  */
 
 // Export shared types
-export * from '../types';
+export * from '../types/index.js';
 
 // Export entity definition
-export * from '../entities/FolderEntity';
+export * from '../entities/FolderEntity.js';

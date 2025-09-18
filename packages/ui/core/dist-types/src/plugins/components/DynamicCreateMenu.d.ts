@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
+import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 export interface DynamicCreateMenuProps {
     /**
      * Parent node where new items will be created

@@ -1,7 +1,7 @@
-import { AuthProviderType } from '../types/AuthProviderType';
+import { AuthProviderType } from '../types/AuthProviderType.js';
 // import { devError } from "@/shared/utils/logger";
 // const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
-import { AuthUser } from '../types/AuthUser';
+import { AuthUser } from '../types/AuthUser.js';
 // Temporary implementation for secureConfig
 const getSecureConfig = () => ({
   microsoftClientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',

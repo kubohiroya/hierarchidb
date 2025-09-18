@@ -1,8 +1,8 @@
 import { ReactNode, useEffect, useState } from 'react';
 
-import { ThemeContext } from './ThemeContext';
-import { ThemeContextType, ThemeMode } from '../types';
-import { getStoredThemeMode, getSystemTheme, storeThemeMode } from '../utils/storage';
+import { ThemeContext } from './ThemeContext.js';
+import { ThemeContextType, ThemeMode } from '../types.js';
+import { getStoredThemeMode, getSystemTheme, storeThemeMode } from '../utils/storage.js';
 
 export interface ThemeProviderProps {
   children: ReactNode;

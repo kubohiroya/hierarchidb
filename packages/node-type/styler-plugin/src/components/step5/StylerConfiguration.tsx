@@ -40,10 +40,10 @@ import {
   ViewColumn as ViewColumnIcon,
 } from '@mui/icons-material';
 
-import type { ColorAlgorithm, ColorSpace, MapLibreStyleProperty, StylerConfig } from '../../types/stylerTypes';
-import { MAPLIBRE_PROPERTY_GROUPS, MAPLIBRE_PROPERTY_METADATA, StylerConfigDefault } from '../../types/stylerTypes';
-import { generateColorGradient } from '../../utils/colorUtils';
-import { analyzeData, type DataAnalysisResult, extractNumericValues } from '../../utils/dataAnalysis';
+import type { ColorAlgorithm, ColorSpace, MapLibreStyleProperty, StylerConfig } from '../../types/stylerTypes.js';
+import { MAPLIBRE_PROPERTY_GROUPS, MAPLIBRE_PROPERTY_METADATA, StylerConfigDefault } from '../../types/stylerTypes.js';
+import { generateColorGradient } from '../../utils/colorUtils.js';
+import { analyzeData, type DataAnalysisResult, extractNumericValues } from '../../utils/dataAnalysis.js';
 
 /**
   * : StylerConfiguration

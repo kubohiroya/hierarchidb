@@ -1,4 +1,4 @@
-import { getRowStoreDB, type RowIndexEntry } from './RowStoreDB';
+import { getRowStoreDB, type RowIndexEntry } from './RowStoreDB.js';
 
 function norm(v: any): string {
   if (v === null || v === undefined) return '';

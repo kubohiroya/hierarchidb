@@ -4,14 +4,14 @@
    */
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
-import { PluginRegistry } from './PluginRegistry';
+import { PluginRegistry } from './PluginRegistry.js';
 import type {
   PluginContext as IPluginContext,
   PluginEvent,
   PluginRegistry as IPluginRegistry,
   TreeTablePlugin,
   TreeTablePluginConfig,
-} from './types';
+} from './types.js';
 
 // =============================================================================
 // Context Definition
@@ -140,9 +140,9 @@ export function PluginProvider({
     };
   }, [registry, onPluginEvent]);
 
-  const executeHook = useCallback(<T extends keyof import('./types').TreeTableHooks>(
+  const executeHook = useCallback(<T extends keyof import('./types.js').TreeTableHooks>(
     hookName: T,
-    ...args: Parameters<NonNullable<import('./types').TreeTableHooks[T]>>
+    ...args: Parameters<NonNullable<import('./types.js').TreeTableHooks[T]>>
   ) => {
     return registry.executeHook(hookName, ...args);
   }, [registry]);

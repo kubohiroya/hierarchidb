@@ -5,7 +5,7 @@
  */
 
 // Export hooks
-export { useImportExport } from './hooks/useImportExport';
+export { useImportExport } from './hooks/useImportExport.js';
 
 // Export types
 export type {
@@ -17,4 +17,4 @@ export type {
   ExportProgress,
   ImportResult,
   ValidationResult,
-} from './hooks/useImportExport';
+} from './hooks/useImportExport.js';

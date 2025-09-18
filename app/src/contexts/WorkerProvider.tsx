@@ -1,208 +1,161 @@
-/**
-  * Worker Provider - UIWorkerReact Context
-  * Worker
- * @hierarchidb/runtime-worker-worker-bootstrap
- * Worker
-  */
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { bootLog } from '../utils/bootLog';
-import { Box, LinearProgress, Typography } from '@mui/material';
-import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
-import { WorkerAPIClient } from '../WorkerAPIClient';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { TitleLogo } from '../components/TitleLogo';
-import { useBootProgress } from './BootProgressProvider';
+import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
+import { bootLog } from '../utils/bootLog.js';
+import { useBootProgress } from './BootProgressProvider.js';
 
-// ===========================
-// ===========================
-
-interface WorkerContextValue {
+type WorkerContextValue = {
   client: Remote<WorkerAPI> | null;
   isInitialized: boolean;
   initProgress: number;
   initMessage: string;
   error: Error | null;
-}
+};
 
-interface WorkerProviderProps {
-  children: React.ReactNode;
+type WorkerProviderProps = {
+  children: ReactNode;
   timeout?: number;
   debug?: boolean;
-  renderOverlay?: boolean; // if false, do not render local initializing/error overlays
-}
-
-// ===========================
-// Context
-// ===========================
+  renderOverlay?: boolean;
+};
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
-// Module-level guards to survive React StrictMode dev remounts
-let __WORKER_INIT_STARTED__ = false;
-let __WORKER_INIT_COMPLETED__ = false;
+let initStarted = false;
+let initCompleted = false;
 
-// ===========================
-// ===========================
+function useBootProgressSafe() {
+  try {
+    return useBootProgress();
+  } catch {
+    return null;
+  }
+}
 
-/**
-    */
-const InitializingView: React.FC<{ progress: number; message: string }> = ({
-                                                                             progress,
-                                                                             message,
-                                                                           }) => (
-  <Box
-    sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#ffffff',
-      padding: 4,
-    }}
-  >
-    <TitleLogo showProgress={false} />
+const overlayContainerStyle: CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#ffffff',
+  zIndex: 2000,
+  padding: '24px',
+};
 
-    <Box sx={{ width: '100%', maxWidth: 400, mt: 4 }}>
-      {/**
-       * UX: Avoid flicker from "0%" regression
-       * - When progress is 0 (initial), show indeterminate bar and hide texts
-       * - Once progress > 0, switch to determinate with percentage and step message
-       */}
-      <LinearProgress
-        variant={progress > 0 ? 'determinate' : 'indeterminate'}
-        value={progress}
-        sx={{ height: 8, borderRadius: 4 }}
-      />
-      {progress > 0 && (
-        <>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ mt: 2 }}
-          >
-            {message}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            align="center"
-            display="block"
-            sx={{ mt: 1 }}
-          >
-            {progress}% Complete
-          </Typography>
-        </>
-      )}
-    </Box>
-  </Box>
-);
+const overlayCardStyle: CSSProperties = {
+  width: '100%',
+  maxWidth: 420,
+  borderRadius: 12,
+  boxShadow: '0 12px 28px rgba(15, 23, 42, 0.16)',
+  padding: '24px',
+  backgroundColor: '#ffffff',
+};
 
-/**
-    */
-const ErrorView: React.FC<{ error: Error; onRetry: () => void }> = ({
-                                                                      error,
-                                                                      onRetry,
-                                                                    }) => (
-  <Box
-    sx={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#fff5f5',
-      padding: 4,
-    }}
-  >
-    <Typography variant="h5" color="error" gutterBottom>
-      Worker初期化エラー
-    </Typography>
+const overlayHeadingStyle: CSSProperties = {
+  fontSize: '16px',
+  fontWeight: 600,
+  marginBottom: 12,
+  color: '#0d47a1',
+};
 
-    <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-      Workerの初期化に失敗しました。
-    </Typography>
+const overlayBodyStyle: CSSProperties = {
+  marginTop: 12,
+  marginBottom: 8,
+  fontSize: '14px',
+  color: '#37474f',
+  lineHeight: 1.5,
+};
 
-    <Box
-      sx={{
-        p: 2,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        borderRadius: 1,
-        maxWidth: 600,
-        width: '100%',
-        mb: 3,
-      }}
-    >
-      <Typography
-        variant="body2"
-        sx={{ fontFamily: 'monospace', color: 'error.main' }}
-      >
-        {error.message || 'Unknown error'}
-      </Typography>
-    </Box>
+const overlayCaptionStyle: CSSProperties = {
+  fontSize: '12px',
+  color: '#607d8b',
+};
 
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      <button
-        onClick={onRetry}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#1976d2',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '14px',
-        }}
-      >
-        再試行
-      </button>
+const progressTrackStyle: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: 8,
+  borderRadius: 4,
+  overflow: 'hidden',
+  backgroundColor: '#e3f2fd',
+};
 
-      <button
-        onClick={() => window.location.reload()}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#757575',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '14px',
-        }}
-      >
-        ページをリロード
-      </button>
-    </Box>
-  </Box>
-);
+const progressBarStyle = (value: number): CSSProperties => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  bottom: 0,
+  width: `${Math.max(0, Math.min(100, value))}%`,
+  backgroundColor: '#1976d2',
+  transition: 'width 160ms ease-out',
+});
 
-// ===========================
-//  Provider
-// ===========================
+const buttonStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '10px 18px',
+  fontSize: '14px',
+  fontWeight: 500,
+  borderRadius: 8,
+  border: 'none',
+  cursor: 'pointer',
+  backgroundColor: '#1976d2',
+  color: '#ffffff',
+};
 
-/**
-  * WorkerProvider
-  * Worker
-  */
-export const WorkerProvider: React.FC<WorkerProviderProps> = ({
+const secondaryButtonStyle: CSSProperties = {
+  ...buttonStyle,
+  backgroundColor: '#607d8b',
+};
+
+function InitializingOverlay({ progress, message }: { progress: number; message: string }) {
+  const clamped = Math.max(0, Math.min(100, Math.round(progress)));
+  return (
+    <div style={overlayContainerStyle}>
+      <div style={overlayCardStyle}>
+        <div style={overlayHeadingStyle}>Setting up worker…</div>
+        <div style={progressTrackStyle}>
+          <div style={progressBarStyle(clamped)} />
+        </div>
+        <div style={overlayBodyStyle}>{message || 'Worker initializing'}</div>
+        <div style={overlayCaptionStyle}>{clamped}% Complete</div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div style={overlayContainerStyle}>
+      <div style={overlayCardStyle}>
+        <div style={overlayHeadingStyle}>Worker initialization error</div>
+        <div style={overlayBodyStyle}>{error.message || 'Unknown error'}</div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+          <button type="button" style={buttonStyle} onClick={onRetry}>Retry</button>
+          <button type="button" style={secondaryButtonStyle} onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const WorkerProvider = ({
   children,
   timeout = 30000,
   debug = false,
   renderOverlay = true,
-}) => {
-  // Bridge progress to BootProgress
-  let bootProgress: { setStepProgress: (n: any, p: number, m?: string) => void; markStepDone: (n: any, m?: string) => void } | null = null;
-  try { bootProgress = useBootProgress(); } catch { /* outside of provider in some tests */ }
+}: WorkerProviderProps) => {
+  const bootProgress = useBootProgressSafe();
   const [state, setState] = useState<WorkerContextValue>({
     client: null,
     isInitialized: false,
@@ -210,15 +163,14 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
     initMessage: 'Worker初期化を開始しています...',
     error: null,
   });
+  const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
+  const latestProgressRef = useRef(0);
 
-  const [initChannel, setInitChannel] = useState<WorkerInitializationChannel | null>(null);
-
-  // Helper to finalize initialization and hide the banner
-  const finalizeInitialized = async () => {
+  const finalizeInitialized = useCallback(async () => {
     try {
-      // Reduce boot log noise; print only when ?debug=init
-      bootLog('WorkerProvider finalize start');
+      bootLog('WorkerProvider finalize');
       const client = await WorkerAPIClient.getSingleton();
+      latestProgressRef.current = 100;
       setState({
         client,
         isInitialized: true,
@@ -226,189 +178,187 @@ export const WorkerProvider: React.FC<WorkerProviderProps> = ({
         initMessage: 'Worker初期化完了',
         error: null,
       });
-      bootLog('WorkerProvider finalized isInitialized=true');
-    } catch (e) {
-      
-    }
-  };
-
-  /**
-      * Worker
-      */
-  const initializeWorker = async () => {
-    bootLog('WorkerProvider initialize() begin');
-    try {
-      setState(prev => ({ ...prev, error: null }));
-      // Mark global guard so route loaders know initialization has begun
-      (window as any).__HDB_INIT_STARTED__ = true;
-
-      //  WorkerAPIClientWorker
-      await WorkerAPIClient.initialize();
-      bootLog('WorkerProvider initialize resolved');
-      // Fast-path if already ready
-      try {
-        if (WorkerAPIClient.isReady()) {
-          bootLog('WorkerProvider fast-path isReady=true, finalizing');
-          __WORKER_INIT_COMPLETED__ = true;
-          await finalizeInitialized();
-          return;
-        }
-      } catch {}
-
-      const rawWorker = WorkerAPIClient.getRawWorkerInstance();
-
-      if (!rawWorker) {
-        throw new Error('Worker instance is not available');
-      }
-
-      //  INIT_PROGRESSUI
-      const onProgressMessage = (event: MessageEvent) => {
-        const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
-        if (data?.type === 'INIT_PROGRESS') {
-          setState(prev => ({
-            ...prev,
-            initProgress: typeof data.payload?.progress === 'number' ? data.payload!.progress! : prev.initProgress,
-            initMessage: data.payload?.message || prev.initMessage,
-          }));
-          bootProgress?.setStepProgress('Worker', Number(data?.payload?.progress ?? 0), data?.payload?.message || '');
-          bootLog('WorkerProvider channel progress=%s msg=%s', data?.payload?.progress ?? 'n/a', data?.payload?.message ?? '');
-        }
-      };
-      rawWorker.addEventListener('message', onProgressMessage);
-
-      const channel = new WorkerInitializationChannel();
-      setInitChannel(channel);
-
-      const result = await channel.waitForInitialization({
-        worker: rawWorker,
-        timeout,
-        debug,
-      });
-
-      rawWorker.removeEventListener('message', onProgressMessage);
-
-      if (result.success) {
-        __WORKER_INIT_COMPLETED__ = true;
-        (window as any).__HDB_INIT_COMPLETE__ = true;
-        bootLog('WorkerProvider channel INIT_COMPLETE');
-        bootProgress?.markStepDone('Worker', 'Worker ready');
-        await finalizeInitialized();
-      } else {
-        throw new Error(result.error?.message || 'Worker initialization failed');
-      }
     } catch (error) {
-      
+      const normalized = error instanceof Error ? error : new Error(String(error));
+      setState(prev => ({ ...prev, error: normalized }));
+    }
+  }, []);
+
+  const markComplete = useCallback(async () => {
+    if (initCompleted) {
+      if (!WorkerAPIClient.isReady()) {
+        return;
+      }
+    }
+    initCompleted = true;
+    try {
+      if (typeof window !== 'undefined') {
+        (window as any).__HDB_INIT_COMPLETE__ = true;
+      }
+    } catch {}
+    bootProgress?.setStepProgress('Worker', 100, 'Worker ready');
+    bootProgress?.markStepDone('Worker', 'Worker ready');
+    await finalizeInitialized();
+  }, [bootProgress, finalizeInitialized]);
+
+  const runInitialization = useCallback(async () => {
+    bootLog('WorkerProvider initialize() start');
+    initChannelRef.current?.dispose();
+    initChannelRef.current = null;
+    latestProgressRef.current = 0;
+    setState(prev => ({
+      ...prev,
+      error: null,
+      initProgress: 0,
+      initMessage: 'Worker初期化を開始しています...',
+      isInitialized: false,
+    }));
+    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+
+    try {
+      if (typeof window !== 'undefined') {
+        (window as any).__HDB_INIT_STARTED__ = true;
+      }
+    } catch {}
+
+    try {
+      await WorkerAPIClient.initialize();
+    } catch (error) {
+      const normalized = error instanceof Error ? error : new Error(String(error));
+      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      return;
+    }
+
+    if (WorkerAPIClient.isReady()) {
+      bootLog('WorkerProvider fast-path (isReady)');
+      await markComplete();
+      return;
+    }
+
+    const rawWorker = WorkerAPIClient.getRawWorkerInstance();
+    if (!rawWorker) {
+      const normalized = new Error('Worker instance is not available');
+      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      return;
+    }
+
+    const progressHandler = (event: MessageEvent) => {
+      const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
+      if (data?.type !== 'INIT_PROGRESS') return;
+      const message = data.payload?.message || 'Worker initializing';
+      const progress = typeof data.payload?.progress === 'number'
+        ? Math.max(0, Math.min(100, data.payload.progress))
+        : latestProgressRef.current;
+      latestProgressRef.current = progress;
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error : new Error('Unknown error'),
-        isInitialized: false,
+        initProgress: progress,
+        initMessage: message,
       }));
-    }
-  };
+      bootProgress?.setStepProgress('Worker', progress, message);
+    };
 
-  //  + event listener for INIT_COMPLETE
+    rawWorker.addEventListener('message', progressHandler);
+
+    const channel = new WorkerInitializationChannel();
+    initChannelRef.current = channel;
+
+    try {
+      await channel.waitForInitialization({ worker: rawWorker, timeout, debug });
+      await markComplete();
+    } catch (error) {
+      const normalized = error instanceof Error
+        ? error
+        : (error && typeof error === 'object' && 'error' in (error as Record<string, unknown>) && (error as any).error)
+          ? ((error as any).error instanceof Error ? (error as any).error : new Error(String((error as any).error)))
+          : new Error('Worker initialization failed');
+      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+    } finally {
+      rawWorker.removeEventListener('message', progressHandler);
+      channel.dispose();
+      initChannelRef.current = null;
+    }
+  }, [bootProgress, debug, markComplete, timeout]);
+
+  const retryInitialization = useCallback(() => {
+    bootLog('WorkerProvider retry requested');
+    WorkerAPIClient.reset();
+    initCompleted = false;
+    latestProgressRef.current = 0;
+    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+    void runInitialization();
+  }, [bootProgress, runInitialization]);
+
   useEffect(() => {
     bootLog('WorkerProvider mount');
-    // In dev, add a short fallback to finalize if WorkerAPIClient becomes ready but the channel hasn't resolved (StrictMode races)
-    let devFallbackTimer: number | undefined;
-    const onInitComplete = async () => {
-      bootLog('WorkerProvider event INIT_COMPLETE');
-      __WORKER_INIT_COMPLETED__ = true;
-      bootProgress?.markStepDone('Worker', 'Worker ready');
-      try {
-        await WorkerAPIClient.initialize();
-        const client = await WorkerAPIClient.getSingleton();
-        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
-      } catch (e) {
-        
-      }
+    let pollTimer: number | null = null;
+    let devFallbackTimer: number | null = null;
+
+    const onInitComplete = () => {
+      void markComplete();
     };
-    const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-    if (!g.__HDB_WORKER_EVT_BOUND__) {
-      g.__HDB_WORKER_EVT_BOUND__ = true;
-      window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
-    }
 
-    if (!__WORKER_INIT_STARTED__) {
-      __WORKER_INIT_STARTED__ = true;
-      void initializeWorker();
-    } else {
-      // Fast finalize on remount if completed
-      if (__WORKER_INIT_COMPLETED__ || WorkerAPIClient.isReady()) {
-        const client = WorkerAPIClient.getSingleton();
-        setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+    if (typeof window !== 'undefined') {
+      const globalAny = window as any;
+      if (!globalAny.__HDB_WORKER_EVT_BOUND__) {
+        globalAny.__HDB_WORKER_EVT_BOUND__ = true;
+        window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
       }
     }
 
-    // Stronger fallback: poll global flag/isReady briefly to avoid missing the event in SSR/hydration races
-    let pollTimer: number | undefined;
-    const start = Date.now();
+    if (!initStarted) {
+      initStarted = true;
+      void runInitialization();
+    } else if (initCompleted || WorkerAPIClient.isReady()) {
+      void markComplete();
+    }
+
     const poll = async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-        if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) {
-          const client = await WorkerAPIClient.getOrInit();
-          setState({ client, isInitialized: true, initProgress: 100, initMessage: 'Worker初期化完了', error: null });
+        if (WorkerAPIClient.isReady()) {
+          await markComplete();
           if (pollTimer) window.clearInterval(pollTimer);
-          return;
-        }
-        if (Date.now() - start > 5000 && pollTimer) {
-          window.clearInterval(pollTimer);
         }
       } catch {}
     };
-    // @ts-ignore setInterval returns number in browsers
-    pollTimer = window.setInterval(poll, 100);
+    pollTimer = window.setInterval(poll, 150);
 
     if (import.meta.env.DEV) {
-      // @ts-ignore setTimeout returns number in browsers
-      devFallbackTimer = window.setTimeout(async () => {
-        if (!state.isInitialized && WorkerAPIClient.isReady()) {
-          await finalizeInitialized();
+      devFallbackTimer = window.setTimeout(() => {
+        if (WorkerAPIClient.isReady()) {
+          void markComplete();
         }
       }, 1500);
     }
 
     return () => {
-      initChannel?.dispose();
-      window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
-      const g2: any = (typeof window !== 'undefined') ? (window as any) : {};
-      g2.__HDB_WORKER_EVT_BOUND__ = false;
-      if (devFallbackTimer) {
-        window.clearTimeout(devFallbackTimer);
+      initChannelRef.current?.dispose();
+      initChannelRef.current = null;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
+        const globalAny = window as any;
+        globalAny.__HDB_WORKER_EVT_BOUND__ = false;
       }
-      // clear poll
       if (pollTimer) window.clearInterval(pollTimer);
+      if (devFallbackTimer) window.clearTimeout(devFallbackTimer);
     };
-  }, []);
+  }, [markComplete, runInitialization]);
 
-  // When renderOverlay=false, always render children and expose state via context,
-  // letting an outer BootProgress overlay handle UX and gating.
-  if (renderOverlay) {
-    if (state.error) {
-      return <ErrorView error={state.error} onRetry={initializeWorker} />;
-    }
-    if (!state.isInitialized) {
-      return <InitializingView progress={state.initProgress} message={state.initMessage} />;
-    }
-  }
+  const contextValue = useMemo<WorkerContextValue>(() => state, [state]);
 
   return (
-    <WorkerContext.Provider value={state}>
+    <WorkerContext.Provider value={contextValue}>
+      {renderOverlay && !state.isInitialized && !state.error ? (
+        <InitializingOverlay progress={state.initProgress} message={state.initMessage} />
+      ) : null}
+      {renderOverlay && state.error ? (
+        <ErrorOverlay error={state.error} onRetry={retryInitialization} />
+      ) : null}
       {children}
     </WorkerContext.Provider>
   );
 };
 
-// ===========================
-// Hooks
-// ===========================
-
-/**
-  * useWorker Hook
-  * WorkerContext
-  */
 export const useWorker = (): WorkerContextValue => {
   const context = useContext(WorkerContext);
   if (!context) {
@@ -417,13 +367,8 @@ export const useWorker = (): WorkerContextValue => {
   return context;
 };
 
-/**
-  * useWorkerClient Hook
-  * WorkerAPIClient
-  */
 export const useWorkerClient = () => {
   const { client, isInitialized } = useWorker();
-
   return {
     client,
     isConnected: isInitialized,

@@ -44,15 +44,19 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
       // '@types/react/ts5.0/jsx-runtime' into the bundled output.
       resolve: false,
       compilerOptions: {
+        module: 'Node16',
         composite: false,
         incremental: false,
         tsBuildInfoFile: undefined,
-        // Force Node-style resolution compatible with TS 4.9 during dts bundling
-        moduleResolution: 'node',
+        // Align with package Node16 resolution during DTS bundling
+        moduleResolution: 'Node16',
         resolveJsonModule: true,
         // Keep JSX types external to avoid leaking jsx-runtime symbols
         jsx: 'react-jsx',
         skipLibCheck: true,
+        // Do not fail DTS bundling on local unuseds; keep tsc typecheck strict
+        noUnusedLocals: false,
+        noUnusedParameters: false,
         types: ['react', 'node'],
       },
     },

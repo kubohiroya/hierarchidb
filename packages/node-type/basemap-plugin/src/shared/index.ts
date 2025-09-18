@@ -3,8 +3,8 @@
  * @description BaseMap shared exports
  */
 
-export * from './types';
-export * from './constants';
-export * from './utils';
-export * from './api';
-export * from './metadata';
+export * from './types.js';
+export * from './constants.js';
+export * from './utils.js';
+export * from './api.js';
+export * from './metadata.js';

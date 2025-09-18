@@ -1,7 +1,7 @@
 /**
  * Download Strategy interfaces for Location plugin
  */
-import type { LocationEntity, LocationSearchConfig } from '../../entities/LocationEntity';
+import type { LocationEntity, LocationSearchConfig } from '../../entities/LocationEntity.js';
 
 export interface ILocationDownloadStrategy {
   readonly id: string;

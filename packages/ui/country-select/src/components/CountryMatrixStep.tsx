@@ -7,9 +7,9 @@ import React, { useMemo } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 
-import { CountryMatrixSelector } from './CountryMatrixSelector';
-import type { Country, CountryFilter } from '../types/Country';
-import type { ColumnSet, MatrixConfig, MatrixSelection } from '../types/MatrixColumn';
+import { CountryMatrixSelector } from './CountryMatrixSelector.js';
+import type { Country, CountryFilter } from '../types/Country.js';
+import type { ColumnSet, MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
 
 export interface CountryMatrixStepProps {
   /** Step title */

@@ -9,9 +9,9 @@ import type {
   BatchSessionStatus,
   IBatchSessionManager,
   StandardProgressEvent,
-} from './BatchControlAPI';
-import { isBatchControlAPIV2Enabled } from './BatchControlAPI';
-import type { AbstractBatchSession } from './AbstractBatchSession';
+} from './BatchControlAPI.js';
+import { isBatchControlAPIV2Enabled } from './BatchControlAPI.js';
+import type { AbstractBatchSession } from './AbstractBatchSession.js';
 
 /**
  * Base implementation for batch session managers

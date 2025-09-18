@@ -1,4 +1,4 @@
-import type { UIPluginDefinition } from '../types';
+import type { UIPluginDefinition } from '../types.js';
 
 /**
  * UI Plugin Registry

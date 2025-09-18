@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AuthProviderType } from '../types/AuthProviderType';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import {
   Box,
   Dialog,
@@ -11,7 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { AuthProviderOptions } from './AuthProviderOptions';
+import { AuthProviderOptions } from './AuthProviderOptions.js';
 
 interface AuthProviderDialogProps {
   open: boolean;

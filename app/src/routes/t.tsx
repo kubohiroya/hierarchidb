@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import type { LoaderFunctionArgs } from 'react-router';
-import { loadWorkerAPIClient, type LoadWorkerAPIClientReturn } from '~/loader';
+import { loadWorkerAPIClient, type LoadWorkerAPIClientReturn } from '~/loader.js';
 
 export async function clientLoader(args: LoaderFunctionArgs): Promise<LoadWorkerAPIClientReturn> {
   
@@ -19,7 +19,7 @@ export async function clientLoader(args: LoaderFunctionArgs): Promise<LoadWorker
       window.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
       const poll = window.setInterval(() => {
         // Defer to WorkerAPIClient if available
-        import('~/WorkerAPIClient').then(({ WorkerAPIClient }) => {
+        import('~/WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
           if (WorkerAPIClient.isReady()) {
             window.clearInterval(poll);
             finish();

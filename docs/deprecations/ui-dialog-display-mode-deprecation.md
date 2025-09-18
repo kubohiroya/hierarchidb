@@ -30,6 +30,7 @@
 - Phase 0（準備）
   - 旧APIに `@deprecated` 付与（済）。
   - 新API/永続化を全対象ダイアログに適用（Route/Resolver/Folder/ProjectWizard 済）。
+  - Headless/visual dialog の display mode 操作を単体テストでカバー（2025-09-17 `feat/ui-dialog/displaymode-modernization` で追加）。
   - ドキュメント化（本書）。
 - Phase 1（警告段階, vN）
   - Flag: `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE = true`（デフォルト）。
@@ -58,6 +59,7 @@
 - 単体
   - `getPeerDisplayMode` / `setPeerDisplayMode` 正常系/異常系。
   - 旧API使用時の警告ログが出ること（Phase 1）。
+  - `CommonDialogTitle` のクイック切替と `useHeadlessDialogFrame` の displayMode 状態遷移が Vitest で検証されていること。
 - 結合
   - 表示モード切替（標準/最大化/全画面）と Fullscreen API 同期。
   - 対象ダイアログで永続化の往復が行えること。
@@ -82,4 +84,3 @@
 
 **メトリクス（任意）**
 - 旧API使用個所数（ビルド時/ランタイム収集）を簡易集計し、Phase 移行判断に活用。
-

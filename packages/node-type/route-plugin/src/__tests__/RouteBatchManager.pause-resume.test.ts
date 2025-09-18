@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RouteBatchManager } from '../../src/services/RouteBatchManager';
-import { RouteDatabase } from '../../src/database/RouteDatabase';
+import { RouteBatchManager } from '../../src/services/RouteBatchManager.js';
+import { RouteDatabase } from '../../src/database/RouteDatabase.js';
 
 describe('RouteBatchManager pause/resume (smoke)', () => {
   it('creates cursor and toggles paused flag', async () => {

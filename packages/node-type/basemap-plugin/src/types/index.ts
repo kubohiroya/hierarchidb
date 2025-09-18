@@ -11,4 +11,4 @@ export type {
   MapStyle,
   MapViewport,
   DisplayOptions,
-} from './BaseMapEntity';
+} from './BaseMapEntity.js';

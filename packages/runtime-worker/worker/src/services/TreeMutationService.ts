@@ -16,15 +16,14 @@ import {
   UndoPayload,
 } from '@hierarchidb/common-type';
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
-import type { CommandProcessor } from './CommandProcessor';
-import type { CoreDB } from './CoreDB';
-import { FEATURE_FLAGS } from '../config/feature-flags';
+import type { CommandProcessor } from './CommandProcessor.js';
+import type { CoreDB } from './CoreDB.js';
 
-import { createNewName } from './WorkingCopyTreeNodeOperations';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config';
+import { createNewName } from './WorkingCopyTreeNodeOperations.js';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { SingletonMixin } from '@hierarchidb/util';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager';
-import { encodeTrashHolderName } from './utils/holder-encoding';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
+import { encodeTrashHolderName } from './utils/holder-encoding.js';
 
 export class TreeMutationService implements TreeMutationAPI {
   // Note: Implementation now routes all mutating operations via CommandProcessor.
@@ -103,7 +102,7 @@ export class TreeMutationService implements TreeMutationAPI {
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
       // New semantics: create a draft working copy under workingCopy root and return its wc nodeId
-      const { createDraftWorkingCopyGetOrCreate } = await import('./WorkingCopyTreeNodeOperations');
+      const { createDraftWorkingCopyGetOrCreate } = await import('./WorkingCopyTreeNodeOperations.js');
       const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(
         this.coreDB as any,
         params.treeId,
@@ -206,12 +205,10 @@ export class TreeMutationService implements TreeMutationAPI {
       const result = await this.duplicateNodesCommand(cmd);
 
       if (result.success) {
-        if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
-          try {
-            const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
-            await lifecycle.handleCommand(cmd as any);
-          } catch {
-          }
+        try {
+          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+          await lifecycle.handleCommand(cmd as any);
+        } catch {
         }
         // After successful duplicate, recompute destination ancestors hasChildren
         await this.recomputeAncestorsHasChildrenFromParent(parentId);
@@ -342,7 +339,7 @@ export class TreeMutationService implements TreeMutationAPI {
     }
     //  Register sourcetarget mapping for lifecycle
     try {
-      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
+      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
       (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
     } catch {
     }
@@ -515,20 +512,18 @@ export class TreeMutationService implements TreeMutationAPI {
         }
       }
 
-      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
-        try {
-          //  Register mapping: source nodeIds newNodeIds
-          const idMap = new Map<string, string>();
-          for (let i = 0; i < (nodeIds?.length || 0); i++) {
-            const src = nodeIds[i];
-            const dst = newNodeIds[i];
-            if (src && dst) idMap.set(src as unknown as string, dst as unknown as string);
-          }
-          (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
-          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
-          await lifecycle.handleCommand(cmd as any);
-        } catch {
+      try {
+        //  Register mapping: source nodeIds newNodeIds
+        const idMap = new Map<string, string>();
+        for (let i = 0; i < (nodeIds?.length || 0); i++) {
+          const src = nodeIds[i];
+          const dst = newNodeIds[i];
+          if (src && dst) idMap.set(src as unknown as string, dst as unknown as string);
         }
+        (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
+        const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+        await lifecycle.handleCommand(cmd as any);
+      } catch {
       }
 
       // Recompute destination ancestors hasChildren
@@ -576,87 +571,63 @@ export class TreeMutationService implements TreeMutationAPI {
    * : docs/13-trash-operations-analysis.md
       */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
-    // Route via CommandProcessor holder path when flag ON, else legacy inline path
+    // Route via CommandProcessor holder path first.
     // Capture original parents to reinforce flags after operation
     const originalParents = new Set<NodeId>();
     for (const nid of nodeIds) {
       const n = await this.coreDB.getNode?.(nid);
       if (n?.parentId) originalParents.add(n.parentId);
     }
-    if (FEATURE_FLAGS.WORKER_TRASH_USE_HOLDER) {
-      const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
-      const res = await this.commandProcessor.processCommand(env as any);
-      if (res.success) {
-        for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
-        return { success: true };
-      }
-      // Fallback: derive trash root from ancestor pattern (e.g., r:root -> r:trash) and perform inline move
-      try {
-        for (const nodeId of nodeIds) {
-          const node = await this.coreDB.getNode?.(nodeId);
-          if (!node) continue;
-          // ascend to find a root-like id ending with ':root'
-          let cursor: NodeId | undefined = node.parentId;
-          let trashRootId: NodeId | undefined;
-          while (cursor) {
-            if (typeof cursor === 'string' && cursor.endsWith(':root')) {
-              trashRootId = (cursor.slice(0, -(':root'.length)) + ':trash') as NodeId;
-              break;
-            }
-            const parent = await this.coreDB.getNode?.(cursor);
-            if (!parent || parent.parentId === cursor) break;
-            cursor = parent.parentId;
-          }
-          if (!trashRootId) continue;
-          const holderId = (crypto.randomUUID() as unknown) as NodeId;
-          const holderName = encodeTrashHolderName(node.parentId, node.id);
-          const now = (Date.now() as unknown) as Timestamp;
-          await this.coreDB.createNode?.({
-            id: holderId,
-            parentId: trashRootId,
-            nodeType: ('trash' as unknown) as NodeType,
-            name: holderName,
-            depth: 0,
-            createdAt: now,
-            updatedAt: now,
-            version: 1,
-            holderType: 'trash' as const,
-            holderTargetId: node.id,
-            holderMetaParentId: node.parentId,
-          } as any);
-          await this.coreDB.updateNode?.({
-            ...node,
-            parentId: holderId,
-            updatedAt: now,
-            version: (node.version || 1) + 1,
-          } as any);
-        }
-        for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
-        return { success: true };
-      } catch (e) {
-        return { success: false, error: (e as Error).message || String(e) };
-      }
+    const env = this.commandProcessor.createEnvelope('moveToTrash' as any, { nodeIds } as any);
+    const res = await this.commandProcessor.processCommand(env as any);
+    if (res.success) {
+      for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
+      return { success: true };
     }
-    const trashRootId = 'trash' as NodeId;
+    // Fallback: derive trash root from ancestor pattern (e.g., r:root -> r:trash) and perform holder move inline
     try {
       for (const nodeId of nodeIds) {
         const node = await this.coreDB.getNode?.(nodeId);
         if (!node) continue;
-        const now = Date.now() as Timestamp;
-        await this.coreDB.updateNode({
-          ...node,
+        let cursor: NodeId | undefined = node.parentId;
+        let trashRootId: NodeId | undefined;
+        while (cursor) {
+          if (typeof cursor === 'string' && cursor.endsWith(':root')) {
+            trashRootId = (cursor.slice(0, -(':root'.length)) + ':trash') as NodeId;
+            break;
+          }
+          const parent = await this.coreDB.getNode?.(cursor);
+          if (!parent || parent.parentId === cursor) break;
+          cursor = parent.parentId;
+        }
+        if (!trashRootId) continue;
+        const holderId = (crypto.randomUUID() as unknown) as NodeId;
+        const holderName = encodeTrashHolderName(node.parentId, node.id);
+        const now = (Date.now() as unknown) as Timestamp;
+        await this.coreDB.createNode?.({
+          id: holderId,
           parentId: trashRootId,
-          originalParentId: node.parentId as any,
-          originalName: node.name as any,
-          removedAt: now as any,
+          nodeType: ('trash' as unknown) as NodeType,
+          name: holderName,
+          depth: 0,
+          createdAt: now,
           updatedAt: now,
-          version: node.version + 1,
+          version: 1,
+          holderType: 'trash' as const,
+          holderTargetId: node.id,
+          holderMetaParentId: node.parentId,
+        } as any);
+        await this.coreDB.updateNode?.({
+          ...node,
+          parentId: holderId,
+          updatedAt: now,
+          version: (node.version || 1) + 1,
         } as any);
       }
       for (const pid of Array.from(originalParents)) await this.recomputeAncestorsHasChildrenFromParent(pid);
       return { success: true };
     } catch (e) {
-      return { success: false, error: String(e) };
+      return { success: false, error: (e as Error).message || String(e) };
     }
   }
 
@@ -740,15 +711,13 @@ export class TreeMutationService implements TreeMutationAPI {
       newNodeIds,
     };
 
-    if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED) {
-      try {
-        const idMap = new Map<string, string>();
-        for (const [src, dst] of idMapping) idMap.set(src as unknown as string, dst as unknown as string);
-        (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
-        const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
-        await lifecycle.handleCommand(cmd as any);
-      } catch {
-      }
+    try {
+      const idMap = new Map<string, string>();
+      for (const [src, dst] of idMapping) idMap.set(src as unknown as string, dst as unknown as string);
+      (EntityLifecycleManager as any).setIdMapping?.(cmd.commandId, idMap);
+      const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB as any);
+      await lifecycle.handleCommand(cmd as any);
+    } catch {
     }
 
     return result;

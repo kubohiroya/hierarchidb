@@ -9,8 +9,8 @@ const randomUUIDCompat = (): string => {
     return v.toString(16);
   });
 };
-import type { ClockPort } from './ports';
-import type { TaskHandle, TaskSpec, TaskStatus } from './types';
+import type { ClockPort } from './ports.js';
+import type { TaskHandle, TaskSpec, TaskStatus } from './types.js';
 
 export interface WorkerPoolOptions {
   concurrency: number;

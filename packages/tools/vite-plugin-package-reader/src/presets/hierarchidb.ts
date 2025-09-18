@@ -6,9 +6,9 @@ import type {
   TransformPipelineOptions,
   VirtualModuleGenerator,
   VitePluginPackageReaderOptions,
-} from '../types';
-import { RegexStrategy } from '../strategies';
-import { DependencyResolver } from '../pipeline/DependencyResolver';
+} from '../types.js';
+import { RegexStrategy } from '../strategies/index.js';
+import { DependencyResolver } from '../pipeline/DependencyResolver.js';
 
 /**
   * HierarchiDB

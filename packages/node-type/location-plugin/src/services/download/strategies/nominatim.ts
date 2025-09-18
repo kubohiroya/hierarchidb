@@ -1,5 +1,5 @@
-import type { ILocationDownloadStrategy } from '../types';
-import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity';
+import type { ILocationDownloadStrategy } from '../types.js';
+import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity.js';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';
@@ -26,7 +26,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       params.append('accept-language', config.language);
     }
     try {
-      const { authFetch } = await import('../../utils/authFetch');
+      const { authFetch } = await import('../../utils/authFetch.js');
       const response = await authFetch(`${endpoint}?${params}`);
       const data = await response.json();
       return (data as any[]).map((osm) => this.fromOSM(osm));

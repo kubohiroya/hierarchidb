@@ -1,7 +1,7 @@
-import type { ProgressInfo } from '../../../shared';
-import type { VectorTileTask } from '../../types';
-import type { VectorTileStageAdapter } from './VectorTileStageAdapter';
-import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient';
+import type { ProgressInfo } from '../../../shared/index.js';
+import type { VectorTileTask } from '../../types.js';
+import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
+import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void) {

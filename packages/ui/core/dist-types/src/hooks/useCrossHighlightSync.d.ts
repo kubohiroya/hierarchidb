@@ -5,20 +5,20 @@ export interface UseCrossHighlightSyncOptions {
 }
 export declare function useCrossHighlightSync({ datasetId, withDeckAccessors }: UseCrossHighlightSyncOptions): {
     rowSets: {
-        hovered: Set<import("../sync/CrossViewStyles").Id>;
-        selected: Set<import("../sync/CrossViewStyles").Id>;
-        matched: Set<import("../sync/CrossViewStyles").Id>;
-        disabled: Set<import("../sync/CrossViewStyles").Id>;
-        dragging: Set<import("../sync/CrossViewStyles").Id>;
-        dropTarget: Set<import("../sync/CrossViewStyles").Id>;
+        hovered: Set<import("../sync/CrossViewStyles.js").Id>;
+        selected: Set<import("../sync/CrossViewStyles.js").Id>;
+        matched: Set<import("../sync/CrossViewStyles.js").Id>;
+        disabled: Set<import("../sync/CrossViewStyles.js").Id>;
+        dragging: Set<import("../sync/CrossViewStyles.js").Id>;
+        dropTarget: Set<import("../sync/CrossViewStyles.js").Id>;
     };
     dataGrid: {
-        hoveredRows: Set<import("../sync/CrossViewStyles").Id>;
-        selectedRows: Set<import("../sync/CrossViewStyles").Id>;
-        matchedRows: Set<import("../sync/CrossViewStyles").Id>;
-        disabledRows: Set<import("../sync/CrossViewStyles").Id>;
-        draggingRows: Set<import("../sync/CrossViewStyles").Id>;
-        dropTargetRows: Set<import("../sync/CrossViewStyles").Id>;
+        hoveredRows: Set<import("../sync/CrossViewStyles.js").Id>;
+        selectedRows: Set<import("../sync/CrossViewStyles.js").Id>;
+        matchedRows: Set<import("../sync/CrossViewStyles.js").Id>;
+        disabledRows: Set<import("../sync/CrossViewStyles.js").Id>;
+        draggingRows: Set<import("../sync/CrossViewStyles.js").Id>;
+        dropTargetRows: Set<import("../sync/CrossViewStyles.js").Id>;
         onRowHover: (row: any, rowId: string | number) => void;
         onRowLeave: (_row: any, _rowId: string | number) => void;
         rowSx: (state: {

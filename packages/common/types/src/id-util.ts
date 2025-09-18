@@ -1,4 +1,4 @@
-import { NodeId, NodeType, TreeId } from './id-types';
+import { NodeId, NodeType, TreeId } from './id-types.js';
 
 // Helper functions to create branded types
 export function toNodeId(id: string): NodeId {

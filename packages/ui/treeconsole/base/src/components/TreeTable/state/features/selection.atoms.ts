@@ -8,7 +8,7 @@
 
 import { atom } from 'jotai';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { filteredDataAtom } from '../core/data.atoms';
+import { filteredDataAtom } from '../core/data.atoms.js';
 
 /**
     */

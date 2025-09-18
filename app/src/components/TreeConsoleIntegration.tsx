@@ -7,13 +7,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
-import { Subscriptions } from '~/subscriptions/controller';
+import { Subscriptions } from '~/subscriptions/controller.js';
 import { Alert, Box, CircularProgress } from '@mui/material';
-import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial';
+import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
-import { useWorkerClient } from '~/contexts/WorkerProvider';
+import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js';
+import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';

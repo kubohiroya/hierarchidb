@@ -48,11 +48,11 @@ import {
   Timeline,
   Warning,
 } from '@mui/icons-material';
-import type { NodeId } from '../../types';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
+import type { NodeId } from '../../types/index.js';
+import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
-import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB';
-import { useLocationProgress } from '../../hooks/useLocationProgress';
+import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
+import { useLocationProgress } from '../../hooks/useLocationProgress.js';
 
 interface ProgressInfo {
   percentage: number;

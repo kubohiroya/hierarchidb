@@ -3,7 +3,7 @@
  */
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { bootLog } from './utils/bootLog';
+import { bootLog } from './utils/bootLog.js';
 
 let workerInstance: Remote<WorkerAPI> | null = null;
 let rawWorkerInstance: Worker | null = null;

@@ -5,7 +5,7 @@
  * to the UI thread via postMessage, independent of Comlink.
  */
 
-import type { InitializationStep, WorkerInitMessage, WorkerInitRequest } from './types';
+import type { InitializationStep, WorkerInitMessage, WorkerInitRequest } from './types.js';
 
 export class WorkerInitializationReporter {
   private isInitialized = false;

@@ -7,25 +7,25 @@
   */
 
 // Import classes and services for internal use
-import { StylerDataService } from './services/StylerDataService';
-import { StylerEntityHandler } from './handlers/StylerEntityHandler';
-import { StylerExtension } from './extension/definition';
+import { StylerDataService } from './services/StylerDataService.js';
+import { StylerEntityHandler } from './handlers/StylerEntityHandler.js';
+import { StylerExtension } from './extension/definition.js';
 
 // Types exports
 export type {
   StylerEntity,
   StylerStyle,
   StylerColorRule,
-} from './entities/StylerEntity';
+} from './entities/StylerEntity.js';
 
 export type {
   StylemapCategory,
   StylemapCategoryConfig,
-} from './types/category-types';
+} from './types/category-types.js';
 
 export type {
   StylemapBasicInfoData,
-} from './steps/BasicInfoStep';
+} from './steps/BasicInfoStep.js';
 
 export type {
   StylerConfig,
@@ -37,24 +37,24 @@ export type {
   PropertyGroup,
   ColorCalculationResult,
   TablePreviewProps,
-} from './types/stylerTypes';
+} from './types/stylerTypes.js';
 
 // Constants and defaults
 export {
   StylerConfigDefault,
   MAPLIBRE_PROPERTY_METADATA,
   MAPLIBRE_PROPERTY_GROUPS,
-} from './types/stylerTypes';
+} from './types/stylerTypes.js';
 
 // Extension definition (main plugin definition)
-export { StylerExtension as default } from './extension/definition';
-export { StylerExtension } from './extension/definition';
+export { StylerExtension as default } from './extension/definition.js';
+export { StylerExtension } from './extension/definition.js';
 
 // Entity handler
-export { StylerEntityHandler } from './handlers/StylerEntityHandler';
+export { StylerEntityHandler } from './handlers/StylerEntityHandler.js';
 
 // Services
-export { StylerDataService } from './services/StylerDataService';
+export { StylerDataService } from './services/StylerDataService.js';
 
 // Utilities
 export {
@@ -68,7 +68,7 @@ export {
   valueToColor,
   adjustBrightness,
   getContrastRatio,
-} from './utils/colorUtils';
+} from './utils/colorUtils.js';
 
 // UI components are exported from subpath to avoid worker-time deps
 // import from '@hierarchidb/styler-plugin/ui' when needed
@@ -124,7 +124,7 @@ export async function initializeStylerPlugin(context: {
     // Optionally register folder-dialog extension for evaluator/steps (if host uses folder Extensible dialog)
     // This is a no-op if the host does not consume folder extensions.
     try {
-      const { stylerFolderExtension } = await import('./extensions/StylerFolderExtension');
+      const { stylerFolderExtension } = await import('./extensions/StylerFolderExtension.js');
       // Defer initialization; host may call separately depending on lifecycle.
       // await stylerFolderExtension.initialize();
       void stylerFolderExtension; // keep import live without side effects

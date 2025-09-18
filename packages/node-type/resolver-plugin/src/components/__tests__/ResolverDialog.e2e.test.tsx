@@ -1,18 +1,41 @@
+/**
+ * @file ResolverDialog.e2e.test.tsx
+ * @description Integration test covering the headless multi-step dialog flow for ResolverDialog.
+ */
+
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ResolverDialog } from '../ResolverDialog';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+import { ResolverDialog } from '../ResolverDialog.js';
+
+const TestThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ThemeProvider theme={createTheme()}>
+    {children}
+  </ThemeProvider>
+);
 
 describe('ResolverDialog (ui-dialog integration)', () => {
   it('walks through steps and saves when filled', async () => {
-    const onSave = vi.fn();
+    const onSave = vi.fn().mockResolvedValue(undefined);
     const onCancel = vi.fn();
+    const onClose = vi.fn();
 
     const working: any = {
       name: 'resolver-1',
-      sourceSchema: 'src',
-      targetSchema: 'dst',
-      mappingRules: [],
+      sourceSchema: JSON.stringify([{ id: 1, value: 'foo' }]),
+      targetSchema: JSON.stringify([{ identifier: 1, transformed: 'foo' }]),
+      mappingRules: [
+        {
+          id: 'rule-1',
+          sourceProperty: 'value',
+          targetProperty: 'transformed',
+          transformFunction: 'uppercase',
+          isRequired: false,
+          description: 'Map value to transformed',
+        },
+      ],
       duplicateResolution: { strategy: 'ignore' },
       previewConfig: { sampleSize: 10 },
     };
@@ -21,38 +44,28 @@ describe('ResolverDialog (ui-dialog integration)', () => {
       <ResolverDialog
         open={true}
         nodeId={'n1' as any}
-        onClose={onCancel}
-        onSave={onSave}
-        onCancel={onCancel}
-        entity={undefined}
-      />,
-    );
-
-    // Re-render with pre-filled working copy to satisfy validation
-    render(
-      <ResolverDialog
-        open={true}
-        nodeId={'n1' as any}
-        onClose={onCancel}
+        onClose={onClose}
         onSave={onSave}
         onCancel={onCancel}
         entity={working}
       />,
+      { wrapper: TestThemeProvider },
     );
 
-    // Move through steps using a11y test controls
-    const next = screen.getByLabelText('Next');
-    fireEvent.click(next);
-    fireEvent.click(next);
-    fireEvent.click(next);
-    fireEvent.click(next);
-    fireEvent.click(next);
+    for (let index = 0; index < 5; index += 1) {
+      fireEvent.click(screen.getByLabelText('Next'));
+    }
 
-    // Complete
-    const complete = screen.getByLabelText('Complete');
-    fireEvent.click(complete);
+    fireEvent.click(screen.getByLabelText('Complete'));
 
-    expect(onSave).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'resolver-1',
+        duplicateResolution: { strategy: 'ignore' },
+      }),
+    );
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
   });
 });
-

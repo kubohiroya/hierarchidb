@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '../EntityLifecycleManager';
-import { storeRegistry } from '../store-registry';
-import type { PeerStore } from '../store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
+import { storeRegistry } from '../store-registry.js';
+import type { PeerStore } from '../store.js';
 
 function makeCoreStub() {
   const nodeMap = new Map<string, any>();
@@ -21,7 +21,6 @@ function makeCoreStub() {
 describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('upserts peer from WC to target and deletes WC peer', async () => {

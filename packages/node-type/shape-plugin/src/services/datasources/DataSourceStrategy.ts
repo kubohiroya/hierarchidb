@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import { ShapeEntity } from '../../types/ShapeEntity';
+import { ShapeEntity } from '../../types/ShapeEntity.js';
 
 export interface DataSourceConfig {
   id: string;

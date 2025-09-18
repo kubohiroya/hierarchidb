@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type RouteBatchConfig, RouteBatchManager, type RouteBatchTask } from '../../src/services/RouteBatchManager';
+import { type RouteBatchConfig, RouteBatchManager, type RouteBatchTask } from '../../src/services/RouteBatchManager.js';
 
 // Minimal subclass to expose internal processing with fake work per lane
 class TestManager extends RouteBatchManager {

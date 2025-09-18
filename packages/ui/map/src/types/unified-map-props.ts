@@ -23,7 +23,7 @@
  *    - Clear separation between data source and display configuration
  */
 
-import type { MapLibreFilter, MapLibreMapInstance, MapLibreStyle } from './maplibre-public';
+import type { MapLibreFilter, MapLibreMapInstance, MapLibreStyle } from './maplibre-public.js';
 
 /**
  * Base map view state - shared across all map components

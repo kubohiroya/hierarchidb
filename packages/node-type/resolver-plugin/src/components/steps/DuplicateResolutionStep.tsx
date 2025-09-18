@@ -24,7 +24,7 @@ import {
   SkipNext as SkipIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity } from '~/types';
+import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity, PropertyMappingRule } from '../../types/index.js';
 
 interface DuplicateResolutionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -317,7 +317,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
             Records are considered duplicates when these key properties match:
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {data.mappingRules?.slice(0, 5).map((rule) => (
+            {data.mappingRules?.slice(0, 5).map((rule: PropertyMappingRule) => (
               <Chip
                 key={rule.id}
                 label={rule.targetProperty}

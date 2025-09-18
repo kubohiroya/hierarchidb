@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { Step5CountrySelection } from '../../components/steps/Step5CountrySelection';
+import { Step5CountrySelection } from '../../components/steps/Step5CountrySelection.js';
 
 export interface CountrySelectionStepProps {
   data: any;

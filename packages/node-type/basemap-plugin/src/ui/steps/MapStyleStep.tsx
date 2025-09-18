@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
-import type { MapStyle } from '../../types/BaseMapEntity';
+import type { MapStyle } from '../../types/BaseMapEntity.js';
 
 export interface MapStyleStepProps {
   value: MapStyle | undefined;

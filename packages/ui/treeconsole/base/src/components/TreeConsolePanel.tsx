@@ -1,13 +1,22 @@
 import { memo, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
-import type { TreeTableColumn } from './TreeTable';
+import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { TreeConsoleFooter } from './TreeConsoleFooter';
+import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 // import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { TreeNodeData } from '../types/index';
+import type { TreeNodeData } from '../types/index.js';
+
+type PanelBreadcrumbNode = {
+  treeNodeId?: string;
+  id?: string;
+  nodeType?: string;
+  type?: string;
+  name?: string;
+  parentId?: string | null;
+};
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -20,7 +29,7 @@ export interface TreeConsolePanelProps {
   readonly pageNodeId?: string;
   readonly data: readonly TreeNodeData[];
   readonly columns: readonly TreeTableColumn[];
-  readonly breadcrumbItems: readonly any[];
+  readonly breadcrumbItems: readonly PanelBreadcrumbNode[];
   readonly loading?: boolean;
   readonly error?: string;
   readonly selectedIds: readonly string[];
@@ -51,7 +60,7 @@ export interface TreeConsolePanelProps {
   readonly onSort: (columnId: string) => void;
   readonly onFilterChange: (filter: string) => void;
   readonly onViewModeChange: (mode: 'list' | 'grid') => void;
-  readonly onBreadcrumbNavigate: (nodeId: string, node?: any) => void;
+  readonly onBreadcrumbNavigate: (nodeId: string, node?: PanelBreadcrumbNode) => void;
   readonly onNavigateBack?: () => void;
   readonly onNavigateForward?: () => void;
   readonly canGoBack?: boolean;
@@ -77,15 +86,14 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   const controller: TreeTableController = useMemo((): TreeTableController => {
     // Convert data to TreeNodeInUI format
     const data = props.data.map((node) => {
-      const depth = typeof (node as any).depth === 'number' && isFinite((node as any).depth)
-        ? (node as any).depth as number
-        : 1; // default: root's direct child
+      const d = (node as TreeNodeData).depth as number | undefined;
+      const depth = typeof d === 'number' && isFinite(d) ? d : 1; // default: root's direct child
       return {
         ...node,
         nodeType: node.nodeType || 'folder',
         type: node.nodeType,
         name: node.name || '',
-        hasChildren: Boolean((node as any).hasChildren),
+        hasChildren: Boolean((node as TreeNodeData).hasChildren),
         depth,
       } as TreeNodeInUI;
     });
@@ -105,9 +113,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       startEdit: async (_nodeId: string) => {},
       finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
         // delegate to parent handler via context-menu action channel
-        const nodeData: TreeNodeData = field === 'name'
-          ? ({ id: nodeId, name: newValue } as any)
-          : ({ id: nodeId, description: newValue } as any);
+        const nodeData: TreeNodeData = (field === 'name'
+          ? ({ id: nodeId, name: newValue })
+          : ({ id: nodeId, description: newValue })) as unknown as TreeNodeData;
         props.onContextMenuAction(field === 'name' ? 'rename-inline' : 'update-desc-inline', nodeData);
       },
       cancelEdit: () => {},
@@ -153,17 +161,17 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   // const visibleItems = props.data.length; // In real implementation, this would be filtered count
 
   // Compute footer counters for loading state (controller not yet available)
-  const countLoadedRecursive = (nodes: any[]): number => {
+  const countLoadedRecursive = (nodes: readonly TreeNodeData[]): number => {
     let c = 0;
     for (const n of nodes || []) {
       c += 1;
-      const ch = (n as any).children as any[] | undefined;
+      const ch = n.children as readonly TreeNodeData[] | undefined;
       if (Array.isArray(ch) && ch.length) c += countLoadedRecursive(ch);
     }
     return c;
   };
   const footerTopLevel = Array.isArray(props.data) ? props.data.length : 0;
-  const footerLoaded = countLoadedRecursive(props.data as any[]);
+  const footerLoaded = countLoadedRecursive(props.data);
   const footerSelected = props.selectedIds.length;
 
   return (
@@ -178,7 +186,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       <TreeConsoleBreadcrumb
         nodePath={[...props.breadcrumbItems]}
         onNodeClick={props.onBreadcrumbNavigate}
-        treeId={props.treeId as any}
+        treeId={props.treeId}
         variant="default"
         onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
       />
@@ -194,7 +202,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           depthOffset={0}
           disableDragAndDrop={false}
           hideDragHandler={false}
-          rowClickAction={(props.rowClickAction ?? 'Select/Navigate') as any}
+          rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
           selectionMode="multiple"
           // Right-click disabled
         />

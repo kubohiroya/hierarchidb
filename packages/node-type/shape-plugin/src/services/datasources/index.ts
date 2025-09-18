@@ -1,11 +1,11 @@
 /**
     */
 
-export * from './DataSourceStrategy';
+export * from './DataSourceStrategy.js';
 
-export * from './NaturalEarthStrategy';
-export * from './GADMStrategy';
-export * from './OpenStreetMapStrategy';
-export * from './GeoBoundariesStrategy';
+export * from './NaturalEarthStrategy.js';
+export * from './GADMStrategy.js';
+export * from './OpenStreetMapStrategy.js';
+export * from './GeoBoundariesStrategy.js';
 
-export * from './DataSourceStrategyFactory';
+export * from './DataSourceStrategyFactory.js';

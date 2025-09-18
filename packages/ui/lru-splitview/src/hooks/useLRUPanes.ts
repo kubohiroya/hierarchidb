@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import type { LRUSplitViewConfig, PaneState, UseLRUPanesResult } from '../types/LRUSplitView';
+import type { LRUSplitViewConfig, PaneState, UseLRUPanesResult } from '../types/LRUSplitView.js';
 
 const DEFAULT_MAX_EXPANDED = 2;
 const DEFAULT_COLLAPSED_SIZE = 60;

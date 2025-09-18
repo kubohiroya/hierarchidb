@@ -1,4 +1,4 @@
-import { registerShapeRuntimeWorkerClient } from './RuntimeWorkerClient';
+import { registerShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 import { createStageWorkerClient } from '@hierarchidb/runtime-worker';
 
 /**

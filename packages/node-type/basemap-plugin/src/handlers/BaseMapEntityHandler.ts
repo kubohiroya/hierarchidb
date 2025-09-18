@@ -14,8 +14,8 @@ import type {
   DisplayOptions,
   MapStyle,
   MapViewport,
-} from '../types';
-import { BaseMapDatabase } from '../database/BaseMapDatabase';
+} from '../types/index.js';
+import { BaseMapDatabase } from '../database/BaseMapDatabase.js';
 
 /**
  * Default values for BaseMap configuration

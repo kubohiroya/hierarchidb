@@ -1,5 +1,5 @@
-import type { RegionMetadata } from '../utils/types';
-import { saveMetadata } from '../utils/utils';
+import type { RegionMetadata } from '../utils/types.js';
+import { saveMetadata } from '../utils/utils.js';
 
 interface GADMCountryInfo {
   iso3: string;

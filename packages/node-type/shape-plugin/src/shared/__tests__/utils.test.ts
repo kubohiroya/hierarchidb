@@ -12,8 +12,8 @@ import {
   serializeCheckboxState,
   validateProcessingConfig,
   validateShapeName,
-} from '../utils';
-import type { CountryMetadata, ProcessingConfig, UrlMetadata } from '../types';
+} from '../utils.js';
+import type { CountryMetadata, ProcessingConfig, UrlMetadata } from '../types.js';
 
 describe('validateShapeName', () => {
   it('should validate correct names', () => {

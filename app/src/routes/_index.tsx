@@ -5,9 +5,9 @@ import { type TreeConfig, TreeToggleButtonGroup } from '@hierarchidb/ui-core';
 import { AccountTree, Folder } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 import { useCallback, useEffect, useState } from 'react';
-import { useAppConfig } from '../contexts/AppConfigContext';
+import { useAppConfig } from '../contexts/AppConfigContext.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { TitleLogo } from '../components/TitleLogo';
+import { TitleLogo } from '../components/TitleLogo.js';
 import { TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 
 // Temporary type definition until TreeToggleButtonGroup is available

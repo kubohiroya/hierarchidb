@@ -2,11 +2,11 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import { DataSourceStrategy } from './DataSourceStrategy';
-import { NaturalEarthStrategy } from './NaturalEarthStrategy';
-import { GADMStrategy } from './GADMStrategy';
-import { OpenStreetMapStrategy } from './OpenStreetMapStrategy';
-import { GeoBoundariesStrategy } from './GeoBoundariesStrategy';
+import { DataSourceStrategy } from './DataSourceStrategy.js';
+import { NaturalEarthStrategy } from './NaturalEarthStrategy.js';
+import { GADMStrategy } from './GADMStrategy.js';
+import { OpenStreetMapStrategy } from './OpenStreetMapStrategy.js';
+import { GeoBoundariesStrategy } from './GeoBoundariesStrategy.js';
 
 export type DataSourceStrategyId =
   | 'natural-earth-shapes'

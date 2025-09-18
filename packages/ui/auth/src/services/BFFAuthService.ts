@@ -4,7 +4,7 @@
  * Handles OAuth2 authentication flow with Cloudflare Worker BFF
  */
 
-import { AuthProviderType } from '../types/AuthProviderType';
+import { AuthProviderType } from '../types/AuthProviderType.js';
 
 export interface BFFUser {
   id: string;

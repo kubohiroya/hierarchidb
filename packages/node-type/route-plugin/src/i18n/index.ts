@@ -4,9 +4,9 @@
   */
 
 import { useMemo } from 'react';
-import type { RoutePluginTranslations, SupportedLocale } from './types';
-import { ja } from './ja';
-import { en } from './en';
+import type { RoutePluginTranslations, SupportedLocale } from './types.js';
+import { ja } from './ja.js';
+import { en } from './en.js';
 
 const translations: Record<SupportedLocale, RoutePluginTranslations> = {
   ja,
@@ -152,5 +152,5 @@ export function formatDuration(
   }
 }
 
-export type { SupportedLocale, RoutePluginTranslations } from './types';
+export type { SupportedLocale, RoutePluginTranslations } from './types.js';
 export { translations };

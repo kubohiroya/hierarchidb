@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { DataSourceSelector } from './DataSourceSelector';
-import { DataSourceCategory, DataSourceName } from '../types/DataSource';
+import { DataSourceSelector } from './DataSourceSelector.js';
+import { DataSourceCategory, DataSourceName } from '../types/DataSource.js';
 
 export interface DataSourceSelectionStepProps {
   selectedDataSource?: DataSourceName;

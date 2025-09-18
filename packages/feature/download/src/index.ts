@@ -1,13 +1,13 @@
-export * from './DownloadService';
-export * from './ports';
-export * from './capability';
-export * from './cas/ContentAddressableStore';
-export * from './adapters/CacheAPICachePort';
-export * from './adapters/NobleSha3HashPort';
-export * from './adapters/DexieContentIndexPort';
-export * from './adapters/DexieChunkStoragePort';
-export * from './adapters/FetchNetworkPort';
-export * from './helpers/auth';
+export * from './DownloadService.js';
+export * from './ports.js';
+export * from './capability.js';
+export * from './cas/ContentAddressableStore.js';
+export * from './adapters/CacheAPICachePort.js';
+export * from './adapters/NobleSha3HashPort.js';
+export * from './adapters/DexieContentIndexPort.js';
+export * from './adapters/DexieChunkStoragePort.js';
+export * from './adapters/FetchNetworkPort.js';
+export * from './helpers/auth.js';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/download', provides: ['download', 'cas', 'net.port'] },
   init(ctx?: { provide?: (cap: string, value: any) => void }) {

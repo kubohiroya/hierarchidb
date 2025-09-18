@@ -1,13 +1,19 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
-import { CoreDB } from '../../services/CoreDB';
-import { CommandProcessor } from '../../services/CommandProcessor';
-import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encoding';
+import { CoreDB } from '../../services/CoreDB.js';
+import { CommandProcessor } from '../../services/CommandProcessor.js';
+import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 
 describe('Headless: Policy C load (moderate subtree)', () => {
-  beforeEach(() => {
-    (process as any).env.WORKER_POLICY_C = '1';
+  beforeEach(async () => {
+    CoreDB.resetInstance();
+    const request = (indexedDB as any)?.deleteDatabase?.('core-db');
+    if (request?.onsuccess !== undefined) {
+      await new Promise<void>((resolve) => {
+        request.onsuccess = request.onerror = request.onblocked = () => resolve();
+      });
+    }
   });
 
   async function newCore(name: string): Promise<CoreDB> {

@@ -3,8 +3,8 @@
  * @module core/types/import-export
   */
 
-import { NodeId } from './id-types';
-import { TreeNode } from './tree-node-types';
+import { NodeId } from './id-types.js';
+import { TreeNode } from './tree-node-types.js';
 
 /**
    * ZIP

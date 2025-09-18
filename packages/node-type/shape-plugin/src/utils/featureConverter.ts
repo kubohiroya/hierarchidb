@@ -5,7 +5,7 @@
 
 import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { Feature } from '../types';
+import type { Feature } from '../types/index.js';
 
 /**
  * Convert internal Feature to GeoJSON standard Feature

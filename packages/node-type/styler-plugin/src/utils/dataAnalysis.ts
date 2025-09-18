@@ -6,7 +6,7 @@
  * :
   */
 
-import type { ColorAlgorithm } from '../types/stylerTypes';
+import type { ColorAlgorithm } from '../types/stylerTypes.js';
 
 /**
     */

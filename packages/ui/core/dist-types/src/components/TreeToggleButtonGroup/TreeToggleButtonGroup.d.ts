@@ -56,7 +56,7 @@ export interface TreeToggleButtonGroupProps {
 /**
  * Flexible tree toggle button group component
  */
-export declare function TreeToggleButtonGroup({ trees, selectedTreeId, currentPageNodeId, appPrefix, getSavedPageNodeId, savePageNodeId, getNodeTreeId, orientation, size, showLabelsOnSmallScreens, sx, onTreeSelect, }: TreeToggleButtonGroupProps): JSX.Element | null;
+export declare function TreeToggleButtonGroup({ trees, selectedTreeId, currentPageNodeId, appPrefix: _appPrefix, getSavedPageNodeId, savePageNodeId, getNodeTreeId, orientation, size, showLabelsOnSmallScreens, sx, onTreeSelect, }: TreeToggleButtonGroupProps): JSX.Element | null;
 /**
  * Helper function to create a tree config for resources
  */

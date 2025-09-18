@@ -6,7 +6,7 @@
 import React from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import type { PluginStepProvider, StepComponentProps } from '../registry/PluginStepRegistry';
+import type { PluginStepProvider, StepComponentProps } from '../registry/PluginStepRegistry.js';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 /**
@@ -322,7 +322,7 @@ export class SamplePluginProvider implements PluginStepProvider {
  * Register the sample provider
  */
 export function registerSampleProvider() {
-  import('../registry/PluginStepRegistry').then(({ PluginStepRegistry }) => {
+  import('../registry/PluginStepRegistry.js').then(({ PluginStepRegistry }) => {
     const registry = PluginStepRegistry.getInstance();
     const provider = new SamplePluginProvider();
     registry.register(provider);

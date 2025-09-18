@@ -3,9 +3,9 @@
  * @description Usage examples showing the unified API across all map components
  */
 
-import type { MapLibreMapProps } from '../components/MapLibreMap';
-import type { MapWithVectorTilesProps } from '../components/MapWithVectorTiles';
-import type { VectorTileLayerProps } from '../components/VectorTileLayer';
+import type { MapLibreMapProps } from '../components/MapLibreMap.js';
+import type { MapWithVectorTilesProps } from '../components/MapWithVectorTiles.js';
+import type { VectorTileLayerProps } from '../components/VectorTileLayer.js';
 
 /**
  * UNIFIED USAGE EXAMPLES

@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
-import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
+import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '../../types/index.js';
 
 interface SchemaSelectionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;

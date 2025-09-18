@@ -40,8 +40,8 @@ import {
   Stop as StopIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../hooks/useAuth';
-import { AuthProviderType } from '../types/AuthProviderType';
+import { useAuth } from '../hooks/useAuth.js';
+import { AuthProviderType } from '../types/AuthProviderType.js';
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/common-auth AuthRequiredNotification shape used here.
 type AuthRequiredNotification = {

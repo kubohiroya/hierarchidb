@@ -1,10 +1,10 @@
 import React from 'react';
-import { AuthProviderType } from '../types/AuthProviderType';
+import { AuthProviderType } from '../types/AuthProviderType.js';
 
-import { PopupDetectionService } from '../services/PopupDetectionService';
+import { PopupDetectionService } from '../services/PopupDetectionService.js';
 
-import { AuthContextType } from '../types/AuthContextType';
-import { AuthUser } from '../types/AuthUser';
+import { AuthContextType } from '../types/AuthContextType.js';
+import { AuthUser } from '../types/AuthUser.js';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 

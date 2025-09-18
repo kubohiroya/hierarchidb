@@ -22,7 +22,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import { rainbowColors } from '@hierarchidb/ui-core';
-import { TreeNodeData } from '../../../types/index';
+import { TreeNodeData } from '../../../types/index.js';
 
 export interface TreeTableColumn {
   readonly id: string;

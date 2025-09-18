@@ -9,7 +9,7 @@
  * - Rate limiting and authentication
  */
 
-import type { DataSourceName } from '../types/DataSource';
+import type { DataSourceName } from '../types/DataSource.js';
 // Import metadata generated at build time
 // Note: Using require for JSON imports due to TypeScript resolution issues
 const gadmMetadata = require('@hierarchidb/runtime-shared-fetch-metadata/output/gadm.json');

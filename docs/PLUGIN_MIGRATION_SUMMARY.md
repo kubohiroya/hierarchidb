@@ -7,7 +7,9 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 ## プラグイン完成度評価
 
 ### 🏆 最高峰レベル
-#### **project-plugin** （127件のエラー → 4時間で修正可能）
+#### **project-plugin** （127件のエラー → 4時間で修正可能／アーカイブ）
+
+> 2025-09-16 更新: プロジェクト領域プラグインは `@hierarchidb/linker-plugin` にリネームされ、`project-plugin` は Deprecated になりました。本評価は旧名称の履歴です。現行の改善は `linker-plugin` を対象にしてください。
 - **HierarchiDB最高峰の複合機能プラグイン**
 - Deck.gl 3D可視化、空間分析エンジン、時系列分析、レポート生成（PDF/HTML/DOCX）
 - プロジェクト管理、ワークフロー、コラボレーション機能
@@ -108,7 +110,7 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 2. **shape-plugin** - 25分（JSX構文修正）
    - route-pluginのエラーも同時解決
 3. **propertyresolver-plugin** - 1.25時間（型定義修正）
-4. **project-plugin** - 4時間（Deck.gl import修正）
+4. **linker-plugin（旧 project-plugin）** - 4時間（Deck.gl import修正想定・アーカイブ）
 
 #### 第3優先（folder-plugin依存）
 5. **basemap-plugin** - 1-1.5時間
@@ -156,4 +158,4 @@ HierarchiDBのプラグインシステムは**非常に高い完成度**を誇�
 - [location-plugin移行計画](./LOCATION_PLUGIN_DETAILED_MIGRATION.md)
 - [route-plugin移行計画](./ROUTE_PLUGIN_DETAILED_MIGRATION.md)
 - [propertyresolver-plugin移行計画](./PROPERTYRESOLVER_PLUGIN_DETAILED_MIGRATION.md)
-- [project-plugin移行計画](./PROJECT_PLUGIN_DETAILED_MIGRATION.md)
+- [project-plugin移行計画（アーカイブ）](./PROJECT_PLUGIN_DETAILED_MIGRATION.md)

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Worker } from 'worker_threads';
 import * as path from 'path';
 import * as fs from 'fs';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 // Create a test worker script file for ESM
 const createTestWorkerFile = (): string => {

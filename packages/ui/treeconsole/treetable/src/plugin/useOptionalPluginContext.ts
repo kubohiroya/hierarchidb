@@ -4,8 +4,8 @@
   */
 
 import { useContext } from 'react';
-import { PluginContext } from './PluginProvider';
-import type { PluginContext as IPluginContext } from './types';
+import { PluginContext } from './PluginProvider.js';
+import type { PluginContext as IPluginContext } from './types.js';
 
 /**
    * @returns null
@@ -31,9 +31,9 @@ export function usePluginsEnabled(): boolean {
 export function useSafePluginHook() {
   const context = useOptionalPluginContext();
 
-  return <T extends keyof import('./types').TreeTableHooks>(
+  return <T extends keyof import('./types.js').TreeTableHooks>(
     hookName: T,
-    ...args: Parameters<NonNullable<import('./types').TreeTableHooks[T]>>
+    ...args: Parameters<NonNullable<import('./types.js').TreeTableHooks[T]>>
   ) => {
     if (context) {
       return context.executeHook(hookName, ...args);

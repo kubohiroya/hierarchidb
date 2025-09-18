@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { MemoryUsageChart } from './MemoryUsageChart';
-import { useMemoryData } from './hooks/useMemoryData';
+import { MemoryUsageChart } from './MemoryUsageChart.js';
+import { useMemoryData } from './hooks/useMemoryData.js';
 
 // Mock hook to control data and interactions
 vi.mock('./hooks/useMemoryData', () => {

@@ -14,9 +14,9 @@ import {
   MemoryProgressStore,
   ProgressEmitter,
 } from '@hierarchidb/runtime-shared-batch-processor';
-import { RouteBatchManager } from './RouteBatchManager';
-import type { RouteBatchConfig } from './RouteBatchSession';
-import type { RouteGenerationConfig } from '../entities/RouteEntity';
+import { RouteBatchManager } from './RouteBatchManager.js';
+import type { RouteBatchConfig } from './RouteBatchSession.js';
+import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 
 /**
  * Unified route batch manager implementing the standard interface

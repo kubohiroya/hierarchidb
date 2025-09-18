@@ -3,7 +3,7 @@
   * eria-cartographTreeConsoleBreadcrumbUI
    */
 
-import { type MouseEvent, useCallback, useState, type ReactElement } from 'react';
+import { type MouseEvent, useCallback, useState, type ReactElement, type KeyboardEvent } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -13,18 +13,17 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
   Link as MUILink,
   Typography,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { MoreVert as MoreVertIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
-import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types';
+import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
 import { rainbowColors } from '@hierarchidb/ui-core';
-import { NodeContextMenu } from './NodeContextMenu';
-import { NodeTypeIcon } from './NodeTypeIcon';
+import { NodeContextMenu } from './NodeContextMenu.js';
+import { NodeTypeIcon } from './NodeTypeIcon.js';
 
 /**
   * BreadcrumbContainer -
@@ -184,10 +183,19 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     setPendingDeleteNodeId(null);
   }, [pendingDeleteNodeId]);
 
-  const handleContextMenuOpen = (event: MouseEvent<HTMLElement>, node: BreadcrumbNode) => {
+  const handleContextMenuOpen = (
+    event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
+    node: BreadcrumbNode,
+  ) => {
     event.preventDefault();
     event.stopPropagation();
-    setContextMenuAnchor(event.currentTarget);
+
+    const anchorEl = event.currentTarget as unknown as HTMLElement | null;
+    if (!anchorEl) {
+      return;
+    }
+
+    setContextMenuAnchor(anchorEl);
     setContextMenuNode(node);
   };
 
@@ -278,6 +286,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     }}
                     aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
                     title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                    aria-haspopup="menu"
+                    onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
+                    onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+                      if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+                        handleContextMenuOpen(event, node);
+                      }
+                    }}
                     onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
@@ -313,14 +328,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     }}
                     onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
                   >
-                    {/* Icon click opens context menu (no navigation) */}
+                    {/* Node icon for context; use context menu trigger to open actions */}
                     <IconComponent
                       nodeType={node.nodeType || node.type || 'folder-plugin'}
                       size="small"
                       color="inherit"
                       htmlColor={iconColor}
-                      clickable
-                      onClick={(e: any) => handleContextMenuOpen(e, node)}
                     />
                     {nodeName}
                   </MUILink>
@@ -335,16 +348,14 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     alignItems: 'center',
                     gap: 0.5,
                   }}
+                  onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
                 >
-                  {/* Icon click opens context menu (no navigation);
-                      split the icon from the link to avoid nesting a button inside an anchor. */}
+                  {/* Node icon for context; right-click/keyboard context menu opens actions. */}
                   <IconComponent
                     nodeType={node.nodeType || node.type || 'folder-plugin'}
                     size="small"
                     color="inherit"
                     htmlColor={iconColor}
-                    clickable
-                    onClick={(e: any) => handleContextMenuOpen(e, node)}
                   />
                   <MUILink
                     color="inherit"
@@ -365,6 +376,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     }}
                     aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
                     title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                    aria-haspopup="menu"
+                    onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
+                    onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+                      if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+                        handleContextMenuOpen(event, node);
+                      }
+                    }}
                     onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
@@ -402,19 +420,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                   >
                     {nodeName}
                   </MUILink>
-                  <IconButton
-                    size="small"
-                    onClick={(e: MouseEvent<HTMLButtonElement>) => handleContextMenuOpen(e, node)}
-                    sx={{
-                      padding: 0.25,
-                      ml: 0.5,
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      },
-                    }}
-                  >
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
                 </Box>
               );
             })}

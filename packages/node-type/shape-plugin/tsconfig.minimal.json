@@ -3,23 +3,23 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "allowImportingTsExtensions": false,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Node16"
   },
   "include": [
-    "src/shared/**/*",
+    "src/shared*",
     "src/worker/api.ts",
-    "src/worker/handlers/**/*",
+    "src/worker/handlers*",
     "src/worker/plugin.ts"
   ],
   "exclude": [
-    "src/services/**/*",
-    "src/types/**/*",
-    "src/ui/**/*",
-    "**/*.test.*",
-    "**/__tests__/**"
+    "src/services*",
+    "src/types*",
+    "src/ui*",
+    "**__tests__/**"
   ],
   "references": [
     {

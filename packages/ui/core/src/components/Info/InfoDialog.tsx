@@ -76,14 +76,7 @@ export const InfoDialog = ({
       open={open}
       onClose={handleClose}
       maxWidth={false}
-      TransitionProps={
-        disableTransition
-          ? {
-            appear: false,
-            timeout: 0,
-          }
-          : undefined
-      }
+      transitionDuration={disableTransition ? 0 : undefined}
       sx={{
         '& .MuiDialog-paper': {
           ...(fullScreen && { m: 4 }),

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { SheetRelationRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB';
-import type { SpreadsheetRelationMeta } from '../types/entities';
+import type { SheetRelationRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB.js';
+import type { SpreadsheetRelationMeta } from '../types/entities.js';
 
 type Rel = RelationBase<SpreadsheetRelationMeta>;
 

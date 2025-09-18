@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RouteDatabase } from '../../database/RouteDatabase';
+import { RouteDatabase } from '../../database/RouteDatabase.js';
 
 export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<{ completed: number; total: number; results: number } | null>(null);

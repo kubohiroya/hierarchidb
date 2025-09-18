@@ -1,5 +1,5 @@
-import type { PackageJson, TransformPipelineOptions } from '../types';
-import { Logger } from '../core/Logger';
+import type { PackageJson, TransformPipelineOptions } from '../types.js';
+import { Logger } from '../core/Logger.js';
 
 export class TransformPipeline<T = any> {
   private options: TransformPipelineOptions<T>;

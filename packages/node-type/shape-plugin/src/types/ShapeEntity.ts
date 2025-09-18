@@ -5,7 +5,7 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
-import type { BatchConfig } from './BatchConfig';
+import type { BatchConfig } from './BatchConfig.js';
 
 /**
  * Shape entity stored in CoreDB

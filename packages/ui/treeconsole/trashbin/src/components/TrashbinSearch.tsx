@@ -4,7 +4,7 @@
 
 import { InputAdornment, TextField } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import type { TrashbinSearchProps } from '../types';
+import type { TrashbinSearchProps } from '../types.js';
 
 /**
   * TrashbinSearch

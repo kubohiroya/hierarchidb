@@ -12,7 +12,7 @@ import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 
-import type { PaneHeaderProps } from '../types/LRUSplitView';
+import type { PaneHeaderProps } from '../types/LRUSplitView.js';
 
 export interface PaneHeaderComponentProps extends PaneHeaderProps {
   /** Whether to use vertical orientation icon */

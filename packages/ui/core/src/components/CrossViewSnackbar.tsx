@@ -1,6 +1,6 @@
 import React from 'react';
 import { Snackbar, Alert, AlertTitle } from '@mui/material';
-import { CrossViewStyles } from '../index';
+import { CrossViewStyles } from '../index.js';
 
 export function CrossViewSnackbar({ datasetId, autoHideDuration = 3000, format }: {
   datasetId: string;

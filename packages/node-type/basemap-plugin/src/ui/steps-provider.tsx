@@ -1,8 +1,8 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import type { MapStyle, MapViewport, DisplayOptions } from '../types/BaseMapEntity';
-import { MapStyleStep } from './steps/MapStyleStep';
-import { ViewportStep } from './steps/ViewportStep';
-import { DisplayOptionsStep } from './steps/DisplayOptionsStep';
+import type { MapStyle, MapViewport, DisplayOptions } from '../types/BaseMapEntity.js';
+import { MapStyleStep } from './steps/MapStyleStep.js';
+import { ViewportStep } from './steps/ViewportStep.js';
+import { DisplayOptionsStep } from './steps/DisplayOptionsStep.js';
 
 type P = StepComponentProps & { data: { mapStyle?: MapStyle; viewport?: MapViewport; displayOptions?: DisplayOptions } };
 

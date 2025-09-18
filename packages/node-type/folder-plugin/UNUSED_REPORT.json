@@ -1661,7 +1661,7 @@
           "text": "export const runtimeWiring = {} as const;"
         },
         {
-          "file": "./packages/node-type/project-plugin/src/index.ts",
+          "file": "./packages/node-type/linker-plugin/src/index.ts",
           "line": 64,
           "text": "export const runtimeWiring = {} as const;"
         },
@@ -4059,7 +4059,7 @@
       "line": 78,
       "references": [
         {
-          "file": "./packages/node-type/project-plugin/README.md",
+          "file": "./packages/node-type/linker-plugin/README.md",
           "line": 105,
           "text": "- CategorySelector: カテゴリ選択（アイコン付き）"
         },

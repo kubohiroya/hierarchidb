@@ -6,7 +6,7 @@
  * for both console output and development feedback.
  */
 
-// import i18n from '../i18n/index';
+// import i18n from '../i18n/index.js';
 
 /**
  * Type for i18next interpolation options

@@ -1,4 +1,4 @@
-import { FEATURE_FLAGS } from '../config/feature-flags';
+import { FEATURE_FLAGS } from '../config/feature-flags.js';
 
 type Stats = {
   count: number;

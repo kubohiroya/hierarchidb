@@ -9,7 +9,7 @@ import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { type MapLibreLayer, MapLibreMap, type MapLibreStyle, type MapViewState } from '@hierarchidb/ui-map';
 import { CrossViewSnackbar } from '@hierarchidb/ui-core';
-import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles';
+import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles.js';
 
 export interface BaseMapPreviewProps {
   /** Map style configuration */

@@ -11,7 +11,7 @@
 import { useCallback, useMemo } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 // Use types from main types file to avoid conflicts
-import type { UndoRedoCommand, UndoRedoResult } from '../types/index';
+import type { UndoRedoCommand, UndoRedoResult } from '../types/index.js';
 
 //  : Undo/Redo
 export interface UseUndoRedoOperationsOptions {

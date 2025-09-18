@@ -5,7 +5,7 @@
 
 import type { Collection, IndexableType, Table } from 'dexie';
 import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
-import type { BaseSearchCriteria, EntityLifecycleHooks, OperationResult, PaginatedResult } from '../types';
+import type { BaseSearchCriteria, EntityLifecycleHooks, OperationResult, PaginatedResult } from '../types.js';
 
 /**
  * Abstract base class for entity handlers

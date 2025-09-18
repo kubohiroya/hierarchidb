@@ -13,10 +13,10 @@ import type {
   RoutePoint,
   RouteStatistics,
   TransportMode,
-} from './RouteEntity';
-import { RouteDatabase } from '../database/RouteDatabase';
-import { RouteGenerator } from '../services/RouteGenerator';
-import { LocationResolver } from '../services/LocationResolver';
+} from './RouteEntity.js';
+import { RouteDatabase } from '../database/RouteDatabase.js';
+import { RouteGenerator } from '../services/RouteGenerator.js';
+import { LocationResolver } from '../services/LocationResolver.js';
 
 /**
  * Metadata search criteria

@@ -6,6 +6,21 @@
   */
 
 import { atom } from 'jotai';
+// Local batch-change payload used by SubscriptionOrchestrator.
+// This avoids requiring treeId/pageNodeId/version at this UI layer
+// and focuses on minimal diffs the table merge can consume.
+export interface SubTreeChanges {
+  added?: Array<{ id: string; parentId?: string | null; [k: string]: unknown }>;
+  updated?: Array<{ nodeId: string; changes: Record<string, unknown> }>;
+  removed?: string[];
+  moved?: Array<{
+    nodeId: string;
+    oldParentId?: string;
+    newParentId: string;
+    oldIndex?: number;
+    newIndex?: number;
+  }>;
+}
 
 /**
   * SubTreeID
@@ -27,4 +42,4 @@ export const lastUpdateTimestampAtom = atom<number>(0);
 
 /**
     */
-export const pendingUpdatesAtom = atom<any[]>([]);
+export const pendingUpdatesAtom = atom<SubTreeChanges[]>([]);

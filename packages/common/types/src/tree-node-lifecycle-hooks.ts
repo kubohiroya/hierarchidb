@@ -1,6 +1,6 @@
-import { PeerEntity } from './entity-types';
-import { NodeId } from './id-types';
-import { TreeNode } from './tree-node-types';
+import { PeerEntity } from './entity-types.js';
+import { NodeId } from './id-types.js';
+import { TreeNode } from './tree-node-types.js';
 
 export interface NodeLifecycleHooks<TEntity extends PeerEntity = PeerEntity> {
   beforeCreate?: (parentId: NodeId, nodeData: Partial<TreeNode>) => Promise<void>;

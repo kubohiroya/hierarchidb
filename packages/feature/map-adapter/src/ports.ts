@@ -1,4 +1,4 @@
-import type { DeckLayerSpec, MapStyleSpec, ViewState } from './types';
+import type { DeckLayerSpec, MapStyleSpec, ViewState } from './types.js';
 
 export interface MapAdapterPort {
   init(container: HTMLElement, initialView: ViewState, style?: MapStyleSpec): Promise<void> | void;

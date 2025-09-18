@@ -7,7 +7,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 interface WorkerState {
   client: any; // Generic worker client type

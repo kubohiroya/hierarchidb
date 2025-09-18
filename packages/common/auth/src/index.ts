@@ -3,7 +3,7 @@
  * @description Export all authentication system components
  */
 
-export * from './AuthNotificationSystem';
+export * from './AuthNotificationSystem.js';
 
 // Re-export commonly used types
 export type {
@@ -15,7 +15,7 @@ export type {
   AuthSource,
   PluginType,
   AuthNotificationType,
-} from './AuthNotificationSystem';
+} from './AuthNotificationSystem.js';
 
 // Re-export main classes and utilities
 export {
@@ -25,4 +25,4 @@ export {
   AUTH_CONSTANTS,
   generateRequestId,
   detectAuthSource,
-} from './AuthNotificationSystem';
+} from './AuthNotificationSystem.js';

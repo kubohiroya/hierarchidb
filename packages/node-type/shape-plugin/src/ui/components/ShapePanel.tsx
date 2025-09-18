@@ -27,10 +27,10 @@ import {
   Refresh as RefreshIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '../../shared/types';
-import { useShapeAPIGetter } from '../hooks/useShapeAPI';
-import { useShapeEntityProgress } from '../hooks/useShapeProgress';
-import { formatBytes, ShapeEntity } from '../../shared';
+import type { NodeId } from '../../shared/types.js';
+import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
+import { useShapeEntityProgress } from '../hooks/useShapeProgress.js';
+import { formatBytes, ShapeEntity } from '../../shared/index.js';
 
 export interface ShapePanelProps {
   nodeId: NodeId;

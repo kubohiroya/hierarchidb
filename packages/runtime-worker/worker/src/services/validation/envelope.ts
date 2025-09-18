@@ -1,4 +1,4 @@
-import type { CommandEnvelope } from '../command-types';
+import type { CommandEnvelope } from '../command-types.js';
 
 // Common constraints (kept consistent with previous zod-based checks)
 const ID_MAX = 100;

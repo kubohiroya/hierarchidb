@@ -1,7 +1,7 @@
-import { RouteBatchManager } from './RouteBatchManager';
-import { OsrmEngine } from './engines/OsrmEngine';
-import { SearouteEngine } from './engines/SearouteEngine';
-import { type NetworkPortLike as NetLike, ThrottledPort, type ThrottleOptions } from './net/ThrottledPort';
+import { RouteBatchManager } from './RouteBatchManager.js';
+import { OsrmEngine } from './engines/OsrmEngine.js';
+import { SearouteEngine } from './engines/SearouteEngine.js';
+import { type NetworkPortLike as NetLike, ThrottledPort, type ThrottleOptions } from './net/ThrottledPort.js';
 
 export interface NetworkPortLike extends NetLike {
 }

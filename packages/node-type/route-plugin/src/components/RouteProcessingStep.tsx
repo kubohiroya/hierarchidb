@@ -24,8 +24,8 @@ import {
   Typography,
 } from '@mui/material';
 import { PlayArrow, Settings, Stop } from '@mui/icons-material';
-import type { RouteCategory, RouteWorkingCopy } from '../types';
-import { useTranslation } from '../i18n';
+import type { RouteCategory, RouteWorkingCopy } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
 
 export interface RouteProcessingStepProps {
   workingCopy: RouteWorkingCopy;

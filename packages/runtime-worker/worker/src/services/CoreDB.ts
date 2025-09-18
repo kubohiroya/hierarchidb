@@ -10,7 +10,7 @@ import {
   TreeRootState,
 } from '@hierarchidb/common-type';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
 export class CoreDB extends Dexie {

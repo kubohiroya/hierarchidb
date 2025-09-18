@@ -1,2 +1,2 @@
-export { MemoryUsageBar } from './MemoryUsageBar';
-export { MemoryUsageChart } from './MemoryUsageChart';
+export { MemoryUsageBar } from './MemoryUsageBar.js';
+export { MemoryUsageChart } from './MemoryUsageChart.js';

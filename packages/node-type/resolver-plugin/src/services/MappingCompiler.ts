@@ -1,4 +1,8 @@
-import type { DuplicateResolutionStrategy, PropertyMappingRule, ValidationRule } from '~/types';
+import type {
+  DuplicateResolutionStrategy,
+  PropertyMappingRule,
+  ValidationRule,
+} from '../types/index.js';
 
 /**
  * Optimization levels for compilation

@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { UnifiedNodeData } from '../types';
+import type { UnifiedNodeData } from '../types.js';
 /**
  * Node Data Adapter
  *

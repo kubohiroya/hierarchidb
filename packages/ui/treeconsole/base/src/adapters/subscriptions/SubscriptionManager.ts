@@ -5,9 +5,9 @@
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
-import { TreeObservableAdapter } from './TreeObservableAdapter';
-import type { AdapterContext, UnsubscribeFunction } from '../../types/index';
-import { TreeConsoleAdapterError } from '../../types/index';
+import { TreeObservableAdapter } from './TreeObservableAdapter.js';
+import type { AdapterContext, UnsubscribeFunction } from '../../types/index.js';
+import { TreeConsoleAdapterError } from '../../types/index.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 

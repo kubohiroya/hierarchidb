@@ -14,7 +14,7 @@ type BaseFolderFields = {
   updatedAt: number;
   version: number;
 };
-import type { DataSourceType } from './constants';
+import type { DataSourceType } from './constants.js';
 
 // =========================================
 // =========================================

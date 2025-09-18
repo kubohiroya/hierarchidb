@@ -12,6 +12,10 @@ declare module 'maplibre-gl/dist/maplibre-gl.css';
 
 // HierarchiDB UI icon resolver (runtime package provides real types)
 declare module '@hierarchidb/ui-icon' {
+  export function getMuiIconComponent(
+    muiIconName?: string,
+    emoji?: string,
+  ): any;
   export function getMuiIconWithColor(
     muiIconName?: string,
     emoji?: string,

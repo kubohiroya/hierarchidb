@@ -23,7 +23,8 @@
     "types": [
       "vite/client",
       "node"
-    ]
+    ],
+    "module": "Node16"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

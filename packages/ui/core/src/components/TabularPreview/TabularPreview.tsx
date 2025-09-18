@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from '@hierarchidb/ui-data-grid';
-import { CrossViewStyles, useCrossHighlightSync, CrossViewSnackbar, ensureDefaultStyles } from '../../index';
+import { CrossViewStyles, useCrossHighlightSync, CrossViewSnackbar, ensureDefaultStyles } from '../../index.js';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { type ColumnFilter, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';

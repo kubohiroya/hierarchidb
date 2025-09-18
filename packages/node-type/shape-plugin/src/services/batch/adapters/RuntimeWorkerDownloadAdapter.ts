@@ -1,9 +1,9 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
-import type { DownloadTask } from '../../types';
-import type { ProgressInfo } from '../../../shared';
-import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter';
-import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient';
+import type { DownloadTask } from '../../types.js';
+import type { ProgressInfo } from '../../../shared/index.js';
+import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
+import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 /**
  * RuntimeWorkerDownloadAdapter

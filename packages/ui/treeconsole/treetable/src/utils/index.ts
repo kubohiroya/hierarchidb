@@ -3,9 +3,10 @@
   * TreeTable
   */
 
+import type { NodeId } from '@hierarchidb/common-type';
 import { TreeNode } from '@hierarchidb/common-type';
 
-// import type { TreeNode } from '../types';
+// import type { TreeNode } from '../types.js';
 
 /**
     */
@@ -60,40 +61,42 @@ export function flattenTree(
 /**
   * ID
   */
-export function getDescendantIds(nodeId: string, allNodes: TreeNode[]): Set<string> {
-  const descendants = new Set<string>();
+export function getDescendantIds(nodeId: string | NodeId, allNodes: TreeNode[]): Set<NodeId> {
+  const descendants = new Set<NodeId>();
 
-  function collectDescendants(currentId: string) {
-    const children = allNodes.filter((node) => node.parentId === currentId);
+  function collectDescendants(currentId: NodeId) {
+    const children = allNodes.filter((node) => (node.parentId as unknown as string) === (currentId as unknown as string));
 
     children.forEach((child) => {
-      descendants.add(child.id);
-      collectDescendants(child.id);
+      descendants.add(child.id as NodeId);
+      collectDescendants(child.id as NodeId);
     });
   }
 
-  collectDescendants(nodeId);
+  collectDescendants(nodeId as NodeId);
   return descendants;
 }
+
+export { computeDescendants } from './descendants.js';
 
 /**
   * ID
   */
-export function getAncestorIds(nodeId: string, allNodes: TreeNode[]): string[] {
-  const ancestors: string[] = [];
+export function getAncestorIds(nodeId: string | NodeId, allNodes: TreeNode[]): NodeId[] {
+  const ancestors: NodeId[] = [];
 
-  function collectAncestors(currentId: string) {
-    const node = allNodes.find((n) => n.id === currentId);
+  function collectAncestors(currentId: NodeId) {
+    const node = allNodes.find((n) => (n.id as unknown as string) === (currentId as unknown as string));
     if (!node) return;
 
-    const parentId = node.parentId;
+    const parentId = node.parentId as NodeId | undefined;
     if (parentId) {
       ancestors.unshift(parentId);
       collectAncestors(parentId);
     }
   }
 
-  collectAncestors(nodeId);
+  collectAncestors(nodeId as NodeId);
   return ancestors;
 }
 
@@ -112,11 +115,11 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
       matchingNodes.add(node.id);
 
       getAncestorIds(node.id, nodes).forEach((ancestorId) => {
-        matchingNodes.add(ancestorId);
+        matchingNodes.add(String(ancestorId));
       });
 
       getDescendantIds(node.id, nodes).forEach((descendantId) => {
-        matchingNodes.add(descendantId);
+        matchingNodes.add(String(descendantId));
       });
     }
   });
@@ -127,17 +130,17 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
 /**
     */
 export function getNodePath(
-  nodeId: string,
+  nodeId: string | NodeId,
   allNodes: TreeNode[],
   separator: string = ' > ',
 ): string {
   const ancestors = getAncestorIds(nodeId, allNodes);
-  const node = allNodes.find((n) => n.id === nodeId);
+  const node = allNodes.find((n) => (n.id as unknown as string) === (nodeId as unknown as string));
 
   if (!node) return '';
 
   const pathNodes = [
-    ...ancestors.map((id) => allNodes.find((n) => n.id === id)).filter(Boolean),
+    ...ancestors.map((id) => allNodes.find((n) => (n.id as unknown as string) === (id as unknown as string))).filter(Boolean),
     node,
   ];
 
@@ -147,21 +150,33 @@ export function getNodePath(
 /**
   * &
   */
+/**
+ * Determine whether a drag source can be dropped relative to a target.
+ * - Prevents self-drop and dropping into own descendants (cycles)。
+ * - For 'into', only cycle/self rulesを適用（親種別の判定は呼び出し側に委ね）。
+ * - For 'before'/'after', 同じく cycle/self のみをチェック（順序の正規化は上位で処理）。
+ */
 export function canDropNode(
-  draggingNodeId: string,
-  targetNodeId: string,
-  _position: 'before' | 'after' | 'into',
+  draggingNodeId: string | NodeId,
+  targetNodeId: string | NodeId,
+  position: 'before' | 'after' | 'into',
   allNodes: TreeNode[],
 ): boolean {
-  if (draggingNodeId === targetNodeId) {
+  if ((draggingNodeId as unknown as string) === (targetNodeId as unknown as string)) {
     return false;
   }
 
   const descendants = getDescendantIds(draggingNodeId, allNodes);
-  if (descendants.has(targetNodeId)) {
+  if (Array.from(descendants).some((id) => (id as unknown as string) === (targetNodeId as unknown as string))) {
     return false;
   }
 
-
-  return true;
+  // position-specific checks can be extended here if必要
+  switch (position) {
+    case 'into':
+    case 'before':
+    case 'after':
+    default:
+      return true;
+  }
 }

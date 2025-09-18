@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon, PlayArrow as PlayArrowIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
-import { BatchSession, formatDuration } from '../../shared';
+import { BatchSession, formatDuration } from '../../shared/index.js';
 
 export interface BatchRecoveryDialogProps {
   open: boolean;

@@ -12,16 +12,3 @@ vk:doc kind=guide audience=dev scope=worker
 - 作用範囲は最小に限定し、副作用の差分をドキュメント化する。
 
 ---
-
-## WORKER_USE_CMDPROC_CREATE_UPDATE（deprecated）
-- 概要: `createNode` / `updateNode` を CommandProcessor 経由に切替するための段階導入フラグ。
-- 状態: 2025-09-02 以降は常時 CommandProcessor 経由となり、本フラグは無視されます。
-- ロールバック: 旧経路は削除済みのため、直前タグへリバートしてください。
-
-関連ドキュメント
-- `docs/task-create-update-routing-draft.md`
-- `docs/task-phased-routing-to-commandprocessor.md`
-## WORKER_USE_CMDPROC_MOVE_REMOVE（deprecated）
-- 概要: `move/remove` を CommandProcessor 経由に切替するための段階導入フラグ。
-- 状態: 2025-09-02 以降は常時 CommandProcessor 経由となり、本フラグは無視されます。
-- ロールバック: 旧経路は削除済みのため、直前タグへリバートしてください。

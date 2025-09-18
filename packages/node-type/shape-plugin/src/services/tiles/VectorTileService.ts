@@ -12,11 +12,11 @@
 //import { VectorTile } from '@mapbox/vector-tile';
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
-import { shapeDB, type VectorTileRecord } from '../database/ShapeDB';
+import { shapeDB, type VectorTileRecord } from '../database/ShapeDB.js';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BoundingBox, TileMetadata } from '../../shared';
-import type { Feature } from '../../shared/types';
-import type { LayerConfig } from '../types';
+import type { BoundingBox, TileMetadata } from '../../shared/index.js';
+import type { Feature } from '../../shared/types.js';
+import type { LayerConfig } from '../types.js';
 import { Geometry } from 'geojson';
 
 export interface TileRequest {

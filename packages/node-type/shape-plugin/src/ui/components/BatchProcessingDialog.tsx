@@ -30,10 +30,10 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
-import { useShapeAPIGetter } from '../hooks/useShapeAPI';
-import { useShapeProgress } from '../hooks/useShapeProgress';
+import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
+import { useShapeProgress } from '../hooks/useShapeProgress.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
-import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB';
+import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 
 import type { NodeId } from '@hierarchidb/common-type';
 
