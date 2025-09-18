@@ -1,12 +1,29 @@
-import { type LoaderFunctionArgs } from 'react-router';
+import type { LoaderFunctionArgs } from 'react-router';
 import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
-import { AppBar, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, ToggleButton, ToggleButtonGroup, Toolbar, Typography } from '@mui/material';
+import {
+  AppBar,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
+import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { loadPageNode, type LoadPageNodeArgs } from '~/loader.js';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
 import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
+import AppLogoIcon from '~/components/AppLogoIcon.js';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const params = args.params as LoadPageNodeArgs;
@@ -18,7 +35,7 @@ export default function TLayout() {
   const data = useLoaderData() as Awaited<ReturnType<typeof clientLoader>>;
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
-  const [selectedTreeId, setSelectedTreeId] = useState<string>(data.tree?.id || '');
+  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
   const [notFoundOpen, setNotFoundOpen] = useState<boolean>(nodeNotFound);
@@ -31,46 +48,102 @@ export default function TLayout() {
         const queryAPI = await client.getQueryAPI();
         const availableTrees = await queryAPI.listTrees();
         setTrees(availableTrees);
-      } catch {}
+      } catch (err) {
+        console.warn('[t.($treeId).($pageNodeId).tsx] failed to list trees', err);
+      }
     };
     loadTrees();
   }, []);
 
   useEffect(() => {
-    if (data.tree?.id) setSelectedTreeId(data.tree.id);
+    if (data.tree?.id) {
+      setSelectedTreeId(data.tree.id);
+    }
   }, [data.tree?.id]);
 
-  const handleTreeChange = (_e: React.MouseEvent<HTMLElement>, newTreeId: string | null) => {
+  const handleTreeChange = (_event: React.MouseEvent<HTMLElement>, newTreeId: string | null) => {
     if (newTreeId && newTreeId !== selectedTreeId) {
       setSelectedTreeId(newTreeId);
       navigate(`/t/${newTreeId}`);
     }
   };
 
+  const pageName = data.pageNode?.name || data.tree?.name || 'TreeTypes Console';
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
+          <IconButton
+            onClick={() => navigate('/')}
+            edge="start"
+            color="primary"
+            aria-label="Go to HierarchiDB home"
+            sx={{ marginLeft: '-20px' }}
+          >
+            <AppLogoIcon size={28} />
+          </IconButton>
+
           <Typography variant="h6" component="div" sx={{ flexGrow: 0, mr: 3 }}>
-            {data.pageNode?.name || 'TreeTypes Console'}
+            {pageName}
           </Typography>
-          <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }} />
-          <Box sx={{ ml: 'auto' }}>
-            <ToggleButtonGroup value={selectedTreeId} exclusive onChange={handleTreeChange} size="small">
-              {trees.map((tree) => (
-                <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
-                  {tree.name.toLowerCase().includes('project') ? (
-                    <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
-                  ) : tree.name.toLowerCase().includes('resource') ? (
-                    <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
-                  ) : (
-                    <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
-                  )}
-                  {tree.name}
-                </ToggleButton>
-              ))}
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Stack direction="row" spacing={1} alignItems="center">
+            <ToggleButtonGroup
+              value={selectedTreeId || undefined}
+              exclusive
+              onChange={handleTreeChange}
+              aria-label="tree selection"
+              size="small"
+              sx={{
+                borderRadius: '24px',
+                '& .MuiToggleButton-root': {
+                  px: 2,
+                  py: 0.5,
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
+                  borderRadius: 0,
+                  '&:first-of-type': {
+                    borderTopLeftRadius: '24px',
+                    borderBottomLeftRadius: '24px',
+                  },
+                  '&:last-of-type': {
+                    borderTopRightRadius: '24px',
+                    borderBottomRightRadius: '24px',
+                  },
+                  '&:not(:first-of-type)': {
+                    borderLeft: 'none',
+                  },
+                },
+              }}
+            >
+              {trees
+                .sort((a, b) => {
+                  const aIsResource = a.name.toLowerCase().includes('resource');
+                  const bIsResource = b.name.toLowerCase().includes('resource');
+                  if (aIsResource && !bIsResource) return -1;
+                  if (!aIsResource && bIsResource) return 1;
+                  return 0;
+                })
+                .map((tree) => (
+                  <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
+                    {tree.name.toLowerCase().includes('project') ? (
+                      <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
+                    ) : tree.name.toLowerCase().includes('resource') ? (
+                      <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
+                    ) : (
+                      <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
+                    )}
+                    {tree.name}
+                  </ToggleButton>
+                ))}
             </ToggleButtonGroup>
-          </Box>
+
+            <Box sx={{ ml: '8px' }}>
+              <UserLoginButton />
+            </Box>
+          </Stack>
         </Toolbar>
       </AppBar>
 

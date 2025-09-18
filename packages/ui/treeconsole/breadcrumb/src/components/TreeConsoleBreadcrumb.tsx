@@ -39,7 +39,6 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   padding: 0;
   flex: 1;
   white-space: nowrap;
-
   /* Dark theme background */
   background-color: ${props => (props.theme?.palette?.mode === 'dark' ? '#181818' : 'transparent')};
 
@@ -116,10 +115,6 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   }
 `;
 
-/**
-  * TreeConsoleBreadcrumb
- * TreeConsoleBreadcrumb
-  */
 export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
   const {
     nodePath = [],
@@ -183,6 +178,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     setPendingDeleteNodeId(null);
   }, [pendingDeleteNodeId]);
 
+  const openContextMenu = (node: BreadcrumbNode, anchorEl: HTMLElement | null) => {
+    if (!anchorEl) return;
+    setContextMenuAnchor(anchorEl);
+    setContextMenuNode(node);
+  };
+
   const handleContextMenuOpen = (
     event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
     node: BreadcrumbNode,
@@ -191,12 +192,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     event.stopPropagation();
 
     const anchorEl = event.currentTarget as unknown as HTMLElement | null;
-    if (!anchorEl) {
-      return;
-    }
-
-    setContextMenuAnchor(anchorEl);
-    setContextMenuNode(node);
+    openContextMenu(node, anchorEl);
   };
 
   const handleContextMenuClose = () => {
@@ -205,17 +201,17 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   };
 
   const handleCreate = (type: string) => {
-    console.log(`Create ${type} under node:`, contextMenuNode?.id);
+    console.log(`TODO: Create ${type} under node:`, contextMenuNode?.id);
     // TODO: Connect to controller
   };
 
   const handleEdit = () => {
-    console.log('Edit node:', contextMenuNode?.id);
+    console.log('TODO: Edit node:', contextMenuNode?.id);
     // TODO: Connect to controller
   };
 
   const handleDuplicate = () => {
-    console.log('Duplicate node:', contextMenuNode?.id);
+    console.log('TODO: Duplicate node:', contextMenuNode?.id);
     // TODO: Connect to controller
   };
 
@@ -240,7 +236,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             display: 'flex',
             alignItems: 'center',
             height: '100%',
-            px: 2,
+            px: 2
           }}
         >
           {isNavigating && <CircularProgress size={20} sx={{ mr: 2 }} />}
@@ -254,7 +250,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const isLast = index === pathToUse.length - 1;
               const nodeId = node.id || node.id || '';
               const nodeName = node.name || 'Unknown';
-              const depth = Math.max(0, index + _depthOffset);
+              const explicitDepth = typeof (node as any)?.depth === 'number' ? (node as any).depth : undefined;
+              const depth = explicitDepth ?? Math.max(0, index + _depthOffset);
               const iconColor = rainbowColors[depth % rainbowColors.length];
               const treeId = (props as any)?.treeId as string | undefined;
               const isRootLike = index === 0 && (!!(node as any)?.parentId === false || (treeId && nodeId === `${treeId}:root`));
@@ -296,33 +293,27 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
-                        try {
                           const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
                           if (raw) {
                             const list = JSON.parse(raw) as string[];
                             blocked = Array.isArray(list) && list.includes(String(nodeId));
                           }
-                        } catch {}
                         setHoverId(String(nodeId));
                         setHoverBlocked(blocked);
                         if (!blocked) e.preventDefault();
                       }
                     }}
                     onDrop={(e: any) => {
-                      try {
                         const dragged = e.dataTransfer?.getData('text/hdb-node');
                         let blocked = hoverBlocked;
-                        try {
                           const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
                           if (raw) {
                             const list = JSON.parse(raw) as string[];
                             blocked = Array.isArray(list) && list.includes(String(nodeId));
                           }
-                        } catch {}
                         if (dragged && nodeId && dragged !== nodeId && !blocked) {
                           props.onDropToNode?.(String(nodeId), dragged);
                         }
-                      } catch {}
                       setHoverId(null);
                       setHoverBlocked(false);
                     }}
@@ -334,6 +325,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                       size="small"
                       color="inherit"
                       htmlColor={iconColor}
+                      clickable
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openContextMenu(node, event.currentTarget as HTMLElement);
+                      }}
                     />
                     {nodeName}
                   </MUILink>
@@ -356,6 +353,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     size="small"
                     color="inherit"
                     htmlColor={iconColor}
+                    clickable
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openContextMenu(node, event.currentTarget as HTMLElement);
+                    }}
                   />
                   <MUILink
                     color="inherit"
@@ -386,33 +389,27 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     onDragOver={(e: any) => {
                       if (e.dataTransfer?.types?.includes('text/hdb-node')) {
                         let blocked = false;
-                        try {
                           const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
                           if (raw) {
                             const list = JSON.parse(raw) as string[];
                             blocked = Array.isArray(list) && list.includes(String(nodeId));
                           }
-                        } catch {}
                         setHoverId(String(nodeId));
                         setHoverBlocked(blocked);
                         if (!blocked) e.preventDefault();
                       }
                     }}
                     onDrop={(e: any) => {
-                      try {
                         const dragged = e.dataTransfer?.getData('text/hdb-node');
                         let blocked = hoverBlocked;
-                        try {
                           const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
                           if (raw) {
                             const list = JSON.parse(raw) as string[];
                             blocked = Array.isArray(list) && list.includes(String(nodeId));
                           }
-                        } catch {}
                         if (dragged && nodeId && dragged !== nodeId && !blocked) {
                           props.onDropToNode?.(String(nodeId), dragged);
                         }
-                      } catch {}
                       setHoverId(null);
                       setHoverBlocked(false);
                     }}

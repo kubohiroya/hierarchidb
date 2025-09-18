@@ -323,32 +323,32 @@ export function TreeTableCore({
 
     const rootId = (controller as any)?.rootNodeId as string | undefined;
 
-    function getDepth(nodeId: string): number {
+    const computeDepth = (nodeId: string): number => {
       if (depthMap.has(nodeId)) return depthMap.get(nodeId)!;
-
       const node = nodeMap.get(nodeId);
       if (!node) {
         depthMap.set(nodeId, 0);
         return 0;
       }
-      // If parentId is missing, treat as direct child of the current root (depth 1),
-      // unless the node itself is the root.
+      if (typeof node.depth === 'number') {
+        depthMap.set(nodeId, node.depth);
+        return node.depth as number;
+      }
       if (!node.parentId) {
         const d = rootId && node.id !== rootId ? 1 : 0;
         depthMap.set(nodeId, d);
         return d;
       }
-
-      const depth = getDepth(node.parentId) + 1;
+      const depth = computeDepth(node.parentId) + 1;
       depthMap.set(nodeId, depth);
       return depth;
-    }
+    };
 
     return rawData.map((node) => ({
       ...node,
-      depth: getDepth(node.id),
+      depth: computeDepth(node.id),
     }));
-  }, [rawData]);
+  }, [rawData, controller]);
   // Derive which nodes have at least one child when hasChildren is not provided
   const nodesWithChildren = useMemo(() => {
     const set = new Set<string>();
@@ -432,7 +432,8 @@ export function TreeTableCore({
         cell: ({ row }) => {
           const node = row.original;
           // Shift visual indentation one level left
-          const depth = Math.max(0, ((node.depth || 0) + depthOffset) - 1);
+          const reportedDepth = typeof node.depth === 'number' ? node.depth : undefined;
+          const depth = Math.max(0, ((reportedDepth ?? 1) + depthOffset) - 1);
           const nodeLike = node as TreeNode & {
             children?: readonly string[] | undefined;
             childCount?: number | undefined;
@@ -450,8 +451,8 @@ export function TreeTableCore({
             (typeof derivedChildCount === 'number' && derivedChildCount > 0);
           const isExpanded = expandedRowIds.has(node.id);
           const isEditing = editingNodeId === node.id;
-          const iconDepth = depth;
-          const iconColor = rainbowColors[iconDepth % rainbowColors.length];
+          const iconDepth = typeof reportedDepth === 'number' ? reportedDepth : depth + depthOffset;
+          const iconColor = rainbowColors[Math.max(0, iconDepth) % rainbowColors.length];
 
           return (
             <NameCell>

@@ -144,7 +144,7 @@ export function useTreeConsoleIntegration({
         const queryAPI = await client.getQueryAPI();
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
         // ancestors: root -> parent
-        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType }));
+        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType, depth: (n as any)?.depth }));
         // Truncate for performance on deep trees
         if (nodes.length + 1 > MAX_BREADCRUMB_ITEMS) {
           const keepTail = Math.max(1, MAX_BREADCRUMB_ITEMS - 3); // root + ellipsis + tail + current
@@ -158,11 +158,11 @@ export function useTreeConsoleIntegration({
         }
         const path: BreadcrumbNode[] = [
           ...nodes,
-          { id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType },
+          { id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType, depth: (pageTreeNode as any)?.depth },
         ];
         if (!disposed) setBreadcrumbItems(path);
       } catch {
-        if (!disposed && pageTreeNode) setBreadcrumbItems([{ id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType }]);
+        if (!disposed && pageTreeNode) setBreadcrumbItems([{ id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType, depth: (pageTreeNode as any)?.depth }]);
       }
     })();
     return () => { disposed = true; };
@@ -701,7 +701,7 @@ export function useTreeConsoleIntegration({
           await loadChildrenOf(toParentId);
           await refreshUndoRedo();
           fireCmdEvent();
-          try {
+
             const getCP = (client as unknown as MaybeCP).getCommandProcessor;
             if (typeof getCP === 'function') {
               const cp = await getCP();
@@ -709,7 +709,7 @@ export function useTreeConsoleIntegration({
               const canRedo = cp && typeof cp.canRedo === 'function' ? cp.canRedo() : false;
               setState((prev) => ({ ...prev, canUndo, canRedo }));
             }
-          } catch {}
+
         } catch (e) {
           console.error('Duplicate failed:', e);
         }
@@ -949,11 +949,11 @@ export function useTreeConsoleIntegration({
     const existing = Subscriptions.getActive('page', rootId);
     if (existing) return;
     const { subId, created } = await Subscriptions.subscribe('page', client, rootId, cb);
-    try {
+
       if (created && subId && import.meta.env && import.meta.env.VITE_SUBSCRIPTION_DEBUG === '1') {
         console.log('[Subscription][page] subscribed', { rootId, subId });
       }
-    } catch {}
+
   }, [client, loadChildrenOf]);
 
   useEffect(() => {

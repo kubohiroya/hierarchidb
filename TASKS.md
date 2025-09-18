@@ -96,6 +96,7 @@
     - 2025-09-17 23:58 runtime-ui/plugin-dialog の FolderIcon が React.createElement に渡され型不正になる事象を検知。アイコンノードの取り扱い修正を着手。
     - 2025-09-18 00:40 peerDialogPersistence で plugin EntitiesDB の解決候補に `.js`/`.ts`/`.mts` を追加し、Folder ダイアログ初期化時にモジュール解決エラーになる問題を修正。
     - 2025-09-18 01:05 useWorkingCopy が create モードで既存 WorkingCopy を再取得できずダイアログ非表示となる不具合を修正（parentId の連携と再取得ロジック追加、hook テスト整備）。
+    - 2025-09-18 01:25 tree ルートのレイアウトをページ単位ルートへ移動し、🌲セクションにページ名を表示する対応を開始。
 
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）

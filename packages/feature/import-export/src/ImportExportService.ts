@@ -53,6 +53,15 @@ export class ImportExportService implements ImportExportAPI {
 
       const nodes = params.data.nodes || [];
       const total = nodes.length;
+      const depthCache = new Map<NodeId, number>();
+      const resolveParentDepth = async (parentId: NodeId | null | undefined): Promise<number> => {
+        if (!parentId) return -1;
+        if (depthCache.has(parentId)) return depthCache.get(parentId)!;
+        const parentNode = await this.db.getNode(parentId);
+        const depth = parentNode?.depth ?? 0;
+        depthCache.set(parentId, depth);
+        return depth;
+      };
 
       const toCreate: { node: TreeNode; children?: any[] }[] = [];
       for (let i = 0; i < nodes.length; i++) {
@@ -68,13 +77,14 @@ export class ImportExportService implements ImportExportAPI {
             }
           }
           const nodeId = crypto.randomUUID() as NodeId;
+          const parentDepth = await resolveParentDepth(params.targetParentId);
           const node: TreeNode = {
             id: nodeId,
             parentId: params.targetParentId,
             nodeType: (nodeData.nodeType || 'folder') as NodeType,
             name: nodeData.name,
             description: nodeData.description,
-            depth: 0,
+            depth: Math.max(0, parentDepth + 1),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
