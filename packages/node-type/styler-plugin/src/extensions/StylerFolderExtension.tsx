@@ -356,7 +356,6 @@ export class StylerFolderExtension extends BaseFolderPlugin {
         },
         required: false,
         order: 20,
-        dependsOn: ['styler-plugin-folder-plugin-extension-style-config'],
       }),
     ];
   }
@@ -473,14 +472,14 @@ export class StylerFolderExtension extends BaseFolderPlugin {
     return errors;
   }
 
-  protected async afterCreate(node: any, entity: FolderEntity): Promise<void> {
+  protected async afterCreate(_node: any, entity: FolderEntity): Promise<void> {
     const stylerConfig = (entity as any).stylerConfig;
     if (stylerConfig) {
       console.log(`Created folder "${entity.name}" with Styler configuration:`, stylerConfig);
     }
   }
 
-  protected async afterUpdate(node: any, entity: FolderEntity): Promise<void> {
+  protected async afterUpdate(_node: any, entity: FolderEntity): Promise<void> {
     const stylerConfig = (entity as any).stylerConfig;
     if (stylerConfig) {
       console.log(`Updated folder "${entity.name}" Styler configuration:`, stylerConfig);

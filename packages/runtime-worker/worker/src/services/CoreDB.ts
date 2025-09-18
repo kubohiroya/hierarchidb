@@ -321,20 +321,10 @@ export class CoreDB extends Dexie {
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {
     const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
 
-    // Ensure we return plain objects that can be serialized by Comlink
-    return children.map(
-      (node): TreeNode => ({
-        id: node.id,
-        parentId: node.parentId,
-        nodeType: node.nodeType,
-        name: node.name,
-        depth: node.depth,
-        createdAt: node.createdAt,
-        updatedAt: node.updatedAt,
-        version: node.version,
-        ...(node.references && { references: node.references }),
-      }),
-    );
+    return children.map((node) => {
+      const plain: TreeNode = { ...node } as TreeNode;
+      return plain;
+    });
   }
 
   /**

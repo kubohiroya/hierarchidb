@@ -63,7 +63,7 @@ const TreeConsoleIntegrationInner: React.FC<
   });
 
   // Row Click Action state (Select | Edit | Navigate)
-  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Select' | 'Edit' | 'Navigate'>('Select/Navigate');
+  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>('Select/Navigate');
 
   // Check for trash items when worker client is available
   useEffect(() => {
@@ -281,7 +281,7 @@ const TreeConsoleIntegrationInner: React.FC<
       switch (action) {
         case 'setRowClickAction':
           if (typeof params === 'string') {
-            setRowClickAction(params as 'Select/Navigate' | 'Select' | 'Edit' | 'Navigate');
+            setRowClickAction(params === 'Edit' ? 'Edit' : 'Select/Navigate');
           }
           break;
         case 'import-template':
@@ -432,7 +432,7 @@ const TreeConsoleIntegrationInner: React.FC<
         }}
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}
-        rowClickAction={rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate'}
+        rowClickAction={rowClickAction}
         canUndo={state.canUndo}
         canRedo={state.canRedo}
         canCopy={selectedIds.length > 0}

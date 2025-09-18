@@ -76,9 +76,7 @@ export async function autoLoadPlugins(): Promise<PluginLoadResult> {
   for (const nodeType of loadOrder) {
     const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
     if (typeof loader === 'function') {
-      console.log(`⏳ Loading plugin: ${nodeType}`);
       await loader();
-      console.log(`✅ Loaded plugin: ${nodeType}`);
     } else {
       console.warn(`⚠️ No loader found for plugin: ${nodeType}`);
     }

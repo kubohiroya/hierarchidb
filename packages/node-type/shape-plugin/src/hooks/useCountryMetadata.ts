@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CountryMetadata } from '~/shared';
-import { metadataLoader } from '~/services/metadata/MetadataLoader';
+import type { CountryMetadata } from '../shared';
+import { metadataLoader } from '../services/metadata/MetadataLoader';
 
 export interface UseCountryMetadataOptions {
   dataSource: string;

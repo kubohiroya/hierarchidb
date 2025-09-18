@@ -12,7 +12,16 @@
     // Override workspace path mappings to avoid pulling source from other packages during app typecheck.
     // Keep only local alias and resolve workspace deps via their published type entries in package.json.
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["src/*"],
+      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/dist"],
+      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist"],
+      "@hierarchidb/ui-auth": ["../packages/ui/auth/dist"],
+      "@hierarchidb/ui-icon": ["../packages/ui/icon/dist"],
+      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/dist/worker"],
+      "@hierarchidb/location-plugin/services": ["../packages/node-type/location-plugin/dist/services"],
+      "@hierarchidb/linker-plugin/services": ["../packages/node-type/linker-plugin/dist/services"],
+      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/dist/worker"],
+      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/dist/worker"]
     },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },

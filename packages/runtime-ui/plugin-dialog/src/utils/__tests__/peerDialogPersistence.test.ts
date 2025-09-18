@@ -1,5 +1,6 @@
-import { beforeEach, afterEach, describe, it, expect } from 'vitest';
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import {
+  UIPersistence,
   getPeerDisplayMode,
   setPeerDisplayMode,
 } from '../peerDialogPersistence.js';
@@ -41,5 +42,43 @@ describe('peerDialogPersistence default provider', () => {
     const mode = await getPeerDisplayMode('folder', nodeId);
 
     expect(mode).toBe('maximized');
+  });
+});
+
+
+const fallbackRows = new Map<string, any>();
+
+vi.mock('@hierarchidb/folder-plugin/worker/folderEntitiesDB', () => ({
+  FolderEntitiesDB: class {
+    async open() { /* no-op */ }
+    table() {
+      return {
+        get: async (id: string) => fallbackRows.get(id) ?? null,
+        put: async (row: any) => { fallbackRows.set(row.nodeId, row); },
+      };
+    }
+  },
+}));
+
+describe('peerDialogPersistence EntitiesDB fallback', () => {
+  beforeEach(() => {
+    delete globalThis.__HDB_PLUGIN_ENTITY_OVERRIDES__;
+    fallbackRows.clear();
+    const registry = UIPersistence as unknown as { providers: Map<string, unknown>; dbCache: Map<string, unknown> };
+    registry.providers.delete('folder');
+    registry.dbCache.delete('folder');
+  });
+
+  afterEach(() => {
+    const registry = UIPersistence as unknown as { providers: Map<string, unknown>; dbCache: Map<string, unknown> };
+    registry.providers.delete('folder');
+    registry.dbCache.delete('folder');
+  });
+
+  it('falls back to worker EntitiesDB export when no override is provided', async () => {
+    const nodeId = 'fallback-node';
+    await setPeerDisplayMode('folder', nodeId, 'fullscreen');
+    const mode = await getPeerDisplayMode('folder', nodeId);
+    expect(mode).toBe('fullscreen');
   });
 });

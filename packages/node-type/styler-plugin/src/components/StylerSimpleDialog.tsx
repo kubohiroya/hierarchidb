@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Add, Cancel, Delete, Save } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { StylerColorRule, StylerEntity, StylerStyle } from '~/entities/StylerEntity';
+import type { StylerColorRule, StylerEntity, StylerStyle } from '../entities/StylerEntity.js';
 
 export interface StylerSimpleDialogProps {
   open: boolean;
@@ -63,15 +63,15 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
         textColor: '#000000',
       },
     };
-    setColorRules(prev => [...prev, newRule]);
+    setColorRules((prev: StylerColorRule[]) => [...prev, newRule]);
   }, []);
 
   const handleUpdateColorRule = useCallback((index: number, updates: Partial<StylerColorRule>) => {
-    setColorRules(prev => prev.map((rule, i) => i === index ? { ...rule, ...updates } : rule));
+    setColorRules((prev: StylerColorRule[]) => prev.map((rule, i) => i === index ? { ...rule, ...updates } : rule));
   }, []);
 
   const handleRemoveColorRule = useCallback((index: number) => {
-    setColorRules(prev => prev.filter((_, i) => i !== index));
+    setColorRules((prev: StylerColorRule[]) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -191,14 +191,14 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                 label="Background Color"
                 type="color"
                 value={defaultStyle.backgroundColor || '#ffffff'}
-                onChange={(e) => setDefaultStyle(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                onChange={(e) => setDefaultStyle((prev: StylerStyle) => ({ ...prev, backgroundColor: e.target.value }))}
                 size="small"
               />
               <TextField
                 label="Text Color"
                 type="color"
                 value={defaultStyle.textColor || '#000000'}
-                onChange={(e) => setDefaultStyle(prev => ({ ...prev, textColor: e.target.value }))}
+                onChange={(e) => setDefaultStyle((prev: StylerStyle) => ({ ...prev, textColor: e.target.value }))}
                 size="small"
               />
             </Box>

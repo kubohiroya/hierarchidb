@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { StepProps } from '~/shared';
-import { useCountryMetadata } from '~/hooks/useCountryMetadata';
+import type { StepProps } from '../../shared';
+import { useCountryMetadata } from '../../hooks/useCountryMetadata';
 import {
   calculateEstimatedFeatures,
   calculateEstimatedProcessingTime,
@@ -27,7 +27,7 @@ import {
   DATA_SOURCE_CONFIGS,
   formatBytes,
   formatNumber,
-} from '~/mock/data';
+} from '../../mock/data';
 
 /**
  * Step 5: Country & Admin Level Selection

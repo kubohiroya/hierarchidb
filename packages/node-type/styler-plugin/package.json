@@ -35,6 +35,26 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
+    },
+    "./worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
     }
   },
   "scripts": {
@@ -58,6 +78,7 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
@@ -74,7 +95,6 @@
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
-    
     "@types/react-window": "^1.8.8",
     "@vitest/ui": "^3.2.4",
     "vitest": "^3.2.4",

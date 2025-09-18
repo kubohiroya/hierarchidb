@@ -30,6 +30,7 @@ export interface TreeTableController {
   // State
   rowSelection?: RowSelectionState;
   expandedRowIds?: Set<string>;
+  rootNodeId?: NodeId;
 
   // Actions
   handleSearchTextChange?: (value: string) => void;

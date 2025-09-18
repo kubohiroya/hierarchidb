@@ -144,25 +144,34 @@ export function useTreeConsoleIntegration({
         const queryAPI = await client.getQueryAPI();
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
         // ancestors: root -> parent
-        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType, depth: (n as any)?.depth }));
+        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType }));
         // Truncate for performance on deep trees
         if (nodes.length + 1 > MAX_BREADCRUMB_ITEMS) {
           const keepTail = Math.max(1, MAX_BREADCRUMB_ITEMS - 3); // root + ellipsis + tail + current
-          const root = nodes[0];
-          const tail = nodes.slice(nodes.length - keepTail);
+          const rootNode = nodes[0];
+          const tail = nodes.slice(Math.max(1, nodes.length - keepTail));
           nodes = [
-            { id: root.id, name: root.name, nodeType: root.nodeType },
-            { id: '', name: '…', nodeType: 'ellipsis', isClickable: false },
+            ...(rootNode ? [{ id: rootNode.id, name: rootNode.name, nodeType: rootNode.nodeType }] : []),
+            { id: '__ellipsis__', name: '…', nodeType: 'ellipsis', isClickable: false },
             ...tail,
           ];
         }
-        const path: BreadcrumbNode[] = [
-          ...nodes,
-          { id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType, depth: (pageTreeNode as any)?.depth },
-        ];
-        if (!disposed) setBreadcrumbItems(path);
+        const currentBreadcrumb: BreadcrumbNode = {
+          id: pageTreeNode.id,
+          name: pageTreeNode.name,
+          nodeType: pageTreeNode.nodeType,
+        };
+        if (!disposed) setBreadcrumbItems([...nodes, currentBreadcrumb]);
       } catch {
-        if (!disposed && pageTreeNode) setBreadcrumbItems([{ id: pageTreeNode.id, name: pageTreeNode.name, nodeType: pageTreeNode.nodeType, depth: (pageTreeNode as any)?.depth }]);
+        if (!disposed && pageTreeNode) {
+          setBreadcrumbItems([
+            {
+              id: pageTreeNode.id,
+              name: pageTreeNode.name,
+              nodeType: pageTreeNode.nodeType,
+            },
+          ]);
+        }
       }
     })();
     return () => { disposed = true; };
@@ -223,8 +232,9 @@ export function useTreeConsoleIntegration({
       arr = arr.filter((n) => (n.name || '').toLowerCase().includes(t));
     }
     arr.sort((a, b) => {
-      const va = (a as Record<string, unknown>)[sortBy ?? 'name'] ?? '';
-      const vb = (b as Record<string, unknown>)[sortBy ?? 'name'] ?? '';
+      const key = sortBy ?? 'name';
+      const va = (a as unknown as Record<string, unknown>)[key] ?? '';
+      const vb = (b as unknown as Record<string, unknown>)[key] ?? '';
       const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
       return sortDir === 'asc' ? cmp : -cmp;
     });

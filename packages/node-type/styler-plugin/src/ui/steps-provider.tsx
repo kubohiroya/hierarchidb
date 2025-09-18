@@ -1,5 +1,4 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import type React from 'react';
 import { StylerStep5 } from '../components/steps/StylerStep5.js';
 import { StylerStep6 } from '../components/steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
@@ -18,7 +17,12 @@ registry.registerConfigProvider({
         id: 'data-source',
         label: 'Data Source',
         componentFactory: (p: P) => (
-          <SpreadsheetDataSourceStep data={p.data} onNext={() => void 0} onPrevious={() => void 0} errors={{}} />
+          <SpreadsheetDataSourceStep
+            data={p.data}
+            onNext={() => void 0}
+            onPrevious={() => void 0}
+            errors={[]}
+          />
         ),
       },
       // Step 3: Spreadsheet Filtering
@@ -26,7 +30,12 @@ registry.registerConfigProvider({
         id: 'filtering',
         label: 'Filtering',
         componentFactory: (p: P) => (
-          <SpreadsheetFilteringStep data={p.data} onNext={() => void 0} onPrevious={() => void 0} />
+          <SpreadsheetFilteringStep
+            data={p.data}
+            onNext={() => void 0}
+            onPrevious={() => void 0}
+            errors={[]}
+          />
         ),
       },
       // Step 4: Styler mapping (original Step2)

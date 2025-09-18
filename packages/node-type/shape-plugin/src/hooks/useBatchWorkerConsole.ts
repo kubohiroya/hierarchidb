@@ -7,8 +7,8 @@ import type {
   SimplifyTask,
   UrlMetadata,
   VectorTileTask,
-} from '~/shared';
-import { generateMockDownloadTasks, generateMockSimplifyTasks, generateMockVectorTileTasks } from '~/mock/data';
+} from '../shared';
+import { generateMockDownloadTasks, generateMockSimplifyTasks, generateMockVectorTileTasks } from '../mock/data';
 
 // Union type for all task types
 type AnyTask = DownloadTask | SimplifyTask | VectorTileTask;

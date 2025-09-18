@@ -102,7 +102,9 @@
     "task:list": "npx mrtask list",
     "task:pr": "npx mrtask pr",
     "task:done": "npx mrtask done",
-    "task:cancel": "npx mrtask cancel"
+    "task:cancel": "npx mrtask cancel",
+    "deps:cycles": "npx dependency-cruiser -c .dependency-cruiser.cjs packages app",
+    "deps:cycles:graph": "npx dependency-cruiser -c .dependency-cruiser.cjs --output-type dot --output-to reports/dependency-graph.dot packages app"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
@@ -133,6 +135,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "change-case": "^5.4.4",
     "dep-fence": "^0.5.1",
+    "dependency-cruiser": "^14.1.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-deprecation": "^2.0.0",

@@ -30,8 +30,8 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { NodeId } from '@hierarchidb/common-type';
-import type { ShapeEntity } from '~/shared';
-import type { BatchStatus } from '~/services/types';
+import type { ShapeEntity } from '../shared';
+import type { BatchStatus } from '../services/types';
 
 interface ShapeViewPanelProps {
   nodeId: NodeId;

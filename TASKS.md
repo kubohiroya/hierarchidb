@@ -53,6 +53,38 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+- fix/runtime-ui/plugin-dialog-entitiesdb-resolve — UIPersistenceRegistry の EntitiesDB 解決で folder plugin を読み込めない不具合修正
+  - ブランチ: `fix/runtime-ui/plugin-dialog-entitiesdb-resolve`（サンドボックス制約でローカル新規ブランチ作成不可のため `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/folder-plugin`
+  - 受け入れ基準（DoD）:
+    - [ ] Folder ダイアログ起動時に EntitiesDB 解決エラーが発生しない
+    - [ ] UIPersistenceRegistry のフォールバック候補が folder-plugin の公開エントリに追随
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がグリーン
+  - チェックリスト:
+    - [x] `peerDialogPersistence` の module specifier 候補を更新
+    - [x] folder-plugin の exports を EntitiesDB 公開に合わせて更新
+    - [x] 動作確認または代替検証結果を運用ログに記録
+  - ロールバック手順:
+    - `peerDialogPersistence.ts` と `folder-plugin/package.json` の変更を git revert し、旧挙動へ戻す
+  - 運用ログ:
+    - start: 2025-09-18 10:15 Folder ダイアログで EntitiesDB 解決エラーが発生する不具合の調査を開始
+    - progress: 2025-09-18 10:32 peerDialogPersistence.ts に worker/dist/src エントリの解決候補を追加し、EntitiesDB 読み込み経路を拡張
+    - progress: 2025-09-18 10:37 folder/basemap/location/route/shape/resolver/styler/spreadsheet 各 plugin の `package.json` に `./worker/*` exports を追加
+    - done: 2025-09-18 10:48 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
+    - done: 2025-09-18 10:55 node-type plugin 群（folder/basemap/location/route/shape/resolver/styler/spreadsheet）の `pnpm --filter ... typecheck` を順次実行し成功
+    - done: 2025-09-18 11:05 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test` を実行し、fallback import シナリオのユニットテストを追加して成功
+    - blocked: 2025-09-18 11:10 Vite dev server で `@hierarchidb/spreadsheet-plugin/ui` 解決エラーが発生（virtual:plugin-registry-ui 経由）。エイリアス整備が必要。
+    - progress: 2025-09-18 11:28 app/vite.config.ts に各 node-type プラグインの `/ui` `/worker` エイリアスを追加し、仮想レジストリからの読み込みに対応。
+    - done: 2025-09-18 11:31 `pnpm --filter @hierarchidb/app typecheck` を実行し成功。
+    - done: 2025-09-18 11:36 policy/ban-tsconfig-paths-dist-dts を実行し、styler-plugin/tsconfig.json の dist 参照を src 参照へ更新。
+    - done: 2025-09-18 11:42 styler-plugin/tsconfig.json の paths をパッケージルート参照（../../ui/core 等）へ変更し、rootDir エラーを解消。
+    - done: 2025-09-18 11:44 `pnpm --filter @hierarchidb/styler-plugin build` を実行し成功。
+    - done: 2025-09-18 11:52 styler-plugin/tsconfig.json から rootDir を除去し、再ビルドで TS6059 を解消（`pnpm --filter @hierarchidb/styler-plugin build` 成功）。
+    - progress: 2025-09-18 12:02 shape-plugin 内の '~/...' エイリアスを相対パスへ置換し、app build 時の参照先を統一。
+    - done: 2025-09-18 12:09 `pnpm --filter @hierarchidb/app build` を実行し成功。
+    - progress: 2025-09-18 11:48 app/tsconfig.typecheck.json の dist 参照を package src へ更新し、typecheck ポリシーに適合。
+    - done: 2025-09-18 11:49 `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を再実行し、違反が解消されたことを確認。
+
 - fix/ui/breadcrumb-drag-handle-remove — TreeConsole パンくず内ドラッグハンドル表示の撤去
   - ブランチ: `fix/ui/breadcrumb-drag-handle-remove`（サンドボックス制約でローカル新規ブランチ作成不可のため `fix/app/emotion-dedupe` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-breadcrumb`
@@ -689,6 +721,33 @@
     - blocked: 2025-09-10 10:20 `eslint-plugin-deprecation` が ESLint v9 で `context.getAncestors` 不在によりクラッシュ（互換版待ち）。
     - done: 2025-09-10 10:25 代替レポート `scripts/report-deprecations.mjs` で集計完了（TS/TSX 合計 109 件、33 ファイル）。
 
+- fix/ui-treeconsole/treetable-visibility-bug — TreeTable 展開表示の修正
+  - ブランチ: `fix/ui-treeconsole/treetable-visibility-bug`（サンドボックス制約でローカル新規ブランチ作成不可のため main 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-treetable`
+  - 受け入れ基準（DoD）:
+    - [ ] 折りたたんだノードの子がテーブルに表示されない
+    - [ ] 再展開した際に子ノードが親ノードの直後に表示される
+    - [ ] 既存の展開状態 Set を用いても初期描画で順序が乱れない
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` がグリーン
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` がグリーン
+  - チェックリスト:
+    - [x] 可視ノード計算のユーティリティとテストを追加
+    - [x] 運用ログを更新
+  - ロールバック手順:
+    - 可視ノード計算の変更をリバートし、旧ロジックへ戻す
+  - 運用ログ:
+    - start: 2025-09-18 11:20 TreeTable ノード展開表示不具合の修正に着手
+    - 2025-09-18 11:32 buildVisibleNodes ユーティリティを追加し、TreeTableCore の可視ノード算出を更新
+    - 2025-09-18 11:33 visibleNodes.test.ts を追加し、展開/折りたたみ挙動のテストを整備
+    - 2025-09-18 11:34 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` 実行、グリーンを確認
+    - 2025-09-18 11:35 `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` 実行、グリーンを確認
+    - 2025-09-18 11:39 展開アイコン表示のため parentId 判定を厳密化
+    - 2025-09-18 11:40 NodeId 仕様に合わせ parentId 文字列化の変更を撤回し、データ契約に沿った検出へ整理
+    - 2025-09-18 11:45 Vite 実行時の spreadsheet-plugin UI 解決エラーに対応し、package.json の ESM エントリを dist/*.js へ統一
+    - 2025-09-18 11:52 buildVisibleNodes 利用時の子ノード判定を正規化し、展開アイコンが常に表示されるよう調整
+    - 2025-09-18 11:53 パンくずリンクの右クリックではメニューを開かず、ノードアイコン左クリック／キーボード操作のみに限定
+    - 2025-09-18 12:05 Worker CoreDB.listChildren で hasChildren などのフィールドを保持するよう修正し UI 伝播欠落を解消
+
 - fix/ui-treeconsole/treetable-node-brands — TreeTable フィクスチャの NodeId/NodeType brand 整合
   - ブランチ: `fix/ui-treeconsole/treetable-node-brands`
   - 依存: `@hierarchidb/common-type`
@@ -723,6 +782,10 @@
 12) fix/resolver/error-notify（エラー通知）
 13) test/base-plugin/minimal-unit（最小ユニット）
 14) test/resolver/e2e-headless-stabilize（ResolverDialog ヘッドレスE2E再有効化）
+
+- chore/route-plugin/publish-dts — Route plugin の UI/worker d.ts 生成（app シム撤去と併走）
+- chore/timeline-plugin/publish-dts — Timeline plugin の公式型出力（ui/worker）と app シム撤去
+- chore/spreadsheet-plugin/publish-dts — Spreadsheet plugin の UI/worker/database 型公開と app シム削減
 
 — Feature Flag Sunset Program（legacy cleanup roadmap） —
 
@@ -2377,6 +2440,11 @@ P2:
   - 要点: NodeType 系 Entities DB のデフォルト名を `*-entities-db` に統一。README/TASKS.md の更新と移行ガイドを整備。
   - ロールバック: 旧 DB 名に戻すのみ（局所復旧可能）。
 
+- chore/node-type/publish-dts-packages（Location/Route/Timeline/Shape/Styler/Spreadsheet/Linker の型公開）
+  - ブランチ: `chore/location-plugin/publish-dts` etc.（ローカル実施、2025-09-18）
+  - 要点: 各 node-type プラグインの `tsup` 設定と `exports` / `typesVersions` を整備し、UI/worker/services の公式 `.d.ts` を公開。App 側のシムを削減し、`pnpm --filter @hierarchidb/app typecheck` で検証済み。
+  - ロールバック: 各 package.json / tsup 設定の差分を revert し、App の tsconfig/shims を元に戻す。
+
 - chore/db/unify-dexie-names-and-tables（Dexie の DB 名・テーブル名を規約に統一）
   - ブランチ: `chore/db/unify-dexie-names-and-tables` → main 反映済（2025-09-07）
   - 要点: NodeType 系の Entities DB 名を `*-entities-db` に統一し、既存テーブル名の監査とガイド更新を実施。型チェックもグリーンを確認。
@@ -2662,6 +2730,10 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
+- 2025-09-18: Location plugin d.ts 整備 — tsup/exports/typesVersions を更新し、`app` 側の Location シムを削除。`pnpm --filter @hierarchidb/location-plugin build` と `pnpm --filter @hierarchidb/app typecheck` で確認済み。
+- 2025-09-18: Route / Timeline / Spreadsheet / Styler / Shape / Linker plugin の d.ts 整備 — 各 tsup/exports/typesVersions を更新し、`app` シムを撤去。`pnpm --filter @hierarchidb/{route-plugin,timeline-plugin,location-plugin,shape-plugin,styler-plugin,spreadsheet-plugin} build` および `pnpm --filter @hierarchidb/app typecheck` を実行済み。
+- 2025-09-18: Route/Timeline/Spreadsheet plugin d.ts 整備 — 各 tsup/exports/typesVersions を更新し、app シム（worker/database）を撤去。`pnpm --filter @hierarchidb/{route-plugin,timeline-plugin,spreadsheet-plugin} build` および `pnpm --filter @hierarchidb/app typecheck` で確認済み。
+
 - runtime-worker の型検証で `decodeWorkingCopyHolderName` がブランド型 `NodeId` と不一致だったため、`@hierarchidb/common-type` の `NodeId` を利用するよう util を修正し、返却値を `as NodeId` で正規化（実行時挙動は非変更）。
 
 2025-09-15
@@ -2786,6 +2858,24 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-18 start: fix/runtime-ui/plugin-dialog-entitiesdb-resolve — Folder ダイアログ EntitiesDB 解決エラーの調査を開始。
+- 2025-09-18 progress: fix/runtime-ui/plugin-dialog-entitiesdb-resolve — peerDialogPersistence.ts の解決候補を拡張し、plugin exports を同期。
+- 2025-09-18 done: 同タスク — runtime-ui-plugin-dialog と folder/basemap/location/route/shape/resolver/styler/spreadsheet の typecheck を順次実行し成功。
+- 2025-09-18 done: 同タスク — runtime-ui-plugin-dialog のユニットテストを追加し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test` を実行して成功。
+- 2025-09-18 blocked: 同タスク — dev server で `@hierarchidb/spreadsheet-plugin/ui` の解決に失敗。plugin alias を追加する対応を開始。
+- 2025-09-18 progress: 同タスク — app/vite.config.ts に plugin alias を追加して dev server の解決エラーに対応。
+- 2025-09-18 done: 同タスク — `pnpm --filter @hierarchidb/app typecheck` を実行し成功。
+- 2025-09-18 done: 同タスク — policy/ban-tsconfig-paths-dist-dts の指摘に対応し、styler-plugin/tsconfig.json の dist 参照を src 参照に修正。
+- 2025-09-18 done: 同タスク — styler-plugin/tsconfig.json の paths をパッケージルート参照に更新し、build 時の rootDir エラーを解消。
+- 2025-09-18 done: 同タスク — `pnpm --filter @hierarchidb/styler-plugin build` を実行して成功。
+- 2025-09-18 done: 同タスク — styler-plugin/tsconfig.json から rootDir を除去し、再ビルドで TS6059 を解消。
+- 2025-09-18 progress: 同タスク — shape-plugin の '~/…' インポートを相対パスへ置換し、app build でのモジュール解決エラーを防止。
+- 2025-09-18 done: 同タスク — `pnpm --filter @hierarchidb/app build` を実行し成功。
+- 2025-09-18 progress: 同タスク — app/tsconfig.typecheck.json の paths を dist 参照から package src に更新。
+- 2025-09-18 done: 同タスク — policy/ban-tsconfig-paths-dist-dts を再実行し違反がないことを確認。
+- 2025-09-18 progress: refactor/app/shim-removal — app/tsconfig.typecheck.json の paths を dist フォルダ参照へ統一し、worker/plugin/ui パッケージの正式 d.ts を解決できるよう整理。
+- 2025-09-18 done: refactor/app/shim-removal — app/src/types/shims.d.ts・common-type/ambient-ui.d.ts から `ui-theme`/`ui-auth`/`ui-treeconsole-toolbar`/`folder-plugin` 向けシムを削除し、`docs/shim-any-audit-2025-09.md` を更新。`pnpm --filter @hierarchidb/common-type typecheck` / `build` と `pnpm --filter @hierarchidb/app typecheck` がグリーン。
+- 2025-09-18 done: refactor/styler-plugin-typecheck — styler-plugin の import パス調整と Dexie 型修正で `pnpm --filter @hierarchidb/styler-plugin typecheck` / `pnpm -w typecheck` がグリーン。
 - 2025-09-17 start: fix/ui-treeconsole/treetable-node-brands — `ui-treeconsole/treetable` の typecheck で発生した NodeId brand エラー（filterAndPath.test.ts）を調査開始。
 - 2025-09-17 done: 同タスク — NodeId/NodeType brand を `toNodeId`/`toNodeType` で生成するよう修正し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功。
 - 2025-09-17 start: Feature Flag Sunset Program — legacy flag サンセット計画を立案し、ToDo に成熟化/撤去タスクを追加。

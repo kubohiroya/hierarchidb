@@ -381,18 +381,35 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Worker subpath exports — map to src during dev so Vite can resolve without prior builds
+        { find: '@hierarchidb/basemap-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/basemap-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/basemap-plugin', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/index.ts') },
+        { find: '@hierarchidb/folder-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/folder-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/folder-plugin', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/index.ts') },
         { find: '@hierarchidb/route-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/worker/index.ts') },
         { find: '@hierarchidb/route-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/database/index.ts') },
         { find: '@hierarchidb/route-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/ui/index.ts') },
         { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/index.ts') },
         { find: '@hierarchidb/timeline-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/timeline-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/timeline-plugin', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/index.ts') },
         
         { find: '@hierarchidb/location-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/location-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/location-plugin', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/index.ts') },
         { find: '@hierarchidb/shape-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/shape-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/shape-plugin', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/index.ts') },
         // Resolver plugin database: map to src during dev for HMR-friendly services (must come BEFORE root alias)
+        { find: '@hierarchidb/resolver-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/worker/index.ts') },
         { find: '@hierarchidb/resolver-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/database/index.ts') },
         // Some plugins don't ship a root dist during dev; point to src to avoid "Failed to resolve entry".
         { find: '@hierarchidb/resolver-plugin', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/index.ts') },
+        // Styler plugin resolves to src for dev-time HMR
+        { find: '@hierarchidb/styler-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/styler-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/styler-plugin', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/index.ts') },
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
@@ -402,6 +419,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
         { find: '@hierarchidb/location-plugin/services', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/services/index.ts') },
         // Spreadsheet plugin database subpath must resolve before the root alias
+        { find: '@hierarchidb/spreadsheet-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/spreadsheet-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/ui/facade/index.ts') },
         { find: '@hierarchidb/spreadsheet-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/database/index.ts') },
         // Spreadsheet plugin is referenced by Styler UI; ensure resolvable during app build
         { find: '@hierarchidb/spreadsheet-plugin', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/index.ts') },

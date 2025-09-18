@@ -13,7 +13,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Link as MUILink,
   Typography,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
@@ -82,28 +81,6 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
     white-space: nowrap;
   }
 
-  & .MuiLink-root {
-    font-size: 0.975rem;
-    font-weight: bold;
-    padding: 2px 8px;
-    margin: -2px -8px;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-    line-height: 1.5;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-
-    &:hover {
-      background-color: #f0f0f0;
-      text-decoration: none;
-    }
-  }
-
   & .MuiBreadcrumbs-separator {
     font-size: 1.375rem;
     margin: 0 8px;
@@ -114,6 +91,36 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
     white-space: nowrap;
   }
 `;
+
+const BreadcrumbLink = styled(RouterLink, {
+  shouldForwardProp: (prop) =>
+    !['$isLast', '$outlined', '$outlineColor', '$blocked'].includes(prop as string),
+})<{
+  $isLast: boolean;
+  $outlined: boolean;
+  $outlineColor: string;
+  $blocked: boolean;
+}>(({ theme, $isLast, $outlined, $outlineColor, $blocked }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: $isLast ? '2px 8px' : '2px 6px',
+  margin: '-2px -4px',
+  borderRadius: 4,
+  textDecoration: 'none',
+  color: 'inherit',
+  fontWeight: $isLast ? 700 : 500,
+  fontSize: $isLast ? '0.975rem' : '0.9rem',
+  lineHeight: 1.5,
+  outline: $outlined ? $outlineColor : 'none',
+  outlineOffset: '-2px',
+  cursor: $blocked ? 'not-allowed' : 'pointer',
+  transition: 'background-color 0.2s ease',
+  '&:hover': {
+    textDecoration: 'none',
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
 
 export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactElement | null {
   const {
@@ -257,97 +264,16 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const isRootLike = index === 0 && (!!(node as any)?.parentId === false || (treeId && nodeId === `${treeId}:root`));
               const toHref = treeId ? (isRootLike ? `/t/${treeId}` : `/t/${treeId}/${String(nodeId)}`) : String(nodeId);
 
-              if (isLast) {
-                // 現在ページ（単一要素でルートの場合を含む）もリンク化し、右クリック新規タブを可能にする
-                return (
-                  <MUILink
-                    key={nodeId}
-                    component={RouterLink as any}
-                    to={toHref}
-                    color="inherit"
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      fontWeight: 'bold',
-                      fontSize: '0.975rem',
-                      outline:
-                        hoverId === nodeId
-                          ? hoverBlocked
-                            ? '2px dashed rgba(211,47,47,0.7)'
-                            : '2px dashed rgba(25,118,210,0.6)'
-                          : 'none',
-                      outlineOffset: '-2px',
-                      cursor: hoverId === nodeId && hoverBlocked ? 'not-allowed' : 'pointer',
-                      textDecoration: 'none',
-                    }}
-                    aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
-                    title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
-                    aria-haspopup="menu"
-                    onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
-                    onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
-                      if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
-                        handleContextMenuOpen(event, node);
-                      }
-                    }}
-                    onDragOver={(e: any) => {
-                      if (e.dataTransfer?.types?.includes('text/hdb-node')) {
-                        let blocked = false;
-                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                          if (raw) {
-                            const list = JSON.parse(raw) as string[];
-                            blocked = Array.isArray(list) && list.includes(String(nodeId));
-                          }
-                        setHoverId(String(nodeId));
-                        setHoverBlocked(blocked);
-                        if (!blocked) e.preventDefault();
-                      }
-                    }}
-                    onDrop={(e: any) => {
-                        const dragged = e.dataTransfer?.getData('text/hdb-node');
-                        let blocked = hoverBlocked;
-                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                          if (raw) {
-                            const list = JSON.parse(raw) as string[];
-                            blocked = Array.isArray(list) && list.includes(String(nodeId));
-                          }
-                        if (dragged && nodeId && dragged !== nodeId && !blocked) {
-                          props.onDropToNode?.(String(nodeId), dragged);
-                        }
-                      setHoverId(null);
-                      setHoverBlocked(false);
-                    }}
-                    onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
-                  >
-                    {/* Node icon for context; use context menu trigger to open actions */}
-                    <IconComponent
-                      nodeType={node.nodeType || node.type || 'folder-plugin'}
-                      size="small"
-                      color="inherit"
-                      htmlColor={iconColor}
-                      clickable
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        openContextMenu(node, event.currentTarget as HTMLElement);
-                      }}
-                    />
-                    {nodeName}
-                  </MUILink>
-                );
-              }
+              const isClickable = node.isClickable !== false;
+              const isOutline = hoverId === nodeId;
+              const outlineColor = isOutline
+                ? hoverBlocked
+                  ? '2px dashed rgba(211,47,47,0.7)'
+                  : '2px dashed rgba(25,118,210,0.6)'
+                : 'none';
 
-              return (
-                <Box
-                  key={nodeId}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                  }}
-                  onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
-                >
-                  {/* Node icon for context; right-click/keyboard context menu opens actions. */}
+              const linkContent = (
+                <>
                   <IconComponent
                     nodeType={node.nodeType || node.type || 'folder-plugin'}
                     size="small"
@@ -360,64 +286,74 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                       openContextMenu(node, event.currentTarget as HTMLElement);
                     }}
                   />
-                  <MUILink
-                    color="inherit"
-                    component={RouterLink as any}
-                    to={toHref}
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      outline:
-                        hoverId === nodeId
-                          ? hoverBlocked
-                            ? '2px dashed rgba(211,47,47,0.7)'
-                            : '2px dashed rgba(25,118,210,0.6)'
-                          : 'none',
-                      outlineOffset: '-2px',
-                      cursor: hoverId === nodeId && hoverBlocked ? 'not-allowed' : 'pointer',
-                    }}
-                    aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
-                    title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
-                    aria-haspopup="menu"
-                    onContextMenu={(event: MouseEvent<HTMLElement>) => handleContextMenuOpen(event, node)}
-                    onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
-                      if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
-                        handleContextMenuOpen(event, node);
-                      }
-                    }}
-                    onDragOver={(e: any) => {
-                      if (e.dataTransfer?.types?.includes('text/hdb-node')) {
-                        let blocked = false;
-                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                          if (raw) {
-                            const list = JSON.parse(raw) as string[];
-                            blocked = Array.isArray(list) && list.includes(String(nodeId));
-                          }
-                        setHoverId(String(nodeId));
-                        setHoverBlocked(blocked);
-                        if (!blocked) e.preventDefault();
-                      }
-                    }}
-                    onDrop={(e: any) => {
-                        const dragged = e.dataTransfer?.getData('text/hdb-node');
-                        let blocked = hoverBlocked;
-                          const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                          if (raw) {
-                            const list = JSON.parse(raw) as string[];
-                            blocked = Array.isArray(list) && list.includes(String(nodeId));
-                          }
-                        if (dragged && nodeId && dragged !== nodeId && !blocked) {
-                          props.onDropToNode?.(String(nodeId), dragged);
-                        }
-                      setHoverId(null);
-                      setHoverBlocked(false);
-                    }}
-                    onDragLeave={() => { setHoverId((id) => (id === nodeId ? null : id)); setHoverBlocked(false); }}
-                  >
+                  <Typography component="span" sx={{ fontWeight: isLast ? 700 : 500 }}>
                     {nodeName}
-                  </MUILink>
-                </Box>
+                  </Typography>
+                </>
+              );
+
+              if (!isClickable) {
+                return (
+                  <Box key={nodeId} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {linkContent}
+                  </Box>
+                );
+              }
+
+              return (
+                <BreadcrumbLink
+                  key={nodeId}
+                  to={toHref}
+                  $isLast={isLast}
+                  $outlined={isOutline}
+                  $outlineColor={outlineColor}
+                  $blocked={hoverId === nodeId && hoverBlocked}
+                  aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
+                  title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                  aria-haspopup="menu"
+                  onContextMenu={(event: MouseEvent<HTMLElement>) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
+                    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+                      handleContextMenuOpen(event, node);
+                    }
+                  }}
+                  onDragOver={(e: any) => {
+                    if (e.dataTransfer?.types?.includes('text/hdb-node')) {
+                      let blocked = false;
+                      const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                      if (raw) {
+                        const list = JSON.parse(raw) as string[];
+                        blocked = Array.isArray(list) && list.includes(String(nodeId));
+                      }
+                      setHoverId(String(nodeId));
+                      setHoverBlocked(blocked);
+                      if (!blocked) e.preventDefault();
+                    }
+                  }}
+                  onDrop={(e: any) => {
+                    const dragged = e.dataTransfer?.getData('text/hdb-node');
+                    let blocked = hoverBlocked;
+                    const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
+                    if (raw) {
+                      const list = JSON.parse(raw) as string[];
+                      blocked = Array.isArray(list) && list.includes(String(nodeId));
+                    }
+                    if (dragged && nodeId && dragged !== nodeId && !blocked) {
+                      props.onDropToNode?.(String(nodeId), dragged);
+                    }
+                    setHoverId(null);
+                    setHoverBlocked(false);
+                  }}
+                  onDragLeave={() => {
+                    setHoverId((id) => (id === nodeId ? null : id));
+                    setHoverBlocked(false);
+                  }}
+                >
+                  {linkContent}
+                </BreadcrumbLink>
               );
             })}
           </Breadcrumbs>

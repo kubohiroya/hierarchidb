@@ -32,6 +32,26 @@
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
       "default": "./dist/ui/index.js"
+    },
+    "./worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
     }
   },
   "scripts": {
@@ -49,6 +69,7 @@
   },
   "dependencies": {
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/base-plugin": "workspace:*",

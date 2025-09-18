@@ -154,6 +154,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                   data: controller.data,
                   rowSelection: controller.rowSelection,
                   expandedRowIds: controller.expandedRowIds,
+                  rootNodeId: controller.rootNodeId,
                   searchText: controller.searchText,
                   filteredItemCount: controller.filteredItemCount,
                   totalItemCount: controller.totalItemCount,

@@ -21,7 +21,7 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { BatchMonitorDialogProps, BatchStatus } from '~/shared';
+import type { BatchMonitorDialogProps, BatchStatus } from '../shared';
 // import { mockShapeService } from '~/services/MockShapeService';
 import { BatchProgressSplitView } from './batch/BatchProgressSplitView.js';
 import { MapPreview } from './batch/MapPreview.js';
@@ -29,8 +29,8 @@ import { ErrorConsoleDialog } from './batch/ErrorConsoleDialog.js';
 import { ErrorReportPanel } from './batch/ErrorReportPanel.js';
 import type { ErrorLogEntry } from '../hooks/useErrorConsole.js';
 import { BatchStatusChip } from './batch/BatchStatusChip.js';
-import { useBatchWorkerConsole } from '~/hooks/useBatchWorkerConsole';
-import { useErrorConsole } from '~/hooks/useErrorConsole';
+import { useBatchWorkerConsole } from '../hooks/useBatchWorkerConsole';
+import { useErrorConsole } from '../hooks/useErrorConsole';
 
 export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = ({
                                                                                   open,

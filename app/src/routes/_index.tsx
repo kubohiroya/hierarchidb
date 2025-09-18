@@ -103,7 +103,6 @@ export default function Index() {
       const savedPageNodeId = getSavedPageNodeId(treeId) || '';
       const path1 = savedPageNodeId ? `/${treeId}/${savedPageNodeId}` : `/${treeId}`;
       const path = `t${path1}`;
-      console.log(path);
       navigate(path);
     },
     [navigate, getSavedPageNodeId],

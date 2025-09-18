@@ -361,7 +361,7 @@ export function recommendAlgorithm(
   */
 export function analyzeData(
   values: number[],
-  column?: string,
+  _column?: string,
   dataType?: 'population' | 'ratio' | 'continuous' | 'categorical',
 ): DataAnalysisResult {
   const statistics = calculateStatistics(values);

@@ -5,22 +5,50 @@
   "description": "Route management plugin extending Shape plugin for HierarchiDB",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
     "./database": {
-      "types": "./dist/database/index.d.mts",
+      "types": "./dist/database/index.d.ts",
       "import": "./dist/database/index.mjs"
     },
     "./worker": {
+      "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.mjs"
     },
     "./ui": {
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.mjs"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "database": [
+        "dist/database/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "scripts": {

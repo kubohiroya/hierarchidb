@@ -17,6 +17,12 @@
       "import": "./dist/services/index.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "services": ["dist/services/index.d.ts"],
+      "*": ["dist/index.d.ts"]
+    }
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -30,6 +36,7 @@
     "@hello-pangea/dnd": "^16.6.0",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",

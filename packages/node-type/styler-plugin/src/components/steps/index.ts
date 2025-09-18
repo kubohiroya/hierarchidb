@@ -15,11 +15,11 @@ export { StylerStep6, StylerStep6Definition } from './StylerStep6.js';
 export type { StylerStep6Props } from './StylerStep6.js';
 
 // Re-export components for direct use
-export { StylerConfiguration } from '../components/step5/StylerConfiguration.js';
-export type { StylerConfigurationProps } from '../components/step5/StylerConfiguration.js';
+export { StylerConfiguration } from '../step5/StylerConfiguration.js';
+export type { StylerConfigurationProps } from '../step5/StylerConfiguration.js';
 
-export { StylerTablePreview } from '../components/step6/StylerTablePreview.js';
-export type { StylerTablePreviewProps } from '../components/step6/StylerTablePreview.js';
+export { StylerTablePreview } from '../step6/StylerTablePreview.js';
+export type { StylerTablePreviewProps } from '../step6/StylerTablePreview.js';
 
 // Re-export types
 export type {
@@ -31,13 +31,13 @@ export type {
   MapLibrePropertyMetadata,
   PropertyGroup,
   ColorCalculationResult,
-} from '../types/stylerTypes.js';
+} from '../../types/stylerTypes.js';
 
 export {
   StylerConfigDefault,
   MAPLIBRE_PROPERTY_METADATA,
   MAPLIBRE_PROPERTY_GROUPS,
-} from '../types/stylerTypes.js';
+} from '../../types/stylerTypes.js';
 
 // Re-export utilities
 export {
@@ -51,4 +51,4 @@ export {
   valueToColor,
   adjustBrightness,
   getContrastRatio,
-} from '../utils/colorUtils.js';
+} from '../../utils/colorUtils.js';

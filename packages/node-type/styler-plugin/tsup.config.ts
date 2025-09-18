@@ -1,14 +1,20 @@
 import { createTsupConfig } from "../../../tsup.base.config.js";
 
 export default createTsupConfig({
-  entry: [
-    "src/index.ts",
-    "src/ui/index.ts",
-    "src/shared/index.ts",
-    "src/services/index.ts"
-  ],
-  // UI-heavy: DTS often pulls in React/MUI internals; skip DTS for now
-  dts: false,
+  entry: {
+    'index': 'src/index.ts',
+    'ui/index': 'src/ui/index.ts',
+    'shared/index': 'src/shared/index.ts',
+    'services/index': 'src/services/index.ts',
+  },
+  dts: {
+    entry: {
+      'index': 'src/index.ts',
+      'ui/index': 'src/ui/index.ts',
+      'shared/index': 'src/shared/index.ts',
+      'services/index': 'src/services/index.ts',
+    },
+  },
   external: [
     '@hierarchidb/runtime-ui-plugin-dialog',
     '@hierarchidb/spreadsheet-plugin',

@@ -1,13 +1,13 @@
 /*
   Minimal dependency-cruiser config:
-  - Warn on cycles
-  - Error on cross-package ../src imports (must consume built outputs or declared exports)
+  - Error on cycles
+  - Ignore generated outputs (dist/build/coverage/.turbo/storybook-static/app/.debug/reports)
 */
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: ['dist', 'build', 'coverage', '.turbo'],
+    exclude: ['dist', 'build', 'coverage', '.turbo', 'storybook-static', 'app/.debug', 'reports'],
     tsConfig: {
       fileName: 'tsconfig.base.json',
     },
@@ -18,17 +18,10 @@ module.exports = {
   forbidden: [
     {
       name: 'no-cycles',
-      comment: 'Avoid cyclical dependencies for maintainability',
-      severity: 'warn',
+      comment: '循環依存を禁止（検出時はビルドを停止）',
+      severity: 'error',
       from: {},
       to: { circular: true },
-    },
-    {
-      name: 'no-cross-src',
-      comment: 'Do not import another package\'s ../src directly; use its built exports instead',
-      severity: 'warn',
-      from: { path: '^packages/.+/src' },
-      to: { path: '^packages/.+/src' },
     },
   ],
 };

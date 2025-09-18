@@ -31,6 +31,14 @@ import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-bread
 import { rainbowColors } from '@hierarchidb/ui-core';
 import { TreeNode } from '@hierarchidb/common-type';
 import { computeDescendants } from '../utils/descendants.js';
+import { buildVisibleNodes } from '../utils/visible-nodes.js';
+
+const EMPTY_SET = new Set<string>();
+
+const normalizeNodeKey = (value: TreeNode['id'] | TreeNode['parentId'] | string | number | null | undefined): string | null => {
+  if (value === null || value === undefined) return null;
+  return String(value);
+};
 
 //  TreeTable.css
 const StyledTableContainer = styled(Box)`
@@ -168,6 +176,7 @@ export function TreeTableCore({
                               }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
+  const rootNodeId = controller?.rootNodeId ? String(controller.rootNodeId) : undefined;
 
   // State
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
@@ -321,8 +330,6 @@ export function TreeTableCore({
 
     rawData.forEach((node) => nodeMap.set(node.id, node as TreeNode));
 
-    const rootId = (controller as any)?.rootNodeId as string | undefined;
-
     const computeDepth = (nodeId: string): number => {
       if (depthMap.has(nodeId)) return depthMap.get(nodeId)!;
       const node = nodeMap.get(nodeId);
@@ -335,7 +342,7 @@ export function TreeTableCore({
         return node.depth as number;
       }
       if (!node.parentId) {
-        const d = rootId && node.id !== rootId ? 1 : 0;
+        const d = rootNodeId && node.id !== rootNodeId ? 1 : 0;
         depthMap.set(nodeId, d);
         return d;
       }
@@ -348,18 +355,19 @@ export function TreeTableCore({
       ...node,
       depth: computeDepth(node.id),
     }));
-  }, [rawData, controller]);
+  }, [rawData, rootNodeId]);
   // Derive which nodes have at least one child when hasChildren is not provided
   const nodesWithChildren = useMemo(() => {
     const set = new Set<string>();
     for (const n of rawData) {
-      const pid = (n as any).parentId as string | undefined;
-      if (pid) set.add(pid);
+      const key = normalizeNodeKey((n as TreeNode).parentId ?? null);
+      if (key != null) set.add(key);
     }
     return set;
   }, [rawData]);
   const rowSelection = controller?.rowSelection || {};
-  const expandedRowIds = controller?.expandedRowIds || new Set();
+  const expandedRowIds: ReadonlySet<string> =
+    (controller?.expandedRowIds as ReadonlySet<string> | undefined) ?? EMPTY_SET;
 
   // Select all handling
   const allSelected = useMemo(() => {
@@ -444,9 +452,10 @@ export function TreeTableCore({
               : typeof nodeLike.childCount === 'number'
                 ? nodeLike.childCount
                 : undefined;
+          const normalizedId = normalizeNodeKey(node.id);
           const hasChildren =
             node.hasChildren === true ||
-            nodesWithChildren.has(node.id) ||
+            (normalizedId != null && nodesWithChildren.has(normalizedId)) ||
             (Array.isArray(nodeLike.children) && nodeLike.children.length > 0) ||
             (typeof derivedChildCount === 'number' && derivedChildCount > 0);
           const isExpanded = expandedRowIds.has(node.id);
@@ -728,11 +737,11 @@ export function TreeTableCore({
     someSelected,
   ]);
 
-  // Compute visible rows. To avoid false negatives (No data) in edge cases,
-  // start with a permissive rule: show all provided rows. Collapsing behavior
-  // will only hide descendants once expansion state is wired with a proper
-  // parent chain that includes the current root.
-  const visibleData = useMemo(() => data, [data]);
+  // Compute visible rows based on expansion state. Children of collapsed
+  // nodes are filtered out while preserving sibling order.
+  const visibleData = useMemo(() => {
+    return buildVisibleNodes(data, expandedRowIds, { rootNodeId });
+  }, [data, expandedRowIds, rootNodeId]);
 
   // React Table instance
   const table = useReactTable({

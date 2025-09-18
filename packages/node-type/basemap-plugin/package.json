@@ -31,6 +31,21 @@
     },
     "./worker": {
       "import": "./dist/worker/index.js"
+    },
+    "./worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
     }
   },
   "scripts": {
