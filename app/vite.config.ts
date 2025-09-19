@@ -26,6 +26,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const base = appPrefix ? `/${appPrefix}/` : '/';
   // const isDev = mode === 'development';
 
+  const ssrExternalDeps = ['maplibre-gl', '@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
+
   /**
    * HDB_DEV 運用ドキュメント（開発者向け）
    *
@@ -151,6 +153,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         gzipSize: true,
         brotliSize: true,
         emitFile: false,
+        // ssr: isSsrBuild,
       }),
     );
   }
@@ -158,11 +161,13 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   // beacon values captured in closure
   const buildTime = new Date().toISOString();
   let appVersion = '0.0.0-dev';
-
+  try {
     const pkgPath = path.resolve(__dirname, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
     if (pkg?.version) appVersion = pkg.version;
-
+  } catch {
+    // no-op: fallback to default version when package.json is not accessible
+  }
 
   const buildBeaconPlugin = {
     name: 'hdb-build-beacon',
@@ -323,14 +328,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       const printBanner = (lines: string[]) => {
         const width = Math.max(...lines.map((l) => l.length), 64);
         const bar = '+-' + '-'.repeat(width) + '-+';
-        // eslint-disable-next-line no-console
         console.log('\n' + bar);
         for (const l of lines) {
           const pad = ' '.repeat(width - l.length);
-          // eslint-disable-next-line no-console
           console.log(`|  ${l}${pad}  |`);
         }
-        // eslint-disable-next-line no-console
         console.log(bar + '\n');
       };
       const onListening = () => {
@@ -539,9 +541,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     // Prevent Vite/React Router SSR build from externalizing workspace packages,
     // which would otherwise cause runtime failures when loaded in the browser.
     ssr: {
-      // Bundle MUI and Emotion into the SSR build to avoid Node ESM directory-import resolution
-      // errors (e.g., importing '@mui/material/styles' from the server bundle).
-      noExternal: [/^@hierarchidb\//, /^@mui\//, /^@emotion\//],
+      external: ssrExternalDeps,
+      // Keep workspace and Emotion packages bundled; maplibre/MUI are externalized above.
+      noExternal: [/^@hierarchidb\//, /^@emotion\//],
     },
     optimizeDeps: {
       include: [
