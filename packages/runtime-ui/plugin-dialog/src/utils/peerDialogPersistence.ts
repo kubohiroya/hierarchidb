@@ -67,17 +67,19 @@ class UIPersistenceRegistry {
       }
 
       const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
+      const isDev = Boolean((import.meta as any)?.env?.DEV);
       const basePaths = [
         `@hierarchidb/${nodeType}-plugin/worker/${nodeType}EntitiesDB`,
         `@hierarchidb/${nodeType}-plugin/worker/index`,
         `@hierarchidb/${nodeType}-plugin/worker`,
-        `@hierarchidb/${nodeType}-plugin/dist/worker/${nodeType}EntitiesDB`,
-        `@hierarchidb/${nodeType}-plugin/dist/worker/index`,
-        `@hierarchidb/${nodeType}-plugin/dist/worker`,
-        `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`,
-        `@hierarchidb/${nodeType}-plugin/src/worker/index`,
-        `@hierarchidb/${nodeType}-plugin/src/worker`,
       ];
+      if (isDev) {
+        basePaths.push(
+          `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`,
+          `@hierarchidb/${nodeType}-plugin/src/worker/index`,
+          `@hierarchidb/${nodeType}-plugin/src/worker`,
+        );
+      }
       const extensions = ['.js', '.mjs', '.mts', '.ts', ''];
       const candidates = Array.from(new Set(
         basePaths.flatMap((base) => extensions.map((ext) => (ext ? `${base}${ext}` : base))),
