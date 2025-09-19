@@ -121,6 +121,12 @@ export interface MapFeatureIdentifyConfig {
   /** Radius in screen pixels used for feature querying (defaults to 5px) */
   radius?: number;
 
+  /** Optional MapLibre filter expression passed to queryRenderedFeatures */
+  filter?: MapLibreFilter;
+
+  /** Whether to fall back to the event.features array when queries return no results (defaults to true) */
+  includeEventFeatures?: boolean;
+
   /** Custom accessor to derive a stable identifier from a feature */
   getFeatureId?: (feature: MapLibreGeoJSONFeature) => MapFeatureIdentifier | null | undefined;
 

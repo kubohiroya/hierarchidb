@@ -143,7 +143,8 @@ const FeatureIdentifyContent: React.FC = () => {
           クリックしたフィーチャー
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          identifyFeatureOnClick と onClick(event.identifiedFeatureIds) で取得したIDの例です。
+          identifyFeatureOnClick（radius=12px, layerIds で絞り込み）と onClick(event.identifiedFeatureIds)
+          の出力例です。queryRenderedFeatures で見つからない場合は event.features からフォールバックします。
         </Typography>
         <Divider sx={{ my: 1.5 }} />
         <Typography variant="subtitle2">identifyFeatureOnClick.onIdentify</Typography>

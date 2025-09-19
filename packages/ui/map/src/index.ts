@@ -50,3 +50,11 @@ export type {
   MapLibrePoint,
   MapLibreQueryGeometry,
 } from './types/maplibre-public';
+
+// Feature identification helpers
+export {
+  DEFAULT_IDENTIFY_RADIUS,
+  defaultFeatureIdAccessor,
+  resolveIdentifyCandidates,
+} from './lib/feature-identification';
+export type { MapFeatureIdentifyCandidates } from './lib/feature-identification';
