@@ -1,0 +1,1 @@
+import{B as a}from"./BaseFolderPlugin-Bv_IWKX4.js";import{i as s,a as l}from"./register-default-extensions-bT5-2h_Y.js";import"./FolderExtensionAPI-BS-yMoM_.js";import"./index-BxnpQD04.js";const o={};export{a as BaseFolderPlugin,s as initializeDefaultFolderExtensions,l as initializeDefaultNodeDialogExtensions,o as runtimeWiring};
