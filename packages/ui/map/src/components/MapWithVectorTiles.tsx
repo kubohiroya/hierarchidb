@@ -61,6 +61,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
                                                                         onViewStateChange,
                                                                         onClick,
                                                                         mapOptions,
+                                                                        identifyFeatureOnClick,
 
                                                                         // Layer configuration
                                                                         layerConfig = {},
@@ -92,6 +93,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       onLoad={handleMapLoad}
       onViewStateChange={onViewStateChange}
       onClick={onClick || onMapClick}
+      identifyFeatureOnClick={identifyFeatureOnClick}
       mapOptions={mapOptions}
     >
       {mapInstance && (dbName || tiles || tileDataProvider) && (

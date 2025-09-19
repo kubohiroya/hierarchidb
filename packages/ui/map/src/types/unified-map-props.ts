@@ -23,7 +23,14 @@
  *    - Clear separation between data source and display configuration
  */
 
-import type { MapLibreFilter, MapLibreMapInstance, MapLibreStyle } from './maplibre-public';
+import type {
+  MapLibreFeatureIdentifier,
+  MapLibreFilter,
+  MapLibreGeoJSONFeature,
+  MapLibreMapInstance,
+  MapLibreMapMouseEvent,
+  MapLibreStyle,
+} from './maplibre-public';
 
 /**
  * Base map view state - shared across all map components
@@ -83,6 +90,13 @@ export interface MapDimensionsProps {
  * RATIONALE: Consistent naming prevents confusion when switching between components
  * All callbacks now follow the same pattern: on[Event] instead of on[Map][Event]
  */
+export type MapFeatureIdentifier = MapLibreFeatureIdentifier;
+
+export interface MapClickEvent extends MapLibreMapMouseEvent {
+  identifiedFeatureIds?: MapFeatureIdentifier[];
+  identifiedFeatures?: MapLibreGeoJSONFeature[];
+}
+
 export interface MapEventHandlers {
   /** Callback when map loads and is ready for interaction */
   onLoad?: (map: MapLibreMapInstance) => void;
@@ -91,7 +105,32 @@ export interface MapEventHandlers {
   onViewStateChange?: (viewState: MapViewState) => void;
 
   /** Callback when map is clicked */
-  onClick?: (event: any) => void;
+  onClick?: (event: MapClickEvent) => void;
+}
+
+export interface MapFeatureIdentifyResult {
+  featureIds: MapFeatureIdentifier[];
+  features: MapLibreGeoJSONFeature[];
+  originalEvent: MapClickEvent;
+}
+
+export interface MapFeatureIdentifyConfig {
+  /** MapLibre layer IDs to query for features */
+  layerIds?: string[];
+
+  /** Radius in screen pixels used for feature querying (defaults to 5px) */
+  radius?: number;
+
+  /** Custom accessor to derive a stable identifier from a feature */
+  getFeatureId?: (feature: MapLibreGeoJSONFeature) => MapFeatureIdentifier | null | undefined;
+
+  /** Optional callback invoked when identification finishes */
+  onIdentify?: (result: MapFeatureIdentifyResult) => void;
+}
+
+export interface MapIdentifyProps {
+  /** Enables feature identification on map clicks */
+  identifyFeatureOnClick?: MapFeatureIdentifyConfig;
 }
 
 /**
@@ -102,7 +141,7 @@ export interface MapEventHandlers {
  * - Serves as foundation for all map component props
  * - Enables consistent API across MapLibreMap and MapWithVectorTiles
  */
-export interface BaseMapProps extends MapDimensionsProps, MapEventHandlers {
+export interface BaseMapProps extends MapDimensionsProps, MapEventHandlers, MapIdentifyProps {
   /** Initial view state for the map */
   initialViewState: MapViewState;
 
