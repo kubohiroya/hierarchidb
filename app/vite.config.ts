@@ -143,14 +143,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     .toLowerCase() === 'true';
   if (enableVisualizer) {
     const suffix = isSsrBuild ? 'server' : 'client';
+    const analysisDir = path.resolve(__dirname, 'build-analysis');
     plugins.push(
       visualizer({
-        filename: `build/analysis/bundle-visualizer-${suffix}.html`,
+        filename: path.join(analysisDir, `bundle-visualizer-${suffix}.html`),
         template: 'treemap',
         gzipSize: true,
         brotliSize: true,
-        emitFile: true,
-        ssr: isSsrBuild,
+        emitFile: false,
       }),
     );
   }
@@ -158,11 +158,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   // beacon values captured in closure
   const buildTime = new Date().toISOString();
   let appVersion = '0.0.0-dev';
-  try {
+
     const pkgPath = path.resolve(__dirname, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
     if (pkg?.version) appVersion = pkg.version;
-  } catch {}
+
 
   const buildBeaconPlugin = {
     name: 'hdb-build-beacon',
@@ -334,7 +334,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         console.log(bar + '\n');
       };
       const onListening = () => {
-        try {
+
           if (DEV_PACKAGES.length === 0) {
             printBanner([
               'HDB_DEV is not set.',
@@ -348,7 +348,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
               ...DEV_PACKAGES.map((p) => `- ${p}`),
             ]);
           }
-        } catch {}
+
       };
       if (server?.httpServer) {
         server.httpServer.once('listening', onListening);

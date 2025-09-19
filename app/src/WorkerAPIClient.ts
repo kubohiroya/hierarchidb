@@ -169,9 +169,6 @@ export class WorkerAPIClient {
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
-    if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-      
-    }
     return ready;
   }
 
