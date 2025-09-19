@@ -23,6 +23,24 @@ export interface MapLibreStyle {
   sources: Record<string, unknown>;
 }
 
+export type MapLibreFeatureIdentifier = string | number;
+
+export interface MapLibreGeoJSONFeature {
+  id?: MapLibreFeatureIdentifier;
+  properties?: Record<string, unknown> | null;
+  layer?: { id?: string };
+}
+
+export interface MapLibrePoint {
+  x: number;
+  y: number;
+}
+
+export type MapLibreQueryGeometry =
+  | MapLibrePoint
+  | [number, number]
+  | [[number, number], [number, number]];
+
 export interface MapLibreMapInstance {
   getStyle(): MapLibreStyle;
 
@@ -52,6 +70,8 @@ export interface MapLibreMapInstance {
 
   addControl(control: unknown, position?: string): void;
 
+  queryRenderedFeatures(geometry?: MapLibreQueryGeometry, parameters?: { layers?: string[]; filter?: MapLibreFilter }): MapLibreGeoJSONFeature[];
+
   // Commonly used convenience methods (subset of MapLibre Map API)
   zoomIn(): void;
   zoomOut(): void;
@@ -59,6 +79,14 @@ export interface MapLibreMapInstance {
   setPitch(pitch: number): void;
   setStyle(style: string | MapLibreStyle): void;
   fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;
+}
+
+export interface MapLibreMapMouseEvent {
+  target: MapLibreMapInstance;
+  point: MapLibrePoint;
+  lngLat: { lng: number; lat: number };
+  features?: MapLibreGeoJSONFeature[];
+  originalEvent?: MouseEvent;
 }
 
 // Minimal filter type to avoid leaking upstream types
