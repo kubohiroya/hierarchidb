@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 
 /**
  * This function is used to resolve the absolute path of a package.
@@ -31,7 +31,10 @@ const config: StorybookConfig = {
         ...config.resolve,
         alias: {
           ...config.resolve?.alias,
-          // 必要に応じてエイリアスを追加
+          '@deck.gl/core': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/core'),
+          '@deck.gl/layers': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/layers'),
+          '@deck.gl/geo-layers': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/geo-layers'),
+          '@deck.gl/mapbox': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/mapbox'),
         },
       },
     };
