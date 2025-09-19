@@ -7,7 +7,6 @@ import { commandMetrics } from '../utils/metrics.js';
 
 describe('Headless metrics (command latency)', () => {
   beforeEach(() => {
-    (process as any).env.WORKER_METRICS_ENABLED = '1';
     commandMetrics.reset();
   });
 

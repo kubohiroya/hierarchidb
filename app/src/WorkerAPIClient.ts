@@ -106,9 +106,6 @@ export class WorkerAPIClient {
 
 
     } catch (error) {
-      
-      
-
       // Clean up on failure
       this.workerInstance = null;
       throw error;
@@ -123,12 +120,8 @@ export class WorkerAPIClient {
       
       throw new NotInitializedError();
     }
-    if (this.state !== 'initialized') {
-      try {
-        if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-          
-        }
-      } catch {}
+    if (this.state !== 'initialized' && (import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
+      console.warn('[WorkerAPIClient] getSingleton called before initialization');
     }
     return this.workerInstance;
   }

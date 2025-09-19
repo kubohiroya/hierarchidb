@@ -7,6 +7,7 @@ import {
   cacheColumnWidths,
   columnWidthsEqual,
   DEFAULT_COLUMN_WIDTHS,
+  loadCachedColumnWidths,
   mergeWithDefaults,
   resolveInitialColumnWidths,
   __columnWidthCacheTesting,
@@ -20,6 +21,7 @@ declare global {
 
 class MemoryStorage implements Storage {
   private readonly store = new Map<string, string>();
+  public throwOnRemove = false;
 
   get length(): number {
     return this.store.size;
@@ -38,6 +40,9 @@ class MemoryStorage implements Storage {
   }
 
   removeItem(key: string): void {
+    if (this.throwOnRemove) {
+      throw new Error('remove blocked');
+    }
     this.store.delete(key);
   }
 
@@ -87,5 +92,17 @@ describe('column-width-cache helpers', () => {
     const modified = { ...base, name: baseName + 5 };
     expect(columnWidthsEqual(base, clone)).toBe(true);
     expect(columnWidthsEqual(base, modified)).toBe(false);
+  });
+
+  it('swallows storage.removeItem errors during cleanup', () => {
+    const key = __columnWidthCacheTesting.storageKey('page-err');
+    storage.throwOnRemove = true;
+    storage.setItem(key, JSON.stringify({ name: -10 }));
+    __columnWidthCacheTesting.reset();
+    try {
+      expect(loadCachedColumnWidths('page-err')).toBeNull();
+    } finally {
+      storage.throwOnRemove = false;
+    }
   });
 });

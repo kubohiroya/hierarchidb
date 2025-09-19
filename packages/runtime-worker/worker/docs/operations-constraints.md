@@ -22,6 +22,5 @@ vk:doc kind=guide audience=dev scope=worker
   - 採用: Core の `CommandResult` / `ErrorCode`
   - NAME_CONFLICT 相当は VALIDATION_ERROR にマップし、メッセージに候補名を含める。
 
-- フラグ運用（現行）
-  - `WORKER_TX_ENABLED`（既定OFF）
-  - `WORKER_METRICS_ENABLED`（既定OFF）
+- フラグ運用
+  - 主要機能（Tx ラップ / コマンドメトリクス / Policy C / Trash holder）は常時有効です。

@@ -12,46 +12,37 @@ export class SearouteEngine implements RoutingEngine {
     const start = points[0]!;
     const end = points[points.length - 1]!;
 
-    const featureEnabled =
-      // Vite client-side env: must use import.meta.env with VITE_ prefix
-      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WORKER_FEATURE_ROUTE_SEAROUTE === '1') ||
-      (typeof process !== 'undefined' && (process as any)?.env?.WORKER_FEATURE_ROUTE_SEAROUTE === '1') ||
-      (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.ROUTE_SEAROUTE === true);
+    try {
+      const lib = await this.loadLib();
+      if (lib) {
+        const fn = this.resolveApi(lib);
+        if (!fn) throw new Error('Unsupported searoute-js API shape');
 
-    if (featureEnabled) {
-      try {
-        const lib = await this.loadLib();
-        if (lib) {
-          const fn = this.resolveApi(lib);
-          if (!fn) throw new Error('Unsupported searoute-js API shape');
-
-          const srOptions = this.mapOptions(options);
-          let result: any;
-          try {
-            result = await fn([start[0], start[1]], [end[0], end[1]], srOptions);
-          } catch (err: any) {
-            // Some variants (johnx25bd/searoute-js) expect the 3rd arg to be a units string
-            const msg = String(err?.message || err || '');
-            const unitsStr = this.unitsString(options);
-            if (unitsStr && /units/i.test(msg)) {
-              result = await fn([start[0], start[1]], [end[0], end[1]], unitsStr);
-            } else {
-              throw err;
-            }
-          }
-
-          const line = this.extractLine(result);
-          const distance_m = this.extractDistanceMeters(result, line);
-          const duration_s = this.estimateDuration(distance_m, options);
-          return { line, distance_m, duration_s } as const;
-        }
-      } catch (e: any) {
-        // Fall through to GC fallback with a warning
+        const srOptions = this.mapOptions(options);
+        let result: any;
         try {
-          console.warn?.(`searoute-js unavailable, fallback to great-circle: ${e?.message ?? e}`);
-        } catch {
+          result = await fn([start[0], start[1]], [end[0], end[1]], srOptions);
+        } catch (err: any) {
+          // Some variants (johnx25bd/searoute-js) expect the 3rd arg to be a units string
+          const msg = String(err?.message || err || '');
+          const unitsStr = this.unitsString(options);
+          if (unitsStr && /units/i.test(msg)) {
+            result = await fn([start[0], start[1]], [end[0], end[1]], unitsStr);
+          } else {
+            throw err;
+          }
         }
+
+        const line = this.extractLine(result);
+        const distance_m = this.extractDistanceMeters(result, line);
+        const duration_s = this.estimateDuration(distance_m, options);
+        return { line, distance_m, duration_s } as const;
       }
+    } catch (e: any) {
+      // Fall through to GC fallback with a warning
+
+      console.warn?.(`searoute-js unavailable, fallback to great-circle: ${e?.message ?? e}`);
+
     }
 
     // Fallback: straight great-circle approximation between endpoints

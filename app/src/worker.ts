@@ -108,18 +108,19 @@ reporter.reportStepProgress('Load Comlink', 0);
             } catch (e: unknown) {
               const msg = (e as any)?.message ?? String(e);
               const soft = /document is not defined|Grid2|does not provide an export/i.test(msg);
+              const prefix = `[worker bootstrap] failed to load worker for ${nodeType}:`;
               if ((import.meta as any)?.env?.DEV || soft) {
-                
+                console.warn(prefix, msg);
               } else {
-                
+                throw e;
               }
             }
           }
         }
         await wirePluginsFromModules(modEntries);
       }
-    } catch (e) {
-      
+    } catch (error) {
+      console.error('[worker bootstrap] plugin wiring failed:', error);
     }
     // Merge standardized lifecycles discovered from worker modules into pluginDefinitions
     try {
@@ -140,22 +141,23 @@ reporter.reportStepProgress('Load Comlink', 0);
               try {
                 const handler = await factory();
                 if (handler) entityRegistry.register(nodeType, handler as any);
-              } catch (e){
-                
+              } catch (error) {
+                console.warn('[worker bootstrap] entity handler registration failed:', nodeType, error);
               }
             }
           }
         }
-      } catch (e){
-        
+      } catch (error) {
+        console.warn('[worker bootstrap] runtime-worker entity registry unavailable:', error);
       }
 
       const { WorkerService } = await import('@hierarchidb/runtime-worker');
       const services = await WorkerService.getSingleton(enriched || (pluginDefinitions as any[]));
       reporter.reportStepProgress('Bootstrap services', 100);
-      try {
-        (self as any).postMessage?.({ type: 'SERVICES_READY', source: 'worker', at: Date.now() });
-      } catch {}
+      const messagePort: any = self as any;
+      if (typeof messagePort?.postMessage === 'function') {
+        messagePort.postMessage({ type: 'SERVICES_READY', source: 'worker', at: Date.now() });
+      }
 
       // Step 5: Create API facade
       reporter.reportStepProgress('Create API facade', 10);

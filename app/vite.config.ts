@@ -10,6 +10,7 @@ import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
 import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { pluginRegistryPlugin } from './vite-plugin-plugin-registry.js';
 import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
 import {
@@ -136,6 +137,23 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       projects: ['./tsconfig.json'],
     }),
   ];
+
+  const enableVisualizer = (env.VITE_APP_ANALYZE || process.env.HDB_ANALYZE || process.env.BUNDLE_ANALYZE || '')
+    .toString()
+    .toLowerCase() === 'true';
+  if (enableVisualizer) {
+    const suffix = isSsrBuild ? 'server' : 'client';
+    plugins.push(
+      visualizer({
+        filename: `build/analysis/bundle-visualizer-${suffix}.html`,
+        template: 'treemap',
+        gzipSize: true,
+        brotliSize: true,
+        emitFile: true,
+        ssr: isSsrBuild,
+      }),
+    );
+  }
 
   // beacon values captured in closure
   const buildTime = new Date().toISOString();

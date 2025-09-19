@@ -40,43 +40,43 @@ export { registerRouteSharedDownloadService } from './services/download/register
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {
-  try {
-    const g = (globalThis as unknown) as Record<string, unknown>;
-    const env = ((typeof process !== 'undefined' ? (process as any).env : undefined) || {}) as Record<string, unknown>;
-    const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const gv = g?.[name];
-    const ev = env?.[name];
-    const v = ls?.getItem(name) ?? (typeof gv === 'string' ? gv : undefined) ?? (typeof ev === 'string' ? ev : undefined);
-    const n = Number(v);
-    return isFinite(n) ? n : fallback;
-  } catch { return fallback; }
+  const g = (globalThis as unknown) as Record<string, unknown>;
+  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
+  const candidate = ls?.getItem(name) ?? (typeof g?.[name] === 'string' ? (g as any)[name] : undefined);
+  const value = Number(candidate);
+  return Number.isFinite(value) ? value : fallback;
 }
 
 export const runtimeWiring = {
   registerSharedDownloadService: () => {
-    try {
-      const phc = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
-      // Use dynamic import to remain ESM-compatible
-      void import('./services/download/registerSharedDownloadService.js')
-        .then(({ registerRouteSharedDownloadService }) => registerRouteSharedDownloadService({ perHostConcurrency: phc }))
-        .catch(() => {});
-    } catch { /* noop */ }
+    const perHostConcurrency = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
+    void import('./services/download/registerSharedDownloadService.js')
+      .then(({ registerRouteSharedDownloadService }) =>
+        registerRouteSharedDownloadService({ perHostConcurrency })
+      )
+      .catch((error) => {
+        console.warn('[route-plugin] registerSharedDownloadService failed:', error);
+      });
   },
   registerAuthNotifier: () => {
-    try {
-      void import('./services/download/registry.js').then(({ registerRouteAuthNotifier }) => registerRouteAuthNotifier((info: any) => {
-        try {
+    void import('./services/download/registry.js')
+      .then(({ registerRouteAuthNotifier }) =>
+        registerRouteAuthNotifier((info: any) => {
           const g = globalThis as unknown as Record<string, any>;
-          const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-          reg?.onAuthRequired?.(info);
-        } catch { /* noop */ }
-      })).catch(() => {});
-    } catch { /* noop */ }
+          const registry = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+          registry?.onAuthRequired?.(info);
+        })
+      )
+      .catch((error) => {
+        console.warn('[route-plugin] registerAuthNotifier failed:', error);
+      });
   },
   registerRuntimeWorkerAdapters: async () => {
     try {
       const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerRouteRuntimeWorkerAdapters();
-    } catch { /* noop */ }
+    } catch (error) {
+      console.warn('[route-plugin] registerRuntimeWorkerAdapters failed:', error);
+    }
   },
 } as const;

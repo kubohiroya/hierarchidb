@@ -67,22 +67,6 @@ export VITE_NEW_FEATURE_ENABLED="true"
 
 ## Worker feature flags (runtime-worker)
 
-段階導入のための機能フラグ（既定OFF）。`scripts/start-env.sh <env> <cmd>` の前に環境変数として指定します。
-
-例（現在有効なもの）:
-
-```
-# 1コマンド＝1Tx の検証（開発時のみ）
-export WORKER_TX_ENABLED="1"
-```
-
-CIや単発実行での例:
-
-```
-WORKER_TX_ENABLED=1 pnpm --filter @hierarchidb/runtime-worker test -r
-```
-```
-
 ### セキュアな値を追加
 
 `app/.env.secrets` に追加：

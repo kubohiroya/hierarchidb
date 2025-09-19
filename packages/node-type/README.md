@@ -163,9 +163,9 @@ graph TB
 location / shape / route の各プラグインは、バッチ処理で正規化した“表データ”を保存してUIでプレビューできます（デフォルトOFF）。
 
 - 有効化フラグ（環境変数 or `globalThis.FEATURE_FLAGS`）
-  - `LOCATION_TABULAR=1`
+- LOCATION_TABULAR モード（データテーブル表示）
   - `SHAPE_TABULAR=1`
-  - `ROUTE_TABULAR=1`
+- ROUTE_TABULAR モード（ルートデータテーブル表示）
 - UI 機能
   - 複数条件フィルタ（AND: `eq`/`neq`/`contains`/`gt`/`gte`/`lt`/`lte`）
   - 表示列の切替（列セレクタ）

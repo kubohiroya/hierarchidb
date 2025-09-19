@@ -192,6 +192,7 @@ export function TreeTableCore({
   }>({ anchorEl: null, node: null });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => resolveInitialColumnWidths(pageNodeId));
+  const [columnWidthsHydrated, setColumnWidthsHydrated] = useState(!pageNodeId);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [hoverDropTargetId, setHoverDropTargetId] = useState<string | null>(null);
   const [forbiddenTargets, setForbiddenTargets] = useState<Set<string>>(new Set());
@@ -211,37 +212,47 @@ export function TreeTableCore({
 
   // Persist/restore column widths in Dexie using pageNodeId as the primary key
   useEffect(() => {
-    const apply = (source: ColumnWidthMap | null | undefined) => {
+    setColumnWidthsHydrated(false);
+
+    const apply = (source: ColumnWidthMap | null | undefined, markHydrated = false) => {
       setColumnWidths((prev) => {
         const next = mergeWithDefaults(source);
         return columnWidthsEqual(prev, next) ? prev : next;
       });
+      if (markHydrated) {
+        setColumnWidthsHydrated(true);
+      }
     };
 
     if (!pageNodeId) {
-      apply(null);
+      apply(null, true);
       return;
     }
 
-    apply(loadCachedColumnWidths(pageNodeId));
+    const cached = loadCachedColumnWidths(pageNodeId);
+    apply(cached, !!cached);
 
     let cancelled = false;
     (async () => {
       const saved = await (await import('../state/column-widths-db.js')).getColumnWidths(pageNodeId);
-      if (cancelled || !saved) return;
-      cacheColumnWidths(pageNodeId, saved);
-      apply(saved);
+      if (cancelled) return;
+      if (saved) {
+        cacheColumnWidths(pageNodeId, saved);
+        apply(saved, true);
+      } else {
+        setColumnWidthsHydrated(true);
+      }
     })();
     return () => { cancelled = true; };
   }, [pageNodeId]);
 
   useEffect(() => {
-    if (!pageNodeId) return;
+    if (!pageNodeId || !columnWidthsHydrated) return;
     cacheColumnWidths(pageNodeId, columnWidths);
     (async () => {
       await (await import('../state/column-widths-db.js')).saveColumnWidths(pageNodeId, columnWidths);
     })();
-  }, [columnWidths, pageNodeId]);
+  }, [columnWidths, pageNodeId, columnWidthsHydrated]);
 
   // Keep first data column ('name') fixed on container resize: adjust only other columns proportionally
   useLayoutEffect(() => {

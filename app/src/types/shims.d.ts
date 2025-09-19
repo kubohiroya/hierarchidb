@@ -31,7 +31,7 @@ declare module 'virtual:plugin-registry-worker' {
 declare global {
   interface FeatureFlags {
     SUBSCRIPTION_BATCH_MS?: number | string;
-    UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE?: boolean | string | number;
+    [key: string]: unknown;
   }
   // eslint-disable-next-line no-var
   var FEATURE_FLAGS: FeatureFlags | undefined;

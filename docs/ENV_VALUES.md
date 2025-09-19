@@ -117,15 +117,9 @@ This document lists all environment variables used by the browser application an
 
 ## Plugin-specific Feature Flags
 - Name: `VITE_LOCATION_TABULAR`
-  - Meaning: Enable tabular persistence in Location plugin pipeline.
-  - Default: off
-  - Example: `1`
-  - Used by: `@hierarchidb/location-plugin`
+  - Status: Deprecated（ロケーションプラグインで常時有効化されたため無視されます）。
 - Name: `VITE_WORKER_FEATURE_ROUTE_SEAROUTE`
-  - Meaning: Enable Searoute engine usage for route generation.
-  - Default: off
-  - Example: `1`
-  - Used by: `@hierarchidb/route-plugin`
+  - Status: Deprecated（Searoute エンジンは常時有効化され、値は無視されます）。
 - Name: `VITE_ROUTE_SEAROUTE_PKG`
   - Meaning: Searoute implementation package to prefer (`searoute` or `searoute-js`).
   - Default: not set (runtime tries `searoute` then `searoute-js`)
@@ -140,4 +134,3 @@ This document lists all environment variables used by the browser application an
 - Only variables prefixed with `VITE_` are exposed to the client bundle. Non-prefixed `process.env.*` is not available in browser code.
 - Backend/services and local tools may use non-`VITE_` variables; those are out of scope for this document.
 - Several defaults also exist in code paths (e.g., fallback asset names) and are noted above.
-

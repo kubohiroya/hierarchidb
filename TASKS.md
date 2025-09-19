@@ -84,6 +84,8 @@
     - done: 2025-09-18 12:09 `pnpm --filter @hierarchidb/app build` を実行し成功。
     - progress: 2025-09-18 11:48 app/tsconfig.typecheck.json の dist 参照を package src へ更新し、typecheck ポリシーに適合。
     - done: 2025-09-18 11:49 `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を再実行し、違反が解消されたことを確認。
+    - progress: 2025-09-19 09:45 TreeTableCore の column width 読み込み処理に hydrate フラグを追加し、Dexie 取得前に既存値を上書きしないよう調整（初回レンダリングの再計算フリッカーを解消）。
+    - done: 2025-09-19 09:59 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`, `pnpm --filter @hierarchidb/ui-treeconsole-treetable test`, `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し成功。column-width-cache の例外ハンドリングを補強し、例外時のユニットテストを追加。
 
 - fix/ui/breadcrumb-drag-handle-remove — TreeConsole パンくず内ドラッグハンドル表示の撤去
   - ブランチ: `fix/ui/breadcrumb-drag-handle-remove`（サンドボックス制約でローカル新規ブランチ作成不可のため `fix/app/emotion-dedupe` 上で作業）
@@ -763,6 +765,31 @@
     - start: 2025-09-17 09:30 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` で NodeId brand エラーを再現、テストフィクスチャ修正に着手。
     - done: 2025-09-17 09:52 フィクスチャをブランド型対応に修正し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功。
 
+- feat/worker/tx-enabled-rollout（CommandProcessor TX 経路の既定ON化準備）
+  - ブランチ: `feat/worker/tx-enabled-rollout`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: runtime-worker の CoreDB 実装（Dexie runInTx 対応）
+  - 受け入れ基準（DoD）:
+    - [ ] runInTx 対応コマンドのユニット/統合テストを追加し、衝突ケースを再現
+    - [ ] DX 観点で PrematureCommitError の再発を防ぐ guard/policy を文書化
+    - [ ] `WORKER_TX_ENABLED` 既定 ON で `pnpm --filter @hierarchidb/runtime-worker typecheck && test` グリーン
+  - チェックリスト:
+    - [ ] コマンドごとの NON_TX リスト棚卸し
+    - [ ] Dexie runInTx の多テーブル対応検証
+    - [ ] ドキュメント更新（PLAN-2025-09-10-worker-tx-enabled-default-on.md）
+  - ロールバック手順:
+    - flag 既定を false に戻し、追加したテストを skip する
+  - 後続: `chore/worker/remove-non-tx-path`（flag 撤去＆旧パス削除）
+  - 運用ログ:
+    - start: 2025-09-19 09:30 CommandProcessor からトランザクション内非同期処理を排除する改修要件を整理開始
+    - progress: 2025-09-19 10:05 CommandProcessor にトランザクション実行コンテキストを導入し、peer-entity cleanup をポストコミットに退避
+    - progress: 2025-09-19 10:20 `tx-wrapper.test.ts` にポストコミット検証テストを追加し、非同期処理がトランザクション外で実行されることを確認
+    - progress: 2025-09-19 10:44 fake-indexeddb 向けの `WORKER_TX_ENABLED` 強制 OFF を撤去し、トランザクション有効化状態でテストが安定することを確認
+    - progress: 2025-09-19 10:48 Dexie PrematureCommitError 発生時に非TXへフォールバックするリトライ処理を追加し、fake-indexeddb 環境でも TX ON のまま成功することを確認
+    - progress: 2025-09-19 11:20 Batch Control API v2 を常時有効化し、`BATCH_CONTROL_API_V2` フラグ依存を撤去（ドキュメント更新含む）
+    - progress: 2025-09-19 11:24 Shape/Location/Route 向けの node-type フラグ（tabular/searoute/lane caps/download strategy）を恒久 ON 化し、関連ドキュメントを更新
+    - progress: 2025-09-19 11:28 UI Dialog legacy display mode フラグ `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE` を撤去し、ドキュメントをアーカイブ扱いに整理
+    - done: 2025-09-19 11:29 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test` / `pnpm --filter @hierarchidb/location-plugin test` を実行しグリーンを確認
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/node-type/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -823,21 +850,6 @@
     - [ ] `pnpm --filter @hierarchidb/ui-dialog typecheck && build` グリーン
   - ロールバック手順:
     - リリース管理上のフォールバックが必要な場合は git revert で復旧
-
-- feat/worker/tx-enabled-rollout（CommandProcessor TX 経路の既定ON化準備）
-  - ブランチ: `feat/worker/tx-enabled-rollout`
-  - 依存: runtime-worker の CoreDB 実装（Dexie runInTx 対応）
-  - 受け入れ基準（DoD）:
-    - [ ] runInTx 対応コマンドのユニット/統合テストを追加し、衝突ケースを再現
-    - [ ] DX 観点で PrematureCommitError の再発を防ぐ guard/policy を文書化
-    - [ ] `WORKER_TX_ENABLED` 既定 ON で `pnpm --filter @hierarchidb/runtime-worker typecheck && test` グリーン
-  - チェックリスト:
-    - [ ] コマンドごとの NON_TX リスト棚卸し
-    - [ ] Dexie runInTx の多テーブル対応検証
-    - [ ] ドキュメント更新（PLAN-2025-09-10-worker-tx-enabled-default-on.md）
-  - ロールバック手順:
-    - flag 既定を false に戻し、追加したテストを skip する
-  - 後続: `chore/worker/remove-non-tx-path`（flag 撤去＆旧パス削除）
 
 - chore/worker/remove-non-tx-path（legacy 非トランザクション経路の撤去）
   - ブランチ: `chore/worker/remove-non-tx-path`

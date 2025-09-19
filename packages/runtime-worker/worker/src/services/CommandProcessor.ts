@@ -8,7 +8,6 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { commandRegistry } from './command/registry.js';
 import { validateAndNormalizeEnvelope } from './validation/envelope.js';
-import { FEATURE_FLAGS } from '../config/feature-flags.js';
 import { encodeTrashHolderName } from './utils/holder-encoding.js';
 import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
@@ -20,6 +19,12 @@ type SanitizedLogResult = {
   seq?: number;
   code?: string;
   error?: string;
+};
+
+type PostCommitTask = () => Promise<void> | void;
+
+type CommandExecutionContext = {
+  postCommitTasks: PostCommitTask[];
 };
 
 export class CommandProcessor {
@@ -43,6 +48,32 @@ export class CommandProcessor {
   private preMoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
   private preRemoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
   private preRecoverState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
+
+  private createExecutionContext(): CommandExecutionContext {
+    return { postCommitTasks: [] };
+  }
+
+  private async runPostCommitTasks(
+    result: CommandResult,
+    context: CommandExecutionContext,
+  ): Promise<void> {
+    if (!result.success || context.postCommitTasks.length === 0) return;
+    for (const task of context.postCommitTasks) {
+      try {
+        await task();
+      } catch (err) {
+        console.warn('[CommandProcessor] post-commit task failed:', err);
+      }
+    }
+  }
+
+  private isRetryableTransactionError(error: unknown): boolean {
+    const name = (error as any)?.name;
+    if (typeof name === 'string' && name.toLowerCase() === 'prematurecommiterror') {
+      return true;
+    }
+    return false;
+  }
 
   /**
    * Create a command envelope with auto-output metadata
@@ -119,8 +150,8 @@ export class CommandProcessor {
 
       const endedAt = Date.now();
       recordCommandLatency(envelope.kind, endedAt - startedAt);
-      // Notify entity lifecycle (behind-the-flag). Best-effort, non-blocking in base skeleton.
-      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED && result.success) {
+      // Notify entity lifecycle. Best-effort, non-blocking in base skeleton.
+      if (result.success) {
         try {
           const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
           await lifecycle.handleCommand(envelope as any);
@@ -145,18 +176,37 @@ export class CommandProcessor {
   ): Promise<CommandResult> {
     // Prefer transactional path when enabled AND supported by the CoreDB mock/impl.
     // In unit tests, CoreDB is often a lightweight stub without runInTx; fall back gracefully.
+    let context = this.createExecutionContext();
     const db: any = this.coreDB as any;
-    if (FEATURE_FLAGS.WORKER_TX_ENABLED && typeof db?.runInTx === 'function') {
+    let result: CommandResult | undefined;
+    let retriedWithoutTx = false;
+    if (typeof db?.runInTx === 'function') {
       // Some commands perform dynamic imports / multi-phase operations that do not play well with Dexie TX scopes.
       // Execute those without wrapping in a single TX to avoid PrematureCommitError.
       const NON_TX: Set<string> = new Set([
         'commitWorkingCopy',
       ]);
       if (!NON_TX.has(envelope.kind)) {
-        return await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope));
+        try {
+          result = await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope, context));
+        } catch (error) {
+          if (this.isRetryableTransactionError(error)) {
+            console.warn('[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.');
+            retriedWithoutTx = true;
+          } else {
+            throw error;
+          }
+        }
       }
     }
-    return this.executeCommandNoTx(envelope);
+    if (!result) {
+      if (retriedWithoutTx) {
+        context = this.createExecutionContext();
+      }
+      result = await this.executeCommandNoTx(envelope, context);
+    }
+    await this.runPostCommitTasks(result, context);
+    return result;
   }
 
   /**
@@ -165,6 +215,7 @@ export class CommandProcessor {
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
+    context: CommandExecutionContext,
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
@@ -263,11 +314,9 @@ export class CommandProcessor {
           //   return this.createErrorResult('Parent node not found', WorkerErrorCode.NODE_NOT_FOUND);
           // }
           // Policy C: block when subtree has working copies
-          if (FEATURE_FLAGS.WORKER_POLICY_C) {
-            for (const id of p.nodeIds) {
-              if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
-                return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
-              }
+          for (const id of p.nodeIds) {
+            if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
+              return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
             }
           }
           // Save pre-state for undo and prepare bulk updates
@@ -382,11 +431,9 @@ export class CommandProcessor {
       case 'remove':
         try {
           const p = envelope.payload as unknown as { nodeIds: NodeId[] };
-          if (FEATURE_FLAGS.WORKER_POLICY_C) {
-            for (const id of p.nodeIds) {
-              if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
-                return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
-              }
+          for (const id of p.nodeIds) {
+            if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
+              return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
             }
           }
           // Collect full deletion set: targets + all descendants (bottom-up)
@@ -413,14 +460,18 @@ export class CommandProcessor {
               await (this.coreDB as any).bulkDeleteNodes?.(slice);
             }
           }
-          if (beforeList.length > 0) this.preRemoveState.set(envelope.commandId, beforeList);
-          // Also remove plugin peer entities tied to the removed nodeIds.
-          // Note: This is for permanent deletion (empty trash), not for moveToTrash/recoverFromTrash).
-          // In headless tests some plugin DB modules may not be build-resolvable; treat failures as non-fatal.
-          try {
-            await this.deletePeerEntitiesForNodes(beforeList);
-          } catch (e) {
-            console.warn('[CommandProcessor/remove] peer-entity cleanup skipped:', (e as Error)?.message || e);
+          if (beforeList.length > 0) {
+            this.preRemoveState.set(envelope.commandId, beforeList);
+            const nodesForCleanup = beforeList.map((n) => ({ ...n }));
+            // Defer peer-entity cleanup until after the Dexie transaction commits to avoid
+            // dynamic imports and extra async hops within the transaction scope.
+            context.postCommitTasks.push(async () => {
+              try {
+                await this.deletePeerEntitiesForNodes(nodesForCleanup);
+              } catch (e) {
+                console.warn('[CommandProcessor/remove] peer-entity cleanup skipped:', (e as Error)?.message || e);
+              }
+            });
           }
           return { success: true, seq: this.getNextSeq() };
         } catch (e) {
@@ -455,11 +506,14 @@ export class CommandProcessor {
                 for (const id of slice) await (this.coreDB as any).deleteNode?.(id);
               }
             }
-            try {
-              await this.deletePeerEntitiesForNodes(toDelete);
-            } catch (e) {
-              console.warn('[CommandProcessor/removeSubtree] peer-entity cleanup skipped:', (e as Error)?.message || e);
-            }
+            const subtreeForCleanup = toDelete.map((n) => ({ ...n }));
+            context.postCommitTasks.push(async () => {
+              try {
+                await this.deletePeerEntitiesForNodes(subtreeForCleanup);
+              } catch (e) {
+                console.warn('[CommandProcessor/removeSubtree] peer-entity cleanup skipped:', (e as Error)?.message || e);
+              }
+            });
           }
           return { success: true, seq: this.getNextSeq() };
         } catch (e) {
@@ -536,10 +590,6 @@ export class CommandProcessor {
             expectedUpdatedAt?: Timestamp;
             onNameConflict?: 'error' | 'auto-rename';
           };
-          if (!FEATURE_FLAGS.WORKER_WC_COMMIT_V2) {
-            // Legacy placeholder: treat as success without side effects
-            return { success: true, seq: this.getNextSeq(), nodeId: p.workingCopyId };
-          }
           const result = await commitWorkingCopyV2(this.coreDB as any, p.workingCopyId, p.onNameConflict ?? 'error');
           if (result.status === 'ok') {
             return { success: true, seq: this.getNextSeq(), nodeId: p.workingCopyId };
@@ -923,22 +973,25 @@ export class CommandProcessor {
   }
 
   private async deletePeerEntityDirect(nodeType: string, nodeId: NodeId): Promise<void> {
-    // Map known node types to their EntitiesDB modules
-    const map: Record<string, () => Promise<{ del(nodeId: NodeId): Promise<void> }>> = {
-      folder: async () => { const name = '@' + 'hierarchidb/folder-plugin/src/worker/folderEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.FolderEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      route: async () => { const name = '@' + 'hierarchidb/route-plugin/src/worker/routeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.RouteEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      resolver: async () => { const name = '@' + 'hierarchidb/resolver-plugin/src/worker/resolverEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ResolverEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      
-      shape: async () => { const name = '@' + 'hierarchidb/shape-plugin/src/worker/shapeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ShapeEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      location: async () => { const name = '@' + 'hierarchidb/location-plugin/src/worker/locationEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.LocationEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      spreadsheet: async () => { const name = '@' + 'hierarchidb/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.SpreadsheetEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      styler: async () => { const name = '@' + 'hierarchidb/styler-plugin/src/worker/stylerEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.StylerEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      basemap: async () => { const name = '@' + 'hierarchidb/basemap-plugin/src/worker/basemapEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.BasemapEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-    };
-    const fn = map[nodeType];
-    if (!fn) return;
-    const adapter = await fn();
-    await adapter.del(nodeId);
+    const overrideFactory = (globalThis as any).__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
+    if (!overrideFactory) {
+      console.warn(
+        '[CommandProcessor] peer-entity cleanup skipped: no override registered for nodeType=',
+        nodeType,
+      );
+      return;
+    }
+    try {
+      const maybeFactory = typeof overrideFactory === 'function' ? await overrideFactory() : overrideFactory;
+      const db = typeof maybeFactory === 'function' ? await maybeFactory() : maybeFactory;
+      if (db && typeof db.table === 'function') {
+        await db.table('peerEntities')?.delete?.(nodeId as any);
+        return;
+      }
+      console.warn('[CommandProcessor] override provided for', nodeType, 'but no table() interface found');
+    } catch (err) {
+      console.warn('[CommandProcessor] override peer-entity cleanup failed:', err);
+    }
   }
 
   /**

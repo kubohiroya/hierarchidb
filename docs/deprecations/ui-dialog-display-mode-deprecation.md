@@ -1,3 +1,6 @@
+**Status**
+- 2025-09-19: Flag撤去および旧実装のサポートを終了しました。以下は履歴として残しています。
+
 **Scope**
 - UI ダイアログの表示モード周りの旧実装/旧APIを段階的に撤廃する計画。
 - 影響範囲: Dialog display mode（standard/maximized/fullscreen）UI とその永続化。
@@ -22,9 +25,7 @@
   - UI ヘルパー: `getPeerDisplayMode(nodeType, nodeId)` / `setPeerDisplayMode(nodeType, nodeId, mode)`
 
 **フィーチャーフラグ**
-- `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE`（boolean, default: true → 段階的に false → 完全撤廃）
-  - true: 旧APIを許容（警告ログ出力）。
-  - false: 旧APIの使用をビルド/実行時にエラー扱い（dev では明示エラー、prod では noop + hard warning）。
+- `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE` は 2025-09-19 に削除済み（Phase 3 完了）。
 
 **段階的撤廃（リリースフェーズ）**
 - Phase 0（準備）

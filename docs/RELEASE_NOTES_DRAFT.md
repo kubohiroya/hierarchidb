@@ -7,16 +7,16 @@ Highlights
 - Trash holder flow: safer trash behavior (recover by holder decode), legacy-compatible fallback
 - Undo/Redo expanded: update/move/remove/recover
 - Error model unified: Core `CommandResult` / `ErrorCode` across worker
-- Working Copy commit V2: integrated via CP behind flag, legacy Ephemeral discard retained
+- Working Copy commit V2: integrated via CP (legacy Ephemeral path removed)
 - Policy C: block move/remove when WC exists in subtree (with indexed search optimization)
 - Headless tests: Node + fake-indexeddb integration scenarios for CP / WC / Policy C
 - Trash migration tool: legacy <-> holder with metrics and rollback
-- Lightweight command metrics: per-command counts/errors/latency with flag
+- Lightweight command metrics: per-command counts/errors/latency
 
-Feature Flags (default OFF)
-- Removed worker flags (now always-on features): `WORKER_TRASH_USE_HOLDER`, `WORKER_WC_COMMIT_V2`, `WORKER_POLICY_C`, `WORKER_ENTITY_UNIFIED`
-- `WORKER_METRICS_ENABLED` – Enable lightweight command metrics
-- `WORKER_TX_ENABLED` – (Footing) Run commands under Dexie transaction helper
+Feature Flags
+- Worker runtime no longer exposes rollout flags; all previous toggles are permanently enabled.
+- Batch Control API V2 flag has been removed (API always available).
+- Node-type plugin flags (`SHAPE_DOWNLOAD_STRATEGY`, `LOCATION_TABULAR`, `ROUTE_SEAROUTE`, `ROUTE_LANE_CAPS`, `ROUTE_TABULAR`) are now always on.
 
 Compatibility & Rollback
 - CommandProcessor routing for create/update/move/remove/recover is now unconditional (legacy flags removed)
