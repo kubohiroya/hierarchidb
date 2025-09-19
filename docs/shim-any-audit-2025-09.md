@@ -39,6 +39,26 @@
 
 （テスト・deprecated ディレクトリは除外済み。`python3` 集計スクリプトで再取得可能。）
 
+### 2025-09-18 自動集計（`pnpm as-any:report`）
+
+```
+total occurrences: 1076
+
+top packages:
+  app                                        245
+  packages/runtime-worker/worker             238
+  packages/node-type/route-plugin             95
+  packages/node-type/shape-plugin             66
+  packages/node-type/location-plugin          48
+  packages/ui/treeconsole                     41
+  packages/node-type/folder-plugin            40
+  packages/node-type/styler-plugin            40
+  packages/node-type/spreadsheet-plugin       33
+  packages/ui/auth                            32
+```
+
+集計は `scripts/report-as-any.mjs`（`pnpm as-any:report`）で再生成できる。`__tests__`/`*.test.*` はカウントから除外している。
+
 ## 推奨アクション
 
 1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/runtime-worker-bootstrap` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。

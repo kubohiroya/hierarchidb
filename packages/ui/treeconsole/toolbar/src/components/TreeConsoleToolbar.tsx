@@ -533,8 +533,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   const {
     hideConsole = false,
     showSearchOnly = false,
-    isProjectsPage = false,
-    isResourcesPage = false,
     controller,
     hasTrashItems = false,
     onAction,
